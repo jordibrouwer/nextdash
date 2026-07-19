@@ -8,6 +8,7 @@
     <title>{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}Dashboard{{end}}</title>
     <script src="/static/js/app-version-guard.js?v={{.Assets.AppVersionGuardJS}}"></script>
     <script src="/static/js/write-api.js?v={{.Assets.WriteAPIJS}}"></script>
+    {{if .EnableUsageAnalytics}}<script src="/static/js/umami-analytics.js?v={{.Assets.UmamiAnalyticsJS}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}"></script>{{end}}
     <script src="/static/js/font-presets.js?v={{.Assets.FontPresetsJS}}"></script>
     <script src="/static/js/device-settings-merge.js?v={{.Assets.DeviceSettingsMergeJS}}"></script>
     <script src="/static/js/settings-sanitize.js?v={{.Assets.SettingsSanitizeJS}}"></script>
@@ -294,13 +295,13 @@
     <script src="/static/js/search-finders.js?v=finder-auto-space-1"></script>
     <script src="/static/js/fuzzy-search.js?v={{.Assets.FuzzySearchJS}}"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1" defer></script>
-    <script src="/static/js/search.js?v=empty-dashboard-fix-1"></script>
+    <script src="/static/js/search.js?v=merge-analytics-1"></script>
     <script src="/static/js/status.js?v=ping-quiet-network-errors-1"></script>
     <script src="/static/js/keyboard-navigation.js?v=health-view-1"></script>
     <script src="/static/js/swipe-navigation.js?v=nav-fix-4" defer></script>
     <script src="/static/js/hypr-mode.js?v={{.Assets.HyprModeJS}}" defer></script>
     <script src="/static/js/reorder.js?v=delegate-dragover-1" defer></script>
-    <script src="/static/js/dashboard-quickstart.js?v=fresh-start-step-1" defer></script>
+    <script src="/static/js/dashboard-quickstart.js?v=merge-analytics-1" defer></script>
     <script src="/static/js/weather.js?v=weather-geolocation-1" defer></script>
     <script src="/static/js/tag-autocomplete.js?v=collections-ac-1" defer></script>
     <script src="/static/js/quick-add.js?v={{.Assets.SearchCommandsNewJS}}" defer></script>
@@ -309,18 +310,18 @@
     <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}" defer></script>
     <script src="/static/js/pwa-install-hint.js?v={{.Assets.PWAInstallHintJS}}" defer></script>
     <script src="/static/js/mobile-experience.js?v={{.Assets.MobileExperienceJS}}"></script>
-    <script src="/static/js/dashboard-tag-cloud.js?v=tag-filter-fix-6" defer></script>
+    <script src="/static/js/dashboard-tag-cloud.js?v=analytics-track-1" defer></script>
     <script src="/static/js/dashboard-deep-link.js?v={{.Assets.DashboardDeepLinkJS}}" defer></script>
     <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
     <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
     <script src="/static/js/dashboard/dashboard-data.js?v=health-always-on-1"></script>
     <script src="/static/js/dashboard/dashboard-config-sync.js?v=inbox-settings-sync-2"></script>
     <script src="/static/js/dashboard/dashboard-inbox-triage.js?v=inbox-kbd-nav-3"></script>
-    <script src="/static/js/dashboard/dashboard-inbox.js?v=promote-healthcheck-2"></script>
+    <script src="/static/js/dashboard/dashboard-inbox.js?v=merge-analytics-1"></script>
     <script src="/static/js/health-reason-utils.js?v=health-view-1"></script>
-    <script src="/static/js/dashboard/dashboard-health.js?v=health-legend-single-1"></script>
+    <script src="/static/js/dashboard/dashboard-health.js?v=analytics-track-4"></script>
     <script src="/static/js/dashboard/dashboard-paste-choice.js?v=inbox-phase1-1"></script>
-    <script src="/static/js/dashboard/dashboard-page-nav.js?v=deeplink-edit-1"></script>
+    <script src="/static/js/dashboard/dashboard-page-nav.js?v=analytics-track-1"></script>
     <script src="/static/js/dashboard/dashboard-tag-filter.js?v=tag-filter-empty-d-1"></script>
     <script src="/static/js/dashboard/dashboard-inline-edit.js?v=inline-edit-dragstart-cancel-1"></script>
     <script src="/static/js/dashboard/dashboard-toolbar.js?v=collapse-all-1"></script>
@@ -335,10 +336,10 @@
     <script src="/static/js/dashboard/dashboard-visual.js?v=health-icon-badge-2"></script>
     <script src="/static/js/dashboard/dashboard-date-weather.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-preview.js?v=dash-phase1-2"></script>
-    <script src="/static/js/dashboard/dashboard-recent.js?v=recent-usage-d8-1"></script>
+    <script src="/static/js/dashboard/dashboard-recent.js?v=analytics-track-4"></script>
     <script src="/static/js/dashboard/dashboard-promos.js?v=promos-standalone-toasts-1"></script>
-    <script src="/static/js/dashboard/dashboard-ui-helpers.js?v=lt-config-shortcut-1"></script>
-    <script src="/static/js/dashboard/dashboard-setup.js?v=empty-dashboard-fix-1"></script>
+    <script src="/static/js/dashboard/dashboard-ui-helpers.js?v=merge-analytics-1"></script>
+    <script src="/static/js/dashboard/dashboard-setup.js?v=merge-analytics-1"></script>
     <script src="/static/js/dashboard/dashboard-persistence.js?v=dash-tag-sync-3"></script>
     <script src="/static/js/dashboard.js?v={{.Assets.DataRevision}}"></script>
     <script src="/static/js/analytics.js?v={{.Assets.AnalyticsJS}}" defer></script>

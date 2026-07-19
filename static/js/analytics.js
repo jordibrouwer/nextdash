@@ -2,7 +2,10 @@
  * Bookmark open tracking (dashboard). Analytics UI lives in Config → Stats and dashboard health.
  */
 class BookmarkAnalytics {
-    async trackBookmarkOpen(pageId, index) {
+    async trackBookmarkOpen(pageId, index, source) {
+        // Usage analytics (Umami): count that a bookmark was opened, and from where.
+        // No id/name/url — `source` is a fixed enum, which keeps it PII-free.
+        window.nextdashTrack?.('bookmark-open', { source: source || 'dashboard' });
         const payload = JSON.stringify({ pageId, index });
         const hasWriteToken = Boolean(
             document.querySelector('meta[name="nextdash-write-token"]')?.content?.trim()

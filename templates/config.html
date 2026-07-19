@@ -7,6 +7,7 @@
     <title>Dashboard Configuration</title>
     <script src="/static/js/app-version-guard.js?v={{.Assets.AppVersionGuardJS}}"></script>
     <script src="/static/js/write-api.js?v={{.Assets.WriteAPIJS}}"></script>
+    {{if .EnableUsageAnalytics}}<script src="/static/js/umami-analytics.js?v={{.Assets.UmamiAnalyticsJS}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}"></script>{{end}}
     <script src="/static/js/font-presets.js?v={{.Assets.FontPresetsJS}}"></script>
     <script src="/static/js/theme-loader.js?v={{.Assets.ThemeJS}}"></script>
     <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
@@ -227,6 +228,7 @@
                             <li><a href="#general-status" data-nav-panel="status" data-i18n="config.generalDiagnosticsTitle">Diagnostics & Status</a></li>
                             <li><a href="#general-branding" data-nav-panel="branding" data-i18n="config.generalBrandingTitle">Branding & Identity</a></li>
                             <li><a href="#general-search-input" data-nav-panel="search-input" data-i18n="config.generalSearchInputTitle">Search & input</a></li>
+                            <li><a href="#general-privacy" data-nav-panel="privacy" data-i18n="config.generalPrivacyTitle">Privacy</a></li>
                             <li><a href="#general-system-tools" data-nav-panel="system-tools" data-i18n="config.generalSystemToolsTitle">System & tools</a></li>
                             <li><a href="#general-tours-resets" data-nav-panel="tours-resets" data-i18n="config.tourResetsTitle">Onboarding & tips</a></li>
                             <li><a href="#general-reset" data-nav-panel="reset" class="general-index-danger-link" data-i18n="config.resetSectionTitle">Reset</a></li>
@@ -1174,6 +1176,19 @@
                     </section>
 
                     <!-- System & tools — advanced -->
+                    <section class="general-card" id="general-privacy" data-general-panel="privacy" data-config-tier="advanced">
+                        <h3 class="section-title" data-i18n="config.generalPrivacyTitle">Privacy</h3>
+                        <div class="checkbox-tree">
+                            <div class="checkbox-tree-item">
+                                <label class="checkbox-label" for="usage-analytics-checkbox">
+                                    <input type="checkbox" id="usage-analytics-checkbox">
+                                    <span class="checkbox-text" data-i18n="config.usageAnalyticsLabel">Privacy-friendly analytics</span>
+                                </label>
+                                <p class="form-hint usage-analytics-hint" data-i18n="config.usageAnalyticsHint">NextDash uses Umami to understand which features are used and how the app can be improved. We use this only for product insights such as page views, feature usage, and general engagement. No cookies are used, no personal profiles are created, and users are not tracked across websites. Analytics data is used only to improve NextDash. You can turn this off here; it takes effect after the page reloads.</p>
+                            </div>
+                        </div>
+                    </section>
+
                     <section class="general-card" id="general-system-tools" data-general-panel="system-tools" data-config-tier="advanced">
                         <h3 class="section-title" data-i18n="config.generalSystemToolsTitle">System & tools</h3>
                         <p class="general-card-intro" data-i18n="config.generalSystemToolsIntro">Launcher mode, device settings, tours, and maintenance.</p>
@@ -2554,7 +2569,7 @@
     <!-- Config modules (must be loaded before main config.js) -->
     <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}"></script>
     <script src="/static/js/config/config-tab-groups.js?v=config-tab-groups-unsaved-1"></script>
-    <script src="/static/js/config/config-ui.js?v=lt-dashboard-shortcut-1"></script>
+    <script src="/static/js/config/config-ui.js?v=analytics-track-2"></script>
     <script src="/static/js/device-settings-merge.js?v={{.Assets.DeviceSettingsMergeJS}}"></script>
     <script src="/static/js/settings-sanitize.js?v={{.Assets.SettingsSanitizeJS}}"></script>
     <script src="/static/js/discoverability-state.js?v={{.Assets.DiscoverabilityJS}}"></script>
@@ -2574,7 +2589,7 @@
     <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-1"></script>
     <script src="/static/js/config/config-backup.js?v=health-recheck-1"></script>
     <script src="/static/js/config/config-font.js?v={{.Assets.ConfigFontJS}}"></script>
-    <script src="/static/js/config/config-settings.js?v=category-item-limit-1"></script>
+    <script src="/static/js/config/config-settings.js?v=category-limit-analytics-1"></script>
     <script src="/static/js/config/config-settings-defaults.js?v=tips-off-default-1"></script>
     <script src="/static/js/config/config-tours-runtime.js?v=tours-removed-1"></script>
     <script src="/static/js/config/config-tab-tours.js?v=tours-removed-1"></script>

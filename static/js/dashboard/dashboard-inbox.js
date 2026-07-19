@@ -21,6 +21,24 @@ class DashboardInbox {
         return this.dash.settings?.inboxEnabled !== false;
     }
 
+    /**
+     * Report an inbox triage action. Tracked at the user-action layer rather than in
+     * markRead()/patchSnooze(), so a bulk run fires one event with a size bucket
+     * instead of one per item.
+     */
+    _trackAction(action, extra) {
+        window.nextdashTrack?.('inbox:' + action, extra);
+    }
+
+    /** Bucket a count so bulk sizes stay low-cardinality. */
+    _countBucket(n) {
+        const count = Number(n) || 0;
+        if (count <= 1) return '1';
+        if (count <= 5) return '2-5';
+        if (count <= 20) return '6-20';
+        return '20+';
+    }
+
     isActiveView() {
         return this.dash.activeView === DashboardInbox.VIEW;
     }
@@ -264,6 +282,10 @@ class DashboardInbox {
     async deleteItemWithUndo(id, options = {}) {
         const d = this.dash;
         const snapshot = this.items.find((item) => item.id === id);
+        // reason=promote deletes are the tail of a promote, already counted there.
+        if (snapshot && options.reason !== 'promote') {
+            this._trackAction('delete');
+        }
         if (!snapshot) {
             return false;
         }
@@ -370,6 +392,7 @@ class DashboardInbox {
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         this.clearKeyboardSelection();
         d.activeView = DashboardInbox.VIEW;
+        window.nextdashTrack?.('view:inbox');
         d.pageNav?.setActiveInboxTab?.();
         d.pageNav?.updateDocumentTitle?.();
         d.pageNav?.markInboxTabDiscovered?.();
@@ -606,6 +629,7 @@ class DashboardInbox {
         if (item.readAt) {
             return;
         }
+        this._trackAction('mark-read');
         await this.markRead(item.id);
         const card = document.querySelector(`[data-inbox-id="${CSS.escape(item.id)}"]`);
         card?.classList.remove('is-unread');
@@ -725,6 +749,7 @@ class DashboardInbox {
         if (!(Number(until) > Date.now())) {
             return;
         }
+        this._trackAction('snooze');
         try {
             await this.patchSnooze(item.id, until);
             this.dash.pageNav?.updateInboxTabBadge?.();
@@ -754,6 +779,7 @@ class DashboardInbox {
 
     async wakeItem(item) {
         const d = this.dash;
+        this._trackAction('wake');
         try {
             await this.patchSnooze(item.id, 0);
             this.dash.pageNav?.updateInboxTabBadge?.();
@@ -816,6 +842,8 @@ class DashboardInbox {
         if (!targets.length) {
             return;
         }
+        // One event for the whole run — markRead() per item would spam.
+        this._trackAction('mark-all-read', { size: this._countBucket(targets.length) });
         const results = await Promise.allSettled(targets.map((item) => this.markRead(item.id)));
         const failed = results.filter((r) => r.status === 'rejected').length;
         if (this.isActiveView()) {
@@ -839,6 +867,7 @@ class DashboardInbox {
         if (!targets.length) {
             return;
         }
+        this._trackAction('clear-read', { size: this._countBucket(targets.length) });
         const confirmed = await this.confirm(
             this.t('dashboard.inboxClearRead', 'Clear read'),
             this.t('dashboard.inboxClearReadConfirm', 'Remove {count} read links from the Inbox?', { count: targets.length }),
@@ -1469,6 +1498,8 @@ class DashboardInbox {
 
     promoteItem(item) {
         const d = this.dash;
+        // The inbox's main conversion: a captured link becoming a real bookmark.
+        this._trackAction('promote');
         const handler = d.searchComponent?.commandsComponent?.newCommandHandler;
         if (!handler) {
             d.showNotification(this.t('dashboard.inboxPromoteFailed', 'Could not open bookmark form'), 'error');

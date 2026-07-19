@@ -240,6 +240,7 @@ class DashboardHealth {
         d.inbox?.clearKeyboardSelection?.();
         this.clearKeyboardSelection();
         d.activeView = DashboardHealth.VIEW;
+        window.nextdashTrack?.('view:health');
         d.pageNav?.setActiveHealthTab?.();
         d.pageNav?.updateDocumentTitle?.();
         const legacyEntry = this.consumeLegacyEntryParams();
@@ -683,6 +684,7 @@ class DashboardHealth {
         if (this._busyKeys.has(key)) return;
         const url = String(issue?.url || '').trim();
         if (!url) return;
+        window.nextdashTrack?.('health:recheck');
         this._busyKeys.add(key);
         this.syncRowBusy(key, true);
         const d = this.dash;
@@ -859,6 +861,7 @@ class DashboardHealth {
     async detectRedirect(issue) {
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
+        window.nextdashTrack?.('health:detect-redirect');
         this.closeAllMenus();
         const d = this.dash;
         this._busyKeys.add(key);
@@ -911,6 +914,7 @@ class DashboardHealth {
     async refreshTitle(issue) {
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
+        window.nextdashTrack?.('health:refresh-title');
         this.closeAllMenus();
         const d = this.dash;
         this._busyKeys.add(key);
@@ -936,6 +940,7 @@ class DashboardHealth {
     async deleteIssue(issue) {
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
+        window.nextdashTrack?.('health:delete');
         this.closeAllMenus();
         const d = this.dash;
         const name = issue.name || issue.url || 'bookmark';
@@ -1261,6 +1266,7 @@ class DashboardHealth {
     async retestAll(button) {
         if (this._retestRunning) return;
         this._retestRunning = true;
+        window.nextdashTrack?.('health:retest-all');
         if (button) {
             button.disabled = true;
             button.textContent = this.t('dashboard.healthRetesting', 'Retesting…');

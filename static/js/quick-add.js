@@ -51,6 +51,7 @@ class QuickAddWidget {
         if (handler.modal?.classList.contains('show')) {
             handler.closeModal();
         } else {
+            // The open event fires inside openModal(), which every entry point uses.
             this.syncNewHandlerContext()?.openModal();
         }
     }

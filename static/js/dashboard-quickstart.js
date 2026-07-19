@@ -197,7 +197,8 @@
                             <span class="quickstart-radio-hint">${this.escape(emptyHint)}</span>
                         </span>
                     </label>
-                </fieldset>`;
+                </fieldset>
+                <p class="quickstart-field-hint quickstart-analytics-note">${this.escape(this.t('setupAnalyticsNote', 'Privacy-friendly usage analytics are on — no bookmark names, URLs, or searches are ever sent. You can turn this off in Config → General.'))}</p>`;
         }
 
         renderSetupStep() {

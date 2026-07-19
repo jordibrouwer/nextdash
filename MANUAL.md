@@ -1223,6 +1223,16 @@ Per-client limits on outbound fetches and SSRF-sensitive APIs (`NEXTDASH_OUTBOUN
 
 HTML pages send a restrictive CSP by default. Set `NEXTDASH_CSP=off` only when required by your proxy or integration.
 
+### Analytics and privacy
+
+**Privacy-friendly analytics.** NextDash uses [Umami](https://umami.is) to understand which features are used and how the app can be improved. We use this only for product insights such as page views, feature usage, and general engagement. No cookies are used, no personal profiles are created, and users are not tracked across websites. Analytics data is used only to improve NextDash.
+
+What is recorded is **page views and a small set of low-cardinality feature events only** — opening the health and inbox views, switching pages, opening search / quick-add / tag cloud / what's-new, config tab changes, and bookmark opens. It never sends bookmark names, URLs, or search queries. The tracker loads from `stats.nextdash.cc`, which is allow-listed in the CSP.
+
+**It is on by default and you can turn it off.** Go to **Config → General → Privacy** and clear **Privacy-friendly analytics** (a one-line note on the first-run quick-start card also points here). The change takes effect after the page reloads. When off, the third-party tracker script is not loaded at all and no analytics request leaves your machine. The setting is stored per user in `settings.json` as `enableUsageAnalytics`.
+
+This is separate from the local **open count / last opened** [usage tracking](#usage-tracking), which stays entirely on your own server and is never sent anywhere.
+
 ### Startup validation
 
 Before listening, the server checks `PORT` (1–65535) and that `NEXTDASH_DATA_DIR` is creatable and writable. Misconfiguration exits with a clear error.

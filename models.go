@@ -192,7 +192,8 @@ type Settings struct {
 	FaviconRefreshPolicy           string                           `json:"faviconRefreshPolicy"`         // Favicon policy: manual, on-save
 	SearchIndexed                  bool                             `json:"searchIndexed"`                // Is search index built
 	OnboardingCompleted            bool                             `json:"onboardingCompleted"`
-	QuickStart                     QuickStartState                  `json:"quickStart"` // First-run quick-start progress (server-side, per-user)
+	EnableUsageAnalytics           bool                             `json:"enableUsageAnalytics"` // Privacy-friendly Umami analytics (default on, opt-out in Config → General)
+	QuickStart                     QuickStartState                  `json:"quickStart"`           // First-run quick-start progress (server-side, per-user)
 	ConfigGeneralTourCompleted     bool                             `json:"configGeneralTourCompleted"`
 	ConfigBookmarksTourCompleted   bool                             `json:"configBookmarksTourCompleted"`
 	ConfigFindersTourCompleted     bool                             `json:"configFindersTourCompleted"`
@@ -422,6 +423,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			CurrentPage:                    1,
 			Theme:                          "midnight-ink-dark",
 			OpenInNewTab:                   true,
+			EnableUsageAnalytics:           true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -1589,6 +1591,7 @@ func (fs *FileStore) GetSettings() Settings {
 			CurrentPage:                    1,
 			Theme:                          "midnight-ink-dark",
 			OpenInNewTab:                   true,
+			EnableUsageAnalytics:           true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -1812,6 +1815,11 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["onboardingCompleted"]; !ok {
 			settings.OnboardingCompleted = true
+		}
+		// Default-on, opt-out: existing installs that predate the field get analytics
+		// enabled (matching new installs). A user who explicitly stored `false` keeps it.
+		if _, ok := rawSettings["enableUsageAnalytics"]; !ok {
+			settings.EnableUsageAnalytics = true
 		}
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true

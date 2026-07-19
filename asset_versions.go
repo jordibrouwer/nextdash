@@ -41,6 +41,7 @@ type pageAssetVersions struct {
 	PWAInstallHintJS         string
 	DashboardDeepLinkJS      string
 	AnalyticsJS              string
+	UmamiAnalyticsJS         string
 	ModalJS                  string
 	StatusJS                 string
 	SelectJS                 string
@@ -91,7 +92,7 @@ var sharedAssetVersions = pageAssetVersions{
 	LayoutVersionUtilsJS: "glass-migrate-1",
 	HealthBadgeJS:        "health-badge-count-only-1",
 	AppNotificationJS:    "toast-grouped-1",
-	SearchCommandsNewJS:  "search-commands-new-6-promote-healthcheck",
+	SearchCommandsNewJS:  "search-commands-new-9-outcome",
 	WhatsNewData:         "whats-new-v168",
 	DataRevision:         "data-revision-8-promo-starvation",
 
@@ -115,7 +116,8 @@ var sharedAssetVersions = pageAssetVersions{
 	ShortcutFormatJS:         "shortcut-format-1",
 	PWAInstallHintJS:         "pwa-install-hint-1",
 	DashboardDeepLinkJS:      "dashboard-deep-link-edit-2",
-	AnalyticsJS:              "analytics-1",
+	AnalyticsJS:              "analytics-3-open-source",
+	UmamiAnalyticsJS:         "umami-analytics-2-snapshot",
 	ModalJS:                  "modal-focus-aria-1",
 	StatusJS:                 "status-1",
 	SelectJS:                 "select-js-1",

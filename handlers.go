@@ -596,14 +596,28 @@ type htmlPageData struct {
 	WriteToken string `json:"-"`
 	Assets     pageAssetVersions
 	AppVersion string
+
+	// Umami analytics (privacy-friendly, opt-out). Fixed id + host for the
+	// project's shared instance; the template only emits the tracker when
+	// Settings.EnableUsageAnalytics is true.
+	AnalyticsWebsiteID string
+	AnalyticsScriptSrc string
 }
+
+// analyticsWebsiteID / analyticsScriptSrc are the project's shared Umami instance.
+const (
+	analyticsWebsiteID = "6088e50e-b155-4efc-bc19-c4754edbbab1"
+	analyticsScriptSrc = "https://stats.nextdash.cc/script.js"
+)
 
 func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	return htmlPageData{
-		Settings:   settings,
-		WriteToken: writeAccessToken(),
-		Assets:     sharedAssetVersions,
-		AppVersion: appVersionToken(),
+		Settings:           settings,
+		WriteToken:         writeAccessToken(),
+		Assets:             sharedAssetVersions,
+		AppVersion:         appVersionToken(),
+		AnalyticsWebsiteID: analyticsWebsiteID,
+		AnalyticsScriptSrc: analyticsScriptSrc,
 	}
 }
 

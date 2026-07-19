@@ -420,6 +420,8 @@
         modalSessionId += 1;
         const sessionId = modalSessionId;
 
+        window.nextdashTrack?.('modal:whats-new');
+
         const finish = () => {
             teardownLazyLoader();
             if (markSeenOnConfirm && releaseToken) {

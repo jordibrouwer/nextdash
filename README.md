@@ -136,6 +136,14 @@ When exceeded, the API returns **429** and (if enabled) logs a `security` activi
 
 nextDash sends a restrictive CSP on HTML pages by default. Set `NEXTDASH_CSP=off` only when a reverse proxy or custom integration requires it.
 
+### Analytics & privacy
+
+**Privacy-friendly analytics.** NextDash uses [Umami](https://umami.is) to understand which features are used and how the app can be improved. We use this only for product insights such as page views, feature usage, and general engagement. No cookies are used, no personal profiles are created, and users are not tracked across websites. Analytics data is used only to improve NextDash.
+
+It records **page views and a small set of low-cardinality feature events only** (opening the health/inbox views, switching pages, opening search / quick-add / tag cloud / what's-new, config tab changes, and bookmark opens) — **never** bookmark names, URLs, or search queries. The tracker loads from `stats.nextdash.cc` and is allow-listed in the CSP.
+
+**It is on by default and can be turned off.** Toggle it under **Config → General → Privacy** (a one-line note on the first-run quick-start card also points new users here). When off, the third-party tracker script is not emitted at all and **no analytics request leaves your machine**. The choice is stored per user in `settings.json` (`enableUsageAnalytics`).
+
 ### DNS rebinding (IP pinning)
 
 Outbound HTTP(S) dials pin resolved public IPs for ~2 minutes so a hostname cannot switch to a private address between the safety check and the connection (unless **allow localhost bookmarks** is enabled).

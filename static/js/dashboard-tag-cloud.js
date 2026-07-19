@@ -492,6 +492,7 @@
 
         openModal() {
             if (!this.isEligible() || !this.modal) return;
+            window.nextdashTrack?.('modal:tag-cloud');
             if (this._closeTimerId) {
                 clearTimeout(this._closeTimerId);
                 this._closeTimerId = null;
