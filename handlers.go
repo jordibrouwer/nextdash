@@ -564,14 +564,9 @@ func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// Always revalidate the HTML shell so clients pick up the latest asset URLs
-	// (with their ?v= cache-busters). "no-cache" forces revalidation but still
-	// allows the bfcache, so Back/Forward stays instant; static JS/CSS remain
-	// long-cached. We deliberately omit "no-store" to keep the bfcache usable.
-	w.Header().Set("Cache-Control", "no-cache, must-revalidate")
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf.Bytes())
+	// Serve the shell with a content-based ETag so browsers (Safari especially)
+	// revalidate against a real validator and reliably pick up new ?v= asset URLs.
+	writeHTMLShell(w, r, buf.Bytes())
 }
 
 func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
@@ -587,14 +582,9 @@ func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// Always revalidate the HTML shell so clients pick up the latest asset URLs
-	// (with their ?v= cache-busters). "no-cache" forces revalidation but still
-	// allows the bfcache, so Back/Forward stays instant; static JS/CSS remain
-	// long-cached. We deliberately omit "no-store" to keep the bfcache usable.
-	w.Header().Set("Cache-Control", "no-cache, must-revalidate")
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf.Bytes())
+	// Serve the shell with a content-based ETag so browsers (Safari especially)
+	// revalidate against a real validator and reliably pick up new ?v= asset URLs.
+	writeHTMLShell(w, r, buf.Bytes())
 }
 
 func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {
