@@ -500,11 +500,13 @@ class ConfigGeneralLayers {
             } catch { /* ignore */ }
         }
 
+        // Restore the saved collapse state first: it runs over every panel, so
+        // expanding the deep-linked one before this would immediately be undone.
+        window.configManager?.refreshGeneralPanelExpandState?.();
+
         if (scrollPanel) {
             this.scrollToPanel(scrollPanel, { switchLayer: true });
         }
-
-        window.configManager?.refreshGeneralPanelExpandState?.();
 
         if (preserveScroll && scrollAnchor && anchorTopBefore !== null) {
             this.preserveScrollAnchor(scrollAnchor, anchorTopBefore);
@@ -561,7 +563,11 @@ class ConfigGeneralLayers {
             return;
         }
 
-        if (!this.hasLayerPreference()) {
+        // A layer spelled out in the URL is an explicit request — honour it even
+        // when the user has no stored preference yet. Without this, a deep link
+        // like #general/advanced/privacy silently lands on Essentials, where the
+        // panel it points at is not rendered at all.
+        if (!this.hasLayerPreference() && layer === null) {
             if (panel) {
                 this.applyLayer('essentials', { updateHash: true });
                 this.scrollToPanel(panel, { switchLayer: false });
@@ -607,6 +613,9 @@ class ConfigGeneralLayers {
 
         if (panelId !== 'reset') {
             card.classList.remove('is-collapsed');
+            // Remembered so refreshGeneralPanelExpandState() — which sweeps every
+            // panel back to its saved state — leaves this one open.
+            this.deepLinkedPanel = panelId;
             const title = card.querySelector('.section-title');
             if (title) {
                 title.setAttribute('aria-expanded', 'true');
