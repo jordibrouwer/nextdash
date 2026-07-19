@@ -2906,7 +2906,7 @@ class ConfigSettings {
      */
     getDefaults() {
         return {
-            theme: 'midnight-ink-dark',
+            theme: 'moss-stone-dark',
             openInNewTab: true,
             enableUsageAnalytics: true,
             columnsPerRow: 3,

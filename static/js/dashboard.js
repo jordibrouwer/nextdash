@@ -31,7 +31,7 @@ class Dashboard {
         this.currentPageId = 'default';
         this.settings = {
             currentPage: 'default',
-            theme: 'midnight-ink-dark',
+            theme: 'moss-stone-dark',
             openInNewTab: true,
             columnsPerRow: 3,
             fontSize: 'm',
