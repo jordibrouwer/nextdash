@@ -9,7 +9,6 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
-- [v2026.07.18 — July 2026](#v20260718--july-2026)
 - [v2026.07.17.2 — July 2026](#v2026071712--july-2026)
 - [v2026.07.17.1 — July 2026](#v2026071711--july-2026)
 - [v2026.07.17 — July 2026](#v20260717--july-2026)
@@ -100,16 +99,6 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
-
----
-
-## v2026.07.18 — July 2026
-
-**Privacy-friendly analytics** — nextDash now uses [Umami](https://umami.is) to understand which features are used and how the app can be improved.
-
-### Privacy
-
-- **new** **Privacy-friendly analytics** — NextDash uses Umami to understand which features are used and how the app can be improved. We use this only for product insights such as page views, feature usage, and general engagement. No cookies are used, no personal profiles are created, and users are not tracked across websites. Analytics data is used only to improve NextDash. It counts **page views and low-cardinality feature events only** (opening health/inbox, switching pages, opening search/quick-add/tag-cloud/what's-new, config tab changes, bookmark opens) — never bookmark names, URLs, or search queries. **It can be turned off** in **Config → General → Privacy**; when off, no third-party script loads and no request leaves your machine. A one-line note on the first-run quick-start card tells new users it's on and how to disable it (`umami-analytics.js`, `security.go` CSP, `config-settings.js`).
 
 ---
 
