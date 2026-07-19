@@ -91,7 +91,7 @@ var sharedAssetVersions = pageAssetVersions{
 	LayoutVersionUtilsJS: "glass-migrate-1",
 	HealthBadgeJS:        "health-badge-count-only-1",
 	AppNotificationJS:    "toast-grouped-1",
-	SearchCommandsNewJS:  "search-commands-new-7-quick-add-track",
+	SearchCommandsNewJS:  "search-commands-new-8-modal-track",
 	WhatsNewData:         "whats-new-v166",
 	DataRevision:         "data-revision-8-promo-starvation",
 

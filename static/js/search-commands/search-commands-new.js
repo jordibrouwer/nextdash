@@ -78,6 +78,10 @@ class SearchCommandNew {
     }
 
     openModal(options = {}) {
+        // Tracked here rather than at the call sites: the modal is opened from the
+        // `+` key, the toolbar, the empty state, the `:new` command and config, and
+        // every one of those funnels through this method.
+        window.nextdashTrack?.('modal:new-bookmark');
         this._openOptions = options;
         this.createModal();
         this.showModal(options);

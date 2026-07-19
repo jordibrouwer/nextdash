@@ -261,6 +261,7 @@ class DashboardUiHelpers {
         if (!window.AppModal) {
             return;
         }
+        window.nextdashTrack?.('modal:cheatsheet');
         // Record for the first-run quick-start checklist (server-side, per-user).
         // Only while onboarding is still in progress, so we don't write on every open.
         if (d.settings && d.settings.onboardingCompleted !== true) {

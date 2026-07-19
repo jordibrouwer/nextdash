@@ -51,13 +51,12 @@ class QuickAddWidget {
         if (handler.modal?.classList.contains('show')) {
             handler.closeModal();
         } else {
-            window.nextdashTrack?.('quick-add');
+            // The open event fires inside openModal(), which every entry point uses.
             this.syncNewHandlerContext()?.openModal();
         }
     }
 
     open() {
-        window.nextdashTrack?.('quick-add');
         this.syncNewHandlerContext()?.openModal();
     }
 
