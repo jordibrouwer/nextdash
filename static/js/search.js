@@ -2213,8 +2213,29 @@ class SearchComponent {
         this.saveRecentCommands();
     }
 
+    /**
+     * Report which command was run, so it is visible which of the ~50 commands
+     * actually get used.
+     *
+     * The name is taken from the typed query and then checked against the
+     * registered command list — that check is the point. The query is free text,
+     * and match.shortcut cannot be used instead: for context commands (pin, move,
+     * copy) it holds the *bookmark's* shortcut, which is user data. Anything not
+     * matching a known command is dropped rather than sent.
+     */
+    _trackCommandUse(query) {
+        const raw = String(query || '').trim();
+        if (!raw.startsWith(':')) return;
+        const name = raw.slice(1).split(/\s+/)[0].toLowerCase();
+        if (!name) return;
+        const known = this.commandsComponent?.availableCommands;
+        if (!known || !Object.prototype.hasOwnProperty.call(known, name)) return;
+        window.nextdashTrack?.('command', { name });
+    }
+
     invokeCommand(match) {
         const queryBefore = this.currentQuery;
+        this._trackCommandUse(queryBefore);
         const result = match.action();
         if (result && typeof result.then === 'function') {
             result.then((resolved) => this._finishCommandInvoke(queryBefore, match, resolved));
