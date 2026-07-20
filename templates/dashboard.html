@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {{if .WriteToken}}<meta name="nextdash-write-token" content="{{.WriteToken}}">{{end}}
     <meta name="nextdash-app-version" content="{{.AppVersion}}">
+    {{if .TelemetryLockedOff}}<meta name="nextdash-telemetry-locked" content="1">{{end}}
     <title>{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}Dashboard{{end}}</title>
     <script src="/static/js/app-version-guard.js?v={{.Assets.AppVersionGuardJS}}"></script>
     <script src="/static/js/write-api.js?v={{.Assets.WriteAPIJS}}"></script>
@@ -291,7 +292,7 @@
     <script src="/static/js/search-commands/search-commands-fontsize.js?v={{.Assets.SearchCommandsFontSizeJS}}"></script>
     <script src="/static/js/search-commands/search-commands-theme.js?v={{.Assets.SearchCommandsThemeJS}}"></script>
     <script src="/static/js/search-commands/search-commands-note.js?v={{.Assets.SearchCommandsNoteJS}}"></script>
-    <script src="/static/js/search-commands.js?v=telemetry-command-1"></script>
+    <script src="/static/js/search-commands.js?v=telemetry-locked-1"></script>
     <script src="/static/js/search-finders.js?v=finder-auto-space-1"></script>
     <script src="/static/js/fuzzy-search.js?v={{.Assets.FuzzySearchJS}}"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1" defer></script>

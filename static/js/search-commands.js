@@ -2944,6 +2944,25 @@ class SearchCommandsComponent {
     handleTelemetryCommand(args) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
+
+        // DISABLE_TELEMETRY is an operator kill switch: the server refuses to turn
+        // analytics back on, so offering an "on" row here would reload the page and
+        // silently change nothing. Say why instead, matching the note in config.
+        if (document.querySelector('meta[name="nextdash-telemetry-locked"]')) {
+            const t = (key, fallback) => {
+                const v = dashboard.language?.t?.(`dashboard.${key}`);
+                return v && v !== `dashboard.${key}` ? v : fallback;
+            };
+            // Only `name` is rendered in the palette, so the reason goes in it.
+            return [{
+                name: t('telemetryLockedRow', 'off — disabled for this server by DISABLE_TELEMETRY'),
+                shortcut: ':TELEMETRY',
+                stateId: 'telemetry:locked',
+                type: 'command',
+                action: () => {},
+            }];
+        }
+
         const enabled = dashboard.settings.enableUsageAnalytics !== false;
         const apply = (value) => this.setUsageAnalytics(dashboard, value);
         return this._handleSimpleToggle(args, { shortcut: ':TELEMETRY', prefix: 'telemetry', enabled, apply });

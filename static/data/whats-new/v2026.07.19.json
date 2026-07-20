@@ -39,7 +39,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Running nextDash for other people?</strong> Set the environment variable <code>DISABLE_TELEMETRY=true</code> to switch analytics off for the entire server, whatever anyone has configured. Nothing is ever sent, it cannot be re-enabled from the app, and the Privacy checkbox shows as greyed out with a note explaining that the server operator turned it off. Everyone's own preference stays stored, so it returns unchanged if you ever unset the variable."
+          "text": "<strong>Running nextDash for other people?</strong> Set the environment variable <code>DISABLE_TELEMETRY=true</code> to switch analytics off for the entire server, whatever anyone has configured. Nothing is ever sent, it cannot be re-enabled from the app, and the Privacy checkbox shows as greyed out with a note explaining that the server operator turned it off. Everyone's own preference stays stored, so it returns unchanged if you ever unset the variable. Running <code>:telemetry</code> then shows a single row explaining that the server operator switched it off, instead of an <strong>on</strong> option that could not work."
         },
         {
           "badge": "new",

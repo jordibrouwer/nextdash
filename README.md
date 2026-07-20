@@ -156,7 +156,7 @@ environment:
   - DISABLE_TELEMETRY=true
 ```
 
-The tracker is then never emitted, the setting cannot be turned back on through the API or the `:telemetry` command, and the **Privacy** checkbox in config renders disabled with a note explaining why. Accepts `true`, `1`, `yes`, or `on`; unset or `false` leaves analytics under user control.
+The tracker is then never emitted, the setting cannot be turned back on through the API or the `:telemetry` command, and the **Privacy** checkbox in config renders disabled with a note explaining why. `:telemetry` shows a single row saying it is off for this server, rather than an **on** option that could not take effect. Accepts `true`, `1`, `yes`, or `on`; unset or `false` leaves analytics under user control.
 
 Each user's own preference is left stored and untouched, so it returns exactly as it was if you ever unset the variable.
 
