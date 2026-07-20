@@ -99,7 +99,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Refresh every bookmark icon at once</strong> — run <code>:favicons fetch</code> to re-download the favicon of every bookmark on every page, with a progress bar while it works. It replaces icons you already have, so ones that have gone stale get updated too — until now the only options were fixing them one at a time in health, or selecting them in config."
+          "text": "<strong>Refresh every bookmark icon at once</strong> — run <code>:favicons fetch</code> to re-download the favicon of every bookmark on every page, with a progress bar while it works. It replaces icons you already have, so ones that have gone stale get updated too — until now the only options were fixing them one at a time in health, or selecting them in config. On a brand-new install this also runs once by itself, right after you finish or skip the setup card with the example bookmarks kept, so the first dashboard you see already has proper icons."
         },
         {
           "badge": "new",

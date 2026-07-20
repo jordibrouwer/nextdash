@@ -372,6 +372,46 @@
             }
             this.teardownSetup();
             this.renderChecklist();
+
+            // Keeping the example bookmarks? Pull fresh favicons for all of them
+            // now that the card is out of the way. The startup prefetch only fills
+            // in missing icons; this re-fetches every one, so the first dashboard a
+            // new user sees has real site icons rather than whatever shipped.
+            //
+            // Skipping the card lands here too — skip-setup calls finishSetup() and
+            // startEmpty stays at its default false, so the examples are kept and
+            // their icons are fetched just the same. Only an explicit "start from
+            // scratch" skips this, because there is nothing left to fetch.
+            //
+            // Deliberately not awaited by the caller: setup is already complete.
+            if (draft.startEmpty !== true) {
+                // teardownSetup() removes the card on a 260ms fade and it sits far
+                // above the prefetch overlay, so wait it out before showing progress.
+                setTimeout(() => void this.fetchAllFaviconsAfterSetup(), 400);
+            }
+        }
+
+        /**
+         * Re-download every bookmark icon, the same run as `:favicons fetch`.
+         * Best-effort: a failure here must never affect a finished setup, so it
+         * only warns and leaves whatever icons are already there.
+         */
+        async fetchAllFaviconsAfterSetup() {
+            const d = this.dash;
+            if (typeof window.ConfigFaviconPrefetch !== 'function') {
+                return;
+            }
+            try {
+                const t = (key) => this.language?.t?.(key) ?? key;
+                const prefetch = new window.ConfigFaviconPrefetch(t);
+                await prefetch.run(null, { refreshAll: true });
+                if (typeof d?.loadData === 'function') {
+                    await d.loadData();
+                    d.renderDashboard?.();
+                }
+            } catch (error) {
+                console.warn('Favicon fetch after setup failed; keeping existing icons.', error);
+            }
         }
 
         // Wipe every seeded bookmark for a fresh start, then clear the in-memory

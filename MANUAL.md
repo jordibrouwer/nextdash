@@ -696,7 +696,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 - Auto-fetch title/description/image when adding URLs (if enabled).  
 - **`[`** toggles preview card on keyboard focus.  
 - **Show favicons** — **Config → General → Bookmarks** or `:favicons on/off` on the dashboard.
-- **Refresh every icon** — `:favicons fetch` re-downloads the favicon of every bookmark on every page, replacing the ones already stored, so icons that changed at the source are updated too. A progress bar shows how far along it is. Individual icons can also be refreshed from the health view (`f` on the selected row), and **Config → Bookmarks** has a bulk **Refresh favicons** button for a selection.  
+- **Refresh every icon** — `:favicons fetch` re-downloads the favicon of every bookmark on every page, replacing the ones already stored, so icons that changed at the source are updated too. A progress bar shows how far along it is. The same run happens automatically once on a new install, right after you finish or skip the first-run setup card while keeping the example bookmarks. Individual icons can also be refreshed from the health view (`f` on the selected row), and **Config → Bookmarks** has a bulk **Refresh favicons** button for a selection.  
 - **Fetch favicon** in config detail or health actions.
 
 ### Shortcuts
