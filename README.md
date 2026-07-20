@@ -15,14 +15,14 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 ## Screenshots
 
 | ![1](screenshots/nextdash-1.png) | ![2](screenshots/nextdash-2.png) |
-|Your dashboard with bookmarks you can control by keyboard|With more then 30 css themes|
+|:---:|:---:|
 | ![3](screenshots/nextdash-3.png) | ![4](screenshots/nextdash-4.png) |
-|More then 90 options to customize your nextDash |Dive into extensive stats about your bookmark usage|
+|:---:|:---:|
 | ![5](screenshots/nextdash-5.png) | ![6](screenshots/nextdash-6.png) |
 |:---:|:---:|
-| ![7](screenshots/nextdash-7.png) | ![9](screenshots/nextdash-9.png) | 
-|:---:|:---:|
+| ![7](screenshots/nextdash-7.png) | ![](screenshots/nextdash-9.png) | 
 
+|:---:|:---:|
 ---
 
 ## Quick Start
