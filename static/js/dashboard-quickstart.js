@@ -93,13 +93,15 @@
                 showWeatherWithDate: s.showWeatherWithDate === true,
                 weatherSource: s.weatherSource || 'manual',
                 weatherLocation: s.weatherLocation || '',
+                // "Start from scratch" opt-in — keeps the seeded bookmarks by default.
+                startEmpty: false,
             };
         }
 
         renderSetupCard() {
             this.draft = this.buildDraft();
             this.setupStep = 0;
-            this.setupStepCount = 3;
+            this.setupStepCount = 4;
 
             const el = document.createElement('div');
             el.className = 'quickstart-card quickstart-setup';
@@ -146,23 +148,57 @@
                         <select class="quickstart-select" data-qs-field="columnsPerRow">${colOpts}</select>
                     </label>`;
             }
-            // step 2 — links + weather
+            if (step === 2) {
+                // step 2 — links + weather
+                return `
+                    <fieldset class="quickstart-fieldset" data-qs-field="openInNewTab">
+                        <legend>${this.escape(this.t('setupLinks', 'Open links in'))}</legend>
+                        <label class="quickstart-radio"><input type="radio" name="qs-open" value="true"> <span>${this.escape(this.t('setupLinksNewTab', 'New tab'))}</span></label>
+                        <label class="quickstart-radio"><input type="radio" name="qs-open" value="false"> <span>${this.escape(this.t('setupLinksSameTab', 'Current tab'))}</span></label>
+                    </fieldset>
+                    <fieldset class="quickstart-fieldset" data-qs-field="showWeatherWithDate">
+                        <legend>${this.escape(this.t('setupWeather', 'Show weather next to the date'))}</legend>
+                        <label class="quickstart-radio"><input type="radio" name="qs-weather" value="false"> <span>${this.escape(this.t('setupNo', 'No'))}</span></label>
+                        <label class="quickstart-radio"><input type="radio" name="qs-weather" value="true"> <span>${this.escape(this.t('setupYes', 'Yes'))}</span></label>
+                    </fieldset>
+                    <label class="quickstart-field" data-qs-weather-location>
+                        <span>${this.escape(this.t('setupLocation', 'Location'))}</span>
+                        <input class="quickstart-input" type="text" data-qs-field="weatherLocation"
+                               placeholder="${this.escape(this.t('setupLocationPlaceholder', 'City name (e.g. Amsterdam)'))}">
+                    </label>`;
+            }
+            // step 3 — starting point: keep bookmarks or start empty.
+            // On a first run the only bookmarks present are the seed examples, so we
+            // say "example". If onboarding already completed (a rare wizard re-entry)
+            // and bookmarks exist, they may be the user's own — drop "example" then so
+            // we never promise to only clear samples.
+            const hasOwnBookmarks = this.dash?.settings?.onboardingCompleted === true
+                && this.bookmarkCount(this.dash) > 0;
+            const keepLabel = hasOwnBookmarks
+                ? this.t('setupStartKeepOwn', 'Keep my bookmarks')
+                : this.t('setupStartKeep', 'Keep the example bookmarks');
+            const emptyHint = hasOwnBookmarks
+                ? this.t('setupStartEmptyHintOwn', 'Removes every bookmark on every page. Pages, categories, and all settings stay. This cannot be undone.')
+                : this.t('setupStartEmptyHint', 'Removes every example bookmark on every page. Pages, categories, and all settings stay. Nothing is added back.');
             return `
-                <fieldset class="quickstart-fieldset" data-qs-field="openInNewTab">
-                    <legend>${this.escape(this.t('setupLinks', 'Open links in'))}</legend>
-                    <label class="quickstart-radio"><input type="radio" name="qs-open" value="true"> <span>${this.escape(this.t('setupLinksNewTab', 'New tab'))}</span></label>
-                    <label class="quickstart-radio"><input type="radio" name="qs-open" value="false"> <span>${this.escape(this.t('setupLinksSameTab', 'Current tab'))}</span></label>
+                <fieldset class="quickstart-fieldset quickstart-startpoint" data-qs-field="startEmpty">
+                    <legend>${this.escape(this.t('setupStartPoint', 'How would you like to begin?'))}</legend>
+                    <label class="quickstart-radio quickstart-radio-block">
+                        <input type="radio" name="qs-startempty" value="false">
+                        <span class="quickstart-radio-text">
+                            <span class="quickstart-radio-label">${this.escape(keepLabel)}</span>
+                            <span class="quickstart-radio-hint">${this.escape(this.t('setupStartKeepHint', 'Explore nextDash with a ready-made dashboard. You can edit or remove anything later.'))}</span>
+                        </span>
+                    </label>
+                    <label class="quickstart-radio quickstart-radio-block">
+                        <input type="radio" name="qs-startempty" value="true">
+                        <span class="quickstart-radio-text">
+                            <span class="quickstart-radio-label">${this.escape(this.t('setupStartEmpty', 'Start from scratch — no bookmarks'))}</span>
+                            <span class="quickstart-radio-hint">${this.escape(emptyHint)}</span>
+                        </span>
+                    </label>
                 </fieldset>
-                <fieldset class="quickstart-fieldset" data-qs-field="showWeatherWithDate">
-                    <legend>${this.escape(this.t('setupWeather', 'Show weather next to the date'))}</legend>
-                    <label class="quickstart-radio"><input type="radio" name="qs-weather" value="false"> <span>${this.escape(this.t('setupNo', 'No'))}</span></label>
-                    <label class="quickstart-radio"><input type="radio" name="qs-weather" value="true"> <span>${this.escape(this.t('setupYes', 'Yes'))}</span></label>
-                </fieldset>
-                <label class="quickstart-field" data-qs-weather-location>
-                    <span>${this.escape(this.t('setupLocation', 'Location'))}</span>
-                    <input class="quickstart-input" type="text" data-qs-field="weatherLocation"
-                           placeholder="${this.escape(this.t('setupLocationPlaceholder', 'City name (e.g. Amsterdam)'))}">
-                </label>`;
+                <p class="quickstart-field-hint quickstart-analytics-note">${this.escape(this.t('setupAnalyticsNote', 'Privacy-friendly usage analytics are on — no bookmark names, URLs, or searches are ever sent. You can turn this off in Config → General.'))}</p>`;
         }
 
         renderSetupStep() {
@@ -174,6 +210,7 @@
                 this.t('setupStep1Title', 'Language & theme'),
                 this.t('setupStep2Title', 'Layout'),
                 this.t('setupStep3Title', 'Links & weather'),
+                this.t('setupStep4Title', 'Starting point'),
             ];
 
             el.innerHTML = `
@@ -213,11 +250,13 @@
             } else if (step === 1) {
                 setRadio('qs-packed', d.packedColumns);
                 setSelect('columnsPerRow', d.columnsPerRow);
-            } else {
+            } else if (step === 2) {
                 setRadio('qs-open', d.openInNewTab);
                 setRadio('qs-weather', d.showWeatherWithDate);
                 setSelect('weatherLocation', d.weatherLocation);
                 this.toggleWeatherLocation();
+            } else {
+                setRadio('qs-startempty', d.startEmpty);
             }
         }
 
@@ -274,10 +313,12 @@
                 const pc = radioVal('qs-packed'); if (pc != null) d.packedColumns = pc === 'true';
                 const cols = parseInt(selVal('columnsPerRow'), 10);
                 if (Number.isFinite(cols)) d.columnsPerRow = cols;
-            } else {
+            } else if (step === 2) {
                 const op = radioVal('qs-open'); if (op != null) d.openInNewTab = op === 'true';
                 const w = radioVal('qs-weather'); if (w != null) d.showWeatherWithDate = w === 'true';
                 const loc = selVal('weatherLocation'); if (loc != null) d.weatherLocation = loc;
+            } else {
+                const se = radioVal('qs-startempty'); if (se != null) d.startEmpty = se === 'true';
             }
         }
 
@@ -303,6 +344,15 @@
                     }
                 } catch { /* non-blocking */ }
 
+                // "Start from scratch": wipe the seeded bookmarks before rendering so
+                // the dashboard lands on the empty state. Reuses the delete-all endpoint.
+                // With no bookmarks left, dashboard status checks have nothing to
+                // monitor — turn the setting off so it isn't left dangling.
+                if (draft.startEmpty === true) {
+                    d.settings.showStatus = false;
+                    await this.clearAllBookmarksForFreshStart();
+                }
+
                 try {
                     d.setupDOM?.();
                     d.initializeAutoDarkMode?.();
@@ -314,10 +364,80 @@
                 } catch { /* best effort */ }
 
                 this.state().setupDone = true;   // marked in the same single save below
+                // Runs after the optional fresh-start wipe, so the baseline is
+                // whatever the user actually starts with — 0 when they chose to
+                // begin empty, the seed count when they kept the examples.
+                this.captureBaseline();
                 Promise.resolve(d.saveSettings?.()).catch(() => {});
             }
             this.teardownSetup();
             this.renderChecklist();
+
+            // Keeping the example bookmarks? Pull fresh favicons for all of them
+            // now that the card is out of the way. The startup prefetch only fills
+            // in missing icons; this re-fetches every one, so the first dashboard a
+            // new user sees has real site icons rather than whatever shipped.
+            //
+            // Skipping the card lands here too — skip-setup calls finishSetup() and
+            // startEmpty stays at its default false, so the examples are kept and
+            // their icons are fetched just the same. Only an explicit "start from
+            // scratch" skips this, because there is nothing left to fetch.
+            //
+            // Deliberately not awaited by the caller: setup is already complete.
+            if (draft.startEmpty !== true) {
+                // teardownSetup() removes the card on a 260ms fade and it sits far
+                // above the prefetch overlay, so wait it out before showing progress.
+                setTimeout(() => void this.fetchAllFaviconsAfterSetup(), 400);
+            }
+        }
+
+        /**
+         * Re-download every bookmark icon, the same run as `:favicons fetch`.
+         * Best-effort: a failure here must never affect a finished setup, so it
+         * only warns and leaves whatever icons are already there.
+         */
+        async fetchAllFaviconsAfterSetup() {
+            const d = this.dash;
+            if (typeof window.ConfigFaviconPrefetch !== 'function') {
+                return;
+            }
+            try {
+                const t = (key) => this.language?.t?.(key) ?? key;
+                const prefetch = new window.ConfigFaviconPrefetch(t);
+                await prefetch.run(null, { refreshAll: true });
+                if (typeof d?.loadData === 'function') {
+                    await d.loadData();
+                    d.renderDashboard?.();
+                }
+            } catch (error) {
+                console.warn('Favicon fetch after setup failed; keeping existing icons.', error);
+            }
+        }
+
+        // Wipe every seeded bookmark for a fresh start, then clear the in-memory
+        // state and page cache so the caller's render lands on the empty state.
+        // Reuses POST /api/bookmarks/delete-all — the same path as the config button.
+        async clearAllBookmarksForFreshStart() {
+            const d = this.dash;
+            try {
+                const headers = typeof nextDashWriteHeaders === 'function'
+                    ? nextDashWriteHeaders({ 'Content-Type': 'application/json' })
+                    : { 'Content-Type': 'application/json' };
+                const res = await fetch('/api/bookmarks/delete-all', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ confirm: true }),
+                });
+                if (!res.ok) throw new Error(`delete-all failed: ${res.status}`);
+            } catch (error) {
+                // Non-blocking: keep the seeded bookmarks rather than failing setup.
+                console.warn('Fresh-start bookmark wipe failed; keeping example bookmarks.', error);
+                return;
+            }
+            // Reflect the wipe locally so the render shows the empty state immediately.
+            d.bookmarks = [];
+            d.allBookmarks = [];
+            try { d._pageDataCache?.clear?.(); } catch { /* ignore */ }
         }
 
         teardownSetup() {
@@ -336,13 +456,7 @@
                     id: 'bookmark',
                     label: this.t('itemBookmark', 'Add your first bookmark'),
                     hint: this.t('itemBookmarkHint', 'Press + or paste a URL anywhere'),
-                    done: (d) => this.bookmarkCount(d) > 0,
-                },
-                {
-                    id: 'tag',
-                    label: this.t('itemTag', 'Tag a bookmark'),
-                    hint: this.t('itemTagHint', 'Edit a bookmark and add a tag'),
-                    done: (d) => this.anyTagged(d),
+                    done: (d) => this.bookmarkCount(d) > Math.max(this.baseline().bookmarks, 0),
                 },
                 {
                     id: 'config',
@@ -402,9 +516,47 @@
             return Math.max(all, page);
         }
 
-        anyTagged(d) {
-            const lists = [d?.allBookmarks, d?.bookmarks];
-            return lists.some((list) => Array.isArray(list) && list.some((b) => Array.isArray(b?.tags) && b.tags.length > 0));
+        /** Still recorded in the baseline so the data stays consistent, even though
+         *  the checklist no longer has a "tag a bookmark" step. */
+        taggedCount(d) {
+            const count = (list) => (Array.isArray(list)
+                ? list.filter((b) => Array.isArray(b?.tags) && b.tags.length > 0).length
+                : 0);
+            return Math.max(count(d?.allBookmarks), count(d?.bookmarks));
+        }
+
+        /**
+         * Bookmark counts as they were when setup finished.
+         *
+         * A fresh install ships example bookmarks that already carry tags, so
+         * comparing against zero ticked "add a bookmark" and "tag a bookmark"
+         * before the user had done anything. Captured once; -1 until then, which
+         * older installs fall back to (they keep the old zero-based behaviour
+         * rather than having items un-tick under them).
+         */
+        baseline() {
+            const qs = this.state();
+            const bookmarks = Number.isFinite(qs.baselineBookmarks) ? qs.baselineBookmarks : -1;
+            const tagged = Number.isFinite(qs.baselineTagged) ? qs.baselineTagged : -1;
+            return { bookmarks, tagged };
+        }
+
+        /**
+         * Capture once, but only when the bookmarks have actually loaded.
+         *
+         * The checklist can render before the first page load resolves, and
+         * recording 0 then would be worse than not recording at all: every seeded
+         * bookmark would count as the user's own. So skip while nothing is loaded
+         * yet and let a later call (poll/refresh) capture the real numbers.
+         */
+        captureBaseline() {
+            const qs = this.state();
+            if (Number.isFinite(qs.baselineBookmarks) && qs.baselineBookmarks >= 0) return;
+            const d = this.dash;
+            const loaded = Array.isArray(d?.bookmarks) || Array.isArray(d?.allBookmarks);
+            if (!loaded) return;
+            qs.baselineBookmarks = this.bookmarkCount(d);
+            qs.baselineTagged = this.taggedCount(d);
         }
 
         renderChecklist() {
@@ -437,6 +589,9 @@
         refresh() {
             if (!this.el) return;
             const d = this.dash;
+            // Capture here rather than at render time: this runs once the page's
+            // bookmarks have loaded, so the baseline reflects what is really there.
+            this.captureBaseline();
             const items = this.buildItems();
             const list = this.el.querySelector('[data-qs-list]');
             const progressEl = this.el.querySelector('[data-qs-progress]');

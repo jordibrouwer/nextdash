@@ -13,6 +13,10 @@ services:
       - ./templates:/app/templates
     environment:
       - PORT=8080
+      # Disable privacy-friendly usage analytics for the whole instance.
+      # When true, nothing is sent and the Privacy toggle in Config is
+      # disabled until this is unset again.
+      # - DISABLE_TELEMETRY=true
       # Optional: require X-NextDash-Token on destructive/write API calls (reset, import, colors reset, delete page, health write endpoints, clear/refresh previews)
       # - NEXTDASH_WRITE_TOKEN=change-me
     restart: unless-stopped

@@ -86,7 +86,10 @@ class DashboardPromos {
         const force = options.force === true;
         window.openWhatsNewModal({
             force,
-            ifBlockingModalOpen: force ? undefined : () => d.isModalOpen()
+            ifBlockingModalOpen: force ? undefined : () => d.isModalOpen(),
+            // Disclose the analytics once the release notes are out of the way,
+            // so the two cards never compete for the same corner.
+            onClose: () => window.DashboardAnalyticsNotice?.scheduleAfterWhatsNew?.(),
         });
     }
 

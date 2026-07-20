@@ -9,6 +9,10 @@ services:
       - ./data:/app/data
     environment:
       - PORT=8080
+      # Disable privacy-friendly usage analytics for the whole instance.
+      # When true, nothing is sent and the Privacy toggle in Config is
+      # disabled until this is unset again.
+      # - DISABLE_TELEMETRY=true
       # LAN/VPS hardening (see README.md → Security):
       # - NEXTDASH_WRITE_TOKEN=change-me-to-a-long-random-string
       # - NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id

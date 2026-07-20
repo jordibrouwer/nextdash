@@ -89,19 +89,34 @@
     }
 
     function renderRelease({ tag, date, sections }) {
-        const sectionsHtml = sections.map(({ title, items }) => `
-            <div class="wn-section">
+        // A section with "kind": "keys" lists new shortcuts and is tinted with its
+        // own accent so it stands apart from the ordinary new/fix rundown.
+        const sectionsHtml = sections.map(({ title, items, kind }) => {
+            const isKeys = kind === 'keys';
+            return `
+            <div class="wn-section${isKeys ? ' wn-section-keys' : ''}">
                 <h4 class="wn-section-title">${title}</h4>
                 <ul class="wn-list">
-                    ${items.map(({ badge, text }) => `
+                    ${items.map(({ badge, text, keys }) => {
+                        if (isKeys) {
+                            return `
+                        <li class="wn-item wn-item-keys">
+                            <span class="wn-keycap">${keys || ''}</span>
+                            <span class="wn-item-text">${text}</span>
+                        </li>
+                    `;
+                        }
+                        return `
                         <li class="wn-item">
                             <span class="wn-badge ${badge === 'new' ? 'wn-badge-new' : 'wn-badge-fix'}">${badge}</span>
                             <span class="wn-item-text">${text}</span>
                         </li>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </ul>
             </div>
-        `).join('');
+        `;
+        }).join('');
         return `
             <div class="wn-release">
                 <div class="wn-release-header">
@@ -420,6 +435,8 @@
         modalSessionId += 1;
         const sessionId = modalSessionId;
 
+        window.nextdashTrack?.('modal:whats-new');
+
         const finish = () => {
             teardownLazyLoader();
             if (markSeenOnConfirm && releaseToken) {
@@ -433,6 +450,17 @@
             onClose?.();
         };
 
+        // finish() must run however the modal goes away — the close button, Escape,
+        // or a click on the backdrop. The latter two only call AppModal.hide(),
+        // which fires onHide but not onConfirm/onCancel, so hang it there and guard
+        // against running twice when the button path fires both.
+        let finished = false;
+        const finishOnce = () => {
+            if (finished) return;
+            finished = true;
+            finish();
+        };
+
         teardownLazyLoader();
         window.AppModal.show({
             title: "what's new",
@@ -440,8 +468,9 @@
             confirmText: 'close',
             showCancel: false,
             modalClass: 'whats-new-modal',
-            onConfirm: finish,
-            onCancel: finish,
+            onConfirm: finishOnce,
+            onCancel: finishOnce,
+            onHide: finishOnce,
         });
 
         return fetchManifest()

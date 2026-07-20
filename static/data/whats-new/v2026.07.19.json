@@ -1,0 +1,131 @@
+{
+  "tag": "v2026.07.19",
+  "date": "July 2026",
+  "releasedAt": "2026-07-19",
+  "modalLead": "nextDash now collects privacy-friendly, anonymous usage statistics to see which features are actually used and where the app can be improved — never who you are or what you bookmark. It is on by default and takes two clicks to turn off. This release also adds a right-click menu on bookmarks and keyboard access to long categories, a new default theme for fresh installs, a fresh-start choice on first run, a wipe-bookmarks button, and fixes a narrow desktop window being mistaken for a phone.",
+  "sections": [
+    {
+      "title": "New shortcuts",
+      "kind": "keys",
+      "items": [
+        {
+          "keys": "Right-click",
+          "text": "On any bookmark — opens a menu with open in new tab, copy URL, edit, tags, move, and delete. <kbd>Shift</kbd> + right-click still gives you the browser's own menu."
+        },
+        {
+          "keys": "Enter",
+          "text": "On the <strong>+ N more</strong> toggle of a long category — expands or collapses it. Arrow onto the toggle first; afterwards the selection returns to the last bookmark above it."
+        },
+        {
+          "keys": ":telemetry",
+          "text": "Turns privacy-friendly analytics on or off from the command palette — the same setting as <strong>Config → General → Advanced → Privacy</strong>."
+        }
+      ]
+    },
+    {
+      "title": "Privacy-friendly analytics",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Why this exists</strong> — nextDash is built without any idea of how it is actually used. Which views do people open? Does anyone use finders, the tag cloud, the inbox? Where do people give up halfway through adding a bookmark? Without answers, improvements are guesswork. These statistics answer exactly those questions — <strong>which features get used and what can be made better</strong> — and nothing else. They are <strong>not</strong> meant to follow you around: it is purely abstract, technical measurement of flow and feature usage, aggregated across everyone."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>How to turn it off — two clicks</strong> — go to <strong>Config → General → Advanced → Privacy</strong> and clear the <strong>Privacy-friendly analytics</strong> checkbox. It takes effect after the page reloads. When it is off, the tracker script is <strong>not loaded at all</strong> and <strong>no request ever leaves your machine</strong> — not even to fetch it. The choice is stored per user in your settings, so it follows you across devices."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Or use the keyboard: <code>:telemetry</code></strong> — press <kbd>:</kbd> and type <strong>telemetry</strong> to see the current state, or go straight to <code>:telemetry off</code> / <code>:telemetry on</code>. It changes the same setting as the Privacy checkbox and reloads the page so the change applies immediately."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Running nextDash for other people?</strong> Set the environment variable <code>DISABLE_TELEMETRY=true</code> to switch analytics off for the entire server, whatever anyone has configured. Nothing is ever sent, it cannot be re-enabled from the app, and the Privacy checkbox shows as greyed out with a note explaining that the server operator turned it off. Everyone's own preference stays stored, so it returns unchanged if you ever unset the variable. Running <code>:telemetry</code> then shows a single row explaining that the server operator switched it off, instead of an <strong>on</strong> option that could not work."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>What is measured</strong> — page views, which views you open (health, inbox), which config tab you land on, opening search / commands / finders / the cheat sheet / the tag cloud / what's-new / the add-bookmark form, bookmark opens (and whether they came from the dashboard, search, or recent), which command palette command you ran, bookmark maintenance (starting and saving an edit, deleting, moving, reordering), inbox triage and health actions, and whether adding a bookmark succeeded or hit a snag. Once per page load it also records which features you have switched on — as plain yes/no values — so it is clear which options are worth keeping and improving."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>What is never measured</strong> — no bookmark names, no URLs, no search queries, no page or category names, no notes or tags. No cookies are set, no personal profile is built, and you are not tracked across other websites. Where a number would be revealing it is rounded into a bucket (for example <em>2-5 items</em> rather than an exact count). Everything is self-hosted on the project's own Umami instance, so nothing is shared with an advertising network."
+        }
+      ]
+    },
+    {
+      "title": "Getting started",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Start seeded or start empty</strong> — the first-run setup card now ends with a <strong>Starting point</strong> step. Keep the example bookmarks to explore with a ready-made dashboard, or choose <em>Start from scratch</em> to begin with a completely empty one. Choosing empty clears every example bookmark; your pages, categories, and settings stay exactly as they are, and nothing is added back. Bookmark status checks are switched off at the same time, since there is nothing left to monitor."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The quick-start checklist no longer ticks itself</strong> — <em>Add your first bookmark</em> and <em>Tag a bookmark</em> were shown as done before you had done anything, because a fresh install ships example bookmarks that already carry tags. The checklist now measures against what was there when setup finished, so an item only ticks once you actually do it. The tagging step has been dropped altogether — it is not a first-run task."
+        }
+      ]
+    },
+    {
+      "title": "New installs",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Moss &amp; Stone is the default theme</strong> — a fresh install now starts on Moss &amp; Stone, a desaturated earthy olive-grey palette (following your system for light/dark). Existing dashboards keep whatever theme you already chose."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Favicons blend with the theme</strong> — a fresh install now starts with <strong>favicon harmonisation</strong> switched on, so site icons that clash with Moss &amp; Stone are toned down to match rather than shouting over it. Existing dashboards keep their own setting. Adjust or switch it off under <strong>Config → Theme</strong>."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Delete all bookmarks, and nothing else</strong> — <strong>Config → General → Reset</strong> now has a second button next to the red full reset: <strong>Delete all bookmarks only</strong>. It removes every bookmark on every page while keeping your pages, categories, finders, and all settings — and unlike a full reset it does <strong>not</strong> put the example bookmarks back. It asks for confirmation and then for you to type <code>DELETE</code>, so it cannot happen by accident."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help covers the newer features</strong> — <strong>Config → Help</strong> was still describing an older nextDash. It now explains the analytics and how to switch them off (under <em>Self-hosting &amp; security</em>), both reset buttons (<em>Data &amp; backups</em>), the first-run starting point and the empty-dashboard state (<em>Getting started</em>), the per-category item limit and how to open it from the keyboard (<em>Appearance</em>), the bookmark right-click menu (<em>Organising</em>), and the occasional keyboard tips (<em>Getting started</em>). It also had two things plainly wrong: the quick-start card was described as three steps when it has four, and the checklist still listed a tagging item that no longer exists. All four languages were updated, and everything stays searchable through the Help filter. Two more things that had drifted: the keyboard cheat sheet still listed <code>:tour</code> and <code>:promo</code>, removed a few releases ago, and the search box on <strong>Config → Bookmarks</strong> stayed English in every language because its label was never translated. Both are fixed."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Occasional keyboard tips</strong> — now and then the dashboard shows a single keyboard tip as a small toast, with a <strong>Cheat sheet</strong> button next to it. It is the same tip list as <strong>Config → Help → Tips &amp; tricks</strong>, so nothing new to maintain, and it stays rare on purpose: at most one every few days, never the same tip twice, and never during first-run setup or over an open dialog. Switch it off under <strong>Config → General → Advanced → Onboarding &amp; tips</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Refresh every bookmark icon at once</strong> — run <code>:favicons fetch</code> to re-download the favicon of every bookmark on every page, with a progress bar while it works. It replaces icons you already have, so ones that have gone stale get updated too — until now the only options were fixing them one at a time in health, or selecting them in config. On a brand-new install this also runs once by itself, right after you finish or skip the setup card with the example bookmarks kept, so the first dashboard you see already has proper icons."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Right-click a bookmark for its actions</strong> — a menu opens with <strong>Open in new tab</strong>, <strong>Copy URL</strong>, <strong>Edit</strong>, <strong>Tags…</strong>, <strong>Move to…</strong>, and <strong>Delete</strong>. Everything it does was already possible through the command palette or config; this simply puts it where you would look first. Arrow keys and <kbd>Enter</kbd> work inside the menu, deleting still asks for confirmation, and <kbd>Shift</kbd> + right-click gives you the browser's own menu."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Expand long categories from the keyboard</strong> — the <strong>+ N more</strong> / <strong>show less</strong> toggle can now be reached with the arrow keys and activated with <kbd>Enter</kbd> or <kbd>Space</kbd>. The selection lands back on the last bookmark above the toggle, so you keep arrowing straight down into the rows you just revealed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Keyboard selection no longer disappears into hidden rows</strong> — in a category trimmed by the item limit, arrowing down would step onto bookmarks that were hidden behind <strong>+ N more</strong>. The highlight vanished and you were navigating blind. Hidden rows are skipped now, and the toggle itself is what you land on instead."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A narrow window is no longer treated as a phone</strong> — resizing a desktop browser window used to flip nextDash into the mobile layout: the toolbar lost commands and finders, modals became full-screen sheets, and a banner appeared telling you to open nextDash on a computer, while you were sitting at one. The mobile layout now requires an actual touch device, so a narrow window simply stays the full desktop app. Phones and tablets are unaffected."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An empty dashboard no longer breaks</strong> — with no bookmarks at all, the dashboard used to fail to start and show <em>Failed to load dashboard</em>, leaving the page unresponsive. It now shows a friendly empty state instead: <strong>No bookmarks yet</strong>, with a button to add your first one, a hint that <kbd>+</kbd> opens the full form, and links to manage bookmarks in config or import your data."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Updates are picked up without a hard reload</strong> — after an update, a browser could keep serving an old cached page and quietly run the previous version's JavaScript, so new features stayed invisible until you cleared the cache by hand (Safari was especially prone to this). Pages now carry a content fingerprint and revalidate properly, and a tab left open across an update reloads itself once. A normal reload is enough again."
+        }
+      ]
+    }
+  ]
+}

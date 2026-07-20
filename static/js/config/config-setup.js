@@ -605,6 +605,8 @@ class ConfigSetup {
     
         const resetBtn = document.getElementById('reset-btn');
         if (resetBtn) resetBtn.addEventListener('click', () => this.c.resetToDefaults());
+        const deleteAllBookmarksBtn = document.getElementById('delete-all-bookmarks-btn');
+        if (deleteAllBookmarksBtn) deleteAllBookmarksBtn.addEventListener('click', () => this.c.deleteAllBookmarks());
         this.c.setupStructureAutoSyncListeners();
         this.c.setupDirtyTracking();
         this.c.setupAutosaveLowRiskFields();
@@ -776,9 +778,13 @@ class ConfigSetup {
                 const panelId = card.getAttribute('data-general-panel');
                 if (!panelId) return;
                 const alwaysCollapsed = panelId === 'reset';
-                const expanded = !alwaysCollapsed && (saved && Object.prototype.hasOwnProperty.call(saved, panelId)
+                // A panel opened by a deep link (#general/advanced/<panel>) stays
+                // open: this runs over every card, so without the exception it
+                // would immediately re-collapse the one the link pointed at.
+                const deepLinked = this.c.generalLayers?.deepLinkedPanel === panelId;
+                const expanded = deepLinked || (!alwaysCollapsed && (saved && Object.prototype.hasOwnProperty.call(saved, panelId)
                     ? Boolean(saved[panelId])
-                    : DEFAULT_OPEN.has(panelId));
+                    : DEFAULT_OPEN.has(panelId)));
                 card.classList.toggle('is-collapsed', !expanded);
                 syncTitleA11y(card, title);
             });
@@ -822,13 +828,22 @@ class ConfigSetup {
                 const tier = card.dataset.configTier || 'advanced';
                 const layerMode = document.querySelector('[data-tab-content="general"] > div')?.dataset?.generalLayer || 'essentials';
                 const tierVisible = layerMode === 'all' || tier === layerMode;
-                const expanded = tierVisible && !alwaysCollapsed && (saved && Object.prototype.hasOwnProperty.call(saved, panelId)
+                // Same deep-link exception as refreshGeneralPanelExpandState():
+                // this runs during init, after applyHash() opened the panel the
+                // URL asked for, and would otherwise close it again.
+                const deepLinked = this.c.generalLayers?.deepLinkedPanel === panelId;
+                const expanded = deepLinked || (tierVisible && !alwaysCollapsed && (saved && Object.prototype.hasOwnProperty.call(saved, panelId)
                     ? Boolean(saved[panelId])
-                    : DEFAULT_OPEN.has(panelId));
+                    : DEFAULT_OPEN.has(panelId)));
                 card.classList.toggle('is-collapsed', !expanded);
             }
             syncTitleA11y(card, title);
             const toggleCard = () => {
+                // Once the user works the panel by hand, drop the deep-link
+                // exception so their choice sticks like any other panel.
+                if (this.c.generalLayers?.deepLinkedPanel === card.getAttribute('data-general-panel')) {
+                    this.c.generalLayers.deepLinkedPanel = null;
+                }
                 card.classList.toggle('is-collapsed');
                 const isNowExpanded = !card.classList.contains('is-collapsed');
                 if (isNowExpanded && panelId) {

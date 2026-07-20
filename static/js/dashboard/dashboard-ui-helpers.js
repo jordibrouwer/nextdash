@@ -157,7 +157,9 @@ class DashboardUiHelpers {
                 item('Shift + T', 'bmQuickTag', 'Quick-tag focused bookmark — ↑/↓ navigate; Enter/Space toggles tag and advances; ✓ shows tags on bookmark; Esc close restores selection on same row'),
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
                 item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
+                item('Enter on "+ N more"', 'bmShowMoreToggle', 'Expand or collapse a long category — selection returns to the last bookmark above the toggle'),
                 item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
+                item('Right-click bookmark', 'bmContextMenu', 'Menu with open in new tab, copy URL, edit, tags, move, delete (Shift + right-click for the browser menu)'),
                 item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
                 item('Long-press category (~500 ms)', 'bmRenameCategory', 'Rename category header (not on sort buttons)'),
                 item('Drag left strip', 'bmDragReorder', 'Reorder a bookmark within or across categories'),
@@ -223,6 +225,7 @@ class DashboardUiHelpers {
                 item(':columns <n>', 'caColumns', 'Set number of columns (1–6)'),
                 item(':fontsize <size>', 'caFontsize', 'Change font size'),
                 item(':favicons on/off', 'caFavicons', 'Toggle favicons on/off'),
+                item(':favicons fetch', 'caFaviconsFetch', 'Re-download every bookmark icon across all pages (replaces existing icons)'),
                 item(':preview on/off', 'caPreview', 'Toggle hover preview cards'),
                 item(':packed on/off', 'caPacked', 'Toggle packed (variable-width) columns'),
                 item(':buttonbar <position>', 'caButtonbar', 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left'),
@@ -234,8 +237,7 @@ class DashboardUiHelpers {
             section('sectionCommandsTools', 'Commands — tools', [
                 item(':backup / :export', 'ctBackup', 'Open config backups or download a ZIP backup immediately'),
                 item(':metadata', 'ctMetadata', 'Open health missing previews or config bookmarks metadata view'),
-                item(':tour', 'ctTour', 'Start the dashboard feature tour'),
-                item(':promo', 'ctPromo', 'Reset discoverability promos (Got it balloons)'),
+                item(':telemetry on / off', 'ctTelemetry', 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)'),
             ]),
             section('sectionOther', 'Other', [
                 item('! or F1', 'otCheatSheet', 'This cheat sheet'),
@@ -261,6 +263,7 @@ class DashboardUiHelpers {
         if (!window.AppModal) {
             return;
         }
+        window.nextdashTrack?.('modal:cheatsheet');
         // Record for the first-run quick-start checklist (server-side, per-user).
         // Only while onboarding is still in progress, so we don't write on every open.
         if (d.settings && d.settings.onboardingCompleted !== true) {

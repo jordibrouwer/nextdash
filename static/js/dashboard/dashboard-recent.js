@@ -197,7 +197,7 @@ class DashboardRecent {
                     const index = parseInt(e.currentTarget.getAttribute('data-recent-index'), 10);
                     const bookmark = !Number.isNaN(index) ? recentBookmarks[index] : null;
                     if (bookmark) {
-                        this.recordBookmarkOpened(bookmark, d.resolveBookmarkIndex(bookmark));
+                        this.recordBookmarkOpened(bookmark, d.resolveBookmarkIndex(bookmark), 'recent');
                     }
                 });
             });
@@ -341,7 +341,7 @@ class DashboardRecent {
     }
 
 
-    recordBookmarkOpened(bookmark, bookmarkIndex) {
+    recordBookmarkOpened(bookmark, bookmarkIndex, source = 'dashboard') {
         const d = this.dash;
         if (!bookmark) return;
 
@@ -356,7 +356,7 @@ class DashboardRecent {
         d.refreshSmartCollectionsAfterOpen(bookmark.url);
 
         if (index >= 0 && pageId > 0) {
-            d.analytics?.trackBookmarkOpen(pageId, index);
+            d.analytics?.trackBookmarkOpen(pageId, index, source);
         }
     }
 

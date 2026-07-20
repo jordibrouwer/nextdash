@@ -335,9 +335,12 @@ class ConfigThemesController {
 
     syncResetPanelGuard() {
         const resetCard = document.querySelector('[data-general-panel="reset"]');
+        if (!resetCard) return;
+        const collapsed = resetCard.classList.contains('is-collapsed');
         const resetBtn = document.getElementById('reset-btn');
-        if (!resetCard || !resetBtn) return;
-        resetBtn.disabled = resetCard.classList.contains('is-collapsed');
+        if (resetBtn) resetBtn.disabled = collapsed;
+        const deleteAllBtn = document.getElementById('delete-all-bookmarks-btn');
+        if (deleteAllBtn) deleteAllBtn.disabled = collapsed;
     }
 
     updateThemeIconStylingPreview(theme) {

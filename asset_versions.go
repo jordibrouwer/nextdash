@@ -21,6 +21,7 @@ type pageAssetVersions struct {
 	// them with max-age=86400 and a deploy stayed invisible for up to a day.
 	// The head scripts are the sharp end: write-api.js carries write-token auth.
 	WriteAPIJS               string
+	AppVersionGuardJS        string
 	FontPresetsJS            string
 	DeviceSettingsMergeJS    string
 	LayoutUtilsJS            string
@@ -40,6 +41,7 @@ type pageAssetVersions struct {
 	PWAInstallHintJS         string
 	DashboardDeepLinkJS      string
 	AnalyticsJS              string
+	UmamiAnalyticsJS         string
 	ModalJS                  string
 	StatusJS                 string
 	SelectJS                 string
@@ -84,17 +86,18 @@ var sharedAssetVersions = pageAssetVersions{
 	ThemeJS:              "theme-color-meta-1",
 	VisualSettingsJS:     "theme-sync-1",
 	SettingsSanitizeJS:   "settings-sanitize-1",
-	DiscoverabilityJS:    "discoverability-state-4",
-	MobileExperienceCSS:  "phone-layout-7-hint-css-gone",
-	MobileExperienceJS:   "general-split-shell-1",
+	DiscoverabilityJS:    "discoverability-state-5-seentips",
+	MobileExperienceCSS:  "touch-only-mobile-1",
+	MobileExperienceJS:   "touch-only-mobile-1",
 	LayoutVersionUtilsJS: "glass-migrate-1",
 	HealthBadgeJS:        "health-badge-count-only-1",
-	AppNotificationJS:    "toast-grouped-1",
-	SearchCommandsNewJS:  "search-commands-new-6-promote-healthcheck",
-	WhatsNewData:         "whats-new-v168",
-	DataRevision:         "data-revision-8-promo-starvation",
+	AppNotificationJS:    "toast-html-1",
+	SearchCommandsNewJS:  "search-commands-new-9-outcome",
+	WhatsNewData:         "whats-new-v180",
+	DataRevision:         "data-revision-9-context-menu",
 
 	WriteAPIJS:               "write-api-1",
+	AppVersionGuardJS:        "app-version-guard-1",
 	FontPresetsJS:            "font-presets-1",
 	DeviceSettingsMergeJS:    "device-settings-merge-1",
 	LayoutUtilsJS:            "layout-utils-1",
@@ -113,7 +116,8 @@ var sharedAssetVersions = pageAssetVersions{
 	ShortcutFormatJS:         "shortcut-format-1",
 	PWAInstallHintJS:         "pwa-install-hint-1",
 	DashboardDeepLinkJS:      "dashboard-deep-link-edit-2",
-	AnalyticsJS:              "analytics-1",
+	AnalyticsJS:              "analytics-3-open-source",
+	UmamiAnalyticsJS:         "umami-analytics-2-snapshot",
 	ModalJS:                  "modal-focus-aria-1",
 	StatusJS:                 "status-1",
 	SelectJS:                 "select-js-1",
@@ -124,27 +128,27 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigFontJS:             "config-font-1",
 	ConfigCommandPaletteJS:   "config-command-palette-1",
 	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
-	DashboardRenderCoreJS:    "category-item-limit-1",
+	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
-	DashboardCSS:            "category-item-limit-1",
+	DashboardCSS:            "showmore-keynav-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
 	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 
-	AppNotificationCSS:       "app-notification-1",
+	AppNotificationCSS:       "app-notification-2-tip",
 	SearchCommandsNewCSS:     "search-commands-new-3-inline-create",
 	BookmarkFormPreviewCSS:   "bookmark-form-preview-1",
 	SearchCommandsNoteCSS:    "search-commands-note-1",
 	SelectCSS:                "select-1",
 	FontSizeCSS:              "font-size-1",
-	QuickStartCSS:            "quickstart-4-actionable",
-	EnhancedFeaturesCSS:      "enhanced-features-1",
-	ModalCSS:                 "page-overview-modal-1",
+	QuickStartCSS:            "analytics-notice-1",
+	EnhancedFeaturesCSS:      "empty-dashboard-fix-1",
+	ModalCSS:                 "whats-new-keys-1",
 	ResponsiveCSS:            "config-shell-align-1",
 	OverlaysModernCSS:        "whats-new-config-parity-1",
 	SkeletonLoadingCSS:       "load-faster-1",
 	ReorderCSS:               "reorder-1",
 	SearchCSS:                "dashboard-whats-new-fab-2-hint-css-gone",
 	StatusCSS:                "dashboard-chrome-c3-1",
-	DashboardEnhancementsCSS: "page-overview-modal-1",
+	DashboardEnhancementsCSS: "whats-new-keys-1",
 	FontsCSS:                 "self-hosted-scp-1",
 }

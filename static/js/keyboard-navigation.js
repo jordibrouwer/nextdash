@@ -312,11 +312,31 @@ class KeyboardNavigation {
         if (row.classList.contains('recent-bookmark-link') || row.classList.contains('launcher-dim') || row.classList.contains('find-hidden')) {
             return false;
         }
+        // Rows past the category item limit are display:none; selecting one would
+        // move the highlight somewhere invisible. The "+ N more" button that reveals
+        // them is navigable instead (see updateNavigableElements).
+        if (row.classList.contains('is-overflow-hidden')) {
+            return false;
+        }
         const category = row.closest('.category');
         if (category && category.getAttribute('data-collapsed') === 'true') {
             return false;
         }
         return true;
+    }
+
+    /** The "+ N more" / "show less" toggle, navigable unless its category is collapsed. */
+    _isNavigableShowMore(btn) {
+        if (!btn) return false;
+        const category = btn.closest('.category');
+        if (category && category.getAttribute('data-collapsed') === 'true') {
+            return false;
+        }
+        return true;
+    }
+
+    _isShowMoreElement(el) {
+        return !!el && el.classList?.contains('category-show-more');
     }
 
     _ensureKbdLiveRegion() {
@@ -340,10 +360,12 @@ class KeyboardNavigation {
         if (!row) {
             return;
         }
-        const name = row.querySelector('.bookmark-text')?.textContent?.trim()
-            || row.querySelector('a.bookmark-open')?.textContent?.trim()
-            || row.getAttribute('data-bookmark-url')
-            || '';
+        const name = this._isShowMoreElement(row)
+            ? row.textContent?.trim()
+            : (row.querySelector('.bookmark-text')?.textContent?.trim()
+                || row.querySelector('a.bookmark-open')?.textContent?.trim()
+                || row.getAttribute('data-bookmark-url')
+                || '');
         if (!name) {
             return;
         }
@@ -442,11 +464,16 @@ class KeyboardNavigation {
         }, 100);
     }
 
+    /**
+     * Bookmark rows of a category. Excludes the show-more toggle so Home/End keep
+     * meaning "first/last bookmark" rather than landing on the trailing button.
+     */
     getCategoryRows(categoryElement) {
         if (!categoryElement) {
             return [];
         }
-        return this.navigableElements.filter((row) => categoryElement.contains(row));
+        return this.navigableElements.filter((row) => categoryElement.contains(row)
+            && !this._isShowMoreElement(row));
     }
 
     getCurrentCategoryElement() {
@@ -551,11 +578,15 @@ class KeyboardNavigation {
     syncRovingTabStops(options = {}) {
         const doFocus = options.focus !== false;
         this.navigableElements.forEach((row, i) => {
-            const openLink = row.querySelector && row.querySelector('a.bookmark-open');
-            if (!openLink) {
+            // The show-more toggle is itself the focusable element; bookmark rows
+            // delegate their tab stop to the inner open link.
+            const focusTarget = this._isShowMoreElement(row)
+                ? row
+                : (row.querySelector && row.querySelector('a.bookmark-open'));
+            if (!focusTarget) {
                 return;
             }
-            openLink.tabIndex = this.currentIndex >= 0
+            focusTarget.tabIndex = this.currentIndex >= 0
                 ? (i === this.currentIndex ? 0 : -1)
                 : (i === 0 ? 0 : -1);
         });
@@ -564,12 +595,15 @@ class KeyboardNavigation {
             this.currentIndex >= 0 &&
             this.currentIndex < this.navigableElements.length
         ) {
-            const openLink = this.navigableElements[this.currentIndex].querySelector('a.bookmark-open');
-            if (openLink && typeof openLink.focus === 'function') {
+            const current = this.navigableElements[this.currentIndex];
+            const focusTarget = this._isShowMoreElement(current)
+                ? current
+                : current.querySelector('a.bookmark-open');
+            if (focusTarget && typeof focusTarget.focus === 'function') {
                 try {
-                    openLink.focus({ preventScroll: true });
+                    focusTarget.focus({ preventScroll: true });
                 } catch {
-                    openLink.focus();
+                    focusTarget.focus();
                 }
             }
         }
@@ -579,8 +613,16 @@ class KeyboardNavigation {
         const previousRow = this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length
             ? this.navigableElements[this.currentIndex]
             : null;
-        const bookmarkElements = document.querySelectorAll('.bookmark-link:not(.recent-bookmark-link)');
-        this.navigableElements = Array.from(bookmarkElements).filter((row) => this._isNavigableRow(row));
+        // Include the "+ N more" / "show less" toggles so long categories can be
+        // expanded from the keyboard. Querying both in one pass keeps them in DOM
+        // order, which is what arrow navigation follows.
+        const bookmarkElements = document.querySelectorAll(
+            '.bookmark-link:not(.recent-bookmark-link), .category-show-more'
+        );
+        this.navigableElements = Array.from(bookmarkElements)
+            .filter((el) => el.classList.contains('category-show-more')
+                ? this._isNavigableShowMore(el)
+                : this._isNavigableRow(el));
 
         if (previousRow) {
             const nextIndex = this.navigableElements.indexOf(previousRow);
@@ -1281,6 +1323,10 @@ class KeyboardNavigation {
     selectCurrentElement() {
         if (this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length) {
             const currentElement = this.navigableElements[this.currentIndex];
+            if (this._isShowMoreElement(currentElement)) {
+                this.toggleShowMoreForCurrent(currentElement);
+                return;
+            }
             const openLink = currentElement.querySelector && currentElement.querySelector('a.bookmark-open');
             if (openLink) {
                 openLink.click();
@@ -1288,6 +1334,31 @@ class KeyboardNavigation {
                 currentElement.click();
             }
         }
+    }
+
+    /**
+     * Expand/collapse a category from the keyboard and land the selection on the
+     * last bookmark before the toggle, so arrowing down continues into the rows
+     * that were just revealed instead of restarting somewhere else.
+     */
+    toggleShowMoreForCurrent(btn) {
+        const category = btn.closest('.category');
+        btn.click();
+        this.updateNavigableElements();
+
+        // The button survives the toggle (its label flips), so anchor on it and
+        // step back one to reach the last bookmark above it.
+        let index = this.navigableElements.indexOf(btn);
+        if (index < 0 && category) {
+            const rebuilt = category.querySelector('.category-show-more');
+            index = rebuilt ? this.navigableElements.indexOf(rebuilt) : -1;
+        }
+        if (index > 0) {
+            this.currentIndex = index - 1;
+        } else if (index === 0) {
+            this.currentIndex = 0;
+        }
+        this.highlightCurrentElement({ keyboardNav: true });
     }
 
     clearSelection(options = {}) {

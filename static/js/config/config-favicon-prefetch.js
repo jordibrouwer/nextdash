@@ -21,15 +21,21 @@ class ConfigFaviconPrefetch {
         await this.run();
     }
 
-    async run(pageIds = null) {
+    /**
+     * @param {number[]|null} pageIds — pages to process; null means every page.
+     * @param {{refreshAll?: boolean}} [options] — refreshAll re-fetches icons for
+     *   every bookmark, not only the ones missing one.
+     */
+    async run(pageIds = null, options = {}) {
         if (this._running) {
             return;
         }
+        const refreshAll = options.refreshAll === true;
         this._running = true;
         const overlay = this._showOverlay();
         try {
             const ids = await this._resolvePageIds(pageIds);
-            const totalMissing = await this._countMissingAcrossPages(ids);
+            const totalMissing = await this._countMissingAcrossPages(ids, refreshAll);
             if (totalMissing === 0) {
                 return;
             }
@@ -40,8 +46,10 @@ class ConfigFaviconPrefetch {
             for (const pageId of ids) {
                 let pageTotal = null;
                 let attempts = 0;
+                // refreshAll does not shrink the candidate list, so walk it by offset.
+                let offset = 0;
                 while (true) {
-                    const batch = await this._postBatch(pageId);
+                    const batch = await this._postBatch(pageId, refreshAll ? { refreshAll: true, offset } : {});
                     if (pageTotal === null) {
                         pageTotal = batch.total || 0;
                         if (pageTotal === 0) {
@@ -52,6 +60,7 @@ class ConfigFaviconPrefetch {
                         break;
                     }
                     attempts += batch.attempted || 0;
+                    offset += batch.attempted || 0;
                     done = Math.min(totalMissing, done + (batch.attempted || 0));
                     this._updateOverlay(overlay, done, totalMissing, false);
                     if (batch.done || batch.remaining === 0 || attempts >= pageTotal) {
@@ -92,10 +101,10 @@ class ConfigFaviconPrefetch {
         return pages.map((p) => Number(p.id)).filter((id) => id > 0);
     }
 
-    async _countMissingAcrossPages(pageIds) {
+    async _countMissingAcrossPages(pageIds, refreshAll = false) {
         let total = 0;
         for (const pageId of pageIds) {
-            const batch = await this._postBatch(pageId, { countOnly: true });
+            const batch = await this._postBatch(pageId, { countOnly: true, refreshAll });
             total += batch.total || 0;
         }
         return total;
@@ -181,4 +190,10 @@ class ConfigFaviconPrefetch {
     _delay(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
+}
+
+// Explicit global: config relies on classic-script scope, but the dashboard
+// loads this deferred and looks it up on window for `:favicons fetch`.
+if (typeof window !== 'undefined') {
+    window.ConfigFaviconPrefetch = ConfigFaviconPrefetch;
 }

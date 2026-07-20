@@ -564,14 +564,9 @@ func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// Always revalidate the HTML shell so clients pick up the latest asset URLs
-	// (with their ?v= cache-busters). "no-cache" forces revalidation but still
-	// allows the bfcache, so Back/Forward stays instant; static JS/CSS remain
-	// long-cached. We deliberately omit "no-store" to keep the bfcache usable.
-	w.Header().Set("Cache-Control", "no-cache, must-revalidate")
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf.Bytes())
+	// Serve the shell with a content-based ETag so browsers (Safari especially)
+	// revalidate against a real validator and reliably pick up new ?v= asset URLs.
+	writeHTMLShell(w, r, buf.Bytes())
 }
 
 func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
@@ -587,14 +582,9 @@ func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// Always revalidate the HTML shell so clients pick up the latest asset URLs
-	// (with their ?v= cache-busters). "no-cache" forces revalidation but still
-	// allows the bfcache, so Back/Forward stays instant; static JS/CSS remain
-	// long-cached. We deliberately omit "no-store" to keep the bfcache usable.
-	w.Header().Set("Cache-Control", "no-cache, must-revalidate")
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf.Bytes())
+	// Serve the shell with a content-based ETag so browsers (Safari especially)
+	// revalidate against a real validator and reliably pick up new ?v= asset URLs.
+	writeHTMLShell(w, r, buf.Bytes())
 }
 
 func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {
@@ -605,13 +595,36 @@ type htmlPageData struct {
 	Settings
 	WriteToken string `json:"-"`
 	Assets     pageAssetVersions
+	AppVersion string
+
+	// Umami analytics (privacy-friendly, opt-out). Fixed id + host for the
+	// project's shared instance. The template emits the tracker only when
+	// AnalyticsEnabled is true — that is the user's setting AND the operator
+	// not having switched telemetry off via DISABLE_TELEMETRY.
+	AnalyticsWebsiteID string
+	AnalyticsScriptSrc string
+	AnalyticsEnabled   bool
+	// TelemetryLockedOff mirrors DISABLE_TELEMETRY so config can render the
+	// Privacy checkbox disabled and explain why it cannot be changed.
+	TelemetryLockedOff bool
 }
+
+// analyticsWebsiteID / analyticsScriptSrc are the project's shared Umami instance.
+const (
+	analyticsWebsiteID = "6088e50e-b155-4efc-bc19-c4754edbbab1"
+	analyticsScriptSrc = "https://stats.nextdash.cc/script.js"
+)
 
 func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	return htmlPageData{
-		Settings:   settings,
-		WriteToken: writeAccessToken(),
-		Assets:     sharedAssetVersions,
+		Settings:           settings,
+		WriteToken:         writeAccessToken(),
+		Assets:             sharedAssetVersions,
+		AppVersion:         appVersionToken(),
+		AnalyticsWebsiteID: analyticsWebsiteID,
+		AnalyticsScriptSrc: analyticsScriptSrc,
+		AnalyticsEnabled:   analyticsEnabled(settings),
+		TelemetryLockedOff: telemetryDisabledByEnv(),
 	}
 }
 
@@ -1193,8 +1206,39 @@ func (h *Handlers) ResetAllData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
+// DeleteAllBookmarks empties every page's bookmarks while keeping pages,
+// categories, and settings. No default bookmarks are recreated.
+func (h *Handlers) DeleteAllBookmarks(w http.ResponseWriter, r *http.Request) {
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
+	var req struct {
+		Confirm bool `json:"confirm"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || !req.Confirm {
+		http.Error(w, "Confirmation required", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.store.DeleteAllBookmarks(); err != nil {
+		http.Error(w, "Error deleting bookmarks", http.StatusInternalServerError)
+		return
+	}
+	h.invalidateHealthReportCache()
+	logBookmarksDeletedAll(r)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
 func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	settings := h.store.GetSettings()
+	// Report the effective value: with DISABLE_TELEMETRY set, analytics is off no
+	// matter what is stored, and clients should render it that way. The stored
+	// setting is left untouched so it returns when the operator lifts the switch.
+	if telemetryDisabledByEnv() {
+		settings.EnableUsageAnalytics = false
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(settings)
 }
@@ -1239,6 +1283,15 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
+	}
+
+	// DISABLE_TELEMETRY is an operator kill switch, so it has to hold at the API
+	// too — otherwise a client could simply POST the setting back to true. Keep
+	// whatever is already stored rather than writing false: the switch suppresses
+	// analytics while it is set, and the user's own preference must survive it so
+	// it returns unchanged once the operator unsets it.
+	if telemetryDisabledByEnv() {
+		settings.EnableUsageAnalytics = h.store.GetSettings().EnableUsageAnalytics
 	}
 
 	// Validate and sanitize collections

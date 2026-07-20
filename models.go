@@ -192,7 +192,9 @@ type Settings struct {
 	FaviconRefreshPolicy           string                           `json:"faviconRefreshPolicy"`         // Favicon policy: manual, on-save
 	SearchIndexed                  bool                             `json:"searchIndexed"`                // Is search index built
 	OnboardingCompleted            bool                             `json:"onboardingCompleted"`
-	QuickStart                     QuickStartState                  `json:"quickStart"` // First-run quick-start progress (server-side, per-user)
+	EnableUsageAnalytics           bool                             `json:"enableUsageAnalytics"` // Privacy-friendly Umami analytics (default on, opt-out in Config → General)
+	EnableSessionTips              bool                             `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
+	QuickStart                     QuickStartState                  `json:"quickStart"`           // First-run quick-start progress (server-side, per-user)
 	ConfigGeneralTourCompleted     bool                             `json:"configGeneralTourCompleted"`
 	ConfigBookmarksTourCompleted   bool                             `json:"configBookmarksTourCompleted"`
 	ConfigFindersTourCompleted     bool                             `json:"configFindersTourCompleted"`
@@ -226,7 +228,16 @@ type DiscoverabilityState struct {
 	LastWhatsNewRelease string `json:"lastWhatsNewRelease,omitempty"`
 	TipsPromoUntil      int64  `json:"tipsPromoUntil,omitempty"`
 	TipsNotBefore       int64  `json:"tipsNotBefore,omitempty"`
+	// SeenTips lists tip ids already shown as a session tip; each is shown once, ever.
+	SeenTips []string `json:"seenTips,omitempty"`
 }
+
+// defaultThemeID is the theme a fresh install starts on. Existing dashboards
+// keep whatever they already have.
+const defaultThemeID = "moss-stone-dark"
+
+// defaultThemeLightID is the light counterpart auto dark mode switches to.
+const defaultThemeLightID = "moss-stone-light"
 
 type ThemeIconStylingEntry struct {
 	Enabled   bool    `json:"enabled"`
@@ -234,13 +245,39 @@ type ThemeIconStylingEntry struct {
 	Intensity float64 `json:"intensity"`
 }
 
+// defaultThemeIconStyling switches favicon harmonisation on for the default
+// theme of a fresh install, so mismatched site favicons blend with Moss & Stone
+// out of the box. Existing installs keep whatever map they already stored.
+//
+// Both variants are listed because the setting is keyed by the *displayed*
+// theme id, and auto dark mode (also on by default) swaps between the dark and
+// light Moss & Stone. With only one entry, harmonisation would silently apply
+// for half the day.
+//
+// Values match the fallback the config UI assumes for an absent entry, so the
+// form shows the same style and intensity it would have defaulted to.
+func defaultThemeIconStyling() map[string]ThemeIconStylingEntry {
+	entry := ThemeIconStylingEntry{Enabled: true, Style: "muted", Intensity: 0.5}
+	return map[string]ThemeIconStylingEntry{
+		defaultThemeID:      entry,
+		defaultThemeLightID: entry,
+	}
+}
+
 // QuickStartState tracks first-run quick-start progress, persisted per-user in
 // settings JSON (not client localStorage) so it is consistent across devices.
 type QuickStartState struct {
-	SetupDone      bool `json:"setupDone"`      // Compact setup card finished or skipped
-	Dismissed      bool `json:"dismissed"`      // Checklist completed or dismissed
-	VisitedConfig  bool `json:"visitedConfig"`  // Opened Config → General (checklist item)
-	SeenCheatsheet bool `json:"seenCheatsheet"` // Opened the keyboard cheat sheet (checklist item)
+	SetupDone           bool `json:"setupDone"`           // Compact setup card finished or skipped
+	Dismissed           bool `json:"dismissed"`           // Checklist completed or dismissed
+	VisitedConfig       bool `json:"visitedConfig"`       // Opened Config → General (checklist item)
+	SeenCheatsheet      bool `json:"seenCheatsheet"`      // Opened the keyboard cheat sheet (checklist item)
+	SeenAnalyticsNotice bool `json:"seenAnalyticsNotice"` // One-time card telling the user analytics is on
+	// Bookmark counts at the moment setup finished. The checklist ticks "add a
+	// bookmark" / "tag a bookmark" only once the user gets past these, so the
+	// seeded example bookmarks (which already carry tags) do not tick them for
+	// free. -1 means "not captured yet".
+	BaselineBookmarks int `json:"baselineBookmarks"`
+	BaselineTagged    int `json:"baselineTagged"`
 }
 
 func isValidFontPreset(s string) bool {
@@ -310,6 +347,8 @@ type Store interface {
 	DeleteBookmarkAt(pageID int, index int) error
 	AddBookmarkToPage(pageID int, bookmark Bookmark) error
 	DeleteBookmarkFromPage(pageID int, bookmark Bookmark) error
+	// DeleteAllBookmarks empties every page's bookmarks while keeping pages/categories/settings.
+	DeleteAllBookmarks() error
 	// Categories - per page only
 	GetCategoriesByPage(pageID int) []Category
 	SaveCategoriesByPage(pageID int, categories []Category) error
@@ -332,7 +371,8 @@ type Store interface {
 	ResetAllData() error
 	// TakeDefaultBookmarkIconPrefetch reports whether default bookmarks were just created and clears the flag.
 	TakeDefaultBookmarkIconPrefetch() bool
-	// MergePrefetchBookmarkIcons applies icon filenames to bookmarks when index/URL still match and icon is empty.
+	// MergePrefetchBookmarkIcons applies icon filenames to bookmarks when index/URL still match and
+	// the icon is empty, or the update sets Overwrite.
 	MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIconUpdate) int
 	// GetDataRevision returns a fingerprint of on-disk data for client cache invalidation.
 	GetDataRevision() string
@@ -353,6 +393,10 @@ type PrefetchIconUpdate struct {
 	Index  int
 	URLKey string
 	Icon   string
+	// Overwrite replaces an icon the bookmark already has. Off by default so the
+	// background prefetch can never clobber a user-chosen icon; the "refresh all
+	// favicons" command sets it deliberately.
+	Overwrite bool
 }
 
 type FileStore struct {
@@ -418,8 +462,10 @@ func (fs *FileStore) initializeDefaultFiles() {
 	if _, err := os.Stat(fs.settingsFile); os.IsNotExist(err) {
 		defaultSettings := Settings{
 			CurrentPage:                    1,
-			Theme:                          "midnight-ink-dark",
+			Theme:                          defaultThemeID,
 			OpenInNewTab:                   true,
+			EnableUsageAnalytics:           true,
+			EnableSessionTips:              true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -495,6 +541,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartRecentLimit:               50,
 			SmartMostUsedLimit:             25,
 			CategoryItemLimit:              15,
+			QuickStart:                     QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
 			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
 			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
 			SmartTodayWeekendKeywords:      "news,weather,maps",
@@ -505,6 +552,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ArchivedPageIds:                []int{},
 			FaviconRefreshPolicy:           "on-save",
 			OnboardingCompleted:            false,
+			ThemeIconStyling:               defaultThemeIconStyling(),
 			PackedColumns:                  true,
 			LauncherIconSize:               "normal",
 			ButtonBarPosition:              "bottom",
@@ -890,6 +938,35 @@ func (fs *FileStore) SaveBookmarkPageUpdates(updates map[int][]Bookmark) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// DeleteAllBookmarks empties every page's bookmark list while preserving pages,
+// categories, finders, and settings. No default bookmarks are recreated.
+func (fs *FileStore) DeleteAllBookmarks() error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	files, err := os.ReadDir(fs.dataDir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.IsDir() || !strings.HasPrefix(file.Name(), "bookmarks-") || !strings.HasSuffix(file.Name(), ".json") {
+			continue
+		}
+		pageID, ok := parseBookmarkPageIDFromFilename(file.Name())
+		if !ok {
+			continue
+		}
+		if err := fs.saveBookmarksByPageLocked(pageID, []Bookmark{}); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -1508,7 +1585,7 @@ func (fs *FileStore) MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIc
 		if canonicalBookmarkURLKey(bookmarks[update.Index].URL) != update.URLKey {
 			continue
 		}
-		if strings.TrimSpace(bookmarks[update.Index].Icon) != "" {
+		if !update.Overwrite && strings.TrimSpace(bookmarks[update.Index].Icon) != "" {
 			continue
 		}
 		bookmarks[update.Index].Icon = safeIcon
@@ -1556,8 +1633,10 @@ func (fs *FileStore) GetSettings() Settings {
 		// Return default settings if file doesn't exist
 		return Settings{
 			CurrentPage:                    1,
-			Theme:                          "midnight-ink-dark",
+			Theme:                          defaultThemeID,
 			OpenInNewTab:                   true,
+			EnableUsageAnalytics:           true,
+			EnableSessionTips:              true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -1628,6 +1707,7 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartRecentLimit:               50,
 			SmartStaleLimit:                50,
 			CategoryItemLimit:              15,
+			QuickStart:                     QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
 			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
 			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
 			SmartTodayWeekendKeywords:      "news,weather,maps",
@@ -1643,7 +1723,7 @@ func (fs *FileStore) GetSettings() Settings {
 			BackgroundType:                 "none",
 			BackgroundGradient:             "",
 			BackgroundImageUrl:             "",
-			ThemeIconStyling:               map[string]ThemeIconStylingEntry{},
+			ThemeIconStyling:               defaultThemeIconStyling(),
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
 			PasteDestination:               "ask",
@@ -1755,6 +1835,23 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["categoryItemLimit"]; !ok || settings.CategoryItemLimit < 0 {
 			settings.CategoryItemLimit = 15
 		}
+		// Baselines default to -1 ("not captured yet"), not Go's zero value: 0
+		// would read as a captured baseline of no bookmarks, and the seeded
+		// examples would immediately tick the checklist's add/tag items.
+		if _, ok := rawSettings["quickStart"]; !ok {
+			settings.QuickStart.BaselineBookmarks = -1
+			settings.QuickStart.BaselineTagged = -1
+		} else if raw, ok := rawSettings["quickStart"]; ok {
+			var qs map[string]json.RawMessage
+			if json.Unmarshal(raw, &qs) == nil {
+				if _, has := qs["baselineBookmarks"]; !has {
+					settings.QuickStart.BaselineBookmarks = -1
+				}
+				if _, has := qs["baselineTagged"]; !has {
+					settings.QuickStart.BaselineTagged = -1
+				}
+			}
+		}
 		if _, ok := rawSettings["smartRecentPageIds"]; !ok || settings.SmartRecentPageIds == nil {
 			settings.SmartRecentPageIds = []int{}
 		}
@@ -1781,6 +1878,15 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["onboardingCompleted"]; !ok {
 			settings.OnboardingCompleted = true
+		}
+		// Default-on, opt-out: existing installs that predate the field get analytics
+		// enabled (matching new installs). A user who explicitly stored `false` keeps it.
+		if _, ok := rawSettings["enableUsageAnalytics"]; !ok {
+			settings.EnableUsageAnalytics = true
+		}
+		// Same default-on, opt-out contract as analytics above.
+		if _, ok := rawSettings["enableSessionTips"]; !ok {
+			settings.EnableSessionTips = true
 		}
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true

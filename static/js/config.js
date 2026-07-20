@@ -59,7 +59,7 @@ class ConfigManager {
         this.currentBookmarksSearch = '';
         this.settingsData = {
             currentPage: 'default',
-            theme: 'midnight-ink-dark',
+            theme: 'moss-stone-dark',
             openInNewTab: true,
             columnsPerRow: 3,
             fontSize: 'm',

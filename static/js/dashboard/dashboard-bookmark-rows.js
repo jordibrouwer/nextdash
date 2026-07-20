@@ -76,6 +76,10 @@ class DashboardBookmarkRows {
             return false;
         }
 
+        // One event per move, with a bucketed size so a bulk move from the tag
+        // filter does not fire once per bookmark. Never the category name.
+        window.nextdashTrack?.('bookmark:move', { size: refs.length <= 1 ? '1' : (refs.length <= 5 ? '2-5' : (refs.length <= 20 ? '6-20' : '20+')) });
+
         const cat = (d.categories || []).find((item) => String(item.id) === String(categoryId));
         const catName = cat?.name || categoryId;
         const affectedCount = Number.isFinite(count) ? count : refs.length;
@@ -353,6 +357,7 @@ class DashboardBookmarkRows {
             row.removeAttribute('data-bookmark-index');
         }
         row.setAttribute('data-category-id', categoryId);
+        d.contextMenu?.bindRow(row);
 
         const lead = document.createElement('div');
         lead.className = 'bookmark-lead';

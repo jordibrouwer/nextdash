@@ -276,6 +276,49 @@
     accent-color: var(--accent-primary);
 }
 
+/* Starting-point step: two stacked option cards with a label + description. */
+.quickstart-startpoint {
+    gap: 0.5rem;
+}
+
+.quickstart-radio-block {
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.quickstart-radio-block input {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+}
+
+.quickstart-radio-block:has(input:checked) {
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+.quickstart-radio-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.quickstart-radio-label {
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-primary);
+}
+
+.quickstart-radio-hint {
+    font-size: var(--font-size-small, 0.66rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    line-height: 1.4;
+}
+
 .quickstart-actions {
     display: flex;
     justify-content: flex-end;
@@ -325,4 +368,65 @@
         width: auto;
         max-width: none;
     }
+}
+
+/* ── One-time analytics disclosure ──────────────────────────────────────
+   Reuses .quickstart-card for placement and chrome; only the body differs. */
+.analytics-notice-text {
+    margin: 0.35rem 0 0;
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.analytics-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+}
+
+/* The shared .whats-new-modal shell only scrolls once it hits max-height; this
+   modal is shorter than that, so cap the body itself or the last paragraph runs
+   under the buttons. */
+.analytics-notice-modal .modal-body {
+    /* Roomy enough that the three sections normally fit whole; scrolls only on
+       short viewports rather than clipping a line mid-sentence. */
+    max-height: min(72vh, 40rem);
+    overflow-y: auto;
+    /* Overlay-style scrollbars hide until you scroll, so the cut-off text reads
+       as clipped rather than scrollable. Keep the track visible instead. */
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+}
+
+.analytics-notice-modal .modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.analytics-notice-modal .modal-body::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: 4px;
+}
+
+/* Modal body: same rhythm as the what's-new release sections. */
+.analytics-notice-modal-body p {
+    margin: 0 0 1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.analytics-notice-modal-body p:last-child {
+    margin-bottom: 0;
+}
+
+.analytics-notice-heading {
+    margin: 0 0 0.35rem;
+    font-size: var(--font-size-text, 0.85rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-primary);
+}
+
+.analytics-notice-modal-body .analytics-notice-heading:not(:first-child) {
+    margin-top: 1.25rem;
 }

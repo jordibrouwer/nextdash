@@ -31,7 +31,7 @@ class Dashboard {
         this.currentPageId = 'default';
         this.settings = {
             currentPage: 'default',
-            theme: 'midnight-ink-dark',
+            theme: 'moss-stone-dark',
             openInNewTab: true,
             columnsPerRow: 3,
             fontSize: 'm',
@@ -184,6 +184,7 @@ class Dashboard {
         this.recent = new DashboardRecent(this);
         this.promos = new DashboardPromos(this);
         this.uiHelpers = new DashboardUiHelpers(this);
+        this.contextMenu = new DashboardContextMenu(this);
         this.setup = new DashboardSetup(this);
         this.persistence = new DashboardPersistence(this);
         this.inbox = new DashboardInbox(this);
@@ -306,6 +307,8 @@ class Dashboard {
             await this.reconcilePendingConfigSyncAfterLoad();
 
             this.updateMiniStatusLine();
+            // Feature-adoption snapshot, once settings are resolved.
+            window.nextdashTrackSettings?.(this.settings);
             this.initializeOnboarding();
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
                 this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });

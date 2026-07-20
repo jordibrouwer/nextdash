@@ -20,7 +20,8 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 |:---:|:---:|
 | ![5](screenshots/nextdash-5.png) | ![6](screenshots/nextdash-6.png) |
 |:---:|:---:|
-| ![7](screenshots/nextdash-7.png) | |
+| ![7](screenshots/nextdash-7.png) | ![](screenshots/nextdash-9.png) | 
+|:---:|:---:|
 
 ---
 
@@ -135,6 +136,55 @@ When exceeded, the API returns **429** and (if enabled) logs a `security` activi
 ### Content-Security-Policy
 
 nextDash sends a restrictive CSP on HTML pages by default. Set `NEXTDASH_CSP=off` only when a reverse proxy or custom integration requires it.
+
+### Analytics & privacy
+
+nextDash records **anonymous, privacy-friendly usage statistics** through a self-hosted [Umami](https://umami.is) instance at `stats.nextdash.cc`. It is on by default and takes two clicks to switch off.
+
+#### Turn it off
+
+**Config → General → Advanced → Privacy** → clear **Privacy-friendly analytics**. It applies after the page reloads.
+
+From the keyboard: press <kbd>:</kbd> and run **`:telemetry off`** (or `:telemetry on`). Typing `:telemetry` on its own shows the current state. It writes the same setting and reloads the page for you.
+
+#### Disable it for the whole instance
+
+Set the environment variable **`DISABLE_TELEMETRY=true`** to switch analytics off server-wide, regardless of what any user has configured:
+
+```yaml
+environment:
+  - DISABLE_TELEMETRY=true
+```
+
+The tracker is then never emitted, the setting cannot be turned back on through the API or the `:telemetry` command, and the **Privacy** checkbox in config renders disabled with a note explaining why. `:telemetry` shows a single row saying it is off for this server, rather than an **on** option that could not take effect. Accepts `true`, `1`, `yes`, or `on`; unset or `false` leaves analytics under user control.
+
+Each user's own preference is left stored and untouched, so it returns exactly as it was if you ever unset the variable.
+
+When it is off, the tracker script is **not emitted into the page at all** — it is never even downloaded, and **no request leaves your machine**. There is no client-side flag quietly suppressing calls; the code simply is not there. The choice is stored per user in `settings.json` as `enableUsageAnalytics`, so it follows you across devices.
+
+#### Why it exists
+
+nextDash was built without any picture of how it is actually used. Which views do people open? Does anyone use finders, the tag cloud, or the inbox? Where do people abandon the add-bookmark form? Without answers, every decision about what to build, fix, or remove is guesswork.
+
+These statistics exist to answer exactly that — **which features get used, and what can be improved** — and nothing else. They are explicitly **not** for following individual users. The measurement is abstract and technical: flow through the app and feature usage, aggregated across everyone.
+
+#### What is measured
+
+- **Page views** — the dashboard, config, health, and colors pages.
+- **Views and navigation** — opening the health and inbox views, switching dashboard pages (by position, never by name), which config tab you land on, and use of the `<` dashboard↔config shortcut.
+- **Overlays** — opening search, commands, finders, the cheat sheet, the tag cloud, what's-new, and the add-bookmark form.
+- **Bookmark opens** — the fact that one was opened and where from (`dashboard`, `search`, or `recent`).
+- **Commands** — which command palette command was run, by its name (`theme`, `config`, `density`, …). Only names from the built-in command list are recorded; anything else you typed is discarded.
+- **Bookmark maintenance** — starting an edit and saving it (with whether that was on the dashboard or in config), deleting, moving to another category (with a bucketed count, so a bulk move counts once), and reordering by drag.
+- **Outcomes** — whether adding a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, or failure. This shows where the form trips people up.
+- **Inbox and health actions** — snooze, mark-read, wake, promote, delete, and bulk clean-ups; health rechecks, retest-all, redirect detection, title refresh, and delete.
+- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums.
+
+#### What is never measured
+
+No bookmark names, URLs, search queries, page or category names, notes, or tags. No cookies are set, no personal profile is built, and there is no tracking across other websites. Counts that could identify a specific setup are bucketed (for example `2-5` rather than an exact number), and the instance is self-hosted, so nothing is shared with an advertising network.
+
+The tracker loads from `stats.nextdash.cc`, which is allow-listed in the CSP (`script-src` and `connect-src`).
 
 ### DNS rebinding (IP pinning)
 
@@ -271,6 +321,8 @@ environment:
 - `Alt + ↑/↓` — reorder the selected bookmark on the Bookmarks tab
 - `Ctrl/Cmd + K` — open the config command palette
 - `Ctrl/Cmd + Shift + K` — find settings, tabs, and help sections
+
+**Privacy-friendly analytics & a desktop-layout fix (v2026.07.19)** — nextDash now records **anonymous** usage statistics so it is visible which features are actually used and where the app can be improved. It is never about following you personally: no bookmark names, URLs, search queries, page names, notes or tags are sent, no cookies are set, and there is no cross-site tracking — purely abstract, technical measurement of flow and feature usage, aggregated across everyone. **Switching it off takes two clicks: Config → General → Advanced → Privacy**; when off the tracker is not even downloaded and no request leaves your machine. See [Analytics & privacy](#analytics--privacy) for the full list of what is and is not measured. Also in this release: **right-click a bookmark** for open in new tab, copy URL, edit, tags, move, and delete — everything the command palette could already do, where you would look for it first; the **+ N more** toggle on long categories can now be reached with the arrow keys and opened with `Enter`, landing the selection back on the last bookmark above it (and keyboard selection no longer disappears onto rows hidden behind that toggle); `:favicons fetch` re-downloads every bookmark icon across all pages in one run (replacing stale ones, with a progress bar); the dashboard now shows an **occasional keyboard tip** as a toast (the same list as Config → Help → Tips & tricks, at most one every few days, never twice the same, switchable off under Config → General → Advanced → Onboarding & tips), and the What's new modal opens with a **New shortcuts** section listing the keys a release added; fresh installs start on the new **Moss & Stone** theme with **favicon harmonisation** on, so clashing site icons are toned down to match (existing dashboards keep theirs); the first-run setup card now asks whether to **start with the example bookmarks or from scratch**, and its checklist no longer shows items as done before you have done them; **Config → General → Reset** gained a **Delete all bookmarks only** button that keeps your pages, categories, and settings; an empty dashboard shows a friendly empty state instead of failing to load; and narrowing a desktop browser window no longer flips nextDash into the mobile layout — that now requires an actual touch device.
 
 **Tidier long categories & aligned config (v2026.07.18)** — a category now shows only its first **15** bookmarks by default, with the rest behind a per-category **+ N more** / **show less** toggle, so one big category no longer towers over the others; change the limit or turn it off under **Config → General → Layout** (smart collections are never capped, and expanding a category is remembered). The **Configuration** page now uses the same top bar and title size as the dashboard, inbox, and health views, so switching between them no longer makes the page jump, and its save row and tabs read as one seamless bar. New installs start on the near-black **Midnight Ink** theme (following your system light/dark) and no longer seed the Tech category or its Unraid/Phoronix bookmarks — existing dashboards keep their theme and bookmarks.
 

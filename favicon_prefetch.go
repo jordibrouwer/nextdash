@@ -167,7 +167,7 @@ func (h *Handlers) prefetchDefaultBookmarkIcons() {
 	const batchLimit = 8
 	totalApplied := 0
 	for {
-		result := h.prefetchBookmarkIconsBatch(pageID, batchLimit, false)
+		result := h.prefetchBookmarkIconsBatch(pageID, batchLimit, false, false, 0)
 		totalApplied += result.Applied
 		// Stop when done, when nothing was attempted, OR when a batch made no
 		// progress. Without the Applied==0 guard, a single bookmark whose favicon
@@ -185,9 +185,17 @@ func (h *Handlers) prefetchDefaultBookmarkIcons() {
 }
 
 func bookmarksNeedingIcons(bookmarks []Bookmark, allowLocal bool) []pendingIconBookmark {
+	return collectIconCandidates(bookmarks, allowLocal, false)
+}
+
+// collectIconCandidates lists bookmarks whose icon can be fetched. With
+// includeExisting the current icon is ignored, so every bookmark with a
+// fetchable URL is re-fetched — used by the "refresh all favicons" command to
+// replace icons that have gone stale, not just fill in missing ones.
+func collectIconCandidates(bookmarks []Bookmark, allowLocal bool, includeExisting bool) []pendingIconBookmark {
 	var pending []pendingIconBookmark
 	for i, b := range bookmarks {
-		if strings.TrimSpace(b.Icon) != "" {
+		if !includeExisting && strings.TrimSpace(b.Icon) != "" {
 			continue
 		}
 		urlStr := strings.TrimSpace(b.URL)
@@ -210,10 +218,19 @@ func countBookmarksNeedingIcons(bookmarks []Bookmark, allowLocal bool) int {
 	return len(bookmarksNeedingIcons(bookmarks, allowLocal))
 }
 
-func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool) prefetchIconsBatchResult {
+// prefetchBookmarkIconsBatch fetches one batch of icons for a page.
+//
+// Two modes. By default only bookmarks without an icon are candidates, and
+// progress is measured by how many still lack one — each batch shrinks that set,
+// so the caller can loop until Remaining hits 0.
+//
+// With refreshAll every bookmark is a candidate, so re-fetching does not shrink
+// anything. The caller walks the list with `offset` instead, and Remaining is
+// whatever sits past the batch just handled.
+func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool, refreshAll bool, offset int) prefetchIconsBatchResult {
 	bookmarks := h.store.GetBookmarksByPage(pageID)
 	allowLocal := h.allowLocalBookmarks()
-	pending := bookmarksNeedingIcons(bookmarks, allowLocal)
+	pending := collectIconCandidates(bookmarks, allowLocal, refreshAll)
 	total := len(pending)
 	if total == 0 {
 		return prefetchIconsBatchResult{Done: true}
@@ -226,7 +243,14 @@ func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool)
 		}
 	}
 
-	batch := pending
+	if offset < 0 {
+		offset = 0
+	}
+	if offset >= total {
+		return prefetchIconsBatchResult{Total: total, Remaining: 0, Done: true}
+	}
+
+	batch := pending[offset:]
 	if limit > 0 && len(batch) > limit {
 		batch = batch[:limit]
 	}
@@ -254,14 +278,26 @@ func (h *Handlers) prefetchBookmarkIconsBatch(pageID, limit int, countOnly bool)
 	updates := make([]PrefetchIconUpdate, 0, len(batch))
 	for result := range results {
 		updates = append(updates, PrefetchIconUpdate{
-			Index:  result.index,
-			URLKey: result.urlKey,
-			Icon:   result.icon,
+			Index:     result.index,
+			URLKey:    result.urlKey,
+			Icon:      result.icon,
+			Overwrite: refreshAll,
 		})
 	}
 
 	applied := h.store.MergePrefetchBookmarkIcons(pageID, updates)
-	remaining := countBookmarksNeedingIcons(h.store.GetBookmarksByPage(pageID), allowLocal)
+	// In refreshAll mode a re-fetched bookmark still has an icon, so counting
+	// icon-less bookmarks would report 0 remaining after the first batch and cut
+	// the run short. Track position in the candidate list instead.
+	var remaining int
+	if refreshAll {
+		remaining = total - (offset + len(batch))
+		if remaining < 0 {
+			remaining = 0
+		}
+	} else {
+		remaining = countBookmarksNeedingIcons(h.store.GetBookmarksByPage(pageID), allowLocal)
+	}
 
 	return prefetchIconsBatchResult{
 		Total:     total,
@@ -288,6 +324,10 @@ func (h *Handlers) PrefetchBookmarkIcons(w http.ResponseWriter, r *http.Request)
 		PageID    int  `json:"pageId"`
 		Limit     int  `json:"limit"`
 		CountOnly bool `json:"countOnly"`
+		// RefreshAll re-fetches icons for every bookmark on the page, not just
+		// the ones missing an icon; Offset walks the list across batches.
+		RefreshAll bool `json:"refreshAll"`
+		Offset     int  `json:"offset"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -306,7 +346,7 @@ func (h *Handlers) PrefetchBookmarkIcons(w http.ResponseWriter, r *http.Request)
 		limit = 8
 	}
 
-	result := h.prefetchBookmarkIconsBatch(req.PageID, limit, req.CountOnly)
+	result := h.prefetchBookmarkIconsBatch(req.PageID, limit, req.CountOnly, req.RefreshAll, req.Offset)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }

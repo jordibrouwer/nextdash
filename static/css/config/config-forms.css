@@ -1104,6 +1104,21 @@
     color: var(--accent-warning, var(--text-secondary));
 }
 
+/* Analytics switched off server-side via DISABLE_TELEMETRY: the checkbox is
+   disabled and the reason is spelled out, so it does not read as broken. */
+.is-locked-by-env .checkbox-label {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.is-locked-by-env .checkbox-label input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+
+.usage-analytics-locked {
+    color: var(--accent-warning, var(--text-secondary));
+}
+
 .bg-auto-preview {
     width: 100%;
     height: 40px;

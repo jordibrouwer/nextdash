@@ -215,6 +215,13 @@ func logDataReset(r *http.Request) {
 	logActivity(activityCategoryMutate, "data.reset", activityFieldsFromRequest(r))
 }
 
+func logBookmarksDeletedAll(r *http.Request) {
+	if !activityEnabled(activityCategoryMutate) {
+		return
+	}
+	logActivity(activityCategoryMutate, "bookmark.deleteAll", activityFieldsFromRequest(r))
+}
+
 func logBookmarkOpen(pageID, index int, bm Bookmark, r *http.Request) {
 	if !activityEnabled(activityCategoryOpen) {
 		return

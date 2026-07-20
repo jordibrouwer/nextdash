@@ -58,7 +58,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew'],
+                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew', 'telemetry'],
             },
         ];
         // Track which groups are expanded (none by default)
@@ -115,6 +115,7 @@ class SearchCommandsComponent {
             'lang': this.handleLangCommand.bind(this),
             'animations': this.handleAnimationsCommand.bind(this),
             'status': this.handleStatusCommand.bind(this),
+            'telemetry': this.handleTelemetryCommand.bind(this),
             'collections': this.handleCollectionsCommand.bind(this),
             'opacity': this.handleOpacityCommand.bind(this),
             'backup': this.handleBackupCommand.bind(this),
@@ -337,6 +338,28 @@ class SearchCommandsComponent {
             dashboard.saveSettings();
         }
         return this._paletteRefresh(enabled ? 'status:on' : 'status:off');
+    }
+
+    /**
+     * Toggle privacy-friendly usage analytics.
+     *
+     * Unlike the other toggles this cannot take effect in place: the tracker
+     * <script> is emitted server-side only when the setting is on, so turning it
+     * on needs a reload to load it, and turning it off needs one to unload it.
+     * Save first, then reload, so the new page reflects the choice.
+     */
+    setUsageAnalytics(dashboard, enabled) {
+        dashboard.settings.enableUsageAnalytics = enabled;
+        const done = () => {
+            dashboard.isNavigatingAway = true;
+            window.location.reload();
+        };
+        if (typeof dashboard.saveSettings === 'function') {
+            Promise.resolve(dashboard.saveSettings()).then(done).catch(done);
+        } else {
+            done();
+        }
+        return this._paletteRefresh(enabled ? 'telemetry:on' : 'telemetry:off');
     }
 
     setBackgroundOpacity(dashboard, opacity) {
@@ -2047,8 +2070,20 @@ class SearchCommandsComponent {
         const enabled = dashboard.settings.showIcons !== false;
         const apply = (value) => this.setFaviconVisibility(dashboard, value);
 
+        const fetchRow = {
+            name: this._t('commands.faviconsFetch', 'fetch all — re-download every bookmark icon'),
+            shortcut: ':FAVICONS',
+            stateId: 'favicons:fetch',
+            type: 'command',
+            action: () => this.refetchAllFavicons(dashboard),
+        };
+
         if (!stateArg) {
-            return this._buildOnOffRows({ prefix: 'favicons', shortcut: ':FAVICONS', enabled, apply });
+            return [...this._buildOnOffRows({ prefix: 'favicons', shortcut: ':FAVICONS', enabled, apply }), fetchRow];
+        }
+
+        if (stateArg === 'fetch' || 'fetch'.startsWith(stateArg)) {
+            return [fetchRow];
         }
 
         if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
@@ -2244,6 +2279,42 @@ class SearchCommandsComponent {
             dashboard.saveSettings();
         }
         return this._paletteRefresh(enabled ? 'favicons:on' : 'favicons:off');
+    }
+
+    /**
+     * Re-download the favicon of every bookmark on every page, replacing icons
+     * that already exist. Reuses ConfigFaviconPrefetch — the same batching,
+     * progress overlay and endpoint used after an import — so there is one
+     * implementation rather than a second one for the palette.
+     */
+    async refetchAllFavicons(dashboard) {
+        this._closeCommandPalette();
+        const notify = (key, fallback, type = 'info') => {
+            const raw = this.language?.t?.(`dashboard.${key}`);
+            const msg = raw && raw !== `dashboard.${key}` ? raw : fallback;
+            dashboard?.showNotification?.(msg, type, { duration: 4000 });
+        };
+
+        if (typeof window.ConfigFaviconPrefetch !== 'function') {
+            notify('faviconsFetchUnavailable', 'Icon fetching is unavailable on this page.', 'error');
+            return;
+        }
+
+        const t = (key) => this.language?.t?.(key) ?? key;
+        try {
+            const prefetch = new window.ConfigFaviconPrefetch(t);
+            await prefetch.run(null, { refreshAll: true });
+            // Icons are stored server-side; re-read so the grid shows the new ones.
+            if (typeof dashboard?.loadData === 'function') {
+                await dashboard.loadData();
+                dashboard.renderDashboard?.();
+            }
+            notify('faviconsFetchDone', 'Bookmark icons refreshed', 'success');
+            window.nextdashTrack?.('favicons:refresh-all');
+        } catch (err) {
+            console.warn('Favicon refresh failed:', err);
+            notify('faviconsFetchFailed', 'Could not refresh bookmark icons', 'error');
+        }
     }
 
     setPreviewCardsVisibility(dashboard, enabled) {
@@ -2915,6 +2986,34 @@ class SearchCommandsComponent {
         const enabled = dashboard.settings.showStatus !== false;
         const apply = (value) => this.setStatusVisibility(dashboard, value);
         return this._handleSimpleToggle(args, { shortcut: ':STATUS', prefix: 'status', enabled, apply });
+    }
+
+    /** :telemetry on|off — privacy-friendly usage analytics (same setting as Config → General → Advanced → Privacy). */
+    handleTelemetryCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+
+        // DISABLE_TELEMETRY is an operator kill switch: the server refuses to turn
+        // analytics back on, so offering an "on" row here would reload the page and
+        // silently change nothing. Say why instead, matching the note in config.
+        if (document.querySelector('meta[name="nextdash-telemetry-locked"]')) {
+            const t = (key, fallback) => {
+                const v = dashboard.language?.t?.(`dashboard.${key}`);
+                return v && v !== `dashboard.${key}` ? v : fallback;
+            };
+            // Only `name` is rendered in the palette, so the reason goes in it.
+            return [{
+                name: t('telemetryLockedRow', 'off — disabled for this server by DISABLE_TELEMETRY'),
+                shortcut: ':TELEMETRY',
+                stateId: 'telemetry:locked',
+                type: 'command',
+                action: () => {},
+            }];
+        }
+
+        const enabled = dashboard.settings.enableUsageAnalytics !== false;
+        const apply = (value) => this.setUsageAnalytics(dashboard, value);
+        return this._handleSimpleToggle(args, { shortcut: ':TELEMETRY', prefix: 'telemetry', enabled, apply });
     }
 
     _handleSimpleToggle(args, { shortcut, prefix, enabled, apply }) {

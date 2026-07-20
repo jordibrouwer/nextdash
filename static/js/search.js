@@ -96,6 +96,9 @@ class SearchComponent {
     buildShortcutsMap() {
         this.shortcuts.clear();
 
+        if (!Array.isArray(this.bookmarks)) {
+            this.bookmarks = [];
+        }
         this.bookmarks.forEach(bookmark => {
             if (bookmark.shortcut && bookmark.shortcut.trim()) {
                 this.shortcuts.set(bookmark.shortcut.toLowerCase(), bookmark);
@@ -211,10 +214,7 @@ class SearchComponent {
         const findersButton = document.getElementById('finders-button');
         if (findersButton) {
             findersButton.addEventListener('click', () => {
-                this.openSearchInterface();
-                this.currentQuery = '?';
-                this.updateSearch();
-                this.renderSearchMatches();
+                this._openInMode('?');
             });
         }
 
@@ -222,10 +222,7 @@ class SearchComponent {
         const commandsButton = document.getElementById('commands-button');
         if (commandsButton) {
             commandsButton.addEventListener('click', () => {
-                this.openSearchInterface();
-                this.currentQuery = ':';
-                this.updateSearch();
-                this.renderSearchMatches();
+                this._openInMode(':');
             });
         }
 
@@ -252,6 +249,46 @@ class SearchComponent {
                 this.renderSearchMatches();
             }
         });
+    }
+
+    /**
+     * Open the overlay directly in commands (`:`) or finders (`?`) mode.
+     *
+     * The prefix is set before the first updateSearch() so the open is tracked as
+     * that mode — going through openSearchInterface() first would briefly run with
+     * an empty query and report a plain search open as well.
+     */
+    _openInMode(prefix) {
+        if (!this.searchActive) {
+            this.searchMatches = [];
+            this.selectedMatchIndex = 0;
+        }
+        this.commandsComponent.resetState();
+        this.currentQuery = prefix;
+        this.updateSearch();
+        this.renderSearchMatches();
+    }
+
+    /**
+     * Fire exactly one usage event for the overlay that opened: modal:search,
+     * modal:commands, or modal:finders. The three are mutually exclusive, so each
+     * counter reads directly without having to subtract the others.
+     *
+     * Every entry point — the `>`/`:`/`?` keys, the toolbar buttons, and the mode
+     * tabs — funnels through updateSearch(), so tracking the mode *transition* here
+     * covers them all once. Without the transition check each keystroke inside a
+     * mode would fire another event; switching mode mid-session (`:` → `?`) counts
+     * as a new open, and closeSearch() resets so reopening counts again.
+     */
+    _trackModeOpen() {
+        const mode = this.currentQuery.startsWith(':')
+            ? 'commands'
+            : this.currentQuery.startsWith('?')
+                ? 'finders'
+                : 'search';
+        if (mode === this._lastTrackedMode) return;
+        this._lastTrackedMode = mode;
+        window.nextdashTrack?.(`modal:${mode}`);
     }
 
     getThemeIconStylingEntry() {
@@ -1176,6 +1213,8 @@ class SearchComponent {
     }
 
     updateSearch() {
+        this._trackModeOpen();
+
         // Find matching shortcuts
         this.searchMatches = [];
 
@@ -1426,6 +1465,8 @@ class SearchComponent {
         if (!this.searchActive) {
             this._searchOpenerElement = document.activeElement;
             window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+            // The open event is fired from _trackModeOpen(), which knows whether this
+            // is a plain search, commands, or finders — see updateSearch().
         }
         this.searchActive = true;
         const searchElement = document.getElementById('shortcut-search');
@@ -1474,6 +1515,8 @@ class SearchComponent {
             this._debounceTimer = null;
         }
         this.searchActive = false;
+        // Reset so reopening the same mode counts as a new open.
+        this._lastTrackedMode = null;
         this.emptyStateExpandedGroups.clear();
         document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', { detail: { active: false, urls: new Set() } }));
         this.resetQuery();
@@ -2008,6 +2051,9 @@ class SearchComponent {
 
     openBookmark(bookmark) {
         this.recordSearchHistory(this.currentQuery);
+        // Opening from search went uncounted before: it bypasses the dashboard row
+        // handler that normally records the open. Attribute it to the search source.
+        window.dashboardInstance?.recordBookmarkOpened?.(bookmark, undefined, 'search');
 
         // Close search first if it's active
         if (this.searchActive) {
@@ -2167,8 +2213,29 @@ class SearchComponent {
         this.saveRecentCommands();
     }
 
+    /**
+     * Report which command was run, so it is visible which of the ~50 commands
+     * actually get used.
+     *
+     * The name is taken from the typed query and then checked against the
+     * registered command list — that check is the point. The query is free text,
+     * and match.shortcut cannot be used instead: for context commands (pin, move,
+     * copy) it holds the *bookmark's* shortcut, which is user data. Anything not
+     * matching a known command is dropped rather than sent.
+     */
+    _trackCommandUse(query) {
+        const raw = String(query || '').trim();
+        if (!raw.startsWith(':')) return;
+        const name = raw.slice(1).split(/\s+/)[0].toLowerCase();
+        if (!name) return;
+        const known = this.commandsComponent?.availableCommands;
+        if (!known || !Object.prototype.hasOwnProperty.call(known, name)) return;
+        window.nextdashTrack?.('command', { name });
+    }
+
     invokeCommand(match) {
         const queryBefore = this.currentQuery;
+        this._trackCommandUse(queryBefore);
         const result = match.action();
         if (result && typeof result.then === 'function') {
             result.then((resolved) => this._finishCommandInvoke(queryBefore, match, resolved));

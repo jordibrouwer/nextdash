@@ -985,6 +985,24 @@ class ConfigSettings {
             });
         }
 
+        // Privacy-friendly usage analytics (default on; unset means on).
+        const usageAnalyticsCheckbox = document.getElementById('usage-analytics-checkbox');
+        if (usageAnalyticsCheckbox) {
+            usageAnalyticsCheckbox.checked = settings.enableUsageAnalytics !== false;
+            usageAnalyticsCheckbox.addEventListener('change', (e) => {
+                settings.enableUsageAnalytics = e.target.checked;
+            });
+        }
+
+        // Tip of the session (default on; unset means on).
+        const sessionTipsCheckbox = document.getElementById('session-tips-checkbox');
+        if (sessionTipsCheckbox) {
+            sessionTipsCheckbox.checked = settings.enableSessionTips !== false;
+            sessionTipsCheckbox.addEventListener('change', (e) => {
+                settings.enableSessionTips = e.target.checked;
+            });
+        }
+
         const pasteUrlQuickAddCheckbox = document.getElementById('paste-url-quick-add-checkbox');
         if (pasteUrlQuickAddCheckbox) {
             pasteUrlQuickAddCheckbox.checked = settings.pasteUrlQuickAdd !== false;
@@ -1914,6 +1932,10 @@ class ConfigSettings {
                 : (settings.columnsPerRow ?? 3);
         }
         if (newTabCheckbox) settings.openInNewTab = newTabCheckbox.checked;
+        const usageAnalyticsEl = document.getElementById('usage-analytics-checkbox');
+        if (usageAnalyticsEl) settings.enableUsageAnalytics = usageAnalyticsEl.checked;
+        const sessionTipsEl = document.getElementById('session-tips-checkbox');
+        if (sessionTipsEl) settings.enableSessionTips = sessionTipsEl.checked;
         const pasteUrlEl = document.getElementById('paste-url-quick-add-checkbox');
         if (pasteUrlEl) settings.pasteUrlQuickAdd = pasteUrlEl.checked;
         const inboxEnabledEl = document.getElementById('inbox-enabled-checkbox');
@@ -2824,6 +2846,8 @@ class ConfigSettings {
         watch('weather-refresh-select', 'weatherRefreshMinutes');
         watch('link-preview-hover-delay-select', 'linkPreviewHoverDelayMs');
         watch('new-tab-checkbox', 'openInNewTab');
+        watch('usage-analytics-checkbox', 'enableUsageAnalytics');
+        watch('session-tips-checkbox', 'enableSessionTips');
         watch('show-background-dots-checkbox', 'showBackgroundDots');
         watch('show-title-checkbox', 'showTitle');
         watch('show-date-checkbox', 'showDate');
@@ -2894,8 +2918,10 @@ class ConfigSettings {
      */
     getDefaults() {
         return {
-            theme: 'midnight-ink-dark',
+            theme: 'moss-stone-dark',
             openInNewTab: true,
+            enableUsageAnalytics: true,
+            enableSessionTips: true,
             columnsPerRow: 3,
             fontSize: 'm',
             showBackgroundDots: true,

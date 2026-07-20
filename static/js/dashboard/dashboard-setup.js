@@ -92,9 +92,10 @@ class DashboardSetup {
     initializeSearchComponent() {
         const d = this.dash;
         // Initialize search component with current data
-        // Use all bookmarks if global shortcuts is enabled, otherwise just current page
-        const bookmarksForSearch = d.settings.globalShortcuts ? d.allBookmarks : d.bookmarks;
-        
+        // Use all bookmarks if global shortcuts is enabled, otherwise just current page.
+        // Either source can still be null this early on a fresh/empty dashboard, so default to [].
+        const bookmarksForSearch = (d.settings.globalShortcuts ? d.allBookmarks : d.bookmarks) || [];
+
         if (window.SearchComponent) {
             d.searchComponent = new window.SearchComponent(bookmarksForSearch, d.bookmarks, d.allBookmarks, d.settings, d.language, d.finders, d.pages);
         } else {
@@ -268,6 +269,7 @@ class DashboardSetup {
             if (e.key === '<' || (e.code === 'Comma' && e.shiftKey)) {
                 e.preventDefault();
                 e.stopPropagation();
+                window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
                 window.location.href = '/config';
                 return;
             }
