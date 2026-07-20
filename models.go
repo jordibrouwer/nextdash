@@ -345,7 +345,8 @@ type Store interface {
 	ResetAllData() error
 	// TakeDefaultBookmarkIconPrefetch reports whether default bookmarks were just created and clears the flag.
 	TakeDefaultBookmarkIconPrefetch() bool
-	// MergePrefetchBookmarkIcons applies icon filenames to bookmarks when index/URL still match and icon is empty.
+	// MergePrefetchBookmarkIcons applies icon filenames to bookmarks when index/URL still match and
+	// the icon is empty, or the update sets Overwrite.
 	MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIconUpdate) int
 	// GetDataRevision returns a fingerprint of on-disk data for client cache invalidation.
 	GetDataRevision() string
@@ -366,6 +367,10 @@ type PrefetchIconUpdate struct {
 	Index  int
 	URLKey string
 	Icon   string
+	// Overwrite replaces an icon the bookmark already has. Off by default so the
+	// background prefetch can never clobber a user-chosen icon; the "refresh all
+	// favicons" command sets it deliberately.
+	Overwrite bool
 }
 
 type FileStore struct {
@@ -1553,7 +1558,7 @@ func (fs *FileStore) MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIc
 		if canonicalBookmarkURLKey(bookmarks[update.Index].URL) != update.URLKey {
 			continue
 		}
-		if strings.TrimSpace(bookmarks[update.Index].Icon) != "" {
+		if !update.Overwrite && strings.TrimSpace(bookmarks[update.Index].Icon) != "" {
 			continue
 		}
 		bookmarks[update.Index].Icon = safeIcon

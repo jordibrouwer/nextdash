@@ -225,6 +225,7 @@ class DashboardUiHelpers {
                 item(':columns <n>', 'caColumns', 'Set number of columns (1–6)'),
                 item(':fontsize <size>', 'caFontsize', 'Change font size'),
                 item(':favicons on/off', 'caFavicons', 'Toggle favicons on/off'),
+                item(':favicons fetch', 'caFaviconsFetch', 'Re-download every bookmark icon across all pages (replaces existing icons)'),
                 item(':preview on/off', 'caPreview', 'Toggle hover preview cards'),
                 item(':packed on/off', 'caPacked', 'Toggle packed (variable-width) columns'),
                 item(':buttonbar <position>', 'caButtonbar', 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left'),

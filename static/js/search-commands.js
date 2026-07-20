@@ -2070,8 +2070,20 @@ class SearchCommandsComponent {
         const enabled = dashboard.settings.showIcons !== false;
         const apply = (value) => this.setFaviconVisibility(dashboard, value);
 
+        const fetchRow = {
+            name: this._t('commands.faviconsFetch', 'fetch all — re-download every bookmark icon'),
+            shortcut: ':FAVICONS',
+            stateId: 'favicons:fetch',
+            type: 'command',
+            action: () => this.refetchAllFavicons(dashboard),
+        };
+
         if (!stateArg) {
-            return this._buildOnOffRows({ prefix: 'favicons', shortcut: ':FAVICONS', enabled, apply });
+            return [...this._buildOnOffRows({ prefix: 'favicons', shortcut: ':FAVICONS', enabled, apply }), fetchRow];
+        }
+
+        if (stateArg === 'fetch' || 'fetch'.startsWith(stateArg)) {
+            return [fetchRow];
         }
 
         if (stateArg === 'on' || 'on'.startsWith(stateArg)) {
@@ -2267,6 +2279,42 @@ class SearchCommandsComponent {
             dashboard.saveSettings();
         }
         return this._paletteRefresh(enabled ? 'favicons:on' : 'favicons:off');
+    }
+
+    /**
+     * Re-download the favicon of every bookmark on every page, replacing icons
+     * that already exist. Reuses ConfigFaviconPrefetch — the same batching,
+     * progress overlay and endpoint used after an import — so there is one
+     * implementation rather than a second one for the palette.
+     */
+    async refetchAllFavicons(dashboard) {
+        this._closeCommandPalette();
+        const notify = (key, fallback, type = 'info') => {
+            const raw = this.language?.t?.(`dashboard.${key}`);
+            const msg = raw && raw !== `dashboard.${key}` ? raw : fallback;
+            dashboard?.showNotification?.(msg, type, { duration: 4000 });
+        };
+
+        if (typeof window.ConfigFaviconPrefetch !== 'function') {
+            notify('faviconsFetchUnavailable', 'Icon fetching is unavailable on this page.', 'error');
+            return;
+        }
+
+        const t = (key) => this.language?.t?.(key) ?? key;
+        try {
+            const prefetch = new window.ConfigFaviconPrefetch(t);
+            await prefetch.run(null, { refreshAll: true });
+            // Icons are stored server-side; re-read so the grid shows the new ones.
+            if (typeof dashboard?.loadData === 'function') {
+                await dashboard.loadData();
+                dashboard.renderDashboard?.();
+            }
+            notify('faviconsFetchDone', 'Bookmark icons refreshed', 'success');
+            window.nextdashTrack?.('favicons:refresh-all');
+        } catch (err) {
+            console.warn('Favicon refresh failed:', err);
+            notify('faviconsFetchFailed', 'Could not refresh bookmark icons', 'error');
+        }
     }
 
     setPreviewCardsVisibility(dashboard, enabled) {

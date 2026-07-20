@@ -36,7 +36,7 @@ func TestPrefetchBookmarkIconsCountOnly(t *testing.T) {
 	want := existing + 1
 
 	h := &Handlers{store: store}
-	result := h.prefetchBookmarkIconsBatch(1, 4, true)
+	result := h.prefetchBookmarkIconsBatch(1, 4, true, false, 0)
 	if result.Total != want || result.Remaining != want || result.Done {
 		t.Fatalf("countOnly result = %+v, want total=%d remaining=%d done=false", result, want, want)
 	}

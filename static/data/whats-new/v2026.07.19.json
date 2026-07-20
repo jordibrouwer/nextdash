@@ -95,6 +95,10 @@
         },
         {
           "badge": "new",
+          "text": "<strong>Refresh every bookmark icon at once</strong> — run <code>:favicons fetch</code> to re-download the favicon of every bookmark on every page, with a progress bar while it works. It replaces icons you already have, so ones that have gone stale get updated too — until now the only options were fixing them one at a time in health, or selecting them in config."
+        },
+        {
+          "badge": "new",
           "text": "<strong>Right-click a bookmark for its actions</strong> — a menu opens with <strong>Open in new tab</strong>, <strong>Copy URL</strong>, <strong>Edit</strong>, <strong>Tags…</strong>, <strong>Move to…</strong>, and <strong>Delete</strong>. Everything it does was already possible through the command palette or config; this simply puts it where you would look first. Arrow keys and <kbd>Enter</kbd> work inside the menu, deleting still asks for confirmation, and <kbd>Shift</kbd> + right-click gives you the browser's own menu."
         },
         {

@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="/static/css/dashboard-bookmark-row.css?v={{.Assets.DashboardBookmarkRowCSS}}">
     <link rel="stylesheet" href="/static/css/modal.css?v={{.Assets.ModalCSS}}">
     <link rel="stylesheet" href="/static/css/app-notification.css?v={{.Assets.AppNotificationCSS}}">
+    <link rel="stylesheet" href="/static/css/favicon-prefetch.css?v=favicon-prefetch-shared-1">
     <link rel="stylesheet" href="/static/css/search.css?v={{.Assets.SearchCSS}}">
     <link rel="stylesheet" href="/static/css/search-commands-new.css?v={{.Assets.SearchCommandsNewCSS}}">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css?v={{.Assets.BookmarkFormPreviewCSS}}">
@@ -292,7 +293,7 @@
     <script src="/static/js/search-commands/search-commands-fontsize.js?v={{.Assets.SearchCommandsFontSizeJS}}"></script>
     <script src="/static/js/search-commands/search-commands-theme.js?v={{.Assets.SearchCommandsThemeJS}}"></script>
     <script src="/static/js/search-commands/search-commands-note.js?v={{.Assets.SearchCommandsNoteJS}}"></script>
-    <script src="/static/js/search-commands.js?v=telemetry-locked-1"></script>
+    <script src="/static/js/search-commands.js?v=favicons-fetch-1"></script>
     <script src="/static/js/search-finders.js?v=finder-auto-space-1"></script>
     <script src="/static/js/fuzzy-search.js?v={{.Assets.FuzzySearchJS}}"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1" defer></script>
@@ -313,6 +314,8 @@
     <!-- Tip catalogue is shared with Config → Help so the two lists cannot drift. -->
     <script src="/static/js/config/config-help-tips.js?v=help-tips-1" defer></script>
     <script src="/static/js/dashboard-keyboard-tip.js?v=keyboard-tip-1" defer></script>
+    <!-- Batch icon fetch (`:favicons fetch`); same class config uses after an import. -->
+    <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-refresh-all-2" defer></script>
     <script src="/static/js/pwa-install-hint.js?v={{.Assets.PWAInstallHintJS}}" defer></script>
     <script src="/static/js/mobile-experience.js?v={{.Assets.MobileExperienceJS}}"></script>
     <script src="/static/js/dashboard-tag-cloud.js?v=analytics-track-1" defer></script>
@@ -343,7 +346,7 @@
     <script src="/static/js/dashboard/dashboard-preview.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-recent.js?v=analytics-track-4"></script>
     <script src="/static/js/dashboard/dashboard-promos.js?v=analytics-notice-1"></script>
-    <script src="/static/js/dashboard/dashboard-ui-helpers.js?v=showmore-keynav-1"></script>
+    <script src="/static/js/dashboard/dashboard-ui-helpers.js?v=favicons-fetch-1"></script>
     <script src="/static/js/dashboard/dashboard-context-menu.js?v=context-menu-2"></script>
     <script src="/static/js/dashboard/dashboard-setup.js?v=merge-analytics-1"></script>
     <script src="/static/js/dashboard/dashboard-persistence.js?v=dash-tag-sync-3"></script>

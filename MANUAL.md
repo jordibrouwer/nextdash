@@ -589,6 +589,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:telemetry` / `:telemetry on` / `:telemetry off` | Turn [privacy-friendly analytics](#analytics-and-privacy) on or off (reloads the page) |
 | `:collections` | Toggle smart collections (today, recent, stale, most used) |
 | `:backup` / `:export` | Open config backups or download ZIP backup |
+| `:favicons fetch` | Re-download every bookmark icon on every page (replaces existing icons) |
 | `:metadata` | Health missing previews or config bookmarks |
 | `:layout …` | default, compact, cards, masonry, list, launcher, … (presets — not layout version) |
 | `:layoutversion` | List classic / modern |
@@ -694,7 +695,8 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 
 - Auto-fetch title/description/image when adding URLs (if enabled).  
 - **`[`** toggles preview card on keyboard focus.  
-- **Show favicons** — **Config → General → Bookmarks** or `:favicons on/off` on the dashboard.  
+- **Show favicons** — **Config → General → Bookmarks** or `:favicons on/off` on the dashboard.
+- **Refresh every icon** — `:favicons fetch` re-downloads the favicon of every bookmark on every page, replacing the ones already stored, so icons that changed at the source are updated too. A progress bar shows how far along it is. Individual icons can also be refreshed from the health view (`f` on the selected row), and **Config → Bookmarks** has a bulk **Refresh favicons** button for a selection.  
 - **Fetch favicon** in config detail or health actions.
 
 ### Shortcuts
