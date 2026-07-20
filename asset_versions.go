@@ -93,7 +93,7 @@ var sharedAssetVersions = pageAssetVersions{
 	HealthBadgeJS:        "health-badge-count-only-1",
 	AppNotificationJS:    "toast-grouped-1",
 	SearchCommandsNewJS:  "search-commands-new-9-outcome",
-	WhatsNewData:         "whats-new-v171",
+	WhatsNewData:         "whats-new-v172",
 	DataRevision:         "data-revision-9-context-menu",
 
 	WriteAPIJS:               "write-api-1",
@@ -130,7 +130,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
 	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
-	DashboardCSS:            "context-menu-danger-1",
+	DashboardCSS:            "showmore-keynav-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
 	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 

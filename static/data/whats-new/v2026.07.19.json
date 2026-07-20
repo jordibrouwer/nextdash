@@ -2,7 +2,7 @@
   "tag": "v2026.07.19",
   "date": "July 2026",
   "releasedAt": "2026-07-19",
-  "modalLead": "nextDash now collects privacy-friendly, anonymous usage statistics to see which features are actually used and where the app can be improved — never who you are or what you bookmark. It is on by default and takes two clicks to turn off. This release also adds a right-click menu on bookmarks, a new default theme for fresh installs, a fresh-start choice on first run, a wipe-bookmarks button, and fixes a narrow desktop window being mistaken for a phone.",
+  "modalLead": "nextDash now collects privacy-friendly, anonymous usage statistics to see which features are actually used and where the app can be improved — never who you are or what you bookmark. It is on by default and takes two clicks to turn off. This release also adds a right-click menu on bookmarks and keyboard access to long categories, a new default theme for fresh installs, a fresh-start choice on first run, a wipe-bookmarks button, and fixes a narrow desktop window being mistaken for a phone.",
   "sections": [
     {
       "title": "Privacy-friendly analytics",
@@ -74,6 +74,14 @@
         {
           "badge": "new",
           "text": "<strong>Right-click a bookmark for its actions</strong> — a menu opens with <strong>Open in new tab</strong>, <strong>Copy URL</strong>, <strong>Edit</strong>, <strong>Tags…</strong>, <strong>Move to…</strong>, and <strong>Delete</strong>. Everything it does was already possible through the command palette or config; this simply puts it where you would look first. Arrow keys and <kbd>Enter</kbd> work inside the menu, deleting still asks for confirmation, and <kbd>Shift</kbd> + right-click gives you the browser's own menu."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Expand long categories from the keyboard</strong> — the <strong>+ N more</strong> / <strong>show less</strong> toggle can now be reached with the arrow keys and activated with <kbd>Enter</kbd> or <kbd>Space</kbd>. The selection lands back on the last bookmark above the toggle, so you keep arrowing straight down into the rows you just revealed."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Keyboard selection no longer disappears into hidden rows</strong> — in a category trimmed by the item limit, arrowing down would step onto bookmarks that were hidden behind <strong>+ N more</strong>. The highlight vanished and you were navigating blind. Hidden rows are skipped now, and the toggle itself is what you land on instead."
         },
         {
           "badge": "fix",

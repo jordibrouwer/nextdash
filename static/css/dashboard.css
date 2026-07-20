@@ -2544,10 +2544,17 @@ a.bookmark-open:hover {
 }
 
 .category-show-more:hover,
-.category-show-more:focus-visible {
+.category-show-more:focus-visible,
+.category-show-more.keyboard-selected {
     color: var(--accent-primary);
     background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
     outline: none;
+}
+
+/* Keyboard selection needs to read as "selected" even without :focus-visible,
+   which browsers withhold after a click. */
+.category-show-more.keyboard-selected {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 45%, transparent);
 }
 
 /* Terminal layout: monospace style with > prefix */

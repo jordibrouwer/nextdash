@@ -157,6 +157,7 @@ class DashboardUiHelpers {
                 item('Shift + T', 'bmQuickTag', 'Quick-tag focused bookmark — ↑/↓ navigate; Enter/Space toggles tag and advances; ✓ shows tags on bookmark; Esc close restores selection on same row'),
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
                 item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
+                item('Enter on "+ N more"', 'bmShowMoreToggle', 'Expand or collapse a long category — selection returns to the last bookmark above the toggle'),
                 item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
                 item('Right-click bookmark', 'bmContextMenu', 'Menu with open in new tab, copy URL, edit, tags, move, delete (Shift + right-click for the browser menu)'),
                 item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
