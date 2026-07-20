@@ -13,6 +13,7 @@
         lastWhatsNewRelease: '',
         tipsPromoUntil: 0,
         tipsNotBefore: 0,
+        seenTips: [],
     };
     let persistTimer = null;
     let migrateScheduled = false;
@@ -23,12 +24,16 @@
                 lastWhatsNewRelease: '',
                 tipsPromoUntil: 0,
                 tipsNotBefore: 0,
+                seenTips: [],
             };
         }
         return {
             lastWhatsNewRelease: String(raw.lastWhatsNewRelease || '').trim(),
             tipsPromoUntil: Number(raw.tipsPromoUntil) || 0,
             tipsNotBefore: Number(raw.tipsNotBefore) || 0,
+            seenTips: Array.isArray(raw.seenTips)
+                ? raw.seenTips.map((id) => String(id || '').trim()).filter(Boolean)
+                : [],
         };
     }
 
@@ -136,11 +141,37 @@
         }
     }
 
+    function getSeenTips() {
+        return Array.isArray(state.seenTips) ? state.seenTips.slice() : [];
+    }
+
+    function hasSeenTip(id) {
+        const key = String(id || '').trim();
+        return !!key && (state.seenTips || []).includes(key);
+    }
+
+    /** Record a tip as shown. Capped so the list cannot grow without bound. */
+    function markTipSeen(id, options = {}) {
+        const key = String(id || '').trim();
+        if (!key) return;
+        if (!Array.isArray(state.seenTips)) state.seenTips = [];
+        if (state.seenTips.includes(key)) return;
+        state.seenTips.push(key);
+        if (state.seenTips.length > 200) {
+            state.seenTips = state.seenTips.slice(-200);
+        }
+        applyToDashboardSettings();
+        if (options.persist !== false) {
+            schedulePersist();
+        }
+    }
+
     function exportState() {
         return {
             lastWhatsNewRelease: state.lastWhatsNewRelease || undefined,
             tipsPromoUntil: state.tipsPromoUntil > 0 ? state.tipsPromoUntil : undefined,
             tipsNotBefore: state.tipsNotBefore > 0 ? state.tipsNotBefore : undefined,
+            seenTips: state.seenTips?.length ? state.seenTips.slice() : undefined,
         };
     }
 
@@ -249,6 +280,9 @@
         setTipsPromoUntil,
         getTipsNotBefore,
         setTipsNotBefore,
+        getSeenTips,
+        hasSeenTip,
+        markTipSeen,
         schedulePersist,
         persistNow,
     };

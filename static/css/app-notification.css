@@ -56,6 +56,31 @@
     border-color: var(--border-primary);
 }
 
+/* Session tip: a longer, quieter toast that carries inline <code> keys. */
+.app-notification.info .app-notification-text {
+    font-weight: var(--font-weight-medium);
+}
+
+.app-notification-tip-label {
+    color: var(--accent-warning);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    font-size: 0.78em;
+    letter-spacing: 0.06em;
+    margin-right: 0.15rem;
+}
+
+.app-notification-text code {
+    font-family: var(--font-family-main);
+    font-size: 0.88em;
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    padding: 0.03rem 0.26rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
 .app-notification-text {
     flex: 1;
     min-width: 0;

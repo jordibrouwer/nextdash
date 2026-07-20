@@ -1233,6 +1233,13 @@
                                 <details class="tour-resets-details" open>
                                     <summary class="tour-resets-summary" data-i18n="config.tourResetsTitle">Onboarding</summary>
                                     <div class="tour-resets-body">
+                                        <div class="setting-item">
+                                            <label class="checkbox-label" for="session-tips-checkbox">
+                                                <input type="checkbox" id="session-tips-checkbox">
+                                                <span data-i18n="config.sessionTipsLabel">Show occasional keyboard tips</span>
+                                            </label>
+                                            <p class="setting-description" data-i18n="config.sessionTipsHint">Now and then shows one keyboard tip as a toast on the dashboard — at most one every few days, never the same tip twice, and never during first-run setup.</p>
+                                        </div>
                                         <div class="config-action-list">
                                         <div class="config-advanced-action-row">
                                             <p class="config-advanced-action-text config-onboarding-reset-hint" data-i18n="config.resetOnboardingHint">Show the quick-start card again on the dashboard. Saves immediately.</p>
@@ -2590,7 +2597,7 @@
     <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-1"></script>
     <script src="/static/js/config/config-backup.js?v=health-recheck-1"></script>
     <script src="/static/js/config/config-font.js?v={{.Assets.ConfigFontJS}}"></script>
-    <script src="/static/js/config/config-settings.js?v=category-limit-analytics-1"></script>
+    <script src="/static/js/config/config-settings.js?v=session-tips-1"></script>
     <script src="/static/js/config/config-settings-defaults.js?v=tips-off-default-1"></script>
     <script src="/static/js/config/config-tours-runtime.js?v=tours-removed-1"></script>
     <script src="/static/js/config/config-tab-tours.js?v=tours-removed-1"></script>

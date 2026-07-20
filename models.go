@@ -193,6 +193,7 @@ type Settings struct {
 	SearchIndexed                  bool                             `json:"searchIndexed"`                // Is search index built
 	OnboardingCompleted            bool                             `json:"onboardingCompleted"`
 	EnableUsageAnalytics           bool                             `json:"enableUsageAnalytics"` // Privacy-friendly Umami analytics (default on, opt-out in Config → General)
+	EnableSessionTips              bool                             `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
 	QuickStart                     QuickStartState                  `json:"quickStart"`           // First-run quick-start progress (server-side, per-user)
 	ConfigGeneralTourCompleted     bool                             `json:"configGeneralTourCompleted"`
 	ConfigBookmarksTourCompleted   bool                             `json:"configBookmarksTourCompleted"`
@@ -227,6 +228,8 @@ type DiscoverabilityState struct {
 	LastWhatsNewRelease string `json:"lastWhatsNewRelease,omitempty"`
 	TipsPromoUntil      int64  `json:"tipsPromoUntil,omitempty"`
 	TipsNotBefore       int64  `json:"tipsNotBefore,omitempty"`
+	// SeenTips lists tip ids already shown as a session tip; each is shown once, ever.
+	SeenTips []string `json:"seenTips,omitempty"`
 }
 
 type ThemeIconStylingEntry struct {
@@ -431,6 +434,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			Theme:                          "moss-stone-dark",
 			OpenInNewTab:                   true,
 			EnableUsageAnalytics:           true,
+			EnableSessionTips:              true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -1600,6 +1604,7 @@ func (fs *FileStore) GetSettings() Settings {
 			Theme:                          "moss-stone-dark",
 			OpenInNewTab:                   true,
 			EnableUsageAnalytics:           true,
+			EnableSessionTips:              true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -1846,6 +1851,10 @@ func (fs *FileStore) GetSettings() Settings {
 		// enabled (matching new installs). A user who explicitly stored `false` keeps it.
 		if _, ok := rawSettings["enableUsageAnalytics"]; !ok {
 			settings.EnableUsageAnalytics = true
+		}
+		// Same default-on, opt-out contract as analytics above.
+		if _, ok := rawSettings["enableSessionTips"]; !ok {
+			settings.EnableSessionTips = true
 		}
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true

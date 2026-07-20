@@ -136,7 +136,13 @@ const AppNotification = {
         const normalized = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'success';
         const persist = options.persist === true;
 
-        messageEl.textContent = message;
+        // textContent by default — messages can contain user data (bookmark names).
+        // allowHtml is opt-in for our own translated markup only, never user input.
+        if (options.allowHtml === true) {
+            messageEl.innerHTML = message;
+        } else {
+            messageEl.textContent = message;
+        }
         host.className = `app-notification ${normalized}`;
         if (persist) host.classList.add('persist');
         if (options.onAction) host.classList.add('has-action');

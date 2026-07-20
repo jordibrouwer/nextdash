@@ -91,6 +91,10 @@
       "items": [
         {
           "badge": "new",
+          "text": "<strong>Occasional keyboard tips</strong> — now and then the dashboard shows a single keyboard tip as a small toast, with a <strong>Cheat sheet</strong> button next to it. It is the same tip list as <strong>Config → Help → Tips &amp; tricks</strong>, so nothing new to maintain, and it stays rare on purpose: at most one every few days, never the same tip twice, and never during first-run setup or over an open dialog. Switch it off under <strong>Config → General → Advanced → Onboarding &amp; tips</strong>."
+        },
+        {
+          "badge": "new",
           "text": "<strong>Right-click a bookmark for its actions</strong> — a menu opens with <strong>Open in new tab</strong>, <strong>Copy URL</strong>, <strong>Edit</strong>, <strong>Tags…</strong>, <strong>Move to…</strong>, and <strong>Delete</strong>. Everything it does was already possible through the command palette or config; this simply puts it where you would look first. Arrow keys and <kbd>Enter</kbd> work inside the menu, deleting still asks for confirmation, and <kbd>Shift</kbd> + right-click gives you the browser's own menu."
         },
         {
