@@ -20,10 +20,9 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 |:---:|:---:|
 | ![5](screenshots/nextdash-5.png) | ![6](screenshots/nextdash-6.png) |
 |:---:|:---:|
-| ![7](screenshots/nextdash-7.png) | ![8](screenshots/nextdash-8.png) |
+| ![7](screenshots/nextdash-7.png) | ![9](screenshots/nextdash-7.png) | 
 |:---:|:---:|
-| ![9](screenshots/nextdash-9.png) | |
-|:---:|:---:|
+
 ---
 
 ## Quick Start
