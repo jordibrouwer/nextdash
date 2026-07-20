@@ -70,6 +70,10 @@
         {
           "badge": "new",
           "text": "<strong>Moss &amp; Stone is the default theme</strong> — a fresh install now starts on Moss &amp; Stone, a desaturated earthy olive-grey palette (following your system for light/dark). Existing dashboards keep whatever theme you already chose."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Favicons blend with the theme</strong> — a fresh install now starts with <strong>favicon harmonisation</strong> switched on, so site icons that clash with Moss &amp; Stone are toned down to match rather than shouting over it. Existing dashboards keep their own setting. Adjust or switch it off under <strong>Config → Theme</strong>."
         }
       ]
     },

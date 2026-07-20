@@ -135,6 +135,8 @@ Nothing yet.
 
 ### New installs
 
+- **new** **Favicon harmonisation is on for fresh installs** — new dashboards now start with favicon harmonisation enabled (`muted`, intensity `0.5`), so site favicons that clash with the theme are desaturated to match instead of shouting over it. The setting is keyed by the *displayed* theme id, and auto dark mode — also on by default — swaps between the dark and light Moss & Stone, so both variants are seeded; with only one entry harmonisation would silently apply for half the day. Existing dashboards keep whatever they had: the defaults only apply when no `themeIconStyling` map is stored, and turning it off survives a restart. Change or disable it under **Config → Theme**.
+
 - **new** **Moss & Stone is the default theme** — a fresh install now starts on `moss-stone-dark`, a desaturated earthy olive-grey palette, instead of Midnight Ink. Set in both server defaults and the three client-side fallbacks so they cannot drift apart. Existing dashboards keep their theme: the only other theme writes are fallbacks for an invalid id, not a migration.
 
 ### Config

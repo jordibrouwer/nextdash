@@ -232,10 +232,36 @@ type DiscoverabilityState struct {
 	SeenTips []string `json:"seenTips,omitempty"`
 }
 
+// defaultThemeID is the theme a fresh install starts on. Existing dashboards
+// keep whatever they already have.
+const defaultThemeID = "moss-stone-dark"
+
+// defaultThemeLightID is the light counterpart auto dark mode switches to.
+const defaultThemeLightID = "moss-stone-light"
+
 type ThemeIconStylingEntry struct {
 	Enabled   bool    `json:"enabled"`
 	Style     string  `json:"style"`
 	Intensity float64 `json:"intensity"`
+}
+
+// defaultThemeIconStyling switches favicon harmonisation on for the default
+// theme of a fresh install, so mismatched site favicons blend with Moss & Stone
+// out of the box. Existing installs keep whatever map they already stored.
+//
+// Both variants are listed because the setting is keyed by the *displayed*
+// theme id, and auto dark mode (also on by default) swaps between the dark and
+// light Moss & Stone. With only one entry, harmonisation would silently apply
+// for half the day.
+//
+// Values match the fallback the config UI assumes for an absent entry, so the
+// form shows the same style and intensity it would have defaulted to.
+func defaultThemeIconStyling() map[string]ThemeIconStylingEntry {
+	entry := ThemeIconStylingEntry{Enabled: true, Style: "muted", Intensity: 0.5}
+	return map[string]ThemeIconStylingEntry{
+		defaultThemeID:      entry,
+		defaultThemeLightID: entry,
+	}
 }
 
 // QuickStartState tracks first-run quick-start progress, persisted per-user in
@@ -436,7 +462,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	if _, err := os.Stat(fs.settingsFile); os.IsNotExist(err) {
 		defaultSettings := Settings{
 			CurrentPage:                    1,
-			Theme:                          "moss-stone-dark",
+			Theme:                          defaultThemeID,
 			OpenInNewTab:                   true,
 			EnableUsageAnalytics:           true,
 			EnableSessionTips:              true,
@@ -526,6 +552,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ArchivedPageIds:                []int{},
 			FaviconRefreshPolicy:           "on-save",
 			OnboardingCompleted:            false,
+			ThemeIconStyling:               defaultThemeIconStyling(),
 			PackedColumns:                  true,
 			LauncherIconSize:               "normal",
 			ButtonBarPosition:              "bottom",
@@ -1606,7 +1633,7 @@ func (fs *FileStore) GetSettings() Settings {
 		// Return default settings if file doesn't exist
 		return Settings{
 			CurrentPage:                    1,
-			Theme:                          "moss-stone-dark",
+			Theme:                          defaultThemeID,
 			OpenInNewTab:                   true,
 			EnableUsageAnalytics:           true,
 			EnableSessionTips:              true,
@@ -1696,7 +1723,7 @@ func (fs *FileStore) GetSettings() Settings {
 			BackgroundType:                 "none",
 			BackgroundGradient:             "",
 			BackgroundImageUrl:             "",
-			ThemeIconStyling:               map[string]ThemeIconStylingEntry{},
+			ThemeIconStyling:               defaultThemeIconStyling(),
 			PasteUrlQuickAdd:               true,
 			InboxEnabled:                   true,
 			PasteDestination:               "ask",

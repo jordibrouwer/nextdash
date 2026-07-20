@@ -773,6 +773,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 - **config → theme** tab (`#colors`) — four subtabs: **Dark**, **Light** (default palettes), **Custom themes** (your saved palettes), and **Packaged themes** (edit built-in families such as Cherry Graphite). Live preview applies to palette cards only; a contrast hint warns when text vs background is too weak. **Export** / **import** JSON, **Undo**, and **↑/↓** reorder for custom themes. Press **S** or **Save colors** to persist. On mobile the tab is read-only (viewer banner).  
 - **General → Appearance → Theme** — pick the active theme for the whole app (built-in or saved custom).  
 - **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
+- **Favicon harmonisation** — recolours site favicons that clash with your theme (styles: **Muted**, **Tinted**, **Overlay**, with an intensity slider). Set per theme under **config → theme**, so the dark and light variant of a pair are configured separately. **New installs start with it on** (Muted, intensity 0.5) for both Moss & Stone variants; existing dashboards keep whatever they had.
 
 ### Config → pages & categories (list tabs)
 
