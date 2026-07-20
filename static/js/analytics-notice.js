@@ -109,7 +109,7 @@
                 ${section(
                     t('dashboard.analyticsNoticeOffTitle', 'How to turn it off'),
                     escape(t('dashboard.analyticsNoticeOffBody',
-                        'Go to Config → General → Advanced → Privacy and clear "Privacy-friendly analytics", or run :tracking off from the command palette. It applies after the page reloads. When off, the tracker is not loaded at all and no request leaves your machine.'))
+                        'Go to Config → General → Advanced → Privacy and clear "Privacy-friendly analytics", or run :telemetry off from the command palette. It applies after the page reloads. When off, the tracker is not loaded at all and no request leaves your machine.'))
                 )}
             </div>`;
 

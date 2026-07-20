@@ -17,7 +17,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Or use the keyboard: <code>:tracking</code></strong> — press <kbd>:</kbd> and type <strong>tracking</strong> to see the current state, or go straight to <code>:tracking off</code> / <code>:tracking on</code>. It changes the same setting as the Privacy checkbox and reloads the page so the change applies immediately."
+          "text": "<strong>Or use the keyboard: <code>:telemetry</code></strong> — press <kbd>:</kbd> and type <strong>telemetry</strong> to see the current state, or go straight to <code>:telemetry off</code> / <code>:telemetry on</code>. It changes the same setting as the Privacy checkbox and reloads the page so the change applies immediately."
         },
         {
           "badge": "new",

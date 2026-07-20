@@ -58,7 +58,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew', 'tracking'],
+                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew', 'telemetry'],
             },
         ];
         // Track which groups are expanded (none by default)
@@ -115,7 +115,7 @@ class SearchCommandsComponent {
             'lang': this.handleLangCommand.bind(this),
             'animations': this.handleAnimationsCommand.bind(this),
             'status': this.handleStatusCommand.bind(this),
-            'tracking': this.handleTrackingCommand.bind(this),
+            'telemetry': this.handleTelemetryCommand.bind(this),
             'collections': this.handleCollectionsCommand.bind(this),
             'opacity': this.handleOpacityCommand.bind(this),
             'backup': this.handleBackupCommand.bind(this),
@@ -359,7 +359,7 @@ class SearchCommandsComponent {
         } else {
             done();
         }
-        return this._paletteRefresh(enabled ? 'tracking:on' : 'tracking:off');
+        return this._paletteRefresh(enabled ? 'telemetry:on' : 'telemetry:off');
     }
 
     setBackgroundOpacity(dashboard, opacity) {
@@ -2940,13 +2940,13 @@ class SearchCommandsComponent {
         return this._handleSimpleToggle(args, { shortcut: ':STATUS', prefix: 'status', enabled, apply });
     }
 
-    /** :tracking on|off — privacy-friendly usage analytics (same setting as Config → General → Advanced → Privacy). */
-    handleTrackingCommand(args) {
+    /** :telemetry on|off — privacy-friendly usage analytics (same setting as Config → General → Advanced → Privacy). */
+    handleTelemetryCommand(args) {
         const dashboard = window.dashboardInstance;
         if (!dashboard) return [];
         const enabled = dashboard.settings.enableUsageAnalytics !== false;
         const apply = (value) => this.setUsageAnalytics(dashboard, value);
-        return this._handleSimpleToggle(args, { shortcut: ':TRACKING', prefix: 'tracking', enabled, apply });
+        return this._handleSimpleToggle(args, { shortcut: ':TELEMETRY', prefix: 'telemetry', enabled, apply });
     }
 
     _handleSimpleToggle(args, { shortcut, prefix, enabled, apply }) {
