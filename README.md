@@ -17,7 +17,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 | ![1](screenshots/nextdash-1.png) | ![2](screenshots/nextdash-2.png) |
 |:---:|:---:|
 | ![3](screenshots/nextdash-3.png) | ![4](screenshots/nextdash-4.png) |
-|:---:|:---:|
+|More then 90 options to customize your nextDash|:---:|
 | ![5](screenshots/nextdash-5.png) | ![6](screenshots/nextdash-6.png) |
 |:---:|:---:|
 | ![7](screenshots/nextdash-7.png) | ![9](screenshots/nextdash-9.png) | 
