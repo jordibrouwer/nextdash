@@ -5,6 +5,24 @@
   "modalLead": "nextDash now collects privacy-friendly, anonymous usage statistics to see which features are actually used and where the app can be improved — never who you are or what you bookmark. It is on by default and takes two clicks to turn off. This release also adds a right-click menu on bookmarks and keyboard access to long categories, a new default theme for fresh installs, a fresh-start choice on first run, a wipe-bookmarks button, and fixes a narrow desktop window being mistaken for a phone.",
   "sections": [
     {
+      "title": "New shortcuts",
+      "kind": "keys",
+      "items": [
+        {
+          "keys": "Right-click",
+          "text": "On any bookmark — opens a menu with open in new tab, copy URL, edit, tags, move, and delete. <kbd>Shift</kbd> + right-click still gives you the browser's own menu."
+        },
+        {
+          "keys": "Enter",
+          "text": "On the <strong>+ N more</strong> toggle of a long category — expands or collapses it. Arrow onto the toggle first; afterwards the selection returns to the last bookmark above it."
+        },
+        {
+          "keys": ":telemetry",
+          "text": "Turns privacy-friendly analytics on or off from the command palette — the same setting as <strong>Config → General → Advanced → Privacy</strong>."
+        }
+      ]
+    },
+    {
       "title": "Privacy-friendly analytics",
       "items": [
         {

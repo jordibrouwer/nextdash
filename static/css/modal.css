@@ -443,6 +443,38 @@ body.no-animations .wn-kofi-star {
     background: var(--background-secondary);
 }
 
+/* "New shortcuts" section — tinted with --accent-warning so it reads as a
+   distinct kind of content next to the green new / grey fix rundown. */
+.wn-section-keys {
+    border-left: 3px solid color-mix(in srgb, var(--accent-warning) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-warning) 6%, transparent);
+    padding: 0.6rem 0.75rem 0.65rem;
+    border-radius: 0 var(--layout-radius-sm, 6px) var(--layout-radius-sm, 6px) 0;
+}
+
+.wn-section-keys .wn-section-title {
+    color: var(--accent-warning);
+}
+
+.wn-item-keys {
+    align-items: baseline;
+}
+
+.wn-keycap {
+    flex-shrink: 0;
+    font-family: var(--font-family-main);
+    font-size: 0.82em;
+    font-weight: var(--font-weight-semibold);
+    color: var(--accent-warning);
+    background: color-mix(in srgb, var(--accent-warning) 12%, var(--background-primary));
+    border: 1px solid color-mix(in srgb, var(--accent-warning) 45%, transparent);
+    border-radius: var(--layout-radius-sm, 5px);
+    padding: 0.1rem 0.4rem;
+    white-space: nowrap;
+    min-width: 2.2rem;
+    text-align: center;
+}
+
 .modal.keyboard-cheat-sheet-modal {
     max-width: min(52rem, calc(100vw - 2.5rem));
     width: min(52rem, calc(100vw - 2.5rem));

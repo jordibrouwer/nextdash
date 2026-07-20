@@ -89,19 +89,34 @@
     }
 
     function renderRelease({ tag, date, sections }) {
-        const sectionsHtml = sections.map(({ title, items }) => `
-            <div class="wn-section">
+        // A section with "kind": "keys" lists new shortcuts and is tinted with its
+        // own accent so it stands apart from the ordinary new/fix rundown.
+        const sectionsHtml = sections.map(({ title, items, kind }) => {
+            const isKeys = kind === 'keys';
+            return `
+            <div class="wn-section${isKeys ? ' wn-section-keys' : ''}">
                 <h4 class="wn-section-title">${title}</h4>
                 <ul class="wn-list">
-                    ${items.map(({ badge, text }) => `
+                    ${items.map(({ badge, text, keys }) => {
+                        if (isKeys) {
+                            return `
+                        <li class="wn-item wn-item-keys">
+                            <span class="wn-keycap">${keys || ''}</span>
+                            <span class="wn-item-text">${text}</span>
+                        </li>
+                    `;
+                        }
+                        return `
                         <li class="wn-item">
                             <span class="wn-badge ${badge === 'new' ? 'wn-badge-new' : 'wn-badge-fix'}">${badge}</span>
                             <span class="wn-item-text">${text}</span>
                         </li>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </ul>
             </div>
-        `).join('');
+        `;
+        }).join('');
         return `
             <div class="wn-release">
                 <div class="wn-release-header">
