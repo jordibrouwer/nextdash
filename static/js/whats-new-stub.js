@@ -15,7 +15,7 @@
     const MODAL_SCRIPT_URL = '/static/js/whats-new-modal.js?v=keys-section-1';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v179';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v180';
 
     let loadPromise = null;
 

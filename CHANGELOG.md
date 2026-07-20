@@ -147,6 +147,10 @@ Nothing yet.
 
 - **fix** **Help described the quick-start card incorrectly** — *Getting started* said the card walks through "three short steps" and that the checklist covers "add a bookmark, tag one, open config, and look at the keyboard shortcuts". Neither matched the app: the card has had four steps since **Starting point** was added, and the tagging item was dropped from the checklist in this release. The opening sentence also contradicted the same section's own later paragraph. Corrected in all four languages.
 
+- **fix** **The cheat sheet listed two commands that no longer exist** — `:tour` and `:promo` were removed in v2026.07.17 along with every tour, spotlight, and promo balloon, but the keyboard cheat sheet kept advertising them, so the app's own shortcut reference pointed at commands that answer *No matches found*. Every command the cheat sheet lists was checked against the palette's registrations and aliases; these two were the only dead entries.
+
+- **fix** **Bookmarks filter field was never translated** — the search box on **Config → Bookmarks** referenced a `config.filterBookmarks` string that existed in no locale file, so its label and placeholder stayed English in Dutch, German, and French. Of the 682 `data-i18n` references in the templates it was the only one missing. The placeholder gets its own key rather than reusing the label's, because it carries a trailing ellipsis that the translation pass would otherwise have dropped.
+
 - **fix** **Stale French-only Help text** — the French translation still carried two paragraphs describing the per-tab guided tours and spotlights removed in v2026.07.17: a whole paragraph in *Pages, categories & bookmarks*, and "visites guidées" in the *System & tools* summary under *Configuring*. EN/NL/DE were updated at the time; French was missed. All four languages now match again.
 
 ### Dashboard
