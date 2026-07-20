@@ -2249,6 +2249,8 @@
         "helpIntro": "This guide walks you through nextDash in plain language: how the dashboard feels day to day, where settings live, and which habits save time once you are past the first five minutes.",
         "helpFilterLabel": "Filter help",
         "helpFilterPlaceholder": "Filter help sections…",
+        "filterBookmarks": "Filter bookmarks",
+        "filterBookmarksPlaceholder": "Filter bookmarks…",
         "helpFilterNoResults": "No sections match your search.",
         "settingsSearchLabel": "Find settings",
         "settingsSearchPlaceholder": "Find settings, tabs, help…",

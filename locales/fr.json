@@ -2230,6 +2230,8 @@
         "helpIntro": "Ce guide présente nextDash en langage clair : comment le tableau de bord s'utilise au quotidien, où se trouvent les réglages, et quelles habitudes font gagner du temps une fois les cinq premières minutes passées.",
         "helpFilterLabel": "Filtrer l'aide",
         "helpFilterPlaceholder": "Filtrer les sections d'aide…",
+        "filterBookmarks": "Filtrer les favoris",
+        "filterBookmarksPlaceholder": "Filtrer les favoris…",
         "helpFilterNoResults": "Aucune section ne correspond.",
         "settingsSearchLabel": "Trouver un réglage",
         "settingsSearchPlaceholder": "Réglages, onglets, aide…",

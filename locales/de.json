@@ -2230,6 +2230,8 @@
         "helpIntro": "Dieser Leitfaden erklärt nextDash in einfacher Sprache: wie sich das Dashboard im Alltag anfühlt, wo die Einstellungen liegen und welche Gewohnheiten Zeit sparen, sobald die ersten fünf Minuten vorbei sind.",
         "helpFilterLabel": "Hilfe filtern",
         "helpFilterPlaceholder": "Hilfe-Abschnitte filtern…",
+        "filterBookmarks": "Lesezeichen filtern",
+        "filterBookmarksPlaceholder": "Lesezeichen filtern…",
         "helpFilterNoResults": "Keine passenden Abschnitte.",
         "settingsSearchLabel": "Einstellungen finden",
         "settingsSearchPlaceholder": "Einstellungen, Tabs, Hilfe…",

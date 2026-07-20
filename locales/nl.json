@@ -2240,6 +2240,8 @@
         "helpIntro": "Deze gids legt nextDash uit in gewone taal: hoe het dashboard aanvoelt in het dagelijks gebruik, waar instellingen staan, en welke gewoontes tijd besparen zodra je voorbij de eerste minuten bent.",
         "helpFilterLabel": "Help filteren",
         "helpFilterPlaceholder": "Help-secties filteren…",
+        "filterBookmarks": "Bladwijzers filteren",
+        "filterBookmarksPlaceholder": "Bladwijzers filteren…",
         "helpFilterNoResults": "Geen secties gevonden.",
         "settingsSearchLabel": "Instellingen vinden",
         "settingsSearchPlaceholder": "Instellingen, tabs, help…",
