@@ -82,7 +82,7 @@
         },
         {
           "badge": "new",
-          "text": "<strong>Help covers the newer features</strong> — <strong>Config → Help</strong> was still describing an older nextDash. It now explains the analytics and how to switch them off (under <em>Self-hosting &amp; security</em>), both reset buttons (<em>Data &amp; backups</em>), the first-run starting point and the empty-dashboard state (<em>Getting started</em>), and the per-category item limit from the previous release (<em>Appearance</em>). All four languages were updated, and it is searchable like the rest of Help."
+          "text": "<strong>Help covers the newer features</strong> — <strong>Config → Help</strong> was still describing an older nextDash. It now explains the analytics and how to switch them off (under <em>Self-hosting &amp; security</em>), both reset buttons (<em>Data &amp; backups</em>), the first-run starting point and the empty-dashboard state (<em>Getting started</em>), the per-category item limit and how to open it from the keyboard (<em>Appearance</em>), the bookmark right-click menu (<em>Organising</em>), and the occasional keyboard tips (<em>Getting started</em>). It also had two things plainly wrong: the quick-start card was described as three steps when it has four, and the checklist still listed a tagging item that no longer exists. All four languages were updated, and everything stays searchable through the Help filter."
         }
       ]
     },
