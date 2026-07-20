@@ -158,6 +158,7 @@ class DashboardUiHelpers {
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
                 item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
                 item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
+                item('Right-click bookmark', 'bmContextMenu', 'Menu with open in new tab, copy URL, edit, tags, move, delete (Shift + right-click for the browser menu)'),
                 item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
                 item('Long-press category (~500 ms)', 'bmRenameCategory', 'Rename category header (not on sort buttons)'),
                 item('Drag left strip', 'bmDragReorder', 'Reorder a bookmark within or across categories'),

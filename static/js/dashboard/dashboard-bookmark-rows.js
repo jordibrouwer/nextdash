@@ -357,6 +357,7 @@ class DashboardBookmarkRows {
             row.removeAttribute('data-bookmark-index');
         }
         row.setAttribute('data-category-id', categoryId);
+        d.contextMenu?.bindRow(row);
 
         const lead = document.createElement('div');
         lead.className = 'bookmark-lead';

@@ -2,7 +2,7 @@
   "tag": "v2026.07.19",
   "date": "July 2026",
   "releasedAt": "2026-07-19",
-  "modalLead": "nextDash now collects privacy-friendly, anonymous usage statistics to see which features are actually used and where the app can be improved — never who you are or what you bookmark. It is on by default and takes two clicks to turn off. This release also brings a new default theme for fresh installs, a fresh-start choice on first run, a wipe-bookmarks button, and fixes a narrow desktop window being mistaken for a phone.",
+  "modalLead": "nextDash now collects privacy-friendly, anonymous usage statistics to see which features are actually used and where the app can be improved — never who you are or what you bookmark. It is on by default and takes two clicks to turn off. This release also adds a right-click menu on bookmarks, a new default theme for fresh installs, a fresh-start choice on first run, a wipe-bookmarks button, and fixes a narrow desktop window being mistaken for a phone.",
   "sections": [
     {
       "title": "Privacy-friendly analytics",
@@ -71,6 +71,10 @@
     {
       "title": "Dashboard",
       "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Right-click a bookmark for its actions</strong> — a menu opens with <strong>Open in new tab</strong>, <strong>Copy URL</strong>, <strong>Edit</strong>, <strong>Tags…</strong>, <strong>Move to…</strong>, and <strong>Delete</strong>. Everything it does was already possible through the command palette or config; this simply puts it where you would look first. Arrow keys and <kbd>Enter</kbd> work inside the menu, deleting still asks for confirmation, and <kbd>Shift</kbd> + right-click gives you the browser's own menu."
+        },
         {
           "badge": "fix",
           "text": "<strong>A narrow window is no longer treated as a phone</strong> — resizing a desktop browser window used to flip nextDash into the mobile layout: the toolbar lost commands and finders, modals became full-screen sheets, and a banner appeared telling you to open nextDash on a computer, while you were sitting at one. The mobile layout now requires an actual touch device, so a narrow window simply stays the full desktop app. Phones and tablets are unaffected."

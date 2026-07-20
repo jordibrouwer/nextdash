@@ -184,6 +184,7 @@ class Dashboard {
         this.recent = new DashboardRecent(this);
         this.promos = new DashboardPromos(this);
         this.uiHelpers = new DashboardUiHelpers(this);
+        this.contextMenu = new DashboardContextMenu(this);
         this.setup = new DashboardSetup(this);
         this.persistence = new DashboardPersistence(this);
         this.inbox = new DashboardInbox(this);
