@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"os"
 	"sort"
 	"time"
@@ -114,6 +115,41 @@ func pruneHealthHistory(history HealthHistoryFile, known map[string]bool, now ti
 // This deliberately does not hook into mergeHealthCacheUpdates: that function
 // *replaces* a URL's entry, which is right for "latest status" but would discard
 // history. The two stores are updated side by side by the monitor run instead.
+// isMonitoredURL reports whether any bookmark with this canonical URL has
+// monitoring switched on. Used to decide whether an ad-hoc check is worth
+// recording: history exists to serve the monitor view, so writing samples for
+// bookmarks nobody monitors would grow the file for data never read.
+func (h *Handlers) isMonitoredURL(key string) bool {
+	if key == "" {
+		return false
+	}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			if bm.Monitor && canonicalBookmarkURLKey(bm.URL) == key {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// recordManualHealthSample stores the result of an on-demand check when the URL
+// belongs to a monitored bookmark.
+//
+// Without this, pressing Re-check on a freshly monitored bookmark left the row
+// saying "awaiting first check": the scan cache was updated, but the monitor
+// view is derived purely from sample history, which only the scheduler wrote.
+// The user saw a check happen and no change, until the next scheduled run.
+func (h *Handlers) recordManualHealthSample(key string, up bool, pingMs, code int) {
+	if !h.isMonitoredURL(key) {
+		return
+	}
+	sample := HealthSample{T: time.Now().UnixMilli(), Up: up, PingMs: pingMs, Code: code}
+	if err := h.appendHealthSamples(map[string][]HealthSample{key: {sample}}); err != nil {
+		log.Printf("health history: failed to record manual check for %s: %v", key, err)
+	}
+}
+
 func (h *Handlers) appendHealthSamples(updates map[string][]HealthSample) error {
 	if len(updates) == 0 {
 		return nil

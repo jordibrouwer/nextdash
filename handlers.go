@@ -2045,6 +2045,7 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 		Status string `json:"status"`
 		PingMs int    `json:"pingMs"`
 		Error  string `json:"error"`
+		Code   int    `json:"code"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -2068,6 +2069,10 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 	})) {
 		return
 	}
+	// A monitored bookmark also records the sample, so an on-demand check shows up
+	// in the uptime, heartbeat and outage view straight away rather than waiting
+	// for the next scheduled run.
+	h.recordManualHealthSample(key, req.Status == "online", req.PingMs, req.Code)
 	h.invalidateHealthReportCache()
 
 	w.Header().Set("Content-Type", "application/json")

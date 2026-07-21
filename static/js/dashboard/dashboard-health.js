@@ -698,13 +698,21 @@ class DashboardHealth {
         const d = this.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
 
-        const persist = async (status, errorDetail, pingMs) => {
+        const persist = async (status, errorDetail, pingMs, httpStatus) => {
             const cacheURL = this.canonicalUrl(url);
             if (cacheURL) {
                 await fetcher('/api/health/cache-scan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: cacheURL, status, pingMs: pingMs || 0, error: errorDetail }),
+                    // The code rides along so a monitored bookmark records the same
+                    // shape of sample the scheduler writes.
+                    body: JSON.stringify({
+                        url: cacheURL,
+                        status,
+                        pingMs: pingMs || 0,
+                        error: errorDetail,
+                        code: Number(httpStatus) || 0,
+                    }),
                 }).catch(() => { /* cache writes are best-effort */ });
             }
             if (Number.isFinite(issue.pageId) && Number.isFinite(issue.index)) {
@@ -730,7 +738,7 @@ class DashboardHealth {
             const status = result.status === 'online' ? 'online' : 'offline';
             const errorDetail = String(result.errorDetail || '').trim()
                 || (status === 'online' ? '' : this.t('dashboard.healthPingFailed', 'ping failed'));
-            await persist(status, errorDetail, result.ping);
+            await persist(status, errorDetail, result.ping, result.httpStatus);
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
             d.showNotification(

@@ -58,11 +58,17 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 	logBookmarkStatus(urlParam, result, activitySourceFromRequest(r), force)
 	if result.Status == "online" {
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		payload := map[string]interface{}{
 			"status":      "online",
 			"ping":        result.PingMs,
 			"errorDetail": "",
-		})
+		}
+		// Reported on success too, so a manual re-check can record the same
+		// status code the scheduler stores in its samples.
+		if result.HTTPStatus > 0 {
+			payload["httpStatus"] = result.HTTPStatus
+		}
+		json.NewEncoder(w).Encode(payload)
 		return
 	}
 
