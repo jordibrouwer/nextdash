@@ -1038,42 +1038,22 @@ class DashboardHealth {
         this._busyKeys.add(key);
         this.syncRowBusy(key, true);
         const d = this.dash;
-        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
 
         try {
-            const res = await fetcher('/api/health/check-mode', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId, index: issue.index, url, mode }),
+            // The write, the stale handling and the wording come from CheckMode,
+            // shared with the dashboard right-click menu. Only the refresh below
+            // is view-specific: a stale row and a changed row both need the report
+            // re-fetched, which is what makes the list agree with the server again.
+            const outcome = await window.CheckMode?.apply({
+                pageId,
+                index: issue.index,
+                url,
+                mode,
+                name: issue.name || url,
             });
-            if (res.status === 409) {
-                // The list moved under us. Reloading is the fix, not a retry.
-                await this.loadAndRender({ refresh: true });
-                d.showNotification(
-                    this.t('dashboard.healthCheckModeStale', 'This bookmark changed — the list has been refreshed. Try again.'),
-                    'warning',
-                    { duration: 4000 }
-                );
-                return;
-            }
-            if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
-
+            if (outcome === 'failed') return;
             await this.loadAndRender({ refresh: true });
-            d.updateHealthBadge?.();
-            const label = this.checkModeMeta(mode).label;
-            d.showNotification(
-                mode === 'off'
-                    ? this.t('dashboard.healthCheckModeOffDone', 'Checking turned off for "{name}"', { name: issue.name || url })
-                    : this.t('dashboard.healthCheckModeSet', '"{name}" is now set to {mode}', { name: issue.name || url, mode: label }),
-                'success',
-                { duration: 3000 }
-            );
-        } catch (err) {
-            console.error('Failed to change check mode:', err);
-            d.showNotification(
-                this.t('dashboard.healthCheckModeFailed', 'Could not change availability checking'),
-                'error'
-            );
+            if (outcome === 'changed') d.updateHealthBadge?.();
         } finally {
             this._busyKeys.delete(key);
             this.syncRowBusy(key, false);
@@ -1479,6 +1459,9 @@ class DashboardHealth {
             });
             if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
             const body = await res.json().catch(() => ({}));
+            // Drop the page cache first: loadBookmarks() is served from it, so
+            // without this the dashboard keeps showing the pre-write flags.
+            d.data?.invalidatePageDataCache?.();
             await d.loadBookmarks?.().catch?.(() => {});
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
@@ -1537,7 +1520,10 @@ class DashboardHealth {
             });
             if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
             const body = await res.json().catch(() => ({}));
-            // The dashboard's own copy would otherwise still show the old flags.
+            // The dashboard's own copy would otherwise still show the old flags,
+            // and loadBookmarks() reads through the page cache, so that has to go
+            // first or the reload just returns the stale values again.
+            d.data?.invalidatePageDataCache?.();
             await d.loadBookmarks?.().catch?.(() => {});
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
@@ -1747,32 +1733,18 @@ class DashboardHealth {
 
     /** The mode a row is in, as the three-state name the server also speaks. */
     checkModeOf(issue) {
-        if (issue?.monitor) return 'monitor';
-        if (issue?.checkStatus) return 'periodic';
-        return 'off';
+        return window.CheckMode.of(issue);
     }
 
-    /** Label, hint and CSS modifier for each mode. */
+    /**
+     * Label, hint and CSS modifier for each mode, from the shared definition so
+     * this view and the dashboard context menu cannot drift apart in wording.
+     * `label` here is the badge wording: a row badge has to say what is off,
+     * where a menu option can simply read "Off".
+     */
     checkModeMeta(mode) {
-        if (mode === 'monitor') {
-            return {
-                cls: 'is-monitor',
-                label: this.t('dashboard.healthBadgeMonitor', 'Monitor'),
-                hint: this.t('dashboard.healthBadgeMonitorHint', 'Checked on its own interval, with uptime history'),
-            };
-        }
-        if (mode === 'periodic') {
-            return {
-                cls: 'is-periodic',
-                label: this.t('dashboard.healthBadgePeriodic', 'Periodic'),
-                hint: this.t('dashboard.healthBadgePeriodicHint', 'Checked about once a day; no uptime history'),
-            };
-        }
-        return {
-            cls: 'is-off',
-            label: this.t('dashboard.healthBadgeOff', 'Not checked'),
-            hint: this.t('dashboard.healthBadgeOffHint', 'This bookmark is never tested for availability'),
-        };
+        const meta = window.CheckMode.meta(mode);
+        return { ...meta, label: meta.badge };
     }
 
     /**
@@ -1810,11 +1782,9 @@ class DashboardHealth {
      */
     renderCheckModeMenu(issue, key) {
         const active = this.checkModeOf(issue);
-        const options = [
-            ['off', this.t('dashboard.healthCheckModeOff', 'Off'), this.t('dashboard.healthCheckModeOffBody', 'Never tested, and never flagged as broken.')],
-            ['periodic', this.t('dashboard.healthBadgePeriodic', 'Periodic'), this.t('dashboard.healthCheckModePeriodicBody', 'Checked about once a day. Catches breakage, keeps no history.')],
-            ['monitor', this.t('dashboard.healthBadgeMonitor', 'Monitor'), this.t('dashboard.healthCheckModeMonitorBody', 'Checked on its own interval, with uptime, heartbeat and outages.')],
-        ];
+        // Same three options, same order and same sentences as the dashboard
+        // right-click menu; only the markup around them differs.
+        const options = window.CheckMode.options().map((o) => [o.mode, o.label, o.body]);
         const items = options.map(([mode, label, body]) => {
             const isActive = mode === active;
             return `<button type="button"

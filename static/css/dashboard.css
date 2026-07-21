@@ -281,6 +281,53 @@ body {
     background: var(--border-primary);
 }
 
+/* Marks an entry that opens a submenu rather than acting immediately. */
+.move-popover-submenu-caret {
+    margin-left: auto;
+    padding-left: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+}
+
+/* ─── Check-mode submenu ─────────────────────────────────────
+   Three named modes, each with the sentence that distinguishes it — the same
+   copy the health view shows, so the choice reads identically wherever it is
+   made. Two-line rows need the alignment and wrapping the flat menu forbids. */
+.bookmark-check-mode-menu {
+    min-width: 17rem;
+    max-width: min(20rem, calc(100vw - 1rem));
+}
+
+.bookmark-check-mode-menu .move-popover-item {
+    align-items: flex-start;
+    white-space: normal;
+    overflow: visible;
+}
+
+.bookmark-check-mode-menu .move-popover-check {
+    margin-top: 0.15rem;
+}
+
+.check-mode-option-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.check-mode-option-body {
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-normal);
+    color: var(--text-secondary);
+    white-space: normal;
+}
+
+/* On hover the row tints, so the explanation follows rather than staying grey
+   against a coloured background. */
+.bookmark-check-mode-menu .move-popover-item.is-focused .check-mode-option-body {
+    color: inherit;
+}
+
 /* ─── Tag popover (Shift+T) ─────────────────────────────────── */
 .tag-popover {
     min-width: 13rem;
