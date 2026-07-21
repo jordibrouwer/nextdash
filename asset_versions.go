@@ -119,7 +119,7 @@ var sharedAssetVersions = pageAssetVersions{
 	AnalyticsJS:              "analytics-3-open-source",
 	UmamiAnalyticsJS:         "umami-analytics-2-snapshot",
 	ModalJS:                  "modal-focus-aria-1",
-	StatusJS:                 "status-1",
+	StatusJS:                 "status-2",
 	SelectJS:                 "select-js-1",
 	ReorderJS:                "reorder-js-1",
 	ConfigStorageJS:          "config-storage-1",
