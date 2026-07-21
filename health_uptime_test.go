@@ -92,6 +92,30 @@ func TestDeriveIncidentsClosedAndOngoing(t *testing.T) {
 	}
 }
 
+func TestDeriveIncidentsReason(t *testing.T) {
+	now := time.Now()
+	samples := []HealthSample{
+		{T: msAgo(now, 9*time.Minute), Up: true},
+		// An outage whose status code changes: the latest one describes it best.
+		{T: msAgo(now, 8*time.Minute), Up: false, Code: 503},
+		{T: msAgo(now, 7*time.Minute), Up: false, Code: 500},
+		{T: msAgo(now, 6*time.Minute), Up: true},
+		// A network-level failure records no code, so there is nothing to report.
+		{T: msAgo(now, 3*time.Minute), Up: false},
+	}
+
+	incidents := deriveIncidents(samples, now)
+	if len(incidents) != 2 {
+		t.Fatalf("expected 2 incidents, got %#v", incidents)
+	}
+	if incidents[0].Reason != "HTTP 500" {
+		t.Errorf("expected the outage's latest code, got %q", incidents[0].Reason)
+	}
+	if incidents[1].Reason != "" {
+		t.Errorf("a codeless failure must not invent a reason, got %q", incidents[1].Reason)
+	}
+}
+
 func TestDeriveIncidentsAllHealthy(t *testing.T) {
 	now := time.Now()
 	samples := []HealthSample{

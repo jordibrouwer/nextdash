@@ -1861,8 +1861,13 @@ class DashboardHealth {
             const length = inc.ongoing
                 ? this.t('dashboard.healthIncidentOngoing', 'ongoing — {duration}', { duration: this.formatDuration(Date.now() - inc.start) })
                 : this.formatDuration(inc.duration);
+            // Only HTTP-level failures carry a reason; a network-level outage has
+            // no code to report, so the row stays as it was.
+            const reason = inc.reason
+                ? ` <span class="health-view-score-item-reason">${this.escape(window.HealthReasonUtils.translateReason(this.dash.language, inc.reason))}</span>`
+                : '';
             return `<li class="health-view-score-item${inc.ongoing ? ' is-ongoing' : ''}">
-                <span>${this.escape(when)}</span>
+                <span>${this.escape(when)}${reason}</span>
                 <span class="health-view-score-item-cost">${this.escape(length)}</span>
             </li>`;
         }).join('');
