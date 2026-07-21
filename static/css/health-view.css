@@ -238,6 +238,23 @@ button.health-view-tile:hover {
     cursor: default;
 }
 
+/* Same shape as its "off" counterpart, but tinted toward the accent rather than
+   the error colour: this one adds monitoring rather than taking it away. */
+.health-view-bulk-monitor-btn {
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-secondary);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.health-view-bulk-monitor-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
 .health-view-load-more-btn {
     display: block;
     width: 100%;

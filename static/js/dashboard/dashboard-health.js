@@ -1287,6 +1287,21 @@ class DashboardHealth {
         return issues.filter((i) => i?.monitor || i?.checkStatus).length;
     }
 
+    /**
+     * "Monitor these N" for the current list. Only offered on a narrowed list:
+     * on "All" it would mean the whole collection, which is the one thing bulk
+     * enabling must not be able to do, so it is left out rather than shown
+     * disabled — a greyed button invites the question of how to enable it.
+     */
+    renderBulkEnableButton() {
+        if (this.filter === 'all') return '';
+        const count = this.bulkEnableTargets('monitor').length;
+        if (!count) return '';
+        return `<button type="button" class="health-view-bulk-monitor-btn" title="${this.escape(
+            this.t('dashboard.healthBulkEnableHint', 'Set the {count} bookmark(s) in this list to Monitor', { count })
+        )}">${this.escape(this.t('dashboard.healthBulkEnable', 'Monitor these {count}', { count }))}</button>`;
+    }
+
     renderToolbar() {
         const checkedCount = this.checkedCount();
         const filters = [
@@ -1328,6 +1343,7 @@ class DashboardHealth {
             <button type="button" class="health-view-checkoff-btn"${checkedCount ? '' : ' disabled'} title="${this.escape(checkedCount
                 ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
                 : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
+            ${this.renderBulkEnableButton()}
         `;
 
         const sortSelect = toolbar.querySelector('.health-view-sort-select');
@@ -1374,6 +1390,11 @@ class DashboardHealth {
             void this.disableAllChecking(checkOffBtn);
         });
 
+        const bulkMonitorBtn = toolbar.querySelector('.health-view-bulk-monitor-btn');
+        bulkMonitorBtn?.addEventListener('click', () => {
+            void this.enableCheckingForVisible('monitor', bulkMonitorBtn);
+        });
+
         return toolbar;
     }
 
@@ -1386,6 +1407,95 @@ class DashboardHealth {
      * exists to avoid. Confirmed first, since it silently clears a setting on
      * many bookmarks and the counts are the only way to see the blast radius.
      */
+    /**
+     * The rows a bulk enable would touch: the current filter and search, minus
+     * the ones already in that mode. Deliberately the *visible* list — the blast
+     * radius has to be the thing on screen, or the count in the button means
+     * nothing.
+     */
+    bulkEnableTargets(mode) {
+        if (this.filter === 'all') return [];
+        return this.getFilteredIssues().filter((issue) => this.checkModeOf(issue) !== mode);
+    }
+
+    /**
+     * Turn one mode on for everything currently listed.
+     *
+     * Bound to the filtered list rather than the whole collection, and refused
+     * outright on the "All" filter: pointing the scheduler at every bookmark is
+     * exactly what the per-bookmark opt-in prevents, and the server enforces the
+     * same rule by only accepting an explicit target list. Confirmed first,
+     * because the count is the only way to see how much this touches.
+     */
+    async enableCheckingForVisible(mode, button) {
+        if (this._checkOffRunning) return;
+        const targets = this.bulkEnableTargets(mode);
+        if (!targets.length) return;
+
+        const label = this.checkModeMeta(mode).label;
+        const ok = await this.confirm(
+            this.t('dashboard.healthBulkEnableTitle', 'Turn on checking for {count} bookmark(s)?', { count: targets.length }),
+            mode === 'monitor'
+                ? this.t(
+                    'dashboard.healthBulkEnableMonitorConfirm',
+                    'This sets {count} bookmark(s) in the current list to Monitor. Each one will be checked on its own interval and will record uptime history.',
+                    { count: targets.length }
+                )
+                : this.t(
+                    'dashboard.healthBulkEnablePeriodicConfirm',
+                    'This sets {count} bookmark(s) in the current list to Periodic. Each one will be checked about once a day.',
+                    { count: targets.length }
+                )
+        );
+        if (!ok) return;
+
+        this._checkOffRunning = true;
+        window.nextdashTrack?.('health:check-on-bulk');
+        if (button) {
+            button.disabled = true;
+        }
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/health/check-mode-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mode,
+                    targets: targets.map((issue) => ({
+                        pageId: issue.pageId,
+                        index: issue.index,
+                        url: issue.url,
+                    })),
+                }),
+            });
+            if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            await d.loadBookmarks?.().catch?.(() => {});
+            await this.loadAndRender({ refresh: true });
+            d.updateHealthBadge?.();
+
+            const changed = Number(body?.changed) || 0;
+            const skipped = Number(body?.skipped) || 0;
+            // Say when part of the batch was stale rather than reporting a clean
+            // success for a number the user can see is wrong.
+            d.showNotification(
+                skipped > 0
+                    ? this.t('dashboard.healthBulkEnablePartial', '{count} bookmark(s) set to {mode}; {skipped} had changed and were skipped', { count: changed, mode: label, skipped })
+                    : this.t('dashboard.healthBulkEnableDone', '{count} bookmark(s) set to {mode}', { count: changed, mode: label }),
+                skipped > 0 ? 'warning' : 'success',
+                { duration: 3500 }
+            );
+        } catch {
+            d.showNotification(
+                this.t('dashboard.healthCheckModeFailed', 'Could not change availability checking'),
+                'error'
+            );
+        } finally {
+            this._checkOffRunning = false;
+        }
+    }
+
     async disableAllChecking(button) {
         if (this._checkOffRunning) return;
         const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];

@@ -27,7 +27,8 @@ function report() {
         issues: [
             issue({ index: 0, name: 'Monitored one', url: 'https://example.com/mon', monitor: true }),
             issue({ index: 1, name: 'Periodic one', url: 'https://example.com/per', checkStatus: true }),
-            issue({ index: 2, name: 'Unchecked one', url: 'https://example.com/off' }),
+            // No lastChecked, so this is the row the "Never checked" filter finds.
+            issue({ index: 2, name: 'Unchecked one', url: 'https://example.com/off', lastChecked: 0 }),
         ],
         duplicateGroups: [],
     };
@@ -46,6 +47,12 @@ async function openHealthView(page) {
     await prepareDashboardInteraction(page);
     await page.click('.health-link a.health-link-anchor');
     await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
+    // Wait for the mocked report to land before touching a filter: the pills are
+    // counted from it, so clicking earlier picks a filter that still reads 0.
+    await page.waitForFunction(() => {
+        const h = window.dashboardInstance?.healthView || window.dashboardInstance?.health;
+        return h?.report?.issues?.length === 3;
+    }, null, { timeout: 15_000 });
     // The view opens on the "broken" filter; these rows are deliberately healthy,
     // because this spec is about check mode rather than scoring.
     await page.click('[data-health-filter="all"]');
@@ -169,6 +176,72 @@ test.describe('health view check mode', () => {
         // lose the user's place in the list.
         await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
         await expect(row.locator('.health-check-mode')).toBeFocused();
+    });
+
+    test('the bulk monitor button is offered on a narrowed list, never on All', async ({ page }) => {
+        await openHealthView(page);
+
+        // openHealthView leaves the view on "All", where bulk enabling would mean
+        // the whole collection — the one thing it must not be able to do.
+        await expect(page.locator('.health-view-bulk-monitor-btn')).toHaveCount(0);
+
+        await page.click('[data-health-filter="unchecked"]');
+        const btn = page.locator('.health-view-bulk-monitor-btn');
+        await expect(btn).toHaveCount(1);
+        // The count names the blast radius, and it is the visible list.
+        await expect(btn).toContainText('1');
+    });
+
+    test('bulk monitor confirms, then posts only the visible rows', async ({ page }) => {
+        await openHealthView(page);
+        /** @type {any[]} */
+        const calls = [];
+        await page.route('**/api/health/check-mode-all', async (route) => {
+            calls.push(JSON.parse(route.request().postData() || '{}'));
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ mode: 'monitor', changed: 1, skipped: 0 }),
+            });
+        });
+
+        await page.click('[data-health-filter="unchecked"]');
+        await page.click('.health-view-bulk-monitor-btn');
+
+        // Confirmation is mandatory: the count is the only view of the impact.
+        // #app-modal specifically: other dialogs (the tag cloud) sit in the DOM
+        // from load, so a generic [role=dialog] would match the wrong one.
+        const dialog = page.locator('#app-modal');
+        await expect(dialog).toBeVisible();
+        expect(calls).toHaveLength(0);
+
+        await dialog.getByRole('button', { name: /confirm/i }).click();
+
+        await expect.poll(() => calls.length).toBe(1);
+        expect(calls[0].mode).toBe('monitor');
+        // Named targets, so the server cannot be asked to enable everything.
+        expect(Array.isArray(calls[0].targets)).toBe(true);
+        expect(calls[0].targets).toHaveLength(1);
+        expect(calls[0].targets[0]).toMatchObject({ pageId: 1, index: 2, url: 'https://example.com/off' });
+    });
+
+    test('cancelling the bulk confirmation writes nothing', async ({ page }) => {
+        await openHealthView(page);
+        /** @type {any[]} */
+        const calls = [];
+        await page.route('**/api/health/check-mode-all', async (route) => {
+            calls.push(JSON.parse(route.request().postData() || '{}'));
+            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+        });
+
+        await page.click('[data-health-filter="unchecked"]');
+        await page.click('.health-view-bulk-monitor-btn');
+        const dialog = page.locator('#app-modal');
+        await expect(dialog).toBeVisible();
+        await dialog.getByRole('button', { name: /cancel/i }).click();
+
+        await expect(dialog).toBeHidden();
+        expect(calls).toHaveLength(0);
     });
 
     test('a stale row is reported rather than silently retried', async ({ page }) => {
