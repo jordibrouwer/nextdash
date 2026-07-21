@@ -602,7 +602,6 @@
         "healthBadgeOffHint": "Dieses Lesezeichen wird nie auf Erreichbarkeit geprüft",
         "healthCheckModeChange": "zum Ändern klicken",
         "healthCheckModeLabel": "Erreichbarkeitsprüfung",
-        "healthCheckModeOff": "Aus",
         "healthCheckModeOffBody": "Wird nie geprüft und nie als defekt markiert.",
         "healthCheckModePeriodicBody": "Etwa einmal täglich geprüft. Erkennt Ausfälle, speichert keinen Verlauf.",
         "healthCheckModeMonitorBody": "Im eigenen Intervall geprüft, mit Verfügbarkeit, Herzschlag und Ausfällen.",

@@ -2628,7 +2628,9 @@
     <script src="/static/js/bookmark-form/bookmark-url-utils.js?v={{.Assets.BookmarkURLUtilsJS}}"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js?v={{.Assets.BookmarkPreviewServiceJS}}"></script>
     <script src="/static/js/bookmark-form/bookmark-form-preview.js?v={{.Assets.BookmarkFormPreviewJS}}"></script>
-    <script src="/static/js/config/config-bookmarks.js?v=check-mode-1"></script>
+    <!-- Before config-bookmarks.js: it reads CheckMode for the monitor default. -->
+    <script src="/static/js/check-mode.js?v=check-mode-shared-4"></script>
+    <script src="/static/js/config/config-bookmarks.js?v=check-mode-2"></script>
     <script src="/static/js/config/config-bookmarks-controller.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-collections.js?v=collections-ac-1"></script>
     <script src="/static/js/config/config-finders.js?v=config-b11-empty-hidden-1"></script>

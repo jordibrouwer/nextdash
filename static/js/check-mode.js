@@ -14,12 +14,32 @@ const CheckMode = {
     PERIODIC: 'periodic',
     MONITOR: 'monitor',
 
-    /** Translate with a dashboard.* key, falling back to plain English. */
+    /**
+     * Cadence a bookmark gets when it is switched to Monitor without one.
+     *
+     * Must match defaultMonitorIntervalMinutes in health_monitor.go: the server
+     * fills this in when a request omits it, so a client that disagrees shows one
+     * number while the scheduler runs on another.
+     */
+    DEFAULT_INTERVAL_MINUTES: 15,
+
+    /** The stored interval, or the default when a bookmark carries none. */
+    intervalOf(bookmark) {
+        return Number(bookmark?.monitorIntervalMinutes) || CheckMode.DEFAULT_INTERVAL_MINUTES;
+    },
+
+    /**
+     * Translate, falling back to plain English.
+     *
+     * A bare key is looked up under `dashboard.`; pass `config.foo` to reach a
+     * key that already lives in the config namespace, so wording shared with the
+     * bookmark editor does not have to be duplicated under a second name.
+     */
     t(key, fallback, params) {
         const lang = window.dashboardInstance?.language;
         let text = fallback;
         if (lang?.t) {
-            const full = `dashboard.${key}`;
+            const full = key.includes('.') ? key : `dashboard.${key}`;
             const value = lang.t(full);
             if (value && value !== full) text = value;
         }
@@ -67,7 +87,9 @@ const CheckMode = {
         }
         return {
             cls: 'is-off',
-            label: CheckMode.t('healthCheckModeOff', 'Off'),
+            // config.checkModeOff, not a dashboard copy of it: the bookmark editor
+            // already ships this word in every locale.
+            label: CheckMode.t('config.checkModeOff', 'Off'),
             badge: CheckMode.t('healthBadgeOff', 'Not checked'),
             body: CheckMode.t('healthCheckModeOffBody', 'Never tested, and never flagged as broken.'),
             hint: CheckMode.t('healthBadgeOffHint', 'This bookmark is never tested for availability'),
@@ -87,7 +109,9 @@ const CheckMode = {
         if (mode === CheckMode.MONITOR) {
             bookmark.monitor = true;
             bookmark.checkStatus = false;
-            if (!bookmark.monitorIntervalMinutes) bookmark.monitorIntervalMinutes = 15;
+            if (!bookmark.monitorIntervalMinutes) {
+                bookmark.monitorIntervalMinutes = CheckMode.DEFAULT_INTERVAL_MINUTES;
+            }
         } else if (mode === CheckMode.PERIODIC) {
             bookmark.monitor = false;
             bookmark.checkStatus = true;

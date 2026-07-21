@@ -43,11 +43,15 @@ async function setup(page) {
     // Start from a known mode. Earlier specs share this server and leave
     // bookmarks monitored, which would turn "choose monitor" into a no-op and
     // make these tests pass or fail on run order.
-    await page.evaluate(() => fetch('/api/health/check-mode-all', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'off' }),
-    }));
+    // Awaited: without returning the promise the reload below can land before the
+    // reset does, and the test then reads whatever the previous spec left behind.
+    await page.evaluate(async () => {
+        await fetch('/api/health/check-mode-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'off' }),
+        });
+    });
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((el) => el.remove()));

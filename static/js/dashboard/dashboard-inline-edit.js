@@ -115,7 +115,7 @@ class DashboardInlineEdit {
             pinned: Boolean(bookmark?.pinned),
             checkStatus: Boolean(bookmark?.checkStatus),
             monitor: Boolean(bookmark?.monitor),
-            monitorIntervalMinutes: Number(bookmark?.monitorIntervalMinutes) || 15,
+            monitorIntervalMinutes: window.CheckMode.intervalOf(bookmark),
             note: String(bookmark?.note || '').trim(),
             tags,
             pageId: Number(pageId),
@@ -146,8 +146,8 @@ class DashboardInlineEdit {
             checkStatus: fields.statusInput.checked,
             monitor: fields.monitorInput ? fields.monitorInput.checked : Boolean(bookmarkRef.bookmark.monitor),
             monitorIntervalMinutes: fields.monitorIntervalInput
-                ? Number(fields.monitorIntervalInput.value) || 15
-                : Number(bookmarkRef.bookmark.monitorIntervalMinutes) || 15,
+                ? Number(fields.monitorIntervalInput.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES
+                : window.CheckMode.intervalOf(bookmarkRef.bookmark),
             note: fields.noteInput ? String(fields.noteInput.value || '').trim() : '',
             tags,
             pageId: Number.isFinite(pageId) ? pageId : Number(bookmarkRef.pageId || d.currentPageId),
@@ -171,8 +171,8 @@ class DashboardInlineEdit {
         const checkStatus = fields.statusInput.checked;
         const monitor = fields.monitorInput ? fields.monitorInput.checked : Boolean(original.monitor);
         const monitorIntervalMinutes = fields.monitorIntervalInput
-            ? Number(fields.monitorIntervalInput.value) || 15
-            : Number(original.monitorIntervalMinutes) || 15;
+            ? Number(fields.monitorIntervalInput.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES
+            : window.CheckMode.intervalOf(original);
         const note = fields.noteInput ? String(fields.noteInput.value || '').trim() : String(original.note || '').trim();
         const icon = typeof fields.getPendingIcon === 'function'
             ? String(fields.getPendingIcon() || '').trim()
@@ -197,7 +197,7 @@ class DashboardInlineEdit {
             || monitor !== Boolean(original.monitor)
             // The interval is only a real change while monitoring is on; otherwise
             // it is a value with no effect and must not trigger an unsaved warning.
-            || (monitor && monitorIntervalMinutes !== (Number(original.monitorIntervalMinutes) || 15))
+            || (monitor && monitorIntervalMinutes !== window.CheckMode.intervalOf(original))
             || (fields.noteInput && note !== String(original.note || '').trim())
             || icon !== String(original.icon || '').trim()
             || !tagsEqual
@@ -868,7 +868,7 @@ class DashboardInlineEdit {
             opt.textContent = label;
             monitorIntervalInput.appendChild(opt);
         });
-        monitorIntervalInput.value = String(bookmark.monitorIntervalMinutes || 15);
+        monitorIntervalInput.value = String(window.CheckMode.intervalOf(bookmark));
         monitorIntervalInput.setAttribute('aria-label', cfg('monitorInterval', 'Check every'));
         // The interval rides along in the same row, so turning Monitor on does not
         // reflow the form — it only reveals a select that was already accounted for.
@@ -896,7 +896,7 @@ class DashboardInlineEdit {
                 // Give a freshly-chosen monitor an explicit interval, so the stored
                 // bookmark states its cadence rather than relying on the default.
                 if (monitorInput.checked && !Number(monitorIntervalInput.value)) {
-                    monitorIntervalInput.value = '15';
+                    monitorIntervalInput.value = String(window.CheckMode.DEFAULT_INTERVAL_MINUTES);
                 }
             });
         });
@@ -1215,7 +1215,7 @@ class DashboardInlineEdit {
             checkStatus: fields.statusInput.checked,
             monitor: fields.monitorInput ? fields.monitorInput.checked : Boolean(bookmark.monitor),
             monitorIntervalMinutes: fields.monitorIntervalInput
-                ? Number(fields.monitorIntervalInput.value) || 15
+                ? Number(fields.monitorIntervalInput.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES
                 : (bookmark.monitorIntervalMinutes || 0),
             note: fields.noteInput ? String(fields.noteInput.value || '').trim() : String(bookmark.note || '').trim(),
             tags: parsedTags

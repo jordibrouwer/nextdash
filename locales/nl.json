@@ -602,7 +602,6 @@
         "healthBadgeOffHint": "Deze bookmark wordt nooit op bereikbaarheid getest",
         "healthCheckModeChange": "klik om te wijzigen",
         "healthCheckModeLabel": "Bereikbaarheidscontrole",
-        "healthCheckModeOff": "Uit",
         "healthCheckModeOffBody": "Wordt nooit getest en nooit als kapot gemarkeerd.",
         "healthCheckModePeriodicBody": "Ongeveer één keer per dag gecontroleerd. Merkt storingen op, houdt geen historie bij.",
         "healthCheckModeMonitorBody": "Op een eigen interval gecontroleerd, met uptime, hartslag en storingen.",

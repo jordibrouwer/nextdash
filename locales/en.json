@@ -602,7 +602,6 @@
         "healthBadgeOffHint": "This bookmark is never tested for availability",
         "healthCheckModeChange": "click to change",
         "healthCheckModeLabel": "Availability checking",
-        "healthCheckModeOff": "Off",
         "healthCheckModeOffBody": "Never tested, and never flagged as broken.",
         "healthCheckModePeriodicBody": "Checked about once a day. Catches breakage, keeps no history.",
         "healthCheckModeMonitorBody": "Checked on its own interval, with uptime, heartbeat and outages.",

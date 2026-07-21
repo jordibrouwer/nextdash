@@ -442,7 +442,7 @@ class ConfigBookmarks {
         if (modeEl) modeEl.checked = true;
 
         const monIntervalEl = document.getElementById('detail-monitor-interval');
-        if (monIntervalEl) monIntervalEl.value = String(bookmark.monitorIntervalMinutes || 15);
+        if (monIntervalEl) monIntervalEl.value = String(window.CheckMode.intervalOf(bookmark));
         this._syncCheckMode(mode);
 
         const noteEl = document.getElementById('detail-note');
@@ -739,7 +739,7 @@ class ConfigBookmarks {
             // Give a freshly-chosen monitor an explicit interval, so the stored
             // bookmark says what it does rather than relying on the server default.
             if (bookmark.monitor && !bookmark.monitorIntervalMinutes) {
-                bookmark.monitorIntervalMinutes = Number(monIntervalEl?.value) || 15;
+                bookmark.monitorIntervalMinutes = Number(monIntervalEl?.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES;
             }
             this._syncCheckMode(mode);
             this._syncRow(index, bookmark);
@@ -756,7 +756,7 @@ class ConfigBookmarks {
         }, { signal });
 
         if (monIntervalEl) monIntervalEl.addEventListener('change', (e) => {
-            bookmark.monitorIntervalMinutes = Number(e.target.value) || 15;
+            bookmark.monitorIntervalMinutes = Number(e.target.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES;
             if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });
 

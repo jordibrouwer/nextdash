@@ -602,7 +602,6 @@
         "healthBadgeOffHint": "Ce favori n'est jamais testé pour sa disponibilité",
         "healthCheckModeChange": "cliquer pour modifier",
         "healthCheckModeLabel": "Vérification de disponibilité",
-        "healthCheckModeOff": "Désactivé",
         "healthCheckModeOffBody": "Jamais testé, et jamais signalé comme cassé.",
         "healthCheckModePeriodicBody": "Vérifié environ une fois par jour. Détecte les pannes, sans historique.",
         "healthCheckModeMonitorBody": "Vérifié à son propre intervalle, avec disponibilité, pouls et pannes.",
