@@ -23,8 +23,9 @@ class ConfigUI {
 
     _restoreGeneralHash() {
         try {
-            const layerKey = 'nextdash-config-general-layer';
-            const storedLayer = localStorage.getItem(layerKey);
+            // Layer preference now lives in settings.json; without one, ignore any
+            // remembered sub-hash so a first visit starts plainly on Essentials.
+            const storedLayer = window.configManager?.settingsData?.configGeneralLayer;
             const hasLayerPreference = storedLayer === 'essentials'
                 || storedLayer === 'advanced'
                 || storedLayer === 'all';
