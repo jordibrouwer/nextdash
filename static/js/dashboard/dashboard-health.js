@@ -276,10 +276,8 @@ class DashboardHealth {
             if (openMenu) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                const key = openMenu.getAttribute('data-menu-for');
                 this.closeAllMenus();
-                document.querySelector(`.health-view-more-btn[data-menu-toggle="${CSS.escape(key)}"]`)
-                    ?.focus({ preventScroll: true });
+                this.focusMenuOwner(openMenu);
                 return;
             }
             if (window.DashboardTagCloud?.modalOpen) return;
@@ -527,7 +525,13 @@ class DashboardHealth {
         if (e.key === 'm' && this.selectedKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.toggleMenu(this.selectedKey);
+            this.toggleMenu(this.selectedKey, 'more');
+            return true;
+        }
+        if (e.key === 'c' && this.selectedKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.toggleMenu(this.selectedKey, 'check');
             return true;
         }
         if (e.key === 'p' && this.selectedKey) {
@@ -571,7 +575,9 @@ class DashboardHealth {
         this._outsideMenuHandler = (e) => {
             if (!this.isActiveView()) return;
             if (!document.querySelector('.health-view-menu:not([hidden])')) return;
-            if (e.target.closest?.('.health-view-menu-wrap')) return;
+            // Both menu wrappers, or a click on an option would dismiss the menu
+            // before the option's own handler ever ran.
+            if (e.target.closest?.('.health-view-menu-wrap, .health-check-mode-wrap')) return;
             this.closeAllMenus();
         };
         document.addEventListener('click', this._outsideMenuHandler, true);
@@ -761,15 +767,38 @@ class DashboardHealth {
         document.querySelectorAll('.health-view-menu').forEach((menu) => {
             menu.hidden = true;
         });
-        document.querySelectorAll('.health-view-more-btn').forEach((btn) => {
+        document.querySelectorAll('[aria-haspopup="menu"]').forEach((btn) => {
             btn.setAttribute('aria-expanded', 'false');
         });
     }
 
-    toggleMenu(key) {
-        const menu = document.querySelector(`.health-view-menu[data-menu-for="${CSS.escape(key)}"]`);
-        const btn = document.querySelector(`.health-view-more-btn[data-menu-toggle="${CSS.escape(key)}"]`);
-        if (!menu || !btn) return;
+    /**
+     * The control a menu belongs to. Menus record their own opener rather than
+     * assuming it is the ⋯ button, so the check-mode popover — which hangs off the
+     * badge in the row meta — returns focus to the right place on Escape.
+     */
+    menuOwner(menu) {
+        const owner = menu?.getAttribute('data-menu-owner');
+        const key = menu?.getAttribute('data-menu-for');
+        if (!owner || !key) return null;
+        return document.querySelector(`[data-menu-toggle="${CSS.escape(key)}"][data-menu-kind="${CSS.escape(owner)}"]`);
+    }
+
+    focusMenuOwner(menu) {
+        this.menuOwner(menu)?.focus({ preventScroll: true });
+    }
+
+    /**
+     * Open or close one row menu. `kind` selects which of a row's menus is meant:
+     * "more" for the ⋯ overflow, "check" for the check-mode popover.
+     */
+    toggleMenu(key, kind = 'more') {
+        const menu = document.querySelector(
+            `.health-view-menu[data-menu-for="${CSS.escape(key)}"][data-menu-owner="${CSS.escape(kind)}"]`
+        );
+        if (!menu) return;
+        const btn = this.menuOwner(menu);
+        if (!btn) return;
         const willOpen = menu.hidden;
         this.closeAllMenus();
         if (!willOpen) return;
@@ -969,6 +998,74 @@ class DashboardHealth {
             d.showNotification(this.t('dashboard.healthDeleted', 'Bookmark deleted'), 'success', { duration: 3000 });
         } catch {
             d.showNotification(this.t('dashboard.healthDeleteFailed', 'Could not delete the bookmark'), 'error');
+        } finally {
+            this._busyKeys.delete(key);
+            this.syncRowBusy(key, false);
+        }
+    }
+
+    /**
+     * Switch one bookmark between off, periodic and monitor without leaving the
+     * view. The old route was a deep link into the dashboard inline editor, which
+     * threw away the filter, search, scroll position and keyboard selection —
+     * expensive for what is a one-field change.
+     *
+     * The URL rides along with the index: the report can be a few minutes old, so
+     * the server rejects the write (409) when the row no longer describes the
+     * bookmark at that index, and the reload below picks up the real list.
+     */
+    async setCheckMode(issue, mode) {
+        const key = this.issueKey(issue);
+        if (this._busyKeys.has(key)) return;
+        if (!mode || mode === this.checkModeOf(issue)) {
+            this.closeAllMenus();
+            return;
+        }
+        const url = String(issue?.url || '').trim();
+        const pageId = Number(issue?.pageId);
+        if (!url || !Number.isFinite(pageId)) return;
+
+        this.closeAllMenus();
+        window.nextdashTrack?.('health:check-mode');
+        this._busyKeys.add(key);
+        this.syncRowBusy(key, true);
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+
+        try {
+            const res = await fetcher('/api/health/check-mode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pageId, index: issue.index, url, mode }),
+            });
+            if (res.status === 409) {
+                // The list moved under us. Reloading is the fix, not a retry.
+                await this.loadAndRender({ refresh: true });
+                d.showNotification(
+                    this.t('dashboard.healthCheckModeStale', 'This bookmark changed — the list has been refreshed. Try again.'),
+                    'warning',
+                    { duration: 4000 }
+                );
+                return;
+            }
+            if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
+
+            await this.loadAndRender({ refresh: true });
+            d.updateHealthBadge?.();
+            const label = this.checkModeMeta(mode).label;
+            d.showNotification(
+                mode === 'off'
+                    ? this.t('dashboard.healthCheckModeOffDone', 'Checking turned off for "{name}"', { name: issue.name || url })
+                    : this.t('dashboard.healthCheckModeSet', '"{name}" is now set to {mode}', { name: issue.name || url, mode: label }),
+                'success',
+                { duration: 3000 }
+            );
+        } catch (err) {
+            console.error('Failed to change check mode:', err);
+            d.showNotification(
+                this.t('dashboard.healthCheckModeFailed', 'Could not change availability checking'),
+                'error'
+            );
         } finally {
             this._busyKeys.delete(key);
             this.syncRowBusy(key, false);
@@ -1529,19 +1626,95 @@ class DashboardHealth {
         return `<svg class="health-sparkline" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${this.escape(label)}">${paths}</svg>`;
     }
 
+    /** The mode a row is in, as the three-state name the server also speaks. */
+    checkModeOf(issue) {
+        if (issue?.monitor) return 'monitor';
+        if (issue?.checkStatus) return 'periodic';
+        return 'off';
+    }
+
+    /** Label, hint and CSS modifier for each mode. */
+    checkModeMeta(mode) {
+        if (mode === 'monitor') {
+            return {
+                cls: 'is-monitor',
+                label: this.t('dashboard.healthBadgeMonitor', 'Monitor'),
+                hint: this.t('dashboard.healthBadgeMonitorHint', 'Checked on its own interval, with uptime history'),
+            };
+        }
+        if (mode === 'periodic') {
+            return {
+                cls: 'is-periodic',
+                label: this.t('dashboard.healthBadgePeriodic', 'Periodic'),
+                hint: this.t('dashboard.healthBadgePeriodicHint', 'Checked about once a day; no uptime history'),
+            };
+        }
+        return {
+            cls: 'is-off',
+            label: this.t('dashboard.healthBadgeOff', 'Not checked'),
+            hint: this.t('dashboard.healthBadgeOffHint', 'This bookmark is never tested for availability'),
+        };
+    }
+
     /**
-     * A badge naming the check mode, so it is obvious why one row has a heartbeat
-     * and the next does not. Rows with no checking at all stay unlabelled — an
-     * "Off" badge on most of the list would be noise.
+     * The check-mode badge, which doubles as the control that changes it. Making
+     * the existing label the button costs no extra room in the row and puts the
+     * control exactly where the eye already goes to ask "why has this row no
+     * heartbeat?".
+     *
+     * An unchecked row shows a muted placeholder rather than a full badge: most
+     * bookmarks are unchecked, and a solid "Not checked" pill on every one of them
+     * would drown the rows that do carry a mode. CSS lifts it into view on hover
+     * and keyboard selection.
      */
-    renderCheckModeBadge(issue) {
-        if (issue?.monitor) {
-            return `<span class="health-check-mode is-monitor" title="${this.escape(this.t('dashboard.healthBadgeMonitorHint', 'Checked on its own interval, with uptime history'))}">${this.escape(this.t('dashboard.healthBadgeMonitor', 'Monitor'))}</span>`;
-        }
-        if (issue?.checkStatus) {
-            return `<span class="health-check-mode is-periodic" title="${this.escape(this.t('dashboard.healthBadgePeriodicHint', 'Checked about once a day; no uptime history'))}">${this.escape(this.t('dashboard.healthBadgePeriodic', 'Periodic'))}</span>`;
-        }
-        return '';
+    renderCheckModeBadge(issue, key) {
+        const mode = this.checkModeOf(issue);
+        const meta = this.checkModeMeta(mode);
+        const title = `${meta.hint} — ${this.t('dashboard.healthCheckModeChange', 'click to change')}`;
+        return `<button type="button"
+            class="health-check-mode ${meta.cls}"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            data-menu-toggle="${this.escape(key)}"
+            data-menu-kind="check"
+            title="${this.escape(title)}"
+            aria-label="${this.escape(title)}"
+        >${this.escape(meta.label)}<kbd>c</kbd></button>`;
+    }
+
+    /**
+     * The check-mode popover: three named options rather than a control that
+     * cycles. The modes are not interchangeable — periodic is cheap and answers
+     * "is this link alive", monitor is the expensive tier that records uptime —
+     * so each carries its one-line explanation instead of leaving the user to
+     * guess what the next click will select.
+     */
+    renderCheckModeMenu(issue, key) {
+        const active = this.checkModeOf(issue);
+        const options = [
+            ['off', this.t('dashboard.healthCheckModeOff', 'Off'), this.t('dashboard.healthCheckModeOffBody', 'Never tested, and never flagged as broken.')],
+            ['periodic', this.t('dashboard.healthBadgePeriodic', 'Periodic'), this.t('dashboard.healthCheckModePeriodicBody', 'Checked about once a day. Catches breakage, keeps no history.')],
+            ['monitor', this.t('dashboard.healthBadgeMonitor', 'Monitor'), this.t('dashboard.healthCheckModeMonitorBody', 'Checked on its own interval, with uptime, heartbeat and outages.')],
+        ];
+        const items = options.map(([mode, label, body]) => {
+            const isActive = mode === active;
+            return `<button type="button"
+                class="health-view-menu-item health-check-option${isActive ? ' is-active' : ''}"
+                role="menuitemradio"
+                aria-checked="${isActive ? 'true' : 'false'}"
+                data-check-mode="${mode}"
+            >
+                <span class="health-check-option-label">${this.escape(label)}</span>
+                <span class="health-check-option-body">${this.escape(body)}</span>
+            </button>`;
+        }).join('');
+
+        // A span, not a div: this popover lives inside the row's <p> meta line, and
+        // a block-level child there would make the parser close the paragraph
+        // early, stranding the menu outside the row it belongs to.
+        return `<span class="health-view-menu health-check-menu" role="menu" hidden
+            data-menu-for="${this.escape(key)}" data-menu-owner="check"
+            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}</span>`;
     }
 
     /** The monitor strip under the row meta: heartbeat, uptime, sparkline. */
@@ -1656,7 +1829,7 @@ class DashboardHealth {
         items.push(`<p class="health-view-menu-label health-view-menu-label--danger" role="presentation">${this.escape(this.t('dashboard.healthMenuRemove', 'Remove'))}</p>`);
         items.push(`<button type="button" class="health-view-menu-item health-view-menu-item--danger" role="menuitem" data-menu-action="delete">${this.escape(this.t('dashboard.healthDelete', 'Delete bookmark'))}</button>`);
 
-        return `<div class="health-view-menu" role="menu" hidden data-menu-for="${this.escape(key)}" aria-label="${this.escape(this.t('dashboard.healthMore', 'More actions'))}">${items.join('')}</div>`;
+        return `<div class="health-view-menu" role="menu" hidden data-menu-for="${this.escape(key)}" data-menu-owner="more" aria-label="${this.escape(this.t('dashboard.healthMore', 'More actions'))}">${items.join('')}</div>`;
     }
 
     createIssueElement(issue) {
@@ -1696,7 +1869,10 @@ class DashboardHealth {
                 </div>
                 <p class="health-view-item-meta">
                     <span>${this.escape(domain)}</span>
-                    ${this.renderCheckModeBadge(issue)}
+                    <span class="health-check-mode-wrap">
+                        ${this.renderCheckModeBadge(issue, key)}
+                        ${this.renderCheckModeMenu(issue, key)}
+                    </span>
                     ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
                     ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
                 </p>
@@ -1708,7 +1884,7 @@ class DashboardHealth {
                         <button type="button" class="health-view-action-btn" data-health-action="open">${this.escape(this.t('dashboard.healthOpen', 'Open'))}</button>
                         <button type="button" class="health-view-action-btn" data-health-action="edit">${this.escape(this.t('dashboard.healthEdit', 'Edit'))}</button>
                         <div class="health-view-menu-wrap">
-                            <button type="button" class="health-view-action-btn health-view-more-btn" aria-haspopup="menu" aria-expanded="false" data-menu-toggle="${this.escape(key)}" aria-label="${this.escape(this.t('dashboard.healthMore', 'More actions'))}">${this.escape(this.t('dashboard.healthMore', 'More'))}<kbd>m</kbd></button>
+                            <button type="button" class="health-view-action-btn health-view-more-btn" aria-haspopup="menu" aria-expanded="false" data-menu-toggle="${this.escape(key)}" data-menu-kind="more" aria-label="${this.escape(this.t('dashboard.healthMore', 'More actions'))}">${this.escape(this.t('dashboard.healthMore', 'More'))}<kbd>m</kbd></button>
                             ${this.renderRowMenu(issue, key)}
                         </div>
                     </div>
@@ -1732,7 +1908,18 @@ class DashboardHealth {
         row.querySelector('.health-view-more-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this.selectRowByKey(key);
-            this.toggleMenu(key);
+            this.toggleMenu(key, 'more');
+        });
+        row.querySelector('.health-check-mode')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.selectRowByKey(key);
+            this.toggleMenu(key, 'check');
+        });
+        row.querySelectorAll('[data-check-mode]').forEach((item) => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                void this.setCheckMode(issue, item.getAttribute('data-check-mode'));
+            });
         });
 
         const menuActions = {
