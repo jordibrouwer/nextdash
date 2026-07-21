@@ -156,6 +156,8 @@ func main() {
 	handlers.StartAutoBackupScheduler(schedulerStop)
 	// Periodic background health rechecks (opt-in, respects the setting + interval).
 	handlers.StartHealthRecheckScheduler(schedulerStop)
+	// Uptime monitoring for bookmarks opted into the faster monitor tier.
+	handlers.StartHealthMonitorScheduler(schedulerStop)
 
 	go func() {
 		log.Printf("Server starting on port %s", port)

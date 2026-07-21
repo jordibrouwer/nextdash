@@ -30,6 +30,7 @@ type Handlers struct {
 	previewLoaded     bool
 	previewCacheDirty bool
 	healthCacheMu     sync.RWMutex
+	healthHistoryMu   sync.Mutex
 	healthReportMu    sync.RWMutex
 	healthReport      BookmarkHealthReport
 	healthReportAt    time.Time
@@ -308,6 +309,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	duplicateCounts := make(map[string]int)
 	shortcutCounts := make(map[string]int)
 
+	// One read serves every monitored row; buildMonitorStats derives the rest.
+	monitorHistory := h.readAllHealthHistory()
+	monitorNow := time.Now()
+
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
 		entries := make([]bookmarkEntry, 0, len(bookmarks))
@@ -486,6 +491,13 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				report.Summary.HealthyCount++
 			}
 
+			var monitorStats *MonitorStats
+			if bm.Monitor {
+				if key := canonicalBookmarkURLKey(bm.URL); key != "" {
+					monitorStats = buildMonitorStats(monitorHistory[key], bm.MonitorIntervalMinutes, monitorNow)
+				}
+			}
+
 			report.Issues = append(report.Issues, HealthIssue{
 				Name:           bm.Name,
 				URL:            bm.URL,
@@ -509,6 +521,8 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				Reasons:        reasons,
 				ReasonDetails:  reasonDetails,
 				DuplicateCount: duplicateCount,
+				Monitor:        bm.Monitor,
+				MonitorStats:   monitorStats,
 			})
 		}
 	}

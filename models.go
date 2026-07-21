@@ -36,6 +36,12 @@ type Bookmark struct {
 	PreviewImage string   `json:"previewImage,omitempty"` // Preview image URL
 	Note         string   `json:"note,omitempty"`         // User note for bookmark
 	Tags         []string `json:"tags,omitempty"`
+	// Monitor opts a bookmark into uptime monitoring: a separate, faster tier than
+	// CheckStatus. Monitored bookmarks are pinged on their own interval and are the
+	// only ones that accumulate sample history (see health_history.go), so enabling
+	// it for everything would bloat the history file for no benefit.
+	Monitor                bool `json:"monitor,omitempty"`
+	MonitorIntervalMinutes int  `json:"monitorIntervalMinutes,omitempty"` // 5..1440, 0 = use default
 }
 
 type Finder struct {
@@ -220,6 +226,8 @@ type Settings struct {
 	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`              // Automatically create a weekly local backup (keeps the latest 3)
 	HealthAutoRecheckEnabled       bool                             `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int                              `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
+	MonitorNotifyURL               string                           `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
+	MonitorNotifyRetries           int                              `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
 	DiscoverabilityState           *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 }
 
@@ -1994,6 +2002,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 	settings.HealthAutoRecheckIntervalHours = clampHealthAutoRecheckIntervalHours(settings.HealthAutoRecheckIntervalHours)
+	settings.MonitorNotifyRetries = clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
 
 	return settings
 }
@@ -2250,6 +2259,11 @@ type HealthIssue struct {
 	Reasons        []string       `json:"reasons"`
 	ReasonDetails  []HealthReason `json:"reasonDetails,omitempty"`
 	DuplicateCount int            `json:"duplicateCount"`
+	// Monitor reflects the uptime-monitor tier. MonitorStats is populated only for
+	// monitored bookmarks that have history, keeping the report payload unchanged
+	// for everyone who never turns monitoring on.
+	Monitor      bool          `json:"monitor,omitempty"`
+	MonitorStats *MonitorStats `json:"monitorStats,omitempty"`
 }
 
 type BookmarkHealthReport struct {
@@ -2300,6 +2314,27 @@ type HealthScanCacheFile struct {
 	// auto-backup compares the newest backup's age rather than an in-process timer.
 	LastAutoRecheck int64                      `json:"lastAutoRecheck,omitempty"`
 	Cache           map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
+}
+
+// HealthSample is one recorded reachability check for a monitored bookmark.
+//
+// The JSON keys are deliberately terse and the file is written compactly: this is
+// the one file in the app that grows per check rather than per bookmark, so a few
+// bytes per sample decide whether the history stays a few hundred KB or a few MB.
+type HealthSample struct {
+	T      int64 `json:"t"`           // Unix milliseconds
+	Up     bool  `json:"u"`           // Reachable (HealthScanCache.Status == "online")
+	PingMs int   `json:"p,omitempty"` // Response time; 0 when the request never completed
+	Code   int   `json:"c,omitempty"` // HTTP status; 0 on a network-level failure
+}
+
+// HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept
+// separate from HealthScanCacheFile because it is rewritten on every monitor run
+// and would otherwise make the (small, frequently read) health cache expensive.
+type HealthHistoryFile struct {
+	GeneratedAt int64 `json:"generatedAt"`
+	// Samples maps canonical URL to samples in ascending time order.
+	Samples map[string][]HealthSample `json:"samples"`
 }
 
 // Search indexing

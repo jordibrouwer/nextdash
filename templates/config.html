@@ -1081,6 +1081,21 @@
                                     <option value="168" data-i18n="config.healthRecheckInterval168h">Weekly</option>
                                 </select>
                             </div>
+                            <div class="checkbox-tree-item">
+                                <label for="monitor-notify-url-input" data-i18n="config.monitorNotifyUrlLabel">Uptime alert webhook:</label>
+                                <input type="url" id="monitor-notify-url-input" class="form-input" placeholder="https://ntfy.sh/my-topic" data-i18n-placeholder="config.monitorNotifyUrlPlaceholder">
+                                <p class="form-hint" data-i18n="config.monitorNotifyUrlHint">Posted when a monitored bookmark goes down or comes back. Leave empty to disable. Local addresses only work when "Allow local bookmarks" is on.</p>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label for="monitor-notify-retries-select" data-i18n="config.monitorNotifyRetriesLabel">Alert after:</label>
+                                <select id="monitor-notify-retries-select">
+                                    <option value="1" data-i18n="config.monitorNotifyRetries1">1 failed check</option>
+                                    <option value="2" data-i18n="config.monitorNotifyRetries2">2 failed checks</option>
+                                    <option value="3" data-i18n="config.monitorNotifyRetries3">3 failed checks (default)</option>
+                                    <option value="5" data-i18n="config.monitorNotifyRetries5">5 failed checks</option>
+                                </select>
+                            </div>
                         </div>
                     </section>
 

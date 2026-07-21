@@ -994,6 +994,22 @@ class ConfigSettings {
             });
         }
 
+        // Uptime alert webhook (empty = notifications off).
+        const monitorNotifyUrlInput = document.getElementById('monitor-notify-url-input');
+        if (monitorNotifyUrlInput) {
+            monitorNotifyUrlInput.value = settings.monitorNotifyUrl || '';
+            monitorNotifyUrlInput.addEventListener('input', (e) => {
+                settings.monitorNotifyUrl = e.target.value.trim();
+            });
+        }
+        const monitorNotifyRetriesSelect = document.getElementById('monitor-notify-retries-select');
+        if (monitorNotifyRetriesSelect) {
+            monitorNotifyRetriesSelect.value = String(settings.monitorNotifyRetries || 3);
+            monitorNotifyRetriesSelect.addEventListener('change', (e) => {
+                settings.monitorNotifyRetries = Number(e.target.value) || 3;
+            });
+        }
+
         // Tip of the session (default on; unset means on).
         const sessionTipsCheckbox = document.getElementById('session-tips-checkbox');
         if (sessionTipsCheckbox) {
@@ -1936,6 +1952,14 @@ class ConfigSettings {
         if (usageAnalyticsEl) settings.enableUsageAnalytics = usageAnalyticsEl.checked;
         const sessionTipsEl = document.getElementById('session-tips-checkbox');
         if (sessionTipsEl) settings.enableSessionTips = sessionTipsEl.checked;
+        const monitorNotifyUrlEl = document.getElementById('monitor-notify-url-input');
+        if (monitorNotifyUrlEl) settings.monitorNotifyUrl = monitorNotifyUrlEl.value.trim();
+        const monitorNotifyRetriesEl = document.getElementById('monitor-notify-retries-select');
+        if (monitorNotifyRetriesEl) {
+            // Selects yield strings; the Go setting is an int, so coerce here.
+            const retries = Number(monitorNotifyRetriesEl.value);
+            settings.monitorNotifyRetries = Number.isFinite(retries) && retries > 0 ? retries : 3;
+        }
         const pasteUrlEl = document.getElementById('paste-url-quick-add-checkbox');
         if (pasteUrlEl) settings.pasteUrlQuickAdd = pasteUrlEl.checked;
         const inboxEnabledEl = document.getElementById('inbox-enabled-checkbox');
