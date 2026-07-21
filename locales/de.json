@@ -203,6 +203,7 @@
             "bmInlineEdit": "Fokussiertes Lesezeichen inline bearbeiten",
             "bmQuickMove": "Fokussiertes Lesezeichen schnell verschieben — Kategorie oder Seite wählen",
             "bmQuickDelete": "Fokussiertes Lesezeichen schnell löschen — im Popover bestätigen",
+            "bmQuickCheckMode": "Erreichbarkeitsprüfung für das fokussierte Lesezeichen — o aus, p periodisch, m Monitor; ↑/↓ und Enter funktionieren auch; Esc schließt",
             "bmCopyUrl": "URL des fokussierten Lesezeichens kopieren (Zeile blinkt grün)",
             "bmTogglePreview": "Hover-Vorschaukarte am fokussierten Lesezeichen umschalten",
             "bmShowMoreToggle": "Eine lange Kategorie aus- oder einklappen — die Auswahl kehrt zum letzten Lesezeichen über der Schaltfläche zurück",

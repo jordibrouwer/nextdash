@@ -203,6 +203,7 @@
             "bmInlineEdit": "Modifier en ligne le favori focalisé",
             "bmQuickMove": "Déplacer rapidement le favori focalisé — choisir catégorie ou page",
             "bmQuickDelete": "Supprimer rapidement le favori focalisé — confirmer dans le popover",
+            "bmQuickCheckMode": "Vérification de disponibilité du favori sélectionné — o désactivé, p périodique, m moniteur ; ↑/↓ et Entrée fonctionnent aussi ; Échap ferme",
             "bmCopyUrl": "Copier l'URL du favori focalisé (la ligne clignote en vert)",
             "bmTogglePreview": "Activer/désactiver l'aperçu au survol du favori focalisé",
             "bmShowMoreToggle": "Déplier ou replier une catégorie longue — la sélection revient au dernier favori au-dessus du bouton",

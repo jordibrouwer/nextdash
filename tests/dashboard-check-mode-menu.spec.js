@@ -120,6 +120,68 @@ test.describe('dashboard check-mode menu', () => {
         expect(Number(stored?.monitorIntervalMinutes)).toBeGreaterThan(0);
     });
 
+    test('Shift+C opens the same menu from the keyboard', async ({ page }) => {
+        await setup(page);
+        await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
+        await page.click('body');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Shift+C');
+
+        await expect(page.locator('#bookmark-check-mode-menu')).toBeVisible();
+        await expect(page.locator('#bookmark-check-mode-menu .move-popover-item')).toHaveCount(3);
+    });
+
+    test('letter accelerators pick a mode, and do not leak to the shortcut search', async ({ page }) => {
+        await setup(page);
+        const row = await firstRow(page);
+
+        await openCheckModeSubmenu(page, row);
+        // Each option prints its own letter, so the accelerator is discoverable
+        // from the menu rather than only from the cheat sheet.
+        await expect(page.locator('[data-check-mode="monitor"] .check-mode-option-key')).toHaveText('m');
+
+        await page.keyboard.press('m');
+        await expect(page.locator('.app-notification')).toContainText(/monitor/i, { timeout: 10_000 });
+        await expect(page.locator('#bookmark-check-mode-menu')).toHaveCount(0);
+
+        // A bare letter would otherwise open the shortcut search behind the menu.
+        expect(await page.evaluate(() => Boolean(window.dashboardInstance?.searchComponent?.isActive?.()))).toBe(false);
+
+        await openCheckModeSubmenu(page, row);
+        expect(await activeMode(page)).toBe('monitor');
+        await page.keyboard.press('o');
+        await expect(page.locator('.app-notification')).toContainText(/off|uit/i, { timeout: 10_000 });
+    });
+
+    test('the menu anchors to its row for both mouse and keyboard', async ({ page }) => {
+        await setup(page);
+        const row = await firstRow(page);
+
+        // Right-click near the row's far edge: the submenu still opens beside the
+        // row, not where the pointer happened to be.
+        const box = await row.boundingBox();
+        await page.mouse.click(box.x + box.width - 12, box.y + box.height - 4, { button: 'right' });
+        await page.waitForSelector('#bookmark-context-menu', { timeout: 10_000 });
+        await page.locator('[data-action="check-mode"]').click();
+        await page.waitForSelector('#bookmark-check-mode-menu', { timeout: 10_000 });
+
+        // Measured against the row that was actually clicked, since the grid can
+        // reorder between renders.
+        const url = await row.getAttribute('data-bookmark-url');
+        const aligned = await page.evaluate((target) => {
+            const menu = document.querySelector('#bookmark-check-mode-menu').getBoundingClientRect();
+            const el = document.querySelector(`.bookmark-link[data-bookmark-url="${CSS.escape(target)}"]`);
+            if (!el) return null;
+            const rect = el.getBoundingClientRect();
+            return { dLeft: Math.abs(menu.left - rect.left), below: menu.top >= rect.bottom - 2 };
+        }, url);
+        expect(aligned).not.toBeNull();
+        // A few pixels of slack: the assertion is "beside this row, not under the
+        // pointer", and the pointer was ~200px away at the row's far edge.
+        expect(aligned.dLeft).toBeLessThan(8);
+        expect(aligned.below).toBe(true);
+    });
+
     test('the submenu opens on the active option and Escape changes nothing', async ({ page }) => {
         await setup(page);
         const row = await firstRow(page);

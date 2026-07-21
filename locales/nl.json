@@ -224,6 +224,7 @@
             "bmInlineEdit": "Bladwijzer met focus inline bewerken",
             "bmQuickMove": "Bladwijzer met focus snel verplaatsen — kies categorie of pagina",
             "bmQuickDelete": "Bladwijzer met focus snel verwijderen — bevestig in popover",
+            "bmQuickCheckMode": "Bereikbaarheidscontrole voor de gefocuste bookmark — o uit, p periodiek, m monitor; ↑/↓ en Enter werken ook; Esc sluit",
             "bmCopyUrl": "Kopieer URL van bladwijzer met focus (rij knippert groen)",
             "bmTogglePreview": "Hover-voorbeeldkaart op bladwijzer met focus aan/uit",
             "bmShowMoreToggle": "Klap een lange categorie uit of in — de selectie gaat terug naar de laatste bladwijzer boven de knop",

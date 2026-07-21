@@ -55,7 +55,19 @@ class DashboardContextMenu {
         if (rawIndex !== null) {
             const index = Number(rawIndex);
             const bookmark = d.bookmarks?.[index];
-            if (bookmark) return { bookmark, index, scope: 'current' };
+            // `original` and `pageId` complete the shape resolveBookmarkReference()
+            // returns. Callers that sync a mutation across collections write to
+            // `original`, and it used to be missing here, so a keyboard-driven
+            // change threw on a row that had a page-local index.
+            if (bookmark) {
+                return {
+                    bookmark,
+                    index,
+                    scope: 'current',
+                    pageId: Number(d.currentPageId),
+                    original: { ...bookmark },
+                };
+            }
         }
         // Smart collections render rows without a page-local index; fall back to the URL.
         const url = row.getAttribute('data-bookmark-url');
@@ -175,11 +187,8 @@ class DashboardContextMenu {
 
         const confirm = (item) => {
             const action = item.getAttribute('data-action');
-            // Capture the anchor before close() detaches the item: the submenu
-            // opens beside the row it came from, not where the pointer ended up.
-            const rect = item.getBoundingClientRect();
             close();
-            this.runAction(action, row, bookmarkRef, { x: rect.right, y: rect.top });
+            this.runAction(action, row, bookmarkRef);
         };
 
         const onKey = (e) => {
@@ -215,7 +224,7 @@ class DashboardContextMenu {
      * monitor is the tier that records uptime — so each carries its sentence
      * instead of leaving the user to guess what the next click selects.
      */
-    showCheckModeMenu(row, bookmarkRef, point) {
+    showCheckModeMenu(row, bookmarkRef) {
         const d = this.dash;
         const bookmark = bookmarkRef.bookmark;
         const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
@@ -243,6 +252,7 @@ class DashboardContextMenu {
             item.setAttribute('role', 'menuitemradio');
             item.setAttribute('aria-checked', isActive ? 'true' : 'false');
             item.setAttribute('data-check-mode', option.mode);
+            item.setAttribute('data-check-key', option.key);
 
             const check = document.createElement('span');
             check.className = 'move-popover-check';
@@ -254,6 +264,12 @@ class DashboardContextMenu {
             const label = document.createElement('span');
             label.className = 'check-mode-option-label';
             label.textContent = option.label;
+            // The accelerator is printed rather than taught elsewhere, the way the
+            // health view marks its row shortcuts.
+            const kbd = document.createElement('kbd');
+            kbd.className = 'check-mode-option-key';
+            kbd.textContent = option.key;
+            label.appendChild(kbd);
             const body = document.createElement('span');
             body.className = 'check-mode-option-body';
             body.textContent = option.body;
@@ -266,11 +282,19 @@ class DashboardContextMenu {
         });
 
         document.body.appendChild(pop);
-        this.positionAtPoint(pop, point || { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+        // Anchored to the row for both routes. The parent menu follows the pointer
+        // because that is where the gesture happened, but this one belongs to a
+        // specific bookmark — and opening it beside that row keeps mouse and
+        // keyboard showing it in the same place.
+        this.positionAtPoint(pop, this.pointBelowRow(row));
         window.FocusTrapUtils?.syncDashboardInert?.();
 
         const previousFocus = document.activeElement;
-        let focusedIdx = Math.max(0, items.findIndex((i) => i.getAttribute('aria-checked') === 'true'));
+        // Captured separately from the mutable cursor below: the deferred focus
+        // call runs after `focusedIdx` may already have moved, and reading it
+        // there landed on whichever item the DOM happened to focus first.
+        const initialIdx = Math.max(0, items.findIndex((i) => i.getAttribute('aria-checked') === 'true'));
+        let focusedIdx = initialIdx;
         const setFocus = (idx) => {
             d.bookmarkRows?._focusActionPopoverItem?.(items, idx);
             focusedIdx = idx;
@@ -353,6 +377,19 @@ class DashboardContextMenu {
             if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx + 1) % items.length); return; }
             if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx - 1 + items.length) % items.length); return; }
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopImmediatePropagation(); if (items[focusedIdx]) void choose(items[focusedIdx]); return; }
+
+            // Letter accelerators: o / p / m pick a mode outright. The letters come
+            // from the mode names themselves and are shown on each row, so there is
+            // nothing to memorise. Swallowed even when they match nothing, because
+            // a bare letter would otherwise fall through to the shortcut search
+            // and leave a menu open over it.
+            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                const hit = items.find((el) => el.getAttribute('data-check-key') === e.key.toLowerCase());
+                if (hit) void choose(hit);
+                return;
+            }
         };
 
         items.forEach((item, idx) => {
@@ -370,7 +407,7 @@ class DashboardContextMenu {
         }, 0);
         // Opens on the active option, so Enter alone is a no-op rather than a
         // change the user did not ask for.
-        requestAnimationFrame(() => setFocus(focusedIdx));
+        requestAnimationFrame(() => setFocus(initialIdx));
     }
 
     /**
@@ -399,6 +436,27 @@ class DashboardContextMenu {
         }
     }
 
+    /** Anchor point just under a row, used by the row-anchored submenu. */
+    pointBelowRow(row) {
+        const rect = row?.getBoundingClientRect?.();
+        if (!rect) return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        return { x: rect.left, y: rect.bottom + 4 };
+    }
+
+    /**
+     * Open the check-mode menu for a row from the keyboard (Shift+C).
+     *
+     * Same menu the right-click route builds, and anchored the same way, so the
+     * two routes are indistinguishable once the menu is open.
+     */
+    openCheckModeForRow(row) {
+        if (!(row instanceof HTMLElement)) return false;
+        const bookmarkRef = this.resolveRowBookmark(row);
+        if (!bookmarkRef?.bookmark) return false;
+        this.showCheckModeMenu(row, bookmarkRef);
+        return true;
+    }
+
     /** Flip the menu back inside the viewport when opened near an edge. */
     positionAtPoint(pop, point) {
         const margin = 8;
@@ -414,7 +472,7 @@ class DashboardContextMenu {
         pop.style.top = `${Math.round(top)}px`;
     }
 
-    runAction(action, row, bookmarkRef, point) {
+    runAction(action, row, bookmarkRef) {
         const d = this.dash;
         const bookmark = bookmarkRef.bookmark;
         const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
@@ -440,7 +498,7 @@ class DashboardContextMenu {
                 d.showMovePopover?.(row, bookmark, bookmarkIndex);
                 break;
             case 'check-mode':
-                this.showCheckModeMenu(row, bookmarkRef, point);
+                this.showCheckModeMenu(row, bookmarkRef);
                 break;
             case 'delete':
                 // Confirm popover rather than deleteBookmarkInline() — a menu click is

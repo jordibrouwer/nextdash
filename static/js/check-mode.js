@@ -100,10 +100,22 @@ const CheckMode = {
         return bookmark;
     },
 
+    /**
+     * Keyboard accelerator per mode.
+     *
+     * Taken from the English mode names rather than the translated labels: a
+     * shortcut that moves when the interface language changes is worse than one
+     * that does not match the local word, and the letter is printed on the row
+     * either way. They are unique across the three modes, which is all a
+     * three-item menu needs.
+     */
+    KEYS: { off: 'o', periodic: 'p', monitor: 'm' },
+
     /** The three options in the order every surface presents them. */
     options() {
         return [CheckMode.OFF, CheckMode.PERIODIC, CheckMode.MONITOR].map((mode) => ({
             mode,
+            key: CheckMode.KEYS[mode],
             ...CheckMode.meta(mode),
         }));
     },

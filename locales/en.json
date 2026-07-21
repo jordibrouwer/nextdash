@@ -224,6 +224,7 @@
             "bmInlineEdit": "Inline-edit focused bookmark",
             "bmQuickMove": "Quick-move focused bookmark — choose category or page",
             "bmQuickDelete": "Quick-delete focused bookmark — confirm in popover",
+            "bmQuickCheckMode": "Availability checking for focused bookmark — o off, p periodic, m monitor; ↑/↓ and Enter also work; Esc closes",
             "bmCopyUrl": "Copy URL of focused bookmark (row flashes green)",
             "bmTogglePreview": "Toggle hover preview card on focused bookmark",
             "bmShowMoreToggle": "Expand or collapse a long category — selection returns to the last bookmark above the toggle",

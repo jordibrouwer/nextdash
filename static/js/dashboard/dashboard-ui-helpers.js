@@ -155,6 +155,7 @@ class DashboardUiHelpers {
                 item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page; Esc close restores selection on same row'),
                 item('Shift + D', 'bmQuickDelete', 'Quick-delete focused bookmark — confirm in popover; Esc close restores selection on same row'),
                 item('Shift + T', 'bmQuickTag', 'Quick-tag focused bookmark — ↑/↓ navigate; Enter/Space toggles tag and advances; ✓ shows tags on bookmark; Esc close restores selection on same row'),
+                item('Shift + C', 'bmQuickCheckMode', 'Availability checking for focused bookmark — o off, p periodic, m monitor; ↑/↓ and Enter also work; Esc closes'),
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
                 item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
                 item('Enter on "+ N more"', 'bmShowMoreToggle', 'Expand or collapse a long category — selection returns to the last bookmark above the toggle'),
