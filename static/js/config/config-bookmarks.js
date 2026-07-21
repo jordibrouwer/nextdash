@@ -437,8 +437,13 @@ class ConfigBookmarks {
         const pinEl = document.getElementById('detail-pinned');
         if (pinEl) pinEl.checked = !!bookmark.pinned;
 
-        const csEl = document.getElementById('detail-check-status');
-        if (csEl) csEl.checked = !!bookmark.checkStatus;
+        const mode = bookmark.monitor ? 'monitor' : (bookmark.checkStatus ? 'periodic' : 'off');
+        const modeEl = document.getElementById(`detail-check-mode-${mode}`);
+        if (modeEl) modeEl.checked = true;
+
+        const monIntervalEl = document.getElementById('detail-monitor-interval');
+        if (monIntervalEl) monIntervalEl.value = String(window.CheckMode.intervalOf(bookmark));
+        this._syncCheckMode(mode);
 
         const noteEl = document.getElementById('detail-note');
         if (noteEl) noteEl.value = bookmark.note || '';
@@ -448,6 +453,66 @@ class ConfigBookmarks {
 
         this._updateDetailIconPreview(bookmark);
         this._updateLinkPreviewCard(bookmark);
+    }
+
+    /**
+     * Reflect the chosen check mode: show the interval only for Monitor, and
+     * describe the mode below the control so the difference is stated rather than
+     * implied.
+     *
+     * select.js replaces the native control with a .custom-select-wrapper, so the
+     * `hidden` attribute has to move to that wrapper — setting it on the (already
+     * display:none) <select> would toggle nothing on screen.
+     */
+    /** Same explanation as the dashboard inline editor, reachable from the (i). */
+    _showCheckModeExplainer() {
+        const t = (key, fallback) => {
+            const full = `config.${key}`;
+            const v = window.i18n?.t ? window.i18n.t(full) : null;
+            return v && v !== full ? v : fallback;
+        };
+        const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+        const row = (title, body) => `<div class="check-mode-explain-row"><h4>${esc(title)}</h4><p>${esc(body)}</p></div>`;
+        const html = `<div class="check-mode-explain">
+            ${row(t('checkModePeriodic', 'Periodic'), t('checkModeExplainPeriodic', 'Answers one question: is this link still alive? It is checked in the background about once a day, and a broken bookmark is flagged in the health view. Cheap, and enough for most bookmarks.'))}
+            ${row(t('checkModeMonitor', 'Monitor'), t('checkModeExplainMonitor', 'Answers a bigger question: how reliable has it been? It is checked on the interval you pick (from 5 minutes) and keeps history, so you get an uptime percentage, a heartbeat bar, outage history and optional alerts. Use it for the handful of services you actually care about being up.'))}
+            ${row(t('checkModeExplainWhichTitle', 'Which should I pick?'), t('checkModeExplainWhich', 'Monitor includes everything Periodic does, so there is never a reason to want both. Periodic suits your ordinary links; Monitor suits your own servers and dashboards. Monitoring everything would make a lot of network requests and a large history file for little benefit.'))}
+        </div>`;
+
+        if (window.AppModal?.show) {
+            window.AppModal.show({
+                title: t('checkModeExplainTitle', 'How availability checking works'),
+                htmlMessage: html,
+                confirmText: t('checkModeExplainClose', 'Got it'),
+                // Informational only — a Cancel button would imply the explanation
+                // could be declined.
+                showCancel: false,
+                modalClass: 'check-mode-explain-modal',
+            });
+        }
+    }
+
+    _syncCheckMode(mode) {
+        const select = document.getElementById('detail-monitor-interval');
+        if (select) {
+            const target = select.closest('.custom-select-wrapper') || select;
+            target.hidden = mode !== 'monitor';
+        }
+        const hint = document.getElementById('detail-check-mode-hint');
+        if (!hint) return;
+        const key = mode === 'monitor'
+            ? 'checkModeMonitorHint'
+            : (mode === 'periodic' ? 'checkModePeriodicHint' : 'checkModeOffHint');
+        const fallback = {
+            checkModeOffHint: 'No availability checking.',
+            checkModePeriodicHint: 'Checks once a day and flags the bookmark when it breaks.',
+            checkModeMonitorHint: 'Checks on your own interval and keeps uptime history, a heartbeat and outage alerts. Includes everything Periodic does.',
+        }[key];
+        const translated = window.i18n?.t ? window.i18n.t(`config.${key}`) : null;
+        hint.textContent = translated && translated !== `config.${key}` ? translated : fallback;
+        hint.setAttribute('data-i18n', `config.${key}`);
     }
 
     _updateDetailIconPreview(bookmark) {
@@ -568,7 +633,9 @@ class ConfigBookmarks {
         const scEl = get('detail-shortcut');
         const catEl = get('detail-category');
         const pinEl = get('detail-pinned');
-        const csEl = get('detail-check-status');
+        const modeEls = Array.from(panel.querySelectorAll('.bookmark-detail-checkmode-input'));
+        const checkModeInfoEl = get('detail-check-mode-info');
+        const monIntervalEl = get('detail-monitor-interval');
         const noteEl = get('detail-note');
         const metaBtn = get('detail-meta-refresh-btn');
         const linkPreviewRefreshBtn = get('detail-link-preview-refresh-btn');
@@ -663,14 +730,34 @@ class ConfigBookmarks {
             if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });
 
-        if (csEl) csEl.addEventListener('change', (e) => {
-            bookmark.checkStatus = e.target.checked;
+        // One radio group drives both stored booleans, so they can never disagree.
+        modeEls.forEach((el) => el.addEventListener('change', (e) => {
+            if (!e.target.checked) return;
+            const mode = e.target.value;
+            bookmark.checkStatus = mode === 'periodic';
+            bookmark.monitor = mode === 'monitor';
+            // Give a freshly-chosen monitor an explicit interval, so the stored
+            // bookmark says what it does rather than relying on the server default.
+            if (bookmark.monitor && !bookmark.monitorIntervalMinutes) {
+                bookmark.monitorIntervalMinutes = Number(monIntervalEl?.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES;
+            }
+            this._syncCheckMode(mode);
             this._syncRow(index, bookmark);
             if (window.configManager?.markDirty) window.configManager.markDirty();
             window.configManager?.settings?.refreshStatusEssentialsSummary?.(
                 window.configManager.settingsData,
                 window.configManager.allBookmarksData
             );
+        }, { signal }));
+
+        if (checkModeInfoEl) checkModeInfoEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            this._showCheckModeExplainer();
+        }, { signal });
+
+        if (monIntervalEl) monIntervalEl.addEventListener('change', (e) => {
+            bookmark.monitorIntervalMinutes = Number(e.target.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES;
+            if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });
 
         if (noteEl) noteEl.addEventListener('input', (e) => {

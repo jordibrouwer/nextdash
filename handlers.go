@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,6 +31,7 @@ type Handlers struct {
 	previewLoaded     bool
 	previewCacheDirty bool
 	healthCacheMu     sync.RWMutex
+	healthHistoryMu   sync.Mutex
 	healthReportMu    sync.RWMutex
 	healthReport      BookmarkHealthReport
 	healthReportAt    time.Time
@@ -308,6 +310,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	duplicateCounts := make(map[string]int)
 	shortcutCounts := make(map[string]int)
 
+	// One read serves every monitored row; buildMonitorStats derives the rest.
+	monitorHistory := h.readAllHealthHistory()
+	monitorNow := time.Now()
+
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
 		entries := make([]bookmarkEntry, 0, len(bookmarks))
@@ -373,9 +379,22 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			duplicateCount := duplicateCounts[key]
 			isDuplicate := duplicateCount > 1
 			isBroken := strings.TrimSpace(bm.LastError) != ""
-			isChecked := bm.CheckStatus
+			// Monitoring is the heavier form of the same thing, so it counts as
+			// "checked" for scoring. Without this, switching a bookmark from
+			// periodic to monitored would flag it as never-checked while it is in
+			// fact being checked far more often.
+			isChecked := bm.CheckStatus || bm.Monitor
 			isUnchecked := isChecked && bm.LastChecked == 0
-			isStaleCheck := isChecked && bm.LastChecked > 0 && time.Since(time.UnixMilli(bm.LastChecked)) > 7*24*time.Hour
+			// A monitor is stale relative to its own cadence, not the weekly bar a
+			// once-a-day check is held to: a 5-minute monitor silent for a day is
+			// already broken, while a weekly threshold would call it fine.
+			staleAfter := 7 * 24 * time.Hour
+			if bm.Monitor {
+				if missed := time.Duration(clampMonitorIntervalMinutes(bm.MonitorIntervalMinutes)) * time.Minute * 3; missed < staleAfter {
+					staleAfter = missed
+				}
+			}
+			isStaleCheck := isChecked && bm.LastChecked > 0 && time.Since(time.UnixMilli(bm.LastChecked)) > staleAfter
 			isUnused := bm.OpenCount == 0 && bm.LastOpened == 0
 			isStale := bm.OpenCount > 0 && bm.LastOpened > 0 && time.Since(time.UnixMilli(bm.LastOpened)) > 30*24*time.Hour
 			isMissingPreview := missingPreview(bm)
@@ -486,6 +505,13 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				report.Summary.HealthyCount++
 			}
 
+			var monitorStats *MonitorStats
+			if bm.Monitor {
+				if key := canonicalBookmarkURLKey(bm.URL); key != "" {
+					monitorStats = buildMonitorStats(monitorHistory[key], bm.MonitorIntervalMinutes, monitorNow)
+				}
+			}
+
 			report.Issues = append(report.Issues, HealthIssue{
 				Name:           bm.Name,
 				URL:            bm.URL,
@@ -509,6 +535,8 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				Reasons:        reasons,
 				ReasonDetails:  reasonDetails,
 				DuplicateCount: duplicateCount,
+				Monitor:        bm.Monitor,
+				MonitorStats:   monitorStats,
 			})
 		}
 	}
@@ -2018,6 +2046,7 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 		Status string `json:"status"`
 		PingMs int    `json:"pingMs"`
 		Error  string `json:"error"`
+		Code   int    `json:"code"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -2041,6 +2070,10 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 	})) {
 		return
 	}
+	// A monitored bookmark also records the sample, so an on-demand check shows up
+	// in the uptime, heartbeat and outage view straight away rather than waiting
+	// for the next scheduled run.
+	h.recordManualHealthSample(key, req.Status == "online", req.PingMs, req.Code)
 	h.invalidateHealthReportCache()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -2169,6 +2202,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	pages := h.store.GetPages()
 	var res healthRetestResult
 	healthUpdates := make(map[string]HealthScanCache)
+	historyUpdates := make(map[string][]HealthSample)
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -2180,8 +2214,10 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 
 		for _, bm := range bookmarks {
 			// A bookmark with checkStatus off but a stored LastError is rendered broken
-			// and scored -60, yet the default run never revisits it.
-			eligible := bm.CheckStatus || (includeFlagged && strings.TrimSpace(bm.LastError) != "")
+			// and scored -60, yet the default run never revisits it. Monitored
+			// bookmarks are eligible too: "Retest all" should mean all, not "all
+			// except the ones you watch most closely".
+			eligible := bm.CheckStatus || bm.Monitor || (includeFlagged && strings.TrimSpace(bm.LastError) != "")
 			if !eligible {
 				res.Skipped++
 				continue
@@ -2219,6 +2255,18 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 					PingMs:      result.PingMs,
 					LastScanned: lastChecked,
 					Error:       errMsg,
+				}
+				// A monitored bookmark also records the sample, so a retest feeds
+				// the uptime and heartbeat view instead of only the scan cache.
+				// Collected here and written once at the end: one history write per
+				// run rather than one per bookmark.
+				if bm.Monitor {
+					historyUpdates[key] = append(historyUpdates[key], HealthSample{
+						T:      lastChecked,
+						Up:     result.Status == "online",
+						PingMs: result.PingMs,
+						Code:   result.HTTPStatus,
+					})
 				}
 			}
 
@@ -2262,6 +2310,11 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 
 	if err := h.mergeHealthCacheUpdates(healthUpdates); err != nil {
 		return res, fmt.Errorf("%w: %v", errHealthRetestPersist, err)
+	}
+	// Best-effort: losing a sample costs a gap in the heartbeat, which is not
+	// worth failing a retest that already pinged everything successfully.
+	if err := h.appendHealthSamples(historyUpdates); err != nil {
+		log.Printf("health history: failed to record retest samples: %v", err)
 	}
 
 	h.invalidateHealthReportCache()

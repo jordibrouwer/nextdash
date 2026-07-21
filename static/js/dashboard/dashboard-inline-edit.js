@@ -54,6 +54,54 @@ class DashboardInlineEdit {
     }
 
 
+    /**
+     * Explains the availability-check modes. Shared by the inline editor and the
+     * health view, because the question ("why does this row have a heartbeat and
+     * that one doesn't?") arises in both places.
+     */
+    showCheckModeExplainer() {
+        const d = this.dash;
+        const cfg = (key, fallback) => {
+            const full = `config.${key}`;
+            const result = d?.language?.t?.(full);
+            return result && result !== full ? result : fallback;
+        };
+        const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+        if (!window.AppModal) return;
+
+        const row = (title, body) => `
+            <div class="check-mode-explain-row">
+                <h4>${esc(title)}</h4>
+                <p>${esc(body)}</p>
+            </div>`;
+
+        window.AppModal.show({
+            title: cfg('checkModeExplainTitle', 'How availability checking works'),
+            htmlMessage: `
+                <div class="check-mode-explain">
+                    ${row(
+                        cfg('checkModePeriodic', 'Periodic'),
+                        cfg('checkModeExplainPeriodic', 'Answers one question: is this link still alive? It is checked in the background about once a day, and a broken bookmark is flagged in the health view. Cheap, and enough for most bookmarks.')
+                    )}
+                    ${row(
+                        cfg('checkModeMonitor', 'Monitor'),
+                        cfg('checkModeExplainMonitor', 'Answers a bigger question: how reliable has it been? It is checked on the interval you pick (from 5 minutes) and keeps history, so you get an uptime percentage, a heartbeat bar, outage history and optional alerts. Use it for the handful of services you actually care about being up.')
+                    )}
+                    ${row(
+                        cfg('checkModeExplainWhichTitle', 'Which should I pick?'),
+                        cfg('checkModeExplainWhich', 'Monitor includes everything Periodic does, so there is never a reason to want both. Periodic suits your ordinary links; Monitor suits your own servers and dashboards. Monitoring everything would make a lot of network requests and a large history file for little benefit.')
+                    )}
+                </div>`,
+            confirmText: cfg('checkModeExplainClose', 'Got it'),
+            // Informational only — a Cancel button would imply the explanation
+            // could be declined.
+            showCancel: false,
+            modalClass: 'whats-new-modal check-mode-explain-modal',
+        });
+    }
+
     snapshotInlineEditBaseline(bookmark, pageId) {
         const tags = Array.isArray(bookmark?.tags)
             ? bookmark.tags.map((tag) => String(tag).trim().toLowerCase()).filter(Boolean)
@@ -66,6 +114,8 @@ class DashboardInlineEdit {
             icon: String(bookmark?.icon || '').trim(),
             pinned: Boolean(bookmark?.pinned),
             checkStatus: Boolean(bookmark?.checkStatus),
+            monitor: Boolean(bookmark?.monitor),
+            monitorIntervalMinutes: window.CheckMode.intervalOf(bookmark),
             note: String(bookmark?.note || '').trim(),
             tags,
             pageId: Number(pageId),
@@ -94,6 +144,10 @@ class DashboardInlineEdit {
                 : String(bookmarkRef.bookmark.icon || '').trim(),
             pinned: fields.pinInput ? fields.pinInput.checked : Boolean(bookmarkRef.bookmark.pinned),
             checkStatus: fields.statusInput.checked,
+            monitor: fields.monitorInput ? fields.monitorInput.checked : Boolean(bookmarkRef.bookmark.monitor),
+            monitorIntervalMinutes: fields.monitorIntervalInput
+                ? Number(fields.monitorIntervalInput.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES
+                : window.CheckMode.intervalOf(bookmarkRef.bookmark),
             note: fields.noteInput ? String(fields.noteInput.value || '').trim() : '',
             tags,
             pageId: Number.isFinite(pageId) ? pageId : Number(bookmarkRef.pageId || d.currentPageId),
@@ -115,6 +169,10 @@ class DashboardInlineEdit {
         const category = fields.catSelect.value;
         const pinned = fields.pinInput ? fields.pinInput.checked : Boolean(original.pinned);
         const checkStatus = fields.statusInput.checked;
+        const monitor = fields.monitorInput ? fields.monitorInput.checked : Boolean(original.monitor);
+        const monitorIntervalMinutes = fields.monitorIntervalInput
+            ? Number(fields.monitorIntervalInput.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES
+            : window.CheckMode.intervalOf(original);
         const note = fields.noteInput ? String(fields.noteInput.value || '').trim() : String(original.note || '').trim();
         const icon = typeof fields.getPendingIcon === 'function'
             ? String(fields.getPendingIcon() || '').trim()
@@ -136,6 +194,10 @@ class DashboardInlineEdit {
             || category !== String(original.category ?? '')
             || (fields.pinInput && pinned !== Boolean(original.pinned))
             || checkStatus !== Boolean(original.checkStatus)
+            || monitor !== Boolean(original.monitor)
+            // The interval is only a real change while monitoring is on; otherwise
+            // it is a value with no effect and must not trigger an unsaved warning.
+            || (monitor && monitorIntervalMinutes !== window.CheckMode.intervalOf(original))
             || (fields.noteInput && note !== String(original.note || '').trim())
             || icon !== String(original.icon || '').trim()
             || !tagsEqual
@@ -650,8 +712,12 @@ class DashboardInlineEdit {
         });
         const pageField = mkField(cfg('page', 'Page'), pageSelect);
 
-        // Field order: Upload → Shortcut → Page → Category → Tags → Note → Pinned/Status
+        // Field order: Upload → Shortcut → flags → Page → Category → Tags → Note.
+        // The flag row is created further down (it needs `cfg` and the bookmark
+        // state), so reserve its slot here and fill it in place.
+        const togglesSlot = document.createComment('bookmark-inline-toggles');
         form.appendChild(shortcutField);
+        form.appendChild(togglesSlot);
         form.appendChild(pageField);
         form.appendChild(catField);
         form.appendChild(tagsField);
@@ -690,32 +756,153 @@ class DashboardInlineEdit {
             void reloadCatSelectForPage(sourcePageId);
         }
 
-        const pinField = document.createElement('input');
-        pinField.type = 'checkbox';
-        pinField.id = `bookmark-inline-pin-${bookmarkIndex >= 0 ? bookmarkIndex : `remote-${bookmarkRef.pageId}`}`;
-        pinField.checked = Boolean(bookmark.pinned);
-        const pinWrap = document.createElement('div');
-        pinWrap.className = 'bookmark-inline-field bookmark-inline-check';
-        const pinLabel = document.createElement('label');
-        pinLabel.htmlFor = pinField.id;
-        pinLabel.textContent = cfg('pinnedShort', 'Pinned');
-        pinWrap.appendChild(pinField);
-        pinWrap.appendChild(pinLabel);
-        form.appendChild(pinWrap);
-        const pinInput = pinField;
+        // The three flags sit together as one compact row of toggle pills directly
+        // under Shortcut. Stacked checkbox rows pushed the save buttons off small
+        // screens and made the flags easy to miss; as pills they read as one group
+        // and cost a single line.
+        const suffix = bookmarkIndex >= 0 ? bookmarkIndex : `remote-${bookmarkRef.pageId}`;
+        const toggleRow = document.createElement('div');
+        toggleRow.className = 'bookmark-inline-toggles';
+        toggleRow.setAttribute('role', 'group');
+        toggleRow.setAttribute('aria-label', cfg('bookmarkFlags', 'Options'));
 
-        const statusInput = document.createElement('input');
-        statusInput.type = 'checkbox';
-        statusInput.id = `bookmark-inline-status-${bookmarkIndex >= 0 ? bookmarkIndex : `remote-${bookmarkRef.pageId}`}`;
-        statusInput.checked = Boolean(bookmark.checkStatus);
-        const statusWrap = document.createElement('div');
-        statusWrap.className = 'bookmark-inline-field bookmark-inline-check';
-        const statusLabel = document.createElement('label');
-        statusLabel.htmlFor = statusInput.id;
-        statusLabel.textContent = cfg('statusCheck', 'Status check');
-        statusWrap.appendChild(statusInput);
-        statusWrap.appendChild(statusLabel);
-        form.appendChild(statusWrap);
+        const mkToggle = (id, labelText, checked, iconPath) => {
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = id;
+            input.checked = Boolean(checked);
+            input.className = 'bookmark-inline-toggle-input';
+
+            const label = document.createElement('label');
+            label.className = 'bookmark-inline-toggle';
+            label.htmlFor = id;
+            label.title = labelText;
+
+            const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            icon.setAttribute('viewBox', '0 0 24 24');
+            icon.setAttribute('aria-hidden', 'true');
+            icon.setAttribute('focusable', 'false');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', iconPath);
+            icon.appendChild(path);
+
+            const text = document.createElement('span');
+            text.textContent = labelText;
+
+            label.appendChild(icon);
+            label.appendChild(text);
+            toggleRow.appendChild(input);
+            toggleRow.appendChild(label);
+            return input;
+        };
+
+        const pinInput = mkToggle(
+            `bookmark-inline-pin-${suffix}`,
+            cfg('pinnedShort', 'Pinned'),
+            bookmark.pinned,
+            'M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z'
+        );
+        // Availability checking is one choice of three, not two overlapping flags.
+        // Monitor does everything Status check does and more, so offering both as
+        // independent checkboxes invited a meaningless "both on" state and left
+        // people guessing at the difference.
+        const checkModeRow = document.createElement('div');
+        checkModeRow.className = 'bookmark-inline-checkmode';
+        checkModeRow.setAttribute('role', 'radiogroup');
+        checkModeRow.setAttribute('aria-label', cfg('checkModeLabel', 'Availability check'));
+
+        const currentMode = bookmark.monitor ? 'monitor' : (bookmark.checkStatus ? 'periodic' : 'off');
+        const modeDefs = [
+            ['off', cfg('checkModeOff', 'Off'), cfg('checkModeOffHint', 'No availability checking.')],
+            ['periodic', cfg('checkModePeriodic', 'Periodic'), cfg('checkModePeriodicHint', 'Checks once a day and flags the bookmark when it breaks.')],
+            ['monitor', cfg('checkModeMonitor', 'Monitor'), cfg('checkModeMonitorHint', 'Checks on your own interval and keeps uptime history, a heartbeat and outage alerts. Includes everything Periodic does.')],
+        ];
+        const modeInputs = {};
+        modeDefs.forEach(([value, labelText, hint]) => {
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = `bookmark-inline-checkmode-${suffix}`;
+            input.id = `bookmark-inline-checkmode-${value}-${suffix}`;
+            input.value = value;
+            input.checked = currentMode === value;
+            input.className = 'bookmark-inline-checkmode-input';
+
+            const label = document.createElement('label');
+            label.className = 'bookmark-inline-checkmode-option';
+            label.htmlFor = input.id;
+            label.textContent = labelText;
+            label.title = hint;
+
+            checkModeRow.appendChild(input);
+            checkModeRow.appendChild(label);
+            modeInputs[value] = input;
+        });
+
+        const readCheckMode = () => {
+            for (const [value, input] of Object.entries(modeInputs)) {
+                if (input.checked) return value;
+            }
+            return 'off';
+        };
+        // The two stored booleans are derived from the single choice, so they can
+        // never disagree with each other.
+        const statusInput = { get checked() { return readCheckMode() === 'periodic'; } };
+        const monitorInput = { get checked() { return readCheckMode() === 'monitor'; } };
+
+        const monitorIntervalInput = document.createElement('select');
+        monitorIntervalInput.id = `bookmark-inline-monitor-interval-${suffix}`;
+        monitorIntervalInput.className = 'bookmark-inline-select bookmark-inline-toggle-select';
+        // Abbreviated units here (not the config form's full words): the select
+        // shares one line with three pills, and "15 minutes" is what pushes it
+        // onto a line of its own.
+        [
+            [5, cfg('monitorIntervalShort5', '5m')],
+            [15, cfg('monitorIntervalShort15', '15m')],
+            [30, cfg('monitorIntervalShort30', '30m')],
+            [60, cfg('monitorIntervalShort60', '1h')],
+            [360, cfg('monitorIntervalShort360', '6h')],
+            [1440, cfg('monitorIntervalShort1440', '24h')],
+        ].forEach(([value, label]) => {
+            const opt = document.createElement('option');
+            opt.value = String(value);
+            opt.textContent = label;
+            monitorIntervalInput.appendChild(opt);
+        });
+        monitorIntervalInput.value = String(window.CheckMode.intervalOf(bookmark));
+        monitorIntervalInput.setAttribute('aria-label', cfg('monitorInterval', 'Check every'));
+        // The interval rides along in the same row, so turning Monitor on does not
+        // reflow the form — it only reveals a select that was already accounted for.
+        monitorIntervalInput.hidden = !monitorInput.checked;
+        checkModeRow.appendChild(monitorIntervalInput);
+
+        // A small info button opens the full explanation. Hover titles cover the
+        // desktop case; this is the path that also works on touch.
+        const checkModeInfo = document.createElement('button');
+        checkModeInfo.type = 'button';
+        checkModeInfo.className = 'bookmark-inline-checkmode-info';
+        checkModeInfo.textContent = 'i';
+        checkModeInfo.title = cfg('checkModeExplainTitle', 'How availability checking works');
+        checkModeInfo.setAttribute('aria-label', cfg('checkModeExplainTitle', 'How availability checking works'));
+        checkModeInfo.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.showCheckModeExplainer();
+        });
+        checkModeRow.appendChild(checkModeInfo);
+
+        Object.values(modeInputs).forEach((input) => {
+            input.addEventListener('change', () => {
+                monitorIntervalInput.hidden = !monitorInput.checked;
+                // Give a freshly-chosen monitor an explicit interval, so the stored
+                // bookmark states its cadence rather than relying on the default.
+                if (monitorInput.checked && !Number(monitorIntervalInput.value)) {
+                    monitorIntervalInput.value = String(window.CheckMode.DEFAULT_INTERVAL_MINUTES);
+                }
+            });
+        });
+
+        form.insertBefore(toggleRow, togglesSlot);
+        form.insertBefore(checkModeRow, togglesSlot);
 
         const actions = document.createElement('div');
         actions.className = 'bookmark-inline-actions';
@@ -765,6 +952,8 @@ class DashboardInlineEdit {
                     pageSelect,
                     pinInput,
                     statusInput,
+                    monitorInput,
+                    monitorIntervalInput,
                     noteInput,
                     tagsInput,
                     getPendingIcon: () => pendingIcon
@@ -875,6 +1064,8 @@ class DashboardInlineEdit {
                 pageSelect,
                 pinInput,
                 statusInput,
+                monitorInput,
+                monitorIntervalInput,
                 noteInput,
                 tagsInput,
                 getPendingIcon: () => pendingIcon
@@ -1022,6 +1213,10 @@ class DashboardInlineEdit {
             category,
             pinned: fields.pinInput ? fields.pinInput.checked : Boolean(bookmark.pinned),
             checkStatus: fields.statusInput.checked,
+            monitor: fields.monitorInput ? fields.monitorInput.checked : Boolean(bookmark.monitor),
+            monitorIntervalMinutes: fields.monitorIntervalInput
+                ? Number(fields.monitorIntervalInput.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES
+                : (bookmark.monitorIntervalMinutes || 0),
             note: fields.noteInput ? String(fields.noteInput.value || '').trim() : String(bookmark.note || '').trim(),
             tags: parsedTags
         };
@@ -1310,6 +1505,8 @@ class DashboardInlineEdit {
         target.category = source.category;
         target.pinned = source.pinned;
         target.checkStatus = source.checkStatus;
+        target.monitor = source.monitor;
+        target.monitorIntervalMinutes = source.monitorIntervalMinutes;
         target.note = source.note || '';
         target.tags = Array.isArray(source.tags) ? [...source.tags] : [];
     }
@@ -1512,6 +1709,8 @@ class DashboardInlineEdit {
                 category: editedBookmark.category,
                 pinned: editedBookmark.pinned,
                 checkStatus: editedBookmark.checkStatus,
+                monitor: editedBookmark.monitor,
+                monitorIntervalMinutes: editedBookmark.monitorIntervalMinutes,
                 note: editedBookmark.note || '',
                 tags: Array.isArray(editedBookmark.tags) ? editedBookmark.tags : []
             };

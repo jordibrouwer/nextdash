@@ -93,7 +93,7 @@ var sharedAssetVersions = pageAssetVersions{
 	HealthBadgeJS:        "health-badge-count-only-1",
 	AppNotificationJS:    "toast-html-1",
 	SearchCommandsNewJS:  "search-commands-new-9-outcome",
-	WhatsNewData:         "whats-new-v180",
+	WhatsNewData:         "whats-new-v181",
 	DataRevision:         "data-revision-9-context-menu",
 
 	WriteAPIJS:               "write-api-1",
@@ -119,7 +119,7 @@ var sharedAssetVersions = pageAssetVersions{
 	AnalyticsJS:              "analytics-3-open-source",
 	UmamiAnalyticsJS:         "umami-analytics-2-snapshot",
 	ModalJS:                  "modal-focus-aria-1",
-	StatusJS:                 "status-1",
+	StatusJS:                 "status-2",
 	SelectJS:                 "select-js-1",
 	ReorderJS:                "reorder-js-1",
 	ConfigStorageJS:          "config-storage-1",
@@ -130,7 +130,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
 	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
-	DashboardCSS:            "showmore-keynav-1",
+	DashboardCSS:            "check-mode-3",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
 	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 

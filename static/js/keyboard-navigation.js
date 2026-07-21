@@ -96,6 +96,8 @@ class KeyboardNavigation {
                 document.getElementById('tag-popover')
                 || document.getElementById('move-popover')
                 || document.getElementById('delete-popover')
+                || document.getElementById('bookmark-context-menu')
+                || document.getElementById('bookmark-check-mode-menu')
             ) {
                 return;
             }
@@ -117,7 +119,7 @@ class KeyboardNavigation {
                 return;
             }
 
-            // Shift+M / Shift+D / Shift+T — quick action popovers (use e.code for layout reliability)
+            // Shift+M / Shift+D / Shift+T / Shift+C — quick action popovers (use e.code for layout reliability)
             if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
                 if (e.code === 'KeyM') {
                     e.preventDefault();
@@ -138,6 +140,13 @@ class KeyboardNavigation {
                     e.stopImmediatePropagation();
                     e.stopPropagation();
                     this.openTagPopoverForCurrent();
+                    return;
+                }
+                if (e.code === 'KeyC') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.openCheckModePopoverForCurrent();
                     return;
                 }
             }
@@ -1454,6 +1463,19 @@ class KeyboardNavigation {
         if (!bookmark) return;
         const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
         dash.showTagPopover(row, bookmark, bookmarkIndex);
+    }
+
+    /**
+     * Shift+C — availability checking for the selected bookmark.
+     *
+     * Delegates to the context menu rather than building a second popover: the
+     * right-click route and this one open the same menu, so the options, the
+     * wording and the write stay one implementation.
+     */
+    openCheckModePopoverForCurrent() {
+        const row = this._resolveActionPopoverRow();
+        if (!row) return;
+        this.dashboard?.contextMenu?.openCheckModeForRow?.(row);
     }
 
     enable() {

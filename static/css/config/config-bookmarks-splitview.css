@@ -1144,26 +1144,249 @@ body[data-mobile-layout="true"] .bookmark-detail-empty-hints--desktop {
     border-color: var(--text-secondary);
 }
 
-.bookmark-detail-toggles {
-    flex-direction: row;
-    gap: 1.25rem;
-    flex-wrap: wrap;
+/* ─── Availability check mode ────────────────────────────────────────────────
+   A three-way choice rather than two checkboxes: Monitor is a superset of
+   Periodic, so the control makes "both" structurally impossible. */
+
+.bookmark-detail-checkmode-header {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
-/* Override .checkbox-label grid — icon-toggle indicator is wider than 1.4em */
+.bookmark-detail-checkmode-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+}
+
+.bookmark-detail-checkmode-input {
+    position: absolute;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    pointer-events: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.bookmark-detail-checkmode-option {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.2;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.bookmark-detail-checkmode-option:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-secondary));
+    color: var(--text-primary);
+}
+
+.bookmark-detail-checkmode-input:checked + .bookmark-detail-checkmode-option {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.bookmark-detail-checkmode-input:focus-visible + .bookmark-detail-checkmode-option {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.bookmark-detail-checkmode-info {
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    border: 1px solid var(--border-secondary);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-style: italic;
+    line-height: 1;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.bookmark-detail-checkmode-info:hover {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.bookmark-detail-checkmode .bookmark-detail-field-hint {
+    margin-top: 0.35rem;
+}
+
+.bookmark-detail-checkmode .custom-select-wrapper,
+.bookmark-detail-checkmode .bookmark-detail-toggle-select {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-detail-checkmode-option {
+        transition: none;
+    }
+}
+
+/* ─── Flag toggles (pinned / status check / monitor) ─────────────────────────
+   Pills rather than square icon boxes with separate labels: the icon and its
+   label become one target, on/off is legible from the fill, and the three flags
+   read as one group. Mirrors .bookmark-inline-toggles in the dashboard editor so
+   both editors look the same. Scoped to this panel — .icon-toggle is shared with
+   other config screens that still want the boxed style. */
+
+.bookmark-detail-toggles {
+    flex-direction: row;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
 .bookmark-detail-toggles .bookmark-detail-toggle.checkbox-label {
     display: inline-flex !important;
     grid-template-columns: unset;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.3rem;
+    padding: 0.25rem 0.55rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: var(--background-primary);
+    color: var(--text-secondary);
     cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.bookmark-detail-toggles .bookmark-detail-toggle:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-secondary));
+    color: var(--text-primary);
+}
+
+/* The native checkbox must stay in the DOM (focusable, screen-reader visible) but
+   never paint: .checkbox-label styles it as a visible 14px box, which would sit
+   inside the pill as a box-in-a-pill. Kept off-screen instead of display:none so
+   it remains focusable. */
+.bookmark-detail-toggles .bookmark-detail-toggle input[type="checkbox"] {
+    position: absolute;
+    /* !important throughout: .checkbox-label in config-forms.css sets width,
+       height, border, background and opacity with !important, so plain
+       declarations here lose regardless of specificity. */
+    width: 1px !important;
+    height: 1px !important;
+    max-width: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    background-color: transparent !important;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    pointer-events: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* The indicator keeps holding the icon, but loses its own box — the pill is the
+   visible control now. */
+.bookmark-detail-toggles .icon-toggle-indicator {
+    width: auto;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+}
+
+.bookmark-detail-toggles .icon-toggle-indicator svg {
+    width: 0.85em;
+    height: 0.85em;
+}
+
+.bookmark-detail-toggles .icon-toggle input[type="checkbox"]:checked + .icon-toggle-indicator {
+    color: inherit;
+    border-color: transparent;
+}
+
+.bookmark-detail-toggles .bookmark-detail-toggle:has(input[type="checkbox"]:checked) {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    color: var(--text-primary);
+}
+
+.bookmark-detail-toggles .bookmark-detail-toggle:has(input[type="checkbox"]:checked) .bookmark-detail-toggle-label {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Focus must land on the pill, since the checkbox itself is visually hidden. */
+.bookmark-detail-toggles .bookmark-detail-toggle:has(input[type="checkbox"]:focus-visible) {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.bookmark-detail-toggles .icon-toggle input[type="checkbox"]:focus-visible + .icon-toggle-indicator {
+    outline: none;
 }
 
 .bookmark-detail-toggle-label {
     font-size: var(--font-size-controls);
-    color: var(--text-secondary);
+    color: inherit;
     user-select: none;
     white-space: nowrap;
+}
+
+/* select.js swaps the native <select> for a .custom-select-wrapper, so size the
+   wrapper too — otherwise the interval stretches to the panel width and lands on
+   its own line, which is exactly what the pill row avoids. */
+.bookmark-detail-toggles .bookmark-detail-toggle-select,
+.bookmark-detail-toggles .custom-select-wrapper {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    font-size: var(--font-size-controls);
+}
+
+.bookmark-detail-toggles .bookmark-detail-toggle-select {
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: var(--background-primary);
+    color: var(--text-primary);
+}
+
+.bookmark-detail-toggles .bookmark-detail-toggle-select:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.bookmark-detail-toggles .custom-select-wrapper .custom-select-trigger {
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-detail-toggles .bookmark-detail-toggle.checkbox-label {
+        transition: none;
+    }
 }
 
 /* Detail header knoppen */

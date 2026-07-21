@@ -15,9 +15,15 @@ class DashboardContextMenu {
         this._cleanup = null;
     }
 
-    t(key, fallback) {
+    t(key, fallback, params) {
         const val = this.dash.language?.t ? this.dash.language.t(key) : null;
-        return (val && val !== key) ? val : fallback;
+        const text = (val && val !== key) ? val : fallback;
+        return params
+            ? Object.entries(params).reduce(
+                (acc, [name, value]) => acc.replaceAll(`{${name}}`, String(value)),
+                String(text)
+            )
+            : text;
     }
 
     /** Bound once per rendered row; rows are rebuilt often, so this stays cheap. */
@@ -49,7 +55,19 @@ class DashboardContextMenu {
         if (rawIndex !== null) {
             const index = Number(rawIndex);
             const bookmark = d.bookmarks?.[index];
-            if (bookmark) return { bookmark, index, scope: 'current' };
+            // `original` and `pageId` complete the shape resolveBookmarkReference()
+            // returns. Callers that sync a mutation across collections write to
+            // `original`, and it used to be missing here, so a keyboard-driven
+            // change threw on a row that had a page-local index.
+            if (bookmark) {
+                return {
+                    bookmark,
+                    index,
+                    scope: 'current',
+                    pageId: Number(d.currentPageId),
+                    original: { ...bookmark },
+                };
+            }
         }
         // Smart collections render rows without a page-local index; fall back to the URL.
         const url = row.getAttribute('data-bookmark-url');
@@ -84,12 +102,23 @@ class DashboardContextMenu {
         nameHint.textContent = String(bookmark.name || bookmark.url || '').trim() || '—';
         pop.appendChild(nameHint);
 
+        // Naming the current mode saves opening the submenu just to read it, the
+        // same way the health view's row menu labels itself.
+        const currentMode = window.CheckMode?.meta(window.CheckMode.of(bookmark));
         const actions = [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'edit', label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎' },
             { id: 'tags', label: this.t('dashboard.contextMenuTags', 'Tags…'), icon: '#' },
             { id: 'move', label: this.t('dashboard.contextMenuMove', 'Move to…'), icon: '→' },
+            ...(currentMode
+                ? [{
+                    id: 'check-mode',
+                    label: this.t('dashboard.contextMenuCheckMode', 'Checking ({mode})…', { mode: currentMode.badge }),
+                    icon: '◉',
+                    submenu: true,
+                }]
+                : []),
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true }
         ];
 
@@ -113,6 +142,15 @@ class DashboardContextMenu {
             const label = document.createElement('span');
             label.textContent = action.label;
             item.appendChild(label);
+
+            if (action.submenu) {
+                item.setAttribute('aria-haspopup', 'menu');
+                const caret = document.createElement('span');
+                caret.className = 'move-popover-submenu-caret';
+                caret.textContent = '▸';
+                caret.setAttribute('aria-hidden', 'true');
+                item.appendChild(caret);
+            }
 
             pop.appendChild(item);
             items.push(item);
@@ -177,6 +215,234 @@ class DashboardContextMenu {
         requestAnimationFrame(() => setFocus(0));
     }
 
+    /**
+     * The check-mode submenu: the same three named options the health view
+     * offers, in this menu's own surface.
+     *
+     * Three explicit options rather than a control that cycles, because the modes
+     * are not interchangeable — periodic is cheap and answers "is this alive",
+     * monitor is the tier that records uptime — so each carries its sentence
+     * instead of leaving the user to guess what the next click selects.
+     */
+    showCheckModeMenu(row, bookmarkRef) {
+        const d = this.dash;
+        const bookmark = bookmarkRef.bookmark;
+        const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
+        if (!window.CheckMode) return;
+        this.close();
+
+        const active = window.CheckMode.of(bookmark);
+
+        const pop = document.createElement('div');
+        pop.id = 'bookmark-check-mode-menu';
+        pop.className = 'move-popover bookmark-context-menu bookmark-check-mode-menu';
+        pop.setAttribute('role', 'menu');
+        pop.setAttribute('aria-label', this.t('dashboard.healthCheckModeLabel', 'Availability checking'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = this.t('dashboard.healthCheckModeLabel', 'Availability checking');
+        pop.appendChild(header);
+
+        const items = [];
+        window.CheckMode.options().forEach((option) => {
+            const isActive = option.mode === active;
+            const item = document.createElement('div');
+            item.className = 'move-popover-item' + (isActive ? ' is-current' : '');
+            item.setAttribute('role', 'menuitemradio');
+            item.setAttribute('aria-checked', isActive ? 'true' : 'false');
+            item.setAttribute('data-check-mode', option.mode);
+            item.setAttribute('data-check-key', option.key);
+
+            const check = document.createElement('span');
+            check.className = 'move-popover-check';
+            check.textContent = isActive ? '✓' : '';
+            item.appendChild(check);
+
+            const text = document.createElement('span');
+            text.className = 'check-mode-option-text';
+            const label = document.createElement('span');
+            label.className = 'check-mode-option-label';
+            label.textContent = option.label;
+            // The accelerator is printed rather than taught elsewhere, the way the
+            // health view marks its row shortcuts.
+            const kbd = document.createElement('kbd');
+            kbd.className = 'check-mode-option-key';
+            kbd.textContent = option.key;
+            label.appendChild(kbd);
+            const body = document.createElement('span');
+            body.className = 'check-mode-option-body';
+            body.textContent = option.body;
+            text.appendChild(label);
+            text.appendChild(body);
+            item.appendChild(text);
+
+            pop.appendChild(item);
+            items.push(item);
+        });
+
+        document.body.appendChild(pop);
+        // Anchored to the row for both routes. The parent menu follows the pointer
+        // because that is where the gesture happened, but this one belongs to a
+        // specific bookmark — and opening it beside that row keeps mouse and
+        // keyboard showing it in the same place.
+        this.positionAtPoint(pop, this.pointBelowRow(row));
+        window.FocusTrapUtils?.syncDashboardInert?.();
+
+        const previousFocus = document.activeElement;
+        // Captured separately from the mutable cursor below: the deferred focus
+        // call runs after `focusedIdx` may already have moved, and reading it
+        // there landed on whichever item the DOM happened to focus first.
+        const initialIdx = Math.max(0, items.findIndex((i) => i.getAttribute('aria-checked') === 'true'));
+        let focusedIdx = initialIdx;
+        const setFocus = (idx) => {
+            d.bookmarkRows?._focusActionPopoverItem?.(items, idx);
+            focusedIdx = idx;
+        };
+
+        let onOutside = null;
+        const close = () => {
+            if (pop.parentNode) pop.remove();
+            document.removeEventListener('keydown', onKey, true);
+            if (onOutside) {
+                document.removeEventListener('click', onOutside);
+                document.removeEventListener('contextmenu', onOutside);
+                onOutside = null;
+            }
+            window.removeEventListener('resize', close);
+            window.removeEventListener('scroll', close, true);
+            if (this._cleanup === close) this._cleanup = null;
+            d.bookmarkRows?._restoreActionPopoverFocus?.(previousFocus, row, bookmarkIndex);
+            window.FocusTrapUtils?.syncDashboardInert?.();
+        };
+        this._cleanup = close;
+
+        const choose = async (item) => {
+            const mode = item.getAttribute('data-check-mode');
+            close();
+            if (!mode || mode === active) return;
+            window.nextdashTrack?.('bookmark:check-mode');
+
+            const pageId = Number(bookmarkRef.pageId || d.currentPageId);
+            const index = await this.resolveWriteIndex(bookmarkRef, pageId);
+            if (index < 0) {
+                d.showNotification?.(
+                    this.t('dashboard.healthCheckModeFailed', 'Could not change availability checking'),
+                    'error'
+                );
+                return;
+            }
+
+            const outcome = await window.CheckMode.apply({
+                pageId,
+                index,
+                url: bookmark.url,
+                mode,
+                name: bookmark.name || bookmark.url,
+            });
+            if (outcome === 'failed') return;
+
+            // Apply the new mode to every in-memory copy before reloading, and
+            // drop the page cache loadBookmarks() reads through. Without it the
+            // menu reopened on the pre-change mode even though the write had
+            // succeeded. Shared with the health view, which needs the same sync.
+            window.CheckMode.assign(bookmark, mode);
+            window.CheckMode.syncLocalCopies({
+                pageId,
+                url: bookmark.url,
+                mode,
+                bookmarkRef,
+            });
+            await d.loadBookmarks?.().catch?.(() => {});
+            d.renderDashboard?.({ incremental: false });
+            d.updateHealthBadge?.();
+        };
+
+        const onKey = (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); return; }
+            if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx + 1) % items.length); return; }
+            if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx - 1 + items.length) % items.length); return; }
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopImmediatePropagation(); if (items[focusedIdx]) void choose(items[focusedIdx]); return; }
+
+            // Letter accelerators: o / p / m pick a mode outright. The letters come
+            // from the mode names themselves and are shown on each row, so there is
+            // nothing to memorise. Swallowed even when they match nothing, because
+            // a bare letter would otherwise fall through to the shortcut search
+            // and leave a menu open over it.
+            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                const hit = items.find((el) => el.getAttribute('data-check-key') === e.key.toLowerCase());
+                if (hit) void choose(hit);
+                return;
+            }
+        };
+
+        items.forEach((item, idx) => {
+            item.addEventListener('mouseenter', () => setFocus(idx));
+            item.addEventListener('click', () => void choose(item));
+        });
+
+        document.addEventListener('keydown', onKey, true);
+        window.addEventListener('resize', close);
+        window.addEventListener('scroll', close, true);
+        setTimeout(() => {
+            onOutside = (e) => { if (!pop.contains(e.target)) close(); };
+            document.addEventListener('click', onOutside);
+            document.addEventListener('contextmenu', onOutside);
+        }, 0);
+        // Opens on the active option, so Enter alone is a no-op rather than a
+        // change the user did not ask for.
+        requestAnimationFrame(() => setFocus(initialIdx));
+    }
+
+    /**
+     * The page-local index the check-mode endpoint needs.
+     *
+     * A row on the current page carries its index already. Smart-collection rows
+     * do not — they can come from any page — so the source page is fetched and
+     * the bookmark located there, the same route remote inline edits take.
+     * Returns -1 when it cannot be placed, which is a refusal rather than a
+     * guess: a wrong index would rewrite a different bookmark.
+     */
+    async resolveWriteIndex(bookmarkRef, pageId) {
+        const d = this.dash;
+        if (bookmarkRef.scope === 'current' && Number.isInteger(bookmarkRef.index) && bookmarkRef.index >= 0) {
+            return bookmarkRef.index;
+        }
+        if (!Number.isFinite(pageId) || pageId <= 0) return -1;
+        try {
+            const res = await fetch(`/api/bookmarks?page=${pageId}`);
+            if (!res.ok) return -1;
+            const sourceBookmarks = await res.json();
+            const index = d.findBookmarkIndexByReference?.(sourceBookmarks, bookmarkRef);
+            return Number.isInteger(index) && index >= 0 ? index : -1;
+        } catch {
+            return -1;
+        }
+    }
+
+    /** Anchor point just under a row, used by the row-anchored submenu. */
+    pointBelowRow(row) {
+        const rect = row?.getBoundingClientRect?.();
+        if (!rect) return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        return { x: rect.left, y: rect.bottom + 4 };
+    }
+
+    /**
+     * Open the check-mode menu for a row from the keyboard (Shift+C).
+     *
+     * Same menu the right-click route builds, and anchored the same way, so the
+     * two routes are indistinguishable once the menu is open.
+     */
+    openCheckModeForRow(row) {
+        if (!(row instanceof HTMLElement)) return false;
+        const bookmarkRef = this.resolveRowBookmark(row);
+        if (!bookmarkRef?.bookmark) return false;
+        this.showCheckModeMenu(row, bookmarkRef);
+        return true;
+    }
+
     /** Flip the menu back inside the viewport when opened near an edge. */
     positionAtPoint(pop, point) {
         const margin = 8;
@@ -216,6 +482,9 @@ class DashboardContextMenu {
                 break;
             case 'move':
                 d.showMovePopover?.(row, bookmark, bookmarkIndex);
+                break;
+            case 'check-mode':
+                this.showCheckModeMenu(row, bookmarkRef);
                 break;
             case 'delete':
                 // Confirm popover rather than deleteBookmarkInline() — a menu click is

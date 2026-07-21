@@ -22,6 +22,18 @@ function statusPingFetch(url, init) {
     return typeof nextDashFetch === 'function' ? nextDashFetch(url, init) : fetch(url, init);
 }
 
+/**
+ * Whether a bookmark takes part in availability checking at all.
+ *
+ * Checking is one three-state choice — off, periodic, monitor — stored as two
+ * mutually exclusive flags, so a monitored bookmark has checkStatus false.
+ * Testing checkStatus alone would hide the status dot on exactly the bookmarks
+ * the user cares most about being up.
+ */
+function bookmarkIsChecked(bookmark) {
+    return Boolean(bookmark?.checkStatus || bookmark?.monitor);
+}
+
 function statusCacheKey(url) {
     const raw = String(url || '').trim();
     if (!raw) return '';
@@ -41,7 +53,6 @@ class StatusMonitor {
         this._inFlightPings = new Set();
         this.checkInterval = null;
         this.isChecking = false;
-        this.emptyStatusHintShown = false;
         this.loadingIndicator = document.getElementById('status-loading-indicator');
         // Cap parallel /api/ping calls so many bookmarks do not freeze browser + server.
         this.maxConcurrentChecks = 4;
@@ -84,26 +95,6 @@ class StatusMonitor {
         return Object.entries(replacements).reduce(
             (out, [name, value]) => out.replaceAll(`{${name}}`, String(value)),
             text
-        );
-    }
-
-    showNoBookmarksStatusHint() {
-        const dashboard = window.dashboardInstance;
-        if (!dashboard || typeof dashboard.showNotification !== 'function') return;
-        const actionLabel = this.statusT('statusOpenBookmarksConfig', 'Open bookmarks');
-        dashboard.showNotification(
-            this.statusT(
-                'statusNoBookmarksChecked',
-                'Status is enabled, but no bookmarks have status checks turned on. Enable them per bookmark in Config.'
-            ),
-            'error',
-            {
-                duration: 9000,
-                actionLabel,
-                onAction: () => {
-                    window.location.href = '/config#bookmarks';
-                }
-            }
         );
     }
 
@@ -200,7 +191,7 @@ class StatusMonitor {
     filterBookmarksNearViewport(bookmarks) {
         const list = Array.isArray(bookmarks) ? bookmarks : [];
         return list.filter((b, index) => {
-            if (!b || !b.checkStatus) {
+            if (!bookmarkIsChecked(b)) {
                 return false;
             }
             const el = this.getStatusTargetElement(b, index);
@@ -250,7 +241,7 @@ class StatusMonitor {
                     const wantKey = statusCacheKey(url);
                     bookmark = list.find((b) => statusCacheKey(b?.url) === wantKey);
                 }
-                if (bookmark && bookmark.checkStatus) {
+                if (bookmarkIsChecked(bookmark)) {
                     this.checkBookmarkStatus(bookmark, rowIndex);
                 }
             });
@@ -273,7 +264,7 @@ class StatusMonitor {
                 const wantKey = statusCacheKey(url);
                 bookmark = bmList.find((b) => statusCacheKey(b?.url) === wantKey);
             }
-            if (bookmark && bookmark.checkStatus) {
+            if (bookmarkIsChecked(bookmark)) {
                 this.pingObserver.observe(row);
             }
         });
@@ -379,7 +370,7 @@ class StatusMonitor {
     }
 
     async checkBookmarkStatus(bookmark, bookmarkIndex) {
-        if (!this.settings.showStatus || !bookmark.checkStatus) {
+        if (!this.settings.showStatus || !bookmarkIsChecked(bookmark)) {
             return null;
         }
 
@@ -509,17 +500,15 @@ class StatusMonitor {
         this.showLoadingIndicator();
 
         // Filter bookmarks that should be checked
-        const bookmarksToCheck = bookmarks.filter(bookmark => bookmark.checkStatus);
+        const bookmarksToCheck = bookmarks.filter(bookmarkIsChecked);
         if (bookmarksToCheck.length === 0) {
+            // Nothing opted in: stop quietly. Checking is deliberately per-bookmark,
+            // so "none selected" is a valid state, not a misconfiguration worth
+            // interrupting the dashboard over on every load.
             this.isChecking = false;
             this.hideLoadingIndicator();
-            if (!this.emptyStatusHintShown) {
-                this.showNoBookmarksStatusHint();
-                this.emptyStatusHintShown = true;
-            }
             return;
         }
-        this.emptyStatusHintShown = false;
 
         const full = options && options.full === true;
         const toRun = full ? bookmarksToCheck : this.filterBookmarksNearViewport(bookmarksToCheck);
@@ -630,7 +619,7 @@ class StatusMonitor {
             || dash?.allBookmarks?.find((candidate) => candidate?.url === url)
             || bookmark;
 
-        if (!fresh?.checkStatus) {
+        if (!bookmarkIsChecked(fresh)) {
             return null;
         }
 
@@ -692,7 +681,7 @@ class StatusMonitor {
 
         // Then check only bookmarks that don't have cached status
         const uncachedBookmarks = bookmarks.filter(bookmark =>
-            bookmark.checkStatus && !this.statusCache.has(statusCacheKey(bookmark.url))
+            bookmarkIsChecked(bookmark) && !this.statusCache.has(statusCacheKey(bookmark.url))
         );
 
         const uncachedNear = this.filterBookmarksNearViewport(uncachedBookmarks);
@@ -706,7 +695,7 @@ class StatusMonitor {
     // Apply cached statuses to bookmarks that already have them
     applyCachedStatuses(bookmarks) {
         bookmarks.forEach((bookmark, index) => {
-            if (!bookmark.checkStatus) {
+            if (!bookmarkIsChecked(bookmark)) {
                 return;
             }
             const bookmarkElement = this.getStatusTargetElement(bookmark, index);

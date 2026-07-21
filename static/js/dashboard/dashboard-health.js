@@ -276,10 +276,8 @@ class DashboardHealth {
             if (openMenu) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                const key = openMenu.getAttribute('data-menu-for');
                 this.closeAllMenus();
-                document.querySelector(`.health-view-more-btn[data-menu-toggle="${CSS.escape(key)}"]`)
-                    ?.focus({ preventScroll: true });
+                this.focusMenuOwner(openMenu);
                 return;
             }
             if (window.DashboardTagCloud?.modalOpen) return;
@@ -309,6 +307,8 @@ class DashboardHealth {
                 return (Number(issue.duplicateCount) || 0) > 1;
             case 'unchecked':
                 return !issue.lastChecked;
+            case 'monitored':
+                return issue.monitor === true;
             // stale / unused / missing-preview / shortcut-conflict / healthy reach
             // this view only through deep links (consumeLegacyEntryParams). Each maps
             // to a single issue.status, so match on that rather than falling through
@@ -525,7 +525,13 @@ class DashboardHealth {
         if (e.key === 'm' && this.selectedKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.toggleMenu(this.selectedKey);
+            this.toggleMenu(this.selectedKey, 'more');
+            return true;
+        }
+        if (e.key === 'c' && this.selectedKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.toggleMenu(this.selectedKey, 'check');
             return true;
         }
         if (e.key === 'p' && this.selectedKey) {
@@ -569,7 +575,9 @@ class DashboardHealth {
         this._outsideMenuHandler = (e) => {
             if (!this.isActiveView()) return;
             if (!document.querySelector('.health-view-menu:not([hidden])')) return;
-            if (e.target.closest?.('.health-view-menu-wrap')) return;
+            // Both menu wrappers, or a click on an option would dismiss the menu
+            // before the option's own handler ever ran.
+            if (e.target.closest?.('.health-view-menu-wrap, .health-check-mode-wrap')) return;
             this.closeAllMenus();
         };
         document.addEventListener('click', this._outsideMenuHandler, true);
@@ -690,13 +698,21 @@ class DashboardHealth {
         const d = this.dash;
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
 
-        const persist = async (status, errorDetail, pingMs) => {
+        const persist = async (status, errorDetail, pingMs, httpStatus) => {
             const cacheURL = this.canonicalUrl(url);
             if (cacheURL) {
                 await fetcher('/api/health/cache-scan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: cacheURL, status, pingMs: pingMs || 0, error: errorDetail }),
+                    // The code rides along so a monitored bookmark records the same
+                    // shape of sample the scheduler writes.
+                    body: JSON.stringify({
+                        url: cacheURL,
+                        status,
+                        pingMs: pingMs || 0,
+                        error: errorDetail,
+                        code: Number(httpStatus) || 0,
+                    }),
                 }).catch(() => { /* cache writes are best-effort */ });
             }
             if (Number.isFinite(issue.pageId) && Number.isFinite(issue.index)) {
@@ -722,7 +738,7 @@ class DashboardHealth {
             const status = result.status === 'online' ? 'online' : 'offline';
             const errorDetail = String(result.errorDetail || '').trim()
                 || (status === 'online' ? '' : this.t('dashboard.healthPingFailed', 'ping failed'));
-            await persist(status, errorDetail, result.ping);
+            await persist(status, errorDetail, result.ping, result.httpStatus);
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
             d.showNotification(
@@ -759,15 +775,38 @@ class DashboardHealth {
         document.querySelectorAll('.health-view-menu').forEach((menu) => {
             menu.hidden = true;
         });
-        document.querySelectorAll('.health-view-more-btn').forEach((btn) => {
+        document.querySelectorAll('[aria-haspopup="menu"]').forEach((btn) => {
             btn.setAttribute('aria-expanded', 'false');
         });
     }
 
-    toggleMenu(key) {
-        const menu = document.querySelector(`.health-view-menu[data-menu-for="${CSS.escape(key)}"]`);
-        const btn = document.querySelector(`.health-view-more-btn[data-menu-toggle="${CSS.escape(key)}"]`);
-        if (!menu || !btn) return;
+    /**
+     * The control a menu belongs to. Menus record their own opener rather than
+     * assuming it is the ⋯ button, so the check-mode popover — which hangs off the
+     * badge in the row meta — returns focus to the right place on Escape.
+     */
+    menuOwner(menu) {
+        const owner = menu?.getAttribute('data-menu-owner');
+        const key = menu?.getAttribute('data-menu-for');
+        if (!owner || !key) return null;
+        return document.querySelector(`[data-menu-toggle="${CSS.escape(key)}"][data-menu-kind="${CSS.escape(owner)}"]`);
+    }
+
+    focusMenuOwner(menu) {
+        this.menuOwner(menu)?.focus({ preventScroll: true });
+    }
+
+    /**
+     * Open or close one row menu. `kind` selects which of a row's menus is meant:
+     * "more" for the ⋯ overflow, "check" for the check-mode popover.
+     */
+    toggleMenu(key, kind = 'more') {
+        const menu = document.querySelector(
+            `.health-view-menu[data-menu-for="${CSS.escape(key)}"][data-menu-owner="${CSS.escape(kind)}"]`
+        );
+        if (!menu) return;
+        const btn = this.menuOwner(menu);
+        if (!btn) return;
         const willOpen = menu.hidden;
         this.closeAllMenus();
         if (!willOpen) return;
@@ -967,6 +1006,69 @@ class DashboardHealth {
             d.showNotification(this.t('dashboard.healthDeleted', 'Bookmark deleted'), 'success', { duration: 3000 });
         } catch {
             d.showNotification(this.t('dashboard.healthDeleteFailed', 'Could not delete the bookmark'), 'error');
+        } finally {
+            this._busyKeys.delete(key);
+            this.syncRowBusy(key, false);
+        }
+    }
+
+    /**
+     * Switch one bookmark between off, periodic and monitor without leaving the
+     * view. The old route was a deep link into the dashboard inline editor, which
+     * threw away the filter, search, scroll position and keyboard selection —
+     * expensive for what is a one-field change.
+     *
+     * The URL rides along with the index: the report can be a few minutes old, so
+     * the server rejects the write (409) when the row no longer describes the
+     * bookmark at that index, and the reload below picks up the real list.
+     */
+    async setCheckMode(issue, mode) {
+        const key = this.issueKey(issue);
+        if (this._busyKeys.has(key)) return;
+        if (!mode || mode === this.checkModeOf(issue)) {
+            this.closeAllMenus();
+            return;
+        }
+        const url = String(issue?.url || '').trim();
+        const pageId = Number(issue?.pageId);
+        if (!url || !Number.isFinite(pageId)) return;
+
+        this.closeAllMenus();
+        window.nextdashTrack?.('health:check-mode');
+        this._busyKeys.add(key);
+        this.syncRowBusy(key, true);
+        const d = this.dash;
+
+        try {
+            // The write, the stale handling and the wording come from CheckMode,
+            // shared with the dashboard right-click menu. Only the refresh below
+            // is view-specific: a stale row and a changed row both need the report
+            // re-fetched, which is what makes the list agree with the server again.
+            const outcome = await window.CheckMode?.apply({
+                pageId,
+                index: issue.index,
+                url,
+                mode,
+                name: issue.name || url,
+            });
+            if (outcome === 'failed') return;
+
+            // Push the new mode into the dashboard's own copies before the
+            // report reloads. The health report and the dashboard's bookmark
+            // arrays are separate caches: refreshing the report alone left the
+            // dashboard acting on the pre-change mode until a hard reload, so
+            // returning to it and checking the bookmark used the old setting.
+            if (outcome === 'changed') {
+                window.CheckMode?.syncLocalCopies?.({ pageId, url, mode });
+            }
+
+            await this.loadAndRender({ refresh: true });
+            if (outcome === 'changed') {
+                // Repaint the rows so a status dot that depends on the mode is
+                // correct the moment the view is closed, not on next render.
+                d.renderDashboard?.({ incremental: false });
+                d.updateHealthBadge?.();
+            }
         } finally {
             this._busyKeys.delete(key);
             this.syncRowBusy(key, false);
@@ -1182,13 +1284,40 @@ class DashboardHealth {
         return wrap;
     }
 
+    /** Bookmarks with any form of availability checking on (periodic or monitor). */
+    checkedCount() {
+        const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
+        return issues.filter((i) => i?.monitor || i?.checkStatus).length;
+    }
+
+    /**
+     * "Monitor these N" for the current list. Only offered on a narrowed list:
+     * on "All" it would mean the whole collection, which is the one thing bulk
+     * enabling must not be able to do, so it is left out rather than shown
+     * disabled — a greyed button invites the question of how to enable it.
+     */
+    renderBulkEnableButton() {
+        if (this.filter === 'all') return '';
+        const count = this.bulkEnableTargets('monitor').length;
+        if (!count) return '';
+        return `<button type="button" class="health-view-bulk-monitor-btn" title="${this.escape(
+            this.t('dashboard.healthBulkEnableHint', 'Set the {count} bookmark(s) in this list to Monitor', { count })
+        )}">${this.escape(this.t('dashboard.healthBulkEnable', 'Monitor these {count}', { count }))}</button>`;
+    }
+
     renderToolbar() {
+        const checkedCount = this.checkedCount();
         const filters = [
             ['broken', this.t('dashboard.healthFilterBroken', 'Broken')],
             ['duplicate', this.t('dashboard.healthFilterDuplicates', 'Duplicates')],
             ['unchecked', this.t('dashboard.healthFilterUnchecked', 'Never checked')],
-            ['all', this.t('dashboard.healthFilterAll', 'All')],
         ];
+        // Only surface the monitor pill once something is actually monitored —
+        // an always-visible "0" would be noise for everyone who never opts in.
+        if (this.filterCount('monitored') > 0) {
+            filters.push(['monitored', this.t('dashboard.healthFilterMonitored', 'Monitored')]);
+        }
+        filters.push(['all', this.t('dashboard.healthFilterAll', 'All')]);
 
         const toolbar = document.createElement('div');
         toolbar.className = 'health-view-toolbar';
@@ -1214,6 +1343,10 @@ class DashboardHealth {
             <input type="search" class="health-view-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}">
             <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
             <button type="button" class="health-view-retest-btn">${this.escape(this.t('dashboard.healthRetest', 'Retest all'))}</button>
+            <button type="button" class="health-view-checkoff-btn"${checkedCount ? '' : ' disabled'} title="${this.escape(checkedCount
+                ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
+                : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
+            ${this.renderBulkEnableButton()}
         `;
 
         const sortSelect = toolbar.querySelector('.health-view-sort-select');
@@ -1255,7 +1388,179 @@ class DashboardHealth {
             void this.retestAll(retestBtn);
         });
 
+        const checkOffBtn = toolbar.querySelector('.health-view-checkoff-btn');
+        checkOffBtn?.addEventListener('click', () => {
+            void this.disableAllChecking(checkOffBtn);
+        });
+
+        const bulkMonitorBtn = toolbar.querySelector('.health-view-bulk-monitor-btn');
+        bulkMonitorBtn?.addEventListener('click', () => {
+            void this.enableCheckingForVisible('monitor', bulkMonitorBtn);
+        });
+
         return toolbar;
+    }
+
+    /**
+     * Turn availability checking off for every bookmark at once — the escape
+     * hatch for a monitor batch that got noisy, without walking the list.
+     *
+     * Only "off" is offered in bulk: switching everything *on* would point the
+     * scheduler at the whole collection, which is what the per-bookmark opt-in
+     * exists to avoid. Confirmed first, since it silently clears a setting on
+     * many bookmarks and the counts are the only way to see the blast radius.
+     */
+    /**
+     * The rows a bulk enable would touch: the current filter and search, minus
+     * the ones already in that mode. Deliberately the *visible* list — the blast
+     * radius has to be the thing on screen, or the count in the button means
+     * nothing.
+     */
+    bulkEnableTargets(mode) {
+        if (this.filter === 'all') return [];
+        return this.getFilteredIssues().filter((issue) => this.checkModeOf(issue) !== mode);
+    }
+
+    /**
+     * Turn one mode on for everything currently listed.
+     *
+     * Bound to the filtered list rather than the whole collection, and refused
+     * outright on the "All" filter: pointing the scheduler at every bookmark is
+     * exactly what the per-bookmark opt-in prevents, and the server enforces the
+     * same rule by only accepting an explicit target list. Confirmed first,
+     * because the count is the only way to see how much this touches.
+     */
+    async enableCheckingForVisible(mode, button) {
+        if (this._checkOffRunning) return;
+        const targets = this.bulkEnableTargets(mode);
+        if (!targets.length) return;
+
+        const label = this.checkModeMeta(mode).label;
+        const ok = await this.confirm(
+            this.t('dashboard.healthBulkEnableTitle', 'Turn on checking for {count} bookmark(s)?', { count: targets.length }),
+            mode === 'monitor'
+                ? this.t(
+                    'dashboard.healthBulkEnableMonitorConfirm',
+                    'This sets {count} bookmark(s) in the current list to Monitor. Each one will be checked on its own interval and will record uptime history.',
+                    { count: targets.length }
+                )
+                : this.t(
+                    'dashboard.healthBulkEnablePeriodicConfirm',
+                    'This sets {count} bookmark(s) in the current list to Periodic. Each one will be checked about once a day.',
+                    { count: targets.length }
+                )
+        );
+        if (!ok) return;
+
+        this._checkOffRunning = true;
+        window.nextdashTrack?.('health:check-on-bulk');
+        if (button) {
+            button.disabled = true;
+        }
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/health/check-mode-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mode,
+                    targets: targets.map((issue) => ({
+                        pageId: issue.pageId,
+                        index: issue.index,
+                        url: issue.url,
+                    })),
+                }),
+            });
+            if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            // Drop the page cache first: loadBookmarks() is served from it, so
+            // without this the dashboard keeps showing the pre-write flags.
+            d.data?.invalidatePageDataCache?.();
+            await d.loadBookmarks?.().catch?.(() => {});
+            await this.loadAndRender({ refresh: true });
+            d.updateHealthBadge?.();
+
+            const changed = Number(body?.changed) || 0;
+            const skipped = Number(body?.skipped) || 0;
+            // Say when part of the batch was stale rather than reporting a clean
+            // success for a number the user can see is wrong.
+            d.showNotification(
+                skipped > 0
+                    ? this.t('dashboard.healthBulkEnablePartial', '{count} bookmark(s) set to {mode}; {skipped} had changed and were skipped', { count: changed, mode: label, skipped })
+                    : this.t('dashboard.healthBulkEnableDone', '{count} bookmark(s) set to {mode}', { count: changed, mode: label }),
+                skipped > 0 ? 'warning' : 'success',
+                { duration: 3500 }
+            );
+        } catch {
+            d.showNotification(
+                this.t('dashboard.healthCheckModeFailed', 'Could not change availability checking'),
+                'error'
+            );
+        } finally {
+            this._checkOffRunning = false;
+        }
+    }
+
+    async disableAllChecking(button) {
+        if (this._checkOffRunning) return;
+        const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
+        const monitored = issues.filter((i) => i?.monitor).length;
+        const periodic = issues.filter((i) => i?.checkStatus && !i?.monitor).length;
+        const total = monitored + periodic;
+        if (!total) return;
+
+        const ok = await this.confirm(
+            this.t('dashboard.healthCheckOffTitle', 'Turn off all checking?'),
+            this.t(
+                'dashboard.healthCheckOffConfirm',
+                'This turns off checking for {total} bookmarks ({monitor} monitored, {periodic} periodic). Uptime history is kept, so turning monitoring back on later resumes where it left off.',
+                { total, monitor: monitored, periodic }
+            )
+        );
+        if (!ok) return;
+
+        this._checkOffRunning = true;
+        window.nextdashTrack?.('health:check-off-all');
+        if (button) {
+            button.disabled = true;
+        }
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/health/check-mode-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'off' }),
+            });
+            if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            // The dashboard's own copy would otherwise still show the old flags,
+            // and loadBookmarks() reads through the page cache, so that has to go
+            // first or the reload just returns the stale values again.
+            d.data?.invalidatePageDataCache?.();
+            await d.loadBookmarks?.().catch?.(() => {});
+            await this.loadAndRender({ refresh: true });
+            d.updateHealthBadge?.();
+            d.showNotification(
+                this.t('dashboard.healthCheckOffDone', 'Checking turned off for {count} bookmarks', {
+                    count: Number(body?.changed) || total,
+                }),
+                'success',
+                { duration: 3500 }
+            );
+        } catch {
+            d.showNotification(
+                this.t('dashboard.healthCheckOffFailed', 'Could not turn off checking'),
+                'error'
+            );
+        } finally {
+            this._checkOffRunning = false;
+            // The button belongs to the pre-refresh DOM; re-query rather than
+            // touching the detached node.
+            const live = document.querySelector('.health-view-checkoff-btn');
+            if (live) live.disabled = this.checkedCount() === 0;
+        }
     }
 
     /**
@@ -1348,6 +1653,7 @@ class DashboardHealth {
             ['j / k', this.t('dashboard.healthKeyMove', 'move')],
             ['s', this.t('dashboard.healthKeyScore', 'score')],
             ['p', this.t('dashboard.healthKeyRecheck', 're-check')],
+            ['c', this.t('dashboard.healthKeyCheckMode', 'checking')],
             ['m', this.t('dashboard.healthKeyMore', 'more actions')],
             ['Enter', this.t('dashboard.healthKeyOpen', 'open')],
             ['g / G', this.t('dashboard.healthKeyFirstLast', 'first / last')],
@@ -1359,10 +1665,241 @@ class DashboardHealth {
         return legend;
     }
 
+    /* ── Uptime monitoring ─────────────────────────────────────────────── */
+
+    /** Compact duration for "down since" and incident lengths: 2d 3h, 4h 12m, 45s. */
+    formatDuration(ms) {
+        const total = Math.max(0, Math.floor(Number(ms) || 0) / 1000);
+        const d = Math.floor(total / 86400);
+        const h = Math.floor((total % 86400) / 3600);
+        const m = Math.floor((total % 3600) / 60);
+        const s = Math.floor(total % 60);
+        if (d > 0) return `${d}d ${h}h`;
+        if (h > 0) return `${h}h ${m}m`;
+        if (m > 0) return `${m}m`;
+        return `${s}s`;
+    }
+
+    /** Uptime as a percentage, or null when the window holds no samples at all. */
+    formatUptime(window) {
+        if (!window || !window.samples) return null;
+        const pct = window.ratio * 100;
+        // Avoid showing a reassuring "100%" when a single failure is rounded away.
+        const rounded = pct >= 99.95 && window.ratio < 1 ? 99.9 : pct;
+        return `${rounded.toFixed(rounded >= 99.95 || rounded % 1 === 0 ? 0 : 1)}%`;
+    }
+
+    /**
+     * The heartbeat bar. Each <span> is one time bucket, not one check, so rows
+     * with different intervals stay visually comparable.
+     */
+    renderHeartbeat(stats) {
+        const buckets = Array.isArray(stats?.heartbeat) ? stats.heartbeat : [];
+        if (!buckets.length) return '';
+        const bars = buckets.map((b) => {
+            const title = b.state === 'unknown'
+                ? this.t('dashboard.healthHeartbeatNoData', 'No data')
+                : `${new Date(b.from).toLocaleString()} — ${b.avgMs ? `${b.avgMs}ms` : b.state}`;
+            return `<span class="health-heartbeat-bar is-${this.escape(b.state)}" title="${this.escape(title)}"></span>`;
+        }).join('');
+        return `<div class="health-heartbeat" role="img" aria-label="${this.escape(this.t('dashboard.healthHeartbeatLabel', 'Uptime history'))}">${bars}</div>`;
+    }
+
+    /**
+     * Response-time sparkline as inline SVG. Shares the heartbeat's buckets, so
+     * the two graphics line up on the same time axis.
+     */
+    renderSparkline(stats) {
+        const buckets = Array.isArray(stats?.heartbeat) ? stats.heartbeat : [];
+        const points = buckets.map((b) => (b.avgMs > 0 ? b.avgMs : null));
+        const known = points.filter((p) => p !== null);
+        if (known.length < 2) return '';
+
+        const max = Math.max(...known);
+        const min = Math.min(...known);
+        const span = max - min || 1;
+        const w = 60;
+        const h = 16;
+        const step = w / Math.max(1, points.length - 1);
+
+        // Gaps break the line rather than interpolating across them, so missing
+        // data never looks like a measured value.
+        const segments = [];
+        let current = [];
+        points.forEach((p, i) => {
+            if (p === null) {
+                if (current.length > 1) segments.push(current);
+                current = [];
+                return;
+            }
+            const x = (i * step).toFixed(1);
+            const y = (h - ((p - min) / span) * (h - 2) - 1).toFixed(1);
+            current.push(`${x},${y}`);
+        });
+        if (current.length > 1) segments.push(current);
+        if (!segments.length) return '';
+
+        const paths = segments
+            .map((pts) => `<polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`)
+            .join('');
+        const label = this.t('dashboard.healthSparklineLabel', 'Response time {min}–{max}ms', { min, max });
+        return `<svg class="health-sparkline" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${this.escape(label)}">${paths}</svg>`;
+    }
+
+    /** The mode a row is in, as the three-state name the server also speaks. */
+    checkModeOf(issue) {
+        return window.CheckMode.of(issue);
+    }
+
+    /**
+     * Label, hint and CSS modifier for each mode, from the shared definition so
+     * this view and the dashboard context menu cannot drift apart in wording.
+     * `label` here is the badge wording: a row badge has to say what is off,
+     * where a menu option can simply read "Off".
+     */
+    checkModeMeta(mode) {
+        const meta = window.CheckMode.meta(mode);
+        return { ...meta, label: meta.badge };
+    }
+
+    /**
+     * The check-mode badge, which doubles as the control that changes it. Making
+     * the existing label the button costs no extra room in the row and puts the
+     * control exactly where the eye already goes to ask "why has this row no
+     * heartbeat?".
+     *
+     * An unchecked row shows a muted placeholder rather than a full badge: most
+     * bookmarks are unchecked, and a solid "Not checked" pill on every one of them
+     * would drown the rows that do carry a mode. CSS lifts it into view on hover
+     * and keyboard selection.
+     */
+    renderCheckModeBadge(issue, key) {
+        const mode = this.checkModeOf(issue);
+        const meta = this.checkModeMeta(mode);
+        const title = `${meta.hint} — ${this.t('dashboard.healthCheckModeChange', 'click to change')}`;
+        return `<button type="button"
+            class="health-check-mode ${meta.cls}"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            data-menu-toggle="${this.escape(key)}"
+            data-menu-kind="check"
+            title="${this.escape(title)}"
+            aria-label="${this.escape(title)}"
+        >${this.escape(meta.label)}<kbd>c</kbd></button>`;
+    }
+
+    /**
+     * The check-mode popover: three named options rather than a control that
+     * cycles. The modes are not interchangeable — periodic is cheap and answers
+     * "is this link alive", monitor is the expensive tier that records uptime —
+     * so each carries its one-line explanation instead of leaving the user to
+     * guess what the next click will select.
+     */
+    renderCheckModeMenu(issue, key) {
+        const active = this.checkModeOf(issue);
+        // Same three options, same order and same sentences as the dashboard
+        // right-click menu; only the markup around them differs.
+        const options = window.CheckMode.options().map((o) => [o.mode, o.label, o.body]);
+        const items = options.map(([mode, label, body]) => {
+            const isActive = mode === active;
+            return `<button type="button"
+                class="health-view-menu-item health-check-option${isActive ? ' is-active' : ''}"
+                role="menuitemradio"
+                aria-checked="${isActive ? 'true' : 'false'}"
+                data-check-mode="${mode}"
+            >
+                <span class="health-check-option-label">${this.escape(label)}</span>
+                <span class="health-check-option-body">${this.escape(body)}</span>
+            </button>`;
+        }).join('');
+
+        // A span, not a div: this popover lives inside the row's <p> meta line, and
+        // a block-level child there would make the parser close the paragraph
+        // early, stranding the menu outside the row it belongs to.
+        return `<span class="health-view-menu health-check-menu" role="menu" hidden
+            data-menu-for="${this.escape(key)}" data-menu-owner="check"
+            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}</span>`;
+    }
+
+    /** The monitor strip under the row meta: heartbeat, uptime, sparkline. */
+    renderMonitorStrip(issue) {
+        const stats = issue?.monitorStats;
+        if (!issue?.monitor) return '';
+        if (!stats) {
+            // Monitored but never checked — say so, rather than showing 0%.
+            return `<div class="health-monitor-strip is-pending">
+                <span class="health-monitor-pending">${this.escape(this.t('dashboard.healthMonitorPending', 'Monitoring — awaiting first check'))}</span>
+            </div>`;
+        }
+
+        const uptime = this.formatUptime(stats.uptime24h);
+        const uptimeLabel = uptime
+            ? `<span class="health-monitor-uptime" title="${this.escape(this.t('dashboard.healthUptime24hTitle', 'Uptime over the last 24 hours'))}">${this.escape(uptime)}</span>`
+            : '';
+        const down = stats.downSince
+            ? `<span class="health-monitor-down">${this.escape(this.t('dashboard.healthDownSince', 'Down for {duration}', { duration: this.formatDuration(Date.now() - stats.downSince) }))}</span>`
+            : '';
+        const ping = !stats.downSince && stats.lastPingMs > 0
+            ? `<span class="health-monitor-ping">${this.escape(stats.lastPingMs)}ms</span>`
+            : '';
+
+        return `<div class="health-monitor-strip">
+            ${this.renderHeartbeat(stats)}
+            ${uptimeLabel}
+            ${this.renderSparkline(stats)}
+            ${ping}
+            ${down}
+        </div>`;
+    }
+
+    /** Incident history, shown inside the expandable score panel. */
+    renderIncidents(issue) {
+        const incidents = Array.isArray(issue?.monitorStats?.incidents) ? issue.monitorStats.incidents : [];
+        if (!incidents.length) return '';
+        const rows = incidents.map((inc) => {
+            const when = new Date(inc.start).toLocaleString();
+            const length = inc.ongoing
+                ? this.t('dashboard.healthIncidentOngoing', 'ongoing — {duration}', { duration: this.formatDuration(Date.now() - inc.start) })
+                : this.formatDuration(inc.duration);
+            return `<li class="health-view-score-item${inc.ongoing ? ' is-ongoing' : ''}">
+                <span>${this.escape(when)}</span>
+                <span class="health-view-score-item-cost">${this.escape(length)}</span>
+            </li>`;
+        }).join('');
+        return `
+            <p class="health-view-score-intro">${this.escape(this.t('dashboard.healthIncidentsTitle', 'Recent outages'))}</p>
+            <ul class="health-view-score-list">${rows}</ul>`;
+    }
+
+    /**
+     * One line in the expanded panel explaining what this row's check mode does —
+     * and, for unmonitored rows, what turning Monitor on would add. This is where
+     * "why no heartbeat here?" gets answered.
+     */
+    renderCheckModeNote(issue) {
+        let text;
+        if (issue?.monitor) {
+            const mins = issue?.monitorStats?.intervalMinutes;
+            text = mins
+                ? this.t('dashboard.healthCheckNoteMonitor', 'Monitored every {mins} min — uptime, heartbeat and outages are recorded.', { mins })
+                // Via CheckMode rather than the key directly: that module owns the
+                // per-mode wording, so a reworded hint reaches every surface at once.
+                : window.CheckMode.meta(window.CheckMode.MONITOR).hint;
+        } else if (issue?.checkStatus) {
+            text = this.t('dashboard.healthCheckNotePeriodic', 'Checked about once a day: breakage is caught, but no uptime history is kept. Switch to Monitor for a heartbeat and outage history.');
+        } else {
+            text = this.t('dashboard.healthCheckNoteOff', 'Availability checking is off for this bookmark, so it is never tested and cannot be flagged as broken.');
+        }
+        return `<p class="health-view-check-note">${this.escape(text)}</p>`;
+    }
+
     renderScorePanel(issue) {
         const entries = this.reasonEntries(issue);
+        // Outage history is worth showing even at a perfect score: a bookmark can
+        // be flawless as a link and still have been unreachable last night.
+        const incidents = this.renderIncidents(issue) + this.renderCheckModeNote(issue);
         if (!entries.length) {
-            return `<p class="health-view-score-intro">${this.escape(this.t('dashboard.healthScorePerfect', 'No issues found — full score.'))}</p>`;
+            return `<p class="health-view-score-intro">${this.escape(this.t('dashboard.healthScorePerfect', 'No issues found — full score.'))}</p>${incidents}`;
         }
         const rows = entries.map((entry) => `
             <li class="health-view-score-item">
@@ -1375,7 +1912,8 @@ class DashboardHealth {
             <p class="health-view-score-total">
                 <span>${this.escape(this.t('dashboard.healthScoreTotal', 'Score'))}</span>
                 <span class="health-view-score-total-value">${this.escape(issue.score)}</span>
-            </p>`;
+            </p>
+            ${incidents}`;
     }
 
     /**
@@ -1394,10 +1932,18 @@ class DashboardHealth {
         }
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="favicon">${this.escape(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive">${this.escape(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
+        // The discoverable route to the mode: the badge is faster, but nothing
+        // announces that a badge is clickable, whereas this menu is where people
+        // already look for row actions. No group label of its own — the item names
+        // the mode it would change, and a heading per entry makes a short menu
+        // read like a form.
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="checkmode">${this.escape(
+            this.t('dashboard.healthMenuCheckMode', 'Change checking ({mode})', { mode: this.checkModeMeta(this.checkModeOf(issue)).label })
+        )}</button>`);
         items.push(`<p class="health-view-menu-label health-view-menu-label--danger" role="presentation">${this.escape(this.t('dashboard.healthMenuRemove', 'Remove'))}</p>`);
         items.push(`<button type="button" class="health-view-menu-item health-view-menu-item--danger" role="menuitem" data-menu-action="delete">${this.escape(this.t('dashboard.healthDelete', 'Delete bookmark'))}</button>`);
 
-        return `<div class="health-view-menu" role="menu" hidden data-menu-for="${this.escape(key)}" aria-label="${this.escape(this.t('dashboard.healthMore', 'More actions'))}">${items.join('')}</div>`;
+        return `<div class="health-view-menu" role="menu" hidden data-menu-for="${this.escape(key)}" data-menu-owner="more" aria-label="${this.escape(this.t('dashboard.healthMore', 'More actions'))}">${items.join('')}</div>`;
     }
 
     createIssueElement(issue) {
@@ -1437,9 +1983,14 @@ class DashboardHealth {
                 </div>
                 <p class="health-view-item-meta">
                     <span>${this.escape(domain)}</span>
+                    <span class="health-check-mode-wrap">
+                        ${this.renderCheckModeBadge(issue, key)}
+                        ${this.renderCheckModeMenu(issue, key)}
+                    </span>
                     ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
                     ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
                 </p>
+                ${this.renderMonitorStrip(issue)}
                 <div class="health-view-score-panel" ${expanded ? '' : 'hidden'}>${this.renderScorePanel(issue)}</div>
                 <div class="health-view-item-actions">
                     <div class="health-view-item-actions-inner">
@@ -1447,7 +1998,7 @@ class DashboardHealth {
                         <button type="button" class="health-view-action-btn" data-health-action="open">${this.escape(this.t('dashboard.healthOpen', 'Open'))}</button>
                         <button type="button" class="health-view-action-btn" data-health-action="edit">${this.escape(this.t('dashboard.healthEdit', 'Edit'))}</button>
                         <div class="health-view-menu-wrap">
-                            <button type="button" class="health-view-action-btn health-view-more-btn" aria-haspopup="menu" aria-expanded="false" data-menu-toggle="${this.escape(key)}" aria-label="${this.escape(this.t('dashboard.healthMore', 'More actions'))}">${this.escape(this.t('dashboard.healthMore', 'More'))}<kbd>m</kbd></button>
+                            <button type="button" class="health-view-action-btn health-view-more-btn" aria-haspopup="menu" aria-expanded="false" data-menu-toggle="${this.escape(key)}" data-menu-kind="more" aria-label="${this.escape(this.t('dashboard.healthMore', 'More actions'))}">${this.escape(this.t('dashboard.healthMore', 'More'))}<kbd>m</kbd></button>
                             ${this.renderRowMenu(issue, key)}
                         </div>
                     </div>
@@ -1471,7 +2022,18 @@ class DashboardHealth {
         row.querySelector('.health-view-more-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this.selectRowByKey(key);
-            this.toggleMenu(key);
+            this.toggleMenu(key, 'more');
+        });
+        row.querySelector('.health-check-mode')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.selectRowByKey(key);
+            this.toggleMenu(key, 'check');
+        });
+        row.querySelectorAll('[data-check-mode]').forEach((item) => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                void this.setCheckMode(issue, item.getAttribute('data-check-mode'));
+            });
         });
 
         const menuActions = {
@@ -1481,6 +2043,9 @@ class DashboardHealth {
             favicon: () => void this.refreshFavicon(issue),
             archive: () => this.openArchive(issue),
             delete: () => void this.deleteIssue(issue),
+            // Hand off to the popover rather than duplicating the three options
+            // here, so there is one place that explains what the modes mean.
+            checkmode: () => this.toggleMenu(key, 'check'),
         };
         row.querySelectorAll('[data-menu-action]').forEach((item) => {
             item.addEventListener('click', (e) => {

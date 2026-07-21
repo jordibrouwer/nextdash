@@ -1,0 +1,93 @@
+{
+  "tag": "v2026.07.20",
+  "date": "July 2026",
+  "releasedAt": "2026-07-20",
+  "modalLead": "Bookmarks can now be watched properly. Pick <strong>Monitor</strong> and nextDash checks a bookmark on your own interval, keeps a month of history, and shows you an uptime percentage, a heartbeat bar and a list of outages — with an optional webhook when something goes down. Availability checking is also one clear choice of three instead of two overlapping switches, and you can set it straight from the dashboard with a right-click or <kbd>Shift</kbd> + <kbd>C</kbd>.",
+  "sections": [
+    {
+      "title": "New shortcuts",
+      "kind": "keys",
+      "items": [
+        {
+          "keys": "Shift + C",
+          "text": "On the selected bookmark — opens the availability-checking menu. Pick with <kbd>O</kbd> off, <kbd>P</kbd> periodic, <kbd>M</kbd> monitor, or arrow to it and press <kbd>Enter</kbd>."
+        },
+        {
+          "keys": "C",
+          "text": "In the <strong>health view</strong> — same menu for the selected row, without leaving the list or losing your filter."
+        },
+        {
+          "keys": ":monitor",
+          "text": "Shows how many bookmarks are being checked and lets you switch checking off for all of them at once."
+        }
+      ]
+    },
+    {
+      "title": "Uptime monitoring",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Monitor a bookmark and see how reliable it really is</strong> — until now a bookmark was only ever checked about once a day, and only the latest result was kept, so nextDash could tell you a link was broken but never how often it had been. Set a bookmark to <strong>Monitor</strong> and it is checked on the interval you pick — <strong>from 5 minutes up to once a day</strong> — and every result is kept for <strong>30 days</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Heartbeat, uptime and outages in the health view</strong> — a monitored bookmark now shows a <strong>heartbeat bar</strong> of its recent checks, an <strong>uptime percentage</strong> over the last 24 hours, 7 days and 30 days, and a small <strong>response-time sparkline</strong>. Open a row and you get its <strong>outage history</strong>: when each one started, how long it lasted, and what went wrong. If it is down right now, you see <em>down since</em> instead."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Get told when something goes down</strong> — set a webhook URL under <strong>Config → General</strong> and nextDash posts to it when a monitored bookmark goes down, and again when it comes back. It waits for <strong>3 failed checks in a row</strong> by default before alerting, so a single hiccup does not wake you up; change that under <strong>Retries</strong>. Works with ntfy, Discord, Slack and anything else that accepts a webhook."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Filter to just the monitored ones</strong> — the health view gained a <strong>Monitored</strong> filter beside the existing ones, so you can look at only the handful of services you actually care about being up."
+        }
+      ]
+    },
+    {
+      "title": "Availability checking",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>One choice of three, instead of two switches</strong> — availability checking used to be two separate toggles that could both be on, both off, or contradict each other, with no explanation of the difference. It is now a single choice: <strong>Off</strong>, <strong>Periodic</strong>, or <strong>Monitor</strong>. Off is never tested. Periodic is the old daily check that flags a broken link. Monitor does everything Periodic does <em>and</em> keeps the history. Your existing bookmarks keep doing exactly what they did before."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Set it from the dashboard</strong> — right-click any bookmark and the menu now has a <strong>Checking</strong> entry that names the current mode and opens the same three-way choice. <kbd>Shift</kbd> + <kbd>C</kbd> opens it from the keyboard on the selected bookmark, and each option prints its own letter — <kbd>O</kbd>, <kbd>P</kbd>, <kbd>M</kbd> — so you can pick one without arrowing to it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>And from the health view</strong> — every row shows its current mode as a button; click it, or press <kbd>C</kbd> on the selected row, to change it. The list stays where it is and keeps your filter, so you can work down a list of never-checked bookmarks without it reshuffling under you."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Turn checking on for a whole list at once</strong> — when you have narrowed the health view to a specific set (say, everything that has never been checked), a button appears offering to switch that <em>visible</em> set to Periodic or Monitor in one go. It asks first and tells you exactly how many bookmarks it will change. It is deliberately never offered on the unfiltered <strong>All</strong> list — monitoring every bookmark you own is not something you should be able to do by accident."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A short explanation of which to pick</strong> — the bookmark editor now has a <strong>How availability checking works</strong> link that explains what Periodic and Monitor each answer, and when one is worth it over the other. Short version: Periodic for your ordinary links, Monitor for your own servers and dashboards."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Re-checking a monitored bookmark shows the result straight away</strong> — after switching a bookmark to Monitor, pressing <strong>Check again</strong> left it reading <em>Monitoring — awaiting first check</em>, because manual checks were not being written to the monitor's own history. The result now appears immediately."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Monitored bookmarks show their status dot again</strong> — a bookmark set to Monitor lost the little coloured availability dot on the dashboard, because the dot was still only looking at the old periodic flag."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No more warning when nothing is being checked</strong> — the health view used to warn that no bookmark had status checks enabled, which is a perfectly reasonable way to run nextDash, not a problem to be fixed."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Config → General remembers which sections you had open</strong> — it now starts collapsed rather than opening everything, and whichever sections you expand are remembered on the server, so they follow you across devices instead of resetting on every visit."
+        }
+      ]
+    }
+  ]
+}

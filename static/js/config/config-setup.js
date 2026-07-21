@@ -724,9 +724,10 @@ class ConfigSetup {
     }
 
     setupGeneralCardCollapsible() {
-        const storageKey = 'nextdash-config-general-panel-state';
-        const DEFAULT_OPEN_ESSENTIALS = new Set(['localization']);
-        const DEFAULT_OPEN_ADVANCED = new Set(['appearance-advanced']);
+        // Every section starts collapsed: General is long, and opening one by
+        // default buried the rest below the fold on smaller screens.
+        const DEFAULT_OPEN_ESSENTIALS = new Set();
+        const DEFAULT_OPEN_ADVANCED = new Set();
     
         const getDefaultOpenForLayer = (layerMode) => {
             if (layerMode === 'advanced') return DEFAULT_OPEN_ADVANCED;
@@ -734,13 +735,12 @@ class ConfigSetup {
             return DEFAULT_OPEN_ESSENTIALS;
         };
     
+        // Panel state lives in settings.json (configGeneralPanels), not
+        // localStorage, so the layout follows the user across browsers like every
+        // other preference.
         const readSavedPanelState = () => {
-            try {
-                const raw = localStorage.getItem(storageKey);
-                if (!raw) return null;
-                const parsed = JSON.parse(raw);
-                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
-            } catch { /* ignore */ }
+            const saved = this.c.settingsData?.configGeneralPanels;
+            if (saved && typeof saved === 'object' && !Array.isArray(saved)) return saved;
             return null;
         };
     
@@ -804,9 +804,16 @@ class ConfigSetup {
             document.querySelectorAll('.smart-collection-group[data-sc-id]').forEach((el) => {
                 state[`sc:${el.dataset.scId}`] = el.open;
             });
-            try {
-                localStorage.setItem(storageKey, JSON.stringify(state));
-            } catch { /* ignore quota / private mode */ }
+            if (!this.c.settingsData) return;
+            this.c.settingsData.configGeneralPanels = state;
+            // Layout state is incidental, not an edit: save it directly instead of
+            // marking the form dirty, which would prompt about unsaved changes
+            // merely because a section was folded open. Debounced because folding
+            // several sections in a row is one intent, not five saves.
+            clearTimeout(this._panelStateSaveTimer);
+            this._panelStateSaveTimer = setTimeout(() => {
+                this.c.settings?.saveSettingsToServer?.(this.c.settingsData);
+            }, 600);
         };
         // Expose so saveChanges can call it too
         this.c._persistGeneralPanelState = persistState;

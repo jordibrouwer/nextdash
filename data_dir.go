@@ -22,3 +22,7 @@ func previewCacheFilePath() string {
 func healthCacheFilePath() string {
 	return filepath.Join(ResolveDataDir(), "health-cache.json")
 }
+
+func healthHistoryFilePath() string {
+	return filepath.Join(ResolveDataDir(), "health-history.json")
+}

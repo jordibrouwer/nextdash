@@ -216,6 +216,45 @@ button.health-view-tile:hover {
     cursor: default;
 }
 
+/* Secondary styling on purpose: this clears a setting on many bookmarks, so it
+   must not compete with "Retest all" for the primary action. */
+.health-view-checkoff-btn {
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-secondary);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.health-view-checkoff-btn:hover:not([disabled]) {
+    border-color: var(--accent-error);
+    color: var(--accent-error);
+}
+
+.health-view-checkoff-btn[disabled] {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* Same shape as its "off" counterpart, but tinted toward the accent rather than
+   the error colour: this one adds monitoring rather than taking it away. */
+.health-view-bulk-monitor-btn {
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-secondary);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.health-view-bulk-monitor-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
 .health-view-load-more-btn {
     display: block;
     width: 100%;
@@ -347,6 +386,200 @@ button.health-view-tile:hover {
 
 .health-view-item.is-broken .health-view-item-reason {
     color: var(--accent-error);
+}
+
+/* ─── Check-mode badge ──────────────────────────────────────────────────────
+   Names why a row does or does not have a heartbeat, and doubles as the control
+   that changes it: the label is already where the eye goes to ask the question,
+   so making it the button costs no extra room in the row. */
+
+.health-check-mode-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.health-check-mode {
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.68rem;
+    line-height: 1.5;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.health-check-mode.is-monitor {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-secondary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--text-primary);
+}
+
+.health-check-mode.is-periodic {
+    color: var(--text-secondary);
+}
+
+/* Most bookmarks are unchecked. A solid pill on every one of them would drown
+   the rows that do carry a mode, so the "off" badge stays nearly invisible until
+   the row is hovered or selected — the moments the control is wanted. */
+.health-check-mode.is-off {
+    border-color: transparent;
+    color: var(--text-tertiary);
+    opacity: 0;
+}
+
+.health-view-item:hover .health-check-mode.is-off,
+.health-view-item.keyboard-selected .health-check-mode.is-off,
+.health-check-mode.is-off:focus-visible,
+.health-check-mode.is-off[aria-expanded="true"] {
+    border-color: var(--border-secondary);
+    opacity: 1;
+}
+
+.health-check-mode:hover,
+.health-check-mode:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* The shortcut hint rides along only once the row is the keyboard target —
+   printing "c" on every badge would turn the meta line into a keymap. */
+.health-check-mode kbd {
+    display: none;
+    margin-left: 0.3rem;
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.health-view-item.keyboard-selected .health-check-mode kbd {
+    display: inline;
+}
+
+/* ─── Check-mode popover ─────────────────────────────────────────────────── */
+
+.health-check-menu {
+    min-width: 15rem;
+}
+
+.health-check-option {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.health-check-option-body {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: normal;
+}
+
+.health-check-option:hover .health-check-option-body,
+.health-check-option:focus-visible .health-check-option-body {
+    color: inherit;
+}
+
+.health-check-option.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+.health-check-option.is-active .health-check-option-label::after {
+    content: " ✓";
+    color: var(--accent-primary);
+}
+
+.health-view-check-note {
+    margin: 0.5rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+/* ─── Uptime monitoring ─────────────────────────────────────────────────── */
+
+.health-monitor-strip {
+    margin-top: 0.4rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+/* The heartbeat bar. Bars stay a fixed minimum width and the row scrolls rather
+   than compressing them: a squashed bar hides exactly the outage it exists to
+   show. */
+.health-monitor-strip .health-heartbeat {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 16px;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.health-monitor-strip .health-heartbeat::-webkit-scrollbar {
+    display: none;
+}
+
+.health-heartbeat-bar {
+    flex: 0 0 auto;
+    width: 3px;
+    height: 100%;
+    border-radius: 1px;
+    background: var(--border-secondary);
+}
+
+.health-heartbeat-bar.is-up {
+    background: var(--accent-success);
+}
+
+.health-heartbeat-bar.is-down {
+    background: var(--accent-error);
+}
+
+/* A bucket holding both a success and a failure — visually distinct from a
+   clean outage so instability is not mistaken for downtime. */
+.health-heartbeat-bar.is-degraded {
+    background: var(--accent-warning);
+}
+
+.health-heartbeat-bar.is-unknown {
+    background: color-mix(in srgb, var(--border-secondary) 55%, transparent);
+}
+
+.health-monitor-uptime {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.health-sparkline {
+    color: var(--text-secondary);
+    opacity: 0.75;
+    flex: 0 0 auto;
+}
+
+.health-monitor-ping {
+    font-variant-numeric: tabular-nums;
+}
+
+.health-monitor-down {
+    color: var(--accent-error);
+    font-weight: 600;
+}
+
+.health-monitor-pending {
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.health-view-score-item.is-ongoing .health-view-score-item-cost {
+    color: var(--accent-error);
+    font-weight: 600;
 }
 
 /* ─── Score breakdown ───────────────────────────────────────────────────── */
@@ -505,6 +738,13 @@ button.health-view-tile:hover {
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-modal, var(--background-secondary));
     box-shadow: 0 10px 28px color-mix(in srgb, #000 22%, transparent);
+}
+
+/* The display above beats the browser's default [hidden] rule, so a closed menu
+   would stay laid out — invisible enough to miss by eye, but still clickable and
+   still announced to assistive tech. */
+.health-view-menu[hidden] {
+    display: none;
 }
 
 /* Flipped by toggleMenu() when the menu would fall off the bottom. */

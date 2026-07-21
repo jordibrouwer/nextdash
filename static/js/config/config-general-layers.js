@@ -3,7 +3,6 @@
  */
 class ConfigGeneralLayers {
     constructor() {
-        this.storageKey = 'nextdash-config-general-layer';
         this.root = null;
         this.toolbar = null;
         this.layer = 'essentials';
@@ -379,31 +378,36 @@ class ConfigGeneralLayers {
         });
     }
 
+    /**
+     * The chosen layer lives in settings.json (configGeneralLayer) rather than
+     * localStorage, so it follows the user across browsers like every other
+     * preference. An empty value means "never chosen" — that is what makes the
+     * first ever visit land on Essentials.
+     */
+    static isValidLayer(v) {
+        return v === 'essentials' || v === 'advanced' || v === 'all';
+    }
+
     hasLayerPreference() {
-        try {
-            const v = localStorage.getItem(this.storageKey);
-            return v === 'essentials' || v === 'advanced' || v === 'all';
-        } catch {
-            return false;
-        }
+        return ConfigGeneralLayers.isValidLayer(window.configManager?.settingsData?.configGeneralLayer);
     }
 
     getStoredLayer() {
-        if (!this.hasLayerPreference()) {
-            return 'essentials';
-        }
-        try {
-            const v = localStorage.getItem(this.storageKey);
-            if (v === 'essentials' || v === 'advanced' || v === 'all') return v;
-        } catch { /* ignore */ }
-        return 'essentials';
+        const v = window.configManager?.settingsData?.configGeneralLayer;
+        return ConfigGeneralLayers.isValidLayer(v) ? v : 'essentials';
     }
 
     persistLayerPreference(layer) {
-        const normalized = layer === 'advanced' || layer === 'all' ? layer : 'essentials';
-        try {
-            localStorage.setItem(this.storageKey, normalized);
-        } catch { /* ignore */ }
+        const normalized = ConfigGeneralLayers.isValidLayer(layer) && layer !== 'essentials'
+            ? layer
+            : 'essentials';
+        const mgr = window.configManager;
+        if (!mgr?.settingsData) return;
+        if (mgr.settingsData.configGeneralLayer === normalized) return;
+        mgr.settingsData.configGeneralLayer = normalized;
+        // Switching layers is navigation, not an edit, so save straight away
+        // instead of marking the form dirty.
+        mgr.settings?.saveSettingsToServer?.(mgr.settingsData);
     }
 
     isMobileGeneralLocked() {

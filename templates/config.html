@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="/static/css/reorder.css?v={{.Assets.ReorderCSS}}">
     <link rel="stylesheet" href="/static/css/modal.css?v={{.Assets.ModalCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-inbox-block-1">
-    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=help-split-b12-1">
+    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=check-mode-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css?v={{.Assets.BookmarkFormPreviewCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=quiet-borders-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=quiet-borders-1">
@@ -1081,6 +1081,21 @@
                                     <option value="168" data-i18n="config.healthRecheckInterval168h">Weekly</option>
                                 </select>
                             </div>
+                            <div class="checkbox-tree-item">
+                                <label for="monitor-notify-url-input" data-i18n="config.monitorNotifyUrlLabel">Uptime alert webhook:</label>
+                                <input type="url" id="monitor-notify-url-input" class="form-input" placeholder="https://ntfy.sh/my-topic" data-i18n-placeholder="config.monitorNotifyUrlPlaceholder">
+                                <p class="form-hint" data-i18n="config.monitorNotifyUrlHint">Posted when a monitored bookmark goes down or comes back. Leave empty to disable. Local addresses only work when "Allow local bookmarks" is on.</p>
+                            </div>
+                            <div class="checkbox-tree-item checkbox-tree-child">
+                                <span class="tree-symbol">└──</span>
+                                <label for="monitor-notify-retries-select" data-i18n="config.monitorNotifyRetriesLabel">Alert after:</label>
+                                <select id="monitor-notify-retries-select">
+                                    <option value="1" data-i18n="config.monitorNotifyRetries1">1 failed check</option>
+                                    <option value="2" data-i18n="config.monitorNotifyRetries2">2 failed checks</option>
+                                    <option value="3" data-i18n="config.monitorNotifyRetries3">3 failed checks (default)</option>
+                                    <option value="5" data-i18n="config.monitorNotifyRetries5">5 failed checks</option>
+                                </select>
+                            </div>
                         </div>
                     </section>
 
@@ -1605,6 +1620,48 @@
                                 </summary>
                                 <div class="bookmark-detail-more-body">
 
+                            <!-- Flags lead the "More options" body: they change what the
+                                 preview below shows (a pinned tile, a status dot), so they
+                                 belong above it rather than at the very bottom. -->
+                            <div class="bookmark-detail-section bookmark-detail-toggles">
+                                <label class="checkbox-label icon-toggle bookmark-detail-toggle" data-i18n-tooltip="config.pinnedToggleHint">
+                                    <input type="checkbox" id="detail-pinned" data-i18n-aria="config.pinnedToggleHint">
+                                    <span class="icon-toggle-indicator" data-i18n-tooltip="config.pinnedToggleHint" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" focusable="false">
+                                            <path d="M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="bookmark-detail-toggle-label" data-i18n="config.pinnedShort">Pinned</span>
+                                </label>
+                            </div>
+
+                            <!-- Availability checking is one choice of three rather than two
+                                 overlapping checkboxes: Monitor is a superset of Periodic, so
+                                 a "both on" state was meaningless and invited confusion. -->
+                            <div class="bookmark-detail-section bookmark-detail-checkmode">
+                                <div class="bookmark-detail-checkmode-header">
+                                    <label class="bookmark-detail-label" data-i18n="config.checkModeLabel">Availability check</label>
+                                    <button type="button" id="detail-check-mode-info" class="bookmark-detail-checkmode-info"
+                                            data-i18n-aria="config.checkModeExplainTitle" aria-label="How availability checking works">i</button>
+                                </div>
+                                <div class="bookmark-detail-checkmode-options" role="radiogroup" data-i18n-aria="config.checkModeLabel" aria-label="Availability check">
+                                    <input type="radio" name="detail-check-mode" id="detail-check-mode-off" value="off" class="bookmark-detail-checkmode-input">
+                                    <label for="detail-check-mode-off" class="bookmark-detail-checkmode-option" data-i18n="config.checkModeOff" data-i18n-tooltip="config.checkModeOffHint">Off</label>
+                                    <input type="radio" name="detail-check-mode" id="detail-check-mode-periodic" value="periodic" class="bookmark-detail-checkmode-input">
+                                    <label for="detail-check-mode-periodic" class="bookmark-detail-checkmode-option" data-i18n="config.checkModePeriodic" data-i18n-tooltip="config.checkModePeriodicHint">Periodic</label>
+                                    <input type="radio" name="detail-check-mode" id="detail-check-mode-monitor" value="monitor" class="bookmark-detail-checkmode-input">
+                                    <label for="detail-check-mode-monitor" class="bookmark-detail-checkmode-option" data-i18n="config.checkModeMonitor" data-i18n-tooltip="config.checkModeMonitorHint">Monitor</label>
+                                    <select id="detail-monitor-interval" class="bookmark-detail-toggle-select" data-i18n-aria="config.monitorInterval" hidden>
+                                        <option value="5" data-i18n="config.monitorIntervalShort5">5m</option>
+                                        <option value="15" data-i18n="config.monitorIntervalShort15">15m</option>
+                                        <option value="30" data-i18n="config.monitorIntervalShort30">30m</option>
+                                        <option value="60" data-i18n="config.monitorIntervalShort60">1h</option>
+                                        <option value="360" data-i18n="config.monitorIntervalShort360">6h</option>
+                                        <option value="1440" data-i18n="config.monitorIntervalShort1440">24h</option>
+                                    </select>
+                                </div>
+                                <p class="bookmark-detail-field-hint" id="detail-check-mode-hint" data-i18n="config.checkModeOffHint">No availability checking.</p>
+
                             <div class="bookmark-detail-section bookmark-detail-preview-section">
                                 <div class="bookmark-detail-preview-header">
                                     <label class="bookmark-detail-label" data-i18n="config.bookmarkDashboardPreviewLabel">Dashboard preview</label>
@@ -1660,26 +1717,6 @@
                                 <textarea id="detail-note" class="bookmark-detail-input bookmark-detail-note" data-i18n-placeholder="config.detailNotePlaceholder" placeholder="Optional note…" rows="3" autocomplete="off"></textarea>
                             </div>
 
-                            <div class="bookmark-detail-section bookmark-detail-toggles">
-                                <label class="checkbox-label icon-toggle bookmark-detail-toggle" data-i18n-tooltip="config.pinnedToggleHint">
-                                    <input type="checkbox" id="detail-pinned" data-i18n-aria="config.pinnedToggleHint">
-                                    <span class="icon-toggle-indicator" data-i18n-tooltip="config.pinnedToggleHint" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24" focusable="false">
-                                            <path d="M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z"></path>
-                                        </svg>
-                                    </span>
-                                    <span class="bookmark-detail-toggle-label" data-i18n="config.pinnedShort">Pinned</span>
-                                </label>
-                                <label class="checkbox-label icon-toggle bookmark-detail-toggle" data-i18n-tooltip="config.statusCheckToggleHint">
-                                    <input type="checkbox" id="detail-check-status" data-i18n-aria="config.statusCheckToggleHint">
-                                    <span class="icon-toggle-indicator" data-i18n-tooltip="config.statusCheckToggleHint" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24" focusable="false">
-                                            <path d="M3 12h4l2-5 4 10 2-5h6v2h-4l-2 5-4-10-2 5H3z"></path>
-                                        </svg>
-                                    </span>
-                                    <span class="bookmark-detail-toggle-label" data-i18n="config.statusCheck">Status check</span>
-                                </label>
-                            </div>
 
                                 </div>
                             </details>
@@ -2578,7 +2615,7 @@
     <!-- Config modules (must be loaded before main config.js) -->
     <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}"></script>
     <script src="/static/js/config/config-tab-groups.js?v=config-tab-groups-unsaved-1"></script>
-    <script src="/static/js/config/config-ui.js?v=analytics-track-2"></script>
+    <script src="/static/js/config/config-ui.js?v=general-collapsed-1"></script>
     <script src="/static/js/device-settings-merge.js?v={{.Assets.DeviceSettingsMergeJS}}"></script>
     <script src="/static/js/settings-sanitize.js?v={{.Assets.SettingsSanitizeJS}}"></script>
     <script src="/static/js/discoverability-state.js?v={{.Assets.DiscoverabilityJS}}"></script>
@@ -2591,7 +2628,9 @@
     <script src="/static/js/bookmark-form/bookmark-url-utils.js?v={{.Assets.BookmarkURLUtilsJS}}"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js?v={{.Assets.BookmarkPreviewServiceJS}}"></script>
     <script src="/static/js/bookmark-form/bookmark-form-preview.js?v={{.Assets.BookmarkFormPreviewJS}}"></script>
-    <script src="/static/js/config/config-bookmarks.js?v=edit-tracking-1"></script>
+    <!-- Before config-bookmarks.js: it reads CheckMode for the monitor default. -->
+    <script src="/static/js/check-mode.js?v=check-mode-shared-5"></script>
+    <script src="/static/js/config/config-bookmarks.js?v=check-mode-2"></script>
     <script src="/static/js/config/config-bookmarks-controller.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-collections.js?v=collections-ac-1"></script>
     <script src="/static/js/config/config-finders.js?v=config-b11-empty-hidden-1"></script>
@@ -2604,9 +2643,9 @@
     <script src="/static/js/config/config-tab-tours.js?v=tours-removed-1"></script>
     <script src="/static/js/config/config-persistence.js?v=health-always-on-1"></script>
     <script src="/static/js/config/config-tabs.js?v=config-tabs-flush-1"></script>
-    <script src="/static/js/config/config-setup.js?v=advanced-deeplink-1"></script>
+    <script src="/static/js/config/config-setup.js?v=general-collapsed-1"></script>
     <script src="/static/js/config/config-language.js?v=tips-removed-1"></script>
-    <script src="/static/js/config/config-general-layers.js?v=advanced-deeplink-1"></script>
+    <script src="/static/js/config/config-general-layers.js?v=general-collapsed-1"></script>
     <script src="/static/js/config/config-help-search.js?v=help-expand-collapse-all-1"></script>
     <script src="/static/js/config/config-help-tips.js?v=help-tips-1"></script>
     <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1"></script>

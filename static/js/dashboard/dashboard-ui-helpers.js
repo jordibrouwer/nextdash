@@ -155,16 +155,36 @@ class DashboardUiHelpers {
                 item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page; Esc close restores selection on same row'),
                 item('Shift + D', 'bmQuickDelete', 'Quick-delete focused bookmark — confirm in popover; Esc close restores selection on same row'),
                 item('Shift + T', 'bmQuickTag', 'Quick-tag focused bookmark — ↑/↓ navigate; Enter/Space toggles tag and advances; ✓ shows tags on bookmark; Esc close restores selection on same row'),
+                item('Shift + C', 'bmQuickCheckMode', 'Availability checking for focused bookmark — o off, p periodic, m monitor; ↑/↓ and Enter also work; Esc closes'),
                 item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
                 item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
                 item('Enter on "+ N more"', 'bmShowMoreToggle', 'Expand or collapse a long category — selection returns to the last bookmark above the toggle'),
                 item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
-                item('Right-click bookmark', 'bmContextMenu', 'Menu with open in new tab, copy URL, edit, tags, move, delete (Shift + right-click for the browser menu)'),
+                item('Right-click bookmark', 'bmContextMenu', 'Menu with open in new tab, copy URL, edit, tags, move, checking, delete (Shift + right-click for the browser menu)'),
                 item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
                 item('Long-press category (~500 ms)', 'bmRenameCategory', 'Rename category header (not on sort buttons)'),
                 item('Drag left strip', 'bmDragReorder', 'Reorder a bookmark within or across categories'),
                 item('Drag // in category title', 'bmDragCategory', 'Reorder categories (grab the // prefix in the header)'),
             ]),
+        );
+
+        // Only when the view exists, matching the Shift+H entry above: teaching row
+        // shortcuts for a view someone cannot open is noise. These mirror the legend
+        // under the health list, which is the same set in context.
+        if (d.health?.isEnabled?.()) {
+            sections.push(section('sectionHealthView', 'Health view', [
+                item('j / k', 'hvMove', 'Move between rows (↑ / ↓ work too)'),
+                item('s', 'hvScore', 'Unfold the score breakdown for the selected row'),
+                item('p', 'hvRecheck', 'Re-check the selected bookmark now'),
+                item('c', 'hvCheckMode', 'Change availability checking — off, periodic or monitor'),
+                item('m', 'hvMore', 'Row menu — redirect, title, favicon, archive, delete'),
+                item('Enter', 'hvOpen', 'Open the selected bookmark'),
+                item('g / G', 'hvFirstLast', 'Jump to the first / last row'),
+                item('Esc', 'hvClose', 'Close a menu, or leave the view'),
+            ]));
+        }
+
+        sections.push(
             section('sectionSearchModes', 'Search modes', [
                 item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),
                 ...(d.isTagCloudDesktopShortcutVisible()
@@ -237,6 +257,7 @@ class DashboardUiHelpers {
             section('sectionCommandsTools', 'Commands — tools', [
                 item(':backup / :export', 'ctBackup', 'Open config backups or download a ZIP backup immediately'),
                 item(':metadata', 'ctMetadata', 'Open health missing previews or config bookmarks metadata view'),
+                item(':monitor off', 'ctMonitor', 'Turn availability checking off for every bookmark at once (asks for confirmation first)'),
                 item(':telemetry on / off', 'ctTelemetry', 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)'),
             ]),
             section('sectionOther', 'Other', [
