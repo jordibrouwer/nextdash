@@ -70,6 +70,42 @@ func TestDueMonitorTargetsRespectsInterval(t *testing.T) {
 	}
 }
 
+func TestDueMonitorTargetsDoesNotDriftByATick(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"Monitored","url":"https://mon.example","monitor":true,"monitorIntervalMinutes":5}
+	]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+	key := canonicalBookmarkURLKey("https://mon.example")
+	now := time.Now()
+
+	// A sample is timestamped once its ping completes, so it sits just past the
+	// tick that scheduled it. The tick a full interval later is therefore a shade
+	// short of 5 minutes; it must still count as due, or every round slips a whole
+	// tick and the monitor settles into a 6-minute cadence.
+	if err := h.appendHealthSamples(map[string][]HealthSample{
+		key: {{T: msAgo(now, 5*time.Minute-800*time.Millisecond), Up: true}},
+	}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	if targets, _ := h.dueMonitorTargets(now); len(targets) != 1 {
+		t.Fatalf("expected due despite sub-tick lateness, got %#v", targets)
+	}
+
+	// The slack must stay well under one tick, so a genuinely recent check is not
+	// re-run on the very next tick.
+	if err := h.appendHealthSamples(map[string][]HealthSample{
+		key: {{T: msAgo(now, monitorTickInterval), Up: true}},
+	}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	if targets, _ := h.dueMonitorTargets(now); len(targets) != 0 {
+		t.Fatalf("a check from one tick ago must not be due, got %#v", targets)
+	}
+}
+
 func TestDueMonitorTargetsNewMonitorIsImmediatelyDue(t *testing.T) {
 	h, dir := healthRecheckTestHandlers(t, `{}`)
 	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[

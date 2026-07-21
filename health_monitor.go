@@ -22,6 +22,12 @@ const (
 	// must divide the minimum interval closely enough that "every 5 minutes" is
 	// honest without waking constantly.
 	monitorTickInterval = 1 * time.Minute
+	// monitorDueSlack lets a check run slightly before its interval has fully
+	// elapsed. A sample is timestamped after its ping completes, so it always
+	// lands a little past the tick that scheduled it. Without slack the next tick
+	// falls just short of the interval, the check slips a whole tick, and the
+	// drift compounds: a 5-minute monitor settles into checking every 6 minutes.
+	monitorDueSlack = monitorTickInterval / 2
 	// monitorMaxConcurrentPings bounds parallel outbound checks so a batch of slow
 	// or unreachable hosts cannot saturate the shared outbound budget.
 	monitorMaxConcurrentPings = 8
@@ -105,7 +111,7 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 			samples := history[key]
 			if len(samples) > 0 {
 				last := time.UnixMilli(samples[len(samples)-1].T)
-				if now.Sub(last) < interval {
+				if now.Sub(last) < interval-monitorDueSlack {
 					continue
 				}
 			}
