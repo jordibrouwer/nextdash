@@ -440,6 +440,12 @@ class ConfigBookmarks {
         const csEl = document.getElementById('detail-check-status');
         if (csEl) csEl.checked = !!bookmark.checkStatus;
 
+        const monEl = document.getElementById('detail-monitor');
+        if (monEl) monEl.checked = !!bookmark.monitor;
+        const monIntervalEl = document.getElementById('detail-monitor-interval');
+        if (monIntervalEl) monIntervalEl.value = String(bookmark.monitorIntervalMinutes || 15);
+        this._syncMonitorIntervalVisibility(!!bookmark.monitor);
+
         const noteEl = document.getElementById('detail-note');
         if (noteEl) noteEl.value = bookmark.note || '';
 
@@ -448,6 +454,20 @@ class ConfigBookmarks {
 
         this._updateDetailIconPreview(bookmark);
         this._updateLinkPreviewCard(bookmark);
+    }
+
+    /**
+     * The interval only matters while monitoring is on, so hide it otherwise.
+     *
+     * select.js replaces the native control with a .custom-select-wrapper, so the
+     * `hidden` attribute has to move to that wrapper — setting it on the (already
+     * display:none) <select> would toggle nothing on screen.
+     */
+    _syncMonitorIntervalVisibility(enabled) {
+        const select = document.getElementById('detail-monitor-interval');
+        if (!select) return;
+        const target = select.closest('.custom-select-wrapper') || select;
+        target.hidden = !enabled;
     }
 
     _updateDetailIconPreview(bookmark) {
@@ -569,6 +589,8 @@ class ConfigBookmarks {
         const catEl = get('detail-category');
         const pinEl = get('detail-pinned');
         const csEl = get('detail-check-status');
+        const monEl = get('detail-monitor');
+        const monIntervalEl = get('detail-monitor-interval');
         const noteEl = get('detail-note');
         const metaBtn = get('detail-meta-refresh-btn');
         const linkPreviewRefreshBtn = get('detail-link-preview-refresh-btn');
@@ -671,6 +693,23 @@ class ConfigBookmarks {
                 window.configManager.settingsData,
                 window.configManager.allBookmarksData
             );
+        }, { signal });
+
+        if (monEl) monEl.addEventListener('change', (e) => {
+            bookmark.monitor = e.target.checked;
+            // Give a freshly-enabled monitor an explicit interval, so the stored
+            // bookmark says what it does rather than relying on the server default.
+            if (bookmark.monitor && !bookmark.monitorIntervalMinutes) {
+                bookmark.monitorIntervalMinutes = Number(monIntervalEl?.value) || 15;
+            }
+            this._syncMonitorIntervalVisibility(bookmark.monitor);
+            this._syncRow(index, bookmark);
+            if (window.configManager?.markDirty) window.configManager.markDirty();
+        }, { signal });
+
+        if (monIntervalEl) monIntervalEl.addEventListener('change', (e) => {
+            bookmark.monitorIntervalMinutes = Number(e.target.value) || 15;
+            if (window.configManager?.markDirty) window.configManager.markDirty();
         }, { signal });
 
         if (noteEl) noteEl.addEventListener('input', (e) => {
