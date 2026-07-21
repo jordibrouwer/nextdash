@@ -1237,7 +1237,7 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	// matter what is stored, and clients should render it that way. The stored
 	// setting is left untouched so it returns when the operator lifts the switch.
 	if telemetryDisabledByEnv() {
-		settings.EnableUsageAnalytics = false
+		settings.AnalyticsOptIn = false
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(settings)
@@ -1291,7 +1291,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	// analytics while it is set, and the user's own preference must survive it so
 	// it returns unchanged once the operator unsets it.
 	if telemetryDisabledByEnv() {
-		settings.EnableUsageAnalytics = h.store.GetSettings().EnableUsageAnalytics
+		settings.AnalyticsOptIn = h.store.GetSettings().AnalyticsOptIn
 	}
 
 	// Validate and sanitize collections
