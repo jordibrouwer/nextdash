@@ -2,10 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
 )
+
+// errCheckModeGone reports that a bookmark moved or changed between the time the
+// health report was built and the time the write landed. Surfaced as 409 so the
+// client reloads rather than retrying against the same stale index.
+var errCheckModeGone = errors.New("bookmark no longer matches the requested reference")
 
 // checkModeResult reports what a bulk check-mode change actually did.
 type checkModeResult struct {
@@ -56,13 +62,24 @@ func (h *Handlers) SetAllCheckModes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Mode string `json:"mode"`
+		Mode    string            `json:"mode"`
+		Targets []checkModeTarget `json:"targets"`
 	}
 	if r.Body != nil {
 		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
+
+	// With an explicit target list, any mode is allowed: the caller has named
+	// every bookmark it touches, so "on" cannot escape the set the user can see.
+	// Without one the request means "everything", and only off stays available —
+	// enabling checks collection-wide is exactly what the per-bookmark opt-in
+	// exists to prevent.
+	if len(req.Targets) > 0 {
+		h.setCheckModeForTargets(w, req.Mode, req.Targets)
+		return
+	}
 	if mode := strings.TrimSpace(strings.ToLower(req.Mode)); mode != "" && mode != "off" {
-		http.Error(w, "only mode=off is supported", http.StatusBadRequest)
+		http.Error(w, "only mode=off is supported without an explicit target list", http.StatusBadRequest)
 		return
 	}
 
