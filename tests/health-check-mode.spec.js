@@ -178,6 +178,31 @@ test.describe('health view check mode', () => {
         await expect(row.locator('.health-check-mode')).toBeFocused();
     });
 
+    test('the overflow menu names the current mode and opens the popover', async ({ page }) => {
+        await openHealthView(page);
+
+        // Row actions only surface on the selected row, so drive it by keyboard
+        // the way the rest of the health specs do.
+        await page.keyboard.press('j');
+        await page.keyboard.press('m');
+
+        const row = page.locator('.health-view-item').first();
+        const item = row.locator('[data-menu-action="checkmode"]');
+        // Naming the current mode saves opening the popover just to read it.
+        await expect(item).toContainText('Monitor');
+
+        await item.click();
+        // It hands off rather than duplicating the options, so one place explains
+        // what the modes mean.
+        await expect(row.locator('.health-check-menu')).toBeVisible();
+        await expect(row.locator('.health-view-menu[data-menu-owner="more"]')).toBeHidden();
+    });
+
+    test('the legend teaches c alongside the other row shortcuts', async ({ page }) => {
+        await openHealthView(page);
+        await expect(page.locator('.health-view-legend')).toContainText('c');
+    });
+
     test('the bulk monitor button is offered on a narrowed list, never on All', async ({ page }) => {
         await openHealthView(page);
 

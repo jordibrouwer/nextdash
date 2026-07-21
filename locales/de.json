@@ -606,6 +606,8 @@
         "healthBulkEnablePeriodicConfirm": "Dies setzt {count} Lesezeichen aus der aktuellen Liste auf Periodisch. Jedes wird etwa einmal täglich geprüft.",
         "healthBulkEnableDone": "{count} Lesezeichen auf {mode} gesetzt",
         "healthBulkEnablePartial": "{count} Lesezeichen auf {mode} gesetzt; {skipped} hatten sich geändert und wurden übersprungen",
+        "healthMenuCheckMode": "Prüfung ändern ({mode})",
+        "healthKeyCheckMode": "Prüfung",
         "healthCheckNoteMonitor": "Alle {mins} Min. überwacht — Uptime, Heartbeat und Ausfälle werden aufgezeichnet.",
         "healthCheckNotePeriodic": "Etwa einmal täglich geprüft: Defekte werden erkannt, aber es wird kein Uptime-Verlauf gespeichert. Wechsle zu Monitor für Heartbeat und Ausfallverlauf.",
         "healthCheckNoteOff": "Die Verfügbarkeitsprüfung ist für dieses Lesezeichen aus, es wird also nie getestet und kann nicht als defekt markiert werden.",

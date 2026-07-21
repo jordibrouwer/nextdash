@@ -235,6 +235,9 @@ test.describe('health dashboard view', () => {
             'Refresh title',
             'Refresh favicon',
             'Find in Web Archive',
+            // The discoverable route to the check-mode popover; the badge is the
+            // fast one, but nothing announces that a badge is clickable.
+            'Change checking (Not checked)',
             'Delete bookmark',
         ]);
     });

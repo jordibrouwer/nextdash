@@ -1644,6 +1644,7 @@ class DashboardHealth {
             ['j / k', this.t('dashboard.healthKeyMove', 'move')],
             ['s', this.t('dashboard.healthKeyScore', 'score')],
             ['p', this.t('dashboard.healthKeyRecheck', 're-check')],
+            ['c', this.t('dashboard.healthKeyCheckMode', 'checking')],
             ['m', this.t('dashboard.healthKeyMore', 'more actions')],
             ['Enter', this.t('dashboard.healthKeyOpen', 'open')],
             ['g / G', this.t('dashboard.healthKeyFirstLast', 'first / last')],
@@ -1936,6 +1937,14 @@ class DashboardHealth {
         }
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="favicon">${this.escape(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive">${this.escape(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
+        // The discoverable route to the mode: the badge is faster, but nothing
+        // announces that a badge is clickable, whereas this menu is where people
+        // already look for row actions. No group label of its own — the item names
+        // the mode it would change, and a heading per entry makes a short menu
+        // read like a form.
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="checkmode">${this.escape(
+            this.t('dashboard.healthMenuCheckMode', 'Change checking ({mode})', { mode: this.checkModeMeta(this.checkModeOf(issue)).label })
+        )}</button>`);
         items.push(`<p class="health-view-menu-label health-view-menu-label--danger" role="presentation">${this.escape(this.t('dashboard.healthMenuRemove', 'Remove'))}</p>`);
         items.push(`<button type="button" class="health-view-menu-item health-view-menu-item--danger" role="menuitem" data-menu-action="delete">${this.escape(this.t('dashboard.healthDelete', 'Delete bookmark'))}</button>`);
 
@@ -2039,6 +2048,9 @@ class DashboardHealth {
             favicon: () => void this.refreshFavicon(issue),
             archive: () => this.openArchive(issue),
             delete: () => void this.deleteIssue(issue),
+            // Hand off to the popover rather than duplicating the three options
+            // here, so there is one place that explains what the modes mean.
+            checkmode: () => this.toggleMenu(key, 'check'),
         };
         row.querySelectorAll('[data-menu-action]').forEach((item) => {
             item.addEventListener('click', (e) => {

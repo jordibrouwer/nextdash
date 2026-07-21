@@ -606,6 +606,8 @@
         "healthBulkEnablePeriodicConfirm": "Ceci règle {count} favori(s) de la liste actuelle sur Périodique. Chacun sera vérifié environ une fois par jour.",
         "healthBulkEnableDone": "{count} favori(s) réglés sur {mode}",
         "healthBulkEnablePartial": "{count} favori(s) réglés sur {mode} ; {skipped} avaient changé et ont été ignorés",
+        "healthMenuCheckMode": "Modifier la vérification ({mode})",
+        "healthKeyCheckMode": "vérification",
         "healthCheckNoteMonitor": "Surveillé toutes les {mins} min — disponibilité, heartbeat et pannes sont enregistrés.",
         "healthCheckNotePeriodic": "Vérifié environ une fois par jour : les liens cassés sont détectés, mais aucun historique n'est conservé. Passez à Surveillance pour un heartbeat et l'historique des pannes.",
         "healthCheckNoteOff": "La vérification de disponibilité est désactivée pour ce favori : il n'est jamais testé et ne peut pas être signalé comme cassé.",
