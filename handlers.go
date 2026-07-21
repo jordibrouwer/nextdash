@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -2201,6 +2202,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	pages := h.store.GetPages()
 	var res healthRetestResult
 	healthUpdates := make(map[string]HealthScanCache)
+	historyUpdates := make(map[string][]HealthSample)
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -2254,6 +2256,18 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 					LastScanned: lastChecked,
 					Error:       errMsg,
 				}
+				// A monitored bookmark also records the sample, so a retest feeds
+				// the uptime and heartbeat view instead of only the scan cache.
+				// Collected here and written once at the end: one history write per
+				// run rather than one per bookmark.
+				if bm.Monitor {
+					historyUpdates[key] = append(historyUpdates[key], HealthSample{
+						T:      lastChecked,
+						Up:     result.Status == "online",
+						PingMs: result.PingMs,
+						Code:   result.HTTPStatus,
+					})
+				}
 			}
 
 			res.Results = append(res.Results, map[string]interface{}{
@@ -2296,6 +2310,11 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 
 	if err := h.mergeHealthCacheUpdates(healthUpdates); err != nil {
 		return res, fmt.Errorf("%w: %v", errHealthRetestPersist, err)
+	}
+	// Best-effort: losing a sample costs a gap in the heartbeat, which is not
+	// worth failing a retest that already pinged everything successfully.
+	if err := h.appendHealthSamples(historyUpdates); err != nil {
+		log.Printf("health history: failed to record retest samples: %v", err)
 	}
 
 	h.invalidateHealthReportCache()
