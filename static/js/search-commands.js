@@ -3038,15 +3038,42 @@ class SearchCommandsComponent {
                 });
         }
         if (!stateArg || 'on'.startsWith(stateArg)) {
+            // Counted the way the "unchecked" filter matches (never checked), so the
+            // number in this row is the number of rows the view then shows.
+            const unchecked = issues.filter((i) => !i?.lastChecked).length;
             rows.push({
-                name: t('monitorCmdOn', 'on — enable per bookmark in its editor (there is no "monitor everything")'),
+                name: unchecked > 0
+                    ? t('monitorCmdOn', 'on — review the {count} never-checked bookmarks in the health view', { count: unchecked })
+                    : t('monitorCmdOnNone', 'on — every bookmark has been checked at least once'),
                 shortcut: ':MONITOR',
                 stateId: 'monitor:on',
                 type: 'command',
-                action: () => {},
+                // Still no "monitor everything": enabling in bulk is deliberately
+                // bound to a filtered list, so this opens that list rather than
+                // acting on the whole collection from a command line.
+                action: unchecked > 0
+                    ? () => { void this._openUncheckedInHealth(dashboard); }
+                    : () => {},
             });
         }
         return rows;
+    }
+
+    /**
+     * Opens the health view filtered to bookmarks with no checking, which is where
+     * the bulk "Monitor these N" button lives. The command stops there on purpose:
+     * the button confirms first and names its blast radius, and a command line is
+     * the wrong place to skip that.
+     */
+    async _openUncheckedInHealth(dashboard) {
+        const health = dashboard.health;
+        if (!health) return;
+        if (!health.isActiveView?.()) {
+            await health.openHealthView?.();
+        }
+        health.filter = 'unchecked';
+        health.visibleLimit = 50;
+        health.render?.();
     }
 
     /** Opens the health view if needed, then runs its bulk disable (with confirm). */
