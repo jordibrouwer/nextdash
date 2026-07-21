@@ -378,9 +378,22 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			duplicateCount := duplicateCounts[key]
 			isDuplicate := duplicateCount > 1
 			isBroken := strings.TrimSpace(bm.LastError) != ""
-			isChecked := bm.CheckStatus
+			// Monitoring is the heavier form of the same thing, so it counts as
+			// "checked" for scoring. Without this, switching a bookmark from
+			// periodic to monitored would flag it as never-checked while it is in
+			// fact being checked far more often.
+			isChecked := bm.CheckStatus || bm.Monitor
 			isUnchecked := isChecked && bm.LastChecked == 0
-			isStaleCheck := isChecked && bm.LastChecked > 0 && time.Since(time.UnixMilli(bm.LastChecked)) > 7*24*time.Hour
+			// A monitor is stale relative to its own cadence, not the weekly bar a
+			// once-a-day check is held to: a 5-minute monitor silent for a day is
+			// already broken, while a weekly threshold would call it fine.
+			staleAfter := 7 * 24 * time.Hour
+			if bm.Monitor {
+				if missed := time.Duration(clampMonitorIntervalMinutes(bm.MonitorIntervalMinutes)) * time.Minute * 3; missed < staleAfter {
+					staleAfter = missed
+				}
+			}
+			isStaleCheck := isChecked && bm.LastChecked > 0 && time.Since(time.UnixMilli(bm.LastChecked)) > staleAfter
 			isUnused := bm.OpenCount == 0 && bm.LastOpened == 0
 			isStale := bm.OpenCount > 0 && bm.LastOpened > 0 && time.Since(time.UnixMilli(bm.LastOpened)) > 30*24*time.Hour
 			isMissingPreview := missingPreview(bm)
@@ -2194,8 +2207,10 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 
 		for _, bm := range bookmarks {
 			// A bookmark with checkStatus off but a stored LastError is rendered broken
-			// and scored -60, yet the default run never revisits it.
-			eligible := bm.CheckStatus || (includeFlagged && strings.TrimSpace(bm.LastError) != "")
+			// and scored -60, yet the default run never revisits it. Monitored
+			// bookmarks are eligible too: "Retest all" should mean all, not "all
+			// except the ones you watch most closely".
+			eligible := bm.CheckStatus || bm.Monitor || (includeFlagged && strings.TrimSpace(bm.LastError) != "")
 			if !eligible {
 				res.Skipped++
 				continue

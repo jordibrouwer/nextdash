@@ -1144,6 +1144,107 @@ body[data-mobile-layout="true"] .bookmark-detail-empty-hints--desktop {
     border-color: var(--text-secondary);
 }
 
+/* ─── Availability check mode ────────────────────────────────────────────────
+   A three-way choice rather than two checkboxes: Monitor is a superset of
+   Periodic, so the control makes "both" structurally impossible. */
+
+.bookmark-detail-checkmode-header {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.bookmark-detail-checkmode-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+}
+
+.bookmark-detail-checkmode-input {
+    position: absolute;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    pointer-events: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.bookmark-detail-checkmode-option {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.2;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.bookmark-detail-checkmode-option:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-secondary));
+    color: var(--text-primary);
+}
+
+.bookmark-detail-checkmode-input:checked + .bookmark-detail-checkmode-option {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.bookmark-detail-checkmode-input:focus-visible + .bookmark-detail-checkmode-option {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.bookmark-detail-checkmode-info {
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    border: 1px solid var(--border-secondary);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-style: italic;
+    line-height: 1;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.bookmark-detail-checkmode-info:hover {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.bookmark-detail-checkmode .bookmark-detail-field-hint {
+    margin-top: 0.35rem;
+}
+
+.bookmark-detail-checkmode .custom-select-wrapper,
+.bookmark-detail-checkmode .bookmark-detail-toggle-select {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-detail-checkmode-option {
+        transition: none;
+    }
+}
+
 /* ─── Flag toggles (pinned / status check / monitor) ─────────────────────────
    Pills rather than square icon boxes with separate labels: the icon and its
    label become one target, on/off is legible from the fill, and the three flags

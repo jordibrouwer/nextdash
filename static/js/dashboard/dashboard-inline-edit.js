@@ -54,6 +54,54 @@ class DashboardInlineEdit {
     }
 
 
+    /**
+     * Explains the availability-check modes. Shared by the inline editor and the
+     * health view, because the question ("why does this row have a heartbeat and
+     * that one doesn't?") arises in both places.
+     */
+    showCheckModeExplainer() {
+        const d = this.dash;
+        const cfg = (key, fallback) => {
+            const full = `config.${key}`;
+            const result = d?.language?.t?.(full);
+            return result && result !== full ? result : fallback;
+        };
+        const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+        if (!window.AppModal) return;
+
+        const row = (title, body) => `
+            <div class="check-mode-explain-row">
+                <h4>${esc(title)}</h4>
+                <p>${esc(body)}</p>
+            </div>`;
+
+        window.AppModal.show({
+            title: cfg('checkModeExplainTitle', 'How availability checking works'),
+            htmlMessage: `
+                <div class="check-mode-explain">
+                    ${row(
+                        cfg('checkModePeriodic', 'Periodic'),
+                        cfg('checkModeExplainPeriodic', 'Answers one question: is this link still alive? It is checked in the background about once a day, and a broken bookmark is flagged in the health view. Cheap, and enough for most bookmarks.')
+                    )}
+                    ${row(
+                        cfg('checkModeMonitor', 'Monitor'),
+                        cfg('checkModeExplainMonitor', 'Answers a bigger question: how reliable has it been? It is checked on the interval you pick (from 5 minutes) and keeps history, so you get an uptime percentage, a heartbeat bar, outage history and optional alerts. Use it for the handful of services you actually care about being up.')
+                    )}
+                    ${row(
+                        cfg('checkModeExplainWhichTitle', 'Which should I pick?'),
+                        cfg('checkModeExplainWhich', 'Monitor includes everything Periodic does, so there is never a reason to want both. Periodic suits your ordinary links; Monitor suits your own servers and dashboards. Monitoring everything would make a lot of network requests and a large history file for little benefit.')
+                    )}
+                </div>`,
+            confirmText: cfg('checkModeExplainClose', 'Got it'),
+            // Informational only — a Cancel button would imply the explanation
+            // could be declined.
+            showCancel: false,
+            modalClass: 'whats-new-modal check-mode-explain-modal',
+        });
+    }
+
     snapshotInlineEditBaseline(bookmark, pageId) {
         const tags = Array.isArray(bookmark?.tags)
             ? bookmark.tags.map((tag) => String(tag).trim().toLowerCase()).filter(Boolean)
@@ -754,19 +802,52 @@ class DashboardInlineEdit {
             bookmark.pinned,
             'M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z'
         );
-        const statusInput = mkToggle(
-            `bookmark-inline-status-${suffix}`,
-            cfg('statusCheck', 'Status check'),
-            bookmark.checkStatus,
-            'M3 12h4l2-5 4 10 2-5h6v2h-4l-2 5-4-10-2 5H3z'
-        );
-        // Uptime monitoring: a faster, opt-in tier next to the status check.
-        const monitorInput = mkToggle(
-            `bookmark-inline-monitor-${suffix}`,
-            cfg('monitorShort', 'Monitor'),
-            bookmark.monitor,
-            'M3 17h2v4H3v-4zm4-5h2v9H7v-9zm4-6h2v15h-2V6zm4 3h2v12h-2V9zm4-6h2v18h-2V3z'
-        );
+        // Availability checking is one choice of three, not two overlapping flags.
+        // Monitor does everything Status check does and more, so offering both as
+        // independent checkboxes invited a meaningless "both on" state and left
+        // people guessing at the difference.
+        const checkModeRow = document.createElement('div');
+        checkModeRow.className = 'bookmark-inline-checkmode';
+        checkModeRow.setAttribute('role', 'radiogroup');
+        checkModeRow.setAttribute('aria-label', cfg('checkModeLabel', 'Availability check'));
+
+        const currentMode = bookmark.monitor ? 'monitor' : (bookmark.checkStatus ? 'periodic' : 'off');
+        const modeDefs = [
+            ['off', cfg('checkModeOff', 'Off'), cfg('checkModeOffHint', 'No availability checking.')],
+            ['periodic', cfg('checkModePeriodic', 'Periodic'), cfg('checkModePeriodicHint', 'Checks once a day and flags the bookmark when it breaks.')],
+            ['monitor', cfg('checkModeMonitor', 'Monitor'), cfg('checkModeMonitorHint', 'Checks on your own interval and keeps uptime history, a heartbeat and outage alerts. Includes everything Periodic does.')],
+        ];
+        const modeInputs = {};
+        modeDefs.forEach(([value, labelText, hint]) => {
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = `bookmark-inline-checkmode-${suffix}`;
+            input.id = `bookmark-inline-checkmode-${value}-${suffix}`;
+            input.value = value;
+            input.checked = currentMode === value;
+            input.className = 'bookmark-inline-checkmode-input';
+
+            const label = document.createElement('label');
+            label.className = 'bookmark-inline-checkmode-option';
+            label.htmlFor = input.id;
+            label.textContent = labelText;
+            label.title = hint;
+
+            checkModeRow.appendChild(input);
+            checkModeRow.appendChild(label);
+            modeInputs[value] = input;
+        });
+
+        const readCheckMode = () => {
+            for (const [value, input] of Object.entries(modeInputs)) {
+                if (input.checked) return value;
+            }
+            return 'off';
+        };
+        // The two stored booleans are derived from the single choice, so they can
+        // never disagree with each other.
+        const statusInput = { get checked() { return readCheckMode() === 'periodic'; } };
+        const monitorInput = { get checked() { return readCheckMode() === 'monitor'; } };
 
         const monitorIntervalInput = document.createElement('select');
         monitorIntervalInput.id = `bookmark-inline-monitor-interval-${suffix}`;
@@ -792,13 +873,36 @@ class DashboardInlineEdit {
         // The interval rides along in the same row, so turning Monitor on does not
         // reflow the form — it only reveals a select that was already accounted for.
         monitorIntervalInput.hidden = !monitorInput.checked;
-        toggleRow.appendChild(monitorIntervalInput);
+        checkModeRow.appendChild(monitorIntervalInput);
 
-        monitorInput.addEventListener('change', () => {
-            monitorIntervalInput.hidden = !monitorInput.checked;
+        // A small info button opens the full explanation. Hover titles cover the
+        // desktop case; this is the path that also works on touch.
+        const checkModeInfo = document.createElement('button');
+        checkModeInfo.type = 'button';
+        checkModeInfo.className = 'bookmark-inline-checkmode-info';
+        checkModeInfo.textContent = 'i';
+        checkModeInfo.title = cfg('checkModeExplainTitle', 'How availability checking works');
+        checkModeInfo.setAttribute('aria-label', cfg('checkModeExplainTitle', 'How availability checking works'));
+        checkModeInfo.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.showCheckModeExplainer();
+        });
+        checkModeRow.appendChild(checkModeInfo);
+
+        Object.values(modeInputs).forEach((input) => {
+            input.addEventListener('change', () => {
+                monitorIntervalInput.hidden = !monitorInput.checked;
+                // Give a freshly-chosen monitor an explicit interval, so the stored
+                // bookmark states its cadence rather than relying on the default.
+                if (monitorInput.checked && !Number(monitorIntervalInput.value)) {
+                    monitorIntervalInput.value = '15';
+                }
+            });
         });
 
         form.insertBefore(toggleRow, togglesSlot);
+        form.insertBefore(checkModeRow, togglesSlot);
 
         const actions = document.createElement('div');
         actions.className = 'bookmark-inline-actions';

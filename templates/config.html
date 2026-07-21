@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="/static/css/reorder.css?v={{.Assets.ReorderCSS}}">
     <link rel="stylesheet" href="/static/css/modal.css?v={{.Assets.ModalCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-stats.css?v=stats-inbox-block-1">
-    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=detail-toggle-pills-1">
+    <link rel="stylesheet" href="/static/css/config/config-bookmarks-splitview.css?v=check-mode-1">
     <link rel="stylesheet" href="/static/css/bookmark-form-preview.css?v={{.Assets.BookmarkFormPreviewCSS}}">
     <link rel="stylesheet" href="/static/css/config/config-keyboard.css?v=quiet-borders-1">
     <link rel="stylesheet" href="/static/css/config/config-tags.css?v=quiet-borders-1">
@@ -1633,36 +1633,34 @@
                                     </span>
                                     <span class="bookmark-detail-toggle-label" data-i18n="config.pinnedShort">Pinned</span>
                                 </label>
-                                <label class="checkbox-label icon-toggle bookmark-detail-toggle" data-i18n-tooltip="config.statusCheckToggleHint">
-                                    <input type="checkbox" id="detail-check-status" data-i18n-aria="config.statusCheckToggleHint">
-                                    <span class="icon-toggle-indicator" data-i18n-tooltip="config.statusCheckToggleHint" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24" focusable="false">
-                                            <path d="M3 12h4l2-5 4 10 2-5h6v2h-4l-2 5-4-10-2 5H3z"></path>
-                                        </svg>
-                                    </span>
-                                    <span class="bookmark-detail-toggle-label" data-i18n="config.statusCheck">Status check</span>
-                                </label>
-                                <label class="checkbox-label icon-toggle bookmark-detail-toggle" data-i18n-tooltip="config.monitorToggleHint">
-                                    <input type="checkbox" id="detail-monitor" data-i18n-aria="config.monitorToggleHint">
-                                    <span class="icon-toggle-indicator" data-i18n-tooltip="config.monitorToggleHint" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24" focusable="false">
-                                            <path d="M3 17h2v4H3v-4zm4-5h2v9H7v-9zm4-6h2v15h-2V6zm4 3h2v12h-2V9zm4-6h2v18h-2V3z"></path>
-                                        </svg>
-                                    </span>
-                                    <span class="bookmark-detail-toggle-label" data-i18n="config.monitorShort">Monitor</span>
-                                </label>
-                                <!-- Rides along in the toggle row so enabling Monitor reveals the
-                                     interval without reflowing the panel. Abbreviated labels keep
-                                     it on the same line, as in the dashboard inline editor. -->
-                                <select id="detail-monitor-interval" class="bookmark-detail-toggle-select" data-i18n-aria="config.monitorInterval" hidden>
-                                    <option value="5" data-i18n="config.monitorIntervalShort5">5m</option>
-                                    <option value="15" data-i18n="config.monitorIntervalShort15">15m</option>
-                                    <option value="30" data-i18n="config.monitorIntervalShort30">30m</option>
-                                    <option value="60" data-i18n="config.monitorIntervalShort60">1h</option>
-                                    <option value="360" data-i18n="config.monitorIntervalShort360">6h</option>
-                                    <option value="1440" data-i18n="config.monitorIntervalShort1440">24h</option>
-                                </select>
                             </div>
+
+                            <!-- Availability checking is one choice of three rather than two
+                                 overlapping checkboxes: Monitor is a superset of Periodic, so
+                                 a "both on" state was meaningless and invited confusion. -->
+                            <div class="bookmark-detail-section bookmark-detail-checkmode">
+                                <div class="bookmark-detail-checkmode-header">
+                                    <label class="bookmark-detail-label" data-i18n="config.checkModeLabel">Availability check</label>
+                                    <button type="button" id="detail-check-mode-info" class="bookmark-detail-checkmode-info"
+                                            data-i18n-aria="config.checkModeExplainTitle" aria-label="How availability checking works">i</button>
+                                </div>
+                                <div class="bookmark-detail-checkmode-options" role="radiogroup" data-i18n-aria="config.checkModeLabel" aria-label="Availability check">
+                                    <input type="radio" name="detail-check-mode" id="detail-check-mode-off" value="off" class="bookmark-detail-checkmode-input">
+                                    <label for="detail-check-mode-off" class="bookmark-detail-checkmode-option" data-i18n="config.checkModeOff" data-i18n-tooltip="config.checkModeOffHint">Off</label>
+                                    <input type="radio" name="detail-check-mode" id="detail-check-mode-periodic" value="periodic" class="bookmark-detail-checkmode-input">
+                                    <label for="detail-check-mode-periodic" class="bookmark-detail-checkmode-option" data-i18n="config.checkModePeriodic" data-i18n-tooltip="config.checkModePeriodicHint">Periodic</label>
+                                    <input type="radio" name="detail-check-mode" id="detail-check-mode-monitor" value="monitor" class="bookmark-detail-checkmode-input">
+                                    <label for="detail-check-mode-monitor" class="bookmark-detail-checkmode-option" data-i18n="config.checkModeMonitor" data-i18n-tooltip="config.checkModeMonitorHint">Monitor</label>
+                                    <select id="detail-monitor-interval" class="bookmark-detail-toggle-select" data-i18n-aria="config.monitorInterval" hidden>
+                                        <option value="5" data-i18n="config.monitorIntervalShort5">5m</option>
+                                        <option value="15" data-i18n="config.monitorIntervalShort15">15m</option>
+                                        <option value="30" data-i18n="config.monitorIntervalShort30">30m</option>
+                                        <option value="60" data-i18n="config.monitorIntervalShort60">1h</option>
+                                        <option value="360" data-i18n="config.monitorIntervalShort360">6h</option>
+                                        <option value="1440" data-i18n="config.monitorIntervalShort1440">24h</option>
+                                    </select>
+                                </div>
+                                <p class="bookmark-detail-field-hint" id="detail-check-mode-hint" data-i18n="config.checkModeOffHint">No availability checking.</p>
 
                             <div class="bookmark-detail-section bookmark-detail-preview-section">
                                 <div class="bookmark-detail-preview-header">
@@ -2630,7 +2628,7 @@
     <script src="/static/js/bookmark-form/bookmark-url-utils.js?v={{.Assets.BookmarkURLUtilsJS}}"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js?v={{.Assets.BookmarkPreviewServiceJS}}"></script>
     <script src="/static/js/bookmark-form/bookmark-form-preview.js?v={{.Assets.BookmarkFormPreviewJS}}"></script>
-    <script src="/static/js/config/config-bookmarks.js?v=monitor-pills-1"></script>
+    <script src="/static/js/config/config-bookmarks.js?v=check-mode-1"></script>
     <script src="/static/js/config/config-bookmarks-controller.js?v=config-modular-1"></script>
     <script src="/static/js/config/config-collections.js?v=collections-ac-1"></script>
     <script src="/static/js/config/config-finders.js?v=config-b11-empty-hidden-1"></script>

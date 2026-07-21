@@ -1447,6 +1447,21 @@ class DashboardHealth {
         return `<svg class="health-sparkline" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${this.escape(label)}">${paths}</svg>`;
     }
 
+    /**
+     * A badge naming the check mode, so it is obvious why one row has a heartbeat
+     * and the next does not. Rows with no checking at all stay unlabelled — an
+     * "Off" badge on most of the list would be noise.
+     */
+    renderCheckModeBadge(issue) {
+        if (issue?.monitor) {
+            return `<span class="health-check-mode is-monitor" title="${this.escape(this.t('dashboard.healthBadgeMonitorHint', 'Checked on its own interval, with uptime history'))}">${this.escape(this.t('dashboard.healthBadgeMonitor', 'Monitor'))}</span>`;
+        }
+        if (issue?.checkStatus) {
+            return `<span class="health-check-mode is-periodic" title="${this.escape(this.t('dashboard.healthBadgePeriodicHint', 'Checked about once a day; no uptime history'))}">${this.escape(this.t('dashboard.healthBadgePeriodic', 'Periodic'))}</span>`;
+        }
+        return '';
+    }
+
     /** The monitor strip under the row meta: heartbeat, uptime, sparkline. */
     renderMonitorStrip(issue) {
         const stats = issue?.monitorStats;
@@ -1497,11 +1512,31 @@ class DashboardHealth {
             <ul class="health-view-score-list">${rows}</ul>`;
     }
 
+    /**
+     * One line in the expanded panel explaining what this row's check mode does —
+     * and, for unmonitored rows, what turning Monitor on would add. This is where
+     * "why no heartbeat here?" gets answered.
+     */
+    renderCheckModeNote(issue) {
+        let text;
+        if (issue?.monitor) {
+            const mins = issue?.monitorStats?.intervalMinutes;
+            text = mins
+                ? this.t('dashboard.healthCheckNoteMonitor', 'Monitored every {mins} min — uptime, heartbeat and outages are recorded.', { mins })
+                : this.t('dashboard.healthBadgeMonitorHint', 'Checked on its own interval, with uptime history');
+        } else if (issue?.checkStatus) {
+            text = this.t('dashboard.healthCheckNotePeriodic', 'Checked about once a day: breakage is caught, but no uptime history is kept. Switch to Monitor for a heartbeat and outage history.');
+        } else {
+            text = this.t('dashboard.healthCheckNoteOff', 'Availability checking is off for this bookmark, so it is never tested and cannot be flagged as broken.');
+        }
+        return `<p class="health-view-check-note">${this.escape(text)}</p>`;
+    }
+
     renderScorePanel(issue) {
         const entries = this.reasonEntries(issue);
         // Outage history is worth showing even at a perfect score: a bookmark can
         // be flawless as a link and still have been unreachable last night.
-        const incidents = this.renderIncidents(issue);
+        const incidents = this.renderIncidents(issue) + this.renderCheckModeNote(issue);
         if (!entries.length) {
             return `<p class="health-view-score-intro">${this.escape(this.t('dashboard.healthScorePerfect', 'No issues found — full score.'))}</p>${incidents}`;
         }
@@ -1579,6 +1614,7 @@ class DashboardHealth {
                 </div>
                 <p class="health-view-item-meta">
                     <span>${this.escape(domain)}</span>
+                    ${this.renderCheckModeBadge(issue)}
                     ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
                     ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
                 </p>

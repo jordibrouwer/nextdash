@@ -349,6 +349,36 @@ button.health-view-tile:hover {
     color: var(--accent-error);
 }
 
+/* ─── Check-mode badge ──────────────────────────────────────────────────────
+   Names why a row does or does not have a heartbeat. Only checked rows carry a
+   badge; labelling every unchecked bookmark "Off" would be noise. */
+
+.health-check-mode {
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    font-size: 0.68rem;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.health-check-mode.is-monitor {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-secondary));
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--text-primary);
+}
+
+.health-check-mode.is-periodic {
+    color: var(--text-secondary);
+}
+
+.health-view-check-note {
+    margin: 0.5rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
 /* ─── Uptime monitoring ─────────────────────────────────────────────────── */
 
 .health-monitor-strip {

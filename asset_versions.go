@@ -130,7 +130,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
 	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
-	DashboardCSS:            "inline-toggle-pills-1",
+	DashboardCSS:            "check-mode-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
 	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 

@@ -2876,10 +2876,109 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     outline-offset: 2px;
 }
 
+/* ─── Availability check mode ────────────────────────────────────────────────
+   A segmented control, not two checkboxes: Monitor is a superset of Periodic, so
+   only one can be true at a time and the UI should make that structural rather
+   than rely on the user knowing it. */
+
+.bookmark-inline-checkmode {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.bookmark-inline-checkmode-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.bookmark-inline-checkmode-option {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background-color: var(--inline-edit-field-bg);
+    color: var(--text-secondary);
+    font-size: var(--font-size-controls);
+    line-height: 1.2;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.bookmark-inline-checkmode-option:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-secondary));
+    color: var(--text-primary);
+}
+
+.bookmark-inline-checkmode-input:checked + .bookmark-inline-checkmode-option {
+    border-color: var(--accent-primary);
+    background-color: color-mix(in srgb, var(--accent-primary) 14%, var(--inline-edit-field-bg));
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.bookmark-inline-checkmode-input:focus-visible + .bookmark-inline-checkmode-option {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.bookmark-inline-checkmode-info {
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    border: 1px solid var(--border-secondary);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-style: italic;
+    line-height: 1;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.bookmark-inline-checkmode-info:hover {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+/* Explainer modal */
+.check-mode-explain-row + .check-mode-explain-row {
+    margin-top: 0.9rem;
+}
+
+.check-mode-explain-row h4 {
+    margin: 0 0 0.2rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.check-mode-explain-row p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bookmark-inline-checkmode-option {
+        transition: none;
+    }
+}
+
 /* Overrides the shared .bookmark-inline-select width:100% (defined later in this
    file) so the interval sits beside the pills instead of claiming its own line —
    the extra specificity is the point, not an accident. */
-.bookmark-inline-toggles .bookmark-inline-select.bookmark-inline-toggle-select {
+.bookmark-inline-toggles .bookmark-inline-select.bookmark-inline-toggle-select,
+.bookmark-inline-checkmode .bookmark-inline-select.bookmark-inline-toggle-select {
     flex: 0 1 auto;
     width: auto;
     min-width: 0;
