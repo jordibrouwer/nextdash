@@ -237,6 +237,7 @@ class DashboardUiHelpers {
             section('sectionCommandsTools', 'Commands — tools', [
                 item(':backup / :export', 'ctBackup', 'Open config backups or download a ZIP backup immediately'),
                 item(':metadata', 'ctMetadata', 'Open health missing previews or config bookmarks metadata view'),
+                item(':monitor off', 'ctMonitor', 'Turn availability checking off for every bookmark at once (asks for confirmation first)'),
                 item(':telemetry on / off', 'ctTelemetry', 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)'),
             ]),
             section('sectionOther', 'Other', [

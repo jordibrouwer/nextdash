@@ -1184,7 +1184,14 @@ class DashboardHealth {
         return wrap;
     }
 
+    /** Bookmarks with any form of availability checking on (periodic or monitor). */
+    checkedCount() {
+        const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
+        return issues.filter((i) => i?.monitor || i?.checkStatus).length;
+    }
+
     renderToolbar() {
+        const checkedCount = this.checkedCount();
         const filters = [
             ['broken', this.t('dashboard.healthFilterBroken', 'Broken')],
             ['duplicate', this.t('dashboard.healthFilterDuplicates', 'Duplicates')],
@@ -1221,6 +1228,9 @@ class DashboardHealth {
             <input type="search" class="health-view-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}">
             <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
             <button type="button" class="health-view-retest-btn">${this.escape(this.t('dashboard.healthRetest', 'Retest all'))}</button>
+            <button type="button" class="health-view-checkoff-btn"${checkedCount ? '' : ' disabled'} title="${this.escape(checkedCount
+                ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
+                : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
         `;
 
         const sortSelect = toolbar.querySelector('.health-view-sort-select');
@@ -1262,7 +1272,79 @@ class DashboardHealth {
             void this.retestAll(retestBtn);
         });
 
+        const checkOffBtn = toolbar.querySelector('.health-view-checkoff-btn');
+        checkOffBtn?.addEventListener('click', () => {
+            void this.disableAllChecking(checkOffBtn);
+        });
+
         return toolbar;
+    }
+
+    /**
+     * Turn availability checking off for every bookmark at once — the escape
+     * hatch for a monitor batch that got noisy, without walking the list.
+     *
+     * Only "off" is offered in bulk: switching everything *on* would point the
+     * scheduler at the whole collection, which is what the per-bookmark opt-in
+     * exists to avoid. Confirmed first, since it silently clears a setting on
+     * many bookmarks and the counts are the only way to see the blast radius.
+     */
+    async disableAllChecking(button) {
+        if (this._checkOffRunning) return;
+        const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
+        const monitored = issues.filter((i) => i?.monitor).length;
+        const periodic = issues.filter((i) => i?.checkStatus && !i?.monitor).length;
+        const total = monitored + periodic;
+        if (!total) return;
+
+        const ok = await this.confirm(
+            this.t('dashboard.healthCheckOffTitle', 'Turn off all checking?'),
+            this.t(
+                'dashboard.healthCheckOffConfirm',
+                'This turns off checking for {total} bookmarks ({monitor} monitored, {periodic} periodic). Uptime history is kept, so turning monitoring back on later resumes where it left off.',
+                { total, monitor: monitored, periodic }
+            )
+        );
+        if (!ok) return;
+
+        this._checkOffRunning = true;
+        window.nextdashTrack?.('health:check-off-all');
+        if (button) {
+            button.disabled = true;
+        }
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/health/check-mode-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'off' }),
+            });
+            if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            // The dashboard's own copy would otherwise still show the old flags.
+            await d.loadBookmarks?.().catch?.(() => {});
+            await this.loadAndRender({ refresh: true });
+            d.updateHealthBadge?.();
+            d.showNotification(
+                this.t('dashboard.healthCheckOffDone', 'Checking turned off for {count} bookmarks', {
+                    count: Number(body?.changed) || total,
+                }),
+                'success',
+                { duration: 3500 }
+            );
+        } catch {
+            d.showNotification(
+                this.t('dashboard.healthCheckOffFailed', 'Could not turn off checking'),
+                'error'
+            );
+        } finally {
+            this._checkOffRunning = false;
+            // The button belongs to the pre-refresh DOM; re-query rather than
+            // touching the detached node.
+            const live = document.querySelector('.health-view-checkoff-btn');
+            if (live) live.disabled = this.checkedCount() === 0;
+        }
     }
 
     /**

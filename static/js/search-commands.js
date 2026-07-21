@@ -58,7 +58,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'export', 'metadata', 'health', 'reload', 'cheat', 'whatsnew', 'telemetry'],
+                commands: ['config', 'backup', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'whatsnew', 'telemetry'],
             },
         ];
         // Track which groups are expanded (none by default)
@@ -116,6 +116,7 @@ class SearchCommandsComponent {
             'animations': this.handleAnimationsCommand.bind(this),
             'status': this.handleStatusCommand.bind(this),
             'telemetry': this.handleTelemetryCommand.bind(this),
+            'monitor': this.handleMonitorCommand.bind(this),
             'collections': this.handleCollectionsCommand.bind(this),
             'opacity': this.handleOpacityCommand.bind(this),
             'backup': this.handleBackupCommand.bind(this),
@@ -2986,6 +2987,76 @@ class SearchCommandsComponent {
         const enabled = dashboard.settings.showStatus !== false;
         const apply = (value) => this.setStatusVisibility(dashboard, value);
         return this._handleSimpleToggle(args, { shortcut: ':STATUS', prefix: 'status', enabled, apply });
+    }
+
+    /**
+     * :monitor off — turn availability checking off for every bookmark at once.
+     *
+     * Deliberately not a symmetric on/off toggle like the other commands: there is
+     * no sensible "monitor everything", since that would point the scheduler at
+     * the whole collection. `:monitor on` therefore explains where to enable it
+     * per bookmark rather than doing something drastic.
+     */
+    handleMonitorCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const t = (key, fallback, params) => {
+            const full = `dashboard.${key}`;
+            let v = dashboard.language?.t?.(full);
+            v = v && v !== full ? v : fallback;
+            return params
+                ? Object.entries(params).reduce((acc, [k, val]) => acc.replaceAll(`{${k}}`, String(val)), String(v))
+                : v;
+        };
+
+        const health = dashboard.health;
+        const issues = Array.isArray(health?.report?.issues) ? health.report.issues : [];
+        const monitored = issues.filter((i) => i?.monitor).length;
+        const periodic = issues.filter((i) => i?.checkStatus && !i?.monitor).length;
+        const total = monitored + periodic;
+
+        const stateArg = (args[0] || '').toLowerCase();
+        const rows = [];
+
+        if (!stateArg || 'off'.startsWith(stateArg)) {
+            rows.push(total > 0
+                ? {
+                    name: t('monitorCmdOff', 'off — stop checking all {total} bookmarks ({monitor} monitored)', { total, monitor: monitored }),
+                    shortcut: ':MONITOR',
+                    stateId: 'monitor:off',
+                    type: 'command',
+                    // Route through the health view so the confirmation, the
+                    // refresh and the notification are identical to the button.
+                    action: () => { void this._disableAllChecking(dashboard); },
+                }
+                : {
+                    name: t('monitorCmdNone', 'off — no bookmarks have checking enabled'),
+                    shortcut: ':MONITOR',
+                    stateId: 'monitor:none',
+                    type: 'command',
+                    action: () => {},
+                });
+        }
+        if (!stateArg || 'on'.startsWith(stateArg)) {
+            rows.push({
+                name: t('monitorCmdOn', 'on — enable per bookmark in its editor (there is no "monitor everything")'),
+                shortcut: ':MONITOR',
+                stateId: 'monitor:on',
+                type: 'command',
+                action: () => {},
+            });
+        }
+        return rows;
+    }
+
+    /** Opens the health view if needed, then runs its bulk disable (with confirm). */
+    async _disableAllChecking(dashboard) {
+        const health = dashboard.health;
+        if (!health) return;
+        if (!health.isActiveView?.()) {
+            await health.openHealthView?.();
+        }
+        await health.disableAllChecking?.(document.querySelector('.health-view-checkoff-btn'));
     }
 
     /** :telemetry on|off — privacy-friendly usage analytics (same setting as Config → General → Advanced → Privacy). */
