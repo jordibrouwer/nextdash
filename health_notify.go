@@ -69,6 +69,20 @@ func trailingFailures(samples []HealthSample) int {
 	return count
 }
 
+// currentOutageAlerted reports whether the outage still in progress at the end of
+// the history has already produced a "down" alert.
+func currentOutageAlerted(samples []HealthSample) bool {
+	for i := len(samples) - 1; i >= 0; i-- {
+		if samples[i].Up {
+			return false
+		}
+		if samples[i].Alerted {
+			return true
+		}
+	}
+	return false
+}
+
 // lastSampleUp reports the most recent known state, and whether any state exists.
 func lastSampleUp(samples []HealthSample) (up bool, ok bool) {
 	if len(samples) == 0 {
@@ -100,6 +114,9 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 
 	history := h.readAllHealthHistory()
 	var pending []monitorNotification
+	// Keys whose current outage alerted on this pass; the flag is persisted below
+	// so later passes can see it.
+	alerted := map[string]bool{}
 
 	for _, t := range transitions {
 		prior := history[t.key]
@@ -108,9 +125,14 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 
 		if !t.up {
 			failures := priorFailures + 1
-			// Exactly at the threshold: below it we stay quiet, above it we have
-			// already alerted for this outage.
-			if failures == threshold {
+			// Fire once the outage has reached the threshold and has not alerted yet.
+			// The count is compared with ">=" rather than "==" because this is not the
+			// only writer of samples: a manual re-check or a bulk retest during an
+			// outage also appends failures, which under an equality test would step the
+			// counter straight over the threshold and silence the outage for good.
+			// "Have we alerted?" is therefore read from the recorded flag instead of
+			// being inferred from the count.
+			if failures >= threshold && !currentOutageAlerted(prior) {
 				pending = append(pending, monitorNotification{
 					Event:    "down",
 					Name:     t.name,
@@ -120,13 +142,15 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 					At:       t.at,
 					Failures: failures,
 				})
+				alerted[t.key] = true
 			}
 			continue
 		}
 
-		// Recovery: only meaningful if we previously alerted, i.e. the outage had
-		// already reached the threshold.
-		if hadState && !prevUp && priorFailures >= threshold {
+		// Recovery: only meaningful if the outage actually alerted, so a blip never
+		// produces a lone "back online". Older histories predate the flag, so a
+		// sufficiently long outage still counts as alerted.
+		if hadState && !prevUp && (currentOutageAlerted(prior) || priorFailures >= threshold) {
 			pending = append(pending, monitorNotification{
 				Event:  "up",
 				Name:   t.name,
@@ -136,7 +160,45 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 			})
 		}
 	}
+
+	h.markOutagesAlerted(alerted)
 	return pending
+}
+
+// markOutagesAlerted stamps the newest stored sample of each key as the one that
+// raised the alert. Called right after the decision so that the "already
+// alerted" state survives a restart and is not re-derived from a failure count
+// that manual re-checks and bulk retests also contribute to.
+func (h *Handlers) markOutagesAlerted(keys map[string]bool) {
+	if len(keys) == 0 {
+		return
+	}
+
+	h.healthHistoryMu.Lock()
+	defer h.healthHistoryMu.Unlock()
+
+	history := readHealthHistoryFile()
+	changed := false
+	for key := range keys {
+		samples := history.Samples[key]
+		if len(samples) == 0 {
+			continue
+		}
+		// The alert was decided against the stored history, so the outage's newest
+		// stored sample is the one to stamp. This round's own sample is appended
+		// afterwards and inherits the state through currentOutageAlerted.
+		if last := &samples[len(samples)-1]; !last.Up && !last.Alerted {
+			last.Alerted = true
+			changed = true
+		}
+	}
+	if !changed {
+		return
+	}
+	history.GeneratedAt = time.Now().UnixMilli()
+	if err := writeHealthHistoryFile(history); err != nil {
+		log.Printf("health-notify: failed to record alert state: %v", err)
+	}
 }
 
 // dispatchMonitorNotifications posts each notification to the configured webhook.

@@ -2335,6 +2335,12 @@ type HealthSample struct {
 	Up     bool  `json:"u"`           // Reachable (HealthScanCache.Status == "online")
 	PingMs int   `json:"p,omitempty"` // Response time; 0 when the request never completed
 	Code   int   `json:"c,omitempty"` // HTTP status; 0 on a network-level failure
+	// Alerted marks the failed sample that triggered a "down" webhook. It makes
+	// "this outage has already alerted" a recorded fact rather than something
+	// re-derived from a failure count, which manual re-checks and bulk retests
+	// also append to. Set on at most one sample per outage, so it stays absent
+	// from virtually every sample written.
+	Alerted bool `json:"a,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept

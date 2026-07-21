@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -94,6 +96,55 @@ func TestPendingNotificationsFireOnceAtThreshold(t *testing.T) {
 	}
 	if got := h.pendingMonitorNotifications([]monitorTransition{transition}); len(got) != 0 {
 		t.Fatalf("expected silence past the threshold, got %#v", got)
+	}
+}
+
+func TestPendingNotificationsSurviveAManualRecheck(t *testing.T) {
+	h, dir := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"https://hooks.example/notify","monitorNotifyRetries":3}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"A","url":"https://a.example","monitor":true}
+	]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+	key := canonicalBookmarkURLKey("https://a.example")
+	now := time.Now()
+
+	// Two scheduled failures stored: the next scheduled run is the third and would
+	// alert.
+	if err := h.appendHealthSamples(map[string][]HealthSample{
+		key: {
+			{T: msAgo(now, 15*time.Minute), Up: false},
+			{T: msAgo(now, 10*time.Minute), Up: false},
+		},
+	}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+
+	// The user presses Re-check while it is down. That writes a sample straight to
+	// the history, outside the notification path, pushing the count to three.
+	h.recordManualHealthSample(key, false, 0, 0)
+
+	// The next scheduled run now counts four consecutive failures. It must still
+	// alert: the outage crossed the threshold here for the first time, and testing
+	// for equality alone would silence it for good.
+	transition := monitorTransition{key: key, url: "https://a.example", name: "A", up: false, reason: "HTTP 503", at: now.UnixMilli()}
+	got := h.pendingMonitorNotifications([]monitorTransition{transition})
+	if len(got) != 1 {
+		t.Fatalf("expected the outage to alert despite a manual re-check, got %#v", got)
+	}
+	if got[0].Event != "down" || got[0].Failures != 4 {
+		t.Errorf("unexpected notification: %#v", got[0])
+	}
+
+	// Still exactly once: with the alert now in the past, later runs stay quiet.
+	if err := h.appendHealthSamples(map[string][]HealthSample{
+		key: {{T: now.UnixMilli(), Up: false}},
+	}); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	if got := h.pendingMonitorNotifications([]monitorTransition{transition}); len(got) != 0 {
+		t.Fatalf("expected silence once the outage has alerted, got %#v", got)
 	}
 }
 
