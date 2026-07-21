@@ -13,8 +13,6 @@
         "recentSearches": "Recent searches",
         "noRecentSearches": "No recent searches yet.",
         "checkingStatus": "checking status",
-        "statusNoBookmarksChecked": "Status is enabled, but no bookmarks have status checks turned on. Enable them per bookmark in Config.",
-        "statusOpenBookmarksConfig": "Open bookmarks",
         "config": "config",
         "health": "health",
         "skipToContent": "Skip to main content",

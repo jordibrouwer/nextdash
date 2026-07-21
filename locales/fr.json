@@ -13,8 +13,6 @@
         "recentSearches": "Recherches récentes",
         "noRecentSearches": "Aucune recherche récente.",
         "checkingStatus": "vérification du statut",
-        "statusNoBookmarksChecked": "Le statut est activé, mais aucun favori n'a de vérification de statut. Activez-la par favori dans Config.",
-        "statusOpenBookmarksConfig": "Ouvrir les favoris",
         "config": "configuration",
         "health": "health",
         "skipToContent": "Aller au contenu principal",

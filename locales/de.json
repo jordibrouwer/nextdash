@@ -13,8 +13,6 @@
         "recentSearches": "Letzte Suchen",
         "noRecentSearches": "Noch keine letzten Suchen.",
         "checkingStatus": "Status wird geprüft",
-        "statusNoBookmarksChecked": "Status ist aktiv, aber kein Lesezeichen hat Statusprüfungen eingeschaltet. Aktivieren Sie diese pro Lesezeichen in der Config.",
-        "statusOpenBookmarksConfig": "Lesezeichen öffnen",
         "config": "Konfiguration",
         "health": "health",
         "skipToContent": "Zum Hauptinhalt springen",

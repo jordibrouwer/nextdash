@@ -13,8 +13,6 @@
         "recentSearches": "Recente zoekopdrachten",
         "noRecentSearches": "Nog geen recente zoekopdrachten.",
         "checkingStatus": "Status controleren...",
-        "statusNoBookmarksChecked": "Status staat aan, maar geen enkele bladwijzer heeft statuscontrole ingeschakeld. Zet dit per bladwijzer aan in Config.",
-        "statusOpenBookmarksConfig": "Bladwijzers openen",
         "config": "configuratie",
         "health": "health",
         "skipToContent": "Ga naar hoofdinhoud",

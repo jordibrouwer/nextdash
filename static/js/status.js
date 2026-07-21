@@ -41,7 +41,6 @@ class StatusMonitor {
         this._inFlightPings = new Set();
         this.checkInterval = null;
         this.isChecking = false;
-        this.emptyStatusHintShown = false;
         this.loadingIndicator = document.getElementById('status-loading-indicator');
         // Cap parallel /api/ping calls so many bookmarks do not freeze browser + server.
         this.maxConcurrentChecks = 4;
@@ -84,26 +83,6 @@ class StatusMonitor {
         return Object.entries(replacements).reduce(
             (out, [name, value]) => out.replaceAll(`{${name}}`, String(value)),
             text
-        );
-    }
-
-    showNoBookmarksStatusHint() {
-        const dashboard = window.dashboardInstance;
-        if (!dashboard || typeof dashboard.showNotification !== 'function') return;
-        const actionLabel = this.statusT('statusOpenBookmarksConfig', 'Open bookmarks');
-        dashboard.showNotification(
-            this.statusT(
-                'statusNoBookmarksChecked',
-                'Status is enabled, but no bookmarks have status checks turned on. Enable them per bookmark in Config.'
-            ),
-            'error',
-            {
-                duration: 9000,
-                actionLabel,
-                onAction: () => {
-                    window.location.href = '/config#bookmarks';
-                }
-            }
         );
     }
 
@@ -511,15 +490,13 @@ class StatusMonitor {
         // Filter bookmarks that should be checked
         const bookmarksToCheck = bookmarks.filter(bookmark => bookmark.checkStatus);
         if (bookmarksToCheck.length === 0) {
+            // Nothing opted in: stop quietly. Checking is deliberately per-bookmark,
+            // so "none selected" is a valid state, not a misconfiguration worth
+            // interrupting the dashboard over on every load.
             this.isChecking = false;
             this.hideLoadingIndicator();
-            if (!this.emptyStatusHintShown) {
-                this.showNoBookmarksStatusHint();
-                this.emptyStatusHintShown = true;
-            }
             return;
         }
-        this.emptyStatusHintShown = false;
 
         const full = options && options.full === true;
         const toRun = full ? bookmarksToCheck : this.filterBookmarksNearViewport(bookmarksToCheck);
