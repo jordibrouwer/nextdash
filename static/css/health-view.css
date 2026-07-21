@@ -349,6 +349,92 @@ button.health-view-tile:hover {
     color: var(--accent-error);
 }
 
+/* ─── Uptime monitoring ─────────────────────────────────────────────────── */
+
+.health-monitor-strip {
+    margin-top: 0.4rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+/* The heartbeat bar. Bars stay a fixed minimum width and the row scrolls rather
+   than compressing them: a squashed bar hides exactly the outage it exists to
+   show. */
+.health-monitor-strip .health-heartbeat {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 16px;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.health-monitor-strip .health-heartbeat::-webkit-scrollbar {
+    display: none;
+}
+
+.health-heartbeat-bar {
+    flex: 0 0 auto;
+    width: 3px;
+    height: 100%;
+    border-radius: 1px;
+    background: var(--border-secondary);
+}
+
+.health-heartbeat-bar.is-up {
+    background: var(--accent-success);
+}
+
+.health-heartbeat-bar.is-down {
+    background: var(--accent-error);
+}
+
+/* A bucket holding both a success and a failure — visually distinct from a
+   clean outage so instability is not mistaken for downtime. */
+.health-heartbeat-bar.is-degraded {
+    background: var(--accent-warning);
+}
+
+.health-heartbeat-bar.is-unknown {
+    background: color-mix(in srgb, var(--border-secondary) 55%, transparent);
+}
+
+.health-monitor-uptime {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.health-sparkline {
+    color: var(--text-secondary);
+    opacity: 0.75;
+    flex: 0 0 auto;
+}
+
+.health-monitor-ping {
+    font-variant-numeric: tabular-nums;
+}
+
+.health-monitor-down {
+    color: var(--accent-error);
+    font-weight: 600;
+}
+
+.health-monitor-pending {
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.health-view-score-item.is-ongoing .health-view-score-item-cost {
+    color: var(--accent-error);
+    font-weight: 600;
+}
+
 /* ─── Score breakdown ───────────────────────────────────────────────────── */
 
 .health-view-score-panel {

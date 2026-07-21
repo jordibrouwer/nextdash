@@ -309,6 +309,8 @@ class DashboardHealth {
                 return (Number(issue.duplicateCount) || 0) > 1;
             case 'unchecked':
                 return !issue.lastChecked;
+            case 'monitored':
+                return issue.monitor === true;
             // stale / unused / missing-preview / shortcut-conflict / healthy reach
             // this view only through deep links (consumeLegacyEntryParams). Each maps
             // to a single issue.status, so match on that rather than falling through
@@ -1187,8 +1189,13 @@ class DashboardHealth {
             ['broken', this.t('dashboard.healthFilterBroken', 'Broken')],
             ['duplicate', this.t('dashboard.healthFilterDuplicates', 'Duplicates')],
             ['unchecked', this.t('dashboard.healthFilterUnchecked', 'Never checked')],
-            ['all', this.t('dashboard.healthFilterAll', 'All')],
         ];
+        // Only surface the monitor pill once something is actually monitored —
+        // an always-visible "0" would be noise for everyone who never opts in.
+        if (this.filterCount('monitored') > 0) {
+            filters.push(['monitored', this.t('dashboard.healthFilterMonitored', 'Monitored')]);
+        }
+        filters.push(['all', this.t('dashboard.healthFilterAll', 'All')]);
 
         const toolbar = document.createElement('div');
         toolbar.className = 'health-view-toolbar';
@@ -1359,10 +1366,144 @@ class DashboardHealth {
         return legend;
     }
 
+    /* ── Uptime monitoring ─────────────────────────────────────────────── */
+
+    /** Compact duration for "down since" and incident lengths: 2d 3h, 4h 12m, 45s. */
+    formatDuration(ms) {
+        const total = Math.max(0, Math.floor(Number(ms) || 0) / 1000);
+        const d = Math.floor(total / 86400);
+        const h = Math.floor((total % 86400) / 3600);
+        const m = Math.floor((total % 3600) / 60);
+        const s = Math.floor(total % 60);
+        if (d > 0) return `${d}d ${h}h`;
+        if (h > 0) return `${h}h ${m}m`;
+        if (m > 0) return `${m}m`;
+        return `${s}s`;
+    }
+
+    /** Uptime as a percentage, or null when the window holds no samples at all. */
+    formatUptime(window) {
+        if (!window || !window.samples) return null;
+        const pct = window.ratio * 100;
+        // Avoid showing a reassuring "100%" when a single failure is rounded away.
+        const rounded = pct >= 99.95 && window.ratio < 1 ? 99.9 : pct;
+        return `${rounded.toFixed(rounded >= 99.95 || rounded % 1 === 0 ? 0 : 1)}%`;
+    }
+
+    /**
+     * The heartbeat bar. Each <span> is one time bucket, not one check, so rows
+     * with different intervals stay visually comparable.
+     */
+    renderHeartbeat(stats) {
+        const buckets = Array.isArray(stats?.heartbeat) ? stats.heartbeat : [];
+        if (!buckets.length) return '';
+        const bars = buckets.map((b) => {
+            const title = b.state === 'unknown'
+                ? this.t('dashboard.healthHeartbeatNoData', 'No data')
+                : `${new Date(b.from).toLocaleString()} — ${b.avgMs ? `${b.avgMs}ms` : b.state}`;
+            return `<span class="health-heartbeat-bar is-${this.escape(b.state)}" title="${this.escape(title)}"></span>`;
+        }).join('');
+        return `<div class="health-heartbeat" role="img" aria-label="${this.escape(this.t('dashboard.healthHeartbeatLabel', 'Uptime history'))}">${bars}</div>`;
+    }
+
+    /**
+     * Response-time sparkline as inline SVG. Shares the heartbeat's buckets, so
+     * the two graphics line up on the same time axis.
+     */
+    renderSparkline(stats) {
+        const buckets = Array.isArray(stats?.heartbeat) ? stats.heartbeat : [];
+        const points = buckets.map((b) => (b.avgMs > 0 ? b.avgMs : null));
+        const known = points.filter((p) => p !== null);
+        if (known.length < 2) return '';
+
+        const max = Math.max(...known);
+        const min = Math.min(...known);
+        const span = max - min || 1;
+        const w = 60;
+        const h = 16;
+        const step = w / Math.max(1, points.length - 1);
+
+        // Gaps break the line rather than interpolating across them, so missing
+        // data never looks like a measured value.
+        const segments = [];
+        let current = [];
+        points.forEach((p, i) => {
+            if (p === null) {
+                if (current.length > 1) segments.push(current);
+                current = [];
+                return;
+            }
+            const x = (i * step).toFixed(1);
+            const y = (h - ((p - min) / span) * (h - 2) - 1).toFixed(1);
+            current.push(`${x},${y}`);
+        });
+        if (current.length > 1) segments.push(current);
+        if (!segments.length) return '';
+
+        const paths = segments
+            .map((pts) => `<polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`)
+            .join('');
+        const label = this.t('dashboard.healthSparklineLabel', 'Response time {min}–{max}ms', { min, max });
+        return `<svg class="health-sparkline" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${this.escape(label)}">${paths}</svg>`;
+    }
+
+    /** The monitor strip under the row meta: heartbeat, uptime, sparkline. */
+    renderMonitorStrip(issue) {
+        const stats = issue?.monitorStats;
+        if (!issue?.monitor) return '';
+        if (!stats) {
+            // Monitored but never checked — say so, rather than showing 0%.
+            return `<div class="health-monitor-strip is-pending">
+                <span class="health-monitor-pending">${this.escape(this.t('dashboard.healthMonitorPending', 'Monitoring — awaiting first check'))}</span>
+            </div>`;
+        }
+
+        const uptime = this.formatUptime(stats.uptime24h);
+        const uptimeLabel = uptime
+            ? `<span class="health-monitor-uptime" title="${this.escape(this.t('dashboard.healthUptime24hTitle', 'Uptime over the last 24 hours'))}">${this.escape(uptime)}</span>`
+            : '';
+        const down = stats.downSince
+            ? `<span class="health-monitor-down">${this.escape(this.t('dashboard.healthDownSince', 'Down for {duration}', { duration: this.formatDuration(Date.now() - stats.downSince) }))}</span>`
+            : '';
+        const ping = !stats.downSince && stats.lastPingMs > 0
+            ? `<span class="health-monitor-ping">${this.escape(stats.lastPingMs)}ms</span>`
+            : '';
+
+        return `<div class="health-monitor-strip">
+            ${this.renderHeartbeat(stats)}
+            ${uptimeLabel}
+            ${this.renderSparkline(stats)}
+            ${ping}
+            ${down}
+        </div>`;
+    }
+
+    /** Incident history, shown inside the expandable score panel. */
+    renderIncidents(issue) {
+        const incidents = Array.isArray(issue?.monitorStats?.incidents) ? issue.monitorStats.incidents : [];
+        if (!incidents.length) return '';
+        const rows = incidents.map((inc) => {
+            const when = new Date(inc.start).toLocaleString();
+            const length = inc.ongoing
+                ? this.t('dashboard.healthIncidentOngoing', 'ongoing — {duration}', { duration: this.formatDuration(Date.now() - inc.start) })
+                : this.formatDuration(inc.duration);
+            return `<li class="health-view-score-item${inc.ongoing ? ' is-ongoing' : ''}">
+                <span>${this.escape(when)}</span>
+                <span class="health-view-score-item-cost">${this.escape(length)}</span>
+            </li>`;
+        }).join('');
+        return `
+            <p class="health-view-score-intro">${this.escape(this.t('dashboard.healthIncidentsTitle', 'Recent outages'))}</p>
+            <ul class="health-view-score-list">${rows}</ul>`;
+    }
+
     renderScorePanel(issue) {
         const entries = this.reasonEntries(issue);
+        // Outage history is worth showing even at a perfect score: a bookmark can
+        // be flawless as a link and still have been unreachable last night.
+        const incidents = this.renderIncidents(issue);
         if (!entries.length) {
-            return `<p class="health-view-score-intro">${this.escape(this.t('dashboard.healthScorePerfect', 'No issues found — full score.'))}</p>`;
+            return `<p class="health-view-score-intro">${this.escape(this.t('dashboard.healthScorePerfect', 'No issues found — full score.'))}</p>${incidents}`;
         }
         const rows = entries.map((entry) => `
             <li class="health-view-score-item">
@@ -1375,7 +1516,8 @@ class DashboardHealth {
             <p class="health-view-score-total">
                 <span>${this.escape(this.t('dashboard.healthScoreTotal', 'Score'))}</span>
                 <span class="health-view-score-total-value">${this.escape(issue.score)}</span>
-            </p>`;
+            </p>
+            ${incidents}`;
     }
 
     /**
@@ -1440,6 +1582,7 @@ class DashboardHealth {
                     ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
                     ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
                 </p>
+                ${this.renderMonitorStrip(issue)}
                 <div class="health-view-score-panel" ${expanded ? '' : 'hidden'}>${this.renderScorePanel(issue)}</div>
                 <div class="health-view-item-actions">
                     <div class="health-view-item-actions-inner">
