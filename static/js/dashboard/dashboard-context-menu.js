@@ -342,31 +342,17 @@ class DashboardContextMenu {
             });
             if (outcome === 'failed') return;
 
-            // Apply the new mode to every in-memory copy before reloading.
-            //
-            // The dashboard keeps a bookmark in more than one array: `bookmarks`
-            // for the current page and `allBookmarks` for everything, and rows
-            // from smart collections resolve through the latter. loadBookmarks()
-            // refreshes only the first, so without this sync the menu reopened on
-            // the pre-change mode even though the write had succeeded.
+            // Apply the new mode to every in-memory copy before reloading, and
+            // drop the page cache loadBookmarks() reads through. Without it the
+            // menu reopened on the pre-change mode even though the write had
+            // succeeded. Shared with the health view, which needs the same sync.
             window.CheckMode.assign(bookmark, mode);
-            d.syncEditedBookmarkAcrossCollections?.(bookmarkRef, String(bookmark.url || '').trim());
-
-            // `allBookmarks` needs its own pass. syncEditedBookmarkAcrossCollections
-            // matches candidates on page id, and entries there carry none, so the
-            // sync above silently skips them — which is what left a smart-collection
-            // row showing the pre-change mode when the menu was reopened.
-            const key = String(bookmark.url || '').trim();
-            (d.allBookmarks || []).forEach((candidate) => {
-                if (String(candidate?.url || '').trim() === key) {
-                    window.CheckMode.assign(candidate, mode);
-                }
+            window.CheckMode.syncLocalCopies({
+                pageId,
+                url: bookmark.url,
+                mode,
+                bookmarkRef,
             });
-
-            // And drop the page cache, since loadBookmarks() reads through it and
-            // would otherwise hand back the values from before the write.
-            d.data?.invalidatePageDataCache?.(pageId);
-            void d.data?.fetchAndStoreDataRevision?.();
             await d.loadBookmarks?.().catch?.(() => {});
             d.renderDashboard?.({ incremental: false });
             d.updateHealthBadge?.();

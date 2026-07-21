@@ -186,6 +186,40 @@ test.describe('dashboard check-mode menu', () => {
         expect(aligned.below).toBe(true);
     });
 
+    /**
+     * The health view and the dashboard keep separate caches of the same
+     * bookmark. Refreshing the health report alone left the dashboard holding
+     * the pre-change mode, so going back and acting on the bookmark used the
+     * old setting until a hard reload.
+     */
+    test('a mode set in the health view is live on the dashboard', async ({ page }) => {
+        await setup(page);
+        const url = await (await firstRow(page)).getAttribute('data-bookmark-url');
+
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
+        await page.click('[data-health-filter="all"]').catch(() => {});
+        await page.waitForSelector('.health-view-item', { timeout: 15_000 });
+
+        const applied = await page.evaluate(async (target) => {
+            const hv = window.dashboardInstance.health || window.dashboardInstance.healthView;
+            const issue = (hv?.report?.issues || []).find((i) => i.url === target);
+            if (!issue) return false;
+            await hv.setCheckMode(issue, 'monitor');
+            return true;
+        }, url);
+        expect(applied).toBe(true);
+
+        // Read the dashboard's own arrays, not the health report: those are what
+        // every later action on the bookmark reads from.
+        await expect.poll(async () => page.evaluate((target) => {
+            const d = window.dashboardInstance;
+            const current = (d.bookmarks || []).find((b) => b.url === target);
+            const all = (d.allBookmarks || []).find((b) => b.url === target);
+            return Boolean(current?.monitor) && (!all || Boolean(all.monitor));
+        }, url), { timeout: 10_000 }).toBe(true);
+    });
+
     test('the submenu opens on the active option and Escape changes nothing', async ({ page }) => {
         await setup(page);
         const row = await firstRow(page);

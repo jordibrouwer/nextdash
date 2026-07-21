@@ -1052,8 +1052,23 @@ class DashboardHealth {
                 name: issue.name || url,
             });
             if (outcome === 'failed') return;
+
+            // Push the new mode into the dashboard's own copies before the
+            // report reloads. The health report and the dashboard's bookmark
+            // arrays are separate caches: refreshing the report alone left the
+            // dashboard acting on the pre-change mode until a hard reload, so
+            // returning to it and checking the bookmark used the old setting.
+            if (outcome === 'changed') {
+                window.CheckMode?.syncLocalCopies?.({ pageId, url, mode });
+            }
+
             await this.loadAndRender({ refresh: true });
-            if (outcome === 'changed') d.updateHealthBadge?.();
+            if (outcome === 'changed') {
+                // Repaint the rows so a status dot that depends on the mode is
+                // correct the moment the view is closed, not on next render.
+                d.renderDashboard?.({ incremental: false });
+                d.updateHealthBadge?.();
+            }
         } finally {
             this._busyKeys.delete(key);
             this.syncRowBusy(key, false);

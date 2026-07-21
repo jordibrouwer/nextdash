@@ -125,6 +125,43 @@ const CheckMode = {
     },
 
     /**
+     * Push a mode onto every in-memory copy the dashboard holds, and drop the
+     * cache that would otherwise undo it.
+     *
+     * A bookmark lives in more than one array: `bookmarks` for the current page
+     * and `allBookmarks` for every page, with smart-collection rows resolving
+     * through the latter. `loadBookmarks()` refreshes only the first and reads
+     * through the page data cache, so without this a successful write is
+     * invisible until a hard reload — the dashboard keeps showing, and acting
+     * on, the mode from before the change.
+     *
+     * Both surfaces that change a mode call this: the health view and the
+     * right-click menu. It is idempotent, so calling it before a reload that
+     * happens to bring the same values back is harmless.
+     */
+    syncLocalCopies({ pageId, url, mode, bookmarkRef } = {}) {
+        const d = window.dashboardInstance;
+        if (!d) return;
+        const key = String(url || '').trim();
+        if (!key) return;
+
+        const matches = (candidate) => String(candidate?.url || '').trim() === key;
+        (d.bookmarks || []).forEach((candidate) => {
+            if (matches(candidate)) CheckMode.assign(candidate, mode);
+        });
+        // allBookmarks needs its own pass: syncEditedBookmarkAcrossCollections
+        // matches on page id and entries here carry none, so it skips them.
+        (d.allBookmarks || []).forEach((candidate) => {
+            if (matches(candidate)) CheckMode.assign(candidate, mode);
+        });
+        if (bookmarkRef) d.syncEditedBookmarkAcrossCollections?.(bookmarkRef, key);
+
+        const page = Number(pageId);
+        if (Number.isFinite(page)) d.data?.invalidatePageDataCache?.(page);
+        void d.data?.fetchAndStoreDataRevision?.();
+    },
+
+    /**
      * Keyboard accelerator per mode.
      *
      * Taken from the English mode names rather than the translated labels: a
