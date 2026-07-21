@@ -2,7 +2,7 @@
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.19**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.20**).
 
 ---
 
@@ -175,7 +175,7 @@ Each bookmark has:
 | **Note** | Plain text; searchable |
 | **Pinned** | Stays at top of its category |
 | **Icon / preview** | Favicon and optional title/description/image |
-| **Status check** | Optional ping for online/offline |
+| **Availability check** (**v2026.07.20**) | One choice of three: **Off** (never tested), **Periodic** (checked about once a day, flags a broken link), or **Monitor** (checked on its own interval with 30 days of history — uptime, heartbeat, outages). Monitor includes everything Periodic does. Set it in the editor, from the dashboard right-click menu, with `Shift + C`, or from a health-view row (`c`) |
 | **Open count / last opened** | Usage tracking |
 
 Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sort). Notes remain searchable in fuzzy search and editable via `:note` or inline edit. Pin and note row icons were removed from the dashboard and from **Config → General**; there are no pin/note badges on bookmark rows.
@@ -345,6 +345,7 @@ Right-click any bookmark on the dashboard for its actions in one place:
 | **Edit** | Opens the same inline editor as long-press |
 | **Tags…** | The quick-tag popover (also `Shift + T`) |
 | **Move to…** | The move popover — another category or page (also `Shift + M`) |
+| **Checking** (**v2026.07.20**) | Names the bookmark's current availability mode and opens the three-way choice — **Off** / **Periodic** / **Monitor** (also `Shift + C`) |
 | **Delete** | Asks for confirmation first, then deletes with undo in the toast |
 
 Nothing here is exclusive to the menu — all of it is reachable from the [command palette](#93-bookmark-actions) and config. The menu just puts it where most people look first.
@@ -464,6 +465,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `Shift + M` | Move to… (category or another page); popover receives focus — use arrows and `Enter` inside it |
 | `Shift + T` | Quick-tag selected row (popover receives focus — `↑`/`↓` navigate; `Enter`/`Space` toggle tag and advance to next; `✓` on tags already applied) |
 | `Shift + D` | Quick-delete selected row (popover receives focus; undo in toast) |
+| `Shift + C` (**v2026.07.20**) | Availability checking for the selected row — **Off** / **Periodic** / **Monitor**. The popover anchors below the row and opens on the current mode; pick with `o` / `p` / `m`, or arrow and `Enter` |
 | `Ctrl + C` | Copy URL (row flashes green) |
 | `[` | Toggle hover preview card on selection |
 | `Delete` | Delete selected bookmark (confirmation dialog; `Shift+D` uses the quick-delete popover instead) |
@@ -488,11 +490,11 @@ While any of these are open, the bookmark grid behind them is **inert** (not cli
 | Tag word cloud | `/` (desktop, when enabled) |
 | Page overview | `,` |
 | Quick-add omnibox | `&` |
-| Quick move / quick tag / quick delete | `Shift+M` / `Shift+T` / `Shift+D` |
+| Quick move / quick tag / quick delete / checking | `Shift+M` / `Shift+T` / `Shift+D` / `Shift+C` |
 | Inline edit | `;` |
 | App modal | e.g. new bookmark `+`, confirmations, recent bookmarks `*` |
 
-**Tab** / **Shift+Tab** cycle within the open overlay. **Escape** closes it and restores focus to the control that opened it (or the bookmark grid). One-time **Got it** discoverability balloons dismiss with **Esc** without trapping the overlay open. A `MutationObserver` re-syncs dashboard `inert` when overlays are added or removed so the grid is not left stuck non-interactive. With an **active tag filter**, only the bookmark list is `inert` — the filter banner and bulk toolbar stay interactive while the tag cloud is open. Grid shortcuts **`;`**, **`Shift+M`**, **`Shift+T`**, and **`Shift+D`** work on the keyboard-selected row when no overlay is open.
+**Tab** / **Shift+Tab** cycle within the open overlay. **Escape** closes it and restores focus to the control that opened it (or the bookmark grid). One-time **Got it** discoverability balloons dismiss with **Esc** without trapping the overlay open. A `MutationObserver` re-syncs dashboard `inert` when overlays are added or removed so the grid is not left stuck non-interactive. With an **active tag filter**, only the bookmark list is `inert` — the filter banner and bulk toolbar stay interactive while the tag cloud is open. Grid shortcuts **`;`**, **`Shift+M`**, **`Shift+T`**, **`Shift+D`**, and **`Shift+C`** work on the keyboard-selected row when no overlay is open.
 
 ---
 
@@ -581,6 +583,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:stale [days]` | List stale bookmarks |
 | `:health [filter]` | Open health view (`Shift+H`) — `broken`, `duplicate`, `stale`, `refresh`, … |
 | `:health page [n]` | Open health with a specific page context |
+| `:monitor` (**v2026.07.20**) | Shows how many bookmarks are checked (monitored and periodic). `:monitor off` turns checking off for all of them at once; `:monitor on` opens the health view filtered to never-checked bookmarks, where the bulk button confirms before enabling — there is deliberately no "monitor everything" |
 | `:duplicate` / `:duplicates` | Scan for duplicate URLs across all pages (opens Health duplicates view) |
 | `:find <text>` / `:find clear` | Hide non-matching tiles on page / clear filter |
 | `:goto <url>` | Navigate to URL or domain |
@@ -827,8 +830,12 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (**Status** → re-check status; **detect redirect**, **refresh title**, **archive**, delete) |
 | **Action runtime** | Row actions are guarded against overlap and refresh the health report after changes |
 | **Detect redirect** | Overflow **detect redirect** uses a fast redirect-only suggest (`redirectOnly=1`, skips title fetch); confirm shows the proposed URL; errors and timeouts appear in the status bar |
-| **Keyboard** (**v2026.07.14.2**) | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `Enter` → inline editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row). The shortcut legend under the feed lists them (**v2026.07.16** — the duplicate legend under the toolbar was removed) |
+| **Keyboard** (**v2026.07.14.2**) | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `Enter` → inline editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row); `c` → availability checking (**v2026.07.20**). The shortcut legend under the feed lists them (**v2026.07.16** — the duplicate legend under the toolbar was removed) |
 | **Background rechecks** (**v2026.07.16**) | Optional server-side schedule under **Config → General → Status monitoring**; keeps the Health view current without opening Retest all |
+| **Check mode per row** (**v2026.07.20**) | Each row shows its current mode (**Off** / **Periodic** / **Monitor**) as a button. Click it, or press `c`, to change it — the list keeps its scroll position and filter, so a filtered list does not reshuffle while you work down it. Options carry their own letters: `o`, `p`, `m` |
+| **Bulk enable** (**v2026.07.20**) | On a **filtered** list, a button offers to switch the visible rows to Periodic or Monitor at once, confirming the exact count first. Never offered on the unfiltered **All** list, where it would point the scheduler at every bookmark you own |
+| **Monitoring** (**v2026.07.20**) | A monitored row shows a **heartbeat bar** of recent checks, **uptime** over 24h / 7d / 30d, and a response-time **sparkline**; the expanded panel adds **outage history** (start, duration, cause), or *down since* while it is still down. A **Monitored** filter narrows the list to these rows. Interval is 5 minutes to 24 hours (default 15); history is kept 30 days in `data/health-history.json` |
+| **Downtime alerts** (**v2026.07.20**) | Optional webhook under **Config → General**, posted when a monitored bookmark goes down and again when it recovers. Fires only after N consecutive failures (default 3, range 1–10) so a single hiccup stays quiet. Works with ntfy, Discord, Slack, and similar. Local addresses are refused unless **Allow local bookmarks** is on — the same SSRF rules as pings |
 | **Layout parity** | Uses the same **Classic / Modern** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
 | **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips) |
 | **dashboard link** | Jump to bookmark on correct page/category |

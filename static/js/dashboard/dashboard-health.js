@@ -1867,7 +1867,9 @@ class DashboardHealth {
             const mins = issue?.monitorStats?.intervalMinutes;
             text = mins
                 ? this.t('dashboard.healthCheckNoteMonitor', 'Monitored every {mins} min — uptime, heartbeat and outages are recorded.', { mins })
-                : this.t('dashboard.healthBadgeMonitorHint', 'Checked on its own interval, with uptime history');
+                // Via CheckMode rather than the key directly: that module owns the
+                // per-mode wording, so a reworded hint reaches every surface at once.
+                : window.CheckMode.meta(window.CheckMode.MONITOR).hint;
         } else if (issue?.checkStatus) {
             text = this.t('dashboard.healthCheckNotePeriodic', 'Checked about once a day: breakage is caught, but no uptime history is kept. Switch to Monitor for a heartbeat and outage history.');
         } else {

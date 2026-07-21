@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.20 — July 2026](#v20260720--july-2026)
 - [v2026.07.19 — July 2026](#v20260719--july-2026)
 - [v2026.07.18 — July 2026](#v20260718--july-2026)
 - [v2026.07.17.3 — July 2026](#v2026071713--july-2026)
@@ -102,6 +103,64 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.20 — July 2026
+
+**Uptime monitoring for bookmarks.** A bookmark can now be checked on its own interval with a month of history behind it, giving an uptime percentage, a heartbeat bar, a response-time sparkline, and an outage list — plus an optional webhook when something goes down. Availability checking became one choice of three instead of two overlapping flags, settable from the health view, the dashboard right-click menu, and `Shift+C`.
+
+### Uptime monitoring
+
+- **new** **Per-bookmark monitoring with history** — the health scan cache kept exactly one sample per URL, each check overwriting the last, so nextDash could say a link was broken but never how often it had been. A new `data/health-history.json` stores a time series per canonical URL (`HealthSample`: timestamp, up, ping ms, HTTP code; compact JSON, not indented, since this is the volume file). Bookmarks gained `Monitor bool` and `MonitorIntervalMinutes int`. Retention is enforced on write: 30 days, capped at 2000 samples per URL, with orphaned URLs dropped during the scheduler run. Appending is a separate path from `mergeHealthCacheUpdates()`, which replaces entries rather than accumulating them.
+
+- **new** **Monitor scheduler** — `StartHealthMonitorScheduler` ticks once a minute alongside the existing 24-hour recheck loop, which is untouched. Each tick pings the monitored bookmarks whose interval has elapsed, via the existing SSRF-safe `pingURLDetailed()`. Intervals are clamped to **5 minutes – 24 hours** (`clampMonitorIntervalMinutes`, defaulting to 15), concurrency is bounded, and results are written to both the health cache (so the existing view stays correct) and the new history. The health report cache is invalidated after each run, since it would otherwise hold a monitor's result for up to three minutes.
+
+- **new** **Derived statistics, computed not stored** — `uptimeRatio` over 24h/7d/30d, `deriveIncidents` for contiguous down-runs (a run with no end is "down since"), and `heartbeatBuckets` splitting a window into time buckets marked up / down / degraded / unknown. Bucketed by time rather than "the last N samples", because at varying intervals the latter misrepresents the time axis. These hang off `HealthIssue` in the existing report payload and are filled only for monitored bookmarks, so the report does not grow for everyone else.
+
+- **new** **Downtime webhook** — `MonitorNotifyURL` and `MonitorNotifyRetries` (default 3, clamped 1–10) under **Config → General**. Alerts fire only after N consecutive failures, with one recovery message on return; the per-URL state is derived from the history, so it survives a restart without extra storage. Sent through `outboundHTTPClient()` behind `validateHTTPURL(url, allowLocalBookmarks)` — the same SSRF rules as pings, so a local webhook works only when local bookmarks are allowed. Best-effort: failures are logged and never take the scheduler down.
+
+- **new** **Health view surfacing** — heartbeat bar, uptime percentage, and an inline SVG response-time sparkline per monitored row; outage history inside the existing expanded score panel; and a **Monitored** filter alongside the existing ones. Styled from the existing CSS variables, so light and dark follow automatically.
+
+### Availability checking
+
+- **new** **One three-state choice instead of two flags** — `checkStatus` and `monitor` were independent booleans, which allowed a meaningless "both on" state and gave no hint of the difference. The UI is now a single choice of **Off** / **Periodic** / **Monitor**, with `Monitor: true` implying `checkStatus: false`. Stored representation is unchanged, so existing bookmarks keep their behaviour. A shared `applyCheckMode` (Go) and `CheckMode.assign` (JS) mirror each other so the persisted record and the in-memory copy cannot disagree about what a mode means.
+
+- **new** **Shared `CheckMode` module** — `static/js/check-mode.js` owns the endpoint, the stale-row handling, the mode wording, and the letter accelerators; each surface keeps its own menu chrome. The 15-minute monitor default lives in one constant (`CheckMode.DEFAULT_INTERVAL_MINUTES`, matching `defaultMonitorIntervalMinutes`), replacing nine hardcoded `|| 15` fallbacks across the config panel and inline editor.
+
+- **new** **Set the mode from the health view** — each row's mode is a button opening a three-option popover; `c` does the same for the keyboard-selected row. The view keeps its scroll position and filter, so working down a filtered list does not reshuffle it mid-task. `POST /api/health/check-mode` takes a page/index/URL triple; the URL travels with the index because the report is cached for minutes, and the server answers **409** rather than rewriting the wrong bookmark when they disagree.
+
+- **new** **Bulk enable on a narrowed list** — a filtered health view offers to switch the *visible* rows to Periodic or Monitor, confirming with an exact count first. Deliberately never offered on the unfiltered **All** list, where it would point the scheduler at the whole collection. Implemented as an explicit target list on the same endpoint.
+
+- **new** **Set the mode from the dashboard** — the bookmark right-click menu gained a **Checking** entry naming the current mode and opening the same three-way submenu, and `Shift+C` opens it for the selected row from the keyboard. Each option prints its accelerator (`o` / `p` / `m`), taken from the English mode names rather than translated labels so the keys do not move with the interface language. The submenu anchors below its row for both mouse and keyboard, rather than at the pointer, and opens focused on the current mode so a stray `Enter` is a no-op.
+
+- **new** **"How availability checking works" explainer** — a help dialog in the bookmark editor covering what each mode answers and when Monitor is worth it over Periodic, in all four locales.
+
+- **fix** **Manual re-checks were invisible to the monitor** — after switching a bookmark to Monitor, **Check again** left the row reading *Monitoring — awaiting first check*, because `monitorStats` is derived purely from sample history and only the scheduler ever wrote to it. Manual checks (`recordManualHealthSample`) and the bulk retest (`runHealthRetest`, batching its updates into one write) now record to the history for monitored URLs. The ping response carries `httpStatus` so the sample stores a real code.
+
+- **fix** **Monitored bookmarks lost their status dot** — a regression from the three-state change: `Monitor: true` clears `checkStatus`, and eight call sites in `status.js` tested `checkStatus` alone. Replaced with a `bookmarkIsChecked()` helper covering both.
+
+- **fix** **The chosen mode did not survive reopening the menu** — the write reached the server, but the menu reopened showing the old mode. Two causes: `loadBookmarks()` reads through the page data cache, which needed invalidating first; and `allBookmarks` entries carry no `pageId`, so `syncEditedBookmarkAcrossCollections` silently skipped them and an explicit pass by URL was needed.
+
+- **fix** **Stop warning when nothing is checked** — the health view flagged "no bookmark has status checks enabled" as a problem, which is a legitimate way to run nextDash.
+
+- **fix** **`:monitor on` pointed nowhere useful** — it now opens the health view filtered to never-checked bookmarks, since there is no sensible "monitor everything".
+
+### Config
+
+- **new** **Config → General starts collapsed and remembers its layout** — the section open/closed state persists server-side in settings, so it follows you across devices instead of resetting each visit.
+
+### Developer & docs
+
+- **fix** **Latent `[hidden]` bug in health view menus** — `.health-view-menu` sets `display: flex`, which beats the browser's default `[hidden]` rule, so menus marked hidden still rendered. Affected the pre-existing overflow menu, not only the new one. Fixed with an explicit `[hidden] { display: none }`.
+
+- **fix** **Invalid markup in the health check-mode popover** — it was a `<div>` inside a `<p>`, which the parser closes early; changed to a `<span>`.
+
+- **fix** **Check-mode wording had two owners** — the expanded health panel read `dashboard.healthBadgeMonitorHint` directly, re-declaring both the key and its English fallback, so a reworded hint would have reached the badge tooltip and missed the panel. It now goes through `CheckMode.meta()`, leaving all three `healthBadge*Hint` keys with a single reader. The `dashboard.healthCheckModeOff` key was dropped in favour of the existing `config.checkModeOff` rather than shipping the same word twice.
+
+- **new** **Tests** — Go coverage for history append/prune/retention, uptime and incident derivation, bucketing at uneven intervals, interval clamping, notification thresholds including SSRF refusal of an internal webhook URL, the single and bulk check-mode endpoints, and manual/retest history recording. Playwright specs for the health view check-mode flow (11) and the dashboard menu (7), each resetting check modes in setup so they do not pass or fail on run order.
+
+- **fix** **Cheat sheet taught no row shortcuts** — the health view row keys and `Shift+C` were added to the keyboard cheat sheet.
 
 ---
 
