@@ -165,6 +165,25 @@ class DashboardUiHelpers {
                 item('Drag left strip', 'bmDragReorder', 'Reorder a bookmark within or across categories'),
                 item('Drag // in category title', 'bmDragCategory', 'Reorder categories (grab the // prefix in the header)'),
             ]),
+        );
+
+        // Only when the view exists, matching the Shift+H entry above: teaching row
+        // shortcuts for a view someone cannot open is noise. These mirror the legend
+        // under the health list, which is the same set in context.
+        if (d.health?.isEnabled?.()) {
+            sections.push(section('sectionHealthView', 'Health view', [
+                item('j / k', 'hvMove', 'Move between rows (↑ / ↓ work too)'),
+                item('s', 'hvScore', 'Unfold the score breakdown for the selected row'),
+                item('p', 'hvRecheck', 'Re-check the selected bookmark now'),
+                item('c', 'hvCheckMode', 'Change availability checking — off, periodic or monitor'),
+                item('m', 'hvMore', 'Row menu — redirect, title, favicon, archive, delete'),
+                item('Enter', 'hvOpen', 'Open the selected bookmark'),
+                item('g / G', 'hvFirstLast', 'Jump to the first / last row'),
+                item('Esc', 'hvClose', 'Close a menu, or leave the view'),
+            ]));
+        }
+
+        sections.push(
             section('sectionSearchModes', 'Search modes', [
                 item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),
                 ...(d.isTagCloudDesktopShortcutVisible()
