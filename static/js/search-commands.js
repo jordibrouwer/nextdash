@@ -351,6 +351,14 @@ class SearchCommandsComponent {
      */
     setUsageAnalytics(dashboard, enabled) {
         dashboard.settings.analyticsOptIn = enabled;
+        // Setting this deliberately is an answer, so the opt-in card must not
+        // come back and ask again — least of all to someone who just turned it
+        // off here. The card only ever writes this flag itself, so without this
+        // a config/`:telemetry` opt-out reads as "never chose" and re-prompts.
+        if (dashboard.settings.quickStart && typeof dashboard.settings.quickStart === 'object') {
+            dashboard.settings.quickStart.analyticsChoiceMade = true;
+            dashboard.settings.quickStart.analyticsAskAfter = 0;
+        }
         const done = () => {
             dashboard.isNavigatingAway = true;
             window.location.reload();

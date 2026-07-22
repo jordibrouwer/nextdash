@@ -164,6 +164,26 @@ func TestShownCooldownPersistsWithoutSnoozeCount(t *testing.T) {
 	}
 }
 
+// Config and `:telemetry` record the choice too, not just the card. Without
+// that, turning analytics off in config reads as "never chose" and the card
+// comes back asking to enable what the user just disabled.
+func TestChoiceFromConfigRoundTripsThroughMerge(t *testing.T) {
+
+	stored := Settings{AnalyticsOptIn: true}
+
+	merged, err := mergeSettingsFromBody(stored,
+		[]byte(`{"analyticsOptIn":false,"quickStart":{"analyticsChoiceMade":true,"analyticsAskAfter":0}}`))
+	if err != nil {
+		t.Fatalf("mergeSettingsFromBody: %v", err)
+	}
+	if merged.AnalyticsOptIn {
+		t.Fatal("analyticsOptIn should be false after opting out")
+	}
+	if !merged.QuickStart.AnalyticsChoiceMade {
+		t.Fatal("opting out via config must count as a choice, or the card re-prompts")
+	}
+}
+
 // The client writes these through the normal settings save, so they must round
 // trip through the merge rather than being dropped as unknown fields.
 func TestSnoozeRoundTripsThroughMerge(t *testing.T) {

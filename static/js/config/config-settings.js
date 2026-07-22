@@ -991,6 +991,12 @@ class ConfigSettings {
             usageAnalyticsCheckbox.checked = settings.analyticsOptIn === true;
             usageAnalyticsCheckbox.addEventListener('change', (e) => {
                 settings.analyticsOptIn = e.target.checked;
+                // Ticking this either way is an answer; record it so the dashboard
+                // opt-in card does not later ask someone who already decided here.
+                if (settings.quickStart && typeof settings.quickStart === 'object') {
+                    settings.quickStart.analyticsChoiceMade = true;
+                    settings.quickStart.analyticsAskAfter = 0;
+                }
             });
         }
 
