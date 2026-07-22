@@ -1,0 +1,34 @@
+{
+  "tag": "v2026.07.21.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-22",
+  "modalLead": "A monitored bookmark's statistics can now be opened at <strong>full size</strong>. The row had room for a 24-hour uptime figure and one ping, while the rest — 7-day and 30-day uptime, the check counts, the outage list — was already there and never shown. Press <strong>⤢</strong> on the row, or <code>i</code>, for a large response-time chart and the whole picture, without losing your place in the list.",
+  "sections": [
+    {
+      "title": "Health view",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Enlarge a monitored row's statistics</strong> — the <strong>⤢</strong> button at the end of the monitor strip opens a large response-time chart with min, average and max marked and a tooltip on every point, plus uptime for <strong>24 hours / 7 days / 30 days</strong> side by side with the number of checks behind each, a taller heartbeat bar, the check interval and last check time, and the full outage list. It opens instantly: it shows the report already on screen rather than fetching anything new."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A window with no data says so</strong> — uptime over 30 days is left as <em>no data</em> rather than 0% when there are no samples yet. A monitor you switched on an hour ago has no month of history, and showing that as total downtime would read as an outage that never happened."
+        },
+        {
+          "badge": "new",
+          "text": "<strong><code>i</code> opens it from the keyboard</strong> — added to the shortcut legend under the feed next to <code>s</code>, <code>p</code>, <code>c</code> and <code>m</code>. <code>Esc</code> closes the statistics and leaves the health view exactly where you left it. On a row with nothing to show the key does nothing rather than opening an empty panel — and the button is not drawn at all on a monitored bookmark still awaiting its first check."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Outages always showed a length of \"0s\"</strong> — the outage list read the wrong field name for how long each one lasted, so every finished outage was reported as lasting no time at all. A twelve-minute outage now reads <code>12m</code>. It was easy to overlook while outages only appeared inside the collapsed score panel; the enlarged view puts them in plain sight."
+        }
+      ]
+    }
+  ]
+}

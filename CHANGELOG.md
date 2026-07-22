@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.21.1 — July 2026](#v2026072111--july-2026)
 - [v2026.07.21 — July 2026](#v20260721--july-2026)
 - [v2026.07.20 — July 2026](#v20260720--july-2026)
 - [v2026.07.19 — July 2026](#v20260719--july-2026)
@@ -104,6 +105,21 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.21.1 — July 2026
+
+**Monitoring statistics can be opened at full size** — a monitored row in the health view had room for a 24-hour uptime figure and one ping, while the report behind it already carried 7-day and 30-day windows, the check count, and the outage list. A button on the row strip now opens all of it in a large view, without leaving the list.
+
+### Health view
+
+- **new** **Enlarge a monitored row's statistics** — the **⤢** button at the end of the monitor strip, or `i` on the selected row, opens a modal with a large response-time chart (min / average / max marked, tooltip per point), uptime for **24h / 7d / 30d** side by side with the sample count behind each, a taller heartbeat bar, interval and last-check time, and the full outage list. It reads the report already on screen rather than fetching again, so it opens instantly and shows exactly what the row below it shows. A window with no samples reads *no data* instead of 0%, so a newly enabled monitor is not misread as a day of downtime. The button is absent on a monitored bookmark that has not been checked yet — there is nothing to enlarge (`dashboard-health.js`, `health-view.css`, `locales/{en,nl,de,fr}.json`).
+- **new** **`i` in the row shortcuts** — added to the keyboard legend under the feed alongside `s`, `p`, `c` and `m`. On a row with no monitoring data the key falls through untouched rather than opening an empty panel.
+
+### Fixes
+
+- **fix** **Outage lengths always showed as "0s"** — the incident list read `duration` from each outage, but the server sends the field as `durationMs` (`HealthIncident.Duration`), so every closed outage was formatted from `undefined` and rendered as `0s`. A twelve-minute outage now reads `12m`. This was easy to miss while outages were only visible inside the collapsed score panel; the enlarged view puts them in plain sight (`dashboard-health.js`).
 
 ---
 

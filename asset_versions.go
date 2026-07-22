@@ -93,7 +93,7 @@ var sharedAssetVersions = pageAssetVersions{
 	HealthBadgeJS:        "health-badge-count-only-1",
 	AppNotificationJS:    "toast-html-1",
 	SearchCommandsNewJS:  "search-commands-new-9-outcome",
-	WhatsNewData:         "whats-new-v182",
+	WhatsNewData:         "whats-new-v183",
 	DataRevision:         "data-revision-9-context-menu",
 
 	WriteAPIJS:               "write-api-1",
