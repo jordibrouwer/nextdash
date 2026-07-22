@@ -1,0 +1,50 @@
+{
+  "tag": "v2026.07.21",
+  "date": "July 2026",
+  "releasedAt": "2026-07-22",
+  "modalLead": "Usage analytics is now <strong>opt-in</strong>. It stays off until you say yes, and the first-run card asks instead of announcing — <strong>Turn on</strong>, <strong>What is recorded?</strong>, or <strong>No thanks</strong>. If you already had it on, it stays on. Leaving the question open is not treated as a no: the card backs off for a while and asks again later, rather than either nagging you or quietly writing you down as uninterested.",
+  "sections": [
+    {
+      "title": "Privacy-friendly analytics",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Nothing is measured until you turn it on</strong> — analytics used to be on by default with an opt-out. Consent nobody actively gave is not consent, so it is now off on a fresh install and only starts once you choose it. While it is off the tracker script is not put into the page at all, so it is never downloaded and no request leaves your machine."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>If you already had it on, it stays on</strong> — upgrading does not silently switch off a working install. Your stored setting carries over: on stays on, and an explicit off stays off. You can change it whenever you like under <strong>Config → General → Advanced → Privacy</strong> or with <code>:telemetry</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The first-run card asks instead of announcing</strong> — it used to tell you analytics was already running. It now offers <strong>Turn on</strong>, <strong>What is recorded?</strong> and <strong>No thanks</strong>, and the confirm button inside the explanation turns it on directly, so reading the detail first is still a one-click yes. It stays hidden entirely when the server operator has set <code>DISABLE_TELEMETRY</code>, since asking would be pointless."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Not deciding is not a no, and does not become nagging</strong> — closing the card with × or reading the detail without choosing puts the question away for a few days, then longer each time. Simply seeing the card also quiets it for a day, so reloading the dashboard does not put the same card straight back in front of you. Everyone who never actually answered still gets asked once, including anyone who dismissed the old announcement."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Turning analytics off in config no longer brings the card back</strong> — the opt-in card only counted its own buttons as an answer, so switching the setting from <strong>Config → General</strong> or with <code>:telemetry</code> left you looking like you had never chosen. The card then came up and asked you to enable what you had just deliberately switched off."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>\"Failed to save settings\" when the save had actually worked</strong> — with device-specific settings on, saving mirrored your settings into browser storage after the server had already accepted them. If that mirror failed — private-browsing mode, or storage full — the dashboard reported the whole save as failed, sending you off to redo a change that was safely stored."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config could report device-local saves it never made</strong> — in device-specific mode your browser's storage <em>is</em> the settings store rather than a copy of the server's. Several config paths assumed writing to it always worked, so a storage failure lost the settings and still showed success. Worst of them: switching <strong>device-specific settings</strong> on confirmed that settings were now stored locally when nothing had been stored at all. Failures are now reported, and that switch turns itself back off instead of leaving you with an empty setting."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Saving a search reported the wrong problem</strong> — when browser storage was unavailable, <code>:save</code> answered with \"No active search to save\", which points at the wrong thing entirely. It now says storage is unavailable, and search history and recent commands no longer interrupt a search when storage refuses a write."
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.21 — July 2026](#v20260721--july-2026)
 - [v2026.07.20 — July 2026](#v20260720--july-2026)
 - [v2026.07.19 — July 2026](#v20260719--july-2026)
 - [v2026.07.18 — July 2026](#v20260718--july-2026)
@@ -103,6 +104,36 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.21 — July 2026
+
+**Usage analytics became opt-in.** Analytics was default-on with an opt-out; it is now off until the user turns it on, and the first-run card is the invitation rather than an announcement. Existing installs keep whatever they had stored, so a working instance is not silently switched off. Leaving the question unanswered snoozes on an escalating schedule instead of nagging or being recorded as a decline. Plus a set of fixes for browser-storage failures that were reporting saves that never happened.
+
+### Privacy-friendly analytics
+
+- **new** **Opt-in rather than opt-out** — `Settings.EnableUsageAnalytics` became `AnalyticsOptIn`, defaulting to false, and `analyticsEnabled()` reads it. The tracker `<script>` is emitted server-side only when it is on, so while off the code is never delivered, not merely suppressed. `DISABLE_TELEMETRY` still overrides everything and keeps the stored preference intact for when the operator unsets it.
+
+- **new** **Stored preference migrates** — installs predating the rename carry the setting under the old key. `GetSettings()` reads it and honours it: `true` migrates to opted in, `false` stays off. This cannot distinguish someone who ticked the box from someone who never touched the old default-on build — both stored `true` — which is recorded in the migration comment rather than papered over.
+
+- **new** **Everyone who never chose gets asked once** — answer-state lives in a new `quickStart.analyticsChoiceMade`, deliberately *not* the existing `seenAnalyticsNotice`. That flag belonged to a card that only announced analytics was already on, so dismissing it acknowledged a statement rather than answering a question. Opted-in users are seeded as having chosen, since the card would only interrupt a working install.
+
+- **new** **The card became the invitation** — **Turn on** / **What is recorded?** / **No thanks**, with the detail modal's confirm button acting as the opt-in so reading the explanation is a one-click yes. Hidden entirely under `DISABLE_TELEMETRY`, where asking would be a lie.
+
+- **new** **Hesitation is neither nagged nor counted as no** — closing with × or reading the detail without deciding snoozes on an escalating 3/14/45-day schedule (`quickStart.analyticsAskAfter`, `analyticsSnoozes`); merely being shown starts a 1-day cooldown, so reloading past an untouched card does not re-show it. The escalation counts user actions directly rather than inferring them from the timestamp, which the shown-cooldown also writes — inferring would pin the schedule at its first step forever. The × and **No thanks** are separate actions: same affordance, different meaning. The detail modal snoozes on open rather than from `onCancel`, because that callback only fires for the cancel button, leaving Escape and click-outside un-snoozed.
+
+### Fixes
+
+- **fix** **A config analytics toggle did not count as an answer** — only the card ever wrote `analyticsChoiceMade`, so setting analytics from **Config → General → Advanced → Privacy** or with `:telemetry` left the user indistinguishable from someone who never chose. The card then appeared and asked them to enable what they had just deliberately turned off. Both write paths now record the choice and clear any pending snooze.
+
+- **fix** **A successful save reported as failed** — `saveSettings` mirrored settings into `localStorage` inside the same `try` as the server POST, after the response had already been checked. A quota or private-mode error on the mirror therefore ran the catch and showed "Failed to save settings" about a save the server had accepted. The mirror is a cache, not the source of truth, so it now fails independently and warns to console.
+
+- **fix** **Config reported device-local saves it never made** — in device-specific mode `localStorage` *is* the settings store rather than a cache of the server, but `saveDeviceSettings` returned nothing and four call sites assumed success. The two autosaves set `ok = true` unconditionally, the main save left the device branch unchecked while the server branch awaited and threw, and the device-specific toggle confirmed "settings will now be stored locally" with nothing stored. `saveDeviceSettings` and `saveDeviceLocalSettings` now report whether the write stuck; the autosaves surface the existing error, the main save throws into its catch, and the toggle reverts itself rather than leaving a switch on with nothing behind it.
+
+- **fix** **`:save` reported the wrong problem** — a storage failure was answered with "No active search to save", pointing the user at the wrong thing. `saveCurrentSearch` now distinguishes `no-query` from `storage-failed`. Search history and recent commands also gained the guard their read counterparts already had, so a refused write no longer throws out of the middle of a search.
+
+- **fix** **Remaining unguarded storage writes** — the device-specific flag in `config-storage`, and the "last backup" timestamps in `config-backup`. Both run after the work they describe has already succeeded, so they now fail quietly rather than derailing a completed backup.
 
 ---
 
