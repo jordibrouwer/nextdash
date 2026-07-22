@@ -2164,7 +2164,13 @@ class SearchComponent {
     }
 
     saveSearchHistory() {
-        localStorage.setItem('dashboardSearchHistory', JSON.stringify(this.searchHistory.slice(0, 15)));
+        // Mirrors the guard on the read side: storage can throw in private mode or
+        // when the quota is full, and losing search history must not break search.
+        try {
+            localStorage.setItem('dashboardSearchHistory', JSON.stringify(this.searchHistory.slice(0, 15)));
+        } catch {
+            // Ignore storage errors.
+        }
     }
 
     removeSearchHistoryEntry(query) {
@@ -2200,7 +2206,11 @@ class SearchComponent {
     }
 
     saveRecentCommands() {
-        localStorage.setItem('dashboardRecentCommands', JSON.stringify(this.recentCommands.slice(0, 5)));
+        try {
+            localStorage.setItem('dashboardRecentCommands', JSON.stringify(this.recentCommands.slice(0, 5)));
+        } catch {
+            // Ignore storage errors.
+        }
     }
 
     recordRecentCommand(query) {
@@ -2397,14 +2407,32 @@ class SearchComponent {
         }
     }
 
+    /**
+     * Persist saved searches. Returns whether it actually stuck.
+     *
+     * Unlike history and recent commands, this one is an explicit user action
+     * ("save this search"), so a silent failure would leave them believing it
+     * was kept. The caller reports the outcome instead of always claiming success.
+     */
     saveSavedSearches() {
-        localStorage.setItem('dashboardSavedSearches', JSON.stringify(this.savedSearches.slice(0, 10)));
+        try {
+            localStorage.setItem('dashboardSavedSearches', JSON.stringify(this.savedSearches.slice(0, 10)));
+            return true;
+        } catch {
+            return false;
+        }
     }
 
+    /**
+     * Save the current query. Returns true, or a reason string when it did not
+     * happen: 'no-query' (nothing to save) or 'storage-failed' (private mode /
+     * quota). The two need different messages — one is the user's situation, the
+     * other is a real failure they would otherwise never hear about.
+     */
     saveCurrentSearch(name = null) {
         const query = (this.lastNonCommandQuery || this.currentQuery || '').trim();
         if (!query) {
-            return false;
+            return 'no-query';
         }
 
         const label = (name || query).trim();
@@ -2412,8 +2440,7 @@ class SearchComponent {
             { name: label, query },
             ...this.savedSearches.filter((entry) => entry.query !== query && entry.name !== label)
         ].slice(0, 10);
-        this.saveSavedSearches();
-        return true;
+        return this.saveSavedSearches() ? true : 'storage-failed';
     }
 
     getSavedSearchMatches() {

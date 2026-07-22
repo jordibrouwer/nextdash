@@ -900,13 +900,21 @@ class DashboardData {
                 throw new Error('Failed to save settings');
             }
             
-            // Also save device-local subset when device-specific is enabled
-            const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
-                || localStorage.getItem('deviceSpecificSettings') === 'true';
-            if (deviceSpecific && window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
-                window.DeviceSettingsMerge.saveDeviceLocalSettings(payload);
-            } else if (deviceSpecific) {
-                localStorage.setItem('dashboardSettings', JSON.stringify(payload));
+            // Also save device-local subset when device-specific is enabled.
+            // The server already accepted the settings by this point, so a failure
+            // here (private mode, quota exceeded) must not surface as "failed to
+            // save" — that would tell the user their change was lost when it was
+            // not. The device-local copy is a mirror, not the source of truth.
+            try {
+                const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
+                    || localStorage.getItem('deviceSpecificSettings') === 'true';
+                if (deviceSpecific && window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
+                    window.DeviceSettingsMerge.saveDeviceLocalSettings(payload);
+                } else if (deviceSpecific) {
+                    localStorage.setItem('dashboardSettings', JSON.stringify(payload));
+                }
+            } catch (storageError) {
+                console.warn('Device-local settings mirror failed:', storageError);
             }
         } catch (error) {
             d.showErrorNotification(

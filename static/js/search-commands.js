@@ -1758,7 +1758,10 @@ class SearchCommandsComponent {
 
         const label = args.join(' ').trim();
         const saved = searchComponent.saveCurrentSearch(label || null);
-        if (!saved) {
+        if (saved === 'storage-failed') {
+            return [{ name: 'Could not save — browser storage unavailable', shortcut: ':SAVE', action: () => false, type: 'command' }];
+        }
+        if (saved !== true) {
             return [{ name: 'No active search to save', shortcut: ':SAVE', action: () => false, type: 'command' }];
         }
 
