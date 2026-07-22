@@ -34,10 +34,10 @@ func telemetryDisabledByEnv() bool {
 }
 
 // analyticsEnabled reports whether the tracker should run for this request:
-// the user's own setting, unless the operator disabled telemetry outright.
+// the user opted in, unless the operator disabled telemetry outright.
 func analyticsEnabled(settings Settings) bool {
 	if telemetryDisabledByEnv() {
 		return false
 	}
-	return settings.EnableUsageAnalytics
+	return settings.AnalyticsOptIn
 }

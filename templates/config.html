@@ -1201,7 +1201,7 @@
                                     <span class="checkbox-text" data-i18n="config.usageAnalyticsLabel">Privacy-friendly analytics</span>
                                 </label>
                                 {{if .TelemetryLockedOff}}<p class="form-hint usage-analytics-locked" data-i18n="config.usageAnalyticsLockedHint">Turned off for this server by the <code>DISABLE_TELEMETRY</code> environment variable. Nothing is sent, and this cannot be changed here until the server operator unsets it.</p>{{end}}
-                                <p class="form-hint usage-analytics-hint" data-i18n="config.usageAnalyticsHint">NextDash uses Umami to understand which features are used and how the app can be improved. We use this only for product insights such as page views, feature usage, and general engagement. No cookies are used, no personal profiles are created, and users are not tracked across websites. Analytics data is used only to improve NextDash. You can turn this off here; it takes effect after the page reloads.</p>
+                                <p class="form-hint usage-analytics-hint" data-i18n="config.usageAnalyticsHint">NextDash uses Umami to understand which features are used and how the app can be improved. We use this only for product insights such as page views, feature usage, and general engagement. No cookies are used, no personal profiles are created, and users are not tracked across websites. Analytics data is used only to improve NextDash. This is off until you tick it here; it takes effect after the page reloads. While it is off, the tracker is not loaded at all and no request leaves your machine.</p>
                             </div>
                         </div>
                     </section>
@@ -2637,7 +2637,7 @@
     <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-refresh-all-2"></script>
     <script src="/static/js/config/config-backup.js?v=health-recheck-1"></script>
     <script src="/static/js/config/config-font.js?v={{.Assets.ConfigFontJS}}"></script>
-    <script src="/static/js/config/config-settings.js?v=session-tips-1"></script>
+    <script src="/static/js/config/config-settings.js?v=analytics-opt-in-1"></script>
     <script src="/static/js/config/config-settings-defaults.js?v=tips-off-default-1"></script>
     <script src="/static/js/config/config-tours-runtime.js?v=tours-removed-1"></script>
     <script src="/static/js/config/config-tab-tours.js?v=tours-removed-1"></script>

@@ -985,12 +985,12 @@ class ConfigSettings {
             });
         }
 
-        // Privacy-friendly usage analytics (default on; unset means on).
+        // Privacy-friendly usage analytics (opt-in; unset means off).
         const usageAnalyticsCheckbox = document.getElementById('usage-analytics-checkbox');
         if (usageAnalyticsCheckbox) {
-            usageAnalyticsCheckbox.checked = settings.enableUsageAnalytics !== false;
+            usageAnalyticsCheckbox.checked = settings.analyticsOptIn === true;
             usageAnalyticsCheckbox.addEventListener('change', (e) => {
-                settings.enableUsageAnalytics = e.target.checked;
+                settings.analyticsOptIn = e.target.checked;
             });
         }
 
@@ -1949,7 +1949,7 @@ class ConfigSettings {
         }
         if (newTabCheckbox) settings.openInNewTab = newTabCheckbox.checked;
         const usageAnalyticsEl = document.getElementById('usage-analytics-checkbox');
-        if (usageAnalyticsEl) settings.enableUsageAnalytics = usageAnalyticsEl.checked;
+        if (usageAnalyticsEl) settings.analyticsOptIn = usageAnalyticsEl.checked;
         const sessionTipsEl = document.getElementById('session-tips-checkbox');
         if (sessionTipsEl) settings.enableSessionTips = sessionTipsEl.checked;
         const monitorNotifyUrlEl = document.getElementById('monitor-notify-url-input');
@@ -2870,7 +2870,7 @@ class ConfigSettings {
         watch('weather-refresh-select', 'weatherRefreshMinutes');
         watch('link-preview-hover-delay-select', 'linkPreviewHoverDelayMs');
         watch('new-tab-checkbox', 'openInNewTab');
-        watch('usage-analytics-checkbox', 'enableUsageAnalytics');
+        watch('usage-analytics-checkbox', 'analyticsOptIn');
         watch('session-tips-checkbox', 'enableSessionTips');
         watch('show-background-dots-checkbox', 'showBackgroundDots');
         watch('show-title-checkbox', 'showTitle');
@@ -2944,7 +2944,7 @@ class ConfigSettings {
         return {
             theme: 'moss-stone-dark',
             openInNewTab: true,
-            enableUsageAnalytics: true,
+            analyticsOptIn: false,
             enableSessionTips: true,
             columnsPerRow: 3,
             fontSize: 'm',

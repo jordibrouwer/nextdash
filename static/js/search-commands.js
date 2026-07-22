@@ -350,7 +350,7 @@ class SearchCommandsComponent {
      * Save first, then reload, so the new page reflects the choice.
      */
     setUsageAnalytics(dashboard, enabled) {
-        dashboard.settings.enableUsageAnalytics = enabled;
+        dashboard.settings.analyticsOptIn = enabled;
         const done = () => {
             dashboard.isNavigatingAway = true;
             window.location.reload();
@@ -3109,7 +3109,7 @@ class SearchCommandsComponent {
             }];
         }
 
-        const enabled = dashboard.settings.enableUsageAnalytics !== false;
+        const enabled = dashboard.settings.analyticsOptIn === true;
         const apply = (value) => this.setUsageAnalytics(dashboard, value);
         return this._handleSimpleToggle(args, { shortcut: ':TELEMETRY', prefix: 'telemetry', enabled, apply });
     }

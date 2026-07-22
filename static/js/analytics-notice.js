@@ -1,24 +1,50 @@
 /**
- * One-time notice that privacy-friendly analytics is on.
+ * One-time invitation to turn privacy-friendly analytics on.
  *
  * Shown a few seconds after the what's-new modal closes, but only when the
- * quick-start setup card is not competing for attention. A link on the card
+ * quick-start setup card is not competing for attention. A button on the card
  * opens a fuller explanation in the same modal style as what's new: why the
- * measurement exists, what it does and does not record, and the two ways to
- * switch it off.
+ * measurement exists and what it does and does not record.
  *
- * Seen-state lives in settings.quickStart.seenAnalyticsNotice (server-side, per
- * user) so the card appears exactly once per user rather than once per browser.
- * Nothing renders when analytics is already off or the operator disabled
- * telemetry, since there would be nothing to disclose.
+ * Answer-state lives in settings.quickStart.analyticsChoiceMade (server-side,
+ * per user) so the card is answered once per user rather than once per browser.
+ * That is deliberately not the older seenAnalyticsNotice flag: the card it
+ * belonged to only announced that analytics was already on, so dismissing it
+ * acknowledged a statement instead of answering a question. Those users still
+ * get asked exactly once.
+ *
+ * Leaving the question open is not an answer either. Closing the card with ×,
+ * or reading the detail without deciding, snoozes it on an escalating schedule
+ * (see SNOOZE_DAYS) rather than asking again on the next load — a hesitant user
+ * should not be badgered, and should not be silently written off as a no.
+ * Merely being shown also starts a short cooldown (SHOWN_COOLDOWN_DAYS), so
+ * reloading past an untouched card does not put it straight back on screen.
+ *
+ * Nothing renders when the user is already opted in, has already answered, is
+ * inside a snooze window, or the operator set DISABLE_TELEMETRY — asking would
+ * then be pointless or a lie.
  */
 (function () {
     'use strict';
 
     const SHOW_DELAY_MS = 3500;
 
+    // Days to wait after each time the question is left open. Escalating, and
+    // capped at the last entry: someone who keeps ignoring it is answering in
+    // practice, so the card becomes rare rather than disappearing outright.
+    const SNOOZE_DAYS = [3, 14, 45];
+
+    // Cooldown applied the moment the card is shown, so reloading past an
+    // untouched card does not re-show it. Short, because ignoring a card once is
+    // much weaker evidence than actively dismissing it.
+    const SHOWN_COOLDOWN_DAYS = 1;
+
     let cardEl = null;
     let pending = null;
+
+    function nowSeconds() {
+        return Math.floor(Date.now() / 1000);
+    }
 
     function dash() {
         return window.dashboardInstance || null;
@@ -46,22 +72,81 @@
         return d.settings.quickStart;
     }
 
-    function markSeen() {
+    /**
+     * Record that the user actually answered — turned analytics on, or declined.
+     *
+     * Deliberately a different flag from the legacy seenAnalyticsNotice, which
+     * only recorded that someone dismissed the older card announcing analytics
+     * was already on. Acknowledging a statement is not answering a question, so
+     * those users are asked once here.
+     */
+    function markChoiceMade() {
         const qs = state();
-        if (!qs || qs.seenAnalyticsNotice === true) return;
-        qs.seenAnalyticsNotice = true;
+        if (!qs || qs.analyticsChoiceMade === true) return;
+        qs.analyticsChoiceMade = true;
+        qs.analyticsAskAfter = 0; // answered; no snooze left to honour
         Promise.resolve(dash()?.saveSettings?.()).catch(() => {});
     }
 
     /**
-     * Only disclose something that is actually happening: analytics on, not
-     * already acknowledged, and no setup card or blocking modal in the way.
+     * Put the question away for a while without recording an answer.
+     *
+     * Used when the user leaves it open rather than deciding — closing the card
+     * with ×, or reading the detail and closing the modal. Asking again on the
+     * very next load would badger someone who is merely hesitating, so back off
+     * and raise the interval each time it happens.
+     */
+    function snooze() {
+        const qs = state();
+        if (!qs) return;
+        // Escalate per *user* action, counted directly rather than inferred from
+        // analyticsAskAfter: the shown-cooldown also pushes that timestamp into
+        // the future, which would otherwise read as "already snoozed" and pin the
+        // schedule at its first step forever.
+        const index = Math.min(Number(qs.analyticsSnoozes) || 0, SNOOZE_DAYS.length - 1);
+        qs.analyticsSnoozes = index + 1;
+        const until = nowSeconds() + SNOOZE_DAYS[index] * 86400;
+        if (until > (Number(qs.analyticsAskAfter) || 0)) {
+            qs.analyticsAskAfter = until;
+        }
+        Promise.resolve(dash()?.saveSettings?.()).catch(() => {});
+    }
+
+    /**
+     * Cool down simply because the card was put on screen.
+     *
+     * Without this, reloading while the card sits there untouched shows it again
+     * on every single load: nothing is persisted until the user clicks. Someone
+     * who opens the dashboard ten times a day would face it ten times.
+     *
+     * Deliberately does not touch analyticsSnoozes — being shown is not the user
+     * hesitating, so it must not consume a step of the escalating schedule. A
+     * later × or detail-close still escalates from where the user actually left
+     * off, and only extends the window (never shortens it).
+     */
+    function coolDownAfterShowing() {
+        const qs = state();
+        if (!qs) return;
+        const until = nowSeconds() + SHOWN_COOLDOWN_DAYS * 86400;
+        if (until <= (Number(qs.analyticsAskAfter) || 0)) return;
+        qs.analyticsAskAfter = until;
+        Promise.resolve(dash()?.saveSettings?.()).catch(() => {});
+    }
+
+    /**
+     * Only ask when there is something to ask for: analytics still off, the
+     * invitation not already answered, and no setup card or blocking modal in
+     * the way. Once someone opts in — or declines — this never returns.
      */
     function shouldShow() {
         const d = dash();
         if (!d?.settings) return false;
-        if (d.settings.enableUsageAnalytics === false) return false;
-        if (state()?.seenAnalyticsNotice === true) return false;
+        if (d.settings.analyticsOptIn === true) return false;
+        // The operator kill switch makes the choice moot; asking would be a lie.
+        if (document.querySelector('meta[name="nextdash-telemetry-locked"]')) return false;
+        if (state()?.analyticsChoiceMade === true) return false;
+        // Still inside a snooze window from an earlier, undecided visit.
+        if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return false;
         if (cardEl) return false;
         // Any quick-start card — the setup wizard *or* the checklist that follows
         // it — owns the same bottom-left corner, so wait until it is gone rather
@@ -80,15 +165,61 @@
         setTimeout(() => { if (el.isConnected) el.remove(); }, 260);
     }
 
+    /** "No thanks" — a real answer, so the card does not come back. */
     function dismiss() {
-        markSeen();
+        markChoiceMade();
         teardown();
     }
 
-    /** Full explanation, in the same modal chrome as what's new. */
+    /** × — no answer given; back off and ask again later. */
+    function askLater() {
+        snooze();
+        teardown();
+    }
+
+    /**
+     * Turn analytics on. The tracker <script> is emitted server-side, so the page
+     * has to reload before anything is actually measured — same as the config
+     * checkbox and `:telemetry on`.
+     */
+    function optIn() {
+        const d = dash();
+        if (!d?.settings) return;
+        // Set both flags before saving so the choice and the opt-in travel in a
+        // single request, rather than racing two saves against the reload below.
+        const qs = state();
+        if (qs) {
+            qs.analyticsChoiceMade = true;
+            // Clear any snooze from an earlier hesitation; the question is answered.
+            qs.analyticsAskAfter = 0;
+        }
+        d.settings.analyticsOptIn = true;
+        teardown();
+        const done = () => {
+            d.isNavigatingAway = true;
+            window.location.reload();
+        };
+        if (typeof d.saveSettings === 'function') {
+            Promise.resolve(d.saveSettings()).then(done).catch(done);
+        } else {
+            done();
+        }
+    }
+
+    /**
+     * Full explanation, in the same modal chrome as what's new.
+     *
+     * Reading the detail is not itself an answer: only the modal's confirm
+     * button (optIn) or "No thanks" records one.
+     *
+     * The snooze is applied up front rather than from onCancel, because that
+     * callback only fires for the cancel button — Escape and click-outside
+     * close the modal without it, and those must not leave the question
+     * un-snoozed. Opting in from here overwrites the snooze anyway.
+     */
     function openDetails() {
         if (!window.AppModal) return;
-        markSeen();
+        snooze();
         teardown();
 
         const section = (title, body) =>
@@ -99,7 +230,7 @@
                 ${section(
                     t('dashboard.analyticsNoticeWhyTitle', 'Why this exists'),
                     escape(t('dashboard.analyticsNoticeWhyBody',
-                        'nextDash had no picture of how it is actually used. Which views do people open? Does anyone use finders, the tag cloud, or the inbox? Where do people give up halfway through adding a bookmark? Without answers, every improvement is guesswork. These statistics answer exactly that — which features get used and what can be made better — and nothing else. They are not meant to follow you around: it is purely abstract, technical measurement of flow and feature usage, aggregated across everyone.'))
+                        'nextDash had no picture of how it is actually used. Which views do people open? Does anyone use finders, the tag cloud, or the inbox? Where do people give up halfway through adding a bookmark? Without answers, every improvement is guesswork. These statistics answer exactly that — which features get used and what can be made better — and nothing else. They are not meant to follow you around: it is purely abstract, technical measurement of flow and feature usage, aggregated across everyone. Turning it on helps a lot, even if you only leave it on for a few days — a short stretch of real usage already says more than months of guessing, and you are welcome to switch it back off afterwards.'))
                 )}
                 ${section(
                     t('dashboard.analyticsNoticeNeverTitle', 'What is never recorded'),
@@ -107,23 +238,22 @@
                         'No bookmark names, URLs, search queries, page or category names, notes, or tags. No cookies are set, no personal profile is built, and you are not tracked across other websites. Counts that could be revealing are rounded into buckets, and the instance is self-hosted, so nothing is shared with an advertising network.'))
                 )}
                 ${section(
-                    t('dashboard.analyticsNoticeOffTitle', 'How to turn it off'),
-                    escape(t('dashboard.analyticsNoticeOffBody',
-                        'Go to Config → General → Advanced → Privacy and clear "Privacy-friendly analytics", or run :telemetry off from the command palette. It applies after the page reloads. When off, the tracker is not loaded at all and no request leaves your machine.'))
+                    t('dashboard.analyticsNoticeOnTitle', 'How to turn it on'),
+                    escape(t('dashboard.analyticsNoticeOnBody',
+                        'Go to Config → General → Advanced → Privacy and tick "Privacy-friendly analytics", or run :telemetry on from the command palette. It applies after the page reloads. While it is off, the tracker is not loaded at all and no request leaves your machine.'))
                 )}
             </div>`;
 
         window.AppModal.show({
             title: t('dashboard.analyticsNoticeModalTitle', 'privacy-friendly analytics'),
             htmlMessage: html,
-            confirmText: t('dashboard.analyticsNoticeOpenConfig', 'Open privacy settings'),
+            confirmText: t('dashboard.analyticsNoticeOptIn', 'Turn on'),
             cancelText: t('dashboard.analyticsNoticeClose', 'Close'),
             modalClass: 'whats-new-modal analytics-notice-modal',
-            // #general/advanced/privacy is the form config's layer router expects:
-            // it switches General to the Advanced layer and scrolls to the panel.
-            // A plain #general-privacy anchor lands on Essentials, where the
-            // Privacy card is not rendered at all.
-            onConfirm: () => { window.location.href = '/config#general/advanced/privacy'; },
+            // Confirm is the opt-in itself — reading the detail is the most likely
+            // moment someone decides yes, so make that the one-click path rather
+            // than sending them to config to find the checkbox.
+            onConfirm: optIn,
         });
     }
 
@@ -140,25 +270,29 @@
             <div class="quickstart-inner">
                 <div class="quickstart-head">
                     <p class="quickstart-title">${escape(t('dashboard.analyticsNoticeTitle', 'Privacy-friendly analytics'))}</p>
-                    <button type="button" class="quickstart-close" data-an-action="dismiss"
+                    <button type="button" class="quickstart-close" data-an-action="later"
                             aria-label="${escape(t('dashboard.analyticsNoticeDismiss', 'Dismiss'))}">×</button>
                 </div>
                 <p class="analytics-notice-text">${escape(t('dashboard.analyticsNoticeBody',
-                    'nextDash records anonymous usage statistics to see which features are used and what can be improved — never bookmark names, URLs, or searches. You can turn this off at any time.'))}</p>
+                    'Analytics is off. Turning it on shares anonymous usage statistics so it is visible which features are used and what can be improved — never bookmark names, URLs, or searches. You can switch it back off at any time.'))}</p>
                 <div class="analytics-notice-actions">
-                    <button type="button" class="quickstart-btn quickstart-btn-primary" data-an-action="details">${escape(t('dashboard.analyticsNoticeLearnMore', 'What is recorded?'))}</button>
-                    <button type="button" class="quickstart-btn quickstart-btn-ghost" data-an-action="dismiss">${escape(t('dashboard.analyticsNoticeGotIt', 'Got it'))}</button>
+                    <button type="button" class="quickstart-btn quickstart-btn-primary" data-an-action="optin">${escape(t('dashboard.analyticsNoticeOptIn', 'Turn on'))}</button>
+                    <button type="button" class="quickstart-btn quickstart-btn-ghost" data-an-action="details">${escape(t('dashboard.analyticsNoticeLearnMore', 'What is recorded?'))}</button>
+                    <button type="button" class="quickstart-btn quickstart-btn-ghost" data-an-action="dismiss">${escape(t('dashboard.analyticsNoticeNoThanks', 'No thanks'))}</button>
                 </div>
             </div>`;
 
-        el.querySelectorAll('[data-an-action="dismiss"]').forEach((btn) => {
-            btn.addEventListener('click', dismiss);
-        });
+        // × is "not now" (snooze); "No thanks" is an actual decline. Same visual
+        // affordance, deliberately different meaning.
+        el.querySelector('[data-an-action="later"]')?.addEventListener('click', askLater);
+        el.querySelector('[data-an-action="dismiss"]')?.addEventListener('click', dismiss);
         el.querySelector('[data-an-action="details"]')?.addEventListener('click', openDetails);
+        el.querySelector('[data-an-action="optin"]')?.addEventListener('click', optIn);
 
         document.body.appendChild(el);
         cardEl = el;
         requestAnimationFrame(() => el.classList.add('show'));
+        coolDownAfterShowing();
         return true;
     }
 
@@ -180,7 +314,8 @@
         const tick = () => {
             attempts += 1;
             if (cardEl) return;
-            if (state()?.seenAnalyticsNotice === true) return;
+            if (state()?.analyticsChoiceMade === true) return;
+            if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return;
             if (render()) return;
             if (attempts < maxAttempts) setTimeout(tick, 1500);
         };
@@ -203,8 +338,9 @@
         const tick = () => {
             attempts += 1;
             if (cardEl || pending) return;              // already showing or queued
-            if (state()?.seenAnalyticsNotice === true) return;
-            if (dash()?.settings?.enableUsageAnalytics === false) return;
+            if (state()?.analyticsChoiceMade === true) return;
+            if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return;
+            if (dash()?.settings?.analyticsOptIn === true) return;
 
             // Let the release notes go first when they are on screen or pending.
             const whatsNewVisible = !!document.querySelector('.whats-new-modal');
