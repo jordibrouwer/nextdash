@@ -350,7 +350,15 @@ class SearchCommandsComponent {
      * Save first, then reload, so the new page reflects the choice.
      */
     setUsageAnalytics(dashboard, enabled) {
-        dashboard.settings.enableUsageAnalytics = enabled;
+        dashboard.settings.analyticsOptIn = enabled;
+        // Setting this deliberately is an answer, so the opt-in card must not
+        // come back and ask again — least of all to someone who just turned it
+        // off here. The card only ever writes this flag itself, so without this
+        // a config/`:telemetry` opt-out reads as "never chose" and re-prompts.
+        if (dashboard.settings.quickStart && typeof dashboard.settings.quickStart === 'object') {
+            dashboard.settings.quickStart.analyticsChoiceMade = true;
+            dashboard.settings.quickStart.analyticsAskAfter = 0;
+        }
         const done = () => {
             dashboard.isNavigatingAway = true;
             window.location.reload();
@@ -1750,7 +1758,10 @@ class SearchCommandsComponent {
 
         const label = args.join(' ').trim();
         const saved = searchComponent.saveCurrentSearch(label || null);
-        if (!saved) {
+        if (saved === 'storage-failed') {
+            return [{ name: 'Could not save — browser storage unavailable', shortcut: ':SAVE', action: () => false, type: 'command' }];
+        }
+        if (saved !== true) {
             return [{ name: 'No active search to save', shortcut: ':SAVE', action: () => false, type: 'command' }];
         }
 
@@ -3109,7 +3120,7 @@ class SearchCommandsComponent {
             }];
         }
 
-        const enabled = dashboard.settings.enableUsageAnalytics !== false;
+        const enabled = dashboard.settings.analyticsOptIn === true;
         const apply = (value) => this.setUsageAnalytics(dashboard, value);
         return this._handleSimpleToggle(args, { shortcut: ':TELEMETRY', prefix: 'telemetry', enabled, apply });
     }

@@ -243,7 +243,13 @@ class ConfigBackup {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
-            localStorage.setItem('nextdash-last-backup', now.toISOString());
+            // The download already happened; a storage failure here only costs the
+            // "Last backup" label, so it must not derail the success path.
+            try {
+                localStorage.setItem('nextdash-last-backup', now.toISOString());
+            } catch {
+                // Ignore storage errors.
+            }
             this.updateLastBackupDisplay(
                 typeof configManager !== 'undefined' ? configManager.settingsData?.language : undefined
             );
@@ -608,7 +614,12 @@ class ConfigBackup {
             });
             if (!res.ok) throw new Error(res.statusText);
             // A manual backup counts as a backup: refresh the "Last backup" label too.
-            localStorage.setItem('nextdash-last-backup', new Date().toISOString());
+            // The server already wrote it, so a storage failure is cosmetic only.
+            try {
+                localStorage.setItem('nextdash-last-backup', new Date().toISOString());
+            } catch {
+                // Ignore storage errors.
+            }
             this.updateLastBackupDisplay(
                 typeof configManager !== 'undefined' ? configManager.settingsData?.language : undefined
             );

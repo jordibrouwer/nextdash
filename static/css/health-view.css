@@ -622,6 +622,12 @@ button.health-view-tile:hover {
     color: var(--accent-error);
 }
 
+/* The failing status code next to an outage's timestamp: supporting detail, so
+   it sits back from the time it annotates. */
+.health-view-score-item-reason {
+    color: var(--text-tertiary);
+}
+
 .health-view-score-total {
     display: flex;
     align-items: baseline;

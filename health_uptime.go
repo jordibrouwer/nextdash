@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"time"
 )
 
@@ -94,11 +95,18 @@ func deriveIncidents(samples []HealthSample, now time.Time) []HealthIncident {
 	for _, s := range samples {
 		if !s.Up {
 			if current == nil {
-				incidents = append(incidents, HealthIncident{Start: s.T, Reason: ""})
+				incidents = append(incidents, HealthIncident{Start: s.T})
 				current = &incidents[len(incidents)-1]
 			}
 			current.Checks++
 			current.End = s.T
+			// The reason comes from the sample's HTTP status, which is all the
+			// history keeps: a network-level failure stores no code, so it stays
+			// blank rather than inventing a cause. Later codes in the same outage
+			// win, so a run that ends 500 is not still labelled with its first 503.
+			if s.Code > 0 {
+				current.Reason = "HTTP " + strconv.Itoa(s.Code)
+			}
 			continue
 		}
 		if current != nil {

@@ -1,9 +1,9 @@
 /**
- * Privacy-friendly usage analytics (Umami), opt-out.
+ * Privacy-friendly usage analytics (Umami), opt-in.
  *
- * The server only emits this script's <script> tag when the user has analytics
- * enabled (Settings.EnableUsageAnalytics), so when it's turned off nothing here
- * runs and no third-party request is made at all.
+ * The server only emits this script's <script> tag when the user has opted in
+ * (Settings.AnalyticsOptIn), so while it's off nothing here runs and no
+ * third-party request is made at all.
  *
  * This file is NOT the Umami tracker itself. It reads config from its own
  * <script> tag's data-* attributes, injects the real Umami tracker from the

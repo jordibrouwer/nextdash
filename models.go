@@ -198,9 +198,9 @@ type Settings struct {
 	FaviconRefreshPolicy         string                       `json:"faviconRefreshPolicy"`         // Favicon policy: manual, on-save
 	SearchIndexed                bool                         `json:"searchIndexed"`                // Is search index built
 	OnboardingCompleted          bool                         `json:"onboardingCompleted"`
-	EnableUsageAnalytics         bool                         `json:"enableUsageAnalytics"` // Privacy-friendly Umami analytics (default on, opt-out in Config → General)
-	EnableSessionTips            bool                         `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
-	QuickStart                   QuickStartState              `json:"quickStart"`           // First-run quick-start progress (server-side, per-user)
+	AnalyticsOptIn               bool                         `json:"analyticsOptIn"`    // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
+	EnableSessionTips            bool                         `json:"enableSessionTips"` // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
+	QuickStart                   QuickStartState              `json:"quickStart"`        // First-run quick-start progress (server-side, per-user)
 	// ConfigGeneralLayer is the last Essentials/Advanced/all layer used in
 	// Config → General. Empty means "never chosen", which starts on Essentials.
 	// Stored here rather than localStorage so the choice follows the user across
@@ -288,7 +288,15 @@ type QuickStartState struct {
 	Dismissed           bool `json:"dismissed"`           // Checklist completed or dismissed
 	VisitedConfig       bool `json:"visitedConfig"`       // Opened Config → General (checklist item)
 	SeenCheatsheet      bool `json:"seenCheatsheet"`      // Opened the keyboard cheat sheet (checklist item)
-	SeenAnalyticsNotice bool `json:"seenAnalyticsNotice"` // One-time card telling the user analytics is on
+	SeenAnalyticsNotice bool `json:"seenAnalyticsNotice"` // Legacy: dismissed the old card that merely announced analytics was on. Not a choice — see AnalyticsChoiceMade.
+	AnalyticsChoiceMade bool `json:"analyticsChoiceMade"` // User actively answered the opt-in card (turned it on, or declined)
+	// Unix seconds before which the opt-in card stays hidden. Set when the user
+	// leaves the question open (closes the card or reads the detail without
+	// deciding) so a hesitant user is not asked again on the very next load.
+	AnalyticsAskAfter int64 `json:"analyticsAskAfter,omitempty"`
+	// How often the question has been put off, indexing a backoff schedule so
+	// each further hesitation waits longer than the last.
+	AnalyticsSnoozes int `json:"analyticsSnoozes,omitempty"`
 	// Bookmark counts at the moment setup finished. The checklist ticks "add a
 	// bookmark" / "tag a bookmark" only once the user gets past these, so the
 	// seeded example bookmarks (which already carry tags) do not tick them for
@@ -481,7 +489,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			CurrentPage:                    1,
 			Theme:                          defaultThemeID,
 			OpenInNewTab:                   true,
-			EnableUsageAnalytics:           true,
+			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
@@ -1652,7 +1660,7 @@ func (fs *FileStore) GetSettings() Settings {
 			CurrentPage:                    1,
 			Theme:                          defaultThemeID,
 			OpenInNewTab:                   true,
-			EnableUsageAnalytics:           true,
+			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
@@ -1896,12 +1904,44 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["onboardingCompleted"]; !ok {
 			settings.OnboardingCompleted = true
 		}
-		// Default-on, opt-out: existing installs that predate the field get analytics
-		// enabled (matching new installs). A user who explicitly stored `false` keeps it.
-		if _, ok := rawSettings["enableUsageAnalytics"]; !ok {
-			settings.EnableUsageAnalytics = true
+		// Analytics is opt-in: an absent key stays false (Go's zero value), so
+		// fresh installs measure nothing until the user says yes.
+		//
+		// Installs that predate the rename carry the setting under the old name,
+		// and that stored value is honoured rather than dropped: `true` migrates
+		// to opted-in, `false` stays off. Note this cannot distinguish a user who
+		// ticked the box from one who simply never touched the old default-on
+		// build -- both stored `true`. An explicit `false` is always preserved.
+		if _, ok := rawSettings["analyticsOptIn"]; !ok {
+			if raw, legacy := rawSettings["enableUsageAnalytics"]; legacy {
+				var wasEnabled bool
+				if json.Unmarshal(raw, &wasEnabled) == nil {
+					settings.AnalyticsOptIn = wasEnabled
+				}
+			}
 		}
-		// Same default-on, opt-out contract as analytics above.
+		// Whoever ends up opted in has a working, measured install; the opt-in card
+		// would only interrupt them, so treat that as the choice already being made.
+		//
+		// Everyone else gets asked, including users carrying the legacy
+		// seenAnalyticsNotice flag: that card only announced analytics was on, and
+		// its "Got it" acknowledged a statement rather than answering a question.
+		// It is deliberately not read here.
+		// The flag lives inside the nested quickStart object, so probe that rather
+		// than the top level -- a top-level lookup never matches and would re-seed
+		// the value on every load, wiping a decline the moment it is stored.
+		storedChoice := false
+		if raw, ok := rawSettings["quickStart"]; ok {
+			var qs map[string]json.RawMessage
+			if json.Unmarshal(raw, &qs) == nil {
+				_, storedChoice = qs["analyticsChoiceMade"]
+			}
+		}
+		if !storedChoice {
+			settings.QuickStart.AnalyticsChoiceMade = settings.AnalyticsOptIn
+		}
+		// Session tips keep the default-on, opt-out contract below — they are a
+		// local UI nicety, not data leaving the machine.
 		if _, ok := rawSettings["enableSessionTips"]; !ok {
 			settings.EnableSessionTips = true
 		}
@@ -2335,6 +2375,12 @@ type HealthSample struct {
 	Up     bool  `json:"u"`           // Reachable (HealthScanCache.Status == "online")
 	PingMs int   `json:"p,omitempty"` // Response time; 0 when the request never completed
 	Code   int   `json:"c,omitempty"` // HTTP status; 0 on a network-level failure
+	// Alerted marks the failed sample that triggered a "down" webhook. It makes
+	// "this outage has already alerted" a recorded fact rather than something
+	// re-derived from a failure count, which manual re-checks and bulk retests
+	// also append to. Set on at most one sample per outage, so it stays absent
+	// from virtually every sample written.
+	Alerted bool `json:"a,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept

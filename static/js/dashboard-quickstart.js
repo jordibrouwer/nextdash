@@ -198,7 +198,7 @@
                         </span>
                     </label>
                 </fieldset>
-                <p class="quickstart-field-hint quickstart-analytics-note">${this.escape(this.t('setupAnalyticsNote', 'Privacy-friendly usage analytics are on — no bookmark names, URLs, or searches are ever sent. You can turn this off in Config → General.'))}</p>`;
+                <p class="quickstart-field-hint quickstart-analytics-note">${this.escape(this.t('setupAnalyticsNote', 'Privacy-friendly usage analytics are off — nothing is sent unless you turn them on. If you do, no bookmark names, URLs, or searches are ever sent. You can turn them on in Config → General.'))}</p>`;
         }
 
         renderSetupStep() {
