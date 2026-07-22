@@ -523,4 +523,40 @@ test.describe('health dashboard view', () => {
         expect(page.url()).not.toContain('/config');
         await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
     });
+
+    test('outage lengths come from durationMs, not duration', async ({ page }) => {
+        // The server sends HealthIncident.Duration as `durationMs`. Reading
+        // `duration` formatted undefined and rendered every closed outage as "0s".
+        const withIncidents = report();
+        withIncidents.issues[0].monitor = true;
+        withIncidents.issues[0].monitorStats = {
+            intervalMinutes: 5,
+            uptime24h: { ratio: 0.9, samples: 100 },
+            uptime7d: { ratio: 0.9, samples: 100 },
+            uptime30d: { ratio: 0.9, samples: 100 },
+            incidents: [
+                { start: 1752000000000, end: 1752000720000, durationMs: 720000, checks: 2, reason: 'HTTP 500' },
+            ],
+            lastSample: 1752000000000,
+            totalChecks: 100,
+        };
+        await page.route('**/api/bookmark-health**', async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(withIncidents),
+            });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item');
+
+        await page.keyboard.press('j');
+        await page.keyboard.press('s');
+        const panel = page.locator('.health-view-item.keyboard-selected .health-view-score-panel');
+        await expect(panel).toBeVisible();
+        await expect(panel.locator('.health-view-score-item-cost').last()).toHaveText('12m');
+    });
 });

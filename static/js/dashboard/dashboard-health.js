@@ -1858,9 +1858,11 @@ class DashboardHealth {
         if (!incidents.length) return '';
         const rows = incidents.map((inc) => {
             const when = new Date(inc.start).toLocaleString();
+            // durationMs is the server's field name (HealthIncident.Duration);
+            // reading `duration` gave every closed outage a length of "0s".
             const length = inc.ongoing
                 ? this.t('dashboard.healthIncidentOngoing', 'ongoing — {duration}', { duration: this.formatDuration(Date.now() - inc.start) })
-                : this.formatDuration(inc.duration);
+                : this.formatDuration(inc.durationMs ?? inc.duration);
             // Only HTTP-level failures carry a reason; a network-level outage has
             // no code to report, so the row stays as it was.
             const reason = inc.reason
