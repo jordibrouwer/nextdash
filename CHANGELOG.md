@@ -116,6 +116,7 @@ Nothing yet.
 
 - **new** **Enlarge a monitored row's statistics** — the **⤢** button at the end of the monitor strip, or `i` on the selected row, opens a modal with a large response-time chart (min / average / max marked, tooltip per point), uptime for **24h / 7d / 30d** side by side with the sample count behind each, a taller heartbeat bar, interval and last-check time, and the full outage list. It reads the report already on screen rather than fetching again, so it opens instantly and shows exactly what the row below it shows. A window with no samples reads *no data* instead of 0%, so a newly enabled monitor is not misread as a day of downtime. The button is absent on a monitored bookmark that has not been checked yet — there is nothing to enlarge (`dashboard-health.js`, `health-view.css`, `locales/{en,nl,de,fr}.json`).
 - **new** **`i` in the row shortcuts** — added to the keyboard legend under the feed alongside `s`, `p`, `c` and `m`. On a row with no monitoring data the key falls through untouched rather than opening an empty panel.
+- **new** **Documented under Config → Help** — **Health & status** gains a paragraph on the enlarged view: what it shows, that it reads the report already on screen rather than fetching, why an empty window reads *no data* instead of 0%, and when the button is absent. A matching entry joins **Tips & tricks** under *Keeping it healthy*. Both are picked up by the help filter, which matches on section text (`locales/{en,nl,de,fr}.json`, `config-help-tips.js`).
 
 ### Fixes
 

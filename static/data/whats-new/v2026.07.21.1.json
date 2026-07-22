@@ -18,6 +18,10 @@
         {
           "badge": "new",
           "text": "<strong><code>i</code> opens it from the keyboard</strong> — added to the shortcut legend under the feed next to <code>s</code>, <code>p</code>, <code>c</code> and <code>m</code>. <code>Esc</code> closes the statistics and leaves the health view exactly where you left it. On a row with nothing to show the key does nothing rather than opening an empty panel — and the button is not drawn at all on a monitored bookmark still awaiting its first check."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Explained under Config → Help</strong> — <strong>Health &amp; status</strong> now describes the enlarged view: what it shows, why it opens instantly, and why an empty window reads <em>no data</em> instead of 0%. There is a matching line in <strong>Tips &amp; tricks</strong>, and the help filter finds both."
         }
       ]
     },
