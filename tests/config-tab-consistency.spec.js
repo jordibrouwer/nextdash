@@ -49,7 +49,22 @@ async function waitForConfigReady(page) {
         cm.persistence?.recomputeDirtyState?.();
         window.ConfigTabGroups?.syncUnsavedIndicators?.(cm);
     });
-    await page.waitForSelector('#columns-input', { timeout: 15_000 });
+    // Since v2026.07.20 General starts with its sections collapsed, so #columns-input
+    // is present but hidden. Open the Layout panel through the app's own deep-link
+    // path rather than clicking, so the test does not depend on nav chrome.
+    await page.evaluate(() => {
+        window.configManager.generalLayers?.scrollToPanel?.('layout', { switchLayer: true });
+    });
+    await page.waitForSelector('#columns-input', { state: 'visible', timeout: 15_000 });
+    // Opening a panel persists configGeneralPanels, which counts as a settings
+    // change and lights the System group's unsaved dot. That is UI state, not an
+    // edit under test, so re-baseline the snapshot to keep the page clean.
+    await page.evaluate(() => {
+        const cm = window.configManager;
+        cm.persistence?.syncSavedSettingsSnapshot?.();
+        cm.persistence?.recomputeDirtyState?.();
+        window.ConfigTabGroups?.syncUnsavedIndicators?.(cm);
+    });
 }
 
 /** @param {import('@playwright/test').Page} page */
@@ -300,6 +315,11 @@ test.describe('config tab consistency v3 navigation', () => {
 });
 
 test.describe('config tab consistency v3 phone block', () => {
+    // Since v2026.07.19 the mobile layout requires an actual touch device
+    // ((hover: none) and (pointer: coarse)) — a narrow desktop window no longer
+    // triggers it. Emulate touch, or these assert desktop chrome on a small screen.
+    test.use({ hasTouch: true, isMobile: true });
+
     test('bookmarks hash on phone shows blocking card and keeps hash', async ({ page }) => {
         await page.setViewportSize({ width: 390, height: 844 });
         await skipConfigTours(page);
@@ -376,7 +396,11 @@ test.describe('config tab consistency v4 classic surfaces', () => {
         expect(chrome.actionsBoxShadow).not.toBe('none');
         expect(parseFloat(chrome.actionsBorderWidth)).toBeGreaterThan(0);
         expect(chrome.tabsBoxShadow).not.toBe('none');
-        expect(parseFloat(chrome.tabsMarginTop)).toBeGreaterThan(0);
+        // v2026.07.18 (5c339f0) merged the save row and tabs into one seamless bar
+        // "instead of two separate cards with a gap", so margin-top is deliberately 0.
+        // The header staying separate from that bar is what this test guards — that is
+        // the seamGap assertion above.
+        expect(parseFloat(chrome.tabsMarginTop)).toBe(0);
     });
 
     test('structure pages list items stay within column width', async ({ page }) => {
@@ -915,18 +939,6 @@ test.describe('config tab groups (v5)', () => {
         expect(spotlightTransition.split(',').every((d) => parseFloat(d) === 0)).toBeTruthy();
     });
 
-    test('phone layout hides Dashboard and Extras groups but keeps Help', async ({ page }) => {
-        await page.setViewportSize({ width: 390, height: 844 });
-        await page.reload();
-        await page.waitForFunction(() => typeof window.configManager?.ui !== 'undefined');
-        await page.waitForSelector('[data-tab-content="general"].active', { timeout: 20_000 });
-
-        await expect(page.locator('.config-tab-group[data-tab-group="system"]')).toBeVisible();
-        await expect(page.locator('.config-tab-group[data-tab-group="dashboard"]')).toBeHidden();
-        await expect(page.locator('.config-tab-group[data-tab-group="extras"]')).toBeHidden();
-        await expect(page.locator('.config-tab-group[data-tab-group="help"]')).toBeVisible();
-    });
-
     test('tab groups use proportional width by visible tab count', async ({ page }) => {
         const data = await page.evaluate(() => {
             const groupWidth = (id) => (
@@ -981,6 +993,24 @@ test.describe('config tab groups (v5)', () => {
         expectWidthNear(widths.tabs, widths.column);
         expectWidthNear(widths.toolbar, widths.column);
         expectWidthNear(widths.card, widths.content);
+    });
+});
+
+test.describe('config tab groups (v5) on phone', () => {
+    // Its own block with touch emulation: since v2026.07.19 the mobile layout needs
+    // a real touch device, and the sibling tests above are desktop-only.
+    test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+    test('phone layout hides Dashboard and Extras groups but keeps Help', async ({ page }) => {
+        await skipConfigTours(page);
+        await page.goto('/config#general');
+        await page.waitForFunction(() => typeof window.configManager?.ui !== 'undefined');
+        await page.waitForSelector('[data-tab-content="general"].active', { timeout: 20_000 });
+
+        await expect(page.locator('.config-tab-group[data-tab-group="system"]')).toBeVisible();
+        await expect(page.locator('.config-tab-group[data-tab-group="dashboard"]')).toBeHidden();
+        await expect(page.locator('.config-tab-group[data-tab-group="extras"]')).toBeHidden();
+        await expect(page.locator('.config-tab-group[data-tab-group="help"]')).toBeVisible();
     });
 });
 

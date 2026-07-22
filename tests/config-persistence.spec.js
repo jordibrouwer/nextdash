@@ -6,7 +6,20 @@ async function waitForConfigReady(page) {
     await page.waitForFunction(() => typeof window.configManager?.captureUndoSnapshot === 'function');
     await page.waitForSelector('.general-layout', { timeout: 20_000 });
     await page.evaluate(() => window.configManager.ui.switchToTab('general'));
-    await page.waitForSelector('#columns-input', { timeout: 15_000 });
+    // Since v2026.07.20 General starts with its sections collapsed, so #columns-input
+    // is present but hidden. Open the Layout panel through the app's own deep-link
+    // path rather than clicking, so the test does not depend on nav chrome.
+    await page.evaluate(() => {
+        window.configManager.generalLayers?.scrollToPanel?.('layout', { switchLayer: true });
+    });
+    await page.waitForSelector('#columns-input', { state: 'visible', timeout: 15_000 });
+    // Opening a panel persists configGeneralPanels, which reads as a settings change.
+    // These tests assert dirty-state transitions, so re-baseline to start clean.
+    await page.evaluate(() => {
+        const cm = window.configManager;
+        cm.persistence?.syncSavedSettingsSnapshot?.();
+        cm.persistence?.recomputeDirtyState?.();
+    });
 }
 
 test.describe('config persistence (phase 2)', () => {
