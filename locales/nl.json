@@ -1697,6 +1697,7 @@
         "errorLoadingCategories": "Fout bij laden van categorieën voor pagina",
         "categoriesRecovered": "Ontbrekende categorieën hersteld vanuit bladwijzer-referenties en opgeslagen.",
         "deviceSpecificEnabled": "Apparaatspecifieke instellingen ingeschakeld. Instellingen worden nu lokaal opgeslagen.",
+        "deviceSpecificStorageError": "Apparaatspecifieke instellingen konden niet worden ingeschakeld: browseropslag is niet beschikbaar (privémodus of vol).",
         "deviceSpecificDisabled": "Apparaatspecifieke instellingen uitgeschakeld. Huidige waarden worden opgeslagen in globale instellingen wanneer u op Opslaan klikt.",
         "errorDeletingPage": "Fout bij verwijderen van pagina",
         "cannotRemoveMainPage": "Kan hoofdpagina niet verwijderen",

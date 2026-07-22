@@ -18,7 +18,13 @@ class ConfigStorage {
      * @param {boolean} enabled
      */
     setDeviceSpecificFlag(enabled) {
-        localStorage.setItem('deviceSpecificSettings', enabled.toString());
+        try {
+            localStorage.setItem('deviceSpecificSettings', enabled.toString());
+            return true;
+        } catch (error) {
+            console.warn('Device-specific flag save failed:', error);
+            return false;
+        }
     }
 
     /**
@@ -40,15 +46,27 @@ class ConfigStorage {
     }
 
     /**
-     * Save device-local settings (strips server-authoritative keys)
+     * Save device-local settings (strips server-authoritative keys).
+     *
+     * Returns whether it stuck. In device-specific mode localStorage *is* the
+     * store, not a cache of the server, so a silent failure here means the
+     * user's settings are gone — callers must be able to tell instead of
+     * reporting success unconditionally.
+     *
      * @param {Object} settings
+     * @returns {boolean}
      */
     saveDeviceSettings(settings) {
-        if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
-            window.DeviceSettingsMerge.saveDeviceLocalSettings(settings);
-            return;
+        try {
+            if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
+                return window.DeviceSettingsMerge.saveDeviceLocalSettings(settings) !== false;
+            }
+            localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+            return true;
+        } catch (error) {
+            console.warn('Device-local settings save failed:', error);
+            return false;
         }
-        localStorage.setItem('dashboardSettings', JSON.stringify(settings));
     }
 
     /**

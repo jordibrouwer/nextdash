@@ -1706,6 +1706,7 @@
         "errorLoadingCategories": "Error loading categories for page",
         "categoriesRecovered": "Recovered missing categories from bookmark references and saved them.",
         "deviceSpecificEnabled": "Device-specific settings enabled. Settings will now be stored locally.",
+        "deviceSpecificStorageError": "Could not enable device-specific settings: browser storage is unavailable (private mode or full).",
         "deviceSpecificDisabled": "Device-specific settings disabled. Current values will be saved to global settings when you click Save.",
         "errorDeletingPage": "Error deleting page",
         "cannotRemoveMainPage": "Cannot remove the main page",

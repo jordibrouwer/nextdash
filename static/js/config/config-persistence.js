@@ -306,8 +306,7 @@ class ConfigPersistence {
         let ok = false;
         try {
             if (this.c.deviceSpecific) {
-                this.c.storage.saveDeviceSettings(this.c.settingsData);
-                ok = true;
+                ok = this.c.storage.saveDeviceSettings(this.c.settingsData);
             } else if (this.c.settings?.saveSettingsToServer) {
                 ok = await this.c.settings.saveSettingsToServer(this.c.settingsData);
             }
@@ -341,8 +340,7 @@ class ConfigPersistence {
         let ok = false;
         try {
             if (this.c.deviceSpecific) {
-                this.c.storage.saveDeviceSettings(this.c.settingsData);
-                ok = true;
+                ok = this.c.storage.saveDeviceSettings(this.c.settingsData);
             } else {
                 ok = await this.c.settings.saveSettingsToServer(this.c.settingsData);
             }
@@ -547,8 +545,7 @@ class ConfigPersistence {
                     this.c.settings.updateFromUI(this.c.settingsData);
                     let ok = false;
                     if (this.c.deviceSpecific) {
-                        this.c.storage.saveDeviceSettings(this.c.settingsData);
-                        ok = true;
+                        ok = this.c.storage.saveDeviceSettings(this.c.settingsData);
                     } else {
                         ok = await this.c.settings.saveSettingsToServer(this.c.settingsData);
                     }
@@ -844,7 +841,12 @@ class ConfigPersistence {
             // Settings first so flags like allowLocalBookmarks apply before bookmark URL validation.
             if (changeScope.hasSettingsChanges) {
                 if (this.c.deviceSpecific) {
-                    this.c.storage.saveDeviceSettings(this.c.settingsData);
+                    // Throw like the server branch does: this is the authoritative
+                    // store in device-specific mode, so a swallowed failure would
+                    // let the rest of the save report success over lost settings.
+                    if (!this.c.storage.saveDeviceSettings(this.c.settingsData)) {
+                        throw new Error('Device-local settings save failed');
+                    }
                 } else {
                     await this.c.data.saveSettings(this.c.settingsData);
                     // Defer clearing the device-local cache until all saves below

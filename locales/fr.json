@@ -1687,6 +1687,7 @@
         "errorLoadingCategories": "Erreur lors du chargement des catégories de la page",
         "categoriesRecovered": "Catégories manquantes récupérées depuis les favoris et enregistrées.",
         "deviceSpecificEnabled": "Paramètres spécifiques à l'appareil activés.",
+        "deviceSpecificStorageError": "Impossible d'activer les paramètres spécifiques à l'appareil : le stockage du navigateur est indisponible (mode privé ou plein).",
         "deviceSpecificDisabled": "Paramètres spécifiques à l'appareil désactivés.",
         "errorDeletingPage": "Erreur lors de la suppression de la page",
         "cannotRemoveMainPage": "Impossible de supprimer la page principale",

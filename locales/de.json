@@ -1687,6 +1687,7 @@
         "errorLoadingCategories": "Fehler beim Laden der Kategorien für Seite",
         "categoriesRecovered": "Fehlende Kategorien aus Lesezeichen-Referenzen wiederhergestellt und gespeichert.",
         "deviceSpecificEnabled": "Gerätespezifische Einstellungen aktiviert. Einstellungen werden lokal gespeichert.",
+        "deviceSpecificStorageError": "Gerätespezifische Einstellungen konnten nicht aktiviert werden: Browser-Speicher ist nicht verfügbar (privater Modus oder voll).",
         "deviceSpecificDisabled": "Gerätespezifische Einstellungen deaktiviert. Werte werden beim Speichern global gespeichert.",
         "errorDeletingPage": "Fehler beim Löschen der Seite",
         "cannotRemoveMainPage": "Hauptseite kann nicht gelöscht werden",

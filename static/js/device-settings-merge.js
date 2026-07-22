@@ -62,11 +62,19 @@
         return merged;
     }
 
+    /**
+     * Persist the device-local subset. Returns whether it stuck.
+     *
+     * In device-specific mode this store is authoritative rather than a cache,
+     * so callers that report "saved" to the user need to know when a quota or
+     * private-mode error swallowed the write.
+     */
     function saveDeviceLocalSettings(settings) {
         try {
             localStorage.setItem(DEVICE_SETTINGS_KEY, JSON.stringify(pickDeviceLocalSettings(settings)));
+            return true;
         } catch {
-            // ignore quota / privacy errors
+            return false;
         }
     }
 

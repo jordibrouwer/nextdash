@@ -146,9 +146,9 @@ class ConfigSetup {
             },
             onPackedColumnsChange: async () => {
                 this.c.settings.updateFromUI(this.c.settingsData);
-                let ok = true;
+                let ok;
                 if (this.c.deviceSpecific) {
-                    this.c.storage.saveDeviceSettings(this.c.settingsData);
+                    ok = this.c.storage.saveDeviceSettings(this.c.settingsData);
                 } else {
                     ok = await this.c.settings.saveSettingsToServer(this.c.settingsData);
                 }
@@ -189,7 +189,19 @@ class ConfigSetup {
                     : this.c.language.t('config.deviceSpecificDisabled');
                 
                 if (this.c.deviceSpecific) {
-                    this.c.storage.saveDeviceSettings(this.c.settingsData);
+                    // Turning the mode on writes the current settings to the device
+                    // store. If that fails there is nothing behind the switch, so
+                    // say so rather than confirming a mode that did not take.
+                    if (!this.c.storage.saveDeviceSettings(this.c.settingsData)) {
+                        this.c.deviceSpecific = false;
+                        this.c.storage.setDeviceSpecificFlag(false);
+                        e.target.checked = false;
+                        this.c.ui.showNotification(
+                            this.c.language.t('config.deviceSpecificStorageError'),
+                            'error'
+                        );
+                        return;
+                    }
                 } else {
                     this.c.storage.clearDeviceSettings();
                 }
