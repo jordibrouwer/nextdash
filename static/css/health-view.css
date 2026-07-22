@@ -577,9 +577,188 @@ button.health-view-tile:hover {
     opacity: 0.8;
 }
 
+/* Enlarge button. Pushed to the end of the strip and kept quiet until the row is
+   hovered or selected — same treatment as the check-mode kbd hint, so a list of
+   monitored rows is not a column of icons competing with the heartbeats. */
+.health-monitor-expand-btn {
+    margin-left: auto;
+    padding: 0.05rem 0.35rem;
+    border: 1px solid transparent;
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    opacity: 0.45;
+    cursor: pointer;
+    transition: opacity 0.12s ease, border-color 0.12s ease;
+}
+
+.health-view-item:hover .health-monitor-expand-btn,
+.health-view-item.keyboard-selected .health-monitor-expand-btn,
+.health-monitor-expand-btn:focus-visible {
+    opacity: 1;
+    border-color: var(--border-secondary);
+}
+
+.health-monitor-expand-btn kbd {
+    display: none;
+    margin-left: 0.25rem;
+    font-size: 0.62rem;
+    opacity: 0.7;
+}
+
+.health-view-item.keyboard-selected .health-monitor-expand-btn kbd {
+    display: inline;
+}
+
 .health-view-score-item.is-ongoing .health-view-score-item-cost {
     color: var(--accent-error);
     font-weight: 600;
+}
+
+/* ─── Enlarged monitor statistics (modal) ───────────────────────────────── */
+
+.health-monitor-stats {
+    text-align: left;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.health-monitor-stats-url {
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+.health-monitor-stats-down {
+    margin: 0 0 0.5rem;
+    color: var(--accent-error);
+    font-weight: 600;
+}
+
+.health-monitor-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 30rem) {
+    .health-monitor-stat-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.health-monitor-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: color-mix(in srgb, var(--border-primary) 12%, transparent);
+}
+
+.health-monitor-stat-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    opacity: 0.8;
+}
+
+.health-monitor-stat-value {
+    font-size: 1.15rem;
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+/* A window with no samples reads as absent, not as a measured zero. */
+.health-monitor-stat--empty .health-monitor-stat-value {
+    font-size: 0.85rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+.health-monitor-stat-sub {
+    font-size: 0.68rem;
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+}
+
+.health-monitor-stats-heading {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+    opacity: 0.85;
+}
+
+/* The chart scrolls inside its own box rather than widening the modal. */
+.health-monitor-chart {
+    max-width: 100%;
+    overflow-x: auto;
+    margin-bottom: 0.75rem;
+}
+
+.health-sparkline--large {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-width: 20rem;
+    color: var(--accent-primary);
+    opacity: 1;
+}
+
+.health-sparkline--large .health-sparkline-axis {
+    fill: var(--text-secondary);
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Invisible until hovered: the dots exist to carry a <title> tooltip, not to
+   speckle the line. */
+.health-sparkline--large circle:hover {
+    opacity: 0.9 !important;
+}
+
+.health-monitor-chart-empty {
+    margin: 0 0 0.75rem;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+/* Taller than the row heartbeat: this is the one place with room for it. */
+.health-monitor-stats-heartbeat .health-heartbeat {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 34px;
+    max-width: 100%;
+    overflow-x: auto;
+    margin-bottom: 0.6rem;
+}
+
+.health-monitor-stats-heartbeat .health-heartbeat-bar {
+    width: 6px;
+    border-radius: 2px;
+}
+
+.health-monitor-meta {
+    margin: 0 0 0.85rem;
+    font-size: 0.72rem;
+    opacity: 0.85;
+}
+
+.health-monitor-stats-incidents .health-view-score-list {
+    max-height: 13rem;
+    overflow-y: auto;
 }
 
 /* ─── Score breakdown ───────────────────────────────────────────────────── */

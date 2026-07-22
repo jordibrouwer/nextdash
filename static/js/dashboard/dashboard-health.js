@@ -543,6 +543,18 @@ class DashboardHealth {
             }
             return true;
         }
+        if (e.key === 'i' && this.selectedKey) {
+            const issue = this.selectedIssue();
+            // Silently ignored on a row with nothing to enlarge, rather than
+            // opening an empty modal.
+            if (this.hasMonitorStats(issue)) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.openMonitorStats(issue);
+                return true;
+            }
+            return false;
+        }
         if ((e.key === 'Enter' || e.key === ' ') && this.selectedKey) {
             const issue = this.selectedIssue();
             if (issue) {
@@ -1652,6 +1664,7 @@ class DashboardHealth {
         const keys = [
             ['j / k', this.t('dashboard.healthKeyMove', 'move')],
             ['s', this.t('dashboard.healthKeyScore', 'score')],
+            ['i', this.t('dashboard.healthKeyStats', 'statistics')],
             ['p', this.t('dashboard.healthKeyRecheck', 're-check')],
             ['c', this.t('dashboard.healthKeyCheckMode', 'checking')],
             ['m', this.t('dashboard.healthKeyMore', 'more actions')],
@@ -1708,8 +1721,13 @@ class DashboardHealth {
     /**
      * Response-time sparkline as inline SVG. Shares the heartbeat's buckets, so
      * the two graphics line up on the same time axis.
+     *
+     * The defaults are the row-sized graphic; the stats modal passes a larger box
+     * and `detail: true` for axis labels and per-point tooltips. One function
+     * rather than two so the gap handling below — which is the part that is easy
+     * to get wrong — cannot drift between the two sizes.
      */
-    renderSparkline(stats) {
+    renderSparkline(stats, { w = 60, h = 16, detail = false, className = 'health-sparkline' } = {}) {
         const buckets = Array.isArray(stats?.heartbeat) ? stats.heartbeat : [];
         const points = buckets.map((b) => (b.avgMs > 0 ? b.avgMs : null));
         const known = points.filter((p) => p !== null);
@@ -1718,13 +1736,17 @@ class DashboardHealth {
         const max = Math.max(...known);
         const min = Math.min(...known);
         const span = max - min || 1;
-        const w = 60;
-        const h = 16;
         const step = w / Math.max(1, points.length - 1);
+        // Room for the axis labels, which are drawn inside the same viewBox.
+        const padRight = detail ? 34 : 0;
+        const plotW = w - padRight;
+        const plotStep = plotW / Math.max(1, points.length - 1);
+        const stepX = detail ? plotStep : step;
 
         // Gaps break the line rather than interpolating across them, so missing
         // data never looks like a measured value.
         const segments = [];
+        const dots = [];
         let current = [];
         points.forEach((p, i) => {
             if (p === null) {
@@ -1732,18 +1754,40 @@ class DashboardHealth {
                 current = [];
                 return;
             }
-            const x = (i * step).toFixed(1);
+            const x = (i * stepX).toFixed(1);
             const y = (h - ((p - min) / span) * (h - 2) - 1).toFixed(1);
             current.push(`${x},${y}`);
+            if (detail) {
+                const when = buckets[i]?.from ? new Date(buckets[i].from).toLocaleString() : '';
+                dots.push(`<circle cx="${x}" cy="${y}" r="2.5" fill="currentColor" opacity="0"><title>${this.escape(`${when} — ${p}ms`)}</title></circle>`);
+            }
         });
         if (current.length > 1) segments.push(current);
         if (!segments.length) return '';
 
+        const strokeWidth = detail ? 2 : 1.5;
         const paths = segments
-            .map((pts) => `<polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`)
+            .map((pts) => `<polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linejoin="round" stroke-linecap="round"/>`)
             .join('');
+
+        // Min/max/average as gridlines, so the big chart reads as a measurement
+        // rather than a shape. The row version stays label-free — there is no room.
+        let axis = '';
+        if (detail) {
+            const avg = Math.round(known.reduce((sum, p) => sum + p, 0) / known.length);
+            const yFor = (value) => (h - ((value - min) / span) * (h - 2) - 1).toFixed(1);
+            const lines = [[max, 'max'], [avg, 'avg'], [min, 'min']]
+                .map(([value, kind]) => {
+                    const y = yFor(value);
+                    return `<line class="health-sparkline-grid is-${kind}" x1="0" y1="${y}" x2="${plotW}" y2="${y}" stroke="currentColor" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.28"/>`
+                        + `<text class="health-sparkline-axis" x="${plotW + 4}" y="${y}" dy="0.32em" fill="currentColor" font-size="9">${this.escape(value)}ms</text>`;
+                })
+                .join('');
+            axis = lines;
+        }
+
         const label = this.t('dashboard.healthSparklineLabel', 'Response time {min}–{max}ms', { min, max });
-        return `<svg class="health-sparkline" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${this.escape(label)}">${paths}</svg>`;
+        return `<svg class="${this.escape(className)}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${this.escape(label)}">${axis}${paths}${dots.join('')}</svg>`;
     }
 
     /** The mode a row is in, as the three-state name the server also speaks. */
@@ -1827,6 +1871,7 @@ class DashboardHealth {
         if (!issue?.monitor) return '';
         if (!stats) {
             // Monitored but never checked — say so, rather than showing 0%.
+            // No expand button here: there are no statistics to enlarge yet.
             return `<div class="health-monitor-strip is-pending">
                 <span class="health-monitor-pending">${this.escape(this.t('dashboard.healthMonitorPending', 'Monitoring — awaiting first check'))}</span>
             </div>`;
@@ -1842,6 +1887,7 @@ class DashboardHealth {
         const ping = !stats.downSince && stats.lastPingMs > 0
             ? `<span class="health-monitor-ping">${this.escape(stats.lastPingMs)}ms</span>`
             : '';
+        const expandLabel = this.t('dashboard.healthStatsExpand', 'Enlarge statistics');
 
         return `<div class="health-monitor-strip">
             ${this.renderHeartbeat(stats)}
@@ -1849,7 +1895,140 @@ class DashboardHealth {
             ${this.renderSparkline(stats)}
             ${ping}
             ${down}
+            <button type="button" class="health-monitor-expand-btn" data-health-action="stats"
+                aria-haspopup="dialog"
+                title="${this.escape(expandLabel)}"
+                aria-label="${this.escape(expandLabel)}"
+            >⤢<kbd>i</kbd></button>
         </div>`;
+    }
+
+    /* ── Enlarged monitor statistics ───────────────────────────────────── */
+
+    /** True when a row has monitoring data worth enlarging. */
+    hasMonitorStats(issue) {
+        return Boolean(issue?.monitor && issue?.monitorStats);
+    }
+
+    /**
+     * The three uptime windows as tiles. A window with no samples reads "no data"
+     * rather than 0%: a monitor enabled an hour ago has no 30-day history, and
+     * showing that as total downtime would be a lie.
+     */
+    renderUptimeTiles(stats) {
+        const windows = [
+            [this.t('dashboard.healthStatsUptime24h', '24 hours'), stats?.uptime24h],
+            [this.t('dashboard.healthStatsUptime7d', '7 days'), stats?.uptime7d],
+            [this.t('dashboard.healthStatsUptime30d', '30 days'), stats?.uptime30d],
+        ];
+        const noData = this.t('dashboard.healthStatsNoData', 'no data');
+        const tiles = windows.map(([label, win]) => {
+            const value = this.formatUptime(win);
+            const samples = Number(win?.samples) || 0;
+            const cls = value ? '' : ' health-monitor-stat--empty';
+            const sub = samples
+                ? this.t('dashboard.healthStatsChecks', '{count} checks', { count: samples })
+                : '';
+            return `<div class="health-monitor-stat${cls}">
+                <span class="health-monitor-stat-label">${this.escape(label)}</span>
+                <span class="health-monitor-stat-value">${this.escape(value || noData)}</span>
+                ${sub ? `<span class="health-monitor-stat-sub">${this.escape(sub)}</span>` : ''}
+            </div>`;
+        }).join('');
+        return `<div class="health-monitor-stat-grid">${tiles}</div>`;
+    }
+
+    /** Interval, total checks and last sample — the facts behind the chart. */
+    renderMonitorMeta(stats) {
+        const parts = [];
+        if (stats?.intervalMinutes) {
+            parts.push(this.t('dashboard.healthStatsInterval', 'Every {mins} min', { mins: stats.intervalMinutes }));
+        }
+        if (Number(stats?.totalChecks) > 0) {
+            parts.push(this.t('dashboard.healthStatsTotalChecks', '{count} checks recorded', { count: stats.totalChecks }));
+        }
+        if (stats?.lastSample) {
+            parts.push(this.t('dashboard.healthStatsLastCheck', 'Last check {when}', {
+                when: new Date(stats.lastSample).toLocaleString(),
+            }));
+        }
+        if (!stats?.downSince && Number(stats?.lastPingMs) > 0) {
+            parts.push(`${stats.lastPingMs}ms`);
+        }
+        if (!parts.length) return '';
+        return `<p class="health-monitor-meta">${parts.map((p) => this.escape(p)).join(' · ')}</p>`;
+    }
+
+    /** The modal body. Built from the loaded report — no extra request. */
+    buildMonitorStatsHtml(issue) {
+        const stats = issue?.monitorStats || {};
+        const down = stats.downSince
+            ? `<p class="health-monitor-stats-down">${this.escape(
+                this.t('dashboard.healthDownSince', 'Down for {duration}', {
+                    duration: this.formatDuration(Date.now() - stats.downSince),
+                })
+            )}</p>`
+            : '';
+
+        const chart = this.renderSparkline(stats, {
+            w: 620,
+            h: 160,
+            detail: true,
+            className: 'health-sparkline health-sparkline--large',
+        });
+        const chartBlock = chart
+            ? `<div class="health-monitor-chart">${chart}</div>`
+            : `<p class="health-monitor-chart-empty">${this.escape(
+                this.t('dashboard.healthStatsNoChart', 'Not enough response-time data to draw a chart yet.')
+            )}</p>`;
+
+        const heartbeat = this.renderHeartbeat(stats);
+        const incidents = this.renderIncidents(issue)
+            || `<p class="health-view-score-intro">${this.escape(
+                this.t('dashboard.healthStatsNoIncidents', 'No outages recorded.')
+            )}</p>`;
+
+        return `<div class="health-monitor-stats">
+            ${down}
+            <p class="health-monitor-stats-url">${this.escape(this.formatUrlDisplay(issue?.url))}</p>
+            ${this.renderUptimeTiles(stats)}
+            <p class="health-monitor-stats-heading">${this.escape(this.t('dashboard.healthStatsResponse', 'Response time'))}</p>
+            ${chartBlock}
+            ${heartbeat ? `<div class="health-monitor-stats-heartbeat">${heartbeat}</div>` : ''}
+            ${this.renderMonitorMeta(stats)}
+            <div class="health-monitor-stats-incidents">${incidents}</div>
+        </div>`;
+    }
+
+    /**
+     * Enlarge one row's monitoring statistics in a modal.
+     *
+     * Escape needs no special handling here: this view's own Escape handler bows
+     * out while a modal is open (isModalOpen sees #app-modal.show), so Escape
+     * closes the modal and leaves the list behind it untouched.
+     */
+    openMonitorStats(issue) {
+        if (!this.hasMonitorStats(issue)) return;
+        // The button can be reached from an open menu; leaving it open would strand
+        // it behind the overlay.
+        this.closeAllMenus();
+        window.nextdashTrack?.('health:monitor-stats');
+
+        const title = issue.name || issue.previewTitle || this.formatUrlDisplay(issue.url);
+        if (typeof window.AppModal?.show !== 'function') return;
+        window.AppModal.show({
+            title,
+            htmlMessage: this.buildMonitorStatsHtml(issue),
+            confirmText: this.t('dashboard.healthStatsClose', 'Close'),
+            showCancel: false,
+            modalClass: 'health-monitor-stats-modal',
+            modalMaxWidth: '44rem',
+            // Focus returns to the row, not the toolbar, so j/k keep working where
+            // the user left off.
+            onHide: () => {
+                this.applyKeyboardSelection();
+            },
+        });
     }
 
     /** Incident history, shown inside the expandable score panel. */
@@ -2025,6 +2204,11 @@ class DashboardHealth {
         });
         row.querySelector('[data-health-action="edit"]')?.addEventListener('click', () => {
             this.editIssueInline(issue);
+        });
+        row.querySelector('[data-health-action="stats"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.selectRowByKey(key);
+            this.openMonitorStats(issue);
         });
         row.querySelector('.health-view-more-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();

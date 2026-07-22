@@ -47,8 +47,66 @@ function report() {
                 reasons: ['Status check has never run'],
                 reasonDetails: [{ code: 'status_never_run', penalty: 10 }],
             },
+            {
+                pageId: 1, index: 4, pageName: 'dev', name: 'Monitored one',
+                url: 'https://example.com/monitored', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                lastChecked: 1752000000000,
+                reasons: [], reasonDetails: [],
+                monitor: true, checkStatus: true,
+                monitorStats: monitorStats(),
+            },
+            {
+                pageId: 1, index: 5, pageName: 'dev', name: 'Monitored pending',
+                url: 'https://example.com/pending', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                reasons: [], reasonDetails: [],
+                // Monitored, but the scheduler has not produced a sample yet, so the
+                // server sends no monitorStats at all.
+                monitor: true, checkStatus: true,
+            },
         ],
         duplicateGroups: [],
+    };
+}
+
+/**
+ * A full monitorStats block. The heartbeat carries varying avgMs so the enlarged
+ * chart has something to draw, plus one gap ('unknown') to keep the
+ * no-interpolation path covered.
+ */
+function monitorStats() {
+    const now = 1752000000000;
+    const heartbeat = [];
+    for (let i = 0; i < 40; i += 1) {
+        const from = now - (40 - i) * 5 * 60 * 1000;
+        if (i === 12) {
+            heartbeat.push({ state: 'unknown', from, to: from + 5 * 60 * 1000 });
+            continue;
+        }
+        const down = i === 20 || i === 21;
+        heartbeat.push({
+            state: down ? 'down' : 'up',
+            from,
+            to: from + 5 * 60 * 1000,
+            up: down ? 0 : 1,
+            down: down ? 1 : 0,
+            avgMs: down ? 0 : 120 + (i % 7) * 15,
+        });
+    }
+    return {
+        intervalMinutes: 5,
+        uptime24h: { ratio: 0.992, samples: 288 },
+        uptime7d: { ratio: 0.978, samples: 2016 },
+        uptime30d: { ratio: 0.981, samples: 8640 },
+        heartbeat,
+        incidents: [
+            { start: now - 90 * 60 * 1000, end: now - 78 * 60 * 1000, durationMs: 12 * 60 * 1000, checks: 2, reason: 'HTTP 500' },
+            { start: now - 3 * 86400000, end: now - 3 * 86400000 + 180000, durationMs: 180000, checks: 1 },
+        ],
+        lastSample: now,
+        lastPingMs: 142,
+        totalChecks: 8640,
     };
 }
 
@@ -273,19 +331,20 @@ test.describe('health dashboard view', () => {
         await openHealthView(page);
         await page.click('[data-health-filter="all"]');
 
-        // Score ascending by default: worst first.
+        // Score ascending by default: worst first. The two monitored rows both
+        // score 100, so they tie and fall back to name order.
         await expect(page.locator('.health-view-item-title')).toHaveText([
-            'Broken one', 'Dup A', 'Never checked one',
+            'Broken one', 'Dup A', 'Never checked one', 'Monitored one', 'Monitored pending',
         ]);
 
         await page.selectOption('.health-view-sort-select', 'name');
         await expect(page.locator('.health-view-item-title')).toHaveText([
-            'Broken one', 'Dup A', 'Never checked one',
+            'Broken one', 'Dup A', 'Monitored one', 'Monitored pending', 'Never checked one',
         ]);
 
         await page.selectOption('.health-view-sort-select', 'last-checked-desc');
         const byChecked = await page.locator('.health-view-item-title').allTextContents();
-        expect(byChecked).toHaveLength(3);
+        expect(byChecked).toHaveLength(5);
 
         // Focus must not stay on the select: a focused SELECT swallows every row
         // shortcut, so j/k/m would go dead until the user clicked away.
@@ -435,7 +494,7 @@ test.describe('health dashboard view', () => {
         await expect(page.locator('.health-view-item-reason')).toContainText('Duplicate URL in 2 bookmarks');
 
         await page.click('[data-health-filter="all"]');
-        await expect(page.locator('.health-view-item')).toHaveCount(3);
+        await expect(page.locator('.health-view-item')).toHaveCount(5);
     });
 
     test('j and k move the selection without opening search', async ({ page }) => {
@@ -523,40 +582,97 @@ test.describe('health dashboard view', () => {
         expect(page.url()).not.toContain('/config');
         await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
     });
+});
 
-    test('outage lengths come from durationMs, not duration', async ({ page }) => {
-        // The server sends HealthIncident.Duration as `durationMs`. Reading
-        // `duration` formatted undefined and rendered every closed outage as "0s".
-        const withIncidents = report();
-        withIncidents.issues[0].monitor = true;
-        withIncidents.issues[0].monitorStats = {
-            intervalMinutes: 5,
-            uptime24h: { ratio: 0.9, samples: 100 },
-            uptime7d: { ratio: 0.9, samples: 100 },
-            uptime30d: { ratio: 0.9, samples: 100 },
-            incidents: [
-                { start: 1752000000000, end: 1752000720000, durationMs: 720000, checks: 2, reason: 'HTTP 500' },
-            ],
-            lastSample: 1752000000000,
-            totalChecks: 100,
-        };
-        await page.route('**/api/bookmark-health**', async (route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify(withIncidents),
-            });
-        });
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await prepareDashboardInteraction(page);
-        await page.click('.health-link a.health-link-anchor');
-        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item');
+/**
+ * Enlarging a monitored row's statistics. The row strip only has room for a 24h
+ * figure and one ping; these cover the modal that shows the rest.
+ */
+test.describe('health view — enlarged monitor statistics', () => {
+    const monitoredRow = '.health-view-item:has-text("Monitored one")';
 
-        await page.keyboard.press('j');
-        await page.keyboard.press('s');
-        const panel = page.locator('.health-view-item.keyboard-selected .health-view-score-panel');
+    async function openMonitored(page) {
+        await openHealthView(page);
+        await page.click('[data-health-filter="monitored"]');
+        await page.waitForSelector(monitoredRow);
+    }
+
+    test('the enlarge button appears only on rows with monitoring data', async ({ page }) => {
+        await openMonitored(page);
+
+        // Monitored and sampled: the button is there.
+        await expect(page.locator(`${monitoredRow} .health-monitor-expand-btn`)).toHaveCount(1);
+        // Monitored but awaiting a first check has nothing to enlarge.
+        await expect(
+            page.locator('.health-view-item:has-text("Monitored pending") .health-monitor-expand-btn')
+        ).toHaveCount(0);
+
+        // And an unmonitored row has no strip at all.
+        await page.click('[data-health-filter="broken"]');
+        await page.waitForSelector('.health-view-item:has-text("Broken one")');
+        await expect(
+            page.locator('.health-view-item:has-text("Broken one") .health-monitor-expand-btn')
+        ).toHaveCount(0);
+    });
+
+    test('the modal shows the windows the row strip has no room for', async ({ page }) => {
+        await openMonitored(page);
+        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+
+        const stats = page.locator('.health-monitor-stats');
+        await expect(stats).toBeVisible();
+
+        // 7d and 30d are the point of enlarging: the row only ever shows 24h.
+        await expect(stats).toContainText('97.8%');
+        await expect(stats).toContainText('98.1%');
+        await expect(stats).toContainText('99.2%');
+
+        // The big chart, and the incidents the row never lists.
+        await expect(stats.locator('.health-sparkline--large')).toHaveCount(1);
+        await expect(stats.locator('.health-view-score-item')).toHaveCount(2);
+        await expect(stats).toContainText('HTTP 500');
+
+        // Outage lengths come from durationMs, the server's field name. Reading
+        // `duration` instead rendered every closed outage as "0s".
+        await expect(stats.locator('.health-view-score-item-cost').first()).toHaveText('12m');
+        await expect(stats.locator('.health-view-score-item-cost')).not.toHaveText(['0s', '0s']);
+    });
+
+    test('outage lengths in the score panel come from durationMs, not duration', async ({ page }) => {
+        // The score panel is where outages shipped first, so it gets its own
+        // assertion: the server sends HealthIncident.Duration as `durationMs`, and
+        // reading `duration` formatted undefined into "0s" for every closed outage.
+        await openMonitored(page);
+
+        await page.click(`${monitoredRow} .health-view-item-score`);
+        const panel = page.locator(`${monitoredRow} .health-view-score-panel`);
         await expect(panel).toBeVisible();
-        await expect(panel.locator('.health-view-score-item-cost').last()).toHaveText('12m');
+        await expect(panel.locator('.health-view-score-item-cost').first()).toHaveText('12m');
+        await expect(panel.locator('.health-view-score-item-cost').nth(1)).toHaveText('3m');
+    });
+
+    test('"i" opens the statistics for the selected row', async ({ page }) => {
+        await openMonitored(page);
+
+        // Select the row the way the keyboard path does, then press i.
+        await page.click(`${monitoredRow} .health-view-item-title`);
+        await page.keyboard.press('i');
+
+        await expect(page.locator('.health-monitor-stats')).toBeVisible();
+    });
+
+    test('Escape closes the modal and leaves the health view open', async ({ page }) => {
+        await openMonitored(page);
+        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+        await expect(page.locator('.health-monitor-stats')).toBeVisible();
+
+        // The regression this guards: the view's own Escape handler runs in the
+        // capture phase, so without the isModalOpen guard this would close the
+        // whole view instead of just the overlay.
+        await page.keyboard.press('Escape');
+
+        await expect(page.locator('.health-monitor-stats')).toBeHidden();
+        await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
+        expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('health');
     });
 });
