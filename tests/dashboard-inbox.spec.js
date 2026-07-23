@@ -233,4 +233,147 @@ test.describe('dashboard inbox phase 1', () => {
         await expect(page.locator('.title')).toHaveText(pageName);
     });
 
+    /* ── Sorting, deep links, selection and custom snooze ─────────────── */
+
+    async function seedInbox(page, titles) {
+        await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+        const stamp = Date.now();
+        await page.evaluate(async ({ titles, stamp }) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            for (let i = 0; i < titles.length; i += 1) {
+                await api('/api/inbox', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: `https://seed${i}-${stamp}.example/x`, title: titles[i] }),
+                });
+            }
+        }, { titles, stamp });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+    }
+
+    test('sorting reorders the feed and oldest-first reverses newest-first', async ({ page }) => {
+        // Seeded in order, so "newest first" is the reverse of the seed order.
+        await seedInbox(page, ['Zebra one', 'Apple two', 'Mango three']);
+
+        const order = (sort) => page.evaluate((s) => {
+            const ib = window.dashboardInstance.inbox;
+            const prev = ib.sort;
+            ib.sort = s;
+            const out = ib.getFilteredItems().map((i) => ib.displayTitle(i));
+            ib.sort = prev;
+            return out;
+        }, sort);
+
+        const newest = await order('newest');
+        const oldest = await order('oldest');
+        expect(newest.length).toBeGreaterThanOrEqual(3);
+        // The backlog case the inbox had no way to reach before.
+        expect(oldest).toEqual([...newest].reverse());
+
+        const byTitle = await order('title');
+        const sortedCopy = [...byTitle].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        expect(byTitle).toEqual(sortedCopy);
+    });
+
+    test('a title sort drops the date headings', async ({ page }) => {
+        await seedInbox(page, ['Zebra one', 'Apple two']);
+
+        // Date groups under an A-Z sort would restart the ordering at every
+        // heading, which is not a sort in any sense the user asked for.
+        await page.selectOption('.inbox-sort-select', 'title');
+        await expect(page.locator('.inbox-date-group-title')).toHaveCount(0);
+
+        await page.selectOption('.inbox-sort-select', 'newest');
+        await expect(page.locator('.inbox-date-group-title').first()).toBeVisible();
+    });
+
+    test('sort and filter survive a reload, and a deep link overrides them', async ({ page }) => {
+        await seedInbox(page, ['Zebra one', 'Apple two']);
+
+        await page.selectOption('.inbox-sort-select', 'oldest');
+        await expect(page).toHaveURL(/ib_sort=oldest/);
+
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+        await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+        expect(await page.evaluate(() => window.dashboardInstance.inbox.sort)).toBe('oldest');
+
+        // A shared link has to win over what this browser last did, or it does
+        // not describe what the recipient sees.
+        await page.goto('/?ib_filter=unread&ib_sort=title#inbox');
+        await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+        await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+        expect(await page.evaluate(() => ({
+            filter: window.dashboardInstance.inbox.filter,
+            sort: window.dashboardInstance.inbox.sort,
+        }))).toEqual({ filter: 'unread', sort: 'title' });
+    });
+
+    test('ticking rows opens a selection bar that acts on just those rows', async ({ page }) => {
+        await seedInbox(page, ['Zebra one', 'Apple two', 'Mango three']);
+
+        await expect(page.locator('.inbox-selection-bar')).toHaveCount(0);
+
+        await page.evaluate(() => {
+            const ib = window.dashboardInstance.inbox;
+            ib.getFilteredItems().slice(0, 2).forEach((i) => ib.setChecked(i.id, true));
+        });
+
+        await expect(page.locator('.inbox-selection-bar')).toBeVisible();
+        await expect(page.locator('.inbox-selection-count')).toContainText('2');
+        await expect(page.locator('.inbox-item.is-checked')).toHaveCount(2);
+
+        // Escape clears the selection rather than leaving the view.
+        await page.locator('.inbox-item').first().click();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.inbox-selection-bar')).toHaveCount(0);
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+    });
+
+    test('a filter change clears ticks so bulk cannot touch hidden rows', async ({ page }) => {
+        await seedInbox(page, ['Zebra one', 'Apple two']);
+
+        await page.evaluate(() => {
+            const ib = window.dashboardInstance.inbox;
+            ib.getFilteredItems().forEach((i) => ib.setChecked(i.id, true));
+        });
+        await expect(page.locator('.inbox-selection-bar')).toBeVisible();
+
+        await page.locator('[data-inbox-filter="unread"]').click();
+        await expect(page.locator('.inbox-selection-bar')).toHaveCount(0);
+        expect(await page.evaluate(() => window.dashboardInstance.inbox.checkedIds.size)).toBe(0);
+    });
+
+    test('the snooze menu offers a date of your own', async ({ page }) => {
+        await seedInbox(page, ['Zebra one']);
+
+        await page.evaluate(() => {
+            const ib = window.dashboardInstance.inbox;
+            ib.openSnoozeMenu(ib.getFilteredItems()[0], document.querySelector('.inbox-item'));
+        });
+
+        await expect(page.locator('.inbox-snooze-option')).toHaveCount(4);
+        const date = page.locator('.inbox-snooze-date');
+        await expect(date).toBeVisible();
+        // Never today: a snooze that wakes immediately is not a snooze.
+        const min = await date.getAttribute('min');
+        expect(min).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        expect(new Date(min + 'T00:00:00').getTime()).toBeGreaterThan(Date.now() - 86400000);
+
+        // Parsed as local 09:00, matching the presets. Parsing the value with
+        // new Date('yyyy-mm-dd') would be UTC midnight and land a day early
+        // for anyone west of Greenwich.
+        const parsed = await page.evaluate(
+            () => window.dashboardInstance.inbox.parseDateInput('2026-08-01')
+        );
+        const asDate = new Date(parsed);
+        expect(asDate.getDate()).toBe(1);
+        expect(asDate.getHours()).toBe(9);
+    });
+
 });

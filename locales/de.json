@@ -715,7 +715,18 @@
         "analyticsNoticeNeverBody": "Keine Lesezeichennamen, URLs, Suchanfragen, Seiten- oder Kategorienamen, Notizen oder Tags. Es werden keine Cookies gesetzt, kein persönliches Profil erstellt, und du wirst nicht über andere Websites verfolgt. Aufschlussreiche Zahlen werden in Bereiche gerundet, und die Instanz ist selbst gehostet, es wird also nichts an ein Werbenetzwerk weitergegeben.",
         "analyticsNoticeOnTitle": "So schaltest du es ein",
         "analyticsNoticeOnBody": "Gehe zu Konfiguration → Allgemein → Erweitert → Datenschutz und aktiviere „Datenschutzfreundliche Statistiken\", oder führe :telemetry on in der Befehlspalette aus. Es wirkt nach dem Neuladen der Seite. Solange es aus ist, wird der Tracker gar nicht geladen und es verlässt keine Anfrage deinen Rechner.",
-        "analyticsNoticeClose": "Schließen"
+        "analyticsNoticeClose": "Schließen",
+        "inboxSortLabel": "Posteingang sortieren",
+        "inboxSortNewest": "neueste zuerst",
+        "inboxSortOldest": "älteste zuerst",
+        "inboxSortTitle": "Titel",
+        "inboxSortDomain": "Seite",
+        "inboxSnoozeCustom": "Datum wählen",
+        "inboxSelectItem": "{title} auswählen",
+        "inboxSelectedCount": "{count} ausgewählt",
+        "inboxSelectionClear": "Auswahl aufheben",
+        "inboxSelectionDeleteConfirm": "{count} ausgewählte Einträge löschen? Das lässt sich nicht rückgängig machen.",
+        "inboxKeySelect": "auswählen"
     },
     "health": {
         "pageTitle": "health beta",

@@ -715,7 +715,18 @@
         "analyticsNoticeNeverBody": "Geen bookmarknamen, URL's, zoekopdrachten, pagina- of categorienamen, notities of tags. Er worden geen cookies gezet, geen persoonlijk profiel opgebouwd en je wordt niet gevolgd op andere websites. Aantallen die veelzeggend kunnen zijn worden afgerond naar categorieën, en de instantie is zelf-gehost, dus er wordt niets gedeeld met een advertentienetwerk.",
         "analyticsNoticeOnTitle": "Zo zet je het aan",
         "analyticsNoticeOnBody": "Ga naar Config → Algemeen → Geavanceerd → Privacy en vink \"Privacyvriendelijke statistieken\" aan, of voer :telemetry on uit in het commandopalet. Het werkt na het herladen van de pagina. Zolang het uit staat, wordt de tracker niet eens geladen en verlaat er geen enkel verzoek je machine.",
-        "analyticsNoticeClose": "Sluiten"
+        "analyticsNoticeClose": "Sluiten",
+        "inboxSortLabel": "Inbox sorteren",
+        "inboxSortNewest": "nieuwste eerst",
+        "inboxSortOldest": "oudste eerst",
+        "inboxSortTitle": "titel",
+        "inboxSortDomain": "site",
+        "inboxSnoozeCustom": "Kies een datum",
+        "inboxSelectItem": "{title} selecteren",
+        "inboxSelectedCount": "{count} geselecteerd",
+        "inboxSelectionClear": "Selectie wissen",
+        "inboxSelectionDeleteConfirm": "{count} geselecteerde items verwijderen? Dit kan niet ongedaan worden gemaakt.",
+        "inboxKeySelect": "selecteren"
     },
     "health": {
         "pageTitle": "health beta",

@@ -715,7 +715,18 @@
         "analyticsNoticeNeverBody": "No bookmark names, URLs, search queries, page or category names, notes, or tags. No cookies are set, no personal profile is built, and you are not tracked across other websites. Counts that could be revealing are rounded into buckets, and the instance is self-hosted, so nothing is shared with an advertising network.",
         "analyticsNoticeOnTitle": "How to turn it on",
         "analyticsNoticeOnBody": "Go to Config → General → Advanced → Privacy and tick \"Privacy-friendly analytics\", or run :telemetry on from the command palette. It applies after the page reloads. While it is off, the tracker is not loaded at all and no request leaves your machine.",
-        "analyticsNoticeClose": "Close"
+        "analyticsNoticeClose": "Close",
+        "inboxSortLabel": "Sort inbox",
+        "inboxSortNewest": "newest first",
+        "inboxSortOldest": "oldest first",
+        "inboxSortTitle": "title",
+        "inboxSortDomain": "site",
+        "inboxSnoozeCustom": "Pick a date",
+        "inboxSelectItem": "Select {title}",
+        "inboxSelectedCount": "{count} selected",
+        "inboxSelectionClear": "Clear selection",
+        "inboxSelectionDeleteConfirm": "Delete {count} selected items? This cannot be undone.",
+        "inboxKeySelect": "select"
     },
     "health": {
         "pageTitle": "health beta",
