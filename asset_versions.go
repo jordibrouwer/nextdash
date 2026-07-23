@@ -92,7 +92,7 @@ var sharedAssetVersions = pageAssetVersions{
 	LayoutVersionUtilsJS: "glass-migrate-1",
 	HealthBadgeJS:        "health-badge-count-only-1",
 	AppNotificationJS:    "toast-html-1",
-	SearchCommandsNewJS:  "search-commands-new-9-outcome",
+	SearchCommandsNewJS:  "search-commands-new-10-check-mode",
 	WhatsNewData:         "whats-new-v185",
 	DataRevision:         "data-revision-9-context-menu",
 
@@ -135,7 +135,7 @@ var sharedAssetVersions = pageAssetVersions{
 	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 
 	AppNotificationCSS:       "app-notification-2-tip",
-	SearchCommandsNewCSS:     "search-commands-new-3-inline-create",
+	SearchCommandsNewCSS:     "search-commands-new-4-check-mode",
 	BookmarkFormPreviewCSS:   "bookmark-form-preview-1",
 	SearchCommandsNoteCSS:    "search-commands-note-1",
 	SelectCSS:                "select-1",
