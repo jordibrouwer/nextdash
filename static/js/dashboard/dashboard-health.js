@@ -221,7 +221,9 @@ class DashboardHealth {
             history.replaceState(history.state, '', nextUrl);
         }
 
-        return { refresh };
+        // `consumed` also tells the caller whether a deep link already set the
+        // view, so stored state does not overwrite a link someone shared.
+        return { refresh, consumed };
     }
 
     async openHealthView() {
@@ -244,6 +246,10 @@ class DashboardHealth {
         d.pageNav?.setActiveHealthTab?.();
         d.pageNav?.updateDocumentTitle?.();
         const legacyEntry = this.consumeLegacyEntryParams();
+        // A deep link wins: it describes the view the sender meant to share.
+        if (!legacyEntry.consumed) {
+            this.restoreViewState();
+        }
         await this.loadAndRender({ refresh: legacyEntry.refresh });
         this.restoreHealthHash();
         return true;
@@ -1324,9 +1330,14 @@ class DashboardHealth {
             ['duplicate', this.t('dashboard.healthFilterDuplicates', 'Duplicates')],
             ['unchecked', this.t('dashboard.healthFilterUnchecked', 'Never checked')],
         ];
-        // Only surface the monitor pill once something is actually monitored —
-        // an always-visible "0" would be noise for everyone who never opts in.
-        if (this.filterCount('monitored') > 0) {
+        // The monitor pill used to appear only once something was already
+        // monitored, which made the feature invisible to exactly the people who
+        // had not found it yet: you had to know it existed to see the way in.
+        // It now shows as soon as there is anything that could be monitored, and
+        // stays hidden on an empty report so a fresh install is not cluttered.
+        const monitoredCount = this.filterCount('monitored');
+        const hasBookmarks = (Array.isArray(this.report?.issues) ? this.report.issues.length : 0) > 0;
+        if (monitoredCount > 0 || hasBookmarks || this.filter === 'monitored') {
             filters.push(['monitored', this.t('dashboard.healthFilterMonitored', 'Monitored')]);
         }
         filters.push(['all', this.t('dashboard.healthFilterAll', 'All')]);
@@ -1354,6 +1365,7 @@ class DashboardHealth {
             <div class="health-view-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.healthFilterLabel', 'Filter health issues'))}">${pills}</div>
             <input type="search" class="health-view-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}">
             <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
+            <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export'))}</button>
             <button type="button" class="health-view-retest-btn">${this.escape(this.t('dashboard.healthRetest', 'Retest all'))}</button>
             <button type="button" class="health-view-checkoff-btn"${checkedCount ? '' : ' disabled'} title="${this.escape(checkedCount
                 ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
@@ -1361,9 +1373,14 @@ class DashboardHealth {
             ${this.renderBulkEnableButton()}
         `;
 
+        toolbar.querySelector('.health-view-export-btn')?.addEventListener('click', () => {
+            this.exportFilteredCsv();
+        });
+
         const sortSelect = toolbar.querySelector('.health-view-sort-select');
         sortSelect?.addEventListener('change', (e) => {
             this.sort = e.target.value || 'score';
+            this.persistViewState();
             this.render();
             // Focus returns to the list, not the select: leaving it focused would
             // swallow every row shortcut afterwards (handleKeyboardNavigation
@@ -1376,6 +1393,7 @@ class DashboardHealth {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-health-filter') || 'broken';
                 this.visibleLimit = 50;
+                this.persistViewState();
                 this.render();
             });
         });
@@ -1637,6 +1655,16 @@ class DashboardHealth {
                 this.t('dashboard.healthEmptyUnchecked', 'Everything has been checked'),
                 this.t('dashboard.healthEmptyUncheckedHint', 'No bookmark is waiting for its first status check.'),
             ],
+            // The one empty state that teaches rather than reassures: the pill is
+            // now visible before anything is monitored, so landing here is a
+            // question ("what is this?") rather than a report of a clean bill.
+            monitored: [
+                this.t('dashboard.healthEmptyMonitored', 'Nothing is being monitored yet'),
+                this.t(
+                    'dashboard.healthEmptyMonitoredHint',
+                    'Monitoring checks a bookmark on its own schedule and keeps 30 days of uptime history. Press c on any row — or use its ⋯ menu — and choose Monitor.'
+                ),
+            ],
             all: [
                 this.t('dashboard.healthEmptyAll', 'No issues found'),
                 this.t('dashboard.healthEmptyAllHint', 'Every bookmark scores full marks.'),
@@ -1823,6 +1851,126 @@ class DashboardHealth {
 
         const label = this.t('dashboard.healthSparklineLabel', 'Response time {min}–{max}ms', { min, max });
         return `<svg class="${this.escape(className)}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${this.escape(label)}">${axis}${paths}${dots.join('')}${hits}</svg>`;
+    }
+
+    /* ── View state persistence ────────────────────────────────────────── */
+
+    static STATE_KEY = 'nextdash:health-view-state';
+    static PERSISTED_FILTERS = new Set([
+        'all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked',
+        'stale', 'unused', 'missing-preview', 'healthy', 'monitored',
+    ]);
+    static PERSISTED_SORTS = new Set(['score', 'status', 'last-checked', 'last-checked-desc', 'name']);
+
+    /**
+     * Restore the last filter and sort. Called only when no deep link supplied
+     * them, so a shared ?hv_filter= link still describes what the recipient sees.
+     */
+    restoreViewState() {
+        try {
+            const stored = JSON.parse(localStorage.getItem(DashboardHealth.STATE_KEY) || '{}');
+            if (DashboardHealth.PERSISTED_FILTERS.has(stored.filter)) this.filter = stored.filter;
+            if (DashboardHealth.PERSISTED_SORTS.has(stored.sort)) this.sort = stored.sort;
+        } catch { /* unreadable storage falls back to the defaults */ }
+    }
+
+    persistViewState() {
+        try {
+            localStorage.setItem(
+                DashboardHealth.STATE_KEY,
+                JSON.stringify({ filter: this.filter, sort: this.sort })
+            );
+        } catch { /* private mode / full quota: the view still works */ }
+    }
+
+    /* ── Export ────────────────────────────────────────────────────────── */
+
+    /**
+     * One CSV field, RFC 4180 style.
+     *
+     * The leading-character guard is for spreadsheets, not for CSV: Excel and
+     * Sheets treat a value starting with = + - @ as a formula, so a bookmark
+     * titled "=cmd" would execute on open. Prefixing an apostrophe keeps it text.
+     */
+    csvField(value) {
+        let text = String(value ?? '');
+        if (/^[=+\-@\t\r]/.test(text)) {
+            text = `'${text}`;
+        }
+        return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    /**
+     * Download the rows currently on screen as CSV — the filter and search are
+     * the point, so this exports what is visible rather than the whole report.
+     *
+     * Findings were previously readable only in the view itself: there was no way
+     * to work through them beside a spreadsheet or hand someone the list.
+     */
+    exportFilteredCsv() {
+        const issues = this.getFilteredIssues();
+        if (!issues.length) {
+            this.dash.showNotification?.(
+                this.t('dashboard.healthExportEmpty', 'Nothing to export in this view.'),
+                'info'
+            );
+            return;
+        }
+
+        const header = [
+            this.t('dashboard.healthExportColName', 'Name'),
+            this.t('dashboard.healthExportColUrl', 'URL'),
+            this.t('dashboard.healthExportColStatus', 'Status'),
+            this.t('dashboard.healthExportColScore', 'Score'),
+            this.t('dashboard.healthExportColPage', 'Page'),
+            this.t('dashboard.healthExportColCategory', 'Category'),
+            this.t('dashboard.healthExportColChecked', 'Last checked'),
+            this.t('dashboard.healthExportColIssues', 'Issues'),
+        ];
+
+        const rows = issues.map((issue) => [
+            issue.name || issue.previewTitle || '',
+            issue.url || '',
+            issue.status || '',
+            Number(issue.score ?? ''),
+            issue.pageName || '',
+            issue.category || '',
+            issue.lastChecked ? new Date(issue.lastChecked).toISOString() : '',
+            // The same wording the score panel shows, so the file and the screen
+            // cannot disagree about why a row is listed.
+            this.reasonEntries(issue).map((e) => e.label).join('; '),
+        ]);
+
+        // BOM so Excel reads UTF-8: without it, accented titles arrive mojibake.
+        const csv = '﻿' + [header, ...rows]
+            .map((row) => row.map((cell) => this.csvField(cell)).join(','))
+            .join('\r\n');
+
+        const stamp = new Date().toISOString().slice(0, 10);
+        const name = `nextdash-health-${this.filter}-${stamp}.csv`;
+        this.downloadFile(name, csv, 'text/csv;charset=utf-8');
+        window.nextdashTrack?.('health:export', { rows: String(rows.length) });
+    }
+
+    downloadFile(filename, content, mime) {
+        try {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            // Revoked on a later tick so the click has consumed the URL first.
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (error) {
+            console.error('health export failed', error);
+            this.dash.showNotification?.(
+                this.t('dashboard.healthExportFailed', 'Could not create the export file.'),
+                'error'
+            );
+        }
     }
 
     /** The mode a row is in, as the three-state name the server also speaks. */

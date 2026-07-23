@@ -726,7 +726,21 @@
         "inboxSelectedCount": "{count} geselecteerd",
         "inboxSelectionClear": "Selectie wissen",
         "inboxSelectionDeleteConfirm": "{count} geselecteerde items verwijderen? Dit kan niet ongedaan worden gemaakt.",
-        "inboxKeySelect": "selecteren"
+        "inboxKeySelect": "selecteren",
+        "healthExport": "Exporteren",
+        "healthExportHint": "Download de gefilterde lijst als CSV",
+        "healthExportEmpty": "Niets te exporteren in deze weergave.",
+        "healthExportFailed": "Kon het exportbestand niet maken.",
+        "healthExportColName": "Naam",
+        "healthExportColUrl": "URL",
+        "healthExportColStatus": "Status",
+        "healthExportColScore": "Score",
+        "healthExportColPage": "Pagina",
+        "healthExportColCategory": "Categorie",
+        "healthExportColChecked": "Laatst gecontroleerd",
+        "healthExportColIssues": "Problemen",
+        "healthEmptyMonitored": "Er wordt nog niets gemonitord",
+        "healthEmptyMonitoredHint": "Monitoring controleert een bookmark op een eigen interval en bewaart 30 dagen geschiedenis. Druk op c bij een rij — of gebruik het ⋯-menu — en kies Monitor."
     },
     "health": {
         "pageTitle": "health beta",

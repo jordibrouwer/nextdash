@@ -726,7 +726,21 @@
         "inboxSelectedCount": "{count} ausgewählt",
         "inboxSelectionClear": "Auswahl aufheben",
         "inboxSelectionDeleteConfirm": "{count} ausgewählte Einträge löschen? Das lässt sich nicht rückgängig machen.",
-        "inboxKeySelect": "auswählen"
+        "inboxKeySelect": "auswählen",
+        "healthExport": "Exportieren",
+        "healthExportHint": "Die gefilterte Liste als CSV herunterladen",
+        "healthExportEmpty": "In dieser Ansicht gibt es nichts zu exportieren.",
+        "healthExportFailed": "Die Exportdatei konnte nicht erstellt werden.",
+        "healthExportColName": "Name",
+        "healthExportColUrl": "URL",
+        "healthExportColStatus": "Status",
+        "healthExportColScore": "Punktzahl",
+        "healthExportColPage": "Seite",
+        "healthExportColCategory": "Kategorie",
+        "healthExportColChecked": "Zuletzt geprüft",
+        "healthExportColIssues": "Probleme",
+        "healthEmptyMonitored": "Es wird noch nichts überwacht",
+        "healthEmptyMonitoredHint": "Die Überwachung prüft ein Lesezeichen in einem eigenen Intervall und bewahrt 30 Tage Verlauf. Drücken Sie c in einer Zeile — oder nutzen Sie das ⋯-Menü — und wählen Sie Monitor."
     },
     "health": {
         "pageTitle": "health beta",

@@ -726,7 +726,21 @@
         "inboxSelectedCount": "{count} sélectionnés",
         "inboxSelectionClear": "Effacer la sélection",
         "inboxSelectionDeleteConfirm": "Supprimer {count} éléments sélectionnés ? Cette action est irréversible.",
-        "inboxKeySelect": "sélectionner"
+        "inboxKeySelect": "sélectionner",
+        "healthExport": "Exporter",
+        "healthExportHint": "Télécharger la liste filtrée en CSV",
+        "healthExportEmpty": "Rien à exporter dans cette vue.",
+        "healthExportFailed": "Impossible de créer le fichier d’export.",
+        "healthExportColName": "Nom",
+        "healthExportColUrl": "URL",
+        "healthExportColStatus": "Statut",
+        "healthExportColScore": "Score",
+        "healthExportColPage": "Page",
+        "healthExportColCategory": "Catégorie",
+        "healthExportColChecked": "Dernière vérification",
+        "healthExportColIssues": "Problèmes",
+        "healthEmptyMonitored": "Rien n’est encore surveillé",
+        "healthEmptyMonitoredHint": "La surveillance vérifie un favori selon son propre intervalle et conserve 30 jours d’historique. Appuyez sur c sur une ligne — ou utilisez son menu ⋯ — et choisissez Monitor."
     },
     "health": {
         "pageTitle": "health beta",

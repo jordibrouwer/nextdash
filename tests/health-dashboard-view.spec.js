@@ -767,3 +767,107 @@ test.describe('health view — enlarged monitor statistics', () => {
         expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('health');
     });
 });
+
+test.describe('health view — export, persistence and monitor discoverability', () => {
+    test('the Monitored pill is offered before anything is monitored', async ({ page }) => {
+        await openHealthView(page);
+
+        // It used to appear only once something was already monitored, which hid
+        // the feature from exactly the people who had not found it yet.
+        await expect(page.locator('[data-health-filter="monitored"]')).toHaveCount(1);
+    });
+
+    test('an empty Monitored list explains how to start', async ({ page }) => {
+        await page.route('**/api/bookmark-health**', async (route) => {
+            const empty = report();
+            // Same rows, none of them monitored.
+            empty.issues = empty.issues.map((i) => ({ ...i, monitor: false, monitorStats: undefined }));
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(empty) });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
+
+        await page.click('[data-health-filter="monitored"]');
+        // Not the generic "No issues found", which would read as a clean bill of
+        // health rather than an answer to "what is this pill?".
+        await expect(page.locator('.health-view-empty-title')).toContainText(/monitor/i);
+        await expect(page.locator('.health-view-empty-hint')).toContainText(/c\b|Monitor/);
+    });
+
+    test('filter and sort come back on the next visit', async ({ page }) => {
+        await openHealthView(page);
+
+        await page.click('[data-health-filter="duplicate"]');
+        await page.selectOption('.health-view-sort-select', 'name');
+
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
+
+        expect(await page.evaluate(() => ({
+            filter: window.dashboardInstance.health.filter,
+            sort: window.dashboardInstance.health.sort,
+        }))).toEqual({ filter: 'duplicate', sort: 'name' });
+    });
+
+    test('a deep link still beats the stored view', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="duplicate"]');
+
+        // Stored state must not overwrite what a shared link asked for.
+        await page.goto('/?hv_filter=unchecked#health');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
+
+        expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('unchecked');
+    });
+
+    test('export downloads the filtered rows as CSV', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+
+        const [download] = await Promise.all([
+            page.waitForEvent('download', { timeout: 10_000 }),
+            page.click('.health-view-export-btn'),
+        ]);
+
+        expect(download.suggestedFilename()).toMatch(/^nextdash-health-all-\d{4}-\d{2}-\d{2}\.csv$/);
+        const fs = require('fs');
+        const csv = fs.readFileSync(await download.path(), 'utf8');
+
+        // BOM, or Excel renders accented titles as mojibake.
+        expect(csv.charCodeAt(0)).toBe(0xFEFF);
+        const lines = csv.split('\r\n').filter(Boolean);
+        // Header plus one row per visible issue.
+        expect(lines.length).toBe(1 + await page.locator('.health-view-item').count());
+        expect(lines[0]).toContain('"URL"');
+        expect(csv).toContain('Broken one');
+    });
+
+    test('the export escapes quotes and neutralises formula-leading values', async ({ page }) => {
+        await openHealthView(page);
+
+        // A spreadsheet treats a leading = + - @ as a formula, so a bookmark
+        // named "=cmd|..." would execute on open.
+        const fields = await page.evaluate(() => {
+            const h = window.dashboardInstance.health;
+            return {
+                quoted: h.csvField('he said "hi"'),
+                formula: h.csvField('=1+1'),
+                plus: h.csvField('+cmd'),
+                plain: h.csvField('ordinary'),
+                nullish: h.csvField(null),
+            };
+        });
+        expect(fields.quoted).toBe('"he said ""hi"""');
+        expect(fields.formula).toBe(`"'=1+1"`);
+        expect(fields.plus).toBe(`"'+cmd"`);
+        expect(fields.plain).toBe('"ordinary"');
+        expect(fields.nullish).toBe('""');
+    });
+});

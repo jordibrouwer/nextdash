@@ -218,6 +218,9 @@ button.health-view-tile:hover {
 
 /* Secondary styling on purpose: this clears a setting on many bookmarks, so it
    must not compete with "Retest all" for the primary action. */
+/* Secondary weight: exporting is a side errand next to "Retest all", which is
+   the button this toolbar exists for. */
+.health-view-export-btn,
 .health-view-checkoff-btn {
     padding: 0.35rem 0.7rem;
     border-radius: 0.4rem;
@@ -226,6 +229,11 @@ button.health-view-tile:hover {
     color: var(--text-secondary);
     font-size: 0.8rem;
     cursor: pointer;
+}
+
+.health-view-export-btn:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
 }
 
 .health-view-checkoff-btn:hover:not([disabled]) {
