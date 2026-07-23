@@ -684,12 +684,19 @@
             this.el = null;
         }
 
+        // Delegates to the shared helper so this cannot drift from it again: the
+        // local copy left `'` unescaped, which is only harmless for as long as
+        // every caller happens to interpolate into a double-quoted attribute.
+        // The fallback covers the onboarding card rendering before the dashboard
+        // has finished wiring itself up.
         escape(value) {
-            return String(value == null ? '' : value)
+            const text = String(value == null ? '' : value);
+            return this.dash?.escapeHtml ? this.dash.escapeHtml(text) : text
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
     }
 
