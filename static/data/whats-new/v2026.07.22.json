@@ -1,0 +1,80 @@
+{
+  "tag": "v2026.07.22",
+  "date": "July 2026",
+  "releasedAt": "2026-07-23",
+  "modalLead": "The <strong>inbox</strong> could not be sorted, linked to, or acted on a few rows at a time — all three of which the health view had solved long ago. It can now do all three. The <strong>health view</strong> could show you a problem but not let you take it anywhere; an <strong>Export</strong> button hands the list over as CSV. The monitoring chart is readable point by point instead of being a shape with a tooltip, and uptime history is finally part of a backup.",
+  "sections": [
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Sort the inbox</strong> — <strong>newest first</strong> (unchanged default), <strong>oldest first</strong>, <strong>title</strong>, or <strong>site</strong>. Oldest-first is the one that was missing: an inbox is worked from the bottom, and a backlog was only reachable by scrolling past everything newer. A title or site sort drops the date headings, because an A–Z list restarting at every <em>Yesterday</em> is not sorted in any sense you asked for."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The inbox is linkable, and remembers itself</strong> — filter, sort and search now live in the address bar (<code>?ib_filter=</code>, <code>?ib_sort=</code>, <code>?ib_q=</code>), so <em>my snoozed items</em> or a saved search can be bookmarked and shared. Filter and sort also come back on your next visit; a shared link still wins, or it would not describe what the recipient sees. The search box is deliberately not remembered — a stored query would silently hide most of your inbox with only a small input to explain why."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Act on a few items, not all of them</strong> — tick rows with their checkbox or <code>x</code>, and a bar offers <strong>Mark read</strong>, <strong>Snooze</strong> and <strong>Delete</strong> for just those. Bulk previously meant <em>everything</em>: five specific items had to be handled one at a time. Changing filter clears the ticks so a bulk action can never reach a row you can no longer see, <code>Esc</code> drops the selection, and a bulk delete names the count and asks first."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Snooze until a date of your own</strong> — the four presets now sit above a date field, so a link can be parked further out than <em>next week</em>. It wakes at 09:00 local like the presets do, and cannot be set to today."
+        }
+      ]
+    },
+    {
+      "title": "Health view",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Read a value straight off the chart</strong> — every measurement now has a full-height hit column, so clicking or hovering anywhere in its slice writes it into a <strong>readout under the chart</strong>: response time, when it was measured, how many checks that point folds together, and whether it was up, down or degraded. It opens on the most recent measurement rather than empty. The readout sits below the chart rather than floating over it — a tooltip that follows the pointer cannot be read on a touch screen and vanishes the moment you look at it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The chart works from the keyboard</strong> — <code>←</code> and <code>→</code> walk from point to point and update the readout, stepping over buckets with no measurement so you never land on an empty reading. The whole chart is a <strong>single</strong> <code>Tab</code> stop, so <strong>Close</strong> stays one <code>Tab</code> away instead of one per measurement, and tabbing back in returns to the point you were reading."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Export the list you are looking at</strong> — an <strong>Export</strong> button downloads the current filter and search as CSV: name, URL, status, score, page, category, last checked, and the same issue wording the score panel shows. The findings were readable only inside the view, with no way to work through them beside a spreadsheet or hand someone the list. Values starting <code>=</code> <code>+</code> <code>-</code> <code>@</code> are neutralised so a spreadsheet treats them as text rather than running them as formulas."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The Monitored filter stops hiding until it is used</strong> — it appeared only once something was already monitored, which made the feature invisible to exactly the people who had not found it yet: you had to know it existed to see the way in. It now shows whenever you have bookmarks, and an empty Monitored list explains what monitoring does and which key switches it on."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Filter and sort are remembered</strong> — the view no longer resets to <em>Broken</em> / <em>score</em> every time you open it. A <code>?hv_filter=</code> deep link still overrides what was stored."
+        }
+      ]
+    },
+    {
+      "title": "Backups",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Uptime history survives a restore</strong> — monitoring samples were left out of the archive, so restoring a backup reset every monitored bookmark to <em>waiting for its first check</em>: no chart, no uptime windows, no outage list, and a 30-day figure that takes 30 days to earn back. It is the one piece of health data that is <em>measured</em> rather than derived, which is why it is archived where the preview and health caches still are not — a scan rebuilds those in minutes. Restoring an <strong>older</strong> backup leaves the history you already have in place rather than wiping it."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The chart's axis labels were cut in half</strong> — the min and max readings sit on the outermost gridlines, so both were sliced by the edge of the drawing area, and the label column was too narrow for the last character of a three-digit value. The plot is now inset vertically and the column widened. The compact sparkline in the row is unchanged, byte for byte."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A new Tips &amp; tricks entry never reached anyone</strong> — the tip catalogue gained an entry last release, but its cache-bust token did not move. Static files are served as <em>immutable</em> for a year, so every existing visitor kept the old catalogue with no day on which it would expire."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Help described a smaller backup than you get</strong> — the ZIP contents were listed without your inbox or monitoring history, in the one place you would check before trusting a restore."
+        }
+      ]
+    }
+  ]
+}

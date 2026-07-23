@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.22 — July 2026](#v20260722--july-2026)
 - [v2026.07.21.1 — July 2026](#v2026072111--july-2026)
 - [v2026.07.21 — July 2026](#v20260721--july-2026)
 - [v2026.07.20 — July 2026](#v20260720--july-2026)
@@ -104,6 +105,14 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+Nothing yet.
+
+---
+
+## v2026.07.22 — July 2026
+
+**The inbox catches up with the health view, and the health view learns to hand its findings over.** The inbox could not be sorted, linked to, or acted on a few rows at a time — all three of which the health view had solved long ago. The health view could show you a problem but not let you take it anywhere. Both are fixed here, along with making the monitoring chart readable point by point and putting uptime history into backups where it belongs.
+
 ### Inbox
 
 - **new** **Sort the inbox** — a sort control next to the search field: **newest first** (unchanged default), **oldest first**, **title**, or **site**. Oldest-first is the one that was missing: an inbox is worked from the bottom, and a backlog was previously only reachable by scrolling past everything newer. Sorting by title or site drops the date headings, because an A–Z list that restarts at every *Yesterday* is not sorted in any sense you asked for (`dashboard-inbox.js`).
@@ -120,6 +129,9 @@ For install and security, see the [README](README.md). For how to use features, 
 - **new** **Filter and sort are remembered** — the view no longer resets to *Broken* / *score* every time you open it. A `?hv_filter=` deep link still overrides what was stored.
 
 - **new** **Monitoring history is part of a backup** — uptime samples were left out of the archive, so restoring a backup reset every monitored bookmark to *waiting for its first check*: no chart, no uptime windows, no outage history, and a 30-day figure that takes 30 days to earn back. `health-history.json` is now included and restored. It is the one piece of health data that is measured rather than derived — the preview and health *caches* are still left out, because a scan rebuilds those in minutes. Restoring an **older** backup, written before this change, leaves the monitoring history you already have in place rather than deleting it (`backup.go`).
+
+- **fix** **A new Tips & tricks entry never reached anyone** — `config-help-tips.js` gained a tip last release, but its cache-bust token did not move. Static assets are served `immutable` for a year, so every existing visitor kept the old catalogue with no day on which it would expire. The token now names the change it carries.
+- **fix** **The quick-start card escaped one character less than everything else** — its private copy of `escape()` handled `&`, `<`, `>` and `"` but not `'`, while every other caller uses the shared helper. Nothing was exploitable, since each caller passes a translation string into a double-quoted attribute — but a local copy quietly weaker than the shared one is a trap for whoever renders the next value through it.
 
 - **fix** **The chart's axis labels were cut off** — the min and max readings sit on their own gridlines at the very top and bottom of the plot, so both were sliced in half by the edge of the drawing area, and the label column was too narrow for the last character of a three-digit value. The plot is now inset vertically and the label column widened enough for a four-digit reading. The compact sparkline in the row is unchanged — byte for byte.
 
