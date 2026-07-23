@@ -1712,7 +1712,7 @@ class DashboardHealth {
         const bars = buckets.map((b) => {
             const title = b.state === 'unknown'
                 ? this.t('dashboard.healthHeartbeatNoData', 'No data')
-                : `${new Date(b.from).toLocaleString()} — ${b.avgMs ? `${b.avgMs}ms` : b.state}`;
+                : `${new Date(b.from).toLocaleString()} — ${b.avgMs ? `${b.avgMs}ms` : this.heartbeatStateLabel(b.state)}`;
             return `<span class="health-heartbeat-bar is-${this.escape(b.state)}" title="${this.escape(title)}"></span>`;
         }).join('');
         return `<div class="health-heartbeat" role="img" aria-label="${this.escape(this.t('dashboard.healthHeartbeatLabel', 'Uptime history'))}">${bars}</div>`;
@@ -1737,11 +1737,18 @@ class DashboardHealth {
         const min = Math.min(...known);
         const span = max - min || 1;
         const step = w / Math.max(1, points.length - 1);
-        // Room for the axis labels, which are drawn inside the same viewBox.
-        const padRight = detail ? 34 : 0;
+        // Room for the axis labels, which are drawn inside the same viewBox. Wide
+        // enough for a four-digit reading ("1250ms") at the 9px label size — 34
+        // clipped the final character off three-digit values.
+        const padRight = detail ? 52 : 0;
         const plotW = w - padRight;
         const plotStep = plotW / Math.max(1, points.length - 1);
         const stepX = detail ? plotStep : step;
+        // The min and max labels sit on their own gridlines, so in detail mode the
+        // plot is inset vertically to keep the top and bottom label from being cut
+        // in half by the edge of the viewBox.
+        const padY = detail ? 7 : 1;
+        const plotH = h - padY * 2;
 
         // Gaps break the line rather than interpolating across them, so missing
         // data never looks like a measured value.
@@ -1755,11 +1762,11 @@ class DashboardHealth {
                 return;
             }
             const x = (i * stepX).toFixed(1);
-            const y = (h - ((p - min) / span) * (h - 2) - 1).toFixed(1);
+            const y = (h - padY - ((p - min) / span) * plotH).toFixed(1);
             current.push(`${x},${y}`);
             if (detail) {
                 const when = buckets[i]?.from ? new Date(buckets[i].from).toLocaleString() : '';
-                dots.push(`<circle cx="${x}" cy="${y}" r="2.5" fill="currentColor" opacity="0"><title>${this.escape(`${when} — ${p}ms`)}</title></circle>`);
+                dots.push(`<circle class="health-sparkline-dot" data-point="${i}" cx="${x}" cy="${y}" r="3" fill="currentColor"><title>${this.escape(`${when} — ${p}ms`)}</title></circle>`);
             }
         });
         if (current.length > 1) segments.push(current);
@@ -1775,7 +1782,7 @@ class DashboardHealth {
         let axis = '';
         if (detail) {
             const avg = Math.round(known.reduce((sum, p) => sum + p, 0) / known.length);
-            const yFor = (value) => (h - ((value - min) / span) * (h - 2) - 1).toFixed(1);
+            const yFor = (value) => (h - padY - ((value - min) / span) * plotH).toFixed(1);
             const lines = [[max, 'max'], [avg, 'avg'], [min, 'min']]
                 .map(([value, kind]) => {
                     const y = yFor(value);
@@ -1786,8 +1793,36 @@ class DashboardHealth {
             axis = lines;
         }
 
+        // Hit targets. The dots are a few pixels across and the readout has to be
+        // reachable without pixel-hunting, so each measured bucket also gets a
+        // full-height transparent column reaching halfway to its neighbours. They
+        // are appended last, on top of the line, so the whole column is clickable.
+        //
+        // Roving tabindex: the chart is one tab stop, not one per measurement. Only
+        // the first target starts reachable by Tab and the arrow keys move the stop
+        // from there — tabbing through every point to reach Close would be worse
+        // than no keyboard support at all.
+        let hits = '';
+        if (detail) {
+            let first = true;
+            hits = points.map((p, i) => {
+                if (p === null) return '';
+                const cx = i * stepX;
+                const x0 = Math.max(0, cx - stepX / 2);
+                const x1 = Math.min(plotW, cx + stepX / 2);
+                const when = buckets[i]?.from ? new Date(buckets[i].from).toLocaleString() : '';
+                const readLabel = this.t('dashboard.healthStatsPointLabel', '{when} — {ms}ms', { when, ms: p });
+                const tab = first ? '0' : '-1';
+                first = false;
+                return `<rect class="health-sparkline-hit" data-point="${i}"`
+                    + ` x="${x0.toFixed(1)}" y="0" width="${Math.max(0.1, x1 - x0).toFixed(1)}" height="${h}"`
+                    + ` fill="transparent" tabindex="${tab}" role="button"`
+                    + ` aria-label="${this.escape(readLabel)}"><title>${this.escape(readLabel)}</title></rect>`;
+            }).join('');
+        }
+
         const label = this.t('dashboard.healthSparklineLabel', 'Response time {min}–{max}ms', { min, max });
-        return `<svg class="${this.escape(className)}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${this.escape(label)}">${axis}${paths}${dots.join('')}</svg>`;
+        return `<svg class="${this.escape(className)}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${this.escape(label)}">${axis}${paths}${dots.join('')}${hits}</svg>`;
     }
 
     /** The mode a row is in, as the three-state name the server also speaks. */
@@ -1976,8 +2011,16 @@ class DashboardHealth {
             detail: true,
             className: 'health-sparkline health-sparkline--large',
         });
+        // The readout sits under the chart rather than floating over it: a tooltip
+        // that follows the pointer cannot be read on a touch screen and vanishes
+        // the moment you look away from it.
         const chartBlock = chart
-            ? `<div class="health-monitor-chart">${chart}</div>`
+            ? `<div class="health-monitor-chart">${chart}</div>
+               <div class="health-monitor-readout" data-health-readout aria-live="polite">
+                   <span class="health-monitor-readout-hint">${this.escape(
+                       this.t('dashboard.healthStatsPointHint', 'Select a point on the chart to read its response time.')
+                   )}</span>
+               </div>`
             : `<p class="health-monitor-chart-empty">${this.escape(
                 this.t('dashboard.healthStatsNoChart', 'Not enough response-time data to draw a chart yet.')
             )}</p>`;
@@ -2029,6 +2072,111 @@ class DashboardHealth {
                 this.applyKeyboardSelection();
             },
         });
+        // show() is synchronous and has already written the body into #modal-text.
+        this.bindMonitorChart(issue);
+    }
+
+    /**
+     * Make the enlarged chart readable: clicking, hovering or tabbing to a point
+     * writes its response time and measurement time into the readout under the
+     * chart, and ←/→ walk the series from a selected point.
+     *
+     * Bound per open. The modal replaces #modal-text wholesale on the next show(),
+     * so the listeners go with it and there is nothing to tear down.
+     */
+    bindMonitorChart(issue) {
+        const modalText = document.getElementById('modal-text');
+        const svg = modalText?.querySelector('.health-sparkline--large');
+        const readout = modalText?.querySelector('[data-health-readout]');
+        if (!svg || !readout) return;
+
+        const buckets = Array.isArray(issue?.monitorStats?.heartbeat) ? issue.monitorStats.heartbeat : [];
+        const hits = Array.from(svg.querySelectorAll('.health-sparkline-hit'));
+        if (!hits.length) return;
+
+        const select = (index, { focus = false } = {}) => {
+            const bucket = buckets[index];
+            if (!bucket) return;
+            svg.querySelectorAll('.is-selected').forEach((el) => el.classList.remove('is-selected'));
+            const hit = svg.querySelector(`.health-sparkline-hit[data-point="${index}"]`);
+            const dot = svg.querySelector(`.health-sparkline-dot[data-point="${index}"]`);
+            hit?.classList.add('is-selected');
+            dot?.classList.add('is-selected');
+            // Move the single tab stop to the selected point, so tabbing back into
+            // the chart returns to where the user left it.
+            if (hit) {
+                hits.forEach((el) => el.setAttribute('tabindex', '-1'));
+                hit.setAttribute('tabindex', '0');
+            }
+            if (focus && hit) hit.focus({ preventScroll: true });
+
+            const ms = Number(bucket.avgMs) || 0;
+            // from/to, not a single instant: a bucket folds every check in its
+            // slice of time, so claiming one timestamp would overstate precision.
+            const when = new Date(bucket.from).toLocaleString();
+            const checks = (Number(bucket.up) || 0) + (Number(bucket.down) || 0);
+            readout.innerHTML = `
+                <span class="health-monitor-readout-value">${this.escape(`${ms}ms`)}</span>
+                <span class="health-monitor-readout-when">${this.escape(when)}</span>
+                ${checks ? `<span class="health-monitor-readout-checks">${this.escape(
+                    this.t('dashboard.healthStatsChecks', '{count} checks', { count: checks })
+                )}</span>` : ''}
+                <span class="health-monitor-readout-state is-${this.escape(bucket.state)}">${this.escape(
+                    this.heartbeatStateLabel(bucket.state)
+                )}</span>`;
+        };
+
+        const indexOf = (el) => Number(el?.dataset?.point);
+        const step = (from, dir) => {
+            const order = hits.map(indexOf);
+            const at = order.indexOf(from);
+            // Walks measured points only — stepping onto a gap would blank the
+            // readout with nothing to show.
+            const next = order[at + dir];
+            return next === undefined ? null : next;
+        };
+
+        // Only the hit columns carry pointer events (the dots are pointer-events:
+        // none in CSS), so matching on them alone covers the whole plot.
+        svg.addEventListener('click', (e) => {
+            const hit = e.target.closest('.health-sparkline-hit');
+            if (hit) select(indexOf(hit), { focus: true });
+        });
+        svg.addEventListener('mousemove', (e) => {
+            const hit = e.target.closest('.health-sparkline-hit');
+            if (hit) select(indexOf(hit));
+        });
+        svg.addEventListener('focusin', (e) => {
+            const hit = e.target.closest('.health-sparkline-hit');
+            if (hit) select(indexOf(hit));
+        });
+        svg.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            const current = indexOf(e.target.closest('.health-sparkline-hit'));
+            if (Number.isNaN(current)) return;
+            const next = step(current, e.key === 'ArrowRight' ? 1 : -1);
+            if (next === null) return;
+            // Escape and Tab stay the modal's; only the arrows are ours.
+            e.preventDefault();
+            e.stopPropagation();
+            select(next, { focus: true });
+        });
+
+        // Open on the most recent measurement rather than an empty readout: it is
+        // the value the user came to see, and it shows what the chart can do.
+        const last = hits[hits.length - 1];
+        if (last) select(indexOf(last));
+    }
+
+    /** Bucket state as a word, shared by the readout and the heartbeat tooltips. */
+    heartbeatStateLabel(state) {
+        const labels = {
+            up: this.t('dashboard.healthStateUp', 'Up'),
+            down: this.t('dashboard.healthStateDown', 'Down'),
+            degraded: this.t('dashboard.healthStateDegraded', 'Degraded'),
+            unknown: this.t('dashboard.healthHeartbeatNoData', 'No data'),
+        };
+        return labels[state] || state || '';
     }
 
     /** Incident history, shown inside the expandable score panel. */

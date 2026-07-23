@@ -661,6 +661,97 @@ test.describe('health view — enlarged monitor statistics', () => {
         await expect(page.locator('.health-monitor-stats')).toBeVisible();
     });
 
+    test('the chart offers one hit target per measured bucket, gaps excluded', async ({ page }) => {
+        await openMonitored(page);
+        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+
+        // 40 buckets, minus the 'unknown' gap at 12 and the two down buckets at
+        // 20/21 whose avgMs is 0 — a point you cannot read a response time from
+        // must not be clickable.
+        const hits = page.locator('.health-sparkline-hit');
+        await expect(hits).toHaveCount(37);
+        await expect(page.locator('.health-sparkline-dot')).toHaveCount(37);
+
+        for (const gap of [12, 20, 21]) {
+            await expect(page.locator(`.health-sparkline-hit[data-point="${gap}"]`)).toHaveCount(0);
+        }
+    });
+
+    test('the readout opens on the latest measurement and follows a click', async ({ page }) => {
+        await openMonitored(page);
+        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+
+        // Opens pre-filled with the most recent point rather than an empty box:
+        // bucket 39 is 120 + (39 % 7) * 15 = 180ms.
+        const readout = page.locator('[data-health-readout]');
+        await expect(readout.locator('.health-monitor-readout-value')).toHaveText('180ms');
+        await expect(readout).not.toContainText('Select a point');
+
+        // Clicking another point reads that one instead: bucket 3 is 165ms.
+        await page.locator('.health-sparkline-hit[data-point="3"]').click();
+        await expect(readout.locator('.health-monitor-readout-value')).toHaveText('165ms');
+
+        // The time of measurement is shown next to it, not just the number.
+        const when = await readout.locator('.health-monitor-readout-when').textContent();
+        expect(when.trim()).not.toBe('');
+        // Bucket 3 of the fixture starts at a known instant; the readout must name
+        // it rather than "now".
+        const expected = await page.evaluate(() => {
+            const b = window.dashboardInstance.health.report.issues
+                .find((i) => i.name === 'Monitored one').monitorStats.heartbeat[3];
+            return new Date(b.from).toLocaleString();
+        });
+        expect(when.trim()).toBe(expected);
+
+        // And the selected point is marked on the chart itself.
+        await expect(page.locator('.health-sparkline-dot[data-point="3"]')).toHaveClass(/is-selected/);
+    });
+
+    test('arrow keys walk the chart and skip over gaps', async ({ page }) => {
+        await openMonitored(page);
+        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+
+        const readout = page.locator('[data-health-readout] .health-monitor-readout-value');
+
+        // The overlay transitions visibility over 0.2s, and a visibility:hidden
+        // element cannot take focus — wait for the chart to actually be visible
+        // rather than racing the fade-in.
+        await expect(page.locator('.health-sparkline-hit[data-point="11"]')).toBeVisible();
+
+        // Focus bucket 11, the last measured point before the gap at 12.
+        // Focused in-page: Playwright's locator.focus() does not land on SVG shapes.
+        await page.evaluate(() => document.querySelector('.health-sparkline-hit[data-point="11"]').focus());
+        await expect(readout).toHaveText('180ms'); // 120 + (11 % 7) * 15
+
+        // Right from 11 lands on 13, not on the unreadable gap at 12.
+        await page.keyboard.press('ArrowRight');
+        await expect(page.locator('.health-sparkline-hit[data-point="13"]')).toBeFocused();
+        await expect(readout).toHaveText('210ms'); // 120 + (13 % 7) * 15
+
+        await page.keyboard.press('ArrowLeft');
+        await expect(page.locator('.health-sparkline-hit[data-point="11"]')).toBeFocused();
+
+        // Arrows are ours, but Escape still belongs to the modal.
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.health-monitor-stats')).toBeHidden();
+    });
+
+    test('the chart is a single tab stop, not one per measurement', async ({ page }) => {
+        await openMonitored(page);
+        await page.click(`${monitoredRow} .health-monitor-expand-btn`);
+
+        // 37 tabbable points would mean 37 presses to reach Close. A roving
+        // tabindex keeps the whole chart to one stop.
+        await expect(page.locator('.health-sparkline-hit[tabindex="0"]')).toHaveCount(1);
+        await expect(page.locator('.health-sparkline-hit[tabindex="-1"]')).toHaveCount(36);
+
+        // And the stop follows the selection, so tabbing back in returns to the
+        // point the user was last reading.
+        await page.locator('.health-sparkline-hit[data-point="5"]').click();
+        await expect(page.locator('.health-sparkline-hit[tabindex="0"]')).toHaveAttribute('data-point', '5');
+        await expect(page.locator('.health-sparkline-hit[tabindex="0"]')).toHaveCount(1);
+    });
+
     test('Escape closes the modal and leaves the health view open', async ({ page }) => {
         await openMonitored(page);
         await page.click(`${monitoredRow} .health-monitor-expand-btn`);
