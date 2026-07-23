@@ -1,7 +1,10 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -286,5 +289,155 @@ func TestRemoveImportOrphansPreservesFindersWhenMissing(t *testing.T) {
 	}
 	if _, err := os.Stat(findersPath); err != nil {
 		t.Fatalf("finders.json should be preserved when import ZIP omits it: %v", err)
+	}
+}
+
+// Monitoring history is measured data: unlike preview-cache.json and
+// health-cache.json it cannot be re-derived by scanning, so it belongs in the
+// archive rather than being filtered out of it.
+func TestBackupIncludesHealthHistory(t *testing.T) {
+	h := newTestHandlers(t)
+	dataDir := ResolveDataDir()
+
+	history := HealthHistoryFile{
+		GeneratedAt: 1750000000000,
+		Samples: map[string][]HealthSample{
+			"https://monitored.example.com": {
+				{T: 1749999000000, Up: true, PingMs: 120, Code: 200},
+				{T: 1749999300000, Up: false, Code: 503},
+			},
+		},
+	}
+	raw, err := json.Marshal(history)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "health-history.json"), raw, 0644); err != nil {
+		t.Fatal(err)
+	}
+	// The two caches that must stay out, so this test also pins the distinction.
+	for _, name := range []string{"preview-cache.json", "health-cache.json"} {
+		if err := os.WriteFile(filepath.Join(dataDir, name), []byte(`{}`), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	zipBytes, err := h.buildBackupZip()
+	if err != nil {
+		t.Fatalf("buildBackupZip: %v", err)
+	}
+	reader, err := zip.NewReader(bytes.NewReader(zipBytes), int64(len(zipBytes)))
+	if err != nil {
+		t.Fatalf("open zip: %v", err)
+	}
+
+	var found *zip.File
+	names := map[string]bool{}
+	for _, f := range reader.File {
+		names[f.Name] = true
+		if f.Name == "health-history.json" {
+			found = f
+		}
+	}
+	if found == nil {
+		t.Fatalf("health-history.json missing from backup; got %v", names)
+	}
+	if names["preview-cache.json"] || names["health-cache.json"] {
+		t.Errorf("derived caches must stay out of the backup; got %v", names)
+	}
+
+	rc, err := found.Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rc.Close()
+	got, err := io.ReadAll(rc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored HealthHistoryFile
+	if err := json.Unmarshal(got, &restored); err != nil {
+		t.Fatalf("archived history is not valid JSON: %v", err)
+	}
+	samples := restored.Samples["https://monitored.example.com"]
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 archived samples, got %d", len(samples))
+	}
+	// The response time is the whole point of keeping the file: an archive that
+	// preserved only the up/down flags would still lose every chart.
+	if samples[0].PingMs != 120 || !samples[0].Up || samples[1].Up {
+		t.Errorf("samples did not survive the round trip: %+v", samples)
+	}
+}
+
+// Every ZIP written before monitoring history was archived omits the file.
+// Treating that absence as "the user removed it" would delete measurements the
+// archive never had a chance to carry.
+func TestRemoveImportOrphansPreservesHealthHistoryWhenMissing(t *testing.T) {
+	dataDir := t.TempDir()
+	historyPath := filepath.Join(dataDir, "health-history.json")
+	if err := os.WriteFile(historyPath, []byte(`{"generatedAt":1,"samples":{"https://a.example":[{"t":1,"u":true}]}}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "settings.json"), []byte(`{}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	prepared := []preparedImportFile{
+		{relPath: "settings.json", content: []byte(`{"theme":"new"}`)},
+	}
+	if err := removeImportOrphans(dataDir, prepared); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(historyPath); err != nil {
+		t.Fatalf("health-history.json should survive an older ZIP that omits it: %v", err)
+	}
+}
+
+// A ZIP that does carry history replaces what is there, same as any other
+// managed file — otherwise restoring an older machine's data would leave the
+// current machine's samples mixed in.
+func TestImportReplacesHealthHistoryWhenPresent(t *testing.T) {
+	dataDir := t.TempDir()
+	historyPath := filepath.Join(dataDir, "health-history.json")
+	if err := os.WriteFile(historyPath, []byte(`{"generatedAt":1,"samples":{"https://old.example":[{"t":1,"u":true}]}}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	incoming := []byte(`{"generatedAt":2,"samples":{"https://new.example":[{"t":2,"u":true,"p":55}]}}`)
+	prepared := []preparedImportFile{
+		{relPath: "health-history.json", content: incoming},
+	}
+	if err := commitPreparedImport(dataDir, prepared); err != nil {
+		t.Fatalf("commitPreparedImport: %v", err)
+	}
+
+	got, err := os.ReadFile(historyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored HealthHistoryFile
+	if err := json.Unmarshal(got, &restored); err != nil {
+		t.Fatal(err)
+	}
+	if _, stale := restored.Samples["https://old.example"]; stale {
+		t.Errorf("import should replace history, not merge into it: %v", restored.Samples)
+	}
+	if len(restored.Samples["https://new.example"]) != 1 {
+		t.Errorf("imported history missing: %v", restored.Samples)
+	}
+}
+
+// health-history.json must pass the shared filename gate, which is what both the
+// export walk and the import validator consult.
+func TestHealthHistoryIsValidImportFilename(t *testing.T) {
+	h := &Handlers{store: NewStore()}
+	if !h.isValidImportFilename("health-history.json") {
+		t.Error("health-history.json should be an accepted import/export filename")
+	}
+	for _, name := range []string{"health-cache.json", "preview-cache.json"} {
+		if h.isValidImportFilename(name) {
+			t.Errorf("%s is derived and should stay out of archives", name)
+		}
 	}
 }
