@@ -1,0 +1,21 @@
+{
+  "tag": "v2026.07.22.2",
+  "date": "July 2026",
+  "releasedAt": "2026-07-23",
+  "modalLead": "A bookmark you <strong>delete in the health view</strong> now disappears from the dashboard at once, rather than lingering there until the next page reload. And a monitored service that <strong>stops responding</strong> is flagged in the header apart from an ordinary dead link.",
+  "sections": [
+    {
+      "title": "Health view",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Deleting a bookmark in the health view clears it from the dashboard immediately</strong> — the health view deletes through its own endpoint and never touched the dashboard's in-memory copies, so a deleted bookmark stayed on the grid — and in any smart collection it matched — until the page was reloaded. It now drops from every live copy at once: the grid, the collections and the health list all update with no reload."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The header flags a monitor that is down, apart from a broken link</strong> — a monitored bookmark that is unreachable right now is counted separately from an ordinary dead link, with its own badge. When the number of down monitors <strong>rises</strong>, the health icon pulses once to catch your eye — only on a rise, so a reload onto an existing outage or a recovery stays quiet, and behind a <strong>10-minute cooldown</strong> so a flapping monitor cannot pulse the header on every check. It shares the broken red and is told apart by the movement; clicking it opens the monitored list. Respects reduced-motion and the no-animations setting."
+        }
+      ]
+    }
+  ]
+}
