@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.22.2 — July 2026](#v202607222--july-2026)
 - [v2026.07.22.1 — July 2026](#v202607221--july-2026)
 - [v2026.07.22 — July 2026](#v20260722--july-2026)
 - [v2026.07.21.1 — July 2026](#v2026072111--july-2026)
@@ -107,6 +108,17 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.22.2 — July 2026
+
+**A deleted bookmark disappears everywhere at once, and the header calls out a monitor that is down.** Deleting from the health view left the bookmark on the dashboard until a reload; and a monitored service that stops responding now stands apart from an ordinary dead link in the header.
+
+### Health view
+
+- **fix** **Deleting a bookmark in the health view now clears it from the dashboard immediately** — the health view deletes through its own endpoint and never touched the dashboard's in-memory copies, so a deleted bookmark lingered on the grid (and in any smart collection it matched) until the page was reloaded. The delete now drops it from every live copy, matched by page and URL rather than a report index that may be minutes stale, and re-renders — the grid, the collections and the health list all update at once.
+- **new** **The header flags a monitor that is down, apart from an ordinary broken link** — a monitored bookmark that is unreachable right now is counted separately from a dead link, so the health icon can tell a live outage from housekeeping. It gets its own badge and, when the number of down monitors **rises**, the icon pulses once to catch your eye. The pulse is deliberately restrained: it fires only on a rise (a reload that finds an existing outage, or a recovery, stays quiet — the badge already shows the standing state), it runs once rather than looping, and a **10-minute cooldown** keeps a flapping monitor from pulsing the header on every check. A down monitor shares the broken red rather than inventing a second one — an outage is not a milder thing than a dead link — and is set apart by the movement instead. Clicking the icon goes straight to the **Monitored** filter. Respects reduced-motion and the no-animations setting.
 
 ---
 

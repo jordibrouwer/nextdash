@@ -2264,9 +2264,14 @@ func (fs *FileStore) SaveColors(colors ColorTheme) error {
 }
 
 type HealthSummary struct {
-	TotalBookmarks        int `json:"totalBookmarks"`
-	HealthyCount          int `json:"healthyCount"`
-	BrokenCount           int `json:"brokenCount"`
+	TotalBookmarks int `json:"totalBookmarks"`
+	HealthyCount   int `json:"healthyCount"`
+	BrokenCount    int `json:"brokenCount"`
+	// MonitorDownCount is monitored bookmarks that are unreachable right now,
+	// counted apart from BrokenCount so the header can flag a live outage
+	// distinctly from an ordinary dead link. A down monitor is not also in
+	// BrokenCount — it is one or the other, never both, so totals stay honest.
+	MonitorDownCount int `json:"monitorDownCount"`
 	DuplicateCount        int `json:"duplicateCount"`
 	UncheckedCount        int `json:"uncheckedCount"`
 	StaleCount            int `json:"staleCount"`

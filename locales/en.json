@@ -163,6 +163,7 @@
         "healthWarnShort": "warnings",
         "healthBrokenAria": "{count} broken bookmarks",
         "healthWarnAria": "{count} bookmarks with warnings",
+        "healthMonitorDownAria": "{count} monitored bookmarks not responding",
         "loadFailed": "Failed to load dashboard. Please reload the page.",
         "reloadPage": "Reload page",
         "syncConfigChanges": "Synced config changes.",

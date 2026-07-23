@@ -719,6 +719,45 @@ class DashboardBookmarkRows {
     }
 
 
+    /**
+     * Drop a bookmark from every in-memory copy the dashboard holds, matched by
+     * page and URL rather than by array index.
+     *
+     * The health view deletes through its own endpoint and hands back only a
+     * pageId + URL — it has no live reference into d.bookmarks, and the index in
+     * its (possibly minutes-old) report cannot be trusted to still point at the
+     * same row. Matching on the URL is what lets a delete made in that view
+     * reach the dashboard grid without a page reload.
+     */
+    removeBookmarkByUrl(pageId, url) {
+        const d = this.dash;
+        const key = String(url || '').trim();
+        if (!key) return false;
+        const pid = Number(pageId);
+        let removed = false;
+
+        const purge = (list) => {
+            if (!Array.isArray(list)) return;
+            for (let i = list.length - 1; i >= 0; i -= 1) {
+                const candidate = list[i];
+                const candidatePid = Number(candidate?.pageId ?? candidate?.pageID ?? d.currentPageId);
+                if (Number.isFinite(pid) && candidatePid !== pid) continue;
+                if (String(candidate?.url || '').trim() === key) {
+                    list.splice(i, 1);
+                    removed = true;
+                }
+            }
+        };
+
+        // Only touch d.bookmarks when it is the page being edited, so a delete on
+        // another page does not disturb the current view's array.
+        if (Number.isFinite(pid) && Number(d.currentPageId) === pid) {
+            purge(d.bookmarks);
+        }
+        purge(d.allBookmarks);
+        return removed;
+    }
+
     restoreBookmarkInAllBookmarks(bookmark, pageId) {
         const d = this.dash;
         if (!bookmark || !Array.isArray(d.allBookmarks)) {

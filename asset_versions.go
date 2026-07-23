@@ -90,11 +90,11 @@ var sharedAssetVersions = pageAssetVersions{
 	MobileExperienceCSS:  "touch-only-mobile-1",
 	MobileExperienceJS:   "touch-only-mobile-1",
 	LayoutVersionUtilsJS: "glass-migrate-1",
-	HealthBadgeJS:        "health-badge-count-only-1",
+	HealthBadgeJS:        "health-badge-monitor-down-1",
 	AppNotificationJS:    "toast-html-1",
 	SearchCommandsNewJS:  "search-commands-new-10-check-mode",
-	WhatsNewData:         "whats-new-v186",
-	DataRevision:         "data-revision-9-context-menu",
+	WhatsNewData:         "whats-new-v187",
+	DataRevision:         "data-revision-10-health-delete-sync",
 
 	WriteAPIJS:               "write-api-1",
 	AppVersionGuardJS:        "app-version-guard-1",
@@ -130,7 +130,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
 	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
-	DashboardCSS:            "check-mode-3",
+	DashboardCSS:            "monitor-down-alert-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
 	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 

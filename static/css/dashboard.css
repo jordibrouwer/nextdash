@@ -1183,6 +1183,48 @@ body {
     color: var(--accent-warning);
 }
 
+/* The down badge shares broken's red — an outage is not a milder thing than a
+   dead link. The two are told apart by movement, not hue: only the down state
+   pulses the link (see .health-link.is-health-alert). Explicit here so the
+   base .health-badge red still applies even beside the warn override above. */
+.health-link--icon .health-badge.health-badge-down {
+    border-color: color-mix(in srgb, var(--accent-error) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 22%, transparent);
+    color: var(--accent-error);
+}
+
+/* Fired once when the number of down monitors rises, then removed — a header
+   ornament that pulsed forever would stop reading as an alert within a day.
+   The cooldown and the rise check live in dashboard-visual.js; this is only the
+   look of the pulse. */
+@keyframes health-alert-pulse {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.18); }
+    60%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
+}
+
+.health-link.is-health-alert .health-link-anchor {
+    animation: health-alert-pulse 0.5s cubic-bezier(0.22, 1, 0.36, 1) 3;
+    transform-origin: center;
+}
+
+/* A quiet ring under the pulse, so a colour-blind or briefly-glanced view still
+   catches it. Also removed with the class when the animation ends. */
+.health-link.is-health-alert .health-badge {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-error) 30%, transparent);
+}
+
+body.no-animations .health-link.is-health-alert .health-link-anchor {
+    animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .health-link.is-health-alert .health-link-anchor {
+        animation: none !important;
+    }
+}
+
 /* Dashboard Grid */
 .dashboard-grid {
     --dashboard-column-min: 250px;

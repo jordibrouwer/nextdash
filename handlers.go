@@ -481,7 +481,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				report.Summary.PinnedCount++
 			}
 			if isBroken {
-				report.Summary.BrokenCount++
+				// A monitored bookmark that is down counts as a live outage, not
+				// an ordinary broken link — kept out of BrokenCount so the two can
+				// be told apart in the header and never double-counted.
+				if bm.Monitor {
+					report.Summary.MonitorDownCount++
+				} else {
+					report.Summary.BrokenCount++
+				}
 			}
 			if isDuplicate {
 				report.Summary.DuplicateCount++

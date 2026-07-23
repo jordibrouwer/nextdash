@@ -303,11 +303,58 @@ class DashboardVisual {
             const summary = await utils.fetchBookmarkHealthSummary();
             if (!summary) return;
             // keepHref: the icon opens the view; its href is only the middle-click path.
-            utils.applyHealthBadgeToAnchor(anchor, summary, d.language, { keepHref: true });
+            utils.applyHealthBadgeToAnchor(anchor, summary, d.language, {
+                keepHref: true,
+                onApplied: (counts) => this.maybePulseHealthAlert(counts?.monitorDown || 0),
+            });
             d.updateMiniStatusLine();
         } catch (e) {
             // Silently skip — badge is non-critical
         }
+    }
+
+    /**
+     * Pulse the health link once when the number of down monitors rises.
+     *
+     * Two guards keep it from becoming noise. It only fires on a *rise*, so a
+     * reload that finds an existing outage — or a recovery — stays quiet; the
+     * static badge already shows the standing state. And a cooldown suppresses a
+     * flapping monitor: one that drops and recovers every few minutes would
+     * otherwise pulse the header on every tick. The first observation seeds the
+     * baseline without animating, so opening the dashboard onto a live outage is
+     * not treated as a fresh one.
+     */
+    maybePulseHealthAlert(downCount) {
+        const previous = this._lastMonitorDownCount;
+        this._lastMonitorDownCount = downCount;
+
+        // First sight: record the level, do not animate. Distinguishes "already
+        // down when I arrived" from "went down while I was watching".
+        if (previous === undefined) return;
+        if (downCount <= previous) return;
+
+        const now = Date.now();
+        const COOLDOWN_MS = 10 * 60 * 1000;
+        if (this._lastHealthAlertAt && now - this._lastHealthAlertAt < COOLDOWN_MS) {
+            return;
+        }
+        this._lastHealthAlertAt = now;
+
+        const link = document.querySelector('.health-link');
+        if (!link) return;
+        link.classList.remove('is-health-alert');
+        // Reflow so a repeat alert replays the animation rather than being ignored
+        // as a no-op class toggle.
+        void link.offsetWidth;
+        link.classList.add('is-health-alert');
+        const anchor = link.querySelector('.health-link-anchor');
+        const done = () => link.classList.remove('is-health-alert');
+        if (anchor) {
+            anchor.addEventListener('animationend', done, { once: true });
+        }
+        // Fallback: reduced-motion and no-animations kill the animation, so
+        // animationend never fires — clear the class on a timer regardless.
+        setTimeout(done, 2000);
     }
 
 
