@@ -740,7 +740,10 @@
         "healthExportColChecked": "Laatst gecontroleerd",
         "healthExportColIssues": "Problemen",
         "healthEmptyMonitored": "Er wordt nog niets gemonitord",
-        "healthEmptyMonitoredHint": "Monitoring controleert een bookmark op een eigen interval en bewaart 30 dagen geschiedenis. Druk op c bij een rij — of gebruik het ⋯-menu — en kies Monitor."
+        "healthEmptyMonitoredHint": "Monitoring controleert een bookmark op een eigen interval en bewaart 30 dagen geschiedenis. Druk op c bij een rij — of gebruik het ⋯-menu — en kies Monitor.",
+        "healthTileMonitored": "Gemonitord",
+        "healthTileMonitoredDown": "{count} van {total} reageren niet",
+        "healthTileMonitoredUp": "Alle {count} reageren"
     },
     "health": {
         "pageTitle": "health beta",

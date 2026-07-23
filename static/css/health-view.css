@@ -127,8 +127,26 @@ button.health-view-tile:hover {
 
 /* A count of zero is good news for a problem tile, so it reads as plain text;
    only a non-zero count earns the severity colour. */
-.health-view-tile--good .health-view-tile-value {
+.health-view-tile--good:not(.health-view-tile--zero) .health-view-tile-value {
     color: var(--accent-success);
+}
+
+/* Monitored is the one tile whose tone is a live reading rather than a fixed
+   category, so it carries the state on its whole face instead of just the
+   number: a red count alone is easy to miss in a row of five tiles, and this
+   one is reporting that something is unreachable right now. */
+.health-view-tile--monitored.health-view-tile--bad:not(.health-view-tile--zero) {
+    border-color: color-mix(in srgb, var(--accent-error) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 10%, var(--background-secondary));
+}
+
+.health-view-tile--monitored.health-view-tile--bad:not(.health-view-tile--zero) .health-view-tile-label {
+    color: var(--accent-error);
+    opacity: 0.9;
+}
+
+.health-view-tile--monitored.health-view-tile--good:not(.health-view-tile--zero) {
+    border-color: color-mix(in srgb, var(--accent-success) 40%, transparent);
 }
 
 .health-view-tile--bad:not(.health-view-tile--zero) .health-view-tile-value {

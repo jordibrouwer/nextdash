@@ -740,7 +740,10 @@
         "healthExportColChecked": "Last checked",
         "healthExportColIssues": "Issues",
         "healthEmptyMonitored": "Nothing is being monitored yet",
-        "healthEmptyMonitoredHint": "Monitoring checks a bookmark on its own schedule and keeps 30 days of uptime history. Press c on any row — or use its ⋯ menu — and choose Monitor."
+        "healthEmptyMonitoredHint": "Monitoring checks a bookmark on its own schedule and keeps 30 days of uptime history. Press c on any row — or use its ⋯ menu — and choose Monitor.",
+        "healthTileMonitored": "Monitored",
+        "healthTileMonitoredDown": "{count} of {total} not responding",
+        "healthTileMonitoredUp": "All {count} responding"
     },
     "health": {
         "pageTitle": "health beta",

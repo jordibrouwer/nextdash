@@ -188,7 +188,8 @@ test.describe('health dashboard view', () => {
         await openHealthView(page);
 
         const tiles = page.locator('.health-view-tile');
-        await expect(tiles).toHaveCount(5);
+        // Total, Healthy, Monitored, Broken, Duplicates, Unchecked.
+        await expect(tiles).toHaveCount(6);
         await expect(page.locator('[data-health-tile="broken"]')).toContainText('1');
         // Broken is the default filter, so its tile starts marked.
         await expect(page.locator('[data-health-tile="broken"]')).toHaveClass(/is-active/);
@@ -869,5 +870,95 @@ test.describe('health view — export, persistence and monitor discoverability',
         expect(fields.plus).toBe(`"'+cmd"`);
         expect(fields.plain).toBe('"ordinary"');
         expect(fields.nullish).toBe('""');
+    });
+});
+
+test.describe('health view — monitored tile', () => {
+    /** The mocked report with the monitored row's outage state forced either way. */
+    async function withMonitorState(page, { down }) {
+        await page.route('**/api/bookmark-health**', async (route) => {
+            const r = report();
+            r.issues = r.issues.map((issue) => (issue.monitorStats
+                ? { ...issue, monitorStats: { ...issue.monitorStats, downSince: down ? Date.now() - 600_000 : 0 } }
+                : issue));
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(r) });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        // A stored filter would otherwise decide which list opens, and the tiles
+        // only render when that list has rows.
+        await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+    }
+
+    test('sits directly after Healthy', async ({ page }) => {
+        await withMonitorState(page, { down: false });
+
+        // Monitored answers the same question as Healthy — is anything wrong
+        // now — where Broken/Duplicates/Unchecked are backlogs to work through.
+        const labels = await page.locator('.health-view-tile-label').allTextContents();
+        expect(labels.map((t) => t.trim())).toEqual(
+            ['Total', 'Healthy', 'Monitored', 'Broken', 'Duplicates', 'Unchecked']
+        );
+    });
+
+    test('reads green while every monitor answers', async ({ page }) => {
+        await withMonitorState(page, { down: false });
+
+        const tile = page.locator('.health-view-tile--monitored');
+        await expect(tile).toHaveClass(/health-view-tile--good/);
+        await expect(tile).not.toHaveClass(/health-view-tile--bad/);
+        await expect(tile).toHaveAttribute('title', /responding/i);
+    });
+
+    test('turns red while a monitor is unreachable', async ({ page }) => {
+        await withMonitorState(page, { down: true });
+
+        const tile = page.locator('.health-view-tile--monitored');
+        await expect(tile).toHaveClass(/health-view-tile--bad/);
+        await expect(tile).not.toHaveClass(/health-view-tile--good/);
+        await expect(tile).toHaveAttribute('title', /not responding/i);
+    });
+
+    test('clicking it goes straight to the monitored list, and is remembered', async ({ page }) => {
+        await withMonitorState(page, { down: true });
+
+        await page.click('[data-health-tile="monitored"]');
+        expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('monitored');
+        // A filter choice that is forgotten on the way out is not a choice.
+        expect(await page.evaluate(() => localStorage.getItem('nextdash:health-view-state')))
+            .toContain('monitored');
+    });
+
+    test('a monitor awaiting its first check is not counted as down', async ({ page }) => {
+        // "Monitored pending" carries monitor: true and no monitorStats at all.
+        // Unknown is not failing, and reddening the tile for it cries wolf on
+        // every freshly-enabled monitor.
+        await withMonitorState(page, { down: false });
+
+        expect(await page.evaluate(() => window.dashboardInstance.health.monitorsDownCount())).toBe(0);
+        await expect(page.locator('.health-view-tile--monitored')).toHaveClass(/health-view-tile--good/);
+    });
+
+    test('a zero count stays neutral rather than reading as a pass', async ({ page }) => {
+        await page.route('**/api/bookmark-health**', async (route) => {
+            const r = report();
+            r.issues = r.issues.map((i) => ({ ...i, monitor: false, monitorStats: undefined }));
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(r) });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+
+        const tile = page.locator('.health-view-tile--monitored');
+        await expect(tile).toHaveClass(/health-view-tile--zero/);
+        // No tooltip either: there is nothing to report on zero monitors. The
+        // attribute is omitted entirely rather than set to an empty string.
+        expect(await tile.getAttribute('title')).toBeNull();
     });
 });
