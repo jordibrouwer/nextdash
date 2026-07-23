@@ -186,8 +186,11 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 
 - Open with the **Inbox** header tab, **`Shift+I`**, **`0`** (when search is closed), or **`:inbox`**.  
 - Add links by pasting a URL on the dashboard (`Ctrl+V`) and choosing **Save to Inbox**, via the browser extension, or through the API.  
-- Filter **All** / **Unread** / **Snoozed**, search, and browse date groups. **Snooze** parks a link for later (`z`); **Promote** turns a link into a full bookmark (and health-checks it when status checks are on); **Triage** walks unread items one by one.  
-- Keyboard: `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `d` delete. Toolbar bulk actions: **Mark all read** and **Clear read**.  
+- Filter **All** / **Unread** / **Snoozed**, search, and browse date groups. **Snooze** parks a link for later (`z`) — four presets, plus a date field (**unreleased**) for anything further out than *next week*, waking at 09:00 local like the presets do; **Promote** turns a link into a full bookmark (and health-checks it when status checks are on); **Triage** walks unread items one by one.  
+- **Sort** (**unreleased**) — next to the search field: **newest first** (default), **oldest first**, **title**, or **site**. *Oldest first* is how a backlog gets worked: the items you have been avoiding are at the bottom. Title and site sorts drop the date headings so the ordering runs unbroken from top to bottom.  
+- **Linkable and remembered** (**unreleased**) — filter, sort and search appear in the address bar (`?ib_filter=`, `?ib_sort=`, `?ib_q=`), so a view can be bookmarked or shared. Filter and sort also return on your next visit; a shared link overrides what was stored. The search box is deliberately not remembered.  
+- **Select several** (**unreleased**) — tick rows (click the box, or `x` on the selected row) and a bar offers **Mark read**, **Snooze** and **Delete** for just those items, instead of the toolbar's all-or-nothing bulk. `Esc` clears the selection, switching filter clears it too (so a bulk action cannot reach rows you can no longer see), and deleting names the count and asks first.  
+- Keyboard: `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `x` select (**unreleased**), `d` delete. Toolbar bulk actions: **Mark all read** and **Clear read**.  
 - Toggle under **Config → General → Enable Inbox page**; set **Paste URL default** to skip the choice dialog.
 
 ### 4.5 Config vs dashboard
@@ -822,8 +825,10 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Score 0–100** | Combines broken, duplicate, shortcut conflict, stale, missing preview, unused |
 | **Score breakdown** (**v2026.07.14.2**) | Click the score badge — or press `s` — to unfold how the score was reached: every bookmark starts at 100, each issue lists what it costs (broken −60, duplicate −15, shortcut conflict −15, never checked −10, not opened in 30 days −10, never opened −10, stale check −5, no preview −5), down to the total |
 | **Summary tiles** | Compact stat tiles; click a tile to jump to that filter |
-| **Filters** | broken, duplicate, shortcut-conflict, stale, unchecked, unused, missing preview, healthy — default **broken** on first visit |
-| **Controls panel** | Search, status pills, sort, and retest action in one compact block |
+| **Filters** | broken, duplicate, shortcut-conflict, stale, unchecked, unused, missing preview, healthy, **monitored** — default **broken** on first visit, and your last filter and sort come back on the next one (**unreleased**); a `?hv_filter=` deep link still overrides what was stored |
+| **Monitored filter** (**unreleased**) | Offered as soon as there are bookmarks, not only once something is already monitored — it used to be invisible to anyone who had not already found the feature. An empty Monitored list explains what monitoring does and how to switch it on (`c` on a row) rather than reporting "no issues found" |
+| **Export** (**unreleased**) | Downloads the **current filter and search** as CSV — name, URL, status, score, page, category, last checked, and the same issue wording the score panel shows. For working through findings beside a spreadsheet, or handing someone the list. Values starting `=` `+` `-` `@` are prefixed so a spreadsheet treats them as text instead of formulas; a UTF-8 BOM keeps accented titles intact in Excel |
+| **Controls panel** | Search, status pills, sort, export, and retest action in one compact block |
 | **Search** | Name, URL, category, page |
 | **Edit** (**v2026.07.16**) | Row Edit (or `Enter`) leaves the Health view, opens the bookmark’s page, and launches the dashboard **inline editor** (falls back to Config when unavailable) |
 | **Favicon** | Shows stored bookmark icon; refresh per row |
