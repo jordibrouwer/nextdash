@@ -836,6 +836,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Bulk enable** (**v2026.07.20**) | On a **filtered** list, a button offers to switch the visible rows to Periodic or Monitor at once, confirming the exact count first. Never offered on the unfiltered **All** list, where it would point the scheduler at every bookmark you own |
 | **Monitoring** (**v2026.07.20**) | A monitored row shows a **heartbeat bar** of recent checks, **uptime** over 24h / 7d / 30d, and a response-time **sparkline**; the expanded panel adds **outage history** (start, duration, cause), or *down since* while it is still down. A **Monitored** filter narrows the list to these rows. Interval is 5 minutes to 24 hours (default 15); history is kept 30 days in `data/health-history.json` |
 | **Enlarge statistics** (**v2026.07.21.1**) | The row strip only has room for a 24h figure and one ping. The **⤢** button at the end of it — or `i` — opens the same monitoring data at full size: a large response-time chart with min / average / max marked and a tooltip per point, **uptime side by side for 24h / 7d / 30d** with the number of checks behind each, a taller heartbeat, the check interval and last check, and the full outage list. A window with no samples yet reads *no data* rather than 0%, so a monitor enabled an hour ago does not look like a day of downtime. Nothing is re-fetched — it is the report already on screen — so it opens instantly. `Esc` closes it and leaves your place in the list. The button only appears once there is something to show: a monitored bookmark still awaiting its first check does not get one |
+| **Reading values off the chart** (**unreleased**) | The chart is interactive: click or hover anywhere in a measurement's slice of the plot — a full-height column, not just the dot — and the **readout under the chart** names that measurement: response time, the time it was measured, how many checks the point folds together, and whether it was up, down or degraded. It opens on the most recent measurement rather than empty. `←` / `→` walk point to point and update the readout as they go, skipping buckets with no measurement so you never land on an empty reading. The chart is a single `Tab` stop, so **Close** stays one `Tab` away, and tabbing back in returns to the point you were reading |
 | **Downtime alerts** (**v2026.07.20**) | Optional webhook under **Config → General**, posted when a monitored bookmark goes down and again when it recovers. Fires only after N consecutive failures (default 3, range 1–10) so a single hiccup stays quiet. Works with ntfy, Discord, Slack, and similar. Local addresses are refused unless **Allow local bookmarks** is on — the same SSRF rules as pings |
 | **Layout parity** | Uses the same **Classic / Modern** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
 | **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips) |
@@ -994,7 +995,9 @@ On phone, Help is the only config tab besides **General** that shows the full do
 
 **config → backups → Create backup** — ZIP, settings export, and CSV sections appear as divided rows inside one fused surface card on all layout versions (**v2026.07.01.1**).
 
-Includes pages, bookmarks (with tags), categories, **finders** (`finders.json`), settings, custom themes (`colors.json`), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`. Legacy icon files that lived directly in `data/` are exported as `icons/<filename>` so bookmark references survive a full round-trip.
+Includes pages, bookmarks (with tags), categories, **finders** (`finders.json`), settings, custom themes (`colors.json`), **uptime monitoring history** (`health-history.json`, **unreleased**), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`. Legacy icon files that lived directly in `data/` are exported as `icons/<filename>` so bookmark references survive a full round-trip.
+
+Monitoring history is the one piece of health data that is **measured** rather than derived, so it is the one that is archived: without it a restore resets every monitored bookmark to *waiting for its first check* — no response-time chart, no uptime windows, no outage list — and a 30-day figure takes 30 days to earn back. The **preview cache** and **health cache** are deliberately left out and cleared on import: a scan rebuilds those in minutes.
 
 The panel shows **Last backup: …** after you create a ZIP (stored locally in the browser).
 
@@ -1002,7 +1005,9 @@ The panel shows **Last backup: …** after you create a ZIP (stored locally in t
 
 Do not rename files inside the ZIP.
 
-Import is **atomic**: files are staged, orphan icons and stale JSON are removed, then everything is committed in one step. If the ZIP **omits** `finders.json`, your **existing finders are preserved** (not deleted as orphans).
+Import is **atomic**: files are staged, orphan icons and stale JSON are removed, then everything is committed in one step. If the ZIP **omits** `finders.json`, your **existing finders are preserved** (not deleted as orphans). The same applies to `health-history.json` (**unreleased**): every ZIP written before monitoring history was archived omits it, and treating that absence as a deletion would throw away measurements the archive never carried.
+
+History for bookmarks that the imported data no longer monitors is **not** removed by the import itself; the monitor scheduler sweeps those orphans on its next tick (within a minute), so the file settles on its own.
 
 Bookmark URL validation during import uses **`allowLocalBookmarks` from the imported `settings.json`** when that file is in the ZIP (read **before** bookmarks — not the server’s current setting).
 

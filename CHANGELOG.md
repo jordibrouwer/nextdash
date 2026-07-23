@@ -104,7 +104,13 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-Nothing yet.
+### Health view
+
+- **new** **The enlarged response-time chart is readable point by point** — the chart shipped as a shape with a tooltip; the numbers behind it were only reachable by hovering the exact pixel of a dot. Every measured bucket now has a full-height hit column, so clicking or hovering anywhere in a point's slice of the chart writes that measurement into a **readout under the chart**: response time, the time it was measured, how many checks the bucket folds together, and whether it was up, down or degraded. It opens on the most recent measurement rather than empty. The readout sits below the chart instead of floating over it, so it can be read on a touch screen and does not vanish when you look away (`dashboard-health.js`, `health-view.css`, `locales/{en,nl,de,fr}.json`).
+- **new** **The chart is keyboard-navigable** — `←` / `→` walk from point to point and update the readout as they go, skipping buckets with no measurement rather than landing on an empty reading. The chart is a **single tab stop** (roving tabindex), so reaching the **Close** button still takes one `Tab` rather than one per measurement, and tabbing back in returns to the point you were reading. `Esc` still closes the modal.
+- **new** **Monitoring history is part of a backup** — uptime samples were left out of the archive, so restoring a backup reset every monitored bookmark to *waiting for its first check*: no chart, no uptime windows, no outage history, and a 30-day figure that takes 30 days to earn back. `health-history.json` is now included and restored. It is the one piece of health data that is measured rather than derived — the preview and health *caches* are still left out, because a scan rebuilds those in minutes. Restoring an **older** backup, written before this change, leaves the monitoring history you already have in place rather than deleting it (`backup.go`).
+
+- **fix** **The chart's axis labels were cut off** — the min and max readings sit on their own gridlines at the very top and bottom of the plot, so both were sliced in half by the edge of the drawing area, and the label column was too narrow for the last character of a three-digit value. The plot is now inset vertically and the label column widened enough for a four-digit reading. The compact sparkline in the row is unchanged — byte for byte.
 
 ---
 
