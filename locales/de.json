@@ -740,7 +740,10 @@
         "healthExportColChecked": "Zuletzt geprüft",
         "healthExportColIssues": "Probleme",
         "healthEmptyMonitored": "Es wird noch nichts überwacht",
-        "healthEmptyMonitoredHint": "Die Überwachung prüft ein Lesezeichen in einem eigenen Intervall und bewahrt 30 Tage Verlauf. Drücken Sie c in einer Zeile — oder nutzen Sie das ⋯-Menü — und wählen Sie Monitor."
+        "healthEmptyMonitoredHint": "Die Überwachung prüft ein Lesezeichen in einem eigenen Intervall und bewahrt 30 Tage Verlauf. Drücken Sie c in einer Zeile — oder nutzen Sie das ⋯-Menü — und wählen Sie Monitor.",
+        "healthTileMonitored": "Überwacht",
+        "healthTileMonitoredDown": "{count} von {total} antworten nicht",
+        "healthTileMonitoredUp": "Alle {count} antworten"
     },
     "health": {
         "pageTitle": "health beta",

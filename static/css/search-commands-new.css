@@ -1,11 +1,16 @@
 /* New Bookmark Modal Styles */
 
+/* The 520px cap used to cut the form off mid-way, so the fields between Tags
+   and "More options" — availability checking among them — sat below the fold
+   and had to be scrolled to before they could be seen at all. 760px shows the
+   whole form down to the collapsed section on a normal window, while 90vh still
+   keeps it inside a short one. The body scrolls either way. */
 .modal-new-bookmark {
     max-width: 560px;
     width: min(560px, 92vw);
     padding: 0;
     overflow: hidden;
-    max-height: min(90vh, 520px);
+    max-height: min(90vh, 760px);
     display: flex;
     flex-direction: column;
 }
@@ -68,6 +73,46 @@
     flex-wrap: wrap;
 }
 
+/* Availability check and Shortcut share one row: the mode pills leave a column
+   free beside them that the short input fits into exactly, which is what lets
+   Shortcut sit above the fold without making the modal taller.
+   Placed here beside .nbm-section-row rather than further down the file because
+   it overrides .nbm-section's column direction at equal specificity — later
+   rules win, so distance from that rule is what makes this work. */
+.nbm-availability-row {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.nbm-availability-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.nbm-availability-aside {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.nbm-availability-aside .nbm-input {
+    width: 5.5rem;
+}
+
+/* Under the narrow breakpoint the two stack rather than squeezing the pills. */
+@media (max-width: 520px) {
+    .nbm-availability-row {
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .nbm-availability-aside {
+        width: 100%;
+    }
+}
+
 /* ── Labels ── */
 .nbm-label {
     font-size: var(--font-size-controls);
@@ -117,24 +162,6 @@
     text-transform: uppercase;
     text-align: center;
     max-width: 5.5rem;
-}
-
-.nbm-shortcut-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: nowrap;
-}
-
-.nbm-shortcut-row .nbm-label {
-    flex-shrink: 0;
-    white-space: nowrap;
-    margin: 0;
-}
-
-.nbm-shortcut-row .nbm-input {
-    flex: 0 0 5.5rem;
-    width: 5.5rem;
 }
 
 .nbm-conflict-hint {

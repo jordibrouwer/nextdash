@@ -60,46 +60,7 @@ class DashboardInlineEdit {
      * that one doesn't?") arises in both places.
      */
     showCheckModeExplainer() {
-        const d = this.dash;
-        const cfg = (key, fallback) => {
-            const full = `config.${key}`;
-            const result = d?.language?.t?.(full);
-            return result && result !== full ? result : fallback;
-        };
-        const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-        ));
-        if (!window.AppModal) return;
-
-        const row = (title, body) => `
-            <div class="check-mode-explain-row">
-                <h4>${esc(title)}</h4>
-                <p>${esc(body)}</p>
-            </div>`;
-
-        window.AppModal.show({
-            title: cfg('checkModeExplainTitle', 'How availability checking works'),
-            htmlMessage: `
-                <div class="check-mode-explain">
-                    ${row(
-                        cfg('checkModePeriodic', 'Periodic'),
-                        cfg('checkModeExplainPeriodic', 'Answers one question: is this link still alive? It is checked in the background about once a day, and a broken bookmark is flagged in the health view. Cheap, and enough for most bookmarks.')
-                    )}
-                    ${row(
-                        cfg('checkModeMonitor', 'Monitor'),
-                        cfg('checkModeExplainMonitor', 'Answers a bigger question: how reliable has it been? It is checked on the interval you pick (from 5 minutes) and keeps history, so you get an uptime percentage, a heartbeat bar, outage history and optional alerts. Use it for the handful of services you actually care about being up.')
-                    )}
-                    ${row(
-                        cfg('checkModeExplainWhichTitle', 'Which should I pick?'),
-                        cfg('checkModeExplainWhich', 'Monitor includes everything Periodic does, so there is never a reason to want both. Periodic suits your ordinary links; Monitor suits your own servers and dashboards. Monitoring everything would make a lot of network requests and a large history file for little benefit.')
-                    )}
-                </div>`,
-            confirmText: cfg('checkModeExplainClose', 'Got it'),
-            // Informational only — a Cancel button would imply the explanation
-            // could be declined.
-            showCancel: false,
-            modalClass: 'whats-new-modal check-mode-explain-modal',
-        });
+        window.CheckMode?.showExplainer?.();
     }
 
     snapshotInlineEditBaseline(bookmark, pageId) {

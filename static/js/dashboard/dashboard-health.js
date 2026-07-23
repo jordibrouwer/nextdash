@@ -381,6 +381,24 @@ class DashboardHealth {
         return issues.filter((issue) => this.matchesFilter(issue, filter)).length;
     }
 
+    /**
+     * Monitored bookmarks that are unreachable right now.
+     *
+     * downSince is the server's own record of an open outage (0 while up), so
+     * this reports what monitoring currently sees rather than re-deriving it
+     * from sample history — a row that recovered a minute ago must not still
+     * count as down.
+     *
+     * A monitor awaiting its first check has no stats and is not counted: it is
+     * unknown rather than failing, and turning the tile red for it would cry
+     * wolf on every freshly-enabled monitor.
+     */
+    monitorsDownCount() {
+        const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
+        return issues.filter((issue) => issue.monitor === true
+            && Number(issue.monitorStats?.downSince) > 0).length;
+    }
+
     /* ── Keyboard ──────────────────────────────────────────────────────── */
 
     getVisibleRows() {
@@ -1264,9 +1282,31 @@ class DashboardHealth {
         const total = Number(summary.totalBookmarks) || 0;
         const healthy = Number(summary.healthyCount) || 0;
 
+        // Monitored sits next to Healthy because it answers the same question —
+        // is anything wrong right now — where Broken/Duplicates/Unchecked are
+        // backlogs to work through. Its tone is live rather than fixed: red the
+        // moment a monitor stops responding, green while they all answer.
+        const monitored = this.filterCount('monitored');
+        const monitorsDown = this.monitorsDownCount();
+
         const tiles = [
             { key: 'all', label: this.t('dashboard.healthTileTotal', 'Total'), value: total, tone: 'neutral' },
             { key: null, label: this.t('dashboard.healthTileHealthy', 'Healthy'), value: healthy, tone: 'good' },
+            {
+                key: 'monitored',
+                label: this.t('dashboard.healthTileMonitored', 'Monitored'),
+                value: monitored,
+                // 'good' keeps a healthy set green; 'bad' turns the count red the
+                // moment one goes down. A zero count stays neutral through the
+                // existing --zero rule, so an install with no monitors is not
+                // painted green as if it were passing something.
+                tone: monitorsDown > 0 ? 'bad' : 'good',
+                title: monitored > 0
+                    ? (monitorsDown > 0
+                        ? this.t('dashboard.healthTileMonitoredDown', '{count} of {total} not responding', { count: monitorsDown, total: monitored })
+                        : this.t('dashboard.healthTileMonitoredUp', 'All {count} responding', { count: monitored }))
+                    : '',
+            },
             { key: 'broken', label: this.t('dashboard.healthTileBroken', 'Broken'), value: Number(summary.brokenCount) || 0, tone: 'bad' },
             { key: 'duplicate', label: this.t('dashboard.healthTileDuplicates', 'Duplicates'), value: Number(summary.duplicateCount) || 0, tone: 'warn' },
             { key: 'unchecked', label: this.t('dashboard.healthTileUnchecked', 'Unchecked'), value: Number(summary.uncheckedCount) || 0, tone: 'warn' },
@@ -1279,14 +1319,18 @@ class DashboardHealth {
             // Zero problems is good news: drop the severity colour so only a real
             // count is tinted red or orange.
             const zero = tile.value === 0 ? ' health-view-tile--zero' : '';
-            const cls = `health-view-tile health-view-tile--${tile.tone}${zero}${active}`;
+            // Named modifier so the monitored tile can style its live state
+            // without the tone classes having to mean something different here.
+            const named = tile.key === 'monitored' ? ' health-view-tile--monitored' : '';
+            const cls = `health-view-tile health-view-tile--${tile.tone}${zero}${named}${active}`;
             if (!tile.key) {
                 return `<article class="${cls}">
                     <span class="health-view-tile-label">${this.escape(tile.label)}</span>
                     <span class="health-view-tile-value">${this.escape(tile.value)}</span>
                 </article>`;
             }
-            return `<button type="button" class="${cls}" data-health-tile="${tile.key}" tabindex="-1" aria-label="${this.escape(tile.label)}: ${this.escape(tile.value)}">
+            const title = tile.title ? ` title="${this.escape(tile.title)}"` : '';
+            return `<button type="button" class="${cls}" data-health-tile="${tile.key}" tabindex="-1"${title} aria-label="${this.escape(tile.label)}: ${this.escape(tile.value)}">
                 <span class="health-view-tile-label">${this.escape(tile.label)}</span>
                 <span class="health-view-tile-value">${this.escape(tile.value)}</span>
             </button>`;
@@ -1296,6 +1340,9 @@ class DashboardHealth {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-health-tile') || 'broken';
                 this.visibleLimit = 50;
+                // Same as the filter pills: a tile is a filter choice, and one
+                // that is forgotten on the way out is not really a choice.
+                this.persistViewState();
                 this.render();
             });
         });

@@ -740,7 +740,10 @@
         "healthExportColChecked": "Dernière vérification",
         "healthExportColIssues": "Problèmes",
         "healthEmptyMonitored": "Rien n’est encore surveillé",
-        "healthEmptyMonitoredHint": "La surveillance vérifie un favori selon son propre intervalle et conserve 30 jours d’historique. Appuyez sur c sur une ligne — ou utilisez son menu ⋯ — et choisissez Monitor."
+        "healthEmptyMonitoredHint": "La surveillance vérifie un favori selon son propre intervalle et conserve 30 jours d’historique. Appuyez sur c sur une ligne — ou utilisez son menu ⋯ — et choisissez Monitor.",
+        "healthTileMonitored": "Surveillés",
+        "healthTileMonitoredDown": "{count} sur {total} ne répondent pas",
+        "healthTileMonitoredUp": "Les {count} répondent"
     },
     "health": {
         "pageTitle": "health beta",

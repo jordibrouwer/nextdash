@@ -464,34 +464,12 @@ class ConfigBookmarks {
      * `hidden` attribute has to move to that wrapper — setting it on the (already
      * display:none) <select> would toggle nothing on screen.
      */
-    /** Same explanation as the dashboard inline editor, reachable from the (i). */
+    /**
+     * The (i) explainer. Delegates to CheckMode so the add-bookmark modal and
+     * this panel describe the three modes with one set of words.
+     */
     _showCheckModeExplainer() {
-        const t = (key, fallback) => {
-            const full = `config.${key}`;
-            const v = window.i18n?.t ? window.i18n.t(full) : null;
-            return v && v !== full ? v : fallback;
-        };
-        const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-        ));
-        const row = (title, body) => `<div class="check-mode-explain-row"><h4>${esc(title)}</h4><p>${esc(body)}</p></div>`;
-        const html = `<div class="check-mode-explain">
-            ${row(t('checkModePeriodic', 'Periodic'), t('checkModeExplainPeriodic', 'Answers one question: is this link still alive? It is checked in the background about once a day, and a broken bookmark is flagged in the health view. Cheap, and enough for most bookmarks.'))}
-            ${row(t('checkModeMonitor', 'Monitor'), t('checkModeExplainMonitor', 'Answers a bigger question: how reliable has it been? It is checked on the interval you pick (from 5 minutes) and keeps history, so you get an uptime percentage, a heartbeat bar, outage history and optional alerts. Use it for the handful of services you actually care about being up.'))}
-            ${row(t('checkModeExplainWhichTitle', 'Which should I pick?'), t('checkModeExplainWhich', 'Monitor includes everything Periodic does, so there is never a reason to want both. Periodic suits your ordinary links; Monitor suits your own servers and dashboards. Monitoring everything would make a lot of network requests and a large history file for little benefit.'))}
-        </div>`;
-
-        if (window.AppModal?.show) {
-            window.AppModal.show({
-                title: t('checkModeExplainTitle', 'How availability checking works'),
-                htmlMessage: html,
-                confirmText: t('checkModeExplainClose', 'Got it'),
-                // Informational only — a Cancel button would imply the explanation
-                // could be declined.
-                showCancel: false,
-                modalClass: 'check-mode-explain-modal',
-            });
-        }
+        window.CheckMode?.showExplainer?.();
     }
 
     _syncCheckMode(mode) {

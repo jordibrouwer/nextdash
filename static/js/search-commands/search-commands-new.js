@@ -18,6 +18,19 @@ function safeUploadedIconFilename(raw) {
 }
 
 class SearchCommandNew {
+    /**
+     * The monitor cadences, matching the bookmark editor's list in config.html.
+     * Kept as data so the two only differ if someone means them to.
+     */
+    static MONITOR_INTERVALS = [
+        { minutes: 5, fallback: '5m' },
+        { minutes: 15, fallback: '15m' },
+        { minutes: 30, fallback: '30m' },
+        { minutes: 60, fallback: '1h' },
+        { minutes: 360, fallback: '6h' },
+        { minutes: 1440, fallback: '24h' },
+    ];
+
     constructor(language = null) {
         this.language = language;
         this.modal = null;
@@ -103,7 +116,12 @@ class SearchCommandNew {
         const shortcutEl = document.getElementById('new-bookmark-shortcut');
         const noteEl = document.getElementById('new-bookmark-note');
         const pinnedEl = document.getElementById('new-bookmark-pinned');
-        const statusEl = document.getElementById('new-bookmark-status');
+        // CheckMode.assign turns the chosen mode into the monitor/checkStatus/
+        // interval triple the server stores, so the preview and the saved record
+        // cannot disagree about what "Monitor" means.
+        const modeFields = window.CheckMode
+            ? window.CheckMode.assign({ monitorIntervalMinutes: this.getSelectedMonitorInterval() }, this.getSelectedCheckMode())
+            : { checkStatus: false, monitor: false };
         return {
             name: nameEl?.value || '',
             url: urlEl?.value || '',
@@ -111,7 +129,9 @@ class SearchCommandNew {
             note: noteEl?.value || '',
             icon: this.pendingIcon || '',
             pinned: pinnedEl?.checked || false,
-            checkStatus: statusEl?.checked || false,
+            checkStatus: modeFields.checkStatus || false,
+            monitor: modeFields.monitor || false,
+            monitorIntervalMinutes: modeFields.monitorIntervalMinutes || 0,
             previewTitle: this.draftState.previewTitle || '',
             previewDesc: this.draftState.previewDesc || '',
             previewImage: this.draftState.previewImage || '',
@@ -121,6 +141,44 @@ class SearchCommandNew {
     updatePreviews() {
         const bookmark = this.getDraftBookmark();
         this.formPreview?.updateAll(bookmark);
+    }
+
+    /** The ticked availability mode, defaulting to off. */
+    getSelectedCheckMode() {
+        const checked = document.querySelector('input[name="new-bookmark-check-mode"]:checked');
+        return checked?.value || window.CheckMode?.OFF || 'off';
+    }
+
+    /** The chosen cadence, only meaningful while the mode is Monitor. */
+    getSelectedMonitorInterval() {
+        const select = document.getElementById('new-bookmark-monitor-interval');
+        return Number(select?.value) || window.CheckMode?.DEFAULT_INTERVAL_MINUTES || 15;
+    }
+
+    /**
+     * Show the interval only for Monitor and swap the hint under the group.
+     *
+     * Deliberately the same behaviour as _syncCheckMode in config-bookmarks.js,
+     * reading the same `config.checkMode*Hint` keys — the two surfaces offer the
+     * same choice, so they should explain it in the same words.
+     */
+    syncCheckMode() {
+        const mode = this.getSelectedCheckMode();
+        const select = document.getElementById('new-bookmark-monitor-interval');
+        if (select) select.hidden = mode !== (window.CheckMode?.MONITOR || 'monitor');
+
+        const hint = document.getElementById('new-bookmark-check-mode-hint');
+        if (!hint) return;
+        const key = mode === 'monitor'
+            ? 'checkModeMonitorHint'
+            : (mode === 'periodic' ? 'checkModePeriodicHint' : 'checkModeOffHint');
+        const fallback = {
+            checkModeOffHint: 'No availability checking.',
+            checkModePeriodicHint: 'Checks once a day and flags the bookmark when it breaks.',
+            checkModeMonitorHint: 'Checks on your own interval and keeps uptime history, a heartbeat and outage alerts. Includes everything Periodic does.',
+        }[key];
+        hint.textContent = this.t(`config.${key}`, fallback);
+        hint.setAttribute('data-i18n', `config.${key}`);
     }
 
     usesMobileWizard() {
@@ -263,6 +321,25 @@ class SearchCommandNew {
         const shortcutConflictLabel = this.t('config.shortcutConflict', 'Shortcut already in use');
         const urlDuplicateLabel = this.t('config.urlConflictHint', 'This URL already exists on this page.');
 
+        // Built from CheckMode.options() rather than written out here, so the three
+        // modes, their order and their labels come from the same place the health
+        // view and the context menu read them from. Off is preselected: a new
+        // bookmark is not checked until asked, which is what the server assumes too.
+        const checkModeOptionsHtml = (window.CheckMode?.options?.() || []).map((opt) => {
+            const id = `new-bookmark-check-mode-${opt.mode}`;
+            const checked = opt.mode === window.CheckMode.OFF ? ' checked' : '';
+            return `<input type="radio" name="new-bookmark-check-mode" id="${id}" value="${opt.mode}" class="bookmark-detail-checkmode-input"${checked}>`
+                + `<label for="${id}" class="bookmark-detail-checkmode-option">${escapeNewCommandHtml(opt.label)}</label>`;
+        }).join('');
+
+        // Same cadences the config panel offers. Sourced from CheckMode so a new
+        // interval only has to be added in one place.
+        const monitorIntervalOptionsHtml = SearchCommandNew.MONITOR_INTERVALS.map(({ minutes, fallback }) => {
+            const label = this.t(`config.monitorIntervalShort${minutes}`, fallback);
+            const selected = minutes === (window.CheckMode?.DEFAULT_INTERVAL_MINUTES ?? 15) ? ' selected' : '';
+            return `<option value="${minutes}"${selected}>${escapeNewCommandHtml(label)}</option>`;
+        }).join('');
+
         const modalHTML = `
             <div id="new-bookmark-modal" class="modal-overlay">
                 <div class="modal modal-new-bookmark">
@@ -328,16 +405,52 @@ class SearchCommandNew {
                             <label class="nbm-label" for="new-bookmark-tags">${this.t('config.detailTagsLabel', 'Tags')} <span class="nbm-label-hint">${this.t('config.commaSeparatedShort', 'comma-separated')}</span></label>
                             <input type="text" id="new-bookmark-tags" name="tags" class="nbm-input" placeholder="${this.t('config.detailTagsPlaceholder', 'work, dev, personal…')}" autocomplete="off" spellcheck="false">
                         </div>
+                        <!-- Availability checking sits above the fold: it decides whether a
+                             bookmark is monitored at all, which is a choice worth making while
+                             adding it rather than one to rediscover under More options later.
+                             The markup mirrors the config bookmark panel exactly, down to the
+                             class names, so both surfaces are styled by the same rules and
+                             cannot drift apart. -->
+                        <div class="nbm-section nbm-wizard-step-2-panel nbm-availability-row">
+                            <div class="bookmark-detail-checkmode nbm-availability-main">
+                                <div class="bookmark-detail-checkmode-header">
+                                    <label class="bookmark-detail-label" data-i18n="config.checkModeLabel">${this.t('config.checkModeLabel', 'Availability check')}</label>
+                                    <button type="button" id="new-bookmark-check-mode-info" class="bookmark-detail-checkmode-info"
+                                            data-i18n-aria="config.checkModeExplainTitle" aria-label="${this.t('config.checkModeExplainTitle', 'How availability checking works')}">i</button>
+                                </div>
+                                <div class="bookmark-detail-checkmode-options" role="radiogroup" aria-label="${this.t('config.checkModeLabel', 'Availability check')}">
+                                    ${checkModeOptionsHtml}
+                                    <select id="new-bookmark-monitor-interval" class="bookmark-detail-toggle-select" data-i18n-aria="config.monitorInterval" aria-label="${this.t('config.monitorInterval', 'Monitor interval')}" hidden>
+                                        ${monitorIntervalOptionsHtml}
+                                    </select>
+                                </div>
+                                <p class="bookmark-detail-field-hint" id="new-bookmark-check-mode-hint"></p>
+                            </div>
+                            <!-- Shortcut shares this row rather than sitting under More
+                                 options: it is a per-bookmark decision you make while adding
+                                 one, and the availability control left an empty column
+                                 beside it that fits the field exactly. -->
+                            <div class="nbm-availability-aside">
+                                <label class="bookmark-detail-label" for="new-bookmark-shortcut">${this.t('config.shortcut', 'Shortcut')}</label>
+                                <input type="text" id="new-bookmark-shortcut" name="shortcut" class="nbm-input nbm-shortcut" maxlength="5" autocomplete="off" placeholder="${this.t('config.bookmarkShortcutPlaceholder', 'Y, YS, YC')}">
+                                <span id="new-bookmark-shortcut-conflict" class="nbm-conflict-hint" hidden>${shortcutConflictLabel}</span>
+                                <!-- Same pill as the config panel and the inline editor, with
+                                     the same pin glyph, rather than a bare checkbox at the very
+                                     bottom of the form where it was easy to miss. -->
+                                <label class="checkbox-label icon-toggle bookmark-detail-toggle nbm-pin-toggle" title="${this.t('config.pinnedToggleHint', 'Pin this bookmark to the top of its category')}">
+                                    <input type="checkbox" id="new-bookmark-pinned" name="pinned">
+                                    <span class="icon-toggle-indicator" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" focusable="false">
+                                            <path d="M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="bookmark-detail-toggle-label">${this.t('config.pinnedShort', 'Pinned')}</span>
+                                </label>
+                            </div>
+                        </div>
                         <details class="nbm-more-options nbm-wizard-step-2-panel" id="new-bookmark-more">
                             <summary>${this.t('config.addBookmarkMoreOptions', 'More options')}</summary>
                             <div class="nbm-more-content">
-                                <div class="nbm-section">
-                                    <div class="nbm-shortcut-row">
-                                        <label class="nbm-label" for="new-bookmark-shortcut">${this.t('config.shortcut', 'Shortcut')}</label>
-                                        <input type="text" id="new-bookmark-shortcut" name="shortcut" class="nbm-input nbm-shortcut" maxlength="5" autocomplete="off" placeholder="${this.t('config.bookmarkShortcutPlaceholder', 'Y, YS, YC')}">
-                                        <span id="new-bookmark-shortcut-conflict" class="nbm-conflict-hint" hidden>${shortcutConflictLabel}</span>
-                                    </div>
-                                </div>
                                 ${fullPreviewHtml}
                                 <div class="nbm-section">
                                     <label class="nbm-label">${this.t('config.icon', 'Icon')}</label>
@@ -356,16 +469,9 @@ class SearchCommandNew {
                                     <label class="nbm-label" for="new-bookmark-note">${this.t('config.note', 'Note')}</label>
                                     <textarea id="new-bookmark-note" name="note" class="nbm-input nbm-note" rows="2"></textarea>
                                 </div>
-                                <div class="nbm-section nbm-section-toggles">
-                                    <label class="nbm-toggle-label">
-                                        <input type="checkbox" id="new-bookmark-pinned" name="pinned">
-                                        <span>${this.t('config.pinnedShort', 'Pinned')}</span>
-                                    </label>
-                                    <label class="nbm-toggle-label">
-                                        <input type="checkbox" id="new-bookmark-status" name="checkStatus">
-                                        <span>${this.t('config.status', 'Status check')}</span>
-                                    </label>
-                                </div>
+                                <!-- Pinned and the status checkbox both used to live here, below
+                                     the fold. They now sit beside the availability control above
+                                     it, in the same order the dashboard's inline editor uses. -->
                             </div>
                         </details>
                         <div class="nbm-footer">
@@ -786,7 +892,19 @@ class SearchCommandNew {
         });
 
         document.getElementById('new-bookmark-pinned')?.addEventListener('change', () => this.updatePreviews());
-        document.getElementById('new-bookmark-status')?.addEventListener('change', () => this.updatePreviews());
+        document.querySelectorAll('input[name="new-bookmark-check-mode"]').forEach((input) => {
+            input.addEventListener('change', () => {
+                this.syncCheckMode();
+                this.updatePreviews();
+            });
+        });
+        document.getElementById('new-bookmark-monitor-interval')?.addEventListener('change', () => this.updatePreviews());
+        // Reuses the config panel's explainer modal, so the three modes are
+        // described in exactly one place.
+        document.getElementById('new-bookmark-check-mode-info')?.addEventListener('click', () => {
+            window.CheckMode?.showExplainer?.();
+        });
+        this.syncCheckMode();
 
         const urlInput = document.getElementById('new-bookmark-url');
         urlInput?.addEventListener('input', () => {
@@ -1038,11 +1156,21 @@ class SearchCommandNew {
             shortcut: formData.get('shortcut').trim().toUpperCase(),
             category: categoryValue,
             pinned: formData.get('pinned') === 'on',
-            checkStatus: formData.get('checkStatus') === 'on',
             tags,
             icon,
             createdAt: Date.now(),
         };
+
+        // Written through CheckMode rather than by hand: it is the same function
+        // the health view and the context menu use, so a bookmark created here
+        // carries exactly the fields a mode change elsewhere would set —
+        // including the explicit interval a fresh monitor needs.
+        if (window.CheckMode) {
+            bookmark.monitorIntervalMinutes = this.getSelectedMonitorInterval();
+            window.CheckMode.assign(bookmark, this.getSelectedCheckMode());
+        } else {
+            bookmark.checkStatus = false;
+        }
 
         if (this.draftState.previewTitle) bookmark.previewTitle = this.draftState.previewTitle;
         if (this.draftState.previewDesc) bookmark.previewDesc = this.draftState.previewDesc;
@@ -1100,7 +1228,9 @@ class SearchCommandNew {
                     // no health data, so it lands on Health as "missing". Kick off a
                     // one-off server-side check (fire-and-forget) so it shows a real
                     // status without waiting for a full retest.
-                    if (bookmark.checkStatus === true) {
+                    // Monitor counts too: it is a superset of Periodic, and a
+                    // monitored bookmark starts just as blank on Health.
+                    if (bookmark.checkStatus === true || bookmark.monitor === true) {
                         dashAfter.inbox.triggerHealthCheckForUrl?.(bookmark.url);
                     }
                 }
