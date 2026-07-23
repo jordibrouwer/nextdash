@@ -94,7 +94,7 @@ var sharedAssetVersions = pageAssetVersions{
 	AppNotificationJS:    "toast-html-1",
 	SearchCommandsNewJS:  "search-commands-new-10-check-mode",
 	WhatsNewData:         "whats-new-v186",
-	DataRevision:         "data-revision-9-context-menu",
+	DataRevision:         "data-revision-10-health-delete-sync",
 
 	WriteAPIJS:               "write-api-1",
 	AppVersionGuardJS:        "app-version-guard-1",

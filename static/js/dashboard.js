@@ -1353,6 +1353,10 @@ class Dashboard {
         return this.bookmarkRows.removeBookmarkFromAllBookmarks(...arguments);
     }
 
+    removeBookmarkByUrl(pageId, url) {
+        return this.bookmarkRows.removeBookmarkByUrl(pageId, url);
+    }
+
     restoreBookmarkInAllBookmarks(bookmark, pageId) {
         return this.bookmarkRows.restoreBookmarkInAllBookmarks(...arguments);
     }

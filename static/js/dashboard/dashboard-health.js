@@ -1037,6 +1037,18 @@ class DashboardHealth {
             });
             if (!res.ok) throw new Error(`delete HTTP ${res.status}`);
             this.selectedKey = null;
+
+            // Keep the dashboard grid in step with the delete rather than leaving
+            // it to a page reload. The health view deletes through its own
+            // endpoint and never touched the dashboard's in-memory arrays, so the
+            // bookmark lingered on the grid — and in smart collections — until the
+            // page was reloaded. Match on page + URL, drop the page cache
+            // loadBookmarks() reads through, and re-render.
+            d.removeBookmarkByUrl?.(issue.pageId, issue.url);
+            d.data?.invalidatePageDataCache?.(Number(issue.pageId));
+            void d.data?.fetchAndStoreDataRevision?.();
+            d.renderDashboard?.({ incremental: false });
+
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
             d.showNotification(this.t('dashboard.healthDeleted', 'Bookmark deleted'), 'success', { duration: 3000 });
