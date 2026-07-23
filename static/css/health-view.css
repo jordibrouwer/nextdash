@@ -218,6 +218,9 @@ button.health-view-tile:hover {
 
 /* Secondary styling on purpose: this clears a setting on many bookmarks, so it
    must not compete with "Retest all" for the primary action. */
+/* Secondary weight: exporting is a side errand next to "Retest all", which is
+   the button this toolbar exists for. */
+.health-view-export-btn,
 .health-view-checkoff-btn {
     padding: 0.35rem 0.7rem;
     border-radius: 0.4rem;
@@ -226,6 +229,11 @@ button.health-view-tile:hover {
     color: var(--text-secondary);
     font-size: 0.8rem;
     cursor: pointer;
+}
+
+.health-view-export-btn:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
 }
 
 .health-view-checkoff-btn:hover:not([disabled]) {
@@ -722,10 +730,106 @@ button.health-view-tile:hover {
     font-variant-numeric: tabular-nums;
 }
 
-/* Invisible until hovered: the dots exist to carry a <title> tooltip, not to
-   speckle the line. */
-.health-sparkline--large circle:hover {
-    opacity: 0.9 !important;
+/* Faint until hovered or selected: the dots mark where the measurements are
+   without speckling the line. */
+.health-sparkline--large .health-sparkline-dot {
+    opacity: 0.28;
+    transition: opacity 0.12s ease, r 0.12s ease;
+    pointer-events: none;
+}
+
+.health-sparkline--large .health-sparkline-dot.is-selected {
+    opacity: 1;
+    r: 4.5;
+}
+
+/* Full-height columns so a point can be hit without pixel-hunting the dot. */
+.health-sparkline-hit {
+    cursor: pointer;
+    outline: none;
+}
+
+.health-sparkline-hit:hover,
+.health-sparkline-hit.is-selected {
+    fill: currentColor;
+    fill-opacity: 0.07;
+}
+
+.health-sparkline-hit:focus-visible {
+    fill: currentColor;
+    fill-opacity: 0.14;
+    stroke: currentColor;
+    stroke-width: 1;
+    stroke-opacity: 0.5;
+}
+
+/* The readout under the chart. Fixed height so selecting a point never shifts
+   the content below it. */
+.health-monitor-readout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.6rem;
+    min-height: 1.9rem;
+    margin-bottom: 0.85rem;
+    padding: 0.35rem 0.55rem;
+    border-radius: calc(var(--layout-radius-sm, 8px) - 2px);
+    border: 1px solid var(--border-secondary);
+    background: var(--background-primary);
+    font-size: 0.75rem;
+}
+
+.health-monitor-readout-hint {
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.health-monitor-readout-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-primary);
+}
+
+.health-monitor-readout-when {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+}
+
+.health-monitor-readout-checks {
+    opacity: 0.7;
+}
+
+.health-monitor-readout-state {
+    margin-left: auto;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: color-mix(in srgb, var(--accent-success) 16%, transparent);
+    color: var(--accent-success);
+}
+
+.health-monitor-readout-state.is-down {
+    background: color-mix(in srgb, var(--accent-error) 16%, transparent);
+    color: var(--accent-error);
+}
+
+.health-monitor-readout-state.is-degraded {
+    background: color-mix(in srgb, var(--accent-warning) 16%, transparent);
+    color: var(--accent-warning);
+}
+
+.health-monitor-readout-state.is-unknown {
+    background: color-mix(in srgb, var(--border-secondary) 55%, transparent);
+    color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .health-sparkline--large .health-sparkline-dot {
+        transition: none;
+    }
 }
 
 .health-monitor-chart-empty {

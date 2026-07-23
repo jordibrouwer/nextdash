@@ -114,6 +114,7 @@ var importManagedRootFilenames = []string{
 	"pages.json",
 	"finders.json",
 	"inbox.json",
+	"health-history.json",
 	"favicon.ico",
 	"favicon.png",
 	"favicon.jpg",
@@ -319,8 +320,12 @@ func removeImportOrphans(dataDir string, prepared []preparedImportFile) error {
 
 	for _, name := range importManagedRootFilenames {
 		if !preparedHasRelPath(prepared, name) {
-			// Keep existing finders when older ZIPs omit finders.json.
-			if name == "finders.json" {
+			// Keep what is already there when an older ZIP omits the file.
+			// finders.json predates the finders feature in archives; every ZIP
+			// written before monitoring history was included omits that too, and
+			// deleting it would throw away measurements the import cannot restore
+			// for a feature the archive simply did not know about.
+			if name == "finders.json" || name == "health-history.json" {
 				continue
 			}
 			_ = os.Remove(filepath.Join(dataDir, name))
@@ -425,6 +430,12 @@ func (h *Handlers) isValidImportFilename(filename string) bool {
 		"pages.json",
 		"finders.json",
 		"inbox.json",
+		// Uptime samples for monitored bookmarks. Unlike preview-cache.json and
+		// health-cache.json — which are re-derived by scanning and are dropped on
+		// import — these are measurements that cannot be recomputed: losing them
+		// resets every monitored row's chart, uptime windows and outage list, and
+		// a 30-day window takes 30 days to earn back.
+		"health-history.json",
 		"favicon.ico",
 		"favicon.png",
 		"favicon.jpg",

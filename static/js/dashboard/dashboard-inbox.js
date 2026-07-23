@@ -10,8 +10,12 @@ class DashboardInbox {
         this.loading = false;
         this.filter = 'all';
         this.searchQuery = '';
+        this.sort = 'newest';
         this.visibleLimit = 50;
         this.selectedItemId = null;
+        // Ids ticked for a bulk action. Kept separate from selectedItemId, which is
+        // the keyboard cursor: moving the cursor must not change what is ticked.
+        this.checkedIds = new Set();
         this.triage = typeof DashboardInboxTriage === 'function' ? new DashboardInboxTriage(this) : null;
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
@@ -19,6 +23,221 @@ class DashboardInbox {
 
     isEnabled() {
         return this.dash.settings?.inboxEnabled !== false;
+    }
+
+    /* ── Multi-select ──────────────────────────────────────────────────── */
+
+    /**
+     * Tick or untick one row. Re-renders only the affected card and the action
+     * bar, so ticking twenty items does not rebuild the feed twenty times.
+     */
+    setChecked(id, on) {
+        if (!id) return;
+        if (on) this.checkedIds.add(id);
+        else this.checkedIds.delete(id);
+        const card = document.querySelector(`.inbox-item[data-inbox-id="${CSS.escape(String(id))}"]`);
+        card?.classList.toggle('is-checked', on);
+        const box = card?.querySelector('.inbox-item-check-input');
+        if (box && box.checked !== Boolean(on)) box.checked = Boolean(on);
+        this.renderBulkBar();
+    }
+
+    /** Ticked ids that are still on screen — a filter change can strand the rest. */
+    checkedItems() {
+        const visible = new Set(this.getFilteredItems().map((i) => i.id));
+        return (this.items || []).filter((i) => this.checkedIds.has(i.id) && visible.has(i.id));
+    }
+
+    clearChecked() {
+        if (!this.checkedIds.size) return;
+        this.checkedIds.clear();
+        document.querySelectorAll('.inbox-item.is-checked').forEach((el) => {
+            el.classList.remove('is-checked');
+            const box = el.querySelector('.inbox-item-check-input');
+            if (box) box.checked = false;
+        });
+        this.renderBulkBar();
+    }
+
+    /**
+     * The action bar for ticked rows, shown only when something is ticked.
+     *
+     * These act on the selection, where the toolbar's "Mark all read" acts on
+     * everything — the distinction the inbox was missing: no way to act on five
+     * specific items without touching the rest.
+     */
+    renderBulkBar() {
+        const container = document.getElementById('dashboard-layout');
+        if (!container || !this.isActiveView()) return;
+        const existing = container.querySelector('.inbox-selection-bar');
+        const count = this.checkedItems().length;
+        if (!count) {
+            existing?.remove();
+            return;
+        }
+
+        const bar = existing || document.createElement('div');
+        if (!existing) {
+            bar.className = 'inbox-selection-bar';
+            bar.setAttribute('role', 'toolbar');
+        }
+        bar.innerHTML = `
+            <span class="inbox-selection-count">${this.escape(
+                this.t('dashboard.inboxSelectedCount', '{count} selected', { count })
+            )}</span>
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="read">${this.escape(this.t('dashboard.inboxMarkRead', 'Mark read'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="snooze">${this.escape(this.t('dashboard.inboxSnooze', 'Snooze'))}</button>
+            <button type="button" class="inbox-bulk-btn inbox-bulk-btn--danger" data-inbox-selection="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="clear">${this.escape(this.t('dashboard.inboxSelectionClear', 'Clear selection'))}</button>
+        `;
+        if (!existing) {
+            container.querySelector('.inbox-toolbar')?.after(bar);
+        }
+
+        bar.querySelector('[data-inbox-selection="read"]')?.addEventListener('click', () => void this.bulkMarkRead());
+        bar.querySelector('[data-inbox-selection="delete"]')?.addEventListener('click', () => void this.bulkDelete());
+        bar.querySelector('[data-inbox-selection="clear"]')?.addEventListener('click', () => this.clearChecked());
+        bar.querySelector('[data-inbox-selection="snooze"]')?.addEventListener('click', (e) => {
+            this.openSnoozeMenu(null, e.currentTarget, this.checkedItems());
+        });
+    }
+
+    async bulkMarkRead() {
+        const targets = this.checkedItems().filter((i) => !i.readAt);
+        if (!targets.length) return;
+        this._trackAction('bulk-read', { size: this._countBucket(targets.length) });
+        for (const item of targets) {
+            await this.markRead(item.id);
+        }
+        this.clearChecked();
+        await this.loadAndRender();
+    }
+
+    async bulkSnooze(items, until) {
+        const targets = (items || []).filter(Boolean);
+        if (!targets.length || !until) return;
+        this._trackAction('bulk-snooze', { size: this._countBucket(targets.length) });
+        for (const item of targets) {
+            await this.patchSnooze(item.id, until);
+        }
+        this.clearChecked();
+        await this.loadAndRender();
+    }
+
+    /**
+     * Delete every ticked row. Confirmed first: this is the one bulk action that
+     * cannot be walked back item by item, and the count is named so "5" is not
+     * discovered after the fact.
+     */
+    async bulkDelete() {
+        const targets = this.checkedItems();
+        if (!targets.length) return;
+        const message = this.t(
+            'dashboard.inboxSelectionDeleteConfirm',
+            'Delete {count} selected items? This cannot be undone.',
+            { count: targets.length }
+        );
+        const ok = await this.confirmBulkDelete(message);
+        if (!ok) return;
+        this._trackAction('bulk-delete', { size: this._countBucket(targets.length) });
+        for (const item of targets) {
+            await this.deleteItem(item.id);
+        }
+        this.clearChecked();
+        await this.loadAndRender();
+    }
+
+    confirmBulkDelete(message) {
+        if (typeof window.AppModal?.show !== 'function') {
+            return Promise.resolve(window.confirm(message));
+        }
+        return new Promise((resolve) => {
+            window.AppModal.show({
+                title: this.t('dashboard.inboxDelete', 'Delete'),
+                message,
+                confirmText: this.t('dashboard.inboxDelete', 'Delete'),
+                confirmClass: 'modal-button--danger',
+                onConfirm: () => resolve(true),
+                onCancel: () => resolve(false),
+                onHide: () => resolve(false),
+            });
+        });
+    }
+
+    /* ── View state: URL and persistence ───────────────────────────────── */
+
+    static FILTERS = new Set(['all', 'unread', 'snoozed']);
+    static SORTS = new Set(['newest', 'oldest', 'title', 'domain']);
+    static STATE_KEY = 'nextdash:inbox-view-state';
+
+    /**
+     * Restore filter and sort, URL first and stored state second.
+     *
+     * A link someone shared has to win over what this browser last did, or the
+     * link does not describe what the recipient sees. Search is deliberately not
+     * persisted — a stored query would silently hide most of the inbox on the
+     * next visit, with only a small input to explain why.
+     */
+    restoreViewState() {
+        let fromUrl = false;
+        try {
+            const params = new URL(window.location.href).searchParams;
+            const filter = (params.get('ib_filter') || '').toLowerCase();
+            if (DashboardInbox.FILTERS.has(filter)) {
+                this.filter = filter;
+                fromUrl = true;
+            }
+            const sort = (params.get('ib_sort') || '').toLowerCase();
+            if (DashboardInbox.SORTS.has(sort)) {
+                this.sort = sort;
+                fromUrl = true;
+            }
+            const query = params.get('ib_q');
+            if (typeof query === 'string' && query.trim() !== '') {
+                this.searchQuery = query.trim();
+                fromUrl = true;
+            }
+        } catch { /* a malformed URL just means no deep link */ }
+
+        if (fromUrl) return;
+
+        try {
+            const stored = JSON.parse(localStorage.getItem(DashboardInbox.STATE_KEY) || '{}');
+            if (DashboardInbox.FILTERS.has(stored.filter)) this.filter = stored.filter;
+            if (DashboardInbox.SORTS.has(stored.sort)) this.sort = stored.sort;
+        } catch { /* unreadable storage falls back to the defaults */ }
+    }
+
+    /** Remember filter and sort for the next visit. Best-effort by design. */
+    persistViewState() {
+        try {
+            localStorage.setItem(
+                DashboardInbox.STATE_KEY,
+                JSON.stringify({ filter: this.filter, sort: this.sort })
+            );
+        } catch { /* private mode / full quota: the view still works */ }
+    }
+
+    /**
+     * Keep the address bar describing the current view so it can be copied and
+     * shared. replaceState, not pushState: a filter click is not a navigation
+     * step, and Back should leave the inbox rather than walk its filter history.
+     */
+    syncUrlState() {
+        if (!this.isActiveView()) return;
+        try {
+            const url = new URL(window.location.href);
+            const params = url.searchParams;
+            const setOrDelete = (key, value, isDefault) => {
+                if (value && !isDefault) params.set(key, value);
+                else params.delete(key);
+            };
+            setOrDelete('ib_filter', this.filter, this.filter === 'all');
+            setOrDelete('ib_sort', this.sort, this.sort === 'newest');
+            setOrDelete('ib_q', String(this.searchQuery || '').trim(), !String(this.searchQuery || '').trim());
+            const query = params.toString();
+            history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#inbox`);
+        } catch { /* history is unavailable in some embedded contexts */ }
     }
 
     /**
@@ -396,8 +615,12 @@ class DashboardInbox {
         d.pageNav?.setActiveInboxTab?.();
         d.pageNav?.updateDocumentTitle?.();
         d.pageNav?.markInboxTabDiscovered?.();
+        // Before the first render, so the view is built in the requested shape
+        // rather than rendering the default and then rearranging itself.
+        this.restoreViewState();
         await this.loadAndRender();
         this.restoreInboxHash();
+        this.syncUrlState();
         return true;
     }
 
@@ -590,6 +813,22 @@ class DashboardInbox {
             void this.editNote(selected);
             return true;
         }
+        // Same key the health view uses to tick a row, so the two feeds share one
+        // vocabulary rather than each inventing their own.
+        if (e.key === 'x' && selected) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.setChecked(selected.id, !this.checkedIds.has(selected.id));
+            return true;
+        }
+        if (e.key === 'Escape' && this.checkedIds.size) {
+            // Escape drops the selection before it closes anything else: an
+            // accidental tick should be cheap to undo.
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.clearChecked();
+            return true;
+        }
         if (e.key === 'z' && selected) {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -662,15 +901,51 @@ class DashboardInbox {
         ];
     }
 
-    /** Small popover of preset durations anchored to the Snooze button. */
-    openSnoozeMenu(item, anchor) {
+    /** yyyy-mm-dd in local time, which is what <input type="date"> expects. */
+    dateInputValue(ts) {
+        const d = new Date(Number(ts) || Date.now());
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    /**
+     * yyyy-mm-dd back to a timestamp at 09:00 local, matching the presets.
+     *
+     * Built from parts rather than parsed: `new Date('2026-08-01')` is UTC
+     * midnight, which lands on the previous day for anyone west of Greenwich.
+     */
+    parseDateInput(value) {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || '').trim());
+        if (!m) return 0;
+        const [, y, mo, d] = m;
+        const at = new Date(Number(y), Number(mo) - 1, Number(d), 9, 0, 0, 0);
+        return Number.isNaN(at.getTime()) ? 0 : at.getTime();
+    }
+
+    /**
+     * Small popover of preset durations anchored to the Snooze button.
+     *
+     * `bulkTargets` reuses the same menu for the selection bar, so one date
+     * picker and one preset list serve both paths rather than drifting apart.
+     */
+    openSnoozeMenu(item, anchor, bulkTargets = null) {
         this.closeSnoozeMenu();
         const menu = document.createElement('div');
         menu.className = 'inbox-snooze-menu';
         menu.setAttribute('role', 'menu');
+        // Presets cover the common cases; the date field covers everything else.
+        // Without it there is no way to park a link beyond "next week" at all.
+        const minDate = this.dateInputValue(Date.now() + 86400000);
         menu.innerHTML = this.snoozeDurations()
             .map((d) => `<button type="button" class="inbox-snooze-option" role="menuitem" data-snooze-until="${d.until}">${this.escape(d.label)}</button>`)
-            .join('');
+            .join('')
+            + `<div class="inbox-snooze-custom">
+                <label class="inbox-snooze-custom-label" for="inbox-snooze-date">${this.escape(
+                    this.t('dashboard.inboxSnoozeCustom', 'Pick a date')
+                )}</label>
+                <input type="date" id="inbox-snooze-date" class="inbox-snooze-date" min="${minDate}"
+                    aria-label="${this.escape(this.t('dashboard.inboxSnoozeCustom', 'Pick a date'))}">
+            </div>`;
         document.body.appendChild(menu);
         this._snoozeMenu = menu;
 
@@ -686,13 +961,33 @@ class DashboardInbox {
             }
         }
 
+        const apply = (until) => {
+            this.closeSnoozeMenu();
+            if (Array.isArray(bulkTargets)) {
+                void this.bulkSnooze(bulkTargets, until);
+            } else {
+                void this.snoozeItem(item, until);
+            }
+        };
+
         menu.querySelectorAll('[data-snooze-until]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                const until = Number(btn.getAttribute('data-snooze-until')) || 0;
-                this.closeSnoozeMenu();
-                void this.snoozeItem(item, until);
+                apply(Number(btn.getAttribute('data-snooze-until')) || 0);
             });
         });
+        const dateInput = menu.querySelector('.inbox-snooze-date');
+        dateInput?.addEventListener('change', () => {
+            const until = this.parseDateInput(dateInput.value);
+            // An empty or past date is a mis-tap, not an instruction to wake now.
+            if (!until || until <= Date.now()) return;
+            apply(until);
+        });
+        // The picker's own Escape/Enter must not reach the menu's global handlers.
+        dateInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') return;
+            e.stopPropagation();
+        });
+
         menu.querySelector('.inbox-snooze-option')?.focus({ preventScroll: true });
 
         // Dismiss on outside click or Escape.
@@ -1038,7 +1333,57 @@ class DashboardInbox {
                 return haystack.includes(query);
             });
         }
-        return list;
+        return this.sortItems(list);
+    }
+
+    /**
+     * The sort modes. "Snoozed" keeps its own soonest-to-wake order — sorting a
+     * wake queue by title would hide the only thing that matters about it.
+     *
+     * Oldest-first is the one that earns its place: an inbox is worked from the
+     * bottom, and without it a backlog is only reachable by scrolling past
+     * everything newer.
+     */
+    sortItems(items) {
+        if (this.filter === 'snoozed') return items;
+        const sorted = [...items];
+        const added = (item) => Number(item.addedAt || 0);
+        const byTitle = (a, b) => this.displayTitle(a).localeCompare(this.displayTitle(b), undefined, { sensitivity: 'base' });
+        switch (this.sort) {
+            case 'oldest':
+                return sorted.sort((a, b) => added(a) - added(b));
+            case 'title':
+                // Newest breaks a tie so two identically-titled captures keep a
+                // stable order across re-renders.
+                return sorted.sort((a, b) => byTitle(a, b) || added(b) - added(a));
+            case 'domain':
+                return sorted.sort((a, b) => this.itemDomain(a).localeCompare(this.itemDomain(b), undefined, { sensitivity: 'base' })
+                    || added(b) - added(a));
+            case 'newest':
+            default:
+                return sorted.sort((a, b) => added(b) - added(a));
+        }
+    }
+
+    /** Sorting on a date is what the date groups already say; anything else is flat. */
+    isGroupedSort() {
+        return this.sort === 'newest' || this.sort === 'oldest' || this.filter === 'snoozed';
+    }
+
+    /** The text a title sort compares — the same string the row shows. */
+    displayTitle(item) {
+        return String(item?.title || item?.previewTitle || item?.url || '').trim();
+    }
+
+    /** Host for domain sort, falling back to the raw URL for unparseable input. */
+    itemDomain(item) {
+        const raw = String(item?.domain || '').trim();
+        if (raw) return raw.toLowerCase();
+        try {
+            return new URL(String(item?.url || '')).hostname.replace(/^www\./, '').toLowerCase();
+        } catch {
+            return String(item?.url || '').toLowerCase();
+        }
     }
 
     getDateGroupKey(ts) {
@@ -1077,6 +1422,12 @@ class DashboardInbox {
         // The snoozed view groups by when items wake, not when they were added.
         if (this.filter === 'snoozed') {
             return this.groupSnoozedItems(items);
+        }
+        // Under a title or domain sort the date headings would cut the ordering
+        // into pieces — an A–Z list restarting at every "Yesterday" is not sorted
+        // in any sense the user asked for. One unlabelled group keeps it whole.
+        if (!this.isGroupedSort()) {
+            return items.length ? [{ key: 'flat', label: '', items }] : [];
         }
         const order = ['today', 'yesterday', 'week', 'older'];
         const buckets = new Map(order.map((key) => [key, []]));
@@ -1167,6 +1518,7 @@ class DashboardInbox {
             ['n', this.t('dashboard.inboxKeyNote', 'note')],
             ['r', this.t('dashboard.inboxKeyKeep', 'mark read')],
             ['z', this.t('dashboard.inboxKeySnooze', 'snooze')],
+            ['x', this.t('dashboard.inboxKeySelect', 'select')],
             ['d', this.t('dashboard.inboxKeyDelete', 'delete')],
             ['g / G', this.t('dashboard.inboxKeyFirstLast', 'first / last')],
             ['Esc', this.t('dashboard.inboxKeyClose', 'back to bookmarks')],
@@ -1183,6 +1535,9 @@ class DashboardInbox {
         }
         this._searchRenderTimer = setTimeout(() => {
             this._searchRenderTimer = null;
+            // Debounced with the render: syncing on every keystroke would rewrite
+            // the address bar a dozen times per word.
+            this.syncUrlState();
             this.render();
         }, 80);
     }
@@ -1262,6 +1617,16 @@ class DashboardInbox {
         // The Snoozed pill only appears when something is asleep (or is the active
         // filter, so it does not vanish under the user when the last item wakes).
         const showSnoozePill = snoozedCount > 0 || this.filter === 'snoozed';
+
+        const sortOptions = [
+            ['newest', this.t('dashboard.inboxSortNewest', 'newest first')],
+            ['oldest', this.t('dashboard.inboxSortOldest', 'oldest first')],
+            ['title', this.t('dashboard.inboxSortTitle', 'title')],
+            ['domain', this.t('dashboard.inboxSortDomain', 'site')],
+        ].map(([value, label]) =>
+            `<option value="${value}"${this.sort === value ? ' selected' : ''}>${this.escape(label)}</option>`
+        ).join('');
+
         toolbar.innerHTML = `
             <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">
                 <button type="button" class="inbox-filter-btn${this.filter === 'all' ? ' is-active' : ''}" data-inbox-filter="all">${this.escape(this.t('dashboard.inboxFilterAll', 'All'))}</button>
@@ -1269,6 +1634,7 @@ class DashboardInbox {
                 ${showSnoozePill ? `<button type="button" class="inbox-filter-btn${this.filter === 'snoozed' ? ' is-active' : ''}" data-inbox-filter="snoozed">${this.escape(this.t('dashboard.inboxFilterSnoozed', 'Snoozed'))}<span class="inbox-filter-count">${snoozedCount}</span></button>` : ''}
             </div>
             <input type="search" class="inbox-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
+            ${this.filter === 'snoozed' ? '' : `<select class="inbox-sort-select" aria-label="${this.escape(this.t('dashboard.inboxSortLabel', 'Sort inbox'))}">${sortOptions}</select>`}
             ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read">${this.escape(this.t('dashboard.inboxMarkAllRead', 'Mark all read'))}</button>` : ''}
             ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
             <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}</button>
@@ -1277,9 +1643,26 @@ class DashboardInbox {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-inbox-filter') || 'all';
                 this.visibleLimit = 50;
+                // Ticks from the previous filter would act on rows the user can no
+                // longer see, so a filter change starts the selection over.
+                this.checkedIds.clear();
+                this.persistViewState();
+                this.syncUrlState();
                 this.render();
             });
         });
+        const sortSelect = toolbar.querySelector('.inbox-sort-select');
+        sortSelect?.addEventListener('change', (e) => {
+            this.sort = e.target.value || 'newest';
+            this.visibleLimit = 50;
+            this.persistViewState();
+            this.syncUrlState();
+            this.render();
+            // Same reason as the health view: a focused SELECT swallows every row
+            // shortcut, so j/k/p/d would go dead until the user clicked away.
+            document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
+        });
+
         const searchInput = toolbar.querySelector('.inbox-search-input');
         searchInput?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value;
@@ -1347,7 +1730,11 @@ class DashboardInbox {
         groups.forEach((group) => {
             const section = document.createElement('section');
             section.className = 'inbox-date-group';
-            section.innerHTML = `<h3 class="inbox-date-group-title">${this.escape(group.label)}</h3>`;
+            // A flat sort has no heading; an empty <h3> would leave its margin
+            // behind as a gap above the first row.
+            section.innerHTML = group.label
+                ? `<h3 class="inbox-date-group-title">${this.escape(group.label)}</h3>`
+                : '';
             const groupList = document.createElement('div');
             groupList.className = 'inbox-date-group-items';
             group.items.forEach((item) => {
@@ -1372,6 +1759,7 @@ class DashboardInbox {
         }
 
         container.appendChild(this.renderLegend());
+        this.renderBulkBar();
 
         if (container.querySelector('.inbox-feed')) {
             this.bindPointerNavigation(container);
@@ -1413,7 +1801,15 @@ class DashboardInbox {
             ? `<span class="inbox-item-snooze">${this.escape(this.t('dashboard.inboxSnoozedUntil', 'Sleeping until {time}', { time: this.formatSnoozeWake(item.snoozedUntil) }))}</span>`
             : '';
 
+        const checked = this.checkedIds.has(item.id);
+        if (checked) {
+            card.classList.add('is-checked');
+        }
         card.innerHTML = `
+            <label class="inbox-item-check">
+                <input type="checkbox" class="inbox-item-check-input"${checked ? ' checked' : ''}
+                    aria-label="${this.escape(this.t('dashboard.inboxSelectItem', 'Select {title}', { title }))}">
+            </label>
             ${thumb}
             <div class="inbox-item-body">
                 <h3 class="inbox-item-title">${this.escape(title)}</h3>
@@ -1435,6 +1831,14 @@ class DashboardInbox {
                 </div>
             </div>
         `;
+
+        const checkInput = card.querySelector('.inbox-item-check-input');
+        checkInput?.addEventListener('change', () => {
+            this.setChecked(item.id, checkInput.checked);
+        });
+        // The checkbox is inside the row, which opens on click — without this,
+        // ticking a box would also launch the link.
+        card.querySelector('.inbox-item-check')?.addEventListener('click', (e) => e.stopPropagation());
 
         card.querySelector('[data-inbox-action="open"]')?.addEventListener('click', () => {
             this.openItem(item);

@@ -850,3 +850,129 @@ body.inbox-triage-active {
         height: 8rem;
     }
 }
+
+/* ─── Sort control ──────────────────────────────────────────────────────── */
+
+/* Matches the health view's sort select so the two feeds read as one system. */
+.inbox-sort-select {
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.inbox-sort-select:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+/* ─── Multi-select ──────────────────────────────────────────────────────── */
+
+/* The row is a 2-column grid (thumb + body); the checkbox adds a narrow
+   leading column rather than overlaying the thumbnail. */
+.inbox-item {
+    grid-template-columns: 1.4rem 4.5rem 1fr;
+}
+
+.inbox-item-check {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 0.15rem;
+    cursor: pointer;
+}
+
+.inbox-item-check-input {
+    width: 0.95rem;
+    height: 0.95rem;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+}
+
+/* Quiet until the row is hovered, focused or already ticked — the same
+   restraint the row's action buttons use, so an untouched list stays calm. */
+.inbox-item-check-input:not(:checked) {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.inbox-item:hover .inbox-item-check-input,
+.inbox-item:focus-within .inbox-item-check-input,
+.inbox-item.keyboard-selected .inbox-item-check-input,
+.inbox-item-check-input:focus-visible {
+    opacity: 1;
+}
+
+.inbox-item.is-checked {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
+}
+
+/* ─── Selection action bar ──────────────────────────────────────────────── */
+
+.inbox-selection-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: var(--layout-radius-sm, 8px);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
+}
+
+.inbox-selection-count {
+    margin-right: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.inbox-bulk-btn--danger:hover {
+    border-color: color-mix(in srgb, var(--accent-error) 55%, transparent);
+    color: var(--accent-error);
+}
+
+/* ─── Custom snooze date ────────────────────────────────────────────────── */
+
+.inbox-snooze-custom {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+    padding: 0.4rem 0.6rem 0.3rem;
+    border-top: 1px solid var(--border-secondary);
+}
+
+.inbox-snooze-custom-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.85;
+}
+
+.inbox-snooze-date {
+    padding: 0.3rem 0.4rem;
+    border-radius: 0.35rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.8rem;
+}
+
+.inbox-snooze-date:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .inbox-item-check-input:not(:checked) {
+        transition: none;
+    }
+}

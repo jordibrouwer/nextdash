@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.22 — July 2026](#v20260722--july-2026)
 - [v2026.07.21.1 — July 2026](#v2026072111--july-2026)
 - [v2026.07.21 — July 2026](#v20260721--july-2026)
 - [v2026.07.20 — July 2026](#v20260720--july-2026)
@@ -105,6 +106,34 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.22 — July 2026
+
+**The inbox catches up with the health view, and the health view learns to hand its findings over.** The inbox could not be sorted, linked to, or acted on a few rows at a time — all three of which the health view had solved long ago. The health view could show you a problem but not let you take it anywhere. Both are fixed here, along with making the monitoring chart readable point by point and putting uptime history into backups where it belongs.
+
+### Inbox
+
+- **new** **Sort the inbox** — a sort control next to the search field: **newest first** (unchanged default), **oldest first**, **title**, or **site**. Oldest-first is the one that was missing: an inbox is worked from the bottom, and a backlog was previously only reachable by scrolling past everything newer. Sorting by title or site drops the date headings, because an A–Z list that restarts at every *Yesterday* is not sorted in any sense you asked for (`dashboard-inbox.js`).
+- **new** **The inbox is linkable** — filter, sort and search now live in the address bar (`?ib_filter=`, `?ib_sort=`, `?ib_q=`), so *my snoozed items* or a saved search can be bookmarked and shared, the way the health view has always allowed. The filter and sort are also remembered for your next visit; a shared link still wins over that, or it would not describe what the recipient sees. Search is deliberately not remembered — a stored query would silently hide most of the inbox with only a small input to explain why.
+- **new** **Act on several items at once** — tick rows (click, or `x` on the selected row) and a bar offers **Mark read**, **Snooze**, or **Delete** for just those. Previously bulk meant *everything*: five specific items had to be handled one at a time. Changing filter clears the ticks so a bulk action can never touch a row you can no longer see, `Esc` drops the selection, and a bulk delete names the count and asks first.
+- **new** **Snooze until a date of your own** — the presets (3 hours, tomorrow, this weekend, next week) now sit above a date field, so a link can be parked further out than *next week*. It wakes at 09:00 local, matching the presets, and cannot be set to today.
+
+### Health view
+
+- **new** **The enlarged response-time chart is readable point by point** — the chart shipped as a shape with a tooltip; the numbers behind it were only reachable by hovering the exact pixel of a dot. Every measured bucket now has a full-height hit column, so clicking or hovering anywhere in a point's slice of the chart writes that measurement into a **readout under the chart**: response time, the time it was measured, how many checks the bucket folds together, and whether it was up, down or degraded. It opens on the most recent measurement rather than empty. The readout sits below the chart instead of floating over it, so it can be read on a touch screen and does not vanish when you look away (`dashboard-health.js`, `health-view.css`, `locales/{en,nl,de,fr}.json`).
+- **new** **The chart is keyboard-navigable** — `←` / `→` walk from point to point and update the readout as they go, skipping buckets with no measurement rather than landing on an empty reading. The chart is a **single tab stop** (roving tabindex), so reaching the **Close** button still takes one `Tab` rather than one per measurement, and tabbing back in returns to the point you were reading. `Esc` still closes the modal.
+- **new** **Export the list you are looking at** — an **Export** button downloads the current filter and search as CSV: name, URL, status, score, page, category, last checked, and the same issue wording the score panel shows. The findings were previously readable only inside the view, with no way to work through them beside a spreadsheet or hand someone the list. Values that begin with `=`, `+`, `-` or `@` are prefixed so a spreadsheet treats them as text rather than executing them as formulas, and the file carries a UTF-8 BOM so accented titles survive Excel.
+- **new** **The Monitored filter no longer hides until it is used** — it appeared only once something was already monitored, so the feature was invisible to exactly the people who had not found it yet: you had to know it existed to see the way in. It now shows whenever there are bookmarks at all, and an empty Monitored list explains what monitoring does and how to switch it on rather than reporting a clean bill of health.
+- **new** **Filter and sort are remembered** — the view no longer resets to *Broken* / *score* every time you open it. A `?hv_filter=` deep link still overrides what was stored.
+
+- **new** **Monitoring history is part of a backup** — uptime samples were left out of the archive, so restoring a backup reset every monitored bookmark to *waiting for its first check*: no chart, no uptime windows, no outage history, and a 30-day figure that takes 30 days to earn back. `health-history.json` is now included and restored. It is the one piece of health data that is measured rather than derived — the preview and health *caches* are still left out, because a scan rebuilds those in minutes. Restoring an **older** backup, written before this change, leaves the monitoring history you already have in place rather than deleting it (`backup.go`).
+
+- **fix** **A new Tips & tricks entry never reached anyone** — `config-help-tips.js` gained a tip last release, but its cache-bust token did not move. Static assets are served `immutable` for a year, so every existing visitor kept the old catalogue with no day on which it would expire. The token now names the change it carries.
+- **fix** **The quick-start card escaped one character less than everything else** — its private copy of `escape()` handled `&`, `<`, `>` and `"` but not `'`, while every other caller uses the shared helper. Nothing was exploitable, since each caller passes a translation string into a double-quoted attribute — but a local copy quietly weaker than the shared one is a trap for whoever renders the next value through it.
+
+- **fix** **The chart's axis labels were cut off** — the min and max readings sit on their own gridlines at the very top and bottom of the plot, so both were sliced in half by the edge of the drawing area, and the label column was too narrow for the last character of a three-digit value. The plot is now inset vertically and the label column widened enough for a four-digit reading. The compact sparkline in the row is unchanged — byte for byte.
 
 ---
 
