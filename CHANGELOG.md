@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.22.1 — July 2026](#v202607221--july-2026)
 - [v2026.07.22 — July 2026](#v20260722--july-2026)
 - [v2026.07.21.1 — July 2026](#v2026072111--july-2026)
 - [v2026.07.21 — July 2026](#v20260721--july-2026)
@@ -105,10 +106,28 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+Nothing yet.
+
+---
+
+## v2026.07.22.1 — July 2026
+
+**Adding a bookmark can now set up monitoring, and the health view says at a glance whether anything is down.** The add-bookmark modal still offered a single *Status check* box, which could not express the three-way choice the rest of the app had moved to — so the one moment you are most likely to want monitoring was the one place you could not switch it on.
+
+### Add bookmark
+
+- **new** **Availability checking while you add** — the modal carries the same **Off / Periodic / Monitor** control as the bookmark editor in Config, with the interval picker and the same explanation behind the **(i)**. It sits above the *More options* fold, next to **Shortcut**, with **Pinned** moved up alongside them as the same pin pill the inline editor uses. All three were previously below the fold or, in Monitor's case, absent entirely.
+- **fix** **The explanation opened behind the form that asked for it** — every overlay in the app sits on the same stacking layer, and a tie is settled by which was created first, so the **(i)** popup appeared *underneath* the modal. It now opens in front.
+- **fix** **The modal cut its own form in half** — a height cap left the fields between *Tags* and *More options* below the visible edge, reachable only by scrolling to something you had no reason to know was there.
+
 ### Health view
 
 - **new** **A Monitored summary tile that shows at a glance whether anything is down** — added to the tile row directly after **Healthy**, because it answers the same question those two do (is anything wrong right now) where Broken, Duplicates and Unchecked are backlogs to work through. Its colour is a live reading rather than a fixed category: the whole tile turns **red** — border, background and label — the moment a monitored bookmark stops responding, and reads **green** while they all answer. Hovering names the split (*1 of 3 not responding*), and clicking goes straight to the monitored list and is remembered like any other filter choice. A monitor still waiting for its first check counts as neither: unknown is not failing, and reddening the tile for it would cry wolf on every monitor you switch on.
 - **fix** **A count of zero no longer reads as a pass** — the **Healthy** tile was coloured green even at `0`, so a dashboard with nothing healthy looked as reassuring as one with everything healthy. Zero now reads as plain text on every tile, the way the problem tiles already did.
+
+### Under the hood
+
+- The availability control's markup and styling now have one home shared by the config panel, the dashboard's inline editor and the add-bookmark modal, rather than a copy per surface. The same goes for the **(i)** explanation, which existed in three places and now exists in one — the wording can no longer drift between the screens that offer the same choice.
 
 ---
 

@@ -1,0 +1,38 @@
+{
+  "tag": "v2026.07.22.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-23",
+  "modalLead": "Adding a bookmark can now <strong>set up monitoring</strong> straight away. The modal still offered a single <em>Status check</em> box, which could not express the three-way choice the rest of the app had moved to — so the one moment you are most likely to want monitoring was the one place you could not switch it on. The health view also gained a <strong>Monitored</strong> tile that turns red the moment something stops responding.",
+  "sections": [
+    {
+      "title": "Add bookmark",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Availability checking while you add</strong> — the modal now carries the same <strong>Off / Periodic / Monitor</strong> control as the bookmark editor in Config, with the interval picker and the same explanation behind the <strong>(i)</strong>. It sits above the <em>More options</em> fold next to <strong>Shortcut</strong>, with <strong>Pinned</strong> moved up alongside them as the same pin pill the inline editor uses. All three were previously below the fold — or, in Monitor's case, absent entirely."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The explanation opened behind the form that asked for it</strong> — every overlay in the app sits on the same stacking layer, and a tie is settled by whichever was created first, so the <strong>(i)</strong> popup appeared <em>underneath</em> the modal. It now opens in front."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The modal cut its own form in half</strong> — a height cap left the fields between <em>Tags</em> and <em>More options</em> below the visible edge, reachable only by scrolling to something you had no reason to know was there."
+        }
+      ]
+    },
+    {
+      "title": "Health view",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A Monitored tile in the summary row</strong> — placed directly after <strong>Healthy</strong>, because it answers the same question those two do (is anything wrong right now) where Broken, Duplicates and Unchecked are backlogs to work through. The whole tile turns <strong>red</strong> the moment a monitored bookmark stops responding and reads <strong>green</strong> while they all answer. Hovering names the split (<em>1 of 3 not responding</em>), and clicking goes straight to the monitored list. A monitor still waiting for its first check counts as neither — unknown is not failing, and reddening the tile for it would cry wolf on every monitor you switch on."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A count of zero no longer reads as a pass</strong> — the <strong>Healthy</strong> tile was coloured green even at <code>0</code>, so a dashboard with nothing healthy looked as reassuring as one with everything healthy."
+        }
+      ]
+    }
+  ]
+}
