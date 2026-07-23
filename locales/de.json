@@ -142,6 +142,7 @@
         "healthWarnShort": "Warnungen",
         "healthBrokenAria": "{count} defekte Lesezeichen",
         "healthWarnAria": "{count} Lesezeichen mit Warnungen",
+        "healthMonitorDownAria": "{count} überwachte Lesezeichen antworten nicht",
         "loadFailed": "Dashboard konnte nicht geladen werden. Bitte Seite neu laden.",
         "reloadPage": "Seite neu laden",
         "syncConfigChanges": "Config-Änderungen synchronisiert.",

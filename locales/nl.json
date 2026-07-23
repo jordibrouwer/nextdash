@@ -163,6 +163,7 @@
         "healthWarnShort": "waarschuwingen",
         "healthBrokenAria": "{count} kapotte bladwijzers",
         "healthWarnAria": "{count} bladwijzers met waarschuwingen",
+        "healthMonitorDownAria": "{count} gemonitorde bladwijzers reageren niet",
         "loadFailed": "Dashboard laden mislukt. Herlaad de pagina.",
         "reloadPage": "Pagina herladen",
         "syncConfigChanges": "Config-wijzigingen gesynchroniseerd.",
