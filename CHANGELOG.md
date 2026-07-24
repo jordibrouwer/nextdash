@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.22.5 — July 2026](#v202607225--july-2026)
 - [v2026.07.22.4 — July 2026](#v202607224--july-2026)
 - [v2026.07.22.3 — July 2026](#v202607223--july-2026)
 - [v2026.07.22.2 — July 2026](#v202607222--july-2026)
@@ -110,6 +111,16 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.22.5 — July 2026
+
+**Bookmark icons show up in the health view again.** A favicon that loaded on the dashboard went missing the moment you opened the health view, and the browser console filled with *Failed to load resource: 404* errors — confusing, because nothing was actually broken.
+
+### Health view
+
+- **fix** **Health icons load again, no more console 404s** — the health view requested each bookmark icon by its bare filename from the site root (e.g. `/unraid.png`, `/icon-376f4a757b89eada.jpg`) instead of from `/data/icons/`, where the dashboard already loads the same file. Every icon 404'd and fell back to a placeholder. Icons now resolve the same way the dashboard rows do (`/data/icons/<file>`, absolute URLs left untouched), so the favicons appear and the console stays clean; a genuinely missing icon falls back to a 🔗 glyph rather than a broken image.
 
 ---
 

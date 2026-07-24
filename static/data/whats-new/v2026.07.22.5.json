@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.07.22.5",
+  "date": "July 2026",
+  "releasedAt": "2026-07-24",
+  "modalLead": "Bookmark icons show up in the health view again — the same favicons you see on the dashboard — and the console 404s they caused are gone.",
+  "sections": [
+    {
+      "title": "Health view",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Health icons load again, no more console 404s</strong> — a bookmark's favicon showed on the dashboard but went missing in the health view, and the browser console filled with <em>Failed to load resource: 404</em> errors that looked like something was broken when nothing was. The health view was requesting each icon by its bare filename from the site root (e.g. <code>/unraid.png</code>) instead of from <code>/data/icons/</code> where the dashboard already loads it. It now resolves icons the same way the dashboard does, so the favicons appear and the console stays clean; a genuinely missing icon falls back to a 🔗 glyph instead of a broken image."
+        }
+      ]
+    }
+  ]
+}
