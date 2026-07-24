@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.07.22.3",
+  "date": "July 2026",
+  "releasedAt": "2026-07-24",
+  "modalLead": "Filing several bookmarks in one sitting no longer means reopening the form each time. The add-bookmark modal gains a <strong>Create + New</strong> button that saves the bookmark and keeps the form open for the next one.",
+  "sections": [
+    {
+      "title": "Add bookmark",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Create + New — save and keep going</strong> — a second button beside <em>Create</em>, in its own accent colour, saves the bookmark and leaves the modal open with a cleared form so the next one can be typed straight away. The <strong>page and category stay selected</strong>, because filing several bookmarks into the same place is the common case, and the caret lands back in the URL field ready for the next entry. The plain <em>Create</em> button is unchanged: it saves and closes as before."
+        }
+      ]
+    }
+  ]
+}

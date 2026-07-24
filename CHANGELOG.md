@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.22.3 — July 2026](#v202607223--july-2026)
 - [v2026.07.22.2 — July 2026](#v202607222--july-2026)
 - [v2026.07.22.1 — July 2026](#v202607221--july-2026)
 - [v2026.07.22 — July 2026](#v20260722--july-2026)
@@ -108,6 +109,16 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.22.3 — July 2026
+
+**Add several bookmarks without reopening the form each time.** The add-bookmark modal saved and closed on every entry, so filing a handful of links in one sitting meant reopening it, re-picking the page, and starting over — a paper cut on exactly the flow where you least want one.
+
+### Add bookmark
+
+- **new** **Create + New — save and keep going** — a second button beside *Create*, in its own accent colour so it reads apart from the neutral primary, saves the bookmark and leaves the modal open with a cleared form so the next one can be typed straight away. The **page and category stay selected** — filing several bookmarks into the same place is the common case — and the caret lands back in the URL field ready for the next entry. The plain *Create* button is unchanged: it saves and closes as before. Adds the `createAndAddAnother` label across en/nl/de/fr.
 
 ---
 
