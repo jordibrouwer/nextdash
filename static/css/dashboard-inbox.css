@@ -57,6 +57,66 @@
     color: var(--text-secondary);
 }
 
+/* ─── Summary tiles ─────────────────────────────────────────────────────────
+   Same grammar as the health view's tiles (.health-view-tiles) so the two feeds
+   read as one system: auto-fit so the row reflows instead of overflowing when a
+   sidebar or narrow window squeezes the container. Tiles that filter are real
+   <button>s; the rest are plain readouts. */
+.inbox-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    gap: 0.5rem;
+    padding: 0 0.35rem;
+}
+
+.inbox-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary);
+    font-family: inherit;
+    text-align: left;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+button.inbox-tile {
+    cursor: pointer;
+}
+
+button.inbox-tile:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
+}
+
+.inbox-tile.is-active {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+}
+
+.inbox-tile-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.inbox-tile-value {
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+/* Unread is the number the inbox exists to drive down: tint it toward the accent
+   when there is something to read, plain when the inbox is clear. */
+.inbox-tile--unread:not(.inbox-tile--zero) .inbox-tile-value {
+    color: var(--accent-primary);
+}
+
 .page-nav-btn--inbox {
     display: inline-flex;
     align-items: center;
@@ -208,7 +268,7 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
 
 .inbox-item {
     display: grid;
-    grid-template-columns: 4.5rem 1fr;
+    grid-template-columns: 3rem 1fr;
     gap: 0.85rem;
     padding: 0.75rem 0.85rem;
     border: 1px solid var(--border-primary);
@@ -236,16 +296,29 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
 }
 
+/* 3rem square, shared with the health feed (.health-view-item-icon) so the two
+   read as one system. Inbox has no stored favicon — the preview image is shown
+   here on `contain`, and a link glyph fills in when there is none. */
 .inbox-item-thumb {
-    width: 4.5rem;
-    height: 4.5rem;
+    width: 3rem;
+    height: 3rem;
     border-radius: calc(var(--layout-radius-sm, 8px) - 2px);
-    background: var(--background-primary) center/cover no-repeat;
+    background: var(--background-primary) center/contain no-repeat;
     border: 1px solid var(--border-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.35rem;
+    font-size: 1.25rem;
+    overflow: hidden;
+}
+
+/* Favicon sizing matches the health view's icon (.health-view-item-icon img):
+   contained at 1.7rem so a site icon sits centred in the 3rem square rather than
+   filling it edge to edge. */
+.inbox-item-thumb-img {
+    width: 1.7rem;
+    height: 1.7rem;
+    object-fit: contain;
 }
 
 .inbox-item-thumb--placeholder {
@@ -290,6 +363,14 @@ body.no-animations .inbox-item-thumb--loading {
     flex-wrap: wrap;
     gap: 0.35rem 0.6rem;
     font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+/* Absolute added date ("3 Jul"). Sits between the domain and the relative time:
+   the date answers "when", the time "how long ago". Tabular figures keep a
+   column of dates from jittering. */
+.inbox-item-date {
+    font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
 }
 
@@ -601,12 +682,7 @@ body.no-animations .inbox-item-actions {
     }
 
     .inbox-item {
-        grid-template-columns: 1fr;
-    }
-
-    .inbox-item-thumb {
-        width: 100%;
-        height: 7rem;
+        grid-template-columns: 3rem 1fr;
     }
 
     .inbox-item-actions {
@@ -617,6 +693,10 @@ body.no-animations .inbox-item-actions {
 
     .inbox-toolbar {
         flex-wrap: wrap;
+    }
+
+    .inbox-tiles {
+        grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
     }
 }
 
@@ -872,17 +952,23 @@ body.inbox-triage-active {
 
 /* ─── Multi-select ──────────────────────────────────────────────────────── */
 
-/* The row is a 2-column grid (thumb + body); the checkbox adds a narrow
-   leading column rather than overlaying the thumbnail. */
+/* The row stays a 2-column grid (thumb + body), identical to the health view so
+   the icon sits in the same place with the same padding. The checkbox is not a
+   leading column — it overlays the icon's top-left corner, quiet until the row is
+   hovered, focused or ticked. The row is position:relative so the absolute
+   checkbox anchors to it. */
 .inbox-item {
-    grid-template-columns: 1.4rem 4.5rem 1fr;
+    position: relative;
 }
 
 .inbox-item-check {
+    position: absolute;
+    top: 0.55rem;
+    left: 0.55rem;
+    z-index: 2;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    padding-top: 0.15rem;
     cursor: pointer;
 }
 
@@ -891,6 +977,10 @@ body.inbox-triage-active {
     height: 0.95rem;
     accent-color: var(--accent-primary);
     cursor: pointer;
+    /* A faint backing so the box stays legible over any favicon underneath. */
+    border-radius: 0.2rem;
+    box-shadow: 0 0 0 2px var(--background-secondary);
+    background: var(--background-secondary);
 }
 
 /* Quiet until the row is hovered, focused or already ticked — the same
