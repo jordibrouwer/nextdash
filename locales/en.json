@@ -1921,6 +1921,8 @@
         "addBookmarkWizardBack": "Back",
         "shortcutConflict": "Shortcut already in use",
         "create": "Create",
+        "createAndAddAnother": "Create + New",
+        "createAndAddAnotherTitle": "Save this bookmark and keep the form open to add another",
         "saving": "Saving…",
         "bookmarkCreated": "Bookmark created successfully!",
         "errorCreatingBookmark": "Error creating bookmark",

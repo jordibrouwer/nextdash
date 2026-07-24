@@ -1902,6 +1902,8 @@
         "addBookmarkWizardBack": "Zurück",
         "shortcutConflict": "Kürzel bereits vergeben",
         "create": "Erstellen",
+        "createAndAddAnother": "Erstellen + Neu",
+        "createAndAddAnotherTitle": "Dieses Lesezeichen speichern und das Formular für ein weiteres offen lassen",
         "saving": "Speichern…",
         "bookmarkCreated": "Lesezeichen erfolgreich erstellt!",
         "errorCreatingBookmark": "Fehler beim Erstellen des Lesezeichens",

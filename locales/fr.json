@@ -1902,6 +1902,8 @@
         "addBookmarkWizardBack": "Retour",
         "shortcutConflict": "Raccourci déjà utilisé",
         "create": "Créer",
+        "createAndAddAnother": "Créer + Nouveau",
+        "createAndAddAnotherTitle": "Enregistrer ce favori et garder le formulaire ouvert pour en ajouter un autre",
         "saving": "Enregistrement…",
         "bookmarkCreated": "Favori créé avec succès !",
         "errorCreatingBookmark": "Erreur lors de la création du favori",
