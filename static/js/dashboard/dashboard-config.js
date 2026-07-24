@@ -1022,6 +1022,7 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeLabel', 'Theme'))}</span>
                     <select class="config-select" data-appearance-select="theme">${this.renderThemeOptions()}</select>
+                    ${this.appearanceAff('theme')}
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.appearanceMode', 'Quick mode'))}</span>
@@ -1030,10 +1031,13 @@ class DashboardConfig {
                         <button type="button" class="config-choice${theme === 'dark' ? ' is-active' : ''}" data-appearance-theme="dark" aria-pressed="${theme === 'dark'}">${esc(this.t('config.themeDark', 'Dark'))}</button>
                     </div>
                 </div>
-                <label class="config-toggle">
-                    <input type="checkbox" data-appearance-toggle="autoDarkMode" ${s.autoDarkMode ? 'checked' : ''}>
-                    <span>${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
-                </label>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="autoDarkMode" ${s.autoDarkMode ? 'checked' : ''}>
+                        <span>${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
+                    </label>
+                    ${this.appearanceAff('autoDarkMode')}
+                </div>
                 <div class="config-actions" style="margin-top:14px">
                     <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openThemeColorsLink', 'Edit theme colours…'))}</button>
                 </div>
@@ -1044,10 +1048,12 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.fontPresetLabel', 'Font'))}</span>
                     <select class="config-select" data-appearance-select="fontPreset">${fontPresetOptions}</select>
+                    ${this.appearanceAff('fontPreset')}
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.fontWeightLabel', 'Weight'))}</span>
                     <div class="config-choices" role="group">${weightChoices}</div>
+                    ${this.appearanceAff('fontWeight')}
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.appearanceFontSize', 'Font size'))}</span>
@@ -1065,16 +1071,21 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.backgroundLabel', 'Background'))}</span>
                     <div class="config-choices" role="group">${bgChoices}</div>
+                    ${this.appearanceAff('backgroundType')}
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.backgroundOpacityLabel', 'Opacity'))}</span>
                     <input type="range" class="config-range" data-appearance-range="backgroundOpacity" min="0" max="1" step="0.05" value="${opacity}">
                     <span class="config-range-value">${Math.round(opacity * 100)}%</span>
+                    ${this.appearanceAff('backgroundOpacity')}
                 </div>
-                <label class="config-toggle">
-                    <input type="checkbox" data-appearance-toggle="showBackgroundDots" ${s.showBackgroundDots ? 'checked' : ''}>
-                    <span>${esc(this.t('config.showBackgroundDots', 'Show background dots'))}</span>
-                </label>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="showBackgroundDots" ${s.showBackgroundDots ? 'checked' : ''}>
+                        <span>${esc(this.t('config.showBackgroundDots', 'Show background dots'))}</span>
+                    </label>
+                    ${this.appearanceAff('showBackgroundDots')}
+                </div>
             </div>
 
             <div class="config-panel">
@@ -1085,31 +1096,45 @@ class DashboardConfig {
                         <button type="button" class="config-choice${layout === 'classic' ? ' is-active' : ''}" data-appearance-layout="classic" aria-pressed="${layout === 'classic'}">${esc(this.t('config.layoutClassic', 'Classic'))}</button>
                         <button type="button" class="config-choice${layout === 'modern' ? ' is-active' : ''}" data-appearance-layout="modern" aria-pressed="${layout === 'modern'}">${esc(this.t('config.layoutModern', 'Modern'))}</button>
                     </div>
+                    ${this.appearanceAff('layoutVersion')}
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.launcherIconSizeLabel', 'Icon size'))}</span>
                     <div class="config-choices" role="group">${iconSizeChoices}</div>
+                    ${this.appearanceAff('launcherIconSize')}
                 </div>
-                <label class="config-toggle">
-                    <input type="checkbox" data-appearance-toggle="showIcons" ${s.showIcons !== false ? 'checked' : ''}>
-                    <span>${esc(this.t('config.showIcons', 'Show bookmark icons'))}</span>
-                </label>
-                <label class="config-toggle">
-                    <input type="checkbox" data-appearance-toggle="colorizeStatus" ${s.colorizeStatus ? 'checked' : ''}>
-                    <span>${esc(this.t('config.colorizeStatus', 'Colour status on bookmark rows'))}</span>
-                </label>
-                <label class="config-toggle">
-                    <input type="checkbox" data-appearance-toggle="animationsEnabled" ${s.animationsEnabled !== false ? 'checked' : ''}>
-                    <span>${esc(this.t('config.enableAnimations', 'Enable animations'))}</span>
-                </label>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="showIcons" ${s.showIcons !== false ? 'checked' : ''}>
+                        <span>${esc(this.t('config.showIcons', 'Show bookmark icons'))}</span>
+                    </label>
+                    ${this.appearanceAff('showIcons')}
+                </div>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="colorizeStatus" ${s.colorizeStatus ? 'checked' : ''}>
+                        <span>${esc(this.t('config.colorizeStatus', 'Colour status on bookmark rows'))}</span>
+                    </label>
+                    ${this.appearanceAff('colorizeStatus')}
+                </div>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="animationsEnabled" ${s.animationsEnabled !== false ? 'checked' : ''}>
+                        <span>${esc(this.t('config.enableAnimations', 'Enable animations'))}</span>
+                    </label>
+                    ${this.appearanceAff('animationsEnabled')}
+                </div>
             </div>
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
-                <label class="config-toggle">
-                    <input type="checkbox" data-appearance-toggle="enableCustomTitle" ${s.enableCustomTitle ? 'checked' : ''}>
-                    <span>${esc(this.t('config.enableCustomTitle', 'Use a custom page title'))}</span>
-                </label>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="enableCustomTitle" ${s.enableCustomTitle ? 'checked' : ''}>
+                        <span>${esc(this.t('config.enableCustomTitle', 'Use a custom page title'))}</span>
+                    </label>
+                    ${this.appearanceAff('enableCustomTitle')}
+                </div>
                 <div class="config-field" style="margin-top:10px">
                     <span class="config-field-label">${esc(this.t('config.customTitleLabel', 'Title'))}</span>
                     <input type="text" class="config-text" data-appearance-text="customTitle" value="${esc(s.customTitle || '')}" ${s.enableCustomTitle ? '' : 'disabled'} placeholder="nextDash">
@@ -1241,6 +1266,10 @@ class DashboardConfig {
                 faviconInput.value = '';
             });
         }
+        // ℹ info modals + ↺ reset-to-default. Reset routes through the field's
+        // live setter (via applyAppearanceField), which repaints the section so
+        // the ↺ visibility refreshes.
+        this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
     }
 
     /** Persist a settings change and repaint the appearance section. */
@@ -1263,6 +1292,36 @@ class DashboardConfig {
             s.showBackgroundDots !== false,
             this.currentFontSize()
         );
+    }
+
+    /** Render the ℹ/↺ affordances for an Appearance-section field. */
+    appearanceAff(field) {
+        const aff = this.renderFieldAffordances(field, this.dash.settings?.[field]);
+        return aff ? `<span class="config-field-affordances">${aff}</span>` : '';
+    }
+
+    /**
+     * Route an Appearance field to its dedicated setter. Used by the ↺
+     * reset-to-default buttons so a reset applies live exactly like the control.
+     */
+    applyAppearanceField(field, value) {
+        switch (field) {
+            case 'fontPreset': this.setAppearanceSelect('fontPreset', value); break;
+            case 'fontWeight': this.setFontWeight(value); break;
+            case 'backgroundType': this.setBackgroundType(value); break;
+            case 'backgroundOpacity':
+                this.dash.settings.backgroundOpacity = Number(value);
+                this.dash.visual?.applyVisualSettings?.();
+                this.persistAppearance();
+                break;
+            case 'launcherIconSize': this.setLauncherIconSize(value); break;
+            case 'layoutVersion': this.setLayout(value); break;
+            default:
+                // Fall back to a plain settings write + repaint for any field
+                // without a dedicated live setter.
+                this.dash.settings[field] = value;
+                this.persistAppearance();
+        }
     }
 
     setTheme(theme) {
@@ -1761,8 +1820,13 @@ class DashboardConfig {
         });
     }
 
-    /** Wire the ℹ (info modal) and ↺ (reset-to-default) buttons. */
-    bindAffordances(container, specialFor) {
+    /**
+     * Wire the ℹ (info modal) and ↺ (reset-to-default) buttons.
+     * By default a reset routes through setBehavior; pass `resetHandler` to
+     * apply the default some other way (the Appearance section needs its own
+     * live setters).
+     */
+    bindAffordances(container, specialFor, resetHandler) {
         container.querySelectorAll('[data-info-field]').forEach((btn) => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1774,6 +1838,10 @@ class DashboardConfig {
                 const field = btn.getAttribute('data-reset-field');
                 const meta = this.fieldMeta(field);
                 if (!meta || meta.def === undefined) return;
+                if (resetHandler) {
+                    resetHandler(field, meta.def);
+                    return;
+                }
                 const special = specialFor ? specialFor(field) : '';
                 void this.setBehavior(field, meta.def, special);
             });
