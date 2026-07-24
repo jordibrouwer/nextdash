@@ -121,7 +121,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ModalJS:                  "modal-focus-aria-1",
 	StatusJS:                 "status-2",
 	SelectJS:                 "select-js-1",
-	ReorderJS:                "reorder-js-1",
+	ReorderJS:                "reorder-inline-edit-1",
 	ConfigStorageJS:          "config-storage-2",
 	ConfigDataJS:             "config-data-1",
 	ConfigBookmarkStoreJS:    "config-bookmark-store-1",
@@ -130,7 +130,7 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
 	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
-	DashboardCSS:            "monitor-down-alert-1",
+	DashboardCSS:            "inline-edit-blur-children-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
 	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
 

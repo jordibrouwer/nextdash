@@ -127,12 +127,19 @@ class DragReorder {
                 return;
             }
         }
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', '');
         const fromHandle = e.currentTarget && e.currentTarget.closest
             ? e.currentTarget.closest(`.${this.itemClass}`)
             : null;
-        this.selected = fromHandle || (e.target && e.target.closest ? e.target.closest(`.${this.itemClass}`) : null);
+        const candidate = fromHandle || (e.target && e.target.closest ? e.target.closest(`.${this.itemClass}`) : null);
+        // Never start a reorder while the inline editor owns this row.
+        if (candidate?.classList?.contains('bookmark-inline-editing')
+            || e.target?.closest?.('.bookmark-inline-form')) {
+            e.preventDefault();
+            return;
+        }
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+        this.selected = candidate;
         if (!this.selected) {
             e.preventDefault();
             return;
