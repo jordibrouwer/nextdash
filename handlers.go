@@ -175,6 +175,9 @@ func NewHandlers(store Store, files embed.FS) *Handlers {
 	if store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
 	}
+	// Existing inbox items predate icon storage; fetch their favicons once so the
+	// inbox shows real site icons like the health view, not just link glyphs.
+	h.backfillInboxIconsAsync()
 	return h
 }
 

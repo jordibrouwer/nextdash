@@ -28,6 +28,10 @@ type InboxLink struct {
 	PreviewTitle string   `json:"previewTitle,omitempty"`
 	PreviewDesc  string   `json:"previewDesc,omitempty"`
 	PreviewImage string   `json:"previewImage,omitempty"`
+	// Icon is a stored favicon filename under data/icons/ (same convention as
+	// Bookmark.Icon), fetched during preview enrichment so the inbox can show the
+	// real site icon like the health view does, not just an og:image.
+	Icon string `json:"icon,omitempty"`
 	Note         string   `json:"note,omitempty"`
 	Tags         []string `json:"tags,omitempty"`
 	Domain       string   `json:"domain,omitempty"`
@@ -195,6 +199,49 @@ func (fs *FileStore) DeleteInboxLink(id string) error {
 	}
 	inbox.Items = next
 	return fs.saveInboxDataLocked(inbox)
+}
+
+// iconReferenced reports whether the given stored icon filename is still used by
+// any bookmark or inbox item. Only bare filenames served from data/icons/ are
+// tracked; absolute/root-relative icon values are never deletable files, so they
+// are treated as "referenced" (never removed). Callers hold no lock — this takes
+// its own read locks via the public getters.
+func (fs *FileStore) iconReferenced(fileName string) bool {
+	fileName = strings.TrimSpace(fileName)
+	if fileName == "" {
+		return true
+	}
+	// Anything that is a URL or path is not a data/icons/ file we manage.
+	if strings.ContainsAny(fileName, "/:") {
+		return true
+	}
+	for _, bm := range fs.GetAllBookmarks() {
+		if strings.TrimSpace(bm.Icon) == fileName {
+			return true
+		}
+	}
+	for _, item := range fs.GetInboxItems() {
+		if strings.TrimSpace(item.Icon) == fileName {
+			return true
+		}
+	}
+	return false
+}
+
+// removeUnusedIconFile deletes a stored icon file when no bookmark or inbox item
+// still references it. Best-effort: a missing file or a still-referenced name is a
+// no-op, and any remove error is swallowed (an orphaned icon is harmless clutter,
+// not a failure worth surfacing to the caller). Call this AFTER the referencing
+// item has been removed, so the just-deleted item does not count as a reference.
+func (fs *FileStore) removeUnusedIconFile(fileName string) {
+	fileName = strings.TrimSpace(fileName)
+	if fileName == "" || strings.ContainsAny(fileName, "/:") {
+		return
+	}
+	if fs.iconReferenced(fileName) {
+		return
+	}
+	_ = os.Remove(filepath.Join(fs.dataDir, "icons", fileName))
 }
 
 func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error) {

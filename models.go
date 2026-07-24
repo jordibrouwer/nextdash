@@ -407,6 +407,10 @@ type Store interface {
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
+	// removeUnusedIconFile deletes a stored favicon file when no bookmark or inbox
+	// item still references it (best-effort). Called after an inbox item that owned
+	// the icon is deleted or promoted, so its file does not linger in data/icons/.
+	removeUnusedIconFile(fileName string)
 
 	// Inbox stats (durable aggregate; survives triaged-away items)
 	RecordInboxEvent(evt InboxEvent)

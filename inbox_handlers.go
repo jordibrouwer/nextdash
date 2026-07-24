@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -97,6 +99,49 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 	h.enrichInboxPreviewAsync(created.ID, url)
 }
 
+// backfillInboxIconsAsync fetches favicons for existing inbox items that predate
+// icon storage (added before Icon was a field, or whose enrichment ran without it).
+// Runs once at startup, off the request path, and mirrors the bookmark icon
+// prefetch: bounded, best-effort, and silent when there is nothing to do.
+func (h *Handlers) backfillInboxIconsAsync() {
+	if os.Getenv("NEXTDASH_DISABLE_PREFETCH") == "1" {
+		return
+	}
+	go func() {
+		items := h.store.GetInboxItems()
+		allowLocal := h.allowLocalBookmarks()
+		applied := 0
+		for _, item := range items {
+			if strings.TrimSpace(item.Icon) != "" || strings.TrimSpace(item.URL) == "" {
+				continue
+			}
+			iconFile := ""
+			if fallback := deriveFaviconURL(item.URL); fallback != "" {
+				if name, err := downloadIconFromURL(fallback, allowLocal); err == nil {
+					iconFile = name
+				}
+			}
+			if iconFile == "" {
+				continue
+			}
+			id := item.ID
+			file := iconFile
+			if _, err := h.store.UpdateInboxLink(id, func(link *InboxLink) error {
+				// Re-check under the store lock: another path may have set it since.
+				if strings.TrimSpace(link.Icon) == "" {
+					link.Icon = file
+				}
+				return nil
+			}); err == nil {
+				applied++
+			}
+		}
+		if applied > 0 {
+			log.Printf("nextDash: backfilled favicons for %d inbox items", applied)
+		}
+	}()
+}
+
 func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 	itemID = strings.TrimSpace(itemID)
 	url = strings.TrimSpace(url)
@@ -105,7 +150,27 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 	}
 	go func() {
 		preview := h.fetchBookmarkPreview(context.Background(), url, &PreviewCacheFile{Cache: map[string]BookmarkPreview{}}, true)
-		if strings.TrimSpace(preview.Title) == "" && strings.TrimSpace(preview.Image) == "" {
+
+		// Download and store the site favicon so the inbox shows the real icon like
+		// the health view, not just a link glyph. Prefers the preview's icon URL,
+		// falling back to the domain's /favicon.ico; the result is a filename served
+		// from /data/icons/ (same store as bookmark icons).
+		allowLocal := h.allowLocalBookmarks()
+		iconFile := ""
+		if iconURL := strings.TrimSpace(preview.Icon); iconURL != "" {
+			if name, err := downloadIconFromURL(iconURL, allowLocal); err == nil {
+				iconFile = name
+			}
+		}
+		if iconFile == "" {
+			if fallback := deriveFaviconURL(url); fallback != "" {
+				if name, err := downloadIconFromURL(fallback, allowLocal); err == nil {
+					iconFile = name
+				}
+			}
+		}
+
+		if strings.TrimSpace(preview.Title) == "" && strings.TrimSpace(preview.Image) == "" && iconFile == "" {
 			return
 		}
 		_, _ = h.store.UpdateInboxLink(itemID, func(item *InboxLink) error {
@@ -123,6 +188,9 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 			}
 			if strings.TrimSpace(preview.Domain) != "" {
 				item.Domain = preview.Domain
+			}
+			if iconFile != "" {
+				item.Icon = iconFile
 			}
 			return nil
 		})
@@ -205,6 +273,14 @@ func (h *Handlers) DeleteInboxItem(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Error(w, "Failed to delete inbox item", http.StatusInternalServerError)
 		return
+	}
+
+	// The item is gone; remove its favicon file if nothing else uses it. Promote
+	// does not carry the icon over — the new bookmark fetches its own — so a
+	// promoted item's icon is orphaned just like a discarded one. Runs after the
+	// delete so the just-removed item no longer counts as a reference.
+	if deleted != nil {
+		h.store.removeUnusedIconFile(deleted.Icon)
 	}
 
 	eventType := inboxEventDeleted
