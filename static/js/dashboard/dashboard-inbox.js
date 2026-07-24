@@ -1306,6 +1306,46 @@ class DashboardInbox {
         return (this.items || []).filter((item) => this.isSnoozed(item)).length;
     }
 
+    /**
+     * Resolve a stored icon filename to a loadable src, matching the dashboard and
+     * health view: bare filenames are served from /data/icons/; absolute and
+     * root-relative URLs are left as-is. Returns '' when there is no icon.
+     */
+    resolveIconSrc(icon) {
+        const value = String(icon || '').trim();
+        if (!value) {
+            return '';
+        }
+        if (/^(https?:|data:|\/)/i.test(value)) {
+            return value;
+        }
+        return `/data/icons/${encodeURIComponent(value)}`;
+    }
+
+    /** Items added in the last 7 days — the "this week" summary tile. */
+    weekAddedCount() {
+        const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        return (this.items || []).filter((item) => Number(item.addedAt || 0) >= cutoff).length;
+    }
+
+    /**
+     * Absolute added date for a row, e.g. "3 Jul". The year is added only when the
+     * item is not from the current year, so recent links stay compact. Sits beside
+     * the relative "3d ago" label — one answers "how long ago", the other "when".
+     */
+    formatAddedDate(ts) {
+        const value = Number(ts || 0);
+        if (!value) {
+            return '';
+        }
+        const date = new Date(value);
+        const opts = { day: 'numeric', month: 'short' };
+        if (date.getFullYear() !== new Date().getFullYear()) {
+            opts.year = 'numeric';
+        }
+        return date.toLocaleDateString(undefined, opts);
+    }
+
     getFilteredItems() {
         let list = Array.isArray(this.items) ? this.items.slice() : [];
         if (this.filter === 'snoozed') {
@@ -1612,6 +1652,40 @@ class DashboardInbox {
 
         const readCount = this.items.filter((entry) => entry.readAt).length;
         const snoozedCount = this.snoozedCount();
+
+        // Summary tiles, mirroring the health view. The first three double as
+        // filters (Total → all, Unread → unread, Snoozed → snoozed); "This week"
+        // is a plain readout with no matching filter, so it renders as a <div>.
+        const weekCount = this.weekAddedCount();
+        const tiles = document.createElement('div');
+        tiles.className = 'inbox-tiles';
+        const tile = (label, value, opts = {}) => {
+            const zero = value === 0 ? ' inbox-tile--zero' : '';
+            const active = opts.filter && this.filter === opts.filter ? ' is-active' : '';
+            const mod = opts.mod ? ` inbox-tile--${opts.mod}` : '';
+            const body = `<span class="inbox-tile-label">${this.escape(label)}</span><span class="inbox-tile-value">${value}</span>`;
+            if (opts.filter) {
+                return `<button type="button" class="inbox-tile${mod}${zero}${active}" data-inbox-tile="${opts.filter}">${body}</button>`;
+            }
+            return `<div class="inbox-tile${mod}${zero}">${body}</div>`;
+        };
+        tiles.innerHTML = [
+            tile(this.t('dashboard.inboxTileTotal', 'Total'), count, { filter: 'all' }),
+            tile(this.t('dashboard.inboxTileUnread', 'Unread'), unread, { filter: 'unread', mod: 'unread' }),
+            tile(this.t('dashboard.inboxTileSnoozed', 'Snoozed'), snoozedCount, { filter: 'snoozed' }),
+            tile(this.t('dashboard.inboxTileThisWeek', 'This week'), weekCount),
+        ].join('');
+        tiles.querySelectorAll('[data-inbox-tile]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.filter = btn.getAttribute('data-inbox-tile') || 'all';
+                this.visibleLimit = 50;
+                this.checkedIds.clear();
+                this.persistViewState();
+                this.syncUrlState();
+                this.render();
+            });
+        });
+        container.appendChild(tiles);
         const toolbar = document.createElement('div');
         toolbar.className = 'inbox-toolbar';
         // The Snoozed pill only appears when something is asleep (or is the active
@@ -1781,6 +1855,7 @@ class DashboardInbox {
         const title = item.previewTitle || item.title || item.domain || item.url;
         const domain = item.domain || this.formatUrlDisplay(item.url);
         const timeLabel = this.formatRelativeTime(item.addedAt);
+        const addedLabel = this.formatAddedDate(item.addedAt);
         const snoozed = this.isSnoozed(item);
         if (snoozed) {
             card.classList.add('is-snoozed');
@@ -1788,9 +1863,20 @@ class DashboardInbox {
         // A freshly-added item enriches its preview server-side; until that lands the
         // placeholder shows a "fetching preview" pulse rather than a bare link glyph.
         const enriching = this.isPreviewPending(item);
-        const thumb = item.previewImage
-            ? `<div class="inbox-item-thumb" style="background-image:url('${this.escape(item.previewImage)}')"></div>`
-            : `<div class="inbox-item-thumb inbox-item-thumb--placeholder${enriching ? ' inbox-item-thumb--loading' : ''}" aria-hidden="true">🔗</div>`;
+        // Icon like the health view: the stored favicon first (served from
+        // /data/icons/), the preview image as a secondary, and the link glyph last.
+        // The <img> carries the fallback chain in data-* so its error handler can
+        // step down without re-rendering the row.
+        const iconSrc = this.resolveIconSrc(item.icon);
+        const previewSrc = String(item.previewImage || '').trim();
+        let thumb;
+        if (iconSrc || previewSrc) {
+            const primary = iconSrc || previewSrc;
+            const fallback = iconSrc && previewSrc ? previewSrc : '';
+            thumb = `<div class="inbox-item-thumb" aria-hidden="true"><img class="inbox-item-thumb-img" src="${this.escape(primary)}" alt="" loading="lazy"${fallback ? ` data-fallback="${this.escape(fallback)}"` : ''}></div>`;
+        } else {
+            thumb = `<div class="inbox-item-thumb inbox-item-thumb--placeholder${enriching ? ' inbox-item-thumb--loading' : ''}" aria-hidden="true">🔗</div>`;
+        }
 
         // On a snoozed card, swap the Snooze button for a Wake one and show when it
         // will resurface.
@@ -1815,6 +1901,7 @@ class DashboardInbox {
                 <h3 class="inbox-item-title">${this.escape(title)}</h3>
                 <p class="inbox-item-meta">
                     <span class="inbox-item-domain">${this.escape(domain)}</span>
+                    ${addedLabel ? `<span class="inbox-item-date" title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}">${this.escape(addedLabel)}</span>` : ''}
                     ${timeLabel ? `<span class="inbox-item-time">${this.escape(timeLabel)}</span>` : ''}
                     ${wakeLabel}
                 </p>
@@ -1831,6 +1918,25 @@ class DashboardInbox {
                 </div>
             </div>
         `;
+
+        // Icon fallback chain: if the favicon fails, drop to the preview image
+        // (data-fallback); if that fails too — or there was none — show the link
+        // glyph, matching the health view's icon fallback.
+        const thumbImg = card.querySelector('.inbox-item-thumb-img');
+        thumbImg?.addEventListener('error', () => {
+            const fallback = thumbImg.getAttribute('data-fallback');
+            if (fallback) {
+                thumbImg.removeAttribute('data-fallback');
+                thumbImg.src = fallback;
+                return;
+            }
+            const slot = thumbImg.parentElement;
+            thumbImg.remove();
+            if (slot) {
+                slot.classList.add('inbox-item-thumb--placeholder');
+                slot.textContent = '🔗';
+            }
+        });
 
         const checkInput = card.querySelector('.inbox-item-check-input');
         checkInput?.addEventListener('change', () => {
