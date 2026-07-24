@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.22.6 — July 2026](#v202607226--july-2026)
 - [v2026.07.22.5 — July 2026](#v202607225--july-2026)
 - [v2026.07.22.4 — July 2026](#v202607224--july-2026)
 - [v2026.07.22.3 — July 2026](#v202607223--july-2026)
@@ -111,6 +112,21 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.22.6 — July 2026
+
+**The inbox now reads as one system with the health view.** The two feeds share the same card shape but the inbox was styled apart; it now follows the health view as the reference — same icons in the same place, summary tiles above the feed, and an added date on every row.
+
+### Inbox
+
+- **new** **Inbox matches the health view** — the site icon is a **3rem square in the same spot with the same padding** as health. The multi-select checkbox moved to overlay the icon's corner instead of taking a leading column that pushed the icon right. Rows gain **summary tiles** above the feed — Total, Unread, Snoozed, This week — the first three doubling as filters, and an **added date** beside the relative time.
+- **new** **Real site icons in the inbox** — inbox items now carry a favicon like bookmarks do, so the inbox shows the real site icon rather than a link glyph, exactly like the health view. Favicons are fetched during preview enrichment and stored under `data/icons/`; existing items are backfilled once on startup. The health view's own icons were enlarged to 3rem to match.
+
+### Fixes
+
+- **fix** A stored inbox favicon is now removed when its item is deleted or promoted, unless another bookmark or inbox item still references the same file — promote does not carry the icon over, so the file would otherwise be orphaned. A backup round-trip keeps the icons, since the archive bundles `data/icons/` wholesale.
 
 ---
 

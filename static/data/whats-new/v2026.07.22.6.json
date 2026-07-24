@@ -1,0 +1,21 @@
+{
+  "tag": "v2026.07.22.6",
+  "date": "July 2026",
+  "releasedAt": "2026-07-24",
+  "modalLead": "The inbox now reads as one system with the health view: real site icons in the same place, summary tiles above the feed, and an added date on every row.",
+  "sections": [
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Inbox matches the health view</strong> — the inbox feed was styled apart from the health view even though they share the same card shape. It now follows health as the reference: the site icon is a <strong>3rem square in the same spot with the same padding</strong> (the multi-select checkbox moved to overlay the icon corner instead of pushing it right), and rows gain <strong>summary tiles</strong> above the feed — Total, Unread, Snoozed and This week, the first three doubling as filters — plus an <strong>added date</strong> on each row beside the relative time."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Real site icons in the inbox</strong> — inbox items now carry a favicon like bookmarks do, so the inbox shows the real site icon instead of a link glyph, exactly like the health view. Favicons are fetched when a link's preview is enriched and stored under <code>data/icons/</code>; existing items are backfilled once on startup. A stored favicon is removed when its item is deleted or promoted, unless another bookmark or inbox item still uses it, so nothing is orphaned."
+        }
+      ]
+    }
+  ]
+}
