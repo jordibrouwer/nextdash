@@ -1,9 +1,8 @@
 /*
- * Config view — Phase 1 scaffold styles.
+ * Config view — configuration as an in-shell dashboard view.
  *
- * Kept intentionally light: this only lays out the view shell so `#config`
- * renders as a real in-shell view. Section navigation and status tiles get
- * their own styling in later phases.
+ * Phase 2 adds the section navigation and the overview status tiles. The tiles
+ * mirror the health view's card language so the shell reads as one product.
  */
 
 #dashboard-layout.config-layout {
@@ -12,24 +11,87 @@
 }
 
 .config-view {
-    max-width: 960px;
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 28px;
+    max-width: 1040px;
     margin: 0 auto;
     padding: 8px 0 48px;
 }
 
-.config-view-head {
-    margin-bottom: 20px;
+@media (max-width: 720px) {
+    .config-view {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+    }
 }
 
-.config-view-title {
-    margin: 0;
-    font-size: 1.4rem;
+/* ── Section navigation ─────────────────────────────────────────────────── */
+
+.config-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: sticky;
+    top: 8px;
+    align-self: start;
+}
+
+@media (max-width: 720px) {
+    .config-nav {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+}
+
+.config-nav-item {
+    text-align: left;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted, #777);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.config-nav-item:hover {
+    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+    color: var(--text-color, inherit);
+}
+
+.config-nav-item.is-active {
+    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
+    color: var(--accent-color, var(--text-color, inherit));
     font-weight: 600;
 }
 
-.config-view-body {
-    display: grid;
-    gap: 16px;
+.config-nav-item:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+/* ── Section body ───────────────────────────────────────────────────────── */
+
+.config-view-main {
+    min-width: 0;
+}
+
+.config-view-section-title {
+    margin: 0 0 4px;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.config-view-intro {
+    margin: 0 0 20px;
+    color: var(--text-muted, #888);
+    max-width: 62ch;
+    line-height: 1.5;
 }
 
 .config-view-placeholder {
@@ -39,4 +101,87 @@
     border-radius: 12px;
     color: var(--text-muted, #888);
     text-align: center;
+}
+
+/* ── Status tiles ───────────────────────────────────────────────────────── */
+
+.config-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.config-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 12px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+}
+
+/* Severity stripe encodes state independently of the accent hue. */
+.config-tile::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--tile-stripe, var(--accent-color, #4a90d9));
+}
+
+.config-tile--accent  { --tile-stripe: var(--accent-color, #4a90d9); }
+.config-tile--good    { --tile-stripe: #2fa968; }
+.config-tile--warn    { --tile-stripe: #cf9014; }
+.config-tile--crit    { --tile-stripe: #d1493f; }
+.config-tile--neutral { --tile-stripe: var(--border-color, rgba(128, 128, 128, 0.5)); }
+
+.config-tile-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted, #888);
+}
+
+.config-tile-value {
+    font-size: 1.7rem;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.config-tile-detail {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-muted, #888);
+}
+
+.config-tile--action {
+    cursor: pointer;
+    transition: border-color 0.12s ease, transform 0.08s ease;
+}
+
+.config-tile--action:hover {
+    border-color: var(--tile-stripe);
+}
+
+.config-tile--action:active {
+    transform: translateY(1px);
+}
+
+.config-tile--action:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-tile--action,
+    .config-nav-item {
+        transition: none;
+    }
 }

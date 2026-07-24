@@ -66,4 +66,53 @@ test.describe('config dashboard view (scaffold)', () => {
         expect(await page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
         expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance');
     });
+
+    test('the overview section renders status tiles', async ({ page }) => {
+        await loadDashboard(page);
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView());
+
+        await expect(page.locator('.config-tiles .config-tile').first()).toBeVisible();
+        // The bookmarks tile always exists; broken/duplicate/pages/inbox join it.
+        const labels = await page.locator('.config-tile-label').allTextContents();
+        expect(labels.join(' ').toLowerCase()).toContain('bookmarks');
+    });
+
+    test('clicking a section nav item switches section and hash', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView());
+
+        await page.locator('[data-config-section="appearance"]').click();
+
+        expect(await page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
+        expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance');
+        await expect(page.locator('[data-config-section="appearance"]')).toHaveClass(/is-active/);
+    });
+
+    test('a broken-links action tile hands off to the health view', async ({ page }) => {
+        // Mock the health report so a broken count exists; loadOverviewData refetches
+        // this endpoint, so forcing the in-memory report alone would be clobbered.
+        await page.route('**/api/bookmark-health**', async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    generatedAt: Date.now(),
+                    summary: { totalBookmarks: 3, brokenCount: 2, duplicateCount: 0, uncheckedCount: 0, healthyCount: 1 },
+                    issues: [],
+                }),
+            });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView());
+
+        const brokenTile = page.locator('.config-tile[data-tile-view="health"][data-tile-filter="broken"]');
+        await expect(brokenTile).toBeVisible();
+        await brokenTile.click();
+
+        await expect
+            .poll(() => page.evaluate(() => window.dashboardInstance.activeView))
+            .toBe('health');
+        expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('broken');
+    });
 });
