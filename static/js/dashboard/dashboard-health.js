@@ -676,14 +676,42 @@ class DashboardHealth {
     }
 
     /**
-     * Edit the bookmark in place: leave the health view, deep-link to the row on its
-     * own page, and open the dashboard's inline editor there (?edit=1). Falls back to
-     * the config bookmarks list when the deep-link helper isn't available.
+     * Edit the bookmark in place: leave the health view, land on the row on its own
+     * page, and open the dashboard's inline editor. Soft-navigates when possible so
+     * the form isn't opened during a cold reload (promo/modal races). Falls back to
+     * ?edit=1, then to the config bookmarks list.
      */
-    editIssueInline(issue) {
+    async editIssueInline(issue) {
         this.closeAllMenus();
+        const d = this.dash;
         const pageId = Number(issue?.pageId);
-        if (Number.isFinite(pageId) && typeof DashboardDeepLink?.buildDashboardDeepLink === 'function') {
+        if (!Number.isFinite(pageId)) {
+            this.openIssueInConfig(issue);
+            return;
+        }
+
+        if (typeof d.pageNav?.requestPageNavigation === 'function'
+            && typeof d.pageNav?.focusDashboardDeepLinkTarget === 'function') {
+            const switched = await d.pageNav.requestPageNavigation(pageId);
+            if (switched) {
+                const link = {
+                    pageId,
+                    bookmarkIndex: Number.isFinite(Number(issue.index)) ? Number(issue.index) : null,
+                    categoryId: issue.category || null,
+                    url: issue.url || null,
+                    edit: true,
+                };
+                // Paint the bookmarks grid after leaving health-layout, then open edit.
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        d.pageNav.focusDashboardDeepLinkTarget(link);
+                    });
+                });
+                return;
+            }
+        }
+
+        if (typeof DashboardDeepLink?.buildDashboardDeepLink === 'function') {
             window.location.href = DashboardDeepLink.buildDashboardDeepLink({
                 pageId,
                 bookmarkIndex: issue.index,
@@ -2558,7 +2586,7 @@ class DashboardHealth {
             this.openIssue(issue);
         });
         row.querySelector('[data-health-action="edit"]')?.addEventListener('click', () => {
-            this.editIssueInline(issue);
+            void this.editIssueInline(issue);
         });
         row.querySelector('[data-health-action="stats"]')?.addEventListener('click', (e) => {
             e.stopPropagation();

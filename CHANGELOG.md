@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.22.4 — July 2026](#v202607224--july-2026)
 - [v2026.07.22.3 — July 2026](#v202607223--july-2026)
 - [v2026.07.22.2 — July 2026](#v202607222--july-2026)
 - [v2026.07.22.1 — July 2026](#v202607221--july-2026)
@@ -109,6 +110,16 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.22.4 — July 2026
+
+**Editing from the health view opens a form you can actually use.** Clicking *Edit* on a health row returned to the dashboard and opened the inline editor, but the fields and buttons ignored clicks — especially in Safari, where blurring neighbouring bookmarks stole pointer hits from the form.
+
+### Health view
+
+- **fix** **Edit from health leaves a form you can actually use** — Health Edit now soft-navigates to the bookmark's page and opens the inline editor there (instead of a full reload). Neighbouring rows still blur visually without blocking the form, and drag-to-reorder is paused while you edit so the row cannot start a drag under your fingers.
 
 ---
 

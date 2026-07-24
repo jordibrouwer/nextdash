@@ -374,6 +374,9 @@ class DashboardInlineEdit {
         const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
         d.inlineEditingBookmarkIndex = bookmarkIndex;
         row.classList.add('bookmark-inline-editing');
+        // Whole-row drag stays armed from DragReorder; form controls inside a
+        // draggable ancestor can swallow clicks. Restore happens via reorder re-init.
+        row.draggable = false;
         row.innerHTML = '';
 
         const form = document.createElement('div');
