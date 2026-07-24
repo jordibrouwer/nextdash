@@ -115,4 +115,51 @@ test.describe('config dashboard view (scaffold)', () => {
             .toBe('health');
         expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('broken');
     });
+
+    test('the data & backups section renders tiles and the stored list', async ({ page }) => {
+        await page.route('**/api/auto-backups', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    enabled: true,
+                    backups: [
+                        { name: 'auto-2026-07-24T10-00-00Z.zip', size: 42000, createdAt: new Date(Date.now() - 3600_000).toISOString() },
+                        { name: 'auto-2026-07-23T10-00-00Z.zip', size: 41000, createdAt: new Date(Date.now() - 90000_000).toISOString() },
+                    ],
+                }),
+            });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
+
+        await expect(page.locator('.config-tile-label', { hasText: /last backup/i })).toBeVisible();
+        await expect(page.locator('.config-backup-row')).toHaveCount(2);
+        await expect(page.locator('[data-backup-action="download"]')).toBeVisible();
+        await expect(page.locator('[data-backup-action="reset"]')).toBeVisible();
+    });
+
+    test('make-a-backup-now posts to the run endpoint and reloads the list', async ({ page }) => {
+        let runCalls = 0;
+        let listCalls = 0;
+        await page.route('**/api/auto-backups/run', async (route) => {
+            runCalls += 1;
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success' }) });
+        });
+        await page.route('**/api/auto-backups', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            listCalls += 1;
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, backups: [] }) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
+        await expect(page.locator('[data-backup-action="run"]')).toBeVisible();
+
+        await page.locator('[data-backup-action="run"]').click();
+
+        await expect.poll(() => runCalls).toBe(1);
+        // The list is refetched after a successful run (initial load + post-run).
+        await expect.poll(() => listCalls).toBeGreaterThanOrEqual(2);
+    });
 });

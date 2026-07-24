@@ -185,3 +185,133 @@
         transition: none;
     }
 }
+
+/* ── Panels (settings blocks under the tiles) ───────────────────────────── */
+
+.config-panel {
+    margin-top: 20px;
+    padding: 18px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 12px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+}
+
+.config-panel--danger {
+    border-color: color-mix(in srgb, #d1493f 40%, transparent);
+}
+
+.config-panel-title {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.config-panel-note {
+    margin: 0 0 12px;
+    color: var(--text-muted, #888);
+    font-size: 0.85rem;
+    max-width: 60ch;
+}
+
+.config-panel-empty {
+    margin: 0;
+    color: var(--text-muted, #888);
+    font-size: 0.88rem;
+}
+
+.config-view-loading {
+    margin: 0;
+    color: var(--text-muted, #888);
+    font-size: 0.88rem;
+}
+
+.config-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+.config-btn {
+    padding: 8px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 8px;
+    background: var(--button-bg, transparent);
+    color: var(--text-color, inherit);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.config-btn:hover {
+    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+    border-color: var(--accent-color, #4a90d9);
+}
+
+.config-btn:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+.config-btn--small {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+}
+
+.config-btn--danger {
+    color: #d1493f;
+    border-color: color-mix(in srgb, #d1493f 45%, transparent);
+}
+
+.config-btn--danger:hover {
+    background: color-mix(in srgb, #d1493f 12%, transparent);
+    border-color: #d1493f;
+}
+
+/* ── Stored backup list ─────────────────────────────────────────────────── */
+
+.config-backup-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.config-backup-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+}
+
+.config-backup-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.config-backup-name {
+    font-size: 0.88rem;
+    font-weight: 500;
+}
+
+.config-backup-size {
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+}
+
+.config-backup-row-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
