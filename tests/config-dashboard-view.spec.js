@@ -333,17 +333,21 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('#config-theme-colors-panel #theme-colors-editor')).toBeVisible();
     });
 
-    test('the behavior section renders grouped settings controls', async ({ page }) => {
+    test('the behavior section renders grouped settings across sub-tabs', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
 
+        // General tab is active by default.
         await expect(page.locator('[data-behavior-field="openInNewTab"]')).toBeVisible();
+        // Other groups live under their own sub-tabs.
+        await page.locator('[data-behavior-tab="datetime"]').click();
         await expect(page.locator('[data-behavior-field="dateFormat"]')).toBeVisible();
+        await page.locator('[data-behavior-tab="layout"]').click();
         await expect(page.locator('[data-behavior-field="columnsPerRow"]')).toBeVisible();
+        await page.locator('[data-behavior-tab="display"]').click();
         await expect(page.locator('[data-behavior-field="showStatus"]')).toBeVisible();
+        await page.locator('[data-behavior-tab="search"]').click();
         await expect(page.locator('[data-behavior-field="pasteDestination"]')).toBeVisible();
-        // Several grouped panels are present.
-        expect(await page.locator('.config-view-main .config-panel').count()).toBeGreaterThan(4);
     });
 
     test('toggling a behavior setting saves it and re-renders', async ({ page }) => {
@@ -377,6 +381,7 @@ test.describe('config dashboard view (scaffold)', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.locator('[data-behavior-tab="datetime"]').click();
 
         await page.locator('[data-behavior-field="dateFormat"]').selectOption('iso');
 

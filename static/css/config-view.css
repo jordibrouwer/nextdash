@@ -539,6 +539,75 @@
     flex: none;
 }
 
+/* ── Info (ℹ) and reset-to-default (↺) affordances ──────────────────────── */
+
+.config-field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.config-field-affordances {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+}
+
+.config-info-btn,
+.config-reset-btn {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted, #999);
+    font-size: 0.78rem;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.config-info-btn:hover {
+    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
+    color: var(--accent-color, inherit);
+}
+
+/* Reset button only shows when the value differs from the installation default. */
+.config-reset-btn {
+    visibility: hidden;
+    font-size: 0.95rem;
+}
+
+.config-reset-btn.is-visible {
+    visibility: visible;
+    color: var(--warn, #cf9014);
+}
+
+.config-reset-btn.is-visible:hover {
+    background: color-mix(in srgb, var(--warn, #cf9014) 16%, transparent);
+}
+
+.config-info-btn:focus-visible,
+.config-reset-btn:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+    visibility: visible;
+}
+
+.config-field-hint {
+    margin: 4px 0 12px;
+    padding-left: 2px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-muted, #888);
+    max-width: 70ch;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .config-choice {
         transition: none;

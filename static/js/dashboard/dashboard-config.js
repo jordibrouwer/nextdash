@@ -30,6 +30,8 @@ class DashboardConfig {
         // Pages & tags sub-tab (finders/tags/collections native; pages/categories embedded).
         this.ptTab = 'finders';
         this._finders = null;
+        // Behavior sub-tab.
+        this.behaviorTab = 'general';
     }
 
     isEnabled() {
@@ -1448,6 +1450,116 @@ class DashboardConfig {
         }
     }
 
+    /* ── Setting metadata (info + installation defaults) ───────────────────── */
+
+    /**
+     * Per-field metadata ported from the old config: the ℹ info modal's i18n
+     * keys (from SETTING_INFO_DEFS) and the installation default value (from
+     * ConfigSettingsDefaults). Keyed by the settings field the control binds.
+     * `info` is `[titleKey, messageKey]`; `def` is the installation default.
+     */
+    static FIELD_META = {
+        // General
+        language: { info: ['languageInfoTitle', 'languageInfoMessage'], def: 'en' },
+        openInNewTab: { info: ['openLinksInNewTabInfoTitle', 'openLinksInNewTabInfoMessage'] },
+        globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'] },
+        allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'] },
+        enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'] },
+        hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
+        // Date, time & weather
+        dateFormat: { info: ['dateFormatInfoTitle', 'dateFormatInfoMessage'], def: 'short-slash' },
+        timeFormat: { info: ['timeFormatInfoTitle', 'timeFormatInfoMessage'], def: '24h' },
+        showDate: { info: ['showDateInfoTitle', 'showDateInfoMessage'], def: true },
+        showTime: { info: ['showTimeInfoTitle', 'showTimeInfoMessage'], def: true },
+        showWeatherWithDate: { info: ['showWeatherWithDateInfoTitle', 'showWeatherWithDateInfoMessage'], def: false },
+        weatherSource: { info: ['weatherSourceInfoTitle', 'weatherSourceInfoMessage'], def: 'manual' },
+        weatherUnit: { info: ['weatherUnitInfoTitle', 'weatherUnitInfoMessage'], def: 'celsius' },
+        weatherLocation: { info: ['weatherLocationInfoTitle', 'weatherLocationInfoMessage'] },
+        // Layout
+        columnsPerRow: { info: ['columnsInfoTitle', 'columnsInfoMessage'] },
+        densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'compact' },
+        packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
+        interleaveMode: { info: ['interleaveModeInfoTitle', 'interleaveModeInfoMessage'], def: false },
+        hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'] },
+        alwaysCollapseCategories: { info: ['alwaysCollapseCategoriesInfoTitle', 'alwaysCollapseCategoriesInfoMessage'] },
+        layoutVersion: { info: ['layoutVersionInfoTitle', 'layoutVersionInfoMessage'], def: 'classic' },
+        launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
+        // Bookmark display
+        showShortcuts: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'] },
+        showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
+        showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
+        showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: false },
+        colorizeStatus: { info: ['colorizeStatusInfoTitle', 'colorizeStatusInfoMessage'], def: true },
+        showIcons: { info: ['showIconsInfoTitle', 'showIconsInfoMessage'] },
+        // Toolbar & tabs
+        showPageTabs: { info: ['showPageTabsInfoTitle', 'showPageTabsInfoMessage'], def: true },
+        showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'] },
+        showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'] },
+        showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'] },
+        // Search
+        includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'] },
+        enableFuzzySuggestions: { info: ['fuzzySuggestionsInfoTitle', 'fuzzySuggestionsInfoMessage'] },
+        fuzzySuggestionsStartWith: { info: ['fuzzySuggestionsStartWithInfoTitle', 'fuzzySuggestionsStartWithInfoMessage'] },
+        keepSearchOpenWhenEmpty: { info: ['keepSearchOpenWhenEmptyInfoTitle', 'keepSearchOpenWhenEmptyInfoMessage'] },
+        showSearchFlowBanner: { info: ['showSearchFlowBannerInfoTitle', 'showSearchFlowBannerInfoMessage'], def: true },
+        // Quick add & inbox
+        pasteUrlQuickAdd: { info: ['pasteUrlQuickAddInfoTitle', 'pasteUrlQuickAddInfoMessage'], def: true },
+        inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
+        // Status & health
+        statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
+        healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'] },
+        // Privacy
+        analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint' },
+        // Appearance
+        autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'] },
+        showBackgroundDots: { info: ['showBackgroundDotsInfoTitle', 'showBackgroundDotsInfoMessage'] },
+        animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'] },
+        fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
+        fontWeight: { info: ['fontWeightInfoTitle', 'fontWeightInfoMessage'], def: 'normal' },
+        backgroundType: { info: ['backgroundPickerInfoTitle', 'backgroundPickerInfoMessage'], def: 'auto' },
+        backgroundOpacity: { info: ['backgroundOpacityInfoTitle', 'backgroundOpacityInfoMessage'], def: 1 },
+        enableCustomTitle: { info: ['enableCustomTitleInfoTitle', 'enableCustomTitleInfoMessage'] },
+        enableCustomFavicon: { info: ['enableCustomFaviconInfoTitle', 'enableCustomFaviconInfoMessage'] },
+        // Collections
+        showSmartTodayCollection: { def: true },
+        showSmartRecentCollection: { def: false },
+        showSmartStaleCollection: { def: false },
+        showSmartMostUsedCollection: { def: false },
+        smartTodayLimit: { def: 8 },
+        smartRecentLimit: { def: 50 },
+        smartStaleLimit: { def: 50 },
+        smartMostUsedLimit: { def: 25 },
+        // Data
+        deviceSpecificSettings: { info: ['deviceSpecificSettingsInfoTitle', 'deviceSpecificSettingsInfoMessage'] },
+        autoBackupEnabled: { info: ['autoBackupInfoTitle', 'autoBackupInfoMessage'] },
+    };
+
+    fieldMeta(field) {
+        return DashboardConfig.FIELD_META[field] || null;
+    }
+
+    /** Whether a field's current value differs from its installation default. */
+    isFieldDefault(field, value) {
+        const meta = this.fieldMeta(field);
+        if (!meta || meta.def === undefined) return true; // no known default → hide reset
+        const d = meta.def;
+        if (typeof d === 'boolean') return Boolean(value) === d;
+        if (typeof d === 'number') return Number(value) === d;
+        return String(value ?? '') === String(d);
+    }
+
+    /** Open the shared info modal for a setting field. */
+    openFieldInfo(field) {
+        const meta = this.fieldMeta(field);
+        if (!meta?.info || !window.AppModal?.alert) return;
+        const [titleKey, msgKey] = meta.info;
+        window.AppModal.alert({
+            title: this.t(`config.${titleKey}`, ''),
+            htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, '')).replace(/\n/g, '<br>'),
+            confirmText: this.t('config.gotIt', 'Got it'),
+        });
+    }
+
     /* ── Behavior ──────────────────────────────────────────────────────────── */
 
     /**
@@ -1462,6 +1574,7 @@ class DashboardConfig {
         const opt = (value, label) => ({ value, label });
         return [
             {
+                tab: 'general',
                 title: t('config.generalGroupGeneral', 'General'),
                 controls: [
                     { field: 'language', type: 'select', label: t('config.languageLabel', 'Language'), special: 'language', options: [
@@ -1475,6 +1588,7 @@ class DashboardConfig {
                 ],
             },
             {
+                tab: 'datetime',
                 title: t('config.generalGroupDateTime', 'Date, time & weather'),
                 controls: [
                     { field: 'dateFormat', type: 'select', label: t('config.dateFormatLabel', 'Date format'), special: 'datetime', options: [
@@ -1494,6 +1608,7 @@ class DashboardConfig {
                 ],
             },
             {
+                tab: 'layout',
                 title: t('config.generalGroupLayout', 'Bookmarks layout'),
                 controls: [
                     { field: 'columnsPerRow', type: 'number', label: t('config.columnsLabel', 'Columns'), min: 1, max: 12, special: 'render' },
@@ -1508,6 +1623,7 @@ class DashboardConfig {
                 ],
             },
             {
+                tab: 'display',
                 title: t('config.generalGroupBookmarkDisplay', 'Bookmark display'),
                 controls: [
                     bool('showShortcuts', 'config.showShortcutsLabel', 'Show shortcut letters'),
@@ -1517,6 +1633,7 @@ class DashboardConfig {
                 ],
             },
             {
+                tab: 'display',
                 title: t('config.generalGroupChrome', 'Toolbar & tabs'),
                 controls: [
                     bool('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
@@ -1530,6 +1647,7 @@ class DashboardConfig {
                 ],
             },
             {
+                tab: 'search',
                 title: t('config.generalGroupSearch', 'Search'),
                 controls: [
                     bool('includeFindersInSearch', 'config.includeFindersInSearch', 'Include finders in search'),
@@ -1540,6 +1658,7 @@ class DashboardConfig {
                 ],
             },
             {
+                tab: 'search',
                 title: t('config.generalGroupQuickAdd', 'Quick add & inbox'),
                 controls: [
                     bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
@@ -1551,12 +1670,28 @@ class DashboardConfig {
                 ],
             },
             {
+                tab: 'privacy',
                 title: t('config.generalGroupPrivacy', 'Privacy'),
                 controls: [
                     { field: 'analyticsOptIn', type: 'checkbox', label: t('config.usageAnalyticsLabel', 'Share anonymous usage analytics'), disabled: this.dash.telemetryLockedOff === true },
                 ],
             },
         ];
+    }
+
+    /** ℹ + ↺ affordances shown after a control, based on the field's metadata. */
+    renderFieldAffordances(field, val) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const meta = this.fieldMeta(field);
+        let out = '';
+        if (meta?.info) {
+            out += `<button type="button" class="config-info-btn" data-info-field="${esc(field)}" aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}" title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`;
+        }
+        const showReset = meta && meta.def !== undefined && !this.isFieldDefault(field, val);
+        if (meta && meta.def !== undefined) {
+            out += `<button type="button" class="config-reset-btn${showReset ? ' is-visible' : ''}" data-reset-field="${esc(field)}" aria-label="${esc(this.t('config.settingResetAria', 'Reset to default'))}" title="${esc(this.t('config.settingResetTitle', 'Reset to default'))}">↺</button>`;
+        }
+        return out;
     }
 
     /** Render a schema of panels into HTML, keyed by a data-<prefix>-field. */
@@ -1566,35 +1701,36 @@ class DashboardConfig {
         const renderControl = (c) => {
             const val = s[c.field];
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
+            const aff = this.renderFieldAffordances(c.field, val);
+            const hintKey = this.fieldMeta(c.field)?.hint;
+            const hint = hintKey ? `<p class="config-field-hint">${esc(this.t(`config.${hintKey}`, ''))}</p>` : '';
             if (c.type === 'checkbox') {
                 return `
-                    <label class="config-toggle">
-                        <input type="checkbox" ${dataAttrs} data-${prefix}-type="checkbox" ${val ? 'checked' : ''} ${c.disabled ? 'disabled' : ''}>
-                        <span>${esc(c.label)}</span>
-                    </label>`;
+                    <div class="config-field-row">
+                        <label class="config-toggle">
+                            <input type="checkbox" ${dataAttrs} data-${prefix}-type="checkbox" ${val ? 'checked' : ''} ${c.disabled ? 'disabled' : ''}>
+                            <span>${esc(c.label)}</span>
+                        </label>
+                        <span class="config-field-affordances">${aff}</span>
+                    </div>${hint}`;
             }
+            let control;
             if (c.type === 'select') {
                 const opts = c.options.map((o) =>
                     `<option value="${esc(o.value)}" ${String(val) === String(o.value) ? 'selected' : ''}>${esc(o.label)}</option>`
                 ).join('');
-                return `
-                    <div class="config-field">
-                        <span class="config-field-label">${esc(c.label)}</span>
-                        <select class="config-select" ${dataAttrs} data-${prefix}-type="select">${opts}</select>
-                    </div>`;
-            }
-            if (c.type === 'number') {
-                return `
-                    <div class="config-field">
-                        <span class="config-field-label">${esc(c.label)}</span>
-                        <input type="number" class="config-text" style="min-width:80px" ${dataAttrs} data-${prefix}-type="number" min="${c.min ?? ''}" max="${c.max ?? ''}" value="${esc(val ?? '')}">
-                    </div>`;
+                control = `<select class="config-select" ${dataAttrs} data-${prefix}-type="select">${opts}</select>`;
+            } else if (c.type === 'number') {
+                control = `<input type="number" class="config-text" style="min-width:80px" ${dataAttrs} data-${prefix}-type="number" min="${c.min ?? ''}" max="${c.max ?? ''}" value="${esc(val ?? '')}">`;
+            } else {
+                control = `<input type="text" class="config-text" ${dataAttrs} data-${prefix}-type="text" value="${esc(val ?? '')}">`;
             }
             return `
                 <div class="config-field">
                     <span class="config-field-label">${esc(c.label)}</span>
-                    <input type="text" class="config-text" ${dataAttrs} data-${prefix}-type="text" value="${esc(val ?? '')}">
-                </div>`;
+                    ${control}
+                    <span class="config-field-affordances">${aff}</span>
+                </div>${hint}`;
         };
         return schema.map((panel) => `
             <div class="config-panel">
@@ -1604,7 +1740,7 @@ class DashboardConfig {
         `).join('');
     }
 
-    /** Bind a rendered schema's controls back to setBehavior. */
+    /** Bind a rendered schema's controls (and ℹ/↺ affordances) back to setBehavior. */
     bindControlPanels(container, prefix) {
         container.querySelectorAll(`[data-${prefix}-field]`).forEach((el) => {
             const field = el.getAttribute(`data-${prefix}-field`);
@@ -1618,17 +1754,85 @@ class DashboardConfig {
                 el.addEventListener('change', () => this.setBehavior(field, el.value, special));
             }
         });
+        this.bindAffordances(container, (field) => {
+            const el = container.querySelector(`[data-${prefix}-field="${CSS.escape(field)}"]`);
+            const special = el?.getAttribute(`data-${prefix}-special`) || '';
+            return special;
+        });
+    }
+
+    /** Wire the ℹ (info modal) and ↺ (reset-to-default) buttons. */
+    bindAffordances(container, specialFor) {
+        container.querySelectorAll('[data-info-field]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openFieldInfo(btn.getAttribute('data-info-field'));
+            });
+        });
+        container.querySelectorAll('[data-reset-field]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const field = btn.getAttribute('data-reset-field');
+                const meta = this.fieldMeta(field);
+                if (!meta || meta.def === undefined) return;
+                const special = specialFor ? specialFor(field) : '';
+                void this.setBehavior(field, meta.def, special);
+            });
+        });
+    }
+
+    static BEHAVIOR_TABS = ['general', 'datetime', 'layout', 'display', 'search', 'privacy'];
+
+    behaviorTabLabel(tab) {
+        const map = {
+            general: ['config.behaviorTabGeneral', 'General'],
+            datetime: ['config.behaviorTabDateTime', 'Date & weather'],
+            layout: ['config.behaviorTabLayout', 'Layout'],
+            display: ['config.behaviorTabDisplay', 'Display'],
+            search: ['config.behaviorTabSearch', 'Search & inbox'],
+            privacy: ['config.behaviorTabPrivacy', 'Privacy'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
     }
 
     renderBehavior() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const tabs = DashboardConfig.BEHAVIOR_TABS.map((tab) => {
+            const active = tab === this.behaviorTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-behavior-tab="${esc(tab)}">${esc(this.behaviorTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>
-            ${this.renderControlPanels(this.behaviorSchema(), 'behavior')}
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-behavior-body">${this.renderBehaviorBody()}</div>
         `;
     }
 
+    renderBehaviorBody() {
+        const panels = this.behaviorSchema().filter((p) => (p.tab || 'general') === this.behaviorTab);
+        return this.renderControlPanels(panels, 'behavior');
+    }
+
     bindBehaviorControls(container) {
+        container.querySelectorAll('[data-behavior-tab]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-behavior-tab');
+                if (tab === this.behaviorTab) return;
+                this.behaviorTab = tab;
+                const body = document.getElementById('config-behavior-body');
+                if (body) {
+                    body.innerHTML = this.renderBehaviorBody();
+                    document.querySelectorAll('[data-behavior-tab]').forEach((b) => {
+                        const on = b.getAttribute('data-behavior-tab') === this.behaviorTab;
+                        b.classList.toggle('is-active', on);
+                        b.setAttribute('aria-selected', on ? 'true' : 'false');
+                    });
+                    this.bindControlPanels(container, 'behavior');
+                } else {
+                    this.render();
+                }
+            });
+        });
         this.bindControlPanels(container, 'behavior');
     }
 
@@ -1656,6 +1860,23 @@ class DashboardConfig {
             await d.saveSettings?.();
         } catch {
             this.notify(this.t('config.behaviorSaveError', 'Could not save that change.'), 'error');
+        }
+        // Repaint the active control panel so the ↺ reset button's visibility and
+        // the control's own value reflect the change (important after a reset).
+        this.repaintActiveControlPanels();
+    }
+
+    /** Re-render whichever schema-driven panel body is currently showing. */
+    repaintActiveControlPanels() {
+        if (!this.isActiveView()) return;
+        const container = document.getElementById('dashboard-layout');
+        if (!container) return;
+        if (this.section === 'behavior') {
+            const body = document.getElementById('config-behavior-body');
+            if (body) { body.innerHTML = this.renderBehaviorBody(); this.bindControlPanels(container, 'behavior'); }
+        } else if (this.section === 'pages-tags' && this.ptTab === 'collections') {
+            const body = document.getElementById('config-pt-body');
+            if (body) { body.innerHTML = this.renderCollections(); this.bindCollections(container); }
         }
     }
 
