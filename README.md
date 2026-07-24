@@ -17,11 +17,14 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 | ![1](screenshots/nextdash-1.png) | ![2](screenshots/nextdash-2.png) |
 |:---:|:---:|
 | ![3](screenshots/nextdash-3.png) | ![4](screenshots/nextdash-4.png) |
-|:---:|:---:|
+|Customize your dashboard|Your statistics|
 | ![5](screenshots/nextdash-5.png) | ![6](screenshots/nextdash-6.png) |
-|:---:|:---:|
+|Tags management|Monitoring your bookmarks|
 | ![7](screenshots/nextdash-7.png) | ![](screenshots/nextdash-9.png) | 
-|:---:|:---:|
+|Health view|Backup & Resdtore|
+| ![7](screenshots/nextdash-8.png) | ![](screenshots/nextdash-10.png) | 
+|Bookmarks that need attention|Links saved to read or review later|
+
 
 ---
 
