@@ -295,6 +295,34 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect.poll(() => saved && saved.fontPreset).toBe('jetbrains-mono');
     });
 
+    test('the theme picker lists built-in themes and applies a choice', async ({ page }) => {
+        let saved = null;
+        await page.route('**/api/colors/custom-themes', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ 'ocean-dark': 'Ocean', 'forest-light': 'Forest' }) });
+        });
+        await page.route('**/api/settings', async (route) => {
+            if (route.request().method() === 'POST') {
+                saved = JSON.parse(route.request().postData() || '{}');
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            }
+            return route.fallback();
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        const select = page.locator('[data-appearance-select="theme"]');
+        await expect(select).toBeVisible();
+        // The built-in themes from the endpoint appear as options.
+        await expect(select.locator('option[value="ocean-dark"]')).toHaveCount(1);
+
+        await select.selectOption('ocean-dark');
+
+        await expect
+            .poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme')))
+            .toBe('ocean-dark');
+        await expect.poll(() => saved && saved.theme).toBe('ocean-dark');
+    });
+
     test('the theme-colours editor mounts on demand', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));

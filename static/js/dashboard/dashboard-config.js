@@ -185,6 +185,7 @@ class DashboardConfig {
             void this.loadBackupData();
         } else if (this.section === 'appearance') {
             this.bindAppearanceControls(container);
+            void this.loadThemeList();
         }
     }
 
@@ -942,7 +943,8 @@ class DashboardConfig {
 
     appearanceTiles() {
         const s = this.dash.settings || {};
-        const theme = s.theme === 'light' ? this.t('config.themeLight', 'Light') : this.t('config.themeDark', 'Dark');
+        const themeId = s.theme || 'dark';
+        const theme = this.themeDisplayName(themeId, this._themeList?.[themeId]);
         return [
             {
                 key: 'theme', tone: 'accent',
@@ -1003,7 +1005,11 @@ class DashboardConfig {
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceThemeTitle', 'Theme'))}</h3>
                 <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.appearanceMode', 'Mode'))}</span>
+                    <span class="config-field-label">${esc(this.t('config.themeLabel', 'Theme'))}</span>
+                    <select class="config-select" data-appearance-select="theme">${this.renderThemeOptions()}</select>
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.appearanceMode', 'Quick mode'))}</span>
                     <div class="config-choices" role="group">
                         <button type="button" class="config-choice${theme === 'light' ? ' is-active' : ''}" data-appearance-theme="light" aria-pressed="${theme === 'light'}">${esc(this.t('config.themeLight', 'Light'))}</button>
                         <button type="button" class="config-choice${theme === 'dark' ? ' is-active' : ''}" data-appearance-theme="dark" aria-pressed="${theme === 'dark'}">${esc(this.t('config.themeDark', 'Dark'))}</button>
@@ -1102,6 +1108,44 @@ class DashboardConfig {
 
             <div class="config-panel" id="config-theme-colors-panel"></div>
         `;
+    }
+
+    /** Friendly name for a theme id, matching the old config's labels. */
+    themeDisplayName(themeId, name) {
+        if (themeId === 'dark') return this.t('config.themeOldDefaultDark', 'Old Default [dark]');
+        if (themeId === 'light') return this.t('config.themeOldDefaultLight', 'Old Default [light]');
+        if (name && String(name).trim()) return String(name);
+        return themeId;
+    }
+
+    renderThemeOptions() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = this.dash.settings?.theme || 'dark';
+        // dark + light always available; the rest come from /api/colors/custom-themes.
+        const themes = { dark: '', light: '', ...(this._themeList || {}) };
+        const entries = Object.entries(themes).sort(([ida, na], [idb, nb]) =>
+            this.themeDisplayName(ida, na).localeCompare(this.themeDisplayName(idb, nb), undefined, { sensitivity: 'base' })
+        );
+        // Make sure the saved theme is selectable even before the list loads.
+        if (!themes[current]) entries.unshift([current, '']);
+        return entries.map(([id, name]) =>
+            `<option value="${esc(id)}" ${id === current ? 'selected' : ''}>${esc(this.themeDisplayName(id, name))}</option>`
+        ).join('');
+    }
+
+    /** Load the built-in + custom theme list, then repaint the theme select. */
+    async loadThemeList() {
+        if (this._themeList) return;
+        try {
+            const res = await fetch('/api/colors/custom-themes');
+            this._themeList = res && res.ok ? await res.json() : {};
+        } catch {
+            this._themeList = {};
+        }
+        const select = document.querySelector('[data-appearance-select="theme"]');
+        if (select && this.isActiveView() && this.section === 'appearance') {
+            select.innerHTML = this.renderThemeOptions();
+        }
     }
 
     fontPresetLabel(preset) {
@@ -1207,9 +1251,16 @@ class DashboardConfig {
     }
 
     setTheme(theme) {
-        if (theme !== 'light' && theme !== 'dark') return;
+        if (!theme) return;
         this.dash.settings.theme = theme;
-        this.applyThemeLive();
+        // applyTheme sets data-theme to any id (light, dark, or a custom/built-in
+        // theme); reloadThemeCSS re-pulls the server stylesheet that defines it.
+        window.ThemeLoader?.applyTheme?.(
+            theme,
+            this.dash.settings.showBackgroundDots !== false,
+            this.currentFontSize()
+        );
+        this.reloadThemeCSS();
         this.persistAppearance();
     }
 
@@ -1282,10 +1333,24 @@ class DashboardConfig {
     }
 
     setAppearanceSelect(name, value) {
-        if (name !== 'fontPreset') return;
-        this.dash.settings.fontPreset = value;
-        window.DashboardFont?.applyMainFont?.(this.dash.settings);
-        this.persistAppearance();
+        if (name === 'fontPreset') {
+            this.dash.settings.fontPreset = value;
+            window.DashboardFont?.applyMainFont?.(this.dash.settings);
+            this.persistAppearance();
+            return;
+        }
+        if (name === 'theme') {
+            this.setTheme(value);
+        }
+    }
+
+    /** Reload the server-rendered theme stylesheet so a theme change takes effect. */
+    reloadThemeCSS() {
+        const link = document.querySelector('link[href^="/api/theme.css"]');
+        if (!link || !link.parentNode) return;
+        const next = link.cloneNode(true);
+        next.href = `/api/theme.css?t=${Date.now()}`;
+        link.parentNode.replaceChild(next, link);
     }
 
     handleAppearanceAction(action) {
