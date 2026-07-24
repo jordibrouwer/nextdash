@@ -162,4 +162,61 @@ test.describe('config dashboard view (scaffold)', () => {
         // The list is refetched after a successful run (initial load + post-run).
         await expect.poll(() => listCalls).toBeGreaterThanOrEqual(2);
     });
+
+    test('the appearance section renders theme and font-size controls', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        await expect(page.locator('.config-tile-label', { hasText: /active theme/i })).toBeVisible();
+        await expect(page.locator('[data-appearance-theme="light"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-theme="dark"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-font="m"]')).toBeVisible();
+    });
+
+    test('switching theme applies live, saves, and updates the tile', async ({ page }) => {
+        let saved = null;
+        await page.route('**/api/settings', async (route) => {
+            if (route.request().method() === 'POST') {
+                saved = JSON.parse(route.request().postData() || '{}');
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            }
+            return route.fallback();
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.theme = 'dark';
+            window.dashboardInstance.config.openConfigView('appearance');
+        });
+
+        await page.locator('[data-appearance-theme="light"]').click();
+
+        // Applied live to the document.
+        await expect
+            .poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme')))
+            .toBe('light');
+        // Persisted.
+        await expect.poll(() => saved && saved.theme).toBe('light');
+        // Tile reflects the new theme.
+        await expect(page.locator('.config-tile-value', { hasText: /light/i })).toBeVisible();
+        // The light button is now the active choice.
+        await expect(page.locator('[data-appearance-theme="light"]')).toHaveClass(/is-active/);
+    });
+
+    test('choosing a font size applies the body class and saves', async ({ page }) => {
+        let saved = null;
+        await page.route('**/api/settings', async (route) => {
+            if (route.request().method() === 'POST') {
+                saved = JSON.parse(route.request().postData() || '{}');
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            }
+            return route.fallback();
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        await page.locator('[data-appearance-font="xl"]').click();
+
+        await expect(page.locator('body')).toHaveClass(/font-size-xl/);
+        await expect.poll(() => saved && saved.fontSize).toBe('xl');
+    });
 });

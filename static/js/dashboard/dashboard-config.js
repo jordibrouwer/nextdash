@@ -183,6 +183,8 @@ class DashboardConfig {
         } else if (this.section === 'data-backups') {
             this.bindDataBackupsActions(container);
             void this.loadBackupData();
+        } else if (this.section === 'appearance') {
+            this.bindAppearanceControls(container);
         }
     }
 
@@ -221,6 +223,9 @@ class DashboardConfig {
         }
         if (this.section === 'data-backups') {
             return this.renderDataBackups();
+        }
+        if (this.section === 'appearance') {
+            return this.renderAppearance();
         }
         // Other sections are rewritten in later phases; a placeholder keeps the
         // view navigable meanwhile.
@@ -627,6 +632,176 @@ class DashboardConfig {
         } catch {
             this.notify(this.t('config.backupResetError', 'Could not reset data.'), 'error');
         }
+    }
+
+    /* ── Appearance ────────────────────────────────────────────────────────── */
+
+    static FONT_SIZES = ['xs', 's', 'sm', 'm', 'lg', 'l', 'xl'];
+
+    fontSizeLabel(size) {
+        const map = {
+            xs: ['config.fontSizeXS', 'XS'], s: ['config.fontSizeS', 'S'],
+            sm: ['config.fontSizeSM', 'SM'], m: ['config.fontSizeM', 'M'],
+            lg: ['config.fontSizeLG', 'LG'], l: ['config.fontSizeL', 'L'],
+            xl: ['config.fontSizeXL', 'XL'],
+        };
+        const [key, fallback] = map[size] || [size, size.toUpperCase()];
+        return this.t(key, fallback);
+    }
+
+    /** Normalise legacy font-size values the same way applyFontSize does. */
+    currentFontSize() {
+        let size = this.dash.settings?.fontSize || 'm';
+        if (size === 'small') size = 'sm';
+        if (size === 'medium') size = 'm';
+        if (size === 'large') size = 'l';
+        return DashboardConfig.FONT_SIZES.includes(size) ? size : 'm';
+    }
+
+    appearanceTiles() {
+        const s = this.dash.settings || {};
+        const theme = s.theme === 'light' ? this.t('config.themeLight', 'Light') : this.t('config.themeDark', 'Dark');
+        return [
+            {
+                key: 'theme', tone: 'accent',
+                label: this.t('config.tileActiveTheme', 'Active theme'),
+                value: theme,
+                detail: s.autoDarkMode ? this.t('config.autoDarkOn', 'Auto dark mode on') : '',
+            },
+            {
+                key: 'font-size', tone: 'neutral',
+                label: this.t('config.tileFontSize', 'Font size'),
+                value: this.fontSizeLabel(this.currentFontSize()),
+            },
+        ];
+    }
+
+    renderAppearance() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const theme = s.theme === 'light' ? 'light' : 'dark';
+        const tiles = `<div class="config-tiles" role="list">${this.appearanceTiles().map((t) => this.renderTile(t)).join('')}</div>`;
+
+        const fontOptions = DashboardConfig.FONT_SIZES.map((size) => {
+            const active = size === this.currentFontSize();
+            return `<button type="button" class="config-choice${active ? ' is-active' : ''}" data-appearance-font="${esc(size)}" aria-pressed="${active ? 'true' : 'false'}">${esc(this.fontSizeLabel(size))}</button>`;
+        }).join('');
+
+        const layout = s.layoutVersion === 'modern' ? 'modern' : 'classic';
+
+        return `
+            <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
+            ${tiles}
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceThemeTitle', 'Theme'))}</h3>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.appearanceMode', 'Mode'))}</span>
+                    <div class="config-choices" role="group">
+                        <button type="button" class="config-choice${theme === 'light' ? ' is-active' : ''}" data-appearance-theme="light" aria-pressed="${theme === 'light'}">${esc(this.t('config.themeLight', 'Light'))}</button>
+                        <button type="button" class="config-choice${theme === 'dark' ? ' is-active' : ''}" data-appearance-theme="dark" aria-pressed="${theme === 'dark'}">${esc(this.t('config.themeDark', 'Dark'))}</button>
+                    </div>
+                </div>
+                <label class="config-toggle">
+                    <input type="checkbox" data-appearance-toggle="autoDarkMode" ${s.autoDarkMode ? 'checked' : ''}>
+                    <span>${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
+                </label>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceTypeTitle', 'Type'))}</h3>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.appearanceFontSize', 'Font size'))}</span>
+                    <div class="config-choices" role="group">${fontOptions}</div>
+                </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutTitle', 'Layout'))}</h3>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.appearanceLayoutVersion', 'Layout'))}</span>
+                    <div class="config-choices" role="group">
+                        <button type="button" class="config-choice${layout === 'classic' ? ' is-active' : ''}" data-appearance-layout="classic" aria-pressed="${layout === 'classic'}">${esc(this.t('config.layoutClassic', 'Classic'))}</button>
+                        <button type="button" class="config-choice${layout === 'modern' ? ' is-active' : ''}" data-appearance-layout="modern" aria-pressed="${layout === 'modern'}">${esc(this.t('config.layoutModern', 'Modern'))}</button>
+                    </div>
+                </div>
+                <label class="config-toggle">
+                    <input type="checkbox" data-appearance-toggle="showBackgroundDots" ${s.showBackgroundDots ? 'checked' : ''}>
+                    <span>${esc(this.t('config.appearanceBackgroundDots', 'Show background dots'))}</span>
+                </label>
+            </div>
+        `;
+    }
+
+    bindAppearanceControls(container) {
+        container.querySelectorAll('[data-appearance-theme]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setTheme(btn.getAttribute('data-appearance-theme')));
+        });
+        container.querySelectorAll('[data-appearance-font]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setFontSize(btn.getAttribute('data-appearance-font')));
+        });
+        container.querySelectorAll('[data-appearance-layout]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setLayout(btn.getAttribute('data-appearance-layout')));
+        });
+        container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
+            input.addEventListener('change', () => this.setToggle(input.getAttribute('data-appearance-toggle'), input.checked));
+        });
+    }
+
+    /** Persist a settings change and repaint the appearance section. */
+    persistAppearance() {
+        this.dash.saveSettings?.();
+        if (this.isActiveView() && this.section === 'appearance') {
+            const body = document.getElementById('config-view-body');
+            if (body) {
+                body.innerHTML = this.renderAppearance();
+                const container = document.getElementById('dashboard-layout');
+                if (container) this.bindAppearanceControls(container);
+            }
+        }
+    }
+
+    applyThemeLive() {
+        const s = this.dash.settings || {};
+        window.ThemeLoader?.applyTheme?.(
+            s.theme === 'light' ? 'light' : 'dark',
+            s.showBackgroundDots !== false,
+            this.currentFontSize()
+        );
+    }
+
+    setTheme(theme) {
+        if (theme !== 'light' && theme !== 'dark') return;
+        this.dash.settings.theme = theme;
+        this.applyThemeLive();
+        this.persistAppearance();
+    }
+
+    setFontSize(size) {
+        if (!DashboardConfig.FONT_SIZES.includes(size)) return;
+        this.dash.settings.fontSize = size;
+        this.dash.applyFontSize?.();
+        this.persistAppearance();
+    }
+
+    setLayout(version) {
+        if (version !== 'classic' && version !== 'modern') return;
+        this.dash.settings.layoutVersion = version;
+        window.ThemeLoader?.applyLayoutVersion?.(version);
+        this.persistAppearance();
+    }
+
+    setToggle(name, value) {
+        if (name === 'autoDarkMode') {
+            this.dash.settings.autoDarkMode = value;
+            this.applyThemeLive();
+        } else if (name === 'showBackgroundDots') {
+            this.dash.settings.showBackgroundDots = value;
+            this.applyThemeLive();
+        } else {
+            return;
+        }
+        this.persistAppearance();
     }
 }
 

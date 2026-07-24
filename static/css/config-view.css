@@ -315,3 +315,82 @@
     flex-wrap: wrap;
 }
 
+/* ── Appearance controls (fields, choices, toggles) ─────────────────────── */
+
+.config-field {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.config-field:last-child {
+    margin-bottom: 0;
+}
+
+.config-field-label {
+    font-size: 0.85rem;
+    color: var(--text-muted, #888);
+    min-width: 84px;
+}
+
+.config-choices {
+    display: inline-flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    padding: 3px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 9px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+}
+
+.config-choice {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted, #888);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.config-choice:hover {
+    color: var(--text-color, inherit);
+}
+
+.config-choice.is-active {
+    background: var(--accent-soft, rgba(128, 128, 128, 0.18));
+    color: var(--accent-color, var(--text-color, inherit));
+    font-weight: 600;
+}
+
+.config-choice:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+.config-toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 12px;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.config-toggle input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-color, #4a90d9);
+    cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-choice {
+        transition: none;
+    }
+}
+
