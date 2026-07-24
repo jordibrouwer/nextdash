@@ -27,6 +27,9 @@ class DashboardConfig {
         this.section = 'overview';
         this.loading = false;
         this._loadPromise = null;
+        // Pages & tags sub-tab (finders/tags/collections native; pages/categories embedded).
+        this.ptTab = 'finders';
+        this._finders = null;
     }
 
     isEnabled() {
@@ -188,6 +191,8 @@ class DashboardConfig {
             void this.loadThemeList();
         } else if (this.section === 'behavior') {
             this.bindBehaviorControls(container);
+        } else if (this.section === 'pages-tags') {
+            this.bindPagesTags(container);
         }
     }
 
@@ -232,6 +237,9 @@ class DashboardConfig {
         }
         if (this.section === 'behavior') {
             return this.renderBehavior();
+        }
+        if (this.section === 'pages-tags') {
+            return this.renderPagesTags();
         }
         // Other sections are rewritten in later phases; a placeholder keeps the
         // view navigable meanwhile.
@@ -1551,16 +1559,17 @@ class DashboardConfig {
         ];
     }
 
-    renderBehavior() {
+    /** Render a schema of panels into HTML, keyed by a data-<prefix>-field. */
+    renderControlPanels(schema, prefix) {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         const renderControl = (c) => {
             const val = s[c.field];
+            const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
             if (c.type === 'checkbox') {
                 return `
                     <label class="config-toggle">
-                        <input type="checkbox" data-behavior-field="${esc(c.field)}" data-behavior-type="checkbox"
-                            ${val ? 'checked' : ''} ${c.disabled ? 'disabled' : ''}>
+                        <input type="checkbox" ${dataAttrs} data-${prefix}-type="checkbox" ${val ? 'checked' : ''} ${c.disabled ? 'disabled' : ''}>
                         <span>${esc(c.label)}</span>
                     </label>`;
             }
@@ -1571,52 +1580,56 @@ class DashboardConfig {
                 return `
                     <div class="config-field">
                         <span class="config-field-label">${esc(c.label)}</span>
-                        <select class="config-select" data-behavior-field="${esc(c.field)}" data-behavior-type="select" data-behavior-special="${esc(c.special || '')}">${opts}</select>
+                        <select class="config-select" ${dataAttrs} data-${prefix}-type="select">${opts}</select>
                     </div>`;
             }
             if (c.type === 'number') {
                 return `
                     <div class="config-field">
                         <span class="config-field-label">${esc(c.label)}</span>
-                        <input type="number" class="config-text" style="min-width:80px" data-behavior-field="${esc(c.field)}" data-behavior-type="number" data-behavior-special="${esc(c.special || '')}"
-                            min="${c.min ?? ''}" max="${c.max ?? ''}" value="${esc(val ?? '')}">
+                        <input type="number" class="config-text" style="min-width:80px" ${dataAttrs} data-${prefix}-type="number" min="${c.min ?? ''}" max="${c.max ?? ''}" value="${esc(val ?? '')}">
                     </div>`;
             }
-            // text
             return `
                 <div class="config-field">
                     <span class="config-field-label">${esc(c.label)}</span>
-                    <input type="text" class="config-text" data-behavior-field="${esc(c.field)}" data-behavior-type="text" data-behavior-special="${esc(c.special || '')}" value="${esc(val ?? '')}">
+                    <input type="text" class="config-text" ${dataAttrs} data-${prefix}-type="text" value="${esc(val ?? '')}">
                 </div>`;
         };
-        const panels = this.behaviorSchema().map((panel) => `
+        return schema.map((panel) => `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(panel.title)}</h3>
                 ${panel.controls.map(renderControl).join('')}
             </div>
         `).join('');
+    }
+
+    /** Bind a rendered schema's controls back to setBehavior. */
+    bindControlPanels(container, prefix) {
+        container.querySelectorAll(`[data-${prefix}-field]`).forEach((el) => {
+            const field = el.getAttribute(`data-${prefix}-field`);
+            const type = el.getAttribute(`data-${prefix}-type`);
+            const special = el.getAttribute(`data-${prefix}-special`) || '';
+            if (type === 'checkbox') {
+                el.addEventListener('change', () => this.setBehavior(field, el.checked, special));
+            } else if (type === 'number') {
+                el.addEventListener('change', () => this.setBehavior(field, Number(el.value), special));
+            } else {
+                el.addEventListener('change', () => this.setBehavior(field, el.value, special));
+            }
+        });
+    }
+
+    renderBehavior() {
+        const esc = (v) => this.dash.escapeHtml(v);
         return `
             <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>
-            ${panels}
+            ${this.renderControlPanels(this.behaviorSchema(), 'behavior')}
         `;
     }
 
     bindBehaviorControls(container) {
-        container.querySelectorAll('[data-behavior-field]').forEach((el) => {
-            const field = el.getAttribute('data-behavior-field');
-            const type = el.getAttribute('data-behavior-type');
-            const special = el.getAttribute('data-behavior-special') || '';
-            if (type === 'checkbox') {
-                el.addEventListener('change', () => this.setBehavior(field, el.checked, special));
-            } else if (type === 'select') {
-                el.addEventListener('change', () => this.setBehavior(field, el.value, special));
-            } else if (type === 'number') {
-                el.addEventListener('change', () => this.setBehavior(field, Number(el.value), special));
-            } else {
-                // Text: save on blur/change so typing is not interrupted by re-renders.
-                el.addEventListener('change', () => this.setBehavior(field, el.value, special));
-            }
-        });
+        this.bindControlPanels(container, 'behavior');
     }
 
     /** Apply a behaviour setting: mutate, run any special apply, save. */
@@ -1644,6 +1657,340 @@ class DashboardConfig {
         } catch {
             this.notify(this.t('config.behaviorSaveError', 'Could not save that change.'), 'error');
         }
+    }
+
+    /* ── Pages & tags ──────────────────────────────────────────────────────── */
+
+    static PT_TABS = ['finders', 'tags', 'collections', 'pages', 'categories'];
+
+    ptTabLabel(tab) {
+        const map = {
+            finders: ['config.findersTab', 'Finders'],
+            tags: ['config.tagsTab', 'Tags'],
+            collections: ['config.collectionsTab', 'Collections'],
+            pages: ['config.pagesTab', 'Pages'],
+            categories: ['config.categoriesTab', 'Categories'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    renderPagesTags() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const tabs = DashboardConfig.PT_TABS.map((tab) => {
+            const active = tab === this.ptTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-pt-tab="${esc(tab)}">${esc(this.ptTabLabel(tab))}</button>`;
+        }).join('');
+        return `
+            <p class="config-view-intro">${esc(this.t('config.pagesTagsIntro', 'Manage pages, categories, tags, finders, and smart collections.'))}</p>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-pt-body">${this.renderPtTab()}</div>
+        `;
+    }
+
+    renderPtTab() {
+        switch (this.ptTab) {
+            case 'finders': return this.renderFinders();
+            case 'tags': return this.renderTagsManager();
+            case 'collections': return this.renderCollections();
+            case 'pages': return this.renderEmbeddedNotice('pages');
+            case 'categories': return this.renderEmbeddedNotice('categories');
+            default: return '';
+        }
+    }
+
+    bindPagesTags(container) {
+        container.querySelectorAll('[data-pt-tab]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-pt-tab');
+                if (tab === this.ptTab) return;
+                this.ptTab = tab;
+                this.repaintPtBody();
+            });
+        });
+        this.bindPtTabControls(container);
+    }
+
+    repaintPtBody() {
+        const body = document.getElementById('config-pt-body');
+        if (!body) { this.render(); return; }
+        body.innerHTML = this.renderPtTab();
+        // Re-mark the active subtab.
+        document.querySelectorAll('[data-pt-tab]').forEach((b) => {
+            const active = b.getAttribute('data-pt-tab') === this.ptTab;
+            b.classList.toggle('is-active', active);
+            b.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        const container = document.getElementById('dashboard-layout');
+        if (container) this.bindPtTabControls(container);
+    }
+
+    bindPtTabControls(container) {
+        if (this.ptTab === 'finders') { this.bindFinders(container); void this.loadFinders(); }
+        else if (this.ptTab === 'tags') { void this.loadTagsManager(); }
+        else if (this.ptTab === 'collections') { this.bindCollections(container); }
+        else if (this.ptTab === 'pages' || this.ptTab === 'categories') { void this.mountEmbeddedStructure(this.ptTab); }
+    }
+
+    renderEmbeddedNotice(which) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.ptTabLabel(which);
+        return `<div id="config-embed-host-${esc(which)}" class="config-embed-host">
+            <p class="config-view-loading">${esc(this.t('config.embedLoading', 'Loading {name}…').replace('{name}', label))}</p>
+        </div>`;
+    }
+
+    async mountEmbeddedStructure(which) {
+        // Pages & categories are embedded in a later step; for now show a clear,
+        // non-broken placeholder pointing at where they will live.
+        const host = document.getElementById(`config-embed-host-${which}`);
+        if (host) {
+            host.innerHTML = `<p class="config-panel-empty">${this.dash.escapeHtml(
+                this.t('config.embedComingSoon', 'This editor is being moved into the view.')
+            )}</p>`;
+        }
+    }
+
+    /* ── Finders (native) ──────────────────────────────────────────────────── */
+
+    finderQueryPlaceholder() { return '%s'; }
+
+    renderFinders() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (this._finders == null) {
+            return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+        }
+        const rows = this._finders.map((f, i) => `
+            <li class="config-crud-row" data-finder-index="${i}">
+                <div class="config-crud-fields">
+                    <input type="text" class="config-text" data-finder="name" data-index="${i}" placeholder="${esc(this.t('config.finderNamePlaceholder', 'Name'))}" value="${esc(f.name || '')}">
+                    <input type="text" class="config-text" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
+                    <input type="text" class="config-text" style="min-width:70px" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
+                </div>
+                <button type="button" class="config-btn config-btn--small config-btn--danger" data-finder-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+            </li>
+        `).join('');
+        return `
+            <p class="config-panel-note">${esc(this.t('config.findersIntro', 'Finders are search shortcuts. Use %s in the URL where the query goes.'))}</p>
+            <ul class="config-crud-list">${rows || `<li class="config-panel-empty">${esc(this.t('config.findersEmpty', 'No finders yet.'))}</li>`}</ul>
+            <div class="config-actions">
+                <button type="button" class="config-btn" data-finder-add>${esc(this.t('config.finderAdd', 'Add finder'))}</button>
+            </div>
+        `;
+    }
+
+    async loadFinders() {
+        if (this._finders != null) return;
+        try {
+            const res = await fetch('/api/finders');
+            const data = res && res.ok ? await res.json() : [];
+            this._finders = Array.isArray(data) ? data : [];
+        } catch {
+            this._finders = [];
+        }
+        if (this.ptTab === 'finders') this.repaintPtBody();
+    }
+
+    bindFinders(container) {
+        container.querySelectorAll('[data-finder]').forEach((input) => {
+            input.addEventListener('change', () => {
+                const i = Number(input.getAttribute('data-index'));
+                const key = input.getAttribute('data-finder');
+                if (this._finders && this._finders[i]) {
+                    this._finders[i][key] = input.value;
+                    void this.saveFinders();
+                }
+            });
+        });
+        const addBtn = container.querySelector('[data-finder-add]');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                this._finders = this._finders || [];
+                this._finders.push({ name: '', searchUrl: '', shortcut: '' });
+                this.repaintPtBody();
+                void this.saveFinders();
+            });
+        }
+        container.querySelectorAll('[data-finder-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const i = Number(btn.getAttribute('data-finder-delete'));
+                if (this._finders && this._finders[i]) {
+                    this._finders.splice(i, 1);
+                    this.repaintPtBody();
+                    void this.saveFinders();
+                }
+            });
+        });
+    }
+
+    async saveFinders() {
+        try {
+            const res = await this.writeFetch('/api/finders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this._finders || []),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } catch {
+            this.notify(this.t('config.findersSaveError', 'Could not save finders.'), 'error');
+        }
+    }
+
+    /* ── Tags & collections placeholders (native, built next) ──────────────── */
+
+    renderTagsManager() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (this._tagList == null) {
+            return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+        }
+        if (this._tagList.length === 0) {
+            return `<p class="config-panel-empty">${esc(this.t('config.tagsEmpty', 'No tags yet. Add tags to bookmarks to manage them here.'))}</p>`;
+        }
+        const rows = this._tagList.map(({ tag, count }) => `
+            <li class="config-crud-row" data-tag-row="${esc(tag)}">
+                <div class="config-crud-fields">
+                    <input type="text" class="config-text" data-tag-rename="${esc(tag)}" value="${esc(tag)}">
+                    <span class="config-tag-count">${count}</span>
+                </div>
+                <button type="button" class="config-btn config-btn--small config-btn--danger" data-tag-delete="${esc(tag)}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+            </li>
+        `).join('');
+        return `
+            <p class="config-panel-note">${esc(this.t('config.tagsIntro', 'Rename a tag to update it everywhere, or delete it from all bookmarks.'))}</p>
+            <ul class="config-crud-list">${rows}</ul>
+        `;
+    }
+
+    async loadTagsManager() {
+        if (this._tagList != null && this._tagList._loaded) return;
+        try {
+            const res = await fetch('/api/bookmarks?all=true');
+            const bookmarks = res && res.ok ? await res.json() : [];
+            const counts = new Map();
+            (Array.isArray(bookmarks) ? bookmarks : []).forEach((bm) => {
+                (Array.isArray(bm.tags) ? bm.tags : []).forEach((raw) => {
+                    const tag = String(raw || '').trim();
+                    if (tag) counts.set(tag, (counts.get(tag) || 0) + 1);
+                });
+            });
+            this._tagList = [...counts.entries()]
+                .map(([tag, count]) => ({ tag, count }))
+                .sort((a, b) => a.tag.localeCompare(b.tag, undefined, { sensitivity: 'base' }));
+            this._tagList._loaded = true;
+        } catch {
+            this._tagList = [];
+            this._tagList._loaded = true;
+        }
+        if (this.ptTab === 'tags') {
+            this.repaintPtBody();
+            this.bindTags(document.getElementById('dashboard-layout'));
+        }
+    }
+
+    bindTags(container) {
+        if (!container) return;
+        container.querySelectorAll('[data-tag-rename]').forEach((input) => {
+            input.addEventListener('change', () => {
+                const from = input.getAttribute('data-tag-rename');
+                const to = input.value.trim();
+                if (to && to !== from) void this.rewriteTag(from, to);
+            });
+        });
+        container.querySelectorAll('[data-tag-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tag = btn.getAttribute('data-tag-delete');
+                if (window.confirm(this.t('config.tagDeleteConfirm', 'Delete this tag from all bookmarks?'))) {
+                    void this.rewriteTag(tag, null);
+                }
+            });
+        });
+    }
+
+    /** Rename (to != null) or delete (to == null) a tag across every bookmark. */
+    async rewriteTag(from, to) {
+        try {
+            const res = await fetch('/api/bookmarks?all=true');
+            const bookmarks = res && res.ok ? await res.json() : [];
+            const list = Array.isArray(bookmarks) ? bookmarks : [];
+            let changed = false;
+            list.forEach((bm) => {
+                if (!Array.isArray(bm.tags)) return;
+                const idx = bm.tags.indexOf(from);
+                if (idx === -1) return;
+                bm.tags.splice(idx, 1);
+                if (to && !bm.tags.includes(to)) bm.tags.push(to);
+                changed = true;
+            });
+            if (!changed) return;
+            // Group by page and re-save each page's bookmarks.
+            const pages = new Map();
+            list.forEach((bm) => {
+                if (!pages.has(bm.pageId)) pages.set(bm.pageId, []);
+                pages.get(bm.pageId).push(bm);
+            });
+            for (const [pageId, pageBookmarks] of pages.entries()) {
+                const saveRes = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pageBookmarks),
+                });
+                if (!saveRes.ok) throw new Error(`HTTP ${saveRes.status}`);
+            }
+            this.notify(to
+                ? this.t('config.tagRenamed', 'Tag renamed.')
+                : this.t('config.tagDeleted', 'Tag deleted.'), 'success');
+            this._tagList = null;
+            await this.loadTagsManager();
+            this.dash.buildSearchIndex?.();
+            this.dash.renderDashboard?.({ animate: false });
+        } catch {
+            this.notify(this.t('config.tagsSaveError', 'Could not update the tag.'), 'error');
+        }
+    }
+
+    collectionsSchema() {
+        const t = (k, f) => this.t(k, f);
+        const bool = (field, label, fallback) => ({ field, type: 'checkbox', label: t(label, fallback) });
+        const limitOpts = [5, 10, 15, 20, 30].map((n) => ({ value: n, label: String(n) }));
+        return [
+            {
+                title: t('config.smartCollectionsTitle', 'Smart collections'),
+                controls: [
+                    bool('showSmartTodayCollection', 'config.showSmartTodayCollection', 'Show “Today” collection'),
+                    { field: 'smartTodayLimit', type: 'select', label: t('config.smartTodayLimit', 'Today limit'), special: 'render', options: limitOpts },
+                    bool('showSmartRecentCollection', 'config.showSmartRecentCollection', 'Show “Recent” collection'),
+                    { field: 'smartRecentLimit', type: 'select', label: t('config.smartRecentLimit', 'Recent limit'), special: 'render', options: limitOpts },
+                    bool('showSmartStaleCollection', 'config.showSmartStaleCollection', 'Show “Stale” collection'),
+                    { field: 'smartStaleLimit', type: 'select', label: t('config.smartStaleLimit', 'Stale limit'), special: 'render', options: limitOpts },
+                    bool('showSmartMostUsedCollection', 'config.showSmartMostUsedCollection', 'Show “Most used” collection'),
+                    { field: 'smartMostUsedLimit', type: 'select', label: t('config.smartMostUsedLimit', 'Most-used limit'), special: 'render', options: limitOpts },
+                ],
+            },
+            {
+                title: t('config.tagCollectionsTitle', 'Tag collections'),
+                controls: [
+                    bool('showTagCollections', 'config.showTagCollections', 'Show tag collections'),
+                    { field: 'tagCollectionsMinCount', type: 'number', label: t('config.tagCollectionsMinCount', 'Minimum tag count'), min: 1, max: 50, special: 'render' },
+                ],
+            },
+            {
+                title: t('config.smartTodayKeywordsTitle', '“Today” keywords'),
+                controls: [
+                    { field: 'smartTodayWorkKeywords', type: 'text', label: t('config.smartTodayWorkKeywords', 'Work'), special: 'render' },
+                    { field: 'smartTodayEveningKeywords', type: 'text', label: t('config.smartTodayEveningKeywords', 'Evening'), special: 'render' },
+                    { field: 'smartTodayWeekendKeywords', type: 'text', label: t('config.smartTodayWeekendKeywords', 'Weekend'), special: 'render' },
+                ],
+            },
+        ];
+    }
+
+    renderCollections() {
+        // Reuse the behaviour control renderer against the collections schema.
+        return this.renderControlPanels(this.collectionsSchema(), 'collection');
+    }
+
+    bindCollections(container) {
+        this.bindControlPanels(container, 'collection');
     }
 }
 

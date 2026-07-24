@@ -444,6 +444,84 @@
     min-width: 40px;
 }
 
+/* ── Sub-tabs (Pages & tags) ────────────────────────────────────────────── */
+
+.config-subtabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    padding-bottom: 8px;
+}
+
+.config-subtab {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted, #888);
+    font: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.config-subtab:hover {
+    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+    color: var(--text-color, inherit);
+}
+
+.config-subtab.is-active {
+    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
+    color: var(--accent-color, var(--text-color, inherit));
+    font-weight: 600;
+}
+
+.config-subtab:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+/* ── CRUD lists (finders, tags) ─────────────────────────────────────────── */
+
+.config-crud-list {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.config-crud-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+}
+
+.config-crud-fields {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.config-crud-fields .config-text {
+    flex: 1;
+    min-width: 120px;
+}
+
+.config-tag-count {
+    font-size: 0.78rem;
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+    align-self: center;
+    white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .config-choice {
         transition: none;
