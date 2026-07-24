@@ -84,6 +84,24 @@ class DashboardHealth {
         return `${issue.pageId}:${issue.index}`;
     }
 
+    /**
+     * Resolve a stored icon to a loadable src. Icons are bare filenames served
+     * from /data/icons/ (matching the dashboard rows in dashboard-bookmark-rows.js);
+     * absolute URLs and root-relative paths are left as-is. Returns '' when there
+     * is no icon. Without the /data/icons/ prefix a bare filename would be
+     * requested from the site root, producing confusing 404s in the console.
+     */
+    resolveIssueIconSrc(icon) {
+        const value = String(icon || '').trim();
+        if (!value) {
+            return '';
+        }
+        if (/^(https?:|data:|\/)/i.test(value)) {
+            return value;
+        }
+        return `/data/icons/${encodeURIComponent(value)}`;
+    }
+
     formatUrlDisplay(url) {
         try {
             const parsed = new URL(url);
@@ -2537,8 +2555,9 @@ class DashboardHealth {
             ? this.t('dashboard.healthMoreReasons', '+{count} more', { count: reasons.length - 1 })
             : '';
         const expanded = this.expandedScores.has(key);
-        const icon = issue.icon
-            ? `<img src="${this.escape(issue.icon)}" alt="" loading="lazy">`
+        const iconSrc = this.resolveIssueIconSrc(issue.icon);
+        const icon = iconSrc
+            ? `<img class="health-view-item-icon-img" src="${this.escape(iconSrc)}" alt="" loading="lazy">`
             : '🔗';
 
         row.innerHTML = `
@@ -2574,6 +2593,13 @@ class DashboardHealth {
                 </div>
             </div>
         `;
+
+        const iconImg = row.querySelector('.health-view-item-icon-img');
+        iconImg?.addEventListener('error', () => {
+            const slot = iconImg.parentElement;
+            iconImg.remove();
+            if (slot) slot.textContent = '🔗';
+        }, { once: true });
 
         row.querySelector('.health-view-item-score')?.addEventListener('click', () => {
             this.selectRowByKey(key);
