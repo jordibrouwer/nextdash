@@ -1,0 +1,42 @@
+/*
+ * Config view — Phase 1 scaffold styles.
+ *
+ * Kept intentionally light: this only lays out the view shell so `#config`
+ * renders as a real in-shell view. Section navigation and status tiles get
+ * their own styling in later phases.
+ */
+
+#dashboard-layout.config-layout {
+    display: block;
+    padding: 0;
+}
+
+.config-view {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 8px 0 48px;
+}
+
+.config-view-head {
+    margin-bottom: 20px;
+}
+
+.config-view-title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.config-view-body {
+    display: grid;
+    gap: 16px;
+}
+
+.config-view-placeholder {
+    margin: 0;
+    padding: 24px;
+    border: 1px dashed var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 12px;
+    color: var(--text-muted, #888);
+    text-align: center;
+}

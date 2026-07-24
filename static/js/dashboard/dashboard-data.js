@@ -369,6 +369,8 @@ class DashboardData {
                     await d.inbox.openInboxView();
                 } else if (initialHash === 'health' && d.health?.isEnabled?.()) {
                     await d.health.openHealthView();
+                } else if ((initialHash === 'config' || initialHash.startsWith('config/')) && d.config?.isEnabled?.()) {
+                    await d.config.openConfigView();
                 }
             }
         } catch (error) {
