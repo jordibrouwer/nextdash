@@ -295,11 +295,12 @@ button.health-view-tile:hover {
     gap: 0.65rem;
 }
 
-/* Favicon column is 2rem where inbox uses a 4.5rem thumbnail: health rows are
-   scannable status lines, not previews, and a 50-row list has to stay short. */
+/* Favicon column is 3rem, shared with the inbox feed so the two read as one
+   system: health rows are scannable status lines, not previews, but the icon is
+   large enough to recognise the site at a glance. */
 .health-view-item {
     display: grid;
-    grid-template-columns: 2rem 1fr;
+    grid-template-columns: 3rem 1fr;
     gap: 0.85rem;
     padding: 0.75rem 0.85rem;
     border: 1px solid var(--border-primary);
@@ -329,22 +330,22 @@ button.health-view-tile:hover {
 }
 
 .health-view-item-icon {
-    width: 2rem;
-    height: 2rem;
-    border-radius: calc(var(--layout-radius-sm, 8px) - 3px);
+    width: 3rem;
+    height: 3rem;
+    border-radius: calc(var(--layout-radius-sm, 8px) - 2px);
     background: var(--background-primary) center/contain no-repeat;
     border: 1px solid var(--border-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: 1.25rem;
     color: var(--text-tertiary);
     overflow: hidden;
 }
 
 .health-view-item-icon img {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.7rem;
+    height: 1.7rem;
     object-fit: contain;
 }
 
