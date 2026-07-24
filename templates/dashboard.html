@@ -46,6 +46,7 @@
     <link rel="stylesheet" href="/static/css/dashboard-inbox.css?v=inbox-sort-select-1">
     <link rel="stylesheet" href="/static/css/health-view.css?v=monitor-tile-1">
     <link rel="stylesheet" href="/static/css/config-view.css?v=config-view-phase5-1">
+    <link rel="stylesheet" href="/static/css/colors.css?v=config-view-phase5-1">
         <link rel="stylesheet" href="/static/css/enhanced-features.css?v={{.Assets.EnhancedFeaturesCSS}}">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
     <link rel="stylesheet" href="/static/css/layout-modern.css?v={{.Assets.LayoutModernCSS}}">
@@ -357,5 +358,12 @@
     <script src="/static/js/dashboard/dashboard-persistence.js?v=dash-tag-sync-3"></script>
     <script src="/static/js/dashboard.js?v={{.Assets.DataRevision}}"></script>
     <script src="/static/js/analytics.js?v={{.Assets.AnalyticsJS}}" defer></script>
+
+    <!-- Theme-colours editor: markup ships hidden here and the config view (Appearance)
+         moves it into place and instantiates the existing ColorsEditor against it. -->
+    <div id="config-theme-colors-host" hidden>{{template "theme-colors-editor" .}}</div>
+    <script src="/static/js/config/config-custom-themes.js?v=config-view-phase5-1" defer></script>
+    <script src="/static/js/color-value-utils.js?v=config-view-phase5-1" defer></script>
+    <script src="/static/js/colors.js?v=config-view-phase5-1" defer></script>
 </body>
 </html>

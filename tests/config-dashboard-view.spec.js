@@ -259,6 +259,52 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-theme="light"]')).toHaveClass(/is-active/);
     });
 
+    test('appearance exposes the full control set', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        await expect(page.locator('[data-appearance-select="fontPreset"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-weight="bold"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-range="backgroundOpacity"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-iconsize="large"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-toggle="animationsEnabled"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-action="upload-font"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-action="upload-favicon"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-action="edit-colors"]')).toBeVisible();
+    });
+
+    test('choosing a font preset applies it and saves', async ({ page }) => {
+        let saved = null;
+        await page.route('**/api/settings', async (route) => {
+            if (route.request().method() === 'POST') {
+                saved = JSON.parse(route.request().postData() || '{}');
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            }
+            return route.fallback();
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        await page.locator('[data-appearance-select="fontPreset"]').selectOption('jetbrains-mono');
+
+        await expect
+            .poll(() => page.evaluate(() => document.documentElement.getAttribute('data-font-preset')))
+            .toBe('jetbrains-mono');
+        await expect.poll(() => saved && saved.fontPreset).toBe('jetbrains-mono');
+    });
+
+    test('the theme-colours editor mounts on demand', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        await page.locator('[data-appearance-action="edit-colors"]').click();
+
+        // The shell-hosted editor is revealed and moved into the appearance panel.
+        await expect(page.locator('#config-theme-colors-panel #theme-colors-editor')).toBeVisible();
+    });
+
     test('choosing a font size applies the body class and saves', async ({ page }) => {
         let saved = null;
         await page.route('**/api/settings', async (route) => {

@@ -971,6 +971,31 @@ class DashboardConfig {
 
         const layout = s.layoutVersion === 'modern' ? 'modern' : 'classic';
 
+        const presets = (window.DashboardFont?.PRESET_IDS) || ['source-code-pro', 'jetbrains-mono', 'ibm-plex-mono', 'inter', 'ibm-plex-sans', 'dm-sans', 'system'];
+        const activePreset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'source-code-pro';
+        const fontPresetOptions = presets.map((p) =>
+            `<option value="${esc(p)}" ${p === activePreset ? 'selected' : ''}>${esc(this.fontPresetLabel(p))}</option>`
+        ).join('');
+
+        const weight = s.fontWeight || 'normal';
+        const weights = [['normal', this.t('config.fontWeightNormal', 'Normal')], ['600', this.t('config.fontWeightSemiBold', 'Semi-bold')], ['bold', this.t('config.fontWeightBold', 'Bold')]];
+        const weightChoices = weights.map(([val, label]) =>
+            `<button type="button" class="config-choice${weight === val ? ' is-active' : ''}" data-appearance-weight="${esc(val)}" aria-pressed="${weight === val}">${esc(label)}</button>`
+        ).join('');
+
+        const bgType = s.backgroundType || 'auto';
+        const bgTypes = [['auto', this.t('config.backgroundAuto', 'Auto')], ['none', this.t('config.backgroundNone', 'None')], ['gradient', this.t('config.backgroundGradient', 'Gradient')], ['image', this.t('config.backgroundImage', 'Image')]];
+        const bgChoices = bgTypes.map(([val, label]) =>
+            `<button type="button" class="config-choice${bgType === val ? ' is-active' : ''}" data-appearance-bg="${esc(val)}" aria-pressed="${bgType === val}">${esc(label)}</button>`
+        ).join('');
+        const opacity = Number.isFinite(Number(s.backgroundOpacity)) ? Number(s.backgroundOpacity) : 1;
+
+        const iconSize = s.launcherIconSize || 'normal';
+        const iconSizes = [['small', this.t('config.launcherIconSizeSmall', 'Small')], ['normal', this.t('config.launcherIconSizeNormal', 'Normal')], ['large', this.t('config.launcherIconSizeLarge', 'Large')]];
+        const iconSizeChoices = iconSizes.map(([val, label]) =>
+            `<button type="button" class="config-choice${iconSize === val ? ' is-active' : ''}" data-appearance-iconsize="${esc(val)}" aria-pressed="${iconSize === val}">${esc(label)}</button>`
+        ).join('');
+
         return `
             <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
             ${tiles}
@@ -988,18 +1013,51 @@ class DashboardConfig {
                     <input type="checkbox" data-appearance-toggle="autoDarkMode" ${s.autoDarkMode ? 'checked' : ''}>
                     <span>${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
                 </label>
+                <div class="config-actions" style="margin-top:14px">
+                    <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openThemeColorsLink', 'Edit theme colours…'))}</button>
+                </div>
             </div>
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceTypeTitle', 'Type'))}</h3>
                 <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.fontPresetLabel', 'Font'))}</span>
+                    <select class="config-select" data-appearance-select="fontPreset">${fontPresetOptions}</select>
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.fontWeightLabel', 'Weight'))}</span>
+                    <div class="config-choices" role="group">${weightChoices}</div>
+                </div>
+                <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.appearanceFontSize', 'Font size'))}</span>
                     <div class="config-choices" role="group">${fontOptions}</div>
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.uploadFontLabel', 'Custom font'))}</span>
+                    <button type="button" class="config-btn config-btn--small" data-appearance-action="upload-font">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
+                    <input type="file" id="config-font-input" accept=".woff,.woff2,.ttf,.otf" hidden>
                 </div>
             </div>
 
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutTitle', 'Layout'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.backgroundLabel', 'Background'))}</h3>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.backgroundLabel', 'Background'))}</span>
+                    <div class="config-choices" role="group">${bgChoices}</div>
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.backgroundOpacityLabel', 'Opacity'))}</span>
+                    <input type="range" class="config-range" data-appearance-range="backgroundOpacity" min="0" max="1" step="0.05" value="${opacity}">
+                    <span class="config-range-value">${Math.round(opacity * 100)}%</span>
+                </div>
+                <label class="config-toggle">
+                    <input type="checkbox" data-appearance-toggle="showBackgroundDots" ${s.showBackgroundDots ? 'checked' : ''}>
+                    <span>${esc(this.t('config.showBackgroundDots', 'Show background dots'))}</span>
+                </label>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutTitle', 'Layout & display'))}</h3>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.appearanceLayoutVersion', 'Layout'))}</span>
                     <div class="config-choices" role="group">
@@ -1007,12 +1065,57 @@ class DashboardConfig {
                         <button type="button" class="config-choice${layout === 'modern' ? ' is-active' : ''}" data-appearance-layout="modern" aria-pressed="${layout === 'modern'}">${esc(this.t('config.layoutModern', 'Modern'))}</button>
                     </div>
                 </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.launcherIconSizeLabel', 'Icon size'))}</span>
+                    <div class="config-choices" role="group">${iconSizeChoices}</div>
+                </div>
                 <label class="config-toggle">
-                    <input type="checkbox" data-appearance-toggle="showBackgroundDots" ${s.showBackgroundDots ? 'checked' : ''}>
-                    <span>${esc(this.t('config.appearanceBackgroundDots', 'Show background dots'))}</span>
+                    <input type="checkbox" data-appearance-toggle="showIcons" ${s.showIcons !== false ? 'checked' : ''}>
+                    <span>${esc(this.t('config.showIcons', 'Show bookmark icons'))}</span>
+                </label>
+                <label class="config-toggle">
+                    <input type="checkbox" data-appearance-toggle="colorizeStatus" ${s.colorizeStatus ? 'checked' : ''}>
+                    <span>${esc(this.t('config.colorizeStatus', 'Colour status on bookmark rows'))}</span>
+                </label>
+                <label class="config-toggle">
+                    <input type="checkbox" data-appearance-toggle="animationsEnabled" ${s.animationsEnabled !== false ? 'checked' : ''}>
+                    <span>${esc(this.t('config.enableAnimations', 'Enable animations'))}</span>
                 </label>
             </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
+                <label class="config-toggle">
+                    <input type="checkbox" data-appearance-toggle="enableCustomTitle" ${s.enableCustomTitle ? 'checked' : ''}>
+                    <span>${esc(this.t('config.enableCustomTitle', 'Use a custom page title'))}</span>
+                </label>
+                <div class="config-field" style="margin-top:10px">
+                    <span class="config-field-label">${esc(this.t('config.customTitleLabel', 'Title'))}</span>
+                    <input type="text" class="config-text" data-appearance-text="customTitle" value="${esc(s.customTitle || '')}" ${s.enableCustomTitle ? '' : 'disabled'} placeholder="nextDash">
+                </div>
+                <div class="config-field" style="margin-top:10px">
+                    <span class="config-field-label">${esc(this.t('config.uploadFaviconLabel', 'Custom favicon'))}</span>
+                    <button type="button" class="config-btn config-btn--small" data-appearance-action="upload-favicon">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
+                    <input type="file" id="config-favicon-input" accept="image/*,.ico" hidden>
+                </div>
+            </div>
+
+            <div class="config-panel" id="config-theme-colors-panel"></div>
         `;
+    }
+
+    fontPresetLabel(preset) {
+        const map = {
+            'source-code-pro': ['config.fontPresetSourceCodePro', 'Source Code Pro'],
+            'jetbrains-mono': ['config.fontPresetJetBrainsMono', 'JetBrains Mono'],
+            'ibm-plex-mono': ['config.fontPresetIbmPlexMono', 'IBM Plex Mono'],
+            inter: ['config.fontPresetInter', 'Inter'],
+            'ibm-plex-sans': ['config.fontPresetIbmPlexSans', 'IBM Plex Sans'],
+            'dm-sans': ['config.fontPresetDmSans', 'DM Sans'],
+            system: ['config.fontPresetSystem', 'System'],
+        };
+        const [key, fallback] = map[preset] || [preset, preset];
+        return this.t(key, fallback);
     }
 
     bindAppearanceControls(container) {
@@ -1025,9 +1128,60 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-layout]').forEach((btn) => {
             btn.addEventListener('click', () => this.setLayout(btn.getAttribute('data-appearance-layout')));
         });
+        container.querySelectorAll('[data-appearance-weight]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setFontWeight(btn.getAttribute('data-appearance-weight')));
+        });
+        container.querySelectorAll('[data-appearance-bg]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setBackgroundType(btn.getAttribute('data-appearance-bg')));
+        });
+        container.querySelectorAll('[data-appearance-iconsize]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setLauncherIconSize(btn.getAttribute('data-appearance-iconsize')));
+        });
         container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
             input.addEventListener('change', () => this.setToggle(input.getAttribute('data-appearance-toggle'), input.checked));
         });
+        container.querySelectorAll('[data-appearance-select]').forEach((select) => {
+            select.addEventListener('change', () => this.setAppearanceSelect(select.getAttribute('data-appearance-select'), select.value));
+        });
+        // Range and text update live without a full repaint so the control keeps focus.
+        const range = container.querySelector('[data-appearance-range="backgroundOpacity"]');
+        if (range) {
+            range.addEventListener('input', () => {
+                const val = Number(range.value);
+                this.dash.settings.backgroundOpacity = val;
+                this.dash.visual?.applyVisualSettings?.();
+                const out = range.parentElement?.querySelector('.config-range-value');
+                if (out) out.textContent = `${Math.round(val * 100)}%`;
+            });
+            range.addEventListener('change', () => this.dash.saveSettings?.());
+        }
+        const titleInput = container.querySelector('[data-appearance-text="customTitle"]');
+        if (titleInput) {
+            titleInput.addEventListener('input', () => { this.dash.settings.customTitle = titleInput.value; });
+            titleInput.addEventListener('change', () => {
+                this.dash.saveSettings?.();
+                this.dash.pageNav?.updateDocumentTitle?.();
+            });
+        }
+        container.querySelectorAll('[data-appearance-action]').forEach((btn) => {
+            btn.addEventListener('click', () => this.handleAppearanceAction(btn.getAttribute('data-appearance-action')));
+        });
+        const fontInput = container.querySelector('#config-font-input');
+        if (fontInput) {
+            fontInput.addEventListener('change', () => {
+                const file = fontInput.files && fontInput.files[0];
+                if (file) void this.uploadFont(file);
+                fontInput.value = '';
+            });
+        }
+        const faviconInput = container.querySelector('#config-favicon-input');
+        if (faviconInput) {
+            faviconInput.addEventListener('change', () => {
+                const file = faviconInput.files && faviconInput.files[0];
+                if (file) void this.uploadFavicon(file);
+                faviconInput.value = '';
+            });
+        }
     }
 
     /** Persist a settings change and repaint the appearance section. */
@@ -1074,16 +1228,146 @@ class DashboardConfig {
     }
 
     setToggle(name, value) {
-        if (name === 'autoDarkMode') {
-            this.dash.settings.autoDarkMode = value;
-            this.applyThemeLive();
-        } else if (name === 'showBackgroundDots') {
-            this.dash.settings.showBackgroundDots = value;
-            this.applyThemeLive();
-        } else {
-            return;
+        const d = this.dash;
+        switch (name) {
+            case 'autoDarkMode':
+                d.settings.autoDarkMode = value;
+                this.applyThemeLive();
+                break;
+            case 'showBackgroundDots':
+                d.settings.showBackgroundDots = value;
+                this.applyThemeLive();
+                break;
+            case 'showIcons':
+                d.settings.showIcons = value;
+                d.renderDashboard?.({ animate: false });
+                break;
+            case 'colorizeStatus':
+                d.settings.colorizeStatus = value;
+                d.renderDashboard?.({ animate: false });
+                break;
+            case 'animationsEnabled':
+                d.settings.animationsEnabled = value;
+                d.visual?.applyVisualSettings?.();
+                break;
+            case 'enableCustomTitle':
+                d.settings.enableCustomTitle = value;
+                d.pageNav?.updateDocumentTitle?.();
+                break;
+            default:
+                return;
         }
         this.persistAppearance();
+    }
+
+    setFontWeight(weight) {
+        if (!['normal', '600', 'bold'].includes(weight)) return;
+        this.dash.settings.fontWeight = weight;
+        this.dash.visual?.applyVisualSettings?.();
+        this.persistAppearance();
+    }
+
+    setBackgroundType(type) {
+        if (!['auto', 'none', 'gradient', 'image'].includes(type)) return;
+        this.dash.settings.backgroundType = type;
+        this.dash.visual?.applyBackground?.();
+        this.persistAppearance();
+    }
+
+    setLauncherIconSize(size) {
+        if (!['small', 'normal', 'large'].includes(size)) return;
+        this.dash.settings.launcherIconSize = size;
+        this.dash.visual?.applyVisualSettings?.();
+        this.persistAppearance();
+    }
+
+    setAppearanceSelect(name, value) {
+        if (name !== 'fontPreset') return;
+        this.dash.settings.fontPreset = value;
+        window.DashboardFont?.applyMainFont?.(this.dash.settings);
+        this.persistAppearance();
+    }
+
+    handleAppearanceAction(action) {
+        switch (action) {
+            case 'edit-colors': void this.toggleThemeColorsEditor(); break;
+            case 'upload-font': document.getElementById('config-font-input')?.click(); break;
+            case 'upload-favicon': document.getElementById('config-favicon-input')?.click(); break;
+        }
+    }
+
+    /**
+     * Reveal the theme-colours editor. Its markup ships hidden in the shell
+     * (#config-theme-colors-host, from the server-rendered partial); on first
+     * open we move it into the appearance panel and instantiate the existing
+     * ColorsEditor against it, so the whole editor is reused, not rebuilt.
+     */
+    async toggleThemeColorsEditor() {
+        const panel = document.getElementById('config-theme-colors-panel');
+        const host = document.getElementById('config-theme-colors-host');
+        if (!panel || !host) {
+            this.notify(this.t('config.colorsUnavailable', 'The colour editor could not be loaded.'), 'error');
+            return;
+        }
+        if (this._colorsShown) {
+            host.hidden = true;
+            this._colorsShown = false;
+            return;
+        }
+        if (host.parentElement !== panel) panel.appendChild(host);
+        host.hidden = false;
+        this._colorsShown = true;
+        if (this._colorsEditor) return;
+        if (typeof ColorsEditor !== 'function') {
+            this.notify(this.t('config.colorsUnavailable', 'The colour editor could not be loaded.'), 'error');
+            return;
+        }
+        try {
+            this._colorsEditor = new ColorsEditor({
+                root: host.querySelector('#theme-colors-editor') || host,
+                language: this.dash.language,
+                settings: this.dash.settings,
+            });
+            await this._colorsEditor.init();
+        } catch {
+            this.notify(this.t('config.colorsUnavailable', 'The colour editor could not be loaded.'), 'error');
+        }
+    }
+
+    async uploadFont(file) {
+        try {
+            const form = new FormData();
+            form.append('font', file);
+            const res = await this.writeFetch('/api/font', { method: 'POST', body: form });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            if (body.path) this.dash.settings.customFontPath = body.path;
+            this.dash.settings.fontPreset = 'custom';
+            this.dash.settings.enableCustomFont = true;
+            window.DashboardFont?.applyMainFont?.(this.dash.settings);
+            this.dash.saveSettings?.();
+            this.notify(this.t('config.fontUploadSuccess', 'Custom font applied.'), 'success');
+            this.persistAppearance();
+        } catch {
+            this.notify(this.t('config.fontUploadError', 'Could not upload the font.'), 'error');
+        }
+    }
+
+    async uploadFavicon(file) {
+        try {
+            const form = new FormData();
+            form.append('favicon', file);
+            const res = await this.writeFetch('/api/favicon', { method: 'POST', body: form });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            if (body.path) this.dash.settings.customFaviconPath = body.path;
+            this.dash.settings.enableCustomFavicon = true;
+            this.dash.saveSettings?.();
+            this.notify(this.t('config.faviconUploadSuccess', 'Custom favicon applied. Reloading…'), 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } catch {
+            this.notify(this.t('config.faviconUploadError', 'Could not upload the favicon.'), 'error');
+        }
     }
 }
 
