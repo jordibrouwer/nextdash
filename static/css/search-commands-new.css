@@ -557,6 +557,18 @@
     color: var(--text-secondary);
 }
 
+/* "Create + New" — a distinct accent so it reads apart from the neutral primary
+   Create button: it saves and immediately reopens the form for another. */
+.nbm-btn-create-another {
+    border-color: var(--accent-success, #34d399);
+    color: var(--accent-success, #34d399);
+}
+
+.nbm-btn-create-another:hover {
+    background: color-mix(in srgb, var(--accent-success, #34d399) 12%, transparent);
+    color: var(--accent-success, #34d399);
+}
+
 /* ── Footer ── */
 .nbm-footer {
     display: flex;

@@ -478,6 +478,7 @@ class SearchCommandNew {
                             <button type="button" class="nbm-btn nbm-btn-secondary nbm-wizard-only" id="new-bookmark-wizard-back">${this.t('config.addBookmarkWizardBack', 'Back')}</button>
                             <button type="button" class="nbm-btn nbm-btn-secondary" id="new-bookmark-cancel">${this.t('config.cancel', 'Cancel')}</button>
                             <button type="button" class="nbm-btn nbm-btn-primary nbm-wizard-only" id="new-bookmark-wizard-next">${this.t('config.addBookmarkWizardNext', 'Next')}</button>
+                            <button type="button" class="nbm-btn nbm-btn-create-another" id="new-bookmark-create-another" title="${this.t('config.createAndAddAnotherTitle', 'Save this bookmark and keep the form open to add another')}">${this.t('config.createAndAddAnother', 'Create + New')}</button>
                             <button type="button" class="nbm-btn nbm-btn-primary" id="new-bookmark-create">${this.t('config.create', 'Add Bookmark')}</button>
                         </div>
                     </form>
@@ -954,6 +955,7 @@ class SearchCommandNew {
         });
 
         document.getElementById('new-bookmark-create')?.addEventListener('click', () => this.createBookmark());
+        document.getElementById('new-bookmark-create-another')?.addEventListener('click', () => this.createBookmark({ keepOpen: true }));
         document.getElementById('new-bookmark-cancel')?.addEventListener('click', () => this.closeModal());
         document.getElementById('new-bookmark-cancel-header')?.addEventListener('click', () => this.closeModal());
 
@@ -1100,7 +1102,7 @@ class SearchCommandNew {
         }, 200);
     }
 
-    async createBookmark() {
+    async createBookmark({ keepOpen = false } = {}) {
         const form = document.getElementById('new-bookmark-form');
         const nameEl = document.getElementById('new-bookmark-name');
         if (nameEl && !String(nameEl.value || '').trim()) {
@@ -1204,10 +1206,17 @@ class SearchCommandNew {
             });
 
             if (response.ok) {
-                try {
-                    this.closeModal();
-                } catch (error) {
-                    console.warn('Error closing new-bookmark modal after save:', error);
+                // "Create + New" keeps the modal open and clears the form (page and
+                // category stay put — you are usually filing several bookmarks in the
+                // same place) so the next one can be typed straight away.
+                if (keepOpen) {
+                    this.resetFormForNext(pageId);
+                } else {
+                    try {
+                        this.closeModal();
+                    } catch (error) {
+                        console.warn('Error closing new-bookmark modal after save:', error);
+                    }
                 }
                 this.pendingIcon = '';
                 if (window.dashboardInstance?.data?.refreshAfterBookmarkAdded) {
@@ -1268,6 +1277,50 @@ class SearchCommandNew {
             window.nextdashTrack?.('bookmark-created', { result: 'error' });
         }
         return { ok: false };
+    }
+
+    /**
+     * Clear the form after a "Create + New" save so the next bookmark can be
+     * typed straight away, while keeping the page/category selection — filing
+     * several bookmarks in one place is the common case. The modal stays open.
+     */
+    resetFormForNext(keepPageId) {
+        const form = document.getElementById('new-bookmark-form');
+        if (!form) return;
+
+        ['new-bookmark-url', 'new-bookmark-name', 'new-bookmark-shortcut', 'new-bookmark-note', 'new-bookmark-tags', 'new-bookmark-icon-url']
+            .forEach((id) => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+        const pinned = document.getElementById('new-bookmark-pinned');
+        if (pinned) pinned.checked = false;
+
+        const iconFile = document.getElementById('new-bookmark-icon-file');
+        if (iconFile) iconFile.value = '';
+
+        // Keep the page the user was filing into; the category select follows it.
+        const pageSelect = document.getElementById('new-bookmark-page');
+        if (pageSelect && Number.isFinite(keepPageId)) {
+            pageSelect.value = String(keepPageId);
+            pageSelect.__customSelectInstance?.refresh?.();
+        }
+
+        // Reset icon + link-preview draft state to a clean slate.
+        this.resetDraftState();
+        this.syncIconPreview('');
+        this.setModalIconFetchState('');
+        this.formPreview?.clearLinkPreview?.(this.getDraftBookmark());
+
+        // Clear any lingering conflict hints and refresh the previews.
+        this.updateShortcutConflictHint();
+        this.updateUrlDuplicateHint();
+        this.updatePreviews();
+
+        // Wizard flows (mobile) start each bookmark back on the first step.
+        if (this.usesMobileWizard()) this.setWizardStep(1);
+
+        // Land the caret in the URL field, ready for the next entry.
+        const urlInput = document.getElementById('new-bookmark-url');
+        setTimeout(() => urlInput?.focus(), 50);
     }
 
     async resolveIconValue(iconFile, iconUrl) {

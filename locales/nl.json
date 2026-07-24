@@ -1912,6 +1912,8 @@
         "addBookmarkWizardBack": "Terug",
         "shortcutConflict": "Sneltoets al in gebruik",
         "create": "Maken",
+        "createAndAddAnother": "Maken + Nieuw",
+        "createAndAddAnotherTitle": "Bewaar deze bookmark en houd het formulier open om er nog een toe te voegen",
         "saving": "Opslaan…",
         "bookmarkCreated": "Bladwijzer succesvol gemaakt!",
         "errorCreatingBookmark": "Fout bij maken van bladwijzer",
