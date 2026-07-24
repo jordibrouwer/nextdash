@@ -163,6 +163,63 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect.poll(() => listCalls).toBeGreaterThanOrEqual(2);
     });
 
+    test('data & backups exposes CSV, browser import, settings and reset controls', async ({ page }) => {
+        await page.route('**/api/auto-backups', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, backups: [] }) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
+
+        for (const action of ['csv-export', 'browser-import', 'settings-export', 'settings-import', 'reset-onboarding']) {
+            await expect(page.locator(`[data-backup-action="${action}"]`)).toBeVisible();
+        }
+        await expect(page.locator('[data-backup-toggle="autoBackupEnabled"]')).toBeVisible();
+        await expect(page.locator('[data-backup-toggle="healthAutoRecheckEnabled"]')).toBeVisible();
+    });
+
+    test('CSV export fetches bookmarks and triggers a download', async ({ page }) => {
+        await page.route('**/api/auto-backups', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, backups: [] }) });
+        });
+        await page.route('**/api/bookmarks?all=true', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ name: 'Example', url: 'https://example.com', category: 'tools', pageId: 1 }]) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
+
+        const [download] = await Promise.all([
+            page.waitForEvent('download'),
+            page.locator('[data-backup-action="csv-export"]').click(),
+        ]);
+        expect(download.suggestedFilename()).toMatch(/nextdash-bookmarks-.*\.csv/);
+    });
+
+    test('toggling auto-backup saves settings and reloads the list', async ({ page }) => {
+        let saved = null;
+        await page.route('**/api/settings', async (route) => {
+            if (route.request().method() === 'POST') {
+                saved = JSON.parse(route.request().postData() || '{}');
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            }
+            return route.fallback();
+        });
+        await page.route('**/api/auto-backups', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, backups: [] }) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.autoBackupEnabled = false;
+            window.dashboardInstance.config.openConfigView('data-backups');
+        });
+
+        await page.locator('[data-backup-toggle="autoBackupEnabled"]').check();
+
+        await expect.poll(() => saved && saved.autoBackupEnabled).toBe(true);
+    });
+
     test('the appearance section renders theme and font-size controls', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));

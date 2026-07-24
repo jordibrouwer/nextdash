@@ -388,6 +388,27 @@
     cursor: pointer;
 }
 
+.config-select {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 8px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    color: var(--text-color, inherit);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.config-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.config-select:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .config-choice {
         transition: none;

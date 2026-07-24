@@ -442,6 +442,21 @@ class DashboardConfig {
             ? `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`
             : `<div class="config-tiles" role="list">${this.dataBackupsTiles().map((t) => this.renderTile(t)).join('')}</div>`;
 
+        const s = this.dash.settings || {};
+        const recheckHours = Number(s.healthAutoRecheckIntervalHours) || 24;
+        const intervalOptions = [6, 12, 24, 48, 168].map((h) => {
+            const label = h < 24
+                ? this.t('config.recheckEveryHours', 'Every {n}h').replace('{n}', String(h))
+                : (h === 24
+                    ? this.t('config.recheckDaily', 'Daily')
+                    : (h === 168
+                        ? this.t('config.recheckWeekly', 'Weekly')
+                        : this.t('config.recheckEveryDays', 'Every {n} days').replace('{n}', String(h / 24))));
+            return `<option value="${h}" ${h === recheckHours ? 'selected' : ''}>${esc(label)}</option>`;
+        }).join('');
+        const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
+            || (() => { try { return localStorage.getItem('deviceSpecificSettings') === 'true'; } catch { return false; } })();
+
         return `
             <p class="config-view-intro">${esc(this.t('config.dataBackupsIntro', 'Back up your data, restore an earlier snapshot, or move it in and out of nextDash.'))}</p>
             ${tiles}
@@ -452,6 +467,10 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-backup-action="download">${esc(this.t('config.backupDownload', 'Download backup'))}</button>
                     <button type="button" class="config-btn" data-backup-action="run">${esc(this.t('config.backupRunNow', 'Make a backup now'))}</button>
                 </div>
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="autoBackupEnabled" ${s.autoBackupEnabled ? 'checked' : ''}>
+                    <span>${esc(this.t('config.autoBackupEnabledLabel', 'Automatic daily backups'))}</span>
+                </label>
             </div>
 
             <div class="config-panel">
@@ -460,16 +479,56 @@ class DashboardConfig {
             </div>
 
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backupMoveTitle', 'Import & export'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.backupsZipSectionTitle', 'Full backup (zip)'))}</h3>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="import">${esc(this.t('config.backupImport', 'Import backup…'))}</button>
                 </div>
                 <input type="file" id="config-import-input" accept=".zip" hidden>
             </div>
 
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.backupsImportExportSectionTitle', 'Import & export bookmarks'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.csvExportDescription', 'Export every bookmark as a CSV file, or import bookmarks exported from a browser.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-backup-action="csv-export">${esc(this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))}</button>
+                    <button type="button" class="config-btn" data-backup-action="browser-import">${esc(this.t('config.browserImportBtn', 'Import browser bookmarks…'))}</button>
+                </div>
+                <input type="file" id="config-browser-import-input" accept=".html,.htm" hidden>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.settingsSection', 'Settings'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-backup-action="settings-export">${esc(this.t('config.settingsExportBtn', 'Export settings (JSON)'))}</button>
+                    <button type="button" class="config-btn" data-backup-action="settings-import">${esc(this.t('config.settingsImportBtn', 'Import settings…'))}</button>
+                </div>
+                <input type="file" id="config-settings-import-input" accept=".json" hidden>
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="deviceSpecificSettings" ${deviceSpecific ? 'checked' : ''}>
+                    <span>${esc(this.t('config.deviceSpecificSettings', 'Keep some settings specific to this device'))}</span>
+                </label>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statusRecheckInterval', 'Automatic health rechecks'))}</h3>
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="healthAutoRecheckEnabled" ${s.healthAutoRecheckEnabled ? 'checked' : ''}>
+                    <span>${esc(this.t('config.healthRecheckEnabledLabel', 'Recheck link health automatically'))}</span>
+                </label>
+                <div class="config-field" style="margin-top:12px">
+                    <span class="config-field-label">${esc(this.t('config.healthRecheckIntervalLabel', 'Interval'))}</span>
+                    <select class="config-select" data-backup-select="healthAutoRecheckIntervalHours" ${s.healthAutoRecheckEnabled ? '' : 'disabled'}>${intervalOptions}</select>
+                </div>
+            </div>
+
             <div class="config-panel config-panel--danger">
-                <h3 class="config-panel-title">${esc(this.t('config.backupResetTitle', 'Reset'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.backupResetNote', 'Removes every bookmark, page, and setting. This cannot be undone.'))}</p>
+                <h3 class="config-panel-title">${esc(this.t('config.resetSectionTitle', 'Reset'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.resetOnboardingHint', 'Replay the welcome tour and tips next time you open the dashboard.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-backup-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Reset onboarding & tips'))}</button>
+                </div>
+                <p class="config-panel-note" style="margin-top:16px">${esc(this.t('config.backupResetNote', 'Removes every bookmark, page, and setting. This cannot be undone.'))}</p>
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--danger" data-backup-action="reset">${esc(this.t('config.backupReset', 'Reset all data'))}</button>
                 </div>
@@ -532,14 +591,25 @@ class DashboardConfig {
                 this.handleBackupItem(btn.getAttribute('data-backup-item'), btn.getAttribute('data-backup-name'));
             });
         });
-        const importInput = container.querySelector('#config-import-input');
-        if (importInput) {
-            importInput.addEventListener('change', () => {
-                const file = importInput.files && importInput.files[0];
-                if (file) void this.importBackup(file);
-                importInput.value = '';
+        const bindFileInput = (id, handler) => {
+            const input = container.querySelector(id);
+            if (!input) return;
+            input.addEventListener('change', () => {
+                const file = input.files && input.files[0];
+                if (file) void handler.call(this, file);
+                input.value = '';
             });
-        }
+        };
+        bindFileInput('#config-import-input', this.importBackup);
+        bindFileInput('#config-browser-import-input', this.importBrowserBookmarks);
+        bindFileInput('#config-settings-import-input', this.importSettings);
+
+        container.querySelectorAll('[data-backup-toggle]').forEach((input) => {
+            input.addEventListener('change', () => this.setBackupToggle(input.getAttribute('data-backup-toggle'), input.checked));
+        });
+        container.querySelectorAll('[data-backup-select]').forEach((select) => {
+            select.addEventListener('change', () => this.setBackupSelect(select.getAttribute('data-backup-select'), select.value));
+        });
     }
 
     handleBackupAction(action) {
@@ -547,8 +617,38 @@ class DashboardConfig {
             case 'download': this.downloadFullBackup(); break;
             case 'run': void this.runBackupNow(); break;
             case 'import': document.getElementById('config-import-input')?.click(); break;
+            case 'csv-export': void this.exportBookmarksCSV(); break;
+            case 'browser-import': document.getElementById('config-browser-import-input')?.click(); break;
+            case 'settings-export': void this.exportSettings(); break;
+            case 'settings-import': document.getElementById('config-settings-import-input')?.click(); break;
+            case 'reset-onboarding': void this.resetOnboarding(); break;
             case 'reset': void this.resetAllData(); break;
         }
+    }
+
+    setBackupToggle(name, value) {
+        const d = this.dash;
+        if (name === 'deviceSpecificSettings') {
+            try { localStorage.setItem('deviceSpecificSettings', value ? 'true' : 'false'); } catch { /* ignore */ }
+            this.notify(this.t('config.deviceSpecificSaved', 'Preference saved.'), 'success');
+            return;
+        }
+        if (name === 'autoBackupEnabled' || name === 'healthAutoRecheckEnabled') {
+            d.settings[name] = value;
+            d.saveSettings?.();
+            // Repaint so the interval select enables/disables and the tile updates.
+            if (name === 'autoBackupEnabled') {
+                void this.loadBackupData();
+            } else {
+                this.repaintBackupSection();
+            }
+        }
+    }
+
+    setBackupSelect(name, value) {
+        if (name !== 'healthAutoRecheckIntervalHours') return;
+        this.dash.settings.healthAutoRecheckIntervalHours = Number(value) || 24;
+        this.dash.saveSettings?.();
     }
 
     handleBackupItem(action, name) {
@@ -631,6 +731,188 @@ class DashboardConfig {
             setTimeout(() => window.location.reload(), 800);
         } catch {
             this.notify(this.t('config.backupResetError', 'Could not reset data.'), 'error');
+        }
+    }
+
+    /* ── Import / export (ported from the old config) ──────────────────────── */
+
+    triggerDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    async exportBookmarksCSV() {
+        try {
+            const [bookmarksRes, pagesRes] = await Promise.all([
+                fetch('/api/bookmarks?all=true'),
+                fetch('/api/pages'),
+            ]);
+            if (!bookmarksRes.ok || !pagesRes.ok) throw new Error('fetch failed');
+            const bookmarks = await bookmarksRes.json();
+            const pages = await pagesRes.json();
+            const pageNames = Object.fromEntries(pages.map((p) => [p.id, p.name]));
+
+            const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+            const header = ['Name', 'URL', 'Category', 'Page', 'Shortcut', 'Tags', 'Notes'].map(escape).join(',');
+            const rows = (Array.isArray(bookmarks) ? bookmarks : []).map((bm) => [
+                escape(bm.name),
+                escape(bm.url),
+                escape(bm.category || ''),
+                escape(pageNames[bm.pageId] ?? bm.pageId ?? ''),
+                escape(bm.shortcut),
+                escape(Array.isArray(bm.tags) ? bm.tags.join(', ') : ''),
+                escape(bm.note || ''),
+            ].join(','));
+            const csv = '﻿' + [header, ...rows].join('\r\n');
+            const date = new Date().toISOString().slice(0, 10);
+            this.triggerDownload(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `nextdash-bookmarks-${date}.csv`);
+            this.notify(this.t('config.csvExportSuccess', 'Bookmarks exported.'), 'success');
+        } catch {
+            this.notify(this.t('config.csvExportError', 'Could not export bookmarks.'), 'error');
+        }
+    }
+
+    /** Parse a browser-exported Netscape bookmark file into {name,url,category}[]. */
+    parseBrowserBookmarks(html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const bookmarks = [];
+        const walk = (container, folderName) => {
+            const els = Array.from(container.children);
+            for (let i = 0; i < els.length; i++) {
+                const el = els[i];
+                if (el.tagName === 'DT') {
+                    const h3 = el.querySelector('h3');
+                    const a = el.querySelector('a[href]');
+                    if (h3 && !a) {
+                        const name = h3.textContent.trim();
+                        if (i + 1 < els.length && els[i + 1].tagName === 'DL') {
+                            walk(els[i + 1], name);
+                            i++;
+                        }
+                    } else if (a) {
+                        const href = a.getAttribute('href');
+                        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+                            bookmarks.push({ name: a.textContent.trim() || href, url: href, category: folderName });
+                        }
+                    }
+                } else if (el.tagName === 'DL' || el.tagName === 'P') {
+                    walk(el, folderName);
+                }
+            }
+        };
+        const topDl = doc.querySelector('dl');
+        if (topDl) walk(topDl, '');
+        return bookmarks;
+    }
+
+    async importBrowserBookmarks(file) {
+        if (!/\.(html?|htm)$/i.test(file.name)) {
+            this.notify(this.t('config.browserImportInvalidFile', 'Please choose an HTML bookmarks file.'), 'error');
+            return;
+        }
+        let bookmarks;
+        try {
+            bookmarks = this.parseBrowserBookmarks(await file.text());
+        } catch {
+            this.notify(this.t('config.browserImportError', 'Could not read that bookmarks file.'), 'error');
+            return;
+        }
+        if (bookmarks.length === 0) {
+            this.notify(this.t('config.browserImportEmpty', 'No bookmarks found in that file.'), 'error');
+            return;
+        }
+        // Import onto the current page; the server dedups against existing URLs.
+        const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
+        const ok = window.confirm(
+            this.t('config.browserImportConfirm', 'Import {n} bookmarks onto the current page?').replace('{n}', String(bookmarks.length))
+        );
+        if (!ok) return;
+        try {
+            const res = await this.writeFetch('/api/bookmarks/import-browser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pageId, bookmarks }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const result = await res.json().catch(() => ({}));
+            const imported = Number(result.imported) || 0;
+            const skipped = Number(result.skipped) || 0;
+            this.notify(
+                this.t('config.browserImportDone', 'Imported {i}, skipped {s} duplicates. Reloading…')
+                    .replace('{i}', String(imported)).replace('{s}', String(skipped)),
+                'success'
+            );
+            setTimeout(() => window.location.reload(), 1000);
+        } catch {
+            this.notify(this.t('config.browserImportError', 'Could not import the bookmarks.'), 'error');
+        }
+    }
+
+    async exportSettings() {
+        try {
+            const res = await fetch('/api/settings');
+            if (!res.ok) throw new Error(res.statusText);
+            const settings = await res.json();
+            const date = new Date().toISOString().slice(0, 10);
+            this.triggerDownload(
+                new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' }),
+                `nextDash-settings-${date}.json`
+            );
+            this.notify(this.t('config.settingsExportSuccess', 'Settings exported.'), 'success');
+        } catch {
+            this.notify(this.t('config.settingsExportError', 'Could not export settings.'), 'error');
+        }
+    }
+
+    async importSettings(file) {
+        if (file.size > 2 * 1024 * 1024) {
+            this.notify(this.t('config.settingsImportFileTooLarge', 'File too large (max 2 MB).'), 'error');
+            return;
+        }
+        let parsed;
+        try {
+            parsed = JSON.parse(await file.text());
+        } catch {
+            this.notify(this.t('config.settingsImportInvalidJson', 'That is not a valid JSON file.'), 'error');
+            return;
+        }
+        if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+            this.notify(this.t('config.settingsImportInvalidFile', 'That is not a valid settings file.'), 'error');
+            return;
+        }
+        const ok = window.confirm(this.t('config.settingsImportConfirmMessage', 'This will overwrite your current settings. Continue?'));
+        if (!ok) return;
+        // Strip one-time migration markers so the destination runs its migrations.
+        const { tagCloudDefaultMigrated, linkPreviewCardsOffMigrated, hideEmptyCategoriesMigrated, showTipsOffMigrated, ...clean } = parsed;
+        try {
+            const res = await this.writeFetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(clean),
+            });
+            if (!res.ok) throw new Error(res.statusText);
+            this.notify(this.t('config.settingsImportSuccess', 'Settings imported. Reloading…'), 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } catch {
+            this.notify(this.t('config.settingsImportError', 'Could not import settings.'), 'error');
+        }
+    }
+
+    async resetOnboarding() {
+        const ok = window.confirm(this.t('config.resetOnboardingConfirm', 'Replay the welcome tour and tips next time?'));
+        if (!ok) return;
+        this.dash.settings.onboardingCompleted = false;
+        try {
+            await this.dash.saveSettings?.();
+            this.notify(this.t('config.resetOnboardingSuccess', 'Onboarding will replay next time.'), 'success');
+        } catch {
+            this.notify(this.t('config.resetOnboardingError', 'Could not reset onboarding.'), 'error');
         }
     }
 
