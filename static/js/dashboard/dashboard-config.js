@@ -1693,8 +1693,8 @@ class DashboardConfig {
             case 'finders': return this.renderFinders();
             case 'tags': return this.renderTagsManager();
             case 'collections': return this.renderCollections();
-            case 'pages': return this.renderEmbeddedNotice('pages');
-            case 'categories': return this.renderEmbeddedNotice('categories');
+            case 'pages': return this.renderPagesEditor();
+            case 'categories': return this.renderCategoriesEditor();
             default: return '';
         }
     }
@@ -1729,26 +1729,8 @@ class DashboardConfig {
         if (this.ptTab === 'finders') { this.bindFinders(container); void this.loadFinders(); }
         else if (this.ptTab === 'tags') { void this.loadTagsManager(); }
         else if (this.ptTab === 'collections') { this.bindCollections(container); }
-        else if (this.ptTab === 'pages' || this.ptTab === 'categories') { void this.mountEmbeddedStructure(this.ptTab); }
-    }
-
-    renderEmbeddedNotice(which) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const label = this.ptTabLabel(which);
-        return `<div id="config-embed-host-${esc(which)}" class="config-embed-host">
-            <p class="config-view-loading">${esc(this.t('config.embedLoading', 'Loading {name}…').replace('{name}', label))}</p>
-        </div>`;
-    }
-
-    async mountEmbeddedStructure(which) {
-        // Pages & categories are embedded in a later step; for now show a clear,
-        // non-broken placeholder pointing at where they will live.
-        const host = document.getElementById(`config-embed-host-${which}`);
-        if (host) {
-            host.innerHTML = `<p class="config-panel-empty">${this.dash.escapeHtml(
-                this.t('config.embedComingSoon', 'This editor is being moved into the view.')
-            )}</p>`;
-        }
+        else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
+        else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
     }
 
     /* ── Finders (native) ──────────────────────────────────────────────────── */
@@ -1991,6 +1973,227 @@ class DashboardConfig {
 
     bindCollections(container) {
         this.bindControlPanels(container, 'collection');
+    }
+
+    /* ── Pages (native) ────────────────────────────────────────────────────── */
+
+    renderPagesEditor() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const rows = pages.map((p, i) => {
+            const isFirst = Number(p.id) === 1;
+            return `
+            <li class="config-crud-row" data-page-row="${esc(p.id)}">
+                <div class="config-crud-fields">
+                    <input type="text" class="config-text" style="min-width:56px;max-width:64px" data-page="icon" data-id="${esc(p.id)}" placeholder="📄" value="${esc(p.icon || '')}">
+                    <input type="text" class="config-text" data-page="name" data-id="${esc(p.id)}" placeholder="${esc(this.t('config.pageNamePlaceholder', 'Page name'))}" value="${esc(p.name || '')}">
+                    <input type="color" class="config-color" data-page="color" data-id="${esc(p.id)}" value="${esc(p.color || '#888888')}" title="${esc(this.t('config.pageColorLabel', 'Tab colour'))}">
+                </div>
+                <div class="config-crud-row-actions">
+                    <button type="button" class="config-btn config-btn--small" data-page-move="up" data-id="${esc(p.id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
+                    <button type="button" class="config-btn config-btn--small" data-page-move="down" data-id="${esc(p.id)}" ${i === pages.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
+                    <button type="button" class="config-btn config-btn--small config-btn--danger" data-page-delete="${esc(p.id)}" ${isFirst ? 'disabled title="' + esc(this.t('config.pageDeleteFirstBlocked', 'The first page cannot be deleted')) + '"' : ''}>${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                </div>
+            </li>`;
+        }).join('');
+        return `
+            <p class="config-panel-note">${esc(this.t('config.pagesIntroView', 'Rename, recolour, reorder (↑ ↓), add, or remove dashboard pages. The first page cannot be removed.'))}</p>
+            <ul class="config-crud-list">${rows}</ul>
+            <div class="config-actions">
+                <button type="button" class="config-btn" data-page-add>${esc(this.t('config.pageAdd', 'Add page'))}</button>
+            </div>
+        `;
+    }
+
+    bindPagesEditor(container) {
+        container.querySelectorAll('[data-page]').forEach((input) => {
+            input.addEventListener('change', () => {
+                const id = Number(input.getAttribute('data-id'));
+                const key = input.getAttribute('data-page');
+                const page = (this.dash.pages || []).find((p) => Number(p.id) === id);
+                if (page) { page[key] = input.value; void this.savePages(); }
+            });
+        });
+        const addBtn = container.querySelector('[data-page-add]');
+        if (addBtn) addBtn.addEventListener('click', () => void this.addPage());
+        container.querySelectorAll('[data-page-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.deletePage(Number(btn.getAttribute('data-page-delete'))));
+        });
+        container.querySelectorAll('[data-page-move]').forEach((btn) => {
+            btn.addEventListener('click', () => this.movePage(Number(btn.getAttribute('data-id')), btn.getAttribute('data-page-move')));
+        });
+    }
+
+    async savePages() {
+        try {
+            const res = await this.writeFetch('/api/pages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.dash.pages || []),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.dash.pageNav?.renderPageNavigation?.();
+        } catch {
+            this.notify(this.t('config.pagesSaveError', 'Could not save pages.'), 'error');
+        }
+    }
+
+    async addPage() {
+        const pages = this.dash.pages || [];
+        const maxId = pages.length ? Math.max(...pages.map((p) => Number(p.id) || 0)) : 0;
+        const newPage = { id: maxId + 1, name: `${this.t('config.pagePrefix', 'Page')} ${maxId + 1}` };
+        pages.push(newPage);
+        await this.savePages();
+        this.repaintPtBody();
+    }
+
+    async deletePage(id) {
+        if (Number(id) === 1) return;
+        if (!window.confirm(this.t('config.pageDeleteConfirm', 'Delete this page and its bookmarks?'))) return;
+        try {
+            const res = await this.writeFetch(`/api/pages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.dash.pages = (this.dash.pages || []).filter((p) => Number(p.id) !== Number(id));
+            this.dash.pageNav?.renderPageNavigation?.();
+            this.notify(this.t('config.pageDeleted', 'Page deleted.'), 'success');
+            this.repaintPtBody();
+        } catch {
+            this.notify(this.t('config.pagesSaveError', 'Could not delete the page.'), 'error');
+        }
+    }
+
+    movePage(id, dir) {
+        const pages = this.dash.pages || [];
+        const idx = pages.findIndex((p) => Number(p.id) === Number(id));
+        if (idx < 0) return;
+        const swap = dir === 'up' ? idx - 1 : idx + 1;
+        if (swap < 0 || swap >= pages.length) return;
+        [pages[idx], pages[swap]] = [pages[swap], pages[idx]];
+        void this.savePages();
+        this.repaintPtBody();
+    }
+
+    /* ── Categories (native, per page) ─────────────────────────────────────── */
+
+    renderCategoriesEditor() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const pageId = this._catPageId != null ? this._catPageId : (this.dash.currentPageId ?? pages[0]?.id);
+        const pageOptions = pages.map((p) =>
+            `<option value="${esc(p.id)}" ${Number(p.id) === Number(pageId) ? 'selected' : ''}>${esc(p.name || p.id)}</option>`
+        ).join('');
+        let body;
+        if (this._categories == null) {
+            body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+        } else if (this._categories.length === 0) {
+            body = `<p class="config-panel-empty">${esc(this.t('config.categoriesEmpty', 'No categories on this page yet.'))}</p>`;
+        } else {
+            const rows = this._categories.map((c, i) => `
+                <li class="config-crud-row" data-cat-row="${i}">
+                    <div class="config-crud-fields">
+                        <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
+                    </div>
+                    <div class="config-crud-row-actions">
+                        <button type="button" class="config-btn config-btn--small" data-cat-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''}>↑</button>
+                        <button type="button" class="config-btn config-btn--small" data-cat-move="down" data-index="${i}" ${i === this._categories.length - 1 ? 'disabled' : ''}>↓</button>
+                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-cat-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                    </div>
+                </li>`).join('');
+            body = `<ul class="config-crud-list">${rows}</ul>`;
+        }
+        return `
+            <p class="config-panel-note">${esc(this.t('config.categoriesIntroView', 'Categories group bookmarks within a page. Pick a page, then rename, reorder (↑ ↓), add, or remove its categories.'))}</p>
+            <div class="config-field">
+                <span class="config-field-label">${esc(this.t('config.categoriesPageLabel', 'Page'))}</span>
+                <select class="config-select" data-cat-page>${pageOptions}</select>
+            </div>
+            ${body}
+            <div class="config-actions">
+                <button type="button" class="config-btn" data-cat-add>${esc(this.t('config.categoryAdd', 'Add category'))}</button>
+            </div>
+        `;
+    }
+
+    async loadCategoriesEditor() {
+        const pages = this.dash.pages || [];
+        const pageId = this._catPageId != null ? this._catPageId : (this.dash.currentPageId ?? pages[0]?.id);
+        this._catPageId = pageId;
+        // Already loaded for this page — don't refetch/repaint and detach controls.
+        if (this._categories != null && this._catLoadedFor === pageId) return;
+        try {
+            const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
+            const data = res && res.ok ? await res.json() : [];
+            this._categories = Array.isArray(data) ? data : [];
+        } catch {
+            this._categories = [];
+        }
+        this._catLoadedFor = pageId;
+        if (this.ptTab === 'categories') this.repaintPtBody();
+    }
+
+    bindCategoriesEditor(container) {
+        const pageSelect = container.querySelector('[data-cat-page]');
+        if (pageSelect) {
+            pageSelect.addEventListener('change', () => {
+                this._catPageId = Number(pageSelect.value);
+                this._categories = null;
+                this.repaintPtBody();
+                void this.loadCategoriesEditor();
+            });
+        }
+        container.querySelectorAll('[data-cat="name"]').forEach((input) => {
+            input.addEventListener('change', () => {
+                const i = Number(input.getAttribute('data-index'));
+                if (this._categories && this._categories[i]) {
+                    this._categories[i].name = input.value;
+                    void this.saveCategories();
+                }
+            });
+        });
+        const addBtn = container.querySelector('[data-cat-add]');
+        if (addBtn) addBtn.addEventListener('click', () => {
+            this._categories = this._categories || [];
+            // Categories need a stable id; the server does not backfill one.
+            const id = `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+            this._categories.push({ id, name: this.t('config.categoryNewName', 'New category') });
+            this.repaintPtBody();
+            void this.saveCategories();
+        });
+        container.querySelectorAll('[data-cat-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const i = Number(btn.getAttribute('data-cat-delete'));
+                if (this._categories && this._categories[i]) {
+                    this._categories.splice(i, 1);
+                    this.repaintPtBody();
+                    void this.saveCategories();
+                }
+            });
+        });
+        container.querySelectorAll('[data-cat-move]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const i = Number(btn.getAttribute('data-index'));
+                const dir = btn.getAttribute('data-cat-move');
+                const swap = dir === 'up' ? i - 1 : i + 1;
+                if (!this._categories || swap < 0 || swap >= this._categories.length) return;
+                [this._categories[i], this._categories[swap]] = [this._categories[swap], this._categories[i]];
+                this.repaintPtBody();
+                void this.saveCategories();
+            });
+        });
+    }
+
+    async saveCategories() {
+        try {
+            const res = await this.writeFetch(`/api/categories?page=${encodeURIComponent(this._catPageId)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this._categories || []),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.dash.renderDashboard?.({ animate: false });
+        } catch {
+            this.notify(this.t('config.categoriesSaveError', 'Could not save categories.'), 'error');
+        }
     }
 }
 

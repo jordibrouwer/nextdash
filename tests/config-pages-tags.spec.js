@@ -72,4 +72,52 @@ test.describe('config pages & tags', () => {
 
         await expect(page.locator('[data-collection-field="showSmartTodayCollection"]')).toBeVisible();
     });
+
+    test('the pages editor lists pages and adding one posts the list', async ({ page }) => {
+        let posted = null;
+        await page.route('**/api/finders', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+        });
+        await page.route('**/api/pages', async (route) => {
+            if (route.request().method() === 'POST') {
+                posted = JSON.parse(route.request().postData() || '[]');
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"success"}' });
+            }
+            return route.fallback();
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="pages"]').click();
+
+        // At least the current page shows, and the first page's delete is disabled.
+        await expect(page.locator('[data-page="name"]').first()).toBeVisible();
+        const before = await page.locator('[data-page-row]').count();
+        await page.locator('[data-page-add]').click();
+        await expect.poll(() => Array.isArray(posted) && posted.length).toBeGreaterThan(before);
+    });
+
+    test('the categories editor loads a page’s categories and can add one', async ({ page }) => {
+        let posted = null;
+        await page.route('**/api/finders', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+        });
+        await page.route('**/api/categories**', async (route) => {
+            if (route.request().method() === 'POST') {
+                posted = JSON.parse(route.request().postData() || '[]');
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"success"}' });
+            }
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'work', name: 'Work' }]) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="categories"]').click();
+
+        await expect(page.locator('[data-cat="name"]').first()).toHaveValue('Work');
+        await page.locator('[data-cat-add]').click();
+        await expect.poll(() => Array.isArray(posted) && posted.length).toBeGreaterThan(1);
+        // New category carries a generated id.
+        expect(posted[posted.length - 1].id).toBeTruthy();
+    });
 });

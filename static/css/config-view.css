@@ -522,6 +522,23 @@
     white-space: nowrap;
 }
 
+.config-crud-row-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.config-color {
+    width: 34px;
+    height: 34px;
+    padding: 2px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 8px;
+    background: var(--card-bg, transparent);
+    cursor: pointer;
+    flex: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .config-choice {
         transition: none;
