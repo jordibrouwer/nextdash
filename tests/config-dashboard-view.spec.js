@@ -333,6 +333,56 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('#config-theme-colors-panel #theme-colors-editor')).toBeVisible();
     });
 
+    test('the behavior section renders grouped settings controls', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+
+        await expect(page.locator('[data-behavior-field="openInNewTab"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="dateFormat"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="columnsPerRow"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="showStatus"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="pasteDestination"]')).toBeVisible();
+        // Several grouped panels are present.
+        expect(await page.locator('.config-view-main .config-panel').count()).toBeGreaterThan(4);
+    });
+
+    test('toggling a behavior setting saves it and re-renders', async ({ page }) => {
+        let saved = null;
+        await page.route('**/api/settings', async (route) => {
+            if (route.request().method() === 'POST') {
+                saved = JSON.parse(route.request().postData() || '{}');
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            }
+            return route.fallback();
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.openInNewTab = false;
+            window.dashboardInstance.config.openConfigView('behavior');
+        });
+
+        await page.locator('[data-behavior-field="openInNewTab"]').check();
+
+        await expect.poll(() => saved && saved.openInNewTab).toBe(true);
+    });
+
+    test('changing a behavior select (date format) saves the value', async ({ page }) => {
+        let saved = null;
+        await page.route('**/api/settings', async (route) => {
+            if (route.request().method() === 'POST') {
+                saved = JSON.parse(route.request().postData() || '{}');
+                return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+            }
+            return route.fallback();
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+
+        await page.locator('[data-behavior-field="dateFormat"]').selectOption('iso');
+
+        await expect.poll(() => saved && saved.dateFormat).toBe('iso');
+    });
+
     test('choosing a font size applies the body class and saves', async ({ page }) => {
         let saved = null;
         await page.route('**/api/settings', async (route) => {

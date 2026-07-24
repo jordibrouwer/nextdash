@@ -186,6 +186,8 @@ class DashboardConfig {
         } else if (this.section === 'appearance') {
             this.bindAppearanceControls(container);
             void this.loadThemeList();
+        } else if (this.section === 'behavior') {
+            this.bindBehaviorControls(container);
         }
     }
 
@@ -227,6 +229,9 @@ class DashboardConfig {
         }
         if (this.section === 'appearance') {
             return this.renderAppearance();
+        }
+        if (this.section === 'behavior') {
+            return this.renderBehavior();
         }
         // Other sections are rewritten in later phases; a placeholder keeps the
         // view navigable meanwhile.
@@ -1432,6 +1437,212 @@ class DashboardConfig {
             setTimeout(() => window.location.reload(), 1000);
         } catch {
             this.notify(this.t('config.faviconUploadError', 'Could not upload the favicon.'), 'error');
+        }
+    }
+
+    /* ── Behavior ──────────────────────────────────────────────────────────── */
+
+    /**
+     * Declarative schema for the behaviour settings, grouped into panels. Each
+     * control names the settings field it binds, its type, and (for selects) its
+     * options. A generic renderer/binder drives them so the whole set stays in
+     * one place — this mirrors the old config's general/keyboard/language tabs.
+     */
+    behaviorSchema() {
+        const t = (k, f) => this.t(k, f);
+        const bool = (field, label, fallback) => ({ field, type: 'checkbox', label: t(label, fallback) });
+        const opt = (value, label) => ({ value, label });
+        return [
+            {
+                title: t('config.generalGroupGeneral', 'General'),
+                controls: [
+                    { field: 'language', type: 'select', label: t('config.languageLabel', 'Language'), special: 'language', options: [
+                        opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'),
+                    ] },
+                    bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
+                    bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
+                    bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
+                    bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional tips'),
+                    bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
+                ],
+            },
+            {
+                title: t('config.generalGroupDateTime', 'Date, time & weather'),
+                controls: [
+                    { field: 'dateFormat', type: 'select', label: t('config.dateFormatLabel', 'Date format'), special: 'datetime', options: [
+                        opt('short-slash', '31/12/2026'), opt('short-dash', '31-12-2026'), opt('mm-slash', '12/31/2026'),
+                        opt('iso', '2026-12-31'), opt('weekday-only', 'Thursday'), opt('long-weekday', 'Thu 31 Dec'),
+                    ] },
+                    { field: 'timeFormat', type: 'select', label: t('config.timeFormatLabel', 'Time format'), special: 'datetime', options: [
+                        opt('24h', '23:59'), opt('12h', '11:59 PM'),
+                    ] },
+                    bool('showDate', 'config.showDateLabel', 'Show the date'),
+                    bool('showTime', 'config.showTimeLabel', 'Show the time'),
+                    bool('showWeatherWithDate', 'config.showWeatherWithDate', 'Show weather next to the date'),
+                    { field: 'weatherUnit', type: 'select', label: t('config.weatherUnitLabel', 'Temperature unit'), special: 'datetime', options: [
+                        opt('celsius', '°C'), opt('fahrenheit', '°F'),
+                    ] },
+                    { field: 'weatherLocation', type: 'text', label: t('config.weatherLocationLabel', 'Weather location'), special: 'datetime' },
+                ],
+            },
+            {
+                title: t('config.generalGroupLayout', 'Bookmarks layout'),
+                controls: [
+                    { field: 'columnsPerRow', type: 'number', label: t('config.columnsLabel', 'Columns'), min: 1, max: 12, special: 'render' },
+                    { field: 'densityMode', type: 'select', label: t('config.densityLabel', 'Density'), special: 'render', options: [
+                        opt('comfortable', t('config.densityComfortable', 'Comfortable')), opt('compact', t('config.densityCompact', 'Compact')),
+                        opt('dense', t('config.densityDense', 'Dense')), opt('auto', t('config.densityAuto', 'Auto')),
+                    ] },
+                    bool('packedColumns', 'config.packedColumnsLabel', 'Pack columns tightly'),
+                    bool('interleaveMode', 'config.interleaveModeLabel', 'Interleave categories across columns'),
+                    bool('hideEmptyCategories', 'config.hideEmptyCategoriesLabel', 'Hide empty categories'),
+                    bool('alwaysCollapseCategories', 'config.alwaysCollapseCategoriesLabel', 'Start with categories collapsed'),
+                ],
+            },
+            {
+                title: t('config.generalGroupBookmarkDisplay', 'Bookmark display'),
+                controls: [
+                    bool('showShortcuts', 'config.showShortcutsLabel', 'Show shortcut letters'),
+                    bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
+                    bool('showPing', 'config.showPingLabel', 'Show ping times'),
+                    bool('showLinkPreviewCards', 'config.showLinkPreviewCardsLabel', 'Show link preview cards'),
+                ],
+            },
+            {
+                title: t('config.generalGroupChrome', 'Toolbar & tabs'),
+                controls: [
+                    bool('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
+                    bool('showPageNamesInTabs', 'config.showPageNamesInTabsLabel', 'Show page names in tabs'),
+                    bool('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
+                    bool('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
+                    bool('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
+                    bool('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
+                    bool('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
+                    bool('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
+                ],
+            },
+            {
+                title: t('config.generalGroupSearch', 'Search'),
+                controls: [
+                    bool('includeFindersInSearch', 'config.includeFindersInSearch', 'Include finders in search'),
+                    bool('enableFuzzySuggestions', 'config.enableFuzzySuggestions', 'Fuzzy search suggestions'),
+                    bool('fuzzySuggestionsStartWith', 'config.fuzzySuggestionsStartWith', 'Prefer matches that start with the query'),
+                    bool('keepSearchOpenWhenEmpty', 'config.keepSearchOpenWhenEmpty', 'Keep search open when empty'),
+                    bool('showSearchFlowBanner', 'config.showSearchFlowBanner', 'Show the search flow hint'),
+                ],
+            },
+            {
+                title: t('config.generalGroupQuickAdd', 'Quick add & inbox'),
+                controls: [
+                    bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
+                    bool('inboxEnabled', 'config.inboxEnabledLabel', 'Enable the inbox'),
+                    { field: 'pasteDestination', type: 'select', label: t('config.pasteDestinationLabel', 'Paste destination'), options: [
+                        opt('ask', t('config.pasteDestinationAsk', 'Ask each time')), opt('bookmark', t('config.pasteDestinationBookmark', 'New bookmark')),
+                        opt('inbox', t('config.pasteDestinationInbox', 'Inbox')),
+                    ] },
+                ],
+            },
+            {
+                title: t('config.generalGroupPrivacy', 'Privacy'),
+                controls: [
+                    { field: 'analyticsOptIn', type: 'checkbox', label: t('config.usageAnalyticsLabel', 'Share anonymous usage analytics'), disabled: this.dash.telemetryLockedOff === true },
+                ],
+            },
+        ];
+    }
+
+    renderBehavior() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const renderControl = (c) => {
+            const val = s[c.field];
+            if (c.type === 'checkbox') {
+                return `
+                    <label class="config-toggle">
+                        <input type="checkbox" data-behavior-field="${esc(c.field)}" data-behavior-type="checkbox"
+                            ${val ? 'checked' : ''} ${c.disabled ? 'disabled' : ''}>
+                        <span>${esc(c.label)}</span>
+                    </label>`;
+            }
+            if (c.type === 'select') {
+                const opts = c.options.map((o) =>
+                    `<option value="${esc(o.value)}" ${String(val) === String(o.value) ? 'selected' : ''}>${esc(o.label)}</option>`
+                ).join('');
+                return `
+                    <div class="config-field">
+                        <span class="config-field-label">${esc(c.label)}</span>
+                        <select class="config-select" data-behavior-field="${esc(c.field)}" data-behavior-type="select" data-behavior-special="${esc(c.special || '')}">${opts}</select>
+                    </div>`;
+            }
+            if (c.type === 'number') {
+                return `
+                    <div class="config-field">
+                        <span class="config-field-label">${esc(c.label)}</span>
+                        <input type="number" class="config-text" style="min-width:80px" data-behavior-field="${esc(c.field)}" data-behavior-type="number" data-behavior-special="${esc(c.special || '')}"
+                            min="${c.min ?? ''}" max="${c.max ?? ''}" value="${esc(val ?? '')}">
+                    </div>`;
+            }
+            // text
+            return `
+                <div class="config-field">
+                    <span class="config-field-label">${esc(c.label)}</span>
+                    <input type="text" class="config-text" data-behavior-field="${esc(c.field)}" data-behavior-type="text" data-behavior-special="${esc(c.special || '')}" value="${esc(val ?? '')}">
+                </div>`;
+        };
+        const panels = this.behaviorSchema().map((panel) => `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(panel.title)}</h3>
+                ${panel.controls.map(renderControl).join('')}
+            </div>
+        `).join('');
+        return `
+            <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>
+            ${panels}
+        `;
+    }
+
+    bindBehaviorControls(container) {
+        container.querySelectorAll('[data-behavior-field]').forEach((el) => {
+            const field = el.getAttribute('data-behavior-field');
+            const type = el.getAttribute('data-behavior-type');
+            const special = el.getAttribute('data-behavior-special') || '';
+            if (type === 'checkbox') {
+                el.addEventListener('change', () => this.setBehavior(field, el.checked, special));
+            } else if (type === 'select') {
+                el.addEventListener('change', () => this.setBehavior(field, el.value, special));
+            } else if (type === 'number') {
+                el.addEventListener('change', () => this.setBehavior(field, Number(el.value), special));
+            } else {
+                // Text: save on blur/change so typing is not interrupted by re-renders.
+                el.addEventListener('change', () => this.setBehavior(field, el.value, special));
+            }
+        });
+    }
+
+    /** Apply a behaviour setting: mutate, run any special apply, save. */
+    async setBehavior(field, value, special) {
+        const d = this.dash;
+        d.settings[field] = value;
+        switch (special) {
+            case 'language':
+                await d.language?.init?.(value);
+                d.renderDashboard?.({ animate: false });
+                break;
+            case 'datetime':
+                d.renderDateWeatherLine?.();
+                break;
+            case 'render':
+                d.renderDashboard?.({ animate: false });
+                break;
+            default:
+                // Most display toggles are read at render time.
+                d.renderDashboard?.({ animate: false });
+                break;
+        }
+        try {
+            await d.saveSettings?.();
+        } catch {
+            this.notify(this.t('config.behaviorSaveError', 'Could not save that change.'), 'error');
         }
     }
 }
