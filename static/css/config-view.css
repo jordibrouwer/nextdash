@@ -54,7 +54,7 @@
     background: transparent;
     color: var(--text-muted, #777);
     font: inherit;
-    font-size: 0.9rem;
+    font-size: calc(var(--font-size-text) * 1.029);
     cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease;
 }
@@ -83,7 +83,7 @@
 
 .config-view-section-title {
     margin: 0 0 4px;
-    font-size: 1.3rem;
+    font-size: calc(var(--font-size-text) * 1.486);
     font-weight: 600;
 }
 
@@ -142,14 +142,14 @@
 .config-tile--neutral { --tile-stripe: var(--border-color, rgba(128, 128, 128, 0.5)); }
 
 .config-tile-label {
-    font-size: 0.72rem;
+    font-size: calc(var(--font-size-text) * 0.823);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--text-muted, #888);
 }
 
 .config-tile-value {
-    font-size: 1.7rem;
+    font-size: calc(var(--font-size-text) * 1.943);
     font-weight: 600;
     line-height: 1;
     font-variant-numeric: tabular-nums;
@@ -157,7 +157,7 @@
 
 .config-tile-detail {
     margin: 0;
-    font-size: 0.78rem;
+    font-size: calc(var(--font-size-text) * 0.891);
     color: var(--text-muted, #888);
 }
 
@@ -202,27 +202,27 @@
 
 .config-panel-title {
     margin: 0 0 12px;
-    font-size: 0.95rem;
+    font-size: calc(var(--font-size-text) * 1.086);
     font-weight: 600;
 }
 
 .config-panel-note {
     margin: 0 0 12px;
     color: var(--text-muted, #888);
-    font-size: 0.85rem;
+    font-size: calc(var(--font-size-text) * 0.971);
     max-width: 60ch;
 }
 
 .config-panel-empty {
     margin: 0;
     color: var(--text-muted, #888);
-    font-size: 0.88rem;
+    font-size: calc(var(--font-size-text) * 1.006);
 }
 
 .config-view-loading {
     margin: 0;
     color: var(--text-muted, #888);
-    font-size: 0.88rem;
+    font-size: calc(var(--font-size-text) * 1.006);
 }
 
 .config-actions {
@@ -240,7 +240,7 @@
     background: var(--button-bg, transparent);
     color: var(--text-color, inherit);
     font: inherit;
-    font-size: 0.85rem;
+    font-size: calc(var(--font-size-text) * 0.971);
     cursor: pointer;
     transition: background 0.12s ease, border-color 0.12s ease;
 }
@@ -257,7 +257,7 @@
 
 .config-btn--small {
     padding: 5px 10px;
-    font-size: 0.78rem;
+    font-size: calc(var(--font-size-text) * 0.891);
 }
 
 .config-btn--danger {
@@ -299,12 +299,12 @@
 }
 
 .config-backup-name {
-    font-size: 0.88rem;
+    font-size: calc(var(--font-size-text) * 1.006);
     font-weight: 500;
 }
 
 .config-backup-size {
-    font-size: 0.75rem;
+    font-size: calc(var(--font-size-text) * 0.857);
     color: var(--text-muted, #888);
     font-variant-numeric: tabular-nums;
 }
@@ -330,7 +330,7 @@
 }
 
 .config-field-label {
-    font-size: 0.85rem;
+    font-size: calc(var(--font-size-text) * 0.971);
     color: var(--text-muted, #888);
     min-width: 84px;
 }
@@ -352,7 +352,7 @@
     background: transparent;
     color: var(--text-muted, #888);
     font: inherit;
-    font-size: 0.82rem;
+    font-size: calc(var(--font-size-text) * 0.937);
     cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease;
 }
@@ -377,7 +377,7 @@
     align-items: center;
     gap: 9px;
     margin-top: 12px;
-    font-size: 0.88rem;
+    font-size: calc(var(--font-size-text) * 1.006);
     cursor: pointer;
 }
 
@@ -395,7 +395,7 @@
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
     color: var(--text-color, inherit);
     font: inherit;
-    font-size: 0.85rem;
+    font-size: calc(var(--font-size-text) * 0.971);
     cursor: pointer;
 }
 
@@ -416,7 +416,7 @@
     background: var(--card-bg, rgba(128, 128, 128, 0.04));
     color: var(--text-color, inherit);
     font: inherit;
-    font-size: 0.85rem;
+    font-size: calc(var(--font-size-text) * 0.971);
     min-width: 200px;
 }
 
@@ -438,7 +438,7 @@
 }
 
 .config-range-value {
-    font-size: 0.8rem;
+    font-size: calc(var(--font-size-text) * 0.914);
     color: var(--text-muted, #888);
     font-variant-numeric: tabular-nums;
     min-width: 40px;
@@ -462,7 +462,7 @@
     background: transparent;
     color: var(--text-muted, #888);
     font: inherit;
-    font-size: 0.88rem;
+    font-size: calc(var(--font-size-text) * 1.006);
     cursor: pointer;
 }
 
@@ -515,7 +515,7 @@
 }
 
 .config-tag-count {
-    font-size: 0.78rem;
+    font-size: calc(var(--font-size-text) * 0.891);
     color: var(--text-muted, #888);
     font-variant-numeric: tabular-nums;
     align-self: center;
@@ -563,7 +563,7 @@
     border-radius: 50%;
     background: transparent;
     color: var(--text-muted, #999);
-    font-size: 0.78rem;
+    font-size: calc(var(--font-size-text) * 0.891);
     line-height: 1;
     cursor: pointer;
     display: inline-flex;
@@ -580,7 +580,7 @@
 /* Reset button only shows when the value differs from the installation default. */
 .config-reset-btn {
     visibility: hidden;
-    font-size: 0.95rem;
+    font-size: calc(var(--font-size-text) * 1.086);
 }
 
 .config-reset-btn.is-visible {
@@ -602,10 +602,773 @@
 .config-field-hint {
     margin: 4px 0 12px;
     padding-left: 2px;
-    font-size: 0.8rem;
+    font-size: calc(var(--font-size-text) * 0.914);
     line-height: 1.5;
     color: var(--text-muted, #888);
     max-width: 70ch;
+}
+
+/* ── Overview ────────────────────────────────────────────────────────────── */
+
+/* Two columns where there is room; the panels stack on a narrow window. */
+.config-overview-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0 18px;
+    align-items: start;
+}
+
+/* "Needs attention" rows: count, what it is, and the way to deal with it. */
+.config-attention-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-attention-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
+    border-left-width: 3px;
+    border-radius: 9px;
+}
+
+.config-attention-row--crit { border-left-color: var(--accent-error, #d1493f); }
+.config-attention-row--warn { border-left-color: var(--accent-warning, #cf9014); }
+.config-attention-row--neutral { border-left-color: var(--border-primary, rgba(128, 128, 128, 0.5)); }
+
+.config-attention-count {
+    font-size: calc(var(--font-size-text) * 1.35);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 1.6em;
+    text-align: right;
+}
+
+.config-attention-row--crit .config-attention-count { color: var(--accent-error, #d1493f); }
+.config-attention-row--warn .config-attention-count { color: var(--accent-warning, #cf9014); }
+
+.config-attention-label {
+    overflow-wrap: anywhere;
+}
+
+.config-attention-clear {
+    margin: 0;
+    color: var(--accent-success, #2fa968);
+    font-size: calc(var(--font-size-text) * 0.95);
+}
+
+/* Compact key/value list used by the at-a-glance panel. */
+.config-mini-list {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.config-mini-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 0;
+    font-size: calc(var(--font-size-text) * 0.95);
+    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.14));
+}
+
+.config-mini-row:last-child {
+    border-bottom: none;
+}
+
+.config-mini-value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.config-score--compact {
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.config-score--compact > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.config-score--compact .config-score-value {
+    font-size: calc(var(--font-size-text) * 1.9);
+    min-width: 2.2em;
+}
+
+.config-score--compact .config-field-hint {
+    margin: 4px 0 0;
+}
+
+.config-release-tag {
+    margin: 0 0 6px;
+    font-weight: 600;
+    font-size: calc(var(--font-size-text) * 0.95);
+    color: var(--accent-color, #4a90d9);
+}
+
+/* ── Save state ──────────────────────────────────────────────────────────── */
+
+.config-view-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/*
+ * Settings here save on change, so this indicator is the only confirmation a
+ * change landed. It is fixed rather than sitting in the header because the
+ * header scrolls away on the long tabs, and a confirmation you have to scroll
+ * back up to read confirms nothing. Bottom-centre keeps it clear of the section
+ * rail on the left and the dashboard's own controls on the right.
+ */
+.config-save-state {
+    position: fixed;
+    /* Right-hand side rather than centred: the dashboard's own button dock sits
+       bottom-centre, and z-index alone would leave the two stacked on top of
+       each other. Above the notification layer (2001) so a save is never hidden
+       behind chrome, and lifted clear of the toast that shares this corner. */
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 52px);
+    transform: translateY(6px);
+    z-index: 2100;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+    background: var(--background-secondary, rgba(20, 20, 20, 0.92));
+    color: var(--text-secondary, #666);
+    font-size: calc(var(--font-size-text) * 0.88);
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+/* Empty means idle: nothing to say, so nothing is shown. */
+.config-save-state:empty {
+    display: none;
+}
+
+.config-save-state.is-saving,
+.config-save-state.is-saved,
+.config-save-state.is-error {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.config-save-state.is-saved {
+    border-color: var(--accent-success, #2fa968);
+    color: var(--accent-success, #2fa968);
+}
+
+.config-save-state.is-error {
+    border-color: var(--accent-error, #d1493f);
+    color: var(--accent-error, #d1493f);
+    /* An error must not fade on its own the way a success does. */
+    pointer-events: auto;
+}
+
+.config-save-state.is-saved::before {
+    content: "✓ ";
+}
+
+.config-save-state.is-error::before {
+    content: "⚠ ";
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-save-state {
+        transition: none;
+    }
+}
+
+/* ── Statistics visualisations ───────────────────────────────────────────── */
+
+/* Screen-reader table carrying the chart's numbers. */
+.config-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.config-score {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.config-score-value {
+    font-size: calc(var(--font-size-text) * 2.4);
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    min-width: 3.2em;
+}
+
+.config-score-value--good { color: var(--accent-success, #2fa968); }
+.config-score-value--warn { color: var(--accent-warning, #cf9014); }
+.config-score-value--crit { color: var(--accent-error, #d1493f); }
+
+/* One bar primitive, reused by the score, the coverage ratios and the
+   per-page distribution. */
+.config-bar {
+    flex: 1;
+    height: 10px;
+    min-width: 0;
+    border-radius: 999px;
+    background: var(--border-primary, rgba(128, 128, 128, 0.22));
+    overflow: hidden;
+}
+
+.config-bar--slim {
+    height: 6px;
+}
+
+.config-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent-color, #4a90d9);
+    transition: width 0.25s ease;
+}
+
+.config-bar-fill--good { background: var(--accent-success, #2fa968); }
+.config-bar-fill--warn { background: var(--accent-warning, #cf9014); }
+.config-bar-fill--crit { background: var(--accent-error, #d1493f); }
+
+@media (prefers-reduced-motion: reduce) {
+    .config-bar-fill {
+        transition: none;
+    }
+}
+
+.config-stat-details {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.config-stat-detail {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: calc(var(--font-size-text) * 0.95);
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.14));
+}
+
+.config-stat-detail:last-child {
+    border-bottom: none;
+}
+
+.config-stat-detail--good { color: var(--accent-success, #2fa968); }
+.config-stat-detail--warn { color: var(--accent-warning, #cf9014); }
+.config-stat-detail--bad  { color: var(--accent-error, #d1493f); }
+
+.config-stat-penalty {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.config-stat-sub {
+    color: var(--text-muted, #888);
+}
+
+.config-stat-figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 12px 0;
+    font-size: calc(var(--font-size-text) * 0.95);
+}
+
+.config-stat-trend--up   { color: var(--accent-success, #2fa968); }
+.config-stat-trend--down { color: var(--accent-error, #d1493f); }
+
+/* The activity bar chart. Fixed height, full width, labels underneath. */
+.config-chart {
+    margin-top: 6px;
+}
+
+.config-chart svg {
+    display: block;
+    width: 100%;
+    height: 72px;
+}
+
+.config-chart-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
+.config-ratio {
+    margin-bottom: 14px;
+}
+
+.config-ratio:last-child {
+    margin-bottom: 0;
+}
+
+.config-ratio-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 5px;
+    font-size: calc(var(--font-size-text) * 0.95);
+}
+
+.config-ratio-label {
+    font-weight: 600;
+}
+
+.config-ratio-value {
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Distribution rows: label, bar, count — aligned in a grid so the bars line up. */
+.config-dist-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.config-dist-row {
+    display: grid;
+    grid-template-columns: minmax(6rem, 11rem) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.config-dist-label {
+    font-size: calc(var(--font-size-text) * 0.95);
+    overflow-wrap: anywhere;
+}
+
+.config-dist-count {
+    font-variant-numeric: tabular-nums;
+    font-size: calc(var(--font-size-text) * 0.95);
+    color: var(--text-muted, #888);
+    min-width: 2.5em;
+    text-align: right;
+}
+
+@media (max-width: 560px) {
+    .config-dist-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .config-dist-row .config-bar {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Which availability mode a panel's settings actually affect. */
+.config-applies-to {
+    margin-left: 10px;
+    padding: 2px 8px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+    border-radius: 999px;
+    font-size: calc(var(--font-size-text) * 0.800);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-muted, #888);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* The three-mode legend at the top of Status & health. */
+.config-mode-list {
+    list-style: none;
+    margin: 10px 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-mode-row {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+}
+
+.config-mode-name {
+    font-weight: 600;
+    font-size: calc(var(--font-size-text) * 0.914);
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-align: center;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+}
+
+/* Monitor is the one that raises alerts, so it carries the accent. */
+.config-mode-name--monitor {
+    border-color: var(--accent-success, #34d399);
+    color: var(--accent-success, #34d399);
+}
+
+.config-mode-hint {
+    font-size: calc(var(--font-size-text) * 0.971);
+    line-height: 1.55;
+    color: var(--text-secondary, #666);
+}
+
+@media (max-width: 560px) {
+    .config-mode-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2px;
+    }
+
+    .config-mode-name {
+        justify-self: start;
+    }
+}
+
+/* Per-collection page scope: a checkbox per page, wrapping into rows. */
+.config-field-block {
+    margin: 14px 0;
+}
+
+.config-scope-pages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 6px;
+}
+
+.config-scope-page {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(var(--font-size-text) * 0.971);
+    cursor: pointer;
+}
+
+/* Bookmarks section: search + page filter above the list. */
+.config-crud-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.config-crud-toolbar .config-text {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+/* A bookmark row stacks its own grid: the summary and the action buttons share
+   the top line, and the editor drops onto a second line when expanded. The
+   shared .config-crud-row is flex with no wrap, which would squeeze the summary
+   column to nothing, so this overrides the display outright rather than trying
+   to make the editor fit beside it. */
+.config-bm-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    row-gap: 10px;
+    column-gap: 10px;
+}
+
+.config-bm-tick {
+    margin-top: 3px;
+    flex: none;
+    cursor: pointer;
+}
+
+/* Bulk bar: groups wrap as a unit so a group's controls never split across lines. */
+.config-bulk-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--accent-color, rgba(74, 144, 217, 0.5));
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--accent-color, #4a90d9) 7%, transparent);
+}
+
+.config-bulk-count {
+    font-weight: 600;
+    font-size: calc(var(--font-size-text) * 0.971);
+    white-space: nowrap;
+}
+
+.config-bulk-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    min-width: 0;
+}
+
+.config-bulk-group .config-text {
+    min-width: 0;
+    width: 12rem;
+}
+
+.config-bulk-group .config-select {
+    min-width: 0;
+}
+
+/* Editor layout: a two-column grid where each cell stacks its own label above
+   its control, so controls line up down the column without depending on the
+   label lengths. Long values (name, URL, tags) span both columns. */
+.config-bm-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 18px;
+    align-items: start;
+}
+
+.config-bm-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.config-bm-cell--wide {
+    grid-column: 1 / -1;
+}
+
+.config-bm-label {
+    font-size: calc(var(--font-size-text) * 0.914);
+    font-weight: 600;
+    color: var(--text-secondary, #666);
+}
+
+.config-bm-label-hint {
+    font-weight: 400;
+    color: var(--text-muted, #888);
+    margin-left: 0.35em;
+}
+
+/* Inputs fill their cell rather than sitting at some default width. */
+.config-bm-cell .config-text,
+.config-bm-cell .config-select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.config-bm-url-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.config-bm-url-row .config-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-bm-url-row .config-btn {
+    flex: none;
+}
+
+.config-bm-fetch-state {
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+    min-width: 4.5rem;
+}
+
+/* The pin uses the same pill the bookmark editor and add modal use, so it
+   picks up the theme rather than looking like a bare checkbox. */
+.config-bm-pin {
+    align-self: start;
+}
+
+.config-bm-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.config-bm-icon-row .config-text {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.config-bm-icon-preview {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.config-bm-icon-img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.config-bm-icon-empty {
+    color: var(--text-muted, #888);
+}
+
+.config-bm-note {
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.config-bm-shortcut {
+    text-transform: uppercase;
+}
+
+/* Under the narrow breakpoint the paired cells stack rather than squeezing. */
+@media (max-width: 720px) {
+    .config-bm-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.config-bm-newcat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: -6px 0 14px;
+}
+
+.config-bm-newcat[hidden] {
+    display: none;
+}
+
+.config-bm-newcat .config-text {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.config-bm-conflict {
+    color: var(--accent-error, #fb7185);
+    margin-top: -8px;
+}
+
+.config-bm-conflict[hidden] {
+    display: none;
+}
+
+/* Save/Revert sit above and below the form, so a long editor never hides them. */
+.config-bm-savebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.config-bm-savebar--top {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
+}
+
+.config-bm-savebar--bottom {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
+}
+
+.config-bm-dirty {
+    font-size: calc(var(--font-size-text) * 0.914);
+    color: var(--accent-warning, #f59e0b);
+}
+
+.config-bm-dirty[hidden] {
+    display: none;
+}
+
+.config-bm-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.config-bm-name {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.config-bm-url,
+.config-bm-meta {
+    font-size: calc(var(--font-size-text) * 0.914);
+    color: var(--text-muted, #888);
+    overflow-wrap: anywhere;
+}
+
+/* The editor spans both columns on its own line. */
+.config-bm-editor {
+    grid-column: 1 / -1;
+    min-width: 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+}
+
+.config-bm-editor .config-text,
+.config-bm-editor .config-select {
+    min-width: 0;
+}
+
+.config-help-tips {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.config-help-tip {
+    font-size: calc(var(--font-size-text) * 1.006);
+    line-height: 1.6;
+}
+
+.config-tile-hint {
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-muted, #888);
 }
 
 @media (prefers-reduced-motion: reduce) {

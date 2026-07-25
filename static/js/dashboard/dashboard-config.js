@@ -17,9 +17,12 @@ class DashboardConfig {
     static SECTIONS = [
         'overview',
         'pages-tags',
+        'bookmarks',
         'appearance',
         'behavior',
         'data-backups',
+        'stats',
+        'help',
     ];
 
     constructor(dashboard) {
@@ -32,6 +35,22 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab.
         this.behaviorTab = 'general';
+        // Bookmarks section: search, filters, sort, the row being edited, the
+        // ticked rows for bulk actions, and whether the open editor has unsaved
+        // changes (so Save can be offered rather than saving on every keystroke).
+        this.bmQuery = '';
+        this.bmPageFilter = '';
+        this.bmCategoryFilter = '';
+        this.bmSort = 'page';
+        this.bmEditing = null;
+        this.bmDirty = false;
+        this.bmSelected = new Set();
+        // Statistics: undefined while the health fetch is in flight, null on failure.
+        this._statsHealth = undefined;
+        // How far back the activity chart looks, in days.
+        this.statsRange = 30;
+        // Latest release for the overview: undefined until fetched, null on failure.
+        this._latestRelease = undefined;
     }
 
     isEnabled() {
@@ -133,6 +152,10 @@ class DashboardConfig {
         if (d.activeView !== DashboardConfig.VIEW) {
             return false;
         }
+        // The save indicator lives on <body>, so leaving the view has to take it
+        // down; otherwise a "Saved" would linger over the dashboard.
+        clearTimeout(this._saveStateTimer);
+        document.getElementById('config-save-state')?.remove();
         const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
         if (restored) {
             d.keyboardNavigation?.scheduleUpdate?.();
@@ -167,9 +190,12 @@ class DashboardConfig {
         const map = {
             overview: ['config.sectionOverview', 'Overview'],
             'pages-tags': ['config.sectionPagesTags', 'Pages & tags'],
+            bookmarks: ['config.sectionBookmarks', 'Bookmarks'],
             appearance: ['config.sectionAppearance', 'Appearance'],
             behavior: ['config.sectionBehavior', 'Behavior'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
+            stats: ['config.sectionStats', 'Statistics'],
+            help: ['config.sectionHelp', 'Help'],
         };
         const [key, fallback] = map[section] || [section, section];
         return this.t(key, fallback);
@@ -181,9 +207,13 @@ class DashboardConfig {
         container.classList.remove('inbox-layout', 'health-layout', 'tag-filter-layout');
         container.classList.add('config-layout', 'page-transition');
         container.innerHTML = this.renderShell();
+        // Created up front, not on first save: a live region has to be in the
+        // document before its text changes, or the change is not announced.
+        this.ensureSaveStateHost();
         this.bindSectionNav(container);
         this.bindTileActions(container);
         if (this.section === 'overview') {
+            this.bindOverviewActions(container);
             void this.loadOverviewData();
         } else if (this.section === 'data-backups') {
             this.bindDataBackupsActions(container);
@@ -195,6 +225,13 @@ class DashboardConfig {
             this.bindBehaviorControls(container);
         } else if (this.section === 'pages-tags') {
             this.bindPagesTags(container);
+        } else if (this.section === 'bookmarks') {
+            this.bindBookmarksSection(container);
+        } else if (this.section === 'stats') {
+            this.bindStats(container);
+            void this.loadStats();
+        } else if (this.section === 'help') {
+            this.bindHelp(container);
         }
     }
 
@@ -218,6 +255,11 @@ class DashboardConfig {
                 <div class="config-view-main">
                     <div class="config-view-head">
                         <h2 class="config-view-section-title">${esc(this.sectionLabel(this.section))}</h2>
+                        <!-- The save state itself lives on <body>, not here: this
+                             container animates with a transform on view change,
+                             which would make it a containing block and pin the
+                             fixed indicator to the wrong place. See
+                             ensureSaveStateHost(). -->
                     </div>
                     <div class="config-view-body" id="config-view-body">
                         ${this.renderSection()}
@@ -242,6 +284,15 @@ class DashboardConfig {
         }
         if (this.section === 'pages-tags') {
             return this.renderPagesTags();
+        }
+        if (this.section === 'bookmarks') {
+            return this.renderBookmarksSection();
+        }
+        if (this.section === 'stats') {
+            return this.renderStats();
+        }
+        if (this.section === 'help') {
+            return this.renderHelp();
         }
         // Other sections are rewritten in later phases; a placeholder keeps the
         // view navigable meanwhile.
@@ -322,34 +373,284 @@ class DashboardConfig {
             </${tag}>`;
     }
 
+    /**
+     * The landing section: a snapshot of the whole install, arranged so the
+     * things that need attention come first and everything else reads as
+     * context. Each block links on to the view that acts on it, so the overview
+     * stays a summary rather than turning into a second place to fix things.
+     */
     renderOverview() {
+        const esc = (v) => this.dash.escapeHtml(v);
         const tiles = this.overviewTiles().map((t) => this.renderTile(t)).join('');
-        const intro = this.dash.escapeHtml(
-            this.t('config.overviewIntro', 'A snapshot of your setup. Tiles that need attention link straight to the view that fixes them.')
-        );
+        const intro = esc(this.t('config.overviewIntro', 'A snapshot of your setup. Tiles that need attention link straight to the view that fixes them.'));
+
         return `
             <p class="config-view-intro">${intro}</p>
             <div class="config-tiles" role="list">${tiles}</div>
+            ${this.renderOverviewAttention()}
+            <div class="config-overview-columns">
+                ${this.renderOverviewStats()}
+                ${this.renderOverviewWhatsNew()}
+            </div>
+            ${this.renderOverviewTips()}
         `;
     }
 
-    /** Refresh the health report, then repaint the tiles if still on overview. */
+    /**
+     * What is waiting for you, in one place: broken links, monitors that are
+     * down, duplicates, an unread inbox. Only problems appear — a clean install
+     * gets a single "nothing needs attention" line instead of five zeroes.
+     */
+    renderOverviewAttention() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const d = this.dash;
+        const sum = d.health?.report?.summary || {};
+        const inboxUnread = d.inbox?.unreadCount?.() || 0;
+
+        const items = [
+            {
+                n: Number(sum.brokenCount) || 0, tone: 'crit',
+                label: this.t('config.overviewBroken', 'Broken links'),
+                cta: this.t('config.overviewFixInHealth', 'Open health'),
+                action: { view: 'health', filter: 'broken' },
+            },
+            {
+                n: Number(sum.monitorDownCount) || 0, tone: 'crit',
+                label: this.t('config.overviewMonitorsDown', 'Monitors down'),
+                cta: this.t('config.overviewFixInHealth', 'Open health'),
+                action: { view: 'health', filter: 'monitored' },
+            },
+            {
+                n: inboxUnread, tone: 'warn',
+                label: this.t('config.overviewInboxUnread', 'Unread in the inbox'),
+                cta: this.t('config.overviewOpenInbox', 'Open inbox'),
+                action: { view: 'inbox' },
+            },
+            {
+                n: Number(sum.duplicateCount) || 0, tone: 'warn',
+                label: this.t('config.overviewDuplicates', 'Duplicate bookmarks'),
+                cta: this.t('config.overviewFixInHealth', 'Open health'),
+                action: { view: 'health', filter: 'duplicate' },
+            },
+            {
+                n: Number(sum.shortcutConflictCount) || 0, tone: 'warn',
+                label: this.t('config.overviewShortcutConflicts', 'Shortcut conflicts'),
+                cta: this.t('config.overviewOpenBookmarks', 'Open bookmarks'),
+                action: { section: 'bookmarks' },
+            },
+            {
+                n: Number(sum.uncheckedCount) || 0, tone: 'neutral',
+                label: this.t('config.overviewUnchecked', 'Never checked'),
+                cta: this.t('config.overviewFixInHealth', 'Open health'),
+                action: { view: 'health', filter: 'unchecked' },
+            },
+        ].filter((i) => i.n > 0);
+
+        const body = items.length
+            ? `<ul class="config-attention-list">${items.map((i) => `
+                <li class="config-attention-row config-attention-row--${esc(i.tone)}">
+                    <span class="config-attention-count">${esc(String(i.n))}</span>
+                    <span class="config-attention-label">${esc(i.label)}</span>
+                    <button type="button" class="config-btn config-btn--small"
+                            data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
+                </li>`).join('')}</ul>`
+            : `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.overviewAttentionTitle', 'Needs attention'))}</h3>
+                ${body}
+            </div>`;
+    }
+
+    /** A few headline numbers, with the full report a click away. */
+    renderOverviewStats() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.computeStats();
+        const pct = s.total ? Math.round((s.tagged / s.total) * 100) : 0;
+        const scoreTone = s.cleanup.score >= 80 ? 'good' : (s.cleanup.score >= 50 ? 'warn' : 'crit');
+
+        const row = (label, value) => `
+            <li class="config-mini-row">
+                <span>${esc(label)}</span>
+                <span class="config-mini-value">${esc(String(value))}</span>
+            </li>`;
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.overviewStatsTitle', 'At a glance'))}</h3>
+                ${s.total ? `
+                    <div class="config-score config-score--compact">
+                        <span class="config-score-value config-score-value--${scoreTone}">${esc(String(s.cleanup.score))}</span>
+                        <div>
+                            <div class="config-bar">
+                                <span class="config-bar-fill config-bar-fill--${scoreTone}" style="width:${s.cleanup.score}%"></span>
+                            </div>
+                            <p class="config-field-hint">${esc(this.t('config.overviewScoreLabel', 'Cleanup score'))}</p>
+                        </div>
+                    </div>` : ''}
+                <ul class="config-mini-list">
+                    ${row(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
+                    ${row(this.t('config.statsPages', 'Pages'), s.pages)}
+                    ${row(this.t('config.statsCategoryCount', 'Categories'), s.categories)}
+                    ${row(this.t('config.statsTagCount', 'Distinct tags'), s.tagCount)}
+                    ${row(this.t('config.statsTaggedBookmarks', 'Tagged'), `${s.tagged} (${pct}%)`)}
+                    ${row(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
+                </ul>
+                <div class="config-actions">
+                    <button type="button" class="config-btn config-btn--small"
+                            data-overview-go='{"section":"stats"}'>${esc(this.t('config.overviewMoreStats', 'All statistics →'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /** The most recent release, summarised, with the full notes a click away. */
+    renderOverviewWhatsNew() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const rel = this._latestRelease;
+
+        let body;
+        if (rel === undefined) {
+            body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+        } else if (!rel) {
+            body = `<p class="config-panel-empty">${esc(this.t('config.overviewNoRelease', 'Release notes are not available.'))}</p>`;
+        } else {
+            // modalLead is authored HTML (it carries <strong>), so strip the tags
+            // rather than escaping them into visible markup.
+            const lead = String(rel.modalLead || '').replace(/<[^>]*>/g, '').trim();
+            body = `
+                <p class="config-release-tag">${esc(rel.tag || '')}${rel.date ? ` · ${esc(rel.date)}` : ''}</p>
+                <p class="config-panel-note">${esc(lead)}</p>`;
+        }
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.overviewWhatsNewTitle', 'Latest update'))}</h3>
+                ${body}
+                <div class="config-actions">
+                    <button type="button" class="config-btn config-btn--small" data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /**
+     * A rotating handful of tips. Rotating rather than fixed so the panel is
+     * worth glancing at more than once; seeded by the day so it does not shuffle
+     * on every repaint.
+     */
+    renderOverviewTips() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const all = this.helpTips();
+        if (!all.length) return '';
+        const day = Math.floor(Date.now() / 86400000);
+        const start = day % all.length;
+        const picked = [0, 1, 2].map((i) => all[(start + i) % all.length]);
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.overviewTipsTitle', 'Tips'))}</h3>
+                <ul class="config-help-tips">${picked.map((t) => `<li class="config-help-tip">${t}</li>`).join('')}</ul>
+                <div class="config-actions">
+                    <button type="button" class="config-btn config-btn--small"
+                            data-overview-go='{"section":"help"}'>${esc(this.t('config.overviewMoreTips', 'More tips →'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /** Refresh the health report and the release notes, then repaint. */
     async loadOverviewData() {
         const d = this.dash;
-        if (!d.health?.fetchReport) return;
+        const jobs = [];
+        if (d.health?.fetchReport) {
+            jobs.push(d.health.fetchReport().catch(() => {}));
+        }
+        if (this._latestRelease === undefined) {
+            jobs.push(this.loadLatestRelease());
+        }
+        await Promise.all(jobs);
+        this.repaintOverview();
+    }
+
+    /**
+     * The newest entry from the what's-new index, plus its own file for the
+     * summary line. Same data the ★ modal reads, so the two cannot disagree.
+     */
+    async loadLatestRelease() {
+        const version = window.NEXTDASH_WHATS_NEW_DATA_VERSION || '';
+        const url = (p) => `/static/data/whats-new/${p}${version ? `?v=${encodeURIComponent(version)}` : ''}`;
         try {
-            await d.health.fetchReport();
+            const idxRes = await fetch(url('index.json'));
+            if (!idxRes.ok) throw new Error(`HTTP ${idxRes.status}`);
+            const index = await idxRes.json();
+            const first = Array.isArray(index) ? index[0] : null;
+            if (!first?.id) throw new Error('empty index');
+
+            const relRes = await fetch(url(`${first.id}.json`));
+            if (!relRes.ok) throw new Error(`HTTP ${relRes.status}`);
+            const release = await relRes.json();
+            this._latestRelease = { ...first, ...release };
         } catch {
-            return;
+            this._latestRelease = null;
         }
-        if (this.isActiveView() && this.section === 'overview') {
-            const body = document.getElementById('config-view-body');
-            if (body) {
-                body.innerHTML = this.renderOverview();
-                const container = document.getElementById('dashboard-layout');
-                if (container) this.bindTileActions(container);
+    }
+
+    repaintOverview() {
+        if (!this.isActiveView() || this.section !== 'overview') return;
+        const body = document.getElementById('config-view-body');
+        if (!body) return;
+        body.innerHTML = this.renderOverview();
+        const container = document.getElementById('dashboard-layout');
+        if (container) {
+            this.bindTileActions(container);
+            this.bindOverviewActions(container);
+        }
+    }
+
+    /**
+     * Open the what's-new modal, reporting a failure rather than swallowing it.
+     * The loader only logs to the console, so a stub that never registered left
+     * the button looking dead. Falls back to the ★ button, which is wired
+     * independently, before giving up.
+     */
+    async openWhatsNew() {
+        try {
+            if (typeof window.openWhatsNewModal === 'function') {
+                await window.openWhatsNewModal();
+                if (document.querySelector('.whats-new-modal')) return;
             }
+            const star = document.getElementById('whats-new-btn');
+            if (star) {
+                star.click();
+                return;
+            }
+            throw new Error('whats-new unavailable');
+        } catch {
+            this.notify(this.t('config.whatsNewUnavailable', 'Could not open the release notes.'), 'error');
         }
+    }
+
+    /** Jump-off points: another config section, or one of the shell's views. */
+    bindOverviewActions(container) {
+        container.querySelectorAll('[data-overview-go]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                let target;
+                try {
+                    target = JSON.parse(btn.getAttribute('data-overview-go') || '{}');
+                } catch {
+                    return;
+                }
+                if (target.section) {
+                    this.selectSection(target.section);
+                    return;
+                }
+                // Same hand-off the status tiles use, which knows that the health
+                // filter is set on the component rather than passed as an argument.
+                if (target.view) this.openViewFromTile(target.view, target.filter);
+            });
+        });
+        container.querySelectorAll('[data-overview-action="whats-new"]').forEach((btn) => {
+            btn.addEventListener('click', () => this.openWhatsNew());
+        });
     }
 
     /* ── Section navigation ────────────────────────────────────────────────── */
@@ -473,6 +774,14 @@ class DashboardConfig {
         const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
             || (() => { try { return localStorage.getItem('deviceSpecificSettings') === 'true'; } catch { return false; } })();
 
+        const faviconPolicy = s.faviconRefreshPolicy || 'monthly';
+        const faviconPolicyOptions = [
+            ['never', this.t('config.faviconPolicyNever', 'Never')],
+            ['monthly', this.t('config.faviconPolicyMonthly', 'Monthly')],
+            ['weekly', this.t('config.faviconPolicyWeekly', 'Weekly')],
+            ['always', this.t('config.faviconPolicyAlways', 'Every load')],
+        ].map(([v, label]) => `<option value="${esc(v)}" ${v === faviconPolicy ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
         return `
             <p class="config-view-intro">${esc(this.t('config.dataBackupsIntro', 'Back up your data, restore an earlier snapshot, or move it in and out of nextDash.'))}</p>
             ${tiles}
@@ -538,11 +847,30 @@ class DashboardConfig {
                 </div>
             </div>
 
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.iconsSectionTitle', 'Icons & previews'))}</h3>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.faviconRefreshPolicyLabel', 'Refresh favicons'))}</span>
+                    <select class="config-select" data-backup-select="faviconRefreshPolicy">${faviconPolicyOptions}</select>
+                    ${this.renderFieldAffordances('faviconRefreshPolicy', s.faviconRefreshPolicy) ? `<span class="config-field-affordances">${this.renderFieldAffordances('faviconRefreshPolicy', s.faviconRefreshPolicy)}</span>` : ''}
+                </div>
+                <p class="config-panel-note">${esc(this.t('config.bookmarkPreviewMaintenanceHint', 'Link preview cards are fetched once and cached. Refresh them all after a site redesign, or clear them to free space.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-backup-action="refresh-favicons">${esc(this.t('config.bulkRefreshFaviconsBtn', 'Refresh all favicons'))}</button>
+                    <button type="button" class="config-btn" data-backup-action="refresh-previews">${esc(this.t('config.refreshAllPreviewsBtn', 'Refresh all link previews'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-backup-action="clear-previews">${esc(this.t('config.clearAllPreviewsBtn', 'Clear all link previews'))}</button>
+                </div>
+            </div>
+
             <div class="config-panel config-panel--danger">
                 <h3 class="config-panel-title">${esc(this.t('config.resetSectionTitle', 'Reset'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.resetOnboardingHint', 'Replay the welcome tour and tips next time you open the dashboard.'))}</p>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Reset onboarding & tips'))}</button>
+                </div>
+                <p class="config-panel-note" style="margin-top:16px">${esc(this.t('config.deleteAllBookmarksHint', 'Removes every bookmark but keeps your pages, categories, and settings.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn config-btn--danger" data-backup-action="delete-bookmarks">${esc(this.t('config.deleteAllBookmarksBtn', 'Delete all bookmarks only'))}</button>
                 </div>
                 <p class="config-panel-note" style="margin-top:16px">${esc(this.t('config.backupResetNote', 'Removes every bookmark, page, and setting. This cannot be undone.'))}</p>
                 <div class="config-actions">
@@ -639,6 +967,10 @@ class DashboardConfig {
             case 'settings-import': document.getElementById('config-settings-import-input')?.click(); break;
             case 'reset-onboarding': void this.resetOnboarding(); break;
             case 'reset': void this.resetAllData(); break;
+            case 'refresh-favicons': void this.refreshAllFavicons(); break;
+            case 'refresh-previews': void this.refreshAllPreviews(); break;
+            case 'clear-previews': void this.clearAllPreviews(); break;
+            case 'delete-bookmarks': void this.deleteAllBookmarks(); break;
         }
     }
 
@@ -651,7 +983,7 @@ class DashboardConfig {
         }
         if (name === 'autoBackupEnabled' || name === 'healthAutoRecheckEnabled') {
             d.settings[name] = value;
-            d.saveSettings?.();
+            void this.saveSettingsWithFeedback();
             // Repaint so the interval select enables/disables and the tile updates.
             if (name === 'autoBackupEnabled') {
                 void this.loadBackupData();
@@ -662,9 +994,69 @@ class DashboardConfig {
     }
 
     setBackupSelect(name, value) {
+        if (name === 'faviconRefreshPolicy') {
+            this.dash.settings.faviconRefreshPolicy = value;
+            void this.saveSettingsWithFeedback();
+            this.repaintBackupSection();
+            return;
+        }
         if (name !== 'healthAutoRecheckIntervalHours') return;
         this.dash.settings.healthAutoRecheckIntervalHours = Number(value) || 24;
-        this.dash.saveSettings?.();
+        void this.saveSettingsWithFeedback();
+    }
+
+    /** Re-download every bookmark favicon across all pages. */
+    async refreshAllFavicons() {
+        if (!window.confirm(this.t('config.bulkRefreshFaviconsConfirm', 'Download every bookmark icon again? This can take a while on a large dashboard.'))) return;
+        try {
+            const res = await this.writeFetch('/api/bookmarks/prefetch-icons', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.bulkRefreshFaviconsDone', 'Favicons refreshed.'), 'success');
+            await this.dash.loadAllBookmarks?.();
+            this.dash.renderDashboard?.({ animate: false });
+        } catch {
+            this.notify(this.t('config.bulkRefreshFaviconsError', 'Could not refresh the favicons.'), 'error');
+        }
+    }
+
+    /** Re-fetch the link-preview card for every bookmark that has one. */
+    async refreshAllPreviews() {
+        if (!window.confirm(this.t('config.refreshAllPreviewsConfirm', 'Fetch every link preview card again from its site?'))) return;
+        try {
+            const res = await this.writeFetch('/api/previews/refresh', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.refreshAllPreviewsDone', 'Link previews refreshed.'), 'success');
+        } catch {
+            this.notify(this.t('config.refreshAllPreviewsError', 'Could not refresh the link previews.'), 'error');
+        }
+    }
+
+    /** Drop every cached link-preview card. */
+    async clearAllPreviews() {
+        if (!window.confirm(this.t('config.clearAllPreviewsConfirm', 'Remove every cached preview card? They are fetched again when next needed.'))) return;
+        try {
+            const res = await this.writeFetch('/api/previews/clear', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.clearAllPreviewsDone', 'Link previews cleared.'), 'success');
+            this.dash.renderDashboard?.({ animate: false });
+        } catch {
+            this.notify(this.t('config.clearAllPreviewsError', 'Could not clear the link previews.'), 'error');
+        }
+    }
+
+    /** Remove every bookmark but keep pages, categories and settings. */
+    async deleteAllBookmarks() {
+        if (!window.confirm(this.t('config.deleteAllBookmarksConfirm', 'Delete every bookmark? Your pages, categories and settings are kept. This cannot be undone.'))) return;
+        try {
+            const res = await this.writeFetch('/api/bookmarks/delete-all', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.deleteAllBookmarksDone', 'All bookmarks deleted.'), 'success');
+            await this.dash.loadAllBookmarks?.();
+            await this.dash.loadPageBookmarks?.(this.dash.currentPageId, { forceFetch: true });
+            this.dash.renderDashboard?.({ animate: false });
+        } catch {
+            this.notify(this.t('config.deleteAllBookmarksError', 'Could not delete the bookmarks.'), 'error');
+        }
     }
 
     handleBackupItem(action, name) {
@@ -1237,13 +1629,13 @@ class DashboardConfig {
                 const out = range.parentElement?.querySelector('.config-range-value');
                 if (out) out.textContent = `${Math.round(val * 100)}%`;
             });
-            range.addEventListener('change', () => this.dash.saveSettings?.());
+            range.addEventListener('change', () => void this.saveSettingsWithFeedback());
         }
         const titleInput = container.querySelector('[data-appearance-text="customTitle"]');
         if (titleInput) {
             titleInput.addEventListener('input', () => { this.dash.settings.customTitle = titleInput.value; });
             titleInput.addEventListener('change', () => {
-                this.dash.saveSettings?.();
+                void this.saveSettingsWithFeedback();
                 this.dash.pageNav?.updateDocumentTitle?.();
             });
         }
@@ -1274,7 +1666,7 @@ class DashboardConfig {
 
     /** Persist a settings change and repaint the appearance section. */
     persistAppearance() {
-        this.dash.saveSettings?.();
+        void this.saveSettingsWithFeedback();
         if (this.isActiveView() && this.section === 'appearance') {
             const body = document.getElementById('config-view-body');
             if (body) {
@@ -1285,13 +1677,41 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * The theme actually shown, which is not always the theme that is stored:
+     * with "follow system dark mode" on, a stored `moss-stone-dark` displays as
+     * `moss-stone-light` while the OS is in light mode. ThemeLoader owns that
+     * pairing, so ask it rather than reducing the value to light/dark here —
+     * doing that by hand was what made the toggle look like it did nothing, and
+     * it also threw away which theme had been picked.
+     */
+    displayTheme() {
+        const s = this.dash.settings || {};
+        const stored = s.theme || 'dark';
+        const resolved = window.ThemeLoader?.resolveDisplayTheme?.(stored, s.autoDarkMode === true);
+        return resolved || stored;
+    }
+
+    /**
+     * Apply the theme as it should currently display. Routed through the
+     * dashboard's own auto-dark wiring, which additionally keeps the
+     * `data-auto-dark-mode` attribute in sync (ThemeLoader reads it on the next
+     * load) and registers the OS-preference listener so a system switch while
+     * the page is open follows along. Only the fallback path applies the theme
+     * by hand.
+     */
     applyThemeLive() {
         const s = this.dash.settings || {};
-        window.ThemeLoader?.applyTheme?.(
-            s.theme === 'light' ? 'light' : 'dark',
-            s.showBackgroundDots !== false,
-            this.currentFontSize()
-        );
+        if (this.dash.visual?.initializeAutoDarkMode) {
+            this.dash.visual.initializeAutoDarkMode();
+        } else {
+            window.ThemeLoader?.applyTheme?.(
+                this.displayTheme(),
+                s.showBackgroundDots !== false,
+                this.currentFontSize()
+            );
+        }
+        this.reloadThemeCSS();
     }
 
     /** Render the ℹ/↺ affordances for an Appearance-section field. */
@@ -1326,15 +1746,11 @@ class DashboardConfig {
 
     setTheme(theme) {
         if (!theme) return;
+        // The choice is stored as picked; what gets displayed runs through
+        // applyThemeLive, which pairs it with the OS preference when "follow
+        // system dark mode" is on. Applying `theme` directly here ignored that.
         this.dash.settings.theme = theme;
-        // applyTheme sets data-theme to any id (light, dark, or a custom/built-in
-        // theme); reloadThemeCSS re-pulls the server stylesheet that defines it.
-        window.ThemeLoader?.applyTheme?.(
-            theme,
-            this.dash.settings.showBackgroundDots !== false,
-            this.currentFontSize()
-        );
-        this.reloadThemeCSS();
+        this.applyThemeLive();
         this.persistAppearance();
     }
 
@@ -1567,6 +1983,32 @@ class DashboardConfig {
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'] },
+        healthRecheckIntervalMinutes: { def: 60 },
+        skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'] },
+        statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 1 },
+        statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 1500 },
+        showStatusLoading: { info: ['showStatusLoadingInfoTitle', 'showStatusLoadingInfoMessage'] },
+        monitorNotifyUrl: { info: ['monitorNotifyUrlInfoTitle', 'monitorNotifyUrlInfoMessage'] },
+        monitorNotifyRetries: { def: 3 },
+        // Toolbar & chrome
+        showRecentButton: { def: true },
+        showCheatSheetButton: { def: true },
+        showConfigButton: { def: true },
+        showHealthDashboard: { def: true },
+        showAddBookmarkButton: { def: true },
+        showSearchButton: { def: true },
+        showFindersButton: { def: true },
+        showCommandsButton: { def: true },
+        buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'center' },
+        showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'] },
+        // Weather & calendar
+        weatherRefreshMinutes: { def: 30 },
+        calendarUrl: { info: ['calendarUrlInfoTitle', 'calendarUrlInfoMessage'] },
+        // Link previews
+        linkPreviewHoverDelayMs: { info: ['linkPreviewHoverDelayInfoTitle', 'linkPreviewHoverDelayInfoMessage'], def: 400 },
+        // Sync
+        showSyncToasts: { info: ['showSyncToastsInfoTitle', 'showSyncToastsInfoMessage'] },
+        faviconRefreshPolicy: { info: ['faviconRefreshPolicyInfoTitle', 'faviconRefreshPolicyInfoMessage'], def: 'monthly' },
         // Privacy
         analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint' },
         // Appearance
@@ -1660,10 +2102,15 @@ class DashboardConfig {
                     bool('showDate', 'config.showDateLabel', 'Show the date'),
                     bool('showTime', 'config.showTimeLabel', 'Show the time'),
                     bool('showWeatherWithDate', 'config.showWeatherWithDate', 'Show weather next to the date'),
+                    { field: 'weatherSource', type: 'select', label: t('config.weatherSourceLabel', 'Weather source'), special: 'datetime', options: [
+                        opt('manual', t('config.weatherSourceManual', 'Manual location')), opt('auto', t('config.weatherSourceAuto', 'Automatic (by IP)')),
+                    ] },
                     { field: 'weatherUnit', type: 'select', label: t('config.weatherUnitLabel', 'Temperature unit'), special: 'datetime', options: [
                         opt('celsius', '°C'), opt('fahrenheit', '°F'),
                     ] },
                     { field: 'weatherLocation', type: 'text', label: t('config.weatherLocationLabel', 'Weather location'), special: 'datetime' },
+                    { field: 'weatherRefreshMinutes', type: 'number', label: t('config.weatherRefreshLabel', 'Refresh weather every (minutes)'), min: 5, max: 1440, special: 'datetime' },
+                    { field: 'calendarUrl', type: 'text', label: t('config.calendarUrlLabel', 'Calendar URL (iCal)'), special: 'datetime' },
                 ],
             },
             {
@@ -1687,8 +2134,14 @@ class DashboardConfig {
                 controls: [
                     bool('showShortcuts', 'config.showShortcutsLabel', 'Show shortcut letters'),
                     bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
+                    bool('showStatusLoading', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
                     bool('showPing', 'config.showPingLabel', 'Show ping times'),
                     bool('showLinkPreviewCards', 'config.showLinkPreviewCardsLabel', 'Show link preview cards'),
+                    { field: 'linkPreviewHoverDelayMs', type: 'select', label: t('config.linkPreviewHoverDelayLabel', 'Preview hover delay'), options: [
+                        opt(0, t('config.linkPreviewDelayInstant', 'Instant')), opt(200, '200 ms'), opt(400, '400 ms'),
+                        opt(700, '700 ms'), opt(1000, '1 s'),
+                    ] },
+                    bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
                 ],
             },
             {
@@ -1703,6 +2156,14 @@ class DashboardConfig {
                     bool('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
                     bool('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
                     bool('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
+                    bool('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
+                    bool('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                    bool('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
+                    bool('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
+                    { field: 'buttonBarPosition', type: 'select', label: t('config.buttonBarPositionLabel', 'Button bar position'), special: 'render', options: [
+                        opt('center', t('config.buttonBarCenter', 'Centre dock')), opt('left', t('config.buttonBarLeft', 'Left rail')),
+                        opt('right', t('config.buttonBarRight', 'Right rail')),
+                    ] },
                 ],
             },
             {
@@ -1726,6 +2187,53 @@ class DashboardConfig {
                         opt('ask', t('config.pasteDestinationAsk', 'Ask each time')), opt('bookmark', t('config.pasteDestinationBookmark', 'New bookmark')),
                         opt('inbox', t('config.pasteDestinationInbox', 'Inbox')),
                     ] },
+                ],
+            },
+            {
+                tab: 'status',
+                title: t('config.statusBrowserChecksTitle', 'Checks in this browser'),
+                note: t('config.statusBrowserChecksNote', 'How the dashboard tests the bookmarks on screen while you have it open. Applies to bookmarks set to Periodic or Monitor; a bookmark set to Off is never tested.'),
+                appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
+                controls: [
+                    { field: 'statusRecheckIntervalMinutes', type: 'select', label: t('config.statusRecheckIntervalLabel', 'Re-check every'), options: [
+                        opt(1, '1 min'), opt(5, '5 min'), opt(15, '15 min'), opt(30, '30 min'),
+                        opt(60, '1 h'), opt(360, '6 h'), opt(1440, '24 h'),
+                    ] },
+                    bool('skipFastPing', 'config.skipFastPingLabel', 'Skip the fast ping pre-check'),
+                    { field: 'statusOfflineRetries', type: 'number', label: t('config.statusOfflineRetriesLabel', 'Retries before offline'), min: 0, max: 10 },
+                    { field: 'statusOfflineRetryDelayMs', type: 'number', label: t('config.statusOfflineRetryDelayLabel', 'Delay between retries (ms)'), min: 0, max: 60000 },
+                ],
+            },
+            {
+                tab: 'status',
+                title: t('config.statusServerChecksTitle', 'Checks on the server'),
+                note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. Off by default because it makes outbound requests.'),
+                appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
+                controls: [
+                    bool('healthAutoRecheckEnabled', 'config.healthRecheckLabel', 'Re-check in the background'),
+                    { field: 'healthRecheckIntervalMinutes', type: 'select', label: t('config.healthRecheckIntervalLabel', 'Background re-check interval'), options: [
+                        opt(15, '15 min'), opt(30, '30 min'), opt(60, '1 h'), opt(360, '6 h'), opt(1440, '24 h'),
+                    ] },
+                ],
+            },
+            {
+                tab: 'status',
+                title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
+                note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
+                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
+                controls: [
+                    { field: 'monitorNotifyUrl', type: 'text', label: t('config.monitorNotifyUrlLabel', 'Alert webhook URL') },
+                    { field: 'monitorNotifyRetries', type: 'select', label: t('config.monitorNotifyRetriesLabel', 'Alert after this many failures'), options: [
+                        opt(1, '1'), opt(2, '2'), opt(3, '3'), opt(5, '5'), opt(10, '10'),
+                    ] },
+                ],
+            },
+            {
+                tab: 'general',
+                title: t('config.generalGroupSync', 'Sync & feedback'),
+                controls: [
+                    bool('showSyncToasts', 'config.showSyncToastsLabel', 'Show sync notifications'),
+                    bool('deviceSpecificSettings', 'config.deviceSpecificSettingsLabel', 'Keep settings on this device only'),
                 ],
             },
             {
@@ -1791,12 +2299,22 @@ class DashboardConfig {
                     <span class="config-field-affordances">${aff}</span>
                 </div>${hint}`;
         };
-        return schema.map((panel) => `
+        // `note` explains the panel; `appliesTo` names the availability modes the
+        // panel's settings actually affect, because several of them are inert
+        // unless a bookmark is set to Periodic or Monitor.
+        return schema.map((panel) => {
+            const badge = panel.appliesTo
+                ? `<span class="config-applies-to" title="${esc(this.t('config.appliesToTitle', 'These settings only take effect for bookmarks set to this mode'))}">${esc(panel.appliesTo)}</span>`
+                : '';
+            const note = panel.note ? `<p class="config-panel-note">${esc(panel.note)}</p>` : '';
+            return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(panel.title)}</h3>
+                <h3 class="config-panel-title">${esc(panel.title)}${badge}</h3>
+                ${note}
                 ${panel.controls.map(renderControl).join('')}
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     /** Bind a rendered schema's controls (and ℹ/↺ affordances) back to setBehavior. */
@@ -1848,7 +2366,7 @@ class DashboardConfig {
         });
     }
 
-    static BEHAVIOR_TABS = ['general', 'datetime', 'layout', 'display', 'search', 'privacy'];
+    static BEHAVIOR_TABS = ['general', 'datetime', 'layout', 'display', 'search', 'status', 'privacy'];
 
     behaviorTabLabel(tab) {
         const map = {
@@ -1857,6 +2375,7 @@ class DashboardConfig {
             layout: ['config.behaviorTabLayout', 'Layout'],
             display: ['config.behaviorTabDisplay', 'Display'],
             search: ['config.behaviorTabSearch', 'Search & inbox'],
+            status: ['config.behaviorTabStatus', 'Status & health'],
             privacy: ['config.behaviorTabPrivacy', 'Privacy'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -1878,7 +2397,36 @@ class DashboardConfig {
 
     renderBehaviorBody() {
         const panels = this.behaviorSchema().filter((p) => (p.tab || 'general') === this.behaviorTab);
-        return this.renderControlPanels(panels, 'behavior');
+        const lead = this.behaviorTab === 'status' ? this.renderStatusModesLead() : '';
+        return lead + this.renderControlPanels(panels, 'behavior');
+    }
+
+    /**
+     * The settings below are per-install, but what they do depends on the
+     * per-bookmark availability mode — several are inert unless a bookmark is
+     * set to Monitor. Spelling the three modes out first is what makes the rest
+     * of the tab readable; the wording matches the (i) explainer the bookmark
+     * forms show, so the two cannot drift apart.
+     */
+    renderStatusModesLead() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const modes = [
+            ['off', this.t('config.checkModeOff', 'Off'), this.t('config.checkModeOffHint', 'No availability checking.')],
+            ['periodic', this.t('config.checkModePeriodic', 'Periodic'), this.t('config.checkModePeriodicHint', 'Checks once a day and flags the bookmark when it breaks.')],
+            ['monitor', this.t('config.checkModeMonitor', 'Monitor'), this.t('config.checkModeMonitorHint', 'Checks on your own interval and keeps uptime history, a heartbeat and outage alerts. Includes everything Periodic does.')],
+        ].map(([id, name, hint]) => `
+            <li class="config-mode-row">
+                <span class="config-mode-name config-mode-name--${esc(id)}">${esc(name)}</span>
+                <span class="config-mode-hint">${esc(hint)}</span>
+            </li>`).join('');
+
+        return `
+            <div class="config-panel config-mode-legend">
+                <h3 class="config-panel-title">${esc(this.t('config.checkModeExplainTitle', 'How availability checking works'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.statusModesLead', 'Each bookmark is set to one of three modes, in its own editor or with a right-click on the dashboard. The settings on this tab decide how those checks are carried out.'))}</p>
+                <ul class="config-mode-list">${modes}</ul>
+                <p class="config-panel-note">${esc(this.t('config.statusModesWhere', 'Set a bookmark’s mode under Bookmarks → Edit, or right-click it on the dashboard.'))}</p>
+            </div>`;
     }
 
     bindBehaviorControls(container) {
@@ -1924,14 +2472,95 @@ class DashboardConfig {
                 d.renderDashboard?.({ animate: false });
                 break;
         }
-        try {
-            await d.saveSettings?.();
-        } catch {
-            this.notify(this.t('config.behaviorSaveError', 'Could not save that change.'), 'error');
-        }
+        await this.saveSettingsWithFeedback();
         // Repaint the active control panel so the ↺ reset button's visibility and
         // the control's own value reflect the change (important after a reset).
         this.repaintActiveControlPanels();
+    }
+
+    /**
+     * Report the outcome of a save in the section header.
+     *
+     * Everything in this view saves the moment you change it, so without this
+     * there is nothing at all to confirm a change stuck. A toast per keystroke
+     * would be unbearable on a tab full of toggles, so the state sits in one
+     * place: "Saving…" while in flight, then "Saved" which fades, or an error
+     * that stays until the next attempt. `role="status"` carries it to screen
+     * readers without stealing focus.
+     */
+    /**
+     * The indicator is appended to <body> rather than to the view.
+     * `#dashboard-layout` animates with a transform when a view opens, and a
+     * transformed ancestor becomes the containing block for `position: fixed` —
+     * which parked the indicator hundreds of pixels below the viewport for the
+     * length of that animation.
+     */
+    ensureSaveStateHost() {
+        let el = document.getElementById('config-save-state');
+        if (el && el.parentElement !== document.body) {
+            el.remove();
+            el = null;
+        }
+        if (!el) {
+            el = document.createElement('span');
+            el.id = 'config-save-state';
+            el.className = 'config-save-state';
+            el.setAttribute('role', 'status');
+            el.setAttribute('aria-live', 'polite');
+            document.body.appendChild(el);
+        }
+        return el;
+    }
+
+    setSaveState(state) {
+        const el = this.ensureSaveStateHost();
+        if (!el) return;
+        clearTimeout(this._saveStateTimer);
+        el.classList.remove('is-saving', 'is-saved', 'is-error');
+
+        if (state === 'saving') {
+            el.textContent = this.t('config.saveStateSaving', 'Saving…');
+            el.classList.add('is-saving');
+            return;
+        }
+        if (state === 'saved') {
+            el.textContent = this.t('config.saveStateSaved', 'Saved');
+            el.classList.add('is-saved');
+            // Clearing it keeps a stale "Saved" from implying the *next* change
+            // was saved too.
+            this._saveStateTimer = setTimeout(() => {
+                if (el.isConnected && el.classList.contains('is-saved')) {
+                    el.textContent = '';
+                    el.classList.remove('is-saved');
+                }
+            }, 2500);
+            return;
+        }
+        if (state === 'error') {
+            el.textContent = this.t('config.saveStateError', 'Not saved — try again');
+            el.classList.add('is-error');
+            return;
+        }
+        el.textContent = '';
+    }
+
+    /**
+     * Persist the current settings and report the outcome. Every settings write
+     * in this view goes through here so the feedback cannot be forgotten at one
+     * call site.
+     */
+    async saveSettingsWithFeedback() {
+        this.setSaveState('saving');
+        let ok = false;
+        try {
+            // saveSettings resolves false rather than rejecting; it reports its
+            // own error toast as well.
+            ok = (await this.dash.saveSettings?.()) !== false;
+        } catch {
+            ok = false;
+        }
+        this.setSaveState(ok ? 'saved' : 'error');
+        return ok;
     }
 
     /** Re-render whichever schema-driven panel body is currently showing. */
@@ -2257,11 +2886,70 @@ class DashboardConfig {
 
     renderCollections() {
         // Reuse the behaviour control renderer against the collections schema.
-        return this.renderControlPanels(this.collectionsSchema(), 'collection');
+        return this.renderControlPanels(this.collectionsSchema(), 'collection')
+            + this.renderCollectionScopes();
+    }
+
+    /**
+     * Which pages each smart collection draws from. Stored as an array of page
+     * ids per collection (empty = every page), so this needs a checkbox per page
+     * rather than the generic single-value controls the schema renderer covers.
+     */
+    static COLLECTION_SCOPES = [
+        ['smartTodayPageIds', 'config.smartTodayScope', '“Today” pages'],
+        ['smartRecentPageIds', 'config.smartRecentScope', '“Recent” pages'],
+        ['smartStalePageIds', 'config.smartStaleScope', '“Stale” pages'],
+        ['smartMostUsedPageIds', 'config.smartMostUsedScope', '“Most used” pages'],
+    ];
+
+    renderCollectionScopes() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = this.dash.pages || [];
+        if (!pages.length) return '';
+        const s = this.dash.settings || {};
+        const rows = DashboardConfig.COLLECTION_SCOPES.map(([field, key, fallback]) => {
+            const selected = Array.isArray(s[field]) ? s[field].map(String) : [];
+            const boxes = pages.map((p) => {
+                const id = String(p.id);
+                const on = selected.includes(id);
+                return `<label class="config-scope-page">
+                    <input type="checkbox" data-scope-field="${esc(field)}" data-scope-page="${esc(id)}" ${on ? 'checked' : ''}>
+                    <span>${esc(p.name || id)}</span>
+                </label>`;
+            }).join('');
+            const allHint = selected.length === 0
+                ? this.t('config.collectionScopeAll', 'All pages')
+                : this.t('config.collectionScopeSome', 'Selected pages only');
+            return `
+                <div class="config-field-block">
+                    <span class="config-field-label">${esc(this.t(key, fallback))}</span>
+                    <p class="config-field-hint">${esc(allHint)}</p>
+                    <div class="config-scope-pages">${boxes}</div>
+                </div>`;
+        }).join('');
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.collectionScopesTitle', 'Collection scope'))}</h3>
+                <p class="config-field-hint">${esc(this.t('config.collectionScopesHint', 'Leave a collection with no pages ticked to draw from every page.'))}</p>
+                ${rows}
+            </div>`;
     }
 
     bindCollections(container) {
         this.bindControlPanels(container, 'collection');
+        container.querySelectorAll('[data-scope-field]').forEach((box) => {
+            box.addEventListener('change', () => {
+                const field = box.getAttribute('data-scope-field');
+                const pageId = box.getAttribute('data-scope-page');
+                const current = Array.isArray(this.dash.settings[field])
+                    ? this.dash.settings[field].map(String)
+                    : [];
+                const next = box.checked
+                    ? [...new Set([...current, pageId])]
+                    : current.filter((id) => id !== pageId);
+                void this.setBehavior(field, next, 'render');
+            });
+        });
     }
 
     /* ── Pages (native) ────────────────────────────────────────────────────── */
@@ -2483,6 +3171,1776 @@ class DashboardConfig {
         } catch {
             this.notify(this.t('config.categoriesSaveError', 'Could not save categories.'), 'error');
         }
+    }
+
+    /* ── Bookmarks (native) ────────────────────────────────────────────────── */
+
+    /**
+     * A searchable, sortable list of every bookmark with the full editor from
+     * the old config inline. The old page used a master/detail split; here the
+     * row expands in place, which keeps the list as the anchor and avoids a
+     * second scroll region.
+     */
+    renderBookmarksSection() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = this.dash.pages || [];
+        const pageOptions = [`<option value="">${esc(this.t('config.allPages', 'All pages'))}</option>`]
+            .concat(pages.map((p) => {
+                const sel = String(this.bmPageFilter || '') === String(p.id) ? ' selected' : '';
+                return `<option value="${esc(p.id)}"${sel}>${esc(p.name || p.id)}</option>`;
+            })).join('');
+
+        const catOptions = [`<option value="">${esc(this.t('config.allCategories', 'All categories'))}</option>`]
+            .concat(this.knownCategories().map((c) => {
+                const sel = this.bmCategoryFilter === c.id ? ' selected' : '';
+                return `<option value="${esc(c.id)}"${sel}>${esc(c.label)}</option>`;
+            })).join('');
+
+        const sortOptions = [
+            ['page', this.t('config.sortByPage', 'Page order')],
+            ['name', this.t('config.sortByName', 'Name (A–Z)')],
+            ['url', this.t('config.sortByUrl', 'URL')],
+            ['category', this.t('config.sortByCategory', 'Category')],
+            ['recent', this.t('config.sortByRecent', 'Recently added')],
+        ].map(([v, label]) =>
+            `<option value="${esc(v)}" ${this.bmSort === v ? 'selected' : ''}>${esc(label)}</option>`
+        ).join('');
+
+        return `
+            <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+            <div class="config-panel">
+                <div class="config-crud-toolbar">
+                    <input type="search" class="config-text" id="config-bm-search" placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}" value="${esc(this.bmQuery || '')}">
+                    <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}">${pageOptions}</select>
+                    <select class="config-select" id="config-bm-category" aria-label="${esc(this.t('config.category', 'Category'))}">${catOptions}</select>
+                    <select class="config-select" id="config-bm-sort" aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
+                </div>
+                <div id="config-bm-bulk">${this.renderBulkToolbar()}</div>
+                <div id="config-bm-list">${this.renderBookmarksList()}</div>
+            </div>
+        `;
+    }
+
+    /** Every category name in use, across all pages, de-duplicated and sorted. */
+    /**
+     * The categories to offer, as {id, label} pairs.
+     *
+     * A bookmark stores its category by *id* ("development") while the category
+     * list carries a display *name* ("Development"). Keying on the id is what
+     * keeps those from being counted as two different categories — collecting
+     * both into one set listed everything twice.
+     *
+     * The page's own category list wins on labels; anything a bookmark refers to
+     * that is not in that list is still offered, so an orphaned category never
+     * silently disappears from the dropdown.
+     */
+    knownCategories() {
+        const byId = new Map();
+        (this.dash.categories || []).forEach((c) => {
+            if (typeof c === 'string') {
+                if (c) byId.set(c, c);
+                return;
+            }
+            const id = c?.id || c?.name;
+            if (id) byId.set(String(id), String(c?.name || id));
+        });
+        (this.dash.allBookmarks || []).forEach((b) => {
+            const id = b.category;
+            if (id && !byId.has(String(id))) byId.set(String(id), String(id));
+        });
+        return [...byId.entries()]
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    /** The rows currently passing search, page filter, category filter and sort. */
+    visibleBookmarks() {
+        const all = this.dash.allBookmarks || [];
+        const q = String(this.bmQuery || '').trim().toLowerCase();
+        const pageFilter = String(this.bmPageFilter || '');
+        const catFilter = this.bmCategoryFilter || '';
+        const rows = all.filter((b) => {
+            if (pageFilter && String(b.pageId) !== pageFilter) return false;
+            if (catFilter && (b.category || '') !== catFilter) return false;
+            if (!q) return true;
+            return [b.name, b.url, b.category, b.note, (b.tags || []).join(' ')]
+                .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
+        });
+        const pageIndex = (id) => (this.dash.pages || []).findIndex((p) => String(p.id) === String(id));
+        const cmp = {
+            name: (a, b) => String(a.name || '').localeCompare(String(b.name || '')),
+            url: (a, b) => String(a.url || '').localeCompare(String(b.url || '')),
+            category: (a, b) => String(a.category || '').localeCompare(String(b.category || '')),
+            recent: (a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0),
+            page: (a, b) => pageIndex(a.pageId) - pageIndex(b.pageId),
+        }[this.bmSort] || null;
+        return cmp ? [...rows].sort(cmp) : rows;
+    }
+
+    static bookmarkKey(b) {
+        return `${b.pageId}::${b.url}`;
+    }
+
+    /** The bulk-action bar, shown only once rows are ticked. */
+    renderBulkToolbar() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const n = this.bmSelected.size;
+        if (n === 0) return '';
+        const pages = this.dash.pages || [];
+        const pageOpts = [`<option value="">${esc(this.t('config.bulkMovePagePlaceholder', 'Move to page…'))}</option>`]
+            .concat(pages.map((p) => `<option value="${esc(p.id)}">${esc(p.name || p.id)}</option>`)).join('');
+        const catOpts = [`<option value="">${esc(this.t('config.bulkMoveCategoryPlaceholder', 'Set category…'))}</option>`]
+            .concat(this.knownCategories().map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`)).join('');
+        const modeOpts = [
+            ['add', this.t('config.bulkTagsAdd', 'Add')],
+            ['replace', this.t('config.bulkTagsReplace', 'Replace')],
+            ['remove', this.t('config.bulkTagsRemove', 'Remove')],
+        ].map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
+        const statusOpts = (window.CheckMode?.options?.() || []).map((o) =>
+            `<option value="${esc(o.mode)}">${esc(o.label)}</option>`
+        ).join('');
+
+        return `
+            <div class="config-bulk-bar" role="group" aria-label="${esc(this.t('config.bulkActions', 'Bulk actions'))}">
+                <span class="config-bulk-count">${esc(this.t('config.bulkSelectedCount', '{n} selected').replace('{n}', String(n)))}</span>
+                <div class="config-bulk-group">
+                    <select class="config-select" id="config-bulk-page">${pageOpts}</select>
+                    <select class="config-select" id="config-bulk-category">${catOpts}</select>
+                    <button type="button" class="config-btn config-btn--small" data-bulk="move">${esc(this.t('config.bulkMoveApply', 'Apply'))}</button>
+                </div>
+                <div class="config-bulk-group">
+                    <input type="text" class="config-text" id="config-bulk-tags" placeholder="${esc(this.t('config.detailTagsPlaceholder', 'work, dev, personal…'))}">
+                    <select class="config-select" id="config-bulk-tags-mode">${modeOpts}</select>
+                    <button type="button" class="config-btn config-btn--small" data-bulk="tags">${esc(this.t('config.bulkTagsApply', 'Apply tags'))}</button>
+                </div>
+                <div class="config-bulk-group">
+                    <select class="config-select" id="config-bulk-status">${statusOpts}</select>
+                    <button type="button" class="config-btn config-btn--small" data-bulk="status">${esc(this.t('config.bulkStatusApply', 'Set checking'))}</button>
+                    <button type="button" class="config-btn config-btn--small" data-bulk="pin">${esc(this.t('config.bulkTogglePin', 'Toggle pin'))}</button>
+                </div>
+                <div class="config-bulk-group">
+                    <button type="button" class="config-btn config-btn--small config-btn--danger" data-bulk="delete">${esc(this.t('config.bulkDelete', 'Delete'))}</button>
+                    <button type="button" class="config-btn config-btn--small" data-bulk="clear">${esc(this.t('config.bulkClearSelection', 'Clear selection'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /** The rows themselves, re-rendered on every search/filter/edit change. */
+    renderBookmarksList() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!(this.dash.allBookmarks || []).length) {
+            return `<p class="config-panel-empty">${esc(this.t('config.noBookmarksYet', 'No bookmarks yet.'))}</p>`;
+        }
+        const rows = this.visibleBookmarks();
+        if (!rows.length) {
+            return `<p class="config-panel-empty">${esc(this.t('config.noBookmarksMatch', 'No bookmarks match your search.'))}</p>`;
+        }
+        const pageName = (id) => (this.dash.pages || []).find((p) => String(p.id) === String(id))?.name || id;
+        // Rows show the category's display name; the bookmark stores its id.
+        const catLabels = new Map(this.knownCategories().map((c) => [c.id, c.label]));
+        const catName = (id) => catLabels.get(String(id)) || id;
+        const modeLabel = (b) => {
+            const mode = window.CheckMode?.of?.(b) || 'off';
+            const found = (window.CheckMode?.options?.() || []).find((o) => o.mode === mode);
+            return mode === 'off' ? '' : (found?.label || mode);
+        };
+        const items = rows.map((b) => {
+            const key = DashboardConfig.bookmarkKey(b);
+            const open = this.bmEditing === key;
+            const ticked = this.bmSelected.has(key);
+            const bits = [esc(pageName(b.pageId))];
+            if (b.category) bits.push(esc(catName(b.category)));
+            if ((b.tags || []).length) bits.push(esc((b.tags || []).join(', ')));
+            const mode = modeLabel(b);
+            if (mode) bits.push(esc(mode));
+            if (b.pinned) bits.push(esc(this.t('config.pinnedShort', 'Pinned')));
+            if (b.shortcut) bits.push(esc(b.shortcut));
+            return `
+                <li class="config-crud-row config-bm-row${open ? ' is-open' : ''}">
+                    <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
+                           aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
+                    <div class="config-bm-main">
+                        <span class="config-bm-name">${esc(b.name || b.url)}</span>
+                        <span class="config-bm-url">${esc(b.url)}</span>
+                        <span class="config-bm-meta">${bits.join(' · ')}</span>
+                    </div>
+                    <div class="config-crud-row-actions">
+                        <button type="button" class="config-btn config-btn--small" data-bm-edit="${esc(key)}">${esc(open ? this.t('config.close', 'Close') : this.t('config.edit', 'Edit'))}</button>
+                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-delete="${esc(key)}">${esc(this.t('config.delete', 'Delete'))}</button>
+                    </div>
+                    ${open ? this.renderBookmarkEditor(b) : ''}
+                </li>`;
+        }).join('');
+        return `<ul class="config-crud-list">${items}</ul>`;
+    }
+
+    /**
+     * The full inline editor, carrying every field the old config's detail panel
+     * had. Laid out as a two-column grid: name and URL span both columns because
+     * they are the long values, the rest pairs up to keep the form short enough
+     * that Save stays near what you were typing. Save/Revert appear above *and*
+     * below, so neither end of a long form has to be scrolled to.
+     */
+    renderBookmarkEditor(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pages = this.dash.pages || [];
+        const pageOpts = pages.map((p) =>
+            `<option value="${esc(p.id)}" ${String(p.id) === String(b.pageId) ? 'selected' : ''}>${esc(p.name || p.id)}</option>`
+        ).join('');
+        const cats = this.knownCategories();
+        const catOpts = [`<option value="">${esc(this.t('config.noCategory', 'No category'))}</option>`]
+            .concat(cats.map((c) =>
+                `<option value="${esc(c.id)}" ${c.id === (b.category || '') ? 'selected' : ''}>${esc(c.label)}</option>`))
+            .concat([`<option value="__new__">${esc(this.t('config.addNewCategoryOption', '➕ New category…'))}</option>`])
+            .join('');
+
+        const mode = window.CheckMode?.of?.(b) || 'off';
+        const modeRadios = (window.CheckMode?.options?.() || []).map((o) => {
+            const id = `config-bm-mode-${o.mode}`;
+            return `<input type="radio" name="config-bm-mode" id="${id}" value="${esc(o.mode)}" class="bookmark-detail-checkmode-input" ${o.mode === mode ? 'checked' : ''}>`
+                + `<label for="${id}" class="bookmark-detail-checkmode-option">${esc(o.label)}</label>`;
+        }).join('');
+        const interval = window.CheckMode?.intervalOf?.(b) || 15;
+        const intervalOpts = [5, 15, 30, 60, 360, 1440].map((m) => {
+            const label = m < 60 ? `${m}m` : (m === 1440 ? '24h' : `${m / 60}h`);
+            return `<option value="${m}" ${m === interval ? 'selected' : ''}>${esc(label)}</option>`;
+        }).join('');
+
+        const icon = b.icon || '';
+        const iconPreview = icon
+            ? `<img src="${esc(this.resolveIconSrc(icon))}" alt="" class="config-bm-icon-img">`
+            : `<span class="config-bm-icon-empty">—</span>`;
+
+        const saveBar = (position) => `
+            <div class="config-bm-savebar config-bm-savebar--${position}">
+                <button type="button" class="config-btn config-btn--primary" data-bm-save="1">${esc(this.t('config.save', 'Save'))}</button>
+                <button type="button" class="config-btn" data-bm-revert="1">${esc(this.t('config.revert', 'Revert'))}</button>
+                <span class="config-bm-dirty" data-bm-dirty hidden>${esc(this.t('config.unsavedChanges', 'Unsaved changes'))}</span>
+            </div>`;
+
+        return `
+            <div class="config-bm-editor" data-bm-editor-key="${esc(DashboardConfig.bookmarkKey(b))}">
+                ${saveBar('top')}
+
+                <div class="config-bm-grid">
+                    <div class="config-bm-cell config-bm-cell--wide">
+                        <label class="config-bm-label" for="config-bm-name">${esc(this.t('config.bookmarkNamePlaceholder', 'Name'))}</label>
+                        <input type="text" id="config-bm-name" class="config-text" data-bm-field="name" value="${esc(b.name || '')}"
+                               placeholder="${esc(this.t('config.bookmarkNameAutoHint', 'Left blank, the page title is used'))}">
+                    </div>
+
+                    <div class="config-bm-cell config-bm-cell--wide">
+                        <label class="config-bm-label" for="config-bm-url">${esc(this.t('config.urlLabelShort', 'URL'))}</label>
+                        <div class="config-bm-url-row">
+                            <input type="url" id="config-bm-url" class="config-text" data-bm-field="url" value="${esc(b.url || '')}" placeholder="https://">
+                            <button type="button" class="config-btn config-btn--small" data-bm-refetch="1"
+                                    title="${esc(this.t('config.fetchMetaTitle', 'Fetch the icon and title for this URL'))}">${esc(this.t('config.fetchFaviconRetry', 'Retry'))}</button>
+                            <span class="config-bm-fetch-state" data-bm-fetch-state></span>
+                        </div>
+                        <p class="config-field-hint config-bm-conflict" data-bm-conflict="url" hidden></p>
+                    </div>
+
+                    <div class="config-bm-cell">
+                        <label class="config-bm-label" for="config-bm-page">${esc(this.t('config.page', 'Page'))}</label>
+                        <select id="config-bm-page-sel" class="config-select" data-bm-field="pageId">${pageOpts}</select>
+                    </div>
+
+                    <div class="config-bm-cell">
+                        <label class="config-bm-label" for="config-bm-cat">${esc(this.t('config.category', 'Category'))}</label>
+                        <select id="config-bm-cat" class="config-select" data-bm-field="category">${catOpts}</select>
+                        <div class="config-bm-newcat" data-bm-newcat hidden>
+                            <input type="text" class="config-text" data-bm-newcat-input placeholder="${esc(this.t('config.newCategoryNamePlaceholder', 'Category name'))}" maxlength="60">
+                            <button type="button" class="config-btn config-btn--small" data-bm-newcat-ok>${esc(this.t('config.confirm', 'Confirm'))}</button>
+                            <button type="button" class="config-btn config-btn--small" data-bm-newcat-cancel>${esc(this.t('config.cancel', 'Cancel'))}</button>
+                        </div>
+                    </div>
+
+                    <div class="config-bm-cell config-bm-cell--wide">
+                        <label class="config-bm-label" for="config-bm-tags">${esc(this.t('config.detailTagsLabel', 'Tags'))}
+                            <span class="config-bm-label-hint">${esc(this.t('config.commaSeparatedShort', 'comma-separated'))}</span></label>
+                        <input type="text" id="config-bm-tags" class="config-text" data-bm-field="tags" value="${esc((b.tags || []).join(', '))}"
+                               placeholder="${esc(this.t('config.detailTagsPlaceholder', 'work, dev, personal…'))}" autocomplete="off">
+                    </div>
+
+                    <div class="config-bm-cell">
+                        <label class="config-bm-label" for="config-bm-shortcut">${esc(this.t('config.shortcut', 'Shortcut'))}</label>
+                        <input type="text" id="config-bm-shortcut" class="config-text config-bm-shortcut" data-bm-field="shortcut" maxlength="5" value="${esc(b.shortcut || '')}"
+                               placeholder="${esc(this.t('config.bookmarkShortcutPlaceholder', 'Y, YS, YC'))}">
+                        <p class="config-field-hint config-bm-conflict" data-bm-conflict="shortcut" hidden></p>
+                    </div>
+
+                    <div class="config-bm-cell">
+                        <label class="config-bm-label" for="config-bm-note">${esc(this.t('config.detailNoteLabel', 'Note'))}</label>
+                        <textarea id="config-bm-note" class="config-text config-bm-note" data-bm-field="note" rows="2">${esc(b.note || '')}</textarea>
+                    </div>
+
+                    <div class="config-bm-cell">
+                        <span class="config-bm-label">${esc(this.t('config.placementLabel', 'Placement'))}</span>
+                        <label class="checkbox-label icon-toggle bookmark-detail-toggle config-bm-pin"
+                               title="${esc(this.t('config.pinnedToggleHint', 'Pin this bookmark to the top of its category'))}">
+                            <input type="checkbox" data-bm-field="pinned" ${b.pinned ? 'checked' : ''}>
+                            <span class="icon-toggle-indicator" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false">
+                                    <path d="M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z"></path>
+                                </svg>
+                            </span>
+                            <span class="bookmark-detail-toggle-label">${esc(this.t('config.pinnedShort', 'Pinned'))}</span>
+                        </label>
+                    </div>
+
+                    <div class="config-bm-cell">
+                        <span class="config-bm-label">${esc(this.t('config.checkModeLabel', 'Availability check'))}</span>
+                        <div class="bookmark-detail-checkmode-options" role="radiogroup" aria-label="${esc(this.t('config.checkModeLabel', 'Availability check'))}">
+                            ${modeRadios}
+                            <select class="bookmark-detail-toggle-select" data-bm-field="monitorIntervalMinutes" ${mode === 'monitor' ? '' : 'hidden'}>${intervalOpts}</select>
+                        </div>
+                        <p class="config-field-hint" data-bm-mode-hint></p>
+                    </div>
+
+                    <div class="config-bm-cell config-bm-cell--wide">
+                        <span class="config-bm-label">${esc(this.t('config.icon', 'Icon'))}</span>
+                        <div class="config-bm-icon-row">
+                            <div class="config-bm-icon-preview">${iconPreview}</div>
+                            <input type="text" class="config-text" data-bm-field="icon" value="${esc(icon)}" placeholder="${esc(this.t('config.iconUrlOptional', 'Icon URL (optional)'))}">
+                            <button type="button" class="config-btn config-btn--small" data-bm-icon="upload">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
+                            <button type="button" class="config-btn config-btn--small" data-bm-icon="clear">${esc(this.t('config.clearIcon', 'Clear icon'))}</button>
+                            <input type="file" data-bm-icon-file accept="image/*,.ico,.svg,.webp" hidden>
+                        </div>
+                    </div>
+
+                    <div class="config-bm-cell config-bm-cell--wide">
+                        <span class="config-bm-label">${esc(this.t('config.linkPreviewSectionTitle', 'Link preview'))}</span>
+                        <p class="config-field-hint" data-bm-preview-title>${b.previewTitle ? esc(b.previewTitle) : esc(this.t('config.noPreviewYet', 'No preview metadata yet.'))}</p>
+                        <div class="config-actions">
+                            <button type="button" class="config-btn config-btn--small" data-bm-preview="refresh">${esc(this.t('config.detailLinkPreviewRefresh', 'Refresh preview'))}</button>
+                            <button type="button" class="config-btn config-btn--small" data-bm-preview="clear">${esc(this.t('config.detailLinkPreviewClear', 'Clear preview'))}</button>
+                        </div>
+                    </div>
+                </div>
+
+                ${saveBar('bottom')}
+            </div>`;
+    }
+
+    /** Bookmark icons are stored as bare filenames; the dashboard serves them from /data/icons/. */
+    resolveIconSrc(icon) {
+        const raw = String(icon || '');
+        if (!raw) return '';
+        if (/^(https?:|data:|\/)/i.test(raw)) return raw;
+        return `/data/icons/${raw}`;
+    }
+
+    bindBookmarksSection(container) {
+        const search = container.querySelector('#config-bm-search');
+        if (search) {
+            search.addEventListener('input', () => {
+                this.bmQuery = search.value;
+                this.repaintBookmarksList();
+            });
+        }
+        const wire = (id, prop) => {
+            const el = container.querySelector(id);
+            if (!el) return;
+            el.addEventListener('change', () => {
+                this[prop] = el.value;
+                this.repaintBookmarksList();
+            });
+        };
+        wire('#config-bm-page', 'bmPageFilter');
+        wire('#config-bm-category', 'bmCategoryFilter');
+        wire('#config-bm-sort', 'bmSort');
+        this.bindBookmarkRows(container);
+        this.bindBulkToolbar(container);
+    }
+
+    /** Row-level handlers, rebound after every list repaint. */
+    bindBookmarkRows(root) {
+        root.querySelectorAll('[data-bm-edit]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const key = btn.getAttribute('data-bm-edit');
+                if (this.bmEditing === key) {
+                    if (!(await this.confirmDiscardBookmarkEdit())) return;
+                    this.bmEditing = null;
+                } else {
+                    if (this.bmEditing && !(await this.confirmDiscardBookmarkEdit())) return;
+                    this.bmEditing = key;
+                }
+                this.bmDirty = false;
+                this.repaintBookmarksList();
+            });
+        });
+        root.querySelectorAll('[data-bm-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => this.deleteBookmarkByKey(btn.getAttribute('data-bm-delete')));
+        });
+        root.querySelectorAll('[data-bm-tick]').forEach((box) => {
+            box.addEventListener('change', () => {
+                const key = box.getAttribute('data-bm-tick');
+                if (box.checked) this.bmSelected.add(key);
+                else this.bmSelected.delete(key);
+                this.repaintBulkToolbar();
+            });
+        });
+        this.bindBookmarkEditorControls(root);
+    }
+
+    /** Everything inside the open editor. */
+    bindBookmarkEditorControls(root) {
+        const editor = root.querySelector('.config-bm-editor');
+        if (!editor) return;
+
+        // The URL the current icon belongs to. Leaving the URL field re-fetches
+        // the favicon whenever the URL has moved away from this, so a changed
+        // address never keeps the previous site's icon.
+        this._bmIconUrl = this.canonicalMetaUrl(editor.querySelector('[data-bm-field="url"]')?.value);
+
+        // Two save bars (top and bottom), so both dirty markers move together.
+        const markDirty = () => this.markEditorDirty(editor);
+
+        editor.querySelectorAll('[data-bm-field]').forEach((el) => {
+            const evt = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+            el.addEventListener(evt, () => {
+                markDirty();
+                if (el.getAttribute('data-bm-field') === 'category' && el.value === '__new__') {
+                    this.openNewCategoryInput(editor);
+                }
+                if (el.getAttribute('data-bm-field') === 'icon') {
+                    this.syncEditorIconPreview(editor);
+                    // Typed by hand, so it belongs to the URL as it stands now
+                    // and a later blur must not fetch over it.
+                    this._bmIconUrl = this.canonicalMetaUrl(editor.querySelector('[data-bm-field="url"]')?.value);
+                }
+            });
+        });
+
+        // Availability mode: show the interval only for Monitor, and explain the
+        // choice in the same words the add-bookmark modal and config panel use.
+        const syncMode = () => {
+            const picked = editor.querySelector('input[name="config-bm-mode"]:checked')?.value || 'off';
+            const sel = editor.querySelector('[data-bm-field="monitorIntervalMinutes"]');
+            if (sel) sel.hidden = picked !== 'monitor';
+            const hint = editor.querySelector('[data-bm-mode-hint]');
+            if (hint) {
+                const key = picked === 'monitor' ? 'checkModeMonitorHint'
+                    : (picked === 'periodic' ? 'checkModePeriodicHint' : 'checkModeOffHint');
+                const fallback = {
+                    checkModeOffHint: 'No availability checking.',
+                    checkModePeriodicHint: 'Checks once a day and flags the bookmark when it breaks.',
+                    checkModeMonitorHint: 'Checks on your own interval and keeps uptime history, a heartbeat and outage alerts.',
+                }[key];
+                hint.textContent = this.t(`config.${key}`, fallback);
+            }
+        };
+        editor.querySelectorAll('input[name="config-bm-mode"]').forEach((r) => {
+            r.addEventListener('change', () => { markDirty(); syncMode(); });
+        });
+        syncMode();
+
+        // Tag autocomplete, drawing on every tag already in use.
+        const tagsInput = editor.querySelector('[data-bm-field="tags"]');
+        if (tagsInput && typeof TagAutocomplete !== 'undefined') {
+            const pool = new Set();
+            (this.dash.allBookmarks || []).forEach((bm) => (bm.tags || []).forEach((t) => pool.add(String(t).toLowerCase())));
+            TagAutocomplete.attach(tagsInput, () => {
+                tagsInput.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean).forEach((t) => pool.add(t));
+                return [...pool];
+            });
+        }
+
+        // Inline "new category".
+        editor.querySelector('[data-bm-newcat-ok]')?.addEventListener('click', () => this.confirmNewCategory(editor));
+        editor.querySelector('[data-bm-newcat-cancel]')?.addEventListener('click', () => this.cancelNewCategory(editor));
+        editor.querySelector('[data-bm-newcat-input]')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); this.confirmNewCategory(editor); }
+            if (e.key === 'Escape') { e.preventDefault(); this.cancelNewCategory(editor); }
+        });
+
+        // Icon: upload a file, or clear it.
+        const fileInput = editor.querySelector('[data-bm-icon-file]');
+        editor.querySelectorAll('[data-bm-icon]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const action = btn.getAttribute('data-bm-icon');
+                if (action === 'upload') fileInput?.click();
+                if (action === 'clear') {
+                    const f = editor.querySelector('[data-bm-field="icon"]');
+                    if (f) f.value = '';
+                    this.syncEditorIconPreview(editor);
+                    // Cleared on purpose: forget which URL the icon belonged to,
+                    // so the next blur is free to fetch one again.
+                    this._bmIconUrl = '';
+                    markDirty();
+                }
+            });
+        });
+        fileInput?.addEventListener('change', async () => {
+            const file = fileInput.files?.[0];
+            fileInput.value = '';
+            if (!file) return;
+            const name = await this.uploadBookmarkIcon(file);
+            if (name) {
+                const f = editor.querySelector('[data-bm-field="icon"]');
+                if (f) f.value = name;
+                this.syncEditorIconPreview(editor);
+                // An icon chosen by hand belongs to the URL as it stands now, so
+                // leaving the field must not fetch over it.
+                this._bmIconUrl = this.canonicalMetaUrl(editor.querySelector('[data-bm-field="url"]')?.value);
+                markDirty();
+            }
+        });
+
+        editor.querySelectorAll('[data-bm-preview]').forEach((btn) => {
+            btn.addEventListener('click', () => this.handleEditorPreview(btn.getAttribute('data-bm-preview')));
+        });
+
+        // Both save bars (top and bottom) drive the same two actions.
+        editor.querySelectorAll('[data-bm-save]').forEach((btn) => {
+            btn.addEventListener('click', () => this.saveEditedBookmark());
+        });
+        editor.querySelectorAll('[data-bm-revert]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.bmDirty = false;
+                this.repaintBookmarksList();
+            });
+        });
+
+        // Live conflict hints for shortcut and URL, matching the add modal.
+        editor.querySelector('[data-bm-field="shortcut"]')?.addEventListener('input', () => this.updateEditorConflicts(editor));
+        this.updateEditorConflicts(editor);
+
+        // URL handling mirrors the add-bookmark modal: typing schedules a
+        // debounced metadata fetch, leaving the field normalises it to a full
+        // http(s) URL first. Both then pull the favicon and, if the name is
+        // still empty, the page title.
+        const urlInput = editor.querySelector('[data-bm-field="url"]');
+        if (urlInput) {
+            urlInput.addEventListener('input', () => {
+                this.updateEditorConflicts(editor);
+                this.scheduleEditorMetaFetch(editor);
+            });
+            urlInput.addEventListener('blur', () => {
+                this.normalizeEditorUrl(editor);
+                this.updateEditorConflicts(editor);
+                void this.autoFetchEditorMeta(editor, { force: false });
+            });
+        }
+        editor.querySelector('[data-bm-refetch]')?.addEventListener('click', () => {
+            this.normalizeEditorUrl(editor);
+            void this.autoFetchEditorMeta(editor, { force: true });
+        });
+    }
+
+    /**
+     * A stable key for "which URL is this icon for". Normalising first means
+     * typing `example.com` and then having it completed to `https://example.com`
+     * does not read as a change and re-fetch for no reason.
+     */
+    canonicalMetaUrl(raw) {
+        const full = window.BookmarkUrlUtils?.ensureHttpUrl?.(raw) || String(raw || '').trim();
+        if (!full) return '';
+        return window.BookmarkUrlUtils?.canonicalBookmarkURLKey?.(full) ?? full.toLowerCase();
+    }
+
+    /** Write the URL back as a full http(s) URL, the way the add modal does. */
+    normalizeEditorUrl(editor) {
+        const input = editor.querySelector('[data-bm-field="url"]');
+        if (!input) return '';
+        const normalized = window.BookmarkUrlUtils?.ensureHttpUrl(input.value) || String(input.value || '').trim();
+        if (normalized && normalized !== String(input.value || '').trim()) {
+            input.value = normalized;
+            this.markEditorDirty(editor);
+        }
+        return normalized;
+    }
+
+    scheduleEditorMetaFetch(editor) {
+        const run = () => void this.autoFetchEditorMeta(editor, { force: false });
+        if (window.BookmarkPreviewService?.scheduleDebounced) {
+            window.BookmarkPreviewService.scheduleDebounced('config-bm-url-meta', run, 500);
+            return;
+        }
+        clearTimeout(this._bmMetaTimer);
+        this._bmMetaTimer = setTimeout(run, 500);
+    }
+
+    markEditorDirty(editor) {
+        this.bmDirty = true;
+        editor.querySelectorAll('[data-bm-dirty]').forEach((el) => { el.hidden = false; });
+    }
+
+    /**
+     * Fetch the favicon and page title for whatever URL the field now holds.
+     * `force` re-fetches even when an icon is already set (the Retry button);
+     * without it an icon the user chose is left alone.
+     */
+    async autoFetchEditorMeta(editor, { force = false } = {}) {
+        if (!editor.isConnected) return;
+        const urlInput = editor.querySelector('[data-bm-field="url"]');
+        const iconInput = editor.querySelector('[data-bm-field="icon"]');
+        const nameInput = editor.querySelector('[data-bm-field="name"]');
+        const state = editor.querySelector('[data-bm-fetch-state]');
+        const url = window.BookmarkUrlUtils?.ensureHttpUrl(urlInput?.value) || String(urlInput?.value || '').trim();
+        if (!url || !window.BookmarkUrlUtils?.isHttpUrl?.(url)) return;
+        if (this._bmFetchInFlight) return;
+
+        // Whether to replace the icon: a different URL than the one the current
+        // icon was fetched for means the old site's icon is simply wrong, so it
+        // is refreshed even though the field is filled. An unchanged URL leaves
+        // a hand-picked icon alone unless Retry asked for it.
+        const canon = this.canonicalMetaUrl(url);
+        const urlChanged = canon !== this._bmIconUrl;
+        const hasIcon = Boolean(String(iconInput?.value || '').trim());
+        const wantIcon = force || urlChanged || !hasIcon;
+        const wantName = !String(nameInput?.value || '').trim();
+        if (!wantIcon && !wantName) return;
+
+        this._bmFetchInFlight = true;
+        if (state) state.textContent = this.t('config.iconFetching', 'Fetching...');
+        try {
+            if (wantIcon) {
+                const icon = await window.BookmarkPreviewService?.fetchAndUploadFavicon?.(url);
+                if (icon && iconInput && editor.isConnected) {
+                    iconInput.value = icon;
+                    this.syncEditorIconPreview(editor);
+                    this.markEditorDirty(editor);
+                }
+                // Recorded either way: a URL whose icon could not be found must
+                // not be retried on every blur.
+                this._bmIconUrl = canon;
+                if (state) state.textContent = icon
+                    ? this.t('config.iconFound', 'Found')
+                    : this.t('config.iconNotFound', 'Not found');
+            } else if (state) {
+                state.textContent = '';
+            }
+
+            // The title only fills an empty name, and always feeds the preview line.
+            const preview = await window.BookmarkPreviewService?.fetchLinkPreview?.(url);
+            if (preview && editor.isConnected) {
+                if (nameInput && !String(nameInput.value || '').trim() && preview.title) {
+                    nameInput.value = preview.title;
+                    this.markEditorDirty(editor);
+                }
+                const line = editor.querySelector('[data-bm-preview-title]');
+                if (line && preview.title) line.textContent = preview.title;
+            }
+        } catch {
+            if (state) state.textContent = this.t('config.iconNotFound', 'Not found');
+        } finally {
+            this._bmFetchInFlight = false;
+        }
+    }
+
+    syncEditorIconPreview(editor) {
+        const host = editor.querySelector('.config-bm-icon-preview');
+        if (!host) return;
+        const val = editor.querySelector('[data-bm-field="icon"]')?.value || '';
+        host.innerHTML = val
+            ? `<img src="${this.dash.escapeHtml(this.resolveIconSrc(val))}" alt="" class="config-bm-icon-img">`
+            : `<span class="config-bm-icon-empty">—</span>`;
+    }
+
+    openNewCategoryInput(editor) {
+        const box = editor.querySelector('[data-bm-newcat]');
+        if (!box) return;
+        box.hidden = false;
+        box.querySelector('[data-bm-newcat-input]')?.focus();
+    }
+
+    cancelNewCategory(editor) {
+        const box = editor.querySelector('[data-bm-newcat]');
+        const sel = editor.querySelector('[data-bm-field="category"]');
+        if (box) { box.hidden = true; const i = box.querySelector('[data-bm-newcat-input]'); if (i) i.value = ''; }
+        if (sel && sel.value === '__new__') sel.value = '';
+    }
+
+    /**
+     * A new category exists only once a bookmark carries it, so this adds the
+     * name as an option and selects it; saving the bookmark is what persists it.
+     */
+    confirmNewCategory(editor) {
+        const box = editor.querySelector('[data-bm-newcat]');
+        const input = box?.querySelector('[data-bm-newcat-input]');
+        const sel = editor.querySelector('[data-bm-field="category"]');
+        const name = String(input?.value || '').trim();
+        if (!name || !sel) return;
+        if (![...sel.options].some((o) => o.value === name)) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            sel.insertBefore(opt, sel.querySelector('option[value="__new__"]'));
+        }
+        sel.value = name;
+        if (box) { box.hidden = true; if (input) input.value = ''; }
+        this.markEditorDirty(editor);
+    }
+
+    /** Warn about a shortcut or URL already used on the target page. */
+    updateEditorConflicts(editor) {
+        const key = editor.getAttribute('data-bm-editor-key');
+        const parsed = this.parseBookmarkKey(key);
+        const pageId = editor.querySelector('[data-bm-field="pageId"]')?.value || parsed?.pageId;
+        const shortcut = String(editor.querySelector('[data-bm-field="shortcut"]')?.value || '').trim().toUpperCase();
+        const url = String(editor.querySelector('[data-bm-field="url"]')?.value || '').trim();
+        const others = (this.dash.allBookmarks || []).filter((b) =>
+            String(b.pageId) === String(pageId) && !(String(b.pageId) === String(parsed?.pageId) && b.url === parsed?.url));
+
+        const show = (which, msg) => {
+            const el = editor.querySelector(`[data-bm-conflict="${which}"]`);
+            if (!el) return;
+            el.textContent = msg || '';
+            el.hidden = !msg;
+        };
+        show('shortcut', shortcut && others.some((b) => String(b.shortcut || '').toUpperCase() === shortcut)
+            ? this.t('config.shortcutConflict', 'Shortcut already in use')
+            : '');
+        const canon = (u) => window.BookmarkUrlUtils?.canonicalBookmarkURLKey?.(u) ?? String(u || '').trim().toLowerCase();
+        show('url', url && others.some((b) => canon(b.url) === canon(url))
+            ? this.t('config.urlConflictHint', 'This URL already exists on this page.')
+            : '');
+    }
+
+    /** Same endpoint and payload the add-bookmark modal uses: POST /api/icon. */
+    async uploadBookmarkIcon(file) {
+        try {
+            const form = new FormData();
+            form.append('icon', file);
+            const res = await this.writeFetch('/api/icon', { method: 'POST', body: form });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const name = data.icon || '';
+            if (!name) throw new Error('no filename');
+            this.notify(this.t('config.iconUploadSuccess', 'Icon uploaded.'), 'success');
+            return name;
+        } catch {
+            this.notify(this.t('config.iconUploadError', 'Could not upload the icon.'), 'error');
+            return '';
+        }
+    }
+
+    /**
+     * Refresh or clear this bookmark's preview metadata. The server's
+     * /api/previews/* endpoints act on everything at once, so a single card is
+     * done the way the bookmark forms do it: fetch the metadata for the URL and
+     * write the three preview fields onto the bookmark itself.
+     */
+    async handleEditorPreview(action) {
+        const parsed = this.parseBookmarkKey(this.bmEditing);
+        const editor = document.querySelector('.config-bm-editor');
+        if (!parsed || !editor) return;
+        const url = editor.querySelector('[data-bm-field="url"]')?.value?.trim() || parsed.url;
+
+        try {
+            let fields;
+            if (action === 'refresh') {
+                if (!window.BookmarkPreviewService?.fetchLinkPreview) {
+                    this.notify(this.t('config.bookmarkLinkPreviewRefreshFailed', 'Could not fetch link preview.'), 'error');
+                    return;
+                }
+                const data = await window.BookmarkPreviewService.fetchLinkPreview(url);
+                fields = {
+                    previewTitle: data.title || '',
+                    previewDesc: data.description || '',
+                    previewImage: data.image || '',
+                };
+            } else {
+                fields = { previewTitle: '', previewDesc: '', previewImage: '' };
+            }
+
+            await this.writePageBookmarks(parsed.pageId, (list) =>
+                list.map((b) => (b.url === parsed.url ? { ...b, ...fields } : b)));
+            this.notify(action === 'refresh'
+                ? this.t('config.bookmarkLinkPreviewRefreshed', 'Link preview updated.')
+                : this.t('config.bookmarkLinkPreviewCleared', 'Link preview cleared.'), 'success');
+            await this.refreshBookmarksAfterWrite();
+        } catch {
+            this.notify(this.t('config.bookmarkLinkPreviewRefreshFailed', 'Could not fetch link preview.'), 'error');
+        }
+    }
+
+    async confirmDiscardBookmarkEdit() {
+        if (!this.bmDirty) return true;
+        return window.confirm(this.t('config.discardChangesConfirm', 'Discard your unsaved changes?'));
+    }
+
+    repaintBookmarksList() {
+        const host = document.getElementById('config-bm-list');
+        if (!host) return;
+        host.innerHTML = this.renderBookmarksList();
+        this.bindBookmarkRows(host);
+        this.repaintBulkToolbar();
+    }
+
+    repaintBulkToolbar() {
+        const host = document.getElementById('config-bm-bulk');
+        if (!host) return;
+        host.innerHTML = this.renderBulkToolbar();
+        this.bindBulkToolbar(host);
+    }
+
+    bindBulkToolbar(root) {
+        root.querySelectorAll('[data-bulk]').forEach((btn) => {
+            btn.addEventListener('click', () => this.handleBulkAction(btn.getAttribute('data-bulk')));
+        });
+    }
+
+    /** Split a "pageId::url" row key back into its parts. */
+    parseBookmarkKey(key) {
+        const idx = String(key || '').indexOf('::');
+        if (idx < 0) return null;
+        return { pageId: key.slice(0, idx), url: key.slice(idx + 2) };
+    }
+
+    /** Re-save one page's bookmark list with a mutation applied. */
+    async writePageBookmarks(pageId, mutate) {
+        const all = this.dash.allBookmarks || [];
+        const list = all.filter((b) => String(b.pageId) === String(pageId))
+            .map((b) => {
+                const copy = { ...b };
+                delete copy.pageId;
+                return copy;
+            });
+        const next = mutate(list);
+        const res = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(next),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    }
+
+    async deleteBookmarkByKey(key) {
+        const parsed = this.parseBookmarkKey(key);
+        if (!parsed) return;
+        if (!window.confirm(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
+        try {
+            await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => b.url !== parsed.url));
+            this.bmSelected.delete(key);
+            if (this.bmEditing === key) { this.bmEditing = null; this.bmDirty = false; }
+            this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success');
+            await this.refreshBookmarksAfterWrite();
+        } catch {
+            this.notify(this.t('config.bookmarkDeleteError', 'Could not delete the bookmark.'), 'error');
+        }
+    }
+
+    async saveEditedBookmark() {
+        const parsed = this.parseBookmarkKey(this.bmEditing);
+        const editor = document.querySelector('.config-bm-editor');
+        if (!parsed || !editor) return;
+        const val = (field) => editor.querySelector(`[data-bm-field="${field}"]`)?.value ?? '';
+        const checked = (field) => editor.querySelector(`[data-bm-field="${field}"]`)?.checked === true;
+
+        const targetPage = String(val('pageId') || parsed.pageId);
+        const category = val('category') === '__new__' ? '' : val('category').trim();
+        const updated = {
+            name: val('name').trim(),
+            url: val('url').trim(),
+            category,
+            shortcut: val('shortcut').trim().toUpperCase(),
+            note: val('note').trim(),
+            pinned: checked('pinned'),
+            icon: val('icon').trim(),
+            tags: val('tags').split(',').map((t) => t.trim().toLowerCase()).filter((t, i, a) => t && a.indexOf(t) === i),
+        };
+        if (!updated.name || !updated.url) {
+            this.notify(this.t('config.nameUrlRequired', 'A name and URL are required.'), 'error');
+            return;
+        }
+
+        // Availability checking goes through CheckMode so the stored
+        // monitor/checkStatus/interval triple matches every other surface.
+        const mode = editor.querySelector('input[name="config-bm-mode"]:checked')?.value || 'off';
+        if (window.CheckMode) {
+            updated.monitorIntervalMinutes = Number(val('monitorIntervalMinutes')) || 15;
+            window.CheckMode.assign(updated, mode);
+        }
+
+        try {
+            const original = (this.dash.allBookmarks || [])
+                .find((b) => String(b.pageId) === String(parsed.pageId) && b.url === parsed.url) || {};
+            if (targetPage === String(parsed.pageId)) {
+                await this.writePageBookmarks(parsed.pageId, (list) =>
+                    list.map((b) => (b.url === parsed.url ? { ...b, ...updated } : b)));
+            } else {
+                // Moving pages is two writes: drop it from the old page, then
+                // append it to the new one so it cannot exist on both at once.
+                await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => b.url !== parsed.url));
+                await this.refreshBookmarksAfterWrite({ silent: true });
+                await this.writePageBookmarks(targetPage, (list) => [...list, { ...original, ...updated }]);
+            }
+            this.bmEditing = null;
+            this.bmDirty = false;
+            this.notify(this.t('config.bookmarkSaved', 'Bookmark saved.'), 'success');
+            await this.refreshBookmarksAfterWrite();
+        } catch {
+            this.notify(this.t('config.bookmarkSaveError', 'Could not save the bookmark.'), 'error');
+        }
+    }
+
+    /* ── Bulk actions ──────────────────────────────────────────────────────── */
+
+    /** The ticked bookmarks, resolved back to live objects. */
+    selectedBookmarks() {
+        const keys = this.bmSelected;
+        return (this.dash.allBookmarks || []).filter((b) => keys.has(DashboardConfig.bookmarkKey(b)));
+    }
+
+    async handleBulkAction(action) {
+        if (action === 'clear') {
+            this.bmSelected.clear();
+            this.repaintBookmarksList();
+            return;
+        }
+        const picked = this.selectedBookmarks();
+        if (!picked.length) return;
+
+        try {
+            if (action === 'move') await this.bulkMove(picked);
+            else if (action === 'tags') await this.bulkTags(picked);
+            else if (action === 'status') await this.bulkStatus(picked);
+            else if (action === 'pin') await this.bulkPin(picked);
+            else if (action === 'delete') await this.bulkDelete(picked);
+        } catch {
+            this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
+        }
+    }
+
+    /**
+     * Apply a mutation to every ticked bookmark, grouped per page so each page
+     * is written exactly once rather than once per bookmark.
+     */
+    async mutateSelected(picked, mutate) {
+        const byPage = new Map();
+        picked.forEach((b) => {
+            const list = byPage.get(String(b.pageId)) || [];
+            list.push(b.url);
+            byPage.set(String(b.pageId), list);
+        });
+        for (const [pageId, urls] of byPage) {
+            const set = new Set(urls);
+            await this.writePageBookmarks(pageId, (list) => list.map((b) => (set.has(b.url) ? mutate({ ...b }) : b)));
+        }
+        this.bmSelected.clear();
+        await this.refreshBookmarksAfterWrite();
+    }
+
+    async bulkMove(picked) {
+        const targetPage = document.getElementById('config-bulk-page')?.value || '';
+        const targetCat = document.getElementById('config-bulk-category')?.value || '';
+        if (!targetPage && !targetCat) return;
+
+        if (targetCat && !targetPage) {
+            await this.mutateSelected(picked, (b) => ({ ...b, category: targetCat }));
+            this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
+            return;
+        }
+
+        // A page move is a remove-then-append across two lists, so it cannot go
+        // through mutateSelected.
+        const moving = picked.filter((b) => String(b.pageId) !== String(targetPage));
+        const byPage = new Map();
+        moving.forEach((b) => {
+            const list = byPage.get(String(b.pageId)) || [];
+            list.push(b.url);
+            byPage.set(String(b.pageId), list);
+        });
+        const carried = moving.map((b) => {
+            const copy = { ...b };
+            delete copy.pageId;
+            if (targetCat) copy.category = targetCat;
+            return copy;
+        });
+        for (const [pageId, urls] of byPage) {
+            const set = new Set(urls);
+            await this.writePageBookmarks(pageId, (list) => list.filter((b) => !set.has(b.url)));
+        }
+        await this.refreshBookmarksAfterWrite({ silent: true });
+        if (carried.length) {
+            await this.writePageBookmarks(targetPage, (list) => [...list, ...carried]);
+        }
+        // Anything already on the target page still needs its category applied.
+        const staying = picked.filter((b) => String(b.pageId) === String(targetPage));
+        if (targetCat && staying.length) {
+            const set = new Set(staying.map((b) => b.url));
+            await this.refreshBookmarksAfterWrite({ silent: true });
+            await this.writePageBookmarks(targetPage, (list) =>
+                list.map((b) => (set.has(b.url) ? { ...b, category: targetCat } : b)));
+        }
+        this.bmSelected.clear();
+        await this.refreshBookmarksAfterWrite();
+        this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
+    }
+
+    async bulkTags(picked) {
+        const raw = document.getElementById('config-bulk-tags')?.value || '';
+        const mode = document.getElementById('config-bulk-tags-mode')?.value || 'add';
+        const tags = raw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+        if (!tags.length) return;
+        await this.mutateSelected(picked, (b) => {
+            const current = Array.isArray(b.tags) ? b.tags.map((t) => String(t).toLowerCase()) : [];
+            let next;
+            if (mode === 'replace') next = [...tags];
+            else if (mode === 'remove') next = current.filter((t) => !tags.includes(t));
+            else next = [...new Set([...current, ...tags])];
+            return { ...b, tags: next };
+        });
+        this.notify(this.t('config.bulkTagsDone', 'Tags updated.'), 'success');
+    }
+
+    async bulkStatus(picked) {
+        const mode = document.getElementById('config-bulk-status')?.value || 'off';
+        await this.mutateSelected(picked, (b) => {
+            const next = { ...b };
+            if (window.CheckMode) {
+                next.monitorIntervalMinutes = window.CheckMode.intervalOf?.(b) || 15;
+                window.CheckMode.assign(next, mode);
+            }
+            return next;
+        });
+        this.notify(this.t('config.bulkStatusDone', 'Availability checking updated.'), 'success');
+    }
+
+    async bulkPin(picked) {
+        // Mixed selections pin everything rather than flipping each: a toggle
+        // that leaves half pinned is not what "toggle pin" is asked to do.
+        const allPinned = picked.every((b) => b.pinned === true);
+        await this.mutateSelected(picked, (b) => ({ ...b, pinned: !allPinned }));
+        this.notify(this.t('config.bulkPinDone', 'Pins updated.'), 'success');
+    }
+
+    async bulkDelete(picked) {
+        const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks? This cannot be undone.')
+            .replace('{n}', String(picked.length));
+        if (!window.confirm(msg)) return;
+        const byPage = new Map();
+        picked.forEach((b) => {
+            const list = byPage.get(String(b.pageId)) || [];
+            list.push(b.url);
+            byPage.set(String(b.pageId), list);
+        });
+        for (const [pageId, urls] of byPage) {
+            const set = new Set(urls);
+            await this.writePageBookmarks(pageId, (list) => list.filter((b) => !set.has(b.url)));
+        }
+        this.bmSelected.clear();
+        this.bmEditing = null;
+        this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success');
+        await this.refreshBookmarksAfterWrite();
+    }
+
+    /** Reload the dashboard's bookmark copies and repaint both list and grid. */
+    async refreshBookmarksAfterWrite({ silent = false } = {}) {
+        await this.dash.loadAllBookmarks?.();
+        await this.dash.loadPageBookmarks?.(this.dash.currentPageId, { forceFetch: true });
+        if (silent) return;
+        this.dash.renderDashboard?.({ animate: false });
+        if (this.isActiveView() && this.section === 'bookmarks') this.repaintBookmarksList();
+    }
+
+    /* ── Statistics (native) ───────────────────────────────────────────────── */
+
+    /** How far back the activity chart looks, in days. */
+    static STATS_RANGES = [7, 30, 90, 365];
+
+    /**
+     * A read-only report on what is actually in the dashboard: a cleanup score,
+     * an activity chart, ratio bars, top lists and per-page/tag distributions.
+     *
+     * Everything is derived from the bookmark copies the shell already holds, so
+     * opening this costs one health fetch rather than a page load. The score and
+     * the chart use the same formulas and bucketing the old config's stats tab
+     * used, so a number does not change meaning by moving views.
+     */
+    renderStats() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.computeStats();
+
+        const tile = (label, value, hint) => `
+            <div class="config-tile" role="listitem">
+                <span class="config-tile-label">${esc(label)}</span>
+                <span class="config-tile-value">${esc(String(value))}</span>
+                ${hint ? `<p class="config-tile-detail">${esc(hint)}</p>` : ''}
+            </div>`;
+
+        return `
+            <p class="config-view-intro">${esc(this.t('config.statsIntroView', 'What is in your dashboard right now. These numbers update as you change things.'))}</p>
+
+            <div class="config-actions" style="margin-bottom:16px">
+                <button type="button" class="config-btn config-btn--small" data-stats-action="export">${esc(this.t('config.statsExportCsv', 'Export as CSV'))}</button>
+            </div>
+
+            <div class="config-tiles" role="list">
+                ${tile(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
+                ${tile(this.t('config.statsPages', 'Pages'), s.pages)}
+                ${tile(this.t('config.statsCategoryCount', 'Categories'), s.categories)}
+                ${tile(this.t('config.statsTagCount', 'Distinct tags'), s.tagCount)}
+                ${tile(this.t('config.statsWithShortcut', 'With a shortcut'), s.withShortcut)}
+                ${tile(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
+            </div>
+
+            ${this.renderStatsScore(s)}
+            ${this.renderStatsActivity(s)}
+            ${this.renderStatsRatios(s)}
+            ${this.renderStatsTopLists(s)}
+            ${this.renderStatsDistributions(s)}
+            ${this.renderStatsRot(s)}
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsHealthTitle', 'Link health'))}</h3>
+                <div id="config-stats-health">${this.renderStatsHealth()}</div>
+            </div>
+        `;
+    }
+
+    /**
+     * The cleanup score, using the old config's weights exactly: never-opened
+     * costs up to 25, stale-90-days up to 20, duplicate URLs up to 15 and
+     * shortcut conflicts up to 10, from a starting 100.
+     */
+    renderStatsScore(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!s.total) {
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsNavScore', 'Cleanup score'))}</h3>
+                    <p class="config-panel-empty">${esc(this.t('config.noBookmarksYet', 'No bookmarks yet.'))}</p>
+                </div>`;
+        }
+        const { score, details } = s.cleanup;
+        const tone = score >= 80 ? 'good' : (score >= 50 ? 'warn' : 'crit');
+        const rows = details.map((d) => `
+            <li class="config-stat-detail config-stat-detail--${esc(d.type)}">
+                <span>${esc(d.text)}</span>
+                ${d.penalty ? `<span class="config-stat-penalty">−${esc(String(d.penalty))}</span>` : ''}
+            </li>`).join('');
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsNavScore', 'Cleanup score'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.statsScoreHint', 'Starts at 100 and loses points for bookmarks you never open, links gone stale, duplicate URLs and clashing shortcuts.'))}</p>
+                <div class="config-score">
+                    <span class="config-score-value config-score-value--${tone}">${esc(String(score))}</span>
+                    <div class="config-bar" role="img" aria-label="${esc(this.t('config.statsNavScore', 'Cleanup score'))}: ${score}/100">
+                        <span class="config-bar-fill config-bar-fill--${tone}" style="width:${score}%"></span>
+                    </div>
+                </div>
+                <ul class="config-stat-details">${rows}</ul>
+            </div>`;
+    }
+
+    /**
+     * Opens per bucket as an SVG bar chart. A screen-reader table carries the
+     * same numbers, because a chart that only exists as shapes is unreadable to
+     * anyone not looking at it.
+     */
+    renderStatsActivity(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const a = s.activity;
+        const ranges = DashboardConfig.STATS_RANGES.map((d) => {
+            const on = d === this.statsRange;
+            return `<button type="button" class="config-choice${on ? ' is-active' : ''}" data-stats-range="${d}" aria-pressed="${on}">${esc(this.statsRangeLabel(d))}</button>`;
+        }).join('');
+
+        if (!a.buckets.length) {
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsNavActivity', 'Activity'))}</h3>
+                    <div class="config-choices" role="group">${ranges}</div>
+                    <p class="config-panel-empty">${esc(this.t('config.statsNoActivity', 'No opens recorded in this period.'))}</p>
+                </div>`;
+        }
+
+        const W = 500;
+        const H = 72;
+        const gap = 3;
+        const n = a.buckets.length;
+        const max = Math.max(...a.buckets, 1);
+        const barW = Math.max(1, Math.floor((W - gap * (n - 1)) / n));
+        const bars = a.buckets.map((val, i) => {
+            const h = Math.round((val / max) * H);
+            const x = i * (barW + gap);
+            const opacity = val === 0 ? 0.15 : (0.75 + (val / max) * 0.25).toFixed(2);
+            return `<rect x="${x}" y="${H - h}" width="${barW}" height="${Math.max(h, val > 0 ? 2 : 0)}" rx="1" fill="var(--accent-color, #4a90d9)" opacity="${opacity}"></rect>`;
+        }).join('');
+        const summary = a.labels.map((l, i) => `${l}: ${a.buckets[i]}`).join(', ');
+        const srRows = a.labels.map((l, i) =>
+            `<tr><th scope="row">${esc(l)}</th><td>${esc(String(a.buckets[i]))}</td></tr>`).join('');
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsNavActivity', 'Activity'))}</h3>
+                <div class="config-choices" role="group">${ranges}</div>
+                <div class="config-stat-figures">
+                    <span><strong>${esc(String(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityOpens', 'opens'))}</span>
+                    <span><strong>${esc(String(a.activeCount))}</strong> ${esc(this.t('config.statsActivityActive', 'bookmarks used'))}</span>
+                    ${a.wow !== null ? `<span class="config-stat-trend config-stat-trend--${a.wow >= 0 ? 'up' : 'down'}">${a.wow >= 0 ? '▲' : '▼'} ${esc(String(Math.abs(a.wow)))}% ${esc(this.t('config.statsActivityVsPrev', 'vs previous period'))}</span>` : ''}
+                </div>
+                <div class="config-chart">
+                    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+                         aria-label="${esc(this.t('config.statsSparklineAriaView', 'Opens per period'))}: ${esc(summary)}">${bars}</svg>
+                    <div class="config-chart-labels">
+                        <span>${esc(a.labels[0] || '')}</span>
+                        <span>${esc(a.labels[a.labels.length - 1] || '')}</span>
+                    </div>
+                </div>
+                <table class="config-sr-only">
+                    <caption>${esc(this.t('config.statsSparklineTableCaptionView', 'Opens per period'))}</caption>
+                    <tbody>${srRows}</tbody>
+                </table>
+            </div>`;
+    }
+
+    statsRangeLabel(days) {
+        if (days === 365) return this.t('config.statsRangeYear', '1 year');
+        return this.t('config.statsRangeDays', '{n} days').replace('{n}', String(days));
+    }
+
+    /** Coverage bars: how much of the collection carries tags, shortcuts, notes. */
+    renderStatsRatios(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const bar = (label, count, total, hint) => {
+            const pct = total ? Math.round((count / total) * 100) : 0;
+            return `
+                <div class="config-ratio">
+                    <div class="config-ratio-head">
+                        <span class="config-ratio-label">${esc(label)}</span>
+                        <span class="config-ratio-value">${esc(String(count))} / ${esc(String(total))} · ${pct}%</span>
+                    </div>
+                    <div class="config-bar" role="img" aria-label="${esc(label)}: ${pct}%">
+                        <span class="config-bar-fill" style="width:${pct}%"></span>
+                    </div>
+                    ${hint ? `<p class="config-field-hint">${esc(hint)}</p>` : ''}
+                </div>`;
+        };
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsCoverageTitle', 'Coverage'))}</h3>
+                ${bar(this.t('config.statsTaggedBookmarks', 'Tagged'), s.tagged, s.total)}
+                ${bar(this.t('config.statsWithShortcut', 'With a shortcut'), s.withShortcut, s.total)}
+                ${bar(this.t('config.statsWithNote', 'With a note'), s.withNote, s.total)}
+                ${bar(this.t('config.statsWithIcon', 'With an icon'), s.withIcon, s.total)}
+                ${bar(this.t('config.statsChecked', 'Availability checked'), s.checked, s.total)}
+            </div>`;
+    }
+
+    /**
+     * Top lists: most opened, most tagged, and what has never been touched.
+     * The ranked lists get the same bar as the distributions — a count is easier
+     * to compare against its neighbours as a length than as a number.
+     */
+    renderStatsTopLists(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+
+        const rankedList = (title, rows, emptyText, hint) => {
+            if (!rows.length) {
+                return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(title)}</h3>
+                    ${hint ? `<p class="config-panel-note">${esc(hint)}</p>` : ''}
+                    <p class="config-panel-empty">${esc(emptyText)}</p>
+                </div>`;
+            }
+            const max = Math.max(...rows.map(([, v]) => Number(v) || 0), 1);
+            const items = rows.map(([label, value]) => {
+                const n = Number(value) || 0;
+                const pct = Math.round((n / max) * 100);
+                return `
+                    <li class="config-dist-row">
+                        <span class="config-dist-label">${esc(label)}</span>
+                        <div class="config-bar config-bar--slim" role="img" aria-label="${esc(label)}: ${esc(String(n))}">
+                            <span class="config-bar-fill" style="width:${pct}%"></span>
+                        </div>
+                        <span class="config-dist-count">${esc(String(n))}</span>
+                    </li>`;
+            }).join('');
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(title)}</h3>
+                    ${hint ? `<p class="config-panel-note">${esc(hint)}</p>` : ''}
+                    <ul class="config-dist-list">${items}</ul>
+                </div>`;
+        };
+
+        // Never-opened is a plain list: its second column is a URL, not a count,
+        // so there is nothing to scale a bar against.
+        const plainList = (title, rows, emptyText, hint) => {
+            const items = rows.length
+                ? rows.map(([label, sub]) => `
+                    <li class="config-crud-row">
+                        <div class="config-bm-main">
+                            <span class="config-bm-name">${esc(label)}</span>
+                            <span class="config-bm-url">${esc(sub)}</span>
+                        </div>
+                    </li>`).join('')
+                : '';
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(title)}</h3>
+                    ${hint ? `<p class="config-panel-note">${esc(hint)}</p>` : ''}
+                    ${items
+                        ? `<ul class="config-crud-list">${items}</ul>`
+                        : `<p class="config-panel-empty">${esc(emptyText)}</p>`}
+                </div>`;
+        };
+
+        return rankedList(this.t('config.statsTopOpened', 'Most opened'), s.topOpened,
+                this.t('config.statsNoOpens', 'Nothing has been opened yet.'))
+            + rankedList(this.t('config.statsTopTags', 'Most used tags'), s.topTags,
+                this.t('config.noTagsYet', 'No tags yet.'))
+            + plainList(this.t('config.statsNeverOpenedTitle', 'Never opened'), s.neverOpenedList,
+                this.t('config.statsAllOpened', 'Everything has been opened at least once.'),
+                this.t('config.statsNeverOpenedHint', 'Candidates to tidy up — they have never been used.'));
+    }
+
+    /** Where the bookmarks sit: per page, per category. */
+    renderStatsDistributions(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const rows = (pairs) => pairs.map(([label, count]) => {
+            const pct = s.total ? Math.round((count / s.total) * 100) : 0;
+            return `
+                <li class="config-dist-row">
+                    <span class="config-dist-label">${esc(label)}</span>
+                    <div class="config-bar config-bar--slim" role="img" aria-label="${esc(label)}: ${esc(String(count))}">
+                        <span class="config-bar-fill" style="width:${pct}%"></span>
+                    </div>
+                    <span class="config-dist-count">${esc(String(count))}</span>
+                </li>`;
+        }).join('');
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsPerPage', 'Bookmarks per page'))}</h3>
+                <ul class="config-dist-list">${rows(s.perPage)}</ul>
+            </div>
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsPerCategory', 'Bookmarks per category'))}</h3>
+                <ul class="config-dist-list">${rows(s.perCategory)}</ul>
+            </div>`;
+    }
+
+    /** Link rot and clashes: stale, duplicates, shortcut conflicts. */
+    renderStatsRot(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const line = (label, n, hint) => `
+            <li class="config-stat-detail${n > 0 ? ' config-stat-detail--warn' : ''}">
+                <span>${esc(label)}${hint ? ` — <span class="config-stat-sub">${esc(hint)}</span>` : ''}</span>
+                <span class="config-stat-penalty">${esc(String(n))}</span>
+            </li>`;
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsNavRot', 'Link rot & clashes'))}</h3>
+                <ul class="config-stat-details">
+                    ${line(this.t('config.statsNeverOpened', 'Never opened'), s.neverOpened)}
+                    ${line(this.t('config.statsStale90', 'Not opened in 90 days'), s.stale90)}
+                    ${line(this.t('config.statsDuplicateUrls', 'Duplicate URLs'), s.duplicateUrls)}
+                    ${line(this.t('config.statsShortcutConflicts', 'Shortcut conflicts'), s.shortcutConflicts)}
+                    ${line(this.t('config.statsUntagged', 'Untagged'), s.total - s.tagged)}
+                </ul>
+            </div>`;
+    }
+
+    /**
+     * Everything derivable from the shell's own bookmark/page copies, including
+     * the cleanup score and the activity buckets.
+     */
+    computeStats() {
+        const all = this.dash.allBookmarks || [];
+        const pages = this.dash.pages || [];
+        const total = all.length;
+
+        const tagCounts = new Map();
+        const categoryKeys = new Set();
+        const perCategoryCount = new Map();
+        let withShortcut = 0;
+        let monitored = 0;
+        let tagged = 0;
+        let withNote = 0;
+        let withIcon = 0;
+        let checked = 0;
+        let neverOpened = 0;
+
+        const cutoff90 = Date.now() - 90 * 86400000;
+        let stale90 = 0;
+        const urlCounts = new Map();
+        const shortcutCounts = new Map();
+
+        all.forEach((b) => {
+            const tags = Array.isArray(b.tags) ? b.tags : [];
+            tags.forEach((t) => tagCounts.set(t, (tagCounts.get(t) || 0) + 1));
+            if (tags.length) tagged += 1;
+            if (b.category) {
+                categoryKeys.add(`${b.pageId}::${b.category}`);
+                perCategoryCount.set(b.category, (perCategoryCount.get(b.category) || 0) + 1);
+            }
+            if (b.shortcut) withShortcut += 1;
+            if (b.monitor === true) monitored += 1;
+            if (String(b.note || '').trim()) withNote += 1;
+            if (String(b.icon || '').trim()) withIcon += 1;
+            if (b.checkStatus === true || b.monitor === true) checked += 1;
+
+            const opens = Number(b.openCount || 0);
+            const last = Number(b.lastOpened || 0);
+            if (!opens && !last) neverOpened += 1;
+            if (last > 0 && last < cutoff90) stale90 += 1;
+
+            const url = String(b.url || '').trim().toLowerCase();
+            if (url) urlCounts.set(url, (urlCounts.get(url) || 0) + 1);
+            const sc = String(b.shortcut || '').trim().toLowerCase();
+            if (sc) shortcutCounts.set(sc, (shortcutCounts.get(sc) || 0) + 1);
+        });
+
+        const duplicateUrls = [...urlCounts.values()].filter((c) => c > 1).length;
+        const shortcutConflicts = [...shortcutCounts.values()].filter((c) => c > 1).length;
+
+        const catLabels = new Map(this.knownCategories().map((c) => [c.id, c.label]));
+        const perCategory = [...perCategoryCount.entries()]
+            .map(([id, n]) => [catLabels.get(id) || id, n])
+            .sort((a, b) => b[1] - a[1]);
+
+        const perPage = pages.map((p) => [
+            p.name || String(p.id),
+            all.filter((b) => String(b.pageId) === String(p.id)).length,
+        ]);
+
+        const topTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const topOpened = all
+            .filter((b) => Number(b.openCount || 0) > 0)
+            .sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0))
+            .slice(0, 10)
+            .map((b) => [b.name || b.url, Number(b.openCount || 0)]);
+        const neverOpenedList = all
+            .filter((b) => !Number(b.openCount || 0) && !Number(b.lastOpened || 0))
+            .slice(0, 10)
+            .map((b) => [b.name || b.url, b.url]);
+
+        return {
+            total,
+            pages: pages.length,
+            categories: categoryKeys.size,
+            tagCount: tagCounts.size,
+            withShortcut,
+            monitored,
+            tagged,
+            withNote,
+            withIcon,
+            checked,
+            neverOpened,
+            stale90,
+            duplicateUrls,
+            shortcutConflicts,
+            perPage,
+            perCategory,
+            topTags,
+            topOpened,
+            neverOpenedList,
+            cleanup: this.computeCleanupScore(all, { neverOpened, stale90, duplicateUrls, shortcutConflicts }),
+            activity: this.computeActivity(all),
+        };
+    }
+
+    /** The old config's scoring weights, kept identical so the number carries over. */
+    computeCleanupScore(all, { neverOpened, stale90, duplicateUrls, shortcutConflicts }) {
+        const total = all.length;
+        if (!total) return { score: 0, details: [] };
+
+        let score = 100;
+        const details = [];
+
+        const neverRatio = neverOpened / total;
+        const neverPenalty = Math.round(Math.min(neverRatio * 50, 25));
+        if (neverPenalty > 0) {
+            score -= neverPenalty;
+            details.push({
+                type: 'warn',
+                penalty: neverPenalty,
+                text: this.t('config.statsScoreNeverOpenedView', '{count} bookmarks never opened ({pct}%)')
+                    .replace('{count}', String(neverOpened)).replace('{pct}', String(Math.round(neverRatio * 100))),
+            });
+        }
+
+        const staleRatio = stale90 / total;
+        const stalePenalty = Math.round(Math.min(staleRatio * 40, 20));
+        if (stalePenalty > 0) {
+            score -= stalePenalty;
+            details.push({
+                type: 'warn',
+                penalty: stalePenalty,
+                text: this.t('config.statsScoreStale90View', '{count} not opened in 90 days ({pct}%)')
+                    .replace('{count}', String(stale90)).replace('{pct}', String(Math.round(staleRatio * 100))),
+            });
+        }
+
+        if (duplicateUrls > 0) {
+            const pen = Math.min(duplicateUrls * 3, 15);
+            score -= pen;
+            details.push({
+                type: 'bad',
+                penalty: pen,
+                text: this.t('config.statsScoreDupUrlsView', '{count} duplicate URLs')
+                    .replace('{count}', String(duplicateUrls)),
+            });
+        }
+
+        if (shortcutConflicts > 0) {
+            const pen = Math.min(shortcutConflicts * 5, 10);
+            score -= pen;
+            details.push({
+                type: 'bad',
+                penalty: pen,
+                text: this.t('config.statsScoreConflictsView', '{count} shortcut conflicts')
+                    .replace('{count}', String(shortcutConflicts)),
+            });
+        }
+
+        score = Math.max(0, Math.min(100, score));
+        if (!details.length) {
+            details.push({ type: 'good', text: this.t('config.statsScoreHealthy', 'Nothing to clean up — everything looks healthy.') });
+        }
+        return { score, details };
+    }
+
+    /**
+     * Opens bucketed over the chosen range. Buckets are days for a week or a
+     * month and weeks beyond that, so the bar count stays readable.
+     */
+    computeActivity(all) {
+        const days = this.statsRange || 30;
+        const now = Date.now();
+        const DAY = 86400000;
+        const bucketDays = days <= 30 ? 1 : (days <= 90 ? 7 : 30);
+        const bucketCount = Math.max(1, Math.round(days / bucketDays));
+        const buckets = new Array(bucketCount).fill(0);
+        const cutoff = now - days * DAY;
+
+        all.forEach((b) => {
+            const last = Number(b.lastOpened || 0);
+            if (!last || last < cutoff) return;
+            const age = now - last;
+            const idx = bucketCount - 1 - Math.min(bucketCount - 1, Math.floor(age / (bucketDays * DAY)));
+            buckets[idx] += Math.max(1, Number(b.openCount || 1));
+        });
+
+        const labels = buckets.map((_, i) => {
+            const agoBuckets = bucketCount - 1 - i;
+            if (agoBuckets === 0) return this.t('config.statsSparklineToday', 'now');
+            const agoDays = agoBuckets * bucketDays;
+            return this.t('config.statsSparklineDaysAgoView', '{n}d ago').replace('{n}', String(agoDays));
+        });
+
+        const activeCount = all.filter((b) => Number(b.lastOpened || 0) >= cutoff).length;
+        const totalOpens = buckets.reduce((a, b) => a + b, 0);
+
+        // Compare the latter half of the range with the former, which is what the
+        // old tab's week-over-week figure did for a 7-day window.
+        const half = Math.floor(bucketCount / 2);
+        let wow = null;
+        if (half > 0) {
+            const prev = buckets.slice(0, half).reduce((a, b) => a + b, 0);
+            const recent = buckets.slice(bucketCount - half).reduce((a, b) => a + b, 0);
+            if (prev > 0) wow = Math.round(((recent - prev) / prev) * 100);
+            else if (recent > 0) wow = 100;
+        }
+
+        return { buckets, labels, activeCount, totalOpens, wow, bucketDays };
+    }
+
+    renderStatsHealth() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const h = this._statsHealth;
+        if (h === undefined) {
+            return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+        }
+        if (h === null) {
+            return `<p class="config-panel-empty">${esc(this.t('config.statsHealthUnavailable', 'Health data is not available.'))}</p>`;
+        }
+        const total = Math.max(1, h.healthy + h.broken + h.unchecked);
+        const pct = Math.round((h.healthy / total) * 100);
+        const line = (label, n, tone) => `
+            <li class="config-stat-detail${tone ? ' config-stat-detail--' + tone : ''}">
+                <span>${esc(label)}</span>
+                <span class="config-stat-penalty">${esc(String(n))}</span>
+            </li>`;
+        return `
+            <div class="config-ratio">
+                <div class="config-ratio-head">
+                    <span class="config-ratio-label">${esc(this.t('config.statsHealthy', 'Healthy'))}</span>
+                    <span class="config-ratio-value">${pct}%</span>
+                </div>
+                <div class="config-bar" role="img" aria-label="${esc(this.t('config.statsHealthy', 'Healthy'))}: ${pct}%">
+                    <span class="config-bar-fill config-bar-fill--good" style="width:${pct}%"></span>
+                </div>
+            </div>
+            <ul class="config-stat-details">
+                ${line(this.t('config.statsHealthy', 'Healthy'), h.healthy, 'good')}
+                ${line(this.t('config.statsBroken', 'Broken'), h.broken, h.broken ? 'bad' : '')}
+                ${line(this.t('config.statsMonitorDown', 'Monitors down'), h.monitorDown, h.monitorDown ? 'bad' : '')}
+                ${line(this.t('config.statsUnchecked', 'Unchecked'), h.unchecked)}
+                ${line(this.t('config.statsStale', 'Stale'), h.stale, h.stale ? 'warn' : '')}
+                ${line(this.t('config.statsDuplicates', 'Duplicates'), h.duplicates, h.duplicates ? 'warn' : '')}
+                ${line(this.t('config.statsShortcutConflicts', 'Shortcut conflicts'), h.shortcutConflicts, h.shortcutConflicts ? 'warn' : '')}
+            </ul>`;
+    }
+
+    /**
+     * The health endpoint already aggregates the counts, so read its summary
+     * rather than re-deriving them from the issue list (which only carries the
+     * bookmarks that have something wrong with them).
+     */
+    async loadStats() {
+        try {
+            const res = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmark-health');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const sum = data?.summary;
+            if (!sum) throw new Error('no summary');
+            this._statsHealth = {
+                healthy: sum.healthyCount || 0,
+                broken: sum.brokenCount || 0,
+                unchecked: sum.uncheckedCount || 0,
+                monitorDown: sum.monitorDownCount || 0,
+                duplicates: sum.duplicateCount || 0,
+                stale: sum.staleCount || 0,
+                shortcutConflicts: sum.shortcutConflictCount || 0,
+            };
+        } catch {
+            this._statsHealth = null;
+        }
+        if (this.isActiveView() && this.section === 'stats') {
+            const host = document.getElementById('config-stats-health');
+            if (host) host.innerHTML = this.renderStatsHealth();
+        }
+    }
+
+    bindStats(container) {
+        container.querySelectorAll('[data-stats-range]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const next = Number(btn.getAttribute('data-stats-range'));
+                if (!next || next === this.statsRange) return;
+                this.statsRange = next;
+                this.repaintStats();
+            });
+        });
+        container.querySelectorAll('[data-stats-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if (btn.getAttribute('data-stats-action') === 'export') this.exportStatsCSV();
+            });
+        });
+    }
+
+    /** Repaint the whole section: the range change feeds nearly every panel. */
+    repaintStats() {
+        if (!this.isActiveView() || this.section !== 'stats') return;
+        const body = document.getElementById('config-view-body');
+        if (!body) return;
+        body.innerHTML = this.renderStats();
+        const container = document.getElementById('dashboard-layout');
+        if (container) this.bindStats(container);
+    }
+
+    /** The report as a flat CSV, so it can be worked through in a spreadsheet. */
+    exportStatsCSV() {
+        const s = this.computeStats();
+        const rows = [
+            ['metric', 'value'],
+            ['bookmarks', s.total],
+            ['pages', s.pages],
+            ['categories', s.categories],
+            ['distinct_tags', s.tagCount],
+            ['tagged', s.tagged],
+            ['with_shortcut', s.withShortcut],
+            ['with_note', s.withNote],
+            ['with_icon', s.withIcon],
+            ['availability_checked', s.checked],
+            ['monitored', s.monitored],
+            ['never_opened', s.neverOpened],
+            ['stale_90_days', s.stale90],
+            ['duplicate_urls', s.duplicateUrls],
+            ['shortcut_conflicts', s.shortcutConflicts],
+            ['cleanup_score', s.cleanup.score],
+        ];
+        s.perPage.forEach(([name, n]) => rows.push([`page:${name}`, n]));
+        s.perCategory.forEach(([name, n]) => rows.push([`category:${name}`, n]));
+        s.topTags.forEach(([tag, n]) => rows.push([`tag:${tag}`, n]));
+
+        const esc = (v) => {
+            const str = String(v ?? '');
+            return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+        };
+        const csv = rows.map((r) => r.map(esc).join(',')).join('\n');
+        this.triggerDownload(new Blob([csv], { type: 'text/csv' }),
+            `nextdash-stats-${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+
+    /* ── Help (native) ─────────────────────────────────────────────────────── */
+
+    renderHelp() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const tips = this.helpTips().map((tip) => `<li class="config-help-tip">${tip}</li>`).join('');
+        return `
+            <p class="config-view-intro">${esc(this.t('config.helpIntro', 'Shortcuts, tips, and where to find more.'))}</p>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.helpWhatsNewTitle', 'What’s new'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.helpWhatsNewHint', 'See what changed in the most recent releases.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-help-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
+                </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.helpShortcutsTitle', 'Keyboard shortcuts'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.helpShortcutsHint', 'The cheat sheet lists every shortcut, including the ones you have rebound.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
+                </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.helpTipsTitle', 'Tips & tricks'))}</h3>
+                <ul class="config-help-tips">${tips}</ul>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.helpAboutTitle', 'About nextDash'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.helpAboutText', 'nextDash is a self-hosted, keyboard-first bookmark dashboard.'))}</p>
+                <div class="config-actions">
+                    <a class="config-btn" href="https://github.com/jordibrouwer/nextDash" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpGithub', 'Project on GitHub'))}</a>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * The same tips the dashboard shows as occasional toasts. Kept as escaped
+     * strings with a single <kbd> per line so a key reads as a key.
+     */
+    helpTips() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const kbd = (k, text) => `<kbd>${esc(k)}</kbd> — ${esc(text)}`;
+        return [
+            kbd('>', this.t('config.tipSearch', 'Open search')),
+            kbd(':', this.t('config.tipCommands', 'Open the command palette')),
+            kbd('?', this.t('config.tipFinders', 'Open finders')),
+            kbd('!', this.t('config.tipCheatsheet', 'Open the keyboard cheat sheet')),
+            kbd('+', this.t('config.tipAddBookmark', 'Add a bookmark')),
+            kbd('.', this.t('config.tipCollapseAll', 'Collapse or expand every category')),
+            kbd('Shift + H', this.t('config.tipHealth', 'Open the health view')),
+            kbd('Shift + I', this.t('config.tipInbox', 'Open the inbox')),
+        ];
+    }
+
+    bindHelp(container) {
+        container.querySelectorAll('[data-help-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const action = btn.getAttribute('data-help-action');
+                if (action === 'whats-new') {
+                    void this.openWhatsNew();
+                } else if (action === 'cheatsheet') {
+                    // The cheat sheet is a dashboard overlay, so leave the config
+                    // view first or it would open behind it.
+                    this.closeConfigView();
+                    this.dash.showKeyboardCheatSheet?.();
+                }
+            });
+        });
     }
 }
 
