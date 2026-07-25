@@ -15,7 +15,7 @@
     const MODAL_SCRIPT_URL = '/static/js/whats-new-modal.js?v=keys-section-1';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v187';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v188';
 
     let loadPromise = null;
 
@@ -59,6 +59,13 @@
         loadPromise = new Promise((resolve, reject) => {
             const existing = document.querySelector('script[data-whats-new-modal]');
             if (existing) {
+                // A script that already finished will never fire `load` again, so
+                // waiting on the event would hang forever. Its own registration
+                // is the reliable signal that it is ready.
+                if (typeof window.__whatsNewOpen === 'function') {
+                    resolve();
+                    return;
+                }
                 existing.addEventListener('load', () => resolve(), { once: true });
                 existing.addEventListener('error', () => {
                     loadPromise = null;
