@@ -3985,8 +3985,10 @@ class DashboardConfig {
     }
 
     /**
-     * A new category exists only once a bookmark carries it, so this adds the
-     * name as an option and selects it; saving the bookmark is what persists it.
+     * Offer the new name as a selected option and remember it as pending. The
+     * dashboard groups bookmarks by the *page's* category list, so saving the
+     * bookmark alone would leave it orphaned under "Unknown category" — the
+     * category itself is written to the target page in saveEditedBookmark.
      */
     confirmNewCategory(editor) {
         const box = editor.querySelector('[data-bm-newcat]');
@@ -3994,15 +3996,50 @@ class DashboardConfig {
         const sel = editor.querySelector('[data-bm-field="category"]');
         const name = String(input?.value || '').trim();
         if (!name || !sel) return;
-        if (![...sel.options].some((o) => o.value === name)) {
+        // Reuse an existing category whose id or label already matches, so
+        // typing the name of a category that exists does not duplicate it.
+        const existing = this.knownCategories()
+            .find((c) => c.id === name || c.label.toLowerCase() === name.toLowerCase());
+        const id = existing ? existing.id : `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+        if (!existing) {
+            this._pendingCategories = this._pendingCategories || new Map();
+            this._pendingCategories.set(id, name);
+        }
+        if (![...sel.options].some((o) => o.value === id)) {
             const opt = document.createElement('option');
-            opt.value = name;
+            opt.value = id;
             opt.textContent = name;
             sel.insertBefore(opt, sel.querySelector('option[value="__new__"]'));
         }
-        sel.value = name;
+        sel.value = id;
         if (box) { box.hidden = true; if (input) input.value = ''; }
         this.markEditorDirty(editor);
+    }
+
+    /**
+     * Append a pending category to a page's own category list. Without this the
+     * bookmark references an id the page does not define, which the dashboard
+     * renders as an orphan block.
+     */
+    async persistPendingCategory(pageId, categoryId) {
+        const name = this._pendingCategories?.get(categoryId);
+        if (!name) return;
+        const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
+        const current = res && res.ok ? await res.json() : [];
+        const list = Array.isArray(current) ? current : [];
+        if (list.some((c) => String(c.id) === String(categoryId))) {
+            this._pendingCategories.delete(categoryId);
+            return;
+        }
+        const saveRes = await this.writeFetch(`/api/categories?page=${encodeURIComponent(pageId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([...list, { id: categoryId, name, sortMode: 'order' }]),
+        });
+        if (!saveRes.ok) throw new Error(`HTTP ${saveRes.status}`);
+        this._pendingCategories.delete(categoryId);
+        // The categories subtab caches per page; drop it so it refetches.
+        if (String(this._catLoadedFor) === String(pageId)) this._catLoadedFor = null;
     }
 
     /** Warn about a shortcut or URL already used on the target page. */
@@ -4187,6 +4224,9 @@ class DashboardConfig {
         }
 
         try {
+            // A category invented in this editor has to exist on the target page
+            // before the bookmark points at it, or it renders as an orphan.
+            if (category) await this.persistPendingCategory(targetPage, category);
             const original = (this.dash.allBookmarks || [])
                 .find((b) => String(b.pageId) === String(parsed.pageId) && b.url === parsed.url) || {};
             if (targetPage === String(parsed.pageId)) {

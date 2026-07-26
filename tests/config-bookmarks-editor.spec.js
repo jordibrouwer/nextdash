@@ -46,7 +46,61 @@ test.describe('config bookmarks editor', () => {
         await expect(page.locator('[data-bm-newcat]')).toBeVisible();
         await page.fill('[data-bm-newcat-input]', 'freshcat');
         await page.click('[data-bm-newcat-ok]');
-        await expect(sel).toHaveValue('freshcat');
+        // The option carries a generated id and shows the typed name.
+        await expect(sel.locator('option:checked')).toHaveText('freshcat');
+        expect(await sel.inputValue()).not.toBe('__new__');
+    });
+
+    /**
+     * The dashboard groups bookmarks by the *page's* category list, so a category
+     * invented here has to be written to that page too — otherwise the bookmark
+     * lands under "Unknown category" instead of the category just created.
+     */
+    test('a new category is saved to the page, not just onto the bookmark', async ({ page }) => {
+        await openBookmarks(page);
+        await openFirstEditor(page);
+
+        const sel = page.locator('[data-bm-field="category"]');
+        await sel.selectOption('__new__');
+        await page.fill('[data-bm-newcat-input]', 'brandnew');
+        await page.click('[data-bm-newcat-ok]');
+        const catId = await sel.inputValue();
+
+        await page.locator('[data-bm-save]').first().click();
+        await expect(page.locator('.config-bm-editor')).toBeHidden();
+
+        // The page now defines the category under the id the bookmark uses.
+        await expect.poll(async () => page.evaluate(async (id) => {
+            const bms = await fetch('/api/bookmarks?all=true').then((r) => r.json());
+            const owner = bms.find((b) => b.category === id);
+            if (!owner) return 'bookmark-missing-category';
+            const cats = await fetch(`/api/categories?page=${owner.pageId}`).then((r) => r.json());
+            return cats.find((c) => c.id === id)?.name ?? 'category-not-on-page';
+        }, catId)).toBe('brandnew');
+
+        // Nothing falls through to the orphan block on the dashboard.
+        const orphans = await page.evaluate(() =>
+            [...document.querySelectorAll('.category-title, .category-header')]
+                .map((el) => el.textContent || '').filter((t) => /Unknown category/i.test(t)));
+        expect(orphans).toEqual([]);
+    });
+
+    test('typing the name of an existing category reuses it instead of duplicating', async ({ page }) => {
+        await openBookmarks(page);
+        await openFirstEditor(page);
+
+        const sel = page.locator('[data-bm-field="category"]');
+        const existing = sel.locator('option').nth(1);
+        const existingId = await existing.getAttribute('value');
+        const existingLabel = (await existing.textContent() || '').trim();
+
+        await sel.selectOption('__new__');
+        await page.fill('[data-bm-newcat-input]', existingLabel);
+        await page.click('[data-bm-newcat-ok]');
+
+        // Resolved back to the existing category, and no duplicate option added.
+        await expect(sel).toHaveValue(existingId || '');
+        expect(await sel.locator(`option[value="${existingId}"]`).count()).toBe(1);
     });
 
     test('editing shows an unsaved marker and Save persists the change', async ({ page }) => {
