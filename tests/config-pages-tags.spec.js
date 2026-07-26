@@ -525,3 +525,15 @@ test.describe('finder URL placeholder', () => {
     });
 
 });
+
+test.describe('category list accessibility', () => {
+    test('the category move buttons are labelled for screen readers', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="categories"]').click();
+        await page.waitForSelector('[data-cat-move]');
+        // Without these a screen reader announces only "↑".
+        await expect(page.locator('[data-cat-move="up"]').first()).toHaveAttribute('aria-label', /.+/);
+        await expect(page.locator('[data-cat-move="down"]').first()).toHaveAttribute('aria-label', /.+/);
+    });
+});
