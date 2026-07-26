@@ -434,6 +434,36 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-action="edit-colors"]')).toBeVisible();
     });
 
+    /**
+     * The four background type buttons used to dead-end: picking Gradient or
+     * Image set the type but offered nothing to choose, so no background was
+     * ever applied. Each now reveals its own control.
+     */
+    test('gradient and image backgrounds can actually be chosen', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        await page.locator('[data-appearance-bg="gradient"]').click();
+        const swatches = page.locator('[data-appearance-gradient]');
+        await expect(swatches.first()).toBeVisible();
+        expect(await swatches.count()).toBeGreaterThan(5);
+
+        await swatches.nth(2).click();
+        await expect.poll(() => page.evaluate(() => ({
+            name: window.dashboardInstance.settings.backgroundGradient,
+            css: document.documentElement.style.getPropertyValue('--custom-background-image'),
+        })).then((r) => Boolean(r.name) && r.css.includes('gradient'))).toBe(true);
+
+        await page.locator('[data-appearance-bg="image"]').click();
+        const url = page.locator('[data-appearance-text="backgroundImageUrl"]');
+        await expect(url).toBeVisible();
+        await url.fill('https://example.com/pic.jpg');
+        await url.dispatchEvent('change');
+        await expect
+            .poll(() => page.evaluate(() => window.dashboardInstance.settings.backgroundImageUrl))
+            .toBe('https://example.com/pic.jpg');
+    });
+
     test('choosing a font preset applies it and saves', async ({ page }) => {
         let saved = null;
         await page.route('**/api/settings', async (route) => {

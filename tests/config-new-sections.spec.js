@@ -177,6 +177,201 @@ test.describe('config: sections restored from the old config', () => {
         }
     });
 
+    /**
+     * Toolbar & tabs settings live on <body> as data-* attributes that setupDOM
+     * writes at startup, not values read at render time — and while config is
+     * open renderDashboard re-renders this view and returns without touching the
+     * header. They must therefore be applied explicitly, or a toggle does nothing
+     * visible until a reload.
+     */
+    /**
+     * Layout preset and items-per-category were in the old config and the
+     * dashboard still honours both, so leaving them out made working features
+     * unreachable rather than merely unconfigurable.
+     */
+    /**
+     * Every settings panel explains what it covers, so the page reads without
+     * having to click each ℹ. Privacy is the exception: it carries a longer
+     * inline hint on the control itself rather than a panel note.
+     */
+    test('every behavior panel carries explanatory text', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'behavior');
+
+        for (const tab of ['general', 'datetime', 'layout', 'display', 'search', 'status']) {
+            await page.locator(`[data-behavior-tab="${tab}"]`).click();
+            const panels = await page.locator('.config-panel').count();
+            const notes = await page.locator('.config-panel-note').count();
+            expect(notes, `${tab} has ${panels} panels but ${notes} notes`).toBeGreaterThanOrEqual(panels);
+        }
+
+        // Privacy explains itself through the control's own hint.
+        await page.locator('[data-behavior-tab="privacy"]').click();
+        await expect(page.locator('.config-field-hint').first()).toBeVisible();
+    });
+
+    test('the smart-collection panels explain what they do', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'pages-tags');
+        await page.locator('[data-pt-tab="collections"]').click();
+        // Smart collections, tag collections, and the "Today" keyword boxes —
+        // the last of which is three bare text fields without a note.
+        await expect.poll(() => page.locator('.config-panel-note').count()).toBeGreaterThanOrEqual(3);
+    });
+
+    test('choosing the beta layout warns before you commit to it', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'appearance');
+
+        await page.locator('[data-appearance-layout="modern"]').click();
+        await expect(page.locator('.config-field-warning')).toBeVisible();
+        await expect(page.locator('.config-field-warning')).toContainText(/beta/i);
+
+        await page.locator('[data-appearance-layout="classic"]').click();
+        await expect(page.locator('.config-field-warning')).toHaveCount(0);
+    });
+
+    test('the layout tab offers the preset and per-category limit', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'behavior');
+        await page.locator('[data-behavior-tab="layout"]').click();
+
+        const preset = page.locator('[data-behavior-field="layoutPreset"]');
+        const limit = page.locator('[data-behavior-field="categoryItemLimit"]');
+        await expect(preset).toBeVisible();
+        await expect(limit).toBeVisible();
+        // All eight presets, named rather than shown as raw ids.
+        expect(await preset.locator('option').count()).toBe(8);
+        expect(await preset.locator('option').allTextContents()).toContain('Masonry');
+
+        await preset.selectOption('masonry');
+        await expect
+            .poll(() => page.evaluate(() => document.body.getAttribute('data-layout-preset')))
+            .toBe('masonry');
+        await expect.poll(() => page.evaluate(() =>
+            document.querySelector('.dashboard-grid')?.className || '')).toContain('layout-masonry');
+    });
+
+    /**
+     * A <select> yields a string, but these fields are ints server-side — a
+     * string fails to unmarshal and the API rejects the *entire* save with 400,
+     * so an unrelated setting changed in the same breath is lost too.
+     */
+    test('numeric selects save as numbers, not strings', async ({ page }) => {
+        const failures = [];
+        page.on('response', (r) => {
+            if (r.url().includes('/api/settings') && r.request().method() === 'POST' && r.status() >= 400) {
+                failures.push(r.status());
+            }
+        });
+        await loadDashboard(page);
+        await openSection(page, 'behavior');
+        await page.locator('[data-behavior-tab="layout"]').click();
+
+        await page.locator('[data-behavior-field="categoryItemLimit"]').selectOption('25');
+        await expect
+            .poll(() => page.evaluate(() => window.dashboardInstance.settings.categoryItemLimit))
+            .toBe(25);
+        expect(failures).toEqual([]);
+
+        // And it survives a round trip to the server.
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        expect(await page.evaluate(() => window.dashboardInstance.settings.categoryItemLimit)).toBe(25);
+    });
+
+    test('toolbar toggles apply immediately, without a reload', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'behavior');
+        await page.locator('[data-behavior-tab="display"]').click();
+
+        const pairs = [
+            ['showAddBookmarkButton', 'data-show-add-bookmark-button'],
+            ['showSearchButton', 'data-show-search-button'],
+            ['showFindersButton', 'data-show-finders-button'],
+            ['showCommandsButton', 'data-show-commands-button'],
+            ['showRecentButton', 'data-show-recent-button'],
+            ['showCheatSheetButton', 'data-show-cheatsheet-button'],
+            ['showConfigButton', 'data-show-config-button'],
+            ['showHealthDashboard', 'data-show-health-dashboard'],
+            ['showTitle', 'data-show-title'],
+        ];
+        for (const [field, attr] of pairs) {
+            await page.locator(`[data-behavior-field="${field}"]`).click();
+            await expect.poll(() => page.evaluate(({ field, attr }) => {
+                const setting = window.dashboardInstance.settings[field];
+                return String(document.body.getAttribute(attr)) === String(setting);
+            }, { field, attr }), { message: `${field} did not reach ${attr}` }).toBe(true);
+        }
+    });
+
+    test('hiding page tabs takes effect at once and can be undone', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'behavior');
+        await page.locator('[data-behavior-tab="display"]').click();
+
+        const display = () => page.evaluate(() =>
+            getComputedStyle(document.getElementById('page-navigation')).display);
+        const toggle = page.locator('[data-behavior-field="showPageTabs"]');
+
+        expect(await display()).toBe('flex');
+        await toggle.click();
+        await expect.poll(display).toBe('none');
+        await toggle.click();
+        await expect.poll(display).toBe('flex');
+    });
+
+    /**
+     * The server accepts exactly bottom / bottom-left / bottom-right / side-left
+     * and silently rewrites anything else to 'bottom'. The view once offered
+     * invented names (center/left/right), so the control looked fine, reported
+     * "Saved", and changed nothing. Assert the values themselves, and that each
+     * survives the round trip rather than only reaching the DOM.
+     */
+    test('every button bar position applies live and is accepted by the server', async ({ page }) => {
+        const rejected = [];
+        page.on('response', (r) => {
+            if (r.url().includes('/api/settings') && r.request().method() === 'POST' && r.status() >= 400) {
+                rejected.push(r.status());
+            }
+        });
+        await loadDashboard(page);
+        await openSection(page, 'behavior');
+        await page.locator('[data-behavior-tab="display"]').click();
+
+        const sel = page.locator('[data-behavior-field="buttonBarPosition"]');
+        expect(await sel.locator('option').evaluateAll((els) => els.map((e) => e.value)))
+            .toEqual(['bottom', 'bottom-left', 'bottom-right', 'side-left']);
+
+        for (const value of ['bottom-left', 'bottom-right', 'side-left', 'bottom']) {
+            await sel.selectOption(value);
+            await expect.poll(() => page.evaluate(() =>
+                document.body.getAttribute('data-button-position'))).toBe(value);
+        }
+        expect(rejected).toEqual([]);
+
+        // The side rail is the one that restyles the whole page, so confirm it
+        // is still set after a reload rather than reset to the default.
+        await sel.selectOption('side-left');
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.settings.buttonBarPosition)).toBe('side-left');
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        expect(await page.evaluate(() => document.body.getAttribute('data-button-position'))).toBe('side-left');
+    });
+
+    test('page names in tabs relabels the tabs at once', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'behavior');
+        await page.locator('[data-behavior-tab="display"]').click();
+
+        const label = () => page.evaluate(() =>
+            document.querySelector('.page-nav-btn .page-tab-label')?.textContent);
+        const before = await label();
+        await page.locator('[data-behavior-field="showPageNamesInTabs"]').click();
+        await expect.poll(label).not.toBe(before);
+    });
+
     test('data & backups gained favicon policy and preview maintenance', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'data-backups');

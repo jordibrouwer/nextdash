@@ -372,6 +372,50 @@
     outline-offset: 1px;
 }
 
+/* ── Background gradient swatches ────────────────────────────────────────── */
+
+.config-bg-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.config-bg-swatch {
+    height: 44px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    /* The gradient itself is the label, so the box must not tint it. */
+    background-clip: padding-box;
+    box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.25);
+    transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.config-bg-swatch:hover {
+    transform: translateY(-1px);
+}
+
+.config-bg-swatch.is-active {
+    border-color: var(--accent-color, #4a90d9);
+}
+
+.config-bg-swatch:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-bg-swatch {
+        transition: none;
+    }
+    .config-bg-swatch:hover {
+        transform: none;
+    }
+}
+
 .config-toggle {
     display: flex;
     align-items: center;
@@ -674,6 +718,20 @@
     font-size: calc(var(--font-size-text) * 0.914);
     line-height: 1.5;
     color: var(--text-muted, #888);
+    max-width: 70ch;
+}
+
+/* A caveat that has to be read before choosing, not a passing note — carries a
+   warning tint and a rule so it separates from the ordinary hints around it. */
+.config-field-warning {
+    margin: 6px 0 4px;
+    padding: 6px 10px;
+    border-left: 3px solid var(--accent-warning, #d08b28);
+    border-radius: 0 6px 6px 0;
+    background: color-mix(in srgb, var(--accent-warning, #d08b28) 10%, transparent);
+    font-size: calc(var(--font-size-text) * 0.914);
+    line-height: 1.5;
+    color: var(--text-color, inherit);
     max-width: 70ch;
 }
 

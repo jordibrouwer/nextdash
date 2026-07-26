@@ -75,6 +75,17 @@ class DashboardConfig {
         if (translated && translated !== key) {
             return translated;
         }
+        // Some locale entries are stored as a literal dotted key inside a
+        // section ("config": { "layoutPresetName.default": … }). The shared
+        // resolver splits on every dot, so it walks past them and never matches.
+        const split = key.indexOf('.');
+        if (split > 0) {
+            const section = d.language?.translations?.[key.slice(0, split)];
+            const flat = section?.[key.slice(split + 1)];
+            if (typeof flat === 'string' && flat) {
+                return flat;
+            }
+        }
         return fallback != null ? fallback : key;
     }
 
@@ -1401,6 +1412,33 @@ class DashboardConfig {
         ).join('');
         const opacity = Number.isFinite(Number(s.backgroundOpacity)) ? Number(s.backgroundOpacity) : 1;
 
+        // Picking "Gradient" or "Image" only sets the type; these sub-sections
+        // are what actually choose one, so the type buttons do not dead-end.
+        const bgPresets = window.VisualSettings?.BACKGROUND_PRESETS || {};
+        const activeGradient = s.backgroundGradient || '';
+        const gradientSwatches = Object.entries(bgPresets).map(([name, css]) =>
+            `<button type="button" class="config-bg-swatch${activeGradient === name ? ' is-active' : ''}"
+                     data-appearance-gradient="${esc(name)}" style="background:${esc(css)}"
+                     aria-pressed="${activeGradient === name}"
+                     aria-label="${esc(this.t(`config.backgroundPreset.${name}`, name))}"
+                     title="${esc(this.t(`config.backgroundPreset.${name}`, name))}"></button>`).join('');
+        const bgDetail = bgType === 'auto'
+            ? `<p class="config-field-hint">${esc(this.t('config.backgroundAutoHint', 'A gradient matched to your active theme.'))}</p>`
+            : bgType === 'gradient'
+            ? `<div class="config-field">
+                   <span class="config-field-label">${esc(this.t('config.backgroundGradientLabel', 'Gradient'))}</span>
+                   <div class="config-bg-swatches" role="group">${gradientSwatches}</div>
+                   <p class="config-field-hint">${esc(this.t('config.backgroundGradientHint', 'Thirteen presets, from dark to light. Pair a light gradient with a light theme.'))}</p>
+               </div>`
+            : bgType === 'image'
+                ? `<div class="config-field">
+                       <span class="config-field-label">${esc(this.t('config.backgroundImageUrlLabel', 'Image URL'))}</span>
+                       <input type="url" class="config-text" data-appearance-text="backgroundImageUrl"
+                              value="${esc(s.backgroundImageUrl || '')}" placeholder="https://example.com/image.jpg">
+                       <p class="config-field-hint">${esc(this.t('config.backgroundImageUrlHint', 'A direct link to an image file. Lower the opacity below if it makes the bookmarks hard to read.'))}</p>
+                   </div>`
+                : '';
+
         const iconSize = s.launcherIconSize || 'normal';
         const iconSizes = [['small', this.t('config.launcherIconSizeSmall', 'Small')], ['normal', this.t('config.launcherIconSizeNormal', 'Normal')], ['large', this.t('config.launcherIconSizeLarge', 'Large')]];
         const iconSizeChoices = iconSizes.map(([val, label]) =>
@@ -1413,6 +1451,7 @@ class DashboardConfig {
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceThemeTitle', 'Theme'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceThemeNote', 'Pick a built-in theme or follow your system. Edit the colours of any theme, or build your own, in the theme editor.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeLabel', 'Theme'))}</span>
                     <select class="config-select" data-appearance-select="theme">${this.renderThemeOptions()}</select>
@@ -1440,6 +1479,7 @@ class DashboardConfig {
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceTypeTitle', 'Type'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceTypeNote', 'The typeface, weight, and size used across the dashboard. Upload a font file to use one that is not listed.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.fontPresetLabel', 'Font'))}</span>
                     <select class="config-select" data-appearance-select="fontPreset">${fontPresetOptions}</select>
@@ -1463,11 +1503,13 @@ class DashboardConfig {
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.backgroundLabel', 'Background'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceBackgroundNote', 'What sits behind the bookmarks. Auto follows your theme; Gradient and Image let you choose your own, and opacity fades it back so the text stays readable.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.backgroundLabel', 'Background'))}</span>
                     <div class="config-choices" role="group">${bgChoices}</div>
                     ${this.appearanceAff('backgroundType')}
                 </div>
+                ${bgDetail}
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.backgroundOpacityLabel', 'Opacity'))}</span>
                     <input type="range" class="config-range" data-appearance-range="backgroundOpacity" min="0" max="1" step="0.05" value="${opacity}">
@@ -1485,6 +1527,7 @@ class DashboardConfig {
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutTitle', 'Layout & display'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.layoutVersionDescIntro', 'Choose a layout style. Classic is recommended; Modern is still in early beta.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.appearanceLayoutVersion', 'Layout'))}</span>
                     <div class="config-choices" role="group">
@@ -1492,6 +1535,10 @@ class DashboardConfig {
                         <button type="button" class="config-choice${layout === 'modern' ? ' is-active' : ''}" data-appearance-layout="modern" aria-pressed="${layout === 'modern'}">${esc(this.t('config.layoutModern', 'Modern'))}</button>
                     </div>
                     ${this.appearanceAff('layoutVersion')}
+                    ${layout === 'modern'
+                        ? `<p class="config-field-warning">${esc(this.t('config.layoutVersionBetaNotice', 'Modern is still in early beta and not finished yet. Classic is recommended for the best experience.'))}</p>`
+                        : ''}
+                    <p class="config-field-hint">${esc(this.t(`config.layoutVersionDesc.${layout}`, ''))}</p>
                 </div>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.launcherIconSizeLabel', 'Icon size'))}</span>
@@ -1613,6 +1660,14 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-bg]').forEach((btn) => {
             btn.addEventListener('click', () => this.setBackgroundType(btn.getAttribute('data-appearance-bg')));
         });
+        container.querySelectorAll('[data-appearance-gradient]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setBackgroundGradient(btn.getAttribute('data-appearance-gradient')));
+        });
+        // `change`, not `input`: saving mid-URL would fetch half-typed addresses.
+        const bgUrl = container.querySelector('[data-appearance-text="backgroundImageUrl"]');
+        if (bgUrl) {
+            bgUrl.addEventListener('change', () => this.setBackgroundImageUrl(bgUrl.value));
+        }
         container.querySelectorAll('[data-appearance-iconsize]').forEach((btn) => {
             btn.addEventListener('click', () => this.setLauncherIconSize(btn.getAttribute('data-appearance-iconsize')));
         });
@@ -2098,6 +2153,8 @@ class DashboardConfig {
         hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'] },
         alwaysCollapseCategories: { info: ['alwaysCollapseCategoriesInfoTitle', 'alwaysCollapseCategoriesInfoMessage'] },
         layoutVersion: { info: ['layoutVersionInfoTitle', 'layoutVersionInfoMessage'], def: 'classic' },
+        layoutPreset: { info: ['layoutPresetInfoTitle', 'layoutPresetInfoMessage'], def: 'default' },
+        categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], def: 15 },
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
         showShortcuts: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'] },
@@ -2139,7 +2196,7 @@ class DashboardConfig {
         showSearchButton: { def: true },
         showFindersButton: { def: true },
         showCommandsButton: { def: true },
-        buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'center' },
+        buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom' },
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'] },
         // Weather & calendar
         weatherRefreshMinutes: { def: 30 },
@@ -2213,11 +2270,18 @@ class DashboardConfig {
     behaviorSchema() {
         const t = (k, f) => this.t(k, f);
         const bool = (field, label, fallback) => ({ field, type: 'checkbox', label: t(label, fallback) });
+        // A toggle whose effect lives in the page chrome rather than the bookmark
+        // grid, so it needs the header reapplied instead of a re-render.
+        const chrome = (field, label, fallback) => ({ ...bool(field, label, fallback), special: 'chrome' });
         const opt = (value, label) => ({ value, label });
+        // From the shared util so config and dashboard cannot drift apart.
+        const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
+            || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
         return [
             {
                 tab: 'general',
                 title: t('config.generalGroupGeneral', 'General'),
+                note: t('config.generalGroupGeneralNote', 'Language, link behaviour, and dashboard-wide options.'),
                 controls: [
                     { field: 'language', type: 'select', label: t('config.languageLabel', 'Language'), special: 'language', options: [
                         opt('en', 'English'), opt('nl', 'Nederlands'), opt('de', 'Deutsch'), opt('fr', 'Français'),
@@ -2232,6 +2296,7 @@ class DashboardConfig {
             {
                 tab: 'datetime',
                 title: t('config.generalGroupDateTime', 'Date, time & weather'),
+                note: t('config.generalGroupDateTimeNote', 'The clock, date line, and weather shown above the bookmarks.'),
                 controls: [
                     { field: 'dateFormat', type: 'select', label: t('config.dateFormatLabel', 'Date format'), special: 'datetime', options: [
                         opt('short-slash', '31/12/2026'), opt('short-dash', '31-12-2026'), opt('mm-slash', '12/31/2026'),
@@ -2257,11 +2322,21 @@ class DashboardConfig {
             {
                 tab: 'layout',
                 title: t('config.generalGroupLayout', 'Bookmarks layout'),
+                note: t('config.generalLayoutIntro', 'Layout version (Classic or Modern), grid structure, column count, layout preset, and density.'),
                 controls: [
                     { field: 'columnsPerRow', type: 'number', label: t('config.columnsLabel', 'Columns'), min: 1, max: 12, special: 'render' },
+                    // The preset drives the grid's `layout-*` class and the
+                    // data-layout-preset attribute, so it needs the chrome
+                    // reapplied as well as a re-render.
+                    { field: 'layoutPreset', type: 'select', label: t('config.layoutPresetLabelShort', 'Layout preset'), special: 'chromeRender',
+                        options: layoutPresets.map((p) => opt(p, t(`config.layoutPresetName.${p}`, p))) },
                     { field: 'densityMode', type: 'select', label: t('config.densityLabel', 'Density'), special: 'render', options: [
                         opt('comfortable', t('config.densityComfortable', 'Comfortable')), opt('compact', t('config.densityCompact', 'Compact')),
                         opt('dense', t('config.densityDense', 'Dense')), opt('auto', t('config.densityAuto', 'Auto')),
+                    ] },
+                    { field: 'categoryItemLimit', type: 'select', label: t('config.categoryItemLimitLabelShort', 'Items per category'), special: 'render', options: [
+                        opt(10, '10'), opt(15, '15'), opt(20, '20'), opt(25, '25'), opt(30, '30'), opt(50, '50'),
+                        opt(0, t('config.categoryItemLimitUnlimited', 'Unlimited')),
                     ] },
                     bool('packedColumns', 'config.packedColumnsLabel', 'Pack columns tightly'),
                     bool('interleaveMode', 'config.interleaveModeLabel', 'Interleave categories across columns'),
@@ -2272,6 +2347,7 @@ class DashboardConfig {
             {
                 tab: 'display',
                 title: t('config.generalGroupBookmarkDisplay', 'Bookmark display'),
+                note: t('config.generalBookmarksDisplayIntro', 'Favicons, shortcuts, badges, link preview, sorting, and navigation.'),
                 controls: [
                     bool('showShortcuts', 'config.showShortcutsLabel', 'Show shortcut letters'),
                     bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
@@ -2288,28 +2364,38 @@ class DashboardConfig {
             {
                 tab: 'display',
                 title: t('config.generalGroupChrome', 'Toolbar & tabs'),
+                note: t('config.generalHeaderButtonsIntro', 'Button visibility in the dashboard footer and header.'),
+                // Chrome lives on <body> as data-* attributes rather than being
+                // read at render time, so these need applyChromeSettings to show
+                // up without a reload — see setBehavior's 'chrome' case.
                 controls: [
-                    bool('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
-                    bool('showPageNamesInTabs', 'config.showPageNamesInTabsLabel', 'Show page names in tabs'),
-                    bool('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
-                    bool('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
-                    bool('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
-                    bool('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
-                    bool('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
-                    bool('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
-                    bool('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
-                    bool('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
-                    bool('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
-                    bool('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
-                    { field: 'buttonBarPosition', type: 'select', label: t('config.buttonBarPositionLabel', 'Button bar position'), special: 'render', options: [
-                        opt('center', t('config.buttonBarCenter', 'Centre dock')), opt('left', t('config.buttonBarLeft', 'Left rail')),
-                        opt('right', t('config.buttonBarRight', 'Right rail')),
+                    chrome('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
+                    chrome('showPageNamesInTabs', 'config.showPageNamesInTabsLabel', 'Show page names in tabs'),
+                    chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
+                    chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
+                    chrome('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
+                    chrome('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
+                    chrome('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
+                    chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
+                    chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
+                    chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                    chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
+                    chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
+                    // These four are the only values the server accepts; it
+                    // silently rewrites anything else to 'bottom', so inventing
+                    // names here made the control a no-op. See models.go.
+                    { field: 'buttonBarPosition', type: 'select', label: t('config.buttonBarPositionLabel', 'Button bar position'), special: 'chrome', options: [
+                        opt('bottom', t('config.buttonBarPositionBottom', 'Center-bottom (default)')),
+                        opt('bottom-left', t('config.buttonBarPositionLeft', 'Bottom-left corner')),
+                        opt('bottom-right', t('config.buttonBarPositionRight', 'Bottom-right corner')),
+                        opt('side-left', t('config.buttonBarPositionSideLeft', 'Side rail (left)')),
                     ] },
                 ],
             },
             {
                 tab: 'search',
                 title: t('config.generalGroupSearch', 'Search'),
+                note: t('config.generalSearchInputIntro', 'Search overlay behavior and suggestions.'),
                 controls: [
                     bool('includeFindersInSearch', 'config.includeFindersInSearch', 'Include finders in search'),
                     bool('enableFuzzySuggestions', 'config.enableFuzzySuggestions', 'Fuzzy search suggestions'),
@@ -2321,6 +2407,7 @@ class DashboardConfig {
             {
                 tab: 'search',
                 title: t('config.generalGroupQuickAdd', 'Quick add & inbox'),
+                note: t('config.generalGroupQuickAddNote', 'What happens when you paste a URL onto the dashboard — add it straight away, or collect it in the inbox to sort later.'),
                 controls: [
                     bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     bool('inboxEnabled', 'config.inboxEnabledLabel', 'Enable the inbox'),
@@ -2372,6 +2459,7 @@ class DashboardConfig {
             {
                 tab: 'general',
                 title: t('config.generalGroupSync', 'Sync & feedback'),
+                note: t('config.generalGroupSyncNote', 'Settings normally follow you to every browser. Keep them on this device to give this one its own appearance and layout.'),
                 controls: [
                     bool('showSyncToasts', 'config.showSyncToastsLabel', 'Show sync notifications'),
                     bool('deviceSpecificSettings', 'config.deviceSpecificSettingsLabel', 'Keep settings on this device only'),
@@ -2433,7 +2521,12 @@ class DashboardConfig {
                 const opts = c.options.map((o) =>
                     `<option value="${esc(o.value)}" ${String(val) === String(o.value) ? 'selected' : ''}>${esc(o.label)}</option>`
                 ).join('');
-                control = `<select class="config-select" ${dataAttrs} data-${prefix}-type="select">${opts}</select>`;
+                // A <select> always yields a string, but these fields are ints
+                // server-side and a string fails to unmarshal — rejecting the
+                // whole save with 400, not just this field. Flag numeric options
+                // so the change handler can coerce back.
+                const numeric = c.options.every((o) => typeof o.value === 'number');
+                control = `<select class="config-select" ${dataAttrs} data-${prefix}-type="select"${numeric ? ` data-${prefix}-numeric="1"` : ''}>${opts}</select>`;
             } else if (c.type === 'number') {
                 control = `<input type="number" class="config-text" style="min-width:80px" ${dataAttrs} data-${prefix}-type="number" min="${c.min ?? ''}" max="${c.max ?? ''}" value="${esc(val ?? '')}">`;
             } else {
@@ -2470,9 +2563,10 @@ class DashboardConfig {
             const field = el.getAttribute(`data-${prefix}-field`);
             const type = el.getAttribute(`data-${prefix}-type`);
             const special = el.getAttribute(`data-${prefix}-special`) || '';
+            const numericSelect = el.hasAttribute(`data-${prefix}-numeric`);
             if (type === 'checkbox') {
                 el.addEventListener('change', () => this.setBehavior(field, el.checked, special));
-            } else if (type === 'number') {
+            } else if (type === 'number' || numericSelect) {
                 el.addEventListener('change', () => this.setBehavior(field, Number(el.value), special));
             } else {
                 el.addEventListener('change', () => this.setBehavior(field, el.value, special));
@@ -2611,6 +2705,15 @@ class DashboardConfig {
             case 'datetime':
                 d.renderDateWeatherLine?.();
                 break;
+            case 'chrome':
+                this.applyChromeSettings();
+                break;
+            case 'chromeRender':
+                // Both: the value is read at render time *and* mirrored onto
+                // <body> by setupDOM, so neither alone is enough.
+                this.applyChromeSettings();
+                d.renderDashboard?.({ animate: false });
+                break;
             case 'render':
                 d.renderDashboard?.({ animate: false });
                 break;
@@ -2623,6 +2726,26 @@ class DashboardConfig {
         // Repaint the active control panel so the ↺ reset button's visibility and
         // the control's own value reflect the change (important after a reset).
         this.repaintActiveControlPanels();
+    }
+
+    /**
+     * Reapply the header/toolbar chrome so a Toolbar & tabs toggle shows up at
+     * once, without a reload.
+     *
+     * These settings are not read at render time: setupDOM writes them onto
+     * <body> as data-* attributes that CSS keys off, and it only ran at startup.
+     * renderDashboard is no help while config is open either — it re-renders the
+     * active view, which is this one, and returns before touching the header.
+     */
+    applyChromeSettings() {
+        const d = this.dash;
+        d.setupDOM?.();
+        // setupDOM covers the data-* attributes and the config/health/tabs links;
+        // the tab labels themselves are built in JS, so showPageNamesInTabs needs
+        // the navigation rebuilt to take effect.
+        d.renderPageNavigation?.();
+        // Rebuilding the nav drops the active markers setActivePageNavButton set.
+        d.pageNav?.setActivePageNavButton?.(d.currentPageId);
     }
 
     /**
@@ -3165,6 +3288,7 @@ class DashboardConfig {
             },
             {
                 title: t('config.smartTodayKeywordsTitle', '“Today” keywords'),
+                note: t('config.smartTodayKeywordsNote', 'Words that push a bookmark up the “Today” list at the matching time — work terms during office hours, the rest in the evening or at the weekend. Comma-separated.'),
                 controls: [
                     { field: 'smartTodayWorkKeywords', type: 'text', label: t('config.smartTodayWorkKeywords', 'Work'), special: 'render' },
                     { field: 'smartTodayEveningKeywords', type: 'text', label: t('config.smartTodayEveningKeywords', 'Evening'), special: 'render' },
