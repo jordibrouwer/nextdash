@@ -1622,6 +1622,8 @@
         "tagNameDuplicate": "Ein Tag mit diesem Namen existiert bereits.",
         "finderNameDuplicate": "Ein Finder mit diesem Namen existiert bereits.",
         "finderShortcutDuplicate": "Ein anderer Finder verwendet dieses Kürzel bereits.",
+        "smartLimitUnlimited": "Unbegrenzt",
+        "smartMostUsedEmptyHint": "„Meistgenutzt“ erscheint erst, wenn du Lesezeichen über das Dashboard geöffnet hast — die Sammlung basiert auf Öffnungszählern und bleibt verborgen, solange es nichts zu sortieren gibt.",
         "addFinder": "+ Finder hinzufügen",
         "dragToReorder": "Ziehen zum Sortieren",
         "allCategories": "Alle Kategorien",

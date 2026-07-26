@@ -2266,6 +2266,12 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         const renderControl = (c) => {
+            // Standalone explanatory text between controls. It has no field, so
+            // it must be handled before anything reads c.field — the fallthrough
+            // below turns an unknown type into a text input bound to undefined.
+            if (c.type === 'note') {
+                return `<p class="config-field-hint">${esc(c.text)}</p>`;
+            }
             const val = s[c.field];
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
             const aff = this.renderFieldAffordances(c.field, val);
@@ -2974,10 +2980,18 @@ class DashboardConfig {
     collectionsSchema() {
         const t = (k, f) => this.t(k, f);
         const bool = (field, label, fallback) => ({ field, type: 'checkbox', label: t(label, fallback) });
-        const limitOpts = [5, 10, 15, 20, 30].map((n) => ({ value: n, label: String(n) }));
+        // Must cover every stored default (Today 8, Most used 25, Recent and
+        // Stale 50) or the select falls back to its first option and shows a
+        // value the setting does not have — then writes it on the next change.
+        // 0 means "no limit", which is what the builders treat <= 0 as.
+        const limitOpts = [0, 5, 8, 10, 15, 20, 25, 30, 50, 100].map((n) => ({
+            value: n,
+            label: n === 0 ? t('config.smartLimitUnlimited', 'Unlimited') : String(n),
+        }));
         return [
             {
                 title: t('config.smartCollectionsTitle', 'Smart collections'),
+                note: t('config.smartCollectionsNote', 'Collections the dashboard fills for you from how and when you use your bookmarks — no rules to maintain. Each limit caps how many appear.'),
                 controls: [
                     bool('showSmartTodayCollection', 'config.showSmartTodayCollection', 'Show “Today” collection'),
                     { field: 'smartTodayLimit', type: 'select', label: t('config.smartTodayLimit', 'Today limit'), special: 'render', options: limitOpts },
@@ -2987,10 +3001,22 @@ class DashboardConfig {
                     { field: 'smartStaleLimit', type: 'select', label: t('config.smartStaleLimit', 'Stale limit'), special: 'render', options: limitOpts },
                     bool('showSmartMostUsedCollection', 'config.showSmartMostUsedCollection', 'Show “Most used” collection'),
                     { field: 'smartMostUsedLimit', type: 'select', label: t('config.smartMostUsedLimit', 'Most-used limit'), special: 'render', options: limitOpts },
+                    {
+                        type: 'note',
+                        // Turning this on before anything has been opened looks
+                        // broken: the collection only exists once a bookmark has
+                        // an open count, which is why the toggle alone shows
+                        // nothing on a fresh dashboard.
+                        text: t(
+                            'config.smartMostUsedEmptyHint',
+                            '“Most used” only appears once you have opened bookmarks from the dashboard — it is built from open counts, so it stays hidden until there is something to rank.'
+                        ),
+                    },
                 ],
             },
             {
                 title: t('config.tagCollectionsTitle', 'Tag collections'),
+                note: t('config.tagCollectionsNote', 'Turns a tag into its own collection once enough bookmarks share it. Raise the minimum to keep one-off tags out.'),
                 controls: [
                     bool('showTagCollections', 'config.showTagCollections', 'Show tag collections'),
                     { field: 'tagCollectionsMinCount', type: 'number', label: t('config.tagCollectionsMinCount', 'Minimum tag count'), min: 1, max: 50, special: 'render' },

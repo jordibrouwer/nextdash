@@ -368,3 +368,51 @@ test.describe('category statistics', () => {
     });
 });
 
+test.describe('smart collection limits', () => {
+    // Regression: the limit dropdown offered only [5,10,15,20,30] while the
+    // stored defaults are 8, 25, 50 and 50. A <select> with no matching option
+    // falls back to its first one, so every limit displayed "5" regardless of
+    // the real setting — and any later change wrote that wrong value.
+    test('each limit select shows the value actually stored', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            const s = window.dashboardInstance.settings;
+            s.smartTodayLimit = 8;
+            s.smartMostUsedLimit = 25;
+            s.smartRecentLimit = 50;
+            s.smartStaleLimit = 0;
+        });
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="collections"]').click();
+        await expect(page.locator('[data-collection-field="smartMostUsedLimit"]')).toHaveValue('25');
+        await expect(page.locator('[data-collection-field="smartRecentLimit"]')).toHaveValue('50');
+        await expect(page.locator('[data-collection-field="smartTodayLimit"]')).toHaveValue('8');
+        // 0 is "Unlimited", which the builders treat as no cap.
+        await expect(page.locator('[data-collection-field="smartStaleLimit"]')).toHaveValue('0');
+    });
+
+    test('the collections panel explains why Most used can look empty', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="collections"]').click();
+        await expect(page.locator('.config-field-hint').filter({ hasText: /most used/i }).first()).toBeVisible();
+        // A `note` entry has no field: it must not become a bound text input.
+        await expect(page.locator('[data-collection-field="undefined"]')).toHaveCount(0);
+    });
+
+    test('Most used renders on the dashboard once a bookmark has an open count', async ({ page }) => {
+        await loadDashboard(page);
+        const ids = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.showSmartMostUsedCollection = true;
+            const before = d.getSmartCollections(d.allBookmarks).map((c) => c.id);
+            // The collection is built from openCount, so it cannot exist until
+            // something has actually been opened.
+            d.allBookmarks[0].openCount = 3;
+            const after = d.getSmartCollections(d.allBookmarks).map((c) => c.id);
+            return { before, after };
+        });
+        expect(ids.before).not.toContain('__smart_most_used__');
+        expect(ids.after).toContain('__smart_most_used__');
+    });
+});

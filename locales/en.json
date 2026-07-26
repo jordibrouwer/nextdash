@@ -1638,6 +1638,8 @@
         "tagNameDuplicate": "A tag with this name already exists.",
         "finderNameDuplicate": "A finder with this name already exists.",
         "finderShortcutDuplicate": "Another finder already uses this shortcut.",
+        "smartLimitUnlimited": "Unlimited",
+        "smartMostUsedEmptyHint": "“Most used” only appears once you have opened bookmarks from the dashboard — it is built from open counts, so it stays hidden until there is something to rank.",
         "addFinder": "+ Add finder",
         "dragToReorder": "Drag to reorder",
         "allCategories": "All categories",

@@ -1622,6 +1622,8 @@
         "tagNameDuplicate": "Une étiquette portant ce nom existe déjà.",
         "finderNameDuplicate": "Un finder portant ce nom existe déjà.",
         "finderShortcutDuplicate": "Un autre finder utilise déjà ce raccourci.",
+        "smartLimitUnlimited": "Illimité",
+        "smartMostUsedEmptyHint": "« Les plus utilisés » n'apparaît qu'une fois que vous avez ouvert des favoris depuis le tableau de bord — la collection repose sur le nombre d'ouvertures et reste masquée tant qu'il n'y a rien à classer.",
         "addFinder": "+ Ajouter un finder",
         "dragToReorder": "Glisser pour réordonner",
         "allCategories": "Toutes les catégories",

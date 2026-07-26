@@ -1632,6 +1632,8 @@
         "tagNameDuplicate": "Er bestaat al een tag met deze naam.",
         "finderNameDuplicate": "Er bestaat al een finder met deze naam.",
         "finderShortcutDuplicate": "Een andere finder gebruikt deze sneltoets al.",
+        "smartLimitUnlimited": "Onbeperkt",
+        "smartMostUsedEmptyHint": "“Meest gebruikt” verschijnt pas als je bladwijzers vanaf het dashboard hebt geopend — de collectie wordt opgebouwd uit het aantal keer openen en blijft verborgen zolang er niets te ranken valt.",
         "addFinder": "+ Zoeker toevoegen",
         "dragToReorder": "Sleep om te herschikken",
         "allCategories": "Alle categorieën",
