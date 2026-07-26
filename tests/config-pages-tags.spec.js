@@ -160,3 +160,160 @@ test.describe('config pages & tags', () => {
         await expect(page.locator('.config-stat-name').first()).toBeVisible();
     });
 });
+
+test.describe('unique names', () => {
+    // The pure matcher backing every check, exercised directly so the edge
+    // cases are pinned independently of any one section's wiring.
+    test('the shared matcher ignores case and surrounding whitespace', async ({ page }) => {
+        await loadDashboard(page);
+        const r = await page.evaluate(() => {
+            const C = window.dashboardInstance.config.constructor;
+            return {
+                exact: C.isNameTaken('Work', ['Work']),
+                casing: C.isNameTaken('WORK', ['work']),
+                padded: C.isNameTaken('  Work  ', ['Work']),
+                innerSpace: C.isNameTaken('My  Work', ['My Work']),
+                distinct: C.isNameTaken('Personal', ['Work']),
+                // Renaming a row to its own name is not a clash with itself.
+                self: C.isNameTaken('Work', ['Work', 'Home'], 'Work'),
+                // Only its own capitalisation changed — still allowed.
+                recase: C.isNameTaken('WORK', ['Work', 'Home'], 'Work'),
+                // But a genuine clash with a *different* row still reports.
+                selfVsOther: C.isNameTaken('Home', ['Work', 'Home'], 'Work'),
+                // Empty is not a duplicate; emptiness is a separate concern.
+                empty: C.isNameTaken('', ['Work']),
+            };
+        });
+        expect(r).toEqual({
+            exact: true, casing: true, padded: true, innerSpace: true,
+            distinct: false, self: false, recase: false,
+            selfVsOther: true, empty: false,
+        });
+    });
+
+    test('uniqueNameFrom suffixes until the name is free', async ({ page }) => {
+        await loadDashboard(page);
+        const r = await page.evaluate(() => {
+            const C = window.dashboardInstance.config.constructor;
+            return [
+                C.uniqueNameFrom('Page 2', []),
+                C.uniqueNameFrom('Page 2', ['Page 2']),
+                C.uniqueNameFrom('Page 2', ['Page 2', 'Page 2 2']),
+            ];
+        });
+        expect(r).toEqual(['Page 2', 'Page 2 2', 'Page 2 3']);
+    });
+
+    test('a page cannot be renamed onto another page name', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="pages"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.addPage());
+        await page.locator('[data-pt-tab="pages"]').click();
+
+        const names = page.locator('[data-page="name"]');
+        await expect(names).toHaveCount(2);
+        const first = await names.nth(0).inputValue();
+
+        let posted = false;
+        await page.route('**/api/pages', async (route) => {
+            if (route.request().method() === 'POST') posted = true;
+            await route.fallback();
+        });
+
+        // Differing only in case must still be rejected.
+        await names.nth(1).fill(first.toUpperCase());
+        await names.nth(1).blur();
+
+        // The input is put back and nothing is written.
+        await expect(names.nth(1)).not.toHaveValue(first.toUpperCase());
+        expect(posted).toBe(false);
+        const stored = await page.evaluate(() => window.dashboardInstance.pages.map((p) => p.name));
+        expect(new Set(stored.map((n) => n.toLowerCase())).size).toBe(stored.length);
+    });
+
+    test('a category cannot be renamed onto another category on the same page', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="categories"]').click();
+        await expect(page.locator('[data-cat="name"]').first()).toBeVisible();
+
+        const names = page.locator('[data-cat="name"]');
+        const count = await names.count();
+        test.skip(count < 2, 'needs at least two categories');
+        const first = await names.nth(0).inputValue();
+
+        await names.nth(1).fill(first);
+        await names.nth(1).blur();
+
+        await expect(names.nth(1)).not.toHaveValue(first);
+        const stored = await page.evaluate(() =>
+            (window.dashboardInstance.config._categories || []).map((c) => c.name));
+        expect(new Set(stored.map((n) => n.toLowerCase())).size).toBe(stored.length);
+    });
+
+    test('a tag cannot be renamed onto an existing tag', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="tags"]').click();
+        await expect(page.locator('[data-tag-rename]').first()).toBeVisible();
+
+        const tags = page.locator('[data-tag-rename]');
+        const count = await tags.count();
+        test.skip(count < 2, 'needs at least two tags');
+        const first = await tags.nth(0).inputValue();
+        const second = await tags.nth(1).inputValue();
+
+        // A tag rename rewrites every bookmark, so a merge would be silent.
+        let wrote = false;
+        await page.route('**/api/bookmarks**', async (route) => {
+            if (route.request().method() === 'POST') wrote = true;
+            await route.fallback();
+        });
+
+        await tags.nth(1).fill(first);
+        await tags.nth(1).blur();
+
+        await expect(tags.nth(1)).toHaveValue(second);
+        expect(wrote).toBe(false);
+    });
+
+    test('a finder rejects a duplicate name and a duplicate shortcut', async ({ page }) => {
+        await page.route('**/api/finders', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+                { id: '1', name: 'Wikipedia', searchUrl: 'https://en.wikipedia.org/?q=%s', shortcut: 'w' },
+                { id: '2', name: 'GitHub', searchUrl: 'https://github.com/search?q=%s', shortcut: 'g' },
+            ]) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="finders"]').click();
+
+        const names = page.locator('[data-finder="name"]');
+        const shortcuts = page.locator('[data-finder="shortcut"]');
+        await expect(names).toHaveCount(2);
+
+        await names.nth(1).fill('Wikipedia');
+        await names.nth(1).blur();
+        await expect(names.nth(1)).toHaveValue('GitHub');
+
+        // The shortcut decides which finder "?w" runs, so it is guarded too.
+        await shortcuts.nth(1).fill('w');
+        await shortcuts.nth(1).blur();
+        await expect(shortcuts.nth(1)).toHaveValue('g');
+    });
+
+    test('adding pages repeatedly never repeats a name', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.addPage();
+            await c.addPage();
+        });
+        const names = await page.evaluate(() => window.dashboardInstance.pages.map((p) => p.name));
+        expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(names.length);
+    });
+});
+

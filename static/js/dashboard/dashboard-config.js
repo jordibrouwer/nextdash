@@ -2696,10 +2696,26 @@ class DashboardConfig {
             input.addEventListener('change', () => {
                 const i = Number(input.getAttribute('data-index'));
                 const key = input.getAttribute('data-finder');
-                if (this._finders && this._finders[i]) {
-                    this._finders[i][key] = input.value;
-                    void this.saveFinders();
-                }
+                if (!this._finders || !this._finders[i]) return;
+                const others = this._finders.filter((_, idx) => idx !== i);
+                if (key === 'name' && !this.guardUniqueName(
+                    input, input.value, others.map((f) => f.name),
+                    {
+                        previous: this._finders[i].name,
+                        message: this.t('config.finderNameDuplicate', 'A finder with this name already exists.'),
+                    }
+                )) return;
+                // A repeated shortcut is worse than a repeated name: it decides
+                // which finder "?g" actually runs, and only one can win.
+                if (key === 'shortcut' && !this.guardUniqueName(
+                    input, input.value, others.map((f) => f.shortcut),
+                    {
+                        previous: this._finders[i].shortcut,
+                        message: this.t('config.finderShortcutDuplicate', 'Another finder already uses this shortcut.'),
+                    }
+                )) return;
+                this._finders[i][key] = input.value;
+                void this.saveFinders();
             });
         });
         const addBtn = container.querySelector('[data-finder-add]');
@@ -2871,7 +2887,14 @@ class DashboardConfig {
             input.addEventListener('change', () => {
                 const from = input.getAttribute('data-tag-rename');
                 const to = input.value.trim();
-                if (to && to !== from) void this.rewriteTag(from, to);
+                if (!to || to === from) return;
+                // Renaming onto an existing tag would quietly merge the two,
+                // losing the distinction with no way back.
+                if (!this.guardUniqueName(input, to, (this._tagList || []).map((t) => t.tag), {
+                    previous: from,
+                    message: this.t('config.tagNameDuplicate', 'A tag with this name already exists.'),
+                })) return;
+                void this.rewriteTag(from, to);
             });
         });
         container.querySelectorAll('[data-tag-delete]').forEach((btn) => {
@@ -3111,8 +3134,17 @@ class DashboardConfig {
             input.addEventListener('change', () => {
                 const id = Number(input.getAttribute('data-id'));
                 const key = input.getAttribute('data-page');
-                const page = (this.dash.pages || []).find((p) => Number(p.id) === id);
-                if (page) { page[key] = input.value; void this.savePages(); }
+                const pages = this.dash.pages || [];
+                const page = pages.find((p) => Number(p.id) === id);
+                if (!page) return;
+                if (key === 'name' && !this.guardUniqueName(
+                    input,
+                    input.value,
+                    pages.filter((p) => Number(p.id) !== id).map((p) => p.name),
+                    { previous: page.name, message: this.t('config.pageNameDuplicate', 'A page with this name already exists.') }
+                )) return;
+                page[key] = input.value;
+                void this.savePages();
             });
         });
         const addBtn = container.querySelector('[data-page-add]');
@@ -3142,7 +3174,12 @@ class DashboardConfig {
     async addPage() {
         const pages = this.dash.pages || [];
         const maxId = pages.length ? Math.max(...pages.map((p) => Number(p.id) || 0)) : 0;
-        const newPage = { id: maxId + 1, name: `${this.t('config.pagePrefix', 'Page')} ${maxId + 1}` };
+        // Deleting page 3 of 3 and adding again would otherwise reuse "Page 3".
+        const name = DashboardConfig.uniqueNameFrom(
+            `${this.t('config.pagePrefix', 'Page')} ${maxId + 1}`,
+            pages.map((p) => p.name)
+        );
+        const newPage = { id: maxId + 1, name };
         pages.push(newPage);
         await this.savePages();
         this.repaintPtBody();
@@ -3253,10 +3290,20 @@ class DashboardConfig {
         container.querySelectorAll('[data-cat="name"]').forEach((input) => {
             input.addEventListener('change', () => {
                 const i = Number(input.getAttribute('data-index'));
-                if (this._categories && this._categories[i]) {
-                    this._categories[i].name = input.value;
-                    void this.saveCategories();
-                }
+                if (!this._categories || !this._categories[i]) return;
+                // Categories live per page, so a name only has to be unique
+                // within the page currently selected in the dropdown.
+                if (!this.guardUniqueName(
+                    input,
+                    input.value,
+                    this._categories.filter((_, idx) => idx !== i).map((c) => c.name),
+                    {
+                        previous: this._categories[i].name,
+                        message: this.t('config.categoryNameDuplicate', 'A category with this name already exists on this page.'),
+                    }
+                )) return;
+                this._categories[i].name = input.value;
+                void this.saveCategories();
             });
         });
         const addBtn = container.querySelector('[data-cat-add]');
@@ -3264,7 +3311,11 @@ class DashboardConfig {
             this._categories = this._categories || [];
             // Categories need a stable id; the server does not backfill one.
             const id = `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-            this._categories.push({ id, name: this.t('config.categoryNewName', 'New category') });
+            const name = DashboardConfig.uniqueNameFrom(
+                this.t('config.categoryNewName', 'New category'),
+                this._categories.map((c) => c.name)
+            );
+            this._categories.push({ id, name });
             this.repaintPtBody();
             void this.saveCategories();
         });
@@ -4100,6 +4151,80 @@ class DashboardConfig {
         this._pendingCategories.delete(categoryId);
         // The categories subtab caches per page; drop it so it refetches.
         if (String(this._catLoadedFor) === String(pageId)) this._catLoadedFor = null;
+    }
+
+    /**
+     * The comparison key for "is this the same name?".
+     *
+     * Case and surrounding whitespace are ignored, because "Work" and "work "
+     * read as the same label to a person and are exactly the pair that causes
+     * confusion. Inner whitespace is collapsed for the same reason.
+     */
+    static nameKey(value) {
+        return String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+    }
+
+    /**
+     * Is `name` free, given the names already taken?
+     *
+     * `taken` is any iterable of existing names. `self` is the entry being
+     * renamed, excluded so that re-saving a row without changing its name — or
+     * only changing its capitalisation — is not reported as a clash with itself.
+     *
+     * An empty name is never treated as a duplicate here; emptiness is a
+     * separate concern handled by the callers that care about it.
+     */
+    static isNameTaken(name, taken, self = null) {
+        const key = DashboardConfig.nameKey(name);
+        if (!key) return false;
+        let selfKey = self === null ? null : DashboardConfig.nameKey(self);
+        for (const other of taken) {
+            const otherKey = DashboardConfig.nameKey(other);
+            if (!otherKey) continue;
+            if (selfKey !== null && otherKey === selfKey) {
+                // Skip one occurrence only: a list that already contains the
+                // name twice should still report the second as a duplicate.
+                selfKey = null;
+                continue;
+            }
+            if (otherKey === key) return true;
+        }
+        return false;
+    }
+
+    /**
+     * The one guard behind every uniqueness check in config.
+     *
+     * Pages, categories, tags and finders all edit a name through an inline
+     * input that saves on `change`, so they can share this: if the typed name
+     * collides, the input is put back to `previous`, a message is shown, and
+     * the caller is told to abandon the write.
+     *
+     * Returns true when the name is free and the caller should proceed.
+     */
+    guardUniqueName(input, name, taken, { previous = null, message } = {}) {
+        if (!DashboardConfig.isNameTaken(name, taken, previous)) return true;
+        if (input && previous !== null) input.value = previous;
+        this.notify(
+            message || this.t('config.nameDuplicate', 'That name is already in use.'),
+            'error'
+        );
+        input?.focus?.();
+        input?.select?.();
+        return false;
+    }
+
+    /**
+     * A name that does not collide, by appending " 2", " 3", … as needed.
+     * Used by the Add buttons, which invent a name rather than asking for one.
+     */
+    static uniqueNameFrom(base, taken) {
+        if (!DashboardConfig.isNameTaken(base, taken)) return base;
+        for (let n = 2; n < 1000; n += 1) {
+            const candidate = `${base} ${n}`;
+            if (!DashboardConfig.isNameTaken(candidate, taken)) return candidate;
+        }
+        return `${base} ${Date.now()}`;
     }
 
     /** Warn about a shortcut or URL already used on the target page. */
