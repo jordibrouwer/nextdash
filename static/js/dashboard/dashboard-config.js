@@ -5329,6 +5329,7 @@ class DashboardConfig {
             kbd('.', this.t('config.tipCollapseAll', 'Collapse or expand every category')),
             kbd('Shift + H', this.t('config.tipHealth', 'Open the health view')),
             kbd('Shift + I', this.t('config.tipInbox', 'Open the inbox')),
+            kbd('Shift + S', this.t('config.tipConfig', 'Open config')),
         ];
     }
 

@@ -295,6 +295,7 @@
             "otConfigKeyboard": "Customize rebindable dashboard shortcuts — fixed quick actions and grid chords listed too",
             "navInboxView": "Open Inbox — links saved to read later",
             "navHealthView": "Open Health — bookmarks that need attention",
+            "navSettingsView": "Open config — settings, pages, and bookmarks",
             "cbHealthPage": "Open health filtered to a specific page number"
         },
         "searchPrefix": ">",
@@ -3030,6 +3031,7 @@
         "tipFinders": "Open finders",
         "tipHealth": "Open the health view",
         "tipInbox": "Open the inbox",
+        "tipConfig": "Open config",
         "tipSearch": "Open search",
         "sectionOverview": "Overview",
         "sectionPagesTags": "Pages & tags",

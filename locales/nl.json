@@ -295,6 +295,7 @@
             "otConfigKeyboard": "Pas herbindbare dashboard-sneltoetsen aan — vaste snelle acties en raster-akkoorden staan bovenaan",
             "navInboxView": "Open Inbox — links om later te lezen",
             "navHealthView": "Open Health — bladwijzers die aandacht nodig hebben",
+            "navSettingsView": "Open config — instellingen, pagina's en bladwijzers",
             "cbHealthPage": "Open Health gefilterd op een specifiek paginanummer"
         },
         "searchPrefix": ">",
@@ -3030,6 +3031,7 @@
         "tipFinders": "Finders openen",
         "tipHealth": "De gezondheidsweergave openen",
         "tipInbox": "De inbox openen",
+        "tipConfig": "Open config",
         "tipSearch": "Zoeken openen",
         "sectionOverview": "Overzicht",
         "sectionPagesTags": "Pagina's & tags",

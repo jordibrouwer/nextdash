@@ -274,6 +274,7 @@
             "otConfigKeyboard": "Anpassbare Dashboard-Kürzel — feste Schnellaktionen und Raster-Chords oben aufgelistet",
             "navInboxView": "Inbox öffnen — Links zum späteren Lesen",
             "navHealthView": "Health öffnen — Lesezeichen mit Handlungsbedarf",
+            "navSettingsView": "Konfiguration öffnen — Einstellungen, Seiten und Lesezeichen",
             "cbHealthPage": "Health gefiltert nach einer bestimmten Seitenzahl öffnen"
         },
         "firstBookmarkGuide": "Fügen Sie Ihr erstes Lesezeichen mit + hinzu (& für Schnellzeile), oder richten Sie Seiten unter config → Seiten ein.",
@@ -3030,6 +3031,7 @@
         "tipFinders": "Finder öffnen",
         "tipHealth": "Die Zustandsansicht öffnen",
         "tipInbox": "Den Eingang öffnen",
+        "tipConfig": "Konfiguration öffnen",
         "tipSearch": "Die Suche öffnen",
         "sectionOverview": "Überblick",
         "sectionPagesTags": "Seiten & Tags",

@@ -274,6 +274,7 @@
             "otConfigKeyboard": "Personnalisez les raccourcis du tableau de bord — actions rapides fixes et accords de grille en tête",
             "navInboxView": "Ouvrir Inbox — liens à lire plus tard",
             "navHealthView": "Ouvrir Health — favoris qui demandent de l’attention",
+            "navSettingsView": "Ouvrir la configuration — réglages, pages et favoris",
             "cbHealthPage": "Ouvrir Health filtré sur un numéro de page précis"
         },
         "firstBookmarkGuide": "Ajoutez votre premier favori avec + (& pour ajout rapide), ou configurez les pages dans config → pages.",
@@ -3030,6 +3031,7 @@
         "tipFinders": "Ouvrir les finders",
         "tipHealth": "Ouvrir la vue d'état",
         "tipInbox": "Ouvrir la boîte de réception",
+        "tipConfig": "Ouvrir la configuration",
         "tipSearch": "Ouvrir la recherche",
         "sectionOverview": "Aperçu",
         "sectionPagesTags": "Pages & étiquettes",

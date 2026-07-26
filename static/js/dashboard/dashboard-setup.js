@@ -327,6 +327,19 @@ class DashboardSetup {
                 }
                 return;
             }
+
+            // Shift+S opens the config view in place. Unlike '<' above, which
+            // still navigates to the old standalone /config page, this stays
+            // inside the dashboard shell — nothing reloads.
+            if (e.shiftKey && e.code === 'KeyS') {
+                if (d.config?.openConfigView) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
+                    void d.config.openConfigView();
+                }
+                return;
+            }
             if (key >= '1' && key <= '9') {
                 if (d.keyboardNavigation?.isGChordActive?.()) {
                     return;

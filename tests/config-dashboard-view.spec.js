@@ -505,3 +505,62 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect.poll(() => saved && saved.fontSize).toBe('xl');
     });
 });
+
+test.describe('Shift+S opens config', () => {
+    test('opens the view from the bookmark grid and Escape returns', async ({ page }) => {
+        await loadDashboard(page);
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config');
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+    });
+
+    test('stays inside the dashboard shell rather than loading /config', async ({ page }) => {
+        await loadDashboard(page);
+        // The older '<' shortcut navigates to the standalone page; this one must
+        // not, so a full document load would be a regression.
+        let navigated = false;
+        page.on('framenavigated', (f) => {
+            if (f === page.mainFrame() && new URL(f.url()).pathname === '/config') navigated = true;
+        });
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        expect(navigated).toBe(false);
+        expect(new URL(page.url()).pathname).toBe('/');
+    });
+
+    test('does not fire while typing into a field', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.locator('#config-bm-add').click();
+        await page.waitForSelector('#new-bookmark-name');
+        await page.locator('#new-bookmark-name').click();
+        // Two capital S characters: a shortcut that ignored input focus would
+        // swallow them and navigate instead.
+        await page.locator('#new-bookmark-name').type('Shift Stress');
+        await expect(page.locator('#new-bookmark-name')).toHaveValue('Shift Stress');
+        await expect(page.locator('#new-bookmark-modal')).toHaveClass(/show/);
+    });
+
+    test('the cheat sheet documents the shortcut', async ({ page }) => {
+        await loadDashboard(page);
+        const found = await page.evaluate(() =>
+            (window.dashboardInstance.getKeyboardCheatSheetItems() || [])
+                .flatMap((s) => s.items)
+                .filter((i) => /Shift \+ S/.test(i.keys))
+                .map((i) => i.description));
+        expect(found).toHaveLength(1);
+        expect(found[0]).toMatch(/config/i);
+        // And it is rendered, not just present in the data. keysToHtml splits
+        // the combo into separate <kbd> elements, so match the row by its
+        // description and assert the keys cell mentions both Shift and S.
+        await page.keyboard.press('!');
+        const row = page.locator('.keyboard-cheat-sheet-table tr')
+            .filter({ hasText: found[0] }).first();
+        await expect(row).toBeVisible();
+        const keysText = await row.locator('.keyboard-cheat-sheet-keys').innerText();
+        expect(keysText).toMatch(/Shift/i);
+        expect(keysText).toMatch(/\bS\b/);
+    });
+});
