@@ -70,6 +70,58 @@ test.describe('config dashboard view (scaffold)', () => {
         if (boxes.health) expect(boxes.config).toEqual(boxes.health);
     });
 
+    /**
+     * The page tabs, inbox, health and config are one row of destinations, so they
+     * must share a baseline. This regressed once because updatePageTabsVisibility
+     * forced an inline display:block onto #page-navigation, dropping its flex
+     * layout and leaving the four on three different baselines.
+     */
+    test('page tabs and the header icons all sit on one line', async ({ page }) => {
+        await loadDashboard(page);
+
+        const rects = await page.evaluate(() => {
+            const pick = (el) => {
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return { top: +r.top.toFixed(1), bottom: +r.bottom.toFixed(1) };
+            };
+            return [
+                pick(document.querySelector('.page-nav-btn:not([data-view-tab])')),
+                pick(document.getElementById('page-nav-inbox-btn')),
+                pick(document.querySelector('.health-link a')),
+                pick(document.querySelector('.config-link a')),
+            ].filter(Boolean);
+        });
+        expect(rects.length).toBeGreaterThanOrEqual(2);
+
+        // Same top and bottom edge, within a sub-pixel rounding tolerance.
+        const spread = (vals) => Math.max(...vals) - Math.min(...vals);
+        expect(spread(rects.map((r) => r.top))).toBeLessThanOrEqual(1);
+        expect(spread(rects.map((r) => r.bottom))).toBeLessThanOrEqual(1);
+
+        // The tab strip must stay a flex row — an inline display:block breaks it.
+        expect(await page.evaluate(() =>
+            getComputedStyle(document.getElementById('page-navigation')).display)).toBe('flex');
+    });
+
+    test('hiding and re-showing page tabs keeps them a flex row', async ({ page }) => {
+        await loadDashboard(page);
+        const display = () => page.evaluate(() =>
+            getComputedStyle(document.getElementById('page-navigation')).display);
+
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.showPageTabs = false;
+            window.dashboardInstance.visual.updatePageTabsVisibility();
+        });
+        expect(await display()).toBe('none');
+
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.showPageTabs = true;
+            window.dashboardInstance.visual.updatePageTabsVisibility();
+        });
+        expect(await display()).toBe('flex');
+    });
+
     test('opening config marks its header icon active, like the health icon', async ({ page }) => {
         await loadDashboard(page);
         const anchor = page.locator('.config-link a.config-link-anchor');

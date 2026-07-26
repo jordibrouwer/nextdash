@@ -395,7 +395,10 @@ class DashboardVisual {
         const d = this.dash;
         const pageNavigation = document.getElementById('page-navigation');
         if (pageNavigation) {
-            pageNavigation.style.display = d.settings.showPageTabs ? 'block' : 'none';
+            // Clear the property rather than forcing 'block': .page-navigation is a
+            // flex row, and an inline display:block dropped that, leaving the tabs
+            // and the header icons on three different baselines.
+            pageNavigation.style.display = d.settings.showPageTabs ? '' : 'none';
         }
     }
 
