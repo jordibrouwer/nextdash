@@ -71,12 +71,93 @@ test.describe('config: sections restored from the old config', () => {
         await expect(page.locator('.config-tile').first()).toContainText(String(expected));
     });
 
+    /**
+     * The Ko-fi call to action carried over from the old config's help tab. Its
+     * button styling comes from modal.css (shared with the what's-new modal),
+     * which the dashboard loads for other reasons — so assert the animation
+     * actually resolves rather than only that the markup is present.
+     */
+    test('the about tab carries the Ko-fi support button', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'help');
+        await page.locator('[data-help-tab="about"]').click();
+
+        const btn = page.locator('.wn-kofi-btn');
+        await expect(btn).toBeVisible();
+        await expect(btn).toHaveAttribute('href', 'https://ko-fi.com/jordibrw');
+        // Opens in a new tab without handing the opener over.
+        await expect(btn).toHaveAttribute('rel', /noopener/);
+        await expect(page.locator('.wn-kofi-label')).toHaveText(/Ko-fi/);
+
+        const styled = await page.evaluate(() => {
+            const a = document.querySelector('.wn-kofi-btn');
+            const star = document.querySelector('.wn-kofi-star');
+            return {
+                anim: getComputedStyle(a).animationName,
+                starAnim: star ? getComputedStyle(star).animationName : 'none',
+                stars: document.querySelectorAll('.wn-kofi-star').length,
+            };
+        });
+        expect(styled.anim, 'the shared wn-kofi CSS did not apply').not.toBe('none');
+        expect(styled.starAnim).not.toBe('none');
+        expect(styled.stars).toBe(4);
+
+        // It belongs to About, not to every help tab.
+        await page.locator('[data-help-tab="start"]').click();
+        await expect(page.locator('.wn-kofi-btn')).toHaveCount(0);
+    });
+
     test('the help section offers whats-new and the cheat sheet', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'help');
-        await expect(page.locator('[data-help-action="whats-new"]')).toBeVisible();
-        await expect(page.locator('[data-help-action="cheatsheet"]')).toBeVisible();
+        // Both actions now live on their topic's tab rather than one long page.
         await expect(page.locator('.config-help-tips li').first()).toBeVisible();
+        await page.locator('[data-help-tab="search"]').click();
+        await expect(page.locator('[data-help-action="cheatsheet"]')).toBeVisible();
+        await page.locator('[data-help-tab="about"]').click();
+        await expect(page.locator('[data-help-action="whats-new"]')).toBeVisible();
+    });
+
+    /**
+     * Help is a set of horizontal tabs, each carrying real prose migrated from
+     * the old config's help pages. Assert every tab renders content and that no
+     * body falls through to a raw i18n key — the bodies are looked up by key, so
+     * a missing translation would silently print "config.helpFooBody".
+     */
+    test('every help tab renders migrated prose', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'help');
+
+        const tabs = await page.locator('[data-help-tab]')
+            .evaluateAll((els) => els.map((e) => e.getAttribute('data-help-tab')));
+        expect(tabs).toEqual(['start', 'config', 'organizing', 'search', 'health', 'data', 'about']);
+
+        for (const tab of tabs) {
+            await page.locator(`[data-help-tab="${tab}"]`).click();
+            const info = await page.evaluate(() => {
+                const body = document.getElementById('config-help-body');
+                return { panels: body.querySelectorAll('.config-panel').length, text: body.innerText };
+            });
+            expect(info.panels, `${tab} rendered no panels`).toBeGreaterThan(0);
+            expect(info.text.length, `${tab} is nearly empty`).toBeGreaterThan(250);
+            expect(/config\.help|helpPage/.test(info.text), `${tab} shows a raw i18n key`).toBe(false);
+        }
+    });
+
+    /**
+     * The old help described the previous config: System/Dashboard/Extras tab
+     * groups, Essentials/Advanced layers, and an explicit Save button. None of
+     * that exists now, so the prose was rewritten rather than copied.
+     */
+    test('help does not describe the retired config UI', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'help');
+        await page.locator('[data-help-tab="config"]').click();
+        const text = await page.locator('#config-help-body').innerText();
+
+        expect(text).not.toMatch(/Essentials|All sections|quick links sidebar/i);
+        // It should say the opposite: saving is automatic.
+        expect(text).toMatch(/no Save button|saves the moment/i);
     });
 
     test('behavior gained a status & health sub-tab with the webhook', async ({ page }) => {
@@ -217,5 +298,77 @@ test.describe('config: font size applies live', () => {
         await openSection(page, 'overview');
         await openSection(page, 'appearance');
         expect(await sizeOf(page, '.config-view-section-title')).toBeCloseTo(applied, 0);
+    });
+});
+
+/**
+ * The help was carried over from the old config's help pages, which were far
+ * more detailed than the first pass of the new one. These pin the parts that
+ * were actually missing rather than the wording, which translators will edit.
+ */
+test.describe('config help coverage', () => {
+    const TABS = ['start', 'config', 'organizing', 'search', 'health', 'data', 'about'];
+
+    test('every tab renders prose with no unresolved locale keys', async ({ page }) => {
+        const errors = [];
+        page.on('pageerror', (e) => errors.push(String(e)));
+        await loadDashboard(page);
+        await openSection(page, 'help');
+        for (const tab of TABS) {
+            await page.locator(`[data-help-tab="${tab}"]`).click();
+            const body = page.locator('#config-help-body');
+            await expect(body.locator('.config-panel').first()).toBeVisible();
+            // A missing key renders as "config.helpSomethingBody".
+            await expect(body).not.toContainText(/config\.help/);
+            // And no panel may be an empty shell.
+            const empty = await body.locator('.config-help-prose').evaluateAll(
+                (els) => els.filter((e) => !e.innerText.trim()).length);
+            expect(empty).toBe(0);
+        }
+        expect(errors).toEqual([]);
+    });
+
+    test('search, finders and commands each get their own panel', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'help');
+        await page.locator('[data-help-tab="search"]').click();
+        // Finders and commands used to be one paragraph inside Search, which is
+        // how they went unnoticed.
+        await expect(page.locator('#config-help-body .config-panel')).toHaveCount(4);
+        const body = page.locator('#config-help-body');
+        // The filter syntax and the command examples are the substance here.
+        await expect(body).toContainText('tag:');
+        await expect(body).toContainText('category:');
+        await expect(body).toContainText('%s');
+        await expect(body).toContainText(':favicons fetch');
+    });
+
+    test('the help covers substantially more than a stub', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'help');
+        let total = 0;
+        for (const tab of TABS) {
+            await page.locator(`[data-help-tab="${tab}"]`).click();
+            total += await page.locator('#config-help-body').evaluate((e) => e.innerText.length);
+        }
+        // The first pass was ~9k characters rendered; the old config's help was
+        // roughly three times that. This guards against a regression that
+        // silently drops sections.
+        expect(total).toBeGreaterThan(16000);
+    });
+
+    test('reusing the old prose did not repoint the old config’s own titles', async ({ page }) => {
+        await loadDashboard(page);
+        // templates/config.html still renders these keys; the new config uses
+        // its own help*Title keys so retitling one page cannot degrade the other.
+        const shared = await page.evaluate(() => {
+            const t = window.dashboardInstance.language.t.bind(window.dashboardInstance.language);
+            return {
+                workspace: t('config.helpPageWorkspaceTitle'),
+                organizing: t('config.helpPageOrganizingTitle'),
+            };
+        });
+        expect(shared.workspace).toMatch(/bulk/i);
+        expect(shared.organizing).toMatch(/organizing/i);
     });
 });

@@ -1435,16 +1435,49 @@
     line-height: 1.6;
 }
 
-.config-tile-hint {
-    font-size: calc(var(--font-size-text) * 0.857);
-    color: var(--text-muted, #888);
+/* ── Help prose ──────────────────────────────────────────────────────────── */
+
+/* Translator-supplied HTML: paragraphs, lists, <strong>, <em>, <code>. Styled
+   here rather than inline so every help page reads the same. */
+.config-help-prose {
+    font-size: calc(var(--font-size-text) * 0.957);
+    line-height: 1.65;
+    color: var(--text-color, inherit);
+    max-width: 76ch;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .config-choice {
-        transition: none;
-    }
+.config-help-prose p {
+    margin: 0 0 10px;
 }
+
+.config-help-prose p:last-child,
+.config-help-prose ul:last-child {
+    margin-bottom: 0;
+}
+
+.config-help-prose ul {
+    margin: 0 0 10px;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.config-help-prose strong {
+    color: var(--text-color, inherit);
+    font-weight: 600;
+}
+
+.config-help-prose code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.92em;
+    white-space: nowrap;
+}
+
+/* ── Favicon harmonisation preview ───────────────────────────────────────── */
 
 .config-icon-preview {
     display: inline-flex;
@@ -1469,3 +1502,55 @@
 /* The button itself is the shared .wn-kofi-* set from modal.css; only this
    surrounding block lived in a config-only stylesheet the dashboard does not
    load, so it is ported here rather than pulling in the whole file. */
+.help-support-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin: 16px 0 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+    font-size: calc(var(--font-size-text) * 0.914);
+    text-align: center;
+}
+
+.help-support-block .wn-kofi-btn {
+    font-size: calc(var(--font-size-text) * 0.957);
+    padding: 0.5rem 1.1rem;
+}
+
+.help-support-label {
+    color: var(--text-muted, #888);
+}
+
+.help-signature {
+    margin: 8px 0 0;
+    text-align: center;
+    font-size: calc(var(--font-size-text) * 1.006);
+}
+
+.help-signature-link {
+    /* --accent-primary, not --accent-color: the themes define the former, and
+       the latter resolves to nothing here — leaving the raw blue fallback. */
+    color: var(--accent-primary, var(--accent-color, #4a90d9));
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.help-signature-link:hover {
+    text-decoration: underline;
+}
+
+.config-tile-hint {
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-muted, #888);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-choice {
+        transition: none;
+    }
+}
+

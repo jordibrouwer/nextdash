@@ -35,6 +35,8 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab.
         this.behaviorTab = 'general';
+        // Help sub-tab.
+        this.helpTab = 'start';
         // Bookmarks section: search, filters, sort, the row being edited, the
         // ticked rows for bulk actions, and whether the open editor has unsaved
         // changes (so Save can be offered rather than saving on every keystroke).
@@ -5415,12 +5417,132 @@ class DashboardConfig {
 
     /* ── Help (native) ─────────────────────────────────────────────────────── */
 
+    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'data', 'about'];
+
+    helpTabLabel(tab) {
+        const map = {
+            start: ['config.helpTabStart', 'Getting started'],
+            config: ['config.helpTabConfig', 'Configuring'],
+            organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
+            search: ['config.helpTabSearch', 'Search & keyboard'],
+            health: ['config.helpTabHealth', 'Health & inbox'],
+            data: ['config.helpTabData', 'Data & hosting'],
+            about: ['config.helpTabAbout', 'About'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
     renderHelp() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const tips = this.helpTips().map((tip) => `<li class="config-help-tip">${tip}</li>`).join('');
+        const tabs = DashboardConfig.HELP_TABS.map((tab) => {
+            const active = tab === this.helpTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-help-tab="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`;
+        }).join('');
         return `
-            <p class="config-view-intro">${esc(this.t('config.helpIntro', 'Shortcuts, tips, and where to find more.'))}</p>
+            <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-help-body">${this.renderHelpBody()}</div>
+        `;
+    }
 
+    /**
+     * The prose is carried over from the old config's help pages, but rewritten
+     * where the new config differs: it has no System/Dashboard/Extras tab groups,
+     * no Essentials/Advanced layers, no explicit Save, and the editors it
+     * describes were rebuilt (rows expand in place; reordering is ↑/↓ rather than
+     * drag; page archiving and category merging are not carried over). Documenting
+     * the old behaviour would send people looking for controls that do not exist.
+     */
+    renderHelpBody() {
+        switch (this.helpTab) {
+            case 'config': return this.renderHelpConfig();
+            case 'organizing': return this.renderHelpOrganizing();
+            case 'search': return this.renderHelpSearch();
+            case 'health': return this.renderHelpHealth();
+            case 'data': return this.renderHelpData();
+            case 'about': return this.renderHelpAbout();
+            default: return this.renderHelpStart();
+        }
+    }
+
+    /** A help panel whose body is trusted, translator-supplied HTML. */
+    helpPanel(titleKey, titleFallback, bodyKey, bodyFallback, extra = '') {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t(titleKey, titleFallback))}</h3>
+                <div class="config-help-prose">${this.t(bodyKey, bodyFallback)}</div>
+                ${extra}
+            </div>`;
+    }
+
+    renderHelpStart() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const tips = this.helpTips().map((tip) => `<li class="config-help-tip">${tip}</li>`).join('');
+        return this.helpPanel('config.helpStartTitle', 'Getting started',
+            'config.helpStartBody', '')
+            + `<div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.helpTipsTitle', 'Everyday keys'))}</h3>
+                <ul class="config-help-tips">${tips}</ul>
+            </div>`;
+    }
+
+    renderHelpConfig() {
+        return this.helpPanel('config.helpConfigTitle', 'Finding your way around config',
+            'config.helpConfigBody', '')
+            + this.helpPanel('config.helpAppearanceTitle', 'Appearance & themes',
+                'config.helpAppearanceBody', '');
+    }
+
+    renderHelpOrganizing() {
+        return this.helpPanel('config.helpWorkspaceTitle', 'Pages & categories',
+            'config.helpWorkspaceBody', '')
+            + this.helpPanel('config.helpBookmarksTitle', 'Bookmarks',
+                'config.helpBookmarksBody', '')
+            + this.helpPanel('config.helpTagsTitle', 'Tags & collections',
+                'config.helpTagsBody', '');
+    }
+
+    renderHelpSearch() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        // Finders and commands get their own panels rather than a paragraph
+        // inside Search: they are separate modes with their own syntax, and
+        // burying them is why they went unnoticed.
+        return this.helpPanel('config.helpSearchTitle', 'Searching your bookmarks',
+            'config.helpSearchBody', '')
+            + this.helpPanel('config.helpFindersTitle', 'Finders',
+                'config.helpFindersBody', '')
+            + this.helpPanel('config.helpCommandsTitle', 'Commands',
+                'config.helpCommandsBody', '')
+            + this.helpPanel('config.helpKeyboardTitle', 'Keyboard',
+                'config.helpKeyboardBody', '',
+                `<div class="config-actions">
+                    <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
+                </div>`);
+    }
+
+    renderHelpHealth() {
+        return this.helpPanel('config.helpHealthTitle', 'Availability & health',
+            'config.helpHealthBody', '')
+            + this.helpPanel('config.helpInboxTitle', 'Inbox',
+                'config.helpInboxBody', '');
+    }
+
+    renderHelpData() {
+        return this.helpPanel('config.helpDataTitle', 'Backups, import & export',
+            'config.helpDataBody', '')
+            + this.helpPanel('config.helpSelfHostingTitle', 'Self-hosting',
+                'config.helpSelfHostingBody', '');
+    }
+
+    renderHelpAbout() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        // No version line: the nextdash-app-version meta is an asset fingerprint
+        // for cache-busting (see appVersionToken in html_etag.go), not a release
+        // number, so printing it as "Version" showed people a meaningless hash.
+        // The real one is served by /api/version if this is ever wanted here.
+        return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.helpWhatsNewTitle', 'What’s new'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.helpWhatsNewHint', 'See what changed in the most recent releases.'))}</p>
@@ -5428,28 +5550,35 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-help-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
                 </div>
             </div>
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.helpShortcutsTitle', 'Keyboard shortcuts'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.helpShortcutsHint', 'The cheat sheet lists every shortcut, including the ones you have rebound.'))}</p>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
-                </div>
-            </div>
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.helpTipsTitle', 'Tips & tricks'))}</h3>
-                <ul class="config-help-tips">${tips}</ul>
-            </div>
-
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.helpAboutTitle', 'About nextDash'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.helpAboutText', 'nextDash is a self-hosted, keyboard-first bookmark dashboard.'))}</p>
+                <div class="config-help-prose">${this.t('config.helpAboutBody', '')}</div>
                 <div class="config-actions">
                     <a class="config-btn" href="https://github.com/jordibrouwer/nextDash" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpGithub', 'Project on GitHub'))}</a>
                 </div>
+                ${this.renderKofiSupport()}
+            </div>`;
+    }
+
+    /**
+     * The Ko-fi call to action from the old config's help tab. The button's own
+     * styling (glow, shimmer, twinkling stars) is the shared .wn-kofi-* set in
+     * modal.css, which the dashboard already loads for the what's-new modal —
+     * only the surrounding block needed porting into config-view.css.
+     */
+    renderKofiSupport() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const stars = '<span class="wn-kofi-star"></span>'.repeat(4);
+        return `
+            <div class="help-support-block">
+                <span class="help-support-label">${esc(this.t('config.helpSupportLabel', 'nextDash is free and open-source.'))}</span>
+                <a href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener noreferrer" class="wn-kofi-btn wn-kofi-btn--animated">
+                    <span class="wn-kofi-stars" aria-hidden="true">${stars}</span>
+                    <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
+                    <span class="wn-kofi-label">${esc(this.t('config.helpSupportKofi', 'Support me on Ko-fi'))}</span>
+                </a>
             </div>
-        `;
+            <p class="help-signature"><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer" class="help-signature-link">jordibrw.nl</a></p>`;
     }
 
     /**
@@ -5473,6 +5602,27 @@ class DashboardConfig {
     }
 
     bindHelp(container) {
+        container.querySelectorAll('[data-help-tab]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-help-tab');
+                if (tab === this.helpTab) return;
+                this.helpTab = tab;
+                const body = document.getElementById('config-help-body');
+                if (!body) { this.render(); return; }
+                body.innerHTML = this.renderHelpBody();
+                document.querySelectorAll('[data-help-tab]').forEach((b) => {
+                    const on = b.getAttribute('data-help-tab') === this.helpTab;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                // The new body carries its own action buttons.
+                this.bindHelpActions(body);
+            });
+        });
+        this.bindHelpActions(container);
+    }
+
+    bindHelpActions(container) {
         container.querySelectorAll('[data-help-action]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-help-action');
