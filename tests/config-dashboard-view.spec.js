@@ -654,3 +654,19 @@ test.describe('Shift+S opens config', () => {
         expect(keysText).toMatch(/\bS\b/);
     });
 });
+
+test.describe('< opens the config view', () => {
+    test('opens in place rather than loading the old /config page', async ({ page }) => {
+        await loadDashboard(page);
+        let navigated = false;
+        page.on('framenavigated', (f) => {
+            if (f === page.mainFrame() && new URL(f.url()).pathname === '/config') navigated = true;
+        });
+        // '<' used to navigate to the standalone page while Shift+S opened the
+        // view, so the two config shortcuts landed somewhere different.
+        await page.keyboard.press('Shift+Comma');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        expect(navigated).toBe(false);
+        expect(new URL(page.url()).pathname).toBe('/');
+    });
+});

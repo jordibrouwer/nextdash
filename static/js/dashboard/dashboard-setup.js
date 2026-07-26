@@ -270,7 +270,16 @@ class DashboardSetup {
                 e.preventDefault();
                 e.stopPropagation();
                 window.nextdashTrack?.('nav:config-shortcut', { dir: 'to-config' });
-                window.location.href = '/config';
+                // Same destination as Shift+S: the config view, in place. This
+                // used to navigate to the standalone /config page with a full
+                // reload, so the two config shortcuts landed somewhere
+                // different. Falls back to the old page only if the view is
+                // unavailable, so the key never becomes a no-op.
+                if (d.config?.openConfigView) {
+                    void d.config.openConfigView();
+                } else {
+                    window.location.href = '/config';
+                }
                 return;
             }
 

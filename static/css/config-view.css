@@ -1612,6 +1612,7 @@
     }
 }
 
+
 /* The in-app replacement for window.confirm. The overlay, panel and buttons
    come from modal.css; only the message needs styling here. */
 .config-confirm-message {
