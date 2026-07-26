@@ -3346,6 +3346,7 @@ class DashboardConfig {
                     <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}">${pageOptions}</select>
                     <select class="config-select" id="config-bm-category" aria-label="${esc(this.t('config.category', 'Category'))}">${catOptions}</select>
                     <select class="config-select" id="config-bm-sort" aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
+                    <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                 </div>
                 <div id="config-bm-bulk">${this.renderBulkToolbar()}</div>
                 <div id="config-bm-list">${this.renderBookmarksList()}</div>
@@ -3681,8 +3682,67 @@ class DashboardConfig {
         wire('#config-bm-page', 'bmPageFilter');
         wire('#config-bm-category', 'bmCategoryFilter');
         wire('#config-bm-sort', 'bmSort');
+        container.querySelector('#config-bm-add')
+            ?.addEventListener('click', () => this.openAddBookmarkModal());
         this.bindBookmarkRows(container);
         this.bindBulkToolbar(container);
+    }
+
+    /**
+     * Open the dashboard's add-bookmark modal from the Bookmarks section.
+     *
+     * The modal is the same one the `+` toolbar button and the `:new` command
+     * use, so a bookmark filed from config goes through exactly one creation
+     * path. It writes the bookmark itself and refreshes `dashboardInstance`,
+     * but it knows nothing about the config list — hence the repaint below.
+     */
+    openAddBookmarkModal() {
+        const d = this.dash;
+        const handler = d.searchComponent?.commandsComponent?.newCommandHandler;
+        if (!handler?.openModal) {
+            this.notify(this.t('config.addBookmarkUnavailable', 'The add-bookmark dialog is not available.'), 'error');
+            return;
+        }
+        // The handler caches its own pages/categories/page-id and only refreshes
+        // them via setContext, which otherwise runs on the `:new` and quick-add
+        // paths only. Without this the modal can open on a stale page list.
+        //
+        // The page it defaults to is currentPageId, so filtering the list to one
+        // page files the new bookmark there — that is nearly always where it
+        // belongs. Unfiltered, it falls back to the page being viewed.
+        const preferredPage = Number(this.bmPageFilter) || Number(d.currentPageId) || 1;
+        handler.setContext?.(preferredPage, d.categories || [], d.pages || []);
+        handler.openModal();
+        this.watchAddBookmarkModal();
+    }
+
+    /**
+     * Repaint the list once the modal goes away.
+     *
+     * The modal exposes no "saved" callback, so rather than reaching into its
+     * internals we watch for the overlay losing `.show` — which covers save,
+     * cancel and Escape alike. A cancel simply repaints identical rows.
+     *
+     * Must be called *after* openModal: createModal removes and rebuilds the
+     * overlay on every open, so an observer attached beforehand would be left
+     * watching a detached node and never fire. Any previous observer is
+     * disconnected for the same reason.
+     */
+    watchAddBookmarkModal() {
+        const overlay = document.getElementById('new-bookmark-modal');
+        if (!overlay) return;
+        this._bmModalWatcher?.disconnect();
+        const observer = new MutationObserver(() => {
+            if (overlay.classList.contains('show')) return;
+            observer.disconnect();
+            if (this._bmModalWatcher === observer) this._bmModalWatcher = null;
+            // The modal awaits its own dashboard refresh before closing, but
+            // that runs on a separate promise chain; defer one frame so
+            // allBookmarks is settled before we read it.
+            requestAnimationFrame(() => this.repaintBookmarksList());
+        });
+        observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+        this._bmModalWatcher = observer;
     }
 
     /** Row-level handlers, rebound after every list repaint. */

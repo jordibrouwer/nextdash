@@ -391,3 +391,44 @@ test.describe('config bookmarks — category options', () => {
         expect(shown).toBe(expected);
     });
 });
+
+test.describe('config bookmarks add button', () => {
+    test('opens the shared add-bookmark modal', async ({ page }) => {
+        await openBookmarks(page);
+        await page.locator('#config-bm-add').click();
+        await expect(page.locator('#new-bookmark-modal')).toHaveClass(/show/);
+        // The same modal the toolbar and :new use, so its fields must be present.
+        await expect(page.locator('#new-bookmark-url')).toBeVisible();
+        await expect(page.locator('#new-bookmark-page')).toBeAttached();
+    });
+
+    test('preselects the page the list is filtered to', async ({ page }) => {
+        await openBookmarks(page);
+        const pages = await page.evaluate(() => window.dashboardInstance.pages.map((p) => String(p.id)));
+        test.skip(pages.length < 2, 'needs at least two pages');
+        // Deliberately a page other than the one being viewed, so passing could
+        // not be explained by the modal's own currentPageId default.
+        const current = String(await page.evaluate(() => window.dashboardInstance.currentPageId));
+        const target = pages.find((id) => id !== current) || pages[1];
+        await page.selectOption('#config-bm-page', target);
+        await page.locator('#config-bm-add').click();
+        await expect(page.locator('#new-bookmark-page')).toHaveValue(target);
+    });
+
+    test('a bookmark created in the modal shows up in the config list', async ({ page }) => {
+        await openBookmarks(page);
+        const before = await page.locator('.config-bm-row').count();
+        const name = `Config Add ${Date.now()}`;
+
+        await page.locator('#config-bm-add').click();
+        await expect(page.locator('#new-bookmark-modal')).toHaveClass(/show/);
+        await page.fill('#new-bookmark-url', 'https://example.com/config-add-test');
+        await page.fill('#new-bookmark-name', name);
+        await page.locator('#new-bookmark-form').evaluate((f) => f.requestSubmit());
+
+        // The list must repaint on its own — no reload, no re-opening the section.
+        await expect(page.locator('#new-bookmark-modal')).not.toHaveClass(/show/);
+        await expect(page.locator('.config-bm-row')).toHaveCount(before + 1);
+        await expect(page.locator('#config-bm-list')).toContainText(name);
+    });
+});

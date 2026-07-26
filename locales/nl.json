@@ -1625,6 +1625,7 @@
         "addPage": "+ Pagina toevoegen",
         "addCategory": "+ Categorie toevoegen",
         "addBookmark": "Bladwijzer toevoegen",
+        "addBookmarkUnavailable": "Het dialoogvenster voor toevoegen is niet beschikbaar.",
         "addFinder": "+ Zoeker toevoegen",
         "dragToReorder": "Sleep om te herschikken",
         "allCategories": "Alle categorieën",

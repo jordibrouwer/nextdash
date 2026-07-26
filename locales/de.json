@@ -1615,6 +1615,7 @@
         "addPage": "+ Seite hinzufügen",
         "addCategory": "+ Kategorie hinzufügen",
         "addBookmark": "Lesezeichen hinzufügen",
+        "addBookmarkUnavailable": "Der Dialog zum Hinzufügen ist nicht verfügbar.",
         "addFinder": "+ Finder hinzufügen",
         "dragToReorder": "Ziehen zum Sortieren",
         "allCategories": "Alle Kategorien",

@@ -1631,6 +1631,7 @@
         "addPage": "+ Add page",
         "addCategory": "+ Add category",
         "addBookmark": "Add Bookmark",
+        "addBookmarkUnavailable": "The add-bookmark dialog is not available.",
         "addFinder": "+ Add finder",
         "dragToReorder": "Drag to reorder",
         "allCategories": "All categories",

@@ -1615,6 +1615,7 @@
         "addPage": "+ Ajouter une page",
         "addCategory": "+ Ajouter une catégorie",
         "addBookmark": "Ajouter un favori",
+        "addBookmarkUnavailable": "La boîte de dialogue d'ajout n'est pas disponible.",
         "addFinder": "+ Ajouter un finder",
         "dragToReorder": "Glisser pour réordonner",
         "allCategories": "Toutes les catégories",
