@@ -588,7 +588,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 }
 
 func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := h.parsePageTemplates("templates/dashboard.html")
+	// The theme-colours editor partial is parsed alongside the shell so the
+	// config view can host it inline (Appearance → Edit theme colours).
+	tmpl, err := h.parsePageTemplates("templates/dashboard.html", "templates/partials/theme-colors-editor.html")
 	if err != nil {
 		http.Error(w, "Template parsing error", http.StatusInternalServerError)
 		return
@@ -607,22 +609,39 @@ func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 	writeHTMLShell(w, r, buf.Bytes())
 }
 
+// Config now redirects into the dashboard shell, where configuration lives as an
+// in-app view (#config), the same way HealthPage redirects to /#health. A legacy
+// ?section=<name> query maps onto the new hash so external links keep working;
+// old fragment-based links like /config#bookmarks cannot survive a redirect
+// (browsers drop the fragment), and are remapped client-side.
 func (h *Handlers) Config(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := h.parsePageTemplates("templates/config.html", "templates/partials/theme-colors-editor.html")
-	if err != nil {
-		http.Error(w, "Template parsing error", http.StatusInternalServerError)
-		return
+	redirectURL := "/#config"
+	if section := strings.TrimSpace(r.URL.Query().Get("section")); section != "" {
+		if mapped := mapLegacyConfigSection(section); mapped != "" {
+			redirectURL = "/#config/" + mapped
+		}
 	}
+	http.Redirect(w, r, redirectURL, http.StatusFound)
+}
 
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, h.htmlPageData(h.store.GetSettings())); err != nil {
-		http.Error(w, "Template execution error", http.StatusInternalServerError)
-		return
+// mapLegacyConfigSection maps an old config tab name onto one of the regrouped
+// view sections (overview · pages-tags · appearance · behavior · data-backups).
+// Returns "" for the overview/unknown case so the caller falls back to /#config.
+func mapLegacyConfigSection(section string) string {
+	switch strings.ToLower(section) {
+	case "pages", "categories", "tags", "finders":
+		return "pages-tags"
+	case "appearance", "colors", "themes", "fonts", "layout":
+		return "appearance"
+	case "behavior", "settings", "keyboard", "language", "quickadd", "quick-add":
+		return "behavior"
+	case "backups", "backup", "data", "import", "export", "reset":
+		return "data-backups"
+	case "bookmarks", "stats", "overview":
+		return ""
+	default:
+		return ""
 	}
-
-	// Serve the shell with a content-based ETag so browsers (Safari especially)
-	// revalidate against a real validator and reliably pick up new ?v= asset URLs.
-	writeHTMLShell(w, r, buf.Bytes())
 }
 
 func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {

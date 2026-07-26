@@ -45,6 +45,8 @@
     <link rel="stylesheet" href="/static/css/dashboard-tag-cloud.css?v=tag-filter-fix-1">
     <link rel="stylesheet" href="/static/css/dashboard-inbox.css?v=inbox-health-parity-2">
     <link rel="stylesheet" href="/static/css/health-view.css?v=health-icon-3rem-1">
+    <link rel="stylesheet" href="/static/css/config-view.css?v=config-view-phase27-1">
+    <link rel="stylesheet" href="/static/css/colors.css?v=config-view-phase27-1">
         <link rel="stylesheet" href="/static/css/enhanced-features.css?v={{.Assets.EnhancedFeaturesCSS}}">
     <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
     <link rel="stylesheet" href="/static/css/layout-modern.css?v={{.Assets.LayoutModernCSS}}">
@@ -122,8 +124,13 @@
                             </svg>
                         </a>
                     </div>{{end}}
-                    {{if .ShowConfigButton}}<div class="config-link">
-                        <a href="/config" data-i18n="dashboard.config">config</a>
+                    {{if .ShowConfigButton}}<div class="config-link config-link--icon">
+                        <a href="/#config" class="config-link-anchor" data-i18n-aria="dashboard.config" data-i18n-tooltip="dashboard.config" aria-label="config" title="config">
+                            <svg class="config-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                        </a>
                     </div>{{end}}
                 </div>
             </div>
@@ -325,14 +332,15 @@
     <script src="/static/js/dashboard-deep-link.js?v={{.Assets.DashboardDeepLinkJS}}" defer></script>
     <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
     <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
-    <script src="/static/js/dashboard/dashboard-data.js?v=storage-guard-1"></script>
+    <script src="/static/js/dashboard/dashboard-data.js?v=save-result-1"></script>
     <script src="/static/js/dashboard/dashboard-config-sync.js?v=inbox-settings-sync-2"></script>
     <script src="/static/js/dashboard/dashboard-inbox-triage.js?v=inbox-kbd-nav-3"></script>
     <script src="/static/js/dashboard/dashboard-inbox.js?v=inbox-health-parity-2"></script>
     <script src="/static/js/health-reason-utils.js?v=health-view-1"></script>
     <script src="/static/js/dashboard/dashboard-health.js?v=health-icon-path-1"></script>
+    <script src="/static/js/dashboard/dashboard-config.js?v=config-view-phase27-1"></script>
     <script src="/static/js/dashboard/dashboard-paste-choice.js?v=inbox-phase1-1"></script>
-    <script src="/static/js/dashboard/dashboard-page-nav.js?v=analytics-track-1"></script>
+    <script src="/static/js/dashboard/dashboard-page-nav.js?v=config-header-icon-1"></script>
     <script src="/static/js/dashboard/dashboard-tag-filter.js?v=tag-filter-empty-d-1"></script>
     <script src="/static/js/dashboard/dashboard-inline-edit.js?v=check-mode-3-drag-off"></script>
     <script src="/static/js/dashboard/dashboard-toolbar.js?v=collapse-all-1"></script>
@@ -344,7 +352,7 @@
     <script src="/static/js/dashboard/dashboard-render-core.js?v={{.Assets.DashboardRenderCoreJS}}"></script>
     <script src="/static/js/dashboard/dashboard-render-incremental.js?v=category-item-limit-1"></script>
     <script src="/static/js/dashboard/dashboard-notifications.js?v=dash-phase1-2"></script>
-    <script src="/static/js/dashboard/dashboard-visual.js?v=monitor-down-alert-1"></script>
+    <script src="/static/js/dashboard/dashboard-visual.js?v=header-baseline-1"></script>
     <script src="/static/js/dashboard/dashboard-date-weather.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-preview.js?v=dash-phase1-2"></script>
     <script src="/static/js/dashboard/dashboard-recent.js?v=analytics-track-4"></script>
@@ -355,5 +363,12 @@
     <script src="/static/js/dashboard/dashboard-persistence.js?v=dash-tag-sync-3"></script>
     <script src="/static/js/dashboard.js?v={{.Assets.DataRevision}}"></script>
     <script src="/static/js/analytics.js?v={{.Assets.AnalyticsJS}}" defer></script>
+
+    <!-- Theme-colours editor: markup ships hidden here and the config view (Appearance)
+         moves it into place and instantiates the existing ColorsEditor against it. -->
+    <div id="config-theme-colors-host" hidden>{{template "theme-colors-editor" .}}</div>
+    <script src="/static/js/config/config-custom-themes.js?v=config-view-phase27-1" defer></script>
+    <script src="/static/js/color-value-utils.js?v=config-view-phase27-1" defer></script>
+    <script src="/static/js/colors.js?v=config-view-phase27-1" defer></script>
 </body>
 </html>

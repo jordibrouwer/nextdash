@@ -369,6 +369,11 @@ class DashboardData {
                     await d.inbox.openInboxView();
                 } else if (initialHash === 'health' && d.health?.isEnabled?.()) {
                     await d.health.openHealthView();
+                } else if ((initialHash === 'config' || initialHash.startsWith('config/')) && d.config?.isEnabled?.()) {
+                    // Pass the section so a deep link like #config/appearance lands
+                    // there rather than on the overview.
+                    const section = window.DashboardConfig?.sectionFromHash?.(initialHash);
+                    await d.config.openConfigView(section || undefined);
                 }
             }
         } catch (error) {
@@ -678,12 +683,20 @@ class DashboardData {
         //    and would then rewrite the hash from #health back to #1.
         const layoutEl = document.getElementById('dashboard-layout');
         const viewOnScreen = layoutEl?.classList.contains('inbox-layout')
-            || layoutEl?.classList.contains('health-layout');
-        const pendingViewHash = window.location.hash === '#health' || window.location.hash === '#inbox';
+            || layoutEl?.classList.contains('health-layout')
+            || layoutEl?.classList.contains('config-layout');
+        // Config deep links carry a section (#config/appearance), so match the
+        // prefix rather than the bare hash the other two views use.
+        const hash = window.location.hash;
+        const pendingViewHash = hash === '#health'
+            || hash === '#inbox'
+            || hash === '#config'
+            || hash.startsWith('#config/');
         const preserveView = pendingViewHash
             || viewOnScreen
             || (d.activeView === 'inbox' && d.inbox?.isEnabled?.())
-            || (d.activeView === 'health' && d.health?.isEnabled?.());
+            || (d.activeView === 'health' && d.health?.isEnabled?.())
+            || (d.activeView === 'config' && d.config?.isEnabled?.());
 
         d.bookmarks = bookmarks;
         d.categories = this.clonePageCategories(categories);
@@ -916,10 +929,15 @@ class DashboardData {
             } catch (storageError) {
                 console.warn('Device-local settings mirror failed:', storageError);
             }
+            return true;
         } catch (error) {
             d.showErrorNotification(
                 d.formatDashboardLabel('saveSettingsFailed', {}, 'Failed to save settings.')
             );
+            // Reported here as before, and also returned so a caller that wants
+            // to say something of its own can tell success from failure — the
+            // swallowed rejection made every save look like it worked.
+            return false;
         }
     }
 }

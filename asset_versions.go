@@ -87,7 +87,7 @@ var sharedAssetVersions = pageAssetVersions{
 	VisualSettingsJS:     "theme-sync-1",
 	SettingsSanitizeJS:   "settings-sanitize-1",
 	DiscoverabilityJS:    "discoverability-state-5-seentips",
-	MobileExperienceCSS:  "touch-only-mobile-1",
+	MobileExperienceCSS:  "config-header-icon-1",
 	MobileExperienceJS:   "touch-only-mobile-1",
 	LayoutVersionUtilsJS: "glass-migrate-1",
 	HealthBadgeJS:        "health-badge-monitor-down-1",
@@ -130,9 +130,9 @@ var sharedAssetVersions = pageAssetVersions{
 	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
 	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
-	DashboardCSS:            "inline-edit-blur-children-1",
+	DashboardCSS:            "inline-edit-blur-children-1-config-header-icon-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
-	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
+	LayoutModernCSS:         "config-header-icon-1",
 
 	AppNotificationCSS:       "app-notification-2-tip",
 	SearchCommandsNewCSS:     "search-commands-new-5-create-another",

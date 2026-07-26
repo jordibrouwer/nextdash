@@ -160,13 +160,21 @@ body[data-mobile-layout="true"] .config-link a {
     justify-content: center;
     min-height: 44px;
     min-width: 44px;
-    padding: 0.55rem 0.9rem;
+    /* Symmetric now the label is an icon; the wider side padding was there to
+       sit around the word "config". */
+    padding: 0.55rem;
     border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, transparent);
     border-radius: var(--header-chip-radius, var(--layout-radius-pill, 999px));
     background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
     text-transform: capitalize;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+}
+
+/* The icon variant's negative pull is for sitting beside the health icon, which
+   mobile hides — without this the chip would overlap the pages button. */
+body[data-mobile-layout="true"] .config-link--icon {
+    margin-left: 0;
 }
 
 body[data-mobile-layout="true"] .config-link a:active,
