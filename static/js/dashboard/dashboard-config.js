@@ -2736,6 +2736,79 @@ class DashboardConfig {
         }
     }
 
+    /* ── List statistics (count badge + popularity bar) ────────────────────── */
+
+    /**
+     * 0–1 scale with boosted contrast, mirroring the classic config's tag cloud
+     * so the same list reads identically in both surfaces.
+     */
+    static scaleForCount(count, minCount, maxCount) {
+        if (maxCount <= 0) return 0.5;
+        if (maxCount === minCount) return 1;
+        const ratio = (count - minCount) / (maxCount - minCount);
+        const spread = maxCount / Math.max(1, minCount);
+        const power = spread > 8 ? 0.5 : 0.68;
+        const floor = spread > 8 ? 0.08 : spread > 3 ? 0.16 : 0.24;
+        return floor + (1 - floor) * Math.pow(Math.max(0, Math.min(1, ratio)), power);
+    }
+
+    static tierClassForScale(scale) {
+        if (scale >= 0.82) return 'config-stat--tier-xl';
+        if (scale >= 0.62) return 'config-stat--tier-lg';
+        if (scale >= 0.42) return 'config-stat--tier-md';
+        if (scale >= 0.22) return 'config-stat--tier-sm';
+        return 'config-stat--tier-xs';
+    }
+
+    /** Pre-compute the scale for a list of counts so bars share one baseline. */
+    static statScales(counts) {
+        const max = counts.length ? Math.max(...counts) : 0;
+        const min = counts.length ? Math.min(...counts) : max;
+        return counts.map((c) => DashboardConfig.scaleForCount(c, min, max));
+    }
+
+    /** Count badge + popularity bar markup, matching the classic config layout. */
+    renderStatMeta(count, scale, labelKey, labelFallback) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t(labelKey, labelFallback).replace('{count}', String(count));
+        const fill = Math.round(Math.max(0, Math.min(1, scale)) * 100);
+        return `<div class="config-stat-meta ${DashboardConfig.tierClassForScale(scale)}">
+            <div class="config-stat-bar" aria-hidden="true"><span class="config-stat-bar-fill" style="width:${fill}%"></span></div>
+            <span class="config-tag-count" title="${esc(label)}">${esc(label)}</span>
+        </div>`;
+    }
+
+    /** A row of totals above a list, e.g. "12 tags · 48 assignments". */
+    renderStatSummary(pairs) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const items = pairs.map(([value, label]) =>
+            `<span class="config-stat-summary-item"><strong>${esc(String(value))}</strong> ${esc(label)}</span>`
+        ).join('');
+        return `<p class="config-stat-summary">${items}</p>`;
+    }
+
+    /** Bookmarks per page id, from the dashboard's full bookmark set. */
+    pageBookmarkCounts() {
+        const counts = new Map();
+        (this.dash.allBookmarks || []).forEach((b) => {
+            const id = String(b.pageId);
+            counts.set(id, (counts.get(id) || 0) + 1);
+        });
+        return counts;
+    }
+
+    /** Bookmarks per category name, limited to one page. */
+    categoryBookmarkCounts(pageId) {
+        const counts = new Map();
+        (this.dash.allBookmarks || []).forEach((b) => {
+            if (String(b.pageId) !== String(pageId)) return;
+            const name = String(b.category || '');
+            if (!name) return;
+            counts.set(name, (counts.get(name) || 0) + 1);
+        });
+        return counts;
+    }
+
     /* ── Tags & collections placeholders (native, built next) ──────────────── */
 
     renderTagsManager() {
@@ -2746,17 +2819,22 @@ class DashboardConfig {
         if (this._tagList.length === 0) {
             return `<p class="config-panel-empty">${esc(this.t('config.tagsEmpty', 'No tags yet. Add tags to bookmarks to manage them here.'))}</p>`;
         }
-        const rows = this._tagList.map(({ tag, count }) => `
+        const scales = DashboardConfig.statScales(this._tagList.map((t) => t.count));
+        const rows = this._tagList.map(({ tag, count }, i) => `
             <li class="config-crud-row" data-tag-row="${esc(tag)}">
                 <div class="config-crud-fields">
                     <input type="text" class="config-text" data-tag-rename="${esc(tag)}" value="${esc(tag)}">
-                    <span class="config-tag-count">${count}</span>
+                    ${this.renderStatMeta(count, scales[i], 'config.tagBookmarkCount', '{count} bookmarks')}
                 </div>
                 <button type="button" class="config-btn config-btn--small config-btn--danger" data-tag-delete="${esc(tag)}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
             </li>
         `).join('');
         return `
             <p class="config-panel-note">${esc(this.t('config.tagsIntro', 'Rename a tag to update it everywhere, or delete it from all bookmarks.'))}</p>
+            ${this.renderStatSummary([
+                [this._tagList.length, this.t('config.tagsStatTotal', 'tags')],
+                [this._tagList.reduce((sum, t) => sum + t.count, 0), this.t('config.tagsStatAssignments', 'assignments')],
+            ])}
             <ul class="config-crud-list">${rows}</ul>
         `;
     }
@@ -2886,8 +2964,46 @@ class DashboardConfig {
 
     renderCollections() {
         // Reuse the behaviour control renderer against the collections schema.
-        return this.renderControlPanels(this.collectionsSchema(), 'collection')
+        return this.renderCollectionStats()
+            + this.renderControlPanels(this.collectionsSchema(), 'collection')
             + this.renderCollectionScopes();
+    }
+
+    /**
+     * How many bookmarks each collection currently yields. Built from the same
+     * evaluator the dashboard renders with, so the numbers match what's on screen.
+     */
+    renderCollectionStats() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        let collections = [];
+        try {
+            collections = this.dash.getSmartCollections?.(this.dash.allBookmarks || []) || [];
+        } catch {
+            collections = [];
+        }
+        if (!collections.length) {
+            return `<div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.collectionStatsTitle', 'Collection sizes'))}</h3>
+                <p class="config-panel-empty">${esc(this.t('config.collectionStatsEmpty', 'No collections are active right now.'))}</p>
+            </div>`;
+        }
+        const counts = collections.map((c) => (c.bookmarks || []).length);
+        const scales = DashboardConfig.statScales(counts);
+        const rows = collections.map((c, i) => `
+            <li class="config-crud-row">
+                <div class="config-crud-fields">
+                    <span class="config-stat-name">${esc(c.name || '')}</span>
+                    ${this.renderStatMeta(counts[i], scales[i], 'config.collectionBookmarkCount', '{count} bookmarks')}
+                </div>
+            </li>`).join('');
+        return `<div class="config-panel">
+            <h3 class="config-panel-title">${esc(this.t('config.collectionStatsTitle', 'Collection sizes'))}</h3>
+            ${this.renderStatSummary([
+                [collections.length, this.t('config.collectionsStatTotal', 'active collections')],
+                [counts.reduce((sum, n) => sum + n, 0), this.t('config.collectionsStatBookmarks', 'bookmarks shown')],
+            ])}
+            <ul class="config-crud-list">${rows}</ul>
+        </div>`;
     }
 
     /**
@@ -2957,6 +3073,9 @@ class DashboardConfig {
     renderPagesEditor() {
         const esc = (v) => this.dash.escapeHtml(v);
         const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        const counts = this.pageBookmarkCounts();
+        const pageCounts = pages.map((p) => counts.get(String(p.id)) || 0);
+        const scales = DashboardConfig.statScales(pageCounts);
         const rows = pages.map((p, i) => {
             const isFirst = Number(p.id) === 1;
             return `
@@ -2965,6 +3084,7 @@ class DashboardConfig {
                     <input type="text" class="config-text" style="min-width:56px;max-width:64px" data-page="icon" data-id="${esc(p.id)}" placeholder="📄" value="${esc(p.icon || '')}">
                     <input type="text" class="config-text" data-page="name" data-id="${esc(p.id)}" placeholder="${esc(this.t('config.pageNamePlaceholder', 'Page name'))}" value="${esc(p.name || '')}">
                     <input type="color" class="config-color" data-page="color" data-id="${esc(p.id)}" value="${esc(p.color || '#888888')}" title="${esc(this.t('config.pageColorLabel', 'Tab colour'))}">
+                    ${this.renderStatMeta(pageCounts[i], scales[i], 'config.pageBookmarkCount', '{count} bookmarks')}
                 </div>
                 <div class="config-crud-row-actions">
                     <button type="button" class="config-btn config-btn--small" data-page-move="up" data-id="${esc(p.id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
@@ -2975,6 +3095,10 @@ class DashboardConfig {
         }).join('');
         return `
             <p class="config-panel-note">${esc(this.t('config.pagesIntroView', 'Rename, recolour, reorder (↑ ↓), add, or remove dashboard pages. The first page cannot be removed.'))}</p>
+            ${this.renderStatSummary([
+                [pages.length, this.t('config.pagesStatTotal', 'pages')],
+                [pageCounts.reduce((sum, n) => sum + n, 0), this.t('config.pagesStatBookmarks', 'bookmarks')],
+            ])}
             <ul class="config-crud-list">${rows}</ul>
             <div class="config-actions">
                 <button type="button" class="config-btn" data-page-add>${esc(this.t('config.pageAdd', 'Add page'))}</button>
@@ -3065,10 +3189,14 @@ class DashboardConfig {
         } else if (this._categories.length === 0) {
             body = `<p class="config-panel-empty">${esc(this.t('config.categoriesEmpty', 'No categories on this page yet.'))}</p>`;
         } else {
+            const counts = this.categoryBookmarkCounts(pageId);
+            const catCounts = this._categories.map((c) => counts.get(String(c.name || '')) || 0);
+            const scales = DashboardConfig.statScales(catCounts);
             const rows = this._categories.map((c, i) => `
                 <li class="config-crud-row" data-cat-row="${i}">
                     <div class="config-crud-fields">
                         <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
+                        ${this.renderStatMeta(catCounts[i], scales[i], 'config.categoryBookmarkCount', '{count} bookmarks')}
                     </div>
                     <div class="config-crud-row-actions">
                         <button type="button" class="config-btn config-btn--small" data-cat-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''}>↑</button>
@@ -3076,7 +3204,11 @@ class DashboardConfig {
                         <button type="button" class="config-btn config-btn--small config-btn--danger" data-cat-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
                     </div>
                 </li>`).join('');
-            body = `<ul class="config-crud-list">${rows}</ul>`;
+            const summary = this.renderStatSummary([
+                [this._categories.length, this.t('config.categoriesStatTotal', 'categories')],
+                [catCounts.reduce((sum, n) => sum + n, 0), this.t('config.categoriesStatBookmarks', 'bookmarks on this page')],
+            ]);
+            body = `${summary}<ul class="config-crud-list">${rows}</ul>`;
         }
         return `
             <p class="config-panel-note">${esc(this.t('config.categoriesIntroView', 'Categories group bookmarks within a page. Pick a page, then rename, reorder (↑ ↓), add, or remove its categories.'))}</p>

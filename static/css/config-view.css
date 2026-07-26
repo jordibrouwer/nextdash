@@ -522,6 +522,75 @@
     white-space: nowrap;
 }
 
+/* ── List statistics: count badge stacked over a popularity bar ──────────── */
+
+.config-stat-meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    flex: none;
+    min-width: 110px;
+    align-self: center;
+}
+
+.config-stat-meta .config-tag-count {
+    align-self: flex-start;
+}
+
+.config-stat-bar {
+    height: 0.28rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--border-color, rgba(128, 128, 128, 0.35)) 80%, transparent);
+    overflow: hidden;
+}
+
+.config-stat-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary, #6aa9ff) 55%, transparent),
+        var(--accent-primary, #6aa9ff)
+    );
+    transition: width 0.35s ease;
+}
+
+.config-stat--tier-xs .config-stat-bar-fill {
+    opacity: 0.55;
+}
+
+/* Name column for stat-only rows (collection sizes) — no input to flex. */
+.config-stat-name {
+    flex: 1;
+    min-width: 120px;
+    align-self: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-stat-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 0 0 10px;
+    font-size: calc(var(--font-size-text) * 0.891);
+    color: var(--text-muted, #888);
+}
+
+.config-stat-summary-item strong {
+    color: var(--text-primary, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-stat-bar-fill {
+        transition: none;
+    }
+}
+
 .config-crud-row-actions {
     display: flex;
     gap: 6px;
