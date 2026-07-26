@@ -44,6 +44,53 @@ test.describe('config dashboard view (scaffold)', () => {
         expect(await page.evaluate(() => window.__noReload)).toBe(true);
     });
 
+    /**
+     * The header config link is an icon, not the word "config", and carries the
+     * same --icon treatment as health so the three destinations read as one set.
+     */
+    test('the config link is an icon styled like the health icon', async ({ page }) => {
+        await loadDashboard(page);
+
+        const anchor = page.locator('.config-link a.config-link-anchor');
+        await expect(page.locator('.config-link .config-link-icon')).toBeVisible();
+        // An icon, not a text label — but still named for screen readers.
+        expect((await anchor.innerText()).trim()).toBe('');
+        await expect(anchor).toHaveAttribute('aria-label', /.+/);
+
+        // Same box metrics as the health icon, from the shared --icon rules.
+        const boxes = await page.evaluate(() => {
+            const pick = (sel) => {
+                const el = document.querySelector(sel);
+                if (!el) return null;
+                const s = getComputedStyle(el);
+                return { pad: s.padding, radius: s.borderTopLeftRadius, display: s.display };
+            };
+            return { health: pick('.health-link a'), config: pick('.config-link a') };
+        });
+        if (boxes.health) expect(boxes.config).toEqual(boxes.health);
+    });
+
+    test('opening config marks its header icon active, like the health icon', async ({ page }) => {
+        await loadDashboard(page);
+        const anchor = page.locator('.config-link a.config-link-anchor');
+        await expect(anchor).not.toHaveClass(/active/);
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        await expect(anchor).toHaveClass(/active/);
+        await expect(anchor).toHaveAttribute('aria-current', 'page');
+
+        // The active look is the tab treatment, not just a class.
+        const active = await page.evaluate(() => {
+            const s = getComputedStyle(document.querySelector('.config-link a'));
+            return { bg: s.backgroundColor, underline: s.borderBottomColor };
+        });
+        expect(active.bg).not.toBe('rgba(0, 0, 0, 0)');
+
+        // Leaving the view clears it again.
+        await page.locator('body').press('Escape');
+        await expect(anchor).not.toHaveClass(/active/);
+    });
+
     test('Escape returns from config to the bookmarks view', async ({ page }) => {
         await loadDashboard(page);
 

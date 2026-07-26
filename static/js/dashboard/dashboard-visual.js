@@ -2,6 +2,15 @@
  * Theme, layout chrome, visibility toggles.
  */
 class DashboardVisual {
+    /**
+     * Kept in step with the same markup in templates/dashboard.html — the server
+     * renders the link, this is only the fallback for when it is absent.
+     */
+    static CONFIG_ICON_SVG = '<svg class="config-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'
+        + '<circle cx="12" cy="12" r="3"/>'
+        + '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+        + '</svg>';
+
     constructor(dashboard) {
         this.dash = dashboard;
     }
@@ -205,14 +214,38 @@ class DashboardVisual {
         // Config button is always visible
         if (!configLink) {
             configLink = document.createElement('div');
-            configLink.className = 'config-link';
+            configLink.className = 'config-link config-link--icon';
             const configLabel = d.language.t('dashboard.config');
-            configLink.innerHTML = `<a href="/config">${configLabel !== 'dashboard.config' ? configLabel : 'config'}</a>`;
+            const label = configLabel !== 'dashboard.config' ? configLabel : 'config';
+            configLink.innerHTML = `<a href="/#config" class="config-link-anchor" aria-label="${label}" title="${label}">${DashboardVisual.CONFIG_ICON_SVG}</a>`;
 
             const headerActions = document.querySelector('.header-actions');
             if (headerActions) {
                 headerActions.appendChild(configLink);
             }
+        }
+        this.syncConfigLinkActiveState();
+    }
+
+
+    /**
+     * Mark the header config icon as the current view, mirroring the health icon.
+     * Config is reached from a header link rather than a page tab, so
+     * setActivePageNavButton never reaches it.
+     */
+    syncConfigLinkActiveState() {
+        const d = this.dash;
+        const anchor = document.querySelector('.config-link a.config-link-anchor');
+        if (!anchor) {
+            return;
+        }
+        const active = d.activeView === 'config';
+        anchor.classList.toggle('active', active);
+        // aria-current, not aria-selected: this is a link, not a tab in a tablist.
+        if (active) {
+            anchor.setAttribute('aria-current', 'page');
+        } else {
+            anchor.removeAttribute('aria-current');
         }
     }
 

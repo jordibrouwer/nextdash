@@ -199,9 +199,11 @@ class DashboardPageNav {
             inboxBtn.setAttribute('aria-selected', inboxSelected ? 'true' : 'false');
             inboxBtn.tabIndex = inboxSelected ? 0 : -1;
         }
-        // The health icon lives in the header, outside this container, but is the
-        // same kind of destination — keep its active state in step with the tabs.
+        // The health and config icons live in the header, outside this container,
+        // but are the same kind of destination — keep their active state in step
+        // with the tabs.
         d.visual?.syncHealthLinkActiveState?.();
+        d.visual?.syncConfigLinkActiveState?.();
     }
 
 

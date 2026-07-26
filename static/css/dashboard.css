@@ -1112,14 +1112,17 @@ body {
 }
 
 /* Icon variant: health shown as an icon with an inline counter after it,
-   styled to match the inbox tab in the page navigation. */
-.health-link--icon {
-    /* Pull the health icon closer to the inbox tab (the .header-actions gap of
+   styled to match the inbox tab in the page navigation. Config uses the same
+   variant so all three header destinations read as one set. */
+.health-link--icon,
+.config-link--icon {
+    /* Pull the icon closer to the inbox tab (the .header-actions gap of
        1.5rem is too wide between two compact icon buttons). */
     margin-left: -1rem;
 }
 
-.health-link--icon a {
+.health-link--icon a,
+.config-link--icon a {
     animation: none;
     display: inline-flex;
     align-items: center;
@@ -1129,7 +1132,8 @@ body {
     border-radius: var(--layout-radius-sm, 8px);
 }
 
-.health-link--icon a:hover {
+.health-link--icon a:hover,
+.config-link--icon a:hover {
     text-shadow: none;
 }
 
@@ -1137,11 +1141,13 @@ body {
    rather than a page tab, but it is the same kind of destination, so "you are
    here" must look the same. The transparent border reserves the underline's
    space at rest, so marking it active never shifts the header. */
-.health-link--icon a {
+.health-link--icon a,
+.config-link--icon a {
     border-bottom: 2px solid transparent;
 }
 
-.health-link--icon a.active {
+.health-link--icon a.active,
+.config-link--icon a.active {
     background: var(--background-secondary);
     color: var(--text-primary);
     border-bottom-color: var(--accent-primary);
@@ -1152,7 +1158,8 @@ body {
     border-bottom-right-radius: 0;
 }
 
-.health-link--icon .health-link-icon {
+.health-link--icon .health-link-icon,
+.config-link--icon .config-link-icon {
     width: 1.15rem;
     height: 1.15rem;
     display: inline-flex;
