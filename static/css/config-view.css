@@ -1622,3 +1622,11 @@
 }
 
 /* A finder URL with no %s placeholder: search.js cannot substitute the query,
+   so the field is flagged the same way a conflicting shortcut is. */
+.config-text.field-conflict {
+    border-color: var(--accent-warning, #d08b28);
+}
+
+.config-text.field-conflict:focus {
+    outline-color: var(--accent-warning, #d08b28);
+}

@@ -485,3 +485,43 @@ test.describe('destructive actions confirm first', () => {
     });
 });
 
+test.describe('finder URL placeholder', () => {
+    test('a searchUrl without %s is flagged and clears as you type', async ({ page }) => {
+        await page.route('**/api/finders', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+                { id: '1', name: 'Broken', searchUrl: 'https://example.com/search', shortcut: 'b' },
+            ]) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="finders"]').click();
+        const url = page.locator('[data-finder="searchUrl"]').first();
+        // search.js does searchUrl.replace('%s', query) — without it the finder
+        // opens the bare URL and silently drops what was typed.
+        await expect(page.locator('[data-finder-warning]')).toHaveCount(1);
+        await expect(url).toHaveClass(/field-conflict/);
+        await url.fill('https://example.com/search?q=%s');
+        await expect(page.locator('[data-finder-warning]')).toHaveCount(0);
+        await expect(url).not.toHaveClass(/field-conflict/);
+    });
+
+    test('adding a finder does not save an all-blank row', async ({ page }) => {
+        let posted = 0;
+        await page.route('**/api/finders', async (route) => {
+            if (route.request().method() === 'POST') { posted += 1; return route.fallback(); }
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="finders"]').click();
+        await page.locator('[data-finder-add]').click();
+        await expect(page.locator('[data-finder="name"]')).toHaveCount(1);
+        // The row exists locally and is focused, but nothing is persisted until
+        // a field is filled in.
+        expect(posted).toBe(0);
+        await expect(page.locator('[data-finder="name"]')).toBeFocused();
+    });
+
+});

@@ -2931,16 +2931,28 @@ class DashboardConfig {
         if (this._finders == null) {
             return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
         }
-        const rows = this._finders.map((f, i) => `
+        const rows = this._finders.map((f, i) => {
+            // search.js does searchUrl.replace('%s', query), which is a no-op
+            // when the placeholder is absent: the finder then opens the bare URL
+            // and silently drops what you typed. The old config warned about
+            // this; without it the finder looks saved and simply misbehaves.
+            const url = String(f.searchUrl || '').trim();
+            const missingPlaceholder = url.length > 0 && !url.includes('%s');
+            const warning = missingPlaceholder
+                ? `<p class="config-field-warning" data-finder-warning="${i}">${esc(this.t('config.finderUrlMissingPlaceholderHint', 'Add %s where the search query should go.'))}</p>`
+                : '';
+            return `
             <li class="config-crud-row" data-finder-index="${i}">
                 <div class="config-crud-fields">
                     <input type="text" class="config-text" data-finder="name" data-index="${i}" placeholder="${esc(this.t('config.finderNamePlaceholder', 'Name'))}" value="${esc(f.name || '')}">
-                    <input type="text" class="config-text" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
+                    <input type="text" class="config-text${missingPlaceholder ? ' field-conflict' : ''}" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
                     <input type="text" class="config-text" style="min-width:70px" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
+                    ${warning}
                 </div>
                 <button type="button" class="config-btn config-btn--small config-btn--danger" data-finder-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
             </li>
-        `).join('');
+        `;
+        }).join('');
         return `
             <p class="config-panel-note">${esc(this.t('config.findersIntro', 'Finders are search shortcuts. Use %s in the URL where the query goes.'))}</p>
             <ul class="config-crud-list">${rows || `<li class="config-panel-empty">${esc(this.t('config.findersEmpty', 'No finders yet.'))}</li>`}</ul>
@@ -2963,6 +2975,28 @@ class DashboardConfig {
     }
 
     bindFinders(container) {
+        // The %s warning updates as you type rather than on commit, so it goes
+        // away the moment you add the placeholder instead of after a repaint.
+        container.querySelectorAll('[data-finder="searchUrl"]').forEach((input) => {
+            input.addEventListener('input', () => {
+                const i = Number(input.getAttribute('data-index'));
+                const url = String(input.value || '').trim();
+                const missing = url.length > 0 && !url.includes('%s');
+                input.classList.toggle('field-conflict', missing);
+                const fields = input.closest('.config-crud-fields');
+                let hint = fields?.querySelector(`[data-finder-warning="${i}"]`);
+                if (missing && !hint && fields) {
+                    hint = document.createElement('p');
+                    hint.className = 'config-field-warning';
+                    hint.setAttribute('data-finder-warning', String(i));
+                    hint.textContent = this.t('config.finderUrlMissingPlaceholderHint',
+                        'Add %s where the search query should go.');
+                    fields.appendChild(hint);
+                } else if (!missing && hint) {
+                    hint.remove();
+                }
+            });
+        });
         container.querySelectorAll('[data-finder]').forEach((input) => {
             input.addEventListener('change', () => {
                 const i = Number(input.getAttribute('data-index'));
@@ -2995,17 +3029,31 @@ class DashboardConfig {
                 this._finders = this._finders || [];
                 this._finders.push({ name: '', searchUrl: '', shortcut: '' });
                 this.repaintPtBody();
-                void this.saveFinders();
+                // Deliberately not saved yet: an all-blank finder is not a
+                // finder, and persisting it means a refresh mid-typing leaves an
+                // empty row behind. The first edit to any field saves the row.
+                document.querySelector('[data-finder="name"][data-index="'
+                    + (this._finders.length - 1) + '"]')?.focus();
             });
         }
         container.querySelectorAll('[data-finder-delete]').forEach((btn) => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const i = Number(btn.getAttribute('data-finder-delete'));
-                if (this._finders && this._finders[i]) {
-                    this._finders.splice(i, 1);
-                    this.repaintPtBody();
-                    void this.saveFinders();
+                if (!this._finders || !this._finders[i]) return;
+                const finder = this._finders[i];
+                // A blank row was never really created, so asking about it is
+                // just an obstacle between adding one by accident and undoing it.
+                const named = String(finder.name || '').trim() || String(finder.searchUrl || '').trim();
+                if (named) {
+                    const ok = await this.confirmAction(
+                        this.t('config.finderDeleteConfirm', 'Delete the finder “{name}”?')
+                            .replace('{name}', String(finder.name || finder.searchUrl || ''))
+                    );
+                    if (!ok) return;
                 }
+                this._finders.splice(i, 1);
+                this.repaintPtBody();
+                void this.saveFinders();
             });
         });
     }
