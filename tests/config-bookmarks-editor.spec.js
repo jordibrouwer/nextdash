@@ -432,3 +432,54 @@ test.describe('config bookmarks add button', () => {
         await expect(page.locator('#config-bm-list')).toContainText(name);
     });
 });
+
+test.describe('a category always exists on the page it is used on', () => {
+    /**
+     * Assigning a category only writes the id onto the bookmark; nothing adds it
+     * to the target page's own list. A page that has never used that category
+     * then holds bookmarks pointing at an id it does not define, and they render
+     * as "unknown categories" on the dashboard.
+     */
+    test('bulk-moving to another page carries the category into its list', async ({ page }) => {
+        await openBookmarks(page);
+        const source = await page.evaluate(() =>
+            (window.dashboardInstance.allBookmarks.find((b) => b.category) || {}).category || '');
+        test.skip(!source, 'needs a categorised bookmark');
+
+        // A second page that has never seen this category.
+        await page.evaluate(() => window.dashboardInstance.config.addPage());
+        await page.waitForFunction(() => window.dashboardInstance.pages.length > 1, null, { timeout: 15_000 });
+        const target = await page.evaluate(() =>
+            String(window.dashboardInstance.pages[window.dashboardInstance.pages.length - 1].id));
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.waitForSelector('[data-bm-tick]');
+        await page.evaluate((cat) => {
+            const bm = window.dashboardInstance.allBookmarks.find((b) => b.category === cat);
+            const box = document.querySelector(`[data-bm-tick="${CSS.escape(`${bm.pageId}::${bm.url}`)}"]`);
+            box.checked = true;
+            box.dispatchEvent(new Event('change', { bubbles: true }));
+        }, source);
+
+        await page.selectOption('#config-bulk-page', target);
+        await page.selectOption('#config-bulk-category', source);
+        await page.locator('[data-bulk="move"]').click();
+
+        await expect.poll(async () => page.evaluate(async (p) => {
+            const cats = await (await fetch(`/api/categories?page=${p}`)).json();
+            const bms = await (await fetch('/api/bookmarks?all=true')).json();
+            return bms.filter((b) => String(b.pageId) === String(p)
+                && b.category && !cats.some((c) => c.id === b.category)).length;
+        }, target), { timeout: 10_000 }).toBe(0);
+
+        const cats = await page.evaluate(async (p) =>
+            (await (await fetch(`/api/categories?page=${p}`)).json()).map((c) => c.id), target);
+        expect(cats).toContain(source);
+
+        // The extra page lives on the shared dev server, so later specs would
+        // inherit it and their page-count assumptions would drift.
+        await page.evaluate(async (p) => {
+            await fetch(`/api/pages/${p}`, { method: 'DELETE' });
+        }, target);
+    });
+});

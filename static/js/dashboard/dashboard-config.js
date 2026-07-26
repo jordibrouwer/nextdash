@@ -4456,28 +4456,33 @@ class DashboardConfig {
     }
 
     /**
-     * Append a pending category to a page's own category list. Without this the
-     * bookmark references an id the page does not define, which the dashboard
-     * renders as an orphan block.
+     * Make sure a page's category list contains `categoryId`, adding it if not.
+     *
+     * Assigning a category to a bookmark only writes the id onto the bookmark;
+     * nothing adds it to the target page's own list. A page that has never seen
+     * that category therefore ends up with bookmarks pointing at an id it does
+     * not define, and they surface as "unknown categories" on the dashboard.
+     *
+     * The label comes from wherever the id is already known — the pending map
+     * for a just-typed name, otherwise the id's display name elsewhere — so a
+     * category carried onto a new page keeps reading the same.
      */
-    async persistPendingCategory(pageId, categoryId) {
-        const name = this._pendingCategories?.get(categoryId);
-        if (!name) return;
+    async ensureCategoryOnPage(pageId, categoryId) {
+        if (!pageId || !categoryId) return;
         const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
         const current = res && res.ok ? await res.json() : [];
         const list = Array.isArray(current) ? current : [];
-        if (list.some((c) => String(c.id) === String(categoryId))) {
-            this._pendingCategories.delete(categoryId);
-            return;
-        }
+        if (list.some((c) => String(c.id) === String(categoryId))) return;
+        const name = this._pendingCategories?.get(categoryId)
+            || this.knownCategories().find((c) => String(c.id) === String(categoryId))?.label
+            || String(categoryId);
         const saveRes = await this.writeFetch(`/api/categories?page=${encodeURIComponent(pageId)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify([...list, { id: categoryId, name, sortMode: 'order' }]),
         });
         if (!saveRes.ok) throw new Error(`HTTP ${saveRes.status}`);
-        this._pendingCategories.delete(categoryId);
-        // The categories subtab caches per page; drop it so it refetches.
+        this._pendingCategories?.delete(categoryId);
         if (String(this._catLoadedFor) === String(pageId)) this._catLoadedFor = null;
     }
 
@@ -4809,9 +4814,11 @@ class DashboardConfig {
         }
 
         try {
-            // A category invented in this editor has to exist on the target page
-            // before the bookmark points at it, or it renders as an orphan.
-            if (category) await this.persistPendingCategory(targetPage, category);
+            // The category has to exist on the target page before the bookmark
+            // points at it, or it renders as an orphan. This covers a category
+            // invented in this editor and one carried to a page that has never
+            // used it — moving a bookmark across pages hits the latter.
+            if (category) await this.ensureCategoryOnPage(targetPage, category);
             const original = (this.dash.allBookmarks || [])
                 .find((b) => String(b.pageId) === String(parsed.pageId) && b.url === parsed.url) || {};
             if (targetPage === String(parsed.pageId)) {
@@ -4886,6 +4893,12 @@ class DashboardConfig {
         if (!targetPage && !targetCat) return;
 
         if (targetCat && !targetPage) {
+            // The selection can span pages, and each one needs the category in
+            // its own list or those rows land in "unknown categories".
+            const pages = new Set(picked.map((b) => String(b.pageId)));
+            for (const pageId of pages) {
+                await this.ensureCategoryOnPage(pageId, targetCat);
+            }
             await this.mutateSelected(picked, (b) => ({ ...b, category: targetCat }));
             this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
             return;
@@ -4893,6 +4906,7 @@ class DashboardConfig {
 
         // A page move is a remove-then-append across two lists, so it cannot go
         // through mutateSelected.
+        if (targetCat) await this.ensureCategoryOnPage(targetPage, targetCat);
         const moving = picked.filter((b) => String(b.pageId) !== String(targetPage));
         const byPage = new Map();
         moving.forEach((b) => {
