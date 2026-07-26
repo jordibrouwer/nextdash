@@ -1355,6 +1355,7 @@
         "localizationIntro": "Language, date and time display, and weather source.",
         "languageLabel": "Language:",
         "iconStylingLabel": "Favicon harmonization (per theme)",
+        "iconStylingThemeHint": "These settings apply to the theme you are using now — “{theme}”. Other themes keep their own.",
         "iconStylingStyleLabel": "Style",
         "iconStylingStyleMuted": "Muted",
         "iconStylingStyleTinted": "Tinted",

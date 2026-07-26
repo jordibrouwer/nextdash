@@ -1446,3 +1446,26 @@
     }
 }
 
+.config-icon-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 4px;
+}
+
+/* The wrapper carries .icon-themed--<style>; theme.css's variant rules target
+   the .preview-icon inside it, so the sample gets the real treatment. Only the
+   swatch's own size and colour are set here. */
+.config-icon-preview-dot .preview-icon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #e8663d 0%, #3d7de8 50%, #35c07a 100%);
+}
+
+/* ── Ko-fi support block ─────────────────────────────────────────────────── */
+
+/* The button itself is the shared .wn-kofi-* set from modal.css; only this
+   surrounding block lived in a config-only stylesheet the dashboard does not
+   load, so it is ported here rather than pulling in the whole file. */

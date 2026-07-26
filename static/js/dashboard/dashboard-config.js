@@ -1430,6 +1430,7 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('autoDarkMode')}
                 </div>
+                ${this.renderIconStyling()}
                 <div class="config-actions" style="margin-top:14px">
                     <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openThemeColorsLink', 'Edit theme colours…'))}</button>
                 </div>
@@ -1642,6 +1643,28 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleAppearanceAction(btn.getAttribute('data-appearance-action')));
         });
+        // Favicon harmonisation: the toggle and style repaint (they change which
+        // controls are shown); the slider updates live so it keeps the pointer.
+        const iconsToggle = container.querySelector('[data-appearance-toggle-icons]');
+        if (iconsToggle) {
+            iconsToggle.addEventListener('change', () => this.setIconStyling({ enabled: iconsToggle.checked }));
+        }
+        container.querySelectorAll('[data-appearance-iconstyle]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setIconStyling({ style: btn.getAttribute('data-appearance-iconstyle') }));
+        });
+        const iconRange = container.querySelector('[data-appearance-icon-intensity]');
+        if (iconRange) {
+            iconRange.addEventListener('input', () => {
+                const val = Number(iconRange.value);
+                const out = iconRange.parentElement?.querySelector('.config-range-value');
+                if (out) out.textContent = `${Math.round(val * 100)}%`;
+                iconRange.parentElement?.querySelectorAll('.config-icon-preview-dot').forEach((dot) => {
+                    dot.style.setProperty('--icon-theme-intensity', String(val));
+                });
+            });
+            iconRange.addEventListener('change', () =>
+                this.setIconStyling({ intensity: Number(iconRange.value) }, { repaint: false }));
+        }
         const fontInput = container.querySelector('#config-font-input');
         if (fontInput) {
             fontInput.addEventListener('change', () => {
@@ -1718,6 +1741,80 @@ class DashboardConfig {
     appearanceAff(field) {
         const aff = this.renderFieldAffordances(field, this.dash.settings?.[field]);
         return aff ? `<span class="config-field-affordances">${aff}</span>` : '';
+    }
+
+    /**
+     * The theme whose icon styling is being edited. The dashboard reads the entry
+     * by the *resolved* theme on <html data-theme> rather than settings.theme —
+     * with auto dark mode on those differ, so editing must follow the same key or
+     * the controls would write to an entry nothing reads.
+     */
+    iconStylingThemeKey() {
+        return document.documentElement.getAttribute('data-theme')
+            || this.dash.settings?.theme
+            || 'default';
+    }
+
+    iconStylingEntry() {
+        const map = this.dash.settings?.themeIconStyling || {};
+        const entry = map[this.iconStylingThemeKey()] || {};
+        return {
+            enabled: entry.enabled === true,
+            style: entry.style || 'muted',
+            intensity: Number.isFinite(Number(entry.intensity)) ? Number(entry.intensity) : 0.5,
+        };
+    }
+
+    /**
+     * Favicon harmonization: blends bookmark icons into the active theme. Stored
+     * per theme, so each theme keeps its own setting — the label says which one
+     * is being edited, since switching theme changes what these controls affect.
+     */
+    renderIconStyling() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const { enabled, style, intensity } = this.iconStylingEntry();
+        const styles = [
+            ['muted', this.t('config.iconStylingStyleMuted', 'Muted')],
+            ['tinted', this.t('config.iconStylingStyleTinted', 'Tinted')],
+            ['overlay', this.t('config.iconStylingStyleOverlay', 'Overlay')],
+        ];
+        const choices = styles.map(([val, label]) =>
+            `<button type="button" class="config-choice${style === val ? ' is-active' : ''}" data-appearance-iconstyle="${esc(val)}" aria-pressed="${style === val}">${esc(label)}</button>`
+        ).join('');
+        // Three sample icons styled exactly as the dashboard styles a favicon, so
+        // the effect is visible without leaving the section.
+        // .preview-icon inside .icon-themed is what theme.css's variant rules
+        // target, so the sample is styled by the same CSS the real favicons use.
+        const preview = [1, 2, 3].map(() =>
+            `<span class="config-icon-preview-dot icon-themed icon-themed--${esc(style)}" style="--icon-theme-intensity:${intensity}"><span class="preview-icon"></span></span>`
+        ).join('');
+        return `
+            <div class="config-field-row">
+                <label class="config-toggle">
+                    <input type="checkbox" data-appearance-toggle-icons ${enabled ? 'checked' : ''}>
+                    <span>${esc(this.t('config.iconStylingLabel', 'Favicon harmonization (per theme)'))}</span>
+                </label>
+                ${this.appearanceAff('themeIconStyling')}
+            </div>
+            <p class="config-field-hint">${esc(this.t('config.iconStylingThemeHint', 'These settings apply to the theme you are using now — “{theme}”. Other themes keep their own.').replace('{theme}', this.themeLabel(this.iconStylingThemeKey())))}</p>
+            ${enabled ? `
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.iconStylingStyleLabel', 'Style'))}</span>
+                    <div class="config-choices" role="group">${choices}</div>
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.iconStylingIntensityLabel', 'Intensity'))}</span>
+                    <input type="range" class="config-range" data-appearance-icon-intensity min="0" max="1" step="0.05" value="${intensity}">
+                    <span class="config-range-value">${Math.round(intensity * 100)}%</span>
+                    <span class="config-icon-preview" aria-hidden="true">${preview}</span>
+                </div>` : ''}`;
+    }
+
+    /** A readable name for a theme id, falling back to the id itself. */
+    themeLabel(id) {
+        const key = String(id || '');
+        const translated = this.t(`config.themeName.${key}`, '');
+        return translated || key;
     }
 
     /**
@@ -1811,8 +1908,49 @@ class DashboardConfig {
     setBackgroundType(type) {
         if (!['auto', 'none', 'gradient', 'image'].includes(type)) return;
         this.dash.settings.backgroundType = type;
+        // Switching to gradient with nothing chosen would apply no background at
+        // all, which reads as a broken button — fall back to the first preset.
+        if (type === 'gradient' && !this.dash.settings.backgroundGradient) {
+            const first = Object.keys(window.VisualSettings?.BACKGROUND_PRESETS || {})[0];
+            if (first) this.dash.settings.backgroundGradient = first;
+        }
         this.dash.visual?.applyBackground?.();
         this.persistAppearance();
+    }
+
+    /** Merge a change into the current theme's icon-styling entry and apply it. */
+    setIconStyling(patch, { repaint = true } = {}) {
+        const d = this.dash;
+        const key = this.iconStylingThemeKey();
+        const map = { ...(d.settings.themeIconStyling || {}) };
+        map[key] = { ...this.iconStylingEntry(), ...patch };
+        d.settings.themeIconStyling = map;
+        // Icon classes are applied while rows render, so the grid has to be
+        // rebuilt for the change to show.
+        d.renderDashboard?.({ animate: false });
+        if (repaint) {
+            this.persistAppearance();
+        } else {
+            void this.saveSettingsWithFeedback();
+        }
+    }
+
+    setBackgroundGradient(name) {
+        if (!name || !(window.VisualSettings?.BACKGROUND_PRESETS || {})[name]) return;
+        this.dash.settings.backgroundGradient = name;
+        this.dash.settings.backgroundType = 'gradient';
+        this.dash.visual?.applyBackground?.();
+        this.persistAppearance();
+    }
+
+    /**
+     * The URL is applied through the shared safeCssImageUrl guard downstream, so
+     * anything it rejects simply renders no background rather than injecting CSS.
+     */
+    setBackgroundImageUrl(url) {
+        this.dash.settings.backgroundImageUrl = String(url || '').trim();
+        this.dash.visual?.applyBackground?.();
+        void this.saveSettingsWithFeedback();
     }
 
     setLauncherIconSize(size) {
@@ -2014,6 +2152,7 @@ class DashboardConfig {
         // Appearance
         autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'] },
         showBackgroundDots: { info: ['showBackgroundDotsInfoTitle', 'showBackgroundDotsInfoMessage'] },
+        themeIconStyling: { info: ['iconStylingInfoTitle', 'iconStylingInfoMessage'] },
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'] },
         fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
         fontWeight: { info: ['fontWeightInfoTitle', 'fontWeightInfoMessage'], def: 'normal' },

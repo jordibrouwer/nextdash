@@ -1346,6 +1346,7 @@
         "backgroundImageUrlPlaceholder": "https://example.com/afbeelding.jpg",
         "languageLabel": "Taal:",
         "iconStylingLabel": "Favicon-harmonisatie (per thema)",
+        "iconStylingThemeHint": "Deze instellingen gelden voor het thema dat je nu gebruikt — “{theme}”. Andere thema’s houden hun eigen instelling.",
         "iconStylingStyleLabel": "Stijl",
         "iconStylingStyleMuted": "Gedempt",
         "iconStylingStyleTinted": "Getint",

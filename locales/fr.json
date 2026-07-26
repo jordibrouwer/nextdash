@@ -1336,6 +1336,7 @@
         "backgroundImageUrlPlaceholder": "https://example.com/image.jpg",
         "languageLabel": "Langue :",
         "iconStylingLabel": "Harmonisation des favicons (par thème)",
+        "iconStylingThemeHint": "Ces réglages s’appliquent au thème actuel — « {theme} ». Les autres thèmes gardent les leurs.",
         "iconStylingStyleLabel": "Style",
         "iconStylingStyleMuted": "Atténué",
         "iconStylingStyleTinted": "Teinté",

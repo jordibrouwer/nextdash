@@ -358,6 +358,66 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-theme="light"]')).toHaveClass(/is-active/);
     });
 
+    /**
+     * Favicon harmonization was in the old config and the dashboard still reads
+     * it, so leaving it out made a working feature unreachable. It is stored per
+     * theme under the *resolved* theme (<html data-theme>), not settings.theme —
+     * with auto dark mode on those differ, and writing the wrong key would save
+     * to an entry nothing reads.
+     */
+    test('favicon harmonization is configurable and stored per theme', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        await expect(toggle).toBeVisible();
+
+        // Off hides the sub-controls; on brings back style, intensity, preview.
+        if (await toggle.isChecked()) await toggle.click();
+        await expect(page.locator('[data-appearance-iconstyle]')).toHaveCount(0);
+        await page.locator('[data-appearance-toggle-icons]').click();
+        await expect(page.locator('[data-appearance-iconstyle]')).toHaveCount(3);
+        await expect(page.locator('[data-appearance-icon-intensity]')).toBeVisible();
+
+        await page.locator('[data-appearance-iconstyle="tinted"]').click();
+        await expect.poll(() => page.evaluate(() => {
+            const key = document.documentElement.getAttribute('data-theme');
+            const e = window.dashboardInstance.settings.themeIconStyling?.[key];
+            return e ? `${e.enabled}:${e.style}` : 'missing';
+        })).toBe('true:tinted');
+
+        // Survives a round trip rather than only living in memory.
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        expect(await page.evaluate(() => {
+            const key = document.documentElement.getAttribute('data-theme');
+            return window.dashboardInstance.settings.themeIconStyling?.[key]?.style;
+        })).toBe('tinted');
+    });
+
+    test('the icon-styling preview is driven by the real theme CSS', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await page.locator('[data-appearance-iconstyle="muted"]').click();
+
+        // theme.css turns Muted into a grayscale filter on the sample, so the
+        // preview shows the same treatment the dashboard applies to a favicon.
+        await expect.poll(() => page.evaluate(() => {
+            const inner = document.querySelector('.config-icon-preview-dot .preview-icon');
+            return inner ? getComputedStyle(inner).filter : '';
+        })).toMatch(/grayscale/);
+
+        // The slider updates the preview live, before the change is committed.
+        const range = page.locator('[data-appearance-icon-intensity]');
+        await range.fill('0.9');
+        await range.dispatchEvent('input');
+        await expect.poll(() => page.evaluate(() =>
+            document.querySelector('.config-icon-preview-dot')?.style.getPropertyValue('--icon-theme-intensity'))).toBe('0.9');
+    });
+
     test('appearance exposes the full control set', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
