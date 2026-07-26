@@ -26,7 +26,7 @@ test.describe('config pages & tags', () => {
         await expect(page.locator('[data-finder="name"]')).toHaveValue('Wikipedia');
     });
 
-    test('adding a finder posts the updated list', async ({ page }) => {
+    test('a finder is posted once it has a name, not while still blank', async ({ page }) => {
         let saved = null;
         await page.route('**/api/finders', async (route) => {
             if (route.request().method() === 'POST') {
@@ -39,7 +39,13 @@ test.describe('config pages & tags', () => {
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
         await page.locator('[data-finder-add]').click();
 
+        // Add alone no longer persists an all-blank row — a refresh mid-typing
+        // used to leave one behind. The first filled field saves it.
+        expect(saved).toBeNull();
+        await page.locator('[data-finder="name"]').fill('Wikipedia');
+        await page.locator('[data-finder="name"]').blur();
         await expect.poll(() => Array.isArray(saved) && saved.length).toBe(1);
+        expect(saved[0].name).toBe('Wikipedia');
     });
 
     test('the tags manager lists tags with counts', async ({ page }) => {
@@ -211,8 +217,11 @@ test.describe('unique names', () => {
         await page.evaluate(() => window.dashboardInstance.config.addPage());
         await page.locator('[data-pt-tab="pages"]').click();
 
+        // Count relative to what was already there: other specs share this
+        // server and may have left pages behind, so a fixed count is brittle.
         const names = page.locator('[data-page="name"]');
-        await expect(names).toHaveCount(2);
+        await expect.poll(() => names.count()).toBeGreaterThan(1);
+        const total = await names.count();
         const first = await names.nth(0).inputValue();
 
         let posted = false;
@@ -221,12 +230,14 @@ test.describe('unique names', () => {
             await route.fallback();
         });
 
-        // Differing only in case must still be rejected.
-        await names.nth(1).fill(first.toUpperCase());
-        await names.nth(1).blur();
+        // Differing only in case must still be rejected. Target the row just
+        // added rather than a fixed index.
+        const added = names.nth(total - 1);
+        await added.fill(first.toUpperCase());
+        await added.blur();
 
         // The input is put back and nothing is written.
-        await expect(names.nth(1)).not.toHaveValue(first.toUpperCase());
+        await expect(added).not.toHaveValue(first.toUpperCase());
         expect(posted).toBe(false);
         const stored = await page.evaluate(() => window.dashboardInstance.pages.map((p) => p.name));
         expect(new Set(stored.map((n) => n.toLowerCase())).size).toBe(stored.length);
@@ -416,3 +427,61 @@ test.describe('smart collection limits', () => {
         expect(ids.after).toContain('__smart_most_used__');
     });
 });
+
+test.describe('destructive actions confirm first', () => {
+    test('deleting a category asks, and names what happens to its bookmarks', async ({ page }) => {
+        let nativeDialogs = 0;
+        page.on('dialog', (d) => { nativeDialogs += 1; d.dismiss(); });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="categories"]').click();
+        await page.waitForSelector('[data-cat-delete]');
+
+        const before = await page.evaluate(() =>
+            (window.dashboardInstance.config._categories || []).length);
+        await page.locator('[data-cat-delete]').first().click();
+
+        // In-app, not window.confirm: the native one cannot be themed and a
+        // delete needs to look like a delete.
+        await expect(page.locator('#config-confirm-modal')).toBeVisible();
+        expect(nativeDialogs).toBe(0);
+        await expect(page.locator('[data-confirm="ok"]')).toHaveClass(/danger/);
+        // The orphaning is invisible from the list, so the message states it.
+        await expect(page.locator('.config-confirm-message')).toContainText(/bookmarks/i);
+
+        await page.locator('[data-confirm="cancel"]').click();
+        await expect(page.locator('#config-confirm-modal')).toHaveCount(0);
+        expect(await page.evaluate(() =>
+            (window.dashboardInstance.config._categories || []).length)).toBe(before);
+    });
+
+    test('Escape cancels the dialog without also leaving config', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="categories"]').click();
+        await page.locator('[data-cat-delete]').first().click();
+        await expect(page.locator('#config-confirm-modal')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#config-confirm-modal')).toHaveCount(0);
+        // The dialog must swallow that Escape, or one keypress closes both.
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.activeView)).toBe('config');
+    });
+
+    test('deleting a named finder asks first', async ({ page }) => {
+        await page.route('**/api/finders', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+                { id: '1', name: 'Wikipedia', searchUrl: 'https://en.wikipedia.org/?q=%s', shortcut: 'w' },
+            ]) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="finders"]').click();
+        await page.waitForSelector('[data-finder-delete]');
+        await page.locator('[data-finder-delete]').first().click();
+        await expect(page.locator('.config-confirm-message')).toContainText('Wikipedia');
+        await page.locator('[data-confirm="cancel"]').click();
+        await expect(page.locator('[data-finder="name"]')).toHaveCount(1);
+    });
+});
+

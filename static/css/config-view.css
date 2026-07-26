@@ -1612,3 +1612,13 @@
     }
 }
 
+/* The in-app replacement for window.confirm. The overlay, panel and buttons
+   come from modal.css; only the message needs styling here. */
+.config-confirm-message {
+    margin: 0;
+    line-height: 1.5;
+    color: var(--text-color, inherit);
+    max-width: 46ch;
+}
+
+/* A finder URL with no %s placeholder: search.js cannot substitute the query,

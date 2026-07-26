@@ -1020,7 +1020,7 @@ class DashboardConfig {
 
     /** Re-download every bookmark favicon across all pages. */
     async refreshAllFavicons() {
-        if (!window.confirm(this.t('config.bulkRefreshFaviconsConfirm', 'Download every bookmark icon again? This can take a while on a large dashboard.'))) return;
+        if (!await this.confirmAction(this.t('config.bulkRefreshFaviconsConfirm', 'Download every bookmark icon again? This can take a while on a large dashboard.'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false })) return;
         try {
             const res = await this.writeFetch('/api/bookmarks/prefetch-icons', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1034,7 +1034,7 @@ class DashboardConfig {
 
     /** Re-fetch the link-preview card for every bookmark that has one. */
     async refreshAllPreviews() {
-        if (!window.confirm(this.t('config.refreshAllPreviewsConfirm', 'Fetch every link preview card again from its site?'))) return;
+        if (!await this.confirmAction(this.t('config.refreshAllPreviewsConfirm', 'Fetch every link preview card again from its site?'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false })) return;
         try {
             const res = await this.writeFetch('/api/previews/refresh', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1046,7 +1046,7 @@ class DashboardConfig {
 
     /** Drop every cached link-preview card. */
     async clearAllPreviews() {
-        if (!window.confirm(this.t('config.clearAllPreviewsConfirm', 'Remove every cached preview card? They are fetched again when next needed.'))) return;
+        if (!await this.confirmAction(this.t('config.clearAllPreviewsConfirm', 'Remove every cached preview card? They are fetched again when next needed.'), { confirmLabel: this.t('config.confirmClear', 'Clear') })) return;
         try {
             const res = await this.writeFetch('/api/previews/clear', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1059,7 +1059,7 @@ class DashboardConfig {
 
     /** Remove every bookmark but keep pages, categories and settings. */
     async deleteAllBookmarks() {
-        if (!window.confirm(this.t('config.deleteAllBookmarksConfirm', 'Delete every bookmark? Your pages, categories and settings are kept. This cannot be undone.'))) return;
+        if (!await this.confirmAction(this.t('config.deleteAllBookmarksConfirm', 'Delete every bookmark? Your pages, categories and settings are kept. This cannot be undone.'))) return;
         try {
             const res = await this.writeFetch('/api/bookmarks/delete-all', { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1102,7 +1102,7 @@ class DashboardConfig {
     }
 
     async restoreBackup(name) {
-        const ok = window.confirm(this.t('config.backupRestoreConfirm', 'Restore this backup? Current data will be replaced.'));
+        const ok = await this.confirmAction(this.t('config.backupRestoreConfirm', 'Restore this backup? Current data will be replaced.'), { confirmLabel: this.t('config.autoBackupRestore', 'Restore') });
         if (!ok) return;
         try {
             const res = await this.writeFetch(`/api/auto-backups/restore?name=${encodeURIComponent(name)}`, { method: 'POST' });
@@ -1115,7 +1115,7 @@ class DashboardConfig {
     }
 
     async deleteBackup(name) {
-        const ok = window.confirm(this.t('config.backupDeleteConfirm', 'Delete this backup?'));
+        const ok = await this.confirmAction(this.t('config.backupDeleteConfirm', 'Delete this backup?'));
         if (!ok) return;
         try {
             const res = await this.writeFetch(`/api/auto-backups?name=${encodeURIComponent(name)}`, { method: 'DELETE' });
@@ -1128,7 +1128,7 @@ class DashboardConfig {
     }
 
     async importBackup(file) {
-        const ok = window.confirm(this.t('config.backupImportConfirm', 'Import this backup? Current data will be replaced.'));
+        const ok = await this.confirmAction(this.t('config.backupImportConfirm', 'Import this backup? Current data will be replaced.'), { confirmLabel: this.t('config.confirmImport', 'Import') });
         if (!ok) return;
         try {
             const form = new FormData();
@@ -1143,7 +1143,7 @@ class DashboardConfig {
     }
 
     async resetAllData() {
-        const ok = window.confirm(this.t('config.backupResetConfirm', 'Delete ALL data? This cannot be undone.'));
+        const ok = await this.confirmAction(this.t('config.backupResetConfirm', 'Delete ALL data? This cannot be undone.'));
         if (!ok) return;
         try {
             const res = await this.writeFetch('/api/reset', { method: 'POST' });
@@ -1250,8 +1250,9 @@ class DashboardConfig {
         }
         // Import onto the current page; the server dedups against existing URLs.
         const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
-        const ok = window.confirm(
-            this.t('config.browserImportConfirm', 'Import {n} bookmarks onto the current page?').replace('{n}', String(bookmarks.length))
+        const ok = await this.confirmAction(
+            this.t('config.browserImportConfirm', 'Import {n} bookmarks onto the current page?').replace('{n}', String(bookmarks.length)),
+            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false }
         );
         if (!ok) return;
         try {
@@ -1307,7 +1308,7 @@ class DashboardConfig {
             this.notify(this.t('config.settingsImportInvalidFile', 'That is not a valid settings file.'), 'error');
             return;
         }
-        const ok = window.confirm(this.t('config.settingsImportConfirmMessage', 'This will overwrite your current settings. Continue?'));
+        const ok = await this.confirmAction(this.t('config.settingsImportConfirmMessage', 'This will overwrite your current settings. Continue?'), { confirmLabel: this.t('config.confirmImport', 'Import') });
         if (!ok) return;
         // Strip one-time migration markers so the destination runs its migrations.
         const { tagCloudDefaultMigrated, linkPreviewCardsOffMigrated, hideEmptyCategoriesMigrated, showTipsOffMigrated, ...clean } = parsed;
@@ -1326,7 +1327,7 @@ class DashboardConfig {
     }
 
     async resetOnboarding() {
-        const ok = window.confirm(this.t('config.resetOnboardingConfirm', 'Replay the welcome tour and tips next time?'));
+        const ok = await this.confirmAction(this.t('config.resetOnboardingConfirm', 'Replay the welcome tour and tips next time?'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false });
         if (!ok) return;
         this.dash.settings.onboardingCompleted = false;
         try {
@@ -3190,9 +3191,9 @@ class DashboardConfig {
             });
         });
         container.querySelectorAll('[data-tag-delete]').forEach((btn) => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const tag = btn.getAttribute('data-tag-delete');
-                if (window.confirm(this.t('config.tagDeleteConfirm', 'Delete this tag from all bookmarks?'))) {
+                if (await this.confirmAction(this.t('config.tagDeleteConfirm', 'Delete this tag from all bookmarks?'))) {
                     void this.rewriteTag(tag, null);
                 }
             });
@@ -3500,7 +3501,7 @@ class DashboardConfig {
 
     async deletePage(id) {
         if (Number(id) === 1) return;
-        if (!window.confirm(this.t('config.pageDeleteConfirm', 'Delete this page and its bookmarks?'))) return;
+        if (!await this.confirmAction(this.t('config.pageDeleteConfirm', 'Delete this page and its bookmarks?'))) return;
         try {
             const res = await this.writeFetch(`/api/pages/${encodeURIComponent(id)}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -3633,13 +3634,27 @@ class DashboardConfig {
             void this.saveCategories();
         });
         container.querySelectorAll('[data-cat-delete]').forEach((btn) => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const i = Number(btn.getAttribute('data-cat-delete'));
-                if (this._categories && this._categories[i]) {
-                    this._categories.splice(i, 1);
-                    this.repaintPtBody();
-                    void this.saveCategories();
-                }
+                if (!this._categories || !this._categories[i]) return;
+                const cat = this._categories[i];
+                // Removing a category does not touch its bookmarks: they keep
+                // pointing at an id nothing defines any more and collect in
+                // "unknown categories" on the dashboard. Say so, with the count,
+                // because that consequence is invisible from this list.
+                const orphans = this.categoryBookmarkCounts(this._catPageId);
+                const n = DashboardConfig.categoryCountFor(orphans, cat);
+                const message = n > 0
+                    ? this.t('config.categoryDeleteWithBookmarks',
+                        'Delete “{name}”? Its {n} bookmarks are kept but lose their category.')
+                        .replace('{name}', String(cat.name || cat.id || ''))
+                        .replace('{n}', String(n))
+                    : this.t('config.categoryDeleteConfirm', 'Delete “{name}”?')
+                        .replace('{name}', String(cat.name || cat.id || ''));
+                if (!await this.confirmAction(message)) return;
+                this._categories.splice(i, 1);
+                this.repaintPtBody();
+                void this.saveCategories();
             });
         });
         container.querySelectorAll('[data-cat-move]').forEach((btn) => {
@@ -4623,9 +4638,81 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * An in-app replacement for window.confirm.
+     *
+     * Native dialogs cannot be styled or themed and look foreign against the
+     * rest of the view. This reuses modal.css — the same overlay, buttons and
+     * .danger treatment the other dashboard modals use — so a destructive
+     * confirmation looks destructive.
+     *
+     * Resolves true/false like window.confirm, so call sites only need `await`.
+     * Escape, the backdrop and Cancel all resolve false; the confirm button is
+     * focused on open so Enter accepts, which keeps the keyboard flow of the
+     * native dialog it replaces.
+     */
+    confirmAction(message, { title, confirmLabel, danger = true } = {}) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        document.getElementById('config-confirm-modal')?.remove();
+        const heading = title || this.t('config.confirmTitle', 'Are you sure?');
+        const okLabel = confirmLabel || this.t('config.confirmOk', 'Delete');
+        const cancelLabel = this.t('config.confirmCancel', 'Cancel');
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="config-confirm-modal" class="modal-overlay" aria-hidden="false">
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="config-confirm-title">
+                    <div class="modal-header">
+                        <span class="modal-title" id="config-confirm-title">${esc(heading)}</span>
+                    </div>
+                    <div class="modal-body">
+                        <p class="config-confirm-message">${esc(message)}</p>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-button" data-confirm="cancel">
+                            <span class="modal-button-name">${esc(cancelLabel)}</span>
+                        </button>
+                        <button type="button" class="modal-button${danger ? ' danger' : ''}" data-confirm="ok">
+                            <span class="modal-button-name">${esc(okLabel)}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>`);
+        const overlay = document.getElementById('config-confirm-modal');
+        // .show drives the CSS transition; setting it on the next frame lets the
+        // overlay animate in rather than appearing fully formed.
+        requestAnimationFrame(() => overlay.classList.add('show'));
+        const previouslyFocused = document.activeElement;
+
+        return new Promise((resolve) => {
+            let done = false;
+            const finish = (result) => {
+                if (done) return;
+                done = true;
+                document.removeEventListener('keydown', onKey, true);
+                overlay.remove();
+                // Escape from a dialog should land back where it was opened
+                // from, not on <body>, or the next keystroke goes nowhere.
+                if (previouslyFocused?.isConnected) previouslyFocused.focus?.();
+                resolve(result);
+            };
+            const onKey = (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+            };
+            // Capture phase: the config view and the dashboard both listen for
+            // Escape, and the dialog has to win while it is open.
+            document.addEventListener('keydown', onKey, true);
+            overlay.querySelector('[data-confirm="ok"]').addEventListener('click', () => finish(true));
+            overlay.querySelector('[data-confirm="cancel"]').addEventListener('click', () => finish(false));
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
+            overlay.querySelector('[data-confirm="ok"]').focus();
+        });
+    }
+
     async confirmDiscardBookmarkEdit() {
         if (!this.bmDirty) return true;
-        return window.confirm(this.t('config.discardChangesConfirm', 'Discard your unsaved changes?'));
+        return this.confirmAction(
+            this.t('config.discardChangesConfirm', 'Discard your unsaved changes?'),
+            { confirmLabel: this.t('config.confirmDiscard', 'Discard') }
+        );
     }
 
     repaintBookmarksList() {
@@ -4677,7 +4764,7 @@ class DashboardConfig {
     async deleteBookmarkByKey(key) {
         const parsed = this.parseBookmarkKey(key);
         if (!parsed) return;
-        if (!window.confirm(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
+        if (!await this.confirmAction(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
         try {
             await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => b.url !== parsed.url));
             this.bmSelected.delete(key);
@@ -4880,7 +4967,7 @@ class DashboardConfig {
     async bulkDelete(picked) {
         const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks? This cannot be undone.')
             .replace('{n}', String(picked.length));
-        if (!window.confirm(msg)) return;
+        if (!await this.confirmAction(msg)) return;
         const byPage = new Map();
         picked.forEach((b) => {
             const list = byPage.get(String(b.pageId)) || [];
