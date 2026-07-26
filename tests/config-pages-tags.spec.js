@@ -317,3 +317,54 @@ test.describe('unique names', () => {
     });
 });
 
+test.describe('category statistics', () => {
+    // Regression: a bookmark stores its category by *id* ("development"), while
+    // the category list carries the display *name* ("Development"). Counting by
+    // id but looking up by name matched nothing, so every row read 0 bookmarks.
+    test('counts categories when bookmarks store the id, not the display name', async ({ page }) => {
+        await page.route('**/api/finders', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+        });
+        await page.route('**/api/categories**', async (route) => {
+            if (route.request().method() === 'POST') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+                { id: 'development', name: 'Development' },
+                { id: 'media', name: 'Media' },
+                { id: 'empty-one', name: 'Utilities' },
+            ]) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.allBookmarks = [
+                { name: 'A', url: 'https://a.com', pageId: 1, category: 'development' },
+                { name: 'B', url: 'https://b.com', pageId: 1, category: 'development' },
+                { name: 'C', url: 'https://c.com', pageId: 1, category: 'media' },
+                // Another page's bookmark must not leak into these counts.
+                { name: 'D', url: 'https://d.com', pageId: 2, category: 'development' },
+            ];
+        });
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="categories"]').click();
+        await expect(page.locator('[data-cat-row="0"] .config-tag-count')).toHaveText('2 bookmarks');
+        await expect(page.locator('[data-cat-row="1"] .config-tag-count')).toHaveText('1 bookmarks');
+        // A category nothing points at is genuinely zero, not a lookup miss.
+        await expect(page.locator('[data-cat-row="2"] .config-tag-count')).toHaveText('0 bookmarks');
+    });
+
+    test('the count lookup prefers the id but still falls back to the name', async ({ page }) => {
+        await loadDashboard(page);
+        const r = await page.evaluate(() => {
+            const C = window.dashboardInstance.config.constructor;
+            const counts = new Map([['development', 3], ['Legacy Name', 2]]);
+            return {
+                byId: C.categoryCountFor(counts, { id: 'development', name: 'Development' }),
+                // Older data stored the display name as the category.
+                byName: C.categoryCountFor(counts, { id: '', name: 'Legacy Name' }),
+                missing: C.categoryCountFor(counts, { id: 'nope', name: 'Nope' }),
+            };
+        });
+        expect(r).toEqual({ byId: 3, byName: 2, missing: 0 });
+    });
+});
+

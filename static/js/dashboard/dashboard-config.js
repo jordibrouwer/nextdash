@@ -2813,16 +2813,38 @@ class DashboardConfig {
         return counts;
     }
 
-    /** Bookmarks per category name, limited to one page. */
+    /**
+     * Bookmarks per category, limited to one page.
+     *
+     * Keyed by category *id* ("development"), which is what a bookmark stores —
+     * not the display name ("Development"). Look results up with
+     * categoryCountFor so the two are never confused.
+     */
     categoryBookmarkCounts(pageId) {
         const counts = new Map();
         (this.dash.allBookmarks || []).forEach((b) => {
             if (String(b.pageId) !== String(pageId)) return;
-            const name = String(b.category || '');
-            if (!name) return;
-            counts.set(name, (counts.get(name) || 0) + 1);
+            const id = String(b.category || '');
+            if (!id) return;
+            counts.set(id, (counts.get(id) || 0) + 1);
         });
         return counts;
+    }
+
+    /**
+     * The count for one category, given the map above.
+     *
+     * Prefers the id, because that is the key bookmarks are counted under.
+     * Falls back to the name for categories created without an id, and for
+     * bookmarks whose category was stored as a display name — both exist in
+     * older data, and neither should silently show zero.
+     */
+    static categoryCountFor(counts, category) {
+        const id = String(category?.id || '');
+        if (id && counts.has(id)) return counts.get(id);
+        const name = String(category?.name || '');
+        if (name && counts.has(name)) return counts.get(name);
+        return 0;
     }
 
     /* ── Tags & collections placeholders (native, built next) ──────────────── */
@@ -3227,7 +3249,7 @@ class DashboardConfig {
             body = `<p class="config-panel-empty">${esc(this.t('config.categoriesEmpty', 'No categories on this page yet.'))}</p>`;
         } else {
             const counts = this.categoryBookmarkCounts(pageId);
-            const catCounts = this._categories.map((c) => counts.get(String(c.name || '')) || 0);
+            const catCounts = this._categories.map((c) => DashboardConfig.categoryCountFor(counts, c));
             const scales = DashboardConfig.statScales(catCounts);
             const rows = this._categories.map((c, i) => `
                 <li class="config-crud-row" data-cat-row="${i}">
