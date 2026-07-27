@@ -236,7 +236,8 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('.config-tile-label', { hasText: /last backup/i })).toBeVisible();
         await expect(page.locator('.config-backup-row')).toHaveCount(2);
         await expect(page.locator('[data-backup-action="download"]')).toBeVisible();
-        await expect(page.locator('[data-backup-action="reset"]')).toBeVisible();
+        // Reset moved to its own sub-tab — see config-data-reset.spec.js.
+        await expect(page.locator('[data-db-tab="reset"]')).toBeVisible();
     });
 
     test('make-a-backup-now posts to the run endpoint and reloads the list', async ({ page }) => {
@@ -677,5 +678,82 @@ test.describe('< opens the config view', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
         expect(navigated).toBe(false);
         expect(new URL(page.url()).pathname).toBe('/');
+    });
+});
+
+test.describe('sub-tab deep links', () => {
+    test('a #config/<section>/<tab> link opens that tab from a cold load', async ({ page }) => {
+        await page.goto('/#config/behavior/privacy');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+
+        // Sections with sub-tabs were only reachable at their first tab, so a
+        // link to something like Privacy could not be handed out at all.
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.section)).toBe('behavior');
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.behaviorTab)).toBe('privacy');
+        await expect(page.locator('[data-behavior-field="analyticsOptIn"]')).toBeVisible();
+    });
+
+    test('switching sub-tab keeps the hash shareable', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.locator('[data-behavior-tab="privacy"]').click();
+        await expect.poll(() => page.evaluate(() => window.location.hash))
+            .toBe('#config/behavior/privacy');
+
+        // The first tab is the section default, so it stays off the URL.
+        await page.locator('[data-behavior-tab="general"]').click();
+        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/behavior');
+    });
+
+    test('an unknown tab falls back to the section rather than breaking', async ({ page }) => {
+        await page.goto('/#config/behavior/nonsense');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.section)).toBe('behavior');
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.behaviorTab)).toBe('general');
+    });
+
+    test('the analytics modal links straight to privacy', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => document.querySelector('.quickstart-setup')?.remove());
+        await page.evaluate(() => window.DashboardAnalyticsNotice.openDetails());
+
+        // It used to only name the old config's path — "General → Advanced →
+        // Privacy" — which no longer exists.
+        const body = page.locator('.analytics-notice-modal-body');
+        await expect(body).toContainText(/Behavior|Gedrag|Verhalten|Comportement/);
+        await expect(body).not.toContainText(/Advanced|Geavanceerd|Erweitert|Avancé/);
+
+        await page.locator('[data-an-action="open-privacy"]').click();
+        // State changing is not the same as the user seeing it: assert the tab
+        // is actually on screen, not just that behaviorTab was set.
+        await expect(page.locator('[data-behavior-field="analyticsOptIn"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-tab="privacy"]')).toHaveClass(/is-active/);
+        await expect.poll(() => page.evaluate(() => window.location.hash))
+            .toBe('#config/behavior/privacy');
+    });
+
+    test('turning analytics on lands on the setting that changed', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(async () => {
+            window.dashboardInstance.settings.analyticsOptIn = false;
+            await window.dashboardInstance.saveSettings?.();
+            document.querySelector('.quickstart-setup')?.remove();
+        });
+        await page.evaluate(() => window.DashboardAnalyticsNotice.openDetails());
+
+        // Opting in reloads, which is what loads the tracker — but the reload
+        // used to discard where you were, leaving you on the dashboard with
+        // nothing to show that anything had happened.
+        await page.getByRole('button', { name: /turn on|inschakelen|aktivieren|activer/i }).click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance?.activeView), { timeout: 15_000 }).toBe('config');
+        await expect(page.locator('[data-behavior-field="analyticsOptIn"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="analyticsOptIn"]')).toBeChecked();
     });
 });

@@ -55,6 +55,8 @@ class DashboardConfig {
         this.statsRange = 30;
         // Statistics sub-tab.
         this.statsTab = 'overview';
+        // Data & backups sub-tab.
+        this.dbTab = 'backups';
         // Inbox stats load on demand; undefined means "not fetched yet".
         this._statsInboxItems = undefined;
         this._statsInboxAgg = undefined;
@@ -900,8 +902,63 @@ class DashboardConfig {
             ['always', this.t('config.faviconPolicyAlways', 'Every load')],
         ].map(([v, label]) => `<option value="${esc(v)}" ${v === faviconPolicy ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
+        const tabs = DashboardConfig.DB_TABS.map((tab) => {
+            const active = tab === this.dbTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-db-tab="${esc(tab)}">${esc(this.dbTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.dataBackupsIntro', 'Back up your data, restore an earlier snapshot, or move it in and out of nextDash.'))}</p>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-db-body">${this.renderDbTab()}</div>
+        `;
+    }
+
+    /** Which sub-tab of Data & backups is showing. */
+    renderDbTab() {
+        return this.dbTab === 'reset' ? this.renderDataReset() : this.renderDataBackupsMain();
+    }
+
+    dbTabLabel(tab) {
+        const map = {
+            backups: ['config.dbTabBackups', 'Backups & data'],
+            reset: ['config.dbTabReset', 'Reset'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    /** Everything except the destructive actions, which live on their own tab. */
+    renderDataBackupsMain() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const loading = this._backupData == null;
+        const tiles = loading
+            ? `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`
+            : `<div class="config-tiles" role="list">${this.dataBackupsTiles().map((t) => this.renderTile(t)).join('')}</div>`;
+
+        const s = this.dash.settings || {};
+        const recheckHours = Number(s.healthAutoRecheckIntervalHours) || 24;
+        const intervalOptions = [6, 12, 24, 48, 168].map((h) => {
+            const label = h < 24
+                ? this.t('config.recheckEveryHours', 'Every {n}h').replace('{n}', String(h))
+                : (h === 24
+                    ? this.t('config.recheckDaily', 'Daily')
+                    : (h === 168
+                        ? this.t('config.recheckWeekly', 'Weekly')
+                        : this.t('config.recheckEveryDays', 'Every {n} days').replace('{n}', String(h / 24))));
+            return `<option value="${h}" ${h === recheckHours ? 'selected' : ''}>${esc(label)}</option>`;
+        }).join('');
+        const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
+            || (() => { try { return localStorage.getItem('deviceSpecificSettings') === 'true'; } catch { return false; } })();
+
+        const faviconPolicy = s.faviconRefreshPolicy || 'monthly';
+        const faviconPolicyOptions = [
+            ['never', this.t('config.faviconPolicyNever', 'Never')],
+            ['monthly', this.t('config.faviconPolicyMonthly', 'Monthly')],
+            ['weekly', this.t('config.faviconPolicyWeekly', 'Weekly')],
+            ['always', this.t('config.faviconPolicyAlways', 'Every load')],
+        ].map(([v, label]) => `<option value="${esc(v)}" ${v === faviconPolicy ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
+        return `
             ${tiles}
 
             <div class="config-panel">
@@ -980,13 +1037,32 @@ class DashboardConfig {
                 </div>
             </div>
 
+        `;
+    }
+
+    /**
+     * The destructive actions, kept on their own tab so they cannot be hit while
+     * scrolling through backup settings. Both ask twice, and the full reset also
+     * makes you type the confirmation word.
+     */
+    renderDataReset() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const token = this.t('config.resetTypeToken', 'RESET');
+        return `
+            <p class="config-view-intro">${esc(this.t('config.resetIntro', 'These actions permanently remove data. Make a backup first — there is no undo.'))}</p>
+
             <div class="config-panel config-panel--danger">
-                <h3 class="config-panel-title">${esc(this.t('config.resetSectionTitle', 'Reset'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.deleteAllBookmarksTitle', 'Delete all bookmarks'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.deleteAllBookmarksHint', 'Removes every bookmark but keeps your pages, categories, and settings.'))}</p>
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--danger" data-backup-action="delete-bookmarks">${esc(this.t('config.deleteAllBookmarksBtn', 'Delete all bookmarks only'))}</button>
                 </div>
-                <p class="config-panel-note" style="margin-top:16px">${esc(this.t('config.backupResetNote', 'Removes every bookmark, page, and setting. This cannot be undone.'))}</p>
+            </div>
+
+            <div class="config-panel config-panel--danger">
+                <h3 class="config-panel-title">${esc(this.t('config.resetSectionTitle', 'Reset all data'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.backupResetNote', 'Removes every bookmark, page, and setting. This cannot be undone.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.resetTypeNote', 'You will be asked to type {token} to confirm.').replace('{token}', token))}</p>
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--danger" data-backup-action="reset">${esc(this.t('config.backupReset', 'Reset all data'))}</button>
                 </div>
@@ -1041,6 +1117,28 @@ class DashboardConfig {
     }
 
     bindDataBackupsActions(container) {
+        container.querySelectorAll('[data-db-tab]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-db-tab');
+                if (tab === this.dbTab) return;
+                this.dbTab = tab;
+                this.restoreConfigHash();
+                // Only the body is repainted; rebuilding the strip would replace
+                // the button that was just clicked.
+                const body = document.getElementById('config-db-body');
+                if (body) {
+                    body.innerHTML = this.renderDbTab();
+                    // Bind the new body only: re-binding the whole container
+                    // would stack a second listener on every tab button.
+                    this.bindDataBackupsActions(body);
+                }
+                document.querySelectorAll('[data-db-tab]').forEach((b) => {
+                    const on = b.getAttribute('data-db-tab') === this.dbTab;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+            });
+        });
         container.querySelectorAll('[data-backup-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleBackupAction(btn.getAttribute('data-backup-action')));
         });
@@ -1161,7 +1259,12 @@ class DashboardConfig {
     async deleteAllBookmarks() {
         if (!await this.confirmAction(this.t('config.deleteAllBookmarksConfirm', 'Delete every bookmark? Your pages, categories and settings are kept. This cannot be undone.'))) return;
         try {
-            const res = await this.writeFetch('/api/bookmarks/delete-all', { method: 'POST' });
+            // Same explicit confirmation flag the reset endpoint requires.
+            const res = await this.writeFetch('/api/bookmarks/delete-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirm: true }),
+            });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.notify(this.t('config.deleteAllBookmarksDone', 'All bookmarks deleted.'), 'success');
             await this.dash.loadAllBookmarks?.();
@@ -1284,8 +1387,20 @@ class DashboardConfig {
     async resetAllData() {
         const ok = await this.confirmAction(this.t('config.backupResetConfirm', 'Delete ALL data? This cannot be undone.'));
         if (!ok) return;
+        // Second gate: the reader types the word before this can fire.
+        const token = this.t('config.resetTypeToken', 'RESET');
+        const typed = await this.confirmTypedAction(
+            this.t('config.resetTypePrompt', 'Type {token} to confirm this permanent reset:').replace('{token}', token),
+            token,
+        );
+        if (!typed) return;
         try {
-            const res = await this.writeFetch('/api/reset', { method: 'POST' });
+            // The server rejects a reset without an explicit confirmation flag.
+            const res = await this.writeFetch('/api/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirm: true }),
+            });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.notify(this.t('config.backupResetSuccess', 'All data reset. Reloading…'), 'success');
             setTimeout(() => window.location.reload(), 800);
@@ -3649,6 +3764,9 @@ class DashboardConfig {
 
     static PT_TABS = ['finders', 'tags', 'collections', 'pages', 'categories'];
 
+    /** Data & backups keeps its destructive actions on a separate tab. */
+    static DB_TABS = ['backups', 'reset'];
+
     static APPEARANCE_TABS = ['general', 'custom-themes'];
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
@@ -5947,6 +6065,83 @@ class DashboardConfig {
             overlay.querySelector('[data-confirm="cancel"]').addEventListener('click', () => finish(false));
             overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
             overlay.querySelector('[data-confirm="ok"]').focus();
+        });
+    }
+
+    /**
+     * Second gate for the irreversible actions: the reader has to type a word
+     * before the confirm button does anything. The token is translated, so a
+     * Dutch reader types the Dutch word, and matching ignores case and padding.
+     * Resolves true only on an exact match; false on cancel, Escape, or a typo.
+     */
+    confirmTypedAction(message, token, { title, confirmLabel } = {}) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        document.getElementById('config-confirm-modal')?.remove();
+        const heading = title || this.t('config.resetTypeTitle', 'Final confirmation');
+        const okLabel = confirmLabel || this.t('config.resetTypeConfirm', 'Confirm reset');
+        const cancelLabel = this.t('config.confirmCancel', 'Cancel');
+        const inputLabel = this.t('config.resetTypeLabel', 'Confirmation text');
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="config-confirm-modal" class="modal-overlay" aria-hidden="false">
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="config-confirm-title">
+                    <div class="modal-header">
+                        <span class="modal-title" id="config-confirm-title">${esc(heading)}</span>
+                    </div>
+                    <div class="modal-body">
+                        <p class="config-confirm-message">${esc(message)}</p>
+                        <input type="text" class="config-text config-confirm-input" data-confirm-input
+                            autocomplete="off" spellcheck="false" aria-label="${esc(inputLabel)}">
+                        <p class="config-field-hint" data-confirm-hint hidden>${esc(this.t('config.resetTypeMismatch', 'That does not match — nothing was changed.'))}</p>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-button" data-confirm="cancel">
+                            <span class="modal-button-name">${esc(cancelLabel)}</span>
+                        </button>
+                        <button type="button" class="modal-button danger" data-confirm="ok" disabled>
+                            <span class="modal-button-name">${esc(okLabel)}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>`);
+        const overlay = document.getElementById('config-confirm-modal');
+        requestAnimationFrame(() => overlay.classList.add('show'));
+        const previouslyFocused = document.activeElement;
+        const wanted = String(token || '').trim().toLocaleUpperCase();
+
+        return new Promise((resolve) => {
+            let done = false;
+            const input = overlay.querySelector('[data-confirm-input]');
+            const okBtn = overlay.querySelector('[data-confirm="ok"]');
+            const hint = overlay.querySelector('[data-confirm-hint]');
+            const matches = () => String(input.value || '').trim().toLocaleUpperCase() === wanted;
+            const finish = (result) => {
+                if (done) return;
+                done = true;
+                document.removeEventListener('keydown', onKey, true);
+                overlay.remove();
+                if (previouslyFocused?.isConnected) previouslyFocused.focus?.();
+                resolve(result);
+            };
+            const onKey = (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+            };
+            document.addEventListener('keydown', onKey, true);
+            // The button stays disabled until the word matches, so there is no
+            // way to fire the reset by mistyping and clicking anyway.
+            input.addEventListener('input', () => {
+                okBtn.disabled = !matches();
+                if (hint) hint.hidden = true;
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                if (matches()) finish(true);
+                else if (hint) hint.hidden = false;
+            });
+            okBtn.addEventListener('click', () => { if (matches()) finish(true); });
+            overlay.querySelector('[data-confirm="cancel"]').addEventListener('click', () => finish(false));
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
+            input.focus();
         });
     }
 

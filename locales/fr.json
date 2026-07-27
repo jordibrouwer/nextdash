@@ -1862,7 +1862,7 @@
         "fileTooLarge": "Le fichier est trop volumineux",
         "invalidFileType": "Type de fichier invalide",
         "reset": "Réinitialiser",
-        "resetSectionTitle": "Réinitialisation",
+        "resetSectionTitle": "Réinitialiser toutes les données",
         "resetSectionHint": "Supprime toutes les pages, catégories, favoris, finders et paramètres — repartez avec le tableau de bord d'exemple par défaut.",
         "resetSectionCleared": "Efface aussi les couleurs de thème personnalisées, favicon/police téléversés, icônes de favoris et caches health/preview. Les favoris d'exemple (favicons préchargés) et les réglages par défaut sont recréés.",
         "resetAllDataTitle": "Réinitialiser toutes les données",
@@ -3373,7 +3373,17 @@
         "collectionMatchCount": "{count} favoris correspondent",
         "collectionNoRules": "Ajoutez une règle pour faire correspondre des favoris.",
         "selectAllBookmarks": "Tout sélectionner",
-        "tagsNoMatch": "Aucune étiquette ne correspond à votre filtre."
+        "tagsNoMatch": "Aucune étiquette ne correspond à votre filtre.",
+        "dbTabBackups": "Sauvegardes et données",
+        "dbTabReset": "Réinitialiser",
+        "resetIntro": "Ces actions suppriment définitivement des données. Faites d’abord une sauvegarde — il n’y a pas de retour en arrière.",
+        "resetTypeToken": "RESET",
+        "resetTypeTitle": "Confirmation finale",
+        "resetTypePrompt": "Tapez {token} pour confirmer cette réinitialisation définitive :",
+        "resetTypeLabel": "Texte de confirmation",
+        "resetTypeConfirm": "Confirmer la réinitialisation",
+        "resetTypeMismatch": "Cela ne correspond pas — rien n’a été modifié.",
+        "resetTypeNote": "Il vous sera demandé de taper {token} pour confirmer."
     },
     "colors": {
         "title": "personnalisation du thème",

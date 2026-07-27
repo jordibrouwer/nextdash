@@ -1881,7 +1881,7 @@
         "fileTooLarge": "File is too large",
         "invalidFileType": "Invalid file type",
         "reset": "Reset",
-        "resetSectionTitle": "Reset",
+        "resetSectionTitle": "Reset all data",
         "resetSectionHint": "Delete all pages, categories, bookmarks, finders, and settings — then start from the default sample dashboard.",
         "resetSectionCleared": "Also clears custom theme colours, uploaded favicon/font, bookmark icons, and health/preview caches. Default sample bookmarks (with favicons prefetched) and built-in settings are recreated.",
         "resetAllDataTitle": "Reset all data",
@@ -3373,7 +3373,17 @@
         "collectionMatchCount": "{count} bookmarks match",
         "collectionNoRules": "Add a rule to match bookmarks.",
         "selectAllBookmarks": "Select all",
-        "tagsNoMatch": "No tags match your filter."
+        "tagsNoMatch": "No tags match your filter.",
+        "dbTabBackups": "Backups & data",
+        "dbTabReset": "Reset",
+        "resetIntro": "These actions permanently remove data. Make a backup first — there is no undo.",
+        "resetTypeToken": "RESET",
+        "resetTypeTitle": "Final confirmation",
+        "resetTypePrompt": "Type {token} to confirm this permanent reset:",
+        "resetTypeLabel": "Confirmation text",
+        "resetTypeConfirm": "Confirm reset",
+        "resetTypeMismatch": "That does not match — nothing was changed.",
+        "resetTypeNote": "You will be asked to type {token} to confirm."
     },
     "colors": {
         "title": "theme customization",

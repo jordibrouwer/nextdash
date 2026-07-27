@@ -1862,7 +1862,7 @@
         "fileTooLarge": "Datei ist zu groß",
         "invalidFileType": "Ungültiger Dateityp",
         "reset": "Zurücksetzen",
-        "resetSectionTitle": "Zurücksetzen",
+        "resetSectionTitle": "Alle Daten zurücksetzen",
         "resetSectionHint": "Alle Seiten, Kategorien, Lesezeichen, Finder und Einstellungen löschen — neu starten mit dem Standard-Beispiel-Dashboard.",
         "resetSectionCleared": "Löscht auch eigene Theme-Farben, hochgeladenes Favicon/Schrift, Lesezeichen-Icons sowie Health-/Preview-Caches. Beispiel-Lesezeichen (mit vorgeladenen Favicons) und Standard-Einstellungen werden neu erstellt.",
         "resetAllDataTitle": "Alle Daten zurücksetzen",
@@ -3373,7 +3373,17 @@
         "collectionMatchCount": "{count} Lesezeichen passen",
         "collectionNoRules": "Füge eine Regel hinzu, um Lesezeichen zu treffen.",
         "selectAllBookmarks": "Alle auswählen",
-        "tagsNoMatch": "Keine Tags passen zu deinem Filter."
+        "tagsNoMatch": "Keine Tags passen zu deinem Filter.",
+        "dbTabBackups": "Backups & Daten",
+        "dbTabReset": "Zurücksetzen",
+        "resetIntro": "Diese Aktionen löschen Daten endgültig. Erstelle zuerst ein Backup — es gibt kein Zurück.",
+        "resetTypeToken": "RESET",
+        "resetTypeTitle": "Letzte Bestätigung",
+        "resetTypePrompt": "Tippe {token}, um das endgültige Zurücksetzen zu bestätigen:",
+        "resetTypeLabel": "Bestätigungstext",
+        "resetTypeConfirm": "Zurücksetzen bestätigen",
+        "resetTypeMismatch": "Das stimmt nicht überein — es wurde nichts geändert.",
+        "resetTypeNote": "Du wirst gebeten, zur Bestätigung {token} zu tippen."
     },
     "colors": {
         "title": "themenanpassung",

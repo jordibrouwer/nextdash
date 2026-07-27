@@ -378,6 +378,8 @@ test.describe('config: sections restored from the old config', () => {
         await expect(page.locator('[data-backup-select="faviconRefreshPolicy"]')).toBeVisible();
         await expect(page.locator('[data-backup-action="refresh-favicons"]')).toBeVisible();
         await expect(page.locator('[data-backup-action="clear-previews"]')).toBeVisible();
+        // Delete-all moved to the Reset sub-tab — see config-data-reset.spec.js.
+        await page.locator('[data-db-tab="reset"]').click();
         await expect(page.locator('[data-backup-action="delete-bookmarks"]')).toBeVisible();
     });
 
