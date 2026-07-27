@@ -1711,6 +1711,7 @@
     border-top-right-radius: 0;
     border-top: none;
 }
+
 /* The inbox source breakdown. Scrolls inside its own box rather than pushing
    the panel wide on a narrow screen. */
 .config-stats-table {
@@ -1743,3 +1744,22 @@
     border-bottom: none;
 }
 
+/* Appearance tiles hold words ("Source Code Pro"), not the short numbers the
+   stats tiles were sized for, so the value scales down and wraps rather than
+   overflowing its box. A minimum height keeps the row even when some tiles
+   carry a detail line and others do not. */
+.config-tiles--text .config-tile {
+    min-height: 96px;
+    justify-content: flex-start;
+}
+
+.config-tiles--text .config-tile-value {
+    font-size: calc(var(--font-size-text) * 1.15);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.config-tiles--text .config-tile-detail {
+    margin-top: auto;
+    padding-top: 4px;
+}

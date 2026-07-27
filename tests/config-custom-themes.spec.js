@@ -234,4 +234,45 @@ test.describe('custom theme editor', () => {
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
     });
+
+    test('the appearance tiles summarise the whole section', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        // Two tiles left the row looking unfinished: the grid is auto-fill, so
+        // a short row stretches to fill the width. One per panel below.
+        const tiles = page.locator('.config-tiles--text .config-tile');
+        await expect(tiles).toHaveCount(6);
+        const labels = await page.locator('.config-tiles--text .config-tile-label').allTextContents();
+        expect(labels.join(' | ')).toMatch(/theme/i);
+        expect(labels.join(' | ')).toMatch(/typeface/i);
+        expect(labels.join(' | ')).toMatch(/background/i);
+        expect(labels.join(' | ')).toMatch(/layout/i);
+
+        // Values are words, not the short numbers the stats tiles size for, so
+        // they must wrap rather than overflow their box.
+        const overflowing = await tiles.evaluateAll(
+            (els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).length);
+        expect(overflowing).toBe(0);
+    });
+
+    test('the custom themes tile opens its tab', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        // Only actionable once the colour document has loaded, since that is
+        // what the count comes from.
+        const tile = page.locator('[data-tile-appearance-tab]');
+        await expect(tile).toHaveCount(1);
+        await tile.click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
+        await expect(page.locator('[data-theme-add]')).toBeVisible();
+    });
 });

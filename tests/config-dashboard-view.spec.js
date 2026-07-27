@@ -270,9 +270,13 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
 
-        for (const action of ['csv-export', 'browser-import', 'settings-export', 'settings-import', 'reset-onboarding']) {
+        for (const action of ['csv-export', 'browser-import', 'settings-export', 'settings-import']) {
             await expect(page.locator(`[data-backup-action="${action}"]`)).toBeVisible();
         }
+        // reset-onboarding moved to Behavior → General, beside the tips toggle:
+        // sitting in the danger panel next to "Delete ALL data" made replaying
+        // the quick-start card read as destructive.
+        await expect(page.locator('[data-backup-action="reset-onboarding"]')).toHaveCount(0);
         await expect(page.locator('[data-backup-toggle="autoBackupEnabled"]')).toBeVisible();
         await expect(page.locator('[data-backup-toggle="healthAutoRecheckEnabled"]')).toBeVisible();
     });
@@ -512,14 +516,19 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect.poll(() => saved && saved.theme).toBe('ocean-dark');
     });
 
-    test('the theme-colours editor mounts on demand', async ({ page }) => {
+    test('the theme-colours link opens the native editor tab', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
 
         await page.locator('[data-appearance-action="edit-colors"]').click();
 
-        // The shell-hosted editor is revealed and moved into the appearance panel.
-        await expect(page.locator('#config-theme-colors-panel #theme-colors-editor')).toBeVisible();
+        // This used to reveal the old config's editor, embedded from a
+        // server-rendered partial. That editor's buttons were wired through a
+        // delegate calling window.configManager, which does not exist in this
+        // view, so its Add button silently did nothing. It is replaced by the
+        // native Custom themes tab — see config-custom-themes.spec.js.
+        await expect(page.locator('#config-theme-colors-panel')).toHaveCount(0);
+        await expect(page.locator('[data-theme-add]')).toBeVisible();
     });
 
     test('the behavior section renders grouped settings across sub-tabs', async ({ page }) => {

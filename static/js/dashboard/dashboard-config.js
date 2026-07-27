@@ -242,6 +242,16 @@ class DashboardConfig {
         } else if (this.section === 'appearance') {
             this.bindAppearanceControls(container);
             void this.loadThemeList();
+            // The custom-themes tile counts what is in the colour document, so
+            // it has to be fetched even when the General tab is showing.
+            if (this._colorsData === undefined || this._colorsData === null) {
+                void this.loadColorsData().then(() => {
+                    if (this.isActiveView() && this.section === 'appearance'
+                        && this.appearanceTab !== 'custom-themes') {
+                        this.render();
+                    }
+                });
+            }
         } else if (this.section === 'behavior') {
             this.bindBehaviorControls(container);
         } else if (this.section === 'pages-tags') {
@@ -386,9 +396,15 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const clickable = tile.action ? ' config-tile--action' : '';
         const tag = tile.action ? 'button' : 'div';
+        // A tile can hand off to a dashboard view, or to a sub-tab of the
+        // section it is sitting in.
         const attrs = tile.action
-            ? ` type="button" data-tile-view="${esc(tile.action.view)}"${
+            ? ` type="button"${
+                  tile.action.view ? ` data-tile-view="${esc(tile.action.view)}"` : ''
+              }${
                   tile.action.filter ? ` data-tile-filter="${esc(tile.action.filter)}"` : ''
+              }${
+                  tile.action.appearanceTab ? ` data-tile-appearance-tab="${esc(tile.action.appearanceTab)}"` : ''
               }`
             : '';
         const detail = tile.detail
@@ -1412,10 +1428,39 @@ class DashboardConfig {
         return DashboardConfig.FONT_SIZES.includes(size) ? size : 'm';
     }
 
+    /**
+     * A summary of everything the section controls, not just the theme.
+     *
+     * Two tiles left the row looking half-finished — the grid is
+     * auto-fill/minmax, so a short row stretches to fill the width. These cover
+     * each panel below, so the strip reads as an at-a-glance answer to "how is
+     * my dashboard set up" and the count fills the row at common widths.
+     */
     appearanceTiles() {
         const s = this.dash.settings || {};
         const themeId = s.theme || 'dark';
         const theme = this.themeDisplayName(themeId, this._themeList?.[themeId]);
+
+        const bgType = s.backgroundType || 'auto';
+        const bgLabel = {
+            auto: this.t('config.backgroundAuto', 'Auto'),
+            none: this.t('config.backgroundNone', 'None'),
+            gradient: this.t('config.backgroundGradient', 'Gradient'),
+            image: this.t('config.backgroundImage', 'Image'),
+        }[bgType] || bgType;
+
+        const layoutModern = s.layoutVersion === 'modern';
+        const density = s.densityMode || 'comfortable';
+        const densityLabel = {
+            comfortable: this.t('config.densityComfortable', 'Comfortable'),
+            compact: this.t('config.densityCompact', 'Compact'),
+            dense: this.t('config.densityDense', 'Dense'),
+            auto: this.t('config.densityAuto', 'Auto'),
+        }[density] || density;
+
+        const preset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'source-code-pro';
+        const customThemeCount = Object.keys(this._colorsData?.custom || {}).length;
+
         return [
             {
                 key: 'theme', tone: 'accent',
@@ -1424,9 +1469,45 @@ class DashboardConfig {
                 detail: s.autoDarkMode ? this.t('config.autoDarkOn', 'Auto dark mode on') : '',
             },
             {
-                key: 'font-size', tone: 'neutral',
-                label: this.t('config.tileFontSize', 'Font size'),
-                value: this.fontSizeLabel(this.currentFontSize()),
+                key: 'font', tone: 'neutral',
+                label: this.t('config.tileTypeface', 'Typeface'),
+                value: this.fontPresetLabel(preset),
+                detail: this.t('config.tileFontSizeDetail', 'Size {size}')
+                    .replace('{size}', this.fontSizeLabel(this.currentFontSize())),
+            },
+            {
+                key: 'background', tone: 'neutral',
+                label: this.t('config.tileBackground', 'Background'),
+                value: bgLabel,
+                // Opacity only means something once there is something to fade.
+                detail: bgType !== 'none' && Number.isFinite(Number(s.backgroundOpacity))
+                    ? `${Math.round(Number(s.backgroundOpacity) * 100)}%`
+                    : '',
+            },
+            {
+                key: 'layout', tone: layoutModern ? 'warn' : 'neutral',
+                label: this.t('config.tileLayout', 'Layout'),
+                value: layoutModern
+                    ? this.t('config.layoutModern', 'Modern')
+                    : this.t('config.layoutClassic', 'Classic'),
+                detail: layoutModern ? this.t('config.layoutBetaShort', 'Early beta') : '',
+            },
+            {
+                key: 'density', tone: 'neutral',
+                label: this.t('config.tileDensity', 'Density'),
+                value: densityLabel,
+                detail: this.t('config.tileColumnsDetail', '{n} columns')
+                    .replace('{n}', String(Number(s.columnsPerRow) || 4)),
+            },
+            {
+                key: 'custom-themes', tone: 'neutral',
+                label: this.t('config.tileCustomThemes', 'Custom themes'),
+                value: customThemeCount,
+                // Only offered once the colour document has actually loaded.
+                action: this._colorsData ? { appearanceTab: 'custom-themes' } : null,
+                detail: customThemeCount === 0
+                    ? this.t('config.tileCustomThemesNone', 'None yet')
+                    : '',
             },
         ];
     }
@@ -1435,7 +1516,7 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         const theme = s.theme === 'light' ? 'light' : 'dark';
-        const tiles = `<div class="config-tiles" role="list">${this.appearanceTiles().map((t) => this.renderTile(t)).join('')}</div>`;
+        const tiles = `<div class="config-tiles config-tiles--text" role="list">${this.appearanceTiles().map((t) => this.renderTile(t)).join('')}</div>`;
 
         const fontOptions = DashboardConfig.FONT_SIZES.map((size) => {
             const active = size === this.currentFontSize();
@@ -1721,6 +1802,13 @@ class DashboardConfig {
                 if (tab !== 'custom-themes') this.clearThemePreview();
                 this.render();
                 if (tab === 'custom-themes') void this.openCustomThemes();
+            });
+        });
+        container.querySelectorAll('[data-tile-appearance-tab]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.appearanceTab = btn.getAttribute('data-tile-appearance-tab');
+                this.render();
+                void this.openCustomThemes();
             });
         });
         this.bindCustomThemes(container);

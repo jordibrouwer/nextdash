@@ -3137,6 +3137,13 @@
         "tileBrokenReview": "Voir dans l'état",
         "tileDuplicates": "Doublons",
         "tileFontSize": "Taille du texte",
+        "tileTypeface": "Police",
+        "tileBackground": "Arrière-plan",
+        "tileLayout": "Disposition",
+        "tileColumnsDetail": "{n} colonnes",
+        "tileCustomThemes": "Thèmes personnalisés",
+        "tileCustomThemesNone": "Aucun pour l’instant",
+        "layoutBetaShort": "Bêta précoce",
         "tileInboxUnread": "Non lus dans la boîte",
         "tileLastBackup": "Dernière sauvegarde",
         "tilePages": "Pages",
@@ -3355,7 +3362,9 @@
         "statsConflictsTitle": "Conflits et doublons",
         "statsSearchTitle": "Recherche et état",
         "statsShortcutsTitle": "Raccourcis",
-        "statsFindersTitle": "Finders"
+        "statsFindersTitle": "Finders",
+        "tileDensity": "Densité",
+        "tileFontSizeDetail": "Taille {size}"
     },
     "colors": {
         "title": "personnalisation du thème",

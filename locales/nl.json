@@ -3137,6 +3137,13 @@
         "tileBrokenReview": "Bekijk in gezondheid",
         "tileDuplicates": "Dubbel",
         "tileFontSize": "Tekstgrootte",
+        "tileTypeface": "Lettertype",
+        "tileBackground": "Achtergrond",
+        "tileLayout": "Indeling",
+        "tileColumnsDetail": "{n} kolommen",
+        "tileCustomThemes": "Eigen thema's",
+        "tileCustomThemesNone": "Nog geen",
+        "layoutBetaShort": "Vroege bèta",
         "tileInboxUnread": "Inbox ongelezen",
         "tileLastBackup": "Laatste back-up",
         "tilePages": "Pagina's",
@@ -3355,7 +3362,9 @@
         "statsConflictsTitle": "Conflicten & duplicaten",
         "statsSearchTitle": "Zoeken & status",
         "statsShortcutsTitle": "Sneltoetsen",
-        "statsFindersTitle": "Finders"
+        "statsFindersTitle": "Finders",
+        "tileDensity": "Dichtheid",
+        "tileFontSizeDetail": "Grootte {size}"
     },
     "colors": {
         "title": "thema-aanpassing",

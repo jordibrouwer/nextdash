@@ -3137,6 +3137,13 @@
         "tileBrokenReview": "Review in health",
         "tileDuplicates": "Duplicates",
         "tileFontSize": "Font size",
+        "tileTypeface": "Typeface",
+        "tileBackground": "Background",
+        "tileLayout": "Layout",
+        "tileColumnsDetail": "{n} columns",
+        "tileCustomThemes": "Custom themes",
+        "tileCustomThemesNone": "None yet",
+        "layoutBetaShort": "Early beta",
         "tileInboxUnread": "Inbox unread",
         "tileLastBackup": "Last backup",
         "tilePages": "Pages",
@@ -3355,7 +3362,9 @@
         "statsConflictsTitle": "Conflicts & duplicates",
         "statsSearchTitle": "Search & status",
         "statsShortcutsTitle": "Shortcuts",
-        "statsFindersTitle": "Finders"
+        "statsFindersTitle": "Finders",
+        "tileDensity": "Density",
+        "tileFontSizeDetail": "Size {size}"
     },
     "colors": {
         "title": "theme customization",

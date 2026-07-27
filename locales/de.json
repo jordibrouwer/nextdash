@@ -3137,6 +3137,13 @@
         "tileBrokenReview": "Im Zustand ansehen",
         "tileDuplicates": "Duplikate",
         "tileFontSize": "Schriftgröße",
+        "tileTypeface": "Schriftart",
+        "tileBackground": "Hintergrund",
+        "tileLayout": "Layout",
+        "tileColumnsDetail": "{n} Spalten",
+        "tileCustomThemes": "Eigene Themen",
+        "tileCustomThemesNone": "Noch keine",
+        "layoutBetaShort": "Frühe Beta",
         "tileInboxUnread": "Ungelesen im Eingang",
         "tileLastBackup": "Letztes Backup",
         "tilePages": "Seiten",
@@ -3355,7 +3362,9 @@
         "statsConflictsTitle": "Konflikte & Duplikate",
         "statsSearchTitle": "Suche & Status",
         "statsShortcutsTitle": "Kürzel",
-        "statsFindersTitle": "Finder"
+        "statsFindersTitle": "Finder",
+        "tileDensity": "Dichte",
+        "tileFontSizeDetail": "Größe {size}"
     },
     "colors": {
         "title": "themenanpassung",
