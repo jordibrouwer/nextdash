@@ -219,7 +219,6 @@ type Settings struct {
 	ConfigPagesTourCompleted       bool                             `json:"configPagesTourCompleted"`
 	ConfigCollectionsTourCompleted bool                             `json:"configCollectionsTourCompleted"`
 	ConfigThemeTourCompleted       bool                             `json:"configThemeTourCompleted"`
-	CustomKeyBindings              map[string]string                `json:"customKeyBindings,omitempty"` // Custom keyboard key remappings (e.g., {"search": "s", "commands": "c"})
 	BackgroundType                 string                           `json:"backgroundType"`              // "auto", "none", "gradient", "image"
 	BackgroundGradient             string                           `json:"backgroundGradient"`          // preset name used when type="gradient"
 	BackgroundImageUrl             string                           `json:"backgroundImageUrl"`          // URL used when type="image"
