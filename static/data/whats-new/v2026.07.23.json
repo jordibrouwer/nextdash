@@ -1,0 +1,203 @@
+{
+    "tag": "v2026.07.23",
+    "date": "July 2026",
+    "releasedAt": "2026-07-27",
+    "modalLead": "Configuration is no longer a separate page. It opens inside the dashboard as a view, in the same tab, with everything regrouped into eight sections you can link straight to.",
+    "sections": [
+        {
+            "title": "Configuration is now a view",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Config opens inside the dashboard</strong> — opening settings used to leave the dashboard for a separate page and load it from scratch; coming back reloaded everything again. Configuration is now a <strong>view in the same tab</strong>, opened with <code>Shift+S</code>, <code>&lt;</code>, or the header icon, and closed with <code>Esc</code>. Nothing is thrown away while you are in there: your page, your scroll position, and your selection are all still waiting when you come back. The old <code>/config</code> address still works and redirects into the view, including links that carried a section such as <code>/config?section=tags</code>."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Eight sections instead of fourteen tabs</strong> — the old tab bar had grown to fourteen tabs across four labelled groups, and finding a setting meant knowing which group someone had filed it under. Settings are now grouped by what you are trying to do: <strong>Overview</strong>, <strong>Pages &amp; tags</strong>, <strong>Bookmarks</strong>, <strong>Appearance</strong>, <strong>Behavior</strong>, <strong>Data &amp; backups</strong>, <strong>Statistics</strong> and <strong>Help</strong>. Sections that hold a lot divide further into sub-tabs — Behavior has seven, Pages &amp; tags five — so each screen holds one topic rather than a scroll of unrelated panels."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Every setting has a link</strong> — <code>/#config/appearance</code> opens Appearance, and <code>/#config/behavior/privacy</code> opens Behavior on its Privacy tab. The address bar keeps up as you click, so whatever you are looking at can be copied out of the URL bar and sent to someone. Anything that points at a setting now goes straight there: the privacy notice's <em>Turn on</em> button lands on the privacy setting itself rather than dropping you at the top of a settings page to hunt for it."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Settings save as you change them</strong> — the old page collected edits behind a save bar with <em>Requires save</em> and <em>Auto-save</em> pills, an undo, and a dirty-state indicator, and it was never quite obvious which tabs needed the button. Tick a box now and it is written, with a short <em>Saved</em> confirmation. The <strong>bookmark editor</strong> is the deliberate exception — it collects a row's edits and writes them on <strong>Save</strong>, so a half-typed URL is never persisted, and it asks before discarding unsaved work."
+                }
+            ]
+        },
+        {
+            "title": "What each section gained",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Overview</strong> — a new landing screen that answers \"is anything wrong?\" before you go looking. Broken links, monitors that are down, duplicates and an unread inbox each get a row with a button that takes you to the right place, and a clean install gets a single <em>nothing needs attention</em> line instead of five zeroes. Alongside it: headline counts, a rotating handful of tips, and the latest release summary."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Bookmarks</strong> — the old master/detail split is replaced by a list whose rows <strong>expand in place</strong>. The editor carries every field a bookmark has — name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking with its interval — instead of hiding half of them under <em>More options</em>. Bulk actions work on the rows your filters are showing, so <strong>Select all</strong> means what you can see rather than everything you own."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Appearance</strong> — theme, background, fonts and icon size in one place, with a <strong>custom themes</strong> editor beside them: build a palette, check its contrast, apply it. Changes preview live on the dashboard behind the view, and leaving the tab drops an unsaved preview rather than leaving your dashboard in a half-edited state."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Statistics</strong> — split across <strong>Overview</strong>, <strong>Activity</strong>, <strong>Content</strong>, <strong>Inbox</strong> and <strong>Health</strong> rather than one long scroll. The inbox block is new here: what is waiting, how long it has waited, and how much of it you actually turn into bookmarks."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Pages &amp; tags</strong> — pages, categories, tags, finders and custom collections together, since they are all about structure. Tags gets the <strong>word cloud</strong> back, and a selected word now carries a visible border — selecting one used to change nothing you could see, which read as the click having failed."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Help</strong> — rewritten across seven tabs rather than carried over, because the old text described a page that no longer exists: no tab groups, no Essentials/Advanced layers, no save button to press."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Settings that were missing are back</strong> — the layout preset and density, the per-category <strong>items-per-category</strong> limit, the background <strong>gradient</strong> and <strong>image</strong> pickers, and the full set of button-bar positions all exist on the dashboard and are honoured by it, but had no control in the first cut of the view. Leaving them out made working features unreachable rather than merely unconfigurable, so they are back."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Favicon harmonisation</strong> — the per-theme favicon styling returns: a toggle, a <strong>Muted / Tinted / Overlay</strong> choice, and an intensity slider, with the style and intensity controls hidden while it is off. Set per theme, so the dark and light halves of a pair are configured separately."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Lists say how much is in them again</strong> — pages, categories and tags carried a bookmark count and a popularity bar in the old config and were listed bare in the new one. A list now tells you how much sits behind each entry, not only what it is called."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Onboarding settings grouped</strong> — <em>Show occasional keyboard tips</em> was working but sat as a bare checkbox among unrelated options like Hypr mode, with nothing to say what \"occasional\" meant. It now sits with the other onboarding settings and explains itself."
+                }
+            ]
+        },
+        {
+            "title": "Reset and backups",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Backups could not be downloaded or restored</strong> — two bugs, the first hiding the second. <em>Download backup</em> navigated straight to <code>/api/backup</code>, and a plain navigation carries no write token, so a protected instance answered <em>401</em> and nothing downloaded. Behind that, restore posted the archive under a field name the server did not read. The download now goes through an authenticated request, and the server accepts a whole <code>.zip</code> as well as unpacked files."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The reset buttons did nothing</strong> — <em>Reset all data</em> and <em>Delete all bookmarks only</em> sent their request without the confirmation the server requires, so it answered <em>400 Confirmation required</em> and the error was swallowed. Clicking either appeared to do nothing at all. Both now send it, and a test checks the server's answer rather than just that a click happened, which is the gap that let this through."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Reset has its own tab, and asks twice</strong> — the destructive actions moved off the tab you scroll through to change backup settings. <em>Reset all data</em> asks for confirmation and then makes you <strong>type the word RESET</strong> — translated, so a Dutch reader types the Dutch word — with the button staying disabled until it matches. A mistype cannot fire it."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Backups repacked in a folder were rejected</strong> — unzipping a backup and zipping it again, which the Finder and most archive tools do by wrapping everything in a folder, put every file behind a <code>backup-name/</code> prefix. Import skipped all of them and reported <em>No files provided</em>, as though nothing had been attached. A single wrapping folder is now stripped, so a repacked backup restores like the original."
+                }
+            ]
+        },
+        {
+            "title": "Editing your structure",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Deleting a category or finder took effect on the first click</strong> — with no confirmation and no undo, while bookmarks, pages, tags and bulk delete all asked first. Both now confirm, using the same in-app dialog as everything else."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>A finder with no <code>%s</code> silently dropped your search</strong> — a finder URL uses <code>%s</code> to mark where the query goes, and without it the finder simply opened the bare URL and threw away what you typed. The old config warned about this; the new one did not, so a finder could look correctly saved and just misbehave. The field now flags it, and a blank finder row is no longer saved."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Assigning a category could leave bookmarks in an \"unknown category\"</strong> — picking a category wrote its id onto the bookmark but never added it to the target page's own list. A page that had not used that category before then held bookmarks pointing at an id it did not define, and the dashboard rendered them as unknown. The category is now added to every page its bookmarks are used on."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Category reorder buttons were unlabelled</strong> — they announced only \"↑\" and \"↓\" to a screen reader, while the identical buttons on Pages already carried proper labels."
+                }
+            ]
+        },
+        {
+            "title": "Keyboard and accessibility",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Sub-tabs answer the arrow keys</strong> — the tab strips announced themselves to screen readers as tab widgets but only listened for clicks, so the keys that role promises did nothing. <code>←</code> and <code>→</code> now move between sub-tabs and wrap at both ends, <code>Home</code> and <code>End</code> jump to the first and last, and a strip is a single stop in the page's tab order instead of one stop per tab. Each tab is also tied to the panel it controls."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Rebinding shortcuts is not available yet</strong> — the old config had a <strong>Keyboard</strong> tab for remapping keys, and it has not been rebuilt in the new view. The setting behind it never actually did anything: it was stored but nothing ever read it back, so rebound keys did not take effect. It has been retired rather than carried over half-working. <strong>Custom key bindings are still in development</strong> and will return as a working feature. Every shortcut keeps its default in the meantime — press <code>!</code> or <code>F1</code> for the cheat sheet."
+                }
+            ]
+        },
+        {
+            "title": "Fixes",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>/colors landed on the wrong screen</strong> — the old <code>/colors</code> bookmark redirected by way of <code>/config#colors</code>, and the fragment naming the colour settings never reaches the server, so it was dropped along the way and you arrived at the config overview instead. It now goes straight to Appearance."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Category statistics all read zero</strong> — the counts were matched against category names while bookmarks store category ids, so every category showed 0 no matter how many bookmarks it held."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Custom themes could not be selected</strong> — the server validated the chosen theme against the built-in list only, so picking one of your own was silently rewritten back to a packaged theme."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Limit dropdowns showed the wrong number</strong> — the smart-collection limits offered 5/10/15/20/30 while the actual defaults were 8, 25 and 50. A value that was not in the list made the dropdown fall back to its first option and write that back on save, quietly changing the setting you were only looking at."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Names had to be unique, but nothing checked</strong> — pages, categories, tags, collections and finders can now be checked for duplicate names before saving, rather than ending up with two of something and no way to tell them apart."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Tips pointed at places that no longer exist</strong> — several tips and setting explanations still named old sections, so following one led nowhere. They now name the section each setting actually lives in, in your own language."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Loading <code>/#config</code> directly landed on the bookmark grid</strong> — the startup page load rewrote the hash before anything could read it, the same blind spot <code>#health</code> and <code>#inbox</code> were already guarded against."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The two config shortcuts went to different places</strong> — <code>&lt;</code> navigated to the old standalone page with a full reload while <code>Shift+S</code> opened the view in place. Both now open the view."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The header sat on three baselines</strong> — the inbox button, the health and config icons and the page tabs each aligned differently. The config label is also now a gear icon built on the health icon's markup, so the three destinations read as one set rather than two icons and a word."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The what's-new modal could hang</strong> — reopening it waited on a load event from a script that had already finished, which never fires again."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Help claimed the cheat sheet reflected rebound keys</strong> — in three places, though no key was ever actually rebound. Corrected alongside retiring the setting."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Add several bookmarks in one sitting</strong> — a <strong>Create + New</strong> button in the add-bookmark modal saves and keeps the form open with the page and category preserved. The plain <em>Create</em> still closes it."
+                }
+            ]
+        },
+        {
+            "title": "Lighter and faster",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>34,000 lines of code deleted</strong> — the old configuration page has been removed in full: its template, its <strong>32 JavaScript modules</strong>, its <strong>27 stylesheets</strong>, and the twelve test files that only existed to exercise it. Across the whole release that is <strong>38,000 lines removed against 18,000 added</strong> — the app does more than it did while carrying roughly <strong>20,000 fewer lines</strong> of code."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Opening settings no longer downloads a second app</strong> — the old page pulled in <strong>~1.2 MB of JavaScript and ~321 KB of CSS</strong> of its own, on top of everything the dashboard had already loaded, and it did that on every visit. The config view is part of the dashboard bundle you already have: opening it fetches <strong>nothing</strong>. What used to be a full page load — parse, execute, re-fetch your bookmarks, rebuild the layout — is now an instant switch."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Going back is instant too</strong> — leaving settings used to mean loading the dashboard from scratch a second time. The dashboard was never unloaded, so returning is just a repaint: your page, scroll position and selection are exactly where you left them."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>One place for each setting</strong> — settings used to live in two codebases that could drift apart, and several bugs in this release came from exactly that. There is now a single implementation, which is why the fixes below could be made once rather than twice."
+                }
+            ]
+        }
+    ]
+}

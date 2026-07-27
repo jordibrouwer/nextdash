@@ -120,6 +120,9 @@ class DashboardUiHelpers {
                 ...(d.health?.isEnabled?.()
                     ? [item('Shift + H', 'navHealthView', 'Open Health — bookmarks that need attention')]
                     : []),
+                ...(d.config?.isEnabled?.()
+                    ? [item('Shift + S', 'navSettingsView', 'Open config — settings, pages, and bookmarks')]
+                    : []),
                 item('Shift + ← / →', 'navPrevNextPage', 'Previous / next page'),
                 item(',', 'navPageOverview', 'Page overview with bookmark counts'),
                 item('<', 'navOpenConfig', 'Open config (< is Shift+,; in config < returns here)'),

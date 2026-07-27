@@ -81,6 +81,12 @@ class DashboardPageNav {
     }
 
 
+    /** Lowercase header label on the config view (same in all locales). */
+    configHeaderTitle() {
+        return 'config';
+    }
+
+
     inboxPageLabel() {
         const d = this.dash;
         const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
@@ -95,6 +101,13 @@ class DashboardPageNav {
     }
 
 
+    configPageLabel() {
+        const d = this.dash;
+        const configLabel = d.language?.t?.('dashboard.config');
+        return configLabel && configLabel !== 'dashboard.config' ? configLabel : 'Config';
+    }
+
+
     updatePageTitle(pageName) {
         const d = this.dash;
         const titleElement = document.querySelector('.title');
@@ -104,6 +117,8 @@ class DashboardPageNav {
                 displayName = this.inboxHeaderTitle();
             } else if (d.activeView === 'health') {
                 displayName = this.healthHeaderTitle();
+            } else if (d.activeView === 'config') {
+                displayName = this.configHeaderTitle();
             } else {
                 const defaultTitle = d.language.t('dashboard.defaultPageTitle');
                 displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
@@ -117,7 +132,9 @@ class DashboardPageNav {
         const d = this.dash;
         const viewName = d.activeView === 'inbox'
             ? this.inboxPageLabel()
-            : (d.activeView === 'health' ? this.healthPageLabel() : '');
+            : (d.activeView === 'health'
+                ? this.healthPageLabel()
+                : (d.activeView === 'config' ? this.configPageLabel() : ''));
         if (viewName) {
             if (d.settings?.enableCustomTitle) {
                 const base = (d.settings.customTitle || '').trim();
@@ -182,9 +199,11 @@ class DashboardPageNav {
             inboxBtn.setAttribute('aria-selected', inboxSelected ? 'true' : 'false');
             inboxBtn.tabIndex = inboxSelected ? 0 : -1;
         }
-        // The health icon lives in the header, outside this container, but is the
-        // same kind of destination — keep its active state in step with the tabs.
+        // The health and config icons live in the header, outside this container,
+        // but are the same kind of destination — keep their active state in step
+        // with the tabs.
         d.visual?.syncHealthLinkActiveState?.();
+        d.visual?.syncConfigLinkActiveState?.();
     }
 
 
@@ -197,6 +216,14 @@ class DashboardPageNav {
 
     /** Health has no tab of its own: it opens from the header icon. */
     setActiveHealthTab() {
+        this.setActivePageNavButton(this.dash.currentPageId);
+        this.updatePageTitle();
+        this.updateDocumentTitle();
+    }
+
+
+    /** Config has no tab of its own either: it opens from the header link. */
+    setActiveConfigTab() {
         this.setActivePageNavButton(this.dash.currentPageId);
         this.updatePageTitle();
         this.updateDocumentTitle();

@@ -46,12 +46,6 @@ type pageAssetVersions struct {
 	StatusJS                 string
 	SelectJS                 string
 	ReorderJS                string
-	ConfigStorageJS          string
-	ConfigDataJS             string
-	ConfigBookmarkStoreJS    string
-	ConfigFontJS             string
-	ConfigCommandPaletteJS   string
-	ConfigSettingInfoJS      string
 	DashboardRenderCoreJS    string
 
 	// dashboard.css and dashboard-bookmark-row.css/layout-modern.css each shared a
@@ -87,7 +81,7 @@ var sharedAssetVersions = pageAssetVersions{
 	VisualSettingsJS:     "theme-sync-1",
 	SettingsSanitizeJS:   "settings-sanitize-1",
 	DiscoverabilityJS:    "discoverability-state-5-seentips",
-	MobileExperienceCSS:  "touch-only-mobile-1",
+	MobileExperienceCSS:  "config-header-icon-1",
 	MobileExperienceJS:   "touch-only-mobile-1",
 	LayoutVersionUtilsJS: "glass-migrate-1",
 	HealthBadgeJS:        "health-badge-monitor-down-1",
@@ -122,17 +116,11 @@ var sharedAssetVersions = pageAssetVersions{
 	StatusJS:                 "status-2",
 	SelectJS:                 "select-js-1",
 	ReorderJS:                "reorder-inline-edit-1",
-	ConfigStorageJS:          "config-storage-2",
-	ConfigDataJS:             "config-data-1",
-	ConfigBookmarkStoreJS:    "config-bookmark-store-1",
-	ConfigFontJS:             "config-font-1",
-	ConfigCommandPaletteJS:   "config-command-palette-1",
-	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
 	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
-	DashboardCSS:            "inline-edit-blur-children-1",
+	DashboardCSS:            "inline-edit-blur-children-1-config-header-icon-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",
-	LayoutModernCSS:         "health-icon-square-underline-2-hint-css-gone",
+	LayoutModernCSS:         "config-header-icon-1",
 
 	AppNotificationCSS:       "app-notification-2-tip",
 	SearchCommandsNewCSS:     "search-commands-new-5-create-another",

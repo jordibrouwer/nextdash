@@ -7,7 +7,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.07-dashboard-release-v135';
+    const DASHBOARD_RELEASE = '2026.07-dashboard-release-v136';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -59,6 +59,13 @@
         loadPromise = new Promise((resolve, reject) => {
             const existing = document.querySelector('script[data-whats-new-modal]');
             if (existing) {
+                // A script that already finished will never fire `load` again, so
+                // waiting on the event would hang forever. Its own registration
+                // is the reliable signal that it is ready.
+                if (typeof window.__whatsNewOpen === 'function') {
+                    resolve();
+                    return;
+                }
                 existing.addEventListener('load', () => resolve(), { once: true });
                 existing.addEventListener('error', () => {
                     loadPromise = null;

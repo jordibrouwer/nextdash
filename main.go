@@ -164,7 +164,7 @@ func main() {
 	go func() {
 		log.Printf("Server starting on port %s", port)
 		log.Printf("Dashboard: http://localhost:%s", port)
-		log.Printf("Configuration: http://localhost:%s/config", port)
+		log.Printf("Configuration: http://localhost:%s/#config", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server error: %v", err)
 		}

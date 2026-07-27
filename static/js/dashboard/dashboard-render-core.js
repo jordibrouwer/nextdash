@@ -245,6 +245,13 @@ class DashboardRenderCore {
             d.health.render();
             return;
         }
+        if (d.activeView === 'config' && d.config?.isEnabled?.()) {
+            if (d.isInlineEditActive()) {
+                return;
+            }
+            d.config.render();
+            return;
+        }
         // A view whose feature is switched off falls back to bookmarks rather
         // than rendering nothing.
         if (d.activeView !== 'bookmarks') {
@@ -272,7 +279,7 @@ class DashboardRenderCore {
         d._renderAnimationsEnabled = animate;
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
-        container.classList.remove('inbox-layout', 'health-layout');
+        container.classList.remove('inbox-layout', 'health-layout', 'config-layout');
 
         d._abortInlineEditForRender();
         window.DashboardSmartWhyPopover?.hide?.();

@@ -204,13 +204,12 @@ func activitySourceFromRequest(r *http.Request) string {
 	if r == nil {
 		return "api"
 	}
-	referer := strings.ToLower(r.Referer())
-	switch {
-	case strings.Contains(referer, "/config"):
-		return "config"
-	case strings.Contains(referer, "/health"):
-		return "health"
-	case referer != "":
+	// Config and health are views inside the dashboard now, at /#config and
+	// /#health. A fragment never travels in the Referer header, so both arrive
+	// indistinguishable from the dashboard they are part of, and any browser
+	// request is reported as "dashboard". Matching on "/config" or "/health"
+	// here only ever produced false negatives once those pages went away.
+	if r.Referer() != "" {
 		return "dashboard"
 	}
 	if strings.Contains(strings.ToLower(r.Header.Get("User-Agent")), "chrome-extension") {

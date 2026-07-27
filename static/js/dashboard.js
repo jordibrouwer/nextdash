@@ -189,6 +189,7 @@ class Dashboard {
         this.persistence = new DashboardPersistence(this);
         this.inbox = new DashboardInbox(this);
         this.health = typeof DashboardHealth === 'function' ? new DashboardHealth(this) : null;
+        this.config = typeof DashboardConfig === 'function' ? new DashboardConfig(this) : null;
         this.pasteChoice = new DashboardPasteChoice(this);
         this.activeView = 'bookmarks';
         this.weatherService = typeof window.WeatherService === 'function' ? new window.WeatherService() : null;
@@ -254,6 +255,7 @@ class Dashboard {
             this.setupPasteToQuickAdd();
             this.inbox.setupEscapeShortcut();
             this.health?.setupEscapeShortcut();
+            this.config?.setupEscapeShortcut();
             if (typeof QuickAddWidget === 'function') {
                 this.quickAddWidget = new QuickAddWidget(this);
             }
@@ -281,6 +283,14 @@ class Dashboard {
                 if (hash === 'health') {
                     if (this.activeView !== 'health') {
                         void this.health?.openHealthView?.();
+                    }
+                    return;
+                }
+                if (hash === 'config' || hash.startsWith('config/')) {
+                    if (this.activeView !== 'config') {
+                        void this.config?.openConfigView?.();
+                    } else {
+                        this.config?.restoreConfigSectionFromHash?.();
                     }
                     return;
                 }

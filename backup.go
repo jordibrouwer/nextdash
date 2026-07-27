@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -516,6 +517,15 @@ func (h *Handlers) Import(w http.ResponseWriter, r *http.Request) {
 
 	files := r.MultipartForm.File["files"]
 	if len(files) == 0 {
+		// A whole .zip under "file" is the other shape a client can send: the
+		// old config unpacked the archive in the browser with JSZip, which is a
+		// CDN dependency the dashboard does not carry. Unpack it here instead,
+		// reusing the same staging the auto-backup restore uses so both paths
+		// validate archives identically.
+		if zipped := r.MultipartForm.File["file"]; len(zipped) == 1 {
+			h.importFromZipUpload(w, r, dataDir, zipped[0])
+			return
+		}
 		http.Error(w, "No files provided", http.StatusBadRequest)
 		return
 	}
@@ -728,6 +738,47 @@ func (h *Handlers) buildBackupZip() ([]byte, error) {
 }
 
 // Backup creates a zip file with all data from the data directory
+// importFromZipUpload handles an /api/import upload that is a single .zip
+// rather than the loose files the old config posted. It routes through the same
+// staging and apply path as the auto-backup restore, so an archive is validated
+// and written the same way regardless of which client sent it.
+func (h *Handlers) importFromZipUpload(w http.ResponseWriter, r *http.Request, dataDir string, fh *multipart.FileHeader) {
+	f, err := fh.Open()
+	if err != nil {
+		http.Error(w, "Failed to open file", http.StatusInternalServerError)
+		return
+	}
+	data, err := io.ReadAll(f)
+	closeErr := f.Close()
+	if err != nil || closeErr != nil {
+		http.Error(w, "Failed to read file", http.StatusInternalServerError)
+		return
+	}
+
+	staged, err := h.stagedFilesFromZip(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(staged) == 0 {
+		http.Error(w, "No files provided", http.StatusBadRequest)
+		return
+	}
+
+	skipped, impErr := h.applyStagedImport(dataDir, staged)
+	if impErr != nil {
+		log.Printf("import: zip upload %q: %v", fh.Filename, impErr)
+		http.Error(w, impErr.Error(), impErr.status())
+		return
+	}
+
+	log.Printf("import: restored from uploaded archive %q (%d bookmarks skipped)", fh.Filename, skipped)
+	logDataImport("backup_zip_import", len(staged), skipped, r)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"status": "success", "skippedBookmarks": skipped})
+}
+
 func (h *Handlers) Backup(w http.ResponseWriter, r *http.Request) {
 	if !h.requireWriteAccess(w, r) {
 		return

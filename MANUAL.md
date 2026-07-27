@@ -131,9 +131,9 @@ Install → Open URL in browser → Quick-start card (optional)
     → Optional: What's new; browser extension
 ```
 
-1. **Quick-start card** — A compact three-step card in the corner: language & auto dark mode, column layout, and weather. Skip it whenever you like — nothing is locked in, and every setting it touches stays reachable in **Config → General** afterwards. It then becomes a short checklist (add a bookmark, tag one, open Config → General, see the keyboard cheat sheet) that dismisses itself once every item is done, or any time you close it (see [Quick-start card](#quick-start-card)).
+1. **Quick-start card** — A compact three-step card in the corner: language & auto dark mode, column layout, and weather. Skip it whenever you like — nothing is locked in, and every setting it touches stays reachable in **Config → Behavior** afterwards. It then becomes a short checklist (add a bookmark, tag one, open config, see the keyboard cheat sheet) that dismisses itself once every item is done, or any time you close it (see [Quick-start card](#quick-start-card)).
 2. **Empty dashboard** — Normal on first run. Use **+** (full add form) or **&** (quick-add) to add your first bookmark, or import from a browser HTML file (see [Import](#17-import-export-and-backup)).
-3. **Config** — Click **config** in the header (or open `/config`). The **Help** tab mirrors much of this manual in shorter form, plus a **Tips & tricks** section and a **What's new** recap.
+3. **Config** — Click **config** in the header, press **`Shift+S`**, or open `/#config`. Config is a view inside the dashboard, not a separate page. Its **Help** section mirrors much of this manual in shorter form, plus a **Tips & tricks** section and a **What's new** recap.
 
 ---
 
@@ -159,7 +159,7 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 - Drag the **`//` prefix** in a category title to reorder sections.  
 - Add a new category (or page) straight from the **new-bookmark modal** — the **Category** and **Page** dropdowns each carry a **+ New…** option that creates and saves it inline, no bookmark required.  
 - Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. **Esc** cancels rename.
-- In **config → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
+- In **config → pages & tags → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
 
 ### 4.3 Bookmarks
 
@@ -178,7 +178,7 @@ Each bookmark has:
 | **Availability check** (**v2026.07.20**) | One choice of three: **Off** (never tested), **Periodic** (checked about once a day, flags a broken link), or **Monitor** (checked on its own interval with 30 days of history — uptime, heartbeat, outages). Monitor includes everything Periodic does. Set it in the editor, from the dashboard right-click menu, with `Shift + C`, or from a health-view row (`c`) |
 | **Open count / last opened** | Usage tracking |
 
-Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sort). Notes remain searchable in fuzzy search and editable via `:note` or inline edit. Pin and note row icons were removed from the dashboard and from **Config → General**; there are no pin/note badges on bookmark rows.
+Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sort). Notes remain searchable in fuzzy search and editable via `:note` or inline edit. Pin and note row icons were removed from the dashboard and from config; there are no pin/note badges on bookmark rows.
 
 ### 4.4 Inbox
 
@@ -191,17 +191,21 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 - **Linkable and remembered** (**v2026.07.22**) — filter, sort and search appear in the address bar (`?ib_filter=`, `?ib_sort=`, `?ib_q=`), so a view can be bookmarked or shared. Filter and sort also return on your next visit; a shared link overrides what was stored. The search box is deliberately not remembered.  
 - **Select several** (**v2026.07.22**) — tick rows (click the box, or `x` on the selected row) and a bar offers **Mark read**, **Snooze** and **Delete** for just those items, instead of the toolbar's all-or-nothing bulk. `Esc` clears the selection, switching filter clears it too (so a bulk action cannot reach rows you can no longer see), and deleting names the count and asks first.  
 - Keyboard: `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `x` select (**v2026.07.22**), `d` delete. Toolbar bulk actions: **Mark all read** and **Clear read**.  
-- Toggle under **Config → General → Enable Inbox page**; set **Paste URL default** to skip the choice dialog.
+- Toggle under **Config → Behavior → Search & inbox → Enable Inbox**; set the paste destination there too, to skip the choice dialog.
 
 ### 4.5 Config vs dashboard
 
-| Dashboard `/` | Config `/config` |
+Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** header link, or the `/#config` address; **`<`** takes you back.
+
+| Dashboard view | Config view |
 |-----------------|------------------|
 | Daily use: open, search, quick-add | Structure: pages, categories, bulk edit |
-| Keyboard-first | Split-view bookmark editor, stats, backups |
-| Live layout and themes | Save bar for many settings |
+| Keyboard-first | Bookmark editor, stats, backups |
+| Live layout and themes | Every setting, grouped by topic |
 
-Changes in config often apply to the dashboard after **Save** (some toggles autosave). Config only writes data that actually changed — a small settings edit does not re-upload every page of bookmarks — and you get a short *Saving…* / *Saved* toast on the right when save completes.
+It has eight sections — **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, and **Help** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
+
+Most controls **save the moment you change them**, and a short *Saving…* / *Saved* confirmation appears. The bookmark editor is the exception: it collects your edits and writes them when you press **Save**. Config only writes data that actually changed — a small settings edit does not re-upload every page of bookmarks.
 
 ---
 
@@ -220,7 +224,7 @@ Changes in config often apply to the dashboard after **Save** (some toggles auto
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Side rail layout (optional — **Config → General → Layout → Button bar position → Side rail**):
+Side rail layout (optional — **Config → Behavior → Display → Button bar position → Side rail**):
 
 ```
 ┌──┬────────────────────────────────────────────────────────┐
@@ -246,7 +250,7 @@ Side rail layout (optional — **Config → General → Layout → Button bar po
 
 ### Button bar / side rail
 
-The button bar can appear as a **floating bottom bar** (default) or as a **44 px left side rail** — set via **Config → General → Layout → Button bar position** or the `:buttonbar` command.
+The button bar can appear as a **floating bottom bar** (default) or as a **44 px left side rail** — set via **Config → Behavior → Display → Button bar position** or the `:buttonbar` command.
 
 **Bottom bar** — buttons float centred at the bottom of the viewport.
 
@@ -293,16 +297,16 @@ Follow this path once; later you will mix steps freely.
 | Step | Action | Where |
 |------|--------|--------|
 | 1 | Complete or skip the quick-start card | First visit |
-| 2 | Open **config → pages** — add or rename pages | `/config#pages` |
-| 3 | Open **config → categories** — create sections per page | `/config#categories` |
+| 2 | Open **config → pages & tags → pages** — add or rename pages | `/#config/pages-tags` |
+| 3 | Open **config → pages & tags → categories** — create sections per page | `/#config/pages-tags` |
 | 4 | Add 3–5 bookmarks with **&** quick-add | Dashboard |
 | 5 | Press **>** and search by name | Dashboard |
 | 6 | Press **!** and skim the cheat sheet | Dashboard |
-| 7 | Enable a theme you like | **config → general → appearance** |
-| 7b | (Optional) Skim **Config → Help → Tips & tricks** for more shortcuts | `/config#help` |
-| 8 | Create a ZIP backup | **config → backups** |
+| 7 | Enable a theme you like | **config → appearance** |
+| 7b | (Optional) Skim **Config → Help → Tips & tricks** for more shortcuts | `/#config/help` |
+| 8 | Create a ZIP backup | **config → data & backups** |
 | 9 | (Optional) Install browser extension | `extension/` folder |
-| 10 | (Optional) Import old browser bookmarks | **config → backups → Import from Browser** |
+| 10 | (Optional) Import old browser bookmarks | **config → data & backups → Import browser bookmarks** |
 
 **Goal:** One page with categories, a handful of bookmarks, search working, and a backup file saved.
 
@@ -333,7 +337,7 @@ The modal includes page, category, preview, tags, and note.
 
 ### 7.3 Paste a URL (`Ctrl+V`)
 
-With the dashboard focused and no text field active, paste a URL. A choice dialog offers **Save to Inbox** or **Add bookmark** (full modal pre-filled). Set a default under **Config → General → Paste URL default** (*Ask each time*, *Always add bookmark*, or *Always save to Inbox*). Paste is ignored while **inline edit** or the **tag word cloud** is open. If paste cannot open the form (no active page, Inbox disabled, or the feature is blocked), a notification explains what to do.
+With the dashboard focused and no text field active, paste a URL. A choice dialog offers **Save to Inbox** or **Add bookmark** (full modal pre-filled). Set a default under **Config → Behavior → Search & inbox** (*Ask each time*, *Always add bookmark*, or *Always save to Inbox*). Paste is ignored while **inline edit** or the **tag word cloud** is open. If paste cannot open the form (no active page, Inbox disabled, or the feature is blocked), a notification explains what to do.
 
 ### 7.4 Inline edit after long-press
 
@@ -359,13 +363,13 @@ Arrow keys move through the items and `Enter` activates one; `Esc` or a click ou
 
 ### 7.6 Config → bookmarks (bulk and detail)
 
-**config → bookmarks**: master/detail split inside one fused surface (**v2026.07.04**) — filters and bulk actions above the split; bookmark list on the left (master pane), detail editor on the right (detail pane). Best for many edits, tags, notes, favicon upload, and bulk actions.
+**config → bookmarks** is the place for many edits at once: a searchable list with a page filter, an editor that expands the row you are working on, and a bulk toolbar for whole selections.
 
-The **Context** panel (page and category switcher for the list below) starts **collapsed** — expand it when you need to change page or category without leaving Bookmarks. Reorder pages, archive, templates, icons, and merge categories on the dedicated **Pages** and **Categories** tabs (links in the Context footnote). Open/closed state is remembered across visits. Below that you pick the active page, filter by category, and sort the list. **+ Bookmark** opens a small menu: **Add & edit** creates a blank row in the detail panel (Save when ready); **Quick add (⚡)** opens the full new-bookmark form and saves to disk immediately — the new row appears in the list right away (search/category filters adjust so you can see it). In the detail panel, **category** and **tags** stay visible (tags sit directly below Category); shortcut, icon, previews, and status sit under **More options**. Select multiple rows for the **bulk toolbar** — **Move to** (page + category + Apply), pin, status, favicon refresh, **tags** (a comma-separated input with Add/Replace/Remove mode, applied to every selected bookmark), and delete. Bookmark changes apply to the dashboard only after **Save** in the config header.
+**Edit** on a row opens it in place. It carries every field a bookmark has — name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor). Unlike the rest of config, the editor does not save as you type: it collects your changes and writes them when you press **Save**, so a half-finished row is never persisted. It warns you before discarding unsaved edits.
 
-The breadcrumb row shows your current location (e.g. `bookmarks › Work › dev`). Save mode (**Requires save**, **Auto-save**, **Read-only**, **Save colors**) and the save status line sit in the **save row** beside **Save**, not in the breadcrumb.
+**+ Bookmark** opens the same add form the dashboard uses. Tick several rows to get the **bulk toolbar** — move to another page or category, pin, refresh favicons, add / replace / remove tags across the whole selection, or delete. **Select all** ticks the rows your filters are currently showing, not every bookmark you own.
 
-On a **phone** (≤768px), opening `/config#bookmarks` shows a clear *desktop only* card with a link back to the dashboard — use a wider window for the split-view editor.
+The bookmark editor is comfortable on a wide window; on a narrow one the fields stack.
 
 All bookmark lists in config (per-page editor, tags tab, stats) read from one **central bookmark store**, so tags and edits stay in sync across tabs.
 
@@ -388,7 +392,7 @@ HTML export from Chrome/Firefox/Edge (see [Import, export, and backup](#17-impor
 5. **Keyboard** — `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `d` delete (legend under the list).  
 6. **Triage** — click **Triage** or run **`:inbox triage`** to walk unread items one by one: `J`/`K` move, `O` open, `P` promote, `R` keep (mark read), `D` delete, `Esc` close.
 
-The first visit may show a short intro modal. Replay it from **Config → Advanced → System → Reset Inbox intro modal**.
+The first visit may show a short intro modal. Replay it from **Config → Behavior → General**.
 
 ### Duplicate URLs
 
@@ -480,9 +484,9 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 
 Press **`!`** or **`F1`**. Focus lands in the filter box automatically. Type to narrow the list. When the **side rail** is active, a **Layout (side rail)** section lists tab order and `:buttonbar` hints. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open. On first open (desktop), a one-time **Got it** balloon may appear beside the modal — dismissing it does not close the cheat sheet.
 
-**Occasional tips** (**v2026.07.19**) — now and then the dashboard shows one keyboard tip as a small toast with a **Cheat sheet** button beside it. It draws from the same list as **Config → Help → Tips & tricks**, appears at most once every few days, never repeats a tip you have already seen, and stays away during first-run setup, on touch, and while a dialog or the inline editor is open. Turn it off under **Config → General → Advanced → Onboarding & tips**.
+**Rebinding shortcuts** — not available at the moment. The old configuration page had a **Keyboard** tab for remapping keys; it has not been rebuilt in the config view, and the setting behind it never took effect (it was stored but never read back), so it was retired rather than carried over half-working. **Custom key bindings are still in development.** Every shortcut keeps its default in the meantime (**v2026.07.23**).
 
-Rebind shortcuts in **config → keyboard** (open from Help or the keyboard link). **Export** / **import** rebindable keys as JSON; fixed cheat-sheet defaults cannot be changed. Rebind checks for conflicts with fixed or existing bindings before save.
+**Occasional tips** (**v2026.07.19**) — now and then the dashboard shows one keyboard tip as a small toast with a **Cheat sheet** button beside it. It draws from the built-in tips catalogue, appears at most once every few days, never repeats a tip you have already seen, and stays away during first-run setup, on touch, and while a dialog or the inline editor is open. Turn it off under **Config → Behavior → General**.
 
 ### 9.5 Blocking overlays & focus
 
@@ -537,7 +541,7 @@ While typing a partial value (e.g. `status:on`), autocomplete stays visible unti
 
 ### 10.2 Tag word cloud (`/`, desktop)
 
-When **Tag cloud (/)** is enabled (config → general → Header & Buttons, on by default on desktop):
+When **Tag cloud (/)** is enabled (config → behavior → display, on by default on desktop):
 
 - Press **`/`** on the dashboard (search closed) or click the **/** button to open a word cloud of all tags (size = usage). With the **side rail**, the button sits under **\*** recent and the modal opens to the **right** of the rail, growing with tag count instead of using a fixed clipped height. With an **active tag filter**, the modal anchors **left below the filter banner** / **/** FAB (not centered over bookmarks).
 - **Click** or **`Enter`** / **`Space`** on a tag **toggles** it in the filter; the modal **stays open** so you can combine several tags.
@@ -613,7 +617,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 
 Format: `?shortcut query` — e.g. `?g nextdash` if `g` is configured to `https://www.google.com/search?q=%s`.
 
-Configure finders in **config → finders** (desktop):
+Configure finders in **config → pages & tags → finders** (desktop):
 
 - **+ Add finder** — appends a new row at the bottom of the table and focuses the name field; the existing list stays visible (no reload needed).
 - **Filter** — narrow the list by name, shortcut, URL, or tags; **✕** or `Escape` clears.
@@ -640,14 +644,14 @@ Temporarily hides bookmark tiles that do not match. Clear with `:find clear` (or
 
 ### Reorder categories
 
-- Drag the **`//` prefix** in the category title on the dashboard, or drag rows in **config → categories** (or focus a row and press **↑** / **↓**). The `//` acts as the drag handle — a plain click on it still toggles collapse.
-- Order in **config → categories** saves automatically after a short debounce (~600 ms) with a localized sync toast.
+- Drag the **`//` prefix** in the category title on the dashboard, or drag rows in **config → pages & tags → categories** (or focus a row and press **↑** / **↓**). The `//` acts as the drag handle — a plain click on it still toggles collapse.
+- Order in **config → pages & tags → categories** saves automatically after a short debounce (~600 ms) with a localized sync toast.
 
 ### Reorder pages
 
-- Drag the **grip** on a row in **config → pages**, or focus a row and press **↑** / **↓**.
+- Drag the **grip** on a row in **config → pages & tags → pages**, or focus a row and press **↑** / **↓**.
 - Order saves automatically after a short debounce (~600 ms) and shows a localized sync toast.
-- **Archive** hides a page from the dashboard and page picker without deleting its bookmarks (restore from **config → pages**, the **Context** panel on Bookmarks when expanded, or the archived list there).
+- **Archive** hides a page from the dashboard and page picker without deleting its bookmarks (restore from **config → pages & tags → pages**, the **Context** panel on Bookmarks when expanded, or the archived list there).
 
 ### Move between pages
 
@@ -660,7 +664,7 @@ Double-click a page tab **on desktop or tablet landscape** (not on mobile — av
 - Set **emoji** icon  
 - Choose **colour dot** (8 accents)
 
-Use **config → pages** to rename a page on any device.
+Use **config → pages & tags → pages** to rename a page on any device.
 
 ### Sorting
 
@@ -683,7 +687,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 - **Search (`>`):** `tag:work` filters results in the search overlay (partial match); dashboard layout unchanged.  
 - **Dashboard tag cloud (desktop):** `/` or / FAB — toggle one or more tags while the modal stays open; **OR match** (bookmarks with any selected tag); per-tag filter chips in the header; **Escape** on the dashboard clears all filters.  
 - **Command palette (`:`):** `:tag work` lists bookmarks in the palette only; `:tag +work` / `:tag -work` mutate tags on the selected bookmark.  
-- **config → tags** (desktop): global tag management across all pages.  
+- **config → pages & tags → tags** (desktop): global tag management across all pages.  
   - **Word cloud:** dashboard-style popularity scaling — larger tags mean more bookmarks; tier colours and light animations; click a chip to scroll to that tag in the list.  
   - **List:** column headers (Tag / Usage / Actions), usage bar per row, sorted by bookmark count; scrolls with the config page (no inner scroll panel).  
   - Expand a row for bookmarks with page name, category, **Open** (jumps to the bookmark in Config → Bookmarks), and **− tag** (remove from one bookmark).  
@@ -703,7 +707,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 
 - Auto-fetch title/description/image when adding URLs (if enabled).  
 - **`[`** toggles preview card on keyboard focus.  
-- **Show favicons** — **Config → General → Bookmarks** or `:favicons on/off` on the dashboard.
+- **Show favicons** — **Config → Appearance** or `:favicons on/off` on the dashboard.
 - **Refresh every icon** — `:favicons fetch` re-downloads the favicon of every bookmark on every page, replacing the ones already stored, so icons that changed at the source are updated too. A progress bar shows how far along it is. The same run happens automatically once on a new install, right after you finish or skip the first-run setup card while keeping the example bookmarks. Individual icons can also be refreshed from the health view (`f` on the selected row), and **Config → Bookmarks** has a bulk **Refresh favicons** button for a selection.  
 - **Fetch favicon** in config detail or health actions.
 
@@ -718,7 +722,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 
 ### Smart collections (built-in)
 
-Enabled in **config → general → smart collections**:
+Enabled in **config → pages & tags → collections**:
 
 | Collection | Shows |
 |------------|--------|
@@ -735,7 +739,7 @@ You can **long-press** or press **`;`** on a smart-collection row to inline-edit
 
 ### Custom collections
 
-**config → collections**: name, icon, AND/OR rules on tag, category, or shortcut. Each rule's value field autocompletes from the tags, categories, and shortcuts already in use, so you rarely type a full value (shortcut suggestions keep their original casing). Appear as dashboard groups above regular categories.
+**config → pages & tags → collections**: name, icon, AND/OR rules on tag, category, or shortcut. Each rule's value field autocompletes from the tags, categories, and shortcuts already in use, so you rarely type a full value (shortcut suggestions keep their original casing). Appear as dashboard groups above regular categories.
 
 ### Tag collections
 
@@ -760,7 +764,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 
 **Where to switch**
 
-- **Config → General → Layout → Layout version** — dropdown with a live description under the control.  
+- **Config → Behavior → Layout** — layout preset and density, each with a live description under the control.  
 - **Quick-start card** — the layout step covers packed columns and columns per row (see [Quick-start card](#quick-start-card)).  
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` switches between them.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
@@ -773,15 +777,15 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 |--------|-----------|
 | **Default** | Classic multi-column grid |
 | **Compact / Cards / Masonry / List** | Density and visual style |
-| **Launcher** | Large favicon tiles; enable via **Config → General → Layout** or `:layout launcher` in search |
+| **Launcher** | Large favicon tiles; enable via **Config → Behavior → Layout** or `:layout launcher` in search |
 
 ### Themes
 
 - 37+ built-in families (dark/light pairs).  
-- **config → theme** tab (`#colors`) — four subtabs: **Dark**, **Light** (default palettes), **Custom themes** (your saved palettes), and **Packaged themes** (edit built-in families such as Cherry Graphite). Live preview applies to palette cards only; a contrast hint warns when text vs background is too weak. **Export** / **import** JSON, **Undo**, and **↑/↓** reorder for custom themes. Press **S** or **Save colors** to persist. On mobile the tab is read-only (viewer banner).  
-- **General → Appearance → Theme** — pick the active theme for the whole app (built-in or saved custom).  
+- **config → appearance → custom themes** — build, edit, and delete your own palettes. A contrast check warns when text against background is too weak to read. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard half-edited.
+- **config → appearance → general** — pick the active theme for the whole app (built-in or one of your own).
 - **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
-- **Favicon harmonisation** — recolours site favicons that clash with your theme (styles: **Muted**, **Tinted**, **Overlay**, with an intensity slider). Set per theme under **config → theme**, so the dark and light variant of a pair are configured separately. **New installs start with it on** (Muted, intensity 0.5) for both Moss & Stone variants; existing dashboards keep whatever they had.
+- **Favicon harmonisation** — recolours site favicons that clash with your theme (styles: **Muted**, **Tinted**, **Overlay**, with an intensity slider). Set per theme under **config → appearance → theme**, so the dark and light variant of a pair are configured separately. **New installs start with it on** (Muted, intensity 0.5) for both Moss & Stone variants; existing dashboards keep whatever they had.
 
 ### Config → pages & categories (list tabs)
 
@@ -802,7 +806,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### What’s new
 
-**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. The latest release loads first; scroll to load up to the **25 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same recap — including **v2026.07.22.6** the inbox reading as one system with the health view (site icons a 3rem square in the same spot with the same padding, the multi-select checkbox overlaying the icon corner instead of a leading column, real favicons fetched and stored like bookmarks so the inbox shows the actual site icon, summary tiles above the feed, and an added date per row; a stored inbox favicon is cleaned up on delete/promote unless still referenced); **v2026.07.22.5** bookmark icons showing in the health view again (they load from `/data/icons/` like the dashboard instead of the site root, so the favicons appear and the console 404s are gone; a missing icon falls back to a 🔗 glyph); **v2026.07.22.4** Health Edit opening a clickable inline form on the bookmark's page (neighbouring rows still blur; drag paused while editing); **v2026.07.22.3** a **Create + New** button in the add-bookmark modal that saves the bookmark and keeps the form open (page and category preserved) so several can be added in a row; **v2026.07.22.2** deleting a bookmark in the health view clearing it from the dashboard at once and the header flagging a monitor that is down apart from a broken link; **v2026.07.22.1** availability checking in the add-bookmark modal and a **Monitored** tile that turns red when something stops responding; **v2026.07.22** the inbox gaining sorting, shareable links and per-row selection, the health view's CSV **Export** and always-visible **Monitored** filter, a monitoring chart you can read point by point, and uptime history travelling with your backups; **v2026.07.21.1** enlarging a monitored bookmark's statistics from the health view (a large response-time chart, 24h/7d/30d uptime side by side, interval and outage history, opened with **⤢** or `i`) and the fix for outage lengths always reading *0s*; **v2026.07.21** usage analytics becoming **opt-in** (off until you turn it on, with a first-run card that asks rather than announces, and browser-storage fixes that stop config reporting saves it never made); **v2026.07.20** uptime monitoring for bookmarks; **v2026.07.19** privacy-friendly anonymous analytics (since v2026.07.21 opt-in, under **Config → General → Advanced → Privacy**), a **right-click menu** on dashboard bookmarks, and keyboard access to the **+ N more** toggle on long categories; **v2026.07.18** tidier long categories (a per-category **Items per category** limit, default 15, hiding the rest behind a **+ N more** / **show less** toggle so one big category no longer towers over the others; smart collections are never capped and expanding is remembered), the **Configuration** page aligned with the dashboard/inbox/health top bar and title size (no more jump when switching, save row and tabs as one seamless bar), and new-install defaults (**Midnight Ink** dark theme following the system, and starter bookmarks without the Tech category / Unraid / Phoronix); **v2026.07.17** removal of every tour, spotlight, and promo balloon in favor of the quick-start card and a **Tips & tricks** section in Help; **v2026.07.16** Inbox snooze / keyboard triage / notes / bulk mark-read & clear-read, Health always-on with optional background rechecks, Edit → dashboard inline editor, and corrected deep-link filters; **v2026.07.15** health as an in-dashboard view (opened from the heartbeat icon without leaving the dashboard; legacy `/health` links redirect to this view), new mnemonic view shortcuts (**Shift+H** for Health, **Shift+I** for Inbox, with legacy `0` kept), a cleaner config header that now keeps only **back to dashboard**, and health-view wording/localized cheat-sheet additions aligned across **EN/NL/DE/FR**; **v2026.07.14.1** clearer feedback when a category sorted A–Z or Recent can't have its bookmarks dragged (hover tooltip, not-allowed cursor, and a one-off note pointing you to switch back to manual order); **v2026.07.14** dashboard organising (drag a bookmark from anywhere on its row to reorder or move it between categories, no column flicker across columns, `.` to collapse or expand every category at once, the `//` category-title drag handle for reordering sections, and a **+ New…** option in the add-bookmark form's Page/Category dropdowns to create a page or category inline); **v2026.07.13.1** automatic-backup refinements (restore a stored backup in one click, a totals line, a Back Up Now last-backup-date fix, and same-second filename uniqueness); **v2026.07.13** automatic weekly local backups (a rolling set of 3 ZIPs under Config → Backup with download/delete/Back Up Now and a countdown, toggleable, restart-robust) plus two health fixes (bulk delete and unusual favicon filenames); **v2026.07.12** fresh defaults for new installs (Kelp Drift dark theme with auto dark mode on, and starter bookmarks seeding a *Tech* category with Unraid/Phoronix and a *Social* category with Bluesky instead of Facebook/Instagram) plus dashboard polish (the `&` quick-add omnibox restyled to match the search/commands/finders overlays, *Config → Bookmarks* opening on the first page each fresh load while remembering the session's page, and reliable loading of icons with unusual filenames); **v2026.07.11.4** smoother dialogs (keyboard and screen-reader focus handed back cleanly when a dialog closes, no console warnings); **v2026.07.11.3** bulk tags in the config bookmarks bulk toolbar (add, replace, or remove tags across every selected bookmark at once, with tag autocomplete); **v2026.07.11.2** tags moved above the fold in the bookmark forms (out of *More options*, right under Page/Category), the dashboard inline editor reordered to match (Page → Category → Tags → Note), autocomplete on custom-collection rule values, and a back/forward-cache fix; **v2026.07.11** clearer General settings (busiest sections split into labelled sub-groups: Localization → language / date & time, Appearance & Style → theme / text / extras, Layout → grid / spacing / extras), the Stats/Pages/Tags/Theme config tours no longer auto-starting (run them from Config → General → Tours & onboarding), plus accessibility polish (config spinner labels, health skip-to-content link, lazy category icons, and a no-JavaScript fallback message on the dashboard); **v2026.07.10.2** gzip-compressed responses (HTML/JS/CSS/JSON transfer 70-90% smaller), deferred config tour scripts (~374 KB) and peripheral dashboard scripts (~107 KB) off first paint, a line-style dashboard inbox icon matching the health icon, and quieter health borders (same cleanup as config: softer tile/panel borders, intro frame dropped, sections by spacing and headings); **v2026.07.10.1** quieter config borders (fewer nested frames; sections separated by spacing and headings, classic layout); **v2026.07.10** self-hosted default font (no Google Fonts request, works offline), deferred promo scripts for faster first paint, correct per-theme browser/PWA `theme-color`, centralized CSS cache-busting, and this 25-release modal history; **v2026.07.09** header health icon with counter (on by default), roomier dashboard side margins with exact config/health alignment at every width (including above 1600px), rounded status-row highlights with extra left inset for favicon clearance, config header health icon parity (dashboard-style icon + counter, inbox pill removed), and Stats inbox insights plus expand/collapse-all with remembered state; **v2026.07.08.1** General quick-link scroll offset hotfix; **v2026.07.08** Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** General split-shell (sticky quick links, section accordion), Advanced split into smaller cards, and number-input styling; **v2026.07.05.1** hotfixes (★ FAB placement, Config Help modal chrome, status-row highlight, save-indicator and merge fixes); **v2026.07.05** config shell polish (Help split-shell B5, flattened Tags/Backups/Theme cards, B10/C15), dashboard chrome (unified chips, toolbar modals for recent/help, D8 recent usage, D12 status-row tokens, fresh-install footer defaults, Classic early-beta notice); **v2026.07.04** config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** activity log, security hardening, extension shortcuts, hash-based data revision, 7-release modal history, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** bookmark category and tag sync and data revision; **v2026.07.02** config polish (Stats tour, B6–B11, A8/A10, C15); **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** config surface polish; **v2026.07.01.4** config polish; **v2026.07.01.1** config surface parity; **v2026.07.01** config tab bar v5; and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
+**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. The latest release loads first; scroll to load up to the **25 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same recap — including **v2026.07.23** configuration becoming a view inside the dashboard (eight sections instead of fourteen tabs, deep links to any section or sub-tab, settings that save as you change them with the bookmark editor as the exception, a new Overview screen, Reset on its own sub-tab with a typed confirmation, arrow-key navigation on the sub-tab strips, and the old page removed in full — 34,255 lines and roughly 1.2 MB of JavaScript no longer loaded; custom key bindings are still in development); **v2026.07.22.6** the inbox reading as one system with the health view (site icons a 3rem square in the same spot with the same padding, the multi-select checkbox overlaying the icon corner instead of a leading column, real favicons fetched and stored like bookmarks so the inbox shows the actual site icon, summary tiles above the feed, and an added date per row; a stored inbox favicon is cleaned up on delete/promote unless still referenced); **v2026.07.22.5** bookmark icons showing in the health view again (they load from `/data/icons/` like the dashboard instead of the site root, so the favicons appear and the console 404s are gone; a missing icon falls back to a 🔗 glyph); **v2026.07.22.4** Health Edit opening a clickable inline form on the bookmark's page (neighbouring rows still blur; drag paused while editing); **v2026.07.22.3** a **Create + New** button in the add-bookmark modal that saves the bookmark and keeps the form open (page and category preserved) so several can be added in a row; **v2026.07.22.2** deleting a bookmark in the health view clearing it from the dashboard at once and the header flagging a monitor that is down apart from a broken link; **v2026.07.22.1** availability checking in the add-bookmark modal and a **Monitored** tile that turns red when something stops responding; **v2026.07.22** the inbox gaining sorting, shareable links and per-row selection, the health view's CSV **Export** and always-visible **Monitored** filter, a monitoring chart you can read point by point, and uptime history travelling with your backups; **v2026.07.21.1** enlarging a monitored bookmark's statistics from the health view (a large response-time chart, 24h/7d/30d uptime side by side, interval and outage history, opened with **⤢** or `i`) and the fix for outage lengths always reading *0s*; **v2026.07.21** usage analytics becoming **opt-in** (off until you turn it on, with a first-run card that asks rather than announces, and browser-storage fixes that stop config reporting saves it never made); **v2026.07.20** uptime monitoring for bookmarks; **v2026.07.19** privacy-friendly anonymous analytics (since v2026.07.21 opt-in, under **Config → General → Advanced → Privacy**), a **right-click menu** on dashboard bookmarks, and keyboard access to the **+ N more** toggle on long categories; **v2026.07.18** tidier long categories (a per-category **Items per category** limit, default 15, hiding the rest behind a **+ N more** / **show less** toggle so one big category no longer towers over the others; smart collections are never capped and expanding is remembered), the **Configuration** page aligned with the dashboard/inbox/health top bar and title size (no more jump when switching, save row and tabs as one seamless bar), and new-install defaults (**Midnight Ink** dark theme following the system, and starter bookmarks without the Tech category / Unraid / Phoronix); **v2026.07.17** removal of every tour, spotlight, and promo balloon in favor of the quick-start card and a **Tips & tricks** section in Help; **v2026.07.16** Inbox snooze / keyboard triage / notes / bulk mark-read & clear-read, Health always-on with optional background rechecks, Edit → dashboard inline editor, and corrected deep-link filters; **v2026.07.15** health as an in-dashboard view (opened from the heartbeat icon without leaving the dashboard; legacy `/health` links redirect to this view), new mnemonic view shortcuts (**Shift+H** for Health, **Shift+I** for Inbox, with legacy `0` kept), a cleaner config header that now keeps only **back to dashboard**, and health-view wording/localized cheat-sheet additions aligned across **EN/NL/DE/FR**; **v2026.07.14.1** clearer feedback when a category sorted A–Z or Recent can't have its bookmarks dragged (hover tooltip, not-allowed cursor, and a one-off note pointing you to switch back to manual order); **v2026.07.14** dashboard organising (drag a bookmark from anywhere on its row to reorder or move it between categories, no column flicker across columns, `.` to collapse or expand every category at once, the `//` category-title drag handle for reordering sections, and a **+ New…** option in the add-bookmark form's Page/Category dropdowns to create a page or category inline); **v2026.07.13.1** automatic-backup refinements (restore a stored backup in one click, a totals line, a Back Up Now last-backup-date fix, and same-second filename uniqueness); **v2026.07.13** automatic weekly local backups (a rolling set of 3 ZIPs under Config → Backup with download/delete/Back Up Now and a countdown, toggleable, restart-robust) plus two health fixes (bulk delete and unusual favicon filenames); **v2026.07.12** fresh defaults for new installs (Kelp Drift dark theme with auto dark mode on, and starter bookmarks seeding a *Tech* category with Unraid/Phoronix and a *Social* category with Bluesky instead of Facebook/Instagram) plus dashboard polish (the `&` quick-add omnibox restyled to match the search/commands/finders overlays, *Config → Bookmarks* opening on the first page each fresh load while remembering the session's page, and reliable loading of icons with unusual filenames); **v2026.07.11.4** smoother dialogs (keyboard and screen-reader focus handed back cleanly when a dialog closes, no console warnings); **v2026.07.11.3** bulk tags in the config bookmarks bulk toolbar (add, replace, or remove tags across every selected bookmark at once, with tag autocomplete); **v2026.07.11.2** tags moved above the fold in the bookmark forms (out of *More options*, right under Page/Category), the dashboard inline editor reordered to match (Page → Category → Tags → Note), autocomplete on custom-collection rule values, and a back/forward-cache fix; **v2026.07.11** clearer General settings (busiest sections split into labelled sub-groups: Localization → language / date & time, Appearance & Style → theme / text / extras, Layout → grid / spacing / extras), the Stats/Pages/Tags/Theme config tours no longer auto-starting (run them from Config → General → Tours & onboarding), plus accessibility polish (config spinner labels, health skip-to-content link, lazy category icons, and a no-JavaScript fallback message on the dashboard); **v2026.07.10.2** gzip-compressed responses (HTML/JS/CSS/JSON transfer 70-90% smaller), deferred config tour scripts (~374 KB) and peripheral dashboard scripts (~107 KB) off first paint, a line-style dashboard inbox icon matching the health icon, and quieter health borders (same cleanup as config: softer tile/panel borders, intro frame dropped, sections by spacing and headings); **v2026.07.10.1** quieter config borders (fewer nested frames; sections separated by spacing and headings, classic layout); **v2026.07.10** self-hosted default font (no Google Fonts request, works offline), deferred promo scripts for faster first paint, correct per-theme browser/PWA `theme-color`, centralized CSS cache-busting, and this 25-release modal history; **v2026.07.09** header health icon with counter (on by default), roomier dashboard side margins with exact config/health alignment at every width (including above 1600px), rounded status-row highlights with extra left inset for favicon clearance, config header health icon parity (dashboard-style icon + counter, inbox pill removed), and Stats inbox insights plus expand/collapse-all with remembered state; **v2026.07.08.1** General quick-link scroll offset hotfix; **v2026.07.08** Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** General split-shell (sticky quick links, section accordion), Advanced split into smaller cards, and number-input styling; **v2026.07.05.1** hotfixes (★ FAB placement, Config Help modal chrome, status-row highlight, save-indicator and merge fixes); **v2026.07.05** config shell polish (Help split-shell B5, flattened Tags/Backups/Theme cards, B10/C15), dashboard chrome (unified chips, toolbar modals for recent/help, D8 recent usage, D12 status-row tokens, fresh-install footer defaults, Classic early-beta notice); **v2026.07.04** config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** activity log, security hardening, extension shortcuts, hash-based data revision, 7-release modal history, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** bookmark category and tag sync and data revision; **v2026.07.02** config polish (Stats tour, B6–B11, A8/A10, C15); **v2026.07.01.8** inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** config surface polish; **v2026.07.01.4** config polish; **v2026.07.01.1** config surface parity; **v2026.07.01** config tab bar v5; and **v2026.06.31** config tab consistency — is summarized under **What's new** in **Config → Help**.
 
 ---
 
@@ -810,7 +814,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### Per-bookmark status (dashboard)
 
-When enabled, bookmarks can show online/offline from ping checks. **Essentials** shows a compact overview (monitored count + toggle); per-bookmark options live under **Bookmarks**, full tuning under **Advanced → Status**. Client re-check interval is configurable (1–30 minutes, default 5). Optionally enable **background health rechecks** under **Config → General → Status monitoring** (**v2026.07.16**) so the server periodically re-pings status-checked bookmarks (off by default; 6h–weekly, default 24h) without a manual Retest all.
+When enabled, bookmarks can show online/offline from ping checks. Per-bookmark options live in the **Bookmarks** editor; the global settings are under **Config → Behavior → Status & health**. Client re-check interval is configurable (1–30 minutes, default 5). Optionally enable **background health rechecks** under **Config → Behavior → Status & health** so the server periodically re-pings status-checked bookmarks (off by default; 6h–weekly, default 24h) without a manual Retest all.
 
 ### Health view (`/#health`)
 
@@ -838,13 +842,13 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Action runtime** | Row actions are guarded against overlap and refresh the health report after changes |
 | **Detect redirect** | Overflow **detect redirect** uses a fast redirect-only suggest (`redirectOnly=1`, skips title fetch); confirm shows the proposed URL; errors and timeouts appear in the status bar |
 | **Keyboard** (**v2026.07.14.2**) | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `Enter` → inline editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row); `c` → availability checking (**v2026.07.20**); `i` → enlarged monitoring statistics on a monitored row (**v2026.07.21.1**). The shortcut legend under the feed lists them (**v2026.07.16** — the duplicate legend under the toolbar was removed) |
-| **Background rechecks** (**v2026.07.16**) | Optional server-side schedule under **Config → General → Status monitoring**; keeps the Health view current without opening Retest all |
+| **Background rechecks** | Optional server-side schedule under **Config → Behavior → Status & health**; keeps the Health view current without opening Retest all |
 | **Check mode per row** (**v2026.07.20**) | Each row shows its current mode (**Off** / **Periodic** / **Monitor**) as a button. Click it, or press `c`, to change it — the list keeps its scroll position and filter, so a filtered list does not reshuffle while you work down it. Options carry their own letters: `o`, `p`, `m` |
 | **Bulk enable** (**v2026.07.20**) | On a **filtered** list, a button offers to switch the visible rows to Periodic or Monitor at once, confirming the exact count first. Never offered on the unfiltered **All** list, where it would point the scheduler at every bookmark you own |
 | **Monitoring** (**v2026.07.20**) | A monitored row shows a **heartbeat bar** of recent checks, **uptime** over 24h / 7d / 30d, and a response-time **sparkline**; the expanded panel adds **outage history** (start, duration, cause), or *down since* while it is still down. A **Monitored** filter narrows the list to these rows. Interval is 5 minutes to 24 hours (default 15); history is kept 30 days in `data/health-history.json` |
 | **Enlarge statistics** (**v2026.07.21.1**) | The row strip only has room for a 24h figure and one ping. The **⤢** button at the end of it — or `i` — opens the same monitoring data at full size: a large response-time chart with min / average / max marked and a tooltip per point, **uptime side by side for 24h / 7d / 30d** with the number of checks behind each, a taller heartbeat, the check interval and last check, and the full outage list. A window with no samples yet reads *no data* rather than 0%, so a monitor enabled an hour ago does not look like a day of downtime. Nothing is re-fetched — it is the report already on screen — so it opens instantly. `Esc` closes it and leaves your place in the list. The button only appears once there is something to show: a monitored bookmark still awaiting its first check does not get one |
 | **Reading values off the chart** (**v2026.07.22**) | The chart is interactive: click or hover anywhere in a measurement's slice of the plot — a full-height column, not just the dot — and the **readout under the chart** names that measurement: response time, the time it was measured, how many checks the point folds together, and whether it was up, down or degraded. It opens on the most recent measurement rather than empty. `←` / `→` walk point to point and update the readout as they go, skipping buckets with no measurement so you never land on an empty reading. The chart is a single `Tab` stop, so **Close** stays one `Tab` away, and tabbing back in returns to the point you were reading |
-| **Downtime alerts** (**v2026.07.20**) | Optional webhook under **Config → General**, posted when a monitored bookmark goes down and again when it recovers. Fires only after N consecutive failures (default 3, range 1–10) so a single hiccup stays quiet. Works with ntfy, Discord, Slack, and similar. Local addresses are refused unless **Allow local bookmarks** is on — the same SSRF rules as pings |
+| **Downtime alerts** | Optional webhook under **Config → Behavior → Status & health**, posted when a monitored bookmark goes down and again when it recovers. Fires only after N consecutive failures (default 3, range 1–10) so a single hiccup stays quiet. Works with ntfy, Discord, Slack, and similar. Local addresses are refused unless **Allow local bookmarks** is on — the same SSRF rules as pings |
 | **Layout parity** | Uses the same **Classic / Modern** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
 | **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips) |
 | **dashboard link** | Jump to bookmark on correct page/category |
@@ -867,7 +871,7 @@ Filter, sort, and search state persist in the session across refreshes and sync 
 
 From the dashboard, **`Shift+H`** opens the Health view directly. **`:health`** (command mode) opens it with optional filters (`broken`, `duplicate`, `stale`, …) or `refresh` to re-scan. **`:stale`** overflow rows link to `/?hv_filter=stale#health`.
 
-The dashboard **health** icon (**v2026.07.09**, a heartbeat glyph styled like the inbox tab) shows a compact counter pill for broken links and warnings (including shortcut conflicts) — broken count takes priority over warnings, red for broken and amber for warnings, hidden when healthy (**v2026.07.01.1**). When broken issues exist, the link opens `/?hv_filter=broken#health`. Keyboard entry is **`Shift+H`**. On **config**, **General → Essentials → Health →** uses the same routing (Essentials link appears when status monitoring is on).
+The dashboard **health** icon (**v2026.07.09**, a heartbeat glyph styled like the inbox tab) shows a compact counter pill for broken links and warnings (including shortcut conflicts) — broken count takes priority over warnings, red for broken and amber for warnings, hidden when healthy (**v2026.07.01.1**). When broken issues exist, the link opens `/?hv_filter=broken#health`. Keyboard entry is **`Shift+H`**. The config view's **Overview** links to the same place when something needs attention.
 
 ### Stats (`config#stats`)
 
@@ -889,110 +893,79 @@ Read-only analytics (desktop). Filter toolbar sits above a fused **split surface
 
 ## 16. Config — complete walkthrough
 
-Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**, and **Help**. **`1`–`9`** jumps to the Nth visible tab; **`←`/`→`** moves tab-by-tab and crosses into the next group at group edges; **`Alt+←`/`Alt+→`** jumps to the first tab of the previous/next group (when focus is not in an input or modal). **`S`** saves (sticky bar); **`<`** (`Shift+,`) returns to the dashboard, confirming first if there are unsaved changes.
+Configuration is a **view inside the dashboard**, not a separate page. It opens in place — same tab, same session, no page load.
 
-| Tab | Purpose |
-|-----|---------|
-| **general** | Language, appearance, layout, bookmarks (display + behaviour merged), smart collections, status, branding, search — split **Essentials** / **Advanced** |
-| **theme** | Built-in theme picker |
-| **collections** | Custom collection rules |
-| **pages** | Add, rename, archive, reorder pages (auto-save; ↑/↓ keyboard; desktop) |
-| **categories** | Per-page categories — merge, counts, auto-save on reorder and when leaving the tab or changing page (desktop) |
-| **bookmarks** | Split-view editor, bulk actions; **Context** panel for page/category; breadcrumb shows active page/category |
-| **finders** | External search shortcuts |
-| **backups** | ZIP backup/restore, CSV, browser HTML import |
-| **help** | In-app documentation index (EN/NL/DE/FR); What's new recap; searchable via settings search — available on phone |
-| **stats** | Usage insights (desktop) |
-| **keyboard** | Rebind shortcuts — tab under **System** in the grouped tab bar (link from help) |
-| **colors** | Theme editor (`#colors`) — dark/light, custom & packaged palettes, export/import, undo |
-| **tags** | Tag management |
+| To open | To leave |
+|---------|----------|
+| **`Shift+S`**, **`<`** (`Shift+,`), the **config** link in the header, or the `/#config` address | **`Escape`** (unless you are typing in a field), or the back link |
 
-### Essentials vs Advanced (general)
+Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/behavior/privacy` opens Behavior on its Privacy tab, and the address bar keeps up as you click, so whatever you are looking at can be copied and shared.
 
-- **Essentials** — Language, appearance (including favicon styling and a link to **Config → Theme**), layout, everyday bookmark options, smart collections (master toggle + enabled count), and a compact **status monitoring overview** (monitored count + toggle; **Health →** when status is on — opens `/?hv_filter=broken#health` when broken issues exist, otherwise `/#health`; from the dashboard use **`Shift+H`**). Language changes apply immediately; other changes need **Save**.
-- **Advanced** — Full status tuning, branding, **Search & input**, and **System & tools** (launcher mode, device settings) (**v2026.07.07**; the **Tours & onboarding** card was removed in **v2026.07.17** along with everything it controlled). Click a **section title** (+/−) to expand or collapse each panel.
-- **Layer toolbar (v2026.07.04)** — **Essentials**, **Advanced**, and **Show all** switch in one row at the top of the fused General surface.
-- **Sections index & accordion (v2026.07.07)** — a sticky **quick links** sidebar (same split-shell pattern as **Stats** and **Help**) lists every section next to the settings content and highlights whichever section is currently in view as you scroll. Opening a section — from the sidebar or by clicking its own title — collapses whichever other section was open, so only one stays expanded at a time. Clicking the link for an already-open section that's in view collapses it again; clicking the link for an open section that has scrolled out of view scrolls back to it instead of collapsing it invisibly off-screen. Hidden on phones (same panels as the mobile layout below). Sections have a dividing border between them, and the vertical divider next to the quick-links sidebar runs the full height of the page (**v2026.07.08**). Quick-link clicks land on the section title instead of scrolling a few lines past it (**v2026.07.08.1**).
-- **Show all sections** — flat view with every panel on one page; **Expand all** / **Collapse all** bulk controls.
-- **Save row chrome** — Save row and main tab bar use a solid background so scrolling content does not show through. Section panels share consistent row widths across classic and modern layout versions.
-- **↺ Reset** — small reset buttons beside many controls restore that field to its saved default (marks the form dirty until you **Save**).
-- **Hash links** — `config#general`, `#general/advanced/layout`, etc. open the right layer and panel; collapsed panels open when linked from search. Bare `#general` opens **Essentials** on your first visit; after you pick a layer explicitly, it restores your last Essentials / Advanced / All choice.
-- **ℹ** next to labels — Short explanations in EN/NL/DE/FR.
+### The eight sections
 
-### Find settings & quick actions (desktop config)
+| Section | What lives there |
+|---------|------------------|
+| **Overview** | At-a-glance health, headline counts, anything needing attention, and the latest release notes |
+| **Pages & tags** | Pages, categories, tags, finders, and custom collections — five sub-tabs |
+| **Bookmarks** | The bookmark list and its editor, with bulk actions |
+| **Appearance** | Theme, background, fonts, icon size, and custom themes |
+| **Behavior** | Every setting, grouped into seven sub-tabs |
+| **Data & backups** | Backup, restore, import, export — plus **Reset** on its own tab |
+| **Statistics** | Usage insights across five sub-tabs |
+| **Help** | In-app documentation (EN/NL/DE/FR) across seven sub-tabs |
 
-- **Breadcrumb row** — compact path `tab › context` (e.g. `bookmarks › Work › dev`, `tags › filter: work`, `stats › overview › 30d`, `collections › editing: Work`) with sub-context on Bookmarks (page + category), Categories (page), Tags (active filter), Stats (section + period), and Collections (edit selection) (**v2026.07.01.5**). **Search settings…** lives in the same row on the right.
-- **Save row** — compact strip with **Save**, **Undo** / **Discard** (only when there are unsaved changes), **Requires save** / **Auto-save** / **Read-only** / **Save colors** pill, and one dirty/saved/syncing status line.
-- **Tab groups (v2026.07.01)** — **System** (General, Theme, Backups, Stats, Keyboard), **Dashboard** (Pages, Categories, Bookmarks), **Extras** (Tags, Finders, Collections), **Help**. Group width follows tab count; phones show **System** + **Help** only. On **Modern** / **Glass**, the page header, save row, and tab bar appear as one connected card. On **Classic** (**v2026.07.01.3**), the configuration title and header links stay separate from the save row and grouped tabs — each in its own bordered card with spacing between them. When a tab in a group has unsaved changes, the group label shows a dot (e.g. **System ●**) (**v2026.07.01.4**). Active group and tab use stronger accent styling (**v2026.07.04**).
-- **Search settings…** — in the breadcrumb row; **`Ctrl+Shift+K`** / **`Cmd+Shift+K`**. Finds tabs, General panels (including Advanced while Essentials is active), individual labels, stats sections, colors groups, keyboard bindings, and Help blocks. Select a result to switch tab/layer, expand collapsed panels, and scroll there.  
-- **Settings search promo** — on the first desktop config visit (until dismissed), a pulsing search field, **New** badge, and speech balloon beside the search field explain settings search vs quick actions (left/right placement, repositions on scroll, clamped so it never covers the tab bar). Dismiss with **Got it**, focus, or typing. It is the only one-time promo balloon left in the app (**v2026.07.17**). Skips mobile.  
-- **Quick actions** — **`Ctrl+K`** / **`Cmd+K`**. Runs actions only (save, open dashboard). Settings navigation is separate — use search settings, not the command palette.
+### Saving
 
-#### Config tab bar (keyboard)
+**Most settings save the moment you change them.** Tick a checkbox, pick from a dropdown, drag a slider — it is written and confirmed with a short *Saved* message. There is no save button to hunt for and nothing to lose by navigating away.
 
-| Keys | Action |
-|------|--------|
-| `1`–`9` | Jump to the Nth visible config tab |
-| `←` / `→` | Previous / next tab; crosses tab groups at the edges |
-| `Alt` + `←` / `→` | Jump to first tab of previous / next group (**System**, **Dashboard**, **Extras**, **Help**) |
-| `S` | Save (same as **Save** button / sticky bar) |
-| `<` | Back to dashboard (`Shift+,`); asks to confirm if there are unsaved changes (**v2026.07.17.2**) |
-| `Alt` + `↑` / `↓` | Reorder selected bookmark on **Bookmarks** tab |
+The **bookmark editor is the exception**: it collects your edits and writes them when you press **Save**, so a half-finished row is never persisted. It tells you when it has unsaved changes and asks before you discard them.
 
-Guards: shortcuts do not fire while focus is in an input, textarea, select, contenteditable field, or app modal. The dashboard cheat sheet (`!` / `F1`) lists these under **Other**; **config → keyboard** lists them under **Config tab bar**.
+Config only writes what actually changed — editing one setting does not re-upload every page of bookmarks.
 
-#### Layout and structure
+### Sub-tabs
 
-- **Tab groups (v2026.07.01)** — labelled groups **System**, **Dashboard**, **Extras**, **Help** with proportional width; active group highlighted; **Keyboard** under System. Tab bar may show a *more tabs →* hint when it overflows horizontally.
-- **Tab shell (v2026.06.31 / v2026.07.01 / v2026.07.01.1 / v2026.07.01.4 / v2026.07.01.5 / v2026.07.01.8 / v2026.07.04 / v2026.07.05)** — list tabs (Pages, Categories, Tags, Finders, Collections) share the same intro paragraph, toolbar alignment, search/filter field, and empty-state layout (`config-list-tab`, **v2026.07.01.5** / **v2026.07.04**). **Pages** and **Categories** also show a **Usage** column (popularity bar + bookmark count, like Tags) (**v2026.07.01.4**). **Bookmarks** uses a master/detail split with toolbar above the panes (**v2026.07.04**); **Collections** editor sits inside its fused surface (**v2026.07.01.5**). **Stats** uses a Help-style split shell for chip-nav + sidebar (**v2026.07.04**). **Help** uses the same split-shell pattern with chip navigation (**v2026.07.05** / B5). **Theme** color rows use divided-list rhythm inside the fused surface (**v2026.07.04**); Colors subtabs match the General layer switcher (**v2026.07.05**). **Keyboard** and **Backups** use the fused `config-tab-surface` pattern. On **Classic**, **Modern**, and **Glass**, each tab fuses toolbar + content into one surface card with divided rows (Classic **header chrome** stays separate from save row and tabs — **v2026.07.01.3**, C10 reverted). Intro text keeps consistent spacing above toolbars on General, Bookmarks, and list tabs. Config chrome respects `prefers-reduced-motion` (**v2026.07.01.4** / **v2026.07.05** C15); tag cloud, keyboard pulse, health shimmer, settings-search promo, and skeleton loaders also respect it (**v2026.07.01.8**). Unsaved group dots include **Extras ●** when only **Collections** changes (**v2026.07.01.8** / C14).
-- **Save UX** — tabs that auto-save (Pages, Categories, Finders, …) show an **Auto-save** pill in the **save row**; General and Bookmarks show **Requires save** until you click **Save**. Stats is **Read-only**; Theme uses **Save colors**. One status line beside **Save** shows dirty / saved / syncing. **Undo** and **Discard** in the save row appear only when something changed.
-- **Bookmarks** — Display and Behaviour are a **single merged section** with a visual divider between the two groups. Essentials still shows a lightweight subset (favicons, new-tab, quick-add, page tabs). Per-category **A–Z** / **Rec** sort lives on the dashboard category headers, not in Config.  
-### Quick-start card
+Five sections divide their content further. Every strip is a proper tab widget: **`←`/`→`** move between tabs and wrap around at the ends, **`Home`**/**`End`** jump to first and last, and the strip is a single stop in the page's tab order rather than one stop per tab.
 
-**v2026.07.17** replaced the onboarding wizard, the nine config-tab guided tours, the dashboard feature tour, and around twenty one-time discoverability balloons with one lightweight, non-blocking card. Nothing about it dims the page, locks scroll, or blocks other controls — you can ignore it and keep using the dashboard normally.
+| Section | Sub-tabs |
+|---------|----------|
+| **Pages & tags** | Finders · Tags · Collections · Pages · Categories |
+| **Appearance** | General · Custom themes |
+| **Behavior** | General · Date & weather · Layout · Display · Search & inbox · Status & health · Privacy |
+| **Data & backups** | Backups & data · Reset |
+| **Statistics** | Overview · Activity · Content · Inbox · Health |
+| **Help** | Getting started · Configuring · Pages & bookmarks · Search & keyboard · Health & inbox · Data & hosting · About |
 
-**Setup step** — On first load, a compact card in the bottom-left corner walks through three short steps:
+### Working with bookmarks
 
-| Step | Covers |
-|------|--------|
-| 1. Language & theme | UI language, auto dark mode |
-| 2. Layout | Packed columns, columns per row |
-| 3. Links & weather | Open links in new tab or same tab, show weather next to the date, weather location |
+**Bookmarks** lists every bookmark with a search field and a page filter. **Edit** expands a row in place rather than opening a separate panel, carrying name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor).
 
-Skip at any step, or finish to apply your choices immediately. Nothing here is locked in — every setting it touches stays reachable afterwards in **Config → General**.
+**+ Bookmark** opens the same add form the dashboard uses. Tick several rows for the bulk toolbar — move to another page or category, pin, refresh favicons, edit tags across the selection, or delete. **Select all** applies to the rows your filters are currently showing, not the whole library.
 
-**Checklist step** — Once setup is done (or skipped), the same card becomes a short checklist: add your first bookmark, tag a bookmark, open **Config → General**, and see the keyboard cheat sheet (its row is a button, since the toolbar's own cheat-sheet button is off by default on a fresh install — pressing **`!`** or **`F1`** also works). Items check themselves off as you do them; the checklist closes on its own once everything is done, or any time you dismiss it with the **×**.
+### Appearance
 
-**Where it lives** — Progress is stored server-side in `settings.quickStart` (`setupDone`, `dismissed`, `visitedConfig`, `seenCheatsheet`), not in browser `localStorage`, so it stays in sync across devices. Once dismissed or completed, it does not come back. Skips mobile — the phone config layout doesn't run it either.
+**General** covers theme, background (none / gradient / image, with opacity), fonts, icon size, and the display toggles. **Custom themes** is a full editor: build a palette, check its contrast, and apply it. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard in a half-edited state.
 
-**Not the same as** — the **settings search promo** (a separate one-time balloon on your first desktop config visit, see below) or the **What's new** modal, which may still open automatically on dashboard load when there's an unread release.
+Many controls carry an **ℹ** button explaining what the setting does, and a **↺** to put it back to its default.
 
-### Config → Help
+### Reset (Data & backups → Reset)
 
-Available on every screen width (including phone). The **Help** tab uses the shared config split shell: intro paragraph, filter toolbar, chip navigation (mobile), and a sticky **quick links** sidebar next to the help content (same split-shell pattern as **General** and **Stats**, **v2026.07.08**). Topics are consolidated into fewer, broader sections in this order: *Getting started, Configuring nextDash, Keyboard shortcuts, Search/commands/toolbar, Finders, Appearance & display, Organizing bookmarks, Pages/categories/bulk editing, Tags & collections, Inbox, Health & status, Data & backups, Self-hosting & troubleshooting*.
+The destructive actions sit on their own sub-tab so they are not something you scroll past while changing backup settings.
 
-- **Quick links & accordion (v2026.07.08)** — the sidebar highlights whichever section is currently in view as you scroll. Opening a section — from the sidebar or by clicking its own title — collapses whichever other section was open, so only one stays expanded at a time, same behaviour as General's section accordion. Clicking a quick link always scrolls so the section's title lands below the sticky toolbar instead of partway down the section.
-- **Health & status content** (**v2026.07.21.1**) — the section covers status monitoring, the health view and its keyboard, the three availability modes, what a monitored row records, and — since v2026.07.21.1 — **opening those statistics at full size**: what the enlarged view shows, that it renders the report already on screen instead of fetching again, why a window with no samples reads *no data* rather than 0%, and why the button is absent on a bookmark still awaiting its first check. A matching one-liner sits in **Tips & tricks** under *Keeping it healthy*. The help filter matches on section text, so both are searchable (try *response-time chart*).
-- **Support the project** — a **Support me on Ko-fi** button at the bottom of Help, centered on its own row with the same twinkling-star glow animation as the What's New modal's donate CTA (**v2026.07.08**); the **jordibrw.nl** signature link below it is larger and accent-themed.
-- **What's new recap** — scrollable history of up to **25 recent** releases in the ★ modal; **v2026.07.22.6** documents the inbox being brought in line with the health view — the site icon is a 3rem square in the same spot with the same padding (the multi-select checkbox moved to overlay the icon corner instead of taking a leading column), inbox items now carry a real favicon fetched during preview enrichment and stored under `data/icons/` (existing items backfilled once on startup) so the inbox shows the actual site icon rather than a link glyph, summary tiles (Total, Unread, Snoozed, This week) sit above the feed with the first three doubling as filters, and each row shows an added date beside the relative time; a stored inbox favicon is removed on delete or promote unless another bookmark or inbox item still uses it; **v2026.07.22.5** documents bookmark icons showing in the health view again — the view was fetching each icon by its bare filename from the site root instead of from `/data/icons/` where the dashboard loads it, so every icon 404'd (filling the console) and fell back to a placeholder; icons now resolve the same way the dashboard does, with a 🔗 glyph for a genuinely missing file; **v2026.07.22.4** documents Health Edit opening a clickable inline form on the bookmark's page — neighbouring rows still blur, and drag-to-reorder is paused while you edit; **v2026.07.22.3** documents the add-bookmark modal's **Create + New** button — it saves the bookmark and leaves the form open with a cleared body while keeping the selected page and category, so a batch of links can be filed one after another without reopening the modal; **v2026.07.22.2** documents deleting a bookmark in the health view now clearing it from the dashboard grid and smart collections immediately rather than after a reload, and the header flagging a monitored bookmark that is down apart from an ordinary broken link — its own badge, and a one-off pulse on a rise with a 10-minute cooldown against a flapping monitor; **v2026.07.22.1** documents availability checking becoming part of the add-bookmark modal — the same Off / Periodic / Monitor control as Config, with Shortcut and Pinned moved up beside it above the fold — plus the health view's **Monitored** summary tile that turns red while anything is unreachable, and fixes for the (i) explanation opening behind the modal and the modal cutting its own form in half; **v2026.07.22** documents the inbox catching up with the health view — sorting (newest / oldest / title / site), filter, sort and search in the address bar so a view can be bookmarked or shared and returns on the next visit, ticking rows to mark read, snooze or delete just those, and a custom snooze date beyond *next week* — plus the health view's **Export** button (the current filter and search as CSV), the **Monitored** filter no longer hiding until it is used, remembered filter and sort, the enlarged response-time chart becoming readable point by point with a readout and arrow keys, uptime history finally travelling with a backup, and fixes for clipped axis labels, a tip that never reached anyone behind a stale cache token, and Help describing a smaller backup than you get; **v2026.07.21.1** documents opening a monitored bookmark's statistics at full size from the health view — a large response-time chart with min/average/max, uptime for 24h/7d/30d with the checks behind each, interval, last check and the full outage list, opened with **⤢** or `i` and closed with `Esc`, plus the fix that stopped every finished outage reading as *0s*; **v2026.07.21** documents usage analytics becoming **opt-in** — off until you turn it on, with a first-run card offering *Turn on* / *What is recorded?* / *No thanks*, an existing *on* setting carried over untouched, and an unanswered question snoozed rather than nagged or counted as a decline — plus fixes for browser-storage failures that reported saves which never happened; **v2026.07.20** documents uptime monitoring for bookmarks (per-bookmark intervals, 30 days of history, heartbeat/uptime/outages in the health view, and a downtime webhook); **v2026.07.19** documents privacy-friendly anonymous usage analytics — recorded to see which features are used and what can be improved, never to follow individual users, and since v2026.07.21 opt-in via **Config → General → Advanced → Privacy** (when off the tracker is not loaded at all and no request leaves your machine) — plus **occasional keyboard tips** on the dashboard and a **New shortcuts** section at the top of the What's new modal, a **right-click menu** on dashboard bookmarks (open in new tab, copy URL, edit, tags, move, delete) and keyboard access to the **+ N more** toggle on long categories (selection returns to the last bookmark above it, and hidden rows are no longer stepped onto invisibly), the new **Moss & Stone** default theme for fresh installs, the first-run **Starting point** step (keep the example bookmarks or start empty) and a quick-start checklist that no longer ticks items you have not done, a **Delete all bookmarks only** button under Config → General → Reset, a friendly empty state instead of a failing dashboard when no bookmarks exist, pages that pick up updates without a hard reload, and the fix that stops a narrowed desktop window from switching to the mobile layout; **v2026.07.18** documents the per-category **Items per category** limit (default 15, with a **+ N more** / **show less** toggle; smart collections excluded), the **Configuration** header aligned with the dashboard/inbox/health top bar and title size, and new-install defaults (**Midnight Ink** dark theme, leaner starter bookmarks without Tech/Unraid/Phoronix); **v2026.07.17.2** documents the `<` (`Shift+,`) dashboard↔config toggle and Config → General opening compact (Essentials, only Localisation expanded) on first visit; **v2026.07.17.1** documents the custom theme name input styling hotfix; **v2026.07.17** documents the removal of every tour, spotlight, and promo balloon, the new quick-start card, and the Tips & tricks section in Help; **v2026.07.16** documents Inbox snooze, keyboard triage, notes, bulk clean-up, Health always-on, optional background rechecks, and Edit → inline editor; **v2026.07.15** documents health as an in-dashboard view, new `Shift+H` / `Shift+I` view shortcuts, config-header cleanup, and localized health-view/cheat-sheet text parity across EN/NL/DE/FR; **v2026.07.08.1** documents the General quick-link scroll offset hotfix; **v2026.07.08** documents the Help section rework, sticky accordion, animated Ko-fi CTA, and split-shell divider/border fixes; **v2026.07.07** documents General's split-shell (sticky quick links, section accordion), Advanced further split into smaller cards, and number-input styling; **v2026.07.05.1** documents hotfixes (★ corner FAB below tag cloud, Config Help *Show what's new*, modal chrome parity, status-row highlight, save-indicator and merge fixes); **v2026.07.05** documents config shell polish (Help B5, flattened cards, B10/C15), dashboard chrome (toolbar modals for recent/help, D8/D12, fresh-install footer defaults, Classic beta notice); **v2026.07.04** documents config surface polish (General layer toolbar, active tab styling, Stats split-layout, Bookmarks master/detail, Theme colors divided list); **v2026.07.03** documents activity log, security hardening, extension shortcuts, hash-based data revision, modal history depth, General layer scroll preservation, and Playwright E2E suite green; **v2026.07.02** documents bookmark category and tag sync, server data revision, Stats tour re-enabled, and config B6–B11 / A8 / A10 / C15 polish; **v2026.07.01.8** documents inline edit focus (opaque panel + tour blur) and config C14/C15 (Extras unsaved dot, broader reduced motion); **v2026.07.01.5** documents fused Bookmarks/Collections surfaces, list-tab shell, breadcrumb context, tour skip persistence, and health fixes; **v2026.07.01.4** documents Pages/Categories usage columns, Help fused surface, tab group unsaved dots, reduced-motion chrome; **v2026.07.01.1** documents Keyboard/Bookmarks/Stats/Backups fused surfaces; **v2026.07.01** documents config tab bar v5; **v2026.06.31** documents config tab consistency.
-- **Translated** — EN, NL, DE, FR (same keys as the rest of config).
-- **Settings search** — `Ctrl/Cmd+Shift+K` finds Help section titles and scrolls to them.
-- **Keyboard tab link** — opens `config#keyboard` under the **System** tab group for rebinding.
+- **Delete all bookmarks only** — removes every bookmark, keeps pages, categories, and settings. Asks once.
+- **Reset all data** — removes everything. Asks twice: a confirmation, then you type **RESET** (or the word in your language) before the button becomes clickable.
 
-On phone, Help is the only config tab besides **General** that shows the full documentation index; structure tabs need a wider window.
+Back up first — neither can be undone.
 
-### Config keyboard
+### Keyboard
 
 | Keys | Action |
 |------|--------|
-| `1`–`9` | Jump to the Nth visible tab (order follows groups: System → Dashboard → Extras → Help) |
-| `←` / `→` | Previous / next tab; crosses tab groups at the edges |
-| `Alt` + `←` / `→` | Jump to first tab of previous / next group |
-| `S` | Save |
-| `<` | Back to dashboard (`Shift+,`); confirms first if there are unsaved changes |
-| `Alt+↑` / `Alt+↓` | Reorder bookmark in list |
-| `Ctrl/Cmd+K` | Quick actions palette (save, open dashboard) |
-| `Ctrl/Cmd+Shift+K` | Find settings (tabs, panels, labels, help sections) |
+| `Shift+S` or `<` | Open config from the dashboard |
+| `Escape` | Close config and return to the dashboard |
+| `←` / `→` | Previous / next sub-tab (wraps at the ends) |
+| `Home` / `End` | First / last sub-tab |
+
+Shortcuts do not fire while focus is in an input, textarea, select, contenteditable field, or a modal.
 
 ---
 
@@ -1000,7 +973,7 @@ On phone, Help is the only config tab besides **General** that shows the full do
 
 ### ZIP backup (full instance)
 
-**config → backups → Create backup** — ZIP, settings export, and CSV sections appear as divided rows inside one fused surface card on all layout versions (**v2026.07.01.1**).
+**config → data & backups → Backup** — ZIP, settings export, and CSV sections appear as divided rows inside one fused surface card on all layout versions (**v2026.07.01.1**).
 
 Includes pages, bookmarks (with tags), categories, **finders** (`finders.json`), settings, custom themes (`colors.json`), **uptime monitoring history** (`health-history.json`, **v2026.07.22**), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`. Legacy icon files that lived directly in `data/` are exported as `icons/<filename>` so bookmark references survive a full round-trip.
 
@@ -1022,7 +995,7 @@ Bookmarks with **invalid URLs** (wrong scheme, or private/loopback hosts when lo
 
 ### Automatic backups (v2026.07.13)
 
-**config → backups → Automatic Backups** — nextDash automatically creates a full ZIP backup (the same contents as a manual ZIP backup) **once a week** and stores it **on the server**, under `data/auto-backups/`. This is separate from the browser download above: automatic backups live with your instance so they survive even if you never click *Create backup*.
+**config → data & backups → Automatic backups** — nextDash automatically creates a full ZIP backup (the same contents as a manual ZIP backup) **once a week** and stores it **on the server**, under `data/auto-backups/`. This is separate from the browser download above: automatic backups live with your instance so they survive even if you never click *Create backup*.
 
 - **Rotation** — the latest **3** automatic backups are kept. When a new one is written, the **oldest is removed** automatically, so the folder never grows without bound.
 - **Download / Restore / Delete** — each stored backup lists its **date** and **size** with three actions: **Download** (saves the ZIP to your computer), **Restore** (replaces **all** current data with that backup after a confirmation, then reloads — the same effect as importing the ZIP, without the download/upload round-trip), and **Delete** (removes it from the server after a confirmation).
@@ -1039,18 +1012,18 @@ Scheduling is **restart-robust**: rather than a fixed weekly timer, nextDash run
 
 ### Settings export / import
 
-**config → backups** — export or import **`settings.json` only** (without touching bookmarks or pages). Useful for migrating appearance, search, and status settings between instances. Import validates file size and strips migration markers so server-side migrations run correctly on next save.
+**config → data & backups** — export or import **`settings.json` only** (without touching bookmarks or pages). Useful for migrating appearance, search, and status settings between instances. Import validates file size and strips migration markers so server-side migrations run correctly on next save.
 
 ### Factory reset
 
-**config → backups → Reset all data**
+**config → data & backups → Reset → Reset all data**
 
 Permanently deletes pages, categories, bookmarks, finders, settings, custom themes, uploaded favicon/font, all files under `data/icons/`, and health/preview caches. Recreates the **default sample bookmarks** (favicons prefetched in the **background** after startup), built-in settings, and default colour palette. Not a partial wipe — use ZIP backup first if you need to keep anything.
 
 ### Browser HTML import
 
 1. Export bookmarks from Chrome, Firefox, or Edge as **HTML**.  
-2. **config → backups → Import from Browser**.  
+2. **config → data & backups → Import browser bookmarks**.  
 3. Review preview: **X new, Y conflicts (skipped)**.  
 4. Choose target **page**.  
 5. Confirm import.
@@ -1111,11 +1084,9 @@ See `extension/README.md` for development notes.
 
 ### Mobile config
 
-On phones (≤768px width), config limits to **General** and **Help**; use a wider window for full bookmark editing. If you open `/config#bookmarks` on a phone, a **desktop only** card explains the limit and links back to the dashboard.
+Every config section is reachable on a phone — the sections stack and the controls reflow to the narrower width. Bulk bookmark editing is still most comfortable on a wide window.
 
-Within **General** on phone you get **language**, **theme**, and **layout** in that order, plus a compact **Search settings…** for those panels — not the full Essentials/Advanced layers.
-
-**Tablets** — Portrait tablets and other touch layouts above 768px keep the full config (all tabs, Essentials/Advanced layers, settings search in the breadcrumb). Only true phone widths use the reduced layout.
+**Tablets** — Portrait tablets and other touch layouts get the same config as desktop; the sections stack and controls reflow to the width available.
 
 ### Phone vs desktop
 
@@ -1131,9 +1102,9 @@ nextDash uses **phone layout** (≤768px width) for the reduced dashboard footer
 | **Tag word cloud (`/`)** | Use `:tag` or `tag:` in the search overlay | `/` FAB + word cloud (when enabled) |
 | **Page tabs in header** | Scrollable tab strip with scroll-snap; active tab auto-scrolls into view; `← →` swipe hint on multi-page dashboards | Tab strip + keys `1`–`9` |
 | **Health badge** | Hidden — fix links in config on desktop | Header link |
-| **Config tabs** | **General** (language, theme, layout) + **Help**; `#bookmarks` shows desktop-only card | Bookmarks, pages, backup, stats, health, theme editor, all settings |
+| **Config** | All eight sections; content stacks to the narrower width | All eight sections side by side |
 | **Link preview on hover** | Off | When enabled in settings |
-| **Quick-start card & settings search promo** | Skipped / hidden | Optional on first visit |
+| **Quick-start card** | Skipped / hidden | Optional on first visit |
 
 ### Touch gestures
 
@@ -1151,7 +1122,7 @@ Keyboard hints in empty states are hidden on touch.
 
 **Add to Home Screen** uses `/manifest.webmanifest` — custom title/favicon from **branding** settings apply to the installed name/icon.
 
-In **Config → General → Advanced**, the panel under **HyprMode** shows platform-specific install steps and an **Add to home screen** button when your browser supports it. HyprMode (launcher behaviour: open bookmark in a new tab and close the dashboard) pairs well with an installed PWA.
+In **Config → Behavior → General**, the panel under **HyprMode** shows platform-specific install steps and an **Add to home screen** button when your browser supports it. HyprMode (launcher behaviour: open bookmark in a new tab and close the dashboard) pairs well with an installed PWA.
 
 ---
 
@@ -1242,7 +1213,7 @@ By default nextDash stores pages, bookmarks, settings, and uploads under `./data
 
 ### Localhost bookmarks
 
-**Config → General → Advanced → Allow localhost & private-network bookmarks** is **on by default** for dev workflows. Turn it **off** if nextDash is reachable on a shared network (reduces SSRF via status/preview fetches).
+**Config → Behavior → General → Allow localhost & private-network bookmarks** is **on by default** for dev workflows. Turn it **off** if nextDash is reachable on a shared network (reduces SSRF via status/preview fetches).
 
 Server-side **pings**, **link previews**, **icon downloads**, and **auto-heal** only follow HTTP redirects to hosts that pass the same rules as the original URL (public hosts when localhost bookmarks are off). Outbound connections also validate **resolved IP addresses at dial time** (DNS-rebinding protection). Resolved public IPs are **pinned for ~2 minutes** so a hostname cannot switch to a private address between the check and the TCP dial.
 
@@ -1284,7 +1255,7 @@ If you **already had analytics on** before upgrading, it stays on and you are no
 
 #### How to turn it on or off
 
-Go to **Config → General → Advanced → Privacy** and tick or clear the **Privacy-friendly analytics** checkbox. The change applies after the page reloads. Setting it here counts as your answer, so the dashboard card will not ask again.
+Go to **Config → Behavior → Privacy** and tick or clear the **Privacy-friendly analytics** checkbox. The change applies after the page reloads. Setting it here counts as your answer, so the dashboard card will not ask again.
 
 **Or from the keyboard.** Press <kbd>:</kbd> and run **`:telemetry on`** — or `:telemetry off` to switch it back. Typing `:telemetry` on its own lists both options and marks which one is current. The command writes the same setting as the checkbox and reloads the page for you, because the tracker script is emitted server-side: only a fresh page can actually load or unload it.
 
@@ -1369,11 +1340,11 @@ Bookmark index may have changed after reorder/delete. Link still opens the right
 
 ### Settings not applying
 
-Click **Save** in config (sticky bar) when the save row shows **Requires save**. Auto-save tabs (Pages, Categories, Finders, …) persist after a short debounce — watch the status line beside **Save** and the **Auto-save** pill in the save row.
+Most settings save the moment you change them, and confirm with a short *Saved* message. The bookmark editor is the exception: press **Save** there to write your edits.
 
 ### Config Save fails on local/private URLs
 
-A bookmark may use a `192.168.x.x`, `localhost`, or other private host while **Allow localhost & private-network bookmarks** is off. Enable it under **Config → General → Advanced**, change the URL, or let nextDash suggest enabling the flag when private URLs are detected. Save posts settings before bookmarks so the flag applies during validation.
+A bookmark may use a `192.168.x.x`, `localhost`, or other private host while **Allow localhost & private-network bookmarks** is off. Enable it under **Config → Behavior → General**, change the URL, or let nextDash suggest enabling the flag when private URLs are detected. Save posts settings before bookmarks so the flag applies during validation.
 
 ### Quick-start card doesn't appear
 
@@ -1412,12 +1383,13 @@ Set manual city or browser location permission; save general settings; check ref
 arrows nav  Enter open    ; edit       Shift+M move  Shift+T tag  Shift+D delete
 ```
 
-### Config (desktop)
+### Config
 
 ```
-Ctrl/Cmd+K          quick actions (save, open dashboard)
-Ctrl/Cmd+Shift+K    find any setting, tab, or help section
-:layoutversion      switch Classic / Modern layout (dashboard)
+Shift+S  or  <      open config from the dashboard
+Escape              close config, back to the dashboard
+← / →               previous / next sub-tab (wraps)
+Home / End          first / last sub-tab
 ```
 
 ### Important URLs
@@ -1425,9 +1397,9 @@ Ctrl/Cmd+Shift+K    find any setting, tab, or help section
 | URL | Page |
 |-----|------|
 | `/` | Dashboard |
-| `/config` | Settings |
-| `/config#bookmarks` | Bookmark editor |
-| `/config#backups` | Backup / import |
+| `/#config` | Settings |
+| `/#config/bookmarks` | Bookmark editor |
+| `/#config/data-backups` | Backup / import |
 | `/health` | Legacy redirect to `/#health` |
 | `/colors` | Theme editor |
 

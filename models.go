@@ -219,7 +219,6 @@ type Settings struct {
 	ConfigPagesTourCompleted       bool                             `json:"configPagesTourCompleted"`
 	ConfigCollectionsTourCompleted bool                             `json:"configCollectionsTourCompleted"`
 	ConfigThemeTourCompleted       bool                             `json:"configThemeTourCompleted"`
-	CustomKeyBindings              map[string]string                `json:"customKeyBindings,omitempty"` // Custom keyboard key remappings (e.g., {"search": "s", "commands": "c"})
 	BackgroundType                 string                           `json:"backgroundType"`              // "auto", "none", "gradient", "image"
 	BackgroundGradient             string                           `json:"backgroundGradient"`          // preset name used when type="gradient"
 	BackgroundImageUrl             string                           `json:"backgroundImageUrl"`          // URL used when type="image"
@@ -646,7 +645,7 @@ func (fs *FileStore) migrateCustomThemesToUserManaged() {
 	}
 
 	settings := fs.GetSettings()
-	if !isValidThemeID(settings.Theme) {
+	if !fs.isValidThemeIDFor(settings.Theme) {
 		settings.Theme = "cherry-graphite-dark"
 		if err := fs.SaveSettings(settings); err != nil {
 			return
@@ -2049,7 +2048,7 @@ func (fs *FileStore) GetSettings() Settings {
 	if settings.Language == "" {
 		settings.Language = "en"
 	}
-	if !isValidThemeID(settings.Theme) {
+	if !fs.isValidThemeIDFor(settings.Theme) {
 		settings.Theme = "cherry-graphite-dark"
 	}
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
@@ -2200,6 +2199,32 @@ func isValidThemeID(themeID string) bool {
 		return true
 	}
 	_, exists := getDefaultBuiltInThemes()[themeID]
+	return exists
+}
+
+// isValidThemeIDFor reports whether themeID names a theme this store can
+// render: the light/dark pair, a packaged theme, or one the user built.
+//
+// isValidThemeID alone only knows the packaged ones, so saving a custom theme
+// was silently rewritten to the default and the choice never stuck. Reads
+// colors.json directly rather than calling GetColors, which takes the same
+// mutex the settings paths already hold.
+func (fs *FileStore) isValidThemeIDFor(themeID string) bool {
+	if isValidThemeID(themeID) {
+		return true
+	}
+	if themeID == "" {
+		return false
+	}
+	data, err := os.ReadFile(fs.colorsFile)
+	if err != nil {
+		return false
+	}
+	var colors ColorTheme
+	if err := json.Unmarshal(data, &colors); err != nil {
+		return false
+	}
+	_, exists := colors.Custom[themeID]
 	return exists
 }
 

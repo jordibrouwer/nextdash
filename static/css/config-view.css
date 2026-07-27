@@ -1,0 +1,1832 @@
+/*
+ * Config view — configuration as an in-shell dashboard view.
+ *
+ * Phase 2 adds the section navigation and the overview status tiles. The tiles
+ * mirror the health view's card language so the shell reads as one product.
+ */
+
+#dashboard-layout.config-layout {
+    display: block;
+    padding: 0;
+}
+
+.config-view {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 28px;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 8px 0 48px;
+}
+
+@media (max-width: 720px) {
+    .config-view {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+    }
+}
+
+/* ── Section navigation ─────────────────────────────────────────────────── */
+
+.config-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: sticky;
+    top: 8px;
+    align-self: start;
+}
+
+@media (max-width: 720px) {
+    .config-nav {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+}
+
+.config-nav-item {
+    text-align: left;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted, #777);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 1.029);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.config-nav-item:hover {
+    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+    color: var(--text-color, inherit);
+}
+
+.config-nav-item.is-active {
+    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
+    color: var(--accent-color, var(--text-color, inherit));
+    font-weight: 600;
+}
+
+.config-nav-item:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+/* ── Section body ───────────────────────────────────────────────────────── */
+
+.config-view-main {
+    min-width: 0;
+}
+
+.config-view-section-title {
+    margin: 0 0 4px;
+    font-size: calc(var(--font-size-text) * 1.486);
+    font-weight: 600;
+}
+
+.config-view-intro {
+    margin: 0 0 20px;
+    color: var(--text-muted, #888);
+    max-width: 62ch;
+    line-height: 1.5;
+}
+
+.config-view-placeholder {
+    margin: 0;
+    padding: 24px;
+    border: 1px dashed var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 12px;
+    color: var(--text-muted, #888);
+    text-align: center;
+}
+
+/* ── Status tiles ───────────────────────────────────────────────────────── */
+
+.config-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.config-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 12px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+}
+
+/* Severity stripe encodes state independently of the accent hue. */
+.config-tile::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--tile-stripe, var(--accent-color, #4a90d9));
+}
+
+.config-tile--accent  { --tile-stripe: var(--accent-color, #4a90d9); }
+.config-tile--good    { --tile-stripe: #2fa968; }
+.config-tile--warn    { --tile-stripe: #cf9014; }
+.config-tile--crit    { --tile-stripe: #d1493f; }
+.config-tile--neutral { --tile-stripe: var(--border-color, rgba(128, 128, 128, 0.5)); }
+
+.config-tile-label {
+    font-size: calc(var(--font-size-text) * 0.823);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted, #888);
+}
+
+.config-tile-value {
+    font-size: calc(var(--font-size-text) * 1.943);
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.config-tile-detail {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.891);
+    color: var(--text-muted, #888);
+}
+
+.config-tile--action {
+    cursor: pointer;
+    transition: border-color 0.12s ease, transform 0.08s ease;
+}
+
+.config-tile--action:hover {
+    border-color: var(--tile-stripe);
+}
+
+.config-tile--action:active {
+    transform: translateY(1px);
+}
+
+.config-tile--action:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-tile--action,
+    .config-nav-item {
+        transition: none;
+    }
+}
+
+/* ── Panels (settings blocks under the tiles) ───────────────────────────── */
+
+.config-panel {
+    margin-top: 20px;
+    padding: 18px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 12px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+}
+
+.config-panel--danger {
+    border-color: color-mix(in srgb, #d1493f 40%, transparent);
+}
+
+.config-panel-title {
+    margin: 0 0 12px;
+    font-size: calc(var(--font-size-text) * 1.086);
+    font-weight: 600;
+}
+
+.config-panel-note {
+    margin: 0 0 12px;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.971);
+    max-width: 60ch;
+}
+
+.config-panel-empty {
+    margin: 0;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 1.006);
+}
+
+.config-view-loading {
+    margin: 0;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 1.006);
+}
+
+.config-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+.config-btn {
+    padding: 8px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 8px;
+    background: var(--button-bg, transparent);
+    color: var(--text-color, inherit);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.971);
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.config-btn:hover {
+    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+    border-color: var(--accent-color, #4a90d9);
+}
+
+.config-btn:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+.config-btn--small {
+    padding: 5px 10px;
+    font-size: calc(var(--font-size-text) * 0.891);
+}
+
+.config-btn--danger {
+    color: #d1493f;
+    border-color: color-mix(in srgb, #d1493f 45%, transparent);
+}
+
+.config-btn--danger:hover {
+    background: color-mix(in srgb, #d1493f 12%, transparent);
+    border-color: #d1493f;
+}
+
+/* ── Stored backup list ─────────────────────────────────────────────────── */
+
+.config-backup-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.config-backup-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+}
+
+.config-backup-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.config-backup-name {
+    font-size: calc(var(--font-size-text) * 1.006);
+    font-weight: 500;
+}
+
+.config-backup-size {
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+}
+
+.config-backup-row-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* ── Appearance controls (fields, choices, toggles) ─────────────────────── */
+
+.config-field {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.config-field:last-child {
+    margin-bottom: 0;
+}
+
+.config-field-label {
+    font-size: calc(var(--font-size-text) * 0.971);
+    color: var(--text-muted, #888);
+    min-width: 84px;
+}
+
+.config-choices {
+    display: inline-flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    padding: 3px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 9px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+}
+
+.config-choice {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted, #888);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.937);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.config-choice:hover {
+    color: var(--text-color, inherit);
+}
+
+.config-choice.is-active {
+    background: var(--accent-soft, rgba(128, 128, 128, 0.18));
+    color: var(--accent-color, var(--text-color, inherit));
+    font-weight: 600;
+}
+
+.config-choice:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+/* ── Background gradient swatches ────────────────────────────────────────── */
+
+.config-bg-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.config-bg-swatch {
+    height: 44px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    /* The gradient itself is the label, so the box must not tint it. */
+    background-clip: padding-box;
+    box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.25);
+    transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.config-bg-swatch:hover {
+    transform: translateY(-1px);
+}
+
+.config-bg-swatch.is-active {
+    border-color: var(--accent-color, #4a90d9);
+}
+
+.config-bg-swatch:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-bg-swatch {
+        transition: none;
+    }
+    .config-bg-swatch:hover {
+        transform: none;
+    }
+}
+
+.config-toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 12px;
+    font-size: calc(var(--font-size-text) * 1.006);
+    cursor: pointer;
+}
+
+.config-toggle input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-color, #4a90d9);
+    cursor: pointer;
+}
+
+.config-select {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 8px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    color: var(--text-color, inherit);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.971);
+    cursor: pointer;
+}
+
+.config-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.config-select:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+.config-text {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 8px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    color: var(--text-color, inherit);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.971);
+    min-width: 200px;
+}
+
+.config-text:disabled {
+    opacity: 0.5;
+}
+
+.config-text:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+.config-range {
+    accent-color: var(--accent-color, #4a90d9);
+    cursor: pointer;
+    flex: 1;
+    min-width: 120px;
+    max-width: 220px;
+}
+
+.config-range-value {
+    font-size: calc(var(--font-size-text) * 0.914);
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+    min-width: 40px;
+}
+
+/* ── Sub-tabs (Pages & tags) ────────────────────────────────────────────── */
+
+.config-subtabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    padding-bottom: 8px;
+}
+
+.config-subtab {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted, #888);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 1.006);
+    cursor: pointer;
+}
+
+.config-subtab:hover {
+    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+    color: var(--text-color, inherit);
+}
+
+.config-subtab.is-active {
+    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
+    color: var(--accent-color, var(--text-color, inherit));
+    font-weight: 600;
+}
+
+.config-subtab:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+/* ── CRUD lists (finders, tags) ─────────────────────────────────────────── */
+
+.config-crud-list {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.config-crud-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+}
+
+.config-crud-fields {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.config-crud-fields .config-text {
+    flex: 1;
+    min-width: 120px;
+}
+
+.config-tag-count {
+    font-size: calc(var(--font-size-text) * 0.891);
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+    align-self: center;
+    white-space: nowrap;
+}
+
+/* ── List statistics: count badge stacked over a popularity bar ──────────── */
+
+.config-stat-meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    flex: none;
+    min-width: 110px;
+    align-self: center;
+}
+
+.config-stat-meta .config-tag-count {
+    align-self: flex-start;
+}
+
+.config-stat-bar {
+    height: 0.28rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--border-color, rgba(128, 128, 128, 0.35)) 80%, transparent);
+    overflow: hidden;
+}
+
+.config-stat-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent-primary, #6aa9ff) 55%, transparent),
+        var(--accent-primary, #6aa9ff)
+    );
+    transition: width 0.35s ease;
+}
+
+.config-stat--tier-xs .config-stat-bar-fill {
+    opacity: 0.55;
+}
+
+/* Name column for stat-only rows (collection sizes) — no input to flex. */
+.config-stat-name {
+    flex: 1;
+    min-width: 120px;
+    align-self: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-stat-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 0 0 10px;
+    font-size: calc(var(--font-size-text) * 0.891);
+    color: var(--text-muted, #888);
+}
+
+.config-stat-summary-item strong {
+    color: var(--text-primary, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-stat-bar-fill {
+        transition: none;
+    }
+}
+
+.config-crud-row-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.config-color {
+    width: 34px;
+    height: 34px;
+    padding: 2px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 8px;
+    background: var(--card-bg, transparent);
+    cursor: pointer;
+    flex: none;
+}
+
+/* ── Info (ℹ) and reset-to-default (↺) affordances ──────────────────────── */
+
+.config-field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.config-field-affordances {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+}
+
+.config-info-btn,
+.config-reset-btn {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted, #999);
+    font-size: calc(var(--font-size-text) * 0.891);
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.config-info-btn:hover {
+    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
+    color: var(--accent-color, inherit);
+}
+
+/* Reset button only shows when the value differs from the installation default. */
+.config-reset-btn {
+    visibility: hidden;
+    font-size: calc(var(--font-size-text) * 1.086);
+}
+
+.config-reset-btn.is-visible {
+    visibility: visible;
+    color: var(--warn, #cf9014);
+}
+
+.config-reset-btn.is-visible:hover {
+    background: color-mix(in srgb, var(--warn, #cf9014) 16%, transparent);
+}
+
+.config-info-btn:focus-visible,
+.config-reset-btn:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+    visibility: visible;
+}
+
+.config-field-hint {
+    margin: 4px 0 12px;
+    padding-left: 2px;
+    font-size: calc(var(--font-size-text) * 0.914);
+    line-height: 1.5;
+    color: var(--text-muted, #888);
+    max-width: 70ch;
+}
+
+/* A caveat that has to be read before choosing, not a passing note — carries a
+   warning tint and a rule so it separates from the ordinary hints around it. */
+.config-field-warning {
+    margin: 6px 0 4px;
+    padding: 6px 10px;
+    border-left: 3px solid var(--accent-warning, #d08b28);
+    border-radius: 0 6px 6px 0;
+    background: color-mix(in srgb, var(--accent-warning, #d08b28) 10%, transparent);
+    font-size: calc(var(--font-size-text) * 0.914);
+    line-height: 1.5;
+    color: var(--text-color, inherit);
+    max-width: 70ch;
+}
+
+/* ── Overview ────────────────────────────────────────────────────────────── */
+
+/* Two columns where there is room; the panels stack on a narrow window. */
+.config-overview-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0 18px;
+    align-items: start;
+}
+
+/* "Needs attention" rows: count, what it is, and the way to deal with it. */
+.config-attention-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-attention-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
+    border-left-width: 3px;
+    border-radius: 9px;
+}
+
+.config-attention-row--crit { border-left-color: var(--accent-error, #d1493f); }
+.config-attention-row--warn { border-left-color: var(--accent-warning, #cf9014); }
+.config-attention-row--neutral { border-left-color: var(--border-primary, rgba(128, 128, 128, 0.5)); }
+
+.config-attention-count {
+    font-size: calc(var(--font-size-text) * 1.35);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 1.6em;
+    text-align: right;
+}
+
+.config-attention-row--crit .config-attention-count { color: var(--accent-error, #d1493f); }
+.config-attention-row--warn .config-attention-count { color: var(--accent-warning, #cf9014); }
+
+.config-attention-label {
+    overflow-wrap: anywhere;
+}
+
+.config-attention-clear {
+    margin: 0;
+    color: var(--accent-success, #2fa968);
+    font-size: calc(var(--font-size-text) * 0.95);
+}
+
+/* Compact key/value list used by the at-a-glance panel. */
+.config-mini-list {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.config-mini-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 0;
+    font-size: calc(var(--font-size-text) * 0.95);
+    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.14));
+}
+
+.config-mini-row:last-child {
+    border-bottom: none;
+}
+
+.config-mini-value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.config-score--compact {
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.config-score--compact > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.config-score--compact .config-score-value {
+    font-size: calc(var(--font-size-text) * 1.9);
+    min-width: 2.2em;
+}
+
+.config-score--compact .config-field-hint {
+    margin: 4px 0 0;
+}
+
+.config-release-tag {
+    margin: 0 0 6px;
+    font-weight: 600;
+    font-size: calc(var(--font-size-text) * 0.95);
+    color: var(--accent-color, #4a90d9);
+}
+
+/* ── Save state ──────────────────────────────────────────────────────────── */
+
+.config-view-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/*
+ * Settings here save on change, so this indicator is the only confirmation a
+ * change landed. It is fixed rather than sitting in the header because the
+ * header scrolls away on the long tabs, and a confirmation you have to scroll
+ * back up to read confirms nothing. Bottom-centre keeps it clear of the section
+ * rail on the left and the dashboard's own controls on the right.
+ */
+.config-save-state {
+    position: fixed;
+    /* Right-hand side rather than centred: the dashboard's own button dock sits
+       bottom-centre, and z-index alone would leave the two stacked on top of
+       each other. Above the notification layer (2001) so a save is never hidden
+       behind chrome, and lifted clear of the toast that shares this corner. */
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 52px);
+    transform: translateY(6px);
+    z-index: 2100;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+    background: var(--background-secondary, rgba(20, 20, 20, 0.92));
+    color: var(--text-secondary, #666);
+    font-size: calc(var(--font-size-text) * 0.88);
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+/* Empty means idle: nothing to say, so nothing is shown. */
+.config-save-state:empty {
+    display: none;
+}
+
+.config-save-state.is-saving,
+.config-save-state.is-saved,
+.config-save-state.is-error {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.config-save-state.is-saved {
+    border-color: var(--accent-success, #2fa968);
+    color: var(--accent-success, #2fa968);
+}
+
+.config-save-state.is-error {
+    border-color: var(--accent-error, #d1493f);
+    color: var(--accent-error, #d1493f);
+    /* An error must not fade on its own the way a success does. */
+    pointer-events: auto;
+}
+
+.config-save-state.is-saved::before {
+    content: "✓ ";
+}
+
+.config-save-state.is-error::before {
+    content: "⚠ ";
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-save-state {
+        transition: none;
+    }
+}
+
+/* ── Statistics visualisations ───────────────────────────────────────────── */
+
+/* Screen-reader table carrying the chart's numbers. */
+.config-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.config-score {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.config-score-value {
+    font-size: calc(var(--font-size-text) * 2.4);
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    min-width: 3.2em;
+}
+
+.config-score-value--good { color: var(--accent-success, #2fa968); }
+.config-score-value--warn { color: var(--accent-warning, #cf9014); }
+.config-score-value--crit { color: var(--accent-error, #d1493f); }
+
+/* One bar primitive, reused by the score, the coverage ratios and the
+   per-page distribution. */
+.config-bar {
+    flex: 1;
+    height: 10px;
+    min-width: 0;
+    border-radius: 999px;
+    background: var(--border-primary, rgba(128, 128, 128, 0.22));
+    overflow: hidden;
+}
+
+.config-bar--slim {
+    height: 6px;
+}
+
+.config-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent-color, #4a90d9);
+    transition: width 0.25s ease;
+}
+
+.config-bar-fill--good { background: var(--accent-success, #2fa968); }
+.config-bar-fill--warn { background: var(--accent-warning, #cf9014); }
+.config-bar-fill--crit { background: var(--accent-error, #d1493f); }
+
+@media (prefers-reduced-motion: reduce) {
+    .config-bar-fill {
+        transition: none;
+    }
+}
+
+.config-stat-details {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.config-stat-detail {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: calc(var(--font-size-text) * 0.95);
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.14));
+}
+
+.config-stat-detail:last-child {
+    border-bottom: none;
+}
+
+.config-stat-detail--good { color: var(--accent-success, #2fa968); }
+.config-stat-detail--warn { color: var(--accent-warning, #cf9014); }
+.config-stat-detail--bad  { color: var(--accent-error, #d1493f); }
+
+.config-stat-penalty {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.config-stat-sub {
+    color: var(--text-muted, #888);
+}
+
+.config-stat-figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 12px 0;
+    font-size: calc(var(--font-size-text) * 0.95);
+}
+
+.config-stat-trend--up   { color: var(--accent-success, #2fa968); }
+.config-stat-trend--down { color: var(--accent-error, #d1493f); }
+
+/* The activity bar chart. Fixed height, full width, labels underneath. */
+.config-chart {
+    margin-top: 6px;
+}
+
+.config-chart svg {
+    display: block;
+    width: 100%;
+    height: 72px;
+}
+
+.config-chart-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
+.config-ratio {
+    margin-bottom: 14px;
+}
+
+.config-ratio:last-child {
+    margin-bottom: 0;
+}
+
+.config-ratio-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 5px;
+    font-size: calc(var(--font-size-text) * 0.95);
+}
+
+.config-ratio-label {
+    font-weight: 600;
+}
+
+.config-ratio-value {
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Distribution rows: label, bar, count — aligned in a grid so the bars line up. */
+.config-dist-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.config-dist-row {
+    display: grid;
+    grid-template-columns: minmax(6rem, 11rem) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.config-dist-label {
+    font-size: calc(var(--font-size-text) * 0.95);
+    overflow-wrap: anywhere;
+}
+
+.config-dist-count {
+    font-variant-numeric: tabular-nums;
+    font-size: calc(var(--font-size-text) * 0.95);
+    color: var(--text-muted, #888);
+    min-width: 2.5em;
+    text-align: right;
+}
+
+@media (max-width: 560px) {
+    .config-dist-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .config-dist-row .config-bar {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Which availability mode a panel's settings actually affect. */
+.config-applies-to {
+    margin-left: 10px;
+    padding: 2px 8px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+    border-radius: 999px;
+    font-size: calc(var(--font-size-text) * 0.800);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-muted, #888);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* The three-mode legend at the top of Status & health. */
+.config-mode-list {
+    list-style: none;
+    margin: 10px 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-mode-row {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+}
+
+.config-mode-name {
+    font-weight: 600;
+    font-size: calc(var(--font-size-text) * 0.914);
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-align: center;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+}
+
+/* Monitor is the one that raises alerts, so it carries the accent. */
+.config-mode-name--monitor {
+    border-color: var(--accent-success, #34d399);
+    color: var(--accent-success, #34d399);
+}
+
+.config-mode-hint {
+    font-size: calc(var(--font-size-text) * 0.971);
+    line-height: 1.55;
+    color: var(--text-secondary, #666);
+}
+
+@media (max-width: 560px) {
+    .config-mode-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2px;
+    }
+
+    .config-mode-name {
+        justify-self: start;
+    }
+}
+
+/* Per-collection page scope: a checkbox per page, wrapping into rows. */
+.config-field-block {
+    margin: 14px 0;
+}
+
+.config-scope-pages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 6px;
+}
+
+.config-scope-page {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(var(--font-size-text) * 0.971);
+    cursor: pointer;
+}
+
+/* Bookmarks section: search + page filter above the list. */
+.config-crud-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.config-crud-toolbar .config-text {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+/* A bookmark row stacks its own grid: the summary and the action buttons share
+   the top line, and the editor drops onto a second line when expanded. The
+   shared .config-crud-row is flex with no wrap, which would squeeze the summary
+   column to nothing, so this overrides the display outright rather than trying
+   to make the editor fit beside it. */
+.config-bm-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    row-gap: 10px;
+    column-gap: 10px;
+}
+
+.config-bm-tick {
+    margin-top: 3px;
+    flex: none;
+    cursor: pointer;
+}
+
+/* Bulk bar: groups wrap as a unit so a group's controls never split across lines. */
+.config-bulk-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--accent-color, rgba(74, 144, 217, 0.5));
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--accent-color, #4a90d9) 7%, transparent);
+}
+
+.config-bulk-count {
+    font-weight: 600;
+    font-size: calc(var(--font-size-text) * 0.971);
+    white-space: nowrap;
+}
+
+.config-bulk-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    min-width: 0;
+}
+
+.config-bulk-group .config-text {
+    min-width: 0;
+    width: 12rem;
+}
+
+.config-bulk-group .config-select {
+    min-width: 0;
+}
+
+/* Editor layout: a two-column grid where each cell stacks its own label above
+   its control, so controls line up down the column without depending on the
+   label lengths. Long values (name, URL, tags) span both columns. */
+.config-bm-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 18px;
+    align-items: start;
+}
+
+.config-bm-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.config-bm-cell--wide {
+    grid-column: 1 / -1;
+}
+
+.config-bm-label {
+    font-size: calc(var(--font-size-text) * 0.914);
+    font-weight: 600;
+    color: var(--text-secondary, #666);
+}
+
+.config-bm-label-hint {
+    font-weight: 400;
+    color: var(--text-muted, #888);
+    margin-left: 0.35em;
+}
+
+/* Inputs fill their cell rather than sitting at some default width. */
+.config-bm-cell .config-text,
+.config-bm-cell .config-select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.config-bm-url-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.config-bm-url-row .config-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-bm-url-row .config-btn {
+    flex: none;
+}
+
+.config-bm-fetch-state {
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+    min-width: 4.5rem;
+}
+
+/* The pin uses the same pill the bookmark editor and add modal use, so it
+   picks up the theme rather than looking like a bare checkbox. */
+.config-bm-pin {
+    align-self: start;
+}
+
+.config-bm-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.config-bm-icon-row .config-text {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.config-bm-icon-preview {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.config-bm-icon-img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.config-bm-icon-empty {
+    color: var(--text-muted, #888);
+}
+
+.config-bm-note {
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.config-bm-shortcut {
+    text-transform: uppercase;
+}
+
+/* Under the narrow breakpoint the paired cells stack rather than squeezing. */
+@media (max-width: 720px) {
+    .config-bm-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.config-bm-newcat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: -6px 0 14px;
+}
+
+.config-bm-newcat[hidden] {
+    display: none;
+}
+
+.config-bm-newcat .config-text {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.config-bm-conflict {
+    color: var(--accent-error, #fb7185);
+    margin-top: -8px;
+}
+
+.config-bm-conflict[hidden] {
+    display: none;
+}
+
+/* Save/Revert sit above and below the form, so a long editor never hides them. */
+.config-bm-savebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.config-bm-savebar--top {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
+}
+
+.config-bm-savebar--bottom {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
+}
+
+.config-bm-dirty {
+    font-size: calc(var(--font-size-text) * 0.914);
+    color: var(--accent-warning, #f59e0b);
+}
+
+.config-bm-dirty[hidden] {
+    display: none;
+}
+
+.config-bm-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.config-bm-name {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.config-bm-url,
+.config-bm-meta {
+    font-size: calc(var(--font-size-text) * 0.914);
+    color: var(--text-muted, #888);
+    overflow-wrap: anywhere;
+}
+
+/* The editor spans both columns on its own line. */
+.config-bm-editor {
+    grid-column: 1 / -1;
+    min-width: 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+}
+
+.config-bm-editor .config-text,
+.config-bm-editor .config-select {
+    min-width: 0;
+}
+
+.config-help-tips {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.config-help-tip {
+    font-size: calc(var(--font-size-text) * 1.006);
+    line-height: 1.6;
+}
+
+/* ── Help prose ──────────────────────────────────────────────────────────── */
+
+/* Translator-supplied HTML: paragraphs, lists, <strong>, <em>, <code>. Styled
+   here rather than inline so every help page reads the same. */
+.config-help-prose {
+    font-size: calc(var(--font-size-text) * 0.957);
+    line-height: 1.65;
+    color: var(--text-color, inherit);
+    max-width: 76ch;
+}
+
+.config-help-prose p {
+    margin: 0 0 10px;
+}
+
+.config-help-prose p:last-child,
+.config-help-prose ul:last-child {
+    margin-bottom: 0;
+}
+
+.config-help-prose ul {
+    margin: 0 0 10px;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.config-help-prose strong {
+    color: var(--text-color, inherit);
+    font-weight: 600;
+}
+
+.config-help-prose code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.92em;
+    white-space: nowrap;
+}
+
+/* ── Favicon harmonisation preview ───────────────────────────────────────── */
+
+.config-icon-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 4px;
+}
+
+/* The wrapper carries .icon-themed--<style>; theme.css's variant rules target
+   the .preview-icon inside it, so the sample gets the real treatment. Only the
+   swatch's own size and colour are set here. */
+.config-icon-preview-dot .preview-icon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #e8663d 0%, #3d7de8 50%, #35c07a 100%);
+}
+
+/* ── Ko-fi support block ─────────────────────────────────────────────────── */
+
+/* The button itself is the shared .wn-kofi-* set from modal.css; only this
+   surrounding block lived in a config-only stylesheet the dashboard does not
+   load, so it is ported here rather than pulling in the whole file. */
+.help-support-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin: 16px 0 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 9px;
+    font-size: calc(var(--font-size-text) * 0.914);
+    text-align: center;
+}
+
+.help-support-block .wn-kofi-btn {
+    font-size: calc(var(--font-size-text) * 0.957);
+    padding: 0.5rem 1.1rem;
+}
+
+.help-support-label {
+    color: var(--text-muted, #888);
+}
+
+.help-signature {
+    margin: 8px 0 0;
+    text-align: center;
+    font-size: calc(var(--font-size-text) * 1.006);
+}
+
+.help-signature-link {
+    /* --accent-primary, not --accent-color: the themes define the former, and
+       the latter resolves to nothing here — leaving the raw blue fallback. */
+    color: var(--accent-primary, var(--accent-color, #4a90d9));
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.help-signature-link:hover {
+    text-decoration: underline;
+}
+
+.config-tile-hint {
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-muted, #888);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-choice {
+        transition: none;
+    }
+}
+
+
+/* The in-app replacement for window.confirm. The overlay, panel and buttons
+   come from modal.css; only the message needs styling here. */
+.config-confirm-message {
+    margin: 0;
+    line-height: 1.5;
+    color: var(--text-color, inherit);
+    max-width: 46ch;
+}
+
+/* A finder URL with no %s placeholder: search.js cannot substitute the query,
+   so the field is flagged the same way a conflicting shortcut is. */
+.config-text.field-conflict {
+    border-color: var(--accent-warning, #d08b28);
+}
+
+.config-text.field-conflict:focus {
+    outline-color: var(--accent-warning, #d08b28);
+}
+
+/* ── Custom theme editor ─────────────────────────────────────────────────── */
+
+/* The three-colour preview beside each theme in the list, so a theme is
+   recognisable before you open it. */
+.config-theme-swatches {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.config-theme-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.4));
+    display: inline-block;
+}
+
+.config-crud-row.is-active {
+    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+}
+
+.config-theme-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+}
+
+.config-theme-group-title {
+    margin: 0 0 8px;
+    font-size: calc(var(--font-size-text) * 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+}
+
+.config-theme-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* A native colour input needs its chrome stripped to read as a swatch. */
+.config-theme-picker {
+    inline-size: 34px;
+    block-size: 28px;
+    padding: 0;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.4));
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    flex: none;
+}
+
+.config-theme-picker::-webkit-color-swatch-wrapper { padding: 2px; }
+.config-theme-picker::-webkit-color-swatch { border: none; border-radius: 4px; }
+.config-theme-picker::-moz-color-swatch { border: none; border-radius: 4px; }
+
+.config-theme-hex {
+    flex: 1 1 110px;
+    min-width: 0;
+    font-family: var(--font-mono, monospace);
+}
+
+/* Set by ColorValueUtils.validateTextInput on an unparseable colour. */
+.config-theme-hex.color-input-invalid {
+    border-color: var(--accent-error, #b3423f);
+}
+
+/* A panel that continues the one above it: the onboarding actions belong to the
+   Onboarding settings, not to a section of their own. */
+.config-panel--attached {
+    margin-top: -10px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: none;
+}
+
+/* The inbox source breakdown. Scrolls inside its own box rather than pushing
+   the panel wide on a narrow screen. */
+.config-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: calc(var(--font-size-text) * 0.93);
+}
+
+.config-stats-table th,
+.config-stats-table td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-secondary, rgba(128, 128, 128, 0.2));
+}
+
+.config-stats-table thead th {
+    font-weight: 600;
+    opacity: 0.75;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: calc(var(--font-size-text) * 0.82);
+}
+
+.config-stats-table td {
+    font-variant-numeric: tabular-nums;
+}
+
+.config-stats-table tbody tr:last-child th,
+.config-stats-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Appearance tiles hold words ("Source Code Pro"), not the short numbers the
+   stats tiles were sized for, so the value scales down and wraps rather than
+   overflowing its box. A minimum height keeps the row even when some tiles
+   carry a detail line and others do not. */
+.config-tiles--text .config-tile {
+    min-height: 96px;
+    justify-content: flex-start;
+}
+
+.config-tiles--text .config-tile-value {
+    font-size: calc(var(--font-size-text) * 1.15);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.config-tiles--text .config-tile-detail {
+    margin-top: auto;
+    padding-top: 4px;
+}
+
+/* ── Custom collections editor ───────────────────────────────────────────── */
+
+.config-collection-editor {
+    list-style: none;
+    padding: 0;
+}
+
+.config-collection-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-collection-rule {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.config-collection-rule .config-text {
+    flex: 1 1 140px;
+    min-width: 0;
+}
+
+/* The tag cloud in config reuses the dashboard's .tag-cloud-word styling; only
+   the surrounding block needs a box of its own here. */
+.config-tag-cloud {
+    margin: 12px 0 16px;
+    padding: 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 12px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    justify-content: flex-start;
+}
+
+/* A selected tag in the config cloud.
+   The shared .is-selected only recolours the text and underlines it, which is
+   easy to miss among words that already vary in size and weight. Inside config
+   the selected word gets a real chip — border, tinted fill — so "which tag am I
+   filtered to" is answerable at a glance. */
+.config-tag-cloud .tag-cloud-word {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.config-tag-cloud .tag-cloud-word:hover {
+    border-color: var(--border-primary, rgba(128, 128, 128, 0.35));
+}
+
+.config-tag-cloud .tag-cloud-word.is-selected {
+    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+    background: color-mix(in srgb, var(--accent-primary, #4A7038) 14%, transparent);
+}
+
+/* The shared rule underlines the label; inside the chip that reads as noise. */
+.config-tag-cloud .tag-cloud-word.is-selected .tag-cloud-word-label {
+    text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-tag-cloud .tag-cloud-word {
+        transition: none;
+    }
+}

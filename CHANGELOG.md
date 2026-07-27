@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.23 — July 2026](#v20260723--july-2026)
 - [v2026.07.22.6 — July 2026](#v202607226--july-2026)
 - [v2026.07.22.5 — July 2026](#v202607225--july-2026)
 - [v2026.07.22.4 — July 2026](#v202607224--july-2026)
@@ -112,6 +113,76 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.23 — July 2026
+
+**Configuration is no longer a separate page.** It opens inside the dashboard as a view, in the same tab, regrouped from fourteen tabs into eight sections that can each be linked to directly. The old page and everything only it used — 32 JavaScript modules, 27 stylesheets, its template, and twelve test files — is deleted: **38,189 lines removed against 17,894 added** across 149 files.
+
+### Configuration as a view
+
+- **new** **Config opens in place** — settings used to be a separate page: leaving the dashboard meant a full load, and coming back meant loading the dashboard again from scratch. Configuration is now a view inside the dashboard shell, opened with `Shift+S`, `<` (`Shift+,`), or the header icon, and closed with `Esc`. The dashboard is never unloaded, so the page you were on, your scroll position and your keyboard selection are all still there when you return. `/config` remains as a redirect into the view, and legacy section links (`/config?section=tags`) map onto the new sections rather than dead-ending.
+- **new** **Eight sections instead of fourteen tabs** — the old tab bar had fourteen tabs across four labelled groups (System, Dashboard, Extras, Help), and finding a setting meant knowing which group it had been filed under. The view groups by task: **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, **Help**. Sections that carry a lot divide into sub-tabs — Behavior into seven (General, Date & weather, Layout, Display, Search & inbox, Status & health, Privacy), Pages & tags into five, Statistics into five, Help into seven.
+- **new** **Deep links to any section or sub-tab** — `/#config/appearance` opens Appearance; `/#config/behavior/privacy` opens Behavior on its Privacy tab. The address bar tracks what you are looking at as you click, so a setting can be linked to from a note or a message. Anything in the app that points at a setting now lands on the setting: the analytics notice's *Turn on* button opens Behavior → Privacy directly instead of reloading the page and discarding the navigation.
+- **new** **Settings save on change** — the old page batched edits behind a save bar with *Requires save* / *Auto-save* / *Read-only* pills, an undo, a discard, and a dirty-state line, and which tabs needed the button was never obvious. Controls now write immediately and confirm with a short *Saved* message. The bookmark editor is the deliberate exception: it collects a row's edits and writes them on **Save**, so a partly-typed URL is never persisted, and it confirms before discarding unsaved changes. Only what changed is written — editing one setting does not re-upload every page of bookmarks.
+
+### Sections
+
+- **new** **Overview** — a new landing screen. Broken links, monitors that are down, duplicate URLs and an unread inbox each appear as a row with a button that opens the right view with the right filter; a clean install gets one *nothing needs attention* line rather than five zeroes. Headline counts, a rotating set of tips, and the latest release summary sit alongside.
+- **new** **Bookmarks** — the master/detail split is replaced by a list whose rows expand in place. The editor carries every field a bookmark has: name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor) — rather than hiding shortcut, icon, previews and status under *More options*. The bulk toolbar acts on the rows the filters are showing, so **Select all** covers the visible list rather than the whole library.
+- **new** **Appearance** — theme, background (none / gradient / image with opacity), fonts, icon size and display toggles in one place, with a **custom themes** editor beside them: build a palette, check its contrast, apply it. Edits preview live on the dashboard behind the view; leaving the tab drops an unsaved preview instead of leaving the dashboard half-edited.
+- **new** **Statistics** — split across Overview, Activity, Content, Inbox and Health rather than one continuous scroll. The **Inbox** block is new: what is waiting, how long it has waited, per-source inflow, and the share of items actually converted into bookmarks.
+- **new** **Pages & tags** — pages, categories, tags, finders and custom collections grouped together as the structural editors they are. The **tag word cloud** returns, and a selected word now carries a visible border; selecting one previously produced no visible change, which read as the click having failed.
+- **new** **Data & backups** — backup, restore, import and export, with **Reset** on its own sub-tab.
+- **new** **Help** — rewritten across seven tabs rather than carried over.
+- **new** **Settings that had no control are reachable again** — the layout preset and density, the per-category items-per-category limit, the background gradient and image pickers, and the full set of button-bar positions are all honoured by the dashboard but had no control in the first cut of the view, which made working features unreachable rather than merely unconfigurable.
+- **new** **Favicon harmonisation** — the per-theme favicon styling returns: toggle, **Muted / Tinted / Overlay**, and an intensity slider, with style and intensity hidden while it is off. Configured per theme, so the two halves of a dark/light pair are set separately.
+- **new** **Bookmark counts on the structural lists** — pages, categories and tags carried a count and a popularity bar in the old config and were listed bare in the new one; both are back.
+- **new** **Onboarding settings grouped** — *Show occasional keyboard tips* was present and working but sat as a bare checkbox among unrelated options such as Hypr mode, with nothing explaining what *occasional* meant. The old text described tab groups, Essentials/Advanced layers and a save button that no longer exist.
+
+### Editing your structure
+
+- **fix** **Deleting a category or a finder took effect on the first click** — no confirmation and no undo, while bookmarks, pages, tags and bulk delete all asked first. Both now confirm through the same in-app dialog.
+- **fix** **A finder URL without `%s` silently dropped the query** — `search.js` does `searchUrl.replace('%s', query)`, which is a no-op when the placeholder is absent: the finder opened the bare URL and threw away what was typed. The old config warned about this and the new one did not, so a finder could look correctly saved and simply misbehave. The field now flags it, and blank finder rows are no longer saved.
+- **fix** **Assigning a category left bookmarks in an "unknown category"** — the id was written onto the bookmark, but nothing added the category to the target page's own list. A page that had never used that category then held bookmarks pointing at an id it did not define, which the dashboard renders as unknown. The category is now added to every page its bookmarks appear on.
+- **fix** **Category reorder buttons announced only "↑" and "↓"** — the identical buttons on Pages already carried `aria-label`s, and the locale keys existed; the category buttons simply never used them.
+
+### Reset and backups
+
+- **fix** **Backups could not be downloaded or restored** — two bugs, the first hiding the second. *Download backup* used `window.location.href = '/api/backup'`, a plain navigation that carries no write token, so a protected instance answered `401` and nothing downloaded. Behind it, restore posted the archive under a field name the server did not read. The download now goes through an authenticated request that saves a blob, and `Import` accepts a whole `.zip` under `file` as well as unpacked files under `files`.
+- **fix** **The reset buttons did nothing** — *Reset all data* and *Delete all bookmarks only* POSTed with no request body, while the server requires an explicit `{"confirm":true}` and answers `400 Confirmation required`. The `catch` swallowed the failure, so clicking either appeared to be ignored entirely. Both now send the confirmation. The regression test asserts the server's response status rather than that a click occurred — the weakness that let this ship, since a test watching only the click would have passed with the bug present.
+- **new** **Reset moved to its own sub-tab, and asks twice** — the destructive actions no longer sit on the tab you scroll through to change backup settings. *Reset all data* asks for confirmation and then requires you to **type the confirmation word** (`RESET`, translated per language) before the button becomes enabled, so a mistype cannot fire it. This restores a second gate the old config had, which the first port had dropped.
+- **fix** **Backups repacked inside a folder were rejected** — `isValidImportFilename` accepts flat names plus `icons/`, so a zip whose entries sat under a wrapping directory (which the Finder and most archive tools create when you re-zip an unpacked backup) had every entry silently skipped, and the import failed with *No files provided* — as though no file had been attached at all. A single common top-level directory is now stripped before validation. `icons/` is deliberately not treated as a wrapper, since it is part of the backup layout and stripping it would flatten icons into the data directory.
+
+### Keyboard and accessibility
+
+- **new** **Sub-tab strips follow the ARIA tabs pattern** — the six strips carried `role="tablist"`, `role="tab"` and `aria-selected` but bound only click, so a screen reader announced a tab widget whose standard keys did nothing, and no `aria-controls` or `role="tabpanel"` tied a tab to what it showed. `←` / `→` now move between tabs and wrap at both ends, `Home` / `End` jump to the first and last, and `tabindex` roves so a strip is one stop in the page tab order rather than one per tab. Sections that repaint wholesale restore focus to the rebuilt button, so a second arrow press still lands.
+- **fix** **Custom key bindings are still in development** — the old config had a **Keyboard** tab for rebinding shortcuts. It has not been rebuilt in the view, and the `customKeyBindings` setting behind it has been retired: it was stored on `Settings` but nothing ever read it back, so a rebound key never actually took effect. It is removed rather than carried over half-working, and will return as a working feature. Shortcuts keep their defaults meanwhile; the cheat sheet (`!` / `F1`) lists them.
+
+### Fixes
+
+- **fix** **`/colors` landed on the config overview** — it redirected to `/config#colors`, which then chained through the `/config` redirect. That redirect reads only `?section=`, and a fragment never reaches the server, so `#colors` was dropped and the destination became the overview rather than the colour settings. `/colors` now targets `/#config/appearance` directly.
+- **fix** **Category statistics all read zero** — counts were keyed by category name while bookmarks store the category id, so every category reported 0 regardless of how many bookmarks it held.
+- **fix** **Custom themes could not be selected** — `isValidThemeID` validated against the built-in list only, so choosing a saved custom theme was silently rewritten back to a packaged one on save.
+- **fix** **Smart-collection limit dropdowns showed a value that was not set** — the options offered 5/10/15/20/30 while the stored defaults were 8, 25 and 50. A `<select>` whose value is absent from its options falls back to the first one, so the control displayed *5* and wrote that back on the next save, changing a setting you had only looked at.
+- **fix** **Duplicate names were accepted** — pages, categories, tags, collections and finders could all be given a name that already existed, leaving two entries with no way to tell them apart. One shared guard now checks each of them.
+- **fix** **A new category created from the bookmark editor was not saved to its page** — it was written onto the bookmark but never added to the page's category list, so it vanished from the dashboard.
+- **fix** **Tips and setting explanations pointed at sections that no longer exist** — several named the old *config → backups* or *config → general → advanced → bookmarks*, so following one led nowhere. Each now names the section the setting actually lives in, using each language's own section label.
+- **fix** **A fresh load of `/#config` landed on the bookmark grid** — the startup page load rewrote the hash to `#<n>` before anything consumed it, the same blind spot `#health` and `#inbox` were already guarded against.
+- **fix** **The two config shortcuts disagreed** — `<` navigated to the standalone `/config` page with a full reload while `Shift+S` opened the view in place, so the same intent landed in two different places.
+- **fix** **Header baselines** — the inbox button, the health and config icons and the page tabs sat on three different baselines; the cause was an inline style on the page-tab row rather than the icons. The config label is now a gear SVG built on the health icon's markup (same viewBox, size and stroke), so the three destinations read as one set.
+- **fix** **The what's-new modal could hang on reopen** — the loader waited for a `load` event from a script that had already finished, which never fires again; its own registration is now the readiness signal.
+- **fix** **Help claimed the cheat sheet reflected rebound keys** — in three places, though nothing in the dashboard runtime ever read `customKeyBindings`, so no key was rebound.
+- **new** **Create + New in the add-bookmark modal** — saves the bookmark and keeps the form open with the page and category preserved, so several links can be filed in one sitting; the plain *Create* still closes the modal.
+- **fix** **A stale test leaked auto dark mode into later tests** — `config-auto-dark.spec.js` turned the setting on without restoring it, and because it is stored server-side the next spec inherited it, resolving a chosen theme to its paired variant and failing for unrelated reasons.
+
+### Lighter and faster
+
+- **new** **34,255 lines deleted with the old page** — its template (2,684 lines), the theme-colours partial (509), all 32 modules under `static/js/config/`, `config.js`, `colors.js`, and 27 stylesheets including the whole `static/css/config/` directory. Twelve test specs that only drove the old page were retired; three that held real coverage were rewritten against the view instead of dropped.
+- **new** **Opening settings no longer downloads a second application** — the old page pulled roughly **1.2 MB of JavaScript and 321 KB of CSS** of its own, on top of everything the dashboard had already loaded, on every visit. The view is part of the dashboard bundle: opening config fetches nothing at all, and what used to be a full page load — parse, execute, refetch bookmarks, rebuild the layout — is now a repaint. Returning to the dashboard is likewise instant, since it was never unloaded.
+- **new** **One implementation per setting** — settings previously lived in two codebases that could and did drift apart; several fixes in this release trace directly to that split. Four modules the dashboard genuinely shares (`config-language`, `config-help-tips`, `config-favicon-prefetch`, `config-custom-themes`) moved to `static/js/shared/` rather than being deleted with the rest.
+- **new** **Dead configuration removed** — the `customKeyBindings` setting (stored, never read), the unreachable `/config` and `/health` referer branches in the activity log (both views live behind a fragment, which is never sent in the `Referer` header), six orphaned asset-version entries, and the dead theme-colours template parse in the dashboard handler.
 
 ---
 
