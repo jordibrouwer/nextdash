@@ -483,3 +483,38 @@ test.describe('a category always exists on the page it is used on', () => {
         }, target);
     });
 });
+
+test.describe('select all bookmarks', () => {
+    test('ticks every visible row and clears on a second press', async ({ page }) => {
+        await openBookmarks(page);
+        const rows = await page.locator('.config-bm-row').count();
+        expect(rows).toBeGreaterThan(0);
+
+        await page.locator('#config-bm-select-all').click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.bmSelected.size)).toBe(rows);
+        // The bulk bar only appears once something is ticked.
+        await expect(page.locator('[data-bulk="delete"]')).toBeVisible();
+
+        await page.locator('#config-bm-select-all').click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.bmSelected.size)).toBe(0);
+    });
+
+    test('selects only what the filters show', async ({ page }) => {
+        await openBookmarks(page);
+        const cat = await page.evaluate(() =>
+            (window.dashboardInstance.allBookmarks.find((b) => b.category) || {}).category || '');
+        test.skip(!cat, 'needs a categorised bookmark');
+
+        await page.selectOption('#config-bm-category', cat);
+        const shown = await page.locator('.config-bm-row').count();
+        const total = await page.evaluate(() => window.dashboardInstance.allBookmarks.length);
+        test.skip(shown >= total, 'filter did not narrow the list');
+
+        // Acting on bookmarks you cannot see is how a bulk delete goes wrong.
+        await page.locator('#config-bm-select-all').click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.bmSelected.size)).toBe(shown);
+    });
+});

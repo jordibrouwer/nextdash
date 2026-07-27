@@ -537,3 +537,135 @@ test.describe('category list accessibility', () => {
         await expect(page.locator('[data-cat-move="down"]').first()).toHaveAttribute('aria-label', /.+/);
     });
 });
+
+test.describe('tag cloud and filter', () => {
+    test('the tags tab shows a usage-sized word cloud', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="tags"]').click();
+        await expect(page.locator('[data-tag-row]').first()).toBeVisible();
+
+        // Reuses the dashboard's own .tag-cloud-word styling and tier classes
+        // rather than a lookalike, so the two clouds cannot drift apart.
+        const words = page.locator('[data-tag-cloud]');
+        await expect(words.first()).toBeVisible();
+        await expect(words.first()).toHaveClass(/tag-cloud-word/);
+        // The cloud's own tier classes, not the stat-bar ones: they carry the
+        // colour gradation that makes a cloud readable.
+        await expect(words.first()).toHaveClass(/tag-cloud-word--tier-/);
+    });
+
+    test('a selected tag is visibly marked, not just filtered', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="tags"]').click();
+        const word = page.locator('[data-tag-cloud]').first();
+        await expect(word).toBeVisible();
+
+        await expect(word).toHaveAttribute('aria-pressed', 'false');
+        const plain = await word.evaluate((el) => getComputedStyle(el).borderColor);
+
+        await word.click();
+        // Recolouring the label alone is easy to miss among words that already
+        // vary in size and weight, so the selected word gets a real border.
+        const selected = page.locator('[data-tag-cloud].is-selected');
+        await expect(selected).toHaveCount(1);
+        await expect(selected).toHaveAttribute('aria-pressed', 'true');
+        const marked = await selected.evaluate((el) => getComputedStyle(el).borderColor);
+        expect(marked).not.toBe(plain);
+        expect(marked).not.toMatch(/rgba\(0, 0, 0, 0\)/);
+    });
+
+    test('clicking a word filters the list, and again clears it', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="tags"]').click();
+        await expect(page.locator('[data-tag-cloud]').first()).toBeVisible();
+
+        const before = await page.locator('[data-tag-row]').count();
+        test.skip(before < 2, 'needs at least two tags');
+        const tag = await page.locator('[data-tag-cloud]').first().getAttribute('data-tag-cloud');
+
+        await page.locator('[data-tag-cloud]').first().click();
+        await expect.poll(() => page.locator('[data-tag-row]').count()).toBeLessThan(before);
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config._tagQuery)).toBe(tag);
+
+        // The cloud doubles as the filter control, so the same word clears it.
+        await page.locator(`[data-tag-cloud="${tag}"]`).click();
+        await expect.poll(() => page.locator('[data-tag-row]').count()).toBe(before);
+    });
+
+    test('the filter box narrows the list and keeps focus while typing', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="tags"]').click();
+        await expect(page.locator('#config-tag-filter')).toBeVisible();
+
+        const before = await page.locator('[data-tag-row]').count();
+        const tag = await page.locator('[data-tag-rename]').first().inputValue();
+        await page.locator('#config-tag-filter').fill(tag);
+        await expect.poll(() => page.locator('[data-tag-row]').count()).toBeLessThanOrEqual(before);
+        // The body is replaced on every keystroke, so focus has to be restored
+        // or the input swallows the rest of what you type.
+        await expect(page.locator('#config-tag-filter')).toBeFocused();
+    });
+});
+
+test.describe('custom collections', () => {
+    test('a rule-based collection can be created, edited and saved', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => { window.dashboardInstance.settings.collections = []; });
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="collections"]').click();
+        await expect(page.locator('[data-collection-add]')).toBeVisible();
+
+        await page.locator('[data-collection-add]').click();
+        await expect(page.locator('[data-collection-row]')).toHaveCount(1);
+        // The editor opens on the new collection, with one rule ready.
+        await expect(page.locator('[data-collection-field="name"]')).toBeVisible();
+        await expect(page.locator('[data-collection-rule]')).toHaveCount(1);
+
+        const tag = await page.evaluate(() =>
+            (window.dashboardInstance.allBookmarks.find((b) => (b.tags || []).length) || {}).tags?.[0] || '');
+        test.skip(!tag, 'needs a tagged bookmark');
+        await page.locator('[data-rule-value="0"]').fill(tag);
+        await page.locator('[data-rule-value="0"]').blur();
+
+        // The shape must match what the dashboard's _evaluateCollection reads.
+        await expect.poll(async () => page.evaluate(async () => {
+            const s = await (await fetch('/api/settings')).json();
+            const c = (s.collections || [])[0];
+            return c && c.id && c.logic && Array.isArray(c.rules) && c.rules[0].field ? 'ok' : 'bad';
+        }), { timeout: 10_000 }).toBe('ok');
+        await expect(page.locator('[data-collection-match]')).toContainText(/\d/);
+    });
+
+    test('the last rule cannot be removed, since a ruleless collection is skipped', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => { window.dashboardInstance.settings.collections = []; });
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="collections"]').click();
+        await page.locator('[data-collection-add]').click();
+        await expect(page.locator('[data-collection-rule]')).toHaveCount(1);
+        await expect(page.locator('[data-rule-remove="0"]')).toBeDisabled();
+
+        await page.locator('[data-collection-add-rule]').click();
+        await expect(page.locator('[data-collection-rule]')).toHaveCount(2);
+        await expect(page.locator('[data-rule-remove="0"]')).toBeEnabled();
+    });
+
+    test('deleting a collection asks first', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => { window.dashboardInstance.settings.collections = []; });
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="collections"]').click();
+        await page.locator('[data-collection-add]').click();
+        await expect(page.locator('[data-collection-row]')).toHaveCount(1);
+
+        await page.locator('[data-collection-delete]').click();
+        await expect(page.locator('#config-confirm-modal')).toBeVisible();
+        await page.locator('[data-confirm="ok"]').click();
+        await expect(page.locator('[data-collection-row]')).toHaveCount(0);
+    });
+});

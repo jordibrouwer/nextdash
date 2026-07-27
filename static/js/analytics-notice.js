@@ -197,7 +197,12 @@
         teardown();
         const done = () => {
             d.isNavigatingAway = true;
-            window.location.reload();
+            // The reload is what actually loads the tracker, but it also throws
+            // away wherever you were — so opting in used to leave you back on
+            // the dashboard with nothing to show for it. Land on the setting
+            // that was just changed instead, by reloading into its deep link.
+            const target = `${window.location.pathname}${window.location.search}#config/behavior/privacy`;
+            window.location.replace(target);
         };
         if (typeof d.saveSettings === 'function') {
             Promise.resolve(d.saveSettings()).then(done).catch(done);
@@ -239,8 +244,11 @@
                 )}
                 ${section(
                     t('dashboard.analyticsNoticeOnTitle', 'How to turn it on'),
-                    escape(t('dashboard.analyticsNoticeOnBody',
-                        'Go to Config → General → Advanced → Privacy and tick "Privacy-friendly analytics", or run :telemetry on from the command palette. It applies after the page reloads. While it is off, the tracker is not loaded at all and no request leaves your machine.'))
+                    `${escape(t('dashboard.analyticsNoticeOnBody',
+                        'Go to Config → Behavior → Privacy and tick "Privacy-friendly analytics", or run :telemetry on from the command palette. It applies after the page reloads. While it is off, the tracker is not loaded at all and no request leaves your machine.'))
+                    }<br><button type="button" class="quickstart-btn quickstart-btn-ghost" data-an-action="open-privacy">${
+                        escape(t('dashboard.analyticsNoticeOpenSettings', 'Open privacy settings'))
+                    }</button>`
                 )}
             </div>`;
 
@@ -255,6 +263,38 @@
             // than sending them to config to find the checkbox.
             onConfirm: optIn,
         });
+
+        // Delegated rather than bound directly: AppModal.show may mount its
+        // markup asynchronously, so querying for the button right here can find
+        // nothing. Registered once, guarded by a flag.
+        if (!bodyPrivacyDelegateBound) {
+            bodyPrivacyDelegateBound = true;
+            document.addEventListener('click', (e) => {
+                const btn = e.target?.closest?.('[data-an-action="open-privacy"]');
+                if (!btn) return;
+                e.preventDefault();
+                window.AppModal?.hide?.();
+                openPrivacySettings();
+            });
+        }
+    }
+
+    let bodyPrivacyDelegateBound = false;
+
+    /**
+     * Open Config → Behavior → Privacy.
+     *
+     * Prefers the in-page config view; falls back to the deep-link hash so the
+     * button still works if the view is unavailable for any reason.
+     */
+    function openPrivacySettings() {
+        const d = window.dashboardInstance;
+        if (d?.config?.openConfigView) {
+            d.config.behaviorTab = 'privacy';
+            void d.config.openConfigView('behavior');
+            return;
+        }
+        window.location.hash = 'config/behavior/privacy';
     }
 
     /** @returns {boolean} whether the card was actually put on screen. */
@@ -367,5 +407,9 @@
         scheduleAfterWhatsNew,
         render,
         shouldShow,
+        // Exposed so the detail modal can be opened without the card, e.g. from
+        // help or a test.
+        openDetails,
+        openPrivacySettings,
     };
 })();

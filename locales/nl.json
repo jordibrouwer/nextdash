@@ -721,7 +721,8 @@
         "analyticsNoticeNeverTitle": "Wat nooit wordt vastgelegd",
         "analyticsNoticeNeverBody": "Geen bookmarknamen, URL's, zoekopdrachten, pagina- of categorienamen, notities of tags. Er worden geen cookies gezet, geen persoonlijk profiel opgebouwd en je wordt niet gevolgd op andere websites. Aantallen die veelzeggend kunnen zijn worden afgerond naar categorieën, en de instantie is zelf-gehost, dus er wordt niets gedeeld met een advertentienetwerk.",
         "analyticsNoticeOnTitle": "Zo zet je het aan",
-        "analyticsNoticeOnBody": "Ga naar Config → Algemeen → Geavanceerd → Privacy en vink \"Privacyvriendelijke statistieken\" aan, of voer :telemetry on uit in het commandopalet. Het werkt na het herladen van de pagina. Zolang het uit staat, wordt de tracker niet eens geladen en verlaat er geen enkel verzoek je machine.",
+        "analyticsNoticeOnBody": "Ga naar Config → Gedrag → Privacy en vink \"Privacyvriendelijke statistieken\" aan, of voer :telemetry on uit in het commandopalet. Het werkt na het herladen van de pagina. Zolang het uit staat, wordt de tracker niet eens geladen en verlaat er geen enkel verzoek je machine.",
+        "analyticsNoticeOpenSettings": "Privacy-instellingen openen",
         "analyticsNoticeClose": "Sluiten",
         "inboxSortLabel": "Inbox sorteren",
         "inboxSortNewest": "nieuwste eerst",
@@ -3364,7 +3365,15 @@
         "statsShortcutsTitle": "Sneltoetsen",
         "statsFindersTitle": "Finders",
         "tileDensity": "Dichtheid",
-        "tileFontSizeDetail": "Grootte {size}"
+        "tileFontSizeDetail": "Grootte {size}",
+        "customCollectionsTitle": "Eigen collecties",
+        "customCollectionsNote": "Groepeer bladwijzers met regels op hun tags, categorie of sneltoets. Ze verschijnen op het dashboard naast de slimme collecties.",
+        "collectionDeleteConfirm": "De collectie “{name}” verwijderen?",
+        "collectionNameDuplicate": "Er bestaat al een collectie met deze naam.",
+        "collectionMatchCount": "{count} bladwijzers komen overeen",
+        "collectionNoRules": "Voeg een regel toe om bladwijzers te matchen.",
+        "selectAllBookmarks": "Alles selecteren",
+        "tagsNoMatch": "Geen tags komen overeen met je filter."
     },
     "colors": {
         "title": "thema-aanpassing",

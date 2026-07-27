@@ -721,7 +721,8 @@
         "analyticsNoticeNeverTitle": "Was nie erfasst wird",
         "analyticsNoticeNeverBody": "Keine Lesezeichennamen, URLs, Suchanfragen, Seiten- oder Kategorienamen, Notizen oder Tags. Es werden keine Cookies gesetzt, kein persönliches Profil erstellt, und du wirst nicht über andere Websites verfolgt. Aufschlussreiche Zahlen werden in Bereiche gerundet, und die Instanz ist selbst gehostet, es wird also nichts an ein Werbenetzwerk weitergegeben.",
         "analyticsNoticeOnTitle": "So schaltest du es ein",
-        "analyticsNoticeOnBody": "Gehe zu Konfiguration → Allgemein → Erweitert → Datenschutz und aktiviere „Datenschutzfreundliche Statistiken\", oder führe :telemetry on in der Befehlspalette aus. Es wirkt nach dem Neuladen der Seite. Solange es aus ist, wird der Tracker gar nicht geladen und es verlässt keine Anfrage deinen Rechner.",
+        "analyticsNoticeOnBody": "Gehe zu Konfiguration → Verhalten → Datenschutz und aktiviere „Datenschutzfreundliche Statistiken\", oder führe :telemetry on in der Befehlspalette aus. Es wirkt nach dem Neuladen der Seite. Solange es aus ist, wird der Tracker gar nicht geladen und es verlässt keine Anfrage deinen Rechner.",
+        "analyticsNoticeOpenSettings": "Datenschutz-Einstellungen öffnen",
         "analyticsNoticeClose": "Schließen",
         "inboxSortLabel": "Posteingang sortieren",
         "inboxSortNewest": "neueste zuerst",
@@ -3364,7 +3365,15 @@
         "statsShortcutsTitle": "Kürzel",
         "statsFindersTitle": "Finder",
         "tileDensity": "Dichte",
-        "tileFontSizeDetail": "Größe {size}"
+        "tileFontSizeDetail": "Größe {size}",
+        "customCollectionsTitle": "Eigene Sammlungen",
+        "customCollectionsNote": "Gruppiere Lesezeichen über Regeln auf Tags, Kategorie oder Kürzel. Sie erscheinen im Dashboard neben den smarten Sammlungen.",
+        "collectionDeleteConfirm": "Die Sammlung „{name}“ löschen?",
+        "collectionNameDuplicate": "Eine Sammlung mit diesem Namen existiert bereits.",
+        "collectionMatchCount": "{count} Lesezeichen passen",
+        "collectionNoRules": "Füge eine Regel hinzu, um Lesezeichen zu treffen.",
+        "selectAllBookmarks": "Alle auswählen",
+        "tagsNoMatch": "Keine Tags passen zu deinem Filter."
     },
     "colors": {
         "title": "themenanpassung",

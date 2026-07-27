@@ -1763,3 +1763,70 @@
     margin-top: auto;
     padding-top: 4px;
 }
+
+/* ── Custom collections editor ───────────────────────────────────────────── */
+
+.config-collection-editor {
+    list-style: none;
+    padding: 0;
+}
+
+.config-collection-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-collection-rule {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.config-collection-rule .config-text {
+    flex: 1 1 140px;
+    min-width: 0;
+}
+
+/* The tag cloud in config reuses the dashboard's .tag-cloud-word styling; only
+   the surrounding block needs a box of its own here. */
+.config-tag-cloud {
+    margin: 12px 0 16px;
+    padding: 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 12px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    justify-content: flex-start;
+}
+
+/* A selected tag in the config cloud.
+   The shared .is-selected only recolours the text and underlines it, which is
+   easy to miss among words that already vary in size and weight. Inside config
+   the selected word gets a real chip — border, tinted fill — so "which tag am I
+   filtered to" is answerable at a glance. */
+.config-tag-cloud .tag-cloud-word {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.config-tag-cloud .tag-cloud-word:hover {
+    border-color: var(--border-primary, rgba(128, 128, 128, 0.35));
+}
+
+.config-tag-cloud .tag-cloud-word.is-selected {
+    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+    background: color-mix(in srgb, var(--accent-primary, #4A7038) 14%, transparent);
+}
+
+/* The shared rule underlines the label; inside the chip that reads as noise. */
+.config-tag-cloud .tag-cloud-word.is-selected .tag-cloud-word-label {
+    text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-tag-cloud .tag-cloud-word {
+        transition: none;
+    }
+}

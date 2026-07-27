@@ -721,7 +721,8 @@
         "analyticsNoticeNeverTitle": "What is never recorded",
         "analyticsNoticeNeverBody": "No bookmark names, URLs, search queries, page or category names, notes, or tags. No cookies are set, no personal profile is built, and you are not tracked across other websites. Counts that could be revealing are rounded into buckets, and the instance is self-hosted, so nothing is shared with an advertising network.",
         "analyticsNoticeOnTitle": "How to turn it on",
-        "analyticsNoticeOnBody": "Go to Config → General → Advanced → Privacy and tick \"Privacy-friendly analytics\", or run :telemetry on from the command palette. It applies after the page reloads. While it is off, the tracker is not loaded at all and no request leaves your machine.",
+        "analyticsNoticeOnBody": "Go to Config → Behavior → Privacy and tick \"Privacy-friendly analytics\", or run :telemetry on from the command palette. It applies after the page reloads. While it is off, the tracker is not loaded at all and no request leaves your machine.",
+        "analyticsNoticeOpenSettings": "Open privacy settings",
         "analyticsNoticeClose": "Close",
         "inboxSortLabel": "Sort inbox",
         "inboxSortNewest": "newest first",
@@ -3364,7 +3365,15 @@
         "statsShortcutsTitle": "Shortcuts",
         "statsFindersTitle": "Finders",
         "tileDensity": "Density",
-        "tileFontSizeDetail": "Size {size}"
+        "tileFontSizeDetail": "Size {size}",
+        "customCollectionsTitle": "Custom collections",
+        "customCollectionsNote": "Group bookmarks by rules on their tags, category or shortcut. They appear on the dashboard alongside the smart collections.",
+        "collectionDeleteConfirm": "Delete the collection “{name}”?",
+        "collectionNameDuplicate": "A collection with this name already exists.",
+        "collectionMatchCount": "{count} bookmarks match",
+        "collectionNoRules": "Add a rule to match bookmarks.",
+        "selectAllBookmarks": "Select all",
+        "tagsNoMatch": "No tags match your filter."
     },
     "colors": {
         "title": "theme customization",

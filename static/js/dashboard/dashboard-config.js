@@ -104,13 +104,76 @@ class DashboardConfig {
         if (typeof hash !== 'string') return null;
         const raw = hash.replace(/^#/, '');
         if (raw === 'config') return 'overview';
-        const match = raw.match(/^config\/([a-z-]+)$/);
+        // A trailing /<tab> is optional and handled by subTabFromHash.
+        const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z-]+))?$/);
         if (!match) return null;
         return DashboardConfig.SECTIONS.includes(match[1]) ? match[1] : 'overview';
     }
 
+    /**
+     * The sub-tab named by a #config/<section>/<tab> hash.
+     *
+     * Sections with sub-tabs are otherwise only reachable at their first tab, so
+     * a link to something like Behavior → Privacy could not be given out at all.
+     * Returns null when the hash names no tab, or one the section does not have.
+     */
+    static subTabFromHash(hash) {
+        if (typeof hash !== 'string') return null;
+        const match = hash.replace(/^#/, '').match(/^config\/([a-z-]+)\/([a-z-]+)$/);
+        if (!match) return null;
+        const tabs = DashboardConfig.SUB_TABS[match[1]];
+        return tabs && tabs.includes(match[2]) ? match[2] : null;
+    }
+
+    /**
+     * Sub-tab lists per section, resolved on demand.
+     *
+     * A getter rather than a static field: the *_TABS constants are declared
+     * further down the class body, and static fields initialise in source
+     * order, so reading them here would give undefined.
+     */
+    static get SUB_TABS() {
+        return {
+            behavior: DashboardConfig.BEHAVIOR_TABS,
+            'pages-tags': DashboardConfig.PT_TABS,
+            appearance: DashboardConfig.APPEARANCE_TABS,
+            stats: DashboardConfig.STATS_TABS,
+            'data-backups': DashboardConfig.DB_TABS,
+            help: DashboardConfig.HELP_TABS,
+        };
+    }
+
+    /** Which sub-tab list belongs to which section, and where it is stored. */
+    static SUB_TAB_STATE = {
+        behavior: 'behaviorTab',
+        'pages-tags': 'ptTab',
+        appearance: 'appearanceTab',
+        stats: 'statsTab',
+        'data-backups': 'dbTab',
+        help: 'helpTab',
+    };
+
+    /** Apply a sub-tab from the hash, if the section has one. */
+    applySubTabFromHash(hash) {
+        const section = DashboardConfig.sectionFromHash(hash);
+        const tab = DashboardConfig.subTabFromHash(hash);
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        if (!tab || !prop) return false;
+        if (this[prop] === tab) return false;
+        this[prop] = tab;
+        return true;
+    }
+
     hashForSection(section) {
         if (!section || section === 'overview') return 'config';
+        // Keep the sub-tab in the URL so the address bar is a link you can
+        // actually hand to someone.
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        const tab = prop ? this[prop] : null;
+        const tabs = DashboardConfig.SUB_TABS[section];
+        if (tab && tabs && tabs.includes(tab) && tab !== tabs[0]) {
+            return `config/${section}/${tab}`;
+        }
         return `config/${section}`;
     }
 
@@ -128,8 +191,11 @@ class DashboardConfig {
     /** Re-apply the section from the hash while the view is already open. */
     restoreConfigSectionFromHash() {
         const section = DashboardConfig.sectionFromHash(window.location.hash);
+        const tabChanged = this.applySubTabFromHash(window.location.hash);
         if (section && section !== this.section) {
             this.section = section;
+            this.render();
+        } else if (tabChanged) {
             this.render();
         }
     }
@@ -143,6 +209,13 @@ class DashboardConfig {
         }
         const targetSection =
             section || DashboardConfig.sectionFromHash(window.location.hash) || 'overview';
+        // Honour a sub-tab in the hash whenever it belongs to the section being
+        // opened. Callers pass the section explicitly on a cold deep link
+        // (dashboard-data reads it from the same hash), so keying this on
+        // "caller named no section" would drop the tab exactly then.
+        if (DashboardConfig.sectionFromHash(window.location.hash) === targetSection) {
+            this.applySubTabFromHash(window.location.hash);
+        }
         if (d.activeView === DashboardConfig.VIEW) {
             if (targetSection !== this.section) {
                 this.section = targetSection;
@@ -1797,6 +1870,7 @@ class DashboardConfig {
                 const tab = btn.getAttribute('data-appearance-tab');
                 if (tab === this.appearanceTab) return;
                 this.appearanceTab = tab;
+                this.restoreConfigHash();
                 // Leaving the tab drops any unsaved preview so the dashboard
                 // does not keep showing colours from a theme you stopped editing.
                 if (tab !== 'custom-themes') this.clearThemePreview();
@@ -3381,6 +3455,7 @@ class DashboardConfig {
                 const tab = btn.getAttribute('data-behavior-tab');
                 if (tab === this.behaviorTab) return;
                 this.behaviorTab = tab;
+                this.restoreConfigHash();
                 const body = document.getElementById('config-behavior-body');
                 if (body) {
                     body.innerHTML = this.renderBehaviorBody();
@@ -3620,6 +3695,7 @@ class DashboardConfig {
                 const tab = btn.getAttribute('data-pt-tab');
                 if (tab === this.ptTab) return;
                 this.ptTab = tab;
+                this.restoreConfigHash();
                 this.repaintPtBody();
             });
         });
@@ -3642,7 +3718,10 @@ class DashboardConfig {
 
     bindPtTabControls(container) {
         if (this.ptTab === 'finders') { this.bindFinders(container); void this.loadFinders(); }
-        else if (this.ptTab === 'tags') { void this.loadTagsManager(); }
+        // bindTags here as well as after the fetch: loadTagsManager returns
+        // early once loaded, so a repaint would otherwise leave the filter and
+        // the cloud with no handlers.
+        else if (this.ptTab === 'tags') { this.bindTags(container); void this.loadTagsManager(); }
         else if (this.ptTab === 'collections') { this.bindCollections(container); }
         else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
         else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
@@ -3813,6 +3892,22 @@ class DashboardConfig {
         return floor + (1 - floor) * Math.pow(Math.max(0, Math.min(1, ratio)), power);
     }
 
+    /**
+     * Tier class for a tag-cloud word.
+     *
+     * Separate from tierClassForScale, which returns the config-stat--tier-*
+     * names used by the stat bars: the cloud's own tiers carry the colour
+     * gradation that makes a cloud readable, and passing it a stat class meant
+     * every word rendered in the same colour.
+     */
+    static cloudTierForScale(scale) {
+        if (scale >= 0.82) return 'tag-cloud-word--tier-xl';
+        if (scale >= 0.62) return 'tag-cloud-word--tier-lg';
+        if (scale >= 0.42) return 'tag-cloud-word--tier-md';
+        if (scale >= 0.22) return 'tag-cloud-word--tier-sm';
+        return 'tag-cloud-word--tier-xs';
+    }
+
     static tierClassForScale(scale) {
         if (scale >= 0.82) return 'config-stat--tier-xl';
         if (scale >= 0.62) return 'config-stat--tier-lg';
@@ -3894,6 +3989,56 @@ class DashboardConfig {
 
     /* ── Tags & collections placeholders (native, built next) ──────────────── */
 
+    /** Stable per-tag tilt, so the cloud looks scattered but never reshuffles. */
+    static tagRotate(tag) {
+        let h = 0;
+        const s = String(tag || '');
+        for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) | 0;
+        return ((h % 9) - 4) * 0.55;
+    }
+
+    /** Tags passing the filter box, in the stored order (most used first). */
+    visibleTags() {
+        const q = String(this._tagQuery || '').trim().toLowerCase();
+        const list = this._tagList || [];
+        return q ? list.filter((t) => t.tag.toLowerCase().includes(q)) : list;
+    }
+
+    /**
+     * A word cloud sized by usage, as the old config's tags tab had.
+     *
+     * Reuses the dashboard's own .tag-cloud-word styling and tier classes
+     * (dashboard-tag-cloud.css, already loaded here) rather than a lookalike,
+     * so the cloud in config and the one on the dashboard cannot drift apart.
+     * Clicking a word filters the list below it.
+     */
+    renderTagCloud(tags) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!tags.length) return '';
+        const counts = tags.map((t) => t.count);
+        const max = Math.max(...counts);
+        const min = Math.min(...counts);
+        const words = [...tags]
+            .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+            .map((t, i) => {
+                const scale = DashboardConfig.scaleForCount(t.count, min, max);
+                const label = this.t('config.tagBookmarkCount', '{count} bookmarks')
+                    .replace('{count}', String(t.count));
+                // Same .is-selected / aria-pressed pair the dashboard's own tag
+                // cloud uses, so the two clouds behave alike.
+                const selected = this._tagQuery === t.tag;
+                return `<button type="button"
+                    class="tag-cloud-word ${esc(DashboardConfig.cloudTierForScale(scale))}${selected ? ' is-selected' : ''}"
+                    data-tag-cloud="${esc(t.tag)}" role="listitem" aria-pressed="${selected ? 'true' : 'false'}"
+                    style="--tag-scale:${scale.toFixed(3)};--tag-rotate:${DashboardConfig.tagRotate(t.tag).toFixed(2)}deg;--tag-index:${i}"
+                    title="#${esc(t.tag)} — ${esc(label)}" aria-label="${esc(t.tag)}. ${esc(label)}">
+                    <span class="tag-cloud-word-hash" aria-hidden="true">#</span>
+                    <span class="tag-cloud-word-label">${esc(t.tag)}</span>
+                </button>`;
+            }).join('');
+        return `<div class="tag-cloud-wordcloud config-tag-cloud" role="list">${words}</div>`;
+    }
+
     renderTagsManager() {
         const esc = (v) => this.dash.escapeHtml(v);
         if (this._tagList == null) {
@@ -3902,8 +4047,9 @@ class DashboardConfig {
         if (this._tagList.length === 0) {
             return `<p class="config-panel-empty">${esc(this.t('config.tagsEmpty', 'No tags yet. Add tags to bookmarks to manage them here.'))}</p>`;
         }
-        const scales = DashboardConfig.statScales(this._tagList.map((t) => t.count));
-        const rows = this._tagList.map(({ tag, count }, i) => `
+        const visible = this.visibleTags();
+        const scales = DashboardConfig.statScales(visible.map((t) => t.count));
+        const rows = visible.map(({ tag, count }, i) => `
             <li class="config-crud-row" data-tag-row="${esc(tag)}">
                 <div class="config-crud-fields">
                     <input type="text" class="config-text" data-tag-rename="${esc(tag)}" value="${esc(tag)}">
@@ -3918,7 +4064,16 @@ class DashboardConfig {
                 [this._tagList.length, this.t('config.tagsStatTotal', 'tags')],
                 [this._tagList.reduce((sum, t) => sum + t.count, 0), this.t('config.tagsStatAssignments', 'assignments')],
             ])}
-            <ul class="config-crud-list">${rows}</ul>
+            ${this.renderTagCloud(this._tagList)}
+            <div class="config-crud-toolbar">
+                <input type="search" class="config-text" id="config-tag-filter"
+                       placeholder="${esc(this.t('config.tagsFilterPlaceholder', 'Filter tags…'))}"
+                       value="${esc(this._tagQuery || '')}">
+                ${this._tagQuery ? `<button type="button" class="config-btn config-btn--small" data-tag-filter-clear>${esc(this.t('config.statsFilterClear', 'Clear'))}</button>` : ''}
+            </div>
+            ${rows
+                ? `<ul class="config-crud-list">${rows}</ul>`
+                : `<p class="config-panel-empty">${esc(this.t('config.tagsNoMatch', 'No tags match your filter.'))}</p>`}
         `;
     }
 
@@ -3942,14 +4097,33 @@ class DashboardConfig {
             this._tagList = [];
             this._tagList._loaded = true;
         }
-        if (this.ptTab === 'tags') {
-            this.repaintPtBody();
-            this.bindTags(document.getElementById('dashboard-layout'));
-        }
+        // repaintPtBody re-runs bindPtTabControls, which binds the tags
+        // controls against the markup it just wrote.
+        if (this.ptTab === 'tags') this.repaintPtBody();
     }
 
     bindTags(container) {
         if (!container) return;
+        const filter = container.querySelector('#config-tag-filter');
+        if (filter) {
+            filter.addEventListener('input', () => {
+                this._tagQuery = filter.value;
+                this.repaintTagsBody();
+            });
+        }
+        container.querySelector('[data-tag-filter-clear]')?.addEventListener('click', () => {
+            this._tagQuery = '';
+            this.repaintTagsBody();
+        });
+        container.querySelectorAll('[data-tag-cloud]').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                // Clicking a word filters the list to it, and clicking the same
+                // word again clears — the cloud doubles as the filter control.
+                const tag = chip.getAttribute('data-tag-cloud');
+                this._tagQuery = this._tagQuery === tag ? '' : tag;
+                this.repaintTagsBody();
+            });
+        });
         container.querySelectorAll('[data-tag-rename]').forEach((input) => {
             input.addEventListener('change', () => {
                 const from = input.getAttribute('data-tag-rename');
@@ -3972,6 +4146,24 @@ class DashboardConfig {
                 }
             });
         });
+    }
+
+    /**
+     * Repaint the tags tab, restoring focus and caret to the filter box.
+     *
+     * The body is replaced wholesale, so without this the input would lose
+     * focus on the first keystroke and swallow the rest of what you type.
+     */
+    repaintTagsBody() {
+        const active = document.activeElement;
+        const wasFilter = active?.id === 'config-tag-filter';
+        const caret = wasFilter ? active.selectionStart : null;
+        this.repaintPtBody();
+        if (!wasFilter) return;
+        const next = document.getElementById('config-tag-filter');
+        if (!next) return;
+        next.focus();
+        if (caret != null) next.setSelectionRange(caret, caret);
     }
 
     /** Rename (to != null) or delete (to == null) a tag across every bookmark. */
@@ -4077,7 +4269,141 @@ class DashboardConfig {
         // Reuse the behaviour control renderer against the collections schema.
         return this.renderCollectionStats()
             + this.renderControlPanels(this.collectionsSchema(), 'collection')
+            + this.renderCustomCollections()
             + this.renderCollectionScopes();
+    }
+
+    /* ── Custom (rule-based) collections ───────────────────────────────────── */
+
+    /** The user's own collections, as stored in settings.collections. */
+    customCollections() {
+        const list = this.dash.settings?.collections;
+        return Array.isArray(list) ? list : [];
+    }
+
+    static newCollectionId() {
+        return `col-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    }
+
+    collectionRuleFieldLabel(field) {
+        const map = {
+            tag: ['config.collectionRuleFieldTag', 'Tag'],
+            category: ['config.collectionRuleFieldCategory', 'Category'],
+            shortcut: ['config.collectionRuleFieldShortcut', 'Shortcut'],
+        };
+        const [key, fallback] = map[field] || [field, field];
+        return this.t(key, fallback);
+    }
+
+    /**
+     * Rule-based collections, which the dashboard already renders but the new
+     * config had no way to create.
+     *
+     * The shape is fixed by _evaluateCollection in dashboard-smart-collections:
+     * {id, name, icon, logic: 'and'|'or', rules:[{field, operator, value}]}.
+     * A collection with no rules is skipped there, so the editor keeps at least
+     * one rule row rather than letting you save something inert.
+     */
+    renderCustomCollections() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const cols = this.customCollections();
+        const editing = this._collectionEditing;
+
+        const rows = cols.length
+            ? cols.map((col) => {
+                const n = Array.isArray(col.rules) ? col.rules.length : 0;
+                const ruleLabel = n === 1
+                    ? this.t('config.collectionRuleCountOne', '1 rule')
+                    : this.t('config.collectionRuleCount', '{count} rules').replace('{count}', String(n));
+                const open = editing === col.id;
+                return `
+                <li class="config-crud-row${open ? ' is-active' : ''}" data-collection-row="${esc(col.id)}">
+                    <div class="config-crud-fields">
+                        <span class="config-stat-name">${esc(col.icon ? `${col.icon} ` : '')}${esc(col.name || col.id)}</span>
+                        <span class="config-stat-sub">${esc(ruleLabel)}</span>
+                    </div>
+                    <div class="config-crud-row-actions">
+                        <button type="button" class="config-btn config-btn--small${open ? ' is-active' : ''}" data-collection-edit="${esc(col.id)}">${esc(this.t('config.collectionEditBtn', 'Edit'))}</button>
+                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-collection-delete="${esc(col.id)}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                    </div>
+                </li>${open ? `<li class="config-collection-editor">${this.renderCollectionEditor(col)}</li>` : ''}`;
+            }).join('')
+            : `<li class="config-panel-empty">${esc(this.t('config.collectionsEmptyHint', 'No collections yet.'))}</li>`;
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.customCollectionsTitle', 'Custom collections'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.customCollectionsNote', 'Group bookmarks by rules on their tags, category or shortcut. They appear on the dashboard alongside the smart collections.'))}</p>
+                <ul class="config-crud-list">${rows}</ul>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-collection-add>${esc(this.t('config.addCollectionBtn', 'Add collection'))}</button>
+                </div>
+            </div>`;
+    }
+
+    renderCollectionEditor(col) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const logic = col.logic === 'or' ? 'or' : 'and';
+        const rules = Array.isArray(col.rules) && col.rules.length
+            ? col.rules
+            : [{ field: 'tag', operator: 'includes', value: '' }];
+
+        // Suggestions come from what is actually in use, so a rule value can be
+        // picked rather than remembered.
+        const tags = [...new Set((this.dash.allBookmarks || []).flatMap((b) => b.tags || []))].sort();
+        const cats = this.knownCategories().map((c) => c.id);
+        const shortcuts = [...new Set((this.dash.allBookmarks || [])
+            .map((b) => String(b.shortcut || '').trim()).filter(Boolean))].sort();
+        const listFor = (field) => (field === 'category' ? cats : field === 'shortcut' ? shortcuts : tags);
+
+        const ruleRows = rules.map((r, i) => {
+            const field = r.field || 'tag';
+            const op = r.operator === 'excludes' ? 'excludes' : 'includes';
+            const options = listFor(field)
+                .map((v) => `<option value="${esc(v)}"></option>`).join('');
+            return `
+            <div class="config-collection-rule" data-collection-rule="${i}">
+                <select class="config-select" data-rule-field="${i}">
+                    ${['tag', 'category', 'shortcut'].map((f) =>
+                        `<option value="${f}" ${f === field ? 'selected' : ''}>${esc(this.collectionRuleFieldLabel(f))}</option>`).join('')}
+                </select>
+                <select class="config-select" data-rule-operator="${i}">
+                    <option value="includes" ${op === 'includes' ? 'selected' : ''}>${esc(this.t('config.collectionRuleOpIncludes', 'includes'))}</option>
+                    <option value="excludes" ${op === 'excludes' ? 'selected' : ''}>${esc(this.t('config.collectionRuleOpExcludes', 'excludes'))}</option>
+                </select>
+                <input type="text" class="config-text" data-rule-value="${i}" list="config-rule-values-${i}"
+                       value="${esc(r.value || '')}" placeholder="${esc(this.t('config.collectionRuleValuePlaceholder', 'value'))}">
+                <datalist id="config-rule-values-${i}">${options}</datalist>
+                <button type="button" class="config-btn config-btn--small config-btn--danger" data-rule-remove="${i}" ${rules.length === 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.backupDelete', 'Delete'))}">✕</button>
+            </div>`;
+        }).join('');
+
+        return `
+            <div class="config-panel config-panel--attached">
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.collectionEditNameLabel', 'Name'))}</span>
+                    <input type="text" class="config-text" data-collection-field="name"
+                           value="${esc(col.name || '')}" placeholder="${esc(this.t('config.collectionEditNamePlaceholder', 'My collection'))}">
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.collectionEditIconLabel', 'Icon (emoji)'))}</span>
+                    <input type="text" class="config-text" style="max-width:80px" data-collection-field="icon"
+                           value="${esc(col.icon || '')}" placeholder="${esc(this.t('config.collectionEditIconPlaceholder', '★'))}">
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.collectionEditLogicLabel', 'Match logic'))}</span>
+                    <select class="config-select" data-collection-field="logic">
+                        <option value="and" ${logic === 'and' ? 'selected' : ''}>${esc(this.t('config.collectionEditLogicAnd', 'AND — all rules must match'))}</option>
+                        <option value="or" ${logic === 'or' ? 'selected' : ''}>${esc(this.t('config.collectionEditLogicOr', 'OR — any rule must match'))}</option>
+                    </select>
+                </div>
+                <h4 class="config-theme-group-title">${esc(this.t('config.collectionEditRulesLabel', 'Rules'))}</h4>
+                <div class="config-collection-rules">${ruleRows}</div>
+                <div class="config-actions">
+                    <button type="button" class="config-btn config-btn--small" data-collection-add-rule>${esc(this.t('config.collectionEditAddRule', '+ Add rule'))}</button>
+                </div>
+                <p class="config-field-hint" data-collection-match></p>
+            </div>`;
     }
 
     /**
@@ -4162,8 +4488,143 @@ class DashboardConfig {
             </div>`;
     }
 
+    /**
+     * Persist the collection list and redraw the dashboard behind the view, so
+     * a rule change is visible without leaving config.
+     */
+    async saveCustomCollections() {
+        this.dash.renderDashboard?.({ animate: false });
+        await this.saveSettingsWithFeedback();
+    }
+
+    /** Live count of what a collection currently matches. */
+    updateCollectionMatchCount(col) {
+        const el = document.querySelector('[data-collection-match]');
+        if (!el) return;
+        const rules = (col.rules || []).filter((r) => String(r.value || '').trim());
+        if (!rules.length) {
+            el.textContent = this.t('config.collectionNoRules', 'Add a rule to match bookmarks.');
+            return;
+        }
+        let matched = [];
+        try {
+            matched = this.dash.smartCollections?._evaluateCollection?.(
+                { ...col, rules }, this.dash.allBookmarks || []) || [];
+        } catch {
+            matched = [];
+        }
+        el.textContent = this.t('config.collectionMatchCount', '{count} bookmarks match')
+            .replace('{count}', String(matched.length));
+    }
+
+    bindCustomCollections(container) {
+        const cols = this.customCollections();
+        const editing = this._collectionEditing;
+        const col = cols.find((c) => c.id === editing);
+
+        container.querySelector('[data-collection-add]')?.addEventListener('click', () => {
+            const names = cols.map((c) => c.name);
+            const fresh = {
+                id: DashboardConfig.newCollectionId(),
+                name: DashboardConfig.uniqueNameFrom(
+                    this.t('config.collectionEditNewTitle', 'New collection'), names),
+                icon: '',
+                logic: 'and',
+                rules: [{ field: 'tag', operator: 'includes', value: '' }],
+            };
+            this.dash.settings.collections = [...cols, fresh];
+            this._collectionEditing = fresh.id;
+            this.repaintPtBody();
+            void this.saveCustomCollections();
+        });
+
+        container.querySelectorAll('[data-collection-edit]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-collection-edit');
+                this._collectionEditing = this._collectionEditing === id ? null : id;
+                this.repaintPtBody();
+            });
+        });
+
+        container.querySelectorAll('[data-collection-delete]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-collection-delete');
+                const target = cols.find((c) => c.id === id);
+                if (!target) return;
+                const ok = await this.confirmAction(
+                    this.t('config.collectionDeleteConfirm', 'Delete the collection “{name}”?')
+                        .replace('{name}', String(target.name || id)));
+                if (!ok) return;
+                this.dash.settings.collections = cols.filter((c) => c.id !== id);
+                if (this._collectionEditing === id) this._collectionEditing = null;
+                this.repaintPtBody();
+                await this.saveCustomCollections();
+            });
+        });
+
+        if (!col) return;
+
+        const commit = () => {
+            this.updateCollectionMatchCount(col);
+            void this.saveCustomCollections();
+        };
+
+        container.querySelectorAll('[data-collection-field]').forEach((el) => {
+            const field = el.getAttribute('data-collection-field');
+            el.addEventListener('change', () => {
+                if (field === 'name' && !this.guardUniqueName(
+                    el, el.value, cols.filter((c) => c.id !== col.id).map((c) => c.name),
+                    {
+                        previous: col.name,
+                        message: this.t('config.collectionNameDuplicate', 'A collection with this name already exists.'),
+                    }
+                )) return;
+                col[field] = el.value;
+                if (field === 'name' || field === 'icon') this.repaintPtBody();
+                commit();
+            });
+        });
+
+        container.querySelector('[data-collection-add-rule]')?.addEventListener('click', () => {
+            col.rules = [...(col.rules || []), { field: 'tag', operator: 'includes', value: '' }];
+            this.repaintPtBody();
+            void this.saveCustomCollections();
+        });
+
+        container.querySelectorAll('[data-rule-remove]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const i = Number(btn.getAttribute('data-rule-remove'));
+                // The dashboard skips a collection with no rules, so the last
+                // one stays; its Remove button is disabled to say so.
+                if (!Array.isArray(col.rules) || col.rules.length <= 1) return;
+                col.rules.splice(i, 1);
+                this.repaintPtBody();
+                void this.saveCustomCollections();
+            });
+        });
+
+        const ruleEdit = (attr, key, repaint) => {
+            container.querySelectorAll(`[${attr}]`).forEach((el) => {
+                el.addEventListener('change', () => {
+                    const i = Number(el.getAttribute(attr));
+                    if (!col.rules?.[i]) return;
+                    col.rules[i][key] = el.value;
+                    // Changing the field changes which values can be suggested.
+                    if (repaint) this.repaintPtBody();
+                    commit();
+                });
+            });
+        };
+        ruleEdit('data-rule-field', 'field', true);
+        ruleEdit('data-rule-operator', 'operator', false);
+        ruleEdit('data-rule-value', 'value', false);
+
+        this.updateCollectionMatchCount(col);
+    }
+
     bindCollections(container) {
         this.bindControlPanels(container, 'collection');
+        this.bindCustomCollections(container);
         container.querySelectorAll('[data-scope-field]').forEach((box) => {
             box.addEventListener('change', () => {
                 const field = box.getAttribute('data-scope-field');
@@ -4500,6 +4961,7 @@ class DashboardConfig {
                     <select class="config-select" id="config-bm-category" aria-label="${esc(this.t('config.category', 'Category'))}">${catOptions}</select>
                     <select class="config-select" id="config-bm-sort" aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
                     <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
+                    <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.t('config.selectAllBookmarks', 'Select all'))}</button>
                 </div>
                 <div id="config-bm-bulk">${this.renderBulkToolbar()}</div>
                 <div id="config-bm-list">${this.renderBookmarksList()}</div>
@@ -4837,6 +5299,8 @@ class DashboardConfig {
         wire('#config-bm-sort', 'bmSort');
         container.querySelector('#config-bm-add')
             ?.addEventListener('click', () => this.openAddBookmarkModal());
+        container.querySelector('#config-bm-select-all')
+            ?.addEventListener('click', () => this.toggleSelectAllBookmarks());
         this.bindBookmarkRows(container);
         this.bindBulkToolbar(container);
     }
@@ -5492,6 +5956,23 @@ class DashboardConfig {
             this.t('config.discardChangesConfirm', 'Discard your unsaved changes?'),
             { confirmLabel: this.t('config.confirmDiscard', 'Discard') }
         );
+    }
+
+    /**
+     * Tick every row the filters currently show, or clear them if they already
+     * are. Scoped to the visible rows, not the whole collection: acting on
+     * bookmarks you cannot see is how a bulk delete goes wrong.
+     */
+    toggleSelectAllBookmarks() {
+        const rows = this.visibleBookmarks();
+        const keys = rows.map((b) => DashboardConfig.bookmarkKey(b));
+        const allSelected = keys.length > 0 && keys.every((k) => this.bmSelected.has(k));
+        if (allSelected) {
+            keys.forEach((k) => this.bmSelected.delete(k));
+        } else {
+            keys.forEach((k) => this.bmSelected.add(k));
+        }
+        this.repaintBookmarksList();
     }
 
     repaintBookmarksList() {
@@ -6863,6 +7344,7 @@ class DashboardConfig {
                 const tab = btn.getAttribute('data-stats-tab');
                 if (tab === this.statsTab) return;
                 this.statsTab = tab;
+                this.restoreConfigHash();
                 // Fetched on first open rather than with the section: the two
                 // inbox endpoints are of no use on the other tabs.
                 if (tab === 'inbox' && this._statsInboxItems === undefined) {
@@ -7141,6 +7623,7 @@ class DashboardConfig {
                 const tab = btn.getAttribute('data-help-tab');
                 if (tab === this.helpTab) return;
                 this.helpTab = tab;
+                this.restoreConfigHash();
                 const body = document.getElementById('config-help-body');
                 if (!body) { this.render(); return; }
                 body.innerHTML = this.renderHelpBody();
