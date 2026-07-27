@@ -1118,6 +1118,10 @@
         "statsDuplicateUrlsDetail": "Doppelte URLs: {labels}{more}",
         "statsIndexTitle": "schnellzugriff",
         "statsNavOverview": "übersicht",
+        "statsTabOverview": "Übersicht",
+        "statsTabActivity": "Aktivität",
+        "statsTabContent": "Inhalt",
+        "statsTabHealth": "Health",
         "statsNavInbox": "inbox",
         "statsNavHealth": "gesundheit",
         "statsHealthSubOverview": "Link-Gesundheit",
@@ -3342,7 +3346,16 @@
         "themeResetConfirm": "Die mitgelieferten Themen auf ihre ursprünglichen Farben zurücksetzen? Deine eigenen Themen bleiben erhalten.",
         "generalGroupOnboarding": "Einstieg",
         "generalGroupOnboardingNote": "Die Schnellstartkarte, der gelegentliche Tastaturtipp und die Zusammenfassung neuer Funktionen.",
-        "generalGroupOnboardingActions": "Erneut anzeigen"
+        "generalGroupOnboardingActions": "Erneut anzeigen",
+        "statsScoreTitle": "Aufräum-Score",
+        "statsActivityTitle": "Öffnungen im Zeitverlauf",
+        "statsRotTitle": "Linkverfall & Konflikte",
+        "statsTabInbox": "Posteingang",
+        "statsInboxIntro": "Was im Posteingang wartet und wie viel davon zu Lesezeichen wird.",
+        "statsConflictsTitle": "Konflikte & Duplikate",
+        "statsSearchTitle": "Suche & Status",
+        "statsShortcutsTitle": "Kürzel",
+        "statsFindersTitle": "Finder"
     },
     "colors": {
         "title": "themenanpassung",

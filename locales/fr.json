@@ -1118,6 +1118,10 @@
         "statsDuplicateUrlsDetail": "URL en double : {labels}{more}",
         "statsIndexTitle": "accès rapide",
         "statsNavOverview": "vue d'ensemble",
+        "statsTabOverview": "Vue d’ensemble",
+        "statsTabActivity": "Activité",
+        "statsTabContent": "Contenu",
+        "statsTabHealth": "Santé",
         "statsNavInbox": "boîte de réception",
         "statsNavHealth": "santé",
         "statsHealthSubOverview": "santé des liens",
@@ -3342,7 +3346,16 @@
         "themeResetConfirm": "Réinitialiser les thèmes fournis à leurs couleurs d’origine ? Vos propres thèmes sont conservés.",
         "generalGroupOnboarding": "Prise en main",
         "generalGroupOnboardingNote": "La carte de démarrage rapide, l’astuce clavier occasionnelle et le résumé des nouveautés.",
-        "generalGroupOnboardingActions": "Réafficher"
+        "generalGroupOnboardingActions": "Réafficher",
+        "statsScoreTitle": "Score de nettoyage",
+        "statsActivityTitle": "Ouvertures dans le temps",
+        "statsRotTitle": "Liens morts et conflits",
+        "statsTabInbox": "Boîte de réception",
+        "statsInboxIntro": "Ce qui attend dans la boîte de réception, et la part que vous convertissez en favoris.",
+        "statsConflictsTitle": "Conflits et doublons",
+        "statsSearchTitle": "Recherche et état",
+        "statsShortcutsTitle": "Raccourcis",
+        "statsFindersTitle": "Finders"
     },
     "colors": {
         "title": "personnalisation du thème",

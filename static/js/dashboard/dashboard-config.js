@@ -53,6 +53,12 @@ class DashboardConfig {
         this._statsHealth = undefined;
         // How far back the activity chart looks, in days.
         this.statsRange = 30;
+        // Statistics sub-tab.
+        this.statsTab = 'overview';
+        // Inbox stats load on demand; undefined means "not fetched yet".
+        this._statsInboxItems = undefined;
+        this._statsInboxAgg = undefined;
+        this._statsFinders = undefined;
         // Latest release for the overview: undefined until fetched, null on failure.
         this._latestRelease = undefined;
     }
@@ -245,6 +251,14 @@ class DashboardConfig {
         } else if (this.section === 'stats') {
             this.bindStats(container);
             void this.loadStats();
+            // The tab can be the one restored from a previous visit rather than
+            // one just clicked, so the fetch cannot hang off the click alone.
+            if (this.statsTab === 'inbox' && this._statsInboxItems === undefined) {
+                void this.loadStatsInbox();
+            }
+            if (this.statsTab === 'activity' && this._statsFinders === undefined) {
+                void this.loadStatsFinders();
+            }
         } else if (this.section === 'help') {
             this.bindHelp(container);
         }
@@ -3474,6 +3488,8 @@ class DashboardConfig {
 
     static APPEARANCE_TABS = ['general', 'custom-themes'];
 
+    static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
+
     ptTabLabel(tab) {
         const map = {
             finders: ['config.findersTab', 'Finders'],
@@ -5691,7 +5707,39 @@ class DashboardConfig {
      * the chart use the same formulas and bucketing the old config's stats tab
      * used, so a number does not change meaning by moving views.
      */
+    statsTabLabel(tab) {
+        const map = {
+            overview: ['config.statsTabOverview', 'Overview'],
+            activity: ['config.statsTabActivity', 'Activity'],
+            content: ['config.statsTabContent', 'Content'],
+            inbox: ['config.statsTabInbox', 'Inbox'],
+            health: ['config.statsTabHealth', 'Health'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    /**
+     * Statistics used to be one long scroll of seven panels, which buried
+     * everything below the fold. The same panels are grouped into four tabs:
+     * the headline numbers and score, what you open over time, what your
+     * collection is made of, and what needs fixing.
+     */
     renderStats() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const tabs = DashboardConfig.STATS_TABS.map((tab) => {
+            const active = tab === this.statsTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-stats-tab="${esc(tab)}">${esc(this.statsTabLabel(tab))}</button>`;
+        }).join('');
+
+        return `
+            <p class="config-view-intro">${esc(this.t('config.statsIntroView', 'What is in your dashboard right now. These numbers update as you change things.'))}</p>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-stats-body">${this.renderStatsBody()}</div>
+        `;
+    }
+
+    renderStatsBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.computeStats();
 
@@ -5702,34 +5750,49 @@ class DashboardConfig {
                 ${hint ? `<p class="config-tile-detail">${esc(hint)}</p>` : ''}
             </div>`;
 
-        return `
-            <p class="config-view-intro">${esc(this.t('config.statsIntroView', 'What is in your dashboard right now. These numbers update as you change things.'))}</p>
+        switch (this.statsTab) {
+            case 'activity':
+                return this.renderStatsActivity(s)
+                    + this.renderStatsTopLists(s)
+                    + this.renderStatsShortcuts(s)
+                    + `<div id="config-stats-finders">${this.renderStatsFinders()}</div>`;
+            case 'content':
+                return this.renderStatsRatios(s) + this.renderStatsDistributions(s);
+            case 'inbox':
+                return this.renderStatsInbox();
+            case 'health':
+                return this.renderStatsRot(s)
+                    + this.renderStatsConflicts(s)
+                    + this.renderStatsSearch(s)
+                    + `
+                    <div class="config-panel">
+                        <h3 class="config-panel-title">${esc(this.t('config.statsHealthTitle', 'Link health'))}</h3>
+                        <div id="config-stats-health">${this.renderStatsHealth()}</div>
+                    </div>`;
+            default:
+                return `
+                    <div class="config-actions" style="margin-bottom:16px">
+                        <button type="button" class="config-btn config-btn--small" data-stats-action="export">${esc(this.t('config.statsExportCsv', 'Export as CSV'))}</button>
+                    </div>
+                    <div class="config-tiles" role="list">
+                        ${tile(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
+                        ${tile(this.t('config.statsPages', 'Pages'), s.pages)}
+                        ${tile(this.t('config.statsCategoryCount', 'Categories'), s.categories)}
+                        ${tile(this.t('config.statsTagCount', 'Distinct tags'), s.tagCount)}
+                        ${tile(this.t('config.statsWithShortcut', 'With a shortcut'), s.withShortcut)}
+                        ${tile(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
+                    </div>
+                    ${this.renderStatsInsights(s)}
+                    ${this.renderStatsScore(s)}`;
+        }
+    }
 
-            <div class="config-actions" style="margin-bottom:16px">
-                <button type="button" class="config-btn config-btn--small" data-stats-action="export">${esc(this.t('config.statsExportCsv', 'Export as CSV'))}</button>
-            </div>
-
-            <div class="config-tiles" role="list">
-                ${tile(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
-                ${tile(this.t('config.statsPages', 'Pages'), s.pages)}
-                ${tile(this.t('config.statsCategoryCount', 'Categories'), s.categories)}
-                ${tile(this.t('config.statsTagCount', 'Distinct tags'), s.tagCount)}
-                ${tile(this.t('config.statsWithShortcut', 'With a shortcut'), s.withShortcut)}
-                ${tile(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
-            </div>
-
-            ${this.renderStatsScore(s)}
-            ${this.renderStatsActivity(s)}
-            ${this.renderStatsRatios(s)}
-            ${this.renderStatsTopLists(s)}
-            ${this.renderStatsDistributions(s)}
-            ${this.renderStatsRot(s)}
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.statsHealthTitle', 'Link health'))}</h3>
-                <div id="config-stats-health">${this.renderStatsHealth()}</div>
-            </div>
-        `;
+    repaintStatsBody() {
+        const host = document.getElementById('config-stats-body');
+        if (!host) { this.render(); return; }
+        host.innerHTML = this.renderStatsBody();
+        const container = document.getElementById('dashboard-layout');
+        if (container) this.bindStats(container);
     }
 
     /**
@@ -5742,7 +5805,7 @@ class DashboardConfig {
         if (!s.total) {
             return `
                 <div class="config-panel">
-                    <h3 class="config-panel-title">${esc(this.t('config.statsNavScore', 'Cleanup score'))}</h3>
+                    <h3 class="config-panel-title">${esc(this.t('config.statsScoreTitle', 'Cleanup score'))}</h3>
                     <p class="config-panel-empty">${esc(this.t('config.noBookmarksYet', 'No bookmarks yet.'))}</p>
                 </div>`;
         }
@@ -5756,11 +5819,11 @@ class DashboardConfig {
 
         return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.statsNavScore', 'Cleanup score'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.statsScoreTitle', 'Cleanup score'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.statsScoreHint', 'Starts at 100 and loses points for bookmarks you never open, links gone stale, duplicate URLs and clashing shortcuts.'))}</p>
                 <div class="config-score">
                     <span class="config-score-value config-score-value--${tone}">${esc(String(score))}</span>
-                    <div class="config-bar" role="img" aria-label="${esc(this.t('config.statsNavScore', 'Cleanup score'))}: ${score}/100">
+                    <div class="config-bar" role="img" aria-label="${esc(this.t('config.statsScoreTitle', 'Cleanup score'))}: ${score}/100">
                         <span class="config-bar-fill config-bar-fill--${tone}" style="width:${score}%"></span>
                     </div>
                 </div>
@@ -5784,7 +5847,7 @@ class DashboardConfig {
         if (!a.buckets.length) {
             return `
                 <div class="config-panel">
-                    <h3 class="config-panel-title">${esc(this.t('config.statsNavActivity', 'Activity'))}</h3>
+                    <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Opens over time'))}</h3>
                     <div class="config-choices" role="group">${ranges}</div>
                     <p class="config-panel-empty">${esc(this.t('config.statsNoActivity', 'No opens recorded in this period.'))}</p>
                 </div>`;
@@ -5808,7 +5871,7 @@ class DashboardConfig {
 
         return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.statsNavActivity', 'Activity'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Opens over time'))}</h3>
                 <div class="config-choices" role="group">${ranges}</div>
                 <div class="config-stat-figures">
                     <span><strong>${esc(String(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityOpens', 'opens'))}</span>
@@ -5967,13 +6030,295 @@ class DashboardConfig {
             </li>`;
         return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.statsNavRot', 'Link rot & clashes'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.statsRotTitle', 'Link rot & clashes'))}</h3>
                 <ul class="config-stat-details">
                     ${line(this.t('config.statsNeverOpened', 'Never opened'), s.neverOpened)}
                     ${line(this.t('config.statsStale90', 'Not opened in 90 days'), s.stale90)}
+                    ${line(this.t('config.statsUntagged', 'Untagged'), s.total - s.tagged)}
+                </ul>
+            </div>`;
+    }
+
+    /**
+     * Personal usage insights: the numbers already on the page, read back as
+     * sentences with somewhere to go next.
+     *
+     * Carried over from the old config, including its thresholds — most-active
+     * page, top bookmark, never-opened share, status coverage, and whether
+     * anything was opened in the last 48 hours.
+     */
+    renderStatsInsights(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const all = this.dash.allBookmarks || [];
+        const total = all.length;
+        if (!total) {
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsInsightsSection', 'Personal usage insights'))}</h3>
+                    <p class="config-panel-empty">${esc(this.t('config.statsNoData', 'No data yet'))}</p>
+                </div>`;
+        }
+
+        const pageName = (id) => (this.dash.pages || [])
+            .find((p) => String(p.id) === String(id))?.name || String(id);
+        const pageOpens = new Map();
+        all.forEach((b) => {
+            const pid = String(b.pageId);
+            pageOpens.set(pid, (pageOpens.get(pid) || 0) + (Number(b.openCount) || 0));
+        });
+        const topPage = [...pageOpens.entries()].sort((a, b) => b[1] - a[1])[0];
+        const topBm = [...all].sort((a, b) => (Number(b.openCount) || 0) - (Number(a.openCount) || 0))[0];
+        const neverOpened = all.filter((b) => !Number(b.openCount) && !Number(b.lastOpened)).length;
+        const statusCount = all.filter((b) => b.checkStatus === true).length;
+        const recent = all.filter((b) => Number(b.lastOpened || 0) >= Date.now() - 48 * 3600000).length;
+        const pct = (n) => String(Math.round((n / total) * 100));
+
+        const items = [];
+        if (topPage && topPage[1] > 0) {
+            items.push({
+                text: this.t('config.statsInsightTopPage', 'Most activity happens on {page} with {opens} opens.')
+                    .replace('{page}', pageName(topPage[0])).replace('{opens}', String(topPage[1])),
+                tab: 'content',
+            });
+        }
+        if (topBm && Number(topBm.openCount) > 0) {
+            items.push({
+                text: this.t('config.statsInsightTopBookmark', 'Top bookmark is "{name}" with {count} opens.')
+                    .replace('{name}', String(topBm.name || '—')).replace('{count}', String(Number(topBm.openCount))),
+                tab: 'activity',
+            });
+        }
+        if (neverOpened > 0) {
+            items.push({
+                text: this.t('config.statsInsightNeverOpened', '{percent}% ({count}/{total}) of bookmarks are never opened yet.')
+                    .replace('{percent}', pct(neverOpened)).replace('{count}', String(neverOpened)).replace('{total}', String(total)),
+                tab: 'health',
+            });
+        }
+        items.push({
+            text: this.t('config.statsInsightStatusCoverage', 'Status checks are enabled for {percent}% ({count}/{total}) of bookmarks.')
+                .replace('{percent}', pct(statusCount)).replace('{count}', String(statusCount)).replace('{total}', String(total)),
+        });
+        items.push(recent > 0
+            ? {
+                text: this.t('config.statsInsightRecentActivity', '{count} bookmarks were opened in the last 48 hours.')
+                    .replace('{count}', String(recent)),
+                tab: 'activity',
+            }
+            : { text: this.t('config.statsInsightNoRecent', 'No bookmark opens recorded in the last 48 hours.') });
+
+        const rows = items.map((it) => `
+            <li class="config-stat-detail">
+                <span>${esc(it.text)}</span>
+                ${it.tab ? `<button type="button" class="config-btn config-btn--small" data-stats-goto="${esc(it.tab)}">${esc(this.statsTabLabel(it.tab))}</button>` : ''}
+            </li>`).join('');
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsInsightsSection', 'Personal usage insights'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.statsInsightsIntro', 'Quick interpretation of your usage patterns.'))}</p>
+                <ul class="config-stat-details">${rows}</ul>
+            </div>`;
+    }
+
+    /** Shortcut coverage, and which shortcuts actually earn their keystroke. */
+    renderStatsShortcuts(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const all = this.dash.allBookmarks || [];
+        const pageName = (id) => (this.dash.pages || [])
+            .find((p) => String(p.id) === String(id))?.name || String(id);
+        const rows = all
+            .filter((b) => String(b.shortcut || '').trim())
+            .sort((a, b) => (Number(b.openCount) || 0) - (Number(a.openCount) || 0))
+            .slice(0, 20)
+            .map((b) => `
+                <tr>
+                    <th scope="row">${esc(String(b.shortcut).toUpperCase())}</th>
+                    <td>${esc(b.name || '—')}</td>
+                    <td>${esc(String(Number(b.openCount) || 0))}</td>
+                    <td>${esc(pageName(b.pageId))}</td>
+                </tr>`).join('');
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsShortcutsTitle', 'Shortcuts'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.statsShortcutCoverage', '{count} of {total} bookmarks have a shortcut ({pct}%)')
+                    .replace('{count}', String(s.withShortcut))
+                    .replace('{total}', String(s.total))
+                    .replace('{pct}', String(s.total ? Math.round((s.withShortcut / s.total) * 100) : 0)))}</p>
+                ${rows ? `
+                <h4 class="config-theme-group-title">${esc(this.t('config.statsSubTopShortcuts', 'Top shortcuts by opens'))}</h4>
+                <table class="config-stats-table">
+                    <thead><tr>
+                        <th scope="col">${esc(this.t('config.statsColShortcut', 'Shortcut'))}</th>
+                        <th scope="col">${esc(this.t('config.statsColBookmark', 'Bookmark'))}</th>
+                        <th scope="col">${esc(this.t('config.statsColOpens', 'Opens'))}</th>
+                        <th scope="col">${esc(this.t('config.statsColPage', 'Page'))}</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>` : `<p class="config-panel-empty">${esc(this.t('config.statsNoData', 'No data yet'))}</p>`}
+            </div>`;
+    }
+
+    /**
+     * Finders, with their use counts. Loaded separately because finders are not
+     * part of the bookmark set the rest of the stats derive from.
+     */
+    renderStatsFinders() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (this._statsFinders === undefined) {
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsFindersTitle', 'Finders'))}</h3>
+                    <p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>
+                </div>`;
+        }
+        const finders = this._statsFinders || [];
+        const totalUses = finders.reduce((n, f) => n + (Number(f.useCount) || 0), 0);
+        const withShortcut = finders.filter((f) => String(f.shortcut || '').trim()).length;
+        const rows = [...finders]
+            .sort((a, b) => (Number(b.useCount) || 0) - (Number(a.useCount) || 0))
+            .slice(0, 20)
+            .map((f) => `
+                <tr>
+                    <th scope="row">${esc(f.name || '—')}</th>
+                    <td>${esc(String(f.shortcut || '—'))}</td>
+                    <td>${esc(String(Number(f.useCount) || 0))}</td>
+                </tr>`).join('');
+
+        const tile = (label, value) => `
+            <div class="config-tile" role="listitem">
+                <span class="config-tile-label">${esc(label)}</span>
+                <span class="config-tile-value">${esc(String(value))}</span>
+            </div>`;
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsFindersTitle', 'Finders'))}</h3>
+                <div class="config-tiles" role="list">
+                    ${tile(this.t('config.statsFindersTotal', 'Finders total'), finders.length)}
+                    ${tile(this.t('config.statsFindersUsesTotal', 'Total finder uses'), totalUses)}
+                    ${tile(this.t('config.statsFindersWithShortcut', 'With shortcut'), withShortcut)}
+                </div>
+                ${rows ? `
+                <h4 class="config-theme-group-title">${esc(this.t('config.statsSubTopFinders', 'Top finders by use count'))}</h4>
+                <table class="config-stats-table">
+                    <thead><tr>
+                        <th scope="col">${esc(this.t('config.statsColName', 'Name'))}</th>
+                        <th scope="col">${esc(this.t('config.statsColShortcut', 'Shortcut'))}</th>
+                        <th scope="col">${esc(this.t('config.statsColUses', 'Uses'))}</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>` : `<p class="config-panel-empty">${esc(this.t('config.findersEmpty', 'No finders yet.'))}</p>`}
+            </div>`;
+    }
+
+    /** Finders are their own resource, so the stats view fetches them itself. */
+    async loadStatsFinders() {
+        try {
+            const res = await fetch('/api/finders');
+            const data = res && res.ok ? await res.json() : [];
+            this._statsFinders = Array.isArray(data) ? data : [];
+        } catch {
+            this._statsFinders = [];
+        }
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'activity') {
+            const host = document.getElementById('config-stats-finders');
+            if (host) host.innerHTML = this.renderStatsFinders();
+        }
+    }
+
+    /**
+     * Conflicts & duplicates, with the offending values named.
+     *
+     * "3 duplicate URLs" tells you there is a problem; naming them tells you
+     * which. The old config capped the list at eight and counted the rest, which
+     * keeps a badly duplicated install from filling the panel.
+     */
+    renderStatsConflicts(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const CAP = 8;
+        const more = (n) => (n > CAP
+            ? this.t('config.statsConflictMore', ' +{count} more').replace('{count}', String(n - CAP))
+            : '');
+
+        const dupes = s.duplicateUrlList || [];
+        const clashes = s.shortcutConflictList || [];
+
+        let detail;
+        if (!dupes.length && !clashes.length) {
+            detail = `<p class="config-panel-empty">${esc(this.t('config.statsNoConflictsFound', 'No conflicts found.'))}</p>`;
+        } else {
+            const parts = [];
+            if (dupes.length) {
+                const labels = dupes.slice(0, CAP).map(([url, c]) => {
+                    const display = url.length > 50 ? `${url.slice(0, 47)}…` : url;
+                    return `${display} (×${c})`;
+                }).join(', ');
+                parts.push(`<p class="config-field-hint">${esc(this.t('config.statsDuplicateUrlsDetail', 'Duplicate URLs: {labels}{more}')
+                    .replace('{labels}', labels).replace('{more}', more(dupes.length)))}</p>`);
+            }
+            if (clashes.length) {
+                const labels = clashes.slice(0, CAP).map(([sc, c]) => `${sc} (×${c})`).join(', ');
+                parts.push(`<p class="config-field-hint">${esc(this.t('config.statsConflictingShortcuts', 'Conflicting shortcuts: {labels}{more}')
+                    .replace('{labels}', labels).replace('{more}', more(clashes.length)))}</p>`);
+            }
+            detail = parts.join('');
+        }
+
+        const line = (label, n) => `
+            <li class="config-stat-detail${n > 0 ? ' config-stat-detail--warn' : ''}">
+                <span>${esc(label)}</span>
+                <span class="config-stat-penalty">${esc(String(n))}</span>
+            </li>`;
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsConflictsTitle', 'Conflicts & duplicates'))}</h3>
+                <ul class="config-stat-details">
                     ${line(this.t('config.statsDuplicateUrls', 'Duplicate URLs'), s.duplicateUrls)}
                     ${line(this.t('config.statsShortcutConflicts', 'Shortcut conflicts'), s.shortcutConflicts)}
-                    ${line(this.t('config.statsUntagged', 'Untagged'), s.total - s.tagged)}
+                </ul>
+                ${detail}
+                ${(dupes.length || clashes.length) ? `
+                <div class="config-actions">
+                    <button type="button" class="config-btn config-btn--small" data-stats-action="open-health">${esc(this.t('config.statsOpenInHealth', 'Open in Health'))}</button>
+                </div>` : ''}
+            </div>`;
+    }
+
+    /**
+     * Search & status: which search behaviours are on, and how much of the
+     * collection opts into availability checking. These are settings rather
+     * than derived counts, so they read from settings directly.
+     */
+    renderStatsSearch(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const set = this.dash.settings || {};
+        const yes = this.t('config.statsYes', 'Yes');
+        const no = this.t('config.statsNo', 'No');
+        const onOff = (v) => (v ? yes : no);
+
+        const row = (label, value) => `
+            <li class="config-stat-detail">
+                <span>${esc(label)}</span>
+                <span class="config-stat-penalty">${esc(String(value))}</span>
+            </li>`;
+
+        // The index is built by the dashboard at runtime; its presence is the
+        // honest signal, rather than a setting that only says it is wanted.
+        const indexed = Boolean(this.dash.searchComponent);
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsSearchTitle', 'Search & status'))}</h3>
+                <ul class="config-stat-details">
+                    ${row(this.t('config.statsSearchIndexed', 'Search index built'), onOff(indexed))}
+                    ${row(this.t('config.statsInterleave', 'Interleave search mode'), onOff(set.interleaveMode))}
+                    ${row(this.t('config.statsFuzzy', 'Fuzzy suggestions'), onOff(set.enableFuzzySuggestions !== false))}
+                    ${row(this.t('config.statsShowStatus', 'Status monitor enabled'), onOff(set.showStatus !== false))}
+                    ${row(this.t('config.statsStatusCheckBookmarks', 'Bookmarks with status check'), s.checked)}
+                    ${row(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
                 </ul>
             </div>`;
     }
@@ -6028,8 +6373,14 @@ class DashboardConfig {
             if (sc) shortcutCounts.set(sc, (shortcutCounts.get(sc) || 0) + 1);
         });
 
-        const duplicateUrls = [...urlCounts.values()].filter((c) => c > 1).length;
-        const shortcutConflicts = [...shortcutCounts.values()].filter((c) => c > 1).length;
+        // Both the counts and the offending values: naming what clashes is what
+        // makes the number actionable, which is how the old config showed it.
+        const duplicateUrlList = [...urlCounts.entries()].filter(([, c]) => c > 1)
+            .sort((a, b) => b[1] - a[1]);
+        const shortcutConflictList = [...shortcutCounts.entries()].filter(([, c]) => c > 1)
+            .sort((a, b) => b[1] - a[1]);
+        const duplicateUrls = duplicateUrlList.length;
+        const shortcutConflicts = shortcutConflictList.length;
 
         const catLabels = new Map(this.knownCategories().map((c) => [c.id, c.label]));
         const perCategory = [...perCategoryCount.entries()]
@@ -6067,6 +6418,8 @@ class DashboardConfig {
             stale90,
             duplicateUrls,
             shortcutConflicts,
+            duplicateUrlList,
+            shortcutConflictList,
             perPage,
             perCategory,
             topTags,
@@ -6221,6 +6574,172 @@ class DashboardConfig {
     }
 
     /**
+     * Inbox figures come from two places: /api/inbox is the current snapshot,
+     * /api/inbox-stats the durable lifetime aggregate that survives items being
+     * triaged away. Neither can be derived from the other, so both are fetched.
+     */
+    async loadStatsInbox() {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const [itemsRes, statsRes] = await Promise.allSettled([
+            fetcher('/api/inbox'),
+            fetcher('/api/inbox-stats'),
+        ]);
+        try {
+            const body = itemsRes.status === 'fulfilled' && itemsRes.value.ok
+                ? await itemsRes.value.json() : null;
+            this._statsInboxItems = Array.isArray(body?.items) ? body.items : [];
+        } catch {
+            this._statsInboxItems = [];
+        }
+        try {
+            this._statsInboxAgg = statsRes.status === 'fulfilled' && statsRes.value.ok
+                ? await statsRes.value.json() : null;
+        } catch {
+            this._statsInboxAgg = null;
+        }
+        if (this.isActiveView() && this.section === 'stats' && this.statsTab === 'inbox') {
+            const host = document.getElementById('config-stats-inbox');
+            if (host) host.innerHTML = this.renderStatsInboxBody();
+        }
+    }
+
+    /** "3d" / "5h" / "20m" — the old config's short duration format. */
+    formatDurationShort(ms) {
+        const n = Number(ms);
+        if (!Number.isFinite(n) || n <= 0) return '—';
+        const days = n / 86400000;
+        if (days >= 1) return this.t('config.statsInboxDaysUnit', '{n}d').replace('{n}', String(Math.round(days)));
+        const hours = n / 3600000;
+        if (hours >= 1) return this.t('config.statsInboxHoursUnit', '{n}h').replace('{n}', String(Math.round(hours)));
+        return this.t('config.statsInboxMinutesUnit', '{n}m').replace('{n}', String(Math.max(1, Math.round(n / 60000))));
+    }
+
+    renderStatsInbox() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.statsInboxIntro', 'What is waiting in the inbox, and how much of it you turn into bookmarks.'))}</p>
+            <div id="config-stats-inbox">${this.renderStatsInboxBody()}</div>`;
+    }
+
+    /**
+     * The snapshot and lifetime blocks, using the old config's own figures:
+     * backlog is unread older than 30 days, and conversion is promoted against
+     * everything triaged (promoted + discarded) rather than against everything
+     * ever added, which would never reach 100%.
+     */
+    renderStatsInboxBody() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (this._statsInboxItems === undefined) {
+            return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+        }
+        const items = this._statsInboxItems || [];
+        const agg = this._statsInboxAgg || {};
+        const now = Date.now();
+
+        const unread = items.filter((it) => !Number(it?.readAt));
+        const read = items.length - unread.length;
+        const oldestUnreadAt = unread.reduce((min, it) => {
+            const added = Number(it?.addedAt || 0);
+            return added > 0 && added < min ? added : min;
+        }, Number.POSITIVE_INFINITY);
+        const backlogCutoff = now - 30 * 86400000;
+        const backlog = unread.filter((it) =>
+            Number(it?.addedAt || 0) > 0 && Number(it.addedAt) < backlogCutoff).length;
+        const withTags = items.filter((it) =>
+            Array.isArray(it?.tags) && it.tags.some((t) => String(t || '').trim())).length;
+        const withNote = items.filter((it) => String(it?.note || '').trim()).length;
+        const withPreview = items.filter((it) => String(it?.previewImage || '').trim()).length;
+
+        const added = Number(agg.totalAdded || 0);
+        const promoted = Number(agg.totalPromoted || 0);
+        const deleted = Number(agg.totalDeleted || 0);
+        const triaged = promoted + deleted;
+        const pct = triaged > 0 ? Math.round((promoted / triaged) * 100) : 0;
+        const avgRetention = Number(agg.retentionCount || 0) > 0
+            ? Number(agg.sumRetentionMs || 0) / Number(agg.retentionCount)
+            : 0;
+
+        const tile = (label, value) => `
+            <div class="config-tile" role="listitem">
+                <span class="config-tile-label">${esc(label)}</span>
+                <span class="config-tile-value">${esc(String(value))}</span>
+            </div>`;
+
+        // Inflow per source, current inbox against lifetime, so a source that
+        // has been fully triaged still shows up.
+        const currentBySource = new Map();
+        items.forEach((it) => {
+            const key = String(it?.source || '').trim() || 'unknown';
+            currentBySource.set(key, (currentBySource.get(key) || 0) + 1);
+        });
+        const lifetimeBySource = agg.bySource && typeof agg.bySource === 'object' ? agg.bySource : {};
+        const sourceKeys = [...new Set([...currentBySource.keys(), ...Object.keys(lifetimeBySource)])].sort();
+        const sourceLabel = (key) => this.t(
+            `config.statsInboxSource${key.charAt(0).toUpperCase()}${key.slice(1)}`, key);
+        const sourceRows = sourceKeys.map((key) => `
+            <tr>
+                <th scope="row">${esc(sourceLabel(key))}</th>
+                <td>${esc(String(currentBySource.get(key) || 0))}</td>
+                <td>${esc(String(Number(lifetimeBySource[key]) || 0))}</td>
+            </tr>`).join('');
+
+        const since = Number(agg.firstEventAt || 0) > 0
+            ? `<p class="config-panel-note">${esc(this.t('config.statsInboxSince', 'Lifetime counters since {date}.')
+                .replace('{date}', new Date(Number(agg.firstEventAt)).toLocaleDateString()))}</p>`
+            : '';
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsInboxSubCurrent', 'Current inbox'))}</h3>
+                <div class="config-tiles" role="list">
+                    ${tile(this.t('config.statsInboxTotal', 'Inbox items'), items.length)}
+                    ${tile(this.t('config.statsInboxUnread', 'Unread'), unread.length)}
+                    ${tile(this.t('config.statsInboxRead', 'Read (kept)'), read)}
+                    ${tile(this.t('config.statsInboxBacklog', 'Unread > 30d'), backlog)}
+                    ${tile(this.t('config.statsInboxOldestUnread', 'Oldest unread'),
+                        Number.isFinite(oldestUnreadAt) ? this.formatDurationShort(now - oldestUnreadAt) : '—')}
+                    ${tile(this.t('config.statsInboxWithTags', 'With tags'), withTags)}
+                    ${tile(this.t('config.statsInboxWithNote', 'With note'), withNote)}
+                    ${tile(this.t('config.statsInboxWithPreview', 'With preview'), withPreview)}
+                </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsInboxSubThroughput', 'Triage throughput'))}</h3>
+                ${since}
+                <div class="config-tiles" role="list">
+                    ${tile(this.t('config.statsInboxAdded', 'Added'), added)}
+                    ${tile(this.t('config.statsInboxPromoted', 'Converted'), promoted)}
+                    ${tile(this.t('config.statsInboxDeleted', 'Discarded'), deleted)}
+                    ${tile(this.t('config.statsInboxAvgRetention', 'Avg. time to triage'), this.formatDurationShort(avgRetention))}
+                </div>
+                <div class="config-ratio" style="margin-top:12px">
+                    <div class="config-bar" role="img" aria-label="${esc(String(pct))}%">
+                        <span class="config-bar-fill" style="width:${pct}%"></span>
+                    </div>
+                    <p class="config-field-hint">${esc(this.t('config.statsInboxConversion',
+                        '{promoted} of {triaged} triaged items converted to bookmarks ({pct}%)')
+                        .replace('{promoted}', String(promoted))
+                        .replace('{triaged}', String(triaged))
+                        .replace('{pct}', String(pct)))}</p>
+                </div>
+            </div>
+
+            ${sourceKeys.length ? `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsInboxSubSources', 'Inbox by source'))}</h3>
+                <table class="config-stats-table">
+                    <thead><tr>
+                        <th scope="col">${esc(this.t('config.statsInboxColSource', 'Source'))}</th>
+                        <th scope="col">${esc(this.t('config.statsInboxColCurrent', 'In inbox now'))}</th>
+                        <th scope="col">${esc(this.t('config.statsInboxColLifetime', 'Added (lifetime)'))}</th>
+                    </tr></thead>
+                    <tbody>${sourceRows}</tbody>
+                </table>
+            </div>` : ''}`;
+    }
+
+    /**
      * The health endpoint already aggregates the counts, so read its summary
      * rather than re-deriving them from the issue list (which only carries the
      * bookmarks that have something wrong with them).
@@ -6251,29 +6770,61 @@ class DashboardConfig {
     }
 
     bindStats(container) {
+        container.querySelectorAll('[data-stats-tab]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-stats-tab');
+                if (tab === this.statsTab) return;
+                this.statsTab = tab;
+                // Fetched on first open rather than with the section: the two
+                // inbox endpoints are of no use on the other tabs.
+                if (tab === 'inbox' && this._statsInboxItems === undefined) {
+                    void this.loadStatsInbox();
+                }
+                if (tab === 'activity' && this._statsFinders === undefined) {
+                    void this.loadStatsFinders();
+                }
+                // Only the body changes; repainting the tab strip too would
+                // rebuild the buttons under the pointer that just clicked one.
+                this.repaintStatsBody();
+                document.querySelectorAll('[data-stats-tab]').forEach((b) => {
+                    const on = b.getAttribute('data-stats-tab') === this.statsTab;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+            });
+        });
         container.querySelectorAll('[data-stats-range]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const next = Number(btn.getAttribute('data-stats-range'));
                 if (!next || next === this.statsRange) return;
                 this.statsRange = next;
-                this.repaintStats();
+                this.repaintStatsBody();
             });
         });
         container.querySelectorAll('[data-stats-action]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                if (btn.getAttribute('data-stats-action') === 'export') this.exportStatsCSV();
+                const action = btn.getAttribute('data-stats-action');
+                if (action === 'export') this.exportStatsCSV();
+                // Duplicates are the actionable half of this panel, and health
+                // is where they can actually be merged.
+                if (action === 'open-health') this.openViewFromTile('health', 'duplicate');
             });
         });
-    }
-
-    /** Repaint the whole section: the range change feeds nearly every panel. */
-    repaintStats() {
-        if (!this.isActiveView() || this.section !== 'stats') return;
-        const body = document.getElementById('config-view-body');
-        if (!body) return;
-        body.innerHTML = this.renderStats();
-        const container = document.getElementById('dashboard-layout');
-        if (container) this.bindStats(container);
+        container.querySelectorAll('[data-stats-goto]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-stats-goto');
+                if (!tab || tab === this.statsTab) return;
+                this.statsTab = tab;
+                if (tab === 'activity' && this._statsFinders === undefined) void this.loadStatsFinders();
+                if (tab === 'inbox' && this._statsInboxItems === undefined) void this.loadStatsInbox();
+                this.repaintStatsBody();
+                document.querySelectorAll('[data-stats-tab]').forEach((b) => {
+                    const on = b.getAttribute('data-stats-tab') === this.statsTab;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+            });
+        });
     }
 
     /** The report as a flat CSV, so it can be worked through in a spreadsheet. */

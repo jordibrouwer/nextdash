@@ -20,6 +20,16 @@ async function openStats(page) {
     await expect(page.locator('.config-tiles')).toBeVisible();
 }
 
+/**
+ * Statistics is split into tabs, so a panel is only in the DOM while its own
+ * tab is showing. Each test opens the tab that owns the panel it asserts on.
+ */
+async function openStatsTab(page, tab) {
+    await openStats(page);
+    await page.locator(`[data-stats-tab="${tab}"]`).click();
+    await expect(page.locator('#config-stats-body .config-panel').first()).toBeVisible();
+}
+
 test.describe('config statistics visualisations', () => {
     test('the cleanup score shows a value, a bar and its penalties', async ({ page }) => {
         await openStats(page);
@@ -37,7 +47,7 @@ test.describe('config statistics visualisations', () => {
     });
 
     test('the activity chart draws one bar per bucket, with a text fallback', async ({ page }) => {
-        await openStats(page);
+        await openStatsTab(page, 'activity');
         const chart = page.locator('.config-chart svg');
         await expect(chart).toBeVisible();
         expect(await chart.locator('rect').count()).toBeGreaterThan(1);
@@ -47,7 +57,7 @@ test.describe('config statistics visualisations', () => {
     });
 
     test('changing the range redraws the chart', async ({ page }) => {
-        await openStats(page);
+        await openStatsTab(page, 'activity');
         const bars = () => page.locator('.config-chart svg rect').count();
         const before = await bars();
         await page.locator('[data-stats-range="7"]').click();
@@ -56,7 +66,7 @@ test.describe('config statistics visualisations', () => {
     });
 
     test('coverage bars report a count out of the total', async ({ page }) => {
-        await openStats(page);
+        await openStatsTab(page, 'content');
         const ratios = page.locator('.config-ratio');
         expect(await ratios.count()).toBeGreaterThanOrEqual(5);
         await expect(ratios.first().locator('.config-ratio-value')).toContainText('%');
@@ -64,7 +74,7 @@ test.describe('config statistics visualisations', () => {
     });
 
     test('top lists and distributions render bars per row', async ({ page }) => {
-        await openStats(page);
+        await openStatsTab(page, 'activity');
         const rows = page.locator('.config-dist-row');
         expect(await rows.count()).toBeGreaterThan(3);
         await expect(rows.first().locator('.config-bar-fill')).toBeVisible();
@@ -72,14 +82,22 @@ test.describe('config statistics visualisations', () => {
     });
 
     test('rot & cleanup counts every problem category', async ({ page }) => {
-        await openStats(page);
+        await openStatsTab(page, 'health');
         // Located by its own heading: hasText also matches ancestor panels.
         const panel = page.locator('.config-panel').filter({
             has: page.locator('.config-panel-title', { hasText: /rot/i }),
         });
         await expect(panel).toHaveCount(1);
-        // Never opened, stale 90 days, duplicate URLs, shortcut conflicts, untagged.
-        expect(await panel.locator('.config-stat-detail').count()).toBe(5);
+        // Never opened, stale 90 days, untagged. Duplicate URLs and shortcut
+        // conflicts moved to their own "Conflicts & duplicates" panel, which the
+        // old stats page also kept separate.
+        expect(await panel.locator('.config-stat-detail').count()).toBe(3);
+
+        const conflicts = page.locator('.config-panel').filter({
+            has: page.locator('.config-panel-title', { hasText: /conflicts/i }),
+        });
+        await expect(conflicts).toHaveCount(1);
+        expect(await conflicts.locator('.config-stat-detail').count()).toBe(2);
     });
 
     test('the CSV export downloads a stats report', async ({ page }) => {
@@ -96,7 +114,7 @@ test.describe('config statistics visualisations', () => {
             contentType: 'application/json',
             body: JSON.stringify({ summary: { healthyCount: 6, brokenCount: 2, uncheckedCount: 1, monitorDownCount: 1, duplicateCount: 0, staleCount: 3, shortcutConflictCount: 0 } }),
         }));
-        await openStats(page);
+        await openStatsTab(page, 'health');
         const health = page.locator('#config-stats-health');
         await expect(health.locator('.config-stat-detail').first()).toContainText('6');
         await expect(health).toContainText('2');

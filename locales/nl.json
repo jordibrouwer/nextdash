@@ -1128,6 +1128,10 @@
         "statsDuplicateUrlsDetail": "Dubbele URL's: {labels}{more}",
         "statsIndexTitle": "snelle links",
         "statsNavOverview": "overzicht",
+        "statsTabOverview": "Overzicht",
+        "statsTabActivity": "Activiteit",
+        "statsTabContent": "Inhoud",
+        "statsTabHealth": "Health",
         "statsNavInbox": "inbox",
         "statsNavHealth": "gezondheid",
         "statsHealthSubOverview": "linkgezondheid",
@@ -3342,7 +3346,16 @@
         "themeResetConfirm": "De meegeleverde thema's terugzetten naar hun oorspronkelijke kleuren? Je eigen thema's blijven behouden.",
         "generalGroupOnboarding": "Onboarding",
         "generalGroupOnboardingNote": "De snelstartkaart, de incidentele sneltoetstip en het overzicht van nieuwe functies.",
-        "generalGroupOnboardingActions": "Opnieuw tonen"
+        "generalGroupOnboardingActions": "Opnieuw tonen",
+        "statsScoreTitle": "Opruimscore",
+        "statsActivityTitle": "Openingen in de tijd",
+        "statsRotTitle": "Linkverval & conflicten",
+        "statsTabInbox": "Inbox",
+        "statsInboxIntro": "Wat er in de inbox wacht, en hoeveel daarvan je omzet naar bladwijzers.",
+        "statsConflictsTitle": "Conflicten & duplicaten",
+        "statsSearchTitle": "Zoeken & status",
+        "statsShortcutsTitle": "Sneltoetsen",
+        "statsFindersTitle": "Finders"
     },
     "colors": {
         "title": "thema-aanpassing",

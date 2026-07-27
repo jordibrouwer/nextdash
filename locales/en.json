@@ -1135,6 +1135,10 @@
         "statsDuplicateUrlsDetail": "Duplicate URLs: {labels}{more}",
         "statsIndexTitle": "quick links",
         "statsNavOverview": "overview",
+        "statsTabOverview": "Overview",
+        "statsTabActivity": "Activity",
+        "statsTabContent": "Content",
+        "statsTabHealth": "Health",
         "statsNavInbox": "inbox",
         "statsNavHealth": "health",
         "statsHealthSubOverview": "link health",
@@ -3342,7 +3346,16 @@
         "themeResetConfirm": "Reset the packaged themes to their original colours? Your own themes are kept.",
         "generalGroupOnboarding": "Onboarding",
         "generalGroupOnboardingNote": "The quick-start card, the occasional keyboard tip, and the release summary.",
-        "generalGroupOnboardingActions": "Replay"
+        "generalGroupOnboardingActions": "Replay",
+        "statsScoreTitle": "Cleanup score",
+        "statsActivityTitle": "Opens over time",
+        "statsRotTitle": "Link rot & clashes",
+        "statsTabInbox": "Inbox",
+        "statsInboxIntro": "What is waiting in the inbox, and how much of it you turn into bookmarks.",
+        "statsConflictsTitle": "Conflicts & duplicates",
+        "statsSearchTitle": "Search & status",
+        "statsShortcutsTitle": "Shortcuts",
+        "statsFindersTitle": "Finders"
     },
     "colors": {
         "title": "theme customization",

@@ -613,3 +613,177 @@ test.describe('onboarding settings', () => {
         await expect(page.locator('[data-backup-action="reset-onboarding"]')).toHaveCount(0);
     });
 });
+
+test.describe('statistics tabs', () => {
+    const TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
+
+    test('the section is split into tabs instead of one long scroll', async ({ page }) => {
+        const errors = [];
+        page.on('pageerror', (e) => errors.push(String(e)));
+        await loadDashboard(page);
+        await openSection(page, 'stats');
+        await expect(page.locator('[data-stats-tab]')).toHaveCount(TABS.length);
+
+        for (const tab of TABS) {
+            await page.locator(`[data-stats-tab="${tab}"]`).click();
+            const body = page.locator('#config-stats-body');
+            await expect(body.locator('.config-panel').first()).toBeVisible();
+            // A missing key renders as "config.statsSomething".
+            await expect(body).not.toContainText(/config\.stats/);
+        }
+        expect(errors).toEqual([]);
+    });
+
+    test('each tab shows its own panels and only those', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'stats');
+
+        // The CSV export and headline tiles belong to Overview.
+        await page.locator('[data-stats-tab="overview"]').click();
+        await expect(page.locator('[data-stats-action="export"]')).toHaveCount(1);
+        await expect(page.locator('.config-tiles')).toBeVisible();
+
+        // The range picker drives the activity chart, so it lives there.
+        await page.locator('[data-stats-tab="activity"]').click();
+        await expect(page.locator('[data-stats-range]').first()).toBeVisible();
+        await expect(page.locator('[data-stats-action="export"]')).toHaveCount(0);
+
+        await page.locator('[data-stats-tab="health"]').click();
+        await expect(page.locator('#config-stats-health')).toBeVisible();
+        await expect(page.locator('[data-stats-range]')).toHaveCount(0);
+    });
+
+    test('overview leads with personal usage insights', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.allBookmarks.forEach((b, i) => {
+                b.openCount = [12, 30, 5, 0, 8][i % 5];
+                b.lastOpened = b.openCount ? Date.now() - i * 3600000 : 0;
+            });
+        });
+        await openSection(page, 'stats');
+        const body = page.locator('#config-stats-body');
+        await expect(body.locator('.config-panel-title').first()).toContainText(/insights/i);
+        // Each insight reads a number already on the page back as a sentence,
+        // with somewhere to go next.
+        await expect(body).toContainText(/Most activity happens on/);
+        await expect(body).toContainText(/Status checks are enabled for/);
+        await expect(page.locator('[data-stats-goto]').first()).toBeVisible();
+    });
+
+    test('an insight jumps to the tab that shows the detail', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.allBookmarks.forEach((b, i) => { b.openCount = 5 + i; });
+        });
+        await openSection(page, 'stats');
+        const goto = page.locator('[data-stats-goto]').first();
+        const target = await goto.getAttribute('data-stats-goto');
+        await goto.click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.statsTab)).toBe(target);
+    });
+
+    test('activity carries shortcut and finder usage tables', async ({ page }) => {
+        await page.route('**/api/finders', async (route) => {
+            if (route.request().method() !== 'GET') return route.fallback();
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+                { id: '1', name: 'Degoogle', searchUrl: 'https://x/?q=%s', shortcut: 'd', useCount: 10 },
+                { id: '2', name: '4get', searchUrl: 'https://y/?q=%s', shortcut: 'g', useCount: 2 },
+            ]) });
+        });
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.allBookmarks.forEach((b, i) => {
+                b.openCount = 30 - i;
+                b.shortcut = `S${i}`;
+            });
+        });
+        await openSection(page, 'stats');
+        await page.locator('[data-stats-tab="activity"]').click();
+
+        const body = page.locator('#config-stats-body');
+        await expect(body.locator('.config-panel-title').filter({ hasText: /shortcuts/i })).toHaveCount(1);
+        // Finders are their own resource, fetched separately from the bookmarks
+        // the rest of the stats derive from.
+        await expect.poll(() => body.locator('.config-stats-table').count(),
+            { timeout: 10_000 }).toBe(2);
+        await expect(body).toContainText('Degoogle');
+        await expect(body).toContainText('12');
+    });
+
+    test('health carries rot, conflicts, search & status and link health', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'stats');
+        await page.locator('[data-stats-tab="health"]').click();
+        const titles = await page.locator('#config-stats-body .config-panel-title').allTextContents();
+        // The old stats page had these as separate sections; folding conflicts
+        // into the rot panel lost "conflicts & duplicates" and "search & status".
+        expect(titles.length).toBe(4);
+        expect(titles.join(' | ')).toMatch(/rot/i);
+        expect(titles.join(' | ')).toMatch(/conflicts/i);
+        expect(titles.join(' | ')).toMatch(/search/i);
+        await expect(page.locator('#config-stats-health')).toBeVisible();
+    });
+
+    test('conflicts names what actually clashes, not just a count', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const url = d.allBookmarks[0].url;
+            d.allBookmarks.push({ name: 'Dup A', url, pageId: 1, shortcut: 'zz' });
+            d.allBookmarks.push({ name: 'Dup B', url: 'https://clash.example.com', pageId: 1, shortcut: 'zz' });
+        });
+        await openSection(page, 'stats');
+        await page.locator('[data-stats-tab="health"]').click();
+
+        const body = page.locator('#config-stats-body');
+        // A count alone says there is a problem; the value says which.
+        await expect(body).toContainText(/Duplicate URLs:/);
+        await expect(body).toContainText(/Conflicting shortcuts:/);
+        await expect(body).toContainText('zz (×2)');
+        // Only offered when there is something to merge.
+        await expect(page.locator('[data-stats-action="open-health"]')).toBeVisible();
+    });
+
+    test('inbox sits between content and health, with both its blocks', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'stats');
+        const order = await page.locator('[data-stats-tab]')
+            .evaluateAll((els) => els.map((e) => e.getAttribute('data-stats-tab')));
+        expect(order).toEqual(['overview', 'activity', 'content', 'inbox', 'health']);
+
+        await page.locator('[data-stats-tab="inbox"]').click();
+        // The snapshot comes from /api/inbox and the lifetime counters from
+        // /api/inbox-stats; neither can be derived from the other.
+        const body = page.locator('#config-stats-body');
+        await expect(body.locator('.config-panel').first()).toBeVisible();
+        await expect(body).not.toContainText(/config\.stats/);
+        await expect.poll(() => body.locator('.config-tile').count(),
+            { timeout: 10_000 }).toBeGreaterThan(0);
+    });
+
+    test('changing the range keeps you on the activity tab', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'stats');
+        await page.locator('[data-stats-tab="activity"]').click();
+        // Only the body repaints: rebuilding the tab strip would replace the
+        // button under the pointer that just clicked it.
+        await page.locator('[data-stats-range]').nth(1).click();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.statsTab)).toBe('activity');
+        await expect(page.locator('[data-stats-range]').first()).toBeVisible();
+    });
+
+    test('the old config keeps its own lowercase quick-link labels', async ({ page }) => {
+        await loadDashboard(page);
+        // templates/config.html still renders statsNav*; the tabs use their own
+        // keys so restyling one page cannot degrade the other.
+        const labels = await page.evaluate(() => {
+            const t = window.dashboardInstance.language.t.bind(window.dashboardInstance.language);
+            return { nav: t('config.statsNavOverview'), tab: t('config.statsTabOverview') };
+        });
+        expect(labels.nav).toBe('overview');
+        expect(labels.tab).toBe('Overview');
+    });
+});

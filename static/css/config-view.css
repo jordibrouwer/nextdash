@@ -1711,3 +1711,35 @@
     border-top-right-radius: 0;
     border-top: none;
 }
+/* The inbox source breakdown. Scrolls inside its own box rather than pushing
+   the panel wide on a narrow screen. */
+.config-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: calc(var(--font-size-text) * 0.93);
+}
+
+.config-stats-table th,
+.config-stats-table td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-secondary, rgba(128, 128, 128, 0.2));
+}
+
+.config-stats-table thead th {
+    font-weight: 600;
+    opacity: 0.75;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: calc(var(--font-size-text) * 0.82);
+}
+
+.config-stats-table td {
+    font-variant-numeric: tabular-nums;
+}
+
+.config-stats-table tbody tr:last-child th,
+.config-stats-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
