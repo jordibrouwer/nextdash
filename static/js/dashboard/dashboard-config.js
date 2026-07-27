@@ -266,10 +266,19 @@ class DashboardConfig {
     }
 
     setupEscapeShortcut() {
+        const d = this.dash;
         // Escape returns to the bookmarks view, matching health and inbox.
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
             if (!this.isActiveView()) return;
+            // Anything layered over the view takes Escape first. Without this,
+            // dismissing a modal opened from config closed config underneath it
+            // too, dropping the user on the dashboard instead of back where
+            // they were. Health and inbox already guard the same way.
+            if (window.DashboardTagCloud?.modalOpen) return;
+            if (d.isModalOpen()) return;
+            if (d.searchComponent?.isActive()) return;
+            if (d.isInlineEditActive()) return;
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) {
                 return;

@@ -321,11 +321,13 @@ environment:
 
 **Config view**
 - `Shift+S` or `<` (`Shift+,`) — open config from the dashboard
-- `Esc` — close config and return to the dashboard
+- `Esc` — close config and return to the dashboard (dismisses an open modal, search or tag cloud first)
 - `←`/`→` — previous/next sub-tab, wrapping at both ends
 - `Home` / `End` — first / last sub-tab
 
 Rebinding shortcuts is not available at the moment — see **v2026.07.23** below.
+
+**Escape closed the config view along with the modal on top of it (v2026.07.23.3)** — opening the add-bookmark modal from settings and pressing `Esc` dismissed both at once, dropping you on the dashboard instead of back on the section you were reading. Each full-container view registers a global `Esc` handler that closes it, and the modal does not stop the key propagating, so both handlers saw the same press. The health and inbox handlers already guard against this; the config one did not, despite a comment claiming it matched them. It now carries the same guards, so `Esc` dismisses the top layer first — a modal, the tag cloud, an active search or an inline edit — and only closes the view once nothing is above it.
 
 **Add-bookmark modal showed only one page (v2026.07.23.2)** — promoting a link from the inbox opened the bookmark form with a single entry in its Page dropdown, and not even a real one but a hardcoded *Dashboard* fallback, so the bookmark could only be filed on one page however many existed. The modal builds its dropdowns from context the handler carries, and `openModal()` never refreshed it: only `:new`, quick-add and the config editor set it on the way past, so every other route into the modal — inbox promote, the paste-a-URL prompt, the *Add as new bookmark* search hint, the toolbar button, the toolbar paste handler and the empty-state button — got whatever the last caller had left, or nothing at all on a fresh load. `openModal()` now refreshes the context itself, so all six are fixed at once; a page chosen deliberately (as the config editor does) still wins.
 

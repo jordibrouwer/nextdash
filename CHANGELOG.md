@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.23.3 — July 2026](#v202607233--july-2026)
 - [v2026.07.23.2 — July 2026](#v202607232--july-2026)
 - [v2026.07.23.1 — July 2026](#v202607231--july-2026)
 - [v2026.07.23 — July 2026](#v20260723--july-2026)
@@ -19,14 +20,14 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.07.22.2 — July 2026](#v202607222--july-2026)
 - [v2026.07.22.1 — July 2026](#v202607221--july-2026)
 - [v2026.07.22 — July 2026](#v20260722--july-2026)
-- [v2026.07.21.1 — July 2026](#v2026072111--july-2026)
+- [v2026.07.21.1 — July 2026](#v202607211--july-2026)
 - [v2026.07.21 — July 2026](#v20260721--july-2026)
 - [v2026.07.20 — July 2026](#v20260720--july-2026)
 - [v2026.07.19 — July 2026](#v20260719--july-2026)
 - [v2026.07.18 — July 2026](#v20260718--july-2026)
-- [v2026.07.17.3 — July 2026](#v2026071713--july-2026)
-- [v2026.07.17.2 — July 2026](#v2026071712--july-2026)
-- [v2026.07.17.1 — July 2026](#v2026071711--july-2026)
+- [v2026.07.17.3 — July 2026](#v202607173--july-2026)
+- [v2026.07.17.2 — July 2026](#v202607172--july-2026)
+- [v2026.07.17.1 — July 2026](#v202607171--july-2026)
 - [v2026.07.17 — July 2026](#v20260717--july-2026)
 - [v2026.07.16 — July 2026](#v20260716--july-2026)
 - [v2026.07.15 — July 2026](#v20260715--july-2026)
@@ -44,7 +45,7 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.07.10.1 — July 2026](#v202607101--july-2026)
 - [v2026.07.10 — July 2026](#v20260710--july-2026)
 - [v2026.07.09 — July 2026](#v20260709--july-2026)
-- [v2026.07.08.1 — July 2026](#v2026070081--july-2026)
+- [v2026.07.08.1 — July 2026](#v202607081--july-2026)
 - [v2026.07.08 — July 2026](#v20260708--july-2026)
 - [v2026.07.07 — July 2026](#v20260707--july-2026)
 - [v2026.07.06.1 — July 2026](#v202607061--july-2026)
@@ -115,6 +116,22 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.23.3 — July 2026
+
+**Closing a modal in the config view closed the config view with it.** Opening the add-bookmark modal from settings and pressing `Esc` dismissed both, landing you on the dashboard instead of back on the section you were reading. The inbox and health views were unaffected.
+
+### Fixes
+
+- **fix** **`Esc` closes one layer at a time** — every full-container view registers a global `Esc` handler that closes it, and the modal does not stop the key from propagating, so both handlers legitimately saw the same press: the modal closed itself and the view closed underneath it. The health and inbox handlers already guard against this (`if (d.isModalOpen()) return;`), but the config handler did not, despite a comment claiming it matched them. It now carries the same guards, so `Esc` dismisses whatever is on top and only closes the view once nothing is above it. Also covers the tag cloud, an active search, and inline editing — the other three layers those views guard against (`dashboard-config.js`).
+
+### Notes
+
+- Covered by `tests/config-escape-modal.spec.js`, which asserts both directions: that `Esc` on an open modal leaves the config view up, and that `Esc` with nothing layered still closes it. The second matters — without it the suite would pass just as well if the fix had simply stopped `Esc` from ever closing the view.
+- **Test isolation, not user-facing** — `tests/config-data-reset.spec.js` genuinely emptied every page's bookmarks and never put them back. The e2e suite shares one data directory and has no seeding step, so every spec running after it saw a bookmark-less install: nine `config-overview` tests failed on a batched run and passed individually, since a dashboard with no bookmarks has no broken links or duplicates to report. The test now snapshots the bookmarks and restores them in a `finally`, and asserts the restore took.
+- `dashboard-config.js` moves to `v2026-07-23-3` so the corrected file is fetched rather than served from cache.
 
 ---
 
