@@ -2878,6 +2878,7 @@
         "generalLayerJumpToast": "Switched to Advanced",
         "resetExpandToConfirm": "Expand this section to access the reset button.",
         "openThemeColorsLink": "Open theme editor →",
+        "openBuiltInColorsLink": "Open the theme editor…",
         "generalBookmarksEssentialsAdvancedHint": "Link previews, category collapse, and more are under Advanced → Bookmarks.",
         "configGeneralTourSearchTitle": "Find any setting",
         "configGeneralTourSearchBody": "Use the search box to jump to a setting on any tab. Matching sections expand automatically so the control is visible.",

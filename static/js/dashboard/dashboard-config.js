@@ -1491,7 +1491,7 @@ class DashboardConfig {
                 </div>
                 ${this.renderIconStyling()}
                 <div class="config-actions" style="margin-top:14px">
-                    <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openThemeColorsLink', 'Edit theme colours…'))}</button>
+                    <button type="button" class="config-btn" data-appearance-action="edit-colors">${esc(this.t('config.openBuiltInColorsLink', 'Open the theme editor…'))}</button>
                 </div>
             </div>
 
@@ -1606,7 +1606,7 @@ class DashboardConfig {
                 </div>
             </div>
 
-            <div class="config-panel" id="config-theme-colors-panel"></div>
+            </div>
         `;
     }
 
@@ -2606,48 +2606,25 @@ class DashboardConfig {
 
     handleAppearanceAction(action) {
         switch (action) {
-            case 'edit-colors': void this.toggleThemeColorsEditor(); break;
+            case 'edit-colors': this.openThemeEditorTab(); break;
             case 'upload-font': document.getElementById('config-font-input')?.click(); break;
             case 'upload-favicon': document.getElementById('config-favicon-input')?.click(); break;
         }
     }
 
     /**
-     * Reveal the theme-colours editor. Its markup ships hidden in the shell
-     * (#config-theme-colors-host, from the server-rendered partial); on first
-     * open we move it into the appearance panel and instantiate the existing
-     * ColorsEditor against it, so the whole editor is reused, not rebuilt.
+     * Jump to the Custom themes tab.
+     *
+     * This used to reveal the old config's editor, embedded from a
+     * server-rendered partial. That editor wired its buttons through a
+     * document-level delegate calling window.configManager, which only exists
+     * on the standalone /config page — so in this view its Add button silently
+     * did nothing. The native tab replaces it and covers the same palettes.
      */
-    async toggleThemeColorsEditor() {
-        const panel = document.getElementById('config-theme-colors-panel');
-        const host = document.getElementById('config-theme-colors-host');
-        if (!panel || !host) {
-            this.notify(this.t('config.colorsUnavailable', 'The colour editor could not be loaded.'), 'error');
-            return;
-        }
-        if (this._colorsShown) {
-            host.hidden = true;
-            this._colorsShown = false;
-            return;
-        }
-        if (host.parentElement !== panel) panel.appendChild(host);
-        host.hidden = false;
-        this._colorsShown = true;
-        if (this._colorsEditor) return;
-        if (typeof ColorsEditor !== 'function') {
-            this.notify(this.t('config.colorsUnavailable', 'The colour editor could not be loaded.'), 'error');
-            return;
-        }
-        try {
-            this._colorsEditor = new ColorsEditor({
-                root: host.querySelector('#theme-colors-editor') || host,
-                language: this.dash.language,
-                settings: this.dash.settings,
-            });
-            await this._colorsEditor.init();
-        } catch {
-            this.notify(this.t('config.colorsUnavailable', 'The colour editor could not be loaded.'), 'error');
-        }
+    openThemeEditorTab() {
+        this.appearanceTab = 'custom-themes';
+        this.render();
+        void this.openCustomThemes();
     }
 
     async uploadFont(file) {

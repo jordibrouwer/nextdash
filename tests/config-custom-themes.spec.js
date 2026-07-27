@@ -220,4 +220,18 @@ test.describe('custom theme editor', () => {
             .not.toBe('#aa3366');
         await expect(page.locator('[data-theme-row]')).toHaveCount(1);
     });
+
+    test('the Appearance link opens the theme editor tab', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        // The old embedded panel is gone; the link is a jump to the tab.
+        await expect(page.locator('#config-theme-colors-panel')).toHaveCount(0);
+        await page.locator('[data-appearance-action="edit-colors"]').click();
+        await expect(page.locator('[data-theme-add]')).toBeVisible();
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
+    });
 });
