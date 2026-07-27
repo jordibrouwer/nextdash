@@ -511,10 +511,15 @@ test.describe('config dashboard view (scaffold)', () => {
 
         await select.selectOption('ocean-dark');
 
-        await expect
-            .poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme')))
-            .toBe('ocean-dark');
+        // Assert the stored choice, not the rendered one: with "follow system
+        // dark mode" on, ThemeLoader.resolveDisplayTheme pairs the stored theme
+        // with the OS preference, so data-theme legitimately reads ocean-light
+        // on a light system. Asserting the resolved value made this test depend
+        // on whichever spec ran before it.
         await expect.poll(() => saved && saved.theme).toBe('ocean-dark');
+        await expect
+            .poll(() => page.evaluate(() => window.dashboardInstance.settings.theme))
+            .toBe('ocean-dark');
     });
 
     test('the theme-colours link opens the native editor tab', async ({ page }) => {

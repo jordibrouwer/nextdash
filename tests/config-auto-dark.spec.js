@@ -21,8 +21,30 @@ async function openAppearance(page) {
 const shown = (page) => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
 const stored = (page) => page.evaluate(() => window.dashboardInstance.settings.theme);
 
+/**
+ * Auto dark mode is stored server-side, so leaving it on bleeds into whatever
+ * spec runs next: a theme picked there resolves to its paired variant and the
+ * assertion fails for reasons that have nothing to do with that test. Every
+ * test here turns it on, so every test has to put it back.
+ */
+async function restoreAutoDarkDefaults(page) {
+    await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await fetch('/api/settings');
+        if (!res.ok) return;
+        const settings = await res.json();
+        settings.autoDarkMode = false;
+        await api('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings),
+        });
+    });
+}
+
 test.describe('follow system dark mode — light OS', () => {
     test.use({ colorScheme: 'light' });
+    test.afterEach(async ({ page }) => { await restoreAutoDarkDefaults(page); });
 
     test('turning it on switches a dark theme to its light variant', async ({ page }) => {
         await openAppearance(page);
@@ -53,6 +75,7 @@ test.describe('follow system dark mode — light OS', () => {
 
 test.describe('follow system dark mode — dark OS', () => {
     test.use({ colorScheme: 'dark' });
+    test.afterEach(async ({ page }) => { await restoreAutoDarkDefaults(page); });
 
     test('turning it on switches a light theme to its dark variant', async ({ page }) => {
         await openAppearance(page);
