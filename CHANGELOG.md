@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.23.1 — July 2026](#v202607231--july-2026)
 - [v2026.07.23 — July 2026](#v20260723--july-2026)
 - [v2026.07.22.6 — July 2026](#v202607226--july-2026)
 - [v2026.07.22.5 — July 2026](#v202607225--july-2026)
@@ -113,6 +114,22 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.23.1 — July 2026
+
+**The v2026.07.23 release did not reach browsers that had visited recently.** The release was published without moving the cache-busting tokens in its asset URLs, so a browser that had loaded the page within the last day kept serving its cached copies. The server was returning the new files all along — nothing was asking for them.
+
+### Fixes
+
+- **fix** **What's new still showed the previous release** — `whats-new-stub.js` is served with `Cache-Control: public, max-age=86400` and carries both `DASHBOARD_RELEASE` and `NEXTDASH_WHATS_NEW_DATA_VERSION`, the token that cache-busts the release-JSON fetches. The release string inside the file was updated but `WhatsNewData` — the token in the file's own URL — was left at `whats-new-v189`, so the URL never changed and the fresh file was never requested. Both move to `whats-new-v190` together, which is the pairing `TestSharedAssetVersionsMatchWhatsNewStub` exists to enforce (`asset_versions.go`, `whats-new-stub.js`).
+- **fix** **The config view's own changes were cached-stale too** — `dashboard-config.js` and `config-view.css` still carried `tagcloud-selected-1` from an earlier commit while the files had changed several times since, so the working reset buttons, the Reset sub-tab and the sub-tab arrow-key navigation shipped in v2026.07.23 were held back by the same day-long cache. Both now carry `v2026-07-23-1` (`templates/dashboard.html`).
+
+### Notes
+
+- The **What's new** modal does not open by itself on a new release, and never has: `isReleaseUnread()` only decides whether the search overlay shows a hint. The modal opens from the **★** button or from **Config → Overview → Show what's new**. A release not appearing on its own is intended behaviour rather than a symptom of this bug.
+- An already-open tab keeps the old files until a hard refresh (`Cmd/Ctrl+Shift+R`); the new tokens change what *subsequent* loads request.
 
 ---
 
