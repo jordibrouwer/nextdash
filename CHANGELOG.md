@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.23.2 — July 2026](#v202607232--july-2026)
 - [v2026.07.23.1 — July 2026](#v202607231--july-2026)
 - [v2026.07.23 — July 2026](#v20260723--july-2026)
 - [v2026.07.22.6 — July 2026](#v202607226--july-2026)
@@ -114,6 +115,23 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.23.2 — July 2026
+
+**The add-bookmark modal offered only one page.** Promoting a link from the inbox opened the form with a Page dropdown holding a single entry — and not even a real one, but a hardcoded *Dashboard* fallback — so a bookmark could only be filed on one page no matter how many existed.
+
+### Fixes
+
+- **fix** **Every page is in the Page dropdown again** — the modal builds its Page and Category dropdowns from context the handler carries, and `openModal()` did not refresh it. Only `:new`, quick-add and the config bookmark editor set that context on the way past; every other way into the modal called straight in and got whatever the previous caller had left behind — or, on a fresh page load, nothing at all. With no pages in hand, `generatePageOptions()` falls back to a single hardcoded option, which is why the list showed one page under a name that did not match any real one. `openModal()` now refreshes the context itself, so the dropdown is correct regardless of how the modal was opened (`search-commands-new.js`).
+- **fix** **Five more entry points had the same fault** — the same broken dropdown was reachable from the paste-a-URL prompt, the *Add as new bookmark* hint in search, the toolbar's add button, the toolbar paste handler, and the empty-state add button. Fixing `openModal()` rather than the individual call sites covers all of them, and any future caller. The config bookmark editor had already worked around this locally, with a comment describing the hazard — so the trap was known, but only patched in one place.
+- **fix** **A deliberately chosen page still wins** — the config editor opens the modal pointing at the page it is editing rather than the page the dashboard is showing, so a blanket refresh would have overridden it. `setContext()` now marks that choice, and the next `openModal()` honours it before returning to following the dashboard, so switching page and adding a bookmark still files it where you are looking (`search-commands-new.js`).
+
+### Notes
+
+- Covered by `tests/inbox-promote-pages.spec.js`: promote from the inbox, a direct open on a fresh load, and the pinned-page case that protects the config editor's behaviour. Reverting the fix fails two of the three.
+- `SearchCommandsNewJS` moves to `promote-page-dropdown-1` so the corrected file is actually fetched rather than served from a day-old cache — the same omission that made v2026.07.23.1 necessary.
 
 ---
 

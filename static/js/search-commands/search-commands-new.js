@@ -54,6 +54,9 @@ class SearchCommandNew {
         this.currentPageId = Number.isFinite(n) && n >= 1 ? n : 1;
         this.categories = categories;
         this.pages = pages;
+        // Deliberate choice: the next openModal keeps this page instead of
+        // following the dashboard. Consumed once, so a later open is free again.
+        this._contextPinned = true;
     }
 
     t(key, fallback) {
@@ -95,9 +98,42 @@ class SearchCommandNew {
         // `+` key, the toolbar, the empty state, the `:new` command and config, and
         // every one of those funnels through this method.
         window.nextdashTrack?.('modal:new-bookmark');
+        // Refresh the Page/Category context here rather than trusting the caller.
+        // Only `:new`, quick-add and config set it on the way past; the inbox
+        // promote, the paste-a-URL prompt, the search hint, the toolbar button and
+        // the empty state all called straight in, so the dropdowns rendered from
+        // whatever the previous caller left behind — and on a fresh load from
+        // nothing, which falls back to one hardcoded "Dashboard" option and hides
+        // every real page. Callers may still pre-set a page (config picks the one
+        // being edited), so an explicit context is only refreshed, never replaced.
+        this.syncContextFromDashboard();
         this._openOptions = options;
         this.createModal();
         this.showModal(options);
+    }
+
+    /**
+     * Pull pages, categories and the current page id off the dashboard.
+     *
+     * A caller that sets a page deliberately still wins: config opens this modal
+     * pointing at the page it is editing, which is not the page the dashboard is
+     * showing. setContext marks that by setting _contextPinned, which one
+     * openModal consumes; everything else follows the dashboard, so switching
+     * page and then adding a bookmark files it where you are looking.
+     */
+    syncContextFromDashboard() {
+        const d = window.dashboardInstance;
+        if (!d) return;
+        const pages = Array.isArray(d.pages) ? d.pages : [];
+        const categories = Array.isArray(d.categories) ? d.categories : [];
+        if (pages.length) this.pages = pages;
+        if (categories.length) this.categories = categories;
+        if (this._contextPinned) {
+            this._contextPinned = false;
+            return;
+        }
+        const n = Number(d.currentPageId);
+        this.currentPageId = Number.isFinite(n) && n >= 1 ? n : (Number(this.currentPageId) || 1);
     }
 
     resetDraftState() {
