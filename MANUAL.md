@@ -133,7 +133,7 @@ Install → Open URL in browser → Quick-start card (optional)
 
 1. **Quick-start card** — A compact three-step card in the corner: language & auto dark mode, column layout, and weather. Skip it whenever you like — nothing is locked in, and every setting it touches stays reachable in **Config → General** afterwards. It then becomes a short checklist (add a bookmark, tag one, open Config → General, see the keyboard cheat sheet) that dismisses itself once every item is done, or any time you close it (see [Quick-start card](#quick-start-card)).
 2. **Empty dashboard** — Normal on first run. Use **+** (full add form) or **&** (quick-add) to add your first bookmark, or import from a browser HTML file (see [Import](#17-import-export-and-backup)).
-3. **Config** — Click **config** in the header (or open `/config`). The **Help** tab mirrors much of this manual in shorter form, plus a **Tips & tricks** section and a **What's new** recap.
+3. **Config** — Click **config** in the header, press **`Shift+S`**, or open `/#config`. Config is a view inside the dashboard, not a separate page. Its **Help** section mirrors much of this manual in shorter form, plus a **Tips & tricks** section and a **What's new** recap.
 
 ---
 
@@ -195,13 +195,17 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 
 ### 4.5 Config vs dashboard
 
-| Dashboard `/` | Config `/config` |
+Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** header link, or the `/#config` address; **`<`** takes you back.
+
+| Dashboard view | Config view |
 |-----------------|------------------|
 | Daily use: open, search, quick-add | Structure: pages, categories, bulk edit |
-| Keyboard-first | Split-view bookmark editor, stats, backups |
-| Live layout and themes | Save bar for many settings |
+| Keyboard-first | Bookmark editor, stats, backups |
+| Live layout and themes | Every setting, grouped by topic |
 
-Changes in config often apply to the dashboard after **Save** (some toggles autosave). Config only writes data that actually changed — a small settings edit does not re-upload every page of bookmarks — and you get a short *Saving…* / *Saved* toast on the right when save completes.
+It has eight sections — **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, and **Help** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
+
+Most controls **save the moment you change them**, and a short *Saving…* / *Saved* confirmation appears. The bookmark editor is the exception: it collects your edits and writes them when you press **Save**. Config only writes data that actually changed — a small settings edit does not re-upload every page of bookmarks.
 
 ---
 
@@ -293,13 +297,13 @@ Follow this path once; later you will mix steps freely.
 | Step | Action | Where |
 |------|--------|--------|
 | 1 | Complete or skip the quick-start card | First visit |
-| 2 | Open **config → pages** — add or rename pages | `/config#pages` |
-| 3 | Open **config → categories** — create sections per page | `/config#categories` |
+| 2 | Open **config → pages** — add or rename pages | `/#config/pages-tags` |
+| 3 | Open **config → categories** — create sections per page | `/#config/pages-tags` |
 | 4 | Add 3–5 bookmarks with **&** quick-add | Dashboard |
 | 5 | Press **>** and search by name | Dashboard |
 | 6 | Press **!** and skim the cheat sheet | Dashboard |
 | 7 | Enable a theme you like | **config → general → appearance** |
-| 7b | (Optional) Skim **Config → Help → Tips & tricks** for more shortcuts | `/config#help` |
+| 7b | (Optional) Skim **Config → Help → Tips & tricks** for more shortcuts | `/#config/help` |
 | 8 | Create a ZIP backup | **config → backups** |
 | 9 | (Optional) Install browser extension | `extension/` folder |
 | 10 | (Optional) Import old browser bookmarks | **config → backups → Import from Browser** |
@@ -365,7 +369,7 @@ The **Context** panel (page and category switcher for the list below) starts **c
 
 The breadcrumb row shows your current location (e.g. `bookmarks › Work › dev`). Save mode (**Requires save**, **Auto-save**, **Read-only**, **Save colors**) and the save status line sit in the **save row** beside **Save**, not in the breadcrumb.
 
-On a **phone** (≤768px), opening `/config#bookmarks` shows a clear *desktop only* card with a link back to the dashboard — use a wider window for the split-view editor.
+The bookmark editor is comfortable on a wide window; on a narrow one the fields stack.
 
 All bookmark lists in config (per-page editor, tags tab, stats) read from one **central bookmark store**, so tags and edits stay in sync across tabs.
 
@@ -889,7 +893,7 @@ Read-only analytics (desktop). Filter toolbar sits above a fused **split surface
 
 ## 16. Config — complete walkthrough
 
-Open `/config`. The tab bar groups tabs as **System**, **Dashboard**, **Extras**, and **Help**. **`1`–`9`** jumps to the Nth visible tab; **`←`/`→`** moves tab-by-tab and crosses into the next group at group edges; **`Alt+←`/`Alt+→`** jumps to the first tab of the previous/next group (when focus is not in an input or modal). **`S`** saves (sticky bar); **`<`** (`Shift+,`) returns to the dashboard, confirming first if there are unsaved changes.
+Open config with **`Shift+S`**, **`<`** (`Shift+,`), the **config** header link, or the `/#config` address — it opens in place, without leaving the dashboard. **`Escape`** closes it again (unless you are typing in a field). Pick a section from the rail on the left, or deep-link straight to one with `/#config/<section>`.
 
 | Tab | Purpose |
 |-----|---------|
@@ -1111,9 +1115,7 @@ See `extension/README.md` for development notes.
 
 ### Mobile config
 
-On phones (≤768px width), config limits to **General** and **Help**; use a wider window for full bookmark editing. If you open `/config#bookmarks` on a phone, a **desktop only** card explains the limit and links back to the dashboard.
-
-Within **General** on phone you get **language**, **theme**, and **layout** in that order, plus a compact **Search settings…** for those panels — not the full Essentials/Advanced layers.
+Every config section is reachable on a phone — the sections stack and the controls reflow to the narrower width. Bulk bookmark editing is still most comfortable on a wide window.
 
 **Tablets** — Portrait tablets and other touch layouts above 768px keep the full config (all tabs, Essentials/Advanced layers, settings search in the breadcrumb). Only true phone widths use the reduced layout.
 
@@ -1425,9 +1427,9 @@ Ctrl/Cmd+Shift+K    find any setting, tab, or help section
 | URL | Page |
 |-----|------|
 | `/` | Dashboard |
-| `/config` | Settings |
-| `/config#bookmarks` | Bookmark editor |
-| `/config#backups` | Backup / import |
+| `/#config` | Settings |
+| `/#config/bookmarks` | Bookmark editor |
+| `/#config/data-backups` | Backup / import |
 | `/health` | Legacy redirect to `/#health` |
 | `/colors` | Theme editor |
 

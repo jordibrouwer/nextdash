@@ -54,4 +54,4 @@ Pattern: **Config-style composition** — `this.data = new DashboardData(this)` 
 - Load race guard: `_pageBookmarksLoadId` / `isCurrentPageBookmarksLoad`.
 - `dashboard-tag-cloud.js` stays separate from tag-filter grid view.
 - Extraction scripts: `scripts/extract-dashboard-modules.mjs`, `scripts/extract-dashboard-pr10.mjs`.
-- Config tour scheduler: `static/js/config/config-tours-runtime.js` (Fase 3.1).
+- Config tour scheduler: `static/js/config/config-tours-runtime.js` (Fase 3.1) — removed with the old config page.

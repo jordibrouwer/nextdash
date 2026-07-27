@@ -80,11 +80,11 @@ nextDash is built for **personal or small-team use on a trusted network**. There
 
 ### Optional write token (LAN / VPS)
 
-Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Protected endpoints then require header `X-NextDash-Token` with that value. The dashboard and config pages inject the token automatically when you open them in a browser.
+Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Protected endpoints then require header `X-NextDash-Token` with that value. The dashboard injects the token automatically when you open it in a browser.
 
 Protected actions include: **reset all data** (also requires `{"confirm":true}`), **download or import backup**, **delete page**, **bookmark preview fetch**, **bookmark ping** (`/api/ping`), **search-index build**, **health delete / retest / merge / auto-heal / open-broken / cache-scan / update-status**, **clear or refresh all bookmark previews**, **bookmark/page/category/finder/settings saves**, **uploads** (favicon, font, icon), and **reset theme colours**.
 
-When the token is **not** set, behaviour is unchanged — everything stays open for local dev. When it **is** set, the dashboard and config pages inject the token automatically so normal browser use is unaffected. The browser extension can store the same write token in **Settings → Write token**.
+When the token is **not** set, behaviour is unchanged — everything stays open for local dev. When it **is** set, the dashboard injects the token automatically so normal browser use is unaffected. The browser extension can store the same write token in **Settings → Write token**.
 
 Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation to block DNS-rebinding to private networks unless **allow localhost bookmarks** is enabled in settings.
 
