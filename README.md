@@ -148,7 +148,7 @@ On a fresh install a card offers **Turn on**, **What is recorded?**, or **No tha
 
 #### Turn it on or off
 
-**Config → General → Advanced → Privacy** → tick or clear **Privacy-friendly analytics**. It applies after the page reloads.
+**Config → Behavior → Privacy** → tick or clear **Privacy-friendly analytics**. It applies after the page reloads.
 
 From the keyboard: press <kbd>:</kbd> and run **`:telemetry on`** (or `:telemetry off`). Typing `:telemetry` on its own shows the current state. It writes the same setting and reloads the page for you.
 
@@ -357,11 +357,11 @@ In the **health view**, an **Export** button downloads the current filter and se
 
 **Dashboard ↔ config shortcut** (**v2026.07.17.2**) — `<` (which is `Shift+,`) jumps from the dashboard to config, and from config back to the dashboard — confirming first if there are unsaved config changes. It accepts both the `<` character and the physical comma key with Shift, so it works regardless of keyboard layout. On the same release, a fresh first visit to Config → General opens compact — **Essentials** with only **Localisation** expanded — until you set your own section layout.
 
-**Quick-start card** (first run only, any window width) — a compact three-step card walks through language & auto dark mode, column layout, and weather, then becomes a short checklist (add a bookmark, tag one, open Config → General, see the keyboard cheat sheet). Skip or dismiss any time; every setting it touches stays reachable in Config afterwards. Progress is stored server-side in `settings.quickStart`, so it holds across devices (**v2026.07.17**, replacing the onboarding wizard, config-tab guided tours, and dashboard feature tour).
+**Quick-start card** (first run only, any window width) — a compact three-step card walks through language & auto dark mode, column layout, and weather, then becomes a short checklist (add a bookmark, tag one, open config, see the keyboard cheat sheet). Skip or dismiss any time; every setting it touches stays reachable in Config afterwards. Progress is stored server-side in `settings.quickStart`, so it holds across devices (**v2026.07.17**, replacing the onboarding wizard, config-tab guided tours, and dashboard feature tour).
 
-**Tips & tricks** (Config → Help, always available) — 30 tips grouped by task (Everyday, Adding bookmarks, Editing and organising, Finding things, Keeping it healthy, Making it yours), searchable via the Help filter and settings search like any other section (**v2026.07.17**, replacing the rotating footer tips).
+**Tips & tricks** — 31 tips grouped by task (Everyday, Adding bookmarks, Editing and organising, Finding things, Keeping it healthy, Making it yours). The dashboard shows one now and then as a small toast, never repeating one you have seen; turn them off under **Config → Behavior → General** (**v2026.07.17**, replacing the rotating footer tips).
 
-**Settings search promo** (desktop config, once until dismissed) — first visit may highlight **Search settings…** in the breadcrumb row with a **New** badge and speech balloon beside the field (`Ctrl/Cmd+Shift+K` for settings navigation vs `Ctrl/Cmd+K` quick actions). This is the only one-time promo balloon left; the ~20 dashboard discoverability promos and all guided tours were removed in **v2026.07.17** — everything they taught is documented in the keyboard cheat sheet (`!` / `F1`).
+**No promo balloons or guided tours** — the ~20 dashboard discoverability promos and all guided tours were removed in **v2026.07.17**; everything they taught is in the keyboard cheat sheet (`!` / `F1`) and the tips below.
 
 **Inbox snooze, keyboard triage & Health always-on (v2026.07.16)** — Inbox can **snooze** links (3h / tomorrow / weekend / next week) with a **Snoozed** filter and **`z`**, gains Health-style keyboard navigation (`j`/`k`/`g`/`G`, `Enter`/`p`/`r`/`n`/`z`/`d`), per-row **notes**, mark-read + bulk **Mark all read** / **Clear read**, and a preview loading pulse for fresh links. Promoting an Inbox item with status checks on immediately health-checks that URL. **Health** is always available in the header (the old hide toggle is gone), can optionally **re-check in the background** under Config → General → Status monitoring, opens **Edit** in the dashboard inline editor, and deep-link filters (stale / unused / missing preview / …) match the right rows again.
 
@@ -473,19 +473,21 @@ In the **health view**, an **Export** button downloads the current filter and se
 
 **Help rework & shell polish (v2026.07.08, hotfixed in v2026.07.08.1)** — Config → Help's topics are consolidated into fewer, reordered sections (*Getting started, Configuring nextDash, Keyboard shortcuts, Search/commands/toolbar, Finders, Appearance & display, Organizing bookmarks, Pages/categories/bulk editing, Tags & collections, Inbox, Health & status, Data & backups, Self-hosting & troubleshooting*) and now shares General's sticky **quick links** sidebar and single-section accordion. Quick-link clicks always land on the section title instead of scrolling partway in. The **Support me on Ko-fi** button gets the same twinkling-star glow animation as the What's New modal's donate CTA, centered on its own row; the **jordibrw.nl** signature link is larger and accent-themed. General's sections now have a dividing border between them like Help's, and the vertical divider between the quick-links sidebar and content now runs the full height of the page on both tabs instead of stopping partway down. **v2026.07.08.1** fixes the same scroll-offset issue on General's own quick links, which still landed a few lines past the section title.
 
-The quick-start card and the settings search promo do not run on the mobile layout.
+The quick-start card does not run on the mobile layout.
 
-#### Config → General (for self-hosters)
+#### Config (for self-hosters)
 
-**Essentials vs Advanced** — On `config#general`, everyday options (language, appearance, layout, bookmarks, smart collections summary, status overview) live under **Essentials**. Power features (full status tuning, branding, search behaviour, backups) are under **Advanced**. **First visit** always opens **Essentials**; your Essentials / Advanced / **Show all** choice is remembered only after you pick a layer explicitly (toolbar buttons, **Advanced settings →** links, or settings-search navigation). A sticky **quick links** sidebar (**v2026.07.07**) lists every section next to the settings and stays in view while you scroll. Click a section title, or its quick link, to expand or collapse it — opening one collapses whichever other section was open, so only one stays expanded at a time. **Show all sections on one page** flattens everything with **Expand all** / **Collapse all**. Hash links (`#general/advanced/…`) restore layer and open collapsed panels once a preference exists. Save row and main tab bar use a solid background so scrolling content does not show through.
+**Where things live** — config is a view inside the dashboard at `/#config`, opened with **`Shift+S`**, **`<`**, or the header link, and closed with **`Escape`**. It has eight sections: **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, and **Help**. Sections with sub-tabs are addressable too — `/#config/behavior/privacy` opens Behavior on Privacy — so a link to any setting can be shared.
 
-**Phone vs tablet** — Only phones (≤768px width) limit config to **General** + **Help** with language, theme, and layout panels, and use the reduced dashboard footer (**Search** + **+ Bookmark** only). Portrait tablets and wider touch layouts keep the full config, Essentials/Advanced layers, and the desktop dashboard toolbar.
+The settings a self-hoster reaches for most: **Behavior → General** (localhost & private-network bookmarks, HyprMode, session tips), **Behavior → Privacy** (analytics), **Behavior → Status & health** (background rechecks, downtime webhook), and **Data & backups** (backup, restore, import/export, and **Reset** on its own sub-tab).
 
-**↺ Reset** — per-control reset buttons beside many General fields restore defaults (marks dirty until **Save**). Advanced **Reset to defaults** card requires expanding before the destructive button is enabled.
+**Saving** — most settings save the moment you change them and confirm with a short *Saved* message. The bookmark editor is the exception: it collects edits and writes them on **Save**.
 
-**Search settings…** — `Ctrl+Shift+K` / `Cmd+Shift+K` in the breadcrumb row finds tabs, General panels, labels, stats sections, theme groups, keyboard bindings, and Help blocks; matching panels expand before scroll. On mobile, a subset search lives inside the General tab. `Ctrl+K` / `Cmd+K` opens quick actions only (save, open dashboard).
+**Phone vs tablet** — every config section is reachable at any width; content stacks and controls reflow on narrow screens. Phones (≤768px) still use the reduced dashboard footer (**Search** + **+ Bookmark** only).
 
-**ℹ info buttons** — Click the small ℹ next to any setting label for a short explanation in your current language (EN / NL / DE / FR). No need to leave the page or search the README for what a toggle does.
+**ℹ and ↺** — many controls carry an **ℹ** explaining the setting and a **↺** restoring its default.
+
+**Keyboard** — sub-tab strips follow the ARIA tabs pattern: **`←`/`→`** move and wrap, **`Home`**/**`End`** jump to the ends. Explanations behind **ℹ** are localised (EN / NL / DE / FR).
 
 **Branding & PWA** — Custom title and favicon under Advanced → Branding apply to the browser tab, the web app manifest (`/manifest.webmanifest`), and “Add to Home Screen” / installed PWA name and icon. **Advanced → HyprMode** includes an **Add to home screen** panel with platform steps and a browser install button when available.
 
