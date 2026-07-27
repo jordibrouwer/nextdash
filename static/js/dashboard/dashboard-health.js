@@ -41,6 +41,16 @@ class DashboardHealth {
     }
 
     /**
+     * Report a health interaction. The existing calls in this file already use
+     * the 'health:' prefix inline; this exists for the ones that carry props,
+     * so filter/sort ids stay in one place. Both are fixed enums — the search
+     * box is deliberately never reported, since a query is free text.
+     */
+    _trackAction(action, extra) {
+        window.nextdashTrack?.('health:' + action, extra);
+    }
+
+    /**
      * `key` is the full dotted key ('dashboard.healthOpen'). formatDashboardLabel
      * adds the 'dashboard.' prefix itself, so it gets the bare tail — passing the
      * full key there yields 'dashboard.dashboard.…' and renders the raw key.
@@ -1397,6 +1407,7 @@ class DashboardHealth {
         wrap.querySelectorAll('[data-health-tile]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-health-tile') || 'broken';
+                this._trackAction('filter', { filter: this.filter, via: 'tile' });
                 this.visibleLimit = 50;
                 // Same as the filter pills: a tile is a filter choice, and one
                 // that is forgotten on the way out is not really a choice.
@@ -1485,6 +1496,7 @@ class DashboardHealth {
         const sortSelect = toolbar.querySelector('.health-view-sort-select');
         sortSelect?.addEventListener('change', (e) => {
             this.sort = e.target.value || 'score';
+            this._trackAction('sort', { sort: this.sort });
             this.persistViewState();
             this.render();
             // Focus returns to the list, not the select: leaving it focused would
@@ -1497,6 +1509,7 @@ class DashboardHealth {
         toolbar.querySelectorAll('[data-health-filter]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-health-filter') || 'broken';
+                this._trackAction('filter', { filter: this.filter, via: 'pill' });
                 this.visibleLimit = 50;
                 this.persistViewState();
                 this.render();

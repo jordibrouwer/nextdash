@@ -76,6 +76,18 @@ class DashboardConfig {
     }
 
     /**
+     * Report a config interaction, mirroring the inbox's `_trackAction`.
+     *
+     * Props stay low-cardinality per the rules in umami-analytics.js: section
+     * and tab ids are a fixed enum, and setting *names* are a fixed enum too.
+     * Setting *values* are not reported — a webhook URL or dashboard title is
+     * free text, and some of it is personal.
+     */
+    _trackAction(action, extra) {
+        window.nextdashTrack?.('config:' + action, extra);
+    }
+
+    /**
      * `key` is the full dotted key ('config.something'). Mirrors the health view's
      * translation helper so both surfaces resolve labels the same way.
      */
@@ -153,6 +165,21 @@ class DashboardConfig {
         stats: 'statsTab',
         'data-backups': 'dbTab',
         help: 'helpTab',
+    };
+
+    /**
+     * Sub-tab strip attribute → section id, so a tracked tab switch is reported
+     * under the same section name the rail and the hash use. Without this the
+     * analytics would say 'data-pt-tab' where every other event says
+     * 'pages-tags'.
+     */
+    static SUB_TAB_SECTION = {
+        'data-behavior-tab': 'behavior',
+        'data-pt-tab': 'pages-tags',
+        'data-appearance-tab': 'appearance',
+        'data-stats-tab': 'stats',
+        'data-db-tab': 'data-backups',
+        'data-help-tab': 'help',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -318,8 +345,16 @@ class DashboardConfig {
      */
     bindSubTabStrip(container, attr, activate) {
         const buttons = [...container.querySelectorAll(`[${attr}]`)];
+        // Every sub-tab strip is bound here, so reporting the switch in this one
+        // place covers all six sections — and keeps click and keyboard
+        // distinguishable, which is the point of having added the key handling.
+        const strip = DashboardConfig.SUB_TAB_SECTION[attr] || attr;
+        const activateTracked = (tab, via) => {
+            if (tab) this._trackAction('subtab', { section: strip, tab, via });
+            activate(tab);
+        };
         buttons.forEach((btn, i) => {
-            btn.addEventListener('click', () => activate(btn.getAttribute(attr)));
+            btn.addEventListener('click', () => activateTracked(btn.getAttribute(attr), 'click'));
             btn.addEventListener('keydown', (e) => {
                 const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
                 if (!keys.includes(e.key)) return;
@@ -333,7 +368,7 @@ class DashboardConfig {
                 if (!target) return;
                 const tab = target.getAttribute(attr);
                 target.focus();
-                activate(tab);
+                activateTracked(tab, 'keyboard');
                 // Some sections repaint through render(), which replaces the
                 // strip wholesale and drops the focus set above. Re-focus the
                 // rebuilt button so a second arrow press still works.
@@ -845,6 +880,7 @@ class DashboardConfig {
             return;
         }
         this.section = section;
+        this._trackAction('section', { section });
         this.render();
         this.restoreConfigHash();
     }
@@ -870,6 +906,10 @@ class DashboardConfig {
     /** A tile hands off to the view that acts on it (health with a filter, inbox). */
     openViewFromTile(view, filter) {
         const d = this.dash;
+        // The overview's "something needs attention" rows. Worth separating from
+        // an ordinary view:health, because it says the summary is what sent
+        // people there — and which problem type did it.
+        this._trackAction('tile-open', { view, ...(filter ? { filter } : {}) });
         if (view === 'health' && d.health?.openHealthView) {
             if (filter) d.health.filter = filter;
             void d.health.openHealthView();
@@ -1227,6 +1267,10 @@ class DashboardConfig {
     }
 
     handleBackupAction(action) {
+        // Fires on intent, not on completion: the destructive ones open a
+        // confirm dialog, and how often people back out is exactly what makes
+        // these worth measuring. `data-backup-action` is a fixed enum.
+        this._trackAction('data-action', { action });
         switch (action) {
             case 'download': this.downloadFullBackup(); break;
             case 'run': void this.runBackupNow(); break;
@@ -3655,6 +3699,15 @@ class DashboardConfig {
     async setBehavior(field, value, special) {
         const d = this.dash;
         d.settings[field] = value;
+        // Which settings people actually change. The field name is a fixed enum
+        // so it is safe to report; the value is not (titles, webhook URLs and
+        // custom text are free-form and can be personal). Booleans are the one
+        // exception — 'on'/'off' is what makes a toggle worth measuring, and it
+        // cannot carry anything identifying.
+        this._trackAction('setting', {
+            field,
+            ...(typeof value === 'boolean' ? { value: value ? 'on' : 'off' } : {}),
+        });
         switch (special) {
             case 'language':
                 await d.language?.init?.(value);
