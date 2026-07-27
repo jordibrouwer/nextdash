@@ -32,6 +32,8 @@ class DashboardConfig {
         this._loadPromise = null;
         // Pages & tags sub-tab (finders/tags/collections native; pages/categories embedded).
         this.ptTab = 'finders';
+        // Appearance sub-tab.
+        this.appearanceTab = 'general';
         this._finders = null;
         // Behavior sub-tab.
         this.behaviorTab = 'general';
@@ -1446,8 +1448,23 @@ class DashboardConfig {
             `<button type="button" class="config-choice${iconSize === val ? ' is-active' : ''}" data-appearance-iconsize="${esc(val)}" aria-pressed="${iconSize === val}">${esc(label)}</button>`
         ).join('');
 
+        const apTabs = DashboardConfig.APPEARANCE_TABS.map((tab) => {
+            const active = tab === this.appearanceTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-appearance-tab="${esc(tab)}">${esc(this.appearanceTabLabel(tab))}</button>`;
+        }).join('');
+
+        if (this.appearanceTab === 'custom-themes') {
+            return `
+                <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
+                <div class="config-subtabs" role="tablist">${apTabs}</div>
+                <div id="config-appearance-body">${this.renderCustomThemes()}</div>
+            `;
+        }
+
         return `
             <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
+            <div class="config-subtabs" role="tablist">${apTabs}</div>
+            <div id="config-appearance-body">
             ${tiles}
 
             <div class="config-panel">
@@ -1646,6 +1663,19 @@ class DashboardConfig {
     }
 
     bindAppearanceControls(container) {
+        container.querySelectorAll('[data-appearance-tab]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-appearance-tab');
+                if (tab === this.appearanceTab) return;
+                this.appearanceTab = tab;
+                // Leaving the tab drops any unsaved preview so the dashboard
+                // does not keep showing colours from a theme you stopped editing.
+                if (tab !== 'custom-themes') this.clearThemePreview();
+                this.render();
+                if (tab === 'custom-themes') void this.openCustomThemes();
+            });
+        });
+        this.bindCustomThemes(container);
         container.querySelectorAll('[data-appearance-theme]').forEach((btn) => {
             btn.addEventListener('click', () => this.setTheme(btn.getAttribute('data-appearance-theme')));
         });
@@ -1793,6 +1823,541 @@ class DashboardConfig {
             );
         }
         this.reloadThemeCSS();
+    }
+
+    appearanceTabLabel(tab) {
+        const map = {
+            general: ['config.appearanceTabGeneral', 'General'],
+            'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
+    }
+
+    /* ── Custom themes (native) ────────────────────────────────────────────── */
+
+    /**
+     * The colour fields a theme carries, in the order they are edited.
+     *
+     * Mirrors ThemeColors in models.go. Grouped the way the old config grouped
+     * them, because "text / surfaces / accents" is how people actually think
+     * about a palette, not the flat struct order.
+     */
+    static THEME_COLOR_GROUPS = [
+        ['themeGroupText', 'Text', ['textPrimary', 'textSecondary', 'textTertiary']],
+        ['themeGroupSurfaces', 'Surfaces', ['backgroundPrimary', 'backgroundSecondary', 'backgroundDots', 'backgroundModal', 'borderPrimary', 'borderSecondary']],
+        ['themeGroupAccents', 'Accents', ['accentSuccess', 'accentWarning', 'accentError']],
+    ];
+
+    themeColorLabel(prop) {
+        const map = {
+            textPrimary: ['config.colorTextPrimary', 'Primary text'],
+            textSecondary: ['config.colorTextSecondary', 'Secondary text'],
+            textTertiary: ['config.colorTextTertiary', 'Tertiary text'],
+            backgroundPrimary: ['config.colorBackgroundPrimary', 'Background'],
+            backgroundSecondary: ['config.colorBackgroundSecondary', 'Panels'],
+            backgroundDots: ['config.colorBackgroundDots', 'Dot grid'],
+            backgroundModal: ['config.colorBackgroundModal', 'Modals'],
+            borderPrimary: ['config.colorBorderPrimary', 'Borders'],
+            borderSecondary: ['config.colorBorderSecondary', 'Subtle borders'],
+            accentSuccess: ['config.colorAccentSuccess', 'Accent'],
+            accentWarning: ['config.colorAccentWarning', 'Warning'],
+            accentError: ['config.colorAccentError', 'Error'],
+        };
+        const [key, fallback] = map[prop] || [prop, prop];
+        return this.t(key, fallback);
+    }
+
+    /** GET /api/colors once; the editor mutates this copy and POSTs it back. */
+    async loadColorsData() {
+        if (this._colorsData) return this._colorsData;
+        try {
+            const res = await fetch('/api/colors');
+            const data = res && res.ok ? await res.json() : null;
+            this._colorsData = data && typeof data === 'object' ? data : { light: {}, dark: {}, builtIn: {}, custom: {} };
+        } catch {
+            this._colorsData = { light: {}, dark: {}, builtIn: {}, custom: {} };
+        }
+        if (!this._colorsData.custom || typeof this._colorsData.custom !== 'object') {
+            this._colorsData.custom = {};
+        }
+        return this._colorsData;
+    }
+
+    /**
+     * Resolve a theme by id across all three buckets.
+     *
+     * A palette lives in one of three places: the light/dark pair at the top
+     * level, the packaged set under builtIn, or the user's own under custom.
+     * The editor treats them uniformly, so every read goes through here rather
+     * than reaching into .custom and silently returning undefined for the rest.
+     */
+    themeById(id) {
+        const d = this._colorsData;
+        if (!d || !id) return null;
+        if (id === 'light' || id === 'dark') return d[id] || null;
+        return d.custom?.[id] || d.builtIn?.[id] || null;
+    }
+
+    /** Only the user's own themes can be renamed, reordered or deleted. */
+    isCustomTheme(id) {
+        return Boolean(this._colorsData?.custom?.[id]);
+    }
+
+    renderCustomThemes() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!this._colorsData) {
+            return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
+        }
+        const custom = this._colorsData.custom || {};
+        const ids = Object.keys(custom);
+        const selected = this._themeSelected && this.themeById(this._themeSelected)
+            ? this._themeSelected : null;
+
+        // The light/dark pair and the packaged themes are editable too — that is
+        // what the old embedded editor offered, and dropping it would have made
+        // those palettes unreachable. They are only editable, never renamed,
+        // reordered or deleted, so they get a picker rather than a list.
+        const builtIn = this._colorsData.builtIn || {};
+        const baseIds = ['dark', 'light', ...Object.keys(builtIn).sort()];
+        const baseOptions = baseIds.map((id) => {
+            const name = id === 'dark' ? this.t('config.themeDark', 'Dark')
+                : id === 'light' ? this.t('config.themeLight', 'Light')
+                : (builtIn[id]?.name || id);
+            return `<option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(name)}</option>`;
+        }).join('');
+
+        const list = ids.length
+            ? ids.map((id, i) => {
+                const active = id === selected;
+                return `
+                <li class="config-crud-row${active ? ' is-active' : ''}" data-theme-row="${esc(id)}">
+                    <div class="config-crud-fields">
+                        <input type="text" class="config-text" data-theme-name="${esc(id)}" value="${esc(custom[id].name || '')}" placeholder="${esc(this.t('config.customThemeNamePlaceholder', 'Theme name'))}">
+                        <span class="config-theme-swatches" aria-hidden="true">
+                            ${['backgroundPrimary', 'textPrimary', 'accentSuccess'].map((p) =>
+                                `<span class="config-theme-swatch" style="background:${esc(custom[id][p] || 'transparent')}"></span>`).join('')}
+                        </span>
+                    </div>
+                    <div class="config-crud-row-actions">
+                        <button type="button" class="config-btn config-btn--small" data-theme-move="up" data-id="${esc(id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
+                        <button type="button" class="config-btn config-btn--small" data-theme-move="down" data-id="${esc(id)}" ${i === ids.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
+                        <button type="button" class="config-btn config-btn--small${active ? ' is-active' : ''}" data-theme-edit="${esc(id)}">${esc(active ? this.t('config.themeEditing', 'Editing') : this.t('config.themeEdit', 'Edit'))}</button>
+                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-theme-delete="${esc(id)}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                    </div>
+                </li>`;
+            }).join('')
+            : `<li class="config-panel-empty">${esc(this.t('config.customThemesEmpty', 'No custom themes yet. Add one to start from a copy of a packaged theme.'))}</li>`;
+
+        return `
+            <p class="config-view-intro">${esc(this.t('config.customThemesIntro', 'Build your own theme by editing its colours. Custom themes appear in the theme picker alongside the packaged ones.'))}</p>
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.customThemesTitle', 'Your themes'))}</h3>
+                <ul class="config-crud-list">${list}</ul>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-theme-add>${esc(this.t('config.addCustomTheme', 'Add custom theme'))}</button>
+                </div>
+            </div>
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.packagedThemesTitle', 'Packaged themes'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.packagedThemesNote', 'Recolour a theme that ships with nextDash, or the base light and dark palettes. Reset defaults puts a packaged theme back to how it shipped.'))}</p>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.packagedThemeLabel', 'Theme'))}</span>
+                    <select class="config-select" data-theme-base-select>
+                        <option value="">${esc(this.t('config.packagedThemePlaceholder', 'Choose a theme to edit…'))}</option>
+                        ${baseOptions}
+                    </select>
+                </div>
+            </div>
+            ${selected ? this.renderThemeColorEditor(selected) : ''}
+        `;
+    }
+
+    renderThemeColorEditor(id) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const theme = this.themeById(id);
+        if (!theme) return '';
+
+        const groups = DashboardConfig.THEME_COLOR_GROUPS.map(([key, fallback, props]) => `
+            <div class="config-theme-group">
+                <h4 class="config-theme-group-title">${esc(this.t(`config.${key}`, fallback))}</h4>
+                ${props.map((prop) => {
+                    const val = theme[prop] || '';
+                    // A colour input cannot hold rgba(), which existing themes
+                    // may use, so the text field is the source of truth and the
+                    // swatch is a convenience that writes into it.
+                    const forPicker = /^#[0-9a-fA-F]{6}$/.test(val) ? val : '#000000';
+                    return `
+                    <div class="config-field config-theme-field">
+                        <span class="config-field-label">${esc(this.themeColorLabel(prop))}</span>
+                        <input type="color" class="config-theme-picker" data-theme-color-picker="${esc(prop)}" value="${esc(forPicker)}" aria-label="${esc(this.themeColorLabel(prop))}">
+                        <input type="text" class="config-text config-theme-hex" data-theme-color="${esc(prop)}" value="${esc(val)}" spellcheck="false" placeholder="#1a1a1a">
+                    </div>`;
+                }).join('')}
+            </div>`).join('');
+
+        const isCustom = this.isCustomTheme(id);
+        const label = theme.name
+            || (id === 'dark' ? this.t('config.themeDark', 'Dark')
+                : id === 'light' ? this.t('config.themeLight', 'Light') : id);
+        return `
+            <div class="config-panel" id="config-theme-editor" data-theme-editing="${esc(id)}">
+                <h3 class="config-panel-title">${esc(this.t('config.themeColoursTitle', 'Colours'))} — ${esc(label)}</h3>
+                <p class="config-panel-note">${esc(this.t('config.themeColoursNote', 'Changes preview on the dashboard behind you as you type, and save when you leave the field.'))}</p>
+                <p class="config-field-warning" id="config-theme-contrast" hidden></p>
+                <div class="config-theme-groups">${groups}</div>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-theme-action="apply">${esc(this.t('config.themeApply', 'Use this theme'))}</button>
+                    <button type="button" class="config-btn" data-theme-action="duplicate">${esc(this.t('config.themeDuplicate', 'Duplicate'))}</button>
+                    <button type="button" class="config-btn" data-theme-action="export">${esc(this.t('config.themeExport', 'Export'))}</button>
+                    ${isCustom ? '' : `<button type="button" class="config-btn" data-theme-action="reset">${esc(this.t('config.themeResetDefaults', 'Reset to default'))}</button>`}
+                </div>
+            </div>`;
+    }
+
+    /**
+     * Repaint just the custom-themes body.
+     *
+     * The General tab is re-rendered through render() instead: its markup is
+     * produced as one block by renderAppearance and carries state (font
+     * pickers, background swatches) that is simpler to rebuild wholesale than
+     * to patch in place.
+     */
+    repaintAppearanceBody() {
+        const host = document.getElementById('config-appearance-body');
+        if (!host || this.appearanceTab !== 'custom-themes') { this.render(); return; }
+        host.innerHTML = this.renderCustomThemes();
+        const container = document.getElementById('dashboard-layout');
+        if (container) this.bindAppearanceControls(container);
+    }
+
+    /**
+     * POST the whole colour document back.
+     *
+     * /api/colors takes the complete ColorTheme, so a partial save would drop
+     * the built-in and light/dark palettes. The dashboard's own stylesheet is
+     * served from /api/theme.css, so it has to be re-fetched afterwards or the
+     * page keeps rendering the previous colours.
+     */
+    async saveColorsData() {
+        try {
+            const res = await this.writeFetch('/api/colors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this._colorsData),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.reloadThemeCSS();
+            // The theme picker is built from a cached /api/colors/custom-themes
+            // response; a new or renamed theme would otherwise not appear in it
+            // until the view was rebuilt from scratch.
+            this._themeList = null;
+            void this.loadThemeList();
+            this.notify(this.t('config.saved', 'Saved'), 'success');
+            return true;
+        } catch {
+            this.notify(this.t('config.themeSaveError', 'Could not save the theme.'), 'error');
+            return false;
+        }
+    }
+
+    /** A theme id that cannot collide with one already stored. */
+    static newThemeId() {
+        return `theme-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    }
+
+    /**
+     * Start a new theme from a full palette rather than blank fields.
+     *
+     * Every colour must be set or the dashboard renders with empty CSS
+     * variables, so a new theme copies a packaged one — the current theme where
+     * possible, so "add" reads as "start from what I am looking at".
+     */
+    addCustomTheme() {
+        const data = this._colorsData;
+        if (!data) return;
+        const resolved = document.documentElement.getAttribute('data-theme') || '';
+        const starter = data.builtIn?.[resolved] || data.dark || data.light || {};
+        const names = Object.values(data.custom || {}).map((t) => t.name);
+        const id = DashboardConfig.newThemeId();
+        data.custom[id] = {
+            ...starter,
+            name: DashboardConfig.uniqueNameFrom(this.t('config.customThemePrefix', 'My theme'), names),
+        };
+        this._themeSelected = id;
+        this.repaintAppearanceBody();
+        void this.saveColorsData();
+    }
+
+    async deleteCustomTheme(id) {
+        const data = this._colorsData;
+        const theme = data?.custom?.[id];
+        if (!theme) return;
+        const ok = await this.confirmAction(
+            this.t('config.themeDeleteConfirm', 'Delete the theme “{name}”?')
+                .replace('{name}', String(theme.name || id))
+        );
+        if (!ok) return;
+        delete data.custom[id];
+        if (this._themeSelected === id) this._themeSelected = null;
+        // A deleted theme that is still selected would leave the dashboard on a
+        // theme that no longer exists, so fall back to the default.
+        if (this.dash.settings?.theme === id) {
+            this.dash.settings.theme = 'default';
+            void this.saveSettingsWithFeedback();
+        }
+        this.repaintAppearanceBody();
+        await this.saveColorsData();
+    }
+
+    moveCustomTheme(id, direction) {
+        const data = this._colorsData;
+        if (!data?.custom?.[id]) return;
+        const ids = Object.keys(data.custom);
+        const i = ids.indexOf(id);
+        const swap = direction === 'up' ? i - 1 : i + 1;
+        if (swap < 0 || swap >= ids.length) return;
+        [ids[i], ids[swap]] = [ids[swap], ids[i]];
+        // Object key order is the theme order, so the map is rebuilt rather
+        // than mutated in place.
+        data.custom = Object.fromEntries(ids.map((k) => [k, data.custom[k]]));
+        this.repaintAppearanceBody();
+        void this.saveColorsData();
+    }
+
+    /**
+     * Preview a colour without saving.
+     *
+     * Writes the theme's variables into a <style> the dashboard picks up, using
+     * the same buildVarsBlock the old editor used so a preview cannot disagree
+     * with what /api/theme.css will produce.
+     */
+    previewThemeColors(id) {
+        const theme = this.themeById(id);
+        document.getElementById('config-theme-preview')?.remove();
+        if (!theme) return;
+        const vars = window.ColorValueUtils?.buildVarsBlock?.(theme) || '';
+        if (!vars) return;
+        const style = document.createElement('style');
+        style.id = 'config-theme-preview';
+        // /api/theme.css writes its variables on html[data-theme="…"], which is
+        // more specific than :root, so a :root block here would be overridden
+        // and the preview would silently do nothing. Match that selector — and
+        // the attribute value the document actually carries, since with auto
+        // dark mode the resolved theme differs from settings.theme.
+        const resolved = document.documentElement.getAttribute('data-theme');
+        const scope = resolved ? `html[data-theme="${CSS.escape(resolved)}"]` : ':root';
+        style.textContent = `${scope} { ${vars} }`;
+        document.head.appendChild(style);
+    }
+
+    clearThemePreview() {
+        document.getElementById('config-theme-preview')?.remove();
+    }
+
+    /** Warn when primary text on the primary background falls below WCAG AA. */
+    updateThemeContrastHint(id) {
+        const hint = document.getElementById('config-theme-contrast');
+        const theme = this.themeById(id);
+        if (!hint || !theme || !window.ColorValueUtils?.contrastRatio) return;
+        const ratio = window.ColorValueUtils.contrastRatio(theme.textPrimary, theme.backgroundPrimary);
+        if (ratio == null || ratio >= 4.5) {
+            hint.hidden = true;
+            return;
+        }
+        hint.hidden = false;
+        hint.textContent = this.t('config.themeContrastWarning',
+            'Low contrast between primary text and background ({ratio}:1). Aim for 4.5:1 or higher.')
+            .replace('{ratio}', ratio.toFixed(1));
+    }
+
+    /** Fetch the colour document on first open, then draw the tab. */
+    async openCustomThemes() {
+        await this.loadColorsData();
+        if (this.appearanceTab === 'custom-themes') this.repaintAppearanceBody();
+    }
+
+    bindCustomThemes(container) {
+        container.querySelector('[data-theme-add]')
+            ?.addEventListener('click', () => this.addCustomTheme());
+
+        container.querySelectorAll('[data-theme-delete]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.deleteCustomTheme(btn.getAttribute('data-theme-delete')));
+        });
+        container.querySelectorAll('[data-theme-move]').forEach((btn) => {
+            btn.addEventListener('click', () =>
+                this.moveCustomTheme(btn.getAttribute('data-id'), btn.getAttribute('data-theme-move')));
+        });
+        const baseSelect = container.querySelector('[data-theme-base-select]');
+        if (baseSelect) {
+            baseSelect.addEventListener('change', () => {
+                this._themeSelected = baseSelect.value || null;
+                this.repaintAppearanceBody();
+                if (this._themeSelected) {
+                    this.previewThemeColors(this._themeSelected);
+                    this.updateThemeContrastHint(this._themeSelected);
+                } else {
+                    this.clearThemePreview();
+                }
+            });
+        }
+
+        container.querySelectorAll('[data-theme-edit]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-theme-edit');
+                this._themeSelected = this._themeSelected === id ? null : id;
+                this.repaintAppearanceBody();
+                if (this._themeSelected) {
+                    this.previewThemeColors(this._themeSelected);
+                    this.updateThemeContrastHint(this._themeSelected);
+                } else {
+                    this.clearThemePreview();
+                }
+            });
+        });
+
+        container.querySelectorAll('[data-theme-name]').forEach((input) => {
+            const id = input.getAttribute('data-theme-name');
+            input.addEventListener('change', () => {
+                const theme = this._colorsData?.custom?.[id];
+                if (!theme) return;
+                const others = Object.entries(this._colorsData.custom)
+                    .filter(([k]) => k !== id).map(([, t]) => t.name);
+                if (!this.guardUniqueName(input, input.value, others, {
+                    previous: theme.name,
+                    message: this.t('config.themeNameDuplicate', 'A theme with this name already exists.'),
+                })) return;
+                theme.name = input.value;
+                void this.saveColorsData();
+            });
+        });
+
+        this.bindThemeColorInputs(container);
+    }
+
+    /**
+     * The colour fields themselves.
+     *
+     * Typing previews live but does not save — a save per keystroke would post
+     * the whole colour document on every character. The commit happens on
+     * `change`, which is blur or a picker selection.
+     */
+    bindThemeColorInputs(container) {
+        const id = this._themeSelected;
+        if (!id) return;
+        const theme = this.themeById(id);
+        if (!theme) return;
+
+        const apply = (prop, value, { save }) => {
+            theme[prop] = value;
+            this.previewThemeColors(id);
+            this.updateThemeContrastHint(id);
+            if (save) void this.saveColorsData();
+        };
+
+        container.querySelectorAll('[data-theme-color]').forEach((input) => {
+            const prop = input.getAttribute('data-theme-color');
+            input.addEventListener('input', () => {
+                // Invalid text is flagged but still previewed as far as the
+                // browser can take it, so a half-typed hex does not blank out.
+                window.ColorValueUtils?.validateTextInput?.(input);
+                if (window.ColorValueUtils?.isValidCSSValue?.(input.value)) {
+                    apply(prop, input.value.trim(), { save: false });
+                    const picker = container.querySelector(`[data-theme-color-picker="${prop}"]`);
+                    if (picker && /^#[0-9a-fA-F]{6}$/.test(input.value.trim())) picker.value = input.value.trim();
+                }
+            });
+            input.addEventListener('change', () => {
+                if (!window.ColorValueUtils?.isValidCSSValue?.(input.value)) {
+                    // Put back the stored value rather than saving something the
+                    // server would reject or render as an empty variable.
+                    input.value = theme[prop] || '';
+                    window.ColorValueUtils?.validateTextInput?.(input);
+                    this.notify(this.t('config.themeColorInvalid', 'Enter a colour like #1a1a1a or rgba(0,0,0,.5).'), 'error');
+                    return;
+                }
+                apply(prop, input.value.trim(), { save: true });
+            });
+        });
+
+        container.querySelectorAll('[data-theme-color-picker]').forEach((picker) => {
+            const prop = picker.getAttribute('data-theme-color-picker');
+            const sync = (save) => {
+                const hex = picker.value;
+                const text = container.querySelector(`[data-theme-color="${prop}"]`);
+                if (text) text.value = hex;
+                apply(prop, hex, { save });
+            };
+            picker.addEventListener('input', () => sync(false));
+            picker.addEventListener('change', () => sync(true));
+        });
+
+        container.querySelectorAll('[data-theme-action]').forEach((btn) => {
+            btn.addEventListener('click', () => this.handleThemeAction(btn.getAttribute('data-theme-action'), id));
+        });
+    }
+
+    async handleThemeAction(action, id) {
+        const theme = this.themeById(id);
+        if (!theme) return;
+        if (action === 'apply') {
+            // Same path the Theme dropdown uses: setTheme runs applyThemeLive,
+            // which pairs the choice with the OS preference when "follow system
+            // dark mode" is on, and persists through persistAppearance. Setting
+            // settings.theme by hand skipped both, so the choice never reached
+            // the server and <html data-theme> never changed.
+            this.clearThemePreview();
+            this.setTheme(id);
+            this.reloadThemeCSS();
+            this.render();
+            return;
+        }
+        if (action === 'duplicate') {
+            const names = Object.values(this._colorsData.custom).map((t) => t.name);
+            const copyId = DashboardConfig.newThemeId();
+            this._colorsData.custom[copyId] = {
+                ...theme,
+                name: DashboardConfig.uniqueNameFrom(
+                    `${theme.name || id} ${this.t('config.themeCopySuffix', 'copy')}`, names),
+            };
+            this._themeSelected = copyId;
+            this.repaintAppearanceBody();
+            await this.saveColorsData();
+            return;
+        }
+        if (action === 'reset') {
+            // /api/colors/reset restores light, dark and every packaged theme
+            // while leaving custom ones alone, so it is safe to offer from here.
+            const ok = await this.confirmAction(
+                this.t('config.themeResetConfirm',
+                    'Reset the packaged themes to their original colours? Your own themes are kept.'),
+                { confirmLabel: this.t('config.themeResetDefaults', 'Reset to default') }
+            );
+            if (!ok) return;
+            try {
+                const res = await this.writeFetch('/api/colors/reset', { method: 'POST' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                this._colorsData = await res.json();
+                if (!this._colorsData.custom) this._colorsData.custom = {};
+                this.clearThemePreview();
+                this.reloadThemeCSS();
+                this.repaintAppearanceBody();
+                if (this._themeSelected) this.previewThemeColors(this._themeSelected);
+                this.notify(this.t('config.saved', 'Saved'), 'success');
+            } catch {
+                this.notify(this.t('config.themeSaveError', 'Could not save the theme.'), 'error');
+            }
+            return;
+        }
+        if (action === 'export') {
+            const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${String(theme.name || id).replace(/[^\w-]+/g, '-').toLowerCase()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
     }
 
     /** Render the ℹ/↺ affordances for an Appearance-section field. */
@@ -2851,6 +3416,8 @@ class DashboardConfig {
     /* ── Pages & tags ──────────────────────────────────────────────────────── */
 
     static PT_TABS = ['finders', 'tags', 'collections', 'pages', 'categories'];
+
+    static APPEARANCE_TABS = ['general', 'custom-themes'];
 
     ptTabLabel(tab) {
         const map = {

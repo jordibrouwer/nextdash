@@ -1631,3 +1631,74 @@
 .config-text.field-conflict:focus {
     outline-color: var(--accent-warning, #d08b28);
 }
+
+/* ── Custom theme editor ─────────────────────────────────────────────────── */
+
+/* The three-colour preview beside each theme in the list, so a theme is
+   recognisable before you open it. */
+.config-theme-swatches {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.config-theme-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.4));
+    display: inline-block;
+}
+
+.config-crud-row.is-active {
+    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+}
+
+.config-theme-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+}
+
+.config-theme-group-title {
+    margin: 0 0 8px;
+    font-size: calc(var(--font-size-text) * 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+}
+
+.config-theme-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* A native colour input needs its chrome stripped to read as a swatch. */
+.config-theme-picker {
+    inline-size: 34px;
+    block-size: 28px;
+    padding: 0;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.4));
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    flex: none;
+}
+
+.config-theme-picker::-webkit-color-swatch-wrapper { padding: 2px; }
+.config-theme-picker::-webkit-color-swatch { border: none; border-radius: 4px; }
+.config-theme-picker::-moz-color-swatch { border: none; border-radius: 4px; }
+
+.config-theme-hex {
+    flex: 1 1 110px;
+    min-width: 0;
+    font-family: var(--font-mono, monospace);
+}
+
+/* Set by ColorValueUtils.validateTextInput on an unparseable colour. */
+.config-theme-hex.color-input-invalid {
+    border-color: var(--accent-error, #b3423f);
+}
