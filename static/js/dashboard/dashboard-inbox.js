@@ -1678,6 +1678,7 @@ class DashboardInbox {
         tiles.querySelectorAll('[data-inbox-tile]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-inbox-tile') || 'all';
+                this._trackAction('filter', { filter: this.filter, via: 'tile' });
                 this.visibleLimit = 50;
                 this.checkedIds.clear();
                 this.persistViewState();
@@ -1716,6 +1717,7 @@ class DashboardInbox {
         toolbar.querySelectorAll('[data-inbox-filter]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-inbox-filter') || 'all';
+                this._trackAction('filter', { filter: this.filter, via: 'pill' });
                 this.visibleLimit = 50;
                 // Ticks from the previous filter would act on rows the user can no
                 // longer see, so a filter change starts the selection over.
@@ -1728,6 +1730,7 @@ class DashboardInbox {
         const sortSelect = toolbar.querySelector('.inbox-sort-select');
         sortSelect?.addEventListener('change', (e) => {
             this.sort = e.target.value || 'newest';
+            this._trackAction('sort', { sort: this.sort });
             this.visibleLimit = 50;
             this.persistViewState();
             this.syncUrlState();

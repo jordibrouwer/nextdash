@@ -508,7 +508,7 @@ button.health-view-tile:hover {
 }
 
 .health-check-option.is-active {
-    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-primary));
 }
 
 .health-check-option.is-active .health-check-option-label::after {
@@ -1031,21 +1031,38 @@ button.health-view-tile:hover {
     display: inline-flex;
 }
 
-/* Above the rows below it, and above the score panel of its own row. */
+/* Above the rows below it, and above the score panel of its own row.
+   Surface deliberately matches the dashboard's .move-popover: an opaque
+   --background-secondary, not --background-modal. The modal colour is
+   semi-transparent by design and only reads correctly behind a backdrop blur;
+   used flat here it let the row underneath bleed through and washed the menu
+   out on every theme. */
 .health-view-menu {
     position: absolute;
     top: calc(100% + 0.3rem);
     left: 0;
     z-index: 20;
     min-width: 12rem;
-    padding: 0.3rem;
+    padding: 0.35rem 0 0.45rem;
     display: flex;
     flex-direction: column;
     gap: 0.05rem;
     border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-modal, var(--background-secondary));
-    box-shadow: 0 10px 28px color-mix(in srgb, #000 22%, transparent);
+    border-radius: 0.65rem;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    box-shadow: 0 4px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+/* The modern layout gives .move-popover softer corners and a blurred edge; the
+   health menu follows so both context menus stay indistinguishable. */
+body[data-layout-version="modern"] .health-view-menu {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border, var(--border-primary));
+    box-shadow: var(--layout-shadow-md);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
 }
 
 /* The display above beats the browser's default [hidden] rule, so a closed menu
@@ -1062,26 +1079,47 @@ button.health-view-tile:hover {
 }
 
 .health-view-menu-item {
-    padding: 0.3rem 0.45rem;
+    padding: 0.45rem 0.85rem;
+    margin: 0 0.3rem;
     border: none;
-    border-radius: 0.3rem;
+    border-radius: 0.4rem;
     background: transparent;
     color: var(--text-primary);
     font-family: inherit;
-    font-size: 0.78rem;
+    font-size: calc(var(--font-size-controls) * 0.92);
+    font-weight: var(--font-weight-medium);
     text-align: left;
     cursor: pointer;
+    transition:
+        background-color 0.12s ease,
+        color 0.12s ease;
 }
 
+/* Mixed against --background-primary rather than transparent: the menu is
+   opaque now, so an alpha highlight would darken instead of tint. */
 .health-view-menu-item:hover,
 .health-view-menu-item:focus-visible {
-    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-primary));
+    color: var(--text-primary);
+}
+
+body[data-layout-version="modern"] .health-view-menu-item {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .health-view-menu-item:hover,
+body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-primary));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+.health-view-menu-item--danger {
+    color: var(--accent-error);
 }
 
 .health-view-menu-item--danger:hover,
 .health-view-menu-item--danger:focus-visible {
-    background: color-mix(in srgb, var(--accent-error) 14%, transparent);
+    background: color-mix(in srgb, var(--accent-error) 14%, var(--background-primary));
     color: var(--accent-error);
 }
 
@@ -1091,12 +1129,13 @@ button.health-view-tile:hover {
 }
 
 .health-view-menu-label {
-    margin: 0.35rem 0 0.1rem;
-    padding: 0 0.45rem;
-    font-size: 0.65rem;
-    letter-spacing: 0.04em;
+    margin: 0;
+    padding: 0.5rem 0.85rem 0.2rem;
+    font-size: calc(var(--font-size-controls) * 0.68);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--text-tertiary);
+    color: var(--text-tertiary, var(--text-secondary));
 }
 
 .health-view-menu-label--danger {

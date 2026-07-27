@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.23.4 — July 2026](#v202607234--july-2026)
 - [v2026.07.23.3 — July 2026](#v202607233--july-2026)
 - [v2026.07.23.2 — July 2026](#v202607232--july-2026)
 - [v2026.07.23.1 — July 2026](#v202607231--july-2026)
@@ -116,6 +117,32 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.23.4 — July 2026
+
+**The health view's More menu was see-through.** Opening **More** on a bookmark row drew a washed-out panel: the row underneath showed through it, and the entries were hard to read against whatever happened to be behind them. The dashboard's own right-click menu was unaffected. Alongside it, two config-view fixes and a round of analytics instrumentation.
+
+### Fixes
+
+- **fix** **The More menu is an opaque surface again** — it filled itself with `--background-modal`, which every theme defines as a semi-transparent colour (`rgba(17, 19, 24, 0.85)` on Moss Stone dark, for instance). That value is meant for modals, which pair it with a backdrop blur to turn what shows through into a wash; the menu applied it flat, so the row beneath it simply came through unblurred. It now uses the opaque `--background-secondary` that the dashboard's `.move-popover` has always used, and picks up the same border radius, padding, shadow, `--text-primary` and `--font-family-main` — so both context menus are indistinguishable (`health-view.css`).
+- **fix** **Hover and focus highlights mixed against the wrong colour** — the items blended their accent tint into `transparent` rather than a background, which darkens instead of tinting once the panel is opaque. They now mix against `--background-primary`, matching `.move-popover-item`. The same fault in the checking submenu's active-option highlight (`.health-check-option.is-active`) is fixed with it.
+- **fix** **The modern layout's menus were inconsistent** — `.move-popover` gets softer corners, `--layout-shadow-md` and a 14px backdrop blur under `data-layout-version="modern"`, and the health menu got none of it. It now carries the same treatment, including the inset accent ring on a focused item.
+- **fix** **Section labels and the delete entry follow the dashboard** — *REPAIR* and *REMOVE* take the sizing and spacing of `.move-popover-section-label`, and **Delete bookmark** is drawn in `--accent-error` at rest rather than only on hover.
+- **fix** **`Esc` on the config view no longer clears an active tag filter too** — config claimed the key in the bubble phase without stopping the event, so one press ran two handlers: the view closed, and the tag-filter shortcut cleared the filter on the way out. One request, two actions, with nothing on screen explaining the second. Health and inbox already handle this in the capture phase with `stopImmediatePropagation()`; config now matches them, and drops a stale handler before re-registering so a re-init cannot leak listeners (`dashboard-config.js`). This completes v2026.07.23.3, which fixed the modal layered over config but left the tag filter behind it.
+- **fix** **Switching analytics in config counts as answering the opt-in question** — the first-run opt-in card decides whether to reappear from `quickStart.analyticsChoiceMade`, and only the card itself ever wrote that flag. Setting analytics from **Config → Behavior → Privacy** left it untouched, so a deliberate choice still read as *never asked* and the card came back — including to someone who had just switched analytics **off**. `setBehavior` now records the answer, mirroring what `search-commands.js` already did for the same setting. Both directions were affected: opting in failed to record the choice as well (`dashboard-config.js`).
+
+### Improvements
+
+- **new** **Config, health and inbox report what people actually use** — the config view carried a single tracked event across roughly 7,900 lines, so nothing said which of the eight sections get opened, which settings get changed, or whether the overview's *needs attention* rows lead anywhere; health and inbox reported their actions but not how the list in front of them was filtered. Instrumentation hooks the choke points rather than the call sites — `bindSubTabStrip` covers all six sub-tab strips at once (and any added later), `setBehavior` covers every settings control — so `config:subtab` also measures whether the arrow-key navigation added in v2026.07.23 is used at all. Filter and sort in health and inbox carry `via=tile|pill`, distinguishing the summary tiles from the filter pills. Analytics remains **opt-in** and off until switched on (`dashboard-config.js`, `dashboard-health.js`, `dashboard-inbox.js`).
+
+### Notes
+
+- **Setting values are deliberately not reported.** A field *name* is a fixed enum and safe to send; what was typed into it is not — dashboard titles, webhook URLs and custom text are free-form and can be personal. Booleans are the single exception, since on/off is the whole point of measuring a toggle and cannot identify anyone. Search boxes are never reported at all. `tests/analytics-view-events.spec.js` asserts both halves of that contract: that the events fire, and that free text cannot leak — one test drives a text setting with a recognisable value and asserts it appears nowhere in the payload.
+- No **What's new** entry ships with this release; the release notes are unchanged.
+- `health-view.css` moves to `v2026-07-23-4` so the corrected stylesheet is fetched rather than served from cache (`templates/dashboard.html`); `dashboard-config.js`, `dashboard-health.js` and `dashboard-inbox.js` moved with their own changes. An already-open tab still needs a hard refresh (`Cmd/Ctrl+Shift+R`).
+- The menu fix was verified against a running instance in the dark theme — the panel is opaque and the row behind it fully covered. `tests/health-check-mode.spec.js` and `tests/health-dashboard-view.spec.js` pass (60 tests); no test asserts on these colours, so that check was visual. The other three changes ship with `tests/config-escape-tag-filter.spec.js`, `tests/config-analytics-choice.spec.js` and `tests/analytics-view-events.spec.js`.
 
 ---
 
