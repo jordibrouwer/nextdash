@@ -176,7 +176,9 @@ These statistics exist to answer exactly that — **which features get used, and
 #### What is measured
 
 - **Page views** — the dashboard, config, health, and colors pages.
-- **Views and navigation** — opening the health and inbox views, switching dashboard pages (by position, never by name), which config tab you land on, and use of the `<` dashboard↔config shortcut.
+- **Views and navigation** — opening the health and inbox views, switching dashboard pages (by position, never by name), which config tab you land on, and use of the `<` dashboard↔config shortcut. Within config, which of the eight **sections** you open, which **sub-tab** you land on and whether you got there by click or by arrow key, and whether an overview *needs attention* row was followed.
+- **Settings changes** — the **name** of the setting you changed, never what you typed into it. Toggles also report `true`/`false`, since on/off is the whole point of measuring one and cannot identify anyone. Free-text fields — dashboard title, webhook URL, custom text — report the name alone, and search boxes are not reported at all.
+- **List shape in health and inbox** — which filter or sort you picked, and whether you used a summary tile or a filter pill. The search box in either view is never reported.
 - **Overlays** — opening search, commands, finders, the cheat sheet, the tag cloud, what's-new, and the add-bookmark form.
 - **Bookmark opens** — the fact that one was opened and where from (`dashboard`, `search`, or `recent`).
 - **Commands** — which command palette command was run, by its name (`theme`, `config`, `density`, …). Only names from the built-in command list are recorded; anything else you typed is discarded.
@@ -326,6 +328,12 @@ environment:
 - `Home` / `End` — first / last sub-tab
 
 Rebinding shortcuts is not available at the moment — see **v2026.07.23** below.
+
+**The health view's More menu was see-through (v2026.07.23.4)** — opening **More** on a bookmark row drew a washed-out panel with the row underneath showing through it, leaving the entries hard to read. The menu filled itself with `--background-modal`, a colour every theme defines as semi-transparent because modals pair it with a backdrop blur; applied flat here, nothing was blurring what came through. It now uses the same opaque surface, radius, padding and shadow as the dashboard's right-click menu, so the two look alike. The hover highlights, the checking submenu's active option, the *REPAIR* / *REMOVE* labels and the red **Delete bookmark** entry are aligned with it.
+
+**Escape closed the config view and cleared your tag filter (v2026.07.23.4)** — with a tag filter active on the dashboard, pressing `Esc` to close config did two things at once: the view closed and the filter was dropped, with nothing on screen explaining the second. Config claimed the key in the bubble phase without stopping the event, so the tag-filter shortcut ran too. Health and inbox already claimed it in the capture phase; config now matches them. This completes v2026.07.23.3, which fixed a modal layered over config but left this case behind it.
+
+**Changing analytics in config still left the opt-in card coming back (v2026.07.23.4)** — the first-run card decides whether to reappear from a flag only the card itself ever wrote, so switching analytics under **Config → Behavior → Privacy** counted as never having answered — including for someone who had just switched it off. The config view now records the answer too, in both directions.
 
 **Escape closed the config view along with the modal on top of it (v2026.07.23.3)** — opening the add-bookmark modal from settings and pressing `Esc` dismissed both at once, dropping you on the dashboard instead of back on the section you were reading. Each full-container view registers a global `Esc` handler that closes it, and the modal does not stop the key propagating, so both handlers saw the same press. The health and inbox handlers already guard against this; the config one did not, despite a comment claiming it matched them. It now carries the same guards, so `Esc` dismisses the top layer first — a modal, the tag cloud, an active search or an inline edit — and only closes the view once nothing is above it.
 
