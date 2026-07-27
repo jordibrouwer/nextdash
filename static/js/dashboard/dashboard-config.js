@@ -879,11 +879,7 @@ class DashboardConfig {
 
             <div class="config-panel config-panel--danger">
                 <h3 class="config-panel-title">${esc(this.t('config.resetSectionTitle', 'Reset'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.resetOnboardingHint', 'Replay the welcome tour and tips next time you open the dashboard.'))}</p>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Reset onboarding & tips'))}</button>
-                </div>
-                <p class="config-panel-note" style="margin-top:16px">${esc(this.t('config.deleteAllBookmarksHint', 'Removes every bookmark but keeps your pages, categories, and settings.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.deleteAllBookmarksHint', 'Removes every bookmark but keeps your pages, categories, and settings.'))}</p>
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--danger" data-backup-action="delete-bookmarks">${esc(this.t('config.deleteAllBookmarksBtn', 'Delete all bookmarks only'))}</button>
                 </div>
@@ -980,7 +976,6 @@ class DashboardConfig {
             case 'browser-import': document.getElementById('config-browser-import-input')?.click(); break;
             case 'settings-export': void this.exportSettings(); break;
             case 'settings-import': document.getElementById('config-settings-import-input')?.click(); break;
-            case 'reset-onboarding': void this.resetOnboarding(); break;
             case 'reset': void this.resetAllData(); break;
             case 'refresh-favicons': void this.refreshAllFavicons(); break;
             case 'refresh-previews': void this.refreshAllPreviews(); break;
@@ -2677,7 +2672,7 @@ class DashboardConfig {
         openInNewTab: { info: ['openLinksInNewTabInfoTitle', 'openLinksInNewTabInfoMessage'] },
         globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'] },
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'] },
-        enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'] },
+        enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
         // Date, time & weather
         dateFormat: { info: ['dateFormatInfoTitle', 'dateFormatInfoMessage'], def: 'short-slash' },
@@ -2832,8 +2827,18 @@ class DashboardConfig {
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
-                    bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional tips'),
                     bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
+                ],
+            },
+            {
+                // The old config kept the tips toggle beside the quick-start and
+                // what's-new actions, which is where people look for it. Split
+                // across two sections it read as a stray General option.
+                tab: 'general',
+                title: t('config.generalGroupOnboarding', 'Onboarding'),
+                note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, and the release summary.'),
+                controls: [
+                    bool('enableSessionTips', 'config.sessionTipsLabel', 'Show occasional keyboard tips'),
                 ],
             },
             {
@@ -3182,7 +3187,23 @@ class DashboardConfig {
     renderBehaviorBody() {
         const panels = this.behaviorSchema().filter((p) => (p.tab || 'general') === this.behaviorTab);
         const lead = this.behaviorTab === 'status' ? this.renderStatusModesLead() : '';
-        return lead + this.renderControlPanels(panels, 'behavior');
+        // The two onboarding actions are buttons rather than settings, so they
+        // cannot come from the schema; they are appended to the General tab so
+        // the whole of onboarding sits together as it did in the old config.
+        const trailing = this.behaviorTab === 'general' ? this.renderOnboardingActions() : '';
+        return lead + this.renderControlPanels(panels, 'behavior') + trailing;
+    }
+
+    renderOnboardingActions() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <div class="config-panel config-panel--attached">
+                <p class="config-panel-note">${esc(this.t('config.resetOnboardingHint', 'Show the quick-start card again on the dashboard.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-behavior-action="reset-onboarding">${esc(this.t('config.resetOnboardingButton', 'Show quick-start card again'))}</button>
+                    <button type="button" class="config-btn" data-behavior-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
+                </div>
+            </div>`;
     }
 
     /**
@@ -3228,12 +3249,30 @@ class DashboardConfig {
                         b.setAttribute('aria-selected', on ? 'true' : 'false');
                     });
                     this.bindControlPanels(container, 'behavior');
+                    this.bindBehaviorActions(container);
                 } else {
                     this.render();
                 }
             });
         });
         this.bindControlPanels(container, 'behavior');
+        this.bindBehaviorActions(container);
+    }
+
+    /**
+     * The onboarding buttons on the General tab.
+     *
+     * Rebound after a tab switch as well: the body is replaced wholesale, so
+     * handlers attached to the previous markup are gone with it.
+     */
+    bindBehaviorActions(container) {
+        container.querySelectorAll('[data-behavior-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const action = btn.getAttribute('data-behavior-action');
+                if (action === 'reset-onboarding') void this.resetOnboarding();
+                if (action === 'whats-new') void this.openWhatsNew();
+            });
+        });
     }
 
     /** Apply a behaviour setting: mutate, run any special apply, save. */

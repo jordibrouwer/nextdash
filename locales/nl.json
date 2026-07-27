@@ -3338,7 +3338,10 @@
         "packagedThemeLabel": "Thema",
         "packagedThemePlaceholder": "Kies een thema om te bewerken…",
         "themeResetDefaults": "Standaardwaarden herstellen",
-        "themeResetConfirm": "De meegeleverde thema's terugzetten naar hun oorspronkelijke kleuren? Je eigen thema's blijven behouden."
+        "themeResetConfirm": "De meegeleverde thema's terugzetten naar hun oorspronkelijke kleuren? Je eigen thema's blijven behouden.",
+        "generalGroupOnboarding": "Onboarding",
+        "generalGroupOnboardingNote": "De snelstartkaart, de incidentele sneltoetstip en het overzicht van nieuwe functies.",
+        "generalGroupOnboardingActions": "Opnieuw tonen"
     },
     "colors": {
         "title": "thema-aanpassing",

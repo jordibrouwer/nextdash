@@ -567,3 +567,49 @@ test.describe('config help coverage', () => {
         expect(shared.organizing).toMatch(/organizing/i);
     });
 });
+
+test.describe('onboarding settings', () => {
+    test('the tips toggle sits with the onboarding actions and explains itself', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'behavior');
+        await page.locator('[data-behavior-tab="general"]').click();
+
+        const toggle = page.locator('[data-behavior-field="enableSessionTips"]');
+        await expect(toggle).toBeVisible();
+        // It used to be a bare checkbox among unrelated General options, with no
+        // explanation of what "occasional" means.
+        await expect(page.locator('.config-field-hint').filter({ hasText: /keyboard tip/i }).first()).toBeVisible();
+        // The quick-start and what's-new actions belong beside it, as in the old
+        // config, rather than in the Data & backups danger panel.
+        await expect(page.locator('[data-behavior-action="reset-onboarding"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-action="whats-new"]')).toBeVisible();
+    });
+
+    test('the tips toggle saves and its actions survive a tab switch', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'behavior');
+        await page.locator('[data-behavior-tab="general"]').click();
+        const toggle = page.locator('[data-behavior-field="enableSessionTips"]');
+        const start = await toggle.isChecked();
+
+        await toggle.setChecked(!start);
+        await expect.poll(() => page.evaluate(async () =>
+            (await (await fetch('/api/settings')).json()).enableSessionTips), { timeout: 10_000 }).toBe(!start);
+
+        // The body is replaced wholesale on a tab switch, so the buttons have to
+        // be rebound or they go dead.
+        await page.locator('[data-behavior-tab="privacy"]').click();
+        await page.locator('[data-behavior-tab="general"]').click();
+        await expect(page.locator('[data-behavior-action]')).toHaveCount(2);
+
+        await toggle.setChecked(start);
+    });
+
+    test('the onboarding reset is no longer in the danger panel', async ({ page }) => {
+        await loadDashboard(page);
+        await openSection(page, 'data-backups');
+        // Replaying the quick-start card is harmless; sitting beside "delete all
+        // bookmarks" made it read as destructive.
+        await expect(page.locator('[data-backup-action="reset-onboarding"]')).toHaveCount(0);
+    });
+});

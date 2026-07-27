@@ -3338,7 +3338,10 @@
         "packagedThemeLabel": "Thème",
         "packagedThemePlaceholder": "Choisissez un thème à modifier…",
         "themeResetDefaults": "Réinitialiser",
-        "themeResetConfirm": "Réinitialiser les thèmes fournis à leurs couleurs d’origine ? Vos propres thèmes sont conservés."
+        "themeResetConfirm": "Réinitialiser les thèmes fournis à leurs couleurs d’origine ? Vos propres thèmes sont conservés.",
+        "generalGroupOnboarding": "Prise en main",
+        "generalGroupOnboardingNote": "La carte de démarrage rapide, l’astuce clavier occasionnelle et le résumé des nouveautés.",
+        "generalGroupOnboardingActions": "Réafficher"
     },
     "colors": {
         "title": "personnalisation du thème",

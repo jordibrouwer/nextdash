@@ -3338,7 +3338,10 @@
         "packagedThemeLabel": "Thema",
         "packagedThemePlaceholder": "Thema zum Bearbeiten wählen…",
         "themeResetDefaults": "Auf Standard zurücksetzen",
-        "themeResetConfirm": "Die mitgelieferten Themen auf ihre ursprünglichen Farben zurücksetzen? Deine eigenen Themen bleiben erhalten."
+        "themeResetConfirm": "Die mitgelieferten Themen auf ihre ursprünglichen Farben zurücksetzen? Deine eigenen Themen bleiben erhalten.",
+        "generalGroupOnboarding": "Einstieg",
+        "generalGroupOnboardingNote": "Die Schnellstartkarte, der gelegentliche Tastaturtipp und die Zusammenfassung neuer Funktionen.",
+        "generalGroupOnboardingActions": "Erneut anzeigen"
     },
     "colors": {
         "title": "themenanpassung",

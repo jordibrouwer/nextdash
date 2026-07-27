@@ -1702,3 +1702,12 @@
 .config-theme-hex.color-input-invalid {
     border-color: var(--accent-error, #b3423f);
 }
+
+/* A panel that continues the one above it: the onboarding actions belong to the
+   Onboarding settings, not to a section of their own. */
+.config-panel--attached {
+    margin-top: -10px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: none;
+}

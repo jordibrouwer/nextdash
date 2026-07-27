@@ -3338,7 +3338,10 @@
         "packagedThemeLabel": "Theme",
         "packagedThemePlaceholder": "Choose a theme to edit…",
         "themeResetDefaults": "Reset to default",
-        "themeResetConfirm": "Reset the packaged themes to their original colours? Your own themes are kept."
+        "themeResetConfirm": "Reset the packaged themes to their original colours? Your own themes are kept.",
+        "generalGroupOnboarding": "Onboarding",
+        "generalGroupOnboardingNote": "The quick-start card, the occasional keyboard tip, and the release summary.",
+        "generalGroupOnboardingActions": "Replay"
     },
     "colors": {
         "title": "theme customization",
