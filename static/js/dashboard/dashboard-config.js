@@ -295,7 +295,10 @@ class DashboardConfig {
     setupEscapeShortcut() {
         const d = this.dash;
         // Escape returns to the bookmarks view, matching health and inbox.
-        document.addEventListener('keydown', (e) => {
+        if (this._escapeHandler) {
+            document.removeEventListener('keydown', this._escapeHandler, true);
+        }
+        this._escapeHandler = (e) => {
             if (e.key !== 'Escape') return;
             if (!this.isActiveView()) return;
             // Anything layered over the view takes Escape first. Without this,
@@ -311,8 +314,17 @@ class DashboardConfig {
                 return;
             }
             e.preventDefault();
+            // Stop here rather than letting the event bubble on. The tag-filter
+            // shortcut listens on document too and registers first, so without
+            // this one Escape both closed config and silently cleared an active
+            // tag filter — two actions the user only asked for one of. Health
+            // and inbox claim the key the same way.
+            e.stopImmediatePropagation();
             this.closeConfigView();
-        });
+        };
+        // Capture phase, as in health and inbox: the view-level handler has to
+        // see Escape before the bubble-phase shortcuts it needs to pre-empt.
+        document.addEventListener('keydown', this._escapeHandler, true);
     }
 
     /**
