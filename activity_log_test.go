@@ -183,7 +183,12 @@ func TestActivitySourceFromRequest(t *testing.T) {
 		// The config view is part of the dashboard, and its /#config fragment
 		// never reaches the server, so its activity reads as "dashboard".
 		{name: "config view", referer: "http://localhost:8080/", want: "dashboard"},
-		{name: "health page", referer: "http://localhost:8080/health", want: "health"},
+		// /health redirects to /#health, so the referer arrives without the
+		// path — health activity is dashboard activity.
+		{name: "health view", referer: "http://localhost:8080/", want: "dashboard"},
+		// A stale bookmark of the old page would still carry the path; it is
+		// the dashboard either way now.
+		{name: "legacy /health url", referer: "http://localhost:8080/health", want: "dashboard"},
 		{name: "dashboard", referer: "http://localhost:8080/", want: "dashboard"},
 		{name: "no referer", want: "api"},
 		{name: "extension", agent: "Mozilla/5.0 chrome-extension", want: "extension"},
