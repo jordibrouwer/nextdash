@@ -8,31 +8,6 @@ test.describe('dashboard bookmark favicons toggle (showIcons)', () => {
         await markWhatsNewSeen(page);
     });
 
-    test('config general essentials exposes show-icons checkbox', async ({ page }) => {
-        await page.goto('/config#general');
-        await page.waitForSelector('.general-layout', { timeout: 15_000 });
-        await page.evaluate(() => window.configManager?.ui?.switchToTab?.('general'));
-
-        const essentials = page.locator('[data-general-panel="bookmarks-essentials"]');
-        await expect(essentials).toBeVisible({ timeout: 10_000 });
-        await page.evaluate(() => {
-            const card = document.querySelector('[data-general-panel="bookmarks-essentials"]');
-            card?.classList.remove('is-collapsed');
-            const title = card?.querySelector('.section-title');
-            title?.setAttribute('aria-expanded', 'true');
-        });
-
-        const inEssentials = await page.evaluate(() => {
-            const essentialsPanel = document.querySelector('[data-general-panel="bookmarks-essentials"]');
-            const checkbox = document.getElementById('show-icons-checkbox');
-            return Boolean(essentialsPanel && checkbox && essentialsPanel.contains(checkbox));
-        });
-        expect(inEssentials).toBe(true);
-
-        const checkbox = essentials.locator('#show-icons-checkbox');
-        await expect(checkbox).toBeChecked();
-    });
-
     test('toggling showIcons off hides favicon slots on dashboard', async ({ page }) => {
         await page.goto('/');
         await page.waitForSelector('#dashboard-layout .bookmark-icon-slot, #dashboard-layout .bookmark-icon', {

@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 async function deleteBookmarkByUrl(page, pageId, url) {
     await page.evaluate(async ({ targetPageId, targetUrl }) => {
@@ -20,14 +21,17 @@ async function deleteBookmarkByUrl(page, pageId, url) {
 }
 
 test.describe('config to dashboard category sync', () => {
-    test('bookmark moved to media in config appears in media column on dashboard', async ({ page }) => {
+    test('bookmark categorised in config appears in that column on dashboard', async ({ page }) => {
         const uniqueUrl = `https://example.com/config-media-sync-${Date.now()}.test`;
         const uniqueName = `Config media sync ${Date.now()}`;
         const pageId = 1;
 
         await page.goto(`/?_=${Date.now()}`);
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
 
+        // Seed an uncategorised bookmark on page 1.
         await page.evaluate(async ({ targetPageId, targetUrl, targetName }) => {
             const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const res = await api('/api/bookmarks/add', {
@@ -49,57 +53,51 @@ test.describe('config to dashboard category sync', () => {
             }
         }, { targetPageId: pageId, targetUrl: uniqueUrl, targetName: uniqueName });
 
-        await page.goto(`/config#bookmarks?_=${Date.now()}`);
-        await page.waitForFunction(() => typeof window.configManager?.saveChanges === 'function');
-        await page.evaluate(async () => {
-            const cm = window.configManager;
-            cm.ui.switchToTab('bookmarks');
-            await cm.loadPageBookmarks(1);
-        });
-        await page.waitForFunction(
-            async ({ targetUrl }) => {
-                const cm = window.configManager;
-                await cm.bookmarkStore.loadAll();
-                return (cm.allBookmarksData || []).some(
-                    (bm) => String(bm?.url || '').trim().toLowerCase() === String(targetUrl).trim().toLowerCase()
-                );
-            },
-            { targetUrl: uniqueUrl },
-            { timeout: 15_000 }
-        );
+        // Reload so the config view sees the seeded bookmark, then open Bookmarks.
+        await page.goto(`/?_=${Date.now()}`);
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await expect(page.locator('#config-bm-list')).toBeVisible();
 
-        await page.evaluate(async ({ targetUrl }) => {
-            const cm = window.configManager;
-            await cm.loadPageBookmarks(1);
-            const categories = await fetch('/api/categories?page=1').then((r) => (r.ok ? r.json() : []));
-            const targetCategory = (Array.isArray(categories) && categories[0]?.id) ? String(categories[0].id) : 'media';
-            const idx = (cm.bookmarksData || []).findIndex(
-                (bm) => String(bm?.url || '').trim().toLowerCase() === String(targetUrl).trim().toLowerCase()
+        // Narrow the list to the seeded bookmark and open its editor.
+        await page.locator('#config-bm-search').fill(uniqueName);
+        const row = page.locator('#config-bm-list [data-bm-edit]').first();
+        await expect(row).toBeVisible({ timeout: 10_000 });
+        await row.click();
+        await expect(page.locator('.config-bm-editor')).toBeVisible();
+
+        // Pick the first real category the page offers, then save — the editor
+        // marks itself dirty on change and only writes on Save.
+        const categorySelect = page.locator('[data-bm-field="category"]');
+        const targetCategory = await categorySelect.evaluate((el) => {
+            const opt = [...el.options].find((o) => o.value && o.value !== '__new__');
+            if (!opt) throw new Error('no category options available');
+            return opt.value;
+        });
+        await categorySelect.selectOption(targetCategory);
+        await page.locator('[data-bm-save]').first().click();
+
+        // The change must reach the server, not just the in-page model.
+        await expect.poll(async () => page.evaluate(async ({ targetPageId, targetUrl }) => {
+            const res = await fetch(`/api/bookmarks?page=${targetPageId}`);
+            const list = res.ok ? await res.json() : [];
+            const bm = (list || []).find(
+                (b) => String(b?.url || '').trim().toLowerCase() === String(targetUrl).trim().toLowerCase()
             );
-            if (idx < 0) {
-                throw new Error('bookmark not found in config list');
-            }
-            cm.bookmarks.openDetailPanel(idx, cm.bookmarksData, cm.bookmarksPageCategories);
-            const bm = cm.bookmarksData[idx];
-            bm.category = targetCategory;
-            const catEl = document.getElementById('detail-category');
-            if (catEl) {
-                catEl.value = targetCategory;
-                catEl.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            cm.markDirty();
-            await cm.saveChanges();
-            return targetCategory;
-        }, { targetUrl: uniqueUrl }).then(async (targetCategory) => {
-            await page.goto(`/?_=${Date.now()}`);
-            await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+            return String(bm?.category ?? '');
+        }, { targetPageId: pageId, targetUrl: uniqueUrl }), { timeout: 10_000 }).toBe(targetCategory);
 
-            const mediaSelector = `.category[data-category-id="${targetCategory}"]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;
-            await expect(page.locator(mediaSelector)).toBeVisible({ timeout: 10_000 });
+        // And the dashboard must render it under that category, not uncategorised.
+        await page.goto(`/?_=${Date.now()}`);
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
 
-            const uncategorizedSelector = `.category[data-category-id=""]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;
-            await expect(page.locator(uncategorizedSelector)).toHaveCount(0);
-        });
+        const inCategory = `.category[data-category-id="${targetCategory}"]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;
+        await expect(page.locator(inCategory)).toBeVisible({ timeout: 10_000 });
+
+        const uncategorized = `.category[data-category-id=""]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;
+        await expect(page.locator(uncategorized)).toHaveCount(0);
 
         await deleteBookmarkByUrl(page, pageId, uniqueUrl);
     });

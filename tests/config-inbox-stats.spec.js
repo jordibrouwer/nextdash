@@ -1,7 +1,9 @@
+// @ts-check
 const { test, expect } = require('@playwright/test');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
-// Verifies the Config → Stats inbox block: snapshot counts from /api/inbox and
-// lifetime counters from /api/inbox-stats, rendered with the shared stats visuals.
+// Verifies the config view's Statistics → Inbox tab: snapshot counts from
+// /api/inbox and lifetime counters from /api/inbox-stats.
 test.describe('config stats inbox block', () => {
     test('renders inbox snapshot and lifetime throughput', async ({ page }) => {
         const stamp = Date.now();
@@ -9,6 +11,8 @@ test.describe('config stats inbox block', () => {
         // Seed two inbox items via the API (also increments the durable "added" counters).
         await page.goto('/');
         await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
         await page.evaluate(async (s) => {
             const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             await api('/api/inbox', {
@@ -23,30 +27,50 @@ test.describe('config stats inbox block', () => {
             });
         }, stamp);
 
-        // Open Config and activate the Stats tab.
-        await page.goto('/config#stats');
-        await page.waitForSelector('#stats-inbox', { timeout: 15_000 });
-        await page.evaluate(() => {
-            window.configManager?.stats?.refresh?.(window.configManager);
-        });
+        // Open the config view and switch to Statistics → Inbox.
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
+        await page.locator('[data-stats-tab="inbox"]').click();
 
-        // Snapshot totals reflect the two seeded items (inbox may already contain
-        // others, so assert "at least").
-        await expect
-            .poll(async () => Number(await page.locator('#stats-inbox-total').textContent()), { timeout: 10_000 })
+        const inbox = page.locator('#config-stats-inbox');
+        await expect(inbox.locator('.config-tile').first()).toBeVisible({ timeout: 15_000 });
+
+        // Reads a tile's numeric value by its label, so the assertions do not
+        // depend on tile ordering.
+        const tileValue = async (labelRe) => {
+            const tile = inbox.locator('.config-tile').filter({
+                has: page.locator('.config-tile-label', { hasText: labelRe }),
+            }).first();
+            return Number((await tile.locator('.config-tile-value').textContent() || '').trim());
+        };
+
+        // Snapshot totals reflect the two seeded items (the inbox may already
+        // contain others, so assert "at least").
+        await expect.poll(() => tileValue(/inbox items|postvak|eingang|boîte/i), { timeout: 10_000 })
             .toBeGreaterThanOrEqual(2);
 
         // Lifetime "added" counter incremented from the seeds.
-        await expect
-            .poll(async () => Number(await page.locator('#stats-inbox-added').textContent()), { timeout: 10_000 })
+        await expect.poll(() => tileValue(/^(added|toegevoegd|hinzugefügt|ajouté)/i), { timeout: 10_000 })
             .toBeGreaterThanOrEqual(2);
 
-        // Sources table renders rows for paste + extension.
-        const sourcesText = await page.locator('#stats-inbox-sources-body').textContent();
-        expect(sourcesText).toMatch(/paste|plakken|collage|einfügen/i);
+        // The per-source table lists the seeded sources.
+        await expect(inbox.locator('.config-stats-table')).toContainText(/paste|plakken|collage|einfügen/i);
 
-        // The trend sparkline SVG was drawn.
-        await expect(page.locator('#stats-inbox-sparkline svg')).toHaveCount(1);
+        // The conversion ratio bar was drawn.
+        await expect(inbox.locator('.config-bar-fill')).toHaveCount(1);
+
+        // Drain the seeded items again: a non-empty inbox is itself an
+        // "attention" row on the overview, so leaving them behind would fail
+        // other specs. Lifetime counters are durable and stay counted.
+        await page.evaluate(async (s) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await api('/api/inbox');
+            const body = res.ok ? await res.json() : null;
+            const items = Array.isArray(body) ? body : (body?.items || []);
+            for (const it of items) {
+                if (!String(it?.url || '').includes(String(s))) continue;
+                await api(`/api/inbox?id=${encodeURIComponent(it.id)}`, { method: 'DELETE' });
+            }
+        }, stamp);
     });
 
     test('promote is attributed as a conversion in lifetime stats', async ({ page }) => {
