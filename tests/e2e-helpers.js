@@ -263,24 +263,6 @@ async function prepareDashboardInteraction(page) {
     await dismissBlockingOverlays(page);
 }
 
-/** @param {import('@playwright/test').Page} page */
-async function dismissConfigTourOverlays(page) {
-    await page.evaluate(() => {
-        window.configManager?.dismissOtherConfigTabTours?.();
-        [
-            'ConfigGeneralTour',
-            'ConfigFindersTour',
-            'ConfigBookmarksTour',
-            'ConfigCategoriesTour',
-            'ConfigTagsTour',
-            'ConfigPagesTour',
-            'ConfigCollectionsTour',
-            'ConfigThemeTour',
-            'ConfigStatsTour',
-        ].forEach((name) => window[name]?.teardownStaleDom?.());
-    });
-}
-
 /**
  * Earlier config tests can replace the default category list; ensure a column exists.
  * @param {import('@playwright/test').Page} page
@@ -385,7 +367,6 @@ module.exports = {
     dismissBlockingOverlays,
     prepareDashboardInteraction,
     dismissOnboardingIfPresent,
-    dismissConfigTourOverlays,
     ensurePageCategory,
     ensureSortableCategory,
     ensureBookmarksDashboardView,

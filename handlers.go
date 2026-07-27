@@ -588,9 +588,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 }
 
 func (h *Handlers) Dashboard(w http.ResponseWriter, r *http.Request) {
-	// The theme-colours editor partial is parsed alongside the shell so the
-	// config view can host it inline (Appearance → Edit theme colours).
-	tmpl, err := h.parsePageTemplates("templates/dashboard.html", "templates/partials/theme-colors-editor.html")
+	tmpl, err := h.parsePageTemplates("templates/dashboard.html")
 	if err != nil {
 		http.Error(w, "Template parsing error", http.StatusInternalServerError)
 		return

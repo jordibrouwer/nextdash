@@ -46,12 +46,6 @@ type pageAssetVersions struct {
 	StatusJS                 string
 	SelectJS                 string
 	ReorderJS                string
-	ConfigStorageJS          string
-	ConfigDataJS             string
-	ConfigBookmarkStoreJS    string
-	ConfigFontJS             string
-	ConfigCommandPaletteJS   string
-	ConfigSettingInfoJS      string
 	DashboardRenderCoreJS    string
 
 	// dashboard.css and dashboard-bookmark-row.css/layout-modern.css each shared a
@@ -122,12 +116,6 @@ var sharedAssetVersions = pageAssetVersions{
 	StatusJS:                 "status-2",
 	SelectJS:                 "select-js-1",
 	ReorderJS:                "reorder-inline-edit-1",
-	ConfigStorageJS:          "config-storage-2",
-	ConfigDataJS:             "config-data-1",
-	ConfigBookmarkStoreJS:    "config-bookmark-store-1",
-	ConfigFontJS:             "config-font-1",
-	ConfigCommandPaletteJS:   "config-command-palette-1",
-	ConfigSettingInfoJS:      "config-setting-info-category-item-limit-1",
 	DashboardRenderCoreJS:    "bookmark-tracking-1",
 
 	DashboardCSS:            "inline-edit-blur-children-1-config-header-icon-1",
