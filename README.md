@@ -319,15 +319,19 @@ environment:
 - `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right` / `side-left`
 - `:save` / `:saved` — save current query / show saved searches
 
-**Config page**
-- `1–9` — jump to the Nth visible config tab (order follows tab groups: **System** → **Dashboard** → **Extras** → **Help**)
-- `←`/`→` — previous/next config tab; crosses into the next tab group at group edges (when focus is not in an input or modal)
-- `Alt` + `←`/`→` — jump to the first tab of the previous/next tab group
-- `S` — save changes
-- `<` — back to the dashboard (`Shift+,`); confirms first if there are unsaved changes
-- `Alt + ↑/↓` — reorder the selected bookmark on the Bookmarks tab
-- `Ctrl/Cmd + K` — open the config command palette
-- `Ctrl/Cmd + Shift + K` — find settings, tabs, and help sections
+**Config view**
+- `Shift+S` or `<` (`Shift+,`) — open config from the dashboard
+- `Esc` — close config and return to the dashboard
+- `←`/`→` — previous/next sub-tab, wrapping at both ends
+- `Home` / `End` — first / last sub-tab
+
+Rebinding shortcuts is not available at the moment — see **v2026.07.23** below.
+
+**Configuration is now part of the dashboard (v2026.07.23)** — settings used to be a separate page: opening them left the dashboard and loaded a second application, and coming back loaded the dashboard again from scratch. Configuration is now a **view inside the dashboard**, opened with `Shift+S`, `<`, or the header icon and closed with `Esc`, with the fourteen old tabs regrouped into eight sections — Overview, Pages & tags, Bookmarks, Appearance, Behavior, Data & backups, Statistics, Help — that can each be linked to directly (`/#config/behavior/privacy` opens Behavior on Privacy). Settings now **save as you change them**, with the bookmark editor the deliberate exception so a half-typed URL is never written.
+
+This also made the app substantially lighter: the old page carried **~1.2 MB of JavaScript and ~321 KB of CSS** of its own, loaded on every visit on top of the dashboard. It is gone in full — **34,255 lines** across its template, 32 JavaScript modules and 27 stylesheets — so opening config now fetches **nothing** and is a repaint rather than a page load. Across the release, **38,189 lines were removed against 17,894 added**.
+
+Also in this release: **Overview**, a new landing screen that surfaces broken links, downed monitors, duplicates and an unread inbox with a button to each; a **Reset** sub-tab where *Reset all data* now asks twice and makes you type the confirmation word; sub-tab strips that answer `←`/`→`/`Home`/`End` as their ARIA role always promised; and fixes for reset buttons that silently did nothing, `/colors` landing on the wrong screen, category statistics reading zero, custom themes that could not be selected, and backups repacked inside a folder being rejected as empty. **Rebinding shortcuts is still in development** — the old Keyboard tab has not been rebuilt, and the setting behind it never actually took effect, so it was retired rather than carried over half-working.
 
 **The inbox now looks like the health view (v2026.07.22.6)** — the inbox feed and the health view share the same card shape but were styled apart; the inbox now follows health as the reference. Site icons are a 3rem square in the same spot with the same padding (the multi-select checkbox moved to overlay the icon corner instead of pushing it right), and inbox items now carry a real favicon like bookmarks do — fetched during preview enrichment, stored under `data/icons/`, and backfilled once on startup — so the inbox shows the real site icon rather than a link glyph. Rows also gain summary tiles above the feed (Total, Unread, Snoozed, This week; the first three double as filters) and an added date beside the relative time. A stored inbox favicon is cleaned up when its item is deleted or promoted, unless another bookmark or inbox item still uses it.
 
