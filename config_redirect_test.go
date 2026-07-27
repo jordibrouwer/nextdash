@@ -56,3 +56,22 @@ func TestConfigRedirectMapsLegacySection(t *testing.T) {
 		})
 	}
 }
+
+// The old /colors bookmark used to redirect to /config#colors. That chained
+// through the /config redirect, which reads only ?section= and never sees the
+// fragment, so it landed on the overview instead of the colour settings.
+func TestColorsRedirectsToAppearance(t *testing.T) {
+	t.Parallel()
+	h := testHandlersWithLocalBookmarks(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/colors", nil)
+	rec := httptest.NewRecorder()
+	h.Colors(rec, req)
+
+	if rec.Code != http.StatusMovedPermanently {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusMovedPermanently)
+	}
+	if got := rec.Header().Get("Location"); got != "/#config/appearance" {
+		t.Fatalf("Location = %q, want %q", got, "/#config/appearance")
+	}
+}

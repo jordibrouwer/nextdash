@@ -206,8 +206,9 @@ func activitySourceFromRequest(r *http.Request) string {
 	}
 	referer := strings.ToLower(r.Referer())
 	switch {
-	case strings.Contains(referer, "/config"):
-		return "config"
+	// Config lives at /#config now. Fragments never travel in the Referer
+	// header, so config activity arrives indistinguishable from the dashboard
+	// it is part of, and is reported as such.
 	case strings.Contains(referer, "/health"):
 		return "health"
 	case referer != "":

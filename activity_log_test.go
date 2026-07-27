@@ -174,9 +174,32 @@ func TestActivityLogPersistWritesFile(t *testing.T) {
 }
 
 func TestActivitySourceFromRequest(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/api/ping", nil)
-	req.Header.Set("Referer", "http://localhost:8080/config")
-	if got := activitySourceFromRequest(req); got != "config" {
-		t.Fatalf("source = %q, want config", got)
+	cases := []struct {
+		name    string
+		referer string
+		agent   string
+		want    string
+	}{
+		// The config view is part of the dashboard, and its /#config fragment
+		// never reaches the server, so its activity reads as "dashboard".
+		{name: "config view", referer: "http://localhost:8080/", want: "dashboard"},
+		{name: "health page", referer: "http://localhost:8080/health", want: "health"},
+		{name: "dashboard", referer: "http://localhost:8080/", want: "dashboard"},
+		{name: "no referer", want: "api"},
+		{name: "extension", agent: "Mozilla/5.0 chrome-extension", want: "extension"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/ping", nil)
+			if tc.referer != "" {
+				req.Header.Set("Referer", tc.referer)
+			}
+			if tc.agent != "" {
+				req.Header.Set("User-Agent", tc.agent)
+			}
+			if got := activitySourceFromRequest(req); got != tc.want {
+				t.Fatalf("source = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }

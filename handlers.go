@@ -1384,8 +1384,11 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
+// Colors keeps the old /colors bookmark working. It targets the view section
+// directly: routing via /config would drop the fragment, since the redirect
+// there reads only ?section= and would land on the overview instead.
 func (h *Handlers) Colors(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/config#colors", http.StatusMovedPermanently)
+	http.Redirect(w, r, "/#config/appearance", http.StatusMovedPermanently)
 }
 
 func (h *Handlers) GetColors(w http.ResponseWriter, r *http.Request) {
