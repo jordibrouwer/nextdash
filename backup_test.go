@@ -519,3 +519,131 @@ func TestImportRejectsEmptyUpload(t *testing.T) {
 		t.Fatalf("status = %d, want 400", rec.Code)
 	}
 }
+
+// Unzipping a backup and zipping it again wraps every entry in a folder, which
+// used to fail validation and report the archive as empty. The wrapper is
+// stripped, so a rewrapped backup restores like the original.
+func TestImportAcceptsFolderWrappedZip(t *testing.T) {
+	h := newTestHandlers(t)
+
+	const backedUpTheme = "kelp-drift-dark"
+	const changedTheme = "cherry-graphite-dark"
+
+	original := h.store.GetSettings()
+	original.Theme = backedUpTheme
+	if err := h.store.SaveSettings(original); err != nil {
+		t.Fatalf("SaveSettings: %v", err)
+	}
+	archive, err := h.buildBackupZip()
+	if err != nil {
+		t.Fatalf("buildBackupZip: %v", err)
+	}
+
+	// Repack every entry under a top-level folder, the way Finder and most
+	// archive tools do.
+	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	if err != nil {
+		t.Fatalf("read archive: %v", err)
+	}
+	var wrapped bytes.Buffer
+	zw := zip.NewWriter(&wrapped)
+	for _, f := range zr.File {
+		if f.FileInfo().IsDir() {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatalf("open %s: %v", f.Name, err)
+		}
+		content, err := io.ReadAll(rc)
+		rc.Close()
+		if err != nil {
+			t.Fatalf("read %s: %v", f.Name, err)
+		}
+		w, err := zw.Create("nextDash-backup-2026-07-27/" + f.Name)
+		if err != nil {
+			t.Fatalf("create entry: %v", err)
+		}
+		if _, err := w.Write(content); err != nil {
+			t.Fatalf("write entry: %v", err)
+		}
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatalf("close zip: %v", err)
+	}
+
+	changed := h.store.GetSettings()
+	changed.Theme = changedTheme
+	if err := h.store.SaveSettings(changed); err != nil {
+		t.Fatalf("SaveSettings (mutate): %v", err)
+	}
+
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	part, err := mw.CreateFormFile("file", "nextDash-backup.zip")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	if _, err := part.Write(wrapped.Bytes()); err != nil {
+		t.Fatalf("write archive: %v", err)
+	}
+	if err := mw.Close(); err != nil {
+		t.Fatalf("close writer: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/import", &body)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	rec := httptest.NewRecorder()
+	h.Import(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (body: %s)", rec.Code, rec.Body.String())
+	}
+	if got := h.store.GetSettings().Theme; got != backedUpTheme {
+		t.Fatalf("after import theme = %q, want %q", got, backedUpTheme)
+	}
+}
+
+// A root-level "icons/" directory is part of the backup layout, not a wrapper,
+// so it must never be stripped.
+func TestCommonZipPrefixKeepsIconsDir(t *testing.T) {
+	build := func(names ...string) []*zip.File {
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+		for _, n := range names {
+			w, err := zw.Create(n)
+			if err != nil {
+				t.Fatalf("create %s: %v", n, err)
+			}
+			if _, err := w.Write([]byte("{}")); err != nil {
+				t.Fatalf("write %s: %v", n, err)
+			}
+		}
+		if err := zw.Close(); err != nil {
+			t.Fatalf("close: %v", err)
+		}
+		zr, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+		if err != nil {
+			t.Fatalf("read: %v", err)
+		}
+		return zr.File
+	}
+
+	cases := []struct {
+		name  string
+		files []string
+		want  string
+	}{
+		{"wrapped", []string{"bk/settings.json", "bk/pages.json"}, "bk/"},
+		{"wrapped with icons", []string{"bk/settings.json", "bk/icons/a.png"}, "bk/"},
+		{"flat", []string{"settings.json", "pages.json"}, ""},
+		{"flat with icons", []string{"settings.json", "icons/a.png"}, ""},
+		{"mixed dirs", []string{"a/settings.json", "b/pages.json"}, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := commonZipPrefix(build(tc.files...)); got != tc.want {
+				t.Fatalf("commonZipPrefix = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

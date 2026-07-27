@@ -311,6 +311,37 @@ func resolveAutoBackupPath(name string) (string, bool) {
 	return filepath.Join(autoBackupDir(), name), true
 }
 
+// commonZipPrefix returns the single top-level directory every entry in the
+// archive sits under, as a "name/" prefix, or "" when the entries are already at
+// the root or spread across several directories.
+//
+// "icons/" is deliberately not treated as a wrapper: it is a real part of the
+// backup layout, and stripping it would flatten icons into the data directory.
+func commonZipPrefix(files []*zip.File) string {
+	prefix := ""
+	for _, f := range files {
+		name := normalizeImportFilename(f.Name)
+		if name == "" {
+			continue
+		}
+		idx := strings.Index(name, "/")
+		if idx <= 0 {
+			// An entry at the archive root means there is no single wrapper.
+			return ""
+		}
+		top := name[:idx+1]
+		if top == "icons/" {
+			return ""
+		}
+		if prefix == "" {
+			prefix = top
+		} else if prefix != top {
+			return ""
+		}
+	}
+	return prefix
+}
+
 // stagedFilesFromZip unpacks a backup ZIP into staged import files, applying the
 // same filename validation and JSON check as the upload import path.
 func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
@@ -318,12 +349,19 @@ func (h *Handlers) stagedFilesFromZip(data []byte) ([]stagedImportFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not read backup archive: %w", err)
 	}
+	// Unzipping a backup and zipping it up again — which the Finder and most
+	// archive tools do by wrapping everything in a folder — puts every entry
+	// behind a "backup-name/" prefix. Those names all fail validation, so the
+	// restore used to reject a perfectly good archive as "No files provided".
+	// Strip the prefix when the whole archive shares one.
+	prefix := commonZipPrefix(zr.File)
+
 	staged := make([]stagedImportFile, 0, len(zr.File))
 	for _, f := range zr.File {
 		if f.FileInfo().IsDir() {
 			continue
 		}
-		filename := normalizeImportFilename(f.Name)
+		filename := strings.TrimPrefix(normalizeImportFilename(f.Name), prefix)
 		if !h.isValidImportFilename(filename) {
 			// Skip unexpected entries rather than failing the whole restore.
 			continue
