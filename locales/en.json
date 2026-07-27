@@ -1752,6 +1752,7 @@
         "autoBackupRestoreConfirmMessage": "Restore this backup? This replaces all current data and cannot be undone.",
         "autoBackupRestoreSuccess": "Backup restored. Reloading…",
         "autoBackupRestoreError": "Failed to restore backup.",
+        "autoBackupDownloadError": "Could not download the backup.",
         "autoBackupsSummary": "{count} backups · {size} total",
         "importDescription": "Import your data",
         "importInfoTitle": "Import Information",

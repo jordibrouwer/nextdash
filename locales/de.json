@@ -1736,6 +1736,7 @@
         "autoBackupRestoreConfirmMessage": "Dieses Backup wiederherstellen? Dies ersetzt alle aktuellen Daten und kann nicht rückgängig gemacht werden.",
         "autoBackupRestoreSuccess": "Backup wiederhergestellt. Wird neu geladen…",
         "autoBackupRestoreError": "Backup konnte nicht wiederhergestellt werden.",
+        "autoBackupDownloadError": "Die Sicherung konnte nicht heruntergeladen werden.",
         "autoBackupsSummary": "{count} Backups · {size} gesamt",
         "importDescription": "Daten importieren",
         "importInfoTitle": "Import-Informationen",

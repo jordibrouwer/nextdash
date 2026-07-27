@@ -5,6 +5,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -439,5 +442,80 @@ func TestHealthHistoryIsValidImportFilename(t *testing.T) {
 		if h.isValidImportFilename(name) {
 			t.Errorf("%s is derived and should stay out of archives", name)
 		}
+	}
+}
+
+// TestImportAcceptsZipUpload covers the shape the dashboard config sends: one
+// .zip under "file" rather than the loose files the old config posted after
+// unpacking the archive with JSZip. Without this the endpoint answered
+// 400 "No files provided" and a downloaded backup could not be restored.
+func TestImportAcceptsZipUpload(t *testing.T) {
+	h := newTestHandlers(t)
+
+	const backedUpTheme = "kelp-drift-dark"
+	const changedTheme = "cherry-graphite-dark"
+
+	original := h.store.GetSettings()
+	original.Theme = backedUpTheme
+	if err := h.store.SaveSettings(original); err != nil {
+		t.Fatalf("SaveSettings: %v", err)
+	}
+
+	archive, err := h.buildBackupZip()
+	if err != nil {
+		t.Fatalf("buildBackupZip: %v", err)
+	}
+
+	changed := h.store.GetSettings()
+	changed.Theme = changedTheme
+	if err := h.store.SaveSettings(changed); err != nil {
+		t.Fatalf("SaveSettings (mutate): %v", err)
+	}
+
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	part, err := mw.CreateFormFile("file", "nextDash-backup.zip")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	if _, err := part.Write(archive); err != nil {
+		t.Fatalf("write archive: %v", err)
+	}
+	if err := mw.Close(); err != nil {
+		t.Fatalf("close writer: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/import", &body)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	rec := httptest.NewRecorder()
+	h.Import(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (body: %s)", rec.Code, rec.Body.String())
+	}
+
+	if got := h.store.GetSettings().Theme; got != backedUpTheme {
+		t.Fatalf("after import theme = %q, want %q", got, backedUpTheme)
+	}
+}
+
+// A multipart upload with neither "files" nor "file" is still a bad request.
+func TestImportRejectsEmptyUpload(t *testing.T) {
+	h := newTestHandlers(t)
+
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	if err := mw.WriteField("other", "x"); err != nil {
+		t.Fatalf("WriteField: %v", err)
+	}
+	if err := mw.Close(); err != nil {
+		t.Fatalf("close writer: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/import", &body)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	rec := httptest.NewRecorder()
+	h.Import(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
 	}
 }

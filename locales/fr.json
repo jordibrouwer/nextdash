@@ -1736,6 +1736,7 @@
         "autoBackupRestoreConfirmMessage": "Restaurer cette sauvegarde ? Cela remplace toutes les données actuelles et est irréversible.",
         "autoBackupRestoreSuccess": "Sauvegarde restaurée. Rechargement…",
         "autoBackupRestoreError": "Échec de la restauration de la sauvegarde.",
+        "autoBackupDownloadError": "Impossible de télécharger la sauvegarde.",
         "autoBackupsSummary": "{count} sauvegardes · {size} au total",
         "importDescription": "Importer vos données",
         "importInfoTitle": "Informations sur l'import",

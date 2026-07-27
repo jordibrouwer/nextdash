@@ -1078,13 +1078,52 @@ class DashboardConfig {
         }
     }
 
-    downloadFullBackup() {
-        // A plain navigation lets the browser handle the file download.
-        window.location.href = '/api/backup';
+    /**
+     * Fetch a file through the write-token wrapper and save it.
+     *
+     * A plain `window.location.href` navigation carries no write token, so
+     * /api/backup answered 401 and the browser navigated to an error page
+     * instead of downloading — silently, since nothing checks the result of a
+     * navigation. With no backup file to be had, there was nothing to restore
+     * from either.
+     *
+     * Same approach the old config used (config-backup.js): fetch with the
+     * write headers, then hand the blob to an <a download>.
+     */
+    async downloadViaBlob(url, filename, errorKey, errorFallback) {
+        try {
+            const res = await this.writeFetch(url, { method: 'GET' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const blob = await res.blob();
+            const href = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = href;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(href);
+            a.remove();
+            return true;
+        } catch {
+            this.notify(this.t(errorKey, errorFallback), 'error');
+            return false;
+        }
+    }
+
+    async downloadFullBackup() {
+        const stamp = new Date().toISOString().replace('T', '_').replace(/\..+/, '').replace(/:/g, '-');
+        const ok = await this.downloadViaBlob('/api/backup', `nextDash-backup-${stamp}.zip`,
+            'config.backupError', 'Could not create the backup.');
+        if (ok) this.notify(this.t('config.backupCreated', 'Backup downloaded.'), 'success');
     }
 
     downloadStoredBackup(name) {
-        window.location.href = `/api/auto-backups/download?name=${encodeURIComponent(name)}`;
+        // This endpoint needs no write token, but routing it through the same
+        // helper means one download path to keep working rather than two.
+        return this.downloadViaBlob(
+            `/api/auto-backups/download?name=${encodeURIComponent(name)}`, name,
+            'config.autoBackupDownloadError', 'Could not download the backup.');
     }
 
     async runBackupNow() {

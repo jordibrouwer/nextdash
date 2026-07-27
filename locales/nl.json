@@ -1746,6 +1746,7 @@
         "autoBackupRestoreConfirmMessage": "Deze back-up herstellen? Dit vervangt alle huidige data en kan niet ongedaan worden gemaakt.",
         "autoBackupRestoreSuccess": "Back-up hersteld. Opnieuw laden…",
         "autoBackupRestoreError": "Kan back-up niet herstellen.",
+        "autoBackupDownloadError": "Kon de back-up niet downloaden.",
         "autoBackupsSummary": "{count} back-ups · {size} totaal",
         "importDescription": "Gegevens importeren",
         "importInfoTitle": "Importinformatie",
