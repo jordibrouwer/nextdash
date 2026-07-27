@@ -291,7 +291,7 @@
     <script src="/static/js/whats-new-stub.js?v={{.Assets.WhatsNewData}}" defer></script>
     <script src="/static/js/layout-version-utils.js?v={{.Assets.LayoutVersionUtilsJS}}"></script>
     <script src="/static/js/layout-utils.js?v={{.Assets.LayoutUtilsJS}}"></script>
-    <script src="/static/js/config/config-language.js?v={{.Assets.ConfigLanguageJS}}"></script>
+    <script src="/static/js/shared/config-language.js?v={{.Assets.ConfigLanguageJS}}"></script>
     <script src="/static/js/bookmark-form/bookmark-url-utils.js?v={{.Assets.BookmarkURLUtilsJS}}"></script>
     <script src="/static/js/bookmark-form/bookmark-preview-service.js?v={{.Assets.BookmarkPreviewServiceJS}}"></script>
     <script src="/static/js/bookmark-form/bookmark-form-preview.js?v={{.Assets.BookmarkFormPreviewJS}}"></script>
@@ -322,10 +322,10 @@
     <script src="/static/js/shortcut-format.js?v={{.Assets.ShortcutFormatJS}}" defer></script>
     <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}" defer></script>
     <!-- Tip catalogue is shared with Config → Help so the two lists cannot drift. -->
-    <script src="/static/js/config/config-help-tips.js?v=help-tips-2-monitor-stats" defer></script>
+    <script src="/static/js/shared/config-help-tips.js?v=help-tips-2-monitor-stats" defer></script>
     <script src="/static/js/dashboard-keyboard-tip.js?v=keyboard-tip-1" defer></script>
     <!-- Batch icon fetch (`:favicons fetch`); same class config uses after an import. -->
-    <script src="/static/js/config/config-favicon-prefetch.js?v=favicon-prefetch-refresh-all-2" defer></script>
+    <script src="/static/js/shared/config-favicon-prefetch.js?v=favicon-prefetch-refresh-all-2" defer></script>
     <script src="/static/js/pwa-install-hint.js?v={{.Assets.PWAInstallHintJS}}" defer></script>
     <script src="/static/js/mobile-experience.js?v={{.Assets.MobileExperienceJS}}"></script>
     <script src="/static/js/dashboard-tag-cloud.js?v=analytics-track-1" defer></script>
@@ -366,7 +366,7 @@
 
     <!-- Theme-colours editor: markup ships hidden here and the config view (Appearance)
          moves it into place and instantiates the existing ColorsEditor against it. -->
-    <script src="/static/js/config/config-custom-themes.js?v=config-view-phase27-1" defer></script>
+    <script src="/static/js/shared/config-custom-themes.js?v=config-view-phase27-1" defer></script>
     <script src="/static/js/color-value-utils.js?v=config-view-phase27-1" defer></script>
 </body>
 </html>
