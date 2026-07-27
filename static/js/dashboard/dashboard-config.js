@@ -279,6 +279,62 @@ class DashboardConfig {
         });
     }
 
+    /**
+     * Mark one button in a sub-tab strip as the current one.
+     *
+     * Also moves the roving tabindex: a tablist is a single stop in the page's
+     * tab order, and Tab from there goes to the panel rather than to the next
+     * tab, so only the active button stays focusable.
+     */
+    syncSubTabStrip(attr, active) {
+        document.querySelectorAll(`[${attr}]`).forEach((b) => {
+            const on = b.getAttribute(attr) === active;
+            b.classList.toggle('is-active', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+            b.setAttribute('tabindex', on ? '0' : '-1');
+        });
+    }
+
+    /**
+     * Wire a `role="tablist"` strip: click plus the keys the role promises.
+     *
+     * These strips carried role="tab" and aria-selected but no key handling, so
+     * a screen reader announced a tab widget and then the standard keys did
+     * nothing. Arrow keys move (wrapping), Home/End jump to the ends, and each
+     * lands on a real tab — matching the ARIA tabs pattern.
+     *
+     * @param {Element} container scope to bind within
+     * @param {string} attr data attribute naming the tab, e.g. 'data-pt-tab'
+     * @param {(tab: string) => void} activate called with the newly chosen tab
+     */
+    bindSubTabStrip(container, attr, activate) {
+        const buttons = [...container.querySelectorAll(`[${attr}]`)];
+        buttons.forEach((btn, i) => {
+            btn.addEventListener('click', () => activate(btn.getAttribute(attr)));
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                const last = buttons.length - 1;
+                const next = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (i === last ? 0 : i + 1)
+                            : (i === 0 ? last : i - 1);
+                const target = buttons[next];
+                if (!target) return;
+                const tab = target.getAttribute(attr);
+                target.focus();
+                activate(tab);
+                // Some sections repaint through render(), which replaces the
+                // strip wholesale and drops the focus set above. Re-focus the
+                // rebuilt button so a second arrow press still works.
+                if (!target.isConnected) {
+                    document.querySelector(`[${attr}="${CSS.escape(tab)}"]`)?.focus();
+                }
+            });
+        });
+    }
+
     /* ── Render ────────────────────────────────────────────────────────────── */
 
     /** Human labels for the section rail. */
@@ -904,12 +960,12 @@ class DashboardConfig {
 
         const tabs = DashboardConfig.DB_TABS.map((tab) => {
             const active = tab === this.dbTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-db-tab="${esc(tab)}">${esc(this.dbTabLabel(tab))}</button>`;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-db-body" data-db-tab="${esc(tab)}">${esc(this.dbTabLabel(tab))}</button>`;
         }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.dataBackupsIntro', 'Back up your data, restore an earlier snapshot, or move it in and out of nextDash.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
-            <div id="config-db-body">${this.renderDbTab()}</div>
+            <div id="config-db-body" role="tabpanel" tabindex="0">${this.renderDbTab()}</div>
         `;
     }
 
@@ -1117,27 +1173,20 @@ class DashboardConfig {
     }
 
     bindDataBackupsActions(container) {
-        container.querySelectorAll('[data-db-tab]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-db-tab');
-                if (tab === this.dbTab) return;
-                this.dbTab = tab;
-                this.restoreConfigHash();
-                // Only the body is repainted; rebuilding the strip would replace
-                // the button that was just clicked.
-                const body = document.getElementById('config-db-body');
-                if (body) {
-                    body.innerHTML = this.renderDbTab();
-                    // Bind the new body only: re-binding the whole container
-                    // would stack a second listener on every tab button.
-                    this.bindDataBackupsActions(body);
-                }
-                document.querySelectorAll('[data-db-tab]').forEach((b) => {
-                    const on = b.getAttribute('data-db-tab') === this.dbTab;
-                    b.classList.toggle('is-active', on);
-                    b.setAttribute('aria-selected', on ? 'true' : 'false');
-                });
-            });
+        this.bindSubTabStrip(container, 'data-db-tab', (tab) => {
+            if (tab === this.dbTab) return;
+            this.dbTab = tab;
+            this.restoreConfigHash();
+            // Only the body is repainted; rebuilding the strip would replace
+            // the button that was just clicked.
+            const body = document.getElementById('config-db-body');
+            if (body) {
+                // Bind the new body only: re-binding the whole container would
+                // stack a second listener on every tab button.
+                body.innerHTML = this.renderDbTab();
+                this.bindDataBackupsActions(body);
+            }
+            this.syncSubTabStrip('data-db-tab', this.dbTab);
         });
         container.querySelectorAll('[data-backup-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleBackupAction(btn.getAttribute('data-backup-action')));
@@ -1767,21 +1816,21 @@ class DashboardConfig {
 
         const apTabs = DashboardConfig.APPEARANCE_TABS.map((tab) => {
             const active = tab === this.appearanceTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-appearance-tab="${esc(tab)}">${esc(this.appearanceTabLabel(tab))}</button>`;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-appearance-body" data-appearance-tab="${esc(tab)}">${esc(this.appearanceTabLabel(tab))}</button>`;
         }).join('');
 
         if (this.appearanceTab === 'custom-themes') {
             return `
                 <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
                 <div class="config-subtabs" role="tablist">${apTabs}</div>
-                <div id="config-appearance-body">${this.renderCustomThemes()}</div>
+                <div id="config-appearance-body" role="tabpanel" tabindex="0">${this.renderCustomThemes()}</div>
             `;
         }
 
         return `
             <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
             <div class="config-subtabs" role="tablist">${apTabs}</div>
-            <div id="config-appearance-body">
+            <div id="config-appearance-body" role="tabpanel" tabindex="0">
             ${tiles}
 
             <div class="config-panel">
@@ -1980,18 +2029,15 @@ class DashboardConfig {
     }
 
     bindAppearanceControls(container) {
-        container.querySelectorAll('[data-appearance-tab]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-appearance-tab');
-                if (tab === this.appearanceTab) return;
-                this.appearanceTab = tab;
-                this.restoreConfigHash();
-                // Leaving the tab drops any unsaved preview so the dashboard
-                // does not keep showing colours from a theme you stopped editing.
-                if (tab !== 'custom-themes') this.clearThemePreview();
-                this.render();
-                if (tab === 'custom-themes') void this.openCustomThemes();
-            });
+        this.bindSubTabStrip(container, 'data-appearance-tab', (tab) => {
+            if (tab === this.appearanceTab) return;
+            this.appearanceTab = tab;
+            this.restoreConfigHash();
+            // Leaving the tab drops any unsaved preview so the dashboard
+            // does not keep showing colours from a theme you stopped editing.
+            if (tab !== 'custom-themes') this.clearThemePreview();
+            this.render();
+            if (tab === 'custom-themes') void this.openCustomThemes();
         });
         container.querySelectorAll('[data-tile-appearance-tab]').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -3505,12 +3551,12 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.BEHAVIOR_TABS.map((tab) => {
             const active = tab === this.behaviorTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-behavior-tab="${esc(tab)}">${esc(this.behaviorTabLabel(tab))}</button>`;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-behavior-body" data-behavior-tab="${esc(tab)}">${esc(this.behaviorTabLabel(tab))}</button>`;
         }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
-            <div id="config-behavior-body">${this.renderBehaviorBody()}</div>
+            <div id="config-behavior-body" role="tabpanel" tabindex="0">${this.renderBehaviorBody()}</div>
         `;
     }
 
@@ -3565,26 +3611,16 @@ class DashboardConfig {
     }
 
     bindBehaviorControls(container) {
-        container.querySelectorAll('[data-behavior-tab]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-behavior-tab');
-                if (tab === this.behaviorTab) return;
-                this.behaviorTab = tab;
-                this.restoreConfigHash();
-                const body = document.getElementById('config-behavior-body');
-                if (body) {
-                    body.innerHTML = this.renderBehaviorBody();
-                    document.querySelectorAll('[data-behavior-tab]').forEach((b) => {
-                        const on = b.getAttribute('data-behavior-tab') === this.behaviorTab;
-                        b.classList.toggle('is-active', on);
-                        b.setAttribute('aria-selected', on ? 'true' : 'false');
-                    });
-                    this.bindControlPanels(container, 'behavior');
-                    this.bindBehaviorActions(container);
-                } else {
-                    this.render();
-                }
-            });
+        this.bindSubTabStrip(container, 'data-behavior-tab', (tab) => {
+            if (tab === this.behaviorTab) return;
+            this.behaviorTab = tab;
+            this.restoreConfigHash();
+            const body = document.getElementById('config-behavior-body');
+            if (!body) { this.render(); return; }
+            body.innerHTML = this.renderBehaviorBody();
+            this.syncSubTabStrip('data-behavior-tab', this.behaviorTab);
+            this.bindControlPanels(container, 'behavior');
+            this.bindBehaviorActions(container);
         });
         this.bindControlPanels(container, 'behavior');
         this.bindBehaviorActions(container);
@@ -3787,12 +3823,12 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.PT_TABS.map((tab) => {
             const active = tab === this.ptTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-pt-tab="${esc(tab)}">${esc(this.ptTabLabel(tab))}</button>`;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-pt-body" data-pt-tab="${esc(tab)}">${esc(this.ptTabLabel(tab))}</button>`;
         }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.pagesTagsIntro', 'Manage pages, categories, tags, finders, and smart collections.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
-            <div id="config-pt-body">${this.renderPtTab()}</div>
+            <div id="config-pt-body" role="tabpanel" tabindex="0">${this.renderPtTab()}</div>
         `;
     }
 
@@ -3808,14 +3844,11 @@ class DashboardConfig {
     }
 
     bindPagesTags(container) {
-        container.querySelectorAll('[data-pt-tab]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-pt-tab');
-                if (tab === this.ptTab) return;
-                this.ptTab = tab;
-                this.restoreConfigHash();
-                this.repaintPtBody();
-            });
+        this.bindSubTabStrip(container, 'data-pt-tab', (tab) => {
+            if (tab === this.ptTab) return;
+            this.ptTab = tab;
+            this.restoreConfigHash();
+            this.repaintPtBody();
         });
         this.bindPtTabControls(container);
     }
@@ -3824,12 +3857,7 @@ class DashboardConfig {
         const body = document.getElementById('config-pt-body');
         if (!body) { this.render(); return; }
         body.innerHTML = this.renderPtTab();
-        // Re-mark the active subtab.
-        document.querySelectorAll('[data-pt-tab]').forEach((b) => {
-            const active = b.getAttribute('data-pt-tab') === this.ptTab;
-            b.classList.toggle('is-active', active);
-            b.setAttribute('aria-selected', active ? 'true' : 'false');
-        });
+        this.syncSubTabStrip('data-pt-tab', this.ptTab);
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindPtTabControls(container);
     }
@@ -6493,13 +6521,13 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.STATS_TABS.map((tab) => {
             const active = tab === this.statsTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-stats-tab="${esc(tab)}">${esc(this.statsTabLabel(tab))}</button>`;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-stats-body" data-stats-tab="${esc(tab)}">${esc(this.statsTabLabel(tab))}</button>`;
         }).join('');
 
         return `
             <p class="config-view-intro">${esc(this.t('config.statsIntroView', 'What is in your dashboard right now. These numbers update as you change things.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
-            <div id="config-stats-body">${this.renderStatsBody()}</div>
+            <div id="config-stats-body" role="tabpanel" tabindex="0">${this.renderStatsBody()}</div>
         `;
     }
 
@@ -7534,9 +7562,8 @@ class DashboardConfig {
     }
 
     bindStats(container) {
-        container.querySelectorAll('[data-stats-tab]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-stats-tab');
+        this.bindSubTabStrip(container, 'data-stats-tab', (tab) => {
+            {
                 if (tab === this.statsTab) return;
                 this.statsTab = tab;
                 this.restoreConfigHash();
@@ -7551,12 +7578,8 @@ class DashboardConfig {
                 // Only the body changes; repainting the tab strip too would
                 // rebuild the buttons under the pointer that just clicked one.
                 this.repaintStatsBody();
-                document.querySelectorAll('[data-stats-tab]').forEach((b) => {
-                    const on = b.getAttribute('data-stats-tab') === this.statsTab;
-                    b.classList.toggle('is-active', on);
-                    b.setAttribute('aria-selected', on ? 'true' : 'false');
-                });
-            });
+                this.syncSubTabStrip('data-stats-tab', this.statsTab);
+            }
         });
         container.querySelectorAll('[data-stats-range]').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -7583,11 +7606,7 @@ class DashboardConfig {
                 if (tab === 'activity' && this._statsFinders === undefined) void this.loadStatsFinders();
                 if (tab === 'inbox' && this._statsInboxItems === undefined) void this.loadStatsInbox();
                 this.repaintStatsBody();
-                document.querySelectorAll('[data-stats-tab]').forEach((b) => {
-                    const on = b.getAttribute('data-stats-tab') === this.statsTab;
-                    b.classList.toggle('is-active', on);
-                    b.setAttribute('aria-selected', on ? 'true' : 'false');
-                });
+                this.syncSubTabStrip('data-stats-tab', this.statsTab);
             });
         });
     }
@@ -7648,12 +7667,12 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.HELP_TABS.map((tab) => {
             const active = tab === this.helpTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-help-tab="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-help-body" data-help-tab="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`;
         }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
-            <div id="config-help-body">${this.renderHelpBody()}</div>
+            <div id="config-help-body" role="tabpanel" tabindex="0">${this.renderHelpBody()}</div>
         `;
     }
 
@@ -7813,23 +7832,18 @@ class DashboardConfig {
     }
 
     bindHelp(container) {
-        container.querySelectorAll('[data-help-tab]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const tab = btn.getAttribute('data-help-tab');
+        this.bindSubTabStrip(container, 'data-help-tab', (tab) => {
+            {
                 if (tab === this.helpTab) return;
                 this.helpTab = tab;
                 this.restoreConfigHash();
                 const body = document.getElementById('config-help-body');
                 if (!body) { this.render(); return; }
                 body.innerHTML = this.renderHelpBody();
-                document.querySelectorAll('[data-help-tab]').forEach((b) => {
-                    const on = b.getAttribute('data-help-tab') === this.helpTab;
-                    b.classList.toggle('is-active', on);
-                    b.setAttribute('aria-selected', on ? 'true' : 'false');
-                });
+                this.syncSubTabStrip('data-help-tab', this.helpTab);
                 // The new body carries its own action buttons.
                 this.bindHelpActions(body);
-            });
+            }
         });
         this.bindHelpActions(container);
     }
