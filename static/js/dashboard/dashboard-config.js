@@ -3720,6 +3720,17 @@ class DashboardConfig {
             field,
             ...(typeof value === 'boolean' ? { value: value ? 'on' : 'off' } : {}),
         });
+        // Toggling analytics here is an answer to the opt-in question, whichever
+        // way it goes. The card writes this flag itself and nothing else did, so
+        // without it a deliberate choice made in config read as "never asked"
+        // and the card came back to ask again. Mirrors search-commands.js.
+        if (field === 'analyticsOptIn') {
+            const qs = d.settings.quickStart;
+            if (qs && typeof qs === 'object') {
+                qs.analyticsChoiceMade = true;
+                qs.analyticsAskAfter = 0; // answered; no snooze left to honour
+            }
+        }
         switch (special) {
             case 'language':
                 await d.language?.init?.(value);
