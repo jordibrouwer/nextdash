@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -58,6 +59,49 @@ func writeHTMLShell(w http.ResponseWriter, r *http.Request, body []byte) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
+}
+
+// writeJSONWithETag serves a JSON API response with a content-based ETag, the
+// same deal writeHTMLShell gives the HTML shell.
+//
+// Why: the dashboard re-reads /api/bookmarks, /api/categories, /api/pages and
+// friends on every page load, every page switch and every cross-tab sync. Those
+// responses are usually byte-identical to the last one — /api/data-revision
+// exists precisely because the client wants to know "did anything change?" —
+// yet the full JSON was sent every time. With a validator the browser asks
+// conditionally and an unchanged body costs a 304 with no payload.
+//
+// "no-cache" rather than a max-age: bookmark data must never be served from
+// cache without asking, because a write from another tab or the extension has
+// to show up immediately. This buys the round trip back, not the request.
+//
+// The body is buffered so it can be hashed before anything is written. These
+// payloads are a few KB of bookmarks, not a stream, so that costs nothing worth
+// measuring. An encoding failure writes a 500 and returns false, leaving the
+// caller nothing to do — no partial body has reached the client yet, which is
+// the other reason to buffer.
+func writeJSONWithETag(w http.ResponseWriter, r *http.Request, v any) bool {
+	body, err := json.Marshal(v)
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return false
+	}
+
+	sum := sha256.Sum256(body)
+	etag := `"` + hex.EncodeToString(sum[:16]) + `"`
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("ETag", etag)
+	w.Header().Set("Cache-Control", "no-cache, must-revalidate")
+
+	if match := r.Header.Get("If-None-Match"); match != "" && etagMatches(match, etag) {
+		w.WriteHeader(http.StatusNotModified)
+		return true
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
+	return true
 }
 
 // etagMatches reports whether the client's If-None-Match header covers etag.

@@ -118,6 +118,12 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
+### Fixes
+
+- **fix** **The read APIs answer conditional requests** — `/api/bookmarks`, `/api/categories`, `/api/pages`, `/api/settings` and `/api/finders` now send a content `ETag` and honour `If-None-Match`, so an unchanged response comes back as a bodyless **304** instead of the full JSON. The dashboard re-reads these on every page load, every page switch and every cross-tab sync, and the payloads are usually byte-identical to the last one — `/api/data-revision` exists precisely because the client wants to know *did anything change?*, yet the answer was always paid for in full. `writeJSONWithETag` follows the same shape `writeHTMLShell` already used for the HTML shell (`html_etag.go`, `handlers.go`).
+- **fix** **Cache-Control stays `no-cache`, not a max-age** — bookmark data must never be served from cache without asking, because a write from another tab or the extension has to be visible immediately. This buys back the response body on a revalidation, not the round trip.
+- **fix** **The extension can use it too** — `If-None-Match` is added to `Access-Control-Allow-Headers` and `ETag` to `Access-Control-Expose-Headers`. Without the first the browser blocks the conditional request outright; without the second its JS cannot read the validator it would have to send back. The ETags would have worked same-origin and silently done nothing cross-origin (`cors.go`).
+
 **The dashboard stops loading the config view it may never open**, and cache-bust tokens stop being something you have to remember.
 
 ### New

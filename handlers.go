@@ -730,8 +730,7 @@ func (h *Handlers) GetBookmarks(w http.ResponseWriter, r *http.Request) {
 		bookmarks = []Bookmark{}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(bookmarks)
+	writeJSONWithETag(w, r, bookmarks)
 }
 
 func (h *Handlers) GetDataRevision(w http.ResponseWriter, r *http.Request) {
@@ -1096,8 +1095,7 @@ func (h *Handlers) GetCategories(w http.ResponseWriter, r *http.Request) {
 	if pageIDStr == "" {
 		// No page param provided - return empty array
 		// Categories are now per-page only, no global categories
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]Category{})
+		writeJSONWithETag(w, r, []Category{})
 		return
 	}
 
@@ -1108,14 +1106,11 @@ func (h *Handlers) GetCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	categories := h.store.GetCategoriesByPage(pageID)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(categories)
+	writeJSONWithETag(w, r, categories)
 }
 
 func (h *Handlers) GetFinders(w http.ResponseWriter, r *http.Request) {
-	finders := h.store.GetFinders()
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(finders)
+	writeJSONWithETag(w, r, h.store.GetFinders())
 }
 
 func (h *Handlers) SaveFinders(w http.ResponseWriter, r *http.Request) {
@@ -1170,9 +1165,7 @@ func (h *Handlers) GetPages(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		return
 	}
-	pages := h.store.GetPages()
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(pages)
+	writeJSONWithETag(w, r, h.store.GetPages())
 }
 
 func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
@@ -1308,8 +1301,7 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	if telemetryDisabledByEnv() {
 		settings.AnalyticsOptIn = false
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(settings)
+	writeJSONWithETag(w, r, settings)
 }
 
 func mergeSettingsFromBody(stored Settings, body []byte) (Settings, error) {
