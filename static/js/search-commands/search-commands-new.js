@@ -43,6 +43,15 @@ class SearchCommandNew {
         this.formPreview = null;
         this._userEditedIcon = false;
         this._wizardStep = 1;
+        // Edit mode: set by openModal({ mode: 'edit', … }) and read by every
+        // branch that has to behave differently from a create. Null means the
+        // modal is doing what it has always done — adding a new bookmark.
+        this.editTarget = null;
+    }
+
+    /** True while the modal is editing an existing bookmark rather than adding one. */
+    isEditMode() {
+        return this.editTarget != null;
     }
 
     setLanguage(language) {
@@ -93,11 +102,31 @@ class SearchCommandNew {
         }];
     }
 
+    /**
+     * Open the bookmark form.
+     *
+     * Two modes share one form. The default adds a bookmark. Passing
+     * `{ mode: 'edit', pageId, index, bookmark }` instead loads that bookmark's
+     * fields and saves back over it, so callers that already have a bookmark —
+     * the health view's Edit, and the inline editor this is meant to replace —
+     * get the same markup, styling and validation as the add flow rather than a
+     * second form to keep in step.
+     */
     openModal(options = {}) {
         // Tracked here rather than at the call sites: the modal is opened from the
         // `+` key, the toolbar, the empty state, the `:new` command and config, and
         // every one of those funnels through this method.
-        window.nextdashTrack?.('modal:new-bookmark');
+        const editing = options.mode === 'edit' && options.bookmark != null;
+        window.nextdashTrack?.(editing ? 'modal:edit-bookmark' : 'modal:new-bookmark');
+        this.editTarget = editing
+            ? {
+                pageId: Number(options.pageId),
+                index: Number.isFinite(Number(options.index)) ? Number(options.index) : null,
+                originalUrl: String(options.bookmark.url || ''),
+                bookmark: { ...options.bookmark },
+                onSaved: typeof options.onSaved === 'function' ? options.onSaved : null,
+            }
+            : null;
         // Refresh the Page/Category context here rather than trusting the caller.
         // Only `:new`, quick-add and config set it on the way past; the inbox
         // promote, the paste-a-URL prompt, the search hint, the toolbar button and
@@ -295,13 +324,27 @@ class SearchCommandNew {
         return (dash.allBookmarks || []).filter((b) => Number(b.pageId) === pageId);
     }
 
+    /**
+     * The bookmark being edited is not its own duplicate. Matched on the URL it
+     * had when the modal opened rather than on its index: the report a health row
+     * comes from can be minutes old, so the index is the less trustworthy of the
+     * two. Only meaningful while the edit stays on its original page.
+     */
+    isEditingSelf(bookmark, pageId) {
+        if (!this.isEditMode() || !bookmark) return false;
+        if (Number(pageId) !== Number(this.editTarget.pageId)) return false;
+        const originalKey = this.canonicalBookmarkURLKey(this.editTarget.originalUrl || '');
+        if (!originalKey) return false;
+        return this.canonicalBookmarkURLKey(bookmark.url) === originalKey;
+    }
+
     hasUrlDuplicateOnPage(url, pageId = null) {
         const key = this.canonicalBookmarkURLKey(url);
         if (!key) return false;
         const pid = pageId ?? this.getSelectedPageId();
         if (pid == null) return false;
         return this.getBookmarksForPage(pid).some(
-            (b) => this.canonicalBookmarkURLKey(b.url) === key
+            (b) => this.canonicalBookmarkURLKey(b.url) === key && !this.isEditingSelf(b, pid)
         );
     }
 
@@ -324,6 +367,7 @@ class SearchCommandNew {
         if (pid == null) return false;
         return this.getBookmarksForPage(pid).some(
             (b) => String(b?.shortcut || '').trim().toUpperCase() === normalized
+                && !this.isEditingSelf(b, pid)
         );
     }
 
@@ -345,6 +389,8 @@ class SearchCommandNew {
         }
 
         this.resetDraftState();
+
+        const editing = this.isEditMode();
 
         const compactStripHtml = window.BookmarkFormPreviewHtml?.buildCompactPreviewStripHtml
             ? window.BookmarkFormPreviewHtml.buildCompactPreviewStripHtml('new-bookmark', (key, fb) => this.t(key, fb))
@@ -380,7 +426,9 @@ class SearchCommandNew {
             <div id="new-bookmark-modal" class="modal-overlay">
                 <div class="modal modal-new-bookmark">
                     <div class="nbm-header">
-                        <span class="nbm-title">${this.t('config.addNewBookmark', 'New Bookmark')}</span>
+                        <span class="nbm-title">${editing
+                            ? this.t('config.editBookmark', 'Edit Bookmark')
+                            : this.t('config.addNewBookmark', 'New Bookmark')}</span>
                         <div class="nbm-header-actions">
                             <kbd>&</kbd>
                             <button type="button" class="nbm-btn" id="new-bookmark-cancel-header" aria-label="Close">✕</button>
@@ -514,8 +562,10 @@ class SearchCommandNew {
                             <button type="button" class="nbm-btn nbm-btn-secondary nbm-wizard-only" id="new-bookmark-wizard-back">${this.t('config.addBookmarkWizardBack', 'Back')}</button>
                             <button type="button" class="nbm-btn nbm-btn-secondary" id="new-bookmark-cancel">${this.t('config.cancel', 'Cancel')}</button>
                             <button type="button" class="nbm-btn nbm-btn-primary nbm-wizard-only" id="new-bookmark-wizard-next">${this.t('config.addBookmarkWizardNext', 'Next')}</button>
-                            <button type="button" class="nbm-btn nbm-btn-create-another" id="new-bookmark-create-another" title="${this.t('config.createAndAddAnotherTitle', 'Save this bookmark and keep the form open to add another')}">${this.t('config.createAndAddAnother', 'Create + New')}</button>
-                            <button type="button" class="nbm-btn nbm-btn-primary" id="new-bookmark-create">${this.t('config.create', 'Add Bookmark')}</button>
+                            ${editing ? '' : `<button type="button" class="nbm-btn nbm-btn-create-another" id="new-bookmark-create-another" title="${this.t('config.createAndAddAnotherTitle', 'Save this bookmark and keep the form open to add another')}">${this.t('config.createAndAddAnother', 'Create + New')}</button>`}
+                            <button type="button" class="nbm-btn nbm-btn-primary" id="new-bookmark-create">${editing
+                                ? this.t('config.save', 'Save')
+                                : this.t('config.create', 'Add Bookmark')}</button>
                         </div>
                     </form>
                 </div>
@@ -990,7 +1040,7 @@ class SearchCommandNew {
             await this.autoFetchFromUrlField(true);
         });
 
-        document.getElementById('new-bookmark-create')?.addEventListener('click', () => this.createBookmark());
+        document.getElementById('new-bookmark-create')?.addEventListener('click', () => this.submitBookmark());
         document.getElementById('new-bookmark-create-another')?.addEventListener('click', () => this.createBookmark({ keepOpen: true }));
         document.getElementById('new-bookmark-cancel')?.addEventListener('click', () => this.closeModal());
         document.getElementById('new-bookmark-cancel-header')?.addEventListener('click', () => this.closeModal());
@@ -1009,7 +1059,7 @@ class SearchCommandNew {
 
         document.getElementById('new-bookmark-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
-            this.createBookmark();
+            this.submitBookmark();
         });
 
         this._modalCustomSelects = [];
@@ -1074,6 +1124,21 @@ class SearchCommandNew {
         const nameInput = document.getElementById('new-bookmark-name');
         const opts = options.url ? options : (this._openOptions || {});
 
+        // An edit fills the whole form from the stored bookmark and stops: the
+        // create path below would re-fetch the favicon and link preview off the
+        // URL, overwriting the icon and preview the bookmark already has.
+        if (this.isEditMode()) {
+            this.fillFormForEdit();
+            this.updatePreviews();
+            this.updateShortcutConflictHint();
+            this.updateUrlDuplicateHint();
+            setTimeout(() => {
+                nameInput?.focus();
+                nameInput?.select();
+            }, 100);
+            return;
+        }
+
         if (opts.url && urlInput) {
             urlInput.value = window.BookmarkUrlUtils?.ensureHttpUrl(opts.url) || opts.url;
             void this.autoFetchFromUrlField(true);
@@ -1135,7 +1200,234 @@ class SearchCommandNew {
             }
             this.formPreview = null;
             this._openOptions = null;
+            // Cleared last: a stale target would put the next plain "add" into
+            // edit mode and overwrite whatever was edited before.
+            this.editTarget = null;
         }, 200);
+    }
+
+    /** Route the primary button to the right save: add a bookmark, or update one. */
+    submitBookmark() {
+        return this.isEditMode() ? this.updateBookmark() : this.createBookmark();
+    }
+
+    /**
+     * Load the bookmark being edited into the form. Sets the same controls the
+     * create path fills in, plus the ones only an existing bookmark has: the
+     * stored icon, tags, category, page and availability mode.
+     */
+    async fillFormForEdit() {
+        const bm = this.editTarget?.bookmark;
+        if (!bm) return;
+
+        const setValue = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.value = value ?? '';
+        };
+
+        setValue('new-bookmark-url', bm.url || '');
+        setValue('new-bookmark-name', bm.name || '');
+        setValue('new-bookmark-note', bm.note || '');
+        setValue('new-bookmark-shortcut', String(bm.shortcut || '').toUpperCase());
+        setValue('new-bookmark-tags', Array.isArray(bm.tags) ? bm.tags.join(', ') : '');
+
+        const pinnedEl = document.getElementById('new-bookmark-pinned');
+        if (pinnedEl) pinnedEl.checked = bm.pinned === true;
+
+        // Carry the stored icon rather than re-fetching a favicon: an edit must
+        // not silently replace an icon the user uploaded or picked by hand.
+        this.pendingIcon = bm.icon || '';
+        this._userEditedIcon = Boolean(bm.icon);
+        this.syncIconPreview(bm.icon || '');
+
+        this.draftState.previewTitle = bm.previewTitle || '';
+        this.draftState.previewDesc = bm.previewDesc || '';
+        this.draftState.previewImage = bm.previewImage || '';
+
+        // The mode is read back through CheckMode so the radio matches what the
+        // stored monitor/checkStatus pair actually means, rather than guessing.
+        const mode = window.CheckMode?.of?.(bm) || window.CheckMode?.OFF || 'off';
+        const modeRadio = document.getElementById(`new-bookmark-check-mode-${mode}`);
+        if (modeRadio) modeRadio.checked = true;
+        const interval = Number(bm.monitorIntervalMinutes);
+        if (Number.isFinite(interval) && interval > 0) {
+            setValue('new-bookmark-monitor-interval', String(interval));
+        }
+        this.syncCheckMode();
+
+        const pageSelect = document.getElementById('new-bookmark-page');
+        const pageId = Number(this.editTarget.pageId);
+        if (pageSelect && Number.isFinite(pageId)) {
+            pageSelect.value = String(pageId);
+            pageSelect.__customSelectInstance?.refresh?.();
+            // Categories belong to a page, so the list has to be the edited
+            // page's before its category can be selected.
+            await this.updateCategoriesForPage(pageId);
+        }
+        const categorySelect = document.getElementById('new-bookmark-category');
+        if (categorySelect) {
+            categorySelect.value = bm.category || '';
+            categorySelect.__customSelectInstance?.refresh?.();
+        }
+    }
+
+    /**
+     * Save an edit by writing the page's bookmark array back.
+     *
+     * There is no single-bookmark update endpoint — /api/bookmarks/add only
+     * appends, and auto-heal-apply only touches URL and title — so this reads the
+     * page, replaces the one entry and posts the list, which is what the inline
+     * editor does. The list is re-read here rather than trusted from the caller:
+     * a health row can be minutes old, so its index is verified against the URL
+     * the bookmark had when the modal opened before anything is overwritten.
+     */
+    async updateBookmark() {
+        const form = document.getElementById('new-bookmark-form');
+        if (!form?.checkValidity()) {
+            form?.reportValidity();
+            window.nextdashTrack?.('bookmark-edited', { result: 'invalid' });
+            return { ok: false };
+        }
+
+        const urlInput = document.getElementById('new-bookmark-url');
+        const normalizedUrl = this.normalizeUrlField(urlInput, true);
+        const formData = new FormData(form);
+        const sourcePageId = Number(this.editTarget.pageId);
+        const targetPageId = this.getSelectedPageId() || sourcePageId;
+
+        const shortcut = String(formData.get('shortcut') || '').trim().toUpperCase();
+        if (shortcut && this.hasShortcutConflictOnPage(shortcut, targetPageId)) {
+            this.updateShortcutConflictHint();
+            this.notify(this.t('config.shortcutConflict', 'Shortcut already in use'), 'error');
+            window.nextdashTrack?.('bookmark-edited', { result: 'shortcut-conflict' });
+            return { ok: false };
+        }
+        if (normalizedUrl && this.hasUrlDuplicateOnPage(normalizedUrl, targetPageId)) {
+            this.updateUrlDuplicateHint();
+            this.notify(this.duplicateBookmarkUrlMessage(), 'error');
+            window.nextdashTrack?.('bookmark-edited', { result: 'duplicate' });
+            return { ok: false };
+        }
+
+        const iconFile = document.getElementById('new-bookmark-icon-file')?.files?.[0];
+        const iconUrl = (document.getElementById('new-bookmark-icon-url')?.value || '').trim();
+        const icon = await this.resolveIconValue(iconFile, iconUrl);
+        if (icon === null) {
+            window.nextdashTrack?.('bookmark-edited', { result: 'icon-failed' });
+            return { ok: false };
+        }
+
+        const rawTags = String(formData.get('tags') || '');
+        const tags = rawTags.split(',').map(t => t.trim().toLowerCase())
+            .filter((t, i, arr) => t && arr.indexOf(t) === i);
+        const categorySelect = document.getElementById('new-bookmark-category');
+
+        // Spread the original first so fields this form does not expose —
+        // createdAt, click counts, health history — survive the edit.
+        const updated = {
+            ...this.editTarget.bookmark,
+            name: String(formData.get('name') || '').trim(),
+            url: normalizedUrl,
+            note: String(formData.get('note') || '').trim(),
+            shortcut,
+            category: String(categorySelect?.value ?? formData.get('category') ?? '').trim(),
+            pinned: formData.get('pinned') === 'on',
+            tags,
+            // resolveIconValue already falls back to the stored icon, so an
+            // untouched form keeps it and the clear button still empties it.
+            icon,
+        };
+        if (window.CheckMode) {
+            updated.monitorIntervalMinutes = this.getSelectedMonitorInterval();
+            window.CheckMode.assign(updated, this.getSelectedCheckMode());
+        }
+        updated.previewTitle = this.draftState.previewTitle || '';
+        updated.previewDesc = this.draftState.previewDesc || '';
+        updated.previewImage = this.draftState.previewImage || '';
+
+        const doFetch = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const listRes = await fetch(`/api/bookmarks?page=${sourcePageId}`);
+            if (!listRes.ok) throw new Error(`load HTTP ${listRes.status}`);
+            const list = await listRes.json();
+            if (!Array.isArray(list)) throw new Error('unexpected bookmark list');
+
+            const originalKey = this.canonicalBookmarkURLKey(this.editTarget.originalUrl || '');
+            let index = Number(this.editTarget.index);
+            const atIndex = Number.isFinite(index) ? list[index] : null;
+            if (!atIndex || this.canonicalBookmarkURLKey(atIndex.url) !== originalKey) {
+                // The index was stale; fall back to the URL it opened with.
+                index = list.findIndex((b) => this.canonicalBookmarkURLKey(b.url) === originalKey);
+            }
+            if (index < 0 || !list[index]) {
+                this.notify(
+                    this.t('config.bookmarkNoLongerExists', 'That bookmark no longer exists.'),
+                    'error'
+                );
+                window.nextdashTrack?.('bookmark-edited', { result: 'stale' });
+                return { ok: false };
+            }
+
+            const merged = { ...list[index], ...updated };
+            const movedPage = Number(targetPageId) !== Number(sourcePageId);
+            if (movedPage) {
+                // Moving pages is two writes: drop it from the old page, append to
+                // the new one. Ordered so a failure leaves the bookmark in place
+                // rather than removing it from both.
+                const targetRes = await fetch(`/api/bookmarks?page=${targetPageId}`);
+                if (!targetRes.ok) throw new Error(`target HTTP ${targetRes.status}`);
+                const targetList = await targetRes.json();
+                targetList.push(merged);
+                const saveTarget = await doFetch(`/api/bookmarks?page=${targetPageId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(targetList),
+                });
+                if (!saveTarget.ok) throw new Error(`save target HTTP ${saveTarget.status}`);
+                list.splice(index, 1);
+            } else {
+                list[index] = merged;
+            }
+
+            const saveRes = await doFetch(`/api/bookmarks?page=${sourcePageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(list),
+            });
+            if (!saveRes.ok) throw new Error(`save HTTP ${saveRes.status}`);
+
+            const onSaved = this.editTarget.onSaved;
+            try {
+                this.closeModal();
+            } catch (error) {
+                console.warn('Error closing bookmark modal after save:', error);
+            }
+
+            const dash = window.dashboardInstance;
+            dash?.data?.invalidatePageDataCache?.(Number(sourcePageId));
+            if (movedPage) dash?.data?.invalidatePageDataCache?.(Number(targetPageId));
+            void dash?.data?.fetchAndStoreDataRevision?.();
+            if (dash) {
+                await dash.loadAllBookmarks?.();
+                if (Number(dash.currentPageId) === Number(sourcePageId)
+                    || Number(dash.currentPageId) === Number(targetPageId)) {
+                    await dash.loadPageBookmarks?.(dash.currentPageId, { forceFetch: true });
+                }
+                dash.renderDashboard?.({ incremental: false });
+            }
+
+            this.notify(this.t('config.bookmarkUpdated', 'Bookmark updated'), 'success');
+            window.nextdashTrack?.('bookmark-edited', { result: 'ok', movedPage });
+            // Lets the opener refresh itself — the health view re-reads its report
+            // so the edited row reflects the new URL, name and check mode.
+            await onSaved?.({ pageId: targetPageId, bookmark: merged });
+            return { ok: true, pageId: targetPageId, bookmark: merged };
+        } catch (error) {
+            console.error('Error updating bookmark:', error);
+            this.notify(this.t('config.errorUpdatingBookmark', 'Could not save the bookmark'), 'error');
+            window.nextdashTrack?.('bookmark-edited', { result: 'error' });
+            return { ok: false };
+        }
     }
 
     async createBookmark({ keepOpen = false } = {}) {
