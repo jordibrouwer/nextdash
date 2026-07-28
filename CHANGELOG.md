@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.24 — July 2026](#v20260724--july-2026)
 - [v2026.07.23.6 — July 2026](#v202607236--july-2026)
 - [v2026.07.23.5 — July 2026](#v202607235--july-2026)
 - [v2026.07.23.4 — July 2026](#v202607234--july-2026)
@@ -118,13 +119,15 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-### Fixes
+Nothing yet.
 
-- **fix** **The read APIs answer conditional requests** — `/api/bookmarks`, `/api/categories`, `/api/pages`, `/api/settings` and `/api/finders` now send a content `ETag` and honour `If-None-Match`, so an unchanged response comes back as a bodyless **304** instead of the full JSON. The dashboard re-reads these on every page load, every page switch and every cross-tab sync, and the payloads are usually byte-identical to the last one — `/api/data-revision` exists precisely because the client wants to know *did anything change?*, yet the answer was always paid for in full. `writeJSONWithETag` follows the same shape `writeHTMLShell` already used for the HTML shell (`html_etag.go`, `handlers.go`).
-- **fix** **Cache-Control stays `no-cache`, not a max-age** — bookmark data must never be served from cache without asking, because a write from another tab or the extension has to be visible immediately. This buys back the response body on a revalidation, not the round trip.
-- **fix** **The extension can use it too** — `If-None-Match` is added to `Access-Control-Allow-Headers` and `ETag` to `Access-Control-Expose-Headers`. Without the first the browser blocks the conditional request outright; without the second its JS cannot read the validator it would have to send back. The ETags would have worked same-origin and silently done nothing cross-origin (`cors.go`).
+---
 
-**The dashboard stops loading the config view it may never open**, and cache-bust tokens stop being something you have to remember.
+## v2026.07.24 — July 2026
+
+**The dashboard stops loading the config view it may never open**, unchanged data stops being sent twice, and cache-bust tokens stop being something a release has to remember.
+
+Initial dashboard JavaScript: **2082 KB → 1673 KB (−19.6%)**.
 
 ### New
 
@@ -137,6 +140,11 @@ For install and security, see the [README](README.md). For how to use features, 
 - **fix** **The runtime asset map survives the CSP** — the hashed URLs for lazily-fetched scripts reach the page as a `data-` attribute read by `asset-map.js`, not as an inline `<script>`. The page's own policy is `script-src 'self'` with no `'unsafe-inline'`, so an inline block would have been silently dropped and both lazy loaders would have fallen back to unversioned URLs — reintroducing exactly the staleness this release removes. Caught by `config-lazy-load.spec.js`, which asserts the fetched URL actually carries a token.
 - **fix** **The preloaded font is fetched once again, not twice** — moving every asset URL onto the content-hashed helper caught the `<link rel="preload">` for `source-code-pro-latin.woff2` as well, but `fonts.css` is a static stylesheet that cannot render the helper and still asked for the plain URL. The two no longer matched, so the browser downloaded the font twice and Safari reported *"preloaded using link preload but not used within a few seconds"*. The preload goes back to the unversioned URL the stylesheet actually requests. `TestPreloadedFontURLsMatchStylesheet` now fails if a font preload is ever routed through the helper again (`dashboard.html`, `asset_hash_test.go`).
 - **fix** **`whats-new-modal.js` stops carrying a hand-written token** — it was fetched at runtime with `?v=keys-section-1` baked into the loader, outside the asset system and so outside anything that could catch it going stale. It reads its URL from the same content-hashed map (`whats-new-stub.js`).
+- **fix** **The read APIs answer conditional requests** — `/api/bookmarks`, `/api/categories`, `/api/pages`, `/api/settings` and `/api/finders` now send a content `ETag` and honour `If-None-Match`, so an unchanged response comes back as a bodyless **304** instead of the full JSON. The dashboard re-reads these on every page load, every page switch and every cross-tab sync, and the payloads are usually byte-identical to the last one — `/api/data-revision` exists precisely because the client wants to know *did anything change?*, yet the answer was always paid for in full. `writeJSONWithETag` follows the same shape `writeHTMLShell` already used for the HTML shell; it hashes the marshalled body rather than reusing `GetDataRevision`, which hashes every file in the data directory and would therefore 304 a page whose own bookmarks changed while missing nothing when an unrelated page's did (`html_etag.go`, `handlers.go`).
+- **fix** **`Cache-Control` stays `no-cache`, not a max-age** — bookmark data must never be served from cache without asking, because a write from another tab or the extension has to be visible immediately. This buys back the response body on a revalidation, not the round trip.
+- **fix** **The browser extension can use the ETags too** — `If-None-Match` is added to `Access-Control-Allow-Headers` and `ETag` to `Access-Control-Expose-Headers`. Without the first the browser blocks the conditional request outright; without the second its JS cannot read the validator it would have to send back. The ETags would have worked same-origin and silently done nothing cross-origin (`cors.go`).
+- **fix** **Config stops shifting sideways when you switch section** — Pages & tags is short enough not to scroll and every other section is not, so the scrollbar came and went; `.config-view` is centred with `max-width` and `margin: auto`, so the changing width slid the whole grid over. `scrollbar-gutter: stable` reserves the space either way. Only visible where a scrollbar takes real width — Safari and Firefox on macOS — which is why it read as a rendering quirk rather than a layout bug (`dashboard.css`).
+- **fix** **The sub-tab strip stops re-measuring on every click** — the active tab is `font-weight: 600` and the rest are normal, so the tab you picked grew a few pixels and pushed its neighbours along; on Help, which already wraps, that was enough to move a tab onto the second row. Every tab is now laid out at its bold width via a zero-height `::before` carrying the same label, so selecting one only repaints it. `bindSubTabStrip` fills in `data-label`, covering all six strips in the one place they are bound (`config-view.css`, `dashboard-config.js`).
 
 ---
 

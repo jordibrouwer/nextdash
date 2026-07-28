@@ -1297,7 +1297,7 @@ These statistics exist to answer exactly those questions — **which features ge
 | Config sections | which of the eight sections you open, which sub-tab you land on and whether you got there by click or arrow key, whether an overview *needs attention* row was followed, and which backup action was run |
 | Settings you change | the **name** of the setting only — never what you typed into it. A toggle also reports `true`/`false`, since on/off is the whole point of measuring one; free-text fields such as the dashboard title or a webhook URL report the name alone |
 | List shape | which filter or sort you picked in health or inbox, and whether you used a summary tile or a filter pill. The search box in either view is never reported |
-| Settings snapshot | once per page load: which features you have switched on, as plain yes/no values and small enums, plus the **release you are running** (`v2026.07.23.6`) so the numbers can be read per version rather than as one blur across every release |
+| Settings snapshot | once per page load: which features you have switched on, as plain yes/no values and small enums, plus the **release you are running** (`v2026.07.24`) so the numbers can be read per version rather than as one blur across every release |
 
 The settings snapshot is what makes it possible to see, for example, that a given option is used by almost nobody and could be simplified away — or that one is popular and deserves more attention.
 

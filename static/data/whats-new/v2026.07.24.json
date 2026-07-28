@@ -1,0 +1,46 @@
+{
+  "tag": "v2026.07.24",
+  "date": "July 2026",
+  "releasedAt": "2026-07-28",
+  "modalLead": "The dashboard opens faster: a fifth of the JavaScript it used to load is gone from the critical path, unchanged data comes back empty instead of in full, and cache-bust tokens stopped being something a release has to remember.",
+  "sections": [
+    {
+      "title": "Faster to open",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Settings load when you open them, not before</strong> — the config view is the largest script in the app at 409&nbsp;KB, and it was downloaded and parsed on every visit to the bookmark grid whether or not you went near settings. It now arrives on the first time you open config. The dashboard's initial JavaScript drops from 2082&nbsp;KB to 1673&nbsp;KB — <strong>19.6% less</strong> to fetch and parse before the grid is usable."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Scripts no longer block the page from rendering</strong> — 56 of them stopped the HTML parser dead while they downloaded and ran. All 78 in the body now defer, which keeps their order and still runs them before the dashboard starts. The handful in the head stay as they were on purpose: the theme has to be applied before the first paint, or you would see an unstyled flash."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Unchanged data is not sent twice</strong> — bookmarks, categories, pages, settings and finders are re-read on every page load, page switch and cross-tab sync, and are almost always identical to last time. They now carry a validator, so an unchanged response comes back empty rather than in full. Data is still checked on every request, so a change made in another tab or from the extension shows up immediately."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config stops jumping when you switch section</strong> — sections tall enough to scroll had a scrollbar and short ones did not, so moving between them changed the usable width and slid the whole centred layout sideways. The space is now always reserved. Most visible in Safari and Firefox on macOS, where a scrollbar takes real width."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Sub-tabs stay put when you pick one</strong> — the selected tab is bold and the others are not, so choosing one made it wider, pushed its neighbours along, and on Help could bump a tab onto a second row. Every tab is now laid out at its widest, so selecting one only changes its colour."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A new release can no longer be invisible</strong> — each stylesheet and script had a hand-written version marker, and forgetting one meant browsers kept the old file for up to a day after an update. Markers are now derived from the file itself, so a changed file always reaches you and an unchanged one stays cached for as long as it deserves."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The dashboard font is fetched once, not twice</strong> — the preloaded copy and the one the stylesheet asked for had drifted to different addresses, so the browser downloaded both and warned that the preload went unused."
+        }
+      ]
+    }
+  ]
+}
