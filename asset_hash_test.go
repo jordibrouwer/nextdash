@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -160,10 +161,13 @@ func TestPreloadedFontURLsMatchStylesheet(t *testing.T) {
 }
 
 func TestLazyAssetMapJSONIsHashedJSON(t *testing.T) {
-	withDiskAssets(t, map[string]string{
-		"js/whats-new-modal.js":            "modal",
-		"js/dashboard/dashboard-config.js": "config",
-	})
+	// Build the fixture from the real list rather than a fixed pair, so adding a
+	// lazily-loaded script cannot make this test silently stop covering it.
+	files := make(map[string]string, len(lazyLoadedAssets))
+	for i, rel := range lazyLoadedAssets {
+		files[rel] = fmt.Sprintf("contents-%d", i)
+	}
+	withDiskAssets(t, files)
 
 	var m map[string]string
 	if err := json.Unmarshal([]byte(lazyAssetMapJSON()), &m); err != nil {
