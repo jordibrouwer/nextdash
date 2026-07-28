@@ -217,7 +217,7 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 ┌─────────────────────────────────────────────────────────────┐
 │  Date/time · mini status          pages · health · config   │
 ├─────────────────────────────────────────────────────────────┤
-│  Title (optional)                                             │
+│  Title (optional)                                           │
 ├─────────────────────────────────────────────────────────────┤
 │  [Smart collections]  [Tag collections]  [Categories…]      │
 │    └─ bookmark rows (icon · name · shortcut)                │
@@ -229,10 +229,10 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 Side rail layout (optional — **Config → Behavior → Display → Button bar position → Side rail**):
 
 ```
-┌──┬────────────────────────────────────────────────────────┐
+┌──┬─────────────────────────────────────────────────────────┐
 │+ │  [header: date · health · config · pages]              │
 │──│                                                         │
-│> │  [Smart collections]  [Tag collections]  [Categories…] │
+│> │  [Smart collections]  [Tag collections]  [Categories…]  │
 │? │    └─ bookmark rows                                     │
 │: │                                                         │
 │* │                                                         │
@@ -240,7 +240,7 @@ Side rail layout (optional — **Config → Behavior → Display → Button bar 
 │/ │                                                         │
 │! │                                                         │
 │★ │                                                         │
-└──┴────────────────────────────────────────────────────────┘
+└──┴──────────── ────────────────────────────────────────────┘
 ```
 
 ### 🧭 Header
