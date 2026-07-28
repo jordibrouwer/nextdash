@@ -82,7 +82,7 @@ var sharedAssetVersions = pageAssetVersions{
 	SettingsSanitizeJS:   "settings-sanitize-1",
 	DiscoverabilityJS:    "discoverability-state-5-seentips",
 	MobileExperienceCSS:  "config-header-icon-1",
-	MobileExperienceJS:   "touch-only-mobile-1",
+	MobileExperienceJS:   "resize-view-guard-1",
 	LayoutVersionUtilsJS: "glass-migrate-1",
 	HealthBadgeJS:        "health-badge-monitor-down-1",
 	AppNotificationJS:    "toast-html-1",
@@ -116,7 +116,7 @@ var sharedAssetVersions = pageAssetVersions{
 	StatusJS:                 "status-2",
 	SelectJS:                 "select-js-1",
 	ReorderJS:                "reorder-inline-edit-1",
-	DashboardRenderCoreJS:    "bookmark-tracking-1",
+	DashboardRenderCoreJS:    "resize-view-guard-1",
 
 	DashboardCSS:            "inline-edit-blur-children-1-config-header-icon-1",
 	DashboardBookmarkRowCSS: "dashboard-d12-row-tokens-1",

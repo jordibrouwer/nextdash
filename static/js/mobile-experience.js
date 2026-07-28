@@ -272,6 +272,15 @@
         if (!dash || typeof dash.shouldStackDashboardCategories !== 'function') {
             return;
         }
+        // Only the bookmark grid has columns to re-sync. Inbox, health and config
+        // own the same container and lay themselves out with their own CSS, so
+        // both branches below would wreck them: renderDashboard() paints the grid
+        // over the view, and syncDashboardGridLayout() rewrites the container's
+        // class outright — dropping health-layout/inbox-layout and leaving the
+        // view's children strewn across grid cells until the next navigation.
+        if (typeof dash.isBookmarksView === 'function' && !dash.isBookmarksView()) {
+            return;
+        }
         const stacked = dash.shouldStackDashboardCategories();
         if (dashboardWasStacked === null) {
             dashboardWasStacked = stacked;

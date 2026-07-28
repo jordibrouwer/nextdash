@@ -50,6 +50,16 @@ class DashboardRenderCore {
         if (!grid) {
             return null;
         }
+        // #dashboard-layout is shared with inbox, health and config, and the
+        // className assignment below is a replace, not an add — running this
+        // while one of those is on screen strips its layout class and re-roles
+        // the container as a grid, scattering the view's children across
+        // columns. Guarded here rather than only at the call sites so a new
+        // caller cannot reintroduce the bug: every path that legitimately needs
+        // the grid re-synced runs while the bookmarks view is up.
+        if (typeof d.isBookmarksView === 'function' && !d.isBookmarksView()) {
+            return null;
+        }
 
         const configuredColCount = this.getNormalizedColumnsPerRow();
         d.settings.columnsPerRow = configuredColCount;
