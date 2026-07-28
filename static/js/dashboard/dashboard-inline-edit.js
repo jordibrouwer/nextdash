@@ -33,6 +33,12 @@ class DashboardInlineEdit {
         if (!form) {
             return;
         }
+        // Remembered so the row's inline background can be taken off again on
+        // close. It is set below to keep the form opaque over the blurred grid,
+        // and an inline background outranks every stylesheet rule — including the
+        // keyboard-selected gradient, which is why a row left with it looked
+        // unselected afterwards.
+        this._solidSurfaceRow = row && !row.closest('.layout-launcher') ? row : null;
         const panelBg = this.readSolidThemeSurface('--background-primary', '--background-secondary');
         const fieldBg = this.readSolidThemeSurface('--background-secondary', '--background-primary');
         document.body.style.setProperty('--inline-edit-panel-bg', panelBg);
@@ -51,6 +57,13 @@ class DashboardInlineEdit {
     clearInlineEditSurfaceOverrides() {
         document.body.style.removeProperty('--inline-edit-panel-bg');
         document.body.style.removeProperty('--inline-edit-field-bg');
+        // The row keeps its own inline background until it is removed here.
+        // Leaving it behind wins over the selected/hover rules, so the row still
+        // takes the keyboard cursor but stops looking like it.
+        if (this._solidSurfaceRow) {
+            this._solidSurfaceRow.style.removeProperty('background');
+            this._solidSurfaceRow = null;
+        }
     }
 
 
@@ -1281,27 +1294,17 @@ class DashboardInlineEdit {
         d.initializeCategoryReorder();
 
         const kn = d.keyboardNavigation;
-        // Only hand the keyboard cursor back to a row the keyboard had in the
-        // first place. Selecting it after a mouse-opened editor leaves the cursor
-        // parked on that row without the user having navigated there, so the next
-        // arrow key steps *off* it — the row reads as skipped.
-        const wasKeyboardSelected = d._inlineEditWasKeyboardSelected === true;
         d._inlineEditWasKeyboardSelected = false;
-        if (wasKeyboardSelected && kn?.selectBookmarkRow?.(row, { focus: true })) {
+        // The row you just edited stays selected and visibly highlighted, however
+        // the editor was opened. Arrow keys then move off it to the next row, the
+        // same as any other selected row — you keep your place without the first
+        // keypress appearing to do nothing.
+        if (kn?.selectBookmarkRow?.(row, { focus: true })) {
             return true;
         }
-        // Focus the row first, then drop the selection. The layout's focusin
-        // handler sets currentIndex whenever a bookmark link gains focus, so
-        // clearing before focusing would be undone by the focus call itself.
         const openLink = row.querySelector('a.bookmark-open');
         if (openLink && typeof openLink.focus === 'function') {
             openLink.focus({ preventScroll: true });
-        }
-        if (!wasKeyboardSelected) {
-            // Mouse route: focus stays on the row it belongs to, but the keyboard
-            // cursor is released so the next arrow key starts a fresh walk instead
-            // of stepping off a row the user never navigated to.
-            kn?.clearSelection?.({ restoreFocus: false });
         }
         return true;
     }
