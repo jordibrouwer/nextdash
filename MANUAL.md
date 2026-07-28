@@ -1,14 +1,12 @@
-# 🚀 nextDash — User Manual
+# nextDash — User Manual
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
-
-> Enhanced for GitHub Markdown with icons, cleaner visual structure, and improved scanability while preserving the original content as much as possible.
 
 This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.20**).
 
 ---
 
-## 📚 Table of contents
+## Table of contents
 
 1. [What is nextDash?](#1-what-is-nextdash)
 2. [Before you begin](#2-before-you-begin)
@@ -36,7 +34,7 @@ This manual is written for new users and for anyone who wants a structured refer
 
 ---
 
-## 1. ✨ What is nextDash?
+## 1. What is nextDash?
 
 nextDash is a **self-hosted bookmark dashboard** you open in your browser. There are:
 
@@ -46,7 +44,7 @@ nextDash is a **self-hosted bookmark dashboard** you open in your browser. There
 
 Think of it as a personal start page: bookmarks grouped by **page** (e.g. Work, Personal) and **category** (e.g. Dev, News), with powerful search and optional link-health tools.
 
-### ✅ What you can do
+### What you can do
 
 | Area | Examples |
 |------|----------|
@@ -59,15 +57,15 @@ Think of it as a personal start page: bookmarks grouped by **page** (e.g. Work, 
 
 ---
 
-## 2. 🧰 Before you begin
+## 2. Before you begin
 
-### 🧰 What you need
+### What you need
 
 - A machine or container to run nextDash (Docker or a single Go binary).
 - A modern browser (Chrome, Firefox, Edge, Safari).
 - For the extension: a reachable nextDash URL (e.g. `http://localhost:8080` or your Tailscale hostname).
 
-### 🚫 What nextDash is not
+### What nextDash is not
 
 - Not a full browser bookmark sync replacement for every device (unless you self-host and expose it safely).
 - Not multi-user SaaS — protect the URL if others can reach your network.
@@ -76,9 +74,9 @@ See [Security and self-hosting](#21-security-and-self-hosting) before exposing n
 
 ---
 
-## 3. ⚙️ Installation and first launch
+## 3. Installation and first launch
 
-### 🐳 Option A — Docker Compose (recommended)
+### Option A — Docker Compose (recommended)
 
 ```yaml
 services:
@@ -100,7 +98,7 @@ docker-compose up -d
 
 Open `http://localhost:8080` in your browser.
 
-### 🧱 Option B — Build from source
+### Option B — Build from source
 
 ```sh
 go build -o nextDash && ./nextDash
@@ -108,7 +106,7 @@ go build -o nextDash && ./nextDash
 
 Data is stored under `./data` by default.
 
-### 🌿 Cloning from GitHub
+### Cloning from GitHub
 
 If you pull the source from GitHub instead of using the published container image:
 
@@ -125,7 +123,7 @@ cd nextdash
 
 For day-to-day use you do **not** need to switch branches: clone the default **`main`** branch, run Docker Compose or `docker build`, and mount `./data` as usual. Choose **`dev`** only if you develop nextDash itself (see the **Contributing** section in the README).
 
-### 🚦 First launch flow
+### First launch flow
 
 ```
 Install → Open URL in browser → Quick-start card (optional)
@@ -139,7 +137,7 @@ Install → Open URL in browser → Quick-start card (optional)
 
 ---
 
-## 4. 🧠 Core concepts
+## 4. Core concepts
 
 Understanding five ideas makes everything else click.
 
@@ -211,13 +209,13 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 
 ---
 
-## 5. 🖥️ The dashboard at a glance
+## 5. The dashboard at a glance
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Date/time · mini status          pages · health · config   │
 ├─────────────────────────────────────────────────────────────┤
-│  Title (optional)                                             │
+│  Title (optional)                                           │
 ├─────────────────────────────────────────────────────────────┤
 │  [Smart collections]  [Tag collections]  [Categories…]      │
 │    └─ bookmark rows (icon · name · shortcut)                │
@@ -229,10 +227,10 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 Side rail layout (optional — **Config → Behavior → Display → Button bar position → Side rail**):
 
 ```
-┌──┬────────────────────────────────────────────────────────┐
-│+ │  [header: date · health · config · pages]              │
+┌──┬─────────────────────────────────────────────────────────┐
+│+ │  [header: date · health · config · pages]               │
 │──│                                                         │
-│> │  [Smart collections]  [Tag collections]  [Categories…] │
+│> │  [Smart collections]  [Tag collections]  [Categories…]  │
 │? │    └─ bookmark rows                                     │
 │: │                                                         │
 │* │                                                         │
@@ -240,17 +238,17 @@ Side rail layout (optional — **Config → Behavior → Display → Button bar 
 │/ │                                                         │
 │! │                                                         │
 │★ │                                                         │
-└──┴────────────────────────────────────────────────────────┘
+└──┴─────────────────────────────────────────────────────────┘
 ```
 
-### 🧭 Header
+### Header
 
 - **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.  
 - **health** — A **heartbeat icon** linking to `/#health`, with an inline pill counter (e.g. `3`) when there is something to report — **red** for a monitored bookmark that is down right now or an ordinary broken link, **amber** for warnings, hidden when healthy (styled like the inbox tab). The most severe state wins the badge: a **down monitor** takes priority over a broken link, which takes priority over warnings. A down monitor is counted apart from a broken link — clicking opens `/?hv_filter=monitored#health` for an outage, `/?hv_filter=broken#health` for a broken link. When the number of down monitors **rises**, the icon **pulses once** to catch your eye; it stays quiet on a reload that merely finds an existing outage, on a recovery, and — via a 10-minute cooldown — on a monitor that flaps up and down. The pulse shares the broken red and is told apart by the movement, and it honours reduced-motion and the no-animations setting. Always shown. Open the same view from the keyboard with **`Shift+H`**.  
 - **config** — Settings and bookmark management.  
 - **pages** — Overview of all pages with counts (`,`).
 
-### 🎛️ Button bar / side rail
+### Button bar / side rail
 
 The button bar can appear as a **floating bottom bar** (default) or as a **44 px left side rail** — set via **Config → Behavior → Display → Button bar position** or the `:buttonbar` command.
 
@@ -282,7 +280,7 @@ The button bar can appear as a **floating bottom bar** (default) or as a **44 px
 
 Hover a button on desktop for a tooltip with shortcuts. In side-rail mode, tooltips appear to the **right** of the rail.
 
-### 🔗 Deep links from Health
+### Deep links from Health
 
 Health can open a bookmark on the dashboard with:
 
@@ -292,7 +290,7 @@ The dashboard switches page, expands the category, scrolls to the row, and highl
 
 ---
 
-## 6. ⏱️ Your first 30 minutes
+## 6. Your first 30 minutes
 
 Follow this path once; later you will mix steps freely.
 
@@ -314,7 +312,7 @@ Follow this path once; later you will mix steps freely.
 
 ---
 
-## 7. ➕ Adding bookmarks
+## 7. Adding bookmarks
 
 ### 7.1 Quick-add (`&`) — fastest for simple links
 
@@ -396,15 +394,15 @@ HTML export from Chrome/Firefox/Edge (see [Import, export, and backup](#17-impor
 
 The first visit may show a short intro modal. Replay it from **Config → Behavior → General**.
 
-### ♻️ Duplicate URLs
+### Duplicate URLs
 
 nextDash warns when a URL already exists on the same page (canonical match: trailing slash, hash, host letter-case, and default ports are ignored — e.g. `https://x` ≡ `https://x:443`). You can still save anyway in the extension or modal when needed. Use **`:duplicate`** in search or the Health view to find duplicates across all pages. Imports **skip** duplicates and show a preview: e.g. **12 new, 3 conflicts (skipped)**.
 
 ---
 
-## 8. 🔖 Opening and using bookmarks
+## 8. Opening and using bookmarks
 
-### 🖱️ Mouse
+### Mouse
 
 - Click the bookmark name (or icon area) to open the URL.
 - Bookmarks **without a display name** show the site **hostname** in the grid (e.g. `docs.example.com`); hover or keyboard focus shows the **full URL** in the tooltip.
@@ -413,7 +411,7 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 - **Right-click** a bookmark for its actions — open in new tab, copy URL, edit, tags, move, delete. See [Right-click menu](#75-right-click-menu). **`Shift` + right-click** gives the browser's own menu.
 - **Long-press** (~500 ms, not on the drag strip) opens the [inline editor](#74-inline-edit-after-long-press).
 
-### ⌨️ Keyboard
+### Keyboard
 
 - Start grid navigation with **Tab**, a click on a bookmark, **hold `G` then `1–9`** / **`GG`**, or the **first arrow key**; then use **plain arrow keys** to move the selection (`Shift+←/→` changes pages only).  
 - After switching pages with **1–9**, the **first visible bookmark** on the new page is selected automatically.  
@@ -427,17 +425,17 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 
 If **Hypr mode** is enabled in settings, bookmark clicks may be routed to your window manager instead of the browser default.
 
-### 📈 Usage tracking
+### Usage tracking
 
 Each open increments **open count** and updates **last opened**. This powers smart collections (“Recently opened”, “Most used”, “Stale”) and stats.
 
-### 🕘 Recent panel (`*`)
+### Recent panel (`*`)
 
 Shows bookmarks you opened recently **on the current page** (not global). Each row shows rank, a recency badge, and open count. Use **`↑`/`↓`/`Home`/`End`** to move between items and bulk-open buttons. From the panel you can open one or use bulk actions aligned with **`:open last`**.
 
 ---
 
-## 9. ⌨️ Keyboard navigation
+## 9. Keyboard navigation
 
 ### 9.1 Page navigation
 
@@ -509,7 +507,7 @@ While any of these are open, the bookmark grid behind them is **inert** (not cli
 
 ---
 
-## 10. 🔎 Search, commands, and finders
+## 10. Search, commands, and finders
 
 Three input modes share one overlay; switch with keys or footer chips.
 
@@ -634,7 +632,7 @@ Temporarily hides bookmark tiles that do not match. Clear with `:find clear` (or
 
 ---
 
-## 11. 🗂️ Organising pages and categories
+## 11. Organising pages and categories
 
 ### Reorder bookmarks
 
@@ -680,7 +678,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 
 ---
 
-## 12. 🏷️ Tags, notes, and metadata
+## 12. Tags, notes, and metadata
 
 ### Tags
 
@@ -720,7 +718,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 
 ---
 
-## 13. 🧩 Smart collections and custom collections
+## 13. Smart collections and custom collections
 
 ### Smart collections (built-in)
 
@@ -749,7 +747,7 @@ When enabled, one auto-group per tag that meets minimum count.
 
 ---
 
-## 14. 🎨 Layouts, themes, and appearance
+## 14. Layouts, themes, and appearance
 
 ### Layout version (Classic / Modern)
 
@@ -801,7 +799,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 - Font preset, size, weight.  
 - **`:density`**, **`:columns`**, **`:fontsize`** from commands.
 
-### 🧭 Header and background
+### Header and background
 
 - Optional title, background dots, gradient/image.  
 - **Button bar position** — centre bottom, corner dock, or **left side rail** (`:buttonbar side-left`). The side rail places navigation buttons in a 44 px vertical strip on the left edge (`/` tag cloud directly under `*` recent); the dashboard grid shifts right to clear it. On mobile it reverts to a centred bottom bar automatically.
@@ -816,7 +814,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ---
 
-## 15. 💓 Status monitoring and health
+## 15. Status monitoring and health
 
 ### Per-bookmark status (dashboard)
 
@@ -897,7 +895,7 @@ Read-only analytics (desktop). Filter toolbar sits above a fused **split surface
 
 ---
 
-## 16. ⚙️ Config — complete walkthrough
+## 16. Config — complete walkthrough
 
 Configuration is a **view inside the dashboard**, not a separate page. It opens in place — same tab, same session, no page load.
 
@@ -962,7 +960,7 @@ The destructive actions sit on their own sub-tab so they are not something you s
 
 Back up first — neither can be undone.
 
-### ⌨️ Keyboard
+### Keyboard
 
 | Keys | Action |
 |------|--------|
@@ -979,9 +977,9 @@ Closing config also leaves the **dashboard underneath it untouched**: an active 
 
 ---
 
-## 17. 📦 Import, export, and backup
+## 17. Import, export, and backup
 
-### 🗜️ ZIP backup (full instance)
+### ZIP backup (full instance)
 
 **config → data & backups → Backup** — ZIP, settings export, and CSV sections appear as divided rows inside one fused surface card on all layout versions.
 
@@ -1058,7 +1056,7 @@ All bookmarks: localized column headers — Name, URL, Category (display name), 
 
 ---
 
-## 18. 🔌 Browser extension
+## 18. Browser extension
 
 Folder: `extension/` (Chrome “Load unpacked”).
 
@@ -1090,7 +1088,7 @@ See `extension/README.md` for development notes.
 
 ---
 
-## 19. 📱 Mobile, PWA, and touch
+## 19. Mobile, PWA, and touch
 
 ### Mobile config
 
@@ -1136,7 +1134,7 @@ In **Config → Behavior → General**, the panel under **HyprMode** shows platf
 
 ---
 
-## 20. 🚀 Efficient workflows
+## 20. Efficient workflows
 
 ### Daily driver
 
@@ -1161,13 +1159,13 @@ In **Config → Behavior → General**, the panel under **HyprMode** shows platf
 3. **`:save`** a search query you reuse.  
 4. Tag bookmarks with **` :tag `** as you go.
 
-### ⌨️ Keyboard-only day
+### Keyboard-only day
 
 Keep hands on home row: **`>`** search → **Enter** open → **Esc** → **`&`** add → **`:`** change layout/theme → **`,`** switch page.
 
 ---
 
-## 21. 🔐 Security and self-hosting
+## 21. Security and self-hosting
 
 nextDash has **no user accounts**. Anyone who can reach the URL can read data and change bookmarks/settings unless you add network or token protection.
 
@@ -1322,7 +1320,7 @@ Preview metadata is cached in memory and flushed periodically (~30 s) and on shu
 
 ---
 
-## 22. 🛠️ Troubleshooting and FAQ
+## 22. Troubleshooting and FAQ
 
 ### Dashboard empty after install
 
@@ -1385,7 +1383,7 @@ Set manual city or browser location permission; save general settings; check ref
 
 ---
 
-## 23. 📌 Quick reference
+## 23. Quick reference
 
 ### Most-used keys (dashboard)
 
@@ -1421,7 +1419,7 @@ Docker: mounted volume (e.g. `./data`). Binary: `./data` next to the executable.
 
 ---
 
-## 📖 Further reading
+## Further reading
 
 - [README.md](README.md) — Install, security, and feature overview  
 - [CHANGELOG.md](CHANGELOG.md) — Complete release history (new / fix)  
