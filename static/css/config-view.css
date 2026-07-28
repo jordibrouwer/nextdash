@@ -5,7 +5,28 @@
  * mirror the health view's card language so the shell reads as one product.
  */
 
+/*
+ * This file was written against a variable set that nothing ever defined:
+ * --card-bg, --border-color, --accent-soft, --hover-bg, --text-muted,
+ * --button-bg and --accent-color appear about ninety times between them, and
+ * none of it existed in CSS or was injected at runtime. Every one of those
+ * uses fell through to its hardcoded grey or #4a90d9 blue fallback, so the
+ * config view rendered the same regardless of the active theme — a green
+ * theme still got grey nav highlights and a blue accent.
+ *
+ * Rather than rewrite ninety call sites, map the names onto the variables the
+ * themes actually publish. The fallbacks stay in place at each use, so a
+ * value missing here still lands on the old literal rather than on nothing.
+ */
 #dashboard-layout.config-layout {
+    --card-bg: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+    --border-color: var(--border-primary);
+    --accent-color: var(--accent-primary);
+    --accent-soft: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    --hover-bg: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+    --text-muted: var(--text-secondary);
+    --button-bg: transparent;
+
     display: block;
     padding: 0;
 }

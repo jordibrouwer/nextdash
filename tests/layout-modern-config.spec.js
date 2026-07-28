@@ -109,7 +109,7 @@ test.describe('modern layout — config view', () => {
         expect(modern.borderRadius).not.toBe(classic.borderRadius);
     });
 
-    test('draws the accent stripe from the theme instead of hardcoded blue', async ({ page }) => {
+    test('draws the accent stripe from the theme in both layouts', async ({ page }) => {
         await openConfig(page, 'appearance');
         await expect(page.locator('.config-tile--accent').first()).toBeVisible();
 
@@ -122,17 +122,36 @@ test.describe('modern layout — config view', () => {
             };
         });
 
-        // Classic resolves --accent-color, which nothing defines, so the stripe
-        // falls back to a literal #4a90d9 that no theme ever asked for.
-        await setLayout(page, 'classic');
-        const classic = await read();
-        expect(classic.stripe).toBe('rgb(74, 144, 217)');
+        // The stripe used to resolve --accent-color, which nothing defined, so
+        // it drew a literal #4a90d9 that no theme ever asked for. Classic now
+        // aliases that variable onto the theme alongside modern, so neither
+        // layout may show the blue and both must track --accent-primary.
+        for (const layout of ['classic', 'modern']) {
+            await setLayout(page, layout);
+            const { stripe, accent } = await read();
+            expect(stripe, `${layout} still draws the hardcoded blue`).not.toBe('rgb(74, 144, 217)');
+            expect(accent).not.toBe('');
+        }
+    });
 
-        // Modern re-points it at the live theme accent.
-        await setLayout(page, 'modern');
-        const modern = await read();
-        expect(modern.stripe).not.toBe('rgb(74, 144, 217)');
-        expect(modern.accent).not.toBe('');
+    test('resolves the aliased colour variables from the theme', async ({ page }) => {
+        await openConfig(page);
+
+        // config-view.css is written against a variable set nothing used to
+        // define, so every use fell through to a hardcoded grey and the view
+        // ignored the theme entirely. They are aliased onto the real theme
+        // variables now; an empty value here means that mapping was dropped.
+        const vars = await page.evaluate(() => {
+            const root = document.querySelector('#dashboard-layout.config-layout');
+            const s = getComputedStyle(root);
+            return ['--card-bg', '--border-color', '--accent-color', '--accent-soft',
+                '--hover-bg', '--text-muted', '--button-bg']
+                .map((n) => [n, s.getPropertyValue(n).trim()]);
+        });
+
+        for (const [name, value] of vars) {
+            expect(value, `${name} resolves to nothing`).not.toBe('');
+        }
     });
 
     test('restyles panels', async ({ page }) => {
