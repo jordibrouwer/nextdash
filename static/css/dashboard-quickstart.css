@@ -430,3 +430,56 @@
 .analytics-notice-modal-body .analytics-notice-heading:not(:first-child) {
     margin-top: 1.25rem;
 }
+
+/* ─── Modern layout ─────────────────────────────────────────────────────────
+   Scoped to body[data-layout-version="modern"]; classic above is untouched.
+   Tokens come from layout-modern-tokens.css.
+   ------------------------------------------------------------------------- */
+
+/* The card floats over the dashboard, so it follows the overlay grammar in
+   overlays-modern.css (rounded, tinted surface, layered shadow) rather than the
+   flat panel treatment the in-page views use. */
+body[data-layout-version="modern"] .quickstart-card {
+    border-radius: var(--layout-radius-lg);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-lg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+/* The stripe spans the full width at the very top of the card, so a rounded
+   card clips its upper corners. Round its own top edge to match. */
+body[data-layout-version="modern"] .quickstart-stripe {
+    border-radius: var(--layout-radius-lg) var(--layout-radius-lg) 0 0;
+}
+
+body[data-layout-version="modern"] .quickstart-item-action {
+    border-radius: var(--layout-radius-sm);
+    transition: background-color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .quickstart-item-action:focus-visible {
+    outline: var(--layout-focus-ring);
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+body[data-layout-version="modern"] .quickstart-close {
+    border-radius: var(--layout-radius-sm);
+    transition:
+        background-color var(--layout-transition),
+        color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .quickstart-close:focus-visible {
+    outline: var(--layout-focus-ring);
+    outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-layout-version="modern"] .quickstart-item-action,
+    body[data-layout-version="modern"] .quickstart-close {
+        transition: none;
+    }
+}
