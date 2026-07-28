@@ -4432,7 +4432,6 @@ class DashboardConfig {
                 : this.t('config.tagDeleted', 'Tag deleted.'), 'success');
             this._tagList = null;
             await this.loadTagsManager();
-            this.dash.buildSearchIndex?.();
             this.dash.renderDashboard?.({ animate: false });
         } catch {
             this.notify(this.t('config.tagsSaveError', 'Could not update the tag.'), 'error');
@@ -7182,15 +7181,15 @@ class DashboardConfig {
                 <span class="config-stat-penalty">${esc(String(value))}</span>
             </li>`;
 
-        // The index is built by the dashboard at runtime; its presence is the
-        // honest signal, rather than a setting that only says it is wanted.
-        const indexed = Boolean(this.dash.searchComponent);
+        // Whether the search component actually loaded — the honest signal, and
+        // the only one there is now that the unused index endpoint is gone.
+        const searchReady = Boolean(this.dash.searchComponent);
 
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsSearchTitle', 'Search & status'))}</h3>
                 <ul class="config-stat-details">
-                    ${row(this.t('config.statsSearchIndexed', 'Search index built'), onOff(indexed))}
+                    ${row(this.t('config.statsSearchReady', 'Search ready'), onOff(searchReady))}
                     ${row(this.t('config.statsInterleave', 'Interleave search mode'), onOff(set.interleaveMode))}
                     ${row(this.t('config.statsFuzzy', 'Fuzzy suggestions'), onOff(set.enableFuzzySuggestions !== false))}
                     ${row(this.t('config.statsShowStatus', 'Status monitor enabled'), onOff(set.showStatus !== false))}

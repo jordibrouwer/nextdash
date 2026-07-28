@@ -1088,7 +1088,7 @@
         "statsColLastOpened": "Laatst geopend",
         "statsColAdded": "Toegevoegd",
         "statsSearchSection": "Zoeken en status",
-        "statsSearchIndexed": "Zoekindex gebouwd",
+        "statsSearchReady": "Zoeken gereed",
         "statsInterleave": "Zoekmodus wisselen (interleave)",
         "statsFuzzy": "Fuzzy-suggesties",
         "statsShowStatus": "Statusmonitor aan",

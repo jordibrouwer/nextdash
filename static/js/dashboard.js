@@ -270,7 +270,6 @@ class Dashboard {
 
             this.analytics = new BookmarkAnalytics();
             this.setupBookmarkTracking();
-            this.buildSearchIndex();
 
             window.addEventListener('hashchange', () => {
                 const hash = window.location.hash.substring(1);
@@ -749,10 +748,6 @@ class Dashboard {
 
     setupBookmarkTracking() {
         return this.setup.setupBookmarkTracking(...arguments);
-    }
-
-    async buildSearchIndex() {
-        return this.setup.buildSearchIndex(...arguments);
     }
 
     async flushPendingDashboardSaves() {

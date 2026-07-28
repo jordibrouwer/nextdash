@@ -414,7 +414,6 @@ class DashboardSetup {
             } else {
                 await d.loadAllBookmarks();
             }
-            this.buildSearchIndex();
             d.updateHealthBadge();
         });
     }
@@ -504,19 +503,6 @@ class DashboardSetup {
                 // ignore errors
             }
         });
-    }
-
-
-    async buildSearchIndex() {
-        const d = this.dash;
-        try {
-            await dashFetch('/api/search-index', {
-                method: 'POST',
-            });
-        } catch (error) {
-            // Keep dashboard functional if indexing fails
-            console.warn('Search index build failed:', error);
-        }
     }
 
 }

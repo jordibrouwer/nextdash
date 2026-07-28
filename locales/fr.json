@@ -1078,7 +1078,7 @@
         "statsColLastOpened": "Dernière ouverture",
         "statsColAdded": "Ajouté",
         "statsSearchSection": "Recherche & statut",
-        "statsSearchIndexed": "Index de recherche créé",
+        "statsSearchReady": "Recherche prête",
         "statsInterleave": "Mode de recherche interleave",
         "statsFuzzy": "Suggestions fuzzy",
         "statsShowStatus": "Moniteur de statut activé",

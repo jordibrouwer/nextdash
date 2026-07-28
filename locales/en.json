@@ -1095,7 +1095,7 @@
         "statsColLastOpened": "Last opened",
         "statsColAdded": "Added",
         "statsSearchSection": "Search & status",
-        "statsSearchIndexed": "Search index built",
+        "statsSearchReady": "Search ready",
         "statsInterleave": "Interleave search mode",
         "statsFuzzy": "Fuzzy suggestions",
         "statsShowStatus": "Status monitor enabled",

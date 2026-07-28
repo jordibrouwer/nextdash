@@ -196,7 +196,6 @@ type Settings struct {
 	ShowTagCollections           bool                         `json:"showTagCollections"`           // Auto-generate a collection per tag
 	TagCollectionsMinCount       int                          `json:"tagCollectionsMinCount"`       // Minimum bookmarks per tag to show collection (0 = all)
 	FaviconRefreshPolicy         string                       `json:"faviconRefreshPolicy"`         // Favicon policy: manual, on-save
-	SearchIndexed                bool                         `json:"searchIndexed"`                // Is search index built
 	OnboardingCompleted          bool                         `json:"onboardingCompleted"`
 	AnalyticsOptIn               bool                         `json:"analyticsOptIn"`    // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
 	EnableSessionTips            bool                         `json:"enableSessionTips"` // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
@@ -2424,21 +2423,6 @@ type HealthHistoryFile struct {
 	GeneratedAt int64 `json:"generatedAt"`
 	// Samples maps canonical URL to samples in ascending time order.
 	Samples map[string][]HealthSample `json:"samples"`
-}
-
-// Search indexing
-type SearchIndex struct {
-	Entries []SearchEntry `json:"entries"`
-}
-
-type SearchEntry struct {
-	Name     string `json:"name"`
-	URL      string `json:"url"`
-	Shortcut string `json:"shortcut"`
-	Category string `json:"category"`
-	Keywords string `json:"keywords"` // Combined searchable text
-	Index    int    `json:"index"`
-	PageID   int    `json:"pageId"`
 }
 
 // Undo/Redo history

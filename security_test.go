@@ -56,7 +56,6 @@ func TestHeavyEndpointsRequireTokenWhenConfigured(t *testing.T) {
 	}{
 		{"backup", http.MethodGet, "/api/backup"},
 		{"bookmark preview", http.MethodGet, "/api/bookmark-preview?url=https://example.com"},
-		{"search index", http.MethodPost, "/api/search-index"},
 		{"open broken", http.MethodPost, "/api/health/open-broken"},
 		{"auto-heal suggest", http.MethodGet, "/api/health/auto-heal-suggest?pageId=1&index=0"},
 		{"ping", http.MethodGet, "/api/ping?url=https://example.com"},
@@ -70,8 +69,6 @@ func TestHeavyEndpointsRequireTokenWhenConfigured(t *testing.T) {
 			h.Backup(rec, req)
 		case "bookmark preview":
 			h.GetBookmarkPreview(rec, req)
-		case "search index":
-			h.BuildSearchIndex(rec, req)
 		case "open broken":
 			h.OpenBroken(rec, req)
 		case "auto-heal suggest":

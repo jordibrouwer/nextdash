@@ -1205,7 +1205,6 @@ When set, protected API calls require header `X-NextDash-Token: your-long-random
 | Health: cache scan result | `POST /api/health/cache-scan` |
 | Health: update bookmark status | `POST /api/health/update-status` |
 | Bookmark link preview | `GET /api/bookmark-preview` |
-| Build search index | `POST /api/search-index` |
 | Clear all preview metadata | `POST /api/previews/clear` |
 | Refresh all preview metadata | `POST /api/previews/refresh` |
 | Reset theme colours | `POST /api/colors/reset` |
