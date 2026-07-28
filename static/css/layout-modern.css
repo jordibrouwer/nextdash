@@ -157,6 +157,62 @@ body[data-layout-version="modern"] .page-navigation {
     border: 1px solid var(--layout-surface-border);
 }
 
+/* The inbox tab sits inside the page-tab strip in the DOM, but it opens a view
+   rather than a page — the same kind of destination as health and config. The
+   container pill would bundle it with the page numbers and say the opposite.
+
+   The strip cannot close around the page tabs alone while it also holds the
+   inbox tab, so instead the strip drops its own surface and each group gets
+   its own: the page tabs share one pill via an inset ring on the container,
+   and the inbox tab becomes a standalone pill like the icons beside it.
+
+   Using padding + inset ring rather than a wrapper keeps this to CSS — the
+   markup is shared with classic, which wants none of it. */
+body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) {
+    background: none;
+    border-color: transparent;
+    padding: 0;
+    /* Page tabs stay tight against each other; the wider gap before the inbox
+       tab is what separates the two groups. */
+    gap: 0;
+}
+
+/* Without the strip's padding wrapping them, these tabs are the outermost
+   element in the row and need the same vertical padding as the neighbouring
+   pills, or they render several pixels shorter than everything beside them. */
+body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn {
+    padding: 0.38rem 0.8rem;
+}
+
+/* The run of page tabs shares one surface: each carries the fill, and only the
+   first and last round their outer edge, so any number of them reads as a
+   single pill rather than a row of separate ones. */
+body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn:not([data-view-tab]) {
+    background: var(--layout-surface);
+    box-shadow: inset 0 0 0 1px var(--layout-surface-border);
+    border-radius: 0;
+}
+
+body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn:not([data-view-tab]):first-child {
+    border-radius: var(--layout-radius-pill) 0 0 var(--layout-radius-pill);
+}
+
+/* Last page tab: the inbox tab follows it, so :last-child never matches. */
+body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn:not([data-view-tab]):has(+ [data-view-tab]) {
+    border-radius: 0 var(--layout-radius-pill) var(--layout-radius-pill) 0;
+    margin-right: 0.5rem;
+}
+
+/* A single page tab is both ends of the run at once. */
+body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn:not([data-view-tab]):first-child:has(+ [data-view-tab]) {
+    border-radius: var(--layout-radius-pill);
+}
+
+body[data-layout-version="modern"] .page-nav-btn[data-view-tab] {
+    background: var(--layout-surface);
+    box-shadow: inset 0 0 0 1px var(--layout-surface-border);
+}
+
 body[data-layout-version="modern"] .page-nav-btn {
     border-bottom: none;
     border-radius: var(--layout-radius-pill);

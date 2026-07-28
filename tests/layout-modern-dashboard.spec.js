@@ -120,6 +120,47 @@ test.describe('modern layout — dashboard chrome', () => {
         expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(2);
     });
 
+    test('groups the inbox tab with the view icons, not with the page tabs', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.inboxEnabled = true;
+            window.dashboardInstance.renderPageNavigation?.();
+        });
+        await expect(page.locator('#page-nav-inbox-btn')).toBeVisible();
+        await setLayout(page, 'modern');
+
+        // The inbox tab lives inside .page-navigation in the DOM but opens a
+        // view, like health and config. Giving the strip one container pill
+        // bundled it with the page numbers and read as though the inbox were a
+        // page. Assert the separation in the geometry: the gap before the inbox
+        // tab must be visibly wider than the gaps between page tabs.
+        const gaps = await page.evaluate(() => {
+            const nav = document.querySelector('.page-navigation');
+            const kids = [...nav.children].filter((el) => el.offsetParent !== null);
+            const inboxAt = kids.findIndex((el) => el.hasAttribute('data-view-tab'));
+            const rect = (el) => el.getBoundingClientRect();
+            return {
+                inboxAt,
+                beforeInbox: inboxAt > 0
+                    ? Math.round(rect(kids[inboxAt]).left - rect(kids[inboxAt - 1]).right)
+                    : null,
+                betweenPages: kids.slice(0, inboxAt).slice(1).map((el, i) =>
+                    Math.round(rect(el).left - rect(kids[i]).right)),
+            };
+        });
+
+        expect(gaps.inboxAt).toBeGreaterThan(0);
+        expect(gaps.beforeInbox).toBeGreaterThan(0);
+        for (const g of gaps.betweenPages) {
+            expect(gaps.beforeInbox).toBeGreaterThan(g);
+        }
+
+        // And the strip itself must not draw a surface around the whole run,
+        // which is what created the false grouping.
+        const strip = await computed(page, '.page-navigation', ['backgroundColor']);
+        expect(strip.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    });
+
     test('gives the header links a pill surface', async ({ page }) => {
         await loadDashboard(page);
         const { classic, modern } = await bothLayouts(
