@@ -5,7 +5,7 @@
 ## Dashboard refactor (if applicable)
 
 - [ ] No intentional behavior change
-- [ ] Script tag + cache-bust in `templates/dashboard.html`
+- [ ] Script tag added via `{{asset "js/…"}}` (never a hand-written `?v=` — tokens are content hashes, see `asset_hash.go`); a script fetched at runtime goes in `lazyLoadedAssets` instead
 - [ ] `dashboard.js` lines: before ___ → after ___
 - [ ] Smoke checklist: [docs/dashboard-smoke-checklist.md](../docs/dashboard-smoke-checklist.md)
 

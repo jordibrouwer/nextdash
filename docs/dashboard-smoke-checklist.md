@@ -31,6 +31,15 @@ Run after every dashboard refactor PR. No behavior change expected unless noted.
 - [ ] Change bookmark in Config → return to dashboard without full reload
 - [ ] Settings change (e.g. theme) applies on dashboard return
 
+## Config lazy load
+
+The view is fetched on first open, so these are the paths a stale stub breaks.
+
+- [ ] `<` / `Shift+S` opens config on a page that has not opened it yet
+- [ ] Deep link `#config/behavior/privacy` from a cold load lands on Privacy
+- [ ] `Escape` closes config and returns to the grid
+- [ ] Console clean on a plain dashboard load (no font-preload or CSP warning)
+
 ## Toolbar & modals
 
 - [ ] Search `>`, commands `:`, finders `?` open and close
