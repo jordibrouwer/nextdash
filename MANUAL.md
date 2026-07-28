@@ -353,14 +353,14 @@ Right-click any bookmark on the dashboard for its actions in one place:
 |------|--------------|
 | **Open in new tab** | Opens the bookmark in a background tab and counts the open, like a normal click |
 | **Copy URL** | Copies the URL to the clipboard; the row flashes green |
-| **Share…** | Hands the bookmark to your system's share sheet (Mail, WhatsApp, AirDrop, …) with its name and URL. Browsers without one — Firefox on the desktop, or any install served over plain HTTP — copy `name — URL` to the clipboard instead. Closing the share sheet does nothing, so a cancel is never mistaken for a copy |
+| **Share… / Copy name + URL** | Hands the bookmark to your system's share sheet with its name and URL. **The entry names what your browser will actually do.** Sharing needs more than the feature being present: browsers only open a sheet in a *secure context*, and **Safari on macOS refuses it over plain `http://` — including `localhost`** — even though it reports the feature as available. When a share is refused the link is copied instead, the message says the browser will not open a sheet here, and the entry re-labels itself to **Copy name + URL** so it stops promising a dialog. Reach the dashboard over **HTTPS** (a reverse proxy or Tailscale) for a real share sheet. Chrome and Firefox on macOS/Linux have no Web Share at all. Closing the sheet does nothing, so a cancel is never mistaken for a copy |
 | **Edit** | Opens the same inline editor as long-press |
 | **Tags…** | The quick-tag popover (also `Shift + T`) |
 | **Move to…** | The move popover — another category or page (also `Shift + M`) |
 | **Checking** | Names the bookmark's current availability mode and opens the three-way choice — **Off** / **Periodic** / **Monitor** (also `Shift + C`) |
 | **Delete** | Asks for confirmation first, then deletes with undo in the toast |
 
-Apart from **Share…**, nothing here is exclusive to the menu — the rest is reachable from the [command palette](#93-bookmark-actions) and config, and the menu just puts it where most people look first.
+Apart from sharing, nothing here is exclusive to the menu — the rest is reachable from the [command palette](#93-bookmark-actions) and config, and the menu just puts it where most people look first.
 
 Arrow keys move through the items and `Enter` activates one; `Esc` or a click outside closes it. It works on **smart collection** rows too. The menu deliberately stays out of the way where the browser's own menu matters: it does not open while the inline editor is active or over a modal, and **`Shift` + right-click** always gives you the browser menu instead. Not available on touch, which has no right-click — use long-press for inline edit there.
 
@@ -845,7 +845,8 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Search** | Name, URL, category, page |
 | **Edit** | Row Edit (or `Enter`) leaves the Health view, opens the bookmark’s page, and launches the dashboard **inline editor** (falls back to Config when unavailable) |
 | **Favicon** | Shows stored bookmark icon; refresh per row |
-| **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (**Status** → re-check status; **detect redirect**, **refresh title**, **archive**, delete) |
+| **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (**Status** → re-check status; **detect redirect**, **refresh title**, **archive**, **copy URL**, **share**, delete) |
+| **Copy URL and Share** | The **More** menu carries the same two entries as the dashboard's right-click menu, so a row found here can be copied or sent on without going back to the dashboard first. The second reads **Share…** where your browser has a share sheet and **Copy name + URL** where it does not, copying `name — URL` in that case. Both apply to any row, healthy or broken |
 | **Action runtime** | Row actions are guarded against overlap and refresh the health report after changes |
 | **Detect redirect** | Overflow **detect redirect** uses a fast redirect-only suggest (`redirectOnly=1`, skips title fetch); confirm shows the proposed URL; errors and timeouts appear in the status bar |
 | **Keyboard** | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `Enter` → inline editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row); `c` → availability checking; `i` → enlarged monitoring statistics on a monitored row. The shortcut legend under the feed lists them |

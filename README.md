@@ -425,7 +425,7 @@ Dynamic bookmark groups that appear automatically:
 - Flash animation on bookmark open — subtle ripple confirms the action was registered
 - Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
 - Open-count badge tracking usage per bookmark
-- **Share** a bookmark from the right-click menu — hands its name and URL to the system share sheet (Mail, WhatsApp, AirDrop); browsers without one, including Firefox on the desktop and any install served over plain HTTP, copy `name — URL` to the clipboard instead
+- **Share** a bookmark from the right-click menu, or from a row's **More** menu in the health view — hands its name and URL to the system share sheet. Sharing needs a **secure context**, and **Safari on macOS refuses it over plain `http://`, `localhost` included**; use **HTTPS** (reverse proxy or Tailscale) for a real sheet. Chrome and Firefox on macOS/Linux have no Web Share at all. Where a sheet cannot open, the entry copies `name — URL`, says so, and re-labels itself **Copy name + URL**
 - Pin bookmarks to keep them at the top of their category (no pin badge on dashboard rows; use `:pin` / inline edit)
 - Import from browser HTML export (Chrome, Firefox, Edge) — folders become categories, duplicate URLs skipped; **missing icons are batch-fetched with a progress bar**
 - Export all bookmarks to CSV (localized headers: Name, URL, Category, Page, Shortcut, Tags, Notes)

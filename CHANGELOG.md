@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.23.6 — July 2026](#v202607236--july-2026)
 - [v2026.07.23.5 — July 2026](#v202607235--july-2026)
 - [v2026.07.23.4 — July 2026](#v202607234--july-2026)
 - [v2026.07.23.3 — July 2026](#v202607233--july-2026)
@@ -118,6 +119,30 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.23.6 — July 2026
+
+**Sharing reaches the health view**, and the share entry stops promising a dialog the browser cannot open.
+
+### New
+
+- **new** **Copy URL and Share in the health view's More menu** — a row in the health view is a bookmark like any other, but copying or sending one meant finding it again on the dashboard first. Both entries now sit in the per-row **More** menu, between *Find in Web Archive* and *Change checking*, under the labels the right-click menu already uses. They are placed with the link actions rather than under *Repair* or *Remove*, so they appear on every row, healthy or broken. The handlers delegate to `DashboardContextMenu.shareBookmark()` and the command bar's clipboard helper rather than reimplementing the share sheet, its fallback and the cancel rule — one behaviour with one definition instead of a second copy to keep in step (`dashboard-health.js`).
+- **new** **No row is handed to the clipboard helper** — its flash animation is styled for `.bookmark-link`, which a health row is not, so passing one would promise a confirmation that never renders. The toast confirms the copy instead.
+
+### Fixes
+
+- **fix** **The share entry names what the browser can actually do** — it reads **Share…** only where `navigator.share` exists, and **Copy name + URL** where it does not. v2026.07.23.5 described the fallback as the plain-HTTP case, which understated it: desktop **Chrome and Firefox on macOS and Linux** expose no Web Share even on a secure origin, and `localhost` *is* a secure origin. So on an ordinary desktop the entry promised a share dialog, opened nothing and quietly copied instead — a documented fallback that reads as a broken feature. `canOpenShareSheet()` and `shareActionLabel()` live on the context menu and the health view borrows them, so the two menus cannot describe the same action differently (`dashboard-context-menu.js`, `dashboard-health.js`).
+- **fix** **The two copy entries are now distinguishable** — where there is no share sheet, **Copy URL** and **Copy name + URL** sit adjacent, which makes the difference between them visible rather than a surprise after the fact.
+- **fix** **The share entry stops promising a sheet the browser refuses** — `navigator.share` can exist and still reject every call: **Safari on macOS refuses Web Share over plain `http://`, `localhost` included**, while reporting the feature as present and the context as secure. Feature detection alone therefore advertised **Share…** for something that could never open, which is how this reached a user as *"share does nothing"*. A `NotAllowedError` is now recorded: the link is still copied, the message says the browser will not open a sheet here rather than sending someone after HTTPS they already have, and the entry re-labels itself to **Copy name + URL** so it stops repeating a promise it has already broken. Isolated with a bare button calling `navigator.share()` directly — no menu, no application code — which failed identically and ruled the app out (`dashboard-context-menu.js`, `dashboard-health.js`).
+- **fix** **The fallback toast names the address when that is the reason** — sharing requires a *secure context*, so a dashboard reached at `http://192.168.1.50:8080` has no share sheet **even in Safari**, which otherwise supports it. `localhost` counts as secure and HTTPS does too, so this is specifically the LAN-address case — and unlike an unsupported browser it is the user's to fix. The toast now reads *"Copied — sharing needs HTTPS or localhost"* instead of the plain confirmation, but only when `window.isSecureContext` is false; on a secure origin without Web Share, naming HTTPS would misdirect. Verified in WebKit against both a `localhost` and a LAN origin (`dashboard-context-menu.js`).
+
+### Notes
+
+- Covered by `tests/health-copy-share.spec.js` (7 tests) and additions to `tests/dashboard-context-share.spec.js`. The label specs stub `navigator.share` through `addInitScript` rather than `page.evaluate`: the row markup is built once at render, so a stub installed afterwards arrives too late to affect the label. Two assertions in `tests/health-dashboard-view.spec.js` expected the literal *Share…* and now expect the capability-dependent label, since headless Chromium has no share sheet either.
+- The health specs were checked against the feature removed. That caught a weak assertion: *"the clipboard stayed empty"* after a cancelled share is true whether the cancel was handled or the menu entry did nothing at all, so it now asserts the sheet was opened first.
+- `dashboard-health.js` and `dashboard-context-menu.js` carry new cache tokens; `WhatsNewData` moves with `DASHBOARD_RELEASE` as the paired test requires. An already-open tab needs a hard refresh (`Cmd/Ctrl+Shift+R`).
 
 ---
 
