@@ -4,7 +4,7 @@
 
 > Enhanced for GitHub Markdown with icons, cleaner visual structure, and improved scanability while preserving the original content as much as possible.
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated, including a **What's new** recap through **v2026.07.20**).
+This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated)).
 
 ---
 
