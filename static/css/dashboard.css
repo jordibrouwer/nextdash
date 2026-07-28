@@ -17,6 +17,19 @@ textarea,
     -webkit-touch-callout: none;
 }
 
+/*
+ * Reserve the scrollbar's width whether or not the page scrolls. Without this,
+ * a short section (Pages & tags, a filtered list) has no scrollbar and a tall
+ * one does, so switching between them changed the usable width and every
+ * centred layout — config's nav column most visibly — jumped sideways. Safari
+ * and Firefox on macOS reserve real width for a scrollbar; browsers with
+ * overlay scrollbars never showed the shift, which is why it reads as a
+ * platform bug rather than a layout one.
+ */
+html {
+    scrollbar-gutter: stable;
+}
+
 body {
     min-height: 100vh;
     transition: background-color 0.3s ease, color 0.3s ease;

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -147,15 +148,25 @@ func findShortcutConflictWithExisting(bookmarks []Bookmark, shortcut string) *Bo
 	return nil
 }
 
+// pageTemplateFuncs are available to every page template. `asset` turns a
+// static-relative path into a content-hashed URL, so templates never carry a
+// hand-written cache-bust token.
+var pageTemplateFuncs = template.FuncMap{
+	"asset":      assetURL,
+	"lazyAssets": lazyAssetMapJSON,
+}
+
 func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Template, error) {
 	if info, err := os.Stat("templates"); err == nil && info.IsDir() {
 		diskFiles := make([]string, len(templateFiles))
 		for i, name := range templateFiles {
 			diskFiles[i] = filepath.FromSlash(name)
 		}
-		return template.ParseFiles(diskFiles...)
+		name := filepath.Base(diskFiles[0])
+		return template.New(name).Funcs(pageTemplateFuncs).ParseFiles(diskFiles...)
 	}
-	return template.ParseFS(h.files, templateFiles...)
+	name := path.Base(templateFiles[0])
+	return template.New(name).Funcs(pageTemplateFuncs).ParseFS(h.files, templateFiles...)
 }
 
 func (h *Handlers) FlushCaches() {
@@ -649,8 +660,11 @@ func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {
 type htmlPageData struct {
 	Settings
 	WriteToken string `json:"-"`
-	Assets     pageAssetVersions
 	AppVersion string
+	// ReleaseTag is the published version ("v2026.07.23.6"), reported with the
+	// analytics settings snapshot so adoption can be read per release. Empty
+	// when the What's new index cannot be read.
+	ReleaseTag string
 
 	// Umami analytics (privacy-friendly, opt-out). Fixed id + host for the
 	// project's shared instance. The template emits the tracker only when
@@ -674,8 +688,8 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	return htmlPageData{
 		Settings:           settings,
 		WriteToken:         writeAccessToken(),
-		Assets:             sharedAssetVersions,
 		AppVersion:         appVersionToken(),
+		ReleaseTag:         releaseTag(),
 		AnalyticsWebsiteID: analyticsWebsiteID,
 		AnalyticsScriptSrc: analyticsScriptSrc,
 		AnalyticsEnabled:   analyticsEnabled(settings),
@@ -716,8 +730,7 @@ func (h *Handlers) GetBookmarks(w http.ResponseWriter, r *http.Request) {
 		bookmarks = []Bookmark{}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(bookmarks)
+	writeJSONWithETag(w, r, bookmarks)
 }
 
 func (h *Handlers) GetDataRevision(w http.ResponseWriter, r *http.Request) {
@@ -1082,8 +1095,7 @@ func (h *Handlers) GetCategories(w http.ResponseWriter, r *http.Request) {
 	if pageIDStr == "" {
 		// No page param provided - return empty array
 		// Categories are now per-page only, no global categories
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]Category{})
+		writeJSONWithETag(w, r, []Category{})
 		return
 	}
 
@@ -1094,14 +1106,11 @@ func (h *Handlers) GetCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	categories := h.store.GetCategoriesByPage(pageID)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(categories)
+	writeJSONWithETag(w, r, categories)
 }
 
 func (h *Handlers) GetFinders(w http.ResponseWriter, r *http.Request) {
-	finders := h.store.GetFinders()
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(finders)
+	writeJSONWithETag(w, r, h.store.GetFinders())
 }
 
 func (h *Handlers) SaveFinders(w http.ResponseWriter, r *http.Request) {
@@ -1156,9 +1165,7 @@ func (h *Handlers) GetPages(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		return
 	}
-	pages := h.store.GetPages()
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(pages)
+	writeJSONWithETag(w, r, h.store.GetPages())
 }
 
 func (h *Handlers) SavePages(w http.ResponseWriter, r *http.Request) {
@@ -1294,8 +1301,7 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	if telemetryDisabledByEnv() {
 		settings.AnalyticsOptIn = false
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(settings)
+	writeJSONWithETag(w, r, settings)
 }
 
 func mergeSettingsFromBody(stored Settings, body []byte) (Settings, error) {

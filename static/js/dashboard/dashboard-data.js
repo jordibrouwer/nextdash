@@ -372,7 +372,7 @@ class DashboardData {
                 } else if ((initialHash === 'config' || initialHash.startsWith('config/')) && d.config?.isEnabled?.()) {
                     // Pass the section so a deep link like #config/appearance lands
                     // there rather than on the overview.
-                    const section = window.DashboardConfig?.sectionFromHash?.(initialHash);
+                    const section = window.DashboardConfigLoader?.sectionFromHash?.(initialHash);
                     await d.config.openConfigView(section || undefined);
                 }
             }

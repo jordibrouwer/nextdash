@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.24 — July 2026](#v20260724--july-2026)
 - [v2026.07.23.6 — July 2026](#v202607236--july-2026)
 - [v2026.07.23.5 — July 2026](#v202607235--july-2026)
 - [v2026.07.23.4 — July 2026](#v202607234--july-2026)
@@ -119,6 +120,31 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.24 — July 2026
+
+**The dashboard stops loading the config view it may never open**, unchanged data stops being sent twice, and cache-bust tokens stop being something a release has to remember.
+
+Initial dashboard JavaScript: **2082 KB → 1673 KB (−19.6%)**.
+
+### New
+
+- **new** **Cache-bust tokens are derived from file contents** — every `?v=` token is now a hash of the file's own bytes, computed at startup (`asset_hash.go`). Templates call `{{asset "js/dashboard.js"}}` and get the versioned URL back, so a token cannot be forgotten, shared between two files, or left behind on a file that has no token at all. Change a file and its URL changes; leave it alone and it keeps its year-long `immutable` cache entry. This replaces `asset_versions.go` — a hand-maintained struct of ~60 strings, plus 20 more written directly into the template — which is deleted along with its test. Both failure modes it documented (a shared token silently moving an unrelated file; an untokened file served `max-age=86400` and staying invisible for a day after a deploy) are now structurally impossible rather than a discipline to keep up. `/api/app-version` is fingerprinted the same way, so a running page still notices a deploy.
+
+### Fixes
+
+- **fix** **The config view is fetched on first open, not on every page load** — `dashboard-config.js` is 409 KB, the largest script in the app and four times the next one, and it was parsed on every visit to the bookmark grid whether or not anyone opened settings. It now loads on the first `#config` open, cutting the dashboard's initial JavaScript from 2082 KB to 1673 KB — **19.6% less to download and parse** before the grid is interactive. A small stub (`dashboard-config-loader.js`) stands in for it and answers what the shell asks before config is ever opened: `isEnabled()`, the Escape handler, and the section list that parses a `#config/appearance` deep link. Anything else is forwarded to the real module, loading it on demand — so a method added to `DashboardConfig` later cannot silently return `undefined` through the loader. Sub-tab choices made before the module arrives (`config.behaviorTab = 'privacy'`) are buffered and replayed onto it, keeping `#config/behavior/privacy` landing on Privacy.
+- **fix** **Body scripts no longer block HTML parsing** — 56 of them were plain `<script src>`, each one a parser stop while it downloaded and ran, on top of the 21 already deferred. All 78 body scripts now carry `defer`, which preserves their execution order and runs them before `DOMContentLoaded` — the event `Dashboard` is constructed on, so the sequence the modules depend on is unchanged. The seven head scripts stay blocking on purpose: `theme-loader.js` applies the theme before first paint, and deferring it would show an unthemed flash.
+- **fix** **The runtime asset map survives the CSP** — the hashed URLs for lazily-fetched scripts reach the page as a `data-` attribute read by `asset-map.js`, not as an inline `<script>`. The page's own policy is `script-src 'self'` with no `'unsafe-inline'`, so an inline block would have been silently dropped and both lazy loaders would have fallen back to unversioned URLs — reintroducing exactly the staleness this release removes. Caught by `config-lazy-load.spec.js`, which asserts the fetched URL actually carries a token.
+- **fix** **The preloaded font is fetched once again, not twice** — moving every asset URL onto the content-hashed helper caught the `<link rel="preload">` for `source-code-pro-latin.woff2` as well, but `fonts.css` is a static stylesheet that cannot render the helper and still asked for the plain URL. The two no longer matched, so the browser downloaded the font twice and Safari reported *"preloaded using link preload but not used within a few seconds"*. The preload goes back to the unversioned URL the stylesheet actually requests. `TestPreloadedFontURLsMatchStylesheet` now fails if a font preload is ever routed through the helper again (`dashboard.html`, `asset_hash_test.go`).
+- **fix** **`whats-new-modal.js` stops carrying a hand-written token** — it was fetched at runtime with `?v=keys-section-1` baked into the loader, outside the asset system and so outside anything that could catch it going stale. It reads its URL from the same content-hashed map (`whats-new-stub.js`).
+- **fix** **The read APIs answer conditional requests** — `/api/bookmarks`, `/api/categories`, `/api/pages`, `/api/settings` and `/api/finders` now send a content `ETag` and honour `If-None-Match`, so an unchanged response comes back as a bodyless **304** instead of the full JSON. The dashboard re-reads these on every page load, every page switch and every cross-tab sync, and the payloads are usually byte-identical to the last one — `/api/data-revision` exists precisely because the client wants to know *did anything change?*, yet the answer was always paid for in full. `writeJSONWithETag` follows the same shape `writeHTMLShell` already used for the HTML shell; it hashes the marshalled body rather than reusing `GetDataRevision`, which hashes every file in the data directory and would therefore 304 a page whose own bookmarks changed while missing nothing when an unrelated page's did (`html_etag.go`, `handlers.go`).
+- **fix** **`Cache-Control` stays `no-cache`, not a max-age** — bookmark data must never be served from cache without asking, because a write from another tab or the extension has to be visible immediately. This buys back the response body on a revalidation, not the round trip.
+- **fix** **The browser extension can use the ETags too** — `If-None-Match` is added to `Access-Control-Allow-Headers` and `ETag` to `Access-Control-Expose-Headers`. Without the first the browser blocks the conditional request outright; without the second its JS cannot read the validator it would have to send back. The ETags would have worked same-origin and silently done nothing cross-origin (`cors.go`).
+- **fix** **Config stops shifting sideways when you switch section** — Pages & tags is short enough not to scroll and every other section is not, so the scrollbar came and went; `.config-view` is centred with `max-width` and `margin: auto`, so the changing width slid the whole grid over. `scrollbar-gutter: stable` reserves the space either way. Only visible where a scrollbar takes real width — Safari and Firefox on macOS — which is why it read as a rendering quirk rather than a layout bug (`dashboard.css`).
+- **fix** **The sub-tab strip stops re-measuring on every click** — the active tab is `font-weight: 600` and the rest are normal, so the tab you picked grew a few pixels and pushed its neighbours along; on Help, which already wraps, that was enough to move a tab onto the second row. Every tab is now laid out at its bold width via a zero-height `::before` carrying the same label, so selecting one only repaints it. `bindSubTabStrip` fills in `data-label`, covering all six strips in the one place they are bound (`config-view.css`, `dashboard-config.js`).
 
 ---
 

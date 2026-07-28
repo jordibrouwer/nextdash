@@ -704,10 +704,14 @@ class DashboardHealth {
     }
 
     /**
-     * Edit the bookmark in place: leave the health view, land on the row on its own
-     * page, and open the dashboard's inline editor. Soft-navigates when possible so
-     * the form isn't opened during a cold reload (promo/modal races). Falls back to
-     * ?edit=1, then to the config bookmarks list.
+     * Edit the bookmark in the shared bookmark modal, the same form Promote opens.
+     *
+     * This used to leave the view: it switched page, painted the bookmarks grid
+     * and opened the dashboard's inline editor, so every edit cost a round trip
+     * back to Health and threw away the filter, search and scroll position on the
+     * way. The modal keeps Health underneath — closing it returns you to the row
+     * you were on — and refreshes the report afterwards so the row reflects the
+     * edit. Falls back to the old deep link when the modal isn't reachable.
      */
     async editIssueInline(issue) {
         this.closeAllMenus();
@@ -718,6 +722,59 @@ class DashboardHealth {
             return;
         }
 
+        const handler = d.searchComponent?.commandsComponent?.newCommandHandler;
+        const bookmark = await this.findBookmarkForIssue(issue, pageId);
+        if (handler && bookmark) {
+            window.nextdashTrack?.('health:edit');
+            handler.openModal({
+                mode: 'edit',
+                pageId,
+                index: bookmark.index,
+                bookmark: bookmark.record,
+                // The report caches status, name and check mode, so it has to be
+                // re-read for the row to agree with what was just saved.
+                onSaved: async () => {
+                    await this.loadAndRender({ refresh: true });
+                    d.updateHealthBadge?.();
+                },
+            });
+            return;
+        }
+
+        return this.editIssueViaDeepLink(issue, pageId);
+    }
+
+    /**
+     * Look up the stored bookmark a health row points at.
+     *
+     * The row itself carries only what the report kept, so the real record is
+     * read from the page. The report can be minutes old, which makes its index
+     * the less reliable of the two keys — the URL decides, and the index is only
+     * used when it still agrees with it.
+     */
+    async findBookmarkForIssue(issue, pageId) {
+        try {
+            const res = await fetch(`/api/bookmarks?page=${pageId}`);
+            if (!res.ok) return null;
+            const list = await res.json();
+            if (!Array.isArray(list)) return null;
+
+            const key = this.canonicalUrl(issue.url);
+            let index = Number(issue.index);
+            const atIndex = Number.isFinite(index) ? list[index] : null;
+            if (!atIndex || this.canonicalUrl(atIndex.url) !== key) {
+                index = list.findIndex((b) => this.canonicalUrl(b.url) === key);
+            }
+            if (index < 0 || !list[index]) return null;
+            return { index, record: list[index] };
+        } catch {
+            return null;
+        }
+    }
+
+    /** The pre-modal route: switch page and open the dashboard's inline editor. */
+    async editIssueViaDeepLink(issue, pageId) {
+        const d = this.dash;
         if (typeof d.pageNav?.requestPageNavigation === 'function'
             && typeof d.pageNav?.focusDashboardDeepLinkTarget === 'function') {
             const switched = await d.pageNav.requestPageNavigation(pageId);

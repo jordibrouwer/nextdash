@@ -510,6 +510,28 @@
     cursor: pointer;
 }
 
+/*
+ * The active tab is bold and the rest are not, so the strip used to re-measure
+ * on every click: the tab you picked grew by a few pixels, its neighbours slid
+ * along, and a strip near the wrap point (Help, Statistics) could drop onto a
+ * second row. Laying every tab out at the bold width removes the difference —
+ * selecting one now only repaints it.
+ *
+ * The bold copy sits in a zero-height ::before that mirrors the label, so the
+ * button is always as wide as its widest state. It reads the text from the
+ * button's own content via data-label; tabs without that attribute simply keep
+ * the old behaviour rather than collapsing.
+ */
+.config-subtab::before {
+    content: attr(data-label);
+    display: block;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    font-weight: 600;
+    pointer-events: none;
+}
+
 .config-subtab:hover {
     background: var(--hover-bg, rgba(128, 128, 128, 0.12));
     color: var(--text-color, inherit);
