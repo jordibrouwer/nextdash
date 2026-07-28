@@ -183,6 +183,53 @@ test.describe('modern layout — dashboard chrome', () => {
     });
 });
 
+test.describe('modern layout — grid presets', () => {
+    /**
+     * The eight presets each get their own block of modern rules, and none of
+     * them had any coverage. Rather than pin per-preset styling — which would
+     * restate the CSS — assert the two things that actually broke elsewhere in
+     * this layer: content overflowing the viewport sideways, and rows in a
+     * column overlapping each other.
+     */
+    const PRESETS = ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
+
+    for (const preset of PRESETS) {
+        test(`${preset} lays out without overflow or overlap`, async ({ page }) => {
+            await loadDashboard(page);
+            await setLayout(page, 'modern');
+            await page.evaluate((v) => {
+                window.dashboardInstance.settings.layoutPreset = v;
+                document.body.setAttribute('data-layout-preset', v);
+                window.dashboardInstance.renderDashboard({ animate: false });
+            }, preset);
+            await expect(page.locator('.bookmark-link').first()).toBeVisible();
+
+            const geo = await page.evaluate(() => {
+                const overflow = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+                const overlaps = [...document.querySelectorAll('.bookmarks-list')].slice(0, 3).flatMap((list) => {
+                    const rects = [...list.querySelectorAll(':scope > .bookmark-link')]
+                        .slice(0, 6)
+                        .map((el) => el.getBoundingClientRect());
+                    const bad = [];
+                    for (let i = 1; i < rects.length; i += 1) {
+                        // Same column (launcher and widgets tile sideways, so only
+                        // compare rows that actually stack) => must not overlap.
+                        const sameColumn = Math.abs(rects[i].left - rects[i - 1].left) < 2;
+                        if (sameColumn && rects[i].top < rects[i - 1].bottom - 1) {
+                            bad.push(Math.round(rects[i - 1].bottom - rects[i].top));
+                        }
+                    }
+                    return bad;
+                });
+                return { overflow, overlaps };
+            });
+
+            expect(geo.overflow).toBeLessThanOrEqual(0);
+            expect(geo.overlaps).toEqual([]);
+        });
+    }
+});
+
 test.describe('modern layout — overlays', () => {
     test('restyles the search overlay', async ({ page }) => {
         await loadDashboard(page);
