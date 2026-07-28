@@ -99,7 +99,6 @@ func main() {
 	r.HandleFunc("/api/health/delete-bookmark", handlers.DeleteHealthBookmark).Methods("POST")
 	r.HandleFunc("/api/health/auto-heal-suggest", handlers.AutoHealSuggest).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-apply", handlers.AutoHealApply).Methods("POST")
-	r.HandleFunc("/api/search-index", handlers.BuildSearchIndex).Methods("POST")
 	r.HandleFunc("/api/bookmark-preview", handlers.GetBookmarkPreview).Methods("GET")
 	r.HandleFunc("/api/inbox", handlers.GetInbox).Methods("GET")
 	r.HandleFunc("/api/inbox", handlers.AddInboxItem).Methods("POST")

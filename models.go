@@ -196,7 +196,6 @@ type Settings struct {
 	ShowTagCollections           bool                         `json:"showTagCollections"`           // Auto-generate a collection per tag
 	TagCollectionsMinCount       int                          `json:"tagCollectionsMinCount"`       // Minimum bookmarks per tag to show collection (0 = all)
 	FaviconRefreshPolicy         string                       `json:"faviconRefreshPolicy"`         // Favicon policy: manual, on-save
-	SearchIndexed                bool                         `json:"searchIndexed"`                // Is search index built
 	OnboardingCompleted          bool                         `json:"onboardingCompleted"`
 	AnalyticsOptIn               bool                         `json:"analyticsOptIn"`    // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
 	EnableSessionTips            bool                         `json:"enableSessionTips"` // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
@@ -219,9 +218,9 @@ type Settings struct {
 	ConfigPagesTourCompleted       bool                             `json:"configPagesTourCompleted"`
 	ConfigCollectionsTourCompleted bool                             `json:"configCollectionsTourCompleted"`
 	ConfigThemeTourCompleted       bool                             `json:"configThemeTourCompleted"`
-	BackgroundType                 string                           `json:"backgroundType"`              // "auto", "none", "gradient", "image"
-	BackgroundGradient             string                           `json:"backgroundGradient"`          // preset name used when type="gradient"
-	BackgroundImageUrl             string                           `json:"backgroundImageUrl"`          // URL used when type="image"
+	BackgroundType                 string                           `json:"backgroundType"`     // "auto", "none", "gradient", "image"
+	BackgroundGradient             string                           `json:"backgroundGradient"` // preset name used when type="gradient"
+	BackgroundImageUrl             string                           `json:"backgroundImageUrl"` // URL used when type="image"
 	ThemeIconStyling               map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
 	PasteUrlQuickAdd               bool                             `json:"pasteUrlQuickAdd"`               // Enable paste URL to quick-add bookmark on dashboard
 	InboxEnabled                   bool                             `json:"inboxEnabled"`                   // Enable inbox page and paste-to-inbox flow
@@ -2300,7 +2299,7 @@ type HealthSummary struct {
 	// counted apart from BrokenCount so the header can flag a live outage
 	// distinctly from an ordinary dead link. A down monitor is not also in
 	// BrokenCount — it is one or the other, never both, so totals stay honest.
-	MonitorDownCount int `json:"monitorDownCount"`
+	MonitorDownCount      int `json:"monitorDownCount"`
 	DuplicateCount        int `json:"duplicateCount"`
 	UncheckedCount        int `json:"uncheckedCount"`
 	StaleCount            int `json:"staleCount"`
@@ -2424,21 +2423,6 @@ type HealthHistoryFile struct {
 	GeneratedAt int64 `json:"generatedAt"`
 	// Samples maps canonical URL to samples in ascending time order.
 	Samples map[string][]HealthSample `json:"samples"`
-}
-
-// Search indexing
-type SearchIndex struct {
-	Entries []SearchEntry `json:"entries"`
-}
-
-type SearchEntry struct {
-	Name     string `json:"name"`
-	URL      string `json:"url"`
-	Shortcut string `json:"shortcut"`
-	Category string `json:"category"`
-	Keywords string `json:"keywords"` // Combined searchable text
-	Index    int    `json:"index"`
-	PageID   int    `json:"pageId"`
 }
 
 // Undo/Redo history

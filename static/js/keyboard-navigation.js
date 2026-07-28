@@ -20,6 +20,10 @@ class KeyboardNavigation {
         this._pointerOverHandler = null;
         this._kbdSelectionDimmed = false;
         this._kbdLiveRegion = null;
+        // True only while the current selection was reached with the keyboard.
+        // A pointer click focuses a row and moves currentIndex too, so the index
+        // alone cannot tell the two routes apart.
+        this._selectionFromKeyboard = false;
 
         this.init();
     }
@@ -270,6 +274,8 @@ class KeyboardNavigation {
                 const idx = this.navigableElements.indexOf(row);
                 if (idx >= 0 && idx !== this.currentIndex) {
                     this.currentIndex = idx;
+                    // Focus moved here by pointer or script, not by an arrow key.
+                    this._selectionFromKeyboard = false;
                     this.highlightCurrentElement({ focus: false });
                 }
             };
@@ -280,7 +286,12 @@ class KeyboardNavigation {
                 if (e.pointerType && e.pointerType !== 'mouse') {
                     return;
                 }
-                if (!e.target.closest?.('.bookmark-link:not(.bookmark-inline-editing)')) {
+                const overRow = e.target.closest?.('.bookmark-link:not(.bookmark-inline-editing)');
+                if (!overRow) {
+                    return;
+                }
+                // Hovering the selected row is not a reason to soften it.
+                if (overRow.classList.contains('keyboard-selected')) {
                     return;
                 }
                 this.dimKbdSelection();
@@ -1185,6 +1196,10 @@ class KeyboardNavigation {
                 inline: 'nearest'
             });
             if (options.keyboardNav) {
+                // Records that the cursor got here by key, not by a mouse click
+                // that focused the row. Consumers that restore a selection need
+                // to tell those apart — see restoreInlineEditRow().
+                this._selectionFromKeyboard = true;
                 this._announceKeyboardSelection(currentElement);
             }
             this.syncRovingTabStops({ focus: doFocus });
@@ -1384,6 +1399,7 @@ class KeyboardNavigation {
         });
         
         this.currentIndex = -1;
+        this._selectionFromKeyboard = false;
         this.syncRovingTabStops({ focus: false });
         this.syncGridActiveDescendant();
 
@@ -1406,6 +1422,16 @@ class KeyboardNavigation {
             return false;
         }
         this.currentIndex = idx;
+        // A selection restored on purpose is not the stale highlight the dimming
+        // is for, so it must be drawn at full strength. Rebuilding a row can fire
+        // a pointerover the user never caused, which would otherwise soften the
+        // row that was just selected.
+        this.restoreKbdSelection();
+        requestAnimationFrame(() => {
+            if (this.navigableElements[this.currentIndex] === row) {
+                this.restoreKbdSelection();
+            }
+        });
         this.highlightCurrentElement({
             focus: options.focus !== false,
             keyboardNav: false,

@@ -1557,43 +1557,6 @@ func (h *Handlers) CheckDuplicates(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(warning)
 }
 
-// Build search index
-func (h *Handlers) BuildSearchIndex(w http.ResponseWriter, r *http.Request) {
-	if !h.requireWriteAccess(w, r) {
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-
-	pages := h.store.GetPages()
-	var entries []SearchEntry
-
-	for _, page := range pages {
-		bookmarks := h.store.GetBookmarksByPage(page.ID)
-		for idx, bm := range bookmarks {
-			keywords := bm.Name + " " + bm.URL + " " + bm.Shortcut + " " + bm.Category
-			entries = append(entries, SearchEntry{
-				Name:     bm.Name,
-				URL:      bm.URL,
-				Shortcut: bm.Shortcut,
-				Category: bm.Category,
-				Keywords: strings.ToLower(keywords),
-				Index:    idx,
-				PageID:   page.ID,
-			})
-		}
-	}
-
-	index := SearchIndex{Entries: entries}
-	settings := h.store.GetSettings()
-	settings.SearchIndexed = true
-	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(index)
-}
-
 func (h *Handlers) outboundHTTPClient(timeout time.Duration, maxRedirects int) *http.Client {
 	return newOutboundHTTPClient(h.allowLocalBookmarks(), timeout, maxRedirects)
 }

@@ -33,6 +33,12 @@ class DashboardInlineEdit {
         if (!form) {
             return;
         }
+        // Remembered so the row's inline background can be taken off again on
+        // close. It is set below to keep the form opaque over the blurred grid,
+        // and an inline background outranks every stylesheet rule — including the
+        // keyboard-selected gradient, which is why a row left with it looked
+        // unselected afterwards.
+        this._solidSurfaceRow = row && !row.closest('.layout-launcher') ? row : null;
         const panelBg = this.readSolidThemeSurface('--background-primary', '--background-secondary');
         const fieldBg = this.readSolidThemeSurface('--background-secondary', '--background-primary');
         document.body.style.setProperty('--inline-edit-panel-bg', panelBg);
@@ -51,6 +57,13 @@ class DashboardInlineEdit {
     clearInlineEditSurfaceOverrides() {
         document.body.style.removeProperty('--inline-edit-panel-bg');
         document.body.style.removeProperty('--inline-edit-field-bg');
+        // The row keeps its own inline background until it is removed here.
+        // Leaving it behind wins over the selected/hover rules, so the row still
+        // takes the keyboard cursor but stops looking like it.
+        if (this._solidSurfaceRow) {
+            this._solidSurfaceRow.style.removeProperty('background');
+            this._solidSurfaceRow = null;
+        }
     }
 
 
@@ -373,6 +386,13 @@ class DashboardInlineEdit {
 
         const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
         d.inlineEditingBookmarkIndex = bookmarkIndex;
+        // Whether the row was reached with the keyboard decides where the
+        // selection goes when the editor closes. Read before disable() clears it.
+        // Both conditions matter: the cursor has to be on this row *and* have got
+        // there by key — a mouse click also focuses the row and moves the cursor.
+        const kbdNav = d.keyboardNavigation;
+        d._inlineEditWasKeyboardSelected = kbdNav?._selectionFromKeyboard === true
+            && kbdNav?.navigableElements?.[kbdNav.currentIndex] === row;
         row.classList.add('bookmark-inline-editing');
         // Whole-row drag stays armed from DragReorder; form controls inside a
         // draggable ancestor can swallow clicks. Restore happens via reorder re-init.
@@ -1254,6 +1274,9 @@ class DashboardInlineEdit {
         d._inlineEditAutoFetchClear = null;
         d.inlineEditingBookmarkIndex = null;
         d._inlineEditContext = null;
+        // Cleared here too: the save path does not run restoreInlineEditRow(), and
+        // a stale true would misroute the selection on the next editor close.
+        d._inlineEditWasKeyboardSelected = false;
         this.leaveBookmarkInlineEditFocusMode();
         row?.classList?.remove('bookmark-inline-editing');
     }
@@ -1271,6 +1294,11 @@ class DashboardInlineEdit {
         d.initializeCategoryReorder();
 
         const kn = d.keyboardNavigation;
+        d._inlineEditWasKeyboardSelected = false;
+        // The row you just edited stays selected and visibly highlighted, however
+        // the editor was opened. Arrow keys then move off it to the next row, the
+        // same as any other selected row — you keep your place without the first
+        // keypress appearing to do nothing.
         if (kn?.selectBookmarkRow?.(row, { focus: true })) {
             return true;
         }

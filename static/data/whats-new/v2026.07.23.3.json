@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.07.23.3",
+  "date": "July 2026",
+  "releasedAt": "2026-07-27",
+  "modalLead": "Closing a modal in the config view closed the config view with it. Opening the add-bookmark form from settings and pressing Escape dismissed both, landing you on the dashboard instead of back on the section you were reading.",
+  "sections": [
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong><code>Esc</code> closes one layer at a time</strong> — every full-container view registers a global <code>Esc</code> handler that closes it, and a modal does not stop the key from travelling onward, so both handlers legitimately saw the same press: the modal closed itself and the view closed underneath it. Health and inbox already guarded against this; config did not, despite a comment claiming it matched them. It now dismisses whatever is on top and only closes the view once nothing is above it — covering the tag cloud, an active search and inline editing as well."
+        }
+      ]
+    }
+  ]
+}

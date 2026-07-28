@@ -108,6 +108,7 @@ class DashboardContextMenu {
         const actions = [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
+            { id: 'share', label: this.t('dashboard.contextMenuShare', 'Share…'), icon: '↪' },
             { id: 'edit', label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎' },
             { id: 'tags', label: this.t('dashboard.contextMenuTags', 'Tags…'), icon: '#' },
             { id: 'move', label: this.t('dashboard.contextMenuMove', 'Move to…'), icon: '→' },
@@ -397,6 +398,94 @@ class DashboardContextMenu {
     }
 
     /**
+     * Hand a bookmark to the system share sheet, or the clipboard when there
+     * isn't one.
+     *
+     * navigator.share() only exists on a secure origin, and on desktop only
+     * Safari and Chromium implement it — a self-hosted dashboard on plain HTTP
+     * over a LAN has no share sheet at all. So the item is always shown and the
+     * fallback copies "name — URL" instead. That is deliberately not the same
+     * as Copy URL one row above: the title travels with the link, which is what
+     * makes it worth pasting into a chat.
+     *
+     * @returns {Promise<'shared'|'cancelled'|'copied'|'none'>} what actually happened
+     */
+    async shareBookmark(bookmark, row) {
+        const url = String(bookmark?.url || '').trim();
+        if (!url) return 'none';
+        const title = String(bookmark?.name || '').trim();
+
+        if (navigator.share) {
+            try {
+                await navigator.share(title ? { title, text: title, url } : { url });
+                return 'shared';
+            } catch (err) {
+                // AbortError is the user closing the sheet — a completed gesture,
+                // not a failure, so it must not fall through to the clipboard and
+                // announce a copy nobody asked for.
+                if (err?.name === 'AbortError') return 'cancelled';
+                // Anything else (NotAllowedError on a non-secure origin, a share
+                // target that rejects) still deserves the fallback.
+            }
+        }
+
+        return this.copyShareText(title ? `${title} — ${url}` : url, row) ? 'copied' : 'none';
+    }
+
+    /**
+     * Clipboard write for the share fallback, with its own toast.
+     *
+     * Deliberately not _copyUrlToClipboard(): that one says "URL copied", which
+     * would be wrong for name + URL, and this needs to report success so the
+     * caller can tell a copy from a no-op.
+     */
+    copyShareText(text, row) {
+        const d = this.dash;
+        const value = String(text || '').trim();
+        if (!value) return false;
+
+        const done = () => {
+            if (row) {
+                row.classList.remove('bookmark-copy-flash');
+                void row.offsetWidth;
+                row.classList.add('bookmark-copy-flash');
+                row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
+            }
+            d.showNotification?.(
+                this.t('dashboard.shareCopied', 'Link copied to share'),
+                'success',
+                { duration: 2000 }
+            );
+        };
+
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(value).then(done).catch(() => {
+                if (this.execCopyFallback(value)) done();
+            });
+            return true;
+        }
+        if (this.execCopyFallback(value)) {
+            done();
+            return true;
+        }
+        return false;
+    }
+
+    /** Pre-Clipboard-API copy, kept for plain-HTTP LAN installs. */
+    execCopyFallback(value) {
+        const ta = document.createElement('textarea');
+        ta.value = value;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch { ok = false; }
+        document.body.removeChild(ta);
+        return ok;
+    }
+
+    /**
      * The page-local index the check-mode endpoint needs.
      *
      * A row on the current page carries its index already. Smart-collection rows
@@ -473,6 +562,9 @@ class DashboardContextMenu {
                 break;
             case 'copy-url':
                 d.searchComponent?.commandsComponent?._copyUrlToClipboard?.(bookmark.url, row);
+                break;
+            case 'share':
+                void this.shareBookmark(bookmark, row);
                 break;
             case 'edit':
                 d.openBookmarkInlineEditor?.(row, bookmarkRef);

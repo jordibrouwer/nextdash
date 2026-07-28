@@ -1,0 +1,51 @@
+{
+  "tag": "v2026.07.23.5",
+  "date": "July 2026",
+  "releasedAt": "2026-07-28",
+  "modalLead": "Bookmarks can be shared straight from the right-click menu, a bookmark edited inline no longer loses its place on the dashboard, and every page load stops building a search index that was thrown away.",
+  "sections": [
+    {
+      "title": "Sharing",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Share a bookmark from the right-click menu</strong> — a new <strong>Share…</strong> entry hands the bookmark to your system's share sheet with both its name and its URL, so it lands in Mail, WhatsApp or AirDrop as a readable link rather than a bare address. Sharing used to mean copying the URL and typing the name next to it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>It works even without a share sheet</strong> — the browser feature behind it only exists on a secure origin, and on the desktop only in Safari and Chromium, so a dashboard reached over plain HTTP on your own network has none. There the entry copies <em>name — URL</em> to the clipboard instead. That is deliberately not what <strong>Copy URL</strong> one row above already does: the title travels with the link, which is what makes it worth pasting into a chat."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Closing the share sheet does nothing</strong> — dismissing it is a finished decision, not a failure, so it does not quietly fall back to copying something you never asked for."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A bookmark edited inline no longer looks unselected afterwards</strong> — closing the inline editor left the row it had just rebuilt carrying an inline background, applied while the editor was open to keep the form opaque above the blurred grid. An inline background outranks every stylesheet rule, so the keyboard highlight could not paint over it: the row still took the cursor and still answered the arrow keys, it simply stopped looking like it. Reading the dashboard, that is a bookmark being skipped."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The keyboard cursor stays on the row you edited</strong> — however the editor was opened, closing it leaves that bookmark visibly selected, so the next arrow key carries on from where you were instead of starting over at the top."
+        }
+      ]
+    },
+    {
+      "title": "Under the hood",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every page load stopped building an index nobody read</strong> — opening the dashboard scanned every bookmark on every page, wrote a settings file and sent back a search index that the dashboard threw away without looking at it. Nothing had ever read it. It is gone, along with the request it made on each load and after every config save."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The manual and README describe the app as it is now</strong> — release notes had been accumulating in both alongside the changelog, so looking up how something works meant scrolling past how it used to work. One paragraph in the manual had grown into a single sentence of more than ten thousand characters listing every release since June. The changelog keeps the full history; the other two now point at it."
+        }
+      ]
+    }
+  ]
+}
