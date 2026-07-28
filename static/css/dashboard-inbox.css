@@ -1066,3 +1066,225 @@ body.inbox-triage-active {
         transition: none;
     }
 }
+
+/* ─── Modern layout ─────────────────────────────────────────────────────────
+   Scoped to body[data-layout-version="modern"]; classic above is untouched.
+
+   The inbox is the health view's sibling — same container width, same tile and
+   row grammar — so this block mirrors the modern section in health-view.css
+   rather than inventing a second dialect. Where the two differ (the unread
+   marker is the accent, not a severity colour; rows carry a checkbox and a
+   selection bar) the difference is called out below.
+
+   Tokens come from layout-modern-tokens.css.
+   ------------------------------------------------------------------------- */
+
+body[data-layout-version="modern"] .inbox-tile:focus-visible,
+body[data-layout-version="modern"] .inbox-filter-btn:focus-visible,
+body[data-layout-version="modern"] .inbox-action-btn:focus-visible,
+body[data-layout-version="modern"] .inbox-bulk-btn:focus-visible,
+body[data-layout-version="modern"] .inbox-triage-btn:focus-visible,
+body[data-layout-version="modern"] .inbox-load-more-btn:focus-visible,
+body[data-layout-version="modern"] .inbox-sort-select:focus-visible,
+body[data-layout-version="modern"] .inbox-item:focus-visible {
+    outline: var(--layout-focus-ring);
+    outline-offset: 2px;
+}
+
+/* ─── Header ────────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .inbox-header {
+    border-bottom-color: color-mix(in srgb, var(--border-primary) 32%, transparent);
+    padding-bottom: 0.7rem;
+}
+
+/* ─── Summary tiles ─────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .inbox-tile {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+    transition:
+        border-color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition),
+        transform var(--layout-transition);
+}
+
+body[data-layout-version="modern"] button.inbox-tile:hover {
+    box-shadow: var(--layout-shadow-md);
+    transform: translateY(-1px);
+}
+
+body[data-layout-version="modern"] .inbox-tile.is-active {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    box-shadow:
+        var(--layout-shadow-sm),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+/* ─── Toolbar & filters ─────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .inbox-filter-group {
+    border-radius: var(--layout-radius-pill);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .inbox-filter-btn {
+    border-radius: var(--layout-radius-pill);
+    transition:
+        background-color var(--layout-transition),
+        color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .inbox-filter-btn.is-active {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+body[data-layout-version="modern"] .inbox-search-input,
+body[data-layout-version="modern"] .inbox-sort-select {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border);
+}
+
+/* Triage keeps its accent fill — it is the button the toolbar exists for — and
+   only picks up the modern radius and motion. */
+body[data-layout-version="modern"] .inbox-triage-btn,
+body[data-layout-version="modern"] .inbox-load-more-btn,
+body[data-layout-version="modern"] .inbox-bulk-btn {
+    border-radius: var(--layout-radius-sm);
+    transition:
+        border-color var(--layout-transition),
+        color var(--layout-transition),
+        background-color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .inbox-bulk-btn {
+    border-color: var(--layout-surface-border);
+}
+
+body[data-layout-version="modern"] .inbox-bulk-btn:hover {
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+/* ─── Feed rows ─────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .inbox-item {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+    transition:
+        border-color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition),
+        transform var(--layout-transition);
+}
+
+/* Unread is a 3px left border in classic, which a rounded row clips into a
+   wedge — the same fix the health view's severity marker needed. Redrawn as an
+   inset bar that follows the corner. */
+body[data-layout-version="modern"] .inbox-item.is-unread {
+    border-left-width: 1px;
+    border-left-color: var(--layout-surface-border);
+    box-shadow:
+        var(--layout-shadow-sm),
+        inset 3px 0 0 0 var(--accent-primary);
+}
+
+body[data-layout-version="modern"] .inbox-item:hover {
+    box-shadow: var(--layout-shadow-md);
+    transform: translateY(-1px);
+}
+
+/* Every state that sets box-shadow has to restate the unread bar, or hovering
+   an unread row erases the one marker that says it is unread. */
+body[data-layout-version="modern"] .inbox-item.is-unread:hover {
+    box-shadow:
+        var(--layout-shadow-md),
+        inset 3px 0 0 0 var(--accent-primary);
+}
+
+body[data-layout-version="modern"] .inbox-item.keyboard-selected {
+    box-shadow:
+        var(--layout-shadow-md),
+        0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+}
+
+body[data-layout-version="modern"] .inbox-item.keyboard-selected.is-unread {
+    box-shadow:
+        var(--layout-shadow-md),
+        0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent),
+        inset 3px 0 0 0 var(--accent-primary);
+}
+
+body[data-layout-version="modern"] .inbox-item--highlight {
+    box-shadow:
+        var(--layout-shadow-md),
+        0 0 0 2px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+body[data-layout-version="modern"] .inbox-item--highlight.is-unread {
+    box-shadow:
+        var(--layout-shadow-md),
+        0 0 0 2px color-mix(in srgb, var(--accent-primary) 35%, transparent),
+        inset 3px 0 0 0 var(--accent-primary);
+}
+
+body[data-layout-version="modern"] .inbox-item-thumb {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border);
+}
+
+/* ─── Row actions ───────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .inbox-action-btn {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border);
+    transition:
+        border-color var(--layout-transition),
+        color var(--layout-transition),
+        background-color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .inbox-action-btn:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+body[data-layout-version="modern"] .inbox-action-btn--danger:hover {
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+}
+
+/* ─── Selection bar ─────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .inbox-selection-bar {
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+/* ─── Empty states ──────────────────────────────────────────────────────── */
+
+/* Classic leaves these as bare centred text; modern gives them the same dashed
+   placeholder card the health view and the empty dashboard use, so a cleared
+   inbox reads as a deliberate state rather than a failed render. */
+body[data-layout-version="modern"] .inbox-empty-state,
+body[data-layout-version="modern"] .inbox-empty {
+    border: 1px dashed var(--layout-surface-border);
+    border-radius: var(--layout-radius-lg);
+    background: color-mix(in srgb, var(--background-secondary) 42%, transparent);
+}
+
+/* ─── Motion preferences ────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-layout-version="modern"] .inbox-tile,
+    body[data-layout-version="modern"] .inbox-item,
+    body[data-layout-version="modern"] button.inbox-tile:hover,
+    body[data-layout-version="modern"] .inbox-item:hover {
+        transition: none;
+        transform: none;
+    }
+}
