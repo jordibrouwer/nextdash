@@ -373,6 +373,13 @@ class DashboardInlineEdit {
 
         const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
         d.inlineEditingBookmarkIndex = bookmarkIndex;
+        // Whether the row was reached with the keyboard decides where the
+        // selection goes when the editor closes. Read before disable() clears it.
+        // Both conditions matter: the cursor has to be on this row *and* have got
+        // there by key — a mouse click also focuses the row and moves the cursor.
+        const kbdNav = d.keyboardNavigation;
+        d._inlineEditWasKeyboardSelected = kbdNav?._selectionFromKeyboard === true
+            && kbdNav?.navigableElements?.[kbdNav.currentIndex] === row;
         row.classList.add('bookmark-inline-editing');
         // Whole-row drag stays armed from DragReorder; form controls inside a
         // draggable ancestor can swallow clicks. Restore happens via reorder re-init.
@@ -1254,6 +1261,9 @@ class DashboardInlineEdit {
         d._inlineEditAutoFetchClear = null;
         d.inlineEditingBookmarkIndex = null;
         d._inlineEditContext = null;
+        // Cleared here too: the save path does not run restoreInlineEditRow(), and
+        // a stale true would misroute the selection on the next editor close.
+        d._inlineEditWasKeyboardSelected = false;
         this.leaveBookmarkInlineEditFocusMode();
         row?.classList?.remove('bookmark-inline-editing');
     }
@@ -1271,12 +1281,27 @@ class DashboardInlineEdit {
         d.initializeCategoryReorder();
 
         const kn = d.keyboardNavigation;
-        if (kn?.selectBookmarkRow?.(row, { focus: true })) {
+        // Only hand the keyboard cursor back to a row the keyboard had in the
+        // first place. Selecting it after a mouse-opened editor leaves the cursor
+        // parked on that row without the user having navigated there, so the next
+        // arrow key steps *off* it — the row reads as skipped.
+        const wasKeyboardSelected = d._inlineEditWasKeyboardSelected === true;
+        d._inlineEditWasKeyboardSelected = false;
+        if (wasKeyboardSelected && kn?.selectBookmarkRow?.(row, { focus: true })) {
             return true;
         }
+        // Focus the row first, then drop the selection. The layout's focusin
+        // handler sets currentIndex whenever a bookmark link gains focus, so
+        // clearing before focusing would be undone by the focus call itself.
         const openLink = row.querySelector('a.bookmark-open');
         if (openLink && typeof openLink.focus === 'function') {
             openLink.focus({ preventScroll: true });
+        }
+        if (!wasKeyboardSelected) {
+            // Mouse route: focus stays on the row it belongs to, but the keyboard
+            // cursor is released so the next arrow key starts a fresh walk instead
+            // of stepping off a row the user never navigated to.
+            kn?.clearSelection?.({ restoreFocus: false });
         }
         return true;
     }
