@@ -541,6 +541,8 @@
         "contextMenuTitle": "Bladwijzeracties",
         "contextMenuOpenNewTab": "Openen in nieuw tabblad",
         "contextMenuCopyUrl": "URL kopiëren",
+        "contextMenuShare": "Delen…",
+        "shareCopied": "Link gekopieerd om te delen",
         "contextMenuEdit": "Bewerken",
         "contextMenuTags": "Tags…",
         "contextMenuMove": "Verplaatsen naar…",

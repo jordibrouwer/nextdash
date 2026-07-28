@@ -538,6 +538,8 @@
         "contextMenuTitle": "Lesezeichen-Aktionen",
         "contextMenuOpenNewTab": "In neuem Tab öffnen",
         "contextMenuCopyUrl": "URL kopieren",
+        "contextMenuShare": "Teilen…",
+        "shareCopied": "Link zum Teilen kopiert",
         "contextMenuEdit": "Bearbeiten",
         "contextMenuTags": "Tags…",
         "contextMenuMove": "Verschieben nach…",

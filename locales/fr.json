@@ -538,6 +538,8 @@
         "contextMenuTitle": "Actions du favori",
         "contextMenuOpenNewTab": "Ouvrir dans un nouvel onglet",
         "contextMenuCopyUrl": "Copier l'URL",
+        "contextMenuShare": "Partager…",
+        "shareCopied": "Lien copié à partager",
         "contextMenuEdit": "Modifier",
         "contextMenuTags": "Tags…",
         "contextMenuMove": "Déplacer vers…",

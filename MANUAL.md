@@ -353,13 +353,14 @@ Right-click any bookmark on the dashboard for its actions in one place:
 |------|--------------|
 | **Open in new tab** | Opens the bookmark in a background tab and counts the open, like a normal click |
 | **Copy URL** | Copies the URL to the clipboard; the row flashes green |
+| **Share…** | Hands the bookmark to your system's share sheet (Mail, WhatsApp, AirDrop, …) with its name and URL. Browsers without one — Firefox on the desktop, or any install served over plain HTTP — copy `name — URL` to the clipboard instead. Closing the share sheet does nothing, so a cancel is never mistaken for a copy |
 | **Edit** | Opens the same inline editor as long-press |
 | **Tags…** | The quick-tag popover (also `Shift + T`) |
 | **Move to…** | The move popover — another category or page (also `Shift + M`) |
 | **Checking** | Names the bookmark's current availability mode and opens the three-way choice — **Off** / **Periodic** / **Monitor** (also `Shift + C`) |
 | **Delete** | Asks for confirmation first, then deletes with undo in the toast |
 
-Nothing here is exclusive to the menu — all of it is reachable from the [command palette](#93-bookmark-actions) and config. The menu just puts it where most people look first.
+Apart from **Share…**, nothing here is exclusive to the menu — the rest is reachable from the [command palette](#93-bookmark-actions) and config, and the menu just puts it where most people look first.
 
 Arrow keys move through the items and `Enter` activates one; `Esc` or a click outside closes it. It works on **smart collection** rows too. The menu deliberately stays out of the way where the browser's own menu matters: it does not open while the inline editor is active or over a modal, and **`Shift` + right-click** always gives you the browser menu instead. Not available on touch, which has no right-click — use long-press for inline edit there.
 

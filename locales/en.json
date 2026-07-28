@@ -541,6 +541,8 @@
         "contextMenuTitle": "Bookmark actions",
         "contextMenuOpenNewTab": "Open in new tab",
         "contextMenuCopyUrl": "Copy URL",
+        "contextMenuShare": "Share…",
+        "shareCopied": "Link copied to share",
         "contextMenuEdit": "Edit",
         "contextMenuTags": "Tags…",
         "contextMenuMove": "Move to…",
