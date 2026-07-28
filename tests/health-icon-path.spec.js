@@ -72,6 +72,16 @@ test.describe('health view icons', () => {
     });
 
     test('leaves an absolute icon URL untouched', async ({ page }) => {
+        // The row drops the <img> and swaps in the link glyph as soon as the
+        // icon fails to load — the behaviour the next test asserts. cdn.example.com
+        // resolves to nothing, so without a route this test races that handler:
+        // it passes only when the assertion beats the network failure. Serve the
+        // URL so the element stays put and the assertion describes src rewriting
+        // (the point of this test) rather than load timing.
+        await page.route('https://cdn.example.com/logo.png', (route) => route.fulfill({
+            status: 200, contentType: 'image/png', body: PNG_1x1,
+        }));
+
         await openHealthView(page, 'https://cdn.example.com/logo.png');
         const img = page.locator('.health-view-item-icon-img').first();
         await expect(img).toHaveAttribute('src', 'https://cdn.example.com/logo.png');
