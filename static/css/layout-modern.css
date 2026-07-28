@@ -1,41 +1,8 @@
 /* Modern layout overrides — scoped to body[data-layout-version="modern"].
-   Classic layout (default) is unchanged; all rules live in dashboard.css. */
+   Classic layout (default) is unchanged; all rules live in dashboard.css.
 
-body[data-layout-version="modern"] {
-    --layout-radius-sm: 8px;
-    --layout-radius-md: 12px;
-    --layout-radius-lg: 16px;
-    --layout-radius-pill: 999px;
-    --layout-shadow-sm: 0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent);
-    --layout-shadow-md: 0 4px 16px color-mix(in srgb, var(--text-primary) 12%, transparent);
-    --layout-shadow-lg: 0 8px 28px color-mix(in srgb, var(--text-primary) 16%, transparent);
-    --layout-gap-header: 1.25rem;
-    --layout-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --layout-surface: color-mix(in srgb, var(--background-secondary) 78%, transparent);
-    --layout-surface-border: color-mix(in srgb, var(--border-primary) 48%, transparent);
-    --layout-focus-ring: 2px solid color-mix(in srgb, var(--accent-primary) 72%, transparent);
-    --modern-bookmark-row-hover-bg: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--accent-primary) 58%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 32%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 10%, var(--background-primary)) 100%
-    );
-    --modern-bookmark-row-selected-bg: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--accent-primary) 68%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 38%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 16%, var(--background-primary)) 100%
-    );
-    --modern-bookmark-row-dimmed-bg: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary)) 0%,
-        color-mix(in srgb, var(--accent-primary) 7%, var(--background-primary)) 48%,
-        color-mix(in srgb, var(--accent-primary) 3%, var(--background-primary)) 100%
-    );
-    --bookmark-row-hover-bg: var(--modern-bookmark-row-hover-bg);
-    --bookmark-row-selected-bg: var(--modern-bookmark-row-selected-bg);
-    --bookmark-row-dimmed-bg: var(--modern-bookmark-row-dimmed-bg);
-}
+   Tokens (--layout-*, --modern-*) come from layout-modern-tokens.css, which
+   loads first. Do not redefine them here. */
 
 /* ─── Shared focus ring ──────────────────────────────────────────────────── */
 

@@ -1,18 +1,8 @@
 /* Modern overlay UI — search, modals, toasts, tag cloud, selects.
-   Scoped to body[data-layout-version="modern"]. Classic unchanged. */
+   Scoped to body[data-layout-version="modern"]. Classic unchanged.
 
-body[data-layout-version="modern"] {
-    --layout-radius-sm: 8px;
-    --layout-radius-md: 12px;
-    --layout-radius-lg: 16px;
-    --layout-radius-pill: 999px;
-    --layout-shadow-sm: 0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent);
-    --layout-shadow-md: 0 4px 16px color-mix(in srgb, var(--text-primary) 12%, transparent);
-    --layout-shadow-lg: 0 8px 28px color-mix(in srgb, var(--text-primary) 16%, transparent);
-    --layout-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --layout-overlay-bg: var(--background-modal, var(--background-secondary));
-    --layout-modal-bg: var(--background-modal, var(--background-secondary));
-}
+   Tokens (--layout-*) come from layout-modern-tokens.css, which loads first.
+   Do not redefine them here. */
 
 /* ─── Search overlay ───────────────────────────────────────────────────────── */
 
