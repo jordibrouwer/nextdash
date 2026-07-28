@@ -82,6 +82,37 @@ test.describe('dashboard share from the right-click menu', () => {
         await expect(page.locator('[data-action="share"]')).toHaveCount(1);
     });
 
+    /**
+     * The label names what will happen. Desktop Chrome and Firefox expose no
+     * navigator.share even on a secure origin, so an entry reading "Share…"
+     * there opens nothing and copies instead — which reads as a broken feature
+     * rather than a documented fallback.
+     */
+    test('the entry is labelled Share only when a share sheet exists', async ({ page }) => {
+        await page.addInitScript(() => {
+            Object.defineProperty(navigator, 'share', {
+                configurable: true, writable: true,
+                value: () => Promise.resolve(),
+            });
+        });
+        await setup(page);
+        const row = await firstRow(page);
+        await openContextMenu(page, row);
+        expect(await page.evaluate(() => document
+            .querySelector('#bookmark-context-menu [data-action="share"]')?.textContent.trim()))
+            .toContain('Share…');
+    });
+
+    test('the entry names the copy when there is no share sheet', async ({ page }) => {
+        // Headless Chromium has none, which is also the desktop Chrome case.
+        await setup(page);
+        const row = await firstRow(page);
+        await openContextMenu(page, row);
+        expect(await page.evaluate(() => document
+            .querySelector('#bookmark-context-menu [data-action="share"]')?.textContent.trim()))
+            .toContain('Copy name + URL');
+    });
+
     test('hands the share sheet the bookmark title and URL', async ({ page }) => {
         await setup(page);
         await stubShare(page, 'resolve');
