@@ -1852,3 +1852,266 @@
         transition: none;
     }
 }
+
+/* ─── Modern layout ─────────────────────────────────────────────────────────
+   Scoped to body[data-layout-version="modern"]; classic above is untouched.
+
+   Note on colour: the classic rules above are written against --card-bg,
+   --border-color, --accent-soft, --hover-bg and --text-muted, none of which are
+   ever defined — not in CSS, not injected at runtime — so every one of them
+   renders on its hardcoded grey fallback and the config view ignores the
+   active theme. That is a pre-existing bug, not something this block sets out
+   to fix, but it does decide the approach: modern rules state their colours
+   explicitly from the real theme variables (--background-secondary,
+   --border-primary, --accent-primary) rather than trying to override greys that
+   no theme ever produced.
+
+   Tokens come from layout-modern-tokens.css.
+   ------------------------------------------------------------------------- */
+
+/* Shared focus ring, replacing each control's hardcoded #4a90d9 outline. */
+body[data-layout-version="modern"] .config-nav-item:focus-visible,
+body[data-layout-version="modern"] .config-subtab:focus-visible,
+body[data-layout-version="modern"] .config-choice:focus-visible,
+body[data-layout-version="modern"] .config-btn:focus-visible,
+body[data-layout-version="modern"] .config-select:focus-visible,
+body[data-layout-version="modern"] .config-tile--action:focus-visible {
+    outline: var(--layout-focus-ring);
+    outline-offset: 2px;
+}
+
+/* ─── Section navigation ────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-nav-item {
+    border-radius: var(--layout-radius-sm);
+    color: var(--text-secondary);
+    transition:
+        background-color var(--layout-transition),
+        color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .config-nav-item:hover {
+    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+    color: var(--text-primary);
+}
+
+body[data-layout-version="modern"] .config-nav-item.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
+    color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+/* ─── Section body ──────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-view-intro {
+    color: var(--text-secondary);
+}
+
+body[data-layout-version="modern"] .config-view-placeholder {
+    border-radius: var(--layout-radius-lg);
+    border-color: var(--layout-surface-border);
+    background: color-mix(in srgb, var(--background-secondary) 42%, transparent);
+    color: var(--text-secondary);
+}
+
+/* ─── Status tiles ──────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-tile {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+/* The stripe is a ::before pinned to the left edge, so a rounded tile would
+   clip it into a wedge — same problem the health rows have. Inset it and let
+   it follow the corner. */
+body[data-layout-version="modern"] .config-tile::before {
+    inset: 0.35rem auto 0.35rem 0;
+    width: 3px;
+    border-radius: 0 var(--layout-radius-pill) var(--layout-radius-pill) 0;
+}
+
+/* The stripe colours are the clearest case of the undefined-variable problem
+   described above: --accent-color never resolves, so an accent tile renders a
+   hardcoded #4a90d9 blue regardless of theme, and the severity hues are literal
+   hex besides. Re-point all five at the theme so a green accent gets a green
+   stripe. Semantic colours stay semantic — only their source changes. */
+body[data-layout-version="modern"] .config-tile--accent  { --tile-stripe: var(--accent-primary); }
+body[data-layout-version="modern"] .config-tile--good     { --tile-stripe: var(--accent-success); }
+body[data-layout-version="modern"] .config-tile--warn     { --tile-stripe: var(--accent-warning); }
+body[data-layout-version="modern"] .config-tile--crit     { --tile-stripe: var(--accent-error); }
+body[data-layout-version="modern"] .config-tile--neutral  { --tile-stripe: var(--layout-surface-border); }
+
+body[data-layout-version="modern"] .config-tile--action {
+    transition:
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition),
+        transform var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .config-tile--action:hover {
+    box-shadow: var(--layout-shadow-md);
+    transform: translateY(-1px);
+}
+
+body[data-layout-version="modern"] .config-tile--action:active {
+    transform: translateY(0);
+}
+
+body[data-layout-version="modern"] .config-tile-label,
+body[data-layout-version="modern"] .config-tile-detail {
+    color: var(--text-tertiary);
+}
+
+/* ─── Panels ────────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-panel {
+    border-radius: var(--layout-radius-lg);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .config-panel--danger {
+    border-color: color-mix(in srgb, var(--accent-error) 40%, transparent);
+}
+
+body[data-layout-version="modern"] .config-panel-note,
+body[data-layout-version="modern"] .config-panel-empty,
+body[data-layout-version="modern"] .config-view-loading {
+    color: var(--text-secondary);
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-btn {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border);
+    transition:
+        background-color var(--layout-transition),
+        border-color var(--layout-transition),
+        box-shadow var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .config-btn:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
+    border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .config-btn--danger {
+    color: var(--accent-error);
+    border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
+}
+
+body[data-layout-version="modern"] .config-btn--danger:hover {
+    background: color-mix(in srgb, var(--accent-error) 12%, transparent);
+    border-color: var(--accent-error);
+}
+
+/* ─── Fields, choices, inputs ───────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-field-label {
+    color: var(--text-secondary);
+}
+
+body[data-layout-version="modern"] .config-choices {
+    border-radius: var(--layout-radius-pill);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .config-choice {
+    border-radius: var(--layout-radius-pill);
+    color: var(--text-secondary);
+    transition:
+        background-color var(--layout-transition),
+        color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .config-choice:hover {
+    color: var(--text-primary);
+}
+
+body[data-layout-version="modern"] .config-choice.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+body[data-layout-version="modern"] .config-select,
+body[data-layout-version="modern"] .config-text {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+}
+
+body[data-layout-version="modern"] .config-text:focus-visible {
+    outline: var(--layout-focus-ring);
+    outline-offset: 2px;
+}
+
+body[data-layout-version="modern"] .config-toggle input {
+    accent-color: var(--accent-primary);
+}
+
+/* ─── Sub-tabs ──────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-subtabs {
+    border-bottom-color: color-mix(in srgb, var(--border-primary) 32%, transparent);
+}
+
+body[data-layout-version="modern"] .config-subtab {
+    border-radius: var(--layout-radius-pill);
+    color: var(--text-secondary);
+    transition:
+        background-color var(--layout-transition),
+        color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .config-subtab:hover {
+    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+    color: var(--text-primary);
+}
+
+body[data-layout-version="modern"] .config-subtab.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
+    color: var(--accent-primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+/* ─── CRUD lists ────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-crud-row {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+}
+
+body[data-layout-version="modern"] .config-tag-count {
+    color: var(--text-tertiary);
+}
+
+/* ─── Backup list ───────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .config-backup-row {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+}
+
+/* ─── Motion preferences ────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-layout-version="modern"] .config-tile--action,
+    body[data-layout-version="modern"] .config-tile--action:hover,
+    body[data-layout-version="modern"] .config-nav-item,
+    body[data-layout-version="modern"] .config-subtab,
+    body[data-layout-version="modern"] .config-btn {
+        transition: none;
+        transform: none;
+    }
+}
