@@ -8,16 +8,17 @@ import (
 	"sync"
 )
 
-// appVersionToken is a short fingerprint of all shared asset versions. It changes
-// whenever any static asset is bumped, and is embedded in the HTML shell and served
-// at /api/app-version so a running page can detect it is stale and reload itself.
+// appVersionToken is a short fingerprint of every static asset's contents. It
+// changes whenever any CSS/JS file changes, and is embedded in the HTML shell and
+// served at /api/app-version so a running page can detect it is stale and reload
+// itself. Derived from file bytes rather than hand-written version strings, so a
+// deploy can never ship with the fingerprint accidentally left unchanged.
 var appVersionToken = func() func() string {
 	var once sync.Once
 	var token string
 	return func() string {
 		once.Do(func() {
-			sum := sha256.Sum256([]byte(fmt.Sprintf("%#v", sharedAssetVersions)))
-			token = hex.EncodeToString(sum[:8])
+			token = assetFingerprint()
 		})
 		return token
 	}

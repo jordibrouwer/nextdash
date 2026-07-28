@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -147,15 +148,25 @@ func findShortcutConflictWithExisting(bookmarks []Bookmark, shortcut string) *Bo
 	return nil
 }
 
+// pageTemplateFuncs are available to every page template. `asset` turns a
+// static-relative path into a content-hashed URL, so templates never carry a
+// hand-written cache-bust token.
+var pageTemplateFuncs = template.FuncMap{
+	"asset":      assetURL,
+	"lazyAssets": lazyAssetMapJSON,
+}
+
 func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Template, error) {
 	if info, err := os.Stat("templates"); err == nil && info.IsDir() {
 		diskFiles := make([]string, len(templateFiles))
 		for i, name := range templateFiles {
 			diskFiles[i] = filepath.FromSlash(name)
 		}
-		return template.ParseFiles(diskFiles...)
+		name := filepath.Base(diskFiles[0])
+		return template.New(name).Funcs(pageTemplateFuncs).ParseFiles(diskFiles...)
 	}
-	return template.ParseFS(h.files, templateFiles...)
+	name := path.Base(templateFiles[0])
+	return template.New(name).Funcs(pageTemplateFuncs).ParseFS(h.files, templateFiles...)
 }
 
 func (h *Handlers) FlushCaches() {
@@ -649,7 +660,6 @@ func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {
 type htmlPageData struct {
 	Settings
 	WriteToken string `json:"-"`
-	Assets     pageAssetVersions
 	AppVersion string
 	// ReleaseTag is the published version ("v2026.07.23.6"), reported with the
 	// analytics settings snapshot so adoption can be read per release. Empty
@@ -678,7 +688,6 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	return htmlPageData{
 		Settings:           settings,
 		WriteToken:         writeAccessToken(),
-		Assets:             sharedAssetVersions,
 		AppVersion:         appVersionToken(),
 		ReleaseTag:         releaseTag(),
 		AnalyticsWebsiteID: analyticsWebsiteID,

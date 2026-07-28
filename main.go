@@ -25,6 +25,10 @@ func main() {
 	mime.AddExtensionType(".css", "text/css")
 	mime.AddExtensionType(".js", "application/javascript")
 
+	// Content-hashed asset URLs. Must run before any template renders so
+	// {{asset "..."}} reads from the same source the /static/ handler serves.
+	initAssetHashing(embeddedFiles)
+
 	// Initialize the data store
 	if err := validateDataDirAtStartup(); err != nil {
 		log.Fatalf("%v", err)

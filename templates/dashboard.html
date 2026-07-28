@@ -7,14 +7,19 @@
     <meta name="nextdash-app-version" content="{{.AppVersion}}">
     {{if .TelemetryLockedOff}}<meta name="nextdash-telemetry-locked" content="1">{{end}}
     <title>{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}Dashboard{{end}}</title>
-    <script src="/static/js/app-version-guard.js?v={{.Assets.AppVersionGuardJS}}"></script>
-    <script src="/static/js/write-api.js?v={{.Assets.WriteAPIJS}}"></script>
-    {{if .AnalyticsEnabled}}<script src="/static/js/umami-analytics.js?v={{.Assets.UmamiAnalyticsJS}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}"></script>{{end}}
-    <script src="/static/js/font-presets.js?v={{.Assets.FontPresetsJS}}"></script>
-    <script src="/static/js/device-settings-merge.js?v={{.Assets.DeviceSettingsMergeJS}}"></script>
-    <script src="/static/js/settings-sanitize.js?v={{.Assets.SettingsSanitizeJS}}"></script>
-    <script src="/static/js/discoverability-state.js?v={{.Assets.DiscoverabilityJS}}"></script>
-    <script src="/static/js/theme-loader.js?v={{.Assets.ThemeJS}}"></script>
+    <!-- Hashed URLs for scripts fetched at runtime, read by asset-map.js. Passed
+         as a data attribute rather than an inline script: the CSP is script-src
+         'self' with no 'unsafe-inline', and loosening that for one JSON blob is
+         not a trade worth making. -->
+    <script src="{{asset "js/asset-map.js"}}" data-nextdash-assets="{{lazyAssets}}"></script>
+    <script src="{{asset "js/app-version-guard.js"}}"></script>
+    <script src="{{asset "js/write-api.js"}}"></script>
+    {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}"></script>{{end}}
+    <script src="{{asset "js/font-presets.js"}}"></script>
+    <script src="{{asset "js/device-settings-merge.js"}}"></script>
+    <script src="{{asset "js/settings-sanitize.js"}}"></script>
+    <script src="{{asset "js/discoverability-state.js"}}"></script>
+    <script src="{{asset "js/theme-loader.js"}}"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
@@ -24,37 +29,41 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
     <link rel="stylesheet" href="/api/theme.css">
-    <link rel="stylesheet" href="/static/css/theme.css?v={{.Assets.ThemeCSS}}">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v={{.Assets.DashboardCSS}}">
-    <link rel="stylesheet" href="/static/css/dashboard-bookmark-row.css?v={{.Assets.DashboardBookmarkRowCSS}}">
-    <link rel="stylesheet" href="/static/css/modal.css?v={{.Assets.ModalCSS}}">
-    <link rel="stylesheet" href="/static/css/app-notification.css?v={{.Assets.AppNotificationCSS}}">
-    <link rel="stylesheet" href="/static/css/favicon-prefetch.css?v=favicon-prefetch-shared-1">
-    <link rel="stylesheet" href="/static/css/search.css?v={{.Assets.SearchCSS}}">
-    <link rel="stylesheet" href="/static/css/search-commands-new.css?v={{.Assets.SearchCommandsNewCSS}}">
-    <link rel="stylesheet" href="/static/css/bookmark-form-preview.css?v={{.Assets.BookmarkFormPreviewCSS}}">
-    <link rel="stylesheet" href="/static/css/check-mode-control.css?v=check-mode-control-3">
-    <link rel="stylesheet" href="/static/css/search-commands-note.css?v={{.Assets.SearchCommandsNoteCSS}}">
-    <link rel="stylesheet" href="/static/css/status.css?v={{.Assets.StatusCSS}}">
-    <link rel="stylesheet" href="/static/css/select.css?v={{.Assets.SelectCSS}}">
-    <link rel="stylesheet" href="/static/css/font-size.css?v={{.Assets.FontSizeCSS}}">
-    <link rel="stylesheet" href="/static/css/responsive.css?v={{.Assets.ResponsiveCSS}}">
-    <link rel="stylesheet" href="/static/css/dashboard-enhancements.css?v={{.Assets.DashboardEnhancementsCSS}}">
-    <link rel="stylesheet" href="/static/css/skeleton-loading.css?v={{.Assets.SkeletonLoadingCSS}}">
-    <link rel="stylesheet" href="/static/css/dashboard-quickstart.css?v={{.Assets.QuickStartCSS}}">
-    <link rel="stylesheet" href="/static/css/dashboard-tag-cloud.css?v=tag-filter-fix-1">
-    <link rel="stylesheet" href="/static/css/dashboard-inbox.css?v=inbox-health-parity-2">
-    <link rel="stylesheet" href="/static/css/health-view.css?v=v2026-07-23-4">
-    <link rel="stylesheet" href="/static/css/config-view.css?v=v2026-07-23-1">
-    <link rel="stylesheet" href="/static/css/colors.css?v=config-view-phase27-1">
-        <link rel="stylesheet" href="/static/css/enhanced-features.css?v={{.Assets.EnhancedFeaturesCSS}}">
-    <link rel="stylesheet" href="/static/css/mobile-experience.css?v={{.Assets.MobileExperienceCSS}}">
-    <link rel="stylesheet" href="/static/css/layout-modern.css?v={{.Assets.LayoutModernCSS}}">
-    <link rel="stylesheet" href="/static/css/overlays-modern.css?v={{.Assets.OverlaysModernCSS}}">
-    <link rel="stylesheet" href="/static/css/layout-side-rail.css?v=side-rail-discover-d7-2-hint-css-gone">
-    <link rel="stylesheet" href="/static/css/dashboard-inline-edit-surface.css?v=opaque-panel-3">
+    <link rel="stylesheet" href="{{asset "css/theme.css"}}">
+    <link rel="stylesheet" href="{{asset "css/dashboard.css"}}">
+    <link rel="stylesheet" href="{{asset "css/dashboard-bookmark-row.css"}}">
+    <link rel="stylesheet" href="{{asset "css/modal.css"}}">
+    <link rel="stylesheet" href="{{asset "css/app-notification.css"}}">
+    <link rel="stylesheet" href="{{asset "css/favicon-prefetch.css"}}">
+    <link rel="stylesheet" href="{{asset "css/search.css"}}">
+    <link rel="stylesheet" href="{{asset "css/search-commands-new.css"}}">
+    <link rel="stylesheet" href="{{asset "css/bookmark-form-preview.css"}}">
+    <link rel="stylesheet" href="{{asset "css/check-mode-control.css"}}">
+    <link rel="stylesheet" href="{{asset "css/search-commands-note.css"}}">
+    <link rel="stylesheet" href="{{asset "css/status.css"}}">
+    <link rel="stylesheet" href="{{asset "css/select.css"}}">
+    <link rel="stylesheet" href="{{asset "css/font-size.css"}}">
+    <link rel="stylesheet" href="{{asset "css/responsive.css"}}">
+    <link rel="stylesheet" href="{{asset "css/dashboard-enhancements.css"}}">
+    <link rel="stylesheet" href="{{asset "css/skeleton-loading.css"}}">
+    <link rel="stylesheet" href="{{asset "css/dashboard-quickstart.css"}}">
+    <link rel="stylesheet" href="{{asset "css/dashboard-tag-cloud.css"}}">
+    <link rel="stylesheet" href="{{asset "css/dashboard-inbox.css"}}">
+    <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
+    <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
+    <link rel="stylesheet" href="{{asset "css/colors.css"}}">
+        <link rel="stylesheet" href="{{asset "css/enhanced-features.css"}}">
+    <link rel="stylesheet" href="{{asset "css/mobile-experience.css"}}">
+    <link rel="stylesheet" href="{{asset "css/layout-modern.css"}}">
+    <link rel="stylesheet" href="{{asset "css/overlays-modern.css"}}">
+    <link rel="stylesheet" href="{{asset "css/layout-side-rail.css"}}">
+    <link rel="stylesheet" href="{{asset "css/dashboard-inline-edit-surface.css"}}">
+    <!-- Deliberately unversioned: fonts.css requests this exact URL from a static
+         stylesheet, which is served as-is and so cannot render the asset helper.
+         A hashed URL here would not match it, making the browser fetch the font
+         twice and warn that the preload went unused. Both sides must agree. -->
     <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="/static/css/fonts.css?v={{.Assets.FontsCSS}}">
+    <link rel="stylesheet" href="{{asset "css/fonts.css"}}">
     <noscript>
         <style>
             /* Without JS the `loading` class never clears, so the skeleton would
@@ -285,88 +294,88 @@
         </svg>
     </button>
 
-    <script src="/static/js/dashboard-feature-flags.js?v=pin-notes-off-1"></script>
-    <script src="/static/js/modal.js?v=modal-focus-aria-1"></script>
-    <script src="/static/js/focus-trap-utils.js?v=inline-edit-inert-fix-1"></script>
-    <script src="/static/js/whats-new-stub.js?v={{.Assets.WhatsNewData}}" defer></script>
-    <script src="/static/js/layout-version-utils.js?v={{.Assets.LayoutVersionUtilsJS}}"></script>
-    <script src="/static/js/layout-utils.js?v={{.Assets.LayoutUtilsJS}}"></script>
-    <script src="/static/js/shared/config-language.js?v={{.Assets.ConfigLanguageJS}}"></script>
-    <script src="/static/js/bookmark-form/bookmark-url-utils.js?v={{.Assets.BookmarkURLUtilsJS}}"></script>
-    <script src="/static/js/bookmark-form/bookmark-preview-service.js?v={{.Assets.BookmarkPreviewServiceJS}}"></script>
-    <script src="/static/js/bookmark-form/bookmark-form-preview.js?v={{.Assets.BookmarkFormPreviewJS}}"></script>
-    <script src="/static/js/search-commands/search-commands-new.js?v={{.Assets.SearchCommandsNewJS}}"></script>
-    <script src="/static/js/search-commands/search-commands-remove.js?v={{.Assets.SearchCommandsRemoveJS}}"></script>
-    <script src="/static/js/search-commands/search-commands-columns.js?v={{.Assets.SearchCommandsColumnsJS}}"></script>
-    <script src="/static/js/search-commands/search-commands-fontsize.js?v={{.Assets.SearchCommandsFontSizeJS}}"></script>
-    <script src="/static/js/search-commands/search-commands-theme.js?v={{.Assets.SearchCommandsThemeJS}}"></script>
-    <script src="/static/js/search-commands/search-commands-note.js?v={{.Assets.SearchCommandsNoteJS}}"></script>
-    <script src="/static/js/search-commands.js?v=monitor-analytics-3"></script>
-    <script src="/static/js/search-finders.js?v=finder-auto-space-1"></script>
-    <script src="/static/js/fuzzy-search.js?v={{.Assets.FuzzySearchJS}}"></script>
-    <script src="/static/js/dashboard-promo-placement.js?v=promo-placement-1" defer></script>
-    <script src="/static/js/search.js?v=storage-guard-1"></script>
-    <script src="/static/js/status.js?v=monitor-status-dot-1"></script>
+    <script src="{{asset "js/dashboard-feature-flags.js"}}"></script>
+    <script src="{{asset "js/modal.js"}}"></script>
+    <script src="{{asset "js/focus-trap-utils.js"}}"></script>
+    <script src="{{asset "js/whats-new-stub.js"}}" defer></script>
+    <script src="{{asset "js/layout-version-utils.js"}}"></script>
+    <script src="{{asset "js/layout-utils.js"}}"></script>
+    <script src="{{asset "js/shared/config-language.js"}}"></script>
+    <script src="{{asset "js/bookmark-form/bookmark-url-utils.js"}}"></script>
+    <script src="{{asset "js/bookmark-form/bookmark-preview-service.js"}}"></script>
+    <script src="{{asset "js/bookmark-form/bookmark-form-preview.js"}}"></script>
+    <script src="{{asset "js/search-commands/search-commands-new.js"}}"></script>
+    <script src="{{asset "js/search-commands/search-commands-remove.js"}}"></script>
+    <script src="{{asset "js/search-commands/search-commands-columns.js"}}"></script>
+    <script src="{{asset "js/search-commands/search-commands-fontsize.js"}}"></script>
+    <script src="{{asset "js/search-commands/search-commands-theme.js"}}"></script>
+    <script src="{{asset "js/search-commands/search-commands-note.js"}}"></script>
+    <script src="{{asset "js/search-commands.js"}}"></script>
+    <script src="{{asset "js/search-finders.js"}}"></script>
+    <script src="{{asset "js/fuzzy-search.js"}}"></script>
+    <script src="{{asset "js/dashboard-promo-placement.js"}}" defer></script>
+    <script src="{{asset "js/search.js"}}"></script>
+    <script src="{{asset "js/status.js"}}"></script>
     <!-- Before the health view and the context menu: both read window.CheckMode. -->
-    <script src="/static/js/check-mode.js?v=check-mode-shared-6"></script>
-    <script src="/static/js/keyboard-navigation.js?v=kbd-select-restore-6"></script>
-    <script src="/static/js/swipe-navigation.js?v=nav-fix-4" defer></script>
-    <script src="/static/js/hypr-mode.js?v={{.Assets.HyprModeJS}}" defer></script>
-    <script src="/static/js/reorder.js?v=inline-edit-drag-guard-1" defer></script>
-    <script src="/static/js/dashboard-quickstart.js?v=analytics-opt-in-1" defer></script>
-    <script src="/static/js/analytics-notice.js?v=privacy-deeplink-2" defer></script>
-    <script src="/static/js/weather.js?v=weather-geolocation-1" defer></script>
-    <script src="/static/js/tag-autocomplete.js?v=collections-ac-1" defer></script>
-    <script src="/static/js/quick-add.js?v={{.Assets.SearchCommandsNewJS}}" defer></script>
-    <script src="/static/js/skeleton-loading.js?v={{.Assets.SkeletonLoadingJS}}"></script>
-    <script src="/static/js/shortcut-format.js?v={{.Assets.ShortcutFormatJS}}" defer></script>
-    <script src="/static/js/app-notification.js?v={{.Assets.AppNotificationJS}}" defer></script>
+    <script src="{{asset "js/check-mode.js"}}"></script>
+    <script src="{{asset "js/keyboard-navigation.js"}}"></script>
+    <script src="{{asset "js/swipe-navigation.js"}}" defer></script>
+    <script src="{{asset "js/hypr-mode.js"}}" defer></script>
+    <script src="{{asset "js/reorder.js"}}" defer></script>
+    <script src="{{asset "js/dashboard-quickstart.js"}}" defer></script>
+    <script src="{{asset "js/analytics-notice.js"}}" defer></script>
+    <script src="{{asset "js/weather.js"}}" defer></script>
+    <script src="{{asset "js/tag-autocomplete.js"}}" defer></script>
+    <script src="{{asset "js/quick-add.js"}}" defer></script>
+    <script src="{{asset "js/skeleton-loading.js"}}"></script>
+    <script src="{{asset "js/shortcut-format.js"}}" defer></script>
+    <script src="{{asset "js/app-notification.js"}}" defer></script>
     <!-- Tip catalogue is shared with Config → Help so the two lists cannot drift. -->
-    <script src="/static/js/shared/config-help-tips.js?v=help-tips-2-monitor-stats" defer></script>
-    <script src="/static/js/dashboard-keyboard-tip.js?v=keyboard-tip-1" defer></script>
+    <script src="{{asset "js/shared/config-help-tips.js"}}" defer></script>
+    <script src="{{asset "js/dashboard-keyboard-tip.js"}}" defer></script>
     <!-- Batch icon fetch (`:favicons fetch`); same class config uses after an import. -->
-    <script src="/static/js/shared/config-favicon-prefetch.js?v=favicon-prefetch-refresh-all-2" defer></script>
-    <script src="/static/js/pwa-install-hint.js?v={{.Assets.PWAInstallHintJS}}" defer></script>
-    <script src="/static/js/mobile-experience.js?v={{.Assets.MobileExperienceJS}}"></script>
-    <script src="/static/js/dashboard-tag-cloud.js?v=analytics-track-1" defer></script>
-    <script src="/static/js/dashboard-deep-link.js?v={{.Assets.DashboardDeepLinkJS}}" defer></script>
-    <script src="/static/js/health-badge-utils.js?v={{.Assets.HealthBadgeJS}}"></script>
-    <script src="/static/js/visual-settings.js?v={{.Assets.VisualSettingsJS}}"></script>
-    <script src="/static/js/dashboard/dashboard-data.js?v=save-result-1"></script>
-    <script src="/static/js/dashboard/dashboard-config-sync.js?v=inbox-settings-sync-2"></script>
-    <script src="/static/js/dashboard/dashboard-inbox-triage.js?v=inbox-kbd-nav-3"></script>
-    <script src="/static/js/dashboard/dashboard-inbox.js?v=view-analytics-1"></script>
-    <script src="/static/js/health-reason-utils.js?v=health-view-1"></script>
-    <script src="/static/js/dashboard/dashboard-health.js?v=health-edit-modal-1"></script>
-    <script src="/static/js/dashboard/dashboard-config.js?v=escape-capture-1"></script>
-    <script src="/static/js/dashboard/dashboard-paste-choice.js?v=inbox-phase1-1"></script>
-    <script src="/static/js/dashboard/dashboard-page-nav.js?v=config-header-icon-1"></script>
-    <script src="/static/js/dashboard/dashboard-tag-filter.js?v=tag-filter-empty-d-1"></script>
-    <script src="/static/js/dashboard/dashboard-inline-edit.js?v=kbd-select-restore-6"></script>
-    <script src="/static/js/dashboard/dashboard-toolbar.js?v=collapse-all-1"></script>
-    <script src="/static/js/dashboard/dashboard-smart-collections.js?v=dash-phase1-2"></script>
-    <script src="/static/js/dashboard/dashboard-smart-why-popover.js?v=smart-why-popover-1"></script>
-    <script src="/static/js/dashboard/dashboard-bookmark-rows.js?v=health-delete-sync-1"></script>
-    <script src="/static/js/dashboard/dashboard-category-sort.js?v=cat-sort-4"></script>
-    <script src="/static/js/dashboard/dashboard-category-title-fit.js?v=cat-title-fit-1"></script>
-    <script src="/static/js/dashboard/dashboard-render-core.js?v={{.Assets.DashboardRenderCoreJS}}"></script>
-    <script src="/static/js/dashboard/dashboard-render-incremental.js?v=category-item-limit-1"></script>
-    <script src="/static/js/dashboard/dashboard-notifications.js?v=dash-phase1-2"></script>
-    <script src="/static/js/dashboard/dashboard-visual.js?v=header-baseline-1"></script>
-    <script src="/static/js/dashboard/dashboard-date-weather.js?v=dash-phase1-2"></script>
-    <script src="/static/js/dashboard/dashboard-preview.js?v=dash-phase1-2"></script>
-    <script src="/static/js/dashboard/dashboard-recent.js?v=analytics-track-4"></script>
-    <script src="/static/js/dashboard/dashboard-promos.js?v=analytics-notice-1"></script>
-    <script src="/static/js/dashboard/dashboard-ui-helpers.js?v=shift-s-config-1"></script>
-    <script src="/static/js/dashboard/dashboard-context-menu.js?v=share-4"></script>
-    <script src="/static/js/dashboard/dashboard-setup.js?v=confirm-dialog-1"></script>
-    <script src="/static/js/dashboard/dashboard-persistence.js?v=dash-tag-sync-3"></script>
-    <script src="/static/js/dashboard.js?v={{.Assets.DataRevision}}"></script>
-    <script src="/static/js/analytics.js?v={{.Assets.AnalyticsJS}}" defer></script>
+    <script src="{{asset "js/shared/config-favicon-prefetch.js"}}" defer></script>
+    <script src="{{asset "js/pwa-install-hint.js"}}" defer></script>
+    <script src="{{asset "js/mobile-experience.js"}}"></script>
+    <script src="{{asset "js/dashboard-tag-cloud.js"}}" defer></script>
+    <script src="{{asset "js/dashboard-deep-link.js"}}" defer></script>
+    <script src="{{asset "js/health-badge-utils.js"}}"></script>
+    <script src="{{asset "js/visual-settings.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-data.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-config-sync.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-inbox-triage.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-inbox.js"}}"></script>
+    <script src="{{asset "js/health-reason-utils.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-health.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-config.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-paste-choice.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-page-nav.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-tag-filter.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-inline-edit.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-toolbar.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-smart-collections.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-smart-why-popover.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-bookmark-rows.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-category-sort.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-category-title-fit.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-render-core.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-render-incremental.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-notifications.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-visual.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-date-weather.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-preview.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-recent.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-promos.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-ui-helpers.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-context-menu.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-setup.js"}}"></script>
+    <script src="{{asset "js/dashboard/dashboard-persistence.js"}}"></script>
+    <script src="{{asset "js/dashboard.js"}}"></script>
+    <script src="{{asset "js/analytics.js"}}" defer></script>
 
     <!-- Theme-colours editor: markup ships hidden here and the config view (Appearance)
          moves it into place and instantiates the existing ColorsEditor against it. -->
-    <script src="/static/js/shared/config-custom-themes.js?v=config-view-phase27-1" defer></script>
-    <script src="/static/js/color-value-utils.js?v=config-view-phase27-1" defer></script>
+    <script src="{{asset "js/shared/config-custom-themes.js"}}" defer></script>
+    <script src="{{asset "js/color-value-utils.js"}}" defer></script>
 </body>
 </html>
