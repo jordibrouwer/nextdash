@@ -1258,3 +1258,239 @@ body.no-animations .health-view-item-score-caret {
         grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
     }
 }
+
+/* ─── Modern layout ─────────────────────────────────────────────────────────
+   Scoped to body[data-layout-version="modern"]; classic above is untouched.
+
+   The view already reads --layout-radius-sm with an 8px fallback in a dozen
+   places, so corners track the layout for free. What classic cannot express is
+   the rest of the modern grammar: surface tint, layered shadow, the softer
+   focus ring, and hover as a lift rather than a border-colour change. Tokens
+   come from layout-modern-tokens.css.
+
+   The row menu (.health-view-menu) is styled next to its classic rule above,
+   where the display/[hidden] interaction it depends on is documented.
+   ------------------------------------------------------------------------- */
+
+/* Focus ring: matches the dashboard's, replacing each control's default. */
+body[data-layout-version="modern"] .health-view-tile:focus-visible,
+body[data-layout-version="modern"] .health-view-filter-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-action-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-export-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-checkoff-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-bulk-monitor-btn:focus-visible,
+body[data-layout-version="modern"] .health-monitor-expand-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-item:focus-visible {
+    outline: var(--layout-focus-ring);
+    outline-offset: 2px;
+}
+
+/* ─── Header ────────────────────────────────────────────────────────────── */
+
+/* Softened to match the dashboard header's divider, which is a tinted hairline
+   rather than a full-strength border. */
+body[data-layout-version="modern"] .health-view-header {
+    border-bottom-color: color-mix(in srgb, var(--border-primary) 32%, transparent);
+    padding-bottom: 0.7rem;
+}
+
+/* ─── Summary tiles ─────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .health-view-tile {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+    transition:
+        border-color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition),
+        transform var(--layout-transition);
+}
+
+/* Modern reads hover as a lift; classic only recolours the border. */
+body[data-layout-version="modern"] button.health-view-tile:hover {
+    box-shadow: var(--layout-shadow-md);
+    transform: translateY(-1px);
+}
+
+body[data-layout-version="modern"] .health-view-tile.is-active {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    box-shadow:
+        var(--layout-shadow-sm),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+
+/* ─── Toolbar & filters ─────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .health-view-filter-group {
+    border-radius: var(--layout-radius-pill);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .health-view-filter-btn {
+    border-radius: var(--layout-radius-pill);
+    transition:
+        background-color var(--layout-transition),
+        color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .health-view-filter-btn.is-active {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+/* The three toolbar buttons share one shape in classic (0.4rem); keep them
+   sharing one shape here rather than pinning each to its own radius. */
+body[data-layout-version="modern"] .health-view-export-btn,
+body[data-layout-version="modern"] .health-view-checkoff-btn,
+body[data-layout-version="modern"] .health-view-bulk-monitor-btn {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border);
+    transition:
+        border-color var(--layout-transition),
+        color var(--layout-transition),
+        background-color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .health-view-export-btn:hover,
+body[data-layout-version="modern"] .health-view-bulk-monitor-btn:hover {
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+
+body[data-layout-version="modern"] .health-view-checkoff-btn:hover:not([disabled]) {
+    background: color-mix(in srgb, var(--accent-error) 8%, transparent);
+}
+
+/* ─── Feed rows ─────────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .health-view-item {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+    transition:
+        border-color var(--layout-transition),
+        background-color var(--layout-transition),
+        box-shadow var(--layout-transition),
+        transform var(--layout-transition);
+}
+
+/* The severity marker is a left border in classic. A rounded row would clip it
+   into a wedge, so modern redraws it as an inset bar that follows the corner. */
+body[data-layout-version="modern"] .health-view-item.is-broken,
+body[data-layout-version="modern"] .health-view-item.is-warn {
+    border-left-width: 1px;
+    border-left-color: var(--layout-surface-border);
+}
+
+body[data-layout-version="modern"] .health-view-item.is-broken {
+    box-shadow:
+        var(--layout-shadow-sm),
+        inset 3px 0 0 0 var(--accent-error);
+}
+
+body[data-layout-version="modern"] .health-view-item.is-warn {
+    box-shadow:
+        var(--layout-shadow-sm),
+        inset 3px 0 0 0 var(--accent-warning);
+}
+
+body[data-layout-version="modern"] .health-view-item:hover {
+    box-shadow: var(--layout-shadow-md);
+    transform: translateY(-1px);
+}
+
+/* Hover must not erase the severity marker, so each state restates its bar. */
+body[data-layout-version="modern"] .health-view-item.is-broken:hover {
+    box-shadow:
+        var(--layout-shadow-md),
+        inset 3px 0 0 0 var(--accent-error);
+}
+
+body[data-layout-version="modern"] .health-view-item.is-warn:hover {
+    box-shadow:
+        var(--layout-shadow-md),
+        inset 3px 0 0 0 var(--accent-warning);
+}
+
+body[data-layout-version="modern"] .health-view-item.keyboard-selected {
+    box-shadow:
+        var(--layout-shadow-md),
+        0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+}
+
+body[data-layout-version="modern"] .health-view-item.keyboard-selected.is-broken {
+    box-shadow:
+        var(--layout-shadow-md),
+        0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent),
+        inset 3px 0 0 0 var(--accent-error);
+}
+
+body[data-layout-version="modern"] .health-view-item.keyboard-selected.is-warn {
+    box-shadow:
+        var(--layout-shadow-md),
+        0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent),
+        inset 3px 0 0 0 var(--accent-warning);
+}
+
+body[data-layout-version="modern"] .health-view-item-icon {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border);
+}
+
+/* ─── Row actions ───────────────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .health-view-action-btn {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border);
+    transition:
+        border-color var(--layout-transition),
+        color var(--layout-transition),
+        background-color var(--layout-transition);
+}
+
+body[data-layout-version="modern"] .health-view-action-btn:hover {
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+body[data-layout-version="modern"] .health-view-action-btn--danger:hover {
+    background: color-mix(in srgb, var(--accent-error) 10%, transparent);
+}
+
+body[data-layout-version="modern"] .health-monitor-expand-btn {
+    border-radius: var(--layout-radius-sm);
+}
+
+/* ─── Monitor statistics (modal) ────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .health-monitor-stat {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+}
+
+/* ─── Empty states ──────────────────────────────────────────────────────── */
+
+/* Classic leaves these as bare centred text. Modern gives them the same dashed
+   placeholder card the empty dashboard uses, so an empty health view reads as a
+   deliberate state rather than a failed render. */
+body[data-layout-version="modern"] .health-view-empty-state,
+body[data-layout-version="modern"] .health-view-empty {
+    border: 1px dashed var(--layout-surface-border);
+    border-radius: var(--layout-radius-lg);
+    background: color-mix(in srgb, var(--background-secondary) 42%, transparent);
+}
+
+/* ─── Motion preferences ────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-layout-version="modern"] .health-view-tile,
+    body[data-layout-version="modern"] .health-view-item,
+    body[data-layout-version="modern"] button.health-view-tile:hover,
+    body[data-layout-version="modern"] .health-view-item:hover {
+        transition: none;
+        transform: none;
+    }
+}
