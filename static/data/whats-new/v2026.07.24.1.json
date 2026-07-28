@@ -1,0 +1,42 @@
+{
+  "tag": "v2026.07.24.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-28",
+  "modalLead": "The Modern layout now reaches the rest of the app. It styled the dashboard and stopped there, so health, config and the inbox stayed on the classic look underneath it. Those three, the quick-start card and the header are now covered — and the config view finally follows your theme. Modern is still early beta: this widens what it covers rather than finishing it, and Classic stays the recommended look.",
+  "sections": [
+    {
+      "title": "Modern layout",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Health, config and the inbox follow the Modern layout</strong> — until now it changed the bookmark grid and the search and modal overlays, and left everything else looking classic. Health had one styled menu floating over rows that had none; config, the screen where you pick the layout, was the one screen that never changed when you picked it. Tiles, filters, feed rows, panels, buttons, sub-tabs and empty states across all three now match, and the quick-start card matches too."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The inbox tab sits with health and config</strong> — it opens a view, like they do, but Modern drew the page tabs as one capsule and swept the inbox in with the page numbers. Pages are now one group and the three view buttons another, so the header says what each button actually is."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The header controls line up</strong> — the page tabs sat a few pixels higher than the buttons beside them, used a different shape, and the health and config buttons overlapped each other by a sliver. All three are fixed, so the row reads as one set of controls."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Status markers follow the rounded corners</strong> — the coloured bar marking a broken health row or an unread inbox item was drawn as a straight edge, which a rounded row cut into a wedge. It now curves with the row, and no longer disappears when you hover it."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The config view follows your theme</strong> — it was written against a set of colour names that were never actually defined, so it fell back to plain greys and a stock blue and looked the same whichever theme you had chosen. A green theme still got grey highlights and a blue accent stripe. It now takes its colours from the theme like everything else."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Escape closes a config confirmation instead of config itself</strong> — pressing it on a delete confirmation shut the whole settings view and left the dialog sitting on the dashboard behind it. Escape now closes the dialog, and only the dialog."
+        }
+      ]
+    }
+  ]
+}
