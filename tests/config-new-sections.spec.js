@@ -465,7 +465,11 @@ test.describe('config: font size applies live', () => {
         await loadDashboard(page);
         await openSection(page, 'appearance');
 
+        // Wait for the baseline to land before measuring — see the sibling test
+        // below for why an unsynchronised read here races the class swap.
         await page.evaluate(() => window.dashboardInstance.config.setFontSize('m'));
+        await expect.poll(() => page.evaluate(() =>
+            document.body.classList.contains('font-size-m'))).toBe(true);
         const base = {
             title: await sizeOf(page, '.config-view-section-title'),
             nav: await sizeOf(page, '.config-nav-item'),
@@ -484,7 +488,14 @@ test.describe('config: font size applies live', () => {
     test('choosing a smaller font shrinks it again', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'appearance');
+        // setFontSize swaps a body class and the size follows on the next style
+        // recalc, so read the baseline only once that class has landed. Without
+        // this the baseline could be measured at whatever size the view opened
+        // at, which under parallel load was occasionally already smaller than
+        // xs — making the shrink assertion fail on timing rather than behaviour.
         await page.evaluate(() => window.dashboardInstance.config.setFontSize('m'));
+        await expect.poll(() => page.evaluate(() =>
+            document.body.classList.contains('font-size-m'))).toBe(true);
         const base = await sizeOf(page, '.config-view-section-title');
 
         await page.locator('[data-appearance-font="xs"]').click();
