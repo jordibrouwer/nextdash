@@ -248,6 +248,13 @@ test.describe('config: sections restored from the old config', () => {
         await expect
             .poll(() => page.evaluate(() => document.body.getAttribute('data-layout-preset')))
             .toBe('masonry');
+
+        // The grid class is not reapplied while config is up: renderDashboard
+        // bails out unless the bookmarks view is active, so that re-rendering
+        // does not strip the config view's own layout class and scatter its
+        // children across grid columns. The preset therefore lands on the grid
+        // when the user returns to the bookmarks view, which is what to assert.
+        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
         await expect.poll(() => page.evaluate(() =>
             document.querySelector('.dashboard-grid')?.className || '')).toContain('layout-masonry');
     });
