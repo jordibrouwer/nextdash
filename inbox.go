@@ -20,22 +20,22 @@ const inboxDataVersion = 1
 
 // InboxLink is a lightweight saved URL (not a full bookmark).
 type InboxLink struct {
-	ID           string   `json:"id"`
-	URL          string   `json:"url"`
-	Title        string   `json:"title,omitempty"`
-	AddedAt      int64    `json:"addedAt"`
-	Source       string   `json:"source,omitempty"`
-	PreviewTitle string   `json:"previewTitle,omitempty"`
-	PreviewDesc  string   `json:"previewDesc,omitempty"`
-	PreviewImage string   `json:"previewImage,omitempty"`
+	ID           string `json:"id"`
+	URL          string `json:"url"`
+	Title        string `json:"title,omitempty"`
+	AddedAt      int64  `json:"addedAt"`
+	Source       string `json:"source,omitempty"`
+	PreviewTitle string `json:"previewTitle,omitempty"`
+	PreviewDesc  string `json:"previewDesc,omitempty"`
+	PreviewImage string `json:"previewImage,omitempty"`
 	// Icon is a stored favicon filename under data/icons/ (same convention as
 	// Bookmark.Icon), fetched during preview enrichment so the inbox can show the
 	// real site icon like the health view does, not just an og:image.
-	Icon string `json:"icon,omitempty"`
-	Note         string   `json:"note,omitempty"`
-	Tags         []string `json:"tags,omitempty"`
-	Domain       string   `json:"domain,omitempty"`
-	ReadAt       int64    `json:"readAt,omitempty"`
+	Icon   string   `json:"icon,omitempty"`
+	Note   string   `json:"note,omitempty"`
+	Tags   []string `json:"tags,omitempty"`
+	Domain string   `json:"domain,omitempty"`
+	ReadAt int64    `json:"readAt,omitempty"`
 	// SnoozedUntil hides the item from the main list until this time (Unix ms).
 	// 0 means not snoozed. No server-side timer is needed — the client re-surfaces
 	// the item once now passes this value.

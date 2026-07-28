@@ -219,9 +219,9 @@ type Settings struct {
 	ConfigPagesTourCompleted       bool                             `json:"configPagesTourCompleted"`
 	ConfigCollectionsTourCompleted bool                             `json:"configCollectionsTourCompleted"`
 	ConfigThemeTourCompleted       bool                             `json:"configThemeTourCompleted"`
-	BackgroundType                 string                           `json:"backgroundType"`              // "auto", "none", "gradient", "image"
-	BackgroundGradient             string                           `json:"backgroundGradient"`          // preset name used when type="gradient"
-	BackgroundImageUrl             string                           `json:"backgroundImageUrl"`          // URL used when type="image"
+	BackgroundType                 string                           `json:"backgroundType"`     // "auto", "none", "gradient", "image"
+	BackgroundGradient             string                           `json:"backgroundGradient"` // preset name used when type="gradient"
+	BackgroundImageUrl             string                           `json:"backgroundImageUrl"` // URL used when type="image"
 	ThemeIconStyling               map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
 	PasteUrlQuickAdd               bool                             `json:"pasteUrlQuickAdd"`               // Enable paste URL to quick-add bookmark on dashboard
 	InboxEnabled                   bool                             `json:"inboxEnabled"`                   // Enable inbox page and paste-to-inbox flow
@@ -2300,7 +2300,7 @@ type HealthSummary struct {
 	// counted apart from BrokenCount so the header can flag a live outage
 	// distinctly from an ordinary dead link. A down monitor is not also in
 	// BrokenCount — it is one or the other, never both, so totals stay honest.
-	MonitorDownCount int `json:"monitorDownCount"`
+	MonitorDownCount      int `json:"monitorDownCount"`
 	DuplicateCount        int `json:"duplicateCount"`
 	UncheckedCount        int `json:"uncheckedCount"`
 	StaleCount            int `json:"staleCount"`
