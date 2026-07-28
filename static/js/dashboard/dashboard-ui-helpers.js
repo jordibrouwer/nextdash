@@ -87,6 +87,13 @@ class DashboardUiHelpers {
         if (document.getElementById('delete-popover')) return true;
         if (document.getElementById('tag-popover')) return true;
         if (document.querySelector('.feature-spotlight.show')) return true;
+        // Config's confirm dialog — both the plain and the type-to-confirm
+        // variant reuse this id. It is injected straight into the document
+        // rather than reusing #app-modal, so without this the config Escape
+        // handler did not count it as layered over the view: it claimed the key
+        // with stopImmediatePropagation() and closed config, leaving the dialog
+        // stranded on the dashboard underneath.
+        if (document.getElementById('config-confirm-modal')) return true;
         if (document.getElementById('paste-choice-modal')?.classList.contains('show')) return true;
         if (this.dash.inbox?.triage?.isOpen?.()) return true;
         if (document.getElementById('new-bookmark-modal')?.classList.contains('show')) return true;
