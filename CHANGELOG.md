@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.23.5 — July 2026](#v202607235--july-2026)
 - [v2026.07.23.4 — July 2026](#v202607234--july-2026)
 - [v2026.07.23.3 — July 2026](#v202607233--july-2026)
 - [v2026.07.23.2 — July 2026](#v202607232--july-2026)
@@ -117,6 +118,40 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.23.5 — July 2026
+
+**Bookmarks can be shared from the right-click menu**, a bookmark edited inline no longer loses its place on the dashboard, and every page load stops building a search index that was thrown away.
+
+### New
+
+- **new** **Share a bookmark from the right-click menu** — a **Share…** entry between *Copy URL* and *Edit* hands the bookmark to `navigator.share()` with both its name and its URL, so it arrives in Mail, WhatsApp or AirDrop as a readable link rather than a bare address. Sharing previously meant copying the URL and typing the name beside it (`dashboard-context-menu.js`).
+- **new** **A clipboard fallback where there is no share sheet** — `navigator.share` only exists on a secure origin, and on the desktop only in Safari and Chromium, so a self-hosted dashboard reached over plain HTTP on a LAN has none. The item is shown unconditionally and copies `name — URL` there instead. That is deliberately not what **Copy URL** one row above already does: the title travels with the link, which is what makes it worth pasting into a chat. Showing the entry always, rather than hiding it when unsupported, keeps the menu the same shape on a phone and on a desktop.
+- **new** **A cancelled share sheet is not a failure** — dismissing the sheet rejects with `AbortError`, which is caught and reported as its own outcome rather than falling through to the clipboard. Without that, closing the sheet would silently copy something the user had just declined to send. Other rejections (`NotAllowedError`, a share target refusing) do fall back.
+
+### Fixes
+
+- **fix** **A bookmark edited inline no longer looks unselected afterwards** — closing the inline editor left the rebuilt row carrying an inline `background`, set by `applySolidInlineEditSurfaces()` to keep the form opaque above the blurred grid. `clearInlineEditSurfaceOverrides()` removed the two CSS custom properties but never that inline style, and an inline `background` outranks every stylesheet rule — including the `.keyboard-selected` gradient. The row still took the keyboard cursor, still answered the arrow keys and still carried `aria-current`; it simply stopped being drawn as selected, which reads as the bookmark being skipped. The row is now remembered when the override is applied and cleared when it is removed (`dashboard-inline-edit.js`).
+- **fix** **The keyboard cursor stays on the row you edited** — however the editor was opened, closing it leaves that row selected, so the next arrow key continues from where you were. Rebuilding a row can also emit a `pointerover` the user never caused, which would otherwise dim the just-restored highlight; `selectBookmarkRow()` now clears that dim on the frame after it selects (`keyboard-navigation.js`).
+
+### Removed
+
+- **new** **`POST /api/search-index` is gone** — it scanned every page, built a `SearchEntry` per bookmark, wrote `settings.json` to set `SearchIndexed`, and returned the index. Nothing read it: the dashboard awaited the POST and discarded the body, and no code path consumed the `SearchIndex` type. It ran on every dashboard load and after every config save, so each page view paid a full scan over all bookmarks plus a settings write for a payload that went nowhere — and a write-token-protected endpoint was being hit during plain navigation. The handler, the route, the `SearchIndex`/`SearchEntry` types, the `SearchIndexed` setting and the four client call sites are removed (`handlers.go`, `main.go`, `models.go`, `dashboard.js`, `dashboard-setup.js`, `dashboard-config.js`).
+- The config **Statistics** row that read *Search index built* stays, because its value was never the setting: it reported whether the search component had loaded, which is honest. Only the label was wrong, and it is now **Search ready** in all four locales.
+
+### Documentation
+
+- **new** **The README and manual describe the app as it is now** — release notes had accumulated in both alongside the changelog, so every release meant writing the same prose three times, and a reader looking for how something works had to scroll past how it used to work. The README drops ~160 lines of version-tagged prose from *Features*; the manual's What's-new paragraph — a single sentence of 10,637 characters chaining every release back to v2026.06.31, thirty times longer than any other line in the file — becomes one sentence and a link. Version references go from 60 to 6 in the manual and from 53 to 1 in the README. The changelog remains the full hand-written history.
+- **fix** **Two stale claims corrected** — the README still listed **Glass** as a current layout, though it was removed in v2026.07.14.2 and is gone from the code; the manual already said so. Four internal manual links pointed at anchors that do not exist — three (`#quick-start-card`) were already broken beforehand.
+- **new** **The four v2026.07.23.x releases have What's new entries** — v2026.07.23.1 through .4 were documented in the changelog but never given release JSON, so the in-app modal jumped from v2026.07.23 to this release and the config **Overview** summarised a release four versions old. All four are now present (`static/data/whats-new/`).
+
+### Notes
+
+- Covered by `tests/dashboard-context-share.spec.js` (5 tests) and `tests/dashboard-inline-edit-selection.spec.js` (6 tests). The share specs stub `navigator.share`, since a headless browser has no sheet to drive; what they assert is the branching around it. The selection specs compare the edited row's computed `backgroundImage` against a control row selected the ordinary way, with the pointer moved off the grid so hover styling cannot stand in for selection — asserting the class alone would have passed while the bug was live, which is exactly how the first attempt at this fix was mis-verified.
+- Four E2E specs were repaired alongside: three wrote to protected endpoints with a bare `fetch` and were answered with **401**, so their setup and cleanup silently did nothing — which is why `dashboard-check-mode-menu.spec.js` failed only when its tests ran in order. A fourth clicked a `.bookmark-inline-select` that had quietly become the hidden monitor-interval dropdown when uptime monitoring shipped.
+- `WhatsNewData` moves to `whats-new-v191` and `DASHBOARD_RELEASE` to `2026.07-dashboard-release-v137` together — the pairing `TestSharedAssetVersionsMatchWhatsNewStub` enforces, and the omission that made v2026.07.23.1 necessary. `keyboard-navigation.js`, `dashboard-inline-edit.js` and `dashboard-context-menu.js` carry new tokens of their own. An already-open tab still needs a hard refresh (`Cmd/Ctrl+Shift+R`).
 
 ---
 

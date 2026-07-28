@@ -1,0 +1,25 @@
+{
+  "tag": "v2026.07.23.2",
+  "date": "July 2026",
+  "releasedAt": "2026-07-27",
+  "modalLead": "The add-bookmark form offered only one page. Promoting a link from the inbox opened it with a Page dropdown holding a single entry — and not even a real one — so a bookmark could only be filed on one page no matter how many you had.",
+  "sections": [
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Every page is in the Page dropdown again</strong> — the form builds its Page and Category lists from context the handler carries, and opening the modal did not refresh it. Only a few routes set that context on the way past; every other way in got whatever the previous caller had left behind, or nothing at all on a fresh page load. With no pages in hand the list fell back to a single hardcoded option, which is why it showed one page under a name matching none of yours."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Five more entry points had the same fault</strong> — the paste-a-URL prompt, the <em>Add as new bookmark</em> hint in search, the toolbar's add button, the toolbar paste handler and the empty-state add button all opened the same broken dropdown. Fixing the modal itself rather than the individual call sites covers every one of them, and any added later."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A deliberately chosen page still wins</strong> — the config bookmark editor opens the form pointing at the page it is editing rather than the page the dashboard is showing, so a blanket refresh would have overridden it. That choice is now marked and honoured, so switching page and adding a bookmark still files it where you are looking."
+        }
+      ]
+    }
+  ]
+}

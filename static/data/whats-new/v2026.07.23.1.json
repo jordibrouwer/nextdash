@@ -1,0 +1,34 @@
+{
+  "tag": "v2026.07.23.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-27",
+  "modalLead": "v2026.07.23 shipped without moving the cache-busting tokens in its asset URLs, so a browser that had visited within the previous day kept serving its cached copies. The server was returning the new files all along — nothing was asking for them.",
+  "sections": [
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>What's new still showed the previous release</strong> — the release string inside <code>whats-new-stub.js</code> was updated, but the token in the file's own URL was not, so the URL never changed and the fresh file was never requested. Both move together now, which is the pairing the build test exists to enforce."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The config view's own changes were held back too</strong> — the config script and stylesheet still carried a token from an earlier commit while the files had changed several times since. The working reset buttons, the Reset sub-tab and the sub-tab arrow-key navigation that shipped in v2026.07.23 were all waiting behind the same day-long cache."
+        }
+      ]
+    },
+    {
+      "title": "Worth knowing",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The What's new modal does not open by itself on a new release</strong>, and never has — the release check only decides whether the search overlay shows a hint. Open it with the <strong>★</strong> button or from <strong>Config → Overview → Show what's new</strong>. A release not announcing itself is intended, not a symptom of this bug."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>An already-open tab keeps the old files</strong> until a hard refresh (<code>Cmd/Ctrl+Shift+R</code>). The new tokens change what later loads ask for."
+        }
+      ]
+    }
+  ]
+}

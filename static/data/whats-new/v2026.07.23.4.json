@@ -1,0 +1,42 @@
+{
+  "tag": "v2026.07.23.4",
+  "date": "July 2026",
+  "releasedAt": "2026-07-27",
+  "modalLead": "The health view's More menu was see-through: the bookmark row underneath showed through it and the entries were hard to read. Alongside it, two config-view fixes and a round of usage instrumentation.",
+  "sections": [
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The More menu is an opaque surface again</strong> — it filled itself with the colour every theme reserves for modals, which is deliberately semi-transparent because modals pair it with a backdrop blur. Applied flat here, nothing was blurring what came through. It now uses the same opaque surface, radius, padding and shadow as the dashboard's right-click menu, so the two are indistinguishable."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Hover and focus highlights mixed against the wrong colour</strong> — the entries blended their accent tint into transparency rather than a background, which darkens instead of tinting once the panel is opaque. The checking submenu's active option had the same fault and is fixed with it. Section labels and the red <strong>Delete bookmark</strong> entry now follow the dashboard menu too."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><code>Esc</code> on the config view no longer clears an active tag filter</strong> — config claimed the key without stopping the event, so one press ran two handlers: the view closed and the tag filter was dropped on the way out. One request, two actions, with nothing on screen explaining the second. This completes v2026.07.23.3, which fixed the modal layered over config but left the filter behind it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Switching analytics in config counts as answering the opt-in question</strong> — the first-run card decided whether to reappear from a flag only the card itself ever wrote, so setting analytics from <strong>Config → Behavior → Privacy</strong> still read as <em>never asked</em> and the card came back — including to someone who had just switched it <strong>off</strong>. Both directions were affected."
+        }
+      ]
+    },
+    {
+      "title": "Improvements",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Config, health and inbox report what people actually use</strong> — the config view carried a single tracked event across roughly 7,900 lines, so nothing said which sections get opened or which settings get changed. Instrumentation hooks the choke points rather than the call sites, so it also measures whether the sub-tab arrow-key navigation added in v2026.07.23 is used at all. Filter and sort in health and inbox now distinguish the summary tiles from the filter pills."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Setting values are deliberately not reported</strong> — a field's <em>name</em> is a fixed list and safe to send; what you typed into it is not. Dashboard titles, webhook URLs and custom text report the name alone, and search boxes are not reported at all. Toggles also report true/false, since on/off is the whole point of measuring one and cannot identify anyone. Analytics remains <strong>opt-in</strong> and off until you switch it on."
+        }
+      ]
+    }
+  ]
+}

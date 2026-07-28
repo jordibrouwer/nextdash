@@ -425,6 +425,7 @@ Dynamic bookmark groups that appear automatically:
 - Flash animation on bookmark open — subtle ripple confirms the action was registered
 - Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
 - Open-count badge tracking usage per bookmark
+- **Share** a bookmark from the right-click menu — hands its name and URL to the system share sheet (Mail, WhatsApp, AirDrop); browsers without one, including Firefox on the desktop and any install served over plain HTTP, copy `name — URL` to the clipboard instead
 - Pin bookmarks to keep them at the top of their category (no pin badge on dashboard rows; use `:pin` / inline edit)
 - Import from browser HTML export (Chrome, Firefox, Edge) — folders become categories, duplicate URLs skipped; **missing icons are batch-fetched with a progress bar**
 - Export all bookmarks to CSV (localized headers: Name, URL, Category, Page, Shortcut, Tags, Notes)
@@ -447,6 +448,7 @@ Full UI translations available for English, Dutch, German, and French.
 
 | Gesture | Action |
 |---|---|
+| Right-click a bookmark | Actions in one place: open in new tab, copy URL, **share**, edit, tags, move, availability checking, delete (`Shift` + right-click gives the browser's own menu) |
 | Drag the left strip of a bookmark | Reorder within category or move to another category |
 | Long press a bookmark row (~500 ms) | Open inline edit (save with **Save** or **Ctrl+Enter**) |
 | Hover over a bookmark | Show preview card when enabled (Config → General → Advanced → Bookmarks) |
