@@ -944,6 +944,67 @@ class DashboardHealth {
         window.open(`https://web.archive.org/web/*/${url}`, '_blank', 'noopener,noreferrer');
     }
 
+    /**
+     * Copy and share, delegated to the dashboard's right-click menu rather than
+     * reimplemented here — the share sheet, its clipboard fallback and the rule
+     * that a cancelled sheet copies nothing are one behaviour, and a second copy
+     * of it would be a second thing to keep in step.
+     *
+     * No row is passed to the clipboard helper: its flash animation is styled for
+     * `.bookmark-link`, which a health row is not, so it would do nothing here.
+     * The toast is what confirms the copy either way.
+     */
+    /**
+     * The share entry's label, from the same source the dashboard menu uses so
+     * the two cannot describe the same action differently. Falls back to naming
+     * the copy, which is what happens when no share sheet exists.
+     */
+    shareActionLabel() {
+        const menu = this.dash.contextMenu;
+        if (menu?.shareActionLabel) {
+            return menu.shareActionLabel();
+        }
+        return typeof navigator.share === 'function'
+            ? this.t('dashboard.contextMenuShare', 'Share…')
+            : this.t('dashboard.contextMenuCopyNameUrl', 'Copy name + URL');
+    }
+
+    copyIssueUrl(issue) {
+        this.closeAllMenus();
+        const url = String(issue?.url || '').trim();
+        if (!url) return;
+        this.dash.searchComponent?.commandsComponent?._copyUrlToClipboard?.(url);
+    }
+
+    async shareIssue(issue) {
+        const url = String(issue?.url || '').trim();
+        if (!url) return;
+        const menu = this.dash.contextMenu;
+        if (!menu?.shareBookmark) return;
+
+        // navigator.share() must be reached while the click that triggered it is
+        // still the browser's active user gesture. closeAllMenus() sets
+        // hidden = true on the menu holding the focused button, and hiding the
+        // focused element ends that gesture in Safari — the share sheet was then
+        // refused and only the clipboard fallback ran. Every other action here
+        // closes first because none of them is gesture-gated.
+        //
+        // Started before the menu closes and awaited after, so the sheet still
+        // opens over a menu that is on its way out rather than a stuck one.
+        const couldShare = menu.canOpenShareSheet?.();
+        const shared = menu.shareBookmark({ name: issue?.name || '', url }, null);
+        this.closeAllMenus();
+        await shared;
+
+        // A refusal is only discovered by attempting it, and the rows were built
+        // while the entry still read "Share…". Repaint so the label matches what
+        // the browser will actually do next time rather than repeating a promise
+        // it has already broken.
+        if (couldShare && menu.canOpenShareSheet?.() === false) {
+            this.render();
+        }
+    }
+
     async refreshFavicon(issue) {
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
@@ -2532,6 +2593,12 @@ class DashboardHealth {
         }
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="favicon">${this.escape(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive">${this.escape(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
+        // Same two entries the dashboard's right-click menu carries, under the
+        // same labels. A row here is a bookmark like any other, and having to go
+        // back to the dashboard to copy or send one is the kind of detour this
+        // menu exists to avoid.
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="copy-url">${this.escape(this.t('dashboard.contextMenuCopyUrl', 'Copy URL'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="share">${this.escape(this.shareActionLabel())}</button>`);
         // The discoverable route to the mode: the badge is faster, but nothing
         // announces that a badge is clickable, whereas this menu is where people
         // already look for row actions. No group label of its own — the item names
@@ -2655,6 +2722,8 @@ class DashboardHealth {
             title: () => void this.refreshTitle(issue),
             favicon: () => void this.refreshFavicon(issue),
             archive: () => this.openArchive(issue),
+            'copy-url': () => this.copyIssueUrl(issue),
+            share: () => void this.shareIssue(issue),
             delete: () => void this.deleteIssue(issue),
             // Hand off to the popover rather than duplicating the three options
             // here, so there is one place that explains what the modes mean.

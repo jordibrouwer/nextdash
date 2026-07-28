@@ -294,6 +294,13 @@ test.describe('health dashboard view', () => {
             'Refresh title',
             'Refresh favicon',
             'Find in Web Archive',
+            // Same two the dashboard's right-click menu carries: a row here is a
+            // bookmark like any other, and copying or sending one should not mean
+            // going back to the dashboard first. The second names the copy rather
+            // than a share sheet, because headless Chromium has no navigator.share
+            // — the label follows the capability (see health-copy-share.spec.js).
+            'Copy URL',
+            'Copy name + URL',
             // The discoverable route to the check-mode popover; the badge is the
             // fast one, but nothing announces that a badge is clickable.
             'Change checking (Not checked)',
@@ -314,6 +321,9 @@ test.describe('health dashboard view', () => {
         expect(items).not.toContain('Refresh title');
         expect(items).toContain('Refresh favicon');
         expect(items).toContain('Delete bookmark');
+        // Copy and share are not repairs — they apply to any row, broken or not.
+        expect(items).toContain('Copy URL');
+        expect(items).toContain('Copy name + URL');
         await expect(page.locator('.health-view-menu:not([hidden]) .health-view-menu-label'))
             .toHaveCount(1);
     });
