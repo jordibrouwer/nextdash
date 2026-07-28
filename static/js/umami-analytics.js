@@ -31,6 +31,11 @@
     const enabled = self && self.getAttribute('data-nextdash-analytics') === 'on';
     const websiteId = self && self.getAttribute('data-website-id');
     const scriptSrc = self && self.getAttribute('data-analytics-src');
+    // The published release ("v2026.07.23.6"), read from the What's new index by
+    // the server. A fixed, low-cardinality value — one per release — so the
+    // settings snapshot can be read per version rather than as one blur across
+    // everyone. Empty when the index could not be read.
+    const releaseTag = (self && self.getAttribute('data-release')) || '';
 
     // Queue tracks fired before the umami tracker finishes loading; flushed on load.
     const queue = [];
@@ -82,6 +87,10 @@
             return `${steps[steps.length - 1]}+`;
         };
         window.nextdashTrack('settings-snapshot', {
+            // Which release these settings belong to. Without it every version's
+            // sessions land in one bucket, so a default that changed between
+            // releases reads as a gradual drift rather than the switch it was.
+            appVersion: releaseTag || 'unknown',
             // Appearance / layout
             theme: String(settings.theme || 'default').slice(0, 40),
             autoDarkMode: bool(settings.autoDarkMode),

@@ -651,6 +651,10 @@ type htmlPageData struct {
 	WriteToken string `json:"-"`
 	Assets     pageAssetVersions
 	AppVersion string
+	// ReleaseTag is the published version ("v2026.07.23.6"), reported with the
+	// analytics settings snapshot so adoption can be read per release. Empty
+	// when the What's new index cannot be read.
+	ReleaseTag string
 
 	// Umami analytics (privacy-friendly, opt-out). Fixed id + host for the
 	// project's shared instance. The template emits the tracker only when
@@ -676,6 +680,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		WriteToken:         writeAccessToken(),
 		Assets:             sharedAssetVersions,
 		AppVersion:         appVersionToken(),
+		ReleaseTag:         releaseTag(),
 		AnalyticsWebsiteID: analyticsWebsiteID,
 		AnalyticsScriptSrc: analyticsScriptSrc,
 		AnalyticsEnabled:   analyticsEnabled(settings),

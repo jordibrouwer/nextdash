@@ -111,7 +111,7 @@ var sharedAssetVersions = pageAssetVersions{
 	PWAInstallHintJS:         "pwa-install-hint-1",
 	DashboardDeepLinkJS:      "dashboard-deep-link-edit-2",
 	AnalyticsJS:              "analytics-3-open-source",
-	UmamiAnalyticsJS:         "umami-analytics-2-snapshot",
+	UmamiAnalyticsJS:         "umami-release-tag-1",
 	ModalJS:                  "modal-focus-aria-1",
 	StatusJS:                 "status-2",
 	SelectJS:                 "select-js-1",
