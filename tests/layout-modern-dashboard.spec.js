@@ -77,6 +77,49 @@ test.describe('modern layout — dashboard chrome', () => {
         expect(btn.modern.borderBottomWidth).toBe('0px');
     });
 
+    test('lays the header controls out as one aligned, non-overlapping row', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.inboxEnabled = true;
+            window.dashboardInstance.renderPageNavigation?.();
+        });
+        await setLayout(page, 'modern');
+
+        const row = await page.evaluate(() => {
+            const kids = [...document.querySelector('.header-actions').children]
+                .filter((el) => el.offsetParent !== null)
+                .map((el) => {
+                    const r = el.getBoundingClientRect();
+                    return {
+                        cls: el.className.split(' ')[0],
+                        top: Math.round(r.top),
+                        height: Math.round(r.height),
+                        left: Math.round(r.left),
+                        right: Math.round(r.right),
+                    };
+                });
+            const gaps = kids.slice(1).map((k, i) => k.left - kids[i].right);
+            return { kids, gaps };
+        });
+
+        expect(row.kids.length).toBeGreaterThanOrEqual(3);
+
+        // Every control gets a filled pill in modern, so any negative gap shows
+        // as two backgrounds overlapping. Classic pulls the health and config
+        // icons back by 1rem to tighten bare glyphs, which modern must undo.
+        for (const gap of row.gaps) {
+            expect(gap).toBeGreaterThanOrEqual(0);
+        }
+
+        // The tab strip is a padded container and its neighbours are single
+        // controls, so they only line up if the row centres them.
+        const tops = row.kids.map((k) => k.top);
+        expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(2);
+
+        const heights = row.kids.map((k) => k.height);
+        expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(2);
+    });
+
     test('gives the header links a pill surface', async ({ page }) => {
         await loadDashboard(page);
         const { classic, modern } = await bothLayouts(
