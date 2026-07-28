@@ -230,7 +230,7 @@ Side rail layout (optional — **Config → Behavior → Display → Button bar 
 
 ```
 ┌──┬─────────────────────────────────────────────────────────┐
-│+ │  [header: date · health · config · pages]              │
+│+ │  [header: date · health · config · pages]               │
 │──│                                                         │
 │> │  [Smart collections]  [Tag collections]  [Categories…]  │
 │? │    └─ bookmark rows                                     │
