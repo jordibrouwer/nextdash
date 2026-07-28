@@ -366,6 +366,12 @@ class DashboardConfig {
             activate(tab);
         };
         buttons.forEach((btn, i) => {
+            // Mirror the label into data-label so CSS can lay the tab out at its
+            // bold width even when it is not the active one. Without it the
+            // strip re-measured on every click and could wrap to a second row.
+            if (!btn.hasAttribute('data-label')) {
+                btn.setAttribute('data-label', btn.textContent.trim());
+            }
             btn.addEventListener('click', () => activateTracked(btn.getAttribute(attr), 'click'));
             btn.addEventListener('keydown', (e) => {
                 const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
