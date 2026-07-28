@@ -73,7 +73,12 @@ test.describe('dashboard inline edit', () => {
         await page.keyboard.press(';');
         await expect(page.locator('.bookmark-inline-form').first()).toBeVisible({ timeout: 3000 });
         await page.locator('.bookmark-inline-form input[type="url"]').first().click({ force: true });
-        await page.locator('.bookmark-inline-form .bookmark-inline-select').first().click({ force: true });
+        // Not .bookmark-inline-select on its own: the monitor-interval dropdown
+        // carries that class too and comes first in the DOM, but is hidden unless
+        // the bookmark is monitored. The point here is that clicking a visible
+        // field does not dismiss the form, so the click has to land on one.
+        await page.locator('.bookmark-inline-form .bookmark-inline-select:not(.bookmark-inline-toggle-select)')
+            .first().click({ force: true });
         await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).first().click();
         await expect(page.locator('.bookmark-inline-editing')).toHaveCount(0);
     });

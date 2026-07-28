@@ -478,9 +478,14 @@ test.describe('a category always exists on the page it is used on', () => {
 
         // The extra page lives on the shared dev server, so later specs would
         // inherit it and their page-count assumptions would drift.
-        await page.evaluate(async (p) => {
-            await fetch(`/api/pages/${p}`, { method: 'DELETE' });
+        // nextDashFetch: deleting a page is write-token protected, and a bare
+        // fetch is answered with 401, so this cleanup silently did nothing.
+        const cleanup = await page.evaluate(async (p) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await api(`/api/pages/${p}`, { method: 'DELETE' });
+            return { ok: res.ok, status: res.status };
         }, target);
+        expect(cleanup.ok, `page cleanup failed with HTTP ${cleanup.status}`).toBe(true);
     });
 });
 

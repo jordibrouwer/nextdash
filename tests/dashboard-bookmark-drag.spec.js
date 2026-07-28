@@ -20,7 +20,11 @@ async function prepare(page) {
         if (d && d.settings && d.settings.onboardingCompleted !== true) {
             d.settings.onboardingCompleted = true;
             try {
-                await fetch('/api/settings', {
+                // nextDashFetch: saving settings is write-token protected, so a
+                // bare fetch is rejected with 401 and onboardingCompleted never
+                // reaches the server.
+                const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                await api('/api/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(d.settings),

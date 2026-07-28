@@ -40,18 +40,28 @@ async function setup(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
     await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((el) => el.remove()));
-    // Start from a known mode. Earlier specs share this server and leave
-    // bookmarks monitored, which would turn "choose monitor" into a no-op and
-    // make these tests pass or fail on run order.
-    // Awaited: without returning the promise the reload below can land before the
-    // reset does, and the test then reads whatever the previous spec left behind.
-    await page.evaluate(async () => {
-        await fetch('/api/health/check-mode-all', {
+    // Start from a known mode. Earlier tests in this file leave the first
+    // bookmark monitored, which would turn "choose monitor" into a no-op — the
+    // menu closes without a change and never raises the notification the
+    // assertions wait for.
+    //
+    // nextDashFetch, not fetch: the E2E server runs with NEXTDASH_WRITE_TOKEN
+    // set, and check-mode-all is a protected endpoint. A bare fetch sends no
+    // token and is answered with 401. The status is checked rather than
+    // discarded, because that 401 is exactly what made this reset a silent
+    // no-op and the suite order-dependent.
+    const reset = await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await api('/api/health/check-mode-all', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: 'off' }),
         });
+        return { ok: res.ok, status: res.status };
     });
+    if (!reset.ok) {
+        throw new Error(`check-mode reset failed with HTTP ${reset.status}`);
+    }
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((el) => el.remove()));
@@ -228,10 +238,14 @@ test.describe('dashboard check-mode menu', () => {
         const before = await activeMode(page);
         // Focus starts on the current mode, so a stray Enter is a no-op rather
         // than a change nobody asked for.
-        const focused = await page.evaluate(() => document
+        //
+        // Polled rather than read once: the menu sets focus inside a
+        // requestAnimationFrame, so the element exists a frame before it is
+        // focused. Reading immediately passed on an idle machine and failed
+        // under load.
+        await expect.poll(() => page.evaluate(() => document
             .querySelector('#bookmark-check-mode-menu .move-popover-item.is-focused')
-            ?.getAttribute('data-check-mode') || null);
-        expect(focused).toBe(before);
+            ?.getAttribute('data-check-mode') || null)).toBe(before);
 
         await page.keyboard.press('Escape');
         await expect(page.locator('#bookmark-check-mode-menu')).toHaveCount(0);
