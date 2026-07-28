@@ -108,7 +108,7 @@ class DashboardContextMenu {
         const actions = [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
-            { id: 'share', label: this.t('dashboard.contextMenuShare', 'Share…'), icon: '↪' },
+            { id: 'share', label: this.shareActionLabel(), icon: '↪' },
             { id: 'edit', label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎' },
             { id: 'tags', label: this.t('dashboard.contextMenuTags', 'Tags…'), icon: '#' },
             { id: 'move', label: this.t('dashboard.contextMenuMove', 'Move to…'), icon: '→' },
@@ -398,6 +398,68 @@ class DashboardContextMenu {
     }
 
     /**
+     * Whether this browser can actually open a share sheet.
+     *
+     * Not merely a question of HTTPS: desktop Chrome on macOS and Linux, and
+     * Firefox everywhere, expose no navigator.share even on a secure origin. The
+     * menus ask before labelling the entry, because an item promising a share
+     * dialog that silently copies instead reads as broken.
+     */
+    canOpenShareSheet() {
+        if (typeof navigator.share !== 'function') return false;
+        // Presence is not permission. Safari on macOS exposes navigator.share
+        // over plain HTTP — localhost included — and then rejects every call
+        // with NotAllowedError, so feature detection alone promises a sheet the
+        // browser will refuse. Once a call has been refused that way, this
+        // browser is treated as unable to share until the page reloads.
+        return DashboardContextMenu._shareRefused !== true;
+    }
+
+    /**
+     * Remember a refusal so the menu stops offering something that cannot work.
+     *
+     * Static rather than per-instance: the health view and the right-click menu
+     * ask the same question about the same browser, and a refusal in one is a
+     * refusal in the other.
+     */
+    static markShareRefused() {
+        DashboardContextMenu._shareRefused = true;
+    }
+
+    /**
+     * Whether a share sheet is missing only because the page is not a secure
+     * context — the case worth explaining, because it is the user's to fix.
+     *
+     * Safari and Chromium both implement Web Share but withhold it outside a
+     * secure origin, and a self-hosted dashboard on `http://192.168.x.x` is
+     * exactly that. `localhost` counts as secure, so this is specifically the
+     * LAN-address case: reaching the same instance over HTTPS or through a
+     * tunnel brings the share sheet back.
+     *
+     * Not knowable for certain — a browser with no Web Share at all looks the
+     * same from here — so it only ever adds a hint, never a promise.
+     */
+    shareBlockedByInsecureOrigin() {
+        if (this.canOpenShareSheet()) return false;
+        // Either the page is not a secure context, or a call was refused with
+        // NotAllowedError — which Safari also raises over plain HTTP on
+        // localhost, a context it otherwise reports as secure. Both point at the
+        // address rather than the browser, and both are fixed the same way.
+        return window.isSecureContext === false
+            || DashboardContextMenu._shareRefused === true;
+    }
+
+    /**
+     * The label for the share entry, naming what will actually happen — the
+     * share sheet where there is one, a clipboard copy where there is not.
+     */
+    shareActionLabel() {
+        return this.canOpenShareSheet()
+            ? this.t('dashboard.contextMenuShare', 'Share…')
+            : this.t('dashboard.contextMenuCopyNameUrl', 'Copy name + URL');
+    }
+
+    /**
      * Hand a bookmark to the system share sheet, or the clipboard when there
      * isn't one.
      *
@@ -424,8 +486,16 @@ class DashboardContextMenu {
                 // not a failure, so it must not fall through to the clipboard and
                 // announce a copy nobody asked for.
                 if (err?.name === 'AbortError') return 'cancelled';
-                // Anything else (NotAllowedError on a non-secure origin, a share
-                // target that rejects) still deserves the fallback.
+                // NotAllowedError means the browser will not open a sheet here at
+                // all — Safari answers that way on plain HTTP, localhost included,
+                // even though navigator.share exists. Recording it re-labels the
+                // entry as the copy it actually performs, so the second attempt
+                // no longer promises a dialog that never appears.
+                if (err?.name === 'NotAllowedError') {
+                    DashboardContextMenu.markShareRefused();
+                }
+                // Anything else (a share target that rejects, a transient
+                // failure) still falls through to the clipboard.
             }
         }
 
@@ -451,11 +521,32 @@ class DashboardContextMenu {
                 row.classList.add('bookmark-copy-flash');
                 row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
             }
-            d.showNotification?.(
-                this.t('dashboard.shareCopied', 'Link copied to share'),
-                'success',
-                { duration: 2000 }
-            );
+            // Name the reason when it is the origin, because that one is fixable:
+            // the browser does have a share sheet and is withholding it over
+            // plain HTTP. Without this the copy looks like the share silently
+            // failing, which is how this was reported.
+            // Three different situations, three honest messages. A refusal is not
+            // the same as a missing feature, and neither is the same as an
+            // insecure address — telling someone on localhost that they need
+            // localhost is worse than saying nothing.
+            const refused = DashboardContextMenu._shareRefused === true;
+            const insecure = !refused && window.isSecureContext === false;
+            const explained = refused || insecure;
+            let message;
+            if (refused) {
+                message = this.t(
+                    'dashboard.shareCopiedUnavailable',
+                    'Copied — this browser will not open a share sheet here'
+                );
+            } else if (insecure) {
+                message = this.t(
+                    'dashboard.shareCopiedInsecure',
+                    'Copied — sharing needs HTTPS or localhost'
+                );
+            } else {
+                message = this.t('dashboard.shareCopied', 'Link copied to share');
+            }
+            d.showNotification?.(message, 'success', { duration: explained ? 4000 : 2000 });
         };
 
         if (navigator.clipboard?.writeText) {

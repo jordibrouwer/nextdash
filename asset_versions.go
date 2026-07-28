@@ -87,7 +87,7 @@ var sharedAssetVersions = pageAssetVersions{
 	HealthBadgeJS:        "health-badge-monitor-down-1",
 	AppNotificationJS:    "toast-html-1",
 	SearchCommandsNewJS:  "promote-page-dropdown-1",
-	WhatsNewData:         "whats-new-v191",
+	WhatsNewData:         "whats-new-v196",
 	DataRevision:         "data-revision-10-health-delete-sync",
 
 	WriteAPIJS:               "write-api-1",

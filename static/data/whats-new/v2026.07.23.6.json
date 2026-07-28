@@ -1,0 +1,29 @@
+{
+  "tag": "v2026.07.23.6",
+  "date": "July 2026",
+  "releasedAt": "2026-07-28",
+  "modalLead": "Sharing reaches the health view, and the share entry now tells the truth about what your browser will do with it — including on Safari, which offers Web Share over plain http:// and then refuses every call.",
+  "sections": [
+    {
+      "title": "Sharing",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Copy URL and Share in the health view</strong> — a row there is a bookmark like any other, but copying or sending one used to mean finding it again on the dashboard first. Both entries now sit in the per-row <strong>More</strong> menu, between <em>Find in Web Archive</em> and <em>Change checking</em>. Neither is a repair, so they appear on every row, healthy or broken."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The entry no longer promises a share sheet that cannot open</strong> — <strong>Safari on macOS refuses sharing over plain <code>http://</code>, <code>localhost</code> included</strong>, while still reporting the feature as available. Checking only whether the browser <em>has</em> sharing was therefore not enough: the menu offered <strong>Share…</strong>, nothing appeared, and the link was quietly copied instead. A refusal is now remembered — the link is still copied, the message explains that this browser will not open a sheet here, and the entry re-labels itself to <strong>Copy name + URL</strong> rather than repeating a promise it has already broken."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>For a real share sheet, reach the dashboard over HTTPS</strong> — through a reverse proxy or a tunnel such as Tailscale. Chrome and Firefox on macOS and Linux have no Web Share at all, at any address, and there the entry simply reads <strong>Copy name + URL</strong> from the start."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Copy URL and Copy name + URL sit next to each other</strong> — where no sheet can open, the two entries are adjacent, which makes the difference between them visible: one is the link, the other the title and the link."
+        }
+      ]
+    }
+  ]
+}
