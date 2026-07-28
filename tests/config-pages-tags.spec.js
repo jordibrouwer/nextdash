@@ -172,8 +172,12 @@ test.describe('unique names', () => {
     // cases are pinned independently of any one section's wiring.
     test('the shared matcher ignores case and surrounding whitespace', async ({ page }) => {
         await loadDashboard(page);
-        const r = await page.evaluate(() => {
-            const C = window.dashboardInstance.config.constructor;
+        const r = await page.evaluate(async () => {
+            // config is a lazy loader proxy until the module is fetched, so its
+            // .constructor is the loader, not DashboardConfig. Force the load and
+            // read the class off window, where dashboard-config.js publishes it.
+            await window.dashboardInstance.config.load();
+            const C = window.DashboardConfig;
             return {
                 exact: C.isNameTaken('Work', ['Work']),
                 casing: C.isNameTaken('WORK', ['work']),
@@ -199,8 +203,9 @@ test.describe('unique names', () => {
 
     test('uniqueNameFrom suffixes until the name is free', async ({ page }) => {
         await loadDashboard(page);
-        const r = await page.evaluate(() => {
-            const C = window.dashboardInstance.config.constructor;
+        const r = await page.evaluate(async () => {
+            await window.dashboardInstance.config.load();
+            const C = window.DashboardConfig;
             return [
                 C.uniqueNameFrom('Page 2', []),
                 C.uniqueNameFrom('Page 2', ['Page 2']),
@@ -365,8 +370,9 @@ test.describe('category statistics', () => {
 
     test('the count lookup prefers the id but still falls back to the name', async ({ page }) => {
         await loadDashboard(page);
-        const r = await page.evaluate(() => {
-            const C = window.dashboardInstance.config.constructor;
+        const r = await page.evaluate(async () => {
+            await window.dashboardInstance.config.load();
+            const C = window.DashboardConfig;
             const counts = new Map([['development', 3], ['Legacy Name', 2]]);
             return {
                 byId: C.categoryCountFor(counts, { id: 'development', name: 'Development' }),
