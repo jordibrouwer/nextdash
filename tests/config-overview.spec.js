@@ -29,6 +29,15 @@ async function openOverview(page, health = PROBLEMS) {
     await expect(page.locator('.config-tiles')).toBeVisible();
 }
 
+async function loadOverview(page) {
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+    await page.waitForTimeout(1200);
+}
+
 test.describe('config overview', () => {
     test('problems are listed with a way to act on each', async ({ page }) => {
         await openOverview(page);
@@ -103,5 +112,35 @@ test.describe('config overview', () => {
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.activeView)).toBe('health');
         expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('broken');
+    });
+
+    // The Ko-fi button reuses the what's-new modal's markup and CSS, so the two
+    // are identical by construction. These assert that it actually arrives that
+    // way: a missing class would silently drop the animation and the stars.
+    test('the about panel links to GitHub and Ko-fi', async ({ page }) => {
+        await loadOverview(page);
+
+        const panel = page.locator('.config-about-panel');
+        await expect(panel).toBeVisible();
+
+        const github = panel.locator('.config-about-github');
+        await expect(github).toHaveAttribute('href', 'https://github.com/jordibrouwer');
+        await expect(github).toHaveAttribute('rel', /noopener/);
+
+        const kofi = panel.locator('.wn-kofi-btn');
+        await expect(kofi).toHaveAttribute('href', 'https://ko-fi.com/jordibrw');
+        await expect(kofi).toHaveAttribute('rel', /noopener/);
+    });
+
+    test('the Ko-fi button keeps the animated treatment from the modal', async ({ page }) => {
+        await loadOverview(page);
+
+        const kofi = page.locator('.config-about-panel .wn-kofi-btn');
+        await expect(kofi).toHaveClass(/wn-kofi-btn--animated/);
+        // Four twinkling stars, as in the modal.
+        await expect(page.locator('.config-about-panel .wn-kofi-star')).toHaveCount(4);
+
+        const glow = await kofi.evaluate((el) => getComputedStyle(el).animationName);
+        expect(glow).not.toBe('none');
     });
 });

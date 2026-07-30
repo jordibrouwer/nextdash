@@ -1644,6 +1644,31 @@
     text-decoration: underline;
 }
 
+/* ── Overview → About the developer ─────────────────────────────────────
+   The Ko-fi button itself is the shared .wn-kofi-* set from modal.css, which
+   config already loads; only the row around it belongs here. */
+.config-about-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.85rem;
+}
+
+/* Match the Ko-fi button's height and padding so the pair reads as one row
+   rather than two buttons that happen to sit next to each other. */
+.config-about-actions .config-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    text-decoration: none;
+}
+
+.config-about-actions .config-btn svg {
+    flex-shrink: 0;
+}
+
 .config-tile-hint {
     font-size: calc(var(--font-size-text) * 0.857);
     color: var(--text-muted, #888);
