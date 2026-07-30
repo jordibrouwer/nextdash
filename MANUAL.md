@@ -857,6 +857,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Enlarge statistics** | The row strip only has room for a 24h figure and one ping. The **⤢** button at the end of it — or `i` — opens the same monitoring data at full size: a large response-time chart with min / average / max marked and a tooltip per point, **uptime side by side for 24h / 7d / 30d** with the number of checks behind each, a taller heartbeat, the check interval and last check, and the full outage list. A window with no samples yet reads *no data* rather than 0%, so a monitor enabled an hour ago does not look like a day of downtime. Nothing is re-fetched — it is the report already on screen — so it opens instantly. `Esc` closes it and leaves your place in the list. The button only appears once there is something to show: a monitored bookmark still awaiting its first check does not get one |
 | **Reading values off the chart** | The chart is interactive: click or hover anywhere in a measurement's slice of the plot — a full-height column, not just the dot — and the **readout under the chart** names that measurement: response time, the time it was measured, how many checks the point folds together, and whether it was up, down or degraded. It opens on the most recent measurement rather than empty. `←` / `→` walk point to point and update the readout as they go, skipping buckets with no measurement so you never land on an empty reading. The chart is a single `Tab` stop, so **Close** stays one `Tab` away, and tabbing back in returns to the point you were reading |
 | **Downtime alerts** | Optional webhook under **Config → Behavior → Status & health**, posted when a monitored bookmark goes down and again when it recovers. Fires only after N consecutive failures (default 3, range 1–10) so a single hiccup stays quiet. Works with ntfy, Discord, Slack, and similar. Local addresses are refused unless **Allow local bookmarks** is on — the same SSRF rules as pings |
+| **Browser notifications** | The same downtime and recovery alerts, delivered to your browser rather than to a webhook — so they arrive while nextDash is closed. Switch them on from the card on the dashboard or under **Config → Behavior → Status & health**, then allow notifications once per device. Backup results and new-release notices are available there too, off by default. **Requires HTTPS**: Safari refuses notifications on `http://localhost`, as does every browser on iPhone and iPad (all WebKit); desktop Chrome and Firefox do allow localhost. See [Browser notifications](#browser-notifications) |
 | **Layout parity** | Uses the same **Classic / Modern** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
 | **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips). The **More** menu is drawn as the same opaque panel as the dashboard's right-click menu — same surface, radius, spacing and shadow, and the same blurred edge under the Modern layout |
 | **dashboard link** | Jump to bookmark on correct page/category |
@@ -880,6 +881,30 @@ Filter, sort, and search state persist in the session across refreshes and sync 
 From the dashboard, **`Shift+H`** opens the Health view directly. **`:health`** (command mode) opens it with optional filters (`broken`, `duplicate`, `stale`, …) or `refresh` to re-scan. **`:stale`** overflow rows link to `/?hv_filter=stale#health`.
 
 The dashboard **health** icon (a heartbeat glyph styled like the inbox tab) shows a compact counter pill for broken links and warnings (including shortcut conflicts) — broken count takes priority over warnings, red for broken and amber for warnings, hidden when healthy. When broken issues exist, the link opens `/?hv_filter=broken#health`. Keyboard entry is **`Shift+H`**. The config view's **Overview** links to the same place when something needs attention.
+
+### Browser notifications
+
+Downtime alerts delivered to the browser itself, so they arrive **while nextDash is closed**. The webhook above posts to a server, which only helps if something is listening for it; this reaches whatever device you allowed, including a phone.
+
+**Turning it on.** A card appears on the dashboard a few seconds after load and offers to switch outage alerts on in one click. Or go to **Config → Behavior → Status & health → Browser notifications**, enable the master switch, then press **Enable on this device**. Either way the browser asks for permission, and a confirming test notification follows immediately so you can see it works.
+
+Permission is granted **per browser**, so every device you want alerts on is asked once. The category switches themselves are server-side and shared across devices.
+
+| What can notify | Default |
+|---|---|
+| **Downtime and recovery** — a monitored bookmark goes down, and again when it comes back. Follows the same retry threshold as the webhook, so a single hiccup stays quiet | On when you accept |
+| **Automatic backups** — a scheduled backup succeeded or failed. Manual backups never notify; their result is already on screen | Off |
+| **New release available** — announced once per version, when a newer nextDash starts. Read from the release notes shipped in the binary; nothing calls home | Off |
+
+**Requirements.** Notifications need a **secure context**:
+
+- **Safari (macOS, iPhone, iPad)** and **every browser on iPhone or iPad** — HTTPS only. They all use WebKit, which refuses on `http://localhost`, so a local-only setup cannot use this in those browsers. A hostname with a real certificate (a reverse proxy, or Tailscale's HTTPS) works.
+- **Chrome, Edge and Firefox on desktop** — HTTPS, or `http://localhost` for local testing.
+- On **iPhone and iPad**, add nextDash to the home screen first.
+
+**Declining and changing your mind.** *No thanks* is remembered and the card does not return; **×** only postpones it. If you decline and later reconsider, **Show the invitation again** in the same config panel brings it back to the dashboard.
+
+**Where the data lives.** Subscriptions and the server's signing key are in `data/push-subscriptions.json`. Deleting that file unregisters every device — they simply opt in again. A subscription the browser has discarded is dropped automatically the first time a notification bounces.
 
 ### Stats (`config#stats`)
 
@@ -990,6 +1015,8 @@ Closing config also leaves the **dashboard underneath it untouched**: an active 
 Includes pages, bookmarks (with tags), categories, **finders** (`finders.json`), settings, custom themes (`colors.json`), **uptime monitoring history** (`health-history.json`), uploaded dashboard favicon/font, and bookmark icon files under `data/icons/`. Legacy icon files that lived directly in `data/` are exported as `icons/<filename>` so bookmark references survive a full round-trip.
 
 Monitoring history is the one piece of health data that is **measured** rather than derived, so it is the one that is archived: without it a restore resets every monitored bookmark to *waiting for its first check* — no response-time chart, no uptime windows, no outage list — and a 30-day figure takes 30 days to earn back. The **preview cache** and **health cache** are deliberately left out and cleared on import: a scan rebuilds those in minutes.
+
+**Push subscriptions** (`push-subscriptions.json`) are also left out. A subscription belongs to one browser on one device and cannot be handed to another install — restoring someone else's would be a set of dead endpoints. Devices opt in again from the config panel, which takes a click each.
 
 The panel shows **Last backup: …** after you create a ZIP (stored locally in the browser).
 
