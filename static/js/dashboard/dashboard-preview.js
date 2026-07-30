@@ -209,6 +209,14 @@ class DashboardPreview {
     }
 
 
+    /**
+     * A day count rendered as "3 days ago" / "2 months ago".
+     *
+     * Kept for the recent-opened modal, which counts minutes and hours itself
+     * and hands down a day count once it passes 24h. The preview card no longer
+     * uses it: it needs the calendar-day boundary the shared formatLastOpened
+     * applies, which a plain day count cannot express.
+     */
     formatPreviewLastOpened(diffDays) {
         const d = this.dash;
         if (diffDays === 0) {
@@ -239,6 +247,16 @@ class DashboardPreview {
     }
 
 
+    /**
+     * "opened 35 times · last yesterday" for the preview card.
+     *
+     * The last-opened half goes through the shared formatLastOpened rather than
+     * a local day count. Dividing elapsed milliseconds by a day, as this did,
+     * measures elapsed hours and not calendar days: something opened at 23:00
+     * last night still reported "today" until 23:00 the next day. The shared
+     * formatter counts the day boundary crossed, so it says "yesterday" — and
+     * says it in the same words Health and the config editor use.
+     */
     formatPreviewUsageText(openCount, lastOpened) {
         const d = this.dash;
         const countText = openCount === 1
@@ -247,14 +265,32 @@ class DashboardPreview {
         if (!lastOpened) {
             return countText;
         }
-        const date = new Date(lastOpened);
-        const diffDays = Math.floor((Date.now() - date.getTime()) / 86400000);
-        const lastText = this.formatPreviewLastOpened(diffDays);
+        const lastText = this.formatLastOpenedShared(lastOpened);
+        if (!lastText) {
+            return countText;
+        }
         return d.formatDashboardLabel(
             'previewUsageWithLast',
             { count: countText, last: lastText },
             `${countText} · last ${lastText}`
         );
+    }
+
+    /**
+     * The shared last-opened label, or '' when the bookmark has never been
+     * opened. Dashboard labels are stored unprefixed, so the "dashboard." that
+     * formatLastOpened asks for is stripped before the lookup.
+     */
+    formatLastOpenedShared(timestamp) {
+        const d = this.dash;
+        if (typeof window.formatLastOpened !== 'function') return '';
+        const { label, never } = window.formatLastOpened(timestamp, {
+            t: (key, fallback, params) => {
+                const bare = String(key).startsWith('dashboard.') ? String(key).slice('dashboard.'.length) : key;
+                return d.formatDashboardLabel(bare, params || {}, fallback);
+            },
+        });
+        return never ? '' : label;
     }
 
 

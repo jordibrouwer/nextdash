@@ -1,0 +1,55 @@
+{
+  "tag": "v2026.07.25.2",
+  "date": "July 2026",
+  "releasedAt": "2026-07-30",
+  "modalLead": "Every bookmark now carries its own history: when it was added, when you last edited it, how often you have opened it and when that last happened. Those figures show up where you are already looking — in the config editor, on hover, and in the preview card — and Statistics turns them into two things it could not say before: which categories you actually use, and which bookmarks are worth clearing out.",
+  "sections": [
+    {
+      "title": "Per bookmark",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A statistics block in the bookmark editor</strong> — added, last modified, how often opened, when that last happened, and the result of the last availability check. The collapsed rows carry the short version too (<em>35× · 2d ago</em>), so a list of dead links is visible without opening each one. Last checked is left out entirely for bookmarks without an availability check, where it would only ever be a dash."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Bookmarks record when you last edited them</strong> — a health check writing its result, or opening a link, deliberately does not count. Without that distinction every monitored bookmark would claim to have been edited on every ping, and the field would say nothing at all. Bookmarks from before this release have no edit date and show a dash rather than an invented one."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Hovering a bookmark shows how you use it</strong> — the tooltip adds the open count and when you last opened it. The label a screen reader announces stays short on purpose: it is read out on every row while you arrow through the grid, where repeating the counts a hundred times would bury the names."
+        }
+      ]
+    },
+    {
+      "title": "Statistics",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Opens per bookmark, by category</strong> — dividing usage by size, so a category holding twenty links nobody opens stops looking healthy next to a small one you reach for daily. The existing per-category panel counts bookmarks, and a count alone cannot tell those two apart."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Where your usage sits</strong> — what share of all your opens the busiest handful of bookmarks accounts for. It answers something no per-bookmark figure can: whether you use the collection broadly, or really just a few links surrounded by everything else."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Cleanup candidates you can act on</strong> — never opened, opened once and never again, untagged, still on plain http, or without an icon. Each opens the matching bookmarks, where they can already be tagged or deleted in bulk, and a banner names the filter you arrived with so the list is never quietly hiding most of your collection."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The preview card counts days, not hours</strong> — it divided elapsed time by twenty-four hours, so a bookmark opened at 23:00 kept reporting <em>today</em> until 23:00 the next day. It now counts the day boundary crossed, the same way the health view and the config editor already did."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Settings that offer a reset now explain the default</strong> — six of them showed the reset arrow without an info button, so the interface offered to restore a value it never named. The refresh-weather field also still described the three fixed choices it had before it became a free number between 5 and 1440 minutes."
+        }
+      ]
+    }
+  ]
+}

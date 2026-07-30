@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.25.2 — July 2026](#v202607252--july-2026)
 - [v2026.07.25.1 — July 2026](#v202607251--july-2026)
 - [v2026.07.25 — July 2026](#v20260725--july-2026)
 - [v2026.07.24.1 — July 2026](#v202607241--july-2026)
@@ -123,6 +124,30 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.25.2 — July 2026
+
+**Every bookmark carries its own history now — added, edited, opened, last reached — and Statistics turns it into something you can act on.** The figures were already being recorded; nothing displayed them.
+
+They appear where you are already looking: in the config editor, on hover, and in the preview card. Statistics adds two readings the existing panels could not express, plus a list of cleanup candidates that opens the matching bookmarks rather than stopping at a number.
+
+### New
+
+- **new** **A statistics block in the bookmark editor** — added, last modified, open count, last opened, and the outcome of the last availability check. Every value was already stored on the bookmark; this reads and never writes, which is also why nothing in the block binds to a form field: saving spreads the form over the stored record, so `openCount` and friends survive an edit precisely because the editor does not know about them. Timestamps go through the shared `formatLastOpened` rather than a local format, so "yesterday" means the same thing here as in Health. Last checked is omitted for bookmarks without an availability check, where it would be a permanent dash rather than information (`dashboard-config.js`).
+- **new** **Collapsed rows carry the short version** — `35× · 2d ago` under the meta line, so dead weight is visible while scanning instead of one editor at a time. Kept separate from the meta line above it: that one says where a bookmark lives (page, category, tags), this says whether it is used at all. Never-opened is stated outright rather than left blank, matching Health, where an empty slot reads as missing data.
+- **new** **Bookmarks record when they were last edited** — a new `updatedAt`, stamped where a page's bookmarks are written rather than in the handler, so every mutation route is covered rather than just the obvious one. Only the fields a person edits are compared, through the existing `bookmarkContentFingerprint`, so a health check writing `lastChecked` or an open bumping `openCount` is not mistaken for an edit. Without that the field would be worthless: every monitored bookmark would claim to have been edited on every ping. Unchanged bookmarks keep their stored stamp, so rewriting a whole page for a reorder or a bulk tag does not restamp the rest, and a client that round-trips a bookmark without the field cannot clear it. Bookmarks predating this have none and show a dash; `omitempty` keeps them out of the files until something is actually edited (`models.go`).
+- **new** **Hovering a bookmark shows how you use it** — the row tooltip adds the open count and last-opened label. The `aria-label` deliberately does not: it is announced on every row while arrowing through the grid, so folding the counts in would read out "opened 35 times, last yesterday" a hundred times while a screen reader user is trying to hear the names. `bookmarkRowTooltip` is now split from the enriched title builder so the two cannot drift back together, and never-opened rows add nothing, since the plain label already says what a "0 times" line would (`dashboard-bookmark-rows.js`).
+- **new** **Opens per bookmark, by category** — the neighbouring panel counts bookmarks per category, and size alone hides the interesting case: a category holding twenty links nobody opens looks healthy there and empty here. Sorted by the ratio rather than the total for the same reason, so a small category in daily use ranks above a large one you built and forgot.
+- **new** **Where your usage sits** — what share of all opens the busiest ten bookmarks account for. Answers something no per-bookmark figure can: whether the collection is used broadly or is really a handful of links surrounded by everything else.
+- **new** **Cleanup candidates that open the list behind them** — never opened, opened once and never again, untagged, plain `http`, or missing an icon. A count on its own is a dead end; the work is always "show me those and let me fix them", and the bookmarks section already has bulk tagging and deletion. The predicates live in one map that feeds both the count and the rows, so the two cannot disagree. Rows with nothing to fix are dropped rather than shown as a zero, making the panel a to-do list instead of a scoreboard. Arriving there clears any earlier search or filter, which would otherwise silently narrow the handed-over list, and a banner names the active filter with a way back — without it you land on a view hiding most of your bookmarks with nothing on screen to say why.
+
+### Fixes
+
+- **fix** **The preview card counts calendar days, not elapsed hours** — it divided elapsed milliseconds by a day, which measures hours: a bookmark opened at 23:00 still reported `today` until 23:00 the following day. It now uses the shared `formatLastOpened`, which counts the day boundary crossed and is the same formatter Health and the config editor already use. The recent-opened modal keeps the older day-count helper, which it feeds a pre-computed day count after handling minutes and hours itself (`dashboard-preview.js`).
+- **fix** **Six settings offered a reset without explaining the default** — background re-check interval, alert-after-failures, and the four smart-collection limits showed the ↺ arrow but no ℹ, so the interface offered to restore a value it never named. A structural test now fails whenever a field carries a default without an explanation, with the self-describing toolbar toggles as the one deliberate exception.
+- **fix** **The refresh-weather info described a control that no longer exists** — the text still listed "10, 30, or 60 minutes" from when the field was a dropdown; it has been a number input accepting 5 to 1440 for some time. The now-unused option labels are dropped from all four languages.
 
 ---
 

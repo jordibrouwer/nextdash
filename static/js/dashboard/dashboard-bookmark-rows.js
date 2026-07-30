@@ -28,6 +28,49 @@ class DashboardBookmarkRows {
         return this.bookmarkDisplayLabel(bookmark);
     }
 
+    /**
+     * The hover tooltip: the row label plus how the bookmark has been used.
+     *
+     * Deliberately separate from bookmarkRowTooltip, which still feeds the
+     * aria-label. A screen reader announces that label on every row it moves
+     * through, so folding usage into it would read out "opened 35 times, last
+     * yesterday" a hundred times while arrowing down a page. Sighted users can
+     * ignore a tooltip until they want it; a screen reader user cannot. The
+     * counts therefore enrich the visual affordance only.
+     *
+     * Never-opened bookmarks add nothing: the plain label already says what a
+     * "0 times" line would, and it would be the noisiest rows that gained text.
+     */
+    bookmarkRowTitle(bookmark) {
+        const d = this.dash;
+        const base = this.bookmarkRowTooltip(bookmark);
+        const opens = Number(bookmark?.openCount || 0);
+        if (opens <= 0) return base;
+
+        const countText = opens === 1
+            ? d.formatDashboardLabel('previewOpenedOnce', {}, 'opened once')
+            : d.formatDashboardLabel('previewOpenedMany', { count: opens }, `opened ${opens} times`);
+
+        const last = this.formatRowLastOpened(bookmark?.lastOpened);
+        const usage = last
+            ? d.formatDashboardLabel('previewUsageWithLast', { count: countText, last }, `${countText} · last ${last}`)
+            : countText;
+        return `${base}\n${usage}`;
+    }
+
+    /** Shared last-opened label, or '' when never opened. */
+    formatRowLastOpened(timestamp) {
+        const d = this.dash;
+        if (typeof window.formatLastOpened !== 'function') return '';
+        const { label, never } = window.formatLastOpened(timestamp, {
+            t: (key, fallback, params) => {
+                const bare = String(key).startsWith('dashboard.') ? String(key).slice('dashboard.'.length) : key;
+                return d.formatDashboardLabel(bare, params || {}, fallback);
+            },
+        });
+        return never ? '' : label;
+    }
+
     resolveDashboardBookmarkRow(ref, bookmark, options = {}) {
         const excludeSmart = options.excludeSmart !== false;
         const root = '#dashboard-layout';
@@ -430,11 +473,10 @@ class DashboardBookmarkRows {
         /* Roving tabindex: only the arrow-selected row’s link is in tab order (see KeyboardNavigation). */
         openLink.tabIndex = -1;
         const displayLabel = this.bookmarkDisplayLabel(bookmark);
-        const rowTooltip = this.bookmarkRowTooltip(bookmark);
         const textSpan = document.createElement('span');
         textSpan.className = 'bookmark-text';
         textSpan.textContent = displayLabel;
-        textSpan.title = rowTooltip;
+        textSpan.title = this.bookmarkRowTitle(bookmark);
         openLink.appendChild(textSpan);
 
         const recordOpen = () => d.recordBookmarkOpened(
@@ -822,11 +864,13 @@ class DashboardBookmarkRows {
         link.className = 'bookmark-link recent-bookmark-link';
 
         const displayLabel = this.bookmarkDisplayLabel(bookmark);
-        const rowTooltip = this.bookmarkRowTooltip(bookmark);
         const textWrapper = document.createElement('span');
         textWrapper.className = 'bookmark-text recent-bookmark-text';
         textWrapper.textContent = displayLabel;
-        textWrapper.title = rowTooltip;
+        // The meta line beside this shows the category, so the counts are new
+        // information here — unlike the recent-opened modal, which prints its
+        // own recency and open count on every row.
+        textWrapper.title = this.bookmarkRowTitle(bookmark);
         link.appendChild(textWrapper);
 
         const meta = document.createElement('span');
