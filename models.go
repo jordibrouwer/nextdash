@@ -27,6 +27,12 @@ type Bookmark struct {
 	CheckStatus  bool     `json:"checkStatus"`
 	Icon         string   `json:"icon"`
 	CreatedAt    int64    `json:"createdAt,omitempty"` // Timestamp when bookmark was created
+	// UpdatedAt records the last change to a bookmark's own content — name, URL,
+	// category, tags and the like. It is deliberately not touched by the health
+	// monitor or by opening a bookmark: LastChecked and LastOpened already carry
+	// those, and letting them bump this would leave every monitored bookmark
+	// permanently reading "changed a minute ago". See bookmarkContentFingerprint.
+	UpdatedAt    int64    `json:"updatedAt,omitempty"`
 	LastOpened   int64    `json:"lastOpened,omitempty"`
 	LastChecked  int64    `json:"lastChecked,omitempty"`
 	LastError    string   `json:"lastError,omitempty"`
@@ -957,8 +963,53 @@ func (fs *FileStore) saveBookmarksByPageLocked(pageID int, bookmarks []Bookmark)
 		return fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
 	}
 
+	stampBookmarkUpdatedAt(pageWithBookmarks.Bookmarks, bookmarks, time.Now().UnixMilli())
 	pageWithBookmarks.Bookmarks = bookmarks
 	return writeIndentJSONFile(filePath, pageWithBookmarks)
+}
+
+// stampBookmarkUpdatedAt sets UpdatedAt on every bookmark in next whose content
+// differs from the matching bookmark in prev.
+//
+// Matching is by canonical URL, which is also the identity the rest of the store
+// uses. A bookmark whose URL itself changed therefore looks new here and is
+// stamped — correct, since editing the URL is a content change.
+//
+// Only the fields a person edits are compared (bookmarkContentFingerprint), so
+// a health check writing LastChecked or an open bumping OpenCount does not count
+// as a change. Without that the field would be worthless: every monitored
+// bookmark would claim to have been edited on every ping.
+//
+// An unchanged bookmark keeps whatever UpdatedAt it already had, so callers that
+// rewrite a whole page (a reorder, a bulk tag) do not restamp the rest.
+func stampBookmarkUpdatedAt(prev, next []Bookmark, now int64) {
+	previous := make(map[string]Bookmark, len(prev))
+	for _, bm := range prev {
+		key := canonicalBookmarkURLKey(bm.URL)
+		if key == "" {
+			continue
+		}
+		previous[key] = bm
+	}
+
+	for i := range next {
+		key := canonicalBookmarkURLKey(next[i].URL)
+		old, existed := previous[key]
+		if !existed {
+			// New to this page: created and moved bookmarks both land here, and
+			// CreatedAt already distinguishes them.
+			if next[i].UpdatedAt == 0 {
+				next[i].UpdatedAt = now
+			}
+			continue
+		}
+		// Carry the stored stamp forward: clients round-trip bookmarks without
+		// it, so trusting the incoming value would silently clear the history.
+		next[i].UpdatedAt = old.UpdatedAt
+		if bookmarkContentFingerprint(old) != bookmarkContentFingerprint(next[i]) {
+			next[i].UpdatedAt = now
+		}
+	}
 }
 
 func (fs *FileStore) SaveBookmarksByPage(pageID int, bookmarks []Bookmark) error {
@@ -1025,6 +1076,9 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 			return err
 		}
 		bookmark.PageID = pageID
+		if bookmark.UpdatedAt == 0 {
+			bookmark.UpdatedAt = time.Now().UnixMilli()
+		}
 		pageWithBookmarks := PageWithBookmarks{
 			Page: Page{
 				ID:   pageID,
@@ -1042,6 +1096,9 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 	}
 
 	bookmark.PageID = pageID
+	if bookmark.UpdatedAt == 0 {
+		bookmark.UpdatedAt = time.Now().UnixMilli()
+	}
 	pageWithBookmarks.Bookmarks = append(pageWithBookmarks.Bookmarks, bookmark)
 	return writeIndentJSONFile(filePath, pageWithBookmarks)
 }

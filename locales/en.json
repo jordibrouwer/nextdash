@@ -3319,6 +3319,7 @@
         "noPreviewYet": "No preview metadata yet.",
         "bookmarkStatsLabel": "Statistics",
         "bookmarkStatAdded": "Added",
+        "bookmarkStatModified": "Modified",
         "bookmarkStatOpens": "Opened",
         "bookmarkStatOpenCount": "{count}×",
         "bookmarkStatLastOpened": "Last opened",

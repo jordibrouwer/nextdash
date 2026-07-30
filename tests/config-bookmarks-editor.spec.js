@@ -418,11 +418,15 @@ test.describe('config bookmarks add button', () => {
     test('a bookmark created in the modal shows up in the config list', async ({ page }) => {
         await openBookmarks(page);
         const before = await page.locator('.config-bm-row').count();
-        const name = `Config Add ${Date.now()}`;
+        const stamp = Date.now();
+        const name = `Config Add ${stamp}`;
 
         await page.locator('#config-bm-add').click();
         await expect(page.locator('#new-bookmark-modal')).toHaveClass(/show/);
-        await page.fill('#new-bookmark-url', 'https://example.com/config-add-test');
+        // The URL has to be unique per run, not just the name: a fixed one is
+        // still in the data after the first run, so every later run is rejected
+        // as a duplicate and the modal stays open to show that error.
+        await page.fill('#new-bookmark-url', `https://example.com/config-add-test-${stamp}`);
         await page.fill('#new-bookmark-name', name);
         await page.locator('#new-bookmark-form').evaluate((f) => f.requestSubmit());
 
@@ -530,6 +534,23 @@ test.describe('bookmark statistics', () => {
         await openFirstEditor(page);
         await expect(page.locator('[data-bm-stats]')).toContainText('20m ago');
         await expect(page.locator('[data-bm-stats]')).not.toContainText('{count}');
+    });
+
+    test('shows when the bookmark was last modified', async ({ page }) => {
+        await openBookmarks(page);
+        await seedStats(page, { updatedAt: Date.now() - 26 * 60 * 60 * 1000 });
+        await openFirstEditor(page);
+        const stats = page.locator('[data-bm-stats]');
+        await expect(stats).toContainText(/modified/i);
+        await expect(stats).toContainText(/yesterday/i);
+    });
+
+    test('a bookmark predating updatedAt shows a dash, not an invented date', async ({ page }) => {
+        await openBookmarks(page);
+        await seedStats(page, { updatedAt: 0 });
+        await openFirstEditor(page);
+        const row = page.locator('.config-bm-stat', { hasText: /modified/i });
+        await expect(row.locator('.config-bm-stat-value')).toHaveText('—');
     });
 
     test('a never-opened bookmark says so instead of showing a blank', async ({ page }) => {

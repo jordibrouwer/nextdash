@@ -5843,6 +5843,16 @@ class DashboardConfig {
             created.never ? this.t('config.bookmarkStatUnknown', 'Not recorded') : created.title,
         ]);
 
+        // Bookmarks stored before updatedAt existed have none, and no edit has
+        // happened since to give them one. A dash is honest; inventing the
+        // created date or "now" would not be.
+        const modified = when(b.updatedAt);
+        rows.push([
+            this.t('config.bookmarkStatModified', 'Modified'),
+            modified.never ? '—' : modified.label,
+            modified.never ? this.t('config.bookmarkStatUnknown', 'Not recorded') : modified.title,
+        ]);
+
         const opens = Number(b.openCount || 0);
         rows.push([
             this.t('config.bookmarkStatOpens', 'Opened'),

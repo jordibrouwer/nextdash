@@ -3319,6 +3319,7 @@
         "noPreviewYet": "Nog geen voorbeeldgegevens.",
         "bookmarkStatsLabel": "Statistieken",
         "bookmarkStatAdded": "Toegevoegd",
+        "bookmarkStatModified": "Gewijzigd",
         "bookmarkStatOpens": "Geopend",
         "bookmarkStatOpenCount": "{count}×",
         "bookmarkStatLastOpened": "Laatst geopend",

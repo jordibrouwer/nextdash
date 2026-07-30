@@ -28,6 +28,11 @@ func mergeOneBookmarkIntoKeeper(keeper *Bookmark, src Bookmark) {
 	if src.LastOpened > keeper.LastOpened {
 		keeper.LastOpened = src.LastOpened
 	}
+	// Newest wins, the mirror of CreatedAt above: the merged bookmark was last
+	// edited whenever the most recently edited of its sources was.
+	if src.UpdatedAt > keeper.UpdatedAt {
+		keeper.UpdatedAt = src.UpdatedAt
+	}
 	if src.LastChecked > keeper.LastChecked {
 		keeper.LastChecked = src.LastChecked
 	}
