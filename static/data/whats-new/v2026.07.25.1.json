@@ -1,0 +1,34 @@
+{
+  "tag": "v2026.07.25.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-30",
+  "modalLead": "The health view now says when you last opened each bookmark — and, more importantly, actually records it. Opening a link from health never counted, so the Stale filter and the score went on calling links you use every week \"never opened\". The config view also stops changing shape depending on whether you opened it or reloaded into it.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Opening a bookmark from health counts as opening it</strong> — the dashboard records every open; health never did. A bookmark you only ever reach from the health view stayed on zero opens for good, which matters because \"never opened\" is exactly what the Stale filter selects on and what the score penalises. Health was flagging links you actually use as unused, and the more you used health to reach them, the more confidently it was wrong."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Every row says when it was last opened</strong> — <em>just opened</em>, <em>4h ago</em>, <em>yesterday</em>, <em>3d ago</em>, then a date once it is more than a week back. Knowing a link is broken is only half of deciding whether to fix it or drop it; the other half is whether you have touched it this year. Never-opened rows are set apart rather than left blank, since that is a finding in its own right. The exact moment is always in the tooltip."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The label updates the moment you open a row</strong> — it used to keep saying <em>never opened</em> right after you had opened it, which read as broken even once the open was being recorded. Only that one label repaints, so the row keeps its place, and nothing is re-scored or re-sorted on a click: a row dropping out of the list you are working through, at the moment you opened it, would be worse than a slightly stale score."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config keeps its layout however you open it</strong> — opening it from the dashboard and reloading into it produced two different pages. Loaded directly, the view collapsed to a narrower shell: five tiles became three, the panels dropped to a single column, and everything shifted right. It shares an element with the bookmark grid and was picking up the rule that centres a narrow column count on a wide screen, escaping it only by accident when arriving from the dashboard."
+        }
+      ]
+    }
+  ]
+}

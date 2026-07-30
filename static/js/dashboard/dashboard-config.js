@@ -627,11 +627,48 @@ class DashboardConfig {
             <div class="config-tiles" role="list">${tiles}</div>
             ${this.renderOverviewAttention()}
             <div class="config-overview-columns">
+                ${this.renderOverviewAbout()}
                 ${this.renderOverviewStats()}
                 ${this.renderOverviewWhatsNew()}
+                ${this.renderOverviewTips()}
             </div>
-            ${this.renderOverviewTips()}
         `;
+    }
+
+    /**
+     * Who makes nextDash, with the two links that follow from it.
+     *
+     * Sits directly under "needs attention", so the first two things the
+     * overview says are what the install wants from you and who is behind it.
+     * Everything below is reference material you go looking for rather than
+     * read on the way past.
+     *
+     * The Ko-fi button reuses the shared .wn-kofi-* set from modal.css — the
+     * same markup the what's-new modal uses, including the twinkling stars — so
+     * the two are identical by construction rather than by two descriptions that
+     * can drift apart.
+     */
+    renderOverviewAbout() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const stars = '<span class="wn-kofi-star"></span>'.repeat(4);
+
+        return `
+            <div class="config-panel config-about-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.overviewAboutTitle', 'About the developer'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.overviewAboutBody',
+                    'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time, scratching my own itch: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. It is free and open-source, and it stays that way. If it saves you time too, a star on GitHub or a coffee is always appreciated — and bug reports and ideas are just as welcome.'))}</p>
+                <div class="config-about-actions">
+                    <a class="config-btn config-about-github" href="https://github.com/jordibrouwer" target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+                        <span>${esc(this.t('config.overviewAboutGithub', 'GitHub'))}</span>
+                    </a>
+                    <a class="wn-kofi-btn wn-kofi-btn--animated" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener noreferrer">
+                        <span class="wn-kofi-stars" aria-hidden="true">${stars}</span>
+                        <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
+                        <span class="wn-kofi-label">${esc(this.t('config.helpSupportKofi', 'Support me on Ko-fi'))}</span>
+                    </a>
+                </div>
+            </div>`;
     }
 
     /**

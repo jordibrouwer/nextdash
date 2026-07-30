@@ -697,10 +697,82 @@ class DashboardHealth {
 
     /* ── Actions ───────────────────────────────────────────────────────── */
 
+    /**
+     * "Last opened" for one row, always present so the meta line keeps a stable
+     * shape rather than gaining and losing a field per row.
+     *
+     * Never-opened is called out rather than left blank: it is a finding in its
+     * own right — the same thing the Stale filter and the score act on — and an
+     * empty slot would read as missing data instead.
+     */
+    renderLastOpened(issue) {
+        const { label, title, never } = window.formatLastOpened(issue?.lastOpened, {
+            t: (key, fallback, params) => this.t(key, fallback, params),
+        });
+        const cls = never ? 'health-view-item-opened is-never' : 'health-view-item-opened';
+        return `<span class="${cls}" data-health-opened title="${this.escape(title)}">${this.escape(label)}</span>`;
+    }
+
+    /**
+     * Open the bookmark, and record that it happened.
+     *
+     * The recording is the point: without it a bookmark opened from here stayed
+     * on openCount 0 forever, so Health went on calling a link you actually use
+     * "never opened" — and the Stale filter and the score, which read exactly
+     * that, went on believing it. The row was not merely showing a stale label;
+     * the data behind it was never written.
+     */
     openIssue(issue) {
         const url = String(issue?.url || '').trim();
         if (!url) return;
         window.open(url, '_blank', 'noopener,noreferrer');
+        this.recordIssueOpened(issue);
+    }
+
+    /**
+     * Persist the open and reflect it in the row straight away.
+     *
+     * Deliberately does not re-score or re-filter. The score, the Stale filter
+     * and the sort order all read openCount and lastOpened, so recomputing them
+     * here would let a row drop out of the list you are working through the
+     * moment you opened it — the list shifting under your hands mid-task. The
+     * timestamp is a fact and updates now; re-ranking waits for the next refresh,
+     * which is a deliberate action rather than a side effect of a click.
+     */
+    recordIssueOpened(issue) {
+        if (!issue) return;
+
+        const pageId = Number(issue.pageId);
+        const index = Number(issue.index);
+        if (Number.isFinite(pageId) && Number.isFinite(index) && index >= 0) {
+            // 'health' is a new value for the existing source enum, so Stats can
+            // tell an open from here apart from one on the dashboard.
+            void this.dash?.analytics?.trackBookmarkOpen?.(pageId, index, 'health');
+        }
+
+        issue.lastOpened = Date.now();
+        issue.openCount = (Number(issue.openCount) || 0) + 1;
+        this.refreshLastOpenedLabel(issue);
+    }
+
+    /**
+     * Repaint just the one label, not the row: a full re-render would rebuild
+     * the action buttons and the menus, dropping focus and closing anything the
+     * user had open at the moment they clicked.
+     */
+    refreshLastOpenedLabel(issue) {
+        const key = this.issueKey(issue);
+        if (!key) return;
+        const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(key)}"]`);
+        const el = row?.querySelector('[data-health-opened]');
+        if (!el) return;
+
+        const { label, title, never } = window.formatLastOpened(issue.lastOpened, {
+            t: (k, fallback, params) => this.t(k, fallback, params),
+        });
+        el.textContent = label;
+        el.setAttribute('title', title);
+        el.classList.toggle('is-never', never);
     }
 
     /**
@@ -2712,6 +2784,7 @@ class DashboardHealth {
                         ${this.renderCheckModeBadge(issue, key)}
                         ${this.renderCheckModeMenu(issue, key)}
                     </span>
+                    ${this.renderLastOpened(issue)}
                     ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
                     ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
                 </p>

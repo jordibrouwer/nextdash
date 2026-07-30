@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.25.1 — July 2026](#v202607251--july-2026)
 - [v2026.07.25 — July 2026](#v20260725--july-2026)
 - [v2026.07.24.1 — July 2026](#v202607241--july-2026)
 - [v2026.07.24 — July 2026](#v20260724--july-2026)
@@ -122,6 +123,25 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.25.1 — July 2026
+
+**Health knows when you last opened a bookmark — and finally records it when you do.** Opening a link from the health view never counted as opening it, so the Stale filter and the score went on treating links you use every week as untouched.
+
+Config also stops changing shape depending on how you got there.
+
+### New
+
+- **new** **Every health row says when it was last opened** — `just opened`, `4h ago`, `yesterday`, `3d ago`, and a date once it is more than a week back (`Jul 21`, then `Jun 2025` beyond a year). Knowing a link is broken is only half of deciding whether to fix it or drop it; the other half is whether you have touched it this year, which the row never said. Shown on every row rather than only where a value exists — a field that appears and vanishes reads as missing data instead of a stable column — and never-opened rows are set apart, since that is the same signal the Stale filter and the score act on. The exact timestamp is always in the `title`, so the rounded label costs nothing. Deliberately not the inbox's `formatRelativeTime`, which counts days indefinitely: "94d ago" stops being a number you can picture, and a bookmark's last open is often months back, so the scale narrows into dates (`shared/last-opened-format.js`).
+- **new** **An "About the developer" panel on the config overview** — a short introduction with links to the GitHub profile and the Ko-fi page, which reuses the what's-new modal's own button markup and `.wn-kofi-*` rules rather than restating them, so the two cannot drift apart. It sits under "needs attention" inside the overview's two-column grid, and Tips moves up beside the release notes so the overview is one two-by-two block instead of a column with two loose full-width panels below it.
+
+### Fixes
+
+- **fix** **Opening a bookmark from health counts as opening it** — `openIssue` called `window.open` and nothing else. The dashboard posts to `/api/track-open` on every open; health never did, so a bookmark you only ever reach from the health view stayed on `openCount: 0` and `lastOpened: 0` permanently. That is not a display problem: "never opened" is precisely what the Stale filter selects on and what the score penalises, so health flagged links you actively use as unused — and the more you used health to reach them, the more confidently it was wrong. The open is now recorded with `source: 'health'`, a new value for the existing enum, so Stats can tell it apart from a dashboard open. Note that opens which happened before this fix were never written and cannot be recovered (`dashboard-health.js`).
+- **fix** **The last-opened label updates the moment you open a row** — it kept reading `never opened` immediately after you had opened it, which looks broken even once the open is being recorded. The issue object updates in place and only that one span repaints; re-rendering the row would rebuild its action buttons and menus and drop whatever the user had open. Nothing is re-scored or re-sorted on the click: the score, the Stale filter and the sort order all read `openCount` and `lastOpened`, so recomputing them there would let a row drop out of the filtered list you are working through at the exact moment you opened it. Re-ranking waits for a refresh, which is a deliberate action rather than a side effect.
+- **fix** **Config keeps its layout however it is opened** — opening it from the dashboard and loading `#config` directly produced two different pages. Loaded directly — a reload, a bookmark, a deep link — the shell collapsed from 1040px to its content width: five tiles became three, the overview panels dropped to a single column, and the whole view shifted right. Config renders into the same element as the bookmark grid, so it inherits `.dashboard-grid:not(.packed-columns):not(.layout-launcher)`, which sets `width: fit-content` and an auto margin to centre a narrow column count on a wide screen. It escaped that rule only by accident: arriving from the dashboard leaves the previous render's `packed-columns` and `columns-N` classes behind, and those exclude it. Rendering config first leaves neither present. It now states the width it wants instead of depending on which classes happen to be left over (`config-view.css`).
 
 ---
 

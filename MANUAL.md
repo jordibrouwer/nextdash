@@ -430,7 +430,9 @@ If **Hypr mode** is enabled in settings, bookmark clicks may be routed to your w
 
 ### 📈 Usage tracking
 
-Each open increments **open count** and updates **last opened**. This powers smart collections (“Recently opened”, “Most used”, “Stale”) and stats.
+Each open increments **open count** and updates **last opened**. This powers smart collections (“Recently opened”, “Most used”, “Stale”) and stats. Opens count wherever they happen — the dashboard, the recent panel, search, and the health view — and stats records which of those it was.
+
+Health opens were the exception until **v2026.07.25.1**: they opened the link but recorded nothing, so a bookmark you only ever reached from the health view stayed on zero opens and kept being flagged as stale. Fixed, but not retroactively — opens from before that release were never written down.
 
 ### 🕘 Recent panel (`*`)
 
@@ -836,6 +838,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | Feature | Use |
 |---------|-----|
 | **Score 0–100** | Combines broken, duplicate, shortcut conflict, stale, missing preview, unused |
+| **Last opened** | Every row says when you last opened it, beside the domain: *just opened*, *4h ago*, *yesterday*, *3d ago*, then a date once it is more than a week back (*Jul 21*, and *Jun 2025* beyond a year). The exact moment is in the tooltip. Rows you have never opened say so plainly rather than showing nothing — that is the same signal the **stale** and **unused** filters act on. Opening a row updates the label straight away, but deliberately does not re-score or re-sort the list, so a row cannot vanish from under you the moment you open it |
 | **Score breakdown** | Click the score badge — or press `s` — to unfold how the score was reached: every bookmark starts at 100, each issue lists what it costs (broken −60, duplicate −15, shortcut conflict −15, never checked −10, not opened in 30 days −10, never opened −10, stale check −5, no preview −5), down to the total |
 | **Summary tiles** | Compact stat tiles; click a tile to jump to that filter. **Monitored** sits directly after **Healthy** and colours itself from live state: the whole tile turns **red** while any monitored bookmark is unreachable, **green** while they all answer, and stays neutral at zero. Its tooltip names the split (*1 of 3 not responding*); clicking opens the monitored list and is remembered. A monitor awaiting its first check counts as neither, since unknown is not the same as failing |
 | **Filters** | broken, duplicate, shortcut-conflict, stale, unchecked, unused, missing preview, healthy, **monitored** — default **broken** on first visit, and your last filter and sort come back on the next one; a `?hv_filter=` deep link still overrides what was stored |

@@ -144,7 +144,7 @@
         return `
             <div class="wn-intro">
                 <p class="wn-intro-text">nextDash is a personal project I build and maintain in my spare time. — if you enjoy using it, a small contribution means a lot and helps keep the project going.</p>
-                <a class="wn-kofi-btn wn-kofi-btn--animated" href="https://ko-fi.com/Z8Z81Z2KIP" target="_blank" rel="noopener">
+                <a class="wn-kofi-btn wn-kofi-btn--animated" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">
                     <span class="wn-kofi-stars" aria-hidden="true">
                         <span class="wn-kofi-star"></span>
                         <span class="wn-kofi-star"></span>
