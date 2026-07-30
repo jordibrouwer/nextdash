@@ -64,6 +64,34 @@ test.describe('config info + reset affordances', () => {
         await expect(page.locator('#app-modal .modal-text')).toContainText(/1440/);
     });
 
+    test('every field with a default also explains itself', async ({ page }) => {
+        await loadDashboard(page);
+        // dashboard-config.js is lazy-loaded on first open; until then the
+        // class it defines is not on window.
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.waitForFunction(() => !!window.DashboardConfig?.FIELD_META);
+        // A field carrying a reset affordance but no info button is a gap: the
+        // UI offers to restore a default it never names.
+        const gaps = await page.evaluate(() => {
+            // dashboardInstance.config is the lazy loader proxy, so the class
+            // statics come from the global rather than from its constructor.
+            const meta = window.DashboardConfig.FIELD_META;
+            return Object.entries(meta)
+                .filter(([, m]) => m && m.def !== undefined && !m.info)
+                .map(([field]) => field);
+        });
+        // Toolbar toggles are self-describing ("Show recent button"), so they
+        // are the deliberate exception rather than an oversight.
+        const allowed = new Set([
+            'showRecentButton', 'showCheatSheetButton', 'showConfigButton', 'showHealthDashboard',
+            'showAddBookmarkButton', 'showSearchButton', 'showFindersButton', 'showCommandsButton',
+            'showSmartTodayCollection', 'showSmartRecentCollection', 'showSmartStaleCollection',
+            'showSmartMostUsedCollection', 'pushNotifyMonitor', 'pushNotifyBackup',
+            'pushNotifyRelease', 'pushNotifySubject',
+        ]);
+        expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
+    });
+
     test('behavior is split into sub-tabs', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));

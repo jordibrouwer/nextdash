@@ -45,6 +45,9 @@ class DashboardConfig {
         this.bmQuery = '';
         this.bmPageFilter = '';
         this.bmCategoryFilter = '';
+        // A named cleanup filter arrived at from Statistics ('untagged', …).
+        // Empty means the list is unfiltered by it.
+        this.bmCleanupFilter = '';
         this.bmSort = 'page';
         this.bmEditing = null;
         this.bmDirty = false;
@@ -3202,13 +3205,13 @@ class DashboardConfig {
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'] },
-        healthRecheckIntervalMinutes: { def: 60 },
+        healthRecheckIntervalMinutes: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 60 },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'] },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 1 },
         statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 1500 },
         showStatusLoading: { info: ['showStatusLoadingInfoTitle', 'showStatusLoadingInfoMessage'] },
         monitorNotifyUrl: { info: ['monitorNotifyUrlInfoTitle', 'monitorNotifyUrlInfoMessage'] },
-        monitorNotifyRetries: { def: 3 },
+        monitorNotifyRetries: { info: ['monitorNotifyRetriesInfoTitle', 'monitorNotifyRetriesInfoMessage'], def: 3 },
         pushNotifyEnabled: { info: ['pushNotifyInfoTitle', 'pushNotifyInfoMessage'], def: false },
         pushNotifyMonitor: { def: false },
         pushNotifyBackup: { def: false },
@@ -3251,10 +3254,10 @@ class DashboardConfig {
         showSmartRecentCollection: { def: false },
         showSmartStaleCollection: { def: false },
         showSmartMostUsedCollection: { def: false },
-        smartTodayLimit: { def: 8 },
-        smartRecentLimit: { def: 50 },
-        smartStaleLimit: { def: 50 },
-        smartMostUsedLimit: { def: 25 },
+        smartTodayLimit: { info: ['smartTodayLimitInfoTitle', 'smartTodayLimitInfoMessage'], def: 8 },
+        smartRecentLimit: { info: ['smartRecentLimitInfoTitle', 'smartRecentLimitInfoMessage'], def: 50 },
+        smartStaleLimit: { info: ['smartStaleLimitInfoTitle', 'smartStaleLimitInfoMessage'], def: 50 },
+        smartMostUsedLimit: { info: ['smartMostUsedLimitInfoTitle', 'smartMostUsedLimitInfoMessage'], def: 25 },
         // Data
         deviceSpecificSettings: { info: ['deviceSpecificSettingsInfoTitle', 'deviceSpecificSettingsInfoMessage'] },
         autoBackupEnabled: { info: ['autoBackupInfoTitle', 'autoBackupInfoMessage'] },
@@ -5411,10 +5414,44 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.t('config.selectAllBookmarks', 'Select all'))}</button>
                 </div>
+                ${this.renderCleanupFilterBanner()}
                 <div id="config-bm-bulk">${this.renderBulkToolbar()}</div>
                 <div id="config-bm-list">${this.renderBookmarksList()}</div>
             </div>
         `;
+    }
+
+    /** Human label for each named cleanup filter. */
+    cleanupFilterLabel(key) {
+        const map = {
+            never: ['config.cleanupFilterNever', 'Never opened'],
+            once: ['config.cleanupFilterOnce', 'Opened once and never again'],
+            untagged: ['config.cleanupFilterUntagged', 'Without tags'],
+            insecure: ['config.cleanupFilterInsecure', 'Not using HTTPS'],
+            noicon: ['config.cleanupFilterNoIcon', 'Without an icon'],
+        }[key];
+        return map ? this.t(map[0], map[1]) : '';
+    }
+
+    /**
+     * A banner naming the cleanup filter the list arrived with.
+     *
+     * Without it the user lands on a list that is silently hiding most of their
+     * bookmarks, with nothing on screen to say why or how to get back — the
+     * search box is empty and both dropdowns read "all".
+     */
+    renderCleanupFilterBanner() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const key = this.bmCleanupFilter;
+        if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return '';
+        const shown = this.visibleBookmarks().length;
+        const label = this.cleanupFilterLabel(key);
+        const count = this.t('config.cleanupFilterCount', '{n} shown').replace('{n}', String(shown));
+        return `
+            <div class="config-cleanup-banner" role="status">
+                <span class="config-cleanup-banner-text">${esc(label)} · ${esc(count)}</span>
+                <button type="button" class="config-btn config-btn--small" data-cleanup-clear="1">${esc(this.t('config.cleanupFilterClear', 'Show all bookmarks'))}</button>
+            </div>`;
     }
 
     /** Every category name in use, across all pages, de-duplicated and sorted. */
@@ -5450,12 +5487,28 @@ class DashboardConfig {
     }
 
     /** The rows currently passing search, page filter, category filter and sort. */
+    /**
+     * Named cleanup filters, each the list behind a figure in Statistics.
+     *
+     * Kept as predicates in one place so the count shown there and the rows
+     * shown here can never drift apart: both read this map.
+     */
+    static CLEANUP_FILTERS = {
+        never: (b) => !Number(b.openCount || 0) && !Number(b.lastOpened || 0),
+        once: (b) => Number(b.openCount || 0) === 1,
+        untagged: (b) => !(Array.isArray(b.tags) && b.tags.length),
+        insecure: (b) => /^http:\/\//i.test(String(b.url || '')),
+        noicon: (b) => !String(b.icon || '').trim(),
+    };
+
     visibleBookmarks() {
         const all = this.dash.allBookmarks || [];
         const q = String(this.bmQuery || '').trim().toLowerCase();
         const pageFilter = String(this.bmPageFilter || '');
         const catFilter = this.bmCategoryFilter || '';
+        const cleanup = DashboardConfig.CLEANUP_FILTERS[this.bmCleanupFilter] || null;
         const rows = all.filter((b) => {
+            if (cleanup && !cleanup(b)) return false;
             if (pageFilter && String(b.pageId) !== pageFilter) return false;
             if (catFilter && (b.category || '') !== catFilter) return false;
             if (!q) return true;
@@ -5856,6 +5909,13 @@ class DashboardConfig {
                 this.repaintBookmarksList();
             });
         }
+        container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
+            this.bmCleanupFilter = '';
+            this.bmSelected.clear();
+            // The banner is outside the list, so repainting the rows alone
+            // would leave it on screen describing a filter no longer applied.
+            this.render();
+        });
         const wire = (id, prop) => {
             const el = container.querySelector(id);
             if (!el) return;
@@ -6973,7 +7033,11 @@ class DashboardConfig {
                     + this.renderStatsShortcuts(s)
                     + `<div id="config-stats-finders">${this.renderStatsFinders()}</div>`;
             case 'content':
-                return this.renderStatsRatios(s) + this.renderStatsDistributions(s);
+                return this.renderStatsRatios(s)
+                    + this.renderStatsConcentration(s)
+                    + this.renderStatsCategoryEffectiveness(s)
+                    + this.renderStatsDistributions(s)
+                    + this.renderStatsCleanup(s);
             case 'inbox':
                 return this.renderStatsInbox();
             case 'health':
@@ -7233,6 +7297,123 @@ class DashboardConfig {
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsPerCategory', 'Bookmarks per category'))}</h3>
                 <ul class="config-dist-list">${rows(s.perCategory)}</ul>
+            </div>`;
+    }
+
+    /**
+     * Opens per bookmark, per category — which shelves you actually reach for.
+     *
+     * The neighbouring "bookmarks per category" panel measures size, and size
+     * alone hides the interesting case: a category holding twenty links that
+     * nobody opens looks healthy there and empty here. Sorted by the ratio
+     * rather than the total for the same reason.
+     */
+    renderStatsCategoryEffectiveness(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const list = s.categoryEffectiveness || [];
+        if (!list.length) {
+            return '';
+        }
+        const max = Math.max(...list.map((c) => c.perBookmark), 0);
+        const rows = list.map((c) => {
+            const pct = max > 0 ? Math.round((c.perBookmark / max) * 100) : 0;
+            const ratio = c.perBookmark.toFixed(1);
+            const detail = this.t('config.statsCategoryEffDetail', '{opens} opens over {count} bookmarks')
+                .replace('{opens}', String(c.opens))
+                .replace('{count}', String(c.count));
+            return `
+                <li class="config-dist-row">
+                    <span class="config-dist-label" title="${esc(detail)}">${esc(c.label)}</span>
+                    <div class="config-bar config-bar--slim" role="img" aria-label="${esc(c.label)}: ${esc(ratio)}">
+                        <span class="config-bar-fill" style="width:${pct}%"></span>
+                    </div>
+                    <span class="config-dist-count" title="${esc(detail)}">${esc(ratio)}</span>
+                </li>`;
+        }).join('');
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsCategoryEffTitle', 'Opens per bookmark, by category'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.statsCategoryEffNote', 'How often a bookmark in this category gets opened. A low figure on a large category is one you built but do not use.'))}</p>
+                <ul class="config-dist-list">${rows}</ul>
+            </div>`;
+    }
+
+    /**
+     * What share of all opens the busiest bookmarks account for.
+     *
+     * Answers a question none of the per-bookmark figures can: whether the
+     * collection is used broadly or is really a handful of links surrounded by
+     * everything else.
+     */
+    renderStatsConcentration(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const c = s.concentration || {};
+        if (!c.totalOpens) {
+            return '';
+        }
+        const sentence = this.t(
+            'config.statsConcentrationBody',
+            'Your top {top} bookmarks account for {share}% of all {total} opens.'
+        ).replace('{top}', String(c.topCount)).replace('{share}', String(c.share)).replace('{total}', String(c.totalOpens));
+        const rest = Math.max(0, c.usedCount - c.topCount);
+        const restText = this.t('config.statsConcentrationRest', 'The other {n} used bookmarks share the remaining {pct}%.')
+            .replace('{n}', String(rest)).replace('{pct}', String(100 - c.share));
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsConcentrationTitle', 'Where your usage sits'))}</h3>
+                <div class="config-ratio">
+                    <div class="config-ratio-head">
+                        <span class="config-ratio-label">${esc(this.t('config.statsConcentrationTop', 'Top {n}').replace('{n}', String(c.topCount)))}</span>
+                        <span class="config-ratio-value">${esc(String(c.topOpens))} / ${esc(String(c.totalOpens))} · ${esc(String(c.share))}%</span>
+                    </div>
+                    <div class="config-bar" role="img" aria-label="${esc(sentence)}">
+                        <span class="config-bar-fill" style="width:${esc(String(c.share))}%"></span>
+                    </div>
+                </div>
+                <p class="config-panel-note">${esc(sentence)}${rest > 0 ? ` ${esc(restText)}` : ''}</p>
+            </div>`;
+    }
+
+    /**
+     * Cleanup candidates, each with a button that opens the list behind it.
+     *
+     * A count on its own is a dead end — the work is always "show me those and
+     * let me fix them", and the bookmarks section already has bulk tagging and
+     * deletion. Rows with nothing to fix are dropped rather than shown as a
+     * zero, so the panel is a to-do list and not a scoreboard.
+     */
+    renderStatsCleanup(s) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const rows = [
+            ['never', s.neverOpened, this.t('config.statsCleanupNeverHint', 'Added but never used')],
+            ['once', s.openedOnce, this.t('config.statsCleanupOnceHint', 'Tried once, then dropped')],
+            ['untagged', s.untagged, this.t('config.statsCleanupUntaggedHint', 'Harder to find by search')],
+            ['insecure', s.insecure, this.t('config.statsCleanupInsecureHint', 'Plain http, no encryption')],
+            ['noicon', s.missingIcon, this.t('config.statsCleanupNoIconHint', 'Falls back to a letter tile')],
+        ].filter(([, n]) => Number(n) > 0);
+
+        if (!rows.length) {
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsCleanupTitle', 'Cleanup candidates'))}</h3>
+                    <p class="config-panel-empty">${esc(this.t('config.statsCleanupNone', 'Nothing to tidy up.'))}</p>
+                </div>`;
+        }
+
+        const items = rows.map(([key, n, hint]) => `
+            <li class="config-stat-detail">
+                <span>${esc(this.cleanupFilterLabel(key))} — <span class="config-stat-sub">${esc(hint)}</span></span>
+                <span class="config-cleanup-actions">
+                    <span class="config-stat-penalty">${esc(String(n))}</span>
+                    <button type="button" class="config-btn config-btn--small" data-cleanup-goto="${esc(key)}">${esc(this.t('config.statsCleanupShow', 'Show'))}</button>
+                </span>
+            </li>`).join('');
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.statsCleanupTitle', 'Cleanup candidates'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.statsCleanupNote', 'Each opens the matching bookmarks, where they can be tagged or removed in bulk.'))}</p>
+                <ul class="config-stat-details">${items}</ul>
             </div>`;
     }
 
@@ -7551,6 +7732,7 @@ class DashboardConfig {
         const tagCounts = new Map();
         const categoryKeys = new Set();
         const perCategoryCount = new Map();
+        const perCategoryOpens = new Map();
         let withShortcut = 0;
         let monitored = 0;
         let tagged = 0;
@@ -7571,6 +7753,7 @@ class DashboardConfig {
             if (b.category) {
                 categoryKeys.add(`${b.pageId}::${b.category}`);
                 perCategoryCount.set(b.category, (perCategoryCount.get(b.category) || 0) + 1);
+                perCategoryOpens.set(b.category, (perCategoryOpens.get(b.category) || 0) + Number(b.openCount || 0));
             }
             if (b.shortcut) withShortcut += 1;
             if (b.monitor === true) monitored += 1;
@@ -7603,6 +7786,18 @@ class DashboardConfig {
             .map(([id, n]) => [catLabels.get(id) || id, n])
             .sort((a, b) => b[1] - a[1]);
 
+        // Opens per bookmark, per category. The raw open total just restates
+        // which categories are biggest; dividing by size is what exposes a
+        // category you built and then never used.
+        const categoryEffectiveness = [...perCategoryCount.entries()]
+            .map(([id, n]) => ({
+                label: catLabels.get(id) || id,
+                count: n,
+                opens: perCategoryOpens.get(id) || 0,
+                perBookmark: n > 0 ? (perCategoryOpens.get(id) || 0) / n : 0,
+            }))
+            .sort((a, b) => b.perBookmark - a.perBookmark);
+
         const perPage = pages.map((p) => [
             p.name || String(p.id),
             all.filter((b) => String(b.pageId) === String(p.id)).length,
@@ -7618,6 +7813,27 @@ class DashboardConfig {
             .filter((b) => !Number(b.openCount || 0) && !Number(b.lastOpened || 0))
             .slice(0, 10)
             .map((b) => [b.name || b.url, b.url]);
+
+        // How much of the total usage the busiest handful accounts for. A high
+        // share means the collection is broad but the habit is narrow, which no
+        // per-bookmark figure shows.
+        const openTotals = all.map((b) => Number(b.openCount || 0)).filter((n) => n > 0)
+            .sort((a, b) => b - a);
+        const totalOpens = openTotals.reduce((sum, n) => sum + n, 0);
+        const topSlice = openTotals.slice(0, 10).reduce((sum, n) => sum + n, 0);
+        const concentration = {
+            totalOpens,
+            topCount: Math.min(10, openTotals.length),
+            topOpens: topSlice,
+            share: totalOpens > 0 ? Math.round((topSlice / totalOpens) * 100) : 0,
+            usedCount: openTotals.length,
+        };
+
+        // Cleanup candidates, each a filter the bookmarks list can reproduce.
+        const openedOnce = all.filter((b) => Number(b.openCount || 0) === 1).length;
+        const untagged = all.filter((b) => !(Array.isArray(b.tags) && b.tags.length)).length;
+        const insecure = all.filter((b) => /^http:\/\//i.test(String(b.url || ''))).length;
+        const missingIcon = all.filter((b) => !String(b.icon || '').trim()).length;
 
         return {
             total,
@@ -7638,6 +7854,12 @@ class DashboardConfig {
             shortcutConflictList,
             perPage,
             perCategory,
+            categoryEffectiveness,
+            concentration,
+            openedOnce,
+            untagged,
+            insecure,
+            missingIcon,
             topTags,
             topOpened,
             neverOpenedList,
@@ -8020,6 +8242,23 @@ class DashboardConfig {
                 // Duplicates are the actionable half of this panel, and health
                 // is where they can actually be merged.
                 if (action === 'open-health') this.openViewFromTile('health', 'duplicate');
+            });
+        });
+        // Cleanup candidates hand off to the bookmarks list, which is where the
+        // rows can actually be tagged or deleted.
+        container.querySelectorAll('[data-cleanup-goto]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-cleanup-goto');
+                if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return;
+                this.bmCleanupFilter = key;
+                // A stale search or category from an earlier visit would narrow
+                // the handed-over list further and misreport the count.
+                this.bmQuery = '';
+                this.bmPageFilter = '';
+                this.bmCategoryFilter = '';
+                this.bmSelected.clear();
+                this.bmEditing = null;
+                this.openConfigView('bookmarks');
             });
         });
         container.querySelectorAll('[data-stats-goto]').forEach((btn) => {

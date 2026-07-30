@@ -1527,6 +1527,35 @@
     overflow-wrap: anywhere;
 }
 
+/* Names the cleanup filter the list was opened with, and offers the way out.
+   Tinted so it reads as a temporary state rather than part of the toolbar. */
+.config-cleanup-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-left: 3px solid var(--accent-color, #4a90d9);
+    border-radius: 0 6px 6px 0;
+    background: color-mix(in srgb, var(--accent-color, #4a90d9) 10%, transparent);
+}
+
+.config-cleanup-banner-text {
+    font-size: calc(var(--font-size-text) * 0.914);
+    font-weight: 600;
+    color: var(--text-primary, inherit);
+}
+
+/* Count and its button travel together at the end of a cleanup row. */
+.config-cleanup-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+}
+
 /* Usage sits under the meta line, dimmer than it: the meta line says where the
    bookmark lives, this says whether it is used. Never-opened is tinted rather
    than merely worded, so a list of dead links is visible without reading it. */
