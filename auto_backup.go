@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -207,9 +208,11 @@ func (h *Handlers) maybeRunAutoBackup() {
 	}
 	if err := h.writeAutoBackup(); err != nil {
 		log.Printf("auto-backup: failed to create scheduled backup: %v", err)
+		h.pushAutoBackupResult(context.Background(), err)
 		return
 	}
 	log.Printf("auto-backup: created scheduled backup")
+	h.pushAutoBackupResult(context.Background(), nil)
 }
 
 // ListAutoBackups returns the stored automatic backups as JSON, newest first,

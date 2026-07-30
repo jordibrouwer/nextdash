@@ -235,7 +235,15 @@ type Settings struct {
 	HealthAutoRecheckIntervalHours int                              `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
 	MonitorNotifyURL               string                           `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
 	MonitorNotifyRetries           int                              `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
-	DiscoverabilityState           *DiscoverabilityState            `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
+	// The push booleans deliberately omit "omitempty": with it, a false value is
+	// dropped from the JSON entirely and the config checkbox reads `undefined`
+	// instead of unchecked, so turning a toggle off would not survive a reload.
+	PushNotifyEnabled    bool                  `json:"pushNotifyEnabled"`              // Master switch for browser push notifications (Web Push)
+	PushNotifySubject    string                `json:"pushNotifySubject,omitempty"`    // VAPID contact (mailto: or https:) sent to push services
+	PushNotifyMonitor    bool                  `json:"pushNotifyMonitor"`              // Push when a monitored bookmark goes down/recovers
+	PushNotifyBackup     bool                  `json:"pushNotifyBackup"`               // Push when an automatic backup succeeds or fails
+	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Push when a newer nextDash release is available
+	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 }
 
 // DiscoverabilityState persists UI discoverability progress in settings.json (shared across browsers).
@@ -295,6 +303,13 @@ type QuickStartState struct {
 	// How often the question has been put off, indexing a backoff schedule so
 	// each further hesitation waits longer than the last.
 	AnalyticsSnoozes int `json:"analyticsSnoozes,omitempty"`
+	// Same three-part state for the browser-notification invitation: whether it
+	// was actually answered, how long it stays hidden after being left open, and
+	// how often that has happened. Registering a device is per browser, so this
+	// records the decision rather than the subscription.
+	PushChoiceMade bool  `json:"pushChoiceMade,omitempty"`
+	PushAskAfter   int64 `json:"pushAskAfter,omitempty"`
+	PushSnoozes    int   `json:"pushSnoozes,omitempty"`
 	// Bookmark counts at the moment setup finished. The checklist ticks "add a
 	// bookmark" / "tag a bookmark" only once the user gets past these, so the
 	// seeded example bookmarks (which already carry tags) do not tick them for
@@ -2054,6 +2069,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 	settings.HealthAutoRecheckIntervalHours = clampHealthAutoRecheckIntervalHours(settings.HealthAutoRecheckIntervalHours)
 	settings.MonitorNotifyRetries = clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
+	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 
 	return settings
 }

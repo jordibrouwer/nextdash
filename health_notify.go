@@ -209,6 +209,12 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 	if len(notifications) == 0 {
 		return
 	}
+
+	// Browser push and the webhook are independent sinks for the same decision:
+	// either can be configured without the other, so this runs before the webhook
+	// target check rather than inside it.
+	h.pushMonitorNotifications(ctx, notifications)
+
 	target := strings.TrimSpace(h.store.GetSettings().MonitorNotifyURL)
 	if target == "" {
 		return
