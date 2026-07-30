@@ -55,6 +55,15 @@ test.describe('config info + reset affordances', () => {
         await expect(page.locator('[data-reset-field="dateFormat"]')).not.toHaveClass(/is-visible/);
     });
 
+    test('date & weather number fields show info buttons', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.locator('[data-behavior-tab="datetime"]').click();
+        await expect(page.locator('[data-info-field="weatherRefreshMinutes"]')).toBeVisible();
+        await page.locator('[data-info-field="weatherRefreshMinutes"]').click();
+        await expect(page.locator('#app-modal .modal-text')).toContainText(/1440/);
+    });
+
     test('behavior is split into sub-tabs', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));

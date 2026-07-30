@@ -2799,7 +2799,7 @@
         "weatherUnitInfoTitle": "Temperatuureenheid",
         "weatherUnitInfoMessage": "Celsius of Fahrenheit.",
         "weatherRefreshInfoTitle": "Weer-verversinterval",
-        "weatherRefreshInfoMessage": "Hoe vaak weer wordt ververst.\n\n• 10, 30 of 60 minuten",
+        "weatherRefreshInfoMessage": "Hoe vaak nextDash nieuwe weergegevens ophaalt.\n\n• Tussen 5 en 1440 minuten\n• Lagere waarden betekenen versere gegevens en meer verzoeken",
         "enableSmartCollectionsInfoTitle": "Smart collections",
         "enableSmartCollectionsInfoMessage": "Automatische categorieën (Today, Recent, Stale, …).\n\n• Hoofdschakelaar voor alles\n• Per type onder Geavanceerd → Smart collections",
         "buttonBarPositionInfoTitle": "Positie knoppenbalk",

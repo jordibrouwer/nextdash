@@ -2790,7 +2790,7 @@
         "weatherUnitInfoTitle": "Temperatureinheit",
         "weatherUnitInfoMessage": "Celsius oder Fahrenheit.",
         "weatherRefreshInfoTitle": "Wetter-Aktualisierung",
-        "weatherRefreshInfoMessage": "Aktualisierungsintervall (10/30/60 Min.).",
+        "weatherRefreshInfoMessage": "Wie oft nextDash neue Wetterdaten abruft.\n\n• Zwischen 5 und 1440 Minuten\n• Niedrigere Werte bedeuten aktuellere Daten und mehr Anfragen",
         "enableSmartCollectionsInfoTitle": "Smart Collections",
         "enableSmartCollectionsInfoMessage": "Automatische Kategorien (Today, Recent, …).\n\n• Details unter Erweitert",
         "buttonBarPositionInfoTitle": "Position der Knopfleiste",

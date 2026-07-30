@@ -2809,7 +2809,7 @@
         "weatherUnitInfoTitle": "Temperature unit",
         "weatherUnitInfoMessage": "Celsius or Fahrenheit for displayed temperature.",
         "weatherRefreshInfoTitle": "Weather refresh interval",
-        "weatherRefreshInfoMessage": "How often to fetch new weather data.\n\n• 10, 30, or 60 minutes",
+        "weatherRefreshInfoMessage": "How often nextDash fetches new weather data.\n\n• Between 5 and 1440 minutes\n• Lower values mean fresher data and more requests",
         "enableSmartCollectionsInfoTitle": "Smart collections",
         "enableSmartCollectionsInfoMessage": "Automatic categories such as Today, Recently opened, or Stale.\n\n• Master toggle enables/disables all smart collections\n• Configure each type under Advanced → Smart collections",
         "buttonBarPositionInfoTitle": "Button bar position",

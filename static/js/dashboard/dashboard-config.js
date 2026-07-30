@@ -3226,7 +3226,7 @@ class DashboardConfig {
         buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom' },
         showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'] },
         // Weather & calendar
-        weatherRefreshMinutes: { def: 30 },
+        weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },
         calendarUrl: { info: ['calendarUrlInfoTitle', 'calendarUrlInfoMessage'] },
         // Link previews
         linkPreviewHoverDelayMs: { info: ['linkPreviewHoverDelayInfoTitle', 'linkPreviewHoverDelayInfoMessage'], def: 400 },

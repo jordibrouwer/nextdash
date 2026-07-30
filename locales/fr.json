@@ -2790,7 +2790,7 @@
         "weatherUnitInfoTitle": "Unité de température",
         "weatherUnitInfoMessage": "Celsius ou Fahrenheit.",
         "weatherRefreshInfoTitle": "Actualisation météo",
-        "weatherRefreshInfoMessage": "Fréquence de mise à jour (10/30/60 min).",
+        "weatherRefreshInfoMessage": "Fréquence à laquelle nextDash récupère les données météo.\n\n• Entre 5 et 1440 minutes\n• Une valeur plus basse signifie des données plus fraîches et plus de requêtes",
         "enableSmartCollectionsInfoTitle": "Collections intelligentes",
         "enableSmartCollectionsInfoMessage": "Catégories automatiques (Today, Recent, …).\n\n• Détails sous Avancé",
         "buttonBarPositionInfoTitle": "Position de la barre de boutons",
