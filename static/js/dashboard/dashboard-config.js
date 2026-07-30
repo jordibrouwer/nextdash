@@ -5559,6 +5559,7 @@ class DashboardConfig {
                         <span class="config-bm-name">${esc(b.name || b.url)}</span>
                         <span class="config-bm-url">${esc(b.url)}</span>
                         <span class="config-bm-meta">${bits.join(' · ')}</span>
+                        ${this.renderBookmarkUsageLine(b)}
                     </div>
                     <div class="config-crud-row-actions">
                         <button type="button" class="config-btn config-btn--small" data-bm-edit="${esc(key)}">${esc(open ? this.t('config.close', 'Close') : this.t('config.edit', 'Edit'))}</button>
@@ -5712,9 +5713,130 @@ class DashboardConfig {
                             <button type="button" class="config-btn config-btn--small" data-bm-preview="clear">${esc(this.t('config.detailLinkPreviewClear', 'Clear preview'))}</button>
                         </div>
                     </div>
+
+                    ${this.renderBookmarkStats(b)}
                 </div>
 
                 ${saveBar('bottom')}
+            </div>`;
+    }
+
+    /**
+     * A translator formatLastOpened can use. Its labels carry a {count}, and the
+     * config t() takes only (key, fallback) — handed to it directly, the count
+     * placeholder survives into the UI verbatim. Dashboard keys also arrive
+     * prefixed here, which formatDashboardLabel does not expect.
+     */
+    lastOpenedTranslator() {
+        return (key, fallback, params) => {
+            const bare = String(key).startsWith('dashboard.') ? String(key).slice('dashboard.'.length) : key;
+            if (params && typeof this.dash.formatDashboardLabel === 'function') {
+                const text = this.dash.formatDashboardLabel(bare, params, fallback);
+                if (text && text !== bare && text !== key) return text;
+            }
+            const raw = this.t(key, fallback);
+            if (!params) return raw;
+            return Object.entries(params).reduce(
+                (acc, [name, value]) => acc.replaceAll(`{${name}}`, String(value)),
+                String(raw || '')
+            );
+        };
+    }
+
+    /**
+     * The one-line usage summary on a collapsed row: how often, how recently.
+     *
+     * Kept out of the meta line above it because that one describes where the
+     * bookmark lives (page, category, tags) and this describes whether it is
+     * used at all — the thing you scan the list for when clearing out dead
+     * links. Never-opened is stated outright rather than left blank, matching
+     * Health, where an empty slot would read as missing data instead.
+     */
+    renderBookmarkUsageLine(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const opens = Number(b.openCount || 0);
+        const { label, title, never } = window.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
+            || { label: '', title: '', never: true };
+        if (never && opens === 0) {
+            return `<span class="config-bm-usage is-never">${esc(this.t('dashboard.healthNeverOpened', 'never opened'))}</span>`;
+        }
+        const count = this.t('config.bookmarkStatOpenCount', '{count}×').replace('{count}', String(opens));
+        return `<span class="config-bm-usage" title="${esc(title)}">${esc(`${count} · ${label}`)}</span>`;
+    }
+
+    /**
+     * Read-only usage figures for one bookmark, shown at the foot of its editor.
+     *
+     * Every value here is already stored on the bookmark — this reads, it never
+     * writes. That matters for the editor around it: saving spreads the form
+     * fields over the existing record, so openCount and friends survive an edit
+     * precisely because nothing in the form binds to them. None of these cells
+     * carry a data-bm-field for the same reason.
+     *
+     * Timestamps go through the shared formatLastOpened rather than a local
+     * format, so "yesterday" means the same thing here as it does in Health.
+     */
+    renderBookmarkStats(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const translate = this.lastOpenedTranslator();
+        const when = (ts) => window.formatLastOpened?.(ts, { t: translate })
+            || { label: '—', title: '', never: true };
+
+        const rows = [];
+        const created = when(b.createdAt);
+        rows.push([
+            this.t('config.bookmarkStatAdded', 'Added'),
+            created.never ? '—' : created.label,
+            created.never ? this.t('config.bookmarkStatUnknown', 'Not recorded') : created.title,
+        ]);
+
+        const opens = Number(b.openCount || 0);
+        rows.push([
+            this.t('config.bookmarkStatOpens', 'Opened'),
+            this.t('config.bookmarkStatOpenCount', '{count}×').replace('{count}', String(opens)),
+            '',
+        ]);
+
+        const lastOpened = when(b.lastOpened);
+        rows.push([
+            this.t('config.bookmarkStatLastOpened', 'Last opened'),
+            lastOpened.label,
+            lastOpened.never ? '' : lastOpened.title,
+        ]);
+
+        // Only bookmarks with availability checking on ever get a lastChecked,
+        // so the row would be a permanent dash for everything else.
+        if (b.lastChecked) {
+            const checked = when(b.lastChecked);
+            const outcome = b.lastError
+                ? String(b.lastError)
+                : this.t('config.bookmarkStatCheckOk', 'no errors');
+            rows.push([
+                this.t('config.bookmarkStatLastChecked', 'Last checked'),
+                `${checked.label} · ${outcome}`,
+                checked.title,
+            ]);
+        }
+
+        const cells = rows.map(([label, value, title]) => `
+            <div class="config-bm-stat">
+                <span class="config-bm-stat-label">${esc(label)}</span>
+                <span class="config-bm-stat-value"${title ? ` title="${esc(title)}"` : ''}>${esc(value)}</span>
+            </div>`).join('');
+
+        // Scale the bar against the busiest bookmark, so the bar answers "is this
+        // one of my heavily used links?" rather than restating the raw count.
+        const busiest = (this.dash.allBookmarks || [])
+            .reduce((max, bm) => Math.max(max, Number(bm.openCount || 0)), 0);
+        const meter = opens > 0 && busiest > 0
+            ? this.renderStatMeta(opens, opens / busiest, 'config.bookmarkStatOpenCount', '{count}×')
+            : '';
+
+        return `
+            <div class="config-bm-cell config-bm-cell--wide config-bm-stats" data-bm-stats>
+                <span class="config-bm-label">${esc(this.t('config.bookmarkStatsLabel', 'Statistics'))}</span>
+                <div class="config-bm-stat-grid">${cells}</div>
+                ${meter}
             </div>`;
     }
 

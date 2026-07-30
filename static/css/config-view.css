@@ -1527,6 +1527,54 @@
     overflow-wrap: anywhere;
 }
 
+/* Usage sits under the meta line, dimmer than it: the meta line says where the
+   bookmark lives, this says whether it is used. Never-opened is tinted rather
+   than merely worded, so a list of dead links is visible without reading it. */
+.config-bm-usage {
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+}
+
+.config-bm-usage.is-never {
+    color: var(--text-disabled, #9a9a9a);
+    font-style: italic;
+}
+
+/* Statistics block at the foot of the editor. Read-only, so it is deliberately
+   quieter than the fields above and carries a rule to separate it from them. */
+.config-bm-stats {
+    padding-top: 12px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+}
+
+.config-bm-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px 18px;
+}
+
+.config-bm-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.config-bm-stat-label {
+    font-size: calc(var(--font-size-text) * 0.821);
+    color: var(--text-muted, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.config-bm-stat-value {
+    font-size: calc(var(--font-size-text) * 0.914);
+    color: var(--text-primary, inherit);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
 /* The editor spans both columns on its own line. */
 .config-bm-editor {
     grid-column: 1 / -1;

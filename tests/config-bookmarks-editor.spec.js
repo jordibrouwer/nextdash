@@ -489,6 +489,89 @@ test.describe('a category always exists on the page it is used on', () => {
     });
 });
 
+test.describe('bookmark statistics', () => {
+    /** Give the first bookmark a known history, so the figures are assertable. */
+    async function seedStats(page, stats) {
+        await page.evaluate((s) => {
+            const bm = window.dashboardInstance.allBookmarks[0];
+            Object.assign(bm, s);
+            window.dashboardInstance.config.repaintBookmarksList();
+        }, stats);
+    }
+
+    test('the editor shows added, open count and last opened', async ({ page }) => {
+        await openBookmarks(page);
+        await seedStats(page, {
+            createdAt: Date.now() - 90 * 24 * 60 * 60 * 1000,
+            openCount: 47,
+            lastOpened: Date.now() - 26 * 60 * 60 * 1000,
+        });
+        await openFirstEditor(page);
+
+        const stats = page.locator('[data-bm-stats]');
+        await expect(stats).toBeVisible();
+        await expect(stats).toContainText('47×');
+        // 26h back is the previous calendar day, so the shared formatter says so.
+        await expect(stats).toContainText(/yesterday/i);
+    });
+
+    test('relative labels interpolate their count', async ({ page }) => {
+        await openBookmarks(page);
+        // Hours and minutes are the two labels carrying a {count}; the config
+        // t() drops params, so an unwrapped translator leaks the placeholder.
+        await seedStats(page, { openCount: 5, lastOpened: Date.now() - 3 * 60 * 60 * 1000, lastChecked: 0 });
+        await openFirstEditor(page);
+        const stats = page.locator('[data-bm-stats]');
+        await expect(stats).toContainText('3h ago');
+        await expect(stats).not.toContainText('{count}');
+
+        await page.locator('[data-bm-edit]').first().click();
+        await seedStats(page, { openCount: 5, lastOpened: Date.now() - 20 * 60 * 1000 });
+        await openFirstEditor(page);
+        await expect(page.locator('[data-bm-stats]')).toContainText('20m ago');
+        await expect(page.locator('[data-bm-stats]')).not.toContainText('{count}');
+    });
+
+    test('a never-opened bookmark says so instead of showing a blank', async ({ page }) => {
+        await openBookmarks(page);
+        await seedStats(page, { openCount: 0, lastOpened: 0, createdAt: 0 });
+        await expect(page.locator('.config-bm-usage.is-never').first()).toContainText(/never opened/i);
+    });
+
+    test('the collapsed row carries the usage summary', async ({ page }) => {
+        await openBookmarks(page);
+        await seedStats(page, { openCount: 12, lastOpened: Date.now() - 5 * 60 * 1000 });
+        await expect(page.locator('.config-bm-usage').first()).toContainText('12×');
+    });
+
+    test('last checked appears only once the bookmark has been checked', async ({ page }) => {
+        await openBookmarks(page);
+        await seedStats(page, { lastChecked: 0, lastError: '' });
+        await openFirstEditor(page);
+        await expect(page.locator('[data-bm-stats]')).not.toContainText(/last checked/i);
+
+        await page.locator('[data-bm-edit]').first().click();
+        await seedStats(page, { lastChecked: Date.now() - 2 * 60 * 60 * 1000, lastError: '' });
+        await openFirstEditor(page);
+        await expect(page.locator('[data-bm-stats]')).toContainText(/last checked/i);
+    });
+
+    test('saving an edit does not clear the statistics', async ({ page }) => {
+        await openBookmarks(page);
+        await seedStats(page, { openCount: 33, lastOpened: Date.now() - 3 * 60 * 60 * 1000 });
+        await openFirstEditor(page);
+
+        // The whole feature rests on the save spreading form fields over the
+        // stored record: bind a stat to an input and it would be wiped here.
+        await page.locator('[data-bm-field="note"]').fill('stats must survive');
+        await page.locator('[data-bm-save]').first().click();
+        await expect(page.locator('.config-bm-editor')).toHaveCount(0);
+
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.allBookmarks[0].openCount)).toBe(33);
+    });
+});
+
 test.describe('select all bookmarks', () => {
     test('ticks every visible row and clears on a second press', async ({ page }) => {
         await openBookmarks(page);
