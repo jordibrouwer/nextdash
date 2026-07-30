@@ -354,7 +354,7 @@ class DashboardSetup {
                     return;
                 }
 
-                const pageIndex = parseInt(key) - 1;
+                const pageIndex = parseInt(key, 10) - 1;
                 
                 // Check if this page exists
                 if (pageIndex < d.pages.length) {
