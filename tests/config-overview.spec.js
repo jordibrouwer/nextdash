@@ -143,4 +143,27 @@ test.describe('config overview', () => {
         const glow = await kofi.evaluate((el) => getComputedStyle(el).animationName);
         expect(glow).not.toBe('none');
     });
+
+    test('the layout is the same whether config is opened or loaded directly', async ({ page }) => {
+        const shellWidth = () => page.evaluate(() => {
+            const el = document.querySelector('.config-view');
+            return el ? Math.round(el.getBoundingClientRect().width) : null;
+        });
+
+        // The direct load goes FIRST and in a fresh context: it is the case that
+        // broke, and navigating to the dashboard first would leave the grid
+        // classes behind that used to hide the bug.
+        await page.goto('/#config');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissBlockingOverlays(page);
+        await page.waitForTimeout(1500);
+        const direct = await shellWidth();
+
+        await loadOverview(page);
+        const navigated = await shellWidth();
+
+        expect(direct).toBe(navigated);
+        // And it is the full shell, not a content-sized box.
+        expect(direct).toBeGreaterThan(900);
+    });
 });

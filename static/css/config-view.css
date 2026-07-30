@@ -29,6 +29,23 @@
 
     display: block;
     padding: 0;
+
+    /* Undo the bookmark grid's centring, which this container inherits.
+     *
+     * .dashboard-grid:not(.packed-columns):not(.layout-launcher) sets
+     * width: fit-content and margin-inline: auto so a narrow column count sits
+     * centred on a wide screen. Config is not a column grid and wants the full
+     * width, and it only escaped that rule by accident: arriving from the
+     * dashboard leaves the previous render's packed-columns/columns-N classes
+     * on the element, which excluded it. Loading #config directly — a reload, a
+     * bookmark, a deep link — renders config first, with neither class present,
+     * so the rule applied and the shell collapsed to its content width: tiles
+     * dropped to three across, the panels to a single column, and the whole
+     * view shifted right. Same page, different layout depending on how you got
+     * there. */
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
 }
 
 .config-view {
