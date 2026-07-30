@@ -627,20 +627,21 @@ class DashboardConfig {
             <div class="config-tiles" role="list">${tiles}</div>
             ${this.renderOverviewAttention()}
             <div class="config-overview-columns">
+                ${this.renderOverviewAbout()}
                 ${this.renderOverviewStats()}
                 ${this.renderOverviewWhatsNew()}
+                ${this.renderOverviewTips()}
             </div>
-            ${this.renderOverviewTips()}
-            ${this.renderOverviewAbout()}
         `;
     }
 
     /**
      * Who makes nextDash, with the two links that follow from it.
      *
-     * Last on the overview on purpose: it is the one panel that is about the
-     * project rather than about your setup, so it reads as a footer rather than
-     * competing with what needs attention.
+     * Sits directly under "needs attention", so the first two things the
+     * overview says are what the install wants from you and who is behind it.
+     * Everything below is reference material you go looking for rather than
+     * read on the way past.
      *
      * The Ko-fi button reuses the shared .wn-kofi-* set from modal.css — the
      * same markup the what's-new modal uses, including the twinkling stars — so
@@ -655,11 +656,11 @@ class DashboardConfig {
             <div class="config-panel config-about-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewAboutTitle', 'About the developer'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.overviewAboutBody',
-                    'Hi, I’m Jordi. I build nextDash in my spare time, scratching my own itch: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. It is free and open-source, and it stays that way.'))}</p>
+                    'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time, scratching my own itch: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. It is free and open-source, and it stays that way. If it saves you time too, a star on GitHub or a coffee is always appreciated — and bug reports and ideas are just as welcome.'))}</p>
                 <div class="config-about-actions">
                     <a class="config-btn config-about-github" href="https://github.com/jordibrouwer" target="_blank" rel="noopener noreferrer">
                         <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-                        <span>${esc(this.t('config.overviewAboutGithub', 'GitHub profile'))}</span>
+                        <span>${esc(this.t('config.overviewAboutGithub', 'GitHub'))}</span>
                     </a>
                     <a class="wn-kofi-btn wn-kofi-btn--animated" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener noreferrer">
                         <span class="wn-kofi-stars" aria-hidden="true">${stars}</span>

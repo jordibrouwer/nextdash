@@ -144,6 +144,71 @@ test.describe('config overview', () => {
         expect(glow).not.toBe('none');
     });
 
+    // Every panel shares the overview's two-column grid. As a full-width block
+    // between "needs attention" and that grid, the about panel pushed everything
+    // below it down the page and the overview stopped reading as a summary.
+    test('the overview panels form a two-by-two grid', async ({ page }) => {
+        await loadOverview(page);
+
+        const inColumns = await page.evaluate(() =>
+            !!document.querySelector('.config-overview-columns .config-about-panel'));
+        expect(inColumns).toBe(true);
+
+        // The four panels form a 2x2 grid: about + stats on the first row,
+        // release notes + tips on the second.
+        const box = await page.evaluate(() => {
+            const find = (text) => [...document.querySelectorAll('.config-overview-columns .config-panel')]
+                .find((el) => el.textContent.includes(text));
+            const rect = (text) => {
+                const el = find(text);
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return { x: Math.round(r.x), y: Math.round(r.y) };
+            };
+            return {
+                about: rect('About the developer'),
+                glance: rect('At a glance'),
+                latest: rect('Latest update'),
+                tips: rect('Tips'),
+            };
+        });
+
+        // Every panel is inside the grid.
+        for (const [name, r] of Object.entries(box)) {
+            expect(r, `${name} should sit in the overview grid`).not.toBeNull();
+        }
+        // Side by side, not stacked.
+        expect(Math.abs(box.about.y - box.glance.y)).toBeLessThan(20);
+        expect(box.glance.x).toBeGreaterThan(box.about.x);
+        // Tips sits beside the release notes rather than below everything.
+        expect(Math.abs(box.latest.y - box.tips.y)).toBeLessThan(20);
+        expect(box.tips.x).toBeGreaterThan(box.latest.x);
+    });
+
+    test('the about buttons stay on one line beside each other', async ({ page }) => {
+        await loadOverview(page);
+
+        const row = await page.evaluate(() => {
+            const el = document.querySelector('.config-about-actions');
+            const [gh, kofi] = el.children;
+            const g = gh.getBoundingClientRect();
+            const k = kofi.getBoundingClientRect();
+            return {
+                sameLine: Math.abs(g.y - k.y) < 3,
+                withinPanel: k.right <= el.getBoundingClientRect().right + 1,
+            };
+        });
+        expect(row.sameLine).toBe(true);
+        expect(row.withinPanel).toBe(true);
+    });
+
+    // Opening #config directly renders config before the bookmark grid has ever
+    // run, so the container carries neither packed-columns nor columns-N — and
+    // .dashboard-grid:not(.packed-columns) sets width: fit-content with an auto
+    // margin. That collapsed the shell to its content width on a reload or a
+    // deep link: three tiles instead of five, one column instead of two, and the
+    // whole view shifted right. Same page, different layout depending on how you
+    // arrived.
     test('the layout is the same whether config is opened or loaded directly', async ({ page }) => {
         const shellWidth = () => page.evaluate(() => {
             const el = document.querySelector('.config-view');

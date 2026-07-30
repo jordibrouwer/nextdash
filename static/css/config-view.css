@@ -1672,13 +1672,18 @@
     margin-top: 0.85rem;
 }
 
-/* Match the Ko-fi button's height and padding so the pair reads as one row
-   rather than two buttons that happen to sit next to each other. */
+/* Match the Ko-fi button's height so the pair reads as one row rather than two
+   buttons that happen to sit next to each other.
+
+   The panel shares the overview's two-column grid, so this row is about half
+   the width it would be full-bleed — narrow enough that both labels at their
+   natural size wrap onto separate lines. The tighter inline padding, and the
+   short "GitHub" label beside the mark, are what keep them on one line. */
 .config-about-actions .config-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.3rem 0.75rem;
+    padding: 0.3rem 0.7rem;
     text-decoration: none;
 }
 
