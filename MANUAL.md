@@ -434,6 +434,16 @@ Each open increments **open count** and updates **last opened**. This powers sma
 
 Health opens were the exception until **v2026.07.25.1**: they opened the link but recorded nothing, so a bookmark you only ever reached from the health view stayed on zero opens and kept being flagged as stale. Fixed, but not retroactively — opens from before that release were never written down.
 
+**Where you can see it.** Since **v2026.07.25.2** every bookmark shows its own figures in three places:
+
+- **Config → Bookmarks → Edit** — a statistics block with when it was added, when it was last modified, how often it has been opened, when that last happened, and the result of the last availability check. The collapsed rows carry the short version (`35× · 2d ago`) so you can scan for dead weight without opening each one.
+- **Hovering a bookmark** on the dashboard — the tooltip adds the open count and last opened. Screen readers deliberately keep the short label, since it is announced on every row while you move through the grid.
+- **The link preview card**, if you have preview cards switched on.
+
+**Last modified** is recorded from v2026.07.25.2 onward. It tracks changes you make — name, URL, category, tags, shortcut, icon, note, pin, availability mode — and deliberately ignores background activity: a health check writing its result, or you opening the link, is not an edit. Bookmarks that existed before this release have no edit date until you next change one, and show `—` rather than a made-up date.
+
+Added dates work the same way: bookmarks from before that field existed show `—`, and nothing can recover those dates after the fact.
+
 ### 🕘 Recent panel (`*`)
 
 Shows bookmarks you opened recently **on the current page** (not global). Each row shows rank, a recency badge, and open count. Use **`↑`/`↓`/`Home`/`End`** to move between items and bulk-open buttons. From the panel you can open one or use bulk actions aligned with **`:open last`**.
@@ -919,6 +929,9 @@ Read-only analytics (desktop). Filter toolbar sits above a fused **split surface
 - **Finders** — finder totals and top-20 table by `useCount`.
 - **Inbox** — current inbox health (total / unread, oldest unread age, unread > 30d backlog, tags / notes / previews) plus **lifetime triage throughput**: items added, converted to bookmarks, discarded, average time to triage, a conversion coverage bar, an added-vs-triaged trend sparkline (7 / 30 / 90 days), and source / top-domain tables. Lifetime counters are kept in `data/inbox-stats.json` and start from when tracking began (older activity isn't included).
 - **Tags** — coverage, most-used tag, untagged count, per-tag tables.
+- **Where your usage sits** (Content, **v2026.07.25.2**) — the share of all your opens that the busiest ten bookmarks account for. A high share means the collection is broad but the habit is narrow.
+- **Opens per bookmark, by category** (Content, **v2026.07.25.2**) — usage divided by category size, sorted by that ratio. The neighbouring "bookmarks per category" panel measures size; this one shows whether a category earns its place. A low figure on a large category is one you built but do not use.
+- **Cleanup candidates** (Content, **v2026.07.25.2**) — never opened, opened once and never again, untagged, still on plain `http`, and without an icon. **Show** opens the matching bookmarks in **Config → Bookmarks** with that filter applied, where the bulk toolbar can tag or delete them. A banner names the active filter and **Show all bookmarks** clears it. Rows with a count of zero are left out.
 - **Rot & cleanup** — stale bookmarks, cleanup score (resets when the library is empty).
 - **Conflicts** — duplicate URL detail list and shortcut conflicts with a link to **Health**.
 - **Toolbar** — **Filter tables** search (narrows rows across all stats tables with a visible/total hint), **Expand all** / **Collapse all sections** (same as General; **v2026.07.09**), **Refresh** (reloads stats in-tab), and **Export CSV** (downloads multiple sections; respects active period filters) live in the in-surface toolbar (**v2026.07.01.1** moved Refresh/Export from the intro row).
