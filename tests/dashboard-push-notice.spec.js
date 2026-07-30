@@ -175,6 +175,17 @@ test.describe('dashboard: browser-notification invitation card', () => {
         expect(await page.evaluate(() => window.dashboardInstance.settings.pushNotifyEnabled === true)).toBe(false);
     });
 
+    // Config, health and the inbox share this page, so a card would land on top
+    // of whatever the user opened — including the push panel it is about.
+    test('the card stays away while the config view is open', async ({ page }) => {
+        await loadWithPushAvailable(page);
+        await resetAnswer(page);
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.waitForTimeout(400);
+        expect(await page.evaluate(() => window.PushNotice.render())).toBe(false);
+    });
+
     test('declining records an answer so the card does not return', async ({ page }) => {
         await loadWithPushAvailable(page);
         await resetAnswer(page);

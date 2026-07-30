@@ -135,6 +135,12 @@
         // This browser is already registered — nothing to ask.
         if (await push.isSubscribed?.()) return false;
 
+        // Config, health and the inbox are hash routes on this same page, so a
+        // card would otherwise drop on top of the settings the user is reading —
+        // including the very panel this card is about. Only interrupt the
+        // bookmarks view. ("bookmarks" is also the value before the first view
+        // is assigned, which is the dashboard.)
+        if (d.activeView && d.activeView !== 'bookmarks') return false;
         // The same bottom-left corner is used by quick-start and the analytics
         // notice; let those finish first.
         if (document.querySelector('.quickstart-card')) return false;
