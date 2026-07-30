@@ -1967,6 +1967,8 @@
         "pushPromptDismiss": "Jetzt nicht",
         "pushPromptDone": "Ausfallwarnungen sind für dieses Gerät aktiv.",
         "pushPromptFailed": "Benachrichtigungen konnten nicht aktiviert werden: {error}",
+        "pushNotifyAskAgain": "Einladung erneut anzeigen",
+        "pushNotifyAskAgainDone": "Die Einladung erscheint wieder auf dem Dashboard.",
         "pushNotifyTestSent": "Testbenachrichtigung gesendet.",
         "monitorNotifyRetries1": "1 fehlgeschlagenen Prüfung",
         "monitorNotifyRetries2": "2 fehlgeschlagenen Prüfungen",

@@ -1967,6 +1967,8 @@
         "pushPromptDismiss": "Pas maintenant",
         "pushPromptDone": "Les alertes de panne sont activées pour cet appareil.",
         "pushPromptFailed": "Impossible d'activer les notifications : {error}",
+        "pushNotifyAskAgain": "Afficher à nouveau l'invitation",
+        "pushNotifyAskAgainDone": "L'invitation réapparaîtra sur le tableau de bord.",
         "pushNotifyTestSent": "Notification de test envoyée.",
         "monitorNotifyRetries1": "1 contrôle échoué",
         "monitorNotifyRetries2": "2 contrôles échoués",

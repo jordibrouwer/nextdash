@@ -3525,6 +3525,7 @@ class DashboardConfig {
                     <div class="config-field-row">
                         <button type="button" class="config-btn" data-push-toggle disabled>${esc(this.t('config.pushNotifyEnableDevice', 'Enable on this device'))}</button>
                         <button type="button" class="config-btn" data-push-test hidden>${esc(this.t('config.pushNotifyTestButton', 'Send test notification'))}</button>
+                        <button type="button" class="config-btn" data-push-reask hidden>${esc(this.t('config.pushNotifyAskAgain', 'Show the invitation again'))}</button>
                     </div>`;
             }
             const val = s[c.field];
@@ -3618,6 +3619,7 @@ class DashboardConfig {
         if (!toggle) return;
         const status = container.querySelector('[data-push-status]');
         const test = container.querySelector('[data-push-test]');
+        const reask = container.querySelector('[data-push-reask]');
         const push = window.PushNotifications;
 
         const notify = (msg) => window.AppNotification?.show?.(msg);
@@ -3627,6 +3629,13 @@ class DashboardConfig {
         let isSubscribedNow = false;
 
         const refreshState = async () => {
+            // Decided before the early returns below: bringing the invitation back
+            // is about the dashboard card, not about whether this browser can
+            // currently subscribe, so it stays available even when push is blocked
+            // here. Re-hidden further down once this device is registered.
+            if (reask) {
+                reask.hidden = this.dash.settings?.quickStart?.pushChoiceMade !== true;
+            }
             if (!push?.isSupported()) {
                 isSubscribedNow = false;
                 toggle.disabled = true;
@@ -3664,6 +3673,8 @@ class DashboardConfig {
                     : this.t('config.pushNotifyDisabledOnDevice', 'Notifications are off for this device.');
             }
             if (test) test.hidden = !subscribed;
+            // Nothing to bring back once this device is registered.
+            if (reask && subscribed) reask.hidden = true;
         };
 
         toggle.addEventListener('click', async () => {
@@ -3696,6 +3707,29 @@ class DashboardConfig {
             } catch (err) {
                 notify(err.message || String(err));
             } finally {
+                await refreshState();
+            }
+        });
+
+        // Clearing the answer is all this needs to do: the card checks that flag
+        // itself and comes back on the dashboard, where the click that accepts it
+        // is a real user gesture. Prompting from here would sit behind the config
+        // view the card is not allowed to cover.
+        reask?.addEventListener('click', async () => {
+            reask.disabled = true;
+            try {
+                const qs = this.dash.settings?.quickStart;
+                if (qs) {
+                    qs.pushChoiceMade = false;
+                    qs.pushAskAfter = 0;
+                    qs.pushSnoozes = 0;
+                    await this.dash.saveSettings?.();
+                }
+                notify(this.t('config.pushNotifyAskAgainDone', 'The invitation will appear again on the dashboard.'));
+            } catch (err) {
+                notify(err.message || String(err));
+            } finally {
+                reask.disabled = false;
                 await refreshState();
             }
         });

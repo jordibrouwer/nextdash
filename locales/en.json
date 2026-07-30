@@ -1986,6 +1986,8 @@
         "pushPromptDismiss": "Not now",
         "pushPromptDone": "Outage alerts are on for this device.",
         "pushPromptFailed": "Could not turn notifications on: {error}",
+        "pushNotifyAskAgain": "Show the invitation again",
+        "pushNotifyAskAgainDone": "The invitation will appear again on the dashboard.",
         "pushNotifyTestSent": "Test notification sent.",
         "monitorNotifyRetries1": "1 failed check",
         "monitorNotifyRetries2": "2 failed checks",

@@ -1977,6 +1977,8 @@
         "pushPromptDismiss": "Niet nu",
         "pushPromptDone": "Meldingen bij uitval staan aan voor dit apparaat.",
         "pushPromptFailed": "Meldingen konden niet worden aangezet: {error}",
+        "pushNotifyAskAgain": "Uitnodiging opnieuw tonen",
+        "pushNotifyAskAgainDone": "De uitnodiging verschijnt weer op het dashboard.",
         "pushNotifyTestSent": "Testmelding verstuurd.",
         "monitorNotifyRetries1": "1 mislukte controle",
         "monitorNotifyRetries2": "2 mislukte controles",

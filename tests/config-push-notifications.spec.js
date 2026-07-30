@@ -197,6 +197,28 @@ test.describe('config: browser push notifications', () => {
         }
     });
 
+    // A declined invitation is otherwise unreachable: the card never returns and
+    // nothing in config brings it back.
+    test('the re-ask button restores a declined invitation', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            d.settings.quickStart = { ...(d.settings.quickStart || {}), pushChoiceMade: true, pushAskAfter: 0 };
+            await d.saveSettings?.();
+        });
+        await openStatusTab(page);
+
+        const reask = page.locator('[data-push-reask]');
+        // Offered even where this browser cannot subscribe: it is about the
+        // dashboard card, not about this browser's permission state.
+        await expect(reask).toBeVisible();
+        await reask.click();
+
+        await expect
+            .poll(() => page.evaluate(() => window.dashboardInstance.settings.quickStart.pushChoiceMade))
+            .toBe(false);
+    });
+
     test('subscribing with a non-https endpoint is refused', async ({ page }) => {
         const res = await page.request.post('/api/push/subscribe', {
             data: {
