@@ -138,7 +138,7 @@
      * a previously denied permission cannot be re-prompted from script, so that
      * case is reported back for the UI to explain.
      */
-    async function subscribe() {
+    async function subscribe(options = {}) {
         if (!isSupported()) throw new Error('This browser does not support push notifications');
         if (!isSecureContext()) throw new Error('Push notifications require HTTPS (or localhost)');
 
@@ -155,6 +155,14 @@
             throw new Error(permissionResult === 'denied'
                 ? 'Notifications are blocked for this site. Allow them in your browser settings.'
                 : 'Notification permission was dismissed');
+        }
+
+        // The one safe moment to switch push on server-side: the permission
+        // prompt is answered (so the user has actually committed) and the key
+        // fetch below would fail while the server switch is still off. Callers
+        // that need no such change simply omit it.
+        if (typeof options.beforeRegister === 'function') {
+            await options.beforeRegister();
         }
 
         const { enabled, publicKey } = await fetchPublicKey();

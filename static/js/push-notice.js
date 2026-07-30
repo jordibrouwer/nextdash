@@ -179,18 +179,17 @@
 
         // Start the subscribe (and with it the permission prompt) before touching
         // anything else — disabling the button first would end the gesture.
-        const pending = push.subscribe();
+        //
+        // beforeRegister runs once the user has granted permission but before the
+        // server is contacted, which is the only point where switching push on is
+        // both necessary (the register call refuses otherwise) and warranted (the
+        // user has committed). Doing it when the card merely appeared would change
+        // settings nobody asked to change.
+        const pending = push.subscribe({ beforeRegister: enableServerSide });
         button.disabled = true;
 
         pending.then(async () => {
-            const d = dash();
             markChoiceMade();
-            if (d?.settings) {
-                // Monitoring and health alerts are the reason this card exists, so
-                // they come on with it. Backup and release stay opt-in.
-                d.settings.pushNotifyEnabled = true;
-                d.settings.pushNotifyMonitor = true;
-            }
             await save();
             teardown();
             notify(t('dashboard.pushPromptDone', 'Outage alerts are on for this device.'));
@@ -206,14 +205,20 @@
     }
 
     /**
-     * The server switch has to be on before subscribe() is allowed, but turning
-     * it on requires a round trip that would cost the gesture. So enable it
-     * up front, quietly, the moment the card is shown — a card that is declined
-     * leaves a switch on with no devices registered, which sends nothing.
+     * Switch push on server-side, as part of accepting.
+     *
+     * Called from subscribe()'s beforeRegister hook rather than when the card is
+     * rendered: the register call refuses while the switch is off, but flipping
+     * it merely because a card appeared would turn settings on for someone who
+     * then declines — and nothing here turns them back off again.
+     *
+     * Monitoring and health alerts are the reason this card exists, so they come
+     * on with it. Backup and release notices stay opt-in from config, because a
+     * yes here should not mean more than the card asked for.
      */
-    async function primeServerSwitch() {
+    async function enableServerSide() {
         const d = dash();
-        if (!d?.settings || d.settings.pushNotifyEnabled === true) return;
+        if (!d?.settings) return;
         d.settings.pushNotifyEnabled = true;
         d.settings.pushNotifyMonitor = true;
         await save();
@@ -227,8 +232,6 @@
 
     async function render() {
         if (!(await shouldShow())) return false;
-
-        await primeServerSwitch();
 
         const el = document.createElement('div');
         el.className = 'quickstart-card push-notice-card';

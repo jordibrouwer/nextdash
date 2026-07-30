@@ -53,9 +53,13 @@ async function loadWithPushAvailable(page, opts = {}) {
             isSecureContext: () => true,
             permission: () => 'default',
             isSubscribed: async () => subscribed,
-            subscribe: () => {
+            subscribe: (options = {}) => {
                 window.__pushCalls.push(window.__gestureAlive ? 'subscribe-with-gesture' : 'subscribe-NO-gesture');
-                return Promise.resolve({ success: true });
+                // Mirror the real client: the caller's hook runs after permission
+                // is granted and before the server is contacted.
+                return Promise.resolve()
+                    .then(() => options.beforeRegister?.())
+                    .then(() => ({ success: true }));
             },
             sendTest: async () => { window.__pushCalls.push('sendTest'); return { sent: 1 }; },
             unsubscribe: async () => ({ removed: true }),
@@ -138,6 +142,37 @@ test.describe('dashboard: browser-notification invitation card', () => {
         await expect
             .poll(() => page.evaluate(() => window.__pushCalls.includes('sendTest')))
             .toBe(true);
+    });
+
+    // Merely showing the card must not change settings. It used to switch push on
+    // up front so the register call would be allowed, which left the toggles on
+    // for anyone who then declined — a setting changing itself with no consent.
+    test('showing the card changes no settings until it is accepted', async ({ page }) => {
+        await loadWithPushAvailable(page);
+        await resetAnswer(page);
+
+        await page.evaluate(() => window.PushNotice.render());
+        await expect(page.locator('.push-notice-card')).toBeVisible();
+
+        expect(await page.evaluate(() => window.dashboardInstance.settings.pushNotifyEnabled === true)).toBe(false);
+        expect(await page.evaluate(() => window.dashboardInstance.settings.pushNotifyMonitor === true)).toBe(false);
+    });
+
+    test('declining leaves push switched off, including after a reload', async ({ page }) => {
+        await loadWithPushAvailable(page);
+        await resetAnswer(page);
+
+        await page.evaluate(() => window.PushNotice.render());
+        await page.locator('.push-notice-card [data-push-action="decline"]').click();
+        await expect(page.locator('.push-notice-card')).toHaveCount(0);
+
+        await expect
+            .poll(() => page.evaluate(() => window.dashboardInstance.settings.quickStart?.pushChoiceMade))
+            .toBe(true);
+
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.settings, null, { timeout: 15_000 });
+        expect(await page.evaluate(() => window.dashboardInstance.settings.pushNotifyEnabled === true)).toBe(false);
     });
 
     test('declining records an answer so the card does not return', async ({ page }) => {
