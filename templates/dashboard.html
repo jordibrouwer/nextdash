@@ -340,6 +340,10 @@
     <!-- Batch icon fetch (`:favicons fetch`); same class config uses after an import. -->
     <script src="{{asset "js/shared/config-favicon-prefetch.js"}}" defer></script>
     <script src="{{asset "js/pwa-install-hint.js"}}" defer></script>
+    <!-- Registers the push service worker and keeps this device's subscription current. -->
+    <script src="{{asset "js/push-notifications.js"}}" defer></script>
+    <!-- One-time card inviting the user to switch outage alerts on. -->
+    <script src="{{asset "js/push-notice.js"}}" defer></script>
     <script src="{{asset "js/mobile-experience.js"}}" defer></script>
     <script src="{{asset "js/dashboard-tag-cloud.js"}}" defer></script>
     <script src="{{asset "js/dashboard-deep-link.js"}}" defer></script>

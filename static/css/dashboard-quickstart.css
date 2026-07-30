@@ -386,6 +386,34 @@
     margin-top: 0.8rem;
 }
 
+/* ── One-time push-notification invitation ──────────────────────────────
+   Same card chrome as the analytics notice; the caveat line is the addition. */
+.push-notice-text {
+    margin: 0.35rem 0 0;
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Safari's HTTPS restriction is a footnote, not part of the pitch: quieter than
+   the body text so it reads as a caveat rather than a second paragraph. */
+.push-notice-caveat {
+    margin: 0.5rem 0 0;
+    padding-left: 0.55rem;
+    border-left: 2px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-muted, var(--text-secondary));
+    line-height: 1.45;
+    opacity: 0.9;
+}
+
+.push-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+}
+
 /* The shared .whats-new-modal shell only scrolls once it hits max-height; this
    modal is shorter than that, so cap the body itself or the last paragraph runs
    under the buttons. */

@@ -3172,6 +3172,11 @@ class DashboardConfig {
         showStatusLoading: { info: ['showStatusLoadingInfoTitle', 'showStatusLoadingInfoMessage'] },
         monitorNotifyUrl: { info: ['monitorNotifyUrlInfoTitle', 'monitorNotifyUrlInfoMessage'] },
         monitorNotifyRetries: { def: 3 },
+        pushNotifyEnabled: { info: ['pushNotifyInfoTitle', 'pushNotifyInfoMessage'], def: false },
+        pushNotifyMonitor: { def: false },
+        pushNotifyBackup: { def: false },
+        pushNotifyRelease: { def: false },
+        pushNotifySubject: { def: '' },
         // Toolbar & chrome
         showRecentButton: { def: true },
         showCheatSheetButton: { def: true },
@@ -3452,6 +3457,19 @@ class DashboardConfig {
                 ],
             },
             {
+                tab: 'status',
+                title: t('config.pushNotifyTitle', 'Browser notifications'),
+                note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
+                controls: [
+                    bool('pushNotifyEnabled', 'config.pushNotifyEnabledLabel', 'Enable browser notifications'),
+                    bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
+                    bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
+                    bool('pushNotifyRelease', 'config.pushNotifyReleaseLabel', 'Notify when an update is available'),
+                    { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
+                    { type: 'pushDevice' },
+                ],
+            },
+            {
                 tab: 'general',
                 title: t('config.generalGroupSync', 'Sync & feedback'),
                 note: t('config.generalGroupSyncNote', 'Settings normally follow you to every browser. Keep them on this device to give this one its own appearance and layout.'),
@@ -3495,6 +3513,20 @@ class DashboardConfig {
             // below turns an unknown type into a text input bound to undefined.
             if (c.type === 'note') {
                 return `<p class="config-field-hint">${esc(c.text)}</p>`;
+            }
+            // Per-device push controls. Permission is granted per browser, so this
+            // cannot be a synced setting like the toggles around it — the state is
+            // read from the browser after render.
+            if (c.type === 'pushDevice') {
+                return `
+                    <div class="config-field-row" data-push-device-row>
+                        <span class="config-field-hint" data-push-status></span>
+                    </div>
+                    <div class="config-field-row">
+                        <button type="button" class="config-btn" data-push-toggle disabled>${esc(this.t('config.pushNotifyEnableDevice', 'Enable on this device'))}</button>
+                        <button type="button" class="config-btn" data-push-test hidden>${esc(this.t('config.pushNotifyTestButton', 'Send test notification'))}</button>
+                        <button type="button" class="config-btn" data-push-reask hidden>${esc(this.t('config.pushNotifyAskAgain', 'Show the invitation again'))}</button>
+                    </div>`;
             }
             const val = s[c.field];
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
@@ -3567,11 +3599,154 @@ class DashboardConfig {
                 el.addEventListener('change', () => this.setBehavior(field, el.value, special));
             }
         });
+        this.bindPushDeviceControls(container);
         this.bindAffordances(container, (field) => {
             const el = container.querySelector(`[data-${prefix}-field="${CSS.escape(field)}"]`);
             const special = el?.getAttribute(`data-${prefix}-special`) || '';
             return special;
         });
+    }
+
+    /**
+     * Wire the per-device push buttons and reflect this browser's actual state.
+     *
+     * Kept apart from the synced settings: whether *this* browser has permission
+     * is a property of the browser, not of the dashboard's settings, so it is
+     * always read live rather than from this.dash.settings.
+     */
+    bindPushDeviceControls(container) {
+        const toggle = container.querySelector('[data-push-toggle]');
+        if (!toggle) return;
+        const status = container.querySelector('[data-push-status]');
+        const test = container.querySelector('[data-push-test]');
+        const reask = container.querySelector('[data-push-reask]');
+        const push = window.PushNotifications;
+
+        const notify = (msg) => window.AppNotification?.show?.(msg);
+
+        // Mirrors the browser's subscription state so the click handler can branch
+        // synchronously; see the comment in that handler for why it must not await.
+        let isSubscribedNow = false;
+
+        const refreshState = async () => {
+            // Decided before the early returns below: bringing the invitation back
+            // is about the dashboard card, not about whether this browser can
+            // currently subscribe, so it stays available even when push is blocked
+            // here. Re-hidden further down once this device is registered.
+            if (reask) {
+                reask.hidden = this.dash.settings?.quickStart?.pushChoiceMade !== true;
+            }
+            if (!push?.isSupported()) {
+                isSubscribedNow = false;
+                toggle.disabled = true;
+                if (status) status.textContent = this.t('config.pushNotifyUnsupported', 'This browser does not support push notifications.');
+                if (test) test.hidden = true;
+                return;
+            }
+            if (!push.isSecureContext()) {
+                isSubscribedNow = false;
+                toggle.disabled = true;
+                if (status) status.textContent = this.t('config.pushNotifyInsecure', 'Push notifications require HTTPS (or localhost).');
+                if (test) test.hidden = true;
+                return;
+            }
+            if (push.permission() === 'denied') {
+                isSubscribedNow = false;
+                toggle.disabled = true;
+                if (status) status.textContent = this.t('config.pushNotifyBlocked', 'Notifications are blocked for this site. Allow them in your browser settings.');
+                if (test) test.hidden = true;
+                return;
+            }
+
+            // The server-side master switch gates everything; without it the
+            // subscribe endpoint refuses, so do not offer the button.
+            const enabled = Boolean(this.dash.settings?.pushNotifyEnabled);
+            const subscribed = enabled && await push.isSubscribed();
+            isSubscribedNow = subscribed;
+            toggle.disabled = !enabled;
+            toggle.textContent = subscribed
+                ? this.t('config.pushNotifyDisableDevice', 'Disable on this device')
+                : this.t('config.pushNotifyEnableDevice', 'Enable on this device');
+            if (status) {
+                status.textContent = subscribed
+                    ? this.t('config.pushNotifyEnabledOnDevice', 'Notifications are on for this device.')
+                    : this.t('config.pushNotifyDisabledOnDevice', 'Notifications are off for this device.');
+            }
+            if (test) test.hidden = !subscribed;
+            // Nothing to bring back once this device is registered.
+            if (reask && subscribed) reask.hidden = true;
+        };
+
+        toggle.addEventListener('click', async () => {
+            // Nothing may run before subscribe() that could end the user gesture.
+            //
+            // Safari treats disabling the clicked button as the end of the gesture,
+            // and requestPermission() then refuses with "Notification prompting can
+            // only be done from a user gesture" — the dialog never appears. The
+            // button is therefore disabled *after* the call is under way, and the
+            // subscribed state comes from refreshState() rather than a fresh await.
+            const wasSubscribed = isSubscribedNow;
+            const pending = wasSubscribed ? push.unsubscribe() : push.subscribe();
+            toggle.disabled = true;
+            try {
+                if (wasSubscribed) {
+                    await pending;
+                    notify(this.t('config.pushNotifyDisabledOnDevice', 'Notifications are off for this device.'));
+                } else {
+                    await pending;
+                    // Confirm in-page *and* send a real notification: without the
+                    // second one a successful opt-in looks like nothing happened,
+                    // and the user has no way to tell delivery actually works.
+                    notify(this.t('config.pushNotifyEnabledOnDevice', 'Notifications are on for this device.'));
+                    try {
+                        await push.sendTest();
+                    } catch (err) {
+                        notify(this.t('config.pushNotifyWelcomeFailed', 'Registered, but the first notification could not be delivered.'));
+                    }
+                }
+            } catch (err) {
+                notify(err.message || String(err));
+            } finally {
+                await refreshState();
+            }
+        });
+
+        // Clearing the answer is all this needs to do: the card checks that flag
+        // itself and comes back on the dashboard, where the click that accepts it
+        // is a real user gesture. Prompting from here would sit behind the config
+        // view the card is not allowed to cover.
+        reask?.addEventListener('click', async () => {
+            reask.disabled = true;
+            try {
+                const qs = this.dash.settings?.quickStart;
+                if (qs) {
+                    qs.pushChoiceMade = false;
+                    qs.pushAskAfter = 0;
+                    qs.pushSnoozes = 0;
+                    await this.dash.saveSettings?.();
+                }
+                notify(this.t('config.pushNotifyAskAgainDone', 'The invitation will appear again on the dashboard.'));
+            } catch (err) {
+                notify(err.message || String(err));
+            } finally {
+                reask.disabled = false;
+                await refreshState();
+            }
+        });
+
+        test?.addEventListener('click', async () => {
+            test.disabled = true;
+            try {
+                await push.sendTest();
+                notify(this.t('config.pushNotifyTestSent', 'Test notification sent.'));
+            } catch (err) {
+                notify(err.message || String(err));
+            } finally {
+                test.disabled = false;
+            }
+        });
+
+        refreshState();
     }
 
     /**

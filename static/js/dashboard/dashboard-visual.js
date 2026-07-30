@@ -216,7 +216,10 @@ class DashboardVisual {
             configLink = document.createElement('div');
             configLink.className = 'config-link config-link--icon';
             const configLabel = d.language.t('dashboard.config');
-            const label = configLabel !== 'dashboard.config' ? configLabel : 'config';
+            const raw = configLabel !== 'dashboard.config' ? configLabel : 'config';
+            // Escaped even though it comes from the locale files: an apostrophe or
+            // quote in a translation would otherwise break out of the attribute.
+            const label = d.escapeHtml ? d.escapeHtml(raw) : raw;
             configLink.innerHTML = `<a href="/#config" class="config-link-anchor" aria-label="${label}" title="${label}">${DashboardVisual.CONFIG_ICON_SVG}</a>`;
 
             const headerActions = document.querySelector('.header-actions');
@@ -305,7 +308,9 @@ class DashboardVisual {
                 healthLink = document.createElement('div');
                 healthLink.className = 'health-link health-link--icon';
                 const healthLabel = d.language.t('dashboard.health');
-                const label = healthLabel !== 'dashboard.health' ? healthLabel : 'health';
+                const raw = healthLabel !== 'dashboard.health' ? healthLabel : 'health';
+                // Escaped for the same reason as the config label above.
+                const label = d.escapeHtml ? d.escapeHtml(raw) : raw;
                 healthLink.innerHTML = `<a href="/#health" class="health-link-anchor" aria-label="${label}" title="${label}"><svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></a>`;
 
                 const headerActions = document.querySelector('.header-actions');

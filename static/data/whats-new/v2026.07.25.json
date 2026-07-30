@@ -1,0 +1,46 @@
+{
+  "tag": "v2026.07.25",
+  "date": "July 2026",
+  "releasedAt": "2026-07-30",
+  "modalLead": "nextDash can now send you a notification when a monitored bookmark goes down — a real one, from your browser, that arrives while the app is closed. Until now the only alert was a webhook, which meant a server had to be listening for it. Turn it on from the card on the dashboard, or in Config → Behaviour → Status & health. It needs HTTPS: Safari and every browser on iPhone and iPad refuse notifications over plain http://localhost.",
+  "sections": [
+    {
+      "title": "Browser notifications",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Outage alerts arrive with nextDash closed</strong> — the existing webhook posts to a server, so nothing reaches your phone unless something else is listening for it. Web Push goes to the browser's own push service instead and is delivered whether or not a tab is open. Downtime and recovery are on by default once you accept; automatic backups and new-release notices are there too, switched off, because a yes to \"tell me when something breaks\" should not quietly mean more than that."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A card on the dashboard offers to switch it on</strong> — one click grants permission, registers this browser and sends a confirming notification straight away, so you can see it works rather than waiting for the first real outage. Declining is remembered; dismissing with × only backs off for a while, and Config → Behaviour → Status &amp; health can bring the invitation back if you change your mind. Permission is per browser, so each device is asked once."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>No new dependency</strong> — the encryption Web Push requires (RFC 8291) and the server identity it checks (RFC 8292) are implemented against Go's standard library. nextDash still has exactly one dependency. A test decrypts the server's own output the way a browser would, so \"this produces a valid push message\" is something the suite checks rather than something the code claims."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Safari can actually complete the opt-in</strong> — it only allows a permission prompt while the click that asked for it is still live, and drops that the moment anything is awaited or the clicked button is disabled. Both happened, so Safari refused the dialog and the opt-in looked like it did nothing at all. Chrome is laxer and worked throughout, which is exactly why it went unnoticed. The prompt now runs before either, and two tests pin the ordering."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The invitation no longer switches notifications on by itself</strong> — showing the card turned the master switch and outage alerts on before you had answered, and declining left them that way. Nothing was ever delivered, since no device was registered, but config reported notifications as on for someone who had just said no. The change now happens as part of accepting."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Notice cards stay off config, health and the inbox</strong> — those are hash routes on the dashboard page, so a card scheduled a few seconds after load could land on top of whichever one you had opened in the meantime. The push card could cover the very settings panel it was asking about. Both it and the analytics notice now only interrupt the bookmark grid."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The HTTPS caveat names the right browsers</strong> — it followed the brand name in the user agent, which got it wrong twice over: Android's stock browser was warned about a restriction it does not have, and Chrome and Firefox on iPhone and iPad were not warned about one they do. Every iOS browser is WebKit underneath, so the check now asks about the engine, and the text no longer suggests Chrome as a way around a limit that applies to Chrome too."
+        }
+      ]
+    }
+  ]
+}

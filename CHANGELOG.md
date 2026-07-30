@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.25 — July 2026](#v20260725--july-2026)
 - [v2026.07.24.1 — July 2026](#v202607241--july-2026)
 - [v2026.07.24 — July 2026](#v20260724--july-2026)
 - [v2026.07.23.6 — July 2026](#v202607236--july-2026)
@@ -121,6 +122,31 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.25 — July 2026
+
+**nextDash can tell you a bookmark is down while it is closed.** The only alert until now was a webhook, which posts to a server — useful if something is already listening, useless for getting a notification on your phone. Web Push goes to the browser's own push service instead, so a monitored bookmark going down reaches you whether or not a tab is open.
+
+Turn it on from the card on the dashboard, or in **Config → Behaviour → Status & health**. Permission is granted per browser, so each device is asked once.
+
+**It needs HTTPS.** Safari refuses notifications on `http://localhost`, and so does every browser on iPhone and iPad — they are all WebKit underneath. Chrome and Firefox on a desktop do allow localhost.
+
+### New
+
+- **new** **Web Push notifications for outages, backups and releases** — a monitored bookmark going down (and coming back) raises a browser notification that arrives with the app closed. Backup results and new-release notices can be switched on too, but stay off by default: accepting a card that asks about downtime should not quietly enable three other things. Outage alerts reuse the existing `pendingMonitorNotifications`, so the retry threshold and the "alert once per outage, not once per check" rule are honoured rather than reimplemented beside them. Backups notify only for scheduled runs — a manual backup already shows its result on screen. Releases are announced once per version at startup, read from the What's new index that ships in the binary; nothing calls home to find out (`push_crypto.go`, `push_send.go`, `push_triggers.go`).
+- **new** **No new dependency** — Web Push needs ECDH, HKDF and AES-GCM for the payload (RFC 8291) and an ES256 JWT to identify the server (RFC 8292). Go's standard library covers all of it, so this is implemented against the RFCs rather than through a library and nextDash still has exactly one dependency. A round-trip test decrypts the server's own output the way a browser would, which is what makes "this produces a valid push message" checkable instead of merely asserted. Subscriptions and the signing key live in one file because rotating the key invalidates every subscription stored beside it, and separating them would make that easy to get wrong. Endpoints must be HTTPS, dead ones are dropped when the push service reports 404 or 410, and a few transient failures are tolerated first so a phone that is briefly unreachable is not forgotten.
+- **new** **A card on the dashboard offers to switch outage alerts on** — appearing a few seconds after load, on existing installs as well as new ones. Accepting grants permission, registers the browser and sends a confirming notification immediately, so success is visible rather than something you take on trust until the first real outage. The three answers mean different things: **Turn on** is done, **No thanks** is recorded and does not come back, and **×** only backs off on an escalating schedule — someone hesitating should not be badgered, and should not be written off as a no either. A declined invitation can be brought back from config.
+
+### Fixes
+
+- **fix** **Safari can complete the opt-in at all** — it ties `Notification.requestPermission()` to an active user gesture and drops that gesture on the first `await`, *and* when the clicked button is disabled. Both happened before the prompt was reached, so Safari refused with "Notification prompting can only be done from a user gesture" and the dialog never appeared: clicking the button looked like it did nothing. Chrome enforces neither rule and worked throughout, which is exactly why this went unnoticed. The prompt now runs before any `await` and before the button is disabled, in both the card and the config panel, and two tests fail if that ordering is ever reversed.
+- **fix** **The invitation no longer switches notifications on before it is accepted** — showing the card turned `pushNotifyEnabled` and the monitoring category on, and declining left them that way: a setting that changed itself, which the user then had to find and undo. It happened because the register call refuses while the switch is off, and turning it on costs a round trip that would have ended the user gesture. `subscribe()` now takes a hook that runs between the permission prompt and the first server call — the one point where the change is both affordable and warranted.
+- **fix** **Notice cards stay off the config, health and inbox views** — those are hash routes on the dashboard page, so a card scheduled a few seconds after load lands on top of whichever one you opened in the meantime; the push card could cover the very settings panel it was asking about. Both it and the analytics notice checked for modals and for each other, but not for which view was on screen. They now only interrupt the bookmark grid.
+- **fix** **The HTTPS caveat follows the rendering engine, not the brand name** — matching "Safari" in the user agent got it wrong in both directions. Android's stock browser says `Safari/` with no Chrome token and was warned about a restriction it does not have; Chromium and Gecko browsers on iOS carry their own tokens but are WebKit underneath and were not warned about one they do. The check now asks whether the engine is WebKit — any iOS or iPadOS browser, or desktop Safari — with `maxTouchPoints` to tell an iPad from a Mac, since iPadOS 13+ claims to be macOS. The wording followed the same mistake and offered Chrome as the way around the limit, which is no help on a phone where Chrome is WebKit too.
+- **fix** **The push client sends the write token** — every write endpoint went through a plain `fetch()` rather than the app's `nextDashFetch`, so with `NEXTDASH_WRITE_TOKEN` set the subscribe call came back 401 and registering a device could never succeed, with nothing on screen to say why.
+- **fix** **Two small hardening fixes in the dashboard header** — the config and health link labels are escaped before going into an `aria-label` and a `title`. They come from the locale files, so nothing can be injected through them, but a translation containing an apostrophe would break out of the attribute. The page-number shortcut's `parseInt` gets an explicit radix.
 
 ---
 

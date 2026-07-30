@@ -148,6 +148,11 @@
         // Still inside a snooze window from an earlier, undecided visit.
         if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return false;
         if (cardEl) return false;
+        // Config, health and the inbox are hash routes on this same page, so
+        // without this the card drops on top of whatever the user opened. Only
+        // interrupt the bookmarks view. ("bookmarks" is also the value before the
+        // first view is assigned, which is the dashboard.)
+        if (d.activeView && d.activeView !== 'bookmarks') return false;
         // Any quick-start card — the setup wizard *or* the checklist that follows
         // it — owns the same bottom-left corner, so wait until it is gone rather
         // than stacking a second card on top of it.

@@ -26,3 +26,11 @@ func healthCacheFilePath() string {
 func healthHistoryFilePath() string {
 	return filepath.Join(ResolveDataDir(), "health-history.json")
 }
+
+func pushSubscriptionsFilePath() string {
+	return filepath.Join(ResolveDataDir(), "push-subscriptions.json")
+}
+
+func pushReleaseStateFilePath() string {
+	return filepath.Join(ResolveDataDir(), "push-release-state.json")
+}

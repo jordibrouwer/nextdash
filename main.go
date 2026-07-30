@@ -47,6 +47,9 @@ func main() {
 	// Routes
 	r.HandleFunc("/version", Version).Methods("GET")
 	r.HandleFunc("/manifest.webmanifest", handlers.WebAppManifest).Methods("GET")
+	// Served from the root because a service worker's scope cannot rise above its
+	// own path; from /static/ it could not control the dashboard.
+	r.HandleFunc("/push-service-worker.js", handlers.PushServiceWorker).Methods("GET")
 	r.HandleFunc("/", handlers.Dashboard).Methods("GET")
 	r.HandleFunc("/health", handlers.HealthPage).Methods("GET")
 	r.HandleFunc("/config", handlers.Config).Methods("GET")
@@ -79,6 +82,11 @@ func main() {
 	r.HandleFunc("/api/colors/reset", handlers.ResetColors).Methods("POST")
 	r.HandleFunc("/api/colors/custom-themes", handlers.GetCustomThemesList).Methods("GET")
 	r.HandleFunc("/api/theme.css", handlers.CustomThemeCSS).Methods("GET")
+	r.HandleFunc("/api/push/public-key", handlers.PushPublicKey).Methods("GET")
+	r.HandleFunc("/api/push/devices", handlers.ListPushDevices).Methods("GET")
+	r.HandleFunc("/api/push/subscribe", handlers.SubscribePush).Methods("POST")
+	r.HandleFunc("/api/push/unsubscribe", handlers.UnsubscribePush).Methods("POST")
+	r.HandleFunc("/api/push/test", handlers.TestPushNotification).Methods("POST")
 	r.HandleFunc("/api/backup", handlers.Backup).Methods("GET")
 	r.HandleFunc("/api/auto-backups", handlers.ListAutoBackups).Methods("GET")
 	r.HandleFunc("/api/auto-backups/download", handlers.DownloadAutoBackup).Methods("GET")
@@ -163,6 +171,9 @@ func main() {
 	handlers.StartHealthRecheckScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
+	// Announce a newer release once per version, off the startup path so a slow
+	// push service never delays the server coming up.
+	go handlers.notifyReleaseOnStartup()
 
 	go func() {
 		log.Printf("Server starting on port %s", port)
