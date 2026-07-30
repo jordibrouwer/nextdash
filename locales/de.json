@@ -1961,7 +1961,7 @@
         "pushNotifyWelcomeFailed": "Registriert, aber die erste Benachrichtigung konnte nicht zugestellt werden.",
         "pushPromptTitle": "Ausfallwarnungen aktivieren?",
         "pushPromptBody": "Erhalte eine Benachrichtigung, wenn ein überwachtes Lesezeichen ausfällt oder zurückkehrt — auch bei geschlossenem nextDash. Monitoring- und Health-Warnungen sind standardmäßig aktiv.",
-        "pushPromptSafari": "Hinweis: Safari erlaubt Benachrichtigungen nur über HTTPS — auf http://localhost verweigert es sie. Chrome funktioniert auf localhost.",
+        "pushPromptSafari": "Hinweis: Dieser Browser nutzt WebKit und erlaubt Benachrichtigungen nur über HTTPS — auf http://localhost verweigert er sie. Auf iPhone und iPad gilt das für jeden Browser.",
         "pushPromptEnable": "Aktivieren",
         "pushPromptNoThanks": "Nein, danke",
         "pushPromptDismiss": "Jetzt nicht",

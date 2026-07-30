@@ -2,14 +2,31 @@
 const { test, expect } = require('@playwright/test');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
+/** User agents the caveat logic has to get right. */
+const UA = {
+    safariMac: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    chromeMac: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+    chromeIos: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0 Mobile/15E148 Safari/604.1',
+    chromeAndroid: 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36',
+    // iPadOS 13+ reports itself as macOS; only maxTouchPoints gives it away.
+    chromeIpad: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) CriOS/120.0 Safari/537.36',
+    // Android's stock browser says "Safari/" with no Chrome token, so a
+    // brand-matching check mistakes it for Safari and warns about a restriction
+    // that does not exist there.
+    androidStock: 'Mozilla/5.0 (Linux; U; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36',
+    // Chromium-branded browsers on iOS are still WebKit and still restricted,
+    // even though their user agent carries a Blink token.
+    braveIos: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120 Mobile/15E148 Safari/604.1 Chrome/120',
+};
+
 /**
  * Loads the dashboard with push support stubbed as available and unsubscribed,
  * so the invitation card has a reason to appear. Real push cannot be exercised
  * in headless Chromium — permission is always denied there.
  */
 async function loadWithPushAvailable(page, opts = {}) {
-    const { subscribed = false, safari = false } = opts;
-    await page.addInitScript(({ subscribed, safari }) => {
+    const { subscribed = false, userAgent = null, maxTouchPoints = 0 } = opts;
+    await page.addInitScript(({ subscribed, userAgent, maxTouchPoints }) => {
         window.__pushCalls = [];
         window.__gestureAlive = false;
         document.addEventListener('pointerdown', () => { window.__gestureAlive = true; }, true);
@@ -28,15 +45,15 @@ async function loadWithPushAvailable(page, opts = {}) {
             },
         });
 
-        if (safari) {
-            Object.defineProperty(navigator, 'userAgent', {
-                get: () => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
-                configurable: true,
-            });
+        if (userAgent) {
+            Object.defineProperty(navigator, 'userAgent', { get: () => userAgent, configurable: true });
+        }
+        if (typeof maxTouchPoints === 'number') {
+            Object.defineProperty(navigator, 'maxTouchPoints', { get: () => maxTouchPoints, configurable: true });
         }
 
         window.__pushStubConfig = { subscribed };
-    }, { subscribed, safari });
+    }, { subscribed, userAgent, maxTouchPoints });
 
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -222,19 +239,35 @@ test.describe('dashboard: browser-notification invitation card', () => {
         expect(await page.evaluate(() => window.PushNotice.render())).toBe(false);
     });
 
-    test('the Safari HTTPS caveat shows only in Safari', async ({ page }) => {
-        await loadWithPushAvailable(page, { safari: true });
-        await resetAnswer(page);
-        await page.evaluate(() => window.PushNotice.render());
-        await expect(page.locator('.push-notice-caveat')).toBeVisible();
-        await expect(page.locator('.push-notice-caveat')).toContainText('HTTPS');
-    });
+    // The caveat follows the rendering engine, not the brand. Every browser on
+    // iOS/iPadOS is WebKit underneath — Chrome included — so they inherit the
+    // HTTPS restriction and must be warned; Blink and Gecko must not be.
+    const caveatCases = [
+        { name: 'Safari on macOS', ua: UA.safariMac, touch: 0, expected: true },
+        { name: 'Chrome on iOS', ua: UA.chromeIos, touch: 5, expected: true },
+        { name: 'Chrome on iPadOS (claims macOS)', ua: UA.chromeIpad, touch: 5, expected: true },
+        // Chromium-branded but WebKit underneath: the engine is what counts.
+        { name: 'a Chromium-branded iOS browser', ua: UA.braveIos, touch: 5, expected: true },
+        { name: 'Chrome on macOS', ua: UA.chromeMac, touch: 0, expected: false },
+        { name: 'Chrome on Android', ua: UA.chromeAndroid, touch: 5, expected: false },
+        // Says "Safari/" with no Chrome token, but is not restricted.
+        { name: "Android's stock browser", ua: UA.androidStock, touch: 5, expected: false },
+    ];
 
-    test('no caveat in a Chromium user agent', async ({ page }) => {
-        await loadWithPushAvailable(page, { safari: false });
-        await resetAnswer(page);
-        await page.evaluate(() => window.PushNotice.render());
-        await expect(page.locator('.push-notice-card')).toBeVisible();
-        await expect(page.locator('.push-notice-caveat')).toHaveCount(0);
-    });
+    for (const { name, ua, touch, expected } of caveatCases) {
+        test(`the HTTPS caveat ${expected ? 'shows' : 'stays hidden'} for ${name}`, async ({ page }) => {
+            await loadWithPushAvailable(page, { userAgent: ua, maxTouchPoints: touch });
+            await resetAnswer(page);
+            await page.evaluate(() => window.PushNotice.render());
+
+            await expect(page.locator('.push-notice-card')).toBeVisible();
+            const caveat = page.locator('.push-notice-caveat');
+            if (expected) {
+                await expect(caveat).toBeVisible();
+                await expect(caveat).toContainText('HTTPS');
+            } else {
+                await expect(caveat).toHaveCount(0);
+            }
+        });
+    }
 });

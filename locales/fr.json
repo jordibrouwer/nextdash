@@ -1961,7 +1961,7 @@
         "pushNotifyWelcomeFailed": "Enregistré, mais la première notification n'a pas pu être délivrée.",
         "pushPromptTitle": "Activer les alertes de panne ?",
         "pushPromptBody": "Recevez une notification lorsqu'un favori surveillé tombe en panne ou revient, même quand nextDash est fermé. Les alertes de surveillance et de santé sont activées par défaut.",
-        "pushPromptSafari": "Remarque : Safari n'autorise les notifications qu'en HTTPS — sur http://localhost il refuse. Chrome fonctionne sur localhost.",
+        "pushPromptSafari": "Remarque : ce navigateur utilise WebKit et n'autorise les notifications qu'en HTTPS — sur http://localhost il refuse. Sur iPhone et iPad, cela vaut pour tous les navigateurs.",
         "pushPromptEnable": "Activer",
         "pushPromptNoThanks": "Non merci",
         "pushPromptDismiss": "Pas maintenant",

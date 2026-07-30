@@ -1980,7 +1980,7 @@
         "pushNotifyWelcomeFailed": "Registered, but the first notification could not be delivered.",
         "pushPromptTitle": "Turn on outage alerts?",
         "pushPromptBody": "Get a notification when a monitored bookmark goes down or comes back, even when nextDash is closed. Monitoring and health alerts are switched on by default.",
-        "pushPromptSafari": "Note: Safari only allows notifications over HTTPS — on http://localhost it will refuse. Chrome does work on localhost.",
+        "pushPromptSafari": "Note: this browser uses WebKit, which only allows notifications over HTTPS — on http://localhost it will refuse. Every browser on iPhone and iPad works this way too.",
         "pushPromptEnable": "Turn on",
         "pushPromptNoThanks": "No thanks",
         "pushPromptDismiss": "Not now",

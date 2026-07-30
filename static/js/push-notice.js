@@ -230,10 +230,26 @@
         await save();
     }
 
-    /** Safari-only caveat, shown only where it applies. */
-    function isSafari() {
+    /**
+     * Whether this browser runs on WebKit, which is what the HTTPS restriction
+     * actually follows — not the brand name.
+     *
+     * Every iOS/iPadOS browser is WebKit underneath, Chrome and Firefox included,
+     * so they inherit the restriction and must see the caveat too. Testing for
+     * "Safari" instead would be wrong twice over: those browsers keep "Safari/"
+     * in their user agent, so a naive check catches them for the wrong reason and
+     * still misses iPad Chrome, which reports "CriOS" on a "Macintosh" platform.
+     *
+     * iPadOS 13+ claims to be macOS; maxTouchPoints is the only reliable tell.
+     */
+    function isWebKitEngine() {
         const ua = navigator.userAgent || '';
-        return /Safari\//.test(ua) && !/Chrome\/|Chromium\/|Edg\//.test(ua);
+        const iOS = /iPhone|iPad|iPod/.test(ua)
+            || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+        if (iOS) return true;
+        // Desktop Safari: the only "Safari/" left once the Blink and Gecko brands
+        // are excluded. Android is excluded because Chrome there also says Safari.
+        return /Safari\//.test(ua) && !/Chrome\/|Chromium\/|Edg\/|Android/.test(ua);
     }
 
     async function render() {
@@ -244,9 +260,9 @@
         el.setAttribute('role', 'complementary');
         el.setAttribute('aria-label', t('dashboard.pushPromptTitle', 'Turn on outage alerts?'));
 
-        const safariNote = isSafari()
+        const safariNote = isWebKitEngine()
             ? `<p class="push-notice-caveat">${escape(t('dashboard.pushPromptSafari',
-                'Note: Safari only allows notifications over HTTPS — on http://localhost it will refuse. Chrome does work on localhost.'))}</p>`
+                'Note: this browser uses WebKit, which only allows notifications over HTTPS — on http://localhost it will refuse. Every browser on iPhone and iPad works this way too.'))}</p>`
             : '';
 
         el.innerHTML = `
