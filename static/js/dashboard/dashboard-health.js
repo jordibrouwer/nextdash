@@ -698,6 +698,22 @@ class DashboardHealth {
     /* ── Actions ───────────────────────────────────────────────────────── */
 
     /**
+     * "Last opened" for one row, always present so the meta line keeps a stable
+     * shape rather than gaining and losing a field per row.
+     *
+     * Never-opened is called out rather than left blank: it is a finding in its
+     * own right — the same thing the Stale filter and the score act on — and an
+     * empty slot would read as missing data instead.
+     */
+    renderLastOpened(issue) {
+        const { label, title, never } = window.formatLastOpened(issue?.lastOpened, {
+            t: (key, fallback, params) => this.t(key, fallback, params),
+        });
+        const cls = never ? 'health-view-item-opened is-never' : 'health-view-item-opened';
+        return `<span class="${cls}" data-health-opened title="${this.escape(title)}">${this.escape(label)}</span>`;
+    }
+
+    /**
      * Open the bookmark, and record that it happened.
      *
      * The recording is the point: without it a bookmark opened from here stayed
@@ -736,8 +752,28 @@ class DashboardHealth {
 
         issue.lastOpened = Date.now();
         issue.openCount = (Number(issue.openCount) || 0) + 1;
+        this.refreshLastOpenedLabel(issue);
     }
 
+    /**
+     * Repaint just the one label, not the row: a full re-render would rebuild
+     * the action buttons and the menus, dropping focus and closing anything the
+     * user had open at the moment they clicked.
+     */
+    refreshLastOpenedLabel(issue) {
+        const key = this.issueKey(issue);
+        if (!key) return;
+        const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(key)}"]`);
+        const el = row?.querySelector('[data-health-opened]');
+        if (!el) return;
+
+        const { label, title, never } = window.formatLastOpened(issue.lastOpened, {
+            t: (k, fallback, params) => this.t(k, fallback, params),
+        });
+        el.textContent = label;
+        el.setAttribute('title', title);
+        el.classList.toggle('is-never', never);
+    }
 
     /**
      * Edit the bookmark in the shared bookmark modal, the same form Promote opens.
@@ -2748,6 +2784,7 @@ class DashboardHealth {
                         ${this.renderCheckModeBadge(issue, key)}
                         ${this.renderCheckModeMenu(issue, key)}
                     </span>
+                    ${this.renderLastOpened(issue)}
                     ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
                     ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
                 </p>

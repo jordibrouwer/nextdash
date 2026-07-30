@@ -411,6 +411,24 @@ button.health-view-tile:hover {
     color: var(--text-secondary);
 }
 
+/* ─── Last opened ───────────────────────────────────────────────────────────
+   Always present, so the meta line keeps one shape across rows rather than a
+   field that appears and disappears. Quieter than the reason beside it: it is
+   context for the row, not a finding about it. */
+.health-view-item-opened {
+    color: var(--text-secondary);
+    opacity: 0.85;
+    white-space: nowrap;
+}
+
+/* Never opened is a finding — the same signal the Stale filter and the score
+   act on — so it carries the weight the neutral timestamps deliberately do not. */
+.health-view-item-opened.is-never {
+    color: var(--text-muted, var(--text-secondary));
+    opacity: 1;
+    font-style: italic;
+}
+
 .health-view-item.is-broken .health-view-item-reason {
     color: var(--accent-error);
 }
