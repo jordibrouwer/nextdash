@@ -1,6 +1,7 @@
 // @ts-check
 const path = require('path');
 const { test, expect, chromium } = require('@playwright/test');
+const { WRITE_TOKEN } = require('./e2e-helpers');
 
 const extensionPath = path.join(__dirname, '..', 'extension');
 
@@ -14,8 +15,9 @@ test.describe('extension popup', () => {
     test('loads popup, saves settings, and saves a bookmark', async () => {
         const userDataDir = path.join(__dirname, '..', '.playwright-extension-profile');
         const context = await chromium.launchPersistentContext(userDataDir, {
-            channel: 'chrome',
-            headless: !!process.env.CI,
+            // Bundled Chromium (CI installs chromium only). Extensions need a headed
+            // persistent context — CI runs the suite under xvfb-run.
+            headless: false,
             args: [
                 `--disable-extensions-except=${extensionPath}`,
                 `--load-extension=${extensionPath}`,
@@ -31,7 +33,8 @@ test.describe('extension popup', () => {
             expect(extensionId).toBeTruthy();
 
             const page = await context.newPage();
-            const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8080';
+            const e2ePort = process.env.PORT || '18080';
+            const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${e2ePort}`;
             await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
             await expect(page.locator('#save-tab')).toBeVisible();
@@ -39,6 +42,7 @@ test.describe('extension popup', () => {
 
             await page.locator('.tab-button[data-tab="settings"]').click();
             await page.locator('#server-url').fill(baseURL);
+            await page.locator('#write-token').fill(WRITE_TOKEN);
             await page.locator('#settings-form button[type="submit"]').click();
             await expect(page.locator('.message.success')).toBeVisible({ timeout: 15_000 });
 

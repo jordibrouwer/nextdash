@@ -11,7 +11,9 @@ if (!skipServer && !reuseExistingServer) {
 
 const { E2E_WEB_SERVER_ENV } = require('./tests/e2e-helpers');
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8080';
+// Default to 18080 so local Docker on :8080 does not shadow the test server.
+const e2ePort = process.env.PORT || '18080';
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${e2ePort}`;
 const isCI = Boolean(process.env.CI);
 
 module.exports = defineConfig({
@@ -41,6 +43,7 @@ module.exports = defineConfig({
             env: {
                 ...process.env,
                 ...E2E_WEB_SERVER_ENV,
+                PORT: e2ePort,
             },
         },
 });
