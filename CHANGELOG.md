@@ -133,7 +133,7 @@ Nothing yet.
 
 ## v2026.07.26.3 — July 2026
 
-**Faster first load, live favicon harmonisation, health feed paging, and a reliable random theme on every view switch — including config.** Heavy modules load on demand; the health list scrolls with the page; harmonisation stays enabled with a custom theme and shares one setting across a random rotation instead of resetting per theme. Config → Overview and Advanced → What's new summarise this patch.
+**Faster first load, live favicon harmonisation, health feed paging, and a reliable random theme on every view switch — including config.** Heavy modules load on demand; the health list scrolls with the page; harmonisation stays enabled with a custom theme and shares one setting across a random rotation instead of resetting per theme. Picking a theme while random is on saves your choice and shows a toast that the display keeps rotating until you turn random off. Config → Overview and Advanced → What's new summarise this patch.
 
 ### New
 
@@ -145,6 +145,7 @@ Nothing yet.
 - **fix** **Live favicon harmonisation** — toggling under Config → Appearance updates bookmark icons on the grid immediately; settings persist per resolved `data-theme` and follow random theme rotation (`theme-icon-styling.js`, `dashboard-config.js`).
 - **fix** **Favicon harmonisation with a custom theme** — saving right after creating or picking a custom theme no longer races the server's theme validation, which could quietly reset the active theme to default and leave harmonisation looking disabled after a reload (`dashboard-config.js`).
 - **fix** **Favicon harmonisation across random theme rotation** — with Random theme on, harmonisation is one shared setting for the whole pool instead of following whichever theme happens to be on screen, so it no longer looks disabled the moment the pool rotates (`theme-icon-styling.js`).
+- **fix** **Random theme choice toast** — picking a saved theme while random mode is on stores your choice and shows a hint that the display keeps rotating until random is off; same from the `:theme` search command (`dashboard-config.js`, `search-commands-theme.js`).
 - **fix** **Random theme view mode on config** — entering or leaving config rotates again; each pick excludes the previous theme from the pool; appearance refreshes when harmonisation is open (`theme-loader.js`, `dashboard-visual.js`).
 - **fix** **Weather errors in the date header** — failed fetches show a readable message (`dashboard-date-weather.js`).
 - **fix** **Pin and note row icons** — respect display settings again (`dashboard-bookmark-rows.js`).

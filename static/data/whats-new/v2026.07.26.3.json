@@ -2,7 +2,7 @@
   "tag": "v2026.07.26.3",
   "date": "July 2026",
   "releasedAt": "2026-07-31",
-  "modalLead": "Faster first load — health, inbox, and bookmark interactions load on demand. Favicon harmonisation applies live on the grid, stays enabled with a custom theme, and shares one setting across a random rotation instead of resetting per theme. The health feed scrolls with the page; random theme view mode rotates reliably again on config switches.",
+  "modalLead": "Faster first load — health, inbox, and bookmark interactions load on demand. Favicon harmonisation applies live on the grid, stays enabled with a custom theme, and shares one setting across a random rotation instead of resetting per theme. Picking a theme while random is on saves your choice and shows a toast that the display keeps rotating until you turn random off. The health feed scrolls with the page; random theme view mode rotates reliably again on config switches.",
   "sections": [
     {
       "title": "Performance",
@@ -36,6 +36,10 @@
         {
           "badge": "fix",
           "text": "<strong>Favicon harmonisation survives random theme rotation</strong> — with <strong>Random theme</strong> on, harmonisation is one shared setting for the whole pool instead of being tied to whichever theme happens to be on screen, so it no longer looks disabled the moment the pool picks a new one (<code>theme-icon-styling.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Toast when picking a theme with random on</strong> — your choice is saved, but the display keeps rotating from the pool until you turn random off; the same hint appears from Config → Appearance and the <code>:theme</code> search command (<code>dashboard-config.js</code>, <code>search-commands-theme.js</code>)."
         },
         {
           "badge": "fix",
