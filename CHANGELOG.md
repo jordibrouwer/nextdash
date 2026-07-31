@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.26.2 — July 2026](#v202607262--july-2026)
 - [v2026.07.26.1 — July 2026](#v202607261--july-2026)
 - [v2026.07.26 — July 2026](#v20260726--july-2026)
 - [v2026.07.25.2 — July 2026](#v202607252--july-2026)
@@ -126,6 +127,20 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.26.2 — July 2026
+
+**Random theme in view mode now re-picks when you switch dashboard pages — not only when changing views.** Help, locales, and the manual describe the broader trigger; Config → Overview and Advanced → What's new summarise this patch.
+
+### Fixes
+
+- **fix** **Random theme on dashboard page switches** — with `randomThemeMode` set to **view**, switching bookmark pages (tabs, `1`–`9`, swipe, or hash) rotates the session pick like switching to config or inbox. Returning from another view still rotates once, not twice (`dashboard-visual.js`, `dashboard-data.js`, `dashboard-page-nav.js`).
+
+### Docs
+
+- **fix** — **Config → Help → Appearance**, locale info strings, and **MANUAL.md** say **On view change** includes dashboard page navigation; E2E test in `config-random-theme.spec.js`; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v146`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v204`.
 
 ---
 
