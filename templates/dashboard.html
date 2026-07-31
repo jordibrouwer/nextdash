@@ -24,7 +24,7 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
     <!-- First-paint fallback only; theme-loader.js syncs this to the resolved --background-primary for every theme. -->
-    <meta name="theme-color" content="{{if eq .Theme "light"}}#2563eb{{else}}#60a5fa{{end}}">
+    <meta name="theme-color" content="{{.ThemeColorMeta}}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">

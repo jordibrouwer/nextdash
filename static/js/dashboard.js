@@ -72,6 +72,7 @@ class Dashboard {
             layoutVersion: 'classic',
             densityMode: 'compact',
             packedColumns: true,
+            backgroundType: 'none',
             backgroundOpacity: 1,
             fontWeight: 'normal',
             fontPreset: 'source-code-pro',

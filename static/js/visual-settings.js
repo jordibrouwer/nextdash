@@ -301,8 +301,11 @@
 
     global.VisualSettings = {
         BACKGROUND_PRESETS,
+        MIN_BACKGROUND_OPACITY,
+        clampBackgroundOpacity,
         THEME_BACKGROUND_MAP,
         getPairedThemeVariant,
+        effectiveBaseTheme,
         resolveTheme,
         applyDisplayTheme,
         applyBackground,

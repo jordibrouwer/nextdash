@@ -687,8 +687,12 @@ const (
 )
 
 func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
+	colors := h.store.GetColors()
+	themeID := normalizeLegacyThemeID(settings.Theme)
 	return htmlPageData{
 		Settings:           settings,
+		ThemePoolCSV:       themePoolCSV(colors),
+		ThemeColorMeta:     themeBackgroundPrimary(themeID, colors),
 		WriteToken:         writeAccessToken(),
 		AppVersion:         appVersionToken(),
 		ReleaseTag:         releaseTag(),

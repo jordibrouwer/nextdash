@@ -119,7 +119,7 @@ test.describe('config info + reset affordances', () => {
             return route.fallback();
         });
         await loadDashboard(page);
-        // backgroundType default is 'auto'; set a non-default first.
+        // backgroundType default is 'none'; set a non-default first.
         await page.evaluate(() => {
             window.dashboardInstance.settings.backgroundType = 'gradient';
             window.dashboardInstance.config.openConfigView('appearance');
@@ -129,7 +129,7 @@ test.describe('config info + reset affordances', () => {
         await expect(resetBtn).toHaveClass(/is-visible/);
         await resetBtn.click();
 
-        await expect.poll(() => saved && saved.backgroundType).toBe('auto');
+        await expect.poll(() => saved && saved.backgroundType).toBe('none');
         await expect(page.locator('[data-reset-field="backgroundType"]')).not.toHaveClass(/is-visible/);
     });
 });
