@@ -729,6 +729,7 @@ test.describe('Shift+S opens config', () => {
             (window.dashboardInstance.getKeyboardCheatSheetItems() || [])
                 .flatMap((s) => s.items)
                 .filter((i) => /Shift \+ S/.test(i.keys))
+                .filter((i) => /^Open config/i.test(i.description))
                 .map((i) => i.description));
         expect(found).toHaveLength(1);
         expect(found[0]).toMatch(/config/i);

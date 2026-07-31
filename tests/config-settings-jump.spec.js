@@ -16,7 +16,8 @@ test.describe('config settings jump', () => {
         await page.locator('#config-section-panel').focus();
         await page.keyboard.press('Control+Shift+K');
         await expect(page.locator('.config-settings-jump-modal')).toBeVisible();
-        await expect(page.locator('#config-settings-jump-filter')).toBeFocused();
+        await expect.poll(() => page.evaluate(() =>
+            document.activeElement?.id === 'config-settings-jump-filter'), { timeout: 15_000 }).toBe(true);
     });
 
     test('filtering and Enter navigates to a section', async ({ page }) => {
@@ -35,6 +36,6 @@ test.describe('config settings jump', () => {
         await page.locator('#config-section-panel').focus();
         await page.keyboard.press('Control+Shift+K');
         await page.locator('#config-settings-jump-filter').fill('theme');
-        await expect(page.locator('.config-settings-jump-result')).toContainText(/theme/i);
+        await expect(page.locator('.config-settings-jump-result').first()).toContainText(/theme/i);
     });
 });

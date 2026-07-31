@@ -12,10 +12,13 @@ async function openPagesTags(page, finders = []) {
         });
     });
     await page.goto('/');
-    await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+    await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+    await page.evaluate(() => {
+        window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
+        return window.dashboardInstance.config.openConfigView('pages-tags');
+    });
     await expect(page.locator('[data-finder-index="0"]')).toBeVisible({ timeout: 10_000 });
 }
 
@@ -30,6 +33,7 @@ test.describe('config list keyboard navigation', () => {
         await page.keyboard.press('ArrowDown');
         await expect(page.locator('[data-finder-index="0"]')).toHaveClass(/keyboard-selected/);
 
+        await page.locator('#config-section-panel').focus();
         await page.keyboard.press('ArrowDown');
         await expect(page.locator('[data-finder-index="1"]')).toHaveClass(/keyboard-selected/);
         await expect(page.locator('[data-finder-index="0"]')).not.toHaveClass(/keyboard-selected/);
@@ -97,13 +101,17 @@ test.describe('config list keyboard navigation', () => {
             });
         });
         await page.goto('/');
-        await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+        await page.waitForFunction(() => window.dashboardInstance?.config?.openConfigView, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.evaluate(() => {
+            window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
+            return window.dashboardInstance.config.openConfigView('pages-tags');
+        });
         await page.locator('[data-pt-tab="tags"]').click();
         await expect(page.locator('#config-tag-filter')).toBeVisible();
 
+        await page.locator('#config-pt-body').click();
         await page.keyboard.press('/');
         await expect(page.locator('#config-tag-filter')).toBeFocused();
     });

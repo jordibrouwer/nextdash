@@ -17,7 +17,8 @@ test.describe('config info + reset affordances', () => {
         await expect(page.locator('[data-info-field="openInNewTab"]')).toBeVisible();
         // Privacy tab: the long analytics hint text is shown inline.
         await page.locator('[data-behavior-tab="privacy"]').click();
-        await expect(page.locator('.config-field-hint')).toContainText(/Umami|analytics/i);
+        await expect(page.locator('#config-behavior-body .config-field-hint:not(.config-form-keyboard-legend)'))
+            .toContainText(/Umami|analytics/i);
         await expect(page.locator('[data-info-field="analyticsOptIn"]')).toBeVisible();
     });
 

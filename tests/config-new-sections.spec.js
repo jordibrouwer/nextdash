@@ -549,7 +549,7 @@ test.describe('config help coverage', () => {
         await page.locator('[data-help-tab="search"]').click();
         // Finders and commands used to be one paragraph inside Search, which is
         // how they went unnoticed.
-        await expect(page.locator('#config-help-body .config-panel')).toHaveCount(4);
+        await expect(page.locator('#config-help-body .config-panel')).toHaveCount(5);
         const body = page.locator('#config-help-body');
         // The filter syntax and the command examples are the substance here.
         await expect(body).toContainText('tag:');

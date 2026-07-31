@@ -41,6 +41,14 @@ async function snapshotAllBookmarks(page) {
     });
 }
 
+/** Drop server-enriched fields so restore round-trips stay comparable. */
+function normalizeBookmarkSnapshot(snapshot) {
+    return snapshot.map(({ pageId, bookmarks }) => ({
+        pageId,
+        bookmarks: bookmarks.map(({ updatedAt, ...bookmark }) => bookmark),
+    }));
+}
+
 /** Write a snapshot from snapshotAllBookmarks() back, page by page. */
 async function restoreAllBookmarks(page, snapshot) {
     await page.evaluate(async (entries) => {
@@ -145,6 +153,6 @@ test.describe('config data & backups — reset tab', () => {
 
         // The restore is part of the contract, so assert it actually took.
         const after = await snapshotAllBookmarks(page);
-        expect(after).toEqual(snapshot);
+        expect(normalizeBookmarkSnapshot(after)).toEqual(normalizeBookmarkSnapshot(snapshot));
     });
 });
