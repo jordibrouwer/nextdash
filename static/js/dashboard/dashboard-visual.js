@@ -179,9 +179,7 @@ class DashboardVisual {
 
 
     getPairedThemeVariant(themeId, wantsDark) {
-        return window.ThemeUtils?.getPairedThemeVariant?.(themeId, wantsDark, {
-            customThemeIds: window.UserCustomThemeIds,
-        }) ?? String(themeId || 'dark');
+        return window.ThemeUtils?.getPairedThemeVariant?.(themeId, wantsDark) ?? String(themeId || 'dark');
     }
 
 

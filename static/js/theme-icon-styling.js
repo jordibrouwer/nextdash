@@ -11,6 +11,19 @@
 
     const STYLE_VARIANTS = ['icon-themed--muted', 'icon-themed--tinted', 'icon-themed--overlay'];
 
+    // Random theme mode rotates the displayed theme on every view/page change
+    // or reload, each with its own harmonisation entry — so a toggle set while
+    // theme A is showing looked like it turned itself off the moment the pool
+    // rotated to theme B, which had no entry yet. While random mode is on,
+    // harmonisation is one shared setting for the whole pool instead of being
+    // keyed to whichever theme happens to be on screen.
+    const RANDOM_POOL_KEY = '__random-theme-pool__';
+
+    function isRandomThemeModeActive(settings) {
+        const mode = global.ThemeUtils?.normalizeRandomThemeMode?.(settings) ?? settings?.randomThemeMode ?? 'off';
+        return mode !== 'off';
+    }
+
     function normalizeEntry(entry) {
         const value = entry || {};
         return {
@@ -21,7 +34,46 @@
     }
 
     function pairedThemeOptions() {
-        return { customThemeIds: global.UserCustomThemeIds };
+        return { customThemeIds: global.ThemeUtils?.getCustomThemeIds?.() || global.UserCustomThemeIds };
+    }
+
+    function isCustomThemeId(themeId) {
+        if (global.ThemeUtils?.isUserCustomThemeId) {
+            return global.ThemeUtils.isUserCustomThemeId(themeId);
+        }
+        if (global.ThemeUtils?.isCustomThemeId) {
+            return global.ThemeUtils.isCustomThemeId(themeId);
+        }
+        const id = String(themeId || '').trim();
+        if (id.startsWith('theme-')) return true;
+        return Array.isArray(global.UserCustomThemeIds) && global.UserCustomThemeIds.includes(id);
+    }
+
+    /**
+     * The per-theme key, ignoring random theme mode. Exposed separately so a
+     * mode switch can move the harmonisation entry between this key and
+     * RANDOM_POOL_KEY rather than losing it — see isRandomThemeModeActive.
+     */
+    function getSpecificThemeKey(settings) {
+        const stored = settings?.theme;
+        if (stored && isCustomThemeId(stored)) {
+            return stored;
+        }
+        return document.documentElement.getAttribute('data-theme')
+            || stored
+            || 'default';
+    }
+
+    /**
+     * Theme key for reading/writing harmonisation. Custom themes always use the
+     * stored choice — they have no dark/light pair and must not follow a
+     * resolved data-theme that auto dark mode may have paired incorrectly.
+     */
+    function getThemeIconStylingThemeKey(settings) {
+        if (isRandomThemeModeActive(settings)) {
+            return RANDOM_POOL_KEY;
+        }
+        return getSpecificThemeKey(settings);
     }
 
     /**
@@ -32,6 +84,9 @@
      */
     function themeIconStylingDisplayKeys(displayTheme) {
         const primary = String(displayTheme || 'default');
+        if (primary === RANDOM_POOL_KEY || isCustomThemeId(primary)) {
+            return [primary];
+        }
         const keys = [primary];
         if (global.ThemeUtils?.getPairedThemeVariant) {
             const opts = pairedThemeOptions();
@@ -47,9 +102,7 @@
 
     function getThemeIconStylingEntry(settings) {
         const map = settings?.themeIconStyling || {};
-        const primary = document.documentElement.getAttribute('data-theme')
-            || settings?.theme
-            || 'default';
+        const primary = getThemeIconStylingThemeKey(settings);
         const keys = themeIconStylingDisplayKeys(primary);
 
         // The resolved display theme wins when set — including enabled: false —
@@ -115,7 +168,11 @@
     }
 
     global.ThemeIconStyling = {
+        RANDOM_POOL_KEY,
+        isRandomThemeModeActive,
         normalizeEntry,
+        getSpecificThemeKey,
+        getThemeIconStylingThemeKey,
         themeIconStylingDisplayKeys,
         /** @deprecated Use themeIconStylingDisplayKeys */
         themeIconStylingRelatedKeys(_settings, displayTheme) {

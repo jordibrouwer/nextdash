@@ -438,6 +438,43 @@ test.describe('config dashboard view (scaffold)', () => {
         }), { timeout: 5000 }).toMatch(/grayscale/);
     });
 
+    /**
+     * Random theme mode rotates the displayed theme on every view change, and
+     * each theme keeps its own harmonisation entry — so a toggle set while one
+     * random theme was showing looked disabled again the moment the pool
+     * rotated to a different one. While random mode is on, harmonisation must
+     * be one shared setting instead of following whichever theme is current.
+     */
+    test('favicon harmonization stays enabled while random theme mode rotates themes', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        await page.evaluate(() => window.dashboardInstance.config.setRandomThemeMode('view'));
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.settings.randomThemeMode)).toBe('view');
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await expect(toggle).toBeChecked();
+
+        // Force the pool to a different theme, as a view change during "on view
+        // change" mode would — the toggle must not depend on which one shows.
+        await page.evaluate(() => {
+            window.ThemeLoader?.clearSessionRandomTheme?.();
+            document.documentElement.setAttribute('data-theme', 'light');
+        });
+        await page.evaluate(() => window.dashboardInstance.config.render());
+        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+
+        // And it must survive a reload, which is where "not saved" was reported.
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+    });
+
     test('the icon-styling preview is driven by the real theme CSS', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));

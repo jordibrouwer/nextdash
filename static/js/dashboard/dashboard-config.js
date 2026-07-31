@@ -457,10 +457,12 @@ class DashboardConfig {
             // it has to be fetched even when the General tab is showing.
             if (this._colorsData === undefined || this._colorsData === null) {
                 void this.loadColorsData().then(() => {
-                    if (this.isActiveView() && this.section === 'appearance'
-                        && this.appearanceTab !== 'custom-themes') {
-                        this.render();
+                    if (!this.isActiveView() || this.section !== 'appearance') return;
+                    if (this.appearanceTab === 'custom-themes') {
+                        this.repaintAppearanceBody();
+                        return;
                     }
+                    this.render();
                 });
             }
         } else if (this.section === 'behavior') {
@@ -2190,20 +2192,11 @@ class DashboardConfig {
 
     bindAppearanceControls(container) {
         this.bindSubTabStrip(container, 'data-appearance-tab', (tab) => {
-            if (tab === this.appearanceTab) return;
-            this.appearanceTab = tab;
-            this.restoreConfigHash();
-            // Leaving the tab drops any unsaved preview so the dashboard
-            // does not keep showing colours from a theme you stopped editing.
-            if (tab !== 'custom-themes') this.clearThemePreview();
-            this.render();
-            if (tab === 'custom-themes') void this.openCustomThemes();
+            void this.switchAppearanceTab(tab);
         });
         container.querySelectorAll('[data-tile-appearance-tab]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                this.appearanceTab = btn.getAttribute('data-tile-appearance-tab');
-                this.render();
-                void this.openCustomThemes();
+                void this.switchAppearanceTab(btn.getAttribute('data-tile-appearance-tab'));
             });
         });
         this.bindCustomThemes(container);
@@ -2318,6 +2311,35 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
+    }
+
+    /** Wait for any in-flight settings write before swapping appearance tabs. */
+    async switchAppearanceTab(tab) {
+        if (tab === this.appearanceTab) return;
+        if (this._settingsSavePromise) {
+            await this._settingsSavePromise;
+        }
+        if (this._colorsSavePromise) {
+            await this._colorsSavePromise;
+        }
+        await this.loadColorsData();
+        // Leaving the editor for General while a custom theme is selected should
+        // apply that theme first — otherwise harmonisation and other appearance
+        // controls still target settings.theme (the old choice).
+        if (tab === 'general' && this._themeSelected
+            && (this.isCustomTheme(this._themeSelected)
+                || window.ThemeUtils?.isUserCustomThemeId?.(this._themeSelected))
+            && this.dash.settings?.theme !== this._themeSelected) {
+            this.clearThemePreview();
+            await this.applyThemeChoice(this._themeSelected);
+        }
+        this.appearanceTab = tab;
+        this.restoreConfigHash();
+        // Leaving the tab drops any unsaved preview so the dashboard
+        // does not keep showing colours from a theme you stopped editing.
+        if (tab !== 'custom-themes') this.clearThemePreview();
+        this.render();
+        if (tab === 'custom-themes') await this.openCustomThemes();
     }
 
     /** Persist a settings change and repaint the appearance section. */
@@ -2435,7 +2457,20 @@ class DashboardConfig {
         if (!this._colorsData.custom || typeof this._colorsData.custom !== 'object') {
             this._colorsData.custom = {};
         }
+        this.syncCustomThemeIds();
         return this._colorsData;
+    }
+
+    /** Keep custom-theme id lists in sync for pairing and harmonisation helpers. */
+    syncCustomThemeIds() {
+        const ids = Object.keys(this._colorsData?.custom || {});
+        if (window.ThemeUtils?.setCustomThemeIds) {
+            window.ThemeUtils.setCustomThemeIds(ids);
+        } else {
+            window.UserCustomThemeIds = ids;
+            window.CustomThemeIds = ids;
+            document.documentElement?.setAttribute('data-custom-theme-ids', ids.join(','));
+        }
     }
 
     /**
@@ -2594,24 +2629,45 @@ class DashboardConfig {
      * page keeps rendering the previous colours.
      */
     async saveColorsData() {
+        const run = async () => {
+            try {
+                const res = await this.writeFetch('/api/colors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this._colorsData),
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                this.syncCustomThemeIds();
+                // Every id just POSTed is now known-good on the server, so a
+                // theme pick or icon-styling save right after this does not
+                // need to re-check it (see ensureCustomThemeOnServer).
+                if (!this._confirmedCustomThemeIds) {
+                    this._confirmedCustomThemeIds = new Set();
+                }
+                for (const id of Object.keys(this._colorsData?.custom || {})) {
+                    this._confirmedCustomThemeIds.add(id);
+                }
+                this.reloadThemeCSS();
+                // The theme picker is built from a cached /api/colors/custom-themes
+                // response; a new or renamed theme would otherwise not appear in it
+                // until the view was rebuilt from scratch.
+                this._themeList = null;
+                void this.loadThemeList();
+                this.notify(this.t('config.saved', 'Saved'), 'success');
+                return true;
+            } catch {
+                this.notify(this.t('config.themeSaveError', 'Could not save the theme.'), 'error');
+                return false;
+            }
+        };
+        const promise = run();
+        this._colorsSavePromise = promise;
         try {
-            const res = await this.writeFetch('/api/colors', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this._colorsData),
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            this.reloadThemeCSS();
-            // The theme picker is built from a cached /api/colors/custom-themes
-            // response; a new or renamed theme would otherwise not appear in it
-            // until the view was rebuilt from scratch.
-            this._themeList = null;
-            void this.loadThemeList();
-            this.notify(this.t('config.saved', 'Saved'), 'success');
-            return true;
-        } catch {
-            this.notify(this.t('config.themeSaveError', 'Could not save the theme.'), 'error');
-            return false;
+            return await promise;
+        } finally {
+            if (this._colorsSavePromise === promise) {
+                this._colorsSavePromise = null;
+            }
         }
     }
 
@@ -2639,8 +2695,52 @@ class DashboardConfig {
             name: DashboardConfig.uniqueNameFrom(this.t('config.customThemePrefix', 'My theme'), names),
         };
         this._themeSelected = id;
+        this.syncCustomThemeIds();
         this.repaintAppearanceBody();
         void this.saveColorsData();
+    }
+
+    /**
+     * Custom theme ids are validated on the server when settings are saved. If
+     * colors.json does not yet contain the theme, SaveSettings silently resets
+     * settings.theme to the default while leaving themeIconStyling entries under
+     * the custom id — harmonisation then looks disabled after reload.
+     *
+     * Confirmed ids are cached so a settings save right after the confirming
+     * colours save (the common case) does not pay for another /api/colors
+     * round trip — only the first save for a given id needs to check.
+     */
+    async ensureCustomThemeOnServer(themeId) {
+        const id = String(themeId || '').trim();
+        if (!id || !window.ThemeUtils?.isUserCustomThemeId?.(id)) {
+            return;
+        }
+        if (!this._confirmedCustomThemeIds) {
+            this._confirmedCustomThemeIds = new Set();
+        }
+        if (this._confirmedCustomThemeIds.has(id)) {
+            return;
+        }
+        if (this._colorsSavePromise) {
+            await this._colorsSavePromise;
+        }
+        await this.loadColorsData();
+        if (!this._colorsData?.custom?.[id]) {
+            return;
+        }
+        try {
+            const res = await fetch('/api/colors');
+            if (!res.ok) {
+                return;
+            }
+            const server = await res.json();
+            if (!server.custom?.[id]) {
+                await this.saveColorsData();
+            }
+            this._confirmedCustomThemeIds.add(id);
+        } catch {
+            /* best effort — saveSettings may still fail validation */
+        }
     }
 
     async deleteCustomTheme(id) {
@@ -2653,6 +2753,7 @@ class DashboardConfig {
         );
         if (!ok) return;
         delete data.custom[id];
+        this.syncCustomThemeIds();
         if (this._themeSelected === id) this._themeSelected = null;
         // A deleted theme that is still selected would leave the dashboard on a
         // theme that no longer exists, so fall back to the default.
@@ -2855,13 +2956,13 @@ class DashboardConfig {
         const theme = this.themeById(id);
         if (!theme) return;
         if (action === 'apply') {
-            // Same path the Theme dropdown uses: setTheme runs applyThemeLive,
+            // Same path the Theme dropdown uses: applyThemeChoice runs applyThemeLive,
             // which pairs the choice with the OS preference when "follow system
             // dark mode" is on, and persists through persistAppearance. Setting
             // settings.theme by hand skipped both, so the choice never reached
             // the server and <html data-theme> never changed.
             this.clearThemePreview();
-            this.setTheme(id);
+            await this.applyThemeChoice(id);
             this.reloadThemeCSS();
             this.render();
             return;
@@ -2875,6 +2976,7 @@ class DashboardConfig {
                     `${theme.name || id} ${this.t('config.themeCopySuffix', 'copy')}`, names),
             };
             this._themeSelected = copyId;
+            this.syncCustomThemeIds();
             this.repaintAppearanceBody();
             await this.saveColorsData();
             return;
@@ -2927,6 +3029,9 @@ class DashboardConfig {
      * the controls would write to an entry nothing reads.
      */
     iconStylingThemeKey() {
+        if (window.ThemeIconStyling?.getThemeIconStylingThemeKey) {
+            return window.ThemeIconStyling.getThemeIconStylingThemeKey(this.dash.settings);
+        }
         return document.documentElement.getAttribute('data-theme')
             || this.dash.settings?.theme
             || 'default';
@@ -2958,6 +3063,22 @@ class DashboardConfig {
      * per theme, so each theme keeps its own setting — the label says which one
      * is being edited, since switching theme changes what these controls affect.
      */
+    /**
+     * With random theme mode on, the displayed theme keeps changing, so the
+     * per-theme phrasing ("applies to … {theme}") would print a different
+     * theme every time the pool rotates. Harmonisation is one shared setting
+     * across the pool in that case, so the hint says so instead.
+     */
+    iconStylingHint() {
+        if (window.ThemeIconStyling?.isRandomThemeModeActive?.(this.dash.settings)) {
+            return this.t('config.iconStylingRandomThemeHint',
+                'These settings apply to every theme in your random rotation.');
+        }
+        return this.t('config.iconStylingThemeHint',
+            'These settings apply to the theme you are using now — “{theme}”. Other themes keep their own.')
+            .replace('{theme}', this.themeLabel(this.iconStylingThemeKey()));
+    }
+
     renderIconStyling() {
         const esc = (v) => this.dash.escapeHtml(v);
         const { enabled, style, intensity } = this.iconStylingEntry();
@@ -2984,7 +3105,7 @@ class DashboardConfig {
                 </label>
                 ${this.appearanceAff('themeIconStyling')}
             </div>
-            <p class="config-field-hint">${esc(this.t('config.iconStylingThemeHint', 'These settings apply to the theme you are using now — “{theme}”. Other themes keep their own.').replace('{theme}', this.themeLabel(this.iconStylingThemeKey())))}</p>
+            <p class="config-field-hint">${esc(this.iconStylingHint())}</p>
             ${enabled ? `
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.iconStylingStyleLabel', 'Style'))}</span>
@@ -3033,13 +3154,27 @@ class DashboardConfig {
     }
 
     setTheme(theme) {
+        void this.applyThemeChoice(theme);
+    }
+
+    async applyThemeChoice(theme) {
         if (!theme) return;
+        if (window.ThemeUtils?.isUserCustomThemeId?.(theme)) {
+            await this.ensureCustomThemeOnServer(theme);
+        }
+        const previous = this.dash.settings?.theme;
+        const randomActive = window.ThemeIconStyling?.isRandomThemeModeActive?.(this.dash.settings) === true
+            || (window.ThemeUtils?.normalizeRandomThemeMode?.(this.dash.settings) ?? this.dash.settings?.randomThemeMode ?? 'off') !== 'off';
         // The choice is stored as picked; what gets displayed runs through
         // applyThemeLive, which pairs it with the OS preference when "follow
         // system dark mode" is on. Applying `theme` directly here ignored that.
         this.dash.settings.theme = theme;
         this.applyThemeLive();
-        this.persistAppearance();
+        await this.persistAppearance();
+        if (randomActive && theme !== previous) {
+            this.notify(this.t('config.randomThemeChoiceSavedHint',
+                'Random theme is on — your choice is saved, but the display keeps picking from the pool until you turn random off.'));
+        }
     }
 
     setFontSize(size) {
@@ -3112,6 +3247,10 @@ class DashboardConfig {
     /** Merge a change into the current theme's icon-styling entry and apply it. */
     async setIconStyling(patch, { repaint = true } = {}) {
         const d = this.dash;
+        const theme = d.settings?.theme;
+        if (theme && window.ThemeUtils?.isUserCustomThemeId?.(theme)) {
+            await this.ensureCustomThemeOnServer(theme);
+        }
         const nextEntry = { ...this.iconStylingEntry(), ...patch };
         const map = { ...(d.settings.themeIconStyling || {}) };
         for (const key of this.iconStylingThemeKeysForWrite()) {
@@ -3181,12 +3320,39 @@ class DashboardConfig {
 
     setRandomThemeMode(mode) {
         const normalized = ['off', 'refresh', 'view'].includes(mode) ? mode : 'off';
+        const wasActive = window.ThemeIconStyling?.isRandomThemeModeActive?.(this.dash.settings) === true;
         this.dash.settings.randomThemeMode = normalized;
         this.dash.settings.randomThemeOnRefresh = normalized !== 'off';
+        const nowActive = normalized !== 'off';
+        if (wasActive !== nowActive) {
+            this.migrateIconStylingOnRandomModeChange(nowActive);
+        }
         document.documentElement.setAttribute('data-random-theme-mode', normalized);
         window.ThemeLoader?.clearSessionRandomTheme?.();
         this.applyThemeLive();
         this.persistAppearance();
+    }
+
+    /**
+     * Random theme mode keys harmonisation to one shared pool entry instead of
+     * per-theme entries (theme-icon-styling.js) — otherwise the toggle keeps
+     * flipping back to disabled every time the pool rotates to a theme with no
+     * entry of its own. Switching the mode changes which key is read, so the
+     * entry is carried across rather than silently losing whatever the user
+     * had set.
+     */
+    migrateIconStylingOnRandomModeChange(nowActive) {
+        const poolKey = window.ThemeIconStyling?.RANDOM_POOL_KEY;
+        const specificKey = window.ThemeIconStyling?.getSpecificThemeKey?.(this.dash.settings);
+        if (!poolKey || !specificKey) return;
+        const fromKey = nowActive ? specificKey : poolKey;
+        const toKey = nowActive ? poolKey : specificKey;
+        if (fromKey === toKey) return;
+        const map = this.dash.settings.themeIconStyling || {};
+        if (!Object.prototype.hasOwnProperty.call(map, fromKey)) return;
+        // Never clobber a setting the target key already has of its own.
+        if (Object.prototype.hasOwnProperty.call(map, toKey)) return;
+        this.dash.settings.themeIconStyling = { ...map, [toKey]: { ...map[fromKey] } };
     }
 
     /** Reload the server-rendered theme stylesheet so a theme change takes effect. */
@@ -4192,6 +4358,10 @@ class DashboardConfig {
         const promise = (async () => {
             let ok = false;
             try {
+                const theme = this.dash.settings?.theme;
+                if (theme && window.ThemeUtils?.isUserCustomThemeId?.(theme)) {
+                    await this.ensureCustomThemeOnServer(theme);
+                }
                 // saveSettings resolves false rather than rejecting; it reports its
                 // own error toast as well.
                 ok = (await this.dash.saveSettings?.()) !== false;

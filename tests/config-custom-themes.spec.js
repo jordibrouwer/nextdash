@@ -277,4 +277,129 @@ test.describe('custom theme editor', () => {
             window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
         await expect(page.locator('[data-theme-add]')).toBeVisible();
     });
+
+    test('favicon harmonization persists for a custom theme with auto dark mode', async ({ page }) => {
+        await openCustomThemes(page);
+        await page.locator('[data-theme-add]').click();
+        const customId = await page.evaluate(() => Object.keys(window.dashboardInstance.config._colorsData.custom)[0]);
+
+        await page.locator('[data-appearance-tab="general"]').click();
+        await page.evaluate(async (id) => {
+            window.dashboardInstance.settings.autoDarkMode = true;
+            window.dashboardInstance.config.setTheme(id);
+            await window.dashboardInstance.saveSettings?.();
+        }, customId);
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await expect(toggle).toBeChecked();
+
+        await expect.poll(() => page.evaluate((id) => {
+            const entry = window.dashboardInstance.settings.themeIconStyling?.[id];
+            return entry?.enabled === true;
+        }, customId)).toBe(true);
+
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        expect(await page.evaluate((id) => {
+            const entry = window.dashboardInstance.settings.themeIconStyling?.[id];
+            return entry?.enabled === true;
+        }, customId)).toBe(true);
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+    });
+
+    test('favicon harmonization persists after switching to the custom themes tab', async ({ page }) => {
+        await openCustomThemes(page);
+        await page.locator('[data-theme-add]').click();
+        const customId = await page.evaluate(() => Object.keys(window.dashboardInstance.config._colorsData.custom)[0]);
+
+        await page.locator('[data-appearance-tab="general"]').click();
+        await page.evaluate(async (id) => {
+            window.dashboardInstance.settings.autoDarkMode = true;
+            window.dashboardInstance.config.setTheme(id);
+            await window.dashboardInstance.saveSettings?.();
+        }, customId);
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await expect(toggle).toBeChecked();
+        await expect.poll(() => page.evaluate((id) =>
+            window.dashboardInstance.settings.themeIconStyling?.[id]?.enabled === true, customId)).toBe(true);
+
+        await page.locator('[data-appearance-tab="custom-themes"]').click();
+        await expect(page.locator('[data-theme-add]')).toBeVisible();
+
+        await page.locator('[data-appearance-tab="general"]').click();
+        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+        expect(await page.evaluate((id) =>
+            window.dashboardInstance.settings.themeIconStyling?.[id]?.enabled === true, customId)).toBe(true);
+    });
+
+    test('favicon harmonization targets the custom theme being edited before Apply', async ({ page }) => {
+        await openCustomThemes(page);
+        await page.locator('[data-theme-add]').click();
+        const customId = await page.evaluate(() => Object.keys(window.dashboardInstance.config._colorsData.custom)[0]);
+
+        // Stay on custom themes with the editor open; do not click Apply yet.
+        await expect(page.locator('#config-theme-editor')).toBeVisible();
+
+        await page.locator('[data-appearance-tab="general"]').click();
+        await expect.poll(() => page.evaluate((id) =>
+            window.dashboardInstance.settings.theme === id, customId)).toBe(true);
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await expect(toggle).toBeChecked();
+
+        await expect.poll(() => page.evaluate((id) =>
+            window.dashboardInstance.settings.themeIconStyling?.[id]?.enabled === true, customId)).toBe(true);
+
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        expect(await page.evaluate((id) => ({
+            theme: window.dashboardInstance.settings.theme,
+            enabled: window.dashboardInstance.settings.themeIconStyling?.[id]?.enabled === true,
+        }), customId)).toEqual({ theme: customId, enabled: true });
+    });
+
+    test('favicon harmonization persists when enabled before colors finish saving', async ({ page }) => {
+        await openCustomThemes(page);
+        await page.locator('[data-theme-add]').click();
+        const customId = await page.evaluate(() => {
+            const ids = Object.keys(window.dashboardInstance.config._colorsData.custom);
+            return ids[ids.length - 1];
+        });
+
+        // Switch to General immediately — do not wait for the colours POST.
+        await page.locator('[data-appearance-tab="general"]').click();
+        await expect.poll(() => page.evaluate((id) =>
+            window.dashboardInstance.settings.theme === id, customId)).toBe(true);
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await expect(toggle).toBeChecked();
+        await expect.poll(() => page.evaluate((id) =>
+            window.dashboardInstance.settings.themeIconStyling?.[id]?.enabled === true, customId)).toBe(true);
+
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        expect(await page.evaluate((id) => ({
+            theme: window.dashboardInstance.settings.theme,
+            enabled: window.dashboardInstance.settings.themeIconStyling?.[id]?.enabled === true,
+        }), customId)).toEqual({ theme: customId, enabled: true });
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+    });
 });
