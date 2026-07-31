@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 )
 
@@ -32,6 +33,53 @@ func TestReleaseTagMatchesWhatsNewIndex(t *testing.T) {
 	if got == "" {
 		t.Fatal("release tag is empty; analytics would report 'unknown' for every session")
 	}
+}
+
+// whats-new-stub.js keeps its own release token for unread detection; this test
+// catches a forgotten bump or a malformed constant during release prep.
+func TestWhatsNewStubReleaseConstants(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("static", "js", "whats-new-stub.js"))
+	if err != nil {
+		t.Fatalf("read whats-new-stub.js: %v", err)
+	}
+	src := string(data)
+
+	dashboardRelease := extractJSStringConst(src, "DASHBOARD_RELEASE")
+	if dashboardRelease == "" {
+		t.Fatal("DASHBOARD_RELEASE not found in whats-new-stub.js")
+	}
+	if !regexp.MustCompile(`^2026\.07-dashboard-release-v\d+$`).MatchString(dashboardRelease) {
+		t.Fatalf("DASHBOARD_RELEASE = %q, want format 2026.07-dashboard-release-vNNN", dashboardRelease)
+	}
+
+	dataVersion := extractJSStringConst(src, "NEXTDASH_WHATS_NEW_DATA_VERSION")
+	if dataVersion == "" {
+		dataVersion = extractJSWindowStringAssign(src, "NEXTDASH_WHATS_NEW_DATA_VERSION")
+	}
+	if dataVersion == "" {
+		t.Fatal("NEXTDASH_WHATS_NEW_DATA_VERSION not found in whats-new-stub.js")
+	}
+	if !regexp.MustCompile(`^whats-new-v\d+$`).MatchString(dataVersion) {
+		t.Fatalf("NEXTDASH_WHATS_NEW_DATA_VERSION = %q, want format whats-new-vNNN", dataVersion)
+	}
+}
+
+func extractJSStringConst(src, name string) string {
+	re := regexp.MustCompile(`const ` + regexp.QuoteMeta(name) + ` = '([^']+)'`)
+	m := re.FindStringSubmatch(src)
+	if len(m) < 2 {
+		return ""
+	}
+	return m[1]
+}
+
+func extractJSWindowStringAssign(src, name string) string {
+	re := regexp.MustCompile(regexp.QuoteMeta(name) + ` = '([^']+)'`)
+	m := re.FindStringSubmatch(src)
+	if len(m) < 2 {
+		return ""
+	}
+	return m[1]
 }
 
 // A missing or malformed index must not take the page down with it: this only
