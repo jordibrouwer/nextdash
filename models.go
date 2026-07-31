@@ -665,8 +665,9 @@ func (fs *FileStore) migrateCustomThemesToUserManaged() {
 	}
 
 	settings := fs.GetSettings()
+	settings.Theme = normalizeLegacyThemeID(settings.Theme)
 	if !fs.isValidThemeIDFor(settings.Theme) {
-		settings.Theme = "cherry-graphite-dark"
+		settings.Theme = defaultThemeID
 		if err := fs.SaveSettings(settings); err != nil {
 			return
 		}
@@ -2119,8 +2120,9 @@ func (fs *FileStore) GetSettings() Settings {
 	if settings.Language == "" {
 		settings.Language = "en"
 	}
+	settings.Theme = normalizeLegacyThemeID(settings.Theme)
 	if !fs.isValidThemeIDFor(settings.Theme) {
-		settings.Theme = "cherry-graphite-dark"
+		settings.Theme = defaultThemeID
 	}
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
@@ -2151,6 +2153,12 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 	settings.PasteDestination = normalizePasteDestination(settings.PasteDestination)
+	settings.RandomThemeMode = normalizeRandomThemeMode(settings.RandomThemeMode, settings.RandomThemeOnRefresh)
+	settings.RandomThemeOnRefresh = settings.RandomThemeMode == "refresh" || settings.RandomThemeMode == "view"
+	settings.Theme = normalizeLegacyThemeID(settings.Theme)
+	if !fs.isValidThemeIDFor(settings.Theme) {
+		settings.Theme = defaultThemeID
+	}
 
 	return writeIndentJSONFile(fs.settingsFile, settings)
 }

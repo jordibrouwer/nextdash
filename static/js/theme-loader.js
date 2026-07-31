@@ -4,22 +4,36 @@
     'use strict';
 
     const LEGACY_THEME_MAP = {
-        aurora: 'aurora-borealis',
-        cyberpunk: 'neon-grid',
-        ember: 'desert-ember',
-        forest: 'forest-moss',
-        lavender: 'lavender-mist',
-        matcha: 'forest-moss',
-        midnight: 'midnight-terminal',
-        mint: 'iceberg',
-        nerd: 'midnight-terminal',
-        ocean: 'iceberg',
-        paper: 'paper-ink',
-        peach: 'desert-ember',
-        sunset: 'sunset-pulse',
-        synthwave: 'neon-grid',
-        void: 'void-mono'
+        aurora: 'midnight-neon-dark',
+        cyberpunk: 'neon-grid-dark',
+        ember: 'desert-sand-dark',
+        forest: 'forest-moss-dark',
+        lavender: 'lavender-mist-dark',
+        matcha: 'forest-moss-dark',
+        midnight: 'midnight-neon-dark',
+        mint: 'glacier-mint-dark',
+        nerd: 'retro-crt-dark',
+        ocean: 'ocean-depth-dark',
+        paper: 'paper-ink-dark',
+        peach: 'desert-sand-dark',
+        sunset: 'solar-ember-dark',
+        synthwave: 'neon-grid-dark',
+        void: 'monochrome-mist-dark',
+        // Intermediate ids emitted by an older client-side map
+        'aurora-borealis': 'midnight-neon-dark',
+        'desert-ember': 'desert-sand-dark',
+        'forest-moss': 'forest-moss-dark',
+        'lavender-mist': 'lavender-mist-dark',
+        'midnight-terminal': 'midnight-neon-dark',
+        iceberg: 'glacier-mint-dark',
+        'neon-grid': 'neon-grid-dark',
+        'paper-ink': 'paper-ink-dark',
+        'sunset-pulse': 'solar-ember-dark',
+        'void-mono': 'monochrome-mist-dark',
     };
+
+    /** Picked once per page load when random theme on refresh is enabled. */
+    let sessionRandomTheme = null;
 
     function normalizeTheme(theme) {
         if (!theme) return 'dark';
