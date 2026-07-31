@@ -171,6 +171,15 @@ class DashboardDateWeather {
             textSpan.textContent = weatherPart;
             weatherLine.append(iconSpan, textSpan);
             dateElement.appendChild(weatherLine);
+        } else if (d.settings.showWeatherWithDate && d.weatherLastError) {
+            const errorText = this.getWeatherErrorMessage(d.weatherLastError);
+            if (errorText) {
+                const weatherLine = document.createElement('div');
+                weatherLine.className = 'date-weather-line date-weather-line--error';
+                weatherLine.textContent = errorText;
+                weatherLine.setAttribute('role', 'status');
+                dateElement.appendChild(weatherLine);
+            }
         }
 
         // Compact mobile badge — only populated when the full .date block is hidden
@@ -330,6 +339,44 @@ class DashboardDateWeather {
     }
 
 
+    getWeatherErrorMessage(errorCode) {
+        const d = this.dash;
+        const code = String(errorCode || '').trim();
+        const keyByCode = {
+            geolocation_denied: 'dashboard.weatherErrorGeolocationDenied',
+            geolocation_timeout: 'dashboard.weatherErrorGeolocationTimeout',
+            geolocation_unavailable: 'dashboard.weatherErrorGeolocationUnavailable',
+            geolocation_failed: 'dashboard.weatherErrorGeolocationFailed',
+            manual_location_missing: 'dashboard.weatherErrorManualLocationMissing',
+            weather_fetch_failed: 'dashboard.weatherErrorFetchFailed',
+        };
+        const fallbackByCode = {
+            geolocation_denied: 'Location access denied — set a manual location in Config',
+            geolocation_timeout: 'Location request timed out',
+            geolocation_unavailable: 'Location unavailable',
+            geolocation_failed: 'Could not get location',
+            manual_location_missing: 'Set a weather location in Config',
+            weather_fetch_failed: 'Could not fetch weather',
+        };
+        const key = keyByCode[code];
+        if (key) {
+            const translated = d.language?.t ? d.language.t(key) : '';
+            if (translated && translated !== key) {
+                return translated;
+            }
+            return fallbackByCode[code] || '';
+        }
+        if (code.startsWith('geolocation_')) {
+            return fallbackByCode.geolocation_failed;
+        }
+        const generic = d.language?.t ? d.language.t('dashboard.weatherUnavailable') : '';
+        if (generic && generic !== 'dashboard.weatherUnavailable') {
+            return generic;
+        }
+        return 'Weather unavailable';
+    }
+
+
     getWeatherConditionLabel(weatherCode) {
         const d = this.dash;
         const key = d.weatherService?.getWeatherLabelKey(weatherCode) || 'dashboard.weatherCode.unknown';
@@ -382,16 +429,6 @@ class DashboardDateWeather {
         } catch (error) {
             d.weatherData = null;
             d.weatherLastError = 'weather_fetch_failed';
-        }
-        if (
-            !d.weatherData
-            && d.weatherLastError
-            && String(d.weatherLastError).startsWith('geolocation_')
-            && d.settings.weatherSource === 'browser'
-        ) {
-            const anchor = document.getElementById('date-element');
-            if (anchor) {
-            }
         }
         this.renderDateWeatherLine();
     }
