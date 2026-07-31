@@ -292,6 +292,9 @@ class SearchComponent {
     }
 
     getThemeIconStylingEntry() {
+        if (window.ThemeIconStyling) {
+            return window.ThemeIconStyling.getThemeIconStylingEntry(this.settings);
+        }
         const currentTheme = document.documentElement.getAttribute('data-theme') || this.settings.theme || 'default';
         const map = this.settings?.themeIconStyling || {};
         return map[currentTheme] || { enabled: false, style: 'muted', intensity: 0.5 };
@@ -1652,7 +1655,9 @@ class SearchComponent {
 
         // Sync mode tab active state
         document.querySelectorAll('.search-mode-tab').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.mode === mode);
+            const isActive = tab.dataset.mode === mode;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
     }
 

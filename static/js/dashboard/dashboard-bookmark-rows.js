@@ -443,15 +443,9 @@ class DashboardBookmarkRows {
                     iconSlot.appendChild(createLetterAvatar());
                 });
                 iconSlot.appendChild(iconImg);
-                try {
-                    const currentTheme = document.documentElement.getAttribute('data-theme') || d.settings.theme || 'default';
-                    const entry = (d.settings.themeIconStyling && d.settings.themeIconStyling[currentTheme]) || { enabled: false };
-                    if (entry.enabled) {
-                        iconSlot.classList.add('icon-themed', `icon-themed--${entry.style || 'muted'}`);
-                        iconSlot.style.setProperty('--icon-theme-intensity', String(entry.intensity || 0.5));
-                    }
-                } catch (e) {
-                    // ignore
+                const entry = window.ThemeIconStyling.getThemeIconStylingEntry(d.settings);
+                if (entry.enabled) {
+                    window.ThemeIconStyling.applyThemeIconStylingToElement(iconSlot, entry);
                 }
             } else {
                 iconSlot.appendChild(createLetterAvatar());
@@ -558,7 +552,7 @@ class DashboardBookmarkRows {
             && isDashboardPinNoteRowIconsEnabled();
         const pinBadge = document.createElement('span');
         pinBadge.className = 'bookmark-pin-badge bookmark-superscript-badge';
-        if (pinNotesRowIconsEnabled && bookmark.pinned) {
+        if (pinNotesRowIconsEnabled && d.settings.showPinIcon === true && bookmark.pinned) {
             pinBadge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4"/><path d="M9 15l-4.5 4.5"/><path d="M14.5 4l5.5 5.5"/></svg>';
             pinBadge.title = d.formatDashboardLabel('pinnedBookmarkTitle', {}, 'Pinned');
             pinBadge.setAttribute('aria-label', d.formatDashboardLabel('pinnedBookmarkAria', {}, 'Pinned bookmark'));
@@ -589,7 +583,7 @@ class DashboardBookmarkRows {
         const noteBadge = document.createElement('span');
         noteBadge.className = 'bookmark-note-badge bookmark-superscript-badge';
         const hasNote = bookmark && String(bookmark.note || '').trim();
-        if (pinNotesRowIconsEnabled && hasNote) {
+        if (pinNotesRowIconsEnabled && d.settings.showNoteIcon !== false && hasNote) {
             const label = d.language?.t('bookmark.hasNote') || 'Has note';
             const noteText = String(bookmark.note || '').trim();
             const tooltipText = noteText.length > 200 ? noteText.slice(0, 200) + '…' : noteText;
@@ -619,6 +613,12 @@ class DashboardBookmarkRows {
         }
         const d = this.dash;
         const showIcons = d?.settings?.showIcons !== false ? '1' : '0';
+        const iconEntry = window.ThemeIconStyling
+            ? window.ThemeIconStyling.getThemeIconStylingEntry(d.settings)
+            : { enabled: false };
+        const iconStylingKey = iconEntry.enabled
+            ? `${iconEntry.style}:${iconEntry.intensity}`
+            : 'off';
         return [
             bookmark.url || '',
             bookmark.name || '',
@@ -631,6 +631,7 @@ class DashboardBookmarkRows {
             (bookmark.tags || []).join(','),
             String(bookmark.openCount || 0),
             showIcons,
+            iconStylingKey,
         ].join('\u0001');
     }
 

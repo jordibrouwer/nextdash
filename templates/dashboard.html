@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-lang="{{.Language}}">
+<html lang="{{.Language}}" data-theme="{{.Theme}}" data-auto-dark-mode="{{if .AutoDarkMode}}true{{else}}false{{end}}" data-random-theme-mode="{{.RandomThemeMode}}" data-theme-pool="{{.ThemePoolCSV}}" data-custom-theme-ids="{{.CustomThemeIDsCSV}}" data-font-size="{{.FontSize}}" data-font-preset="{{.FontPreset}}" data-show-background-dots="{{if .ShowBackgroundDots}}true{{else}}false{{end}}" data-enable-custom-font="{{.EnableCustomFont}}" data-custom-font-path="{{.CustomFontPath}}" data-layout-version="{{if .LayoutVersion}}{{.LayoutVersion}}{{else}}classic{{end}}" data-lang="{{.Language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -127,7 +127,7 @@
                 </div>
                 <div id="date-badge-mobile" class="date-badge-mobile" role="button" tabindex="0" data-i18n-aria="dashboard.dateBadgeAria" aria-label="Date and time"></div>
                 <div class="header-actions skeleton-hide-while-loading">
-                    <button type="button" id="page-overview-header-btn" class="page-overview-header-btn" data-i18n="dashboard.pagesOverview">pages</button>
+                    <button type="button" id="page-overview-header-btn" class="page-overview-header-btn" data-i18n="dashboard.pagesOverview" data-i18n-aria="dashboard.pagesOverviewAria" aria-label="Choose a page">pages</button>
                     <div id="page-navigation" class="page-navigation">
                         <!-- Pages will be loaded here -->
                     </div>
@@ -201,15 +201,15 @@
             <div id="search-matches" class="search-matches"></div>
             <div id="search-result-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
             <div class="search-mode-tabs" data-i18n-aria="dashboard.searchModeTabsAria" aria-label="Switch search mode">
-                <button class="search-mode-tab" data-mode="search" type="button">
+                <button class="search-mode-tab" data-mode="search" type="button" aria-pressed="true">
                     <span class="search-mode-tab-key">&gt;</span>
                     <span class="search-mode-tab-label" data-i18n="dashboard.searchLabel">search</span>
                 </button>
-                <button class="search-mode-tab" data-mode="command" type="button">
+                <button class="search-mode-tab" data-mode="command" type="button" aria-pressed="false">
                     <span class="search-mode-tab-key">:</span>
                     <span class="search-mode-tab-label" data-i18n="dashboard.commandsLabel">commands</span>
                 </button>
-                <button class="search-mode-tab" data-mode="finder" type="button">
+                <button class="search-mode-tab" data-mode="finder" type="button" aria-pressed="false">
                     <span class="search-mode-tab-key">?</span>
                     <span class="search-mode-tab-label" data-i18n="dashboard.findersLabel">finders</span>
                 </button>
@@ -301,6 +301,7 @@
     </button>
 
     <script src="{{asset "js/dashboard-feature-flags.js"}}" defer></script>
+    <script src="{{asset "js/theme-icon-styling.js"}}" defer></script>
     <script src="{{asset "js/modal.js"}}" defer></script>
     <script src="{{asset "js/focus-trap-utils.js"}}" defer></script>
     <script src="{{asset "js/whats-new-stub.js"}}" defer></script>
@@ -355,17 +356,13 @@
     <script src="{{asset "js/visual-settings.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-data.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-config-sync.js"}}" defer></script>
-    <script src="{{asset "js/dashboard/dashboard-inbox-triage.js"}}" defer></script>
-    <script src="{{asset "js/dashboard/dashboard-inbox.js"}}" defer></script>
-    <script src="{{asset "js/health-reason-utils.js"}}" defer></script>
-    <!-- "Last opened" labels for the health rows; loaded before the view uses it. -->
-    <script src="{{asset "js/shared/last-opened-format.js"}}" defer></script>
-    <script src="{{asset "js/dashboard/dashboard-health.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-inbox-loader.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-health-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-config-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-paste-choice.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-page-nav.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-tag-filter.js"}}" defer></script>
-    <script src="{{asset "js/dashboard/dashboard-inline-edit.js"}}" defer></script>
+    <script src="{{asset "js/dashboard/dashboard-bookmark-interactions-loader.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-toolbar.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-smart-collections.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-smart-why-popover.js"}}" defer></script>
@@ -381,7 +378,6 @@
     <script src="{{asset "js/dashboard/dashboard-recent.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-promos.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-ui-helpers.js"}}" defer></script>
-    <script src="{{asset "js/dashboard/dashboard-context-menu.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-setup.js"}}" defer></script>
     <script src="{{asset "js/dashboard/dashboard-persistence.js"}}" defer></script>
     <script src="{{asset "js/dashboard.js"}}" defer></script>

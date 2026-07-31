@@ -21,6 +21,8 @@ class DashboardPageNav {
         }
 
         if (leavingView) {
+            // View change already rotates random theme; skip the page-change pick below.
+            d._pageNavIncludesViewChange = true;
             d.setActiveView('bookmarks');
             d.inbox?.clearKeyboardSelection?.();
             d.health?.clearKeyboardSelection?.();
@@ -60,6 +62,7 @@ class DashboardPageNav {
         d.updateDocumentTitle();
         d.setActivePageNavButton(targetPageId);
         d.renderDashboard({ animate: false });
+        window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(d.settings);
         d.keyboardNavigation?.clearSelection?.();
         d.keyboardNavigation?.scheduleUpdate?.();
         d.inbox?.clearKeyboardSelection?.();

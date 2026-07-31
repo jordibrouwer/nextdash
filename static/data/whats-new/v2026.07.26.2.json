@@ -1,0 +1,26 @@
+{
+  "tag": "v2026.07.26.2",
+  "date": "July 2026",
+  "releasedAt": "2026-07-31",
+  "modalLead": "Random theme in view mode now picks again when you switch dashboard pages — not only when jumping between bookmarks, config, inbox, and health. Help text and locales describe the broader trigger; an E2E test covers page-tab navigation.",
+  "sections": [
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Random theme rotates on dashboard page switches</strong> — with <strong>Random theme</strong> set to <em>On view change</em>, switching bookmark pages (tabs, <code>1</code>–<code>9</code>, swipe, or hash) now picks a new theme from the pool, same as switching to config or inbox. Returning from another view still rotates once (not twice). Implemented via <code>onDashboardPageChanged</code> in <code>dashboard-visual.js</code> and <code>_applyLoadedPageData</code> in <code>dashboard-data.js</code>."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Help and locales mention page switches</strong> — <strong>Config → Help → Appearance</strong>, locale info strings, and <code>MANUAL.md</code> now say <em>On view change</em> includes dashboard page navigation. <strong>Config → Overview → Latest update</strong> and <strong>Advanced → What's new</strong> summarise this patch from the same what's-new data as the ★ modal."
+        }
+      ]
+    }
+  ]
+}

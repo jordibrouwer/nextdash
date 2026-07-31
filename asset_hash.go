@@ -138,6 +138,13 @@ func assetURL(rel string) string {
 var lazyLoadedAssets = []string{
 	"js/whats-new-modal.js",
 	"js/dashboard/dashboard-config.js",
+	"js/health-reason-utils.js",
+	"js/shared/last-opened-format.js",
+	"js/dashboard/dashboard-health.js",
+	"js/dashboard/dashboard-inbox-triage.js",
+	"js/dashboard/dashboard-inbox.js",
+	"js/dashboard/dashboard-inline-edit.js",
+	"js/dashboard/dashboard-context-menu.js",
 }
 
 // lazyAssetMapJSON renders lazyLoadedAssets as a JSON object of path -> hashed

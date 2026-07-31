@@ -13,6 +13,21 @@ class DashboardVisual {
 
     constructor(dashboard) {
         this.dash = dashboard;
+        this._themeIconStylingListenerAttached = false;
+    }
+
+    setupThemeIconStylingListener() {
+        if (this._themeIconStylingListenerAttached || !window.ThemeLoader?.onThemeChange) {
+            return;
+        }
+        this._themeIconStylingListenerAttached = true;
+        window.ThemeLoader.onThemeChange(() => {
+            window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(this.dash.settings);
+            const d = this.dash;
+            if (d.activeView === 'config' && d.config?.section === 'appearance') {
+                d.config.render?.();
+            }
+        });
     }
 
     applyVisualSettings() {
@@ -131,10 +146,7 @@ class DashboardVisual {
     }
 
 
-    onActiveViewChanged(previousView, nextView) {
-        if (!previousView || previousView === nextView) {
-            return;
-        }
+    rotateRandomThemeIfViewMode() {
         const d = this.dash;
         const mode = window.ThemeUtils?.normalizeRandomThemeMode?.(d.settings)
             ?? d.settings?.randomThemeMode
@@ -144,13 +156,30 @@ class DashboardVisual {
         }
         window.ThemeLoader?.rotateSessionRandomTheme?.(d.settings);
         this.initializeAutoDarkMode();
+        window.VisualSettings?.reloadThemeCSS?.();
+    }
+
+
+    onActiveViewChanged(previousView, nextView) {
+        if (!previousView || previousView === nextView) {
+            return;
+        }
+        this.rotateRandomThemeIfViewMode();
+    }
+
+
+    onDashboardPageChanged(previousPageId, nextPageId) {
+        const prev = Number(previousPageId);
+        const next = Number(nextPageId);
+        if (!Number.isFinite(prev) || !Number.isFinite(next) || prev === next) {
+            return;
+        }
+        this.rotateRandomThemeIfViewMode();
     }
 
 
     getPairedThemeVariant(themeId, wantsDark) {
-        return window.ThemeUtils?.getPairedThemeVariant?.(themeId, wantsDark, {
-            customThemeIds: window.UserCustomThemeIds,
-        }) ?? String(themeId || 'dark');
+        return window.ThemeUtils?.getPairedThemeVariant?.(themeId, wantsDark) ?? String(themeId || 'dark');
     }
 
 

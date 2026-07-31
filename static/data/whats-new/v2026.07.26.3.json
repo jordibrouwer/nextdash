@@ -1,0 +1,68 @@
+{
+  "tag": "v2026.07.26.3",
+  "date": "July 2026",
+  "releasedAt": "2026-07-31",
+  "modalLead": "Faster first load — health, inbox, and bookmark interactions load on demand. Favicon harmonisation applies live on the grid, stays enabled with a custom theme, and shares one setting across a random rotation instead of resetting per theme. Picking a theme while random is on saves your choice and shows a toast that the display keeps rotating until you turn random off. The health feed scrolls with the page; random theme view mode rotates reliably again on config switches.",
+  "sections": [
+    {
+      "title": "Performance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Lazy-load heavy dashboard modules</strong> — the health view, inbox (skipped entirely when disabled), and inline edit plus the context menu load on first use instead of every page load. Loaders in <code>dashboard-*-loader.js</code> keep the shell responsive on large dashboards."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Health feed uses page-scroll paging</strong> — long issue lists scroll with the page (no nested scrollbar). An intersection observer loads fifty rows at a time; <code>Shift+G</code> jumps to the last filtered row."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Live favicon harmonisation</strong> — toggling harmonisation under <strong>Config → Appearance</strong> updates bookmark icons on the grid immediately; settings persist per resolved <code>data-theme</code> and follow random theme rotation (<code>theme-icon-styling.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Favicon harmonisation stays enabled with a custom theme</strong> — saving a setting right after creating or picking a custom theme no longer races the server's theme validation, which could reset the active theme to default and leave harmonisation looking disabled after reload (<code>dashboard-config.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Favicon harmonisation survives random theme rotation</strong> — with <strong>Random theme</strong> on, harmonisation is one shared setting for the whole pool instead of being tied to whichever theme happens to be on screen, so it no longer looks disabled the moment the pool picks a new one (<code>theme-icon-styling.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Toast when picking a theme with random on</strong> — your choice is saved, but the display keeps rotating from the pool until you turn random off; the same hint appears from Config → Appearance and the <code>:theme</code> search command (<code>dashboard-config.js</code>, <code>search-commands-theme.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Random theme view mode restored on config</strong> — entering or leaving config rotates again when <em>On view change</em> is on; each pick excludes the previous theme from the pool. The appearance panel refreshes when harmonisation is open."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Weather errors in the date header</strong> — failed weather fetches show a readable message instead of failing silently."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Pin and note row icons</strong> — respect display settings again on bookmark rows."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Accessibility labels</strong> — search tabs and the pages overview button carry clearer <code>aria</code> labels."
+        }
+      ]
+    }
+  ]
+}

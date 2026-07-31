@@ -172,7 +172,9 @@ class Dashboard {
         this.configSync = new DashboardConfigSync(this);
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
-        this.inlineEdit = new DashboardInlineEdit(this);
+        this.inlineEdit = typeof window.createDashboardInlineEditLoader === 'function'
+            ? window.createDashboardInlineEditLoader(this)
+            : new DashboardInlineEdit(this);
         this.toolbar = new DashboardToolbar(this);
         this.smartCollections = new DashboardSmartCollections(this);
         this.bookmarkRows = new DashboardBookmarkRows(this);
@@ -185,11 +187,17 @@ class Dashboard {
         this.recent = new DashboardRecent(this);
         this.promos = new DashboardPromos(this);
         this.uiHelpers = new DashboardUiHelpers(this);
-        this.contextMenu = new DashboardContextMenu(this);
+        this.contextMenu = typeof window.createDashboardContextMenuLoader === 'function'
+            ? window.createDashboardContextMenuLoader(this)
+            : new DashboardContextMenu(this);
         this.setup = new DashboardSetup(this);
         this.persistence = new DashboardPersistence(this);
-        this.inbox = new DashboardInbox(this);
-        this.health = typeof DashboardHealth === 'function' ? new DashboardHealth(this) : null;
+        this.inbox = typeof window.createDashboardInboxLoader === 'function'
+            ? window.createDashboardInboxLoader(this)
+            : new DashboardInbox(this);
+        this.health = typeof window.createDashboardHealthLoader === 'function'
+            ? window.createDashboardHealthLoader(this)
+            : (typeof DashboardHealth === 'function' ? new DashboardHealth(this) : null);
         // Config is loaded on first open (dashboard-config-loader.js); the stub
         // answers the shell's pre-open calls so this stays a plain assignment.
         this.config = typeof window.createDashboardConfigLoader === 'function'
@@ -236,6 +244,7 @@ class Dashboard {
             await this.loadData();
             this.applyVisualSettings();
             this.initializeAutoDarkMode();
+            this.visual.setupThemeIconStylingListener?.();
             this.loadCollapsedStates();
             await this.language.init(this.settings.language);
             // Expose instance before mobile banner / i18n helpers (refresh runs before status monitor).
@@ -249,7 +258,7 @@ class Dashboard {
             this.initializeSwipeNavigation();
             this.initializeHyprMode();
             this.renderPageNavigation();
-            void this.inbox.loadItems().then(() => {
+            void (this.inbox.bootstrap?.() ?? this.inbox.loadItems?.()).then(() => {
                 this.pageNav?.updateInboxTabBadge?.();
             });
             this.renderDashboard({ animate: true });

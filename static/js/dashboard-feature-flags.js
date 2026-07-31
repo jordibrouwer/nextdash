@@ -1,10 +1,9 @@
 /**
  * Dashboard feature toggles during incremental rollouts.
- * Pin/note row badges are off; pin sort, :pin/:note, and note search stay active.
  */
 (function initDashboardFeatureFlags(global) {
     const flags = Object.freeze({
-        pinNoteRowIconsEnabled: false,
+        pinNoteRowIconsEnabled: true,
     });
 
     function isDashboardPinNoteRowIconsEnabled() {

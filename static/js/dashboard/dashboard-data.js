@@ -670,6 +670,7 @@ class DashboardData {
     _applyLoadedPageData(targetPageId, bookmarks, categories, options = {}) {
         const d = this.dash;
         const { skipRender = false, animate = false } = options;
+        const previousPageId = Number(d.currentPageId);
         // Loading a page's data in the background must not yank the user out of a
         // view they are reading, nor rewrite the hash out from under it.
         //
@@ -733,6 +734,20 @@ class DashboardData {
         }
 
         d.setActivePageNavButton(targetPageId);
+
+        const skipPageThemeRotate = d._pageNavIncludesViewChange === true;
+        if (skipPageThemeRotate) {
+            d._pageNavIncludesViewChange = false;
+        }
+        if (
+            !skipPageThemeRotate
+            && Number.isFinite(previousPageId)
+            && previousPageId !== targetPageId
+            && d.isBookmarksView()
+        ) {
+            d.visual?.onDashboardPageChanged?.(previousPageId, targetPageId);
+        }
+
         d._bookmarksReady = true;
         if (d._pendingRecentModalRefresh && d.isRecentBookmarksModalOpen()) {
             d._pendingRecentModalRefresh = false;
@@ -929,6 +944,7 @@ class DashboardData {
             } catch (storageError) {
                 console.warn('Device-local settings mirror failed:', storageError);
             }
+            void d.inbox?.bootstrap?.();
             return true;
         } catch (error) {
             d.showErrorNotification(

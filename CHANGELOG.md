@@ -9,6 +9,8 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.26.3 — July 2026](#v202607263--july-2026)
+- [v2026.07.26.2 — July 2026](#v202607262--july-2026)
 - [v2026.07.26.1 — July 2026](#v202607261--july-2026)
 - [v2026.07.26 — July 2026](#v20260726--july-2026)
 - [v2026.07.25.2 — July 2026](#v202607252--july-2026)
@@ -126,6 +128,46 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.26.3 — July 2026
+
+**Faster first load, live favicon harmonisation, health feed paging, and a reliable random theme on every view switch — including config.** Heavy modules load on demand; the health list scrolls with the page; harmonisation stays enabled with a custom theme and shares one setting across a random rotation instead of resetting per theme. Picking a theme while random is on saves your choice and shows a toast that the display keeps rotating until you turn random off. Config → Overview and Advanced → What's new summarise this patch.
+
+### New
+
+- **new** **Lazy-load heavy dashboard modules** — health (`dashboard-health-loader.js`), inbox when disabled (skipped entirely), and inline edit plus the context menu (`dashboard-bookmark-interactions-loader.js`) load on first use instead of every page load.
+
+### Fixes
+
+- **fix** **Health feed page-scroll paging** — long issue lists use page scroll with intersection-observer batches of fifty rows; `Shift+G` jumps to the last filtered row (`dashboard-health.js`, `health-view.css`).
+- **fix** **Live favicon harmonisation** — toggling under Config → Appearance updates bookmark icons on the grid immediately; settings persist per resolved `data-theme` and follow random theme rotation (`theme-icon-styling.js`, `dashboard-config.js`).
+- **fix** **Favicon harmonisation with a custom theme** — saving right after creating or picking a custom theme no longer races the server's theme validation, which could quietly reset the active theme to default and leave harmonisation looking disabled after a reload (`dashboard-config.js`).
+- **fix** **Favicon harmonisation across random theme rotation** — with Random theme on, harmonisation is one shared setting for the whole pool instead of following whichever theme happens to be on screen, so it no longer looks disabled the moment the pool rotates (`theme-icon-styling.js`).
+- **fix** **Random theme choice toast** — picking a saved theme while random mode is on stores your choice and shows a hint that the display keeps rotating until random is off; same from the `:theme` search command (`dashboard-config.js`, `search-commands-theme.js`).
+- **fix** **Random theme view mode on config** — entering or leaving config rotates again; each pick excludes the previous theme from the pool; appearance refreshes when harmonisation is open (`theme-loader.js`, `dashboard-visual.js`).
+- **fix** **Weather errors in the date header** — failed fetches show a readable message (`dashboard-date-weather.js`).
+- **fix** **Pin and note row icons** — respect display settings again (`dashboard-bookmark-rows.js`).
+- **fix** **Accessibility labels** — clearer `aria` labels on search tabs and the pages overview button.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.07.26.3**; Playwright lazy-load, health paging, extension smoke, and random-theme tests; E2E server on port **18080** with `xvfb-run` in CI; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v148`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v206`.
+
+---
+
+## v2026.07.26.2 — July 2026
+
+**Random theme in view mode now re-picks when you switch dashboard pages — not only when changing views.** Help, locales, and the manual describe the broader trigger; Config → Overview and Advanced → What's new summarise this patch.
+
+### Fixes
+
+- **fix** **Random theme on dashboard page switches** — with `randomThemeMode` set to **view**, switching bookmark pages (tabs, `1`–`9`, swipe, or hash) rotates the session pick like switching to config or inbox. Returning from another view still rotates once, not twice (`dashboard-visual.js`, `dashboard-data.js`, `dashboard-page-nav.js`).
+
+### Docs
+
+- **fix** — **Config → Help → Appearance**, locale info strings, and **MANUAL.md** say **On view change** includes dashboard page navigation; E2E test in `config-random-theme.spec.js`; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v146`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v204`.
 
 ---
 

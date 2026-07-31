@@ -116,6 +116,8 @@ class SearchCommandTheme {
      */
     async applyTheme(theme) {
         const safeTheme = theme || 'dark';
+        const dash = window.dashboardInstance;
+        const previous = dash?.settings?.theme;
 
         // Remove all theme classes
         document.body.classList.remove('dark', 'light');
@@ -183,6 +185,19 @@ class SearchCommandTheme {
             window.ThemeLoader.applyTheme(safeTheme, showBackgroundDots, currentFontSize);
         } else {
             console.warn('ThemeLoader not available');
+        }
+
+        const randomActive = window.ThemeIconStyling?.isRandomThemeModeActive?.(dash?.settings) === true
+            || (window.ThemeUtils?.normalizeRandomThemeMode?.(dash?.settings) ?? dash?.settings?.randomThemeMode ?? 'off') !== 'off';
+        if (randomActive && safeTheme !== previous && dash?.showNotification) {
+            const key = 'config.randomThemeChoiceSavedHint';
+            const fallback = 'Random theme is on — your choice is saved, but the display keeps picking from the pool until you turn random off.';
+            let message = fallback;
+            if (this.language?.t) {
+                const translated = this.language.t(key);
+                if (translated && translated !== key) message = translated;
+            }
+            dash.showNotification(message, 'info', { duration: 3500 });
         }
     }
 }

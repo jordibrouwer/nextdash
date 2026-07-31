@@ -98,6 +98,13 @@ body {
     font-weight: var(--font-weight-semibold);
 }
 
+.date-weather-line--error {
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-controls) * 0.95);
+    font-weight: var(--font-weight-normal, 400);
+    opacity: 0.85;
+}
+
 .date-time-line {
     font-size: calc(var(--font-size-controls) * 1.3); /* slightly smaller */
     color: var(--text-secondary);

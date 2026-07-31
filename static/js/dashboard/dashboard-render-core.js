@@ -1000,7 +1000,8 @@ class DashboardRenderCore {
 
 
     _attachCategoryTitleLongPress(titleEl, nameSpan, category) {
-        const longMs = window.DashboardInlineEdit?.ROW_LONG_PRESS_MS ?? 500;
+        const longMs = window.DashboardInlineEditLoader?.ROW_LONG_PRESS_MS
+            ?? window.DashboardInlineEdit?.ROW_LONG_PRESS_MS ?? 500;
         const slop = 8;
         let timer = null;
         let startX = 0;
@@ -1398,16 +1399,10 @@ class DashboardRenderCore {
             iconImage.loading = 'lazy';
             iconImage.className = 'bookmark-icon';
             labelWrap.appendChild(iconImage);
-            try {
-                const currentTheme = document.documentElement.getAttribute('data-theme') || d.settings.theme || 'default';
-                const entry = (d.settings.themeIconStyling && d.settings.themeIconStyling[currentTheme]) || { enabled: false };
-                if (entry.enabled) {
-                    iconImage.classList.add('icon-themed', `icon-themed--${entry.style || 'muted'}`);
-                    iconImage.style.setProperty('--icon-theme-intensity', String(entry.intensity || 0.5));
-                }
-            } catch (e) {
-                // ignore
-            }
+            window.ThemeIconStyling.applyThemeIconStylingToElement(
+                labelWrap,
+                window.ThemeIconStyling.getThemeIconStylingEntry(d.settings)
+            );
             labelWrap.appendChild(document.createTextNode(' '));
         } else {
             const textIcon = categoryIcon || '▣';
