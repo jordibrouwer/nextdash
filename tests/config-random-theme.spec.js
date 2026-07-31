@@ -127,6 +127,18 @@ test.describe('Random theme modes', () => {
         await expect.poll(shown.bind(null, page)).toBe(resolved);
     });
 
+    test('changing theme while random is on shows a toast', async ({ page }) => {
+        await openAppearance(page);
+        await setRandomThemeMode(page, 'view');
+        const current = await stored(page);
+        const pick = current === 'light' ? 'dark' : 'light';
+        await page.locator(`[data-appearance-theme="${pick}"]`).click();
+        await expect(page.locator('.app-notification')).toContainText(
+            /random theme|willekeurig|zufällig|aléatoire/i,
+            { timeout: 5000 }
+        );
+    });
+
     test('with auto dark mode only matching variants are shown', async ({ page }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
