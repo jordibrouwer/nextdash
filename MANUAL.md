@@ -149,7 +149,7 @@ A **page** is a separate tab on the dashboard (e.g. `main`, `Work`, `Home lab`).
 
 - Bookmark list  
 - Category list  
-- Optional page emoji and colour dot (double-click the tab to edit)
+- Optional page emoji and **colour dot** on the tab (double-click the tab on desktop or tablet landscape to set name, emoji, and dot from eight swatches)
 
 Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** overview (`,`). Recently visited pages are kept in memory (and prefetched when you hover a tab), so switching back is usually instant without reloading every bookmark from the server.
 
@@ -676,10 +676,11 @@ Temporarily hides bookmark tiles that do not match. Clear with `:find clear` (or
 
 Double-click a page tab **on desktop or tablet landscape** (not on mobile — avoids accidental renames on touch):
 
-- Set **emoji** icon  
-- Choose **colour dot** (8 accents)
+- Rename the page  
+- Set an optional **emoji** icon  
+- Pick a **colour dot** from eight swatches (or the empty swatch to remove it); the dot appears on the tab beside the label or page number
 
-Use **config → pages & tags → pages** to rename a page on any device.
+The popover saves when you click away or press **Enter**. Use **config → pages & tags → pages** to rename on any device or to manage several pages in a list.
 
 ### Sorting
 
@@ -799,7 +800,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 - 57+ built-in families (dark/light pairs), including twenty new pairs from **v2026.07.26** (Patina Verdigris, Rhubarb Tart, Bio Abyss, Sumi Ink, Denim Fade, and fifteen more).  
 - **config → appearance → custom themes** — build, edit, and delete your own palettes. A contrast check warns when text against background is too weak to read. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard half-edited.
 - **config → appearance → general** — pick the active theme for the whole app (built-in or one of your own).
-- **Random theme** (**v2026.07.26**) — under **General → Appearance**, choose **Off**, **On page refresh**, or **On view change** to pick from the built-in pool instead of your saved theme. With **auto dark mode** on, only variants matching your system light/dark are eligible; custom single-palette themes are skipped. A **Currently showing** hint names the active pick while random is on.
+- **Random theme** (**v2026.07.26**) — under **config → appearance → general**, below your saved theme. Choose **Off** (always use the saved theme), **On page refresh** (new built-in pick on each reload), or **On view change** (new pick when switching bookmarks ↔ config ↔ inbox ↔ health). A **Currently showing** hint names the active theme while random is on. With **auto dark mode**, only variants matching your system light/dark are eligible; custom single-palette themes are skipped.
 - **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
 - **Favicon harmonisation** — recolours site favicons that clash with your theme (styles: **Muted**, **Tinted**, **Overlay**, with an intensity slider). Set per theme under **config → appearance → theme**, so the dark and light variant of a pair are configured separately. **New installs start with it on** (Muted, intensity 0.5) for both Moss & Stone variants; existing dashboards keep whatever they had.
 
@@ -807,7 +808,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 
 Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collections**) share the same layout pattern: a short intro paragraph, toolbar with **+ Add** and filters, then the list. On **Classic** layout, toolbar and list sit inside one elevated surface card. Empty states include a clear next step (e.g. Tags → open Bookmarks to add a tagged bookmark; Collections → start editing a new collection).
 
-- **Pages** — add, rename, **archive** (hide without deleting bookmarks), remove, drag or **↑/↓** reorder; order auto-saves (~600 ms). **Usage** column shows a popularity bar and bookmark count (Tags-style). Page dropdowns skip archived pages. Desktop only (mobile shows a toast). On **Bookmarks**, the **Context** panel only switches the active page — full page editing stays here.
+- **Pages** — add, rename, **archive** (hide without deleting bookmarks), remove, drag or **↑/↓** reorder; order auto-saves (~600 ms). **Usage** column shows a popularity bar and bookmark count (Tags-style). Page dropdowns skip archived pages. Desktop only (mobile shows a toast). On the dashboard, **double-click a page tab** (desktop/tablet landscape) to rename, set an emoji, and pick a **colour dot**; on **Bookmarks**, the **Context** panel only switches the active page — full page editing stays here.
 - **Categories** — per-page list with icon, name, **merge**, remove; drag or **↑/↓** reorder with auto-save; **Usage** column with popularity bar and bookmark count (Tags-style). Switching the page selector **or leaving the Categories tab** flushes pending edits first (blocked if validation fails). Delete asks what to do with in-use bookmarks (move, uncategorize, or delete). Breadcrumb shows the selected page. On **Bookmarks**, **Context** only switches the active category filter. Desktop only for full editing.
 
 ### Typography and density
@@ -818,7 +819,6 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 ### 🧭 Header and background
 
 - Optional title, background dots, gradient/image. **Background type** defaults to **none** (**v2026.07.26**); choose gradient, image, or **auto** (theme-matched preset) under **config → appearance**. **Background opacity** fades only the backdrop layer — bookmark rows and chrome stay fully readable (**v2026.07.26**).
-- Double-click a page tab to rename it, set an emoji, and pick a **colour dot** from the swatches — the dot appears on the tab for quick visual identification.
 - **Button bar position** — centre bottom, corner dock, or **left side rail** (`:buttonbar side-left`). The side rail places navigation buttons in a 44 px vertical strip on the left edge (`/` tag cloud directly under `*` recent); the dashboard grid shifts right to clear it. On mobile it reverts to a centred bottom bar automatically.
 
 ### What’s new
@@ -994,7 +994,9 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 
 ### Appearance
 
-**General** covers theme, background (none / gradient / image, with opacity), fonts, icon size, and the display toggles. **Custom themes** is a full editor: build a palette, check its contrast, and apply it. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard in a half-edited state.
+**General** covers theme, background (none / gradient / image / auto, with opacity), fonts, icon size, and the display toggles. Pick a built-in dark/light family or a custom theme, then optionally set **Random theme** to **Off**, **On page refresh**, or **On view change** — see [Themes](#themes) above for how the pool and auto dark mode interact. A **Currently showing** line appears while random is active.
+
+**Custom themes** is a full editor: build a palette, check its contrast, and apply it. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard in a half-edited state.
 
 Many controls carry an **ℹ** button explaining what the setting does, and a **↺** to put it back to its default.
 
