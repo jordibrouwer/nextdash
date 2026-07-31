@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
 
 func TestManifestAppName(t *testing.T) {
 	t.Parallel()
@@ -46,17 +51,32 @@ func TestFaviconMimeFromPath(t *testing.T) {
 	}
 }
 
-func TestManifestThemeColors(t *testing.T) {
+func TestWebAppManifestThemeColors(t *testing.T) {
 	t.Parallel()
 
-	bg, theme := manifestThemeColors("light")
-	if bg != "#f5f5f5" || theme != "#2563eb" {
-		t.Fatalf("light theme = %q / %q", bg, theme)
+	h := &Handlers{store: NewStore()}
+	settings := h.store.GetSettings()
+	settings.Theme = "moss-stone-dark"
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatalf("SaveSettings: %v", err)
 	}
 
-	bg, theme = manifestThemeColors("dark")
-	if bg != "#121212" || theme != "#60a5fa" {
-		t.Fatalf("dark theme = %q / %q", bg, theme)
+	rec := httptest.NewRecorder()
+	h.WebAppManifest(rec, httptest.NewRequest(http.MethodGet, "/manifest.webmanifest", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+
+	var manifest webManifest
+	if err := json.Unmarshal(rec.Body.Bytes(), &manifest); err != nil {
+		t.Fatalf("decode manifest: %v", err)
+	}
+
+	want := themeBackgroundPrimary("moss-stone-dark", h.store.GetColors())
+	if manifest.BackgroundColor != want || manifest.ThemeColor != want {
+		t.Fatalf("manifest colors = %q / %q, want both %q",
+			manifest.BackgroundColor, manifest.ThemeColor, want)
 	}
 }
 

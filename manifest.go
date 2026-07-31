@@ -71,17 +71,11 @@ func manifestIcons(settings Settings) []manifestIcon {
 	}
 }
 
-func manifestThemeColors(theme string) (background, themeColor string) {
-	if strings.EqualFold(theme, "light") {
-		return "#f5f5f5", "#2563eb"
-	}
-	return "#121212", "#60a5fa"
-}
-
 func (h *Handlers) WebAppManifest(w http.ResponseWriter, r *http.Request) {
 	settings := h.store.GetSettings()
+	colors := h.store.GetColors()
 	name := manifestAppName(settings)
-	bg, theme := manifestThemeColors(settings.Theme)
+	themeColor := themeBackgroundPrimary(normalizeLegacyThemeID(settings.Theme), colors)
 
 	manifest := webManifest{
 		Name:            name,
@@ -90,8 +84,8 @@ func (h *Handlers) WebAppManifest(w http.ResponseWriter, r *http.Request) {
 		StartURL:        "/",
 		Scope:           "/",
 		Display:         "standalone",
-		BackgroundColor: bg,
-		ThemeColor:      theme,
+		BackgroundColor: themeColor,
+		ThemeColor:      themeColor,
 		Icons:           manifestIcons(settings),
 	}
 
