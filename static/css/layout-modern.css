@@ -35,11 +35,19 @@ body[data-layout-version="modern"] .skip-to-content {
 body[data-layout-version="modern"] .dashboard-section.section-controls {
     padding-bottom: 1.15rem;
     border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 32%, transparent);
+    overflow-x: clip;
+    max-width: 100%;
 }
 
 body[data-layout-version="modern"] .header-top {
     gap: var(--layout-gap-header) 1.5rem;
     align-items: flex-start;
+    min-width: 0;
+    max-width: 100%;
+}
+
+body[data-layout-version="modern"] .header-top-primary {
+    flex-shrink: 0;
 }
 
 /* Centre the row: the children are different heights (the page-tab strip is a
@@ -50,6 +58,9 @@ body[data-layout-version="modern"] .header-actions {
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
+    min-width: 0;
+    flex: 1 1 auto;
+    max-width: 100%;
 }
 
 /* Classic pulls these two back by 1rem to close up a 1.5rem gap between what
@@ -155,6 +166,11 @@ body[data-layout-version="modern"] .page-navigation {
     border-radius: var(--layout-radius-pill);
     background: var(--layout-surface);
     border: 1px solid var(--layout-surface-border);
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: thin;
 }
 
 /* The inbox tab sits inside the page-tab strip in the DOM, but it opens a view

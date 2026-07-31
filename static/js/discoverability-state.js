@@ -14,6 +14,7 @@
         tipsPromoUntil: 0,
         tipsNotBefore: 0,
         seenTips: [],
+        seenSettingPromos: [],
     };
     let persistTimer = null;
     let migrateScheduled = false;
@@ -25,6 +26,7 @@
                 tipsPromoUntil: 0,
                 tipsNotBefore: 0,
                 seenTips: [],
+                seenSettingPromos: [],
             };
         }
         return {
@@ -33,6 +35,9 @@
             tipsNotBefore: Number(raw.tipsNotBefore) || 0,
             seenTips: Array.isArray(raw.seenTips)
                 ? raw.seenTips.map((id) => String(id || '').trim()).filter(Boolean)
+                : [],
+            seenSettingPromos: Array.isArray(raw.seenSettingPromos)
+                ? raw.seenSettingPromos.map((id) => String(id || '').trim()).filter(Boolean)
                 : [],
         };
     }
@@ -166,12 +171,48 @@
         }
     }
 
+    function getSeenSettingPromos() {
+        return Array.isArray(state.seenSettingPromos) ? state.seenSettingPromos.slice() : [];
+    }
+
+    function hasSeenSettingPromo(id) {
+        const key = String(id || '').trim();
+        return !!key && (state.seenSettingPromos || []).includes(key);
+    }
+
+    /** Record a config setting promo as dismissed; each id is shown once, ever. */
+    function markSettingPromoSeen(id, options = {}) {
+        const key = String(id || '').trim();
+        if (!key) return;
+        if (!Array.isArray(state.seenSettingPromos)) state.seenSettingPromos = [];
+        if (state.seenSettingPromos.includes(key)) return;
+        state.seenSettingPromos.push(key);
+        if (state.seenSettingPromos.length > 100) {
+            state.seenSettingPromos = state.seenSettingPromos.slice(-100);
+        }
+        applyToDashboardSettings();
+        if (options.persist !== false) {
+            schedulePersist();
+        }
+    }
+
+    function resetSettingPromoSeen(id, options = {}) {
+        const key = String(id || '').trim();
+        if (!key || !Array.isArray(state.seenSettingPromos)) return;
+        state.seenSettingPromos = state.seenSettingPromos.filter((entry) => entry !== key);
+        applyToDashboardSettings();
+        if (options.persist !== false) {
+            schedulePersist();
+        }
+    }
+
     function exportState() {
         return {
             lastWhatsNewRelease: state.lastWhatsNewRelease || undefined,
             tipsPromoUntil: state.tipsPromoUntil > 0 ? state.tipsPromoUntil : undefined,
             tipsNotBefore: state.tipsNotBefore > 0 ? state.tipsNotBefore : undefined,
             seenTips: state.seenTips?.length ? state.seenTips.slice() : undefined,
+            seenSettingPromos: state.seenSettingPromos?.length ? state.seenSettingPromos.slice() : undefined,
         };
     }
 
@@ -283,6 +324,10 @@
         getSeenTips,
         hasSeenTip,
         markTipSeen,
+        getSeenSettingPromos,
+        hasSeenSettingPromo,
+        markSettingPromoSeen,
+        resetSettingPromoSeen,
         schedulePersist,
         persistNow,
     };
