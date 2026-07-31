@@ -54,7 +54,7 @@ Think of it as a personal start page: bookmarks grouped by **page** (e.g. Work, 
 | **Navigate** | Number keys for pages, arrow keys for bookmarks, search and command palette |
 | **Add** | Quick-add line, full modal, paste URL, browser extension, HTML import |
 | **Monitor** | Online/offline status, health scores, duplicate detection, stale bookmarks |
-| **Customise** | 37+ themes, layouts (including launcher tiles), fonts, density, button bar position |
+| **Customise** | 57+ themes, random theme picks, layouts (including launcher tiles), fonts, density, button bar position |
 | **Preserve** | ZIP backup/restore, CSV export, browser bookmark import |
 
 ---
@@ -796,9 +796,10 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 
 ### Themes
 
-- 37+ built-in families (dark/light pairs).  
+- 57+ built-in families (dark/light pairs), including twenty new pairs from **v2026.07.26** (Patina Verdigris, Rhubarb Tart, Bio Abyss, Sumi Ink, Denim Fade, and fifteen more).  
 - **config → appearance → custom themes** — build, edit, and delete your own palettes. A contrast check warns when text against background is too weak to read. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard half-edited.
 - **config → appearance → general** — pick the active theme for the whole app (built-in or one of your own).
+- **Random theme** (**v2026.07.26**) — under **General → Appearance**, choose **Off**, **On page refresh**, or **On view change** to pick from the built-in pool instead of your saved theme. With **auto dark mode** on, only variants matching your system light/dark are eligible; custom single-palette themes are skipped. A **Currently showing** hint names the active pick while random is on.
 - **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
 - **Favicon harmonisation** — recolours site favicons that clash with your theme (styles: **Muted**, **Tinted**, **Overlay**, with an intensity slider). Set per theme under **config → appearance → theme**, so the dark and light variant of a pair are configured separately. **New installs start with it on** (Muted, intensity 0.5) for both Moss & Stone variants; existing dashboards keep whatever they had.
 
@@ -816,7 +817,8 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### 🧭 Header and background
 
-- Optional title, background dots, gradient/image.  
+- Optional title, background dots, gradient/image. **Background type** defaults to **none** (**v2026.07.26**); choose gradient, image, or **auto** (theme-matched preset) under **config → appearance**. **Background opacity** fades only the backdrop layer — bookmark rows and chrome stay fully readable (**v2026.07.26**).
+- Double-click a page tab to rename it, set an emoji, and pick a **colour dot** from the swatches — the dot appears on the tab for quick visual identification.
 - **Button bar position** — centre bottom, corner dock, or **left side rail** (`:buttonbar side-left`). The side rail places navigation buttons in a 44 px vertical strip on the left edge (`/` tag cloud directly under `*` recent); the dashboard grid shifts right to clear it. On mobile it reverts to a centred bottom bar automatically.
 
 ### What’s new
