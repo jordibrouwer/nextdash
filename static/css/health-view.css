@@ -295,6 +295,12 @@ button.health-view-tile:hover {
     gap: 0.65rem;
 }
 
+.health-view-load-sentinel {
+    height: 1px;
+    width: 100%;
+    pointer-events: none;
+}
+
 /* Favicon column is 3rem, shared with the inbox feed so the two read as one
    system: health rows are scannable status lines, not previews, but the icon is
    large enough to recognise the site at a glance. */

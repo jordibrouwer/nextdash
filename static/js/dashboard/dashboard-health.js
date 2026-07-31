@@ -30,6 +30,7 @@ class DashboardHealth {
         this._searchFocusPending = false;
         this._loadPromise = null;
         this._busyKeys = new Set();
+        this._loadMoreObserver = null;
     }
 
     isEnabled() {
@@ -288,6 +289,7 @@ class DashboardHealth {
         if (d.activeView !== DashboardHealth.VIEW) {
             return false;
         }
+        this._teardownLoadMoreObserver();
         this.clearKeyboardSelection();
         const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
         if (restored) {
@@ -441,20 +443,27 @@ class DashboardHealth {
     }
 
     moveKeyboardSelection(delta, rows) {
-        const list = Array.isArray(rows) && rows.length ? rows : this.getVisibleRows();
-        if (!list.length) return;
+        const filtered = this.getFilteredIssues();
+        if (!filtered.length) return;
         let index = this.selectedKey
-            ? list.findIndex((row) => row.dataset.healthKey === this.selectedKey)
+            ? filtered.findIndex((issue) => this.issueKey(issue) === this.selectedKey)
             : -1;
         if (index < 0) {
-            index = delta > 0 ? 0 : list.length - 1;
+            index = delta > 0 ? 0 : filtered.length - 1;
         } else {
             index += delta;
-            if (index < 0) index = list.length - 1;
-            else if (index >= list.length) index = 0;
+            if (index < 0) index = filtered.length - 1;
+            else if (index >= filtered.length) index = 0;
         }
-        this.selectedKey = list[index]?.dataset?.healthKey || null;
-        this.applyKeyboardSelection(list);
+        const needed = index + 1;
+        if (needed > this.visibleLimit) {
+            this.selectedKey = this.issueKey(filtered[index]);
+            this.visibleLimit = Math.min(filtered.length, needed + 5);
+            this.render();
+            return;
+        }
+        this.selectedKey = this.issueKey(filtered[index]);
+        this.applyKeyboardSelection(rows);
     }
 
     applyKeyboardSelection(rows) {
@@ -619,14 +628,23 @@ class DashboardHealth {
         if (e.key === 'g') {
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.selectedKey = rows[0]?.dataset?.healthKey || null;
+            const filtered = this.getFilteredIssues();
+            this.selectedKey = filtered[0] ? this.issueKey(filtered[0]) : null;
             this.applyKeyboardSelection(rows);
             return true;
         }
         if (e.key === 'G') {
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.selectedKey = rows[rows.length - 1]?.dataset?.healthKey || null;
+            const filtered = this.getFilteredIssues();
+            const lastIndex = filtered.length - 1;
+            if (lastIndex >= 0 && lastIndex >= this.visibleLimit) {
+                this.selectedKey = this.issueKey(filtered[lastIndex]);
+                this.visibleLimit = filtered.length;
+                this.render();
+                return true;
+            }
+            this.selectedKey = lastIndex >= 0 ? this.issueKey(filtered[lastIndex]) : null;
             this.applyKeyboardSelection(rows);
             return true;
         }
@@ -1385,6 +1403,57 @@ class DashboardHealth {
         return window.confirm(message);
     }
 
+    /* ── Feed paging (page scroll) ─────────────────────────────────────── */
+
+    _resetFeedPaging() {
+        this.visibleLimit = 50;
+    }
+
+    _teardownLoadMoreObserver() {
+        this._loadMoreObserver?.disconnect?.();
+        this._loadMoreObserver = null;
+    }
+
+    /**
+     * Loads the next page of rows when the sentinel nears the viewport. Uses
+     * the document scroll — no nested feed scrollbar.
+     */
+    _bindLoadMoreObserver(sentinel, filteredLength) {
+        this._teardownLoadMoreObserver();
+        if (!sentinel || this.visibleLimit >= filteredLength) return;
+
+        if (typeof IntersectionObserver !== 'function') {
+            return;
+        }
+
+        this._loadMoreObserver = new IntersectionObserver((entries) => {
+            if (!this.isActiveView()) return;
+            if (!entries.some((entry) => entry.isIntersecting)) return;
+            const total = this.getFilteredIssues().length;
+            if (this.visibleLimit >= total) {
+                this._teardownLoadMoreObserver();
+                return;
+            }
+            this.visibleLimit = Math.min(total, this.visibleLimit + 50);
+            this.render();
+        }, { root: null, rootMargin: '320px 0px' });
+        this._loadMoreObserver.observe(sentinel);
+    }
+
+    _appendLoadMoreFallback(container, filteredLength) {
+        if (this.visibleLimit >= filteredLength) return;
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'health-view-load-more-btn';
+        const remaining = filteredLength - this.visibleLimit;
+        more.textContent = this.t('dashboard.healthLoadMore', 'Show {count} more', { count: remaining });
+        more.addEventListener('click', () => {
+            this.visibleLimit = Math.min(filteredLength, this.visibleLimit + 50);
+            this.render();
+        });
+        container.appendChild(more);
+    }
+
     /* ── Render ────────────────────────────────────────────────────────── */
 
     scheduleSearchRender() {
@@ -1432,6 +1501,7 @@ class DashboardHealth {
             : null;
         this._searchFocusPending = false;
 
+        this._teardownLoadMoreObserver();
         container.innerHTML = '';
         container.className = 'health-layout';
         container.removeAttribute('aria-colcount');
@@ -1486,16 +1556,14 @@ class DashboardHealth {
         this.bindOutsideMenuDismiss();
 
         if (filtered.length > this.visibleLimit) {
-            const more = document.createElement('button');
-            more.type = 'button';
-            more.className = 'health-view-load-more-btn';
-            const remaining = filtered.length - this.visibleLimit;
-            more.textContent = this.t('dashboard.healthLoadMore', 'Show {count} more', { count: remaining });
-            more.addEventListener('click', () => {
-                this.visibleLimit += 50;
-                this.render();
-            });
-            container.appendChild(more);
+            const sentinel = document.createElement('div');
+            sentinel.className = 'health-view-load-sentinel';
+            sentinel.setAttribute('aria-hidden', 'true');
+            container.appendChild(sentinel);
+            this._bindLoadMoreObserver(sentinel, filtered.length);
+            if (!this._loadMoreObserver) {
+                this._appendLoadMoreFallback(container, filtered.length);
+            }
         }
 
         container.appendChild(this.renderLegend());
@@ -1598,7 +1666,7 @@ class DashboardHealth {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-health-tile') || 'broken';
                 this._trackAction('filter', { filter: this.filter, via: 'tile' });
-                this.visibleLimit = 50;
+                this._resetFeedPaging();
                 // Same as the filter pills: a tile is a filter choice, and one
                 // that is forgotten on the way out is not really a choice.
                 this.persistViewState();
@@ -1687,6 +1755,7 @@ class DashboardHealth {
         sortSelect?.addEventListener('change', (e) => {
             this.sort = e.target.value || 'score';
             this._trackAction('sort', { sort: this.sort });
+            this._resetFeedPaging();
             this.persistViewState();
             this.render();
             // Focus returns to the list, not the select: leaving it focused would
@@ -1700,7 +1769,7 @@ class DashboardHealth {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-health-filter') || 'broken';
                 this._trackAction('filter', { filter: this.filter, via: 'pill' });
-                this.visibleLimit = 50;
+                this._resetFeedPaging();
                 this.persistViewState();
                 this.render();
             });
@@ -1709,7 +1778,7 @@ class DashboardHealth {
         const searchInput = toolbar.querySelector('.health-view-search-input');
         searchInput?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value;
-            this.visibleLimit = 50;
+            this._resetFeedPaging();
             this._searchFocusPending = true;
             this.scheduleSearchRender();
         });
