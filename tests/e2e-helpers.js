@@ -261,6 +261,10 @@ async function prepareDashboardInteraction(page) {
     await dismissOnboardingIfPresent(page);
     await ensureBookmarksDashboardView(page);
     await dismissBlockingOverlays(page);
+    await page.evaluate(() => {
+        window.GuidedFlowGuard?.sync?.();
+        document.body.classList.remove('guided-flow-locked');
+    });
 }
 
 /**
@@ -348,11 +352,32 @@ async function ensureSortableCategory(page) {
 
 /** @param {import('@playwright/test').Page} page */
 async function dismissOnboardingIfPresent(page) {
-    const card = page.locator('.onboarding-card');
-    if (await card.count()) {
+    const legacy = page.locator('.onboarding-card');
+    if (await legacy.count()) {
         await page.locator('.onboarding-skip').click();
-        await card.waitFor({ state: 'hidden', timeout: 5000 });
+        await legacy.waitFor({ state: 'hidden', timeout: 5000 });
     }
+
+    const setup = page.locator('.quickstart-setup');
+    if (await setup.count()) {
+        await setup.locator('[data-qs-action="skip-setup"]').click();
+        await setup.waitFor({ state: 'hidden', timeout: 5000 });
+    }
+
+    const checklist = page.locator('.quickstart-checklist');
+    if (await checklist.count()) {
+        await checklist.locator('[data-qs-action="dismiss"]').click();
+        await checklist.waitFor({ state: 'hidden', timeout: 5000 });
+    }
+
+    await page.evaluate(() => {
+        const d = window.dashboardInstance;
+        if (!d) return;
+        if (d.settings?.onboardingCompleted !== true) {
+            d.settings.onboardingCompleted = true;
+        }
+        d.onboardingStartedInSession = false;
+    });
 }
 
 module.exports = {

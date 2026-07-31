@@ -1,11 +1,12 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
 
 const PROMO_ID = 'random-theme-v2';
 const STORAGE_KEY = `nextdash:config-setting-promo-seen-v1:${PROMO_ID}`;
 
 async function openAppearanceFresh(page) {
+    await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
