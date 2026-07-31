@@ -27,7 +27,6 @@
 .config-setting-promo.is-visible {
     opacity: 1;
     transform: translateY(0) scale(1);
-    animation: config-setting-promo-float 4.5s ease-in-out infinite;
 }
 
 @keyframes config-setting-promo-float {

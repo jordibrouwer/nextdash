@@ -29,6 +29,7 @@
     /** @type {{ config?: object } | null} */
     let pendingCtx = null;
     let onReposition = null;
+    let repositionRaf = null;
     let onEscape = null;
     let onAnchorInteract = null;
 
@@ -320,9 +321,13 @@
         });
 
         onReposition = () => {
-            if (activeEl && anchorTargetEl?.isConnected) {
-                positionPopover(activeEl, anchorTargetEl, activePromoDef);
-            }
+            if (repositionRaf) return;
+            repositionRaf = requestAnimationFrame(() => {
+                repositionRaf = null;
+                if (activeEl && anchorTargetEl?.isConnected) {
+                    positionPopover(activeEl, anchorTargetEl, activePromoDef);
+                }
+            });
         };
         global.addEventListener('resize', onReposition, { passive: true });
         global.addEventListener('scroll', onReposition, { passive: true, capture: true });
