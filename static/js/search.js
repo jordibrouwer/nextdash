@@ -292,6 +292,9 @@ class SearchComponent {
     }
 
     getThemeIconStylingEntry() {
+        if (window.ThemeIconStyling) {
+            return window.ThemeIconStyling.getThemeIconStylingEntry(this.settings);
+        }
         const currentTheme = document.documentElement.getAttribute('data-theme') || this.settings.theme || 'default';
         const map = this.settings?.themeIconStyling || {};
         return map[currentTheme] || { enabled: false, style: 'muted', intensity: 0.5 };

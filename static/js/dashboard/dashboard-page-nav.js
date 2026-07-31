@@ -62,6 +62,7 @@ class DashboardPageNav {
         d.updateDocumentTitle();
         d.setActivePageNavButton(targetPageId);
         d.renderDashboard({ animate: false });
+        window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(d.settings);
         d.keyboardNavigation?.clearSelection?.();
         d.keyboardNavigation?.scheduleUpdate?.();
         d.inbox?.clearKeyboardSelection?.();

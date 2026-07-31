@@ -94,6 +94,8 @@ class DashboardRenderIncremental {
             this.patchCategoryBookmarks(categoryEl, block.category, block.bookmarks, { forceRowRefresh: true });
         });
 
+        window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(d.settings);
+
         this.finishIncrementalRefresh();
         return true;
     }

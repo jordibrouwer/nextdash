@@ -443,15 +443,9 @@ class DashboardBookmarkRows {
                     iconSlot.appendChild(createLetterAvatar());
                 });
                 iconSlot.appendChild(iconImg);
-                try {
-                    const currentTheme = document.documentElement.getAttribute('data-theme') || d.settings.theme || 'default';
-                    const entry = (d.settings.themeIconStyling && d.settings.themeIconStyling[currentTheme]) || { enabled: false };
-                    if (entry.enabled) {
-                        iconSlot.classList.add('icon-themed', `icon-themed--${entry.style || 'muted'}`);
-                        iconSlot.style.setProperty('--icon-theme-intensity', String(entry.intensity || 0.5));
-                    }
-                } catch (e) {
-                    // ignore
+                const entry = window.ThemeIconStyling.getThemeIconStylingEntry(d.settings);
+                if (entry.enabled) {
+                    window.ThemeIconStyling.applyThemeIconStylingToElement(iconSlot, entry);
                 }
             } else {
                 iconSlot.appendChild(createLetterAvatar());
@@ -619,6 +613,12 @@ class DashboardBookmarkRows {
         }
         const d = this.dash;
         const showIcons = d?.settings?.showIcons !== false ? '1' : '0';
+        const iconEntry = window.ThemeIconStyling
+            ? window.ThemeIconStyling.getThemeIconStylingEntry(d.settings)
+            : { enabled: false };
+        const iconStylingKey = iconEntry.enabled
+            ? `${iconEntry.style}:${iconEntry.intensity}`
+            : 'off';
         return [
             bookmark.url || '',
             bookmark.name || '',
@@ -631,6 +631,7 @@ class DashboardBookmarkRows {
             (bookmark.tags || []).join(','),
             String(bookmark.openCount || 0),
             showIcons,
+            iconStylingKey,
         ].join('\u0001');
     }
 

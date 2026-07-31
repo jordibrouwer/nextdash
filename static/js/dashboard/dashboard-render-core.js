@@ -1398,16 +1398,10 @@ class DashboardRenderCore {
             iconImage.loading = 'lazy';
             iconImage.className = 'bookmark-icon';
             labelWrap.appendChild(iconImage);
-            try {
-                const currentTheme = document.documentElement.getAttribute('data-theme') || d.settings.theme || 'default';
-                const entry = (d.settings.themeIconStyling && d.settings.themeIconStyling[currentTheme]) || { enabled: false };
-                if (entry.enabled) {
-                    iconImage.classList.add('icon-themed', `icon-themed--${entry.style || 'muted'}`);
-                    iconImage.style.setProperty('--icon-theme-intensity', String(entry.intensity || 0.5));
-                }
-            } catch (e) {
-                // ignore
-            }
+            window.ThemeIconStyling.applyThemeIconStylingToElement(
+                labelWrap,
+                window.ThemeIconStyling.getThemeIconStylingEntry(d.settings)
+            );
             labelWrap.appendChild(document.createTextNode(' '));
         } else {
             const textIcon = categoryIcon || '▣';
