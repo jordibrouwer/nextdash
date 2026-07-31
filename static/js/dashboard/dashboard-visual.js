@@ -131,10 +131,7 @@ class DashboardVisual {
     }
 
 
-    onActiveViewChanged(previousView, nextView) {
-        if (!previousView || previousView === nextView) {
-            return;
-        }
+    rotateRandomThemeIfViewMode() {
         const d = this.dash;
         const mode = window.ThemeUtils?.normalizeRandomThemeMode?.(d.settings)
             ?? d.settings?.randomThemeMode
@@ -144,6 +141,24 @@ class DashboardVisual {
         }
         window.ThemeLoader?.rotateSessionRandomTheme?.(d.settings);
         this.initializeAutoDarkMode();
+    }
+
+
+    onActiveViewChanged(previousView, nextView) {
+        if (!previousView || previousView === nextView) {
+            return;
+        }
+        this.rotateRandomThemeIfViewMode();
+    }
+
+
+    onDashboardPageChanged(previousPageId, nextPageId) {
+        const prev = Number(previousPageId);
+        const next = Number(nextPageId);
+        if (!Number.isFinite(prev) || !Number.isFinite(next) || prev === next) {
+            return;
+        }
+        this.rotateRandomThemeIfViewMode();
     }
 
 

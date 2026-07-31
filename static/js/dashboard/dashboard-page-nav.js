@@ -21,6 +21,8 @@ class DashboardPageNav {
         }
 
         if (leavingView) {
+            // View change already rotates random theme; skip the page-change pick below.
+            d._pageNavIncludesViewChange = true;
             d.setActiveView('bookmarks');
             d.inbox?.clearKeyboardSelection?.();
             d.health?.clearKeyboardSelection?.();

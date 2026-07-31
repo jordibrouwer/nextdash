@@ -2734,7 +2734,7 @@
         "autoDarkModeInfoMessage": "Automatically switches between light and dark theme based on your system preference.\n\n• Only works with built-in themes that have dark and light variants\n• Not available with custom themes — those use one fixed palette\n• Useful on laptops and phones that follow OS appearance",
         "autoDarkModeUnavailableHint": "Not available with custom themes. Custom themes use one fixed palette instead of separate dark and light variants. Select a built-in theme to enable auto dark mode.",
         "randomThemeModeInfoTitle": "Random theme",
-        "randomThemeModeInfoMessage": "Picks a different theme from the pool instead of your saved choice.\n\n• Off — always use the theme selected above\n• On page refresh — new random theme on each reload (F5)\n• On view change — new random theme when switching between bookmarks, config, inbox, and health\n\nWith auto dark mode on, only dark or light variants matching your system appearance are chosen. Custom themes without a dark/light pair are skipped when auto dark mode is on.",
+        "randomThemeModeInfoMessage": "Picks a different theme from the pool instead of your saved choice.\n\n• Off — always use the theme selected above\n• On page refresh — new random theme on each reload (F5)\n• On view change — new random theme when switching between bookmarks, config, inbox, and health, or when switching between dashboard pages\n\nWith auto dark mode on, only dark or light variants matching your system appearance are chosen. Custom themes without a dark/light pair are skipped when auto dark mode is on.",
         "randomThemeModeLabel": "Random theme",
         "randomThemeModeOff": "Off",
         "randomThemeModeRefresh": "On page refresh",

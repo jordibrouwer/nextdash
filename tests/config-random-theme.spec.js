@@ -82,6 +82,38 @@ test.describe('Random theme modes', () => {
         await expect.poll(shown.bind(null, page)).not.toBe(homeTheme);
     });
 
+    test('view mode changes theme when switching dashboard pages', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        const pageCount = await page.evaluate(() => window.dashboardInstance.pages.length);
+        test.skip(pageCount < 2, 'needs at least two pages');
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(async () => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await fetch('/api/settings');
+            if (!res.ok) return;
+            const settings = await res.json();
+            settings.randomThemeMode = 'view';
+            settings.randomThemeOnRefresh = true;
+            await api('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings),
+            });
+        });
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        const firstPageTheme = await shown(page);
+        const targetPageId = await page.evaluate(() => Number(window.dashboardInstance.pages[1].id));
+        await page.evaluate(async (pageId) => {
+            await window.dashboardInstance.requestPageNavigation(pageId);
+        }, targetPageId);
+        await expect.poll(shown.bind(null, page)).not.toBe(firstPageTheme);
+    });
+
     test('turning off restores stored theme', async ({ page }) => {
         await openAppearance(page);
         await setRandomThemeMode(page, 'view');
