@@ -188,7 +188,9 @@ class Dashboard {
         this.contextMenu = new DashboardContextMenu(this);
         this.setup = new DashboardSetup(this);
         this.persistence = new DashboardPersistence(this);
-        this.inbox = new DashboardInbox(this);
+        this.inbox = typeof window.createDashboardInboxLoader === 'function'
+            ? window.createDashboardInboxLoader(this)
+            : new DashboardInbox(this);
         this.health = typeof window.createDashboardHealthLoader === 'function'
             ? window.createDashboardHealthLoader(this)
             : (typeof DashboardHealth === 'function' ? new DashboardHealth(this) : null);
@@ -252,7 +254,7 @@ class Dashboard {
             this.initializeSwipeNavigation();
             this.initializeHyprMode();
             this.renderPageNavigation();
-            void this.inbox.loadItems().then(() => {
+            void (this.inbox.bootstrap?.() ?? this.inbox.loadItems?.()).then(() => {
                 this.pageNav?.updateInboxTabBadge?.();
             });
             this.renderDashboard({ animate: true });

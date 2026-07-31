@@ -944,6 +944,7 @@ class DashboardData {
             } catch (storageError) {
                 console.warn('Device-local settings mirror failed:', storageError);
             }
+            void d.inbox?.bootstrap?.();
             return true;
         } catch (error) {
             d.showErrorNotification(

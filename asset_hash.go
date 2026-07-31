@@ -141,6 +141,8 @@ var lazyLoadedAssets = []string{
 	"js/health-reason-utils.js",
 	"js/shared/last-opened-format.js",
 	"js/dashboard/dashboard-health.js",
+	"js/dashboard/dashboard-inbox-triage.js",
+	"js/dashboard/dashboard-inbox.js",
 }
 
 // lazyAssetMapJSON renders lazyLoadedAssets as a JSON object of path -> hashed
