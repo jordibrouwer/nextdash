@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const { prepareDashboardInteraction } = require('./e2e-helpers');
 
 /**
  * Inline edit and the bookmark context menu load together on first long-press or
@@ -61,8 +62,13 @@ test.describe('bookmark interactions lazy load', () => {
     test('keyboard edit loads the inline editor', async ({ page }) => {
         await page.goto('/');
         await waitReady(page);
-
-        await page.locator('.bookmark-link').first().focus();
+        await prepareDashboardInteraction(page);
+        await page.evaluate(() => {
+            const kn = window.dashboardInstance.keyboardNavigation;
+            kn.updateNavigableElements?.();
+            kn.currentIndex = 0;
+            kn.highlightCurrentElement?.({ keyboardNav: true });
+        });
         await page.keyboard.press(';');
 
         await expect(page.locator('.bookmark-inline-editing')).toBeVisible({ timeout: 15_000 });

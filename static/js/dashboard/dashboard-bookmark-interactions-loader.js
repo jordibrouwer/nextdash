@@ -15,11 +15,25 @@
         return (window.NEXTDASH_ASSETS && window.NEXTDASH_ASSETS[rel]) || `/static/${rel}`;
     }
 
+    function scriptReady(rel) {
+        if (rel === INLINE_EDIT) return typeof window.DashboardInlineEdit === 'function';
+        if (rel === CONTEXT_MENU) return typeof window.DashboardContextMenu === 'function';
+        return false;
+    }
+
     function loadScript(rel, datasetKey) {
         const src = assetURL(rel);
         return new Promise((resolve, reject) => {
+            if (scriptReady(rel)) {
+                resolve();
+                return;
+            }
             const existing = document.querySelector(`script[data-${datasetKey}]`);
             if (existing) {
+                if (scriptReady(rel)) {
+                    resolve();
+                    return;
+                }
                 existing.addEventListener('load', () => resolve(), { once: true });
                 existing.addEventListener('error', () => reject(new Error(`${rel} failed to load`)), { once: true });
                 return;
@@ -88,6 +102,73 @@
                 return false;
             }
             return this._module?.hasInlineEditUnsavedChanges?.() ?? false;
+        }
+
+        /** Called on every dashboard render — must not fetch the module. */
+        _abortInlineEditForRender() {
+            const d = this.dash;
+            if (d.inlineEditingBookmarkIndex !== null) {
+                if (this.hasInlineEditUnsavedChanges()) {
+                    return;
+                }
+                d._inlineEditGlobalCleanup?.();
+                d.inlineEditingBookmarkIndex = null;
+            }
+            d._inlineEditAutoFetchClear?.();
+            d._inlineEditAutoFetchClear = null;
+            d._inlineEditContext = null;
+            document.body.classList.remove('bookmark-inline-edit-active');
+        }
+
+        ensureBookmarkMutationSnapshot() {
+            const d = this.dash;
+            if (!d.pendingReorderSnapshot) {
+                d.pendingReorderSnapshot = d.bookmarks.map((bm) => ({ ...bm }));
+            }
+        }
+
+        syncInlineEditCategoryAfterMove(categoryId, affectedRefs = []) {
+            const d = this.dash;
+            const ctx = d._inlineEditContext;
+            if (!ctx?.fields?.catSelect || !ctx.bookmarkRef?.bookmark) {
+                return;
+            }
+            const editingRef = ctx.bookmarkRef;
+            const isAffected = (affectedRefs || []).some((ref) => (
+                ref === editingRef
+                || ref?.bookmark === editingRef.bookmark
+                || d.isSameBookmarkReference?.(editingRef, ref?.bookmark)
+            ));
+            if (!isAffected) {
+                return;
+            }
+            ctx.fields.catSelect.value = String(categoryId ?? '');
+            editingRef.bookmark.category = categoryId;
+            if (editingRef.original) {
+                editingRef.original.category = categoryId;
+            }
+        }
+
+        dismissInlineEditForNavigation() {
+            if (!this.isInlineEditActive()) {
+                this._abortInlineEditForRender();
+                return;
+            }
+            void this.load().then((mod) => mod.dismissInlineEditForNavigation()).catch(() => {});
+        }
+
+        confirmInlineEditBeforeNavigation() {
+            if (!this.isInlineEditActive()) {
+                return Promise.resolve(true);
+            }
+            return this.load().then((mod) => mod.confirmInlineEditBeforeNavigation());
+        }
+
+        confirmDiscardInlineEdit() {
+            if (!this.isInlineEditUnsavedChanges()) {
+                return Promise.resolve(true);
+            }
+            return this.load().then((mod) => mod.confirmDiscardInlineEdit());
         }
 
         /**
