@@ -400,6 +400,44 @@ test.describe('config dashboard view (scaffold)', () => {
         })).toBe('tinted');
     });
 
+    test('favicon harmonization stays enabled after leaving config', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await expect(toggle).toBeChecked();
+
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+    });
+
+    test('favicon harmonization applies to the dashboard without reload', async ({ page }) => {
+        await loadDashboard(page);
+        const hasIcon = await page.evaluate(() => {
+            const slot = document.querySelector('#dashboard-layout .bookmark-icon-slot img.bookmark-icon');
+            return !!slot;
+        });
+        test.skip(!hasIcon, 'needs at least one bookmark with a favicon');
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await page.locator('[data-appearance-iconstyle="muted"]').click();
+
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
+
+        await expect.poll(() => page.evaluate(() => {
+            const img = document.querySelector('#dashboard-layout .bookmark-icon-slot img.bookmark-icon');
+            return img ? getComputedStyle(img).filter : '';
+        }), { timeout: 5000 }).toMatch(/grayscale/);
+    });
+
     test('the icon-styling preview is driven by the real theme CSS', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
