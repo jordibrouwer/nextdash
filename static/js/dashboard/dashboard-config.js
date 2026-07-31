@@ -310,6 +310,11 @@ class DashboardConfig {
             // they were. Health and inbox already guard the same way.
             if (window.DashboardTagCloud?.modalOpen) return;
             if (d.isModalOpen()) return;
+            if (window.ConfigSettingPromo?.dismissActive?.({ persist: true })) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
             const tag = document.activeElement?.tagName;
@@ -468,6 +473,7 @@ class DashboardConfig {
         } else if (this.section === 'help') {
             this.bindHelp(container);
         }
+        window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
     }
 
     renderShell() {
@@ -1979,7 +1985,7 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('autoDarkMode')}
                 </div>
-                <div class="config-field">
+                <div class="config-field" data-config-setting-promo-anchor="randomThemeMode">
                     <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
                     <select class="config-select" data-appearance-select="randomThemeMode">${this.renderRandomThemeModeOptions(s)}</select>
                     ${this.appearanceAff('randomThemeMode')}

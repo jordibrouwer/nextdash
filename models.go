@@ -261,6 +261,8 @@ type DiscoverabilityState struct {
 	TipsNotBefore       int64  `json:"tipsNotBefore,omitempty"`
 	// SeenTips lists tip ids already shown as a session tip; each is shown once, ever.
 	SeenTips []string `json:"seenTips,omitempty"`
+	// SeenSettingPromos lists dismissed config setting highlight popovers.
+	SeenSettingPromos []string `json:"seenSettingPromos,omitempty"`
 }
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards

@@ -1,0 +1,185 @@
+/* One-time config setting highlight popovers (see config-setting-promo.js) */
+
+.config-setting-promo-anchor-highlight {
+    position: relative;
+    z-index: 1;
+    border-radius: 10px;
+    outline: 2px solid color-mix(in srgb, var(--accent-primary, #4a90d9) 55%, transparent);
+    outline-offset: 4px;
+    animation: config-setting-promo-anchor-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes config-setting-promo-anchor-pulse {
+    0%, 100% { outline-color: color-mix(in srgb, var(--accent-primary, #4a90d9) 40%, transparent); }
+    50% { outline-color: color-mix(in srgb, var(--accent-primary, #4a90d9) 78%, transparent); }
+}
+
+.config-setting-promo {
+    position: fixed;
+    z-index: 1200;
+    max-width: min(300px, calc(100vw - 24px));
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.config-setting-promo.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    animation: config-setting-promo-float 4.5s ease-in-out infinite;
+}
+
+@keyframes config-setting-promo-float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-3px) scale(1); }
+}
+
+.config-setting-promo-inner {
+    position: relative;
+    background: var(--background-secondary, var(--card-bg, #1e1e1e));
+    border: 1px solid var(--border-primary, var(--border-color, rgba(128, 128, 128, 0.35)));
+    border-radius: 0.75rem;
+    padding: 0.85rem 0.95rem 0.9rem;
+    box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.22),
+        0 0 0 1px color-mix(in srgb, var(--accent-primary, #4a90d9) 18%, transparent);
+}
+
+.config-setting-promo-badge {
+    display: inline-block;
+    margin-bottom: 0.35rem;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-primary, #4a90d9);
+    background: color-mix(in srgb, var(--accent-primary, #4a90d9) 16%, transparent);
+}
+
+.config-setting-promo-title {
+    margin: 0 0 0.35rem;
+    font-size: calc(var(--font-size-text, 14px) * 1.05);
+    font-weight: 600;
+    color: var(--text-primary, inherit);
+    line-height: 1.3;
+}
+
+.config-setting-promo-body {
+    margin: 0 0 0.75rem;
+    font-size: calc(var(--font-size-text, 14px) * 0.94);
+    color: var(--text-secondary, var(--text-muted, #aaa));
+    line-height: 1.45;
+}
+
+.config-setting-promo-dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.75rem;
+    border: none;
+    border-radius: 0.45rem;
+    font: inherit;
+    font-size: calc(var(--font-size-text, 14px) * 0.94);
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--background-primary, #fff);
+    background: var(--accent-primary, #4a90d9);
+    transition: filter 0.12s ease, transform 0.12s ease;
+}
+
+.config-setting-promo-dismiss:hover {
+    filter: brightness(1.08);
+}
+
+.config-setting-promo-dismiss:focus-visible {
+    outline: 2px solid var(--accent-primary, #4a90d9);
+    outline-offset: 2px;
+}
+
+.config-setting-promo-arrow {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--background-secondary, var(--card-bg, #1e1e1e));
+    border: 1px solid var(--border-primary, var(--border-color, rgba(128, 128, 128, 0.35)));
+    transform: rotate(45deg);
+    box-shadow: -2px 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Below the control (default) */
+.config-setting-promo.is-below .config-setting-promo-arrow {
+    top: -5px;
+    left: var(--promo-arrow-left, 50%);
+    margin-left: -5px;
+    border-right: none;
+    border-bottom: none;
+}
+
+/* Above the control when there is no room below */
+.config-setting-promo.is-above .config-setting-promo-arrow {
+    bottom: -5px;
+    left: var(--promo-arrow-left, 50%);
+    margin-left: -5px;
+    border-left: none;
+    border-top: none;
+}
+
+/* Beside the control (optional placement) */
+.config-setting-promo.is-right .config-setting-promo-arrow,
+.config-setting-promo.is-left .config-setting-promo-arrow {
+    top: 50%;
+    margin-top: -5px;
+    margin-left: 0;
+}
+
+.config-setting-promo.is-right .config-setting-promo-arrow {
+    left: -5px;
+    border-right: none;
+    border-top: none;
+}
+
+.config-setting-promo.is-left .config-setting-promo-arrow {
+    right: -5px;
+    border-left: none;
+    border-bottom: none;
+}
+
+@media (max-width: 720px) {
+    .config-setting-promo {
+        display: none !important;
+    }
+
+    .config-setting-promo-anchor-highlight {
+        animation: none;
+        outline-width: 1px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-setting-promo,
+    .config-setting-promo.is-visible,
+    .config-setting-promo-anchor-highlight {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .config-setting-promo {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+body.no-animations .config-setting-promo,
+body.no-animations .config-setting-promo.is-visible,
+body.no-animations .config-setting-promo-anchor-highlight {
+    animation: none !important;
+    transition: none !important;
+}
+
+body.no-animations .config-setting-promo {
+    opacity: 1;
+    transform: none;
+}
