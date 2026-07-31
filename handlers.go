@@ -659,8 +659,9 @@ func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {
 
 type htmlPageData struct {
 	Settings
-	ThemePoolCSV   string `json:"-"`
-	ThemeColorMeta string `json:"-"`
+	ThemePoolCSV       string `json:"-"`
+	CustomThemeIDsCSV  string `json:"-"`
+	ThemeColorMeta     string `json:"-"`
 	WriteToken   string `json:"-"`
 	AppVersion string
 	// ReleaseTag is the published version ("v2026.07.23.6"), reported with the
@@ -692,6 +693,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	return htmlPageData{
 		Settings:           settings,
 		ThemePoolCSV:       themePoolCSV(colors),
+		CustomThemeIDsCSV:  customThemeIDsCSV(colors),
 		ThemeColorMeta:     themeBackgroundPrimary(themeID, colors),
 		WriteToken:         writeAccessToken(),
 		AppVersion:         appVersionToken(),

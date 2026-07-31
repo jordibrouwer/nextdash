@@ -78,6 +78,15 @@ func filterThemePoolForAutoDark(pool []string, wantsDark bool) []string {
 	return []string{"light"}
 }
 
+func customThemeIDsCSV(colors ColorTheme) string {
+	ids := make([]string, 0, len(colors.Custom))
+	for id := range colors.Custom {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return strings.Join(ids, ",")
+}
+
 func themePoolCSV(colors ColorTheme) string {
 	return strings.Join(allThemeIDs(colors), ",")
 }
