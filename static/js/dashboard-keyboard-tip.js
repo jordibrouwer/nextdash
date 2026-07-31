@@ -150,7 +150,43 @@
         timer = setTimeout(attempt, SHOW_DELAY_MS);
     }
 
-    global.DashboardKeyboardTip = { autoStart, attempt, show, shouldShow, pickTip };
+    /**
+     * One-time hint the first time config opens — separate from the occasional
+     * dashboard tips so it never waits on tipsNotBefore.
+     */
+    function showConfigIntro() {
+        const TIP_ID = 'tipConfigKeyboard';
+        if (global.DiscoverabilityState?.hasSeenTip?.(TIP_ID)) return false;
+        const d = dash();
+        if (!d?.settings || d.settings.enableSessionTips === false) return false;
+        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
+        if (d.searchComponent?.isActive?.()) return false;
+
+        const html = tipText(TIP_ID);
+        if (!html) return false;
+
+        const label = t('sessionTipLabel', 'Tip');
+        const message = `<strong class="app-notification-tip-label">${label}</strong> ${html}`;
+        const opts = {
+            duration: 14000,
+            actionLabel: t('sessionTipAction', 'Cheat sheet'),
+            onAction: () => {
+                if (typeof d.showKeyboardCheatSheet === 'function') {
+                    d.showKeyboardCheatSheet();
+                }
+            },
+            allowHtml: true,
+        };
+
+        if (!global.AppNotification?.show) return false;
+        global.AppNotification.show(message, 'info', opts);
+        global.DiscoverabilityState?.markTipSeen?.(TIP_ID);
+        global.nextdashTrack?.('tip:shown', { tip: TIP_ID, context: 'config-intro' });
+        return true;
+    }
+
+    global.DashboardKeyboardTip = { autoStart, attempt, show, shouldShow, pickTip, showConfigIntro };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', autoStart, { once: true });

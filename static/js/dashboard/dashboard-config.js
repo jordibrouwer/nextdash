@@ -290,6 +290,7 @@ class DashboardConfig {
         d.pageNav?.updateDocumentTitle?.();
         await this.loadAndRender();
         this.restoreConfigHash();
+        requestAnimationFrame(() => window.DashboardKeyboardTip?.showConfigIntro?.());
         return true;
     }
 
@@ -795,6 +796,7 @@ class DashboardConfig {
         }
         window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
         this.bindFormKeyboard(container);
+        this.bindFormKeyboardLegend(container);
         this.cacheSettingsJumpFields();
     }
 
@@ -808,6 +810,22 @@ class DashboardConfig {
         this.bindChoiceGroups(container);
         this.bindSwatchGroups(container);
         this.bindRangeInputs(container);
+    }
+
+    /** Footer hint on form-heavy sections (Behavior, Appearance, …). */
+    bindFormKeyboardLegend(container) {
+        const formSections = new Set(['behavior', 'appearance', 'stats', 'data-backups']);
+        if (!formSections.has(this.section)) return;
+        const body = container?.querySelector('#config-view-body') || document.getElementById('config-view-body');
+        if (!body) return;
+        if (body.querySelector('.config-form-keyboard-legend')) return;
+        if (!body.querySelector('.config-choices, .config-range, .config-subtabs')) return;
+        const legend = document.createElement('p');
+        legend.className = 'config-form-keyboard-legend config-field-hint';
+        legend.setAttribute('aria-hidden', 'true');
+        legend.textContent = this.t('config.formKeyboardLegend',
+            '←/→ choices · Home/End sliders · Alt+←/→ or [ ] sub-tabs · Ctrl/Cmd+Shift+K find setting · ! cheat sheet');
+        body.appendChild(legend);
     }
 
     /** Roving tabindex for a single `.config-choices` radiogroup. */
@@ -5323,6 +5341,7 @@ class DashboardConfig {
             this.bindControlPanels(container, 'behavior');
             this.bindBehaviorActions(container);
             this.bindFormKeyboard(container);
+            this.bindFormKeyboardLegend(container);
         });
         this.bindControlPanels(container, 'behavior');
         this.bindBehaviorActions(container);
@@ -9858,7 +9877,9 @@ class DashboardConfig {
                 'config.helpKeyboardBody', '',
                 `<div class="config-actions">
                     <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
-                </div>`);
+                </div>`)
+            + this.helpPanel('config.helpConfigKeyboardTitle', 'Config navigation',
+                'config.helpConfigKeyboardBody', '');
     }
 
     renderHelpHealth() {

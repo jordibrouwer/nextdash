@@ -1012,18 +1012,37 @@ Back up first — neither can be undone.
 
 ### ⌨️ Keyboard
 
+Config has its own keyboard layer — dashboard grid shortcuts do not run while config is open. Press **`!`** or **`F1`** for the cheat sheet; the **Config view** group lists every binding.
+
 | Keys | Action |
 |------|--------|
 | `Shift+S` or `<` | Open config from the dashboard |
-| `Escape` | Close config and return to the dashboard |
-| `←` / `→` | Previous / next sub-tab (wraps at the ends) |
-| `Home` / `End` | First / last sub-tab |
+| `1`–`8` | Jump to a section (Overview through Help) |
+| `j` / `k` | Previous / next section in the left rail |
+| `g` / `G` | First / last section |
+| `←` / `→` or `↑` / `↓` (section rail) | Move between sections when the rail is focused |
+| `Home` / `End` (section rail) | Jump to first / last section |
+| `Alt + ←` / `→` or `[` / `]` | Previous / next sub-tab |
+| `←` / `→` (sub-tabs) | Move between sub-tabs when a sub-tab strip is focused |
+| `↑` / `↓` (Pages & tags lists) | Move between rows when focus is in the list panel |
+| `Enter` / `Space` (list row) | Focus the first field in the selected list row |
+| `g` / `G` (list row) | Jump to first / last row in a Pages & tags list |
+| `/` (Tags tab) | Focus the tag filter |
+| `j` / `k` (Bookmarks list) | Move between bookmark rows |
+| `Enter` / `Space` (bookmark row) | Open the inline editor |
+| `/` (Bookmarks) | Focus the bookmark search field |
+| `←` / `→` (choice row) | Move between options; `Space` selects |
+| `Home` / `End` (slider) | Jump to min or max on a focused slider |
+| `Ctrl/Cmd + Shift + K` | Find a setting, section, or help topic (settings jump) |
+| `Escape` | Close bookmark editor → clear list selection → exit config |
 
-Shortcuts do not fire while focus is in an input, textarea, select, contenteditable field, or a modal.
+Inline hints at the bottom of form sections and under list tabs summarise the keys for that panel. **Help → Search & keyboard → Config navigation** repeats this in prose.
 
-`Escape` closes one layer at a time. With a modal open over the config view — the add-bookmark form, say — the first press closes the modal and leaves you in config, on the section you were reading; a second press closes config. The same holds for the tag cloud, an active search and an inline edit.
+Shortcuts do not fire while focus is in an input, textarea, select, or contenteditable field, except where noted (for example list keys from the tag filter or bookmark search).
 
-Closing config also leaves the **dashboard underneath it untouched**: an active tag filter is still applied when you land back on it.
+`Escape` closes one layer at a time. With a modal open over config — the add-bookmark form, for example — the first press closes the modal and leaves you in config; a second press closes config. The same applies to search overlays and inline edit on the dashboard underneath.
+
+Closing config leaves the **dashboard underneath untouched**: an active tag filter stays applied when you return.
 
 ---
 
