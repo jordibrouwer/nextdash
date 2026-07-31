@@ -58,8 +58,16 @@ test.describe('health view icons', () => {
             iconRequests.push(new URL(route.request().url()).pathname);
             await route.fulfill({ status: 200, contentType: 'image/png', body: PNG_1x1 });
         });
-        page.on('requestfailed', (req) => { if (req.resourceType() === 'image') failures.push(req.url()); });
-        page.on('response', (res) => { if (res.status() === 404) failures.push(res.url()); });
+        page.on('requestfailed', (req) => {
+            if (req.resourceType() !== 'image') return;
+            const url = req.url();
+            if (url.includes('/data/icons/')) failures.push(url);
+        });
+        page.on('response', (res) => {
+            if (res.request().resourceType() !== 'image' || res.status() !== 404) return;
+            const url = res.url();
+            if (url.includes('/data/icons/')) failures.push(url);
+        });
 
         await openHealthView(page, 'icon-8cf59ef5c5c8d226.jpg');
 

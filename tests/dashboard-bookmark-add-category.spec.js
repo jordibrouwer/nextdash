@@ -48,6 +48,12 @@ test.describe('dashboard bookmark add category placement', () => {
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
         await prepareDashboardInteraction(page);
         await ensurePageCategory(page, 'media', 'Media');
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.showAddBookmarkButton = true;
+            document.body.setAttribute('data-show-add-bookmark-button', 'true');
+            d.setupDOM?.();
+        });
 
         const uniqueUrl = `https://example.com/category-placement-${Date.now()}.test`;
         const uniqueName = `Category placement ${Date.now()}`;

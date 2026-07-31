@@ -26,7 +26,10 @@ async function setup(page) {
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
-    await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((el) => el.remove()));
+    await page.evaluate(() => {
+        document.querySelectorAll('.quickstart-card').forEach((el) => el.remove());
+        window.GuidedFlowGuard?.sync?.();
+    });
 }
 
 /** Replace navigator.share with a recorder that resolves, rejects, or aborts. */

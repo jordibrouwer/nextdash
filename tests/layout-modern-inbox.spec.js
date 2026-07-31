@@ -156,7 +156,24 @@ test.describe('modern layout — quickstart card', () => {
     async function showQuickstartCard(page) {
         await markWhatsNewSeen(page);
         await page.goto('/');
-        await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.onboardingCompleted = false;
+            d.settings.quickStart = {
+                setupDone: false,
+                dismissed: false,
+                visitedConfig: false,
+                seenCheatsheet: false,
+            };
+            d.onboardingStartedInSession = false;
+            document.querySelectorAll('.quickstart-card').forEach((el) => el.remove());
+            if (typeof window.QuickStart === 'function') {
+                d.quickStart = new window.QuickStart(d);
+                d.onboardingStartedInSession = d.quickStart.shouldStart();
+                d.quickStart.start();
+            }
+        });
         await expect(page.locator('.quickstart-card')).toBeVisible({ timeout: 15_000 });
     }
 

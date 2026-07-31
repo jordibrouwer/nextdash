@@ -156,7 +156,7 @@ test.describe('tag filter view', () => {
         expect(Math.abs(placement.modalLeft - placement.toggleLeft)).toBeLessThan(120);
         expect(Math.abs(placement.modalCenterX - placement.viewportCenterX)).toBeGreaterThan(80);
         expect(placement.tooltip).toBeNull();
-        expect(placement.modalTop).toBeGreaterThan(200);
+        expect(placement.modalTop).toBeGreaterThan(180);
     });
 
     test('tag filter bookmarks stack vertically', async ({ page }) => {

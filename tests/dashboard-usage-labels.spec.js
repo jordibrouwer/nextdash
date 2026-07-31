@@ -11,30 +11,33 @@ async function loadDashboard(page) {
 
 /** Give the first rendered bookmark a known history and repaint. */
 async function seedFirstRow(page, stats) {
-    const url = await page.evaluate(async (s) => {
+    const seeded = await page.evaluate(async (s) => {
         const d = window.dashboardInstance;
         const found = document.querySelector('#dashboard-layout .bookmark-link[data-bookmark-url]')
             ?.getAttribute('data-bookmark-url');
-        const bm = d.allBookmarks.find((b) => b.url === found);
-        // A shortcut is what puts the counts at risk of being announced, so
-        // ensure one exists rather than depending on which row sorts first.
-        Object.assign(bm, s, { shortcut: bm.shortcut || 'ZZ' });
+        const patch = (bm) => {
+            if (!bm || bm.url !== found) return;
+            Object.assign(bm, s, { shortcut: bm.shortcut || 'ZZ' });
+        };
+        d.allBookmarks.forEach(patch);
+        (d.bookmarks || []).forEach(patch);
+        (d.pages || []).forEach((p) => (p.bookmarks || []).forEach(patch));
         // incremental:false — the incremental path reuses cached rows and would
         // not pick the seeded counts up.
         await d.renderDashboard({ incremental: false });
-        return found;
+        return { url: found, openCount: s.openCount };
     }, stats);
-    await page.waitForSelector(`.bookmark-link[data-bookmark-url="${url}"]`);
-    return url;
+    await page.waitForSelector(`.bookmark-link[data-bookmark-url="${seeded.url}"]`);
+    return seeded;
 }
 
 test.describe('usage in the row tooltip', () => {
     test('the title carries the open count and last opened', async ({ page }) => {
         await loadDashboard(page);
-        const url = await seedFirstRow(page, { openCount: 35, lastOpened: Date.now() - 26 * 60 * 60 * 1000 });
+        const { url, openCount } = await seedFirstRow(page, { openCount: 35, lastOpened: Date.now() - 26 * 60 * 60 * 1000 });
         const text = page.locator(`.bookmark-link[data-bookmark-url="${url}"] .bookmark-text`).first();
         const title = await text.getAttribute('title');
-        expect(title).toContain('35');
+        expect(title).toContain(String(openCount));
         expect(title).toMatch(/yesterday/i);
         // The placeholder must be substituted, not printed.
         expect(title).not.toContain('{count}');
@@ -55,7 +58,7 @@ test.describe('usage in the row tooltip', () => {
 
     test('the aria-label stays lean so screen readers are not flooded', async ({ page }) => {
         await loadDashboard(page);
-        const url = await seedFirstRow(page, { openCount: 35, lastOpened: Date.now() - 26 * 60 * 60 * 1000 });
+        const { url, openCount } = await seedFirstRow(page, { openCount: 35, lastOpened: Date.now() - 26 * 60 * 60 * 1000 });
         const row = page.locator(`.bookmark-link[data-bookmark-url="${url}"]`).first();
         // The row is a div; the link a screen reader lands on is the anchor inside it.
         const aria = await row.locator('a.bookmark-open').getAttribute('aria-label');
@@ -63,11 +66,11 @@ test.describe('usage in the row tooltip', () => {
         // belong in the tooltip, which a screen reader user is not forced to hear.
         expect(aria).toBeTruthy();
         expect(aria).not.toMatch(/opened \d+ times/i);
-        expect(aria).not.toContain('35');
+        expect(aria).not.toContain(String(openCount));
         // The tooltip on the same row does carry them, so this is a split and
         // not simply a feature that failed to render.
         const title = await row.locator('.bookmark-text').getAttribute('title');
-        expect(title).toContain('35');
+        expect(title).toContain(String(openCount));
     });
 });
 

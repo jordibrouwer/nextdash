@@ -11,6 +11,10 @@ test.describe('dashboard side rail discoverability (D7)', () => {
             localStorage.removeItem('nextdash:side-rail-legend-v1');
             localStorage.removeItem('nextdash:search-flow-hint-side-rail-v1');
             d.settings.buttonBarPosition = 'side-left';
+            d.settings.showAddBookmarkButton = true;
+            d.settings.showRecentButton = true;
+            d.settings.showCheatSheetButton = true;
+            d.settings.showTagCloudButton = true;
             d.settings.onboardingCompleted = true;
             d.onboardingStartedInSession = false;
             d.setupDOM?.();

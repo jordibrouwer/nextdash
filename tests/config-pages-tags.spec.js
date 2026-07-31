@@ -422,6 +422,7 @@ test.describe('smart collection limits', () => {
         const ids = await page.evaluate(() => {
             const d = window.dashboardInstance;
             d.settings.showSmartMostUsedCollection = true;
+            d.allBookmarks.forEach((bm) => { bm.openCount = 0; });
             const before = d.getSmartCollections(d.allBookmarks).map((c) => c.id);
             // The collection is built from openCount, so it cannot exist until
             // something has actually been opened.

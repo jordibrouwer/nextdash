@@ -116,7 +116,7 @@ test.describe('custom theme editor', () => {
         await expect(page.locator('#config-theme-editor')).toBeVisible();
         await page.locator('[data-theme-color="backgroundPrimary"]').fill('#123456');
         await page.locator('[data-theme-color="backgroundPrimary"]').blur();
-        await page.waitForTimeout(500);
+        await expect(page.locator('[data-theme-action="apply"]')).toBeVisible({ timeout: 10_000 });
         await page.locator('[data-theme-action="apply"]').click();
 
         const id = await page.evaluate(() => window.dashboardInstance.settings.theme);
@@ -206,11 +206,13 @@ test.describe('custom theme editor', () => {
         await page.locator('[data-theme-add]').click();
         await expect(page.locator('[data-theme-row]')).toHaveCount(1);
 
+        await page.locator('[data-appearance-tab="custom-themes"]').click();
         await page.selectOption('[data-theme-base-select]', 'dark');
+        await expect(page.locator('#config-theme-editor[data-theme-editing="dark"]')).toBeVisible({ timeout: 10_000 });
         await page.locator('[data-theme-color="accentSuccess"]').fill('#aa3366');
         await page.locator('[data-theme-color="accentSuccess"]').blur();
-        await page.waitForTimeout(500);
 
+        await expect(page.locator('[data-theme-action="reset"]')).toBeVisible({ timeout: 10_000 });
         await page.locator('[data-theme-action="reset"]').click();
         await expect(page.locator('#config-confirm-modal')).toBeVisible();
         await page.locator('[data-confirm="ok"]').click();
