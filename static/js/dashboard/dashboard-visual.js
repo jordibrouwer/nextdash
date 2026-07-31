@@ -13,6 +13,17 @@ class DashboardVisual {
 
     constructor(dashboard) {
         this.dash = dashboard;
+        this._themeIconStylingListenerAttached = false;
+    }
+
+    setupThemeIconStylingListener() {
+        if (this._themeIconStylingListenerAttached || !window.ThemeLoader?.onThemeChange) {
+            return;
+        }
+        this._themeIconStylingListenerAttached = true;
+        window.ThemeLoader.onThemeChange(() => {
+            window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(this.dash.settings);
+        });
     }
 
     applyVisualSettings() {
@@ -146,6 +157,12 @@ class DashboardVisual {
 
     onActiveViewChanged(previousView, nextView) {
         if (!previousView || previousView === nextView) {
+            return;
+        }
+        // Config is a settings shell, not a separate destination. Rotating the
+        // theme on the way in or out would orphan a harmonisation entry the user
+        // just saved under the previous data-theme key.
+        if (previousView === 'config' || nextView === 'config') {
             return;
         }
         this.rotateRandomThemeIfViewMode();

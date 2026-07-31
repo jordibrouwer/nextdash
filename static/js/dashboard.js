@@ -236,6 +236,7 @@ class Dashboard {
             await this.loadData();
             this.applyVisualSettings();
             this.initializeAutoDarkMode();
+            this.visual.setupThemeIconStylingListener?.();
             this.loadCollapsedStates();
             await this.language.init(this.settings.language);
             // Expose instance before mobile banner / i18n helpers (refresh runs before status monitor).
