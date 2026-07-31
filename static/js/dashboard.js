@@ -189,7 +189,9 @@ class Dashboard {
         this.setup = new DashboardSetup(this);
         this.persistence = new DashboardPersistence(this);
         this.inbox = new DashboardInbox(this);
-        this.health = typeof DashboardHealth === 'function' ? new DashboardHealth(this) : null;
+        this.health = typeof window.createDashboardHealthLoader === 'function'
+            ? window.createDashboardHealthLoader(this)
+            : (typeof DashboardHealth === 'function' ? new DashboardHealth(this) : null);
         // Config is loaded on first open (dashboard-config-loader.js); the stub
         // answers the shell's pre-open calls so this stays a plain assignment.
         this.config = typeof window.createDashboardConfigLoader === 'function'
