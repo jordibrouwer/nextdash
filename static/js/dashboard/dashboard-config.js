@@ -66,8 +66,10 @@ class DashboardConfig {
         this._statsFinders = undefined;
         // Latest release for the overview: undefined until fetched, null on failure.
         this._latestRelease = undefined;
-        // Pages & tags CRUD list row highlighted via j/k (health/inbox feed pattern).
+        // Pages & tags CRUD list row highlighted via ↑/↓ (health/inbox feed pattern).
         this._listKeyboardKey = null;
+        // Bookmarks master list row highlighted via j/k.
+        this._bmKeyboardKey = null;
         /** Cached field labels seen while browsing config — merged into settings jump. */
         this._settingsJumpCache = new Map();
         this._settingsJumpHandler = null;
@@ -280,6 +282,7 @@ class DashboardConfig {
         d.inbox?.clearKeyboardSelection?.();
         d.health?.clearKeyboardSelection?.();
         this.clearListKeyboardSelection();
+        this.clearBookmarkKeyboardSelection();
         this.section = targetSection;
         d.setActiveView(DashboardConfig.VIEW);
         window.nextdashTrack?.('view:config');
@@ -344,8 +347,20 @@ class DashboardConfig {
             }
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
+            if (this.bmEditing) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.closeBookmarkEditorFromKeyboard();
+                return;
+            }
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) {
+                return;
+            }
+            if (this._bmKeyboardKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.clearBookmarkKeyboardSelection();
                 return;
             }
             if (this._listKeyboardKey) {
@@ -438,6 +453,19 @@ class DashboardConfig {
     }
 
     /**
+     * Bookmarks master list uses j/k (and g/G while focus sits in the list panel).
+     * Section-rail j/k stay reserved unless a row is already keyboard-selected.
+     */
+    shouldUseBookmarkKeyboardNav(target) {
+        if (this.section !== 'bookmarks') return false;
+        if (this._bmKeyboardKey) return true;
+        const inList = target?.closest?.('#config-bm-list');
+        if (inList) return this.getBookmarkKeyboardRows().length > 0;
+        if (target?.id === 'config-bm-search') return this.getBookmarkKeyboardRows().length > 0;
+        return false;
+    }
+
+    /**
      * Config view keyboard handler — section digits and sub-tab shortcuts.
      * Called from keyboard-navigation.js whenever #dashboard-layout carries
      * config-layout.
@@ -460,9 +488,12 @@ class DashboardConfig {
         const target = e.target;
         const tag = target?.tagName;
         const isTagFilter = target?.id === 'config-tag-filter';
+        const isBmSearch = target?.id === 'config-bm-search';
         const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
+        const bmNavFromSearch = new Set(['j', 'k', 'Enter', ' ', 'g', 'G']);
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
-            if (!(this.section === 'pages-tags' && isTagFilter && listNavFromFilter.has(e.key))) {
+            if (!(this.section === 'pages-tags' && isTagFilter && listNavFromFilter.has(e.key))
+                && !(this.section === 'bookmarks' && isBmSearch && bmNavFromSearch.has(e.key))) {
                 return false;
             }
         }
@@ -487,8 +518,13 @@ class DashboardConfig {
             return true;
         }
 
+        if (this.shouldUseBookmarkKeyboardNav(target) && this.handleBookmarkKeyboardNavigation(e)) {
+            return true;
+        }
+
         if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey
             && !this.shouldUseListKeyboardNav(target)
+            && !this.shouldUseBookmarkKeyboardNav(target)
             && !target?.closest?.('.config-choices, .config-bg-swatches, .config-sub-tabs')) {
             if (e.key === 'j') {
                 e.preventDefault();
@@ -1065,6 +1101,196 @@ class DashboardConfig {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 filter.focus();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /* ── Bookmarks master/detail keyboard ──────────────────────────────────── */
+
+    bookmarkRowKey(row) {
+        return row?.getAttribute('data-bm-key') || null;
+    }
+
+    getBookmarkKeyboardRows() {
+        const host = document.getElementById('config-bm-list');
+        if (!host) return [];
+        return Array.from(host.querySelectorAll('.config-bm-row'));
+    }
+
+    clearBookmarkKeyboardSelection() {
+        this._bmKeyboardKey = null;
+        document.querySelectorAll('#config-bm-list .config-bm-row.keyboard-selected').forEach((row) => {
+            row.classList.remove('keyboard-selected');
+            row.removeAttribute('aria-selected');
+        });
+    }
+
+    applyBookmarkKeyboardSelection(rows) {
+        const list = Array.isArray(rows) && rows.length ? rows : this.getBookmarkKeyboardRows();
+        list.forEach((row) => {
+            const selected = this.bookmarkRowKey(row) === this._bmKeyboardKey;
+            row.classList.toggle('keyboard-selected', selected);
+            if (selected) {
+                row.setAttribute('aria-selected', 'true');
+                row.scrollIntoView({
+                    block: 'nearest',
+                    behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
+                });
+            } else {
+                row.removeAttribute('aria-selected');
+            }
+        });
+    }
+
+    syncBookmarkKeyboardSelectionAfterRender() {
+        const rows = this.getBookmarkKeyboardRows();
+        if (!this._bmKeyboardKey || !rows.some((row) => this.bookmarkRowKey(row) === this._bmKeyboardKey)) {
+            this._bmKeyboardKey = null;
+        }
+        this.applyBookmarkKeyboardSelection(rows);
+    }
+
+    moveBookmarkKeyboardSelection(delta, rows) {
+        const list = Array.isArray(rows) && rows.length ? rows : this.getBookmarkKeyboardRows();
+        if (!list.length) return;
+        let index = this._bmKeyboardKey
+            ? list.findIndex((row) => this.bookmarkRowKey(row) === this._bmKeyboardKey)
+            : -1;
+        if (index < 0) {
+            index = delta > 0 ? 0 : list.length - 1;
+        } else {
+            index += delta;
+            if (index < 0) index = list.length - 1;
+            else if (index >= list.length) index = 0;
+        }
+        this._bmKeyboardKey = this.bookmarkRowKey(list[index]);
+        this.applyBookmarkKeyboardSelection(list);
+    }
+
+    focusBookmarkEditor() {
+        document.querySelector('.config-bm-editor [data-bm-field="name"], #config-bm-name')?.focus();
+    }
+
+    async activateBookmarkKeyboardRow(key) {
+        if (!key) return;
+        if (this.bmEditing === key) {
+            this.focusBookmarkEditor();
+            return;
+        }
+        if (this.bmEditing && !(await this.confirmDiscardBookmarkEdit())) return;
+        this.bmEditing = key;
+        this.bmDirty = false;
+        this.repaintBookmarksList();
+        this.focusBookmarkEditor();
+    }
+
+    async closeBookmarkEditorFromKeyboard() {
+        if (!this.bmEditing) return false;
+        if (!(await this.confirmDiscardBookmarkEdit())) return true;
+        this.bmEditing = null;
+        this.bmDirty = false;
+        this.repaintBookmarksList();
+        return true;
+    }
+
+    appendBookmarkKeyboardLegend(host) {
+        const list = host?.querySelector('.config-crud-list');
+        if (!list || list.querySelector('.config-panel-empty')) return;
+        if (host.querySelector('.config-bm-keyboard-legend')) return;
+        const legend = document.createElement('p');
+        legend.className = 'config-bm-keyboard-legend config-field-hint';
+        legend.setAttribute('aria-hidden', 'true');
+        legend.textContent = this.t('config.bookmarksKeyboardLegend',
+            'j/k move · Enter edit · g/G first/last · / search · Esc clear');
+        list.after(legend);
+    }
+
+    bindBookmarkKeyboard(container) {
+        if (this.section !== 'bookmarks') return;
+        const host = container?.querySelector('#config-bm-list') || document.getElementById('config-bm-list');
+        if (!host) return;
+        this.appendBookmarkKeyboardLegend(host);
+        if (!host.dataset.configBmKbdWired) {
+            host.dataset.configBmKbdWired = '1';
+            host.addEventListener('click', (e) => {
+                const row = e.target.closest('.config-bm-row');
+                if (!row || !host.contains(row)) return;
+                this._bmKeyboardKey = this.bookmarkRowKey(row);
+                this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+            });
+        }
+        this.syncBookmarkKeyboardSelectionAfterRender();
+    }
+
+    handleBookmarkKeyboardNavigation(e) {
+        if (this.section !== 'bookmarks') return false;
+        if (e.ctrlKey || e.altKey || e.metaKey) return false;
+
+        const target = e.target;
+        const tag = target?.tagName;
+        const isBmSearch = target?.id === 'config-bm-search';
+        const bmNavKeys = new Set(['j', 'k', 'Enter', ' ', 'g', 'G']);
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+            if (!isBmSearch || !bmNavKeys.has(e.key)) {
+                return false;
+            }
+        }
+
+        const onRowControl = Boolean(
+            target?.closest?.('.config-bm-row')
+            && target?.matches?.('button, a, input, select, textarea')
+        );
+
+        const rows = this.getBookmarkKeyboardRows();
+        if (!rows.length) return false;
+
+        if (e.key === 'j') {
+            if (onRowControl) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (isBmSearch) target.blur();
+            this.moveBookmarkKeyboardSelection(1, rows);
+            return true;
+        }
+        if (e.key === 'k') {
+            if (onRowControl) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (isBmSearch) target.blur();
+            this.moveBookmarkKeyboardSelection(-1, rows);
+            return true;
+        }
+        if (onRowControl) {
+            return false;
+        }
+        if ((e.key === 'Enter' || e.key === ' ') && this._bmKeyboardKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
+            return true;
+        }
+        if (e.key === 'g') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._bmKeyboardKey = this.bookmarkRowKey(rows[0]);
+            this.applyBookmarkKeyboardSelection(rows);
+            return true;
+        }
+        if (e.key === 'G') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._bmKeyboardKey = this.bookmarkRowKey(rows[rows.length - 1]);
+            this.applyBookmarkKeyboardSelection(rows);
+            return true;
+        }
+        if (e.key === '/' && !isBmSearch) {
+            const search = document.getElementById('config-bm-search');
+            if (search) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                search.focus();
                 return true;
             }
         }
@@ -1843,6 +2069,7 @@ class DashboardConfig {
             return;
         }
         this.clearListKeyboardSelection();
+        this.clearBookmarkKeyboardSelection();
         this.section = section;
         this._trackAction('section', { section, via });
         this.render();
@@ -6811,7 +7038,7 @@ class DashboardConfig {
             if (b.pinned) bits.push(esc(this.t('config.pinnedShort', 'Pinned')));
             if (b.shortcut) bits.push(esc(b.shortcut));
             return `
-                <li class="config-crud-row config-bm-row${open ? ' is-open' : ''}">
+                <li class="config-crud-row config-bm-row${open ? ' is-open' : ''}" data-bm-key="${esc(key)}">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
                            aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
                     <div class="config-bm-main">
@@ -7149,6 +7376,7 @@ class DashboardConfig {
             ?.addEventListener('click', () => this.toggleSelectAllBookmarks());
         this.bindBookmarkRows(container);
         this.bindBulkToolbar(container);
+        this.bindBookmarkKeyboard(container);
     }
 
     /**
@@ -7903,6 +8131,7 @@ class DashboardConfig {
         if (!host) return;
         host.innerHTML = this.renderBookmarksList();
         this.bindBookmarkRows(host);
+        this.bindBookmarkKeyboard(host);
         this.repaintBulkToolbar();
     }
 

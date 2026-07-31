@@ -1841,6 +1841,16 @@
     margin: 8px 0 0;
 }
 
+.config-bm-keyboard-legend {
+    margin: 8px 0 0;
+}
+
+.config-form-keyboard-legend {
+    margin: 16px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--text-color, #ccc) 12%, transparent);
+}
+
 .config-theme-groups {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
