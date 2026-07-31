@@ -206,6 +206,8 @@
             "cvSubTab": "Vorige / volgende sub-tab in de huidige sectie",
             "cvSubTabBrackets": "Vorige / volgende sub-tab in de huidige sectie",
             "cvSubTabRail": "Wissel van sub-tab wanneer een sub-tabstrip focus heeft",
+            "cvChoiceRow": "Wissel tussen opties in een keuzeregel; Spatie selecteert",
+            "cvRangeHomeEnd": "Spring naar min of max op een focus-slider voor opacity of intensiteit",
             "cvClose": "Terug naar het dashboard vanuit config",
             "cvEsc": "Config sluiten en terug naar het dashboard",
             "sectionSearchModes": "Zoekmodi",

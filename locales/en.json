@@ -206,6 +206,8 @@
             "cvSubTab": "Previous / next sub-tab in the current section",
             "cvSubTabBrackets": "Previous / next sub-tab in the current section",
             "cvSubTabRail": "Move between sub-tabs when a sub-tab strip is focused",
+            "cvChoiceRow": "Move between options in a choice group; Space selects",
+            "cvRangeHomeEnd": "Jump to min or max on a focused opacity or intensity slider",
             "cvClose": "Return to the dashboard from config",
             "cvEsc": "Close config and return to the dashboard",
             "sectionSearchModes": "Search modes",

@@ -185,6 +185,8 @@
             "cvSubTab": "Vorheriger / nächster Unter-Tab in der aktuellen Sektion",
             "cvSubTabBrackets": "Vorheriger / nächster Unter-Tab in der aktuellen Sektion",
             "cvSubTabRail": "Zwischen Unter-Tabs wechseln, wenn ein Unter-Tab-Streifen Fokus hat",
+            "cvChoiceRow": "Zwischen Optionen in einer Auswahlzeile wechseln; Leertaste wählt",
+            "cvRangeHomeEnd": "Zu Min/Max auf einem fokussierten Opacity- oder Intensitäts-Slider springen",
             "cvClose": "Vom Config zurück zum Dashboard",
             "cvEsc": "Config schließen und zum Dashboard zurück",
             "sectionSearchModes": "Suchmodi",

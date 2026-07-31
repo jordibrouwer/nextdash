@@ -185,6 +185,8 @@
             "cvSubTab": "Sous-onglet précédent / suivant dans la section actuelle",
             "cvSubTabBrackets": "Sous-onglet précédent / suivant dans la section actuelle",
             "cvSubTabRail": "Changer de sous-onglet quand la barre de sous-onglets a le focus",
+            "cvChoiceRow": "Changer d’option dans une rangée de choix ; Espace sélectionne",
+            "cvRangeHomeEnd": "Aller au min/max sur un curseur d’opacité ou d’intensité focus",
             "cvClose": "Revenir au tableau de bord depuis config",
             "cvEsc": "Fermer config et revenir au tableau de bord",
             "sectionSearchModes": "Modes de recherche",

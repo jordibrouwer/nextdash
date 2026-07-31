@@ -201,6 +201,8 @@ class DashboardUiHelpers {
                 item('Alt + ← / →', 'cvSubTab', 'Previous / next sub-tab in the current section'),
                 item('[ / ]', 'cvSubTabBrackets', 'Previous / next sub-tab in the current section'),
                 item('← / → (sub-tabs)', 'cvSubTabRail', 'Move between sub-tabs when a sub-tab strip is focused'),
+                item('← / → (choice row)', 'cvChoiceRow', 'Move between options in a choice group; Space selects'),
+                item('Home / End (slider)', 'cvRangeHomeEnd', 'Jump to min or max on a focused opacity or intensity slider'),
                 item('< / Shift + S', 'cvClose', 'Return to the dashboard from config'),
                 item('Esc', 'cvEsc', 'Close config and return to the dashboard'),
             ]));

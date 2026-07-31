@@ -409,9 +409,10 @@ class DashboardConfig {
 
         if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
             let subTabDelta = 0;
+            const inChoiceControl = Boolean(target?.closest?.('.config-choices, .config-bg-swatches'));
             if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
                 subTabDelta = e.key === 'ArrowRight' ? 1 : -1;
-            } else if (!e.altKey && (e.key === '[' || e.key === ']'
+            } else if (!e.altKey && !inChoiceControl && (e.key === '[' || e.key === ']'
                 || e.code === 'BracketLeft' || e.code === 'BracketRight')) {
                 subTabDelta = (e.key === ']' || e.code === 'BracketRight') ? 1 : -1;
             }
@@ -484,6 +485,7 @@ class DashboardConfig {
                 if (container) {
                     this.bindControlPanels(container, 'behavior');
                     this.bindBehaviorActions(container);
+                    this.bindFormKeyboard(container);
                 }
                 break;
             }
@@ -666,6 +668,133 @@ class DashboardConfig {
             this.bindHelp(container);
         }
         window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
+        this.bindFormKeyboard(container);
+    }
+
+    /**
+     * Wire keyboard patterns for schema-driven and appearance controls: choice
+     * rows behave as radiogroups, gradient swatches the same, and range sliders
+     * honour Home/End for min/max.
+     */
+    bindFormKeyboard(container) {
+        if (!container) return;
+        this.bindChoiceGroups(container);
+        this.bindSwatchGroups(container);
+        this.bindRangeInputs(container);
+    }
+
+    /** Roving tabindex for a single `.config-choices` radiogroup. */
+    syncChoiceGroup(group) {
+        group.querySelectorAll('.config-choice').forEach((btn) => {
+            const on = btn.classList.contains('is-active');
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            btn.setAttribute('tabindex', on ? '0' : '-1');
+        });
+    }
+
+    syncSwatchGroup(group) {
+        group.querySelectorAll('.config-bg-swatch').forEach((btn) => {
+            const on = btn.classList.contains('is-active');
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            btn.setAttribute('tabindex', on ? '0' : '-1');
+        });
+    }
+
+    wireChoiceGroup(group) {
+        if (group.dataset.configChoiceWired) return;
+        group.dataset.configChoiceWired = '1';
+        const choices = [...group.querySelectorAll('.config-choice')];
+        if (!choices.length) return;
+        group.setAttribute('role', 'radiogroup');
+        const label = group.closest('.config-field')?.querySelector('.config-field-label')?.textContent?.trim();
+        if (label) {
+            group.setAttribute('aria-label', label);
+        }
+        this.syncChoiceGroup(group);
+        choices.forEach((btn) => {
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const current = choices.indexOf(btn);
+                const last = choices.length - 1;
+                const nextIdx = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (current === last ? 0 : current + 1)
+                            : (current === 0 ? last : current - 1);
+                const target = choices[nextIdx];
+                if (!target) return;
+                target.focus();
+                target.click();
+                queueMicrotask(() => this.syncChoiceGroup(group));
+            });
+        });
+        group.addEventListener('click', (e) => {
+            if (e.target.closest('.config-choice')) {
+                queueMicrotask(() => this.syncChoiceGroup(group));
+            }
+        });
+    }
+
+    wireSwatchGroup(group) {
+        if (group.dataset.configSwatchWired) return;
+        group.dataset.configSwatchWired = '1';
+        const swatches = [...group.querySelectorAll('.config-bg-swatch')];
+        if (!swatches.length) return;
+        group.setAttribute('role', 'radiogroup');
+        const label = group.closest('.config-field, .config-bg-picker')?.querySelector('.config-field-label')?.textContent?.trim();
+        if (label) {
+            group.setAttribute('aria-label', label);
+        }
+        this.syncSwatchGroup(group);
+        swatches.forEach((btn) => {
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const current = swatches.indexOf(btn);
+                const last = swatches.length - 1;
+                const nextIdx = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (current === last ? 0 : current + 1)
+                            : (current === 0 ? last : current - 1);
+                const target = swatches[nextIdx];
+                if (!target) return;
+                target.focus();
+                target.click();
+                queueMicrotask(() => this.syncSwatchGroup(group));
+            });
+        });
+        group.addEventListener('click', (e) => {
+            if (e.target.closest('.config-bg-swatch')) {
+                queueMicrotask(() => this.syncSwatchGroup(group));
+            }
+        });
+    }
+
+    bindChoiceGroups(container) {
+        container.querySelectorAll('.config-choices').forEach((group) => this.wireChoiceGroup(group));
+    }
+
+    bindSwatchGroups(container) {
+        container.querySelectorAll('.config-bg-swatches').forEach((group) => this.wireSwatchGroup(group));
+    }
+
+    bindRangeInputs(container) {
+        container.querySelectorAll('input.config-range[type="range"]').forEach((range) => {
+            if (range.dataset.configRangeWired) return;
+            range.dataset.configRangeWired = '1';
+            range.addEventListener('keydown', (e) => {
+                if (e.key !== 'Home' && e.key !== 'End') return;
+                e.preventDefault();
+                e.stopPropagation();
+                range.value = e.key === 'Home' ? range.min : range.max;
+                range.dispatchEvent(new Event('input', { bubbles: true }));
+                range.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
     }
 
     renderShell() {
@@ -2517,6 +2646,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
+        this.bindFormKeyboard(container);
     }
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */
@@ -4392,9 +4522,11 @@ class DashboardConfig {
             this.syncSubTabStrip('data-behavior-tab', this.behaviorTab);
             this.bindControlPanels(container, 'behavior');
             this.bindBehaviorActions(container);
+            this.bindFormKeyboard(container);
         });
         this.bindControlPanels(container, 'behavior');
         this.bindBehaviorActions(container);
+        this.bindFormKeyboard(container);
     }
 
     /**
@@ -8781,6 +8913,7 @@ class DashboardConfig {
                 this.syncSubTabStrip('data-stats-tab', this.statsTab);
             });
         });
+        this.bindFormKeyboard(container);
     }
 
     /** The report as a flat CSV, so it can be worked through in a spreadsheet. */
