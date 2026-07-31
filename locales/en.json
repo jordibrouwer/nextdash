@@ -3018,6 +3018,7 @@
         "tipEditUndo": "Deleted the wrong one? The toast has an <code>Undo</code> for a few seconds.",
         "tipEditDrag": "Drag the strip on the left of a row to reorder; drag the <code>//</code> in a category header to reorder categories.",
         "tipEditRenamePage": "Double-click a page tab to rename it and give it an emoji and colour.",
+        "tipEditPageTabDot": "Double-click a page tab and pick a colour swatch — a colour dot appears on the tab so you can tell pages apart at a glance.",
         "tipEditCopyUrl": "<code>Ctrl+C</code> copies the selected bookmark's URL.",
         "tipFindFilters": "Search narrows with <code>tag:</code>, <code>category:</code>, <code>status:</code> and <code>page:</code> — combine them with plain words.",
         "tipFindAllPages": "Prefix a search with <code>@</code> to look across every page instead of the current one.",

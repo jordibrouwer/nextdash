@@ -3018,6 +3018,7 @@
         "tipEditUndo": "Falsches gelöscht? Die Meldung bietet ein paar Sekunden lang <code>Rückgängig</code>.",
         "tipEditDrag": "Ziehe den Streifen links einer Zeile zum Umsortieren; ziehe das <code>//</code> in der Kategorieüberschrift für Kategorien.",
         "tipEditRenamePage": "Doppelklicke einen Seiten-Tab, um ihn umzubenennen und Emoji und Farbe zu geben.",
+        "tipEditPageTabDot": "Doppelklicke einen Seiten-Tab und wähle eine Farbe — ein Farbpunkt erscheint auf dem Tab, damit du Seiten auf einen Blick unterscheidest.",
         "tipEditCopyUrl": "<code>Ctrl+C</code> kopiert die URL des ausgewählten Lesezeichens.",
         "tipFindFilters": "Suche filtert mit <code>tag:</code>, <code>category:</code>, <code>status:</code> und <code>page:</code> — kombinierbar mit Text.",
         "tipFindAllPages": "Stelle <code>@</code> voran, um über alle Seiten statt nur der aktuellen zu suchen.",

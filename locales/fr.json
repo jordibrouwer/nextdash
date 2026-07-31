@@ -3018,6 +3018,7 @@
         "tipEditUndo": "Mauvais favori supprimé ? La notification propose <code>Annuler</code> pendant quelques secondes.",
         "tipEditDrag": "Faites glisser la bande à gauche d'une ligne pour réordonner ; le <code>//</code> d'un en-tête pour les catégories.",
         "tipEditRenamePage": "Double-cliquez sur un onglet de page pour le renommer et lui donner un emoji et une couleur.",
+        "tipEditPageTabDot": "Double-cliquez sur un onglet de page et choisissez une couleur — une pastille apparaît sur l'onglet pour distinguer vos pages d'un coup d'œil.",
         "tipEditCopyUrl": "<code>Ctrl+C</code> copie l'URL du favori sélectionné.",
         "tipFindFilters": "La recherche filtre avec <code>tag:</code>, <code>category:</code>, <code>status:</code> et <code>page:</code> — combinables avec du texte.",
         "tipFindAllPages": "Préfixez avec <code>@</code> pour chercher sur toutes les pages au lieu de la page courante.",

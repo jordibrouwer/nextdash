@@ -3018,6 +3018,7 @@
         "tipEditUndo": "Verkeerde verwijderd? De melding heeft een paar seconden lang <code>Ongedaan maken</code>.",
         "tipEditDrag": "Sleep de strip links van een rij om te herordenen; sleep de <code>//</code> in een categoriekop om categorieën te herordenen.",
         "tipEditRenamePage": "Dubbelklik op een paginatab om hem te hernoemen en een emoji en kleur te geven.",
+        "tipEditPageTabDot": "Dubbelklik op een paginatab en kies een kleur — er verschijnt een kleur stip op het tabblad zodat je pagina's in één oogopslag uit elkaar houdt.",
         "tipEditCopyUrl": "<code>Ctrl+C</code> kopieert de URL van de geselecteerde bookmark.",
         "tipFindFilters": "Zoeken versmalt met <code>tag:</code>, <code>category:</code>, <code>status:</code> en <code>page:</code> — combineer ze met gewone woorden.",
         "tipFindAllPages": "Zet <code>@</code> voor een zoekopdracht om over alle pagina's te zoeken in plaats van alleen de huidige.",
