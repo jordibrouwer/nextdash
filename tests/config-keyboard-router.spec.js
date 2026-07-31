@@ -25,6 +25,14 @@ test.describe('config keyboard router', () => {
         await expect(page.locator('.config-nav')).toBeVisible();
     });
 
+    test('letter keys do not open shortcut search while config is active', async ({ page }) => {
+        await openConfig(page, 'overview');
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('j');
+        await page.keyboard.press('k');
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+    });
+
     test('digit section shortcuts jump without closing config', async ({ page }) => {
         await openConfig(page, 'overview');
         await page.locator('#config-section-panel').focus();
