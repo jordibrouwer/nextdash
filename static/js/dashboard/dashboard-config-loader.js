@@ -98,6 +98,11 @@ class DashboardConfigLoader {
         return this.dash.activeView === DashboardConfigLoader.VIEW;
     }
 
+    /** Delegates to the loaded module; config must be open so the module exists. */
+    handleKeyboardNavigation(e) {
+        return this._module?.handleKeyboardNavigation?.(e) ?? false;
+    }
+
     /** The real DashboardConfig instance once loaded, else null. */
     get instance() {
         return this._module;

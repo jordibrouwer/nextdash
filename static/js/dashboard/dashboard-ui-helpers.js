@@ -194,6 +194,18 @@ class DashboardUiHelpers {
             ]));
         }
 
+        if (d.config?.isEnabled?.()) {
+            sections.push(section('sectionConfigView', 'Config view', [
+                item('1–8', 'cvSectionJump', 'Jump to a config section — Overview through Help'),
+                item('← / → (section rail)', 'cvSectionRail', 'Move between sections when the section rail is focused'),
+                item('Alt + ← / →', 'cvSubTab', 'Previous / next sub-tab in the current section'),
+                item('[ / ]', 'cvSubTabBrackets', 'Previous / next sub-tab in the current section'),
+                item('← / → (sub-tabs)', 'cvSubTabRail', 'Move between sub-tabs when a sub-tab strip is focused'),
+                item('< / Shift + S', 'cvClose', 'Return to the dashboard from config'),
+                item('Esc', 'cvEsc', 'Close config and return to the dashboard'),
+            ]));
+        }
+
         sections.push(
             section('sectionSearchModes', 'Search modes', [
                 item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),

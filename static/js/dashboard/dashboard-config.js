@@ -185,6 +185,16 @@ class DashboardConfig {
         'data-help-tab': 'help',
     };
 
+    /** data-* attribute on each section's sub-tab strip buttons. */
+    static SUB_TAB_ATTR = {
+        behavior: 'data-behavior-tab',
+        'pages-tags': 'data-pt-tab',
+        appearance: 'data-appearance-tab',
+        stats: 'data-stats-tab',
+        'data-backups': 'data-db-tab',
+        help: 'data-help-tab',
+    };
+
     /** Apply a sub-tab from the hash, if the section has one. */
     applySubTabFromHash(hash) {
         const section = DashboardConfig.sectionFromHash(hash);
@@ -362,6 +372,175 @@ class DashboardConfig {
     }
 
     /**
+     * Mark one button in the section rail as current and keep roving tabindex
+     * in sync — the same contract as syncSubTabStrip for the primary nav.
+     */
+    syncSectionNav(active) {
+        document.querySelectorAll('[data-config-section]').forEach((btn) => {
+            const on = btn.getAttribute('data-config-section') === active;
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+            btn.setAttribute('tabindex', on ? '0' : '-1');
+        });
+        const panel = document.getElementById('config-section-panel');
+        if (panel) {
+            panel.setAttribute('aria-labelledby', `config-section-${active}`);
+        }
+    }
+
+    /**
+     * Config view keyboard handler — section digits and sub-tab shortcuts.
+     * Called from keyboard-navigation.js whenever #dashboard-layout carries
+     * config-layout.
+     */
+    handleKeyboardNavigation(e) {
+        if (!this.isActiveView() || !this.isEnabled()) return false;
+        const d = this.dash;
+        if (window.DashboardTagCloud?.modalOpen) return false;
+        if (d.isModalOpen?.()) return false;
+        if (d.searchComponent?.isActive?.()) return false;
+        if (d.isInlineEditActive?.()) return false;
+
+        const target = e.target;
+        const tag = target?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+            return false;
+        }
+
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            let subTabDelta = 0;
+            if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                subTabDelta = e.key === 'ArrowRight' ? 1 : -1;
+            } else if (!e.altKey && (e.key === '[' || e.key === ']'
+                || e.code === 'BracketLeft' || e.code === 'BracketRight')) {
+                subTabDelta = (e.key === ']' || e.code === 'BracketRight') ? 1 : -1;
+            }
+            if (subTabDelta) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.moveSubTab(subTabDelta);
+            }
+        }
+
+        if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
+
+        let idx = -1;
+        if (e.code && /^Digit[1-8]$/.test(e.code)) {
+            idx = parseInt(e.code.slice(5), 10) - 1;
+        } else if (e.key >= '1' && e.key <= '8') {
+            idx = parseInt(e.key, 10) - 1;
+        }
+        if (idx < 0) return false;
+
+        const section = DashboardConfig.SECTIONS[idx];
+        if (!section || section === this.section) return false;
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this.selectSection(section, 'keyboard');
+        document.querySelector(`[data-config-section="${CSS.escape(section)}"]`)?.focus();
+        return true;
+    }
+
+    /** Active sub-tab strip for the current section, if any. */
+    getSubTabContext() {
+        const section = this.section;
+        const tabs = DashboardConfig.SUB_TABS[section];
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        const attr = DashboardConfig.SUB_TAB_ATTR[section];
+        if (!tabs?.length || !prop || !attr) return null;
+        return { section, tabs, prop, attr, current: this[prop] };
+    }
+
+    /**
+     * Activate a sub-tab programmatically — mirrors each strip's click handler
+     * so keyboard shortcuts do not depend on synthetic clicks.
+     */
+    switchSubTab(tab, via = 'keyboard') {
+        const ctx = this.getSubTabContext();
+        if (!ctx || !ctx.tabs.includes(tab) || tab === ctx.current) return false;
+
+        this._trackAction('subtab', { section: ctx.section, tab, via });
+
+        if (ctx.section === 'appearance') {
+            void this.switchAppearanceTab(tab).then(() => {
+                document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`)?.focus();
+            });
+            return true;
+        }
+
+        this[ctx.prop] = tab;
+        this.restoreConfigHash();
+
+        const container = document.getElementById('dashboard-layout');
+        switch (ctx.section) {
+            case 'behavior': {
+                const body = document.getElementById('config-behavior-body');
+                if (!body) {
+                    this.render();
+                    break;
+                }
+                body.innerHTML = this.renderBehaviorBody();
+                if (container) {
+                    this.bindControlPanels(container, 'behavior');
+                    this.bindBehaviorActions(container);
+                }
+                break;
+            }
+            case 'pages-tags':
+                this.repaintPtBody();
+                break;
+            case 'data-backups': {
+                const body = document.getElementById('config-db-body');
+                if (body) {
+                    body.innerHTML = this.renderDbTab();
+                    this.bindDataBackupsActions(body);
+                }
+                break;
+            }
+            case 'stats':
+                if (tab === 'inbox' && this._statsInboxItems === undefined) {
+                    void this.loadStatsInbox();
+                }
+                if (tab === 'activity' && this._statsFinders === undefined) {
+                    void this.loadStatsFinders();
+                }
+                this.repaintStatsBody();
+                break;
+            case 'help': {
+                const body = document.getElementById('config-help-body');
+                if (!body) {
+                    this.render();
+                    break;
+                }
+                body.innerHTML = this.renderHelpBody();
+                this.bindHelpActions(body);
+                break;
+            }
+            default:
+                return false;
+        }
+
+        this.syncSubTabStrip(ctx.attr, tab);
+        const focusTarget = document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`);
+        focusTarget?.focus();
+        if (focusTarget && !focusTarget.isConnected) {
+            document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`)?.focus();
+        }
+        return true;
+    }
+
+    /** Wrap to previous/next sub-tab in the current section. */
+    moveSubTab(delta) {
+        const ctx = this.getSubTabContext();
+        if (!ctx) return false;
+        const idx = ctx.tabs.indexOf(ctx.current);
+        if (idx < 0) return false;
+        const next = ctx.tabs[(idx + delta + ctx.tabs.length) % ctx.tabs.length];
+        return this.switchSubTab(next, 'keyboard');
+    }
+
+    /**
      * Wire a `role="tablist"` strip: click plus the keys the role promises.
      *
      * These strips carried role="tab" and aria-selected but no key handling, so
@@ -443,6 +622,7 @@ class DashboardConfig {
         // document before its text changes, or the change is not announced.
         this.ensureSaveStateHost();
         this.bindSectionNav(container);
+        this.syncSectionNav(this.section);
         this.bindTileActions(container);
         if (this.section === 'overview') {
             this.bindOverviewActions(container);
@@ -490,11 +670,16 @@ class DashboardConfig {
 
     renderShell() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const panelId = 'config-section-panel';
+        const activeNavId = `config-section-${this.section}`;
         const nav = DashboardConfig.SECTIONS.map((section) => {
             const active = section === this.section;
             return `
                 <button type="button" class="config-nav-item${active ? ' is-active' : ''}"
                         role="tab" aria-selected="${active ? 'true' : 'false'}"
+                        tabindex="${active ? '0' : '-1'}"
+                        id="config-section-${esc(section)}"
+                        aria-controls="${panelId}"
                         data-config-section="${esc(section)}">
                     ${esc(this.sectionLabel(section))}
                 </button>`;
@@ -505,7 +690,8 @@ class DashboardConfig {
                 <nav class="config-nav" role="tablist" aria-label="${esc(this.t('config.sectionsNavAria', 'Config sections'))}">
                     ${nav}
                 </nav>
-                <div class="config-view-main">
+                <div class="config-view-main" id="${panelId}" role="tabpanel" tabindex="0"
+                     aria-labelledby="${activeNavId}">
                     <div class="config-view-head">
                         <h2 class="config-view-section-title">${esc(this.sectionLabel(this.section))}</h2>
                         <!-- The save state itself lives on <body>, not here: this
@@ -951,20 +1137,40 @@ class DashboardConfig {
 
     /* ── Section navigation ────────────────────────────────────────────────── */
 
-    selectSection(section) {
+    selectSection(section, via = 'click') {
         if (!DashboardConfig.SECTIONS.includes(section) || section === this.section) {
             return;
         }
         this.section = section;
-        this._trackAction('section', { section });
+        this._trackAction('section', { section, via });
         this.render();
         this.restoreConfigHash();
     }
 
     bindSectionNav(container) {
-        container.querySelectorAll('[data-config-section]').forEach((btn) => {
+        const buttons = [...container.querySelectorAll('[data-config-section]')];
+        buttons.forEach((btn, i) => {
             btn.addEventListener('click', () => {
-                this.selectSection(btn.getAttribute('data-config-section'));
+                this.selectSection(btn.getAttribute('data-config-section'), 'click');
+            });
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                const last = buttons.length - 1;
+                const next = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (i === last ? 0 : i + 1)
+                            : (i === 0 ? last : i - 1);
+                const target = buttons[next];
+                if (!target) return;
+                const section = target.getAttribute('data-config-section');
+                target.focus();
+                this.selectSection(section, 'keyboard');
+                // render() replaces the rail wholesale; re-focus the rebuilt tab.
+                if (!target.isConnected) {
+                    document.querySelector(`[data-config-section="${CSS.escape(section)}"]`)?.focus();
+                }
             });
         });
     }
