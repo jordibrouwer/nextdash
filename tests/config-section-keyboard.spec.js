@@ -78,14 +78,12 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
         await expect(page.locator('[data-config-section="overview"][aria-selected="true"]')).toBeVisible();
     });
 
-    test('digit keys 1–8 jump to the matching section', async ({ page }) => {
-        await openSection(page, 'overview');
+    test('digit keys 1–9 leave config for a bookmark page', async ({ page }) => {
+        await openSection(page, 'bookmarks');
         await page.locator('#config-section-panel').focus();
 
-        await page.keyboard.press('3');
-        await expect(page.locator('[data-config-section="bookmarks"][aria-selected="true"]')).toBeVisible();
-
-        await page.keyboard.press('8');
-        await expect(page.locator('[data-config-section="help"][aria-selected="true"]')).toBeVisible();
+        await page.keyboard.press('1');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+        await expect(page.locator('#dashboard-layout')).not.toHaveClass(/config-layout/);
     });
 });

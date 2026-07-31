@@ -370,10 +370,12 @@ class DashboardData {
                 } else if (initialHash === 'health' && d.health?.isEnabled?.()) {
                     await d.health.openHealthView();
                 } else if ((initialHash === 'config' || initialHash.startsWith('config/')) && d.config?.isEnabled?.()) {
-                    // Pass the section so a deep link like #config/appearance lands
-                    // there rather than on the overview.
-                    const section = window.DashboardConfigLoader?.sectionFromHash?.(initialHash);
-                    await d.config.openConfigView(section || undefined);
+                    // Bare #config means “open config”, not “open Overview”; a
+                    // sectioned hash is an explicit deep link.
+                    const section = initialHash === 'config'
+                        ? undefined
+                        : window.DashboardConfigLoader?.sectionFromHash?.(`#${initialHash}`);
+                    await d.config.openConfigView(section);
                 }
             }
         } catch (error) {

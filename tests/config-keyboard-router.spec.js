@@ -34,11 +34,11 @@ test.describe('config keyboard router', () => {
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
     });
 
-    test('digit section shortcuts jump without closing config', async ({ page }) => {
+    test('digit keys leave config for bookmark pages', async ({ page }) => {
         await openConfig(page, 'overview');
         await page.locator('#config-section-panel').focus();
-        await page.keyboard.press('5');
-        await expect(page.locator('[data-config-section="behavior"][aria-selected="true"]')).toBeVisible();
-        await expect(page.locator('#dashboard-layout')).toHaveClass(/config-layout/);
+        await page.keyboard.press('1');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+        await expect(page.locator('#dashboard-layout')).not.toHaveClass(/config-layout/);
     });
 });

@@ -25,6 +25,9 @@ class DashboardConfig {
         'help',
     ];
 
+    /** Device-local last config section (and sub-tab) for Shift+S / `<` return visits. */
+    static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
+
     constructor(dashboard) {
         this.dash = dashboard;
         this.section = 'overview';
@@ -123,6 +126,11 @@ class DashboardConfig {
     }
 
     /* ── Hash / deep linking ───────────────────────────────────────────────── */
+
+    /** True for `#config` with no section — “open config”, not “open Overview”. */
+    static isGenericConfigHash(hash) {
+        return typeof hash === 'string' && hash.replace(/^#/, '') === 'config';
+    }
 
     /** Normalise a hash like `config/appearance` into a known section. */
     static sectionFromHash(hash) {
@@ -238,9 +246,88 @@ class DashboardConfig {
         }
     }
 
+    /** Read the last config section/sub-tab the user opened (shortcut return visits). */
+    loadLastConfigLocation() {
+        try {
+            const raw = localStorage.getItem(DashboardConfig.CONFIG_LAST_KEY);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            const section = data?.section;
+            if (!section || !DashboardConfig.SECTIONS.includes(section)) return null;
+            let subTab = data?.subTab ?? null;
+            if (subTab) {
+                const tabs = DashboardConfig.SUB_TABS[section];
+                if (!tabs?.includes(subTab)) subTab = null;
+            }
+            return { section, subTab };
+        } catch {
+            return null;
+        }
+    }
+
+    /** Remember where the user left config — section rail and sub-tabs. */
+    saveLastConfigLocation() {
+        try {
+            const section = this.section;
+            if (!DashboardConfig.SECTIONS.includes(section)) return;
+            const prop = DashboardConfig.SUB_TAB_STATE[section];
+            const subTab = prop ? this[prop] : null;
+            localStorage.setItem(DashboardConfig.CONFIG_LAST_KEY, JSON.stringify({
+                section,
+                subTab: subTab || null,
+            }));
+        } catch {
+            // localStorage unavailable — skip silently
+        }
+    }
+
+    applyStoredSubTab(section, tab) {
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        const tabs = DashboardConfig.SUB_TABS[section];
+        if (!prop || !tabs?.includes(tab)) return false;
+        this[prop] = tab;
+        return true;
+    }
+
+    /**
+     * Section (and optional sub-tab) when opening config without an explicit
+     * target or `#config/…` hash — e.g. Shift+S from the bookmark grid.
+     */
+    resolveConfigOpenTarget(explicitSection) {
+        const hash = window.location.hash;
+        const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
+        const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
+        const stored = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
+        const targetSection = explicitSection || hashSection || stored?.section || 'overview';
+
+        if (!hashIsGeneric && hashSection === targetSection) {
+            this.applySubTabFromHash(hash);
+        } else if (!explicitSection && stored?.section === targetSection && stored.subTab) {
+            this.applyStoredSubTab(targetSection, stored.subTab);
+        }
+
+        return targetSection;
+    }
+
     /** Re-apply the section from the hash while the view is already open. */
     restoreConfigSectionFromHash() {
-        const section = DashboardConfig.sectionFromHash(window.location.hash);
+        const hash = window.location.hash;
+        if (DashboardConfig.isGenericConfigHash(hash)) {
+            const stored = this.loadLastConfigLocation();
+            if (!stored?.section) return;
+            if (stored.subTab) {
+                this.applyStoredSubTab(stored.section, stored.subTab);
+            }
+            if (stored.section !== this.section) {
+                this.section = stored.section;
+                this.render();
+            } else if (stored.subTab) {
+                this.render();
+            }
+            this.restoreConfigHash();
+            return;
+        }
+        const section = DashboardConfig.sectionFromHash(hash);
         const tabChanged = this.applySubTabFromHash(window.location.hash);
         if (section && section !== this.section) {
             this.section = section;
@@ -257,15 +344,7 @@ class DashboardConfig {
         if (!this.isEnabled()) {
             return false;
         }
-        const targetSection =
-            section || DashboardConfig.sectionFromHash(window.location.hash) || 'overview';
-        // Honour a sub-tab in the hash whenever it belongs to the section being
-        // opened. Callers pass the section explicitly on a cold deep link
-        // (dashboard-data reads it from the same hash), so keying this on
-        // "caller named no section" would drop the tab exactly then.
-        if (DashboardConfig.sectionFromHash(window.location.hash) === targetSection) {
-            this.applySubTabFromHash(window.location.hash);
-        }
+        const targetSection = this.resolveConfigOpenTarget(section);
         if (d.activeView === DashboardConfig.VIEW) {
             if (targetSection !== this.section) {
                 this.section = targetSection;
@@ -299,6 +378,9 @@ class DashboardConfig {
         if (d.activeView !== DashboardConfig.VIEW) {
             return false;
         }
+        // Bookmark grid hash replaces #config/… on exit; persist section/sub-tab
+        // here so Shift+S can reopen where the user left off.
+        this.saveLastConfigLocation();
         // The save indicator lives on <body>, so leaving the view has to take it
         // down; otherwise a "Saved" would linger over the dashboard.
         clearTimeout(this._saveStateTimer);
@@ -549,24 +631,45 @@ class DashboardConfig {
             }
         }
 
-        if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
-
-        let idx = -1;
-        if (e.code && /^Digit[1-8]$/.test(e.code)) {
-            idx = parseInt(e.code.slice(5), 10) - 1;
-        } else if (e.key >= '1' && e.key <= '8') {
-            idx = parseInt(e.key, 10) - 1;
+        if (this.handleShellViewShortcut(e)) {
+            return true;
         }
-        if (idx < 0) return false;
 
-        const section = DashboardConfig.SECTIONS[idx];
-        if (!section || section === this.section) return false;
+        return false;
+    }
 
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        this.selectSection(section, 'keyboard');
-        document.querySelector(`[data-config-section="${CSS.escape(section)}"]`)?.focus();
-        return true;
+    /**
+     * Page tabs (1–9) and Inbox (0) work from config too — same as on the
+     * bookmark grid — so you can leave without Esc first.
+     */
+    handleShellViewShortcut(e) {
+        if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
+        const d = this.dash;
+        if (d.keyboardNavigation?.isGChordActive?.()) return false;
+
+        const key = e.key;
+        if (key === '0') {
+            if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.saveLastConfigLocation();
+                void d.inbox.openInboxView();
+                return true;
+            }
+            return false;
+        }
+
+        if (key >= '1' && key <= '9') {
+            const pageIndex = parseInt(key, 10) - 1;
+            if (pageIndex >= d.pages.length) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.saveLastConfigLocation();
+            void d.requestPageNavigation(d.pages[pageIndex].id);
+            return true;
+        }
+
+        return false;
     }
 
     /** Active sub-tab strip for the current section, if any. */
@@ -656,6 +759,7 @@ class DashboardConfig {
         if (focusTarget && !focusTarget.isConnected) {
             document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`)?.focus();
         }
+        this.saveLastConfigLocation();
         return true;
     }
 
@@ -690,6 +794,7 @@ class DashboardConfig {
         const activateTracked = (tab, via) => {
             if (tab) this._trackAction('subtab', { section: strip, tab, via });
             activate(tab);
+            this.saveLastConfigLocation();
         };
         buttons.forEach((btn, i) => {
             // Mirror the label into data-label so CSS can lay the tab out at its
@@ -2092,6 +2197,7 @@ class DashboardConfig {
         this._trackAction('section', { section, via });
         this.render();
         this.restoreConfigHash();
+        this.saveLastConfigLocation();
     }
 
     bindSectionNav(container) {
@@ -3489,6 +3595,7 @@ class DashboardConfig {
         }
         this.appearanceTab = tab;
         this.restoreConfigHash();
+        this.saveLastConfigLocation();
         // Leaving the tab drops any unsaved preview so the dashboard
         // does not keep showing colours from a theme you stopped editing.
         if (tab !== 'custom-themes') this.clearThemePreview();

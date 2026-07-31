@@ -201,7 +201,7 @@
             "hvFirstLast": "Jump to the first / last row",
             "hvClose": "Close a menu, or leave the view",
             "sectionConfigView": "Config view",
-            "cvSectionJump": "Jump to a config section — Overview through Help",
+            "cvSectionJump": "Switch to Inbox (0) or a bookmark page (1–9)",
             "cvSectionJk": "Previous / next section in the left rail",
             "cvSectionFirstLast": "Jump to the first / last section",
             "cvSectionRail": "Move between sections when the section rail is focused (↑ / ↓ on desktop)",

@@ -31,6 +31,11 @@ class DashboardConfigLoader {
 
     static VIEW = 'config';
 
+    /** Mirrors DashboardConfig.isGenericConfigHash for pre-load hash routing. */
+    static isGenericConfigHash(hash) {
+        return typeof hash === 'string' && hash.replace(/^#/, '') === 'config';
+    }
+
     /** Mirrors DashboardConfig.sectionFromHash for pre-load hash routing. */
     static sectionFromHash(hash) {
         if (typeof hash !== 'string') return null;

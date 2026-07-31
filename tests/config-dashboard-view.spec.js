@@ -746,6 +746,98 @@ test.describe('Shift+S opens config', () => {
     });
 });
 
+test.describe('config remembers last location', () => {
+    test('Shift+S returns to the last section after leaving config', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('bookmarks');
+    });
+
+    test('Shift+S restores the last sub-tab within a section', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.locator('[data-behavior-tab="privacy"]').click();
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('behavior');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.behaviorTab)).toBe('privacy');
+    });
+
+    test('a #config/… deep link overrides the stored location', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            localStorage.setItem('nextdash:config-last-location-v1', JSON.stringify({
+                section: 'bookmarks',
+                subTab: null,
+            }));
+        });
+        await page.goto('/#config/appearance');
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
+    });
+
+    test('pressing a page digit leaves config and remembers the section for Shift+S', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('1');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('stats');
+    });
+
+    test('bare #config opens the stored section, not Overview', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.locator('[data-behavior-tab="privacy"]').click();
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.goto('/#config');
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('behavior');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.behaviorTab)).toBe('privacy');
+    });
+
+    test('cold load on #config restores the stored sub-tab', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await page.evaluate(() => {
+            localStorage.setItem('nextdash:config-last-location-v1', JSON.stringify({
+                section: 'appearance',
+                subTab: 'custom-themes',
+            }));
+        });
+        await page.goto('/#config');
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
+    });
+});
+
 test.describe('< opens the config view', () => {
     test('opens in place rather than loading the old /config page', async ({ page }) => {
         await loadDashboard(page);
