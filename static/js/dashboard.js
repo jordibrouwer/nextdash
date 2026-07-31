@@ -172,7 +172,9 @@ class Dashboard {
         this.configSync = new DashboardConfigSync(this);
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
-        this.inlineEdit = new DashboardInlineEdit(this);
+        this.inlineEdit = typeof window.createDashboardInlineEditLoader === 'function'
+            ? window.createDashboardInlineEditLoader(this)
+            : new DashboardInlineEdit(this);
         this.toolbar = new DashboardToolbar(this);
         this.smartCollections = new DashboardSmartCollections(this);
         this.bookmarkRows = new DashboardBookmarkRows(this);
@@ -185,7 +187,9 @@ class Dashboard {
         this.recent = new DashboardRecent(this);
         this.promos = new DashboardPromos(this);
         this.uiHelpers = new DashboardUiHelpers(this);
-        this.contextMenu = new DashboardContextMenu(this);
+        this.contextMenu = typeof window.createDashboardContextMenuLoader === 'function'
+            ? window.createDashboardContextMenuLoader(this)
+            : new DashboardContextMenu(this);
         this.setup = new DashboardSetup(this);
         this.persistence = new DashboardPersistence(this);
         this.inbox = typeof window.createDashboardInboxLoader === 'function'

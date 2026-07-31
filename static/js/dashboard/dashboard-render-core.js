@@ -1000,7 +1000,8 @@ class DashboardRenderCore {
 
 
     _attachCategoryTitleLongPress(titleEl, nameSpan, category) {
-        const longMs = window.DashboardInlineEdit?.ROW_LONG_PRESS_MS ?? 500;
+        const longMs = window.DashboardInlineEditLoader?.ROW_LONG_PRESS_MS
+            ?? window.DashboardInlineEdit?.ROW_LONG_PRESS_MS ?? 500;
         const slop = 8;
         let timer = null;
         let startX = 0;
