@@ -40,42 +40,13 @@
         return LEGACY_THEME_MAP[theme] || theme;
     }
 
-    function getPairedThemeVariant(themeId, wantsDark) {
-        const base = String(themeId || 'dark');
-        if (base === 'dark' || base === 'light') {
-            return wantsDark ? 'dark' : 'light';
-        }
-        const match = base.match(/^(.*)-(dark|light)$/);
-        if (!match) {
-            return base;
-        }
-        return `${match[1]}-${wantsDark ? 'dark' : 'light'}`;
-    }
+    const themeUtils = () => window.ThemeUtils;
 
     function shouldUseAutoDarkMode(parsedSettings) {
         if (parsedSettings && typeof parsedSettings.autoDarkMode === 'boolean') {
             return parsedSettings.autoDarkMode;
         }
         return document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
-    }
-
-    function normalizeRandomThemeMode(parsedSettings) {
-        const fromSettings = parsedSettings?.randomThemeMode;
-        if (fromSettings === 'refresh' || fromSettings === 'view' || fromSettings === 'off') {
-            return fromSettings;
-        }
-        if (parsedSettings && parsedSettings.randomThemeOnRefresh === true) {
-            return 'refresh';
-        }
-        const fromHtml = document.documentElement.getAttribute('data-random-theme-mode');
-        if (fromHtml === 'refresh' || fromHtml === 'view' || fromHtml === 'off') {
-            return fromHtml;
-        }
-        const legacyHtml = document.documentElement.getAttribute('data-random-theme-on-refresh');
-        if (legacyHtml === 'true') {
-            return 'refresh';
-        }
-        return 'off';
     }
 
     function getThemePool() {
@@ -137,7 +108,10 @@
         if (!autoDarkMode || !window.matchMedia) {
             return normalized;
         }
-        return getPairedThemeVariant(normalized, window.matchMedia('(prefers-color-scheme: dark)').matches);
+        return themeUtils().getPairedThemeVariant(
+            normalized,
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+        );
     }
 
     /**
@@ -146,7 +120,7 @@
      */
     function getEffectiveBaseTheme(parsedSettings, storedTheme) {
         const normalizedStored = normalizeTheme(storedTheme || 'dark');
-        const mode = normalizeRandomThemeMode(parsedSettings);
+        const mode = themeUtils().normalizeRandomThemeMode(parsedSettings);
         if (mode === 'off') {
             return normalizedStored;
         }
@@ -498,7 +472,8 @@
     // Export functions for use by other scripts (e.g., config.js)
     window.ThemeLoader = {
         normalizeTheme,
-        normalizeRandomThemeMode,
+        normalizeRandomThemeMode: (parsedSettings) =>
+            themeUtils().normalizeRandomThemeMode(parsedSettings),
         getTheme: getTheme,
         getEffectiveBaseTheme,
         getThemePool,
@@ -506,7 +481,8 @@
         pickSessionRandomTheme,
         rotateSessionRandomTheme,
         clearSessionRandomTheme,
-        getPairedThemeVariant: getPairedThemeVariant,
+        getPairedThemeVariant: (themeId, wantsDark) =>
+            themeUtils().getPairedThemeVariant(themeId, wantsDark),
         resolveDisplayTheme: resolveDisplayTheme,
         getShowBackgroundDots: getShowBackgroundDots,
         getFontSize: getFontSize,

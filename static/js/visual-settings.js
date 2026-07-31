@@ -133,23 +133,11 @@
     let autoDarkSettingsRef = null;
     let autoDarkOnApply = null;
 
-    function getPairedThemeVariant(themeId, wantsDark) {
-        const base = String(themeId || 'dark');
-        if (base === 'dark' || base === 'light') {
-            return wantsDark ? 'dark' : 'light';
-        }
-        const match = base.match(/^(.*)-(dark|light)$/);
-        if (!match) {
-            return base;
-        }
-        return `${match[1]}-${wantsDark ? 'dark' : 'light'}`;
-    }
+    const themeUtils = () => global.ThemeUtils;
 
     function effectiveBaseTheme(settings) {
         const stored = settings?.theme || 'dark';
-        const mode = global.ThemeLoader?.normalizeRandomThemeMode?.(settings)
-            ?? (settings?.randomThemeMode === 'refresh' || settings?.randomThemeMode === 'view'
-                || settings?.randomThemeOnRefresh ? 'refresh' : 'off');
+        const mode = themeUtils()?.normalizeRandomThemeMode(settings) ?? 'off';
         if (mode === 'off') {
             return stored;
         }
@@ -166,7 +154,7 @@
             return baseTheme;
         }
         const media = global.matchMedia('(prefers-color-scheme: dark)');
-        return getPairedThemeVariant(baseTheme, media.matches);
+        return themeUtils().getPairedThemeVariant(baseTheme, media.matches);
     }
 
     function applyDisplayTheme(settings) {
@@ -263,8 +251,7 @@
             return;
         }
         const settings = autoDarkSettingsRef;
-        const randomMode = global.ThemeLoader?.normalizeRandomThemeMode?.(settings)
-            ?? (settings.randomThemeMode || (settings.randomThemeOnRefresh ? 'refresh' : 'off'));
+        const randomMode = themeUtils()?.normalizeRandomThemeMode(settings) ?? 'off';
         // When the OS preference changes under random theme, re-pair the session
         // pick instead of reverting to the stored theme.
         if (randomMode !== 'off' && global.ThemeLoader?.resolveDisplayTheme) {
@@ -304,7 +291,8 @@
         MIN_BACKGROUND_OPACITY,
         clampBackgroundOpacity,
         THEME_BACKGROUND_MAP,
-        getPairedThemeVariant,
+        getPairedThemeVariant: (themeId, wantsDark) =>
+            themeUtils().getPairedThemeVariant(themeId, wantsDark),
         effectiveBaseTheme,
         resolveTheme,
         applyDisplayTheme,

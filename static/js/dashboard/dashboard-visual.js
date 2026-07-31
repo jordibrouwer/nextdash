@@ -100,7 +100,7 @@ class DashboardVisual {
         );
         document.documentElement.setAttribute(
             'data-random-theme-mode',
-            window.ThemeLoader?.normalizeRandomThemeMode?.(d.settings)
+            window.ThemeUtils?.normalizeRandomThemeMode?.(d.settings)
                 || d.settings?.randomThemeMode
                 || 'off'
         );
@@ -136,7 +136,7 @@ class DashboardVisual {
             return;
         }
         const d = this.dash;
-        const mode = window.ThemeLoader?.normalizeRandomThemeMode?.(d.settings)
+        const mode = window.ThemeUtils?.normalizeRandomThemeMode?.(d.settings)
             ?? d.settings?.randomThemeMode
             ?? 'off';
         if (mode !== 'view') {
@@ -148,23 +148,9 @@ class DashboardVisual {
 
 
     getPairedThemeVariant(themeId, wantsDark) {
-        const d = this.dash;
-        const base = String(themeId || 'dark');
-        const userCustomIds = window.UserCustomThemeIds;
-        if (Array.isArray(userCustomIds) && userCustomIds.includes(base)) {
-            return base;
-        }
-        if (window.VisualSettings?.getPairedThemeVariant) {
-            return window.VisualSettings.getPairedThemeVariant(themeId, wantsDark);
-        }
-        if (base === 'dark' || base === 'light') {
-            return wantsDark ? 'dark' : 'light';
-        }
-        const match = base.match(/^(.*)-(dark|light)$/);
-        if (!match) {
-            return base;
-        }
-        return `${match[1]}-${wantsDark ? 'dark' : 'light'}`;
+        return window.ThemeUtils?.getPairedThemeVariant?.(themeId, wantsDark, {
+            customThemeIds: window.UserCustomThemeIds,
+        }) ?? String(themeId || 'dark');
     }
 
 

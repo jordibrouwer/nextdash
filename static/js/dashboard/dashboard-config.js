@@ -1893,7 +1893,7 @@ class DashboardConfig {
         const opacity = window.VisualSettings?.clampBackgroundOpacity
             ? window.VisualSettings.clampBackgroundOpacity(s.backgroundOpacity)
             : (Number.isFinite(Number(s.backgroundOpacity)) ? Number(s.backgroundOpacity) : 1);
-        const randomMode = window.ThemeLoader?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
+        const randomMode = window.ThemeUtils?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
         const showingThemeId = randomMode !== 'off'
             ? (document.documentElement.getAttribute('data-theme')
                 || window.VisualSettings?.resolveTheme?.(s)
@@ -2115,7 +2115,7 @@ class DashboardConfig {
 
     renderRandomThemeModeOptions(settings) {
         const esc = (v) => this.dash.escapeHtml(v);
-        const current = window.ThemeLoader?.normalizeRandomThemeMode?.(settings)
+        const current = window.ThemeUtils?.normalizeRandomThemeMode?.(settings)
             || settings?.randomThemeMode
             || 'off';
         const modes = [
