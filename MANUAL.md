@@ -197,7 +197,7 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 
 ### 4.5 Config vs dashboard
 
-Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** header link, or the `/#config` address; **`<`** takes you back.
+Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** header link, or the `/#config` address; **`<`** takes you back. Reopening config returns you to the **last section and sub-tab** you were on; a deep link like `/#config/appearance` still takes priority.
 
 | Dashboard view | Config view |
 |-----------------|------------------|
@@ -951,6 +951,8 @@ Configuration is a **view inside the dashboard**, not a separate page. It opens 
 |---------|----------|
 | **`Shift+S`**, **`<`** (`Shift+,`), the **config** link in the header, or the `/#config` address | **`Escape`** (unless you are typing in a field, or something is open on top of it), or the back link |
 
+Reopening config (**`Shift+S`**, **`<`**, the header link, or `/#config`) restores the **last section and sub-tab** unless a `/#config/…` deep link names something else.
+
 Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/behavior/privacy` opens Behavior on its Privacy tab, and the address bar keeps up as you click, so whatever you are looking at can be copied and shared.
 
 ### The eight sections
@@ -1016,8 +1018,8 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 
 | Keys | Action |
 |------|--------|
-| `Shift+S` or `<` | Open config from the dashboard |
-| `1`–`8` | Jump to a section (Overview through Help) |
+| `Shift+S` or `<` | Toggle config; reopening returns to the last section and sub-tab |
+| `0`–`9` | Leave config for Inbox (`0`) or a bookmark page (`1`–`9`) |
 | `j` / `k` | Previous / next section in the left rail |
 | `g` / `G` | First / last section |
 | `←` / `→` or `↑` / `↓` (section rail) | Move between sections when the rail is focused |

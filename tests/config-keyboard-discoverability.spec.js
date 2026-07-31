@@ -38,7 +38,7 @@ test.describe('config keyboard discoverability', () => {
         });
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
         await expect(page.locator('#app-notification.show')).toBeVisible({ timeout: 10_000 });
-        await expect(page.locator('#app-notification.show')).toContainText(/1.*8|Ctrl.*Shift.*K|cheat sheet/i);
+        await expect(page.locator('#app-notification.show')).toContainText(/j.*k|0.*9|Ctrl.*Shift.*K|cheat sheet|spiekbriefje/i);
 
         await page.evaluate(() => window.AppNotification?.hide?.());
         await expect(page.locator('#app-notification.show')).toHaveCount(0);
