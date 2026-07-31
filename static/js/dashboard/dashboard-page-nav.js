@@ -21,7 +21,7 @@ class DashboardPageNav {
         }
 
         if (leavingView) {
-            d.activeView = 'bookmarks';
+            d.setActiveView('bookmarks');
             d.inbox?.clearKeyboardSelection?.();
             d.health?.clearKeyboardSelection?.();
         }
@@ -44,7 +44,7 @@ class DashboardPageNav {
 
     restoreBookmarksViewForPage(pageId) {
         const d = this.dash;
-        d.activeView = 'bookmarks';
+        d.setActiveView('bookmarks');
         const targetPageId = Number(pageId);
         const pageIndex = d.pages.findIndex((page) => Number(page.id) === targetPageId);
         if (pageIndex >= 0) {

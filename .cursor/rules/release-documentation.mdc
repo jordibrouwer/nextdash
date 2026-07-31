@@ -1,0 +1,42 @@
+---
+description: Steps to document a nextDash release (v2026.07.xx)
+alwaysApply: false
+---
+
+# Release documentation (nextDash)
+
+When the user asks to document a release (e.g. `v2026.07.26`):
+
+## 1. What's new modal + config Overview
+
+- Add `static/data/whats-new/v<TAG>.json` with `tag`, `date`, `releasedAt`, `modalLead`, and `sections[]` (`badge`: `new` | `fix`, `text` HTML).
+- Prepend the entry to `static/data/whats-new/index.json` (newest first).
+- **Config → Overview → Latest update** reads `index.json[0]` and that file's `modalLead` — no separate overview copy; keep `modalLead` suitable as a plain-text summary (HTML is stripped in the overview panel).
+
+## 2. Cache-bust tokens
+
+- Bump together in `static/js/whats-new-stub.js`:
+  - `DASHBOARD_RELEASE` → `2026.07-dashboard-release-vNNN` (+1)
+  - `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-vNNN` (+1)
+
+## 3. CHANGELOG.md
+
+- Add TOC link and full section after `## Unreleased` (same style: lead paragraph, ### New / Fixes / Docs, file references where useful).
+- Leave `## Unreleased` as "Nothing yet."
+
+## 4. README.md & MANUAL.md
+
+- Update feature lists, version examples (e.g. analytics release tag), and manual sections for user-visible changes only.
+
+## 5. Config → Help → What's new recap
+
+- Prepend a `<li>` to `helpPageWhatsNewItems` in **all four** locale files: `locales/en.json`, `nl.json`, `de.json`, `fr.json`.
+- Mention that Overview summarises the same release when relevant.
+
+## 6. Verify
+
+- `npm run validate:json` (or parse JSON files)
+- `go test ./...` (especially `release_version_test.go`)
+- Optional: Playwright `tests/config-overview.spec.js` (release tag visible)
+
+## Do not commit unless the user explicitly asks.

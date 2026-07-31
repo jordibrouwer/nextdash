@@ -50,7 +50,7 @@ class KeyboardNavigation {
             const inboxDomActive = layoutEl?.classList.contains('inbox-layout');
             if (inboxDomActive && inbox?.isEnabled?.()) {
                 if (this.dashboard.activeView !== 'inbox') {
-                    this.dashboard.activeView = 'inbox';
+                    this.dashboard.setActiveView('inbox', { silent: true });
                 }
                 if (inbox.handleKeyboardNavigation?.(e)) {
                     return;
@@ -62,7 +62,7 @@ class KeyboardNavigation {
             const healthDomActive = layoutEl?.classList.contains('health-layout');
             if (healthDomActive && health?.isEnabled?.()) {
                 if (this.dashboard.activeView !== 'health') {
-                    this.dashboard.activeView = 'health';
+                    this.dashboard.setActiveView('health', { silent: true });
                 }
                 health.handleKeyboardNavigation?.(e);
                 // Return either way: the bookmark grid is not on screen, so its

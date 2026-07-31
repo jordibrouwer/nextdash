@@ -4,39 +4,43 @@
     'use strict';
 
     const LEGACY_THEME_MAP = {
-        aurora: 'aurora-borealis',
-        cyberpunk: 'neon-grid',
-        ember: 'desert-ember',
-        forest: 'forest-moss',
-        lavender: 'lavender-mist',
-        matcha: 'forest-moss',
-        midnight: 'midnight-terminal',
-        mint: 'iceberg',
-        nerd: 'midnight-terminal',
-        ocean: 'iceberg',
-        paper: 'paper-ink',
-        peach: 'desert-ember',
-        sunset: 'sunset-pulse',
-        synthwave: 'neon-grid',
-        void: 'void-mono'
+        aurora: 'midnight-neon-dark',
+        cyberpunk: 'neon-grid-dark',
+        ember: 'desert-sand-dark',
+        forest: 'forest-moss-dark',
+        lavender: 'lavender-mist-dark',
+        matcha: 'forest-moss-dark',
+        midnight: 'midnight-neon-dark',
+        mint: 'glacier-mint-dark',
+        nerd: 'retro-crt-dark',
+        ocean: 'ocean-depth-dark',
+        paper: 'paper-ink-dark',
+        peach: 'desert-sand-dark',
+        sunset: 'solar-ember-dark',
+        synthwave: 'neon-grid-dark',
+        void: 'monochrome-mist-dark',
+        // Intermediate ids emitted by an older client-side map
+        'aurora-borealis': 'midnight-neon-dark',
+        'desert-ember': 'desert-sand-dark',
+        'forest-moss': 'forest-moss-dark',
+        'lavender-mist': 'lavender-mist-dark',
+        'midnight-terminal': 'midnight-neon-dark',
+        iceberg: 'glacier-mint-dark',
+        'neon-grid': 'neon-grid-dark',
+        'paper-ink': 'paper-ink-dark',
+        'sunset-pulse': 'solar-ember-dark',
+        'void-mono': 'monochrome-mist-dark',
     };
+
+    /** Picked once per page load when random theme on refresh is enabled. */
+    let sessionRandomTheme = null;
 
     function normalizeTheme(theme) {
         if (!theme) return 'dark';
         return LEGACY_THEME_MAP[theme] || theme;
     }
 
-    function getPairedThemeVariant(themeId, wantsDark) {
-        const base = String(themeId || 'dark');
-        if (base === 'dark' || base === 'light') {
-            return wantsDark ? 'dark' : 'light';
-        }
-        const match = base.match(/^(.*)-(dark|light)$/);
-        if (!match) {
-            return base;
-        }
-        return `${match[1]}-${wantsDark ? 'dark' : 'light'}`;
-    }
+    const themeUtils = () => window.ThemeUtils;
 
     function shouldUseAutoDarkMode(parsedSettings) {
         if (parsedSettings && typeof parsedSettings.autoDarkMode === 'boolean') {
@@ -45,12 +49,90 @@
         return document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
     }
 
+    function getThemePool() {
+        const raw = document.documentElement.getAttribute('data-theme-pool') || '';
+        if (!raw.trim()) {
+            return [];
+        }
+        return raw.split(',').map((id) => id.trim()).filter(Boolean);
+    }
+
+    function filterPoolForAutoDark(pool, autoDarkMode) {
+        if (!autoDarkMode || !window.matchMedia) {
+            return pool;
+        }
+        const wantsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const filtered = pool.filter((id) => {
+            if (id === 'dark') return wantsDark;
+            if (id === 'light') return !wantsDark;
+            if (id.endsWith('-dark')) return wantsDark;
+            if (id.endsWith('-light')) return !wantsDark;
+            return false;
+        });
+        if (filtered.length) {
+            return filtered;
+        }
+        return wantsDark ? ['dark'] : ['light'];
+    }
+
+    function pickRandomFromPool(pool) {
+        if (!pool.length) {
+            return null;
+        }
+        return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function pickSessionRandomTheme(pool, autoDarkMode) {
+        if (sessionRandomTheme) {
+            return sessionRandomTheme;
+        }
+        const effectivePool = filterPoolForAutoDark(pool, autoDarkMode);
+        sessionRandomTheme = pickRandomFromPool(effectivePool) || 'dark';
+        return sessionRandomTheme;
+    }
+
+    function clearSessionRandomTheme() {
+        sessionRandomTheme = null;
+    }
+
+    /** Force a new random pick (used when randomThemeMode is "view"). */
+    function rotateSessionRandomTheme(parsedSettings) {
+        clearSessionRandomTheme();
+        const pool = getThemePool();
+        const autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
+        return pickSessionRandomTheme(pool, autoDarkMode);
+    }
+
     function resolveDisplayTheme(baseTheme, autoDarkMode) {
         const normalized = normalizeTheme(baseTheme);
         if (!autoDarkMode || !window.matchMedia) {
             return normalized;
         }
-        return getPairedThemeVariant(normalized, window.matchMedia('(prefers-color-scheme: dark)').matches);
+        return themeUtils().getPairedThemeVariant(
+            normalized,
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+        );
+    }
+
+    /**
+     * Returns the stored theme choice, or the session-random base when random
+     * on refresh is enabled. Does not apply auto-dark pairing.
+     */
+    function getEffectiveBaseTheme(parsedSettings, storedTheme) {
+        const normalizedStored = normalizeTheme(storedTheme || 'dark');
+        const mode = themeUtils().normalizeRandomThemeMode(parsedSettings);
+        if (mode === 'off') {
+            return normalizedStored;
+        }
+        if (sessionRandomTheme) {
+            return sessionRandomTheme;
+        }
+        if (mode === 'refresh' || mode === 'view') {
+            const pool = getThemePool();
+            const autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
+            return pickSessionRandomTheme(pool, autoDarkMode);
+        }
+        return normalizedStored;
     }
     
     /**
@@ -59,16 +141,17 @@
      */
     function getTheme() {
         const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-        let theme = 'dark'; // default
+        let storedTheme = 'dark';
+        let parsedSettings = null;
         let autoDarkMode = document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
         
         if (deviceSpecific) {
             const settings = localStorage.getItem('dashboardSettings');
             if (settings) {
                 try {
-                    const parsedSettings = JSON.parse(settings);
+                    parsedSettings = JSON.parse(settings);
                     const normalizedTheme = normalizeTheme(parsedSettings.theme || 'dark');
-                    theme = normalizedTheme;
+                    storedTheme = normalizedTheme;
                     autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
 
                     // Persist migrated theme for device-specific users.
@@ -82,18 +165,18 @@
                     }
                 } catch (e) {
                     console.error('Error parsing dashboard settings:', e);
-                    theme = 'dark';
+                    storedTheme = 'dark';
                 }
             }
         } else {
-            // Use server-side theme from html element data attribute
             const htmlTheme = document.documentElement.getAttribute('data-theme');
             if (htmlTheme) {
-                theme = normalizeTheme(htmlTheme);
+                storedTheme = normalizeTheme(htmlTheme);
             }
         }
-        
-        return resolveDisplayTheme(theme, autoDarkMode);
+
+        const baseTheme = getEffectiveBaseTheme(parsedSettings, storedTheme);
+        return resolveDisplayTheme(baseTheme, autoDarkMode);
     }
     
     /**
@@ -388,8 +471,18 @@
     
     // Export functions for use by other scripts (e.g., config.js)
     window.ThemeLoader = {
+        normalizeTheme,
+        normalizeRandomThemeMode: (parsedSettings) =>
+            themeUtils().normalizeRandomThemeMode(parsedSettings),
         getTheme: getTheme,
-        getPairedThemeVariant: getPairedThemeVariant,
+        getEffectiveBaseTheme,
+        getThemePool,
+        filterPoolForAutoDark,
+        pickSessionRandomTheme,
+        rotateSessionRandomTheme,
+        clearSessionRandomTheme,
+        getPairedThemeVariant: (themeId, wantsDark) =>
+            themeUtils().getPairedThemeVariant(themeId, wantsDark),
         resolveDisplayTheme: resolveDisplayTheme,
         getShowBackgroundDots: getShowBackgroundDots,
         getFontSize: getFontSize,
@@ -406,4 +499,3 @@
         }
     };
 })();
-

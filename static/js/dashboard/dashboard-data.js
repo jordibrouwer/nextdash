@@ -702,7 +702,7 @@ class DashboardData {
         d.categories = this.clonePageCategories(categories);
         d.currentPageId = targetPageId;
         if (!preserveView) {
-            d.activeView = 'bookmarks';
+            d.setActiveView('bookmarks');
         }
         const pageIndex = d.pages.findIndex((p) => Number(p.id) === targetPageId);
         if (!preserveView && pageIndex !== -1) {

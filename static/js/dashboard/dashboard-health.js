@@ -269,7 +269,7 @@ class DashboardHealth {
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         d.inbox?.clearKeyboardSelection?.();
         this.clearKeyboardSelection();
-        d.activeView = DashboardHealth.VIEW;
+        d.setActiveView(DashboardHealth.VIEW);
         window.nextdashTrack?.('view:health');
         d.pageNav?.setActiveHealthTab?.();
         d.pageNav?.updateDocumentTitle?.();

@@ -185,7 +185,7 @@ These statistics exist to answer exactly that — **which features get used, and
 - **Bookmark maintenance** — starting an edit and saving it (with whether that was on the dashboard or in config), deleting, moving to another category (with a bucketed count, so a bulk move counts once), and reordering by drag.
 - **Outcomes** — whether adding a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, or failure. This shows where the form trips people up.
 - **Inbox and health actions** — snooze, mark-read, wake, promote, delete, and bulk clean-ups; health rechecks, retest-all, redirect detection, title refresh, and delete.
-- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums. It carries the **release you are running** (`v2026.07.24`), so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
+- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums. It carries the **release you are running** (`v2026.07.26`), so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
 
 #### What is never measured
 
@@ -393,7 +393,8 @@ Dynamic bookmark groups that appear automatically:
 
 ### Appearance
 
-- 37+ built-in theme families, dark and light variants (including Terminal Amber, Dusk Horizon, Moss & Stone, Candy Pop, Midnight Ink)
+- 57+ built-in theme families, dark and light variants (including Terminal Amber, Dusk Horizon, Moss & Stone, Candy Pop, Midnight Ink, Bio Abyss, Sea Glass, and fifteen more added in v2026.07.26)
+- **Random theme** — pick a different built-in theme on each page refresh or each view change (bookmarks ↔ config ↔ inbox ↔ health); auto dark mode limits the pool to matching variants (`Config → Appearance`)
 - Custom theme editor (`config#colors`) — dark/light default palettes, **packaged themes** subtab (edit built-in families), custom theme list with **export/import** and **undo**; live preview on palette cards with contrast warnings; on mobile the editor is read-only (viewer mode)
 - Auto dark mode — follows system light/dark without overwriting your saved theme palette id
 - Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List, **Launcher** (large favicon tiles)

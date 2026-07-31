@@ -72,6 +72,7 @@ class Dashboard {
             layoutVersion: 'classic',
             densityMode: 'compact',
             packedColumns: true,
+            backgroundType: 'none',
             backgroundOpacity: 1,
             fontWeight: 'normal',
             fontPreset: 'source-code-pro',
@@ -780,6 +781,24 @@ class Dashboard {
 
     samePageId(a, b) {
         return this.data.samePageId(...arguments);
+    }
+
+    /**
+     * Switch the active shell view and optionally apply random-theme-on-view.
+     * @param {string} view
+     * @param {{ silent?: boolean }} [options] Pass silent:true for internal
+     *   activeView sync that is not a user navigation (keyboard DOM repair).
+     */
+    setActiveView(view, options = {}) {
+        const previous = this.activeView;
+        if (previous === view) {
+            return previous;
+        }
+        this.activeView = view;
+        if (!options.silent) {
+            this.visual?.onActiveViewChanged?.(previous, view);
+        }
+        return previous;
     }
 
     /**

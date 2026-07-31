@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.26 — July 2026](#v20260726--july-2026)
 - [v2026.07.25.2 — July 2026](#v202607252--july-2026)
 - [v2026.07.25.1 — July 2026](#v202607251--july-2026)
 - [v2026.07.25 — July 2026](#v20260725--july-2026)
@@ -124,6 +125,31 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.26 — July 2026
+
+**Fifty-seven built-in theme families, twenty of them new — plus random picks on refresh or view change, and appearance chrome that finally matches the palette you chose.** Legacy theme ids migrate instead of silently falling back, background opacity fades only the backdrop, and the PWA manifest reads the same colour as the `<meta name="theme-color">` tag.
+
+### New
+
+- **new** **Twenty built-in theme pairs** — Patina Verdigris, Rhubarb Tart, Bio Abyss, Sumi Ink, Denim Fade, Pistachio Cream, Thunderhead, Desert Rose, Library Mahogany, Wheat Field, Cerulean Skylark, Smoked Plum, Licorice Layer, Terracotta Studio, Frosted Juniper, Candlelit Study, Electric Orchid, Sea Glass, Graphite Prism, and Midnight Firefly. Each ships dark and light variants in `colors.json` defaults and picks up an auto-background gradient preset in `THEME_BACKGROUND_MAP` (`models.go`, `visual-settings.js`).
+- **new** **Random theme modes** — `randomThemeMode` replaces the legacy boolean with **off**, **refresh**, and **view**. Refresh picks once per page load; view re-picks when switching between bookmarks, config, inbox, and health. The session pick is shared through `ThemeLoader`; auto dark mode filters the pool to matching variants and falls back to `dark`/`light` when nothing else fits. Config shows **Currently showing** while random is on (`theme-loader.js`, `dashboard-visual.js`, `handlers.go` SSR `data-theme-pool`).
+- **new** **Page tab colour dot tip** — `tipEditPageTabDot` in **Config → Help → Tips & tricks** and the occasional dashboard toast catalogue (`config-help-tips.js`, locales).
+
+### Fixes
+
+- **fix** **Legacy theme ids map on read and save** — `normalizeLegacyThemeID` / `LEGACY_THEME_MAP` cover short ids from early clients (`forest`, `aurora`, `neon-grid`, …). Invalid stored themes fall back to `moss-stone-dark` instead of `cherry-graphite-dark`. `SaveSettings` normalizes and validates the theme id against packaged and custom palettes (`theme_random.go`, `models.go`, `theme-loader.js`).
+- **fix** **Background opacity fades only the backdrop** — opacity moved from `body.style.opacity` to `body::after` with `--dashboard-bg-opacity`, so bookmark rows and chrome stay fully opaque while the gradient or image behind them fades (`theme.css`, `visual-settings.js`, `dashboard-visual.js`).
+- **fix** **`backgroundType` default is none** — server default, client fallback, config UI, and field metadata aligned so new installs do not assume a gradient until chosen. Opacity clamped to 0.65–1.0 consistently via `clampBackgroundOpacity()` (`models.go`, `dashboard-config.js`).
+- **fix** **Browser chrome follows the active theme** — SSR `ThemeColorMeta` and PWA manifest `background_color` / `theme_color` use `themeBackgroundPrimary()` instead of hardcoded light/dark hex pairs (`handlers.go`, `manifest.go`).
+- **fix** **Config appearance toggle layout** — boolean fields in the appearance panel use a clearer grid so labels, switches, and ℹ buttons stay aligned when the section wraps (`config-view.css`).
+- **fix** **Shared theme helpers** — `getPairedThemeVariant` and `normalizeRandomThemeMode` live in `theme-utils.js` so `theme-loader.js`, `visual-settings.js`, and dashboard code no longer duplicate the same logic.
+
+### Docs
+
+- **fix** — What's new modal, config **Overview → Latest update**, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.07.26**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v144`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v202`.
 
 ---
 

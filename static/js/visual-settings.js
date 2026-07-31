@@ -4,6 +4,8 @@
 (function initVisualSettings(global) {
     'use strict';
 
+    const MIN_BACKGROUND_OPACITY = 0.65;
+
     const BACKGROUND_PRESETS = {
         sunset: 'linear-gradient(135deg, #c94b4b 0%, #4b134f 100%)',
         ocean: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
@@ -73,6 +75,56 @@
         'solar-ember-light': 'morning',
         'sunflower-ink-light': 'morning',
         'volcanic-ash-light': 'morning',
+        'patina-verdigris-dark': 'ocean',
+        'patina-verdigris-light': 'mist',
+        'rhubarb-tart-dark': 'rose',
+        'rhubarb-tart-light': 'blush',
+        'bio-abyss-dark': 'aurora',
+        'bio-abyss-light': 'mist',
+        'sumi-ink-dark': 'nordic',
+        'sumi-ink-light': 'morning',
+        'denim-fade-dark': 'nordic',
+        'denim-fade-light': 'mist',
+        'pistachio-cream-dark': 'meadow',
+        'pistachio-cream-light': 'meadow',
+        'thunderhead-dark': 'lavender',
+        'thunderhead-light': 'mist',
+        'desert-rose-dark': 'blush',
+        'desert-rose-light': 'blush',
+        'library-mahogany-dark': 'ember',
+        'library-mahogany-light': 'morning',
+        'wheat-field-dark': 'morning',
+        'wheat-field-light': 'morning',
+        'cerulean-skylark-dark': 'nordic',
+        'cerulean-skylark-light': 'mist',
+        'smoked-plum-dark': 'lavender',
+        'smoked-plum-light': 'petal',
+        'licorice-layer-dark': 'aurora',
+        'licorice-layer-light': 'mist',
+        'terracotta-studio-dark': 'ember',
+        'terracotta-studio-light': 'morning',
+        'frosted-juniper-dark': 'nordic',
+        'frosted-juniper-light': 'mist',
+        'candlelit-study-dark': 'ember',
+        'candlelit-study-light': 'morning',
+        'electric-orchid-dark': 'aurora',
+        'electric-orchid-light': 'petal',
+        'sea-glass-dark': 'ocean',
+        'sea-glass-light': 'mist',
+        'graphite-prism-dark': 'nordic',
+        'graphite-prism-light': 'mist',
+        'midnight-firefly-dark': 'forest',
+        'midnight-firefly-light': 'meadow',
+        'moss-stone-dark': 'meadow',
+        'moss-stone-light': 'morning',
+        'terminal-amber-dark': 'ember',
+        'terminal-amber-light': 'morning',
+        'dusk-horizon-dark': 'sunset',
+        'dusk-horizon-light': 'mist',
+        'candy-pop-dark': 'petal',
+        'candy-pop-light': 'petal',
+        'midnight-ink-dark': 'aurora',
+        'midnight-ink-light': 'mist',
         dark: 'aurora',
         light: 'mist'
     };
@@ -81,25 +133,28 @@
     let autoDarkSettingsRef = null;
     let autoDarkOnApply = null;
 
-    function getPairedThemeVariant(themeId, wantsDark) {
-        const base = String(themeId || 'dark');
-        if (base === 'dark' || base === 'light') {
-            return wantsDark ? 'dark' : 'light';
+    const themeUtils = () => global.ThemeUtils;
+
+    function effectiveBaseTheme(settings) {
+        const stored = settings?.theme || 'dark';
+        const mode = themeUtils()?.normalizeRandomThemeMode(settings) ?? 'off';
+        if (mode === 'off') {
+            return stored;
         }
-        const match = base.match(/^(.*)-(dark|light)$/);
-        if (!match) {
-            return base;
+        if (global.ThemeLoader?.getEffectiveBaseTheme) {
+            return global.ThemeLoader.getEffectiveBaseTheme(settings, stored);
         }
-        return `${match[1]}-${wantsDark ? 'dark' : 'light'}`;
+        const current = document.documentElement.getAttribute('data-theme');
+        return current || stored;
     }
 
     function resolveTheme(settings) {
-        const baseTheme = settings?.theme || 'dark';
+        const baseTheme = effectiveBaseTheme(settings);
         if (!settings?.autoDarkMode || !global.matchMedia) {
             return baseTheme;
         }
         const media = global.matchMedia('(prefers-color-scheme: dark)');
-        return getPairedThemeVariant(baseTheme, media.matches);
+        return themeUtils().getPairedThemeVariant(baseTheme, media.matches);
     }
 
     function applyDisplayTheme(settings) {
@@ -161,11 +216,14 @@
         global.ThemeLoader?.syncBackgroundDots?.(!forceNoDots && showDots);
     }
 
-    function applyBackgroundOpacity(value) {
+    function clampBackgroundOpacity(value) {
         const opacity = Number(value ?? 1);
-        const clamped = Number.isFinite(opacity) ? Math.min(1, Math.max(0.65, opacity)) : 1;
+        return Number.isFinite(opacity) ? Math.min(1, Math.max(MIN_BACKGROUND_OPACITY, opacity)) : 1;
+    }
+
+    function applyBackgroundOpacity(value) {
+        const clamped = clampBackgroundOpacity(value);
         document.documentElement.style.setProperty('--dashboard-bg-opacity', String(clamped));
-        document.body.style.opacity = String(clamped);
     }
 
     function applyFontWeight(value) {
@@ -192,8 +250,24 @@
         if (!autoDarkSettingsRef) {
             return;
         }
-        const displayTheme = applyDisplayTheme(autoDarkSettingsRef);
-        autoDarkOnApply?.(displayTheme, autoDarkSettingsRef);
+        const settings = autoDarkSettingsRef;
+        const randomMode = themeUtils()?.normalizeRandomThemeMode(settings) ?? 'off';
+        // When the OS preference changes under random theme, re-pair the session
+        // pick instead of reverting to the stored theme.
+        if (randomMode !== 'off' && global.ThemeLoader?.resolveDisplayTheme) {
+            const base = effectiveBaseTheme(settings);
+            const displayTheme = global.ThemeLoader.resolveDisplayTheme(
+                base,
+                settings.autoDarkMode === true
+            );
+            const showDots = settings.showBackgroundDots !== false;
+            const fontSize = settings.fontSize || 'm';
+            global.ThemeLoader.applyTheme(displayTheme, showDots, fontSize);
+            autoDarkOnApply?.(displayTheme, settings);
+            return;
+        }
+        const displayTheme = applyDisplayTheme(settings);
+        autoDarkOnApply?.(displayTheme, settings);
     }
 
     function applyAutoDarkMode(settings, onApply) {
@@ -214,8 +288,12 @@
 
     global.VisualSettings = {
         BACKGROUND_PRESETS,
+        MIN_BACKGROUND_OPACITY,
+        clampBackgroundOpacity,
         THEME_BACKGROUND_MAP,
-        getPairedThemeVariant,
+        getPairedThemeVariant: (themeId, wantsDark) =>
+            themeUtils().getPairedThemeVariant(themeId, wantsDark),
+        effectiveBaseTheme,
         resolveTheme,
         applyDisplayTheme,
         applyBackground,

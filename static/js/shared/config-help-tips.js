@@ -38,6 +38,7 @@
                 'tipEditUndo',
                 'tipEditDrag',
                 'tipEditRenamePage',
+                'tipEditPageTabDot',
                 'tipEditCopyUrl',
             ],
         },

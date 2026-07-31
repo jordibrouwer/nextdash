@@ -1,0 +1,55 @@
+{
+  "tag": "v2026.07.26",
+  "date": "July 2026",
+  "releasedAt": "2026-07-31",
+  "modalLead": "Fifty-seven built-in theme families now, twenty of them new — and you can let nextDash pick one for you on every reload or every time you switch views. Random theme, legacy id migration, a backdrop opacity fix, and browser chrome that finally matches whatever palette you chose round out a release that is mostly about making appearance trustworthy end to end.",
+  "sections": [
+    {
+      "title": "Themes",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Twenty new built-in theme pairs</strong> — Patina Verdigris, Rhubarb Tart, Bio Abyss, Sumi Ink, Denim Fade, Pistachio Cream, Thunderhead, Desert Rose, Library Mahogany, Wheat Field, Cerulean Skylark, Smoked Plum, Licorice Layer, Terracotta Studio, Frosted Juniper, Candlelit Study, Electric Orchid, Sea Glass, Graphite Prism, and Midnight Firefly join the picker under <strong>Config → Appearance</strong>, each with a matching auto-background gradient when background type is set to <em>Auto</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Random theme with three modes</strong> — <em>Off</em> keeps your saved choice; <em>On page refresh</em> picks from the pool on every reload; <em>On view change</em> picks again when you switch between bookmarks, config, inbox, and health. With <strong>auto dark mode</strong> on, only dark or light variants matching your system appearance are eligible — custom single-palette themes are skipped. A <em>Currently showing</em> hint names the active pick while random is on."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Old theme ids map to their modern replacements</strong> — short ids from early releases (<em>forest</em>, <em>aurora</em>, <em>cyberpunk</em>, and the rest) now resolve to the packaged dark/light families instead of silently falling back. Saving settings validates the theme id so a typo or removed theme cannot stick on disk."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Background opacity fades only the backdrop</strong> — lowering opacity no longer dims bookmark rows, text, and chrome along with the gradient or image. The fade applies to a dedicated backdrop layer via <code>--dashboard-bg-opacity</code>, so the dashboard stays readable at any setting."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Background type defaults to none</strong> — new installs and unset values no longer assume a gradient background until you choose one. Opacity is clamped consistently between 65% and 100% on save and in the UI."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Appearance toggle fields line up cleanly</strong> — boolean switches in the appearance panel share a clearer grid so labels, toggles, and ℹ buttons stay aligned when the section wraps on narrower widths."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Browser chrome follows the active theme</strong> — the <code>&lt;meta name=\"theme-color\"&gt;</code> tag and the PWA manifest <code>background_color</code> / <code>theme_color</code> both read the theme's background primary instead of hardcoded light/dark greys and blues."
+        }
+      ]
+    },
+    {
+      "title": "Tips",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Page tab colour dots in Tips &amp; tricks</strong> — double-click a page tab and pick a colour swatch; a dot appears on the tab so you can tell pages apart at a glance. The new entry lives in <strong>Config → Help → Tips &amp; tricks</strong> and rotates into the occasional dashboard toast like the rest."
+        }
+      ]
+    }
+  ]
+}

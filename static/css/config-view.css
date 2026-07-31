@@ -463,6 +463,11 @@
     cursor: pointer;
 }
 
+/* Checkbox-only toggles aligned in the config-field label/control grid. */
+.config-field > .config-toggle {
+    margin-top: 0;
+}
+
 .config-toggle input {
     width: 16px;
     height: 16px;
@@ -718,6 +723,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-bottom: 14px;
+}
+
+.config-field-row:last-child {
+    margin-bottom: 0;
 }
 
 .config-field-affordances {
