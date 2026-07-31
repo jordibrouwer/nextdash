@@ -197,7 +197,9 @@ class DashboardUiHelpers {
         if (d.config?.isEnabled?.()) {
             sections.push(section('sectionConfigView', 'Config view', [
                 item('1–8', 'cvSectionJump', 'Jump to a config section — Overview through Help'),
-                item('← / → (section rail)', 'cvSectionRail', 'Move between sections when the section rail is focused'),
+                item('j / k', 'cvSectionJk', 'Previous / next section in the left rail'),
+                item('g / G', 'cvSectionFirstLast', 'Jump to the first / last section'),
+                item('← / → (section rail)', 'cvSectionRail', 'Move between sections when the section rail is focused (↑ / ↓ on desktop)'),
                 item('Alt + ← / →', 'cvSubTab', 'Previous / next sub-tab in the current section'),
                 item('[ / ]', 'cvSubTabBrackets', 'Previous / next sub-tab in the current section'),
                 item('← / → (sub-tabs)', 'cvSubTabRail', 'Move between sub-tabs when a sub-tab strip is focused'),

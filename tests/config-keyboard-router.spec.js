@@ -16,13 +16,14 @@ async function openConfig(page, section = 'overview') {
 }
 
 test.describe('config keyboard router', () => {
-    test('grid list shortcuts do not leave config view', async ({ page }) => {
-        await openConfig(page);
+    test('j and k move the section rail without closing config', async ({ page }) => {
+        await openConfig(page, 'overview');
+        await page.locator('#config-section-panel').focus();
         await page.keyboard.press('j');
+        await expect(page.locator('[data-config-section="pages-tags"][aria-selected="true"]')).toBeVisible();
         await page.keyboard.press('k');
-        await page.keyboard.press('g');
+        await expect(page.locator('[data-config-section="overview"][aria-selected="true"]')).toBeVisible();
         await expect(page.locator('#dashboard-layout')).toHaveClass(/config-layout/);
-        await expect(page.locator('.config-nav')).toBeVisible();
     });
 
     test('letter keys do not open shortcut search while config is active', async ({ page }) => {

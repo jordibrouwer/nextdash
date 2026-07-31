@@ -23,11 +23,11 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
         expect(count).toBe(8);
 
         await tabs.first().focus();
-        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('ArrowDown');
         await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
 
         await tabs.first().focus();
-        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowUp');
         await expect(tabs.nth(count - 1)).toHaveAttribute('aria-selected', 'true');
     });
 
@@ -63,10 +63,19 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
         await openSection(page, 'overview');
         const tabs = page.locator('[data-config-section]');
         await tabs.first().focus();
-        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('ArrowDown');
         await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
-        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowUp');
         await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+    });
+
+    test('j and k move between sections from the panel', async ({ page }) => {
+        await openSection(page, 'overview');
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('j');
+        await expect(page.locator('[data-config-section="pages-tags"][aria-selected="true"]')).toBeVisible();
+        await page.keyboard.press('k');
+        await expect(page.locator('[data-config-section="overview"][aria-selected="true"]')).toBeVisible();
     });
 
     test('digit keys 1–8 jump to the matching section', async ({ page }) => {

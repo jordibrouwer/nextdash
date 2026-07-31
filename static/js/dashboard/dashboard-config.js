@@ -397,6 +397,42 @@ class DashboardConfig {
         }
     }
 
+    moveSectionKeyboard(delta) {
+        const sections = DashboardConfig.SECTIONS;
+        let idx = sections.indexOf(this.section);
+        if (idx < 0) idx = 0;
+        idx = (idx + delta + sections.length) % sections.length;
+        const next = sections[idx];
+        if (next === this.section) return false;
+        this.selectSection(next, 'keyboard');
+        document.querySelector(`[data-config-section="${CSS.escape(next)}"]`)?.focus();
+        return true;
+    }
+
+    jumpSectionKeyboard(index) {
+        const sections = DashboardConfig.SECTIONS;
+        const clamped = Math.max(0, Math.min(index, sections.length - 1));
+        const next = sections[clamped];
+        if (next === this.section) return false;
+        this.selectSection(next, 'keyboard');
+        document.querySelector(`[data-config-section="${CSS.escape(next)}"]`)?.focus();
+        return true;
+    }
+
+    /**
+     * Pages & tags list rows use ↑/↓ (and g/G while focus sits in the list
+     * panel). j/k stay reserved for the section rail unless a row is already
+     * keyboard-selected.
+     */
+    shouldUseListKeyboardNav(target) {
+        if (this.section !== 'pages-tags') return false;
+        if (this._listKeyboardKey) return true;
+        const body = target?.closest?.('#config-pt-body');
+        if (!body) return false;
+        if (target?.closest?.('.config-sub-tabs, [data-pt-tab]')) return false;
+        return this.getListKeyboardRows().length > 0;
+    }
+
     /**
      * Config view keyboard handler — section digits and sub-tab shortcuts.
      * Called from keyboard-navigation.js whenever #dashboard-layout carries
@@ -436,8 +472,33 @@ class DashboardConfig {
             }
         }
 
-        if (this.section === 'pages-tags' && this.handleListKeyboardNavigation(e)) {
+        if (this.shouldUseListKeyboardNav(target) && this.handleListKeyboardNavigation(e)) {
             return true;
+        }
+
+        if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey
+            && !this.shouldUseListKeyboardNav(target)
+            && !target?.closest?.('.config-choices, .config-bg-swatches, .config-sub-tabs')) {
+            if (e.key === 'j') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.moveSectionKeyboard(1);
+            }
+            if (e.key === 'k') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.moveSectionKeyboard(-1);
+            }
+            if (e.key === 'g') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.jumpSectionKeyboard(0);
+            }
+            if (e.key === 'G') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.jumpSectionKeyboard(DashboardConfig.SECTIONS.length - 1);
+            }
         }
 
         if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
@@ -1485,15 +1546,15 @@ class DashboardConfig {
                 this.selectSection(btn.getAttribute('data-config-section'), 'click');
             });
             btn.addEventListener('keydown', (e) => {
-                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
                 if (!keys.includes(e.key)) return;
                 e.preventDefault();
                 const last = buttons.length - 1;
-                const next = e.key === 'Home' ? 0
+                const nextIdx = e.key === 'Home' ? 0
                     : e.key === 'End' ? last
-                        : e.key === 'ArrowRight' ? (i === last ? 0 : i + 1)
+                        : (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? (i === last ? 0 : i + 1)
                             : (i === 0 ? last : i - 1);
-                const target = buttons[next];
+                const target = buttons[nextIdx];
                 if (!target) return;
                 const section = target.getAttribute('data-config-section');
                 target.focus();
