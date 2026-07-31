@@ -21,7 +21,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 | ![5](screenshots/nextdash-5.png) | ![6](screenshots/nextdash-6.png) |
 |Tags management|Monitoring your bookmarks|
 | ![7](screenshots/nextdash-7.png) | ![](screenshots/nextdash-9.png) | 
-|Health view|Backup & Resdtore|
+|Health view|Backup & Restore|
 | ![7](screenshots/nextdash-8.png) | ![](screenshots/nextdash-10.png) | 
 |Bookmarks that need attention|Links saved to read or review later|
 
