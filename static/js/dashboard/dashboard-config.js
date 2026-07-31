@@ -66,6 +66,8 @@ class DashboardConfig {
         this._statsFinders = undefined;
         // Latest release for the overview: undefined until fetched, null on failure.
         this._latestRelease = undefined;
+        // Pages & tags CRUD list row highlighted via j/k (health/inbox feed pattern).
+        this._listKeyboardKey = null;
     }
 
     isEnabled() {
@@ -273,6 +275,7 @@ class DashboardConfig {
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         d.inbox?.clearKeyboardSelection?.();
         d.health?.clearKeyboardSelection?.();
+        this.clearListKeyboardSelection();
         this.section = targetSection;
         d.setActiveView(DashboardConfig.VIEW);
         window.nextdashTrack?.('view:config');
@@ -341,6 +344,12 @@ class DashboardConfig {
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) {
                 return;
             }
+            if (this._listKeyboardKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.clearListKeyboardSelection();
+                return;
+            }
             e.preventDefault();
             // Stop here rather than letting the event bubble on. The tag-filter
             // shortcut listens on document too and registers first, so without
@@ -403,8 +412,12 @@ class DashboardConfig {
 
         const target = e.target;
         const tag = target?.tagName;
+        const isTagFilter = target?.id === 'config-tag-filter';
+        const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
-            return false;
+            if (!(this.section === 'pages-tags' && isTagFilter && listNavFromFilter.has(e.key))) {
+                return false;
+            }
         }
 
         if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
@@ -421,6 +434,10 @@ class DashboardConfig {
                 e.stopImmediatePropagation();
                 return this.moveSubTab(subTabDelta);
             }
+        }
+
+        if (this.section === 'pages-tags' && this.handleListKeyboardNavigation(e)) {
+            return true;
         }
 
         if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
@@ -490,6 +507,7 @@ class DashboardConfig {
                 break;
             }
             case 'pages-tags':
+                this.clearListKeyboardSelection();
                 this.repaintPtBody();
                 break;
             case 'data-backups': {
@@ -795,6 +813,189 @@ class DashboardConfig {
                 range.dispatchEvent(new Event('change', { bubbles: true }));
             });
         });
+    }
+
+    /* ── Pages & tags list keyboard (feed pattern) ─────────────────────────── */
+
+    listRowKey(row) {
+        if (!row) return null;
+        if (row.hasAttribute('data-page-row')) return `page:${row.getAttribute('data-page-row')}`;
+        if (row.hasAttribute('data-cat-row')) return `cat:${row.getAttribute('data-cat-row')}`;
+        if (row.hasAttribute('data-tag-row')) return `tag:${row.getAttribute('data-tag-row')}`;
+        if (row.hasAttribute('data-finder-index')) return `finder:${row.getAttribute('data-finder-index')}`;
+        if (row.hasAttribute('data-collection-row')) return `collection:${row.getAttribute('data-collection-row')}`;
+        return null;
+    }
+
+    getListKeyboardRows() {
+        const body = document.getElementById('config-pt-body');
+        if (!body) return [];
+        return Array.from(body.querySelectorAll('.config-crud-list .config-crud-row'));
+    }
+
+    clearListKeyboardSelection() {
+        this._listKeyboardKey = null;
+        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected').forEach((row) => {
+            row.classList.remove('keyboard-selected');
+            row.removeAttribute('aria-selected');
+        });
+    }
+
+    applyListKeyboardSelection(rows) {
+        const list = Array.isArray(rows) && rows.length ? rows : this.getListKeyboardRows();
+        list.forEach((row) => {
+            const selected = this.listRowKey(row) === this._listKeyboardKey;
+            row.classList.toggle('keyboard-selected', selected);
+            if (selected) {
+                row.setAttribute('aria-selected', 'true');
+                row.scrollIntoView({
+                    block: 'nearest',
+                    behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
+                });
+            } else {
+                row.removeAttribute('aria-selected');
+            }
+        });
+    }
+
+    syncListKeyboardSelectionAfterRender() {
+        const rows = this.getListKeyboardRows();
+        if (!this._listKeyboardKey || !rows.some((row) => this.listRowKey(row) === this._listKeyboardKey)) {
+            this._listKeyboardKey = null;
+        }
+        this.applyListKeyboardSelection(rows);
+    }
+
+    moveListKeyboardSelection(delta, rows) {
+        const list = Array.isArray(rows) && rows.length ? rows : this.getListKeyboardRows();
+        if (!list.length) return;
+        let index = this._listKeyboardKey
+            ? list.findIndex((row) => this.listRowKey(row) === this._listKeyboardKey)
+            : -1;
+        if (index < 0) {
+            index = delta > 0 ? 0 : list.length - 1;
+        } else {
+            index += delta;
+            if (index < 0) index = list.length - 1;
+            else if (index >= list.length) index = 0;
+        }
+        this._listKeyboardKey = this.listRowKey(list[index]);
+        this.applyListKeyboardSelection(list);
+    }
+
+    focusListRow(row) {
+        if (!row) return;
+        const field = row.querySelector('.config-crud-fields input:not([type="hidden"]), .config-crud-fields select, .config-crud-fields textarea');
+        if (field) {
+            field.focus();
+            return;
+        }
+        row.querySelector('.config-crud-row-actions button:not(.config-btn--danger), [data-collection-edit]')?.focus();
+    }
+
+    appendListKeyboardLegend(body) {
+        const list = body?.querySelector('.config-crud-list');
+        if (!list || list.querySelector('.config-panel-empty')) return;
+        if (body.querySelector('.config-list-keyboard-legend')) return;
+        const legend = document.createElement('p');
+        legend.className = 'config-list-keyboard-legend config-field-hint';
+        legend.setAttribute('aria-hidden', 'true');
+        legend.textContent = this.t('config.listKeyboardLegend',
+            '↑/↓ move · Enter edit · g/G first/last · / filter tags · Esc clear');
+        list.after(legend);
+    }
+
+    bindListKeyboard(container) {
+        if (this.section !== 'pages-tags') return;
+        const body = container?.querySelector('#config-pt-body') || document.getElementById('config-pt-body');
+        if (!body) return;
+        this.appendListKeyboardLegend(body);
+        if (!body.dataset.configListKbdWired) {
+            body.dataset.configListKbdWired = '1';
+            body.addEventListener('click', (e) => {
+                const row = e.target.closest('.config-crud-row');
+                if (!row || !body.contains(row)) return;
+                this._listKeyboardKey = this.listRowKey(row);
+                this.applyListKeyboardSelection(this.getListKeyboardRows());
+            });
+        }
+        this.syncListKeyboardSelectionAfterRender();
+    }
+
+    handleListKeyboardNavigation(e) {
+        if (this.section !== 'pages-tags') return false;
+        if (e.ctrlKey || e.altKey || e.metaKey) return false;
+
+        const target = e.target;
+        const tag = target?.tagName;
+        const isTagFilter = target?.id === 'config-tag-filter';
+        const listNavKeys = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+            if (!isTagFilter || !listNavKeys.has(e.key)) {
+                return false;
+            }
+        }
+
+        const onRowControl = Boolean(
+            target?.closest?.('.config-crud-row')
+            && target?.matches?.('button, a, input, select, textarea')
+        );
+
+        const rows = this.getListKeyboardRows();
+        if (!rows.length) return false;
+
+        if (e.key === 'ArrowDown') {
+            if (onRowControl) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (isTagFilter) target.blur();
+            this.moveListKeyboardSelection(1, rows);
+            return true;
+        }
+        if (e.key === 'ArrowUp') {
+            if (onRowControl) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (isTagFilter) target.blur();
+            this.moveListKeyboardSelection(-1, rows);
+            return true;
+        }
+        if (onRowControl) {
+            return false;
+        }
+        if ((e.key === 'Enter' || e.key === ' ') && this._listKeyboardKey) {
+            const row = rows.find((r) => this.listRowKey(r) === this._listKeyboardKey);
+            if (row) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.focusListRow(row);
+            }
+            return true;
+        }
+        if (e.key === 'g') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._listKeyboardKey = this.listRowKey(rows[0]);
+            this.applyListKeyboardSelection(rows);
+            return true;
+        }
+        if (e.key === 'G') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._listKeyboardKey = this.listRowKey(rows[rows.length - 1]);
+            this.applyListKeyboardSelection(rows);
+            return true;
+        }
+        if (e.key === '/' && this.ptTab === 'tags' && !isTagFilter) {
+            const filter = document.getElementById('config-tag-filter');
+            if (filter) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                filter.focus();
+                return true;
+            }
+        }
+        return false;
     }
 
     renderShell() {
@@ -1270,6 +1471,7 @@ class DashboardConfig {
         if (!DashboardConfig.SECTIONS.includes(section) || section === this.section) {
             return;
         }
+        this.clearListKeyboardSelection();
         this.section = section;
         this._trackAction('section', { section, via });
         this.render();
@@ -4783,6 +4985,7 @@ class DashboardConfig {
     bindPagesTags(container) {
         this.bindSubTabStrip(container, 'data-pt-tab', (tab) => {
             if (tab === this.ptTab) return;
+            this.clearListKeyboardSelection();
             this.ptTab = tab;
             this.restoreConfigHash();
             this.repaintPtBody();
@@ -4808,6 +5011,7 @@ class DashboardConfig {
         else if (this.ptTab === 'collections') { this.bindCollections(container); }
         else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
         else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
+        this.bindListKeyboard(container);
     }
 
     /* ── Finders (native) ──────────────────────────────────────────────────── */

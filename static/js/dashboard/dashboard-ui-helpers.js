@@ -203,8 +203,12 @@ class DashboardUiHelpers {
                 item('← / → (sub-tabs)', 'cvSubTabRail', 'Move between sub-tabs when a sub-tab strip is focused'),
                 item('← / → (choice row)', 'cvChoiceRow', 'Move between options in a choice group; Space selects'),
                 item('Home / End (slider)', 'cvRangeHomeEnd', 'Jump to min or max on a focused opacity or intensity slider'),
+                item('↑ / ↓ (Pages & tags lists)', 'cvListMove', 'Move between rows when focus is in the list panel'),
+                item('Enter / Space (list row)', 'cvListEdit', 'Focus the first field in the selected list row'),
+                item('g / G (list row)', 'cvListFirstLast', 'Jump to the first / last row in a Pages & tags list'),
+                item('/ (Tags tab)', 'cvListFilter', 'Focus the tag filter while on the Tags sub-tab'),
                 item('< / Shift + S', 'cvClose', 'Return to the dashboard from config'),
-                item('Esc', 'cvEsc', 'Close config and return to the dashboard'),
+                item('Esc', 'cvEsc', 'Clear list selection, or close config and return to the dashboard'),
             ]));
         }
 

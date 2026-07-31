@@ -1832,6 +1832,15 @@
     border-color: var(--accent-primary, var(--accent-success, #4A7038));
 }
 
+.config-crud-row.keyboard-selected {
+    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--accent-success, #4A7038)) 28%, transparent);
+}
+
+.config-list-keyboard-legend {
+    margin: 8px 0 0;
+}
+
 .config-theme-groups {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
