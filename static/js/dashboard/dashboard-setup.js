@@ -30,9 +30,11 @@ class DashboardSetup {
         d.syncSideRailDiscoverability?.();
 
         document.body.setAttribute('data-show-shortcuts', d.settings.showShortcuts !== false);
-        document.body.setAttribute('data-pin-notes-disabled', 'true');
-        document.body.setAttribute('data-show-pin-icon', 'false');
-        document.body.setAttribute('data-show-note-icon', 'false');
+        const showPinIcon = d.settings.showPinIcon === true;
+        const showNoteIcon = d.settings.showNoteIcon !== false;
+        document.body.setAttribute('data-pin-notes-disabled', (!showPinIcon && !showNoteIcon) ? 'true' : 'false');
+        document.body.setAttribute('data-show-pin-icon', showPinIcon ? 'true' : 'false');
+        document.body.setAttribute('data-show-note-icon', showNoteIcon ? 'true' : 'false');
         document.body.setAttribute('data-layout-preset', d.settings.layoutPreset || 'default');
         const layoutVersion = window.LayoutVersionUtils
             ? window.LayoutVersionUtils.normalizeLayoutVersion(d.settings.layoutVersion)
