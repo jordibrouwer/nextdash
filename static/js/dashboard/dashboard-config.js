@@ -282,11 +282,21 @@ class DashboardConfig {
         // down; otherwise a "Saved" would linger over the dashboard.
         clearTimeout(this._saveStateTimer);
         document.getElementById('config-save-state')?.remove();
-        const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
-        if (restored) {
-            d.keyboardNavigation?.scheduleUpdate?.();
+        const finishRestore = () => {
+            const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
+            if (restored) {
+                d.keyboardNavigation?.scheduleUpdate?.();
+            }
+            return restored;
+        };
+        const pendingSave = this._settingsSavePromise;
+        if (pendingSave) {
+            void pendingSave.finally(() => {
+                finishRestore();
+            });
+            return true;
         }
-        return restored;
+        return finishRestore();
     }
 
     async loadAndRender() {
@@ -2258,10 +2268,14 @@ class DashboardConfig {
         // controls are shown); the slider updates live so it keeps the pointer.
         const iconsToggle = container.querySelector('[data-appearance-toggle-icons]');
         if (iconsToggle) {
-            iconsToggle.addEventListener('change', () => this.setIconStyling({ enabled: iconsToggle.checked }));
+            iconsToggle.addEventListener('change', () => {
+                void this.setIconStyling({ enabled: iconsToggle.checked });
+            });
         }
         container.querySelectorAll('[data-appearance-iconstyle]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setIconStyling({ style: btn.getAttribute('data-appearance-iconstyle') }));
+            btn.addEventListener('click', () => {
+                void this.setIconStyling({ style: btn.getAttribute('data-appearance-iconstyle') });
+            });
         });
         const iconRange = container.querySelector('[data-appearance-icon-intensity]');
         if (iconRange) {
@@ -2272,9 +2286,17 @@ class DashboardConfig {
                 iconRange.parentElement?.querySelectorAll('.config-icon-preview-dot').forEach((dot) => {
                     dot.style.setProperty('--icon-theme-intensity', String(val));
                 });
+                const nextEntry = { ...this.iconStylingEntry(), intensity: val };
+                const map = { ...(this.dash.settings.themeIconStyling || {}) };
+                for (const key of this.iconStylingThemeKeysForWrite()) {
+                    map[key] = { ...nextEntry };
+                }
+                this.dash.settings.themeIconStyling = map;
+                window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(this.dash.settings);
             });
-            iconRange.addEventListener('change', () =>
-                this.setIconStyling({ intensity: Number(iconRange.value) }, { repaint: false }));
+            iconRange.addEventListener('change', () => {
+                void this.setIconStyling({ intensity: Number(iconRange.value) }, { repaint: false });
+            });
         }
         const fontInput = container.querySelector('#config-font-input');
         if (fontInput) {
@@ -2300,15 +2322,21 @@ class DashboardConfig {
 
     /** Persist a settings change and repaint the appearance section. */
     persistAppearance() {
-        void this.saveSettingsWithFeedback();
+        const savePromise = this.saveSettingsWithFeedback();
         if (this.isActiveView() && this.section === 'appearance') {
-            const body = document.getElementById('config-view-body');
-            if (body) {
-                body.innerHTML = this.renderAppearance();
-                const container = document.getElementById('dashboard-layout');
-                if (container) this.bindAppearanceControls(container);
-            }
+            void savePromise.finally(() => {
+                if (!this.isActiveView() || this.section !== 'appearance') {
+                    return;
+                }
+                const body = document.getElementById('config-view-body');
+                if (body) {
+                    body.innerHTML = this.renderAppearance();
+                    const container = document.getElementById('dashboard-layout');
+                    if (container) this.bindAppearanceControls(container);
+                }
+            });
         }
+        return savePromise;
     }
 
     /**
@@ -2905,6 +2933,9 @@ class DashboardConfig {
     }
 
     iconStylingEntry() {
+        if (window.ThemeIconStyling?.getThemeIconStylingEntry) {
+            return window.ThemeIconStyling.getThemeIconStylingEntry(this.dash.settings);
+        }
         const map = this.dash.settings?.themeIconStyling || {};
         const entry = map[this.iconStylingThemeKey()] || {};
         return {
@@ -2912,6 +2943,14 @@ class DashboardConfig {
             style: entry.style || 'muted',
             intensity: Number.isFinite(Number(entry.intensity)) ? Number(entry.intensity) : 0.5,
         };
+    }
+
+    iconStylingThemeKeysForWrite() {
+        const primary = this.iconStylingThemeKey();
+        if (window.ThemeIconStyling?.themeIconStylingDisplayKeys) {
+            return window.ThemeIconStyling.themeIconStylingDisplayKeys(primary);
+        }
+        return [primary];
     }
 
     /**
@@ -3071,19 +3110,31 @@ class DashboardConfig {
     }
 
     /** Merge a change into the current theme's icon-styling entry and apply it. */
-    setIconStyling(patch, { repaint = true } = {}) {
+    async setIconStyling(patch, { repaint = true } = {}) {
         const d = this.dash;
-        const key = this.iconStylingThemeKey();
+        const nextEntry = { ...this.iconStylingEntry(), ...patch };
         const map = { ...(d.settings.themeIconStyling || {}) };
-        map[key] = { ...this.iconStylingEntry(), ...patch };
+        for (const key of this.iconStylingThemeKeysForWrite()) {
+            map[key] = { ...nextEntry };
+        }
         d.settings.themeIconStyling = map;
-        // Icon classes are applied while rows render, so the grid has to be
-        // rebuilt for the change to show.
-        d.renderDashboard?.({ animate: false });
+        this.applyIconStylingLive();
         if (repaint) {
-            this.persistAppearance();
+            await this.persistAppearance();
         } else {
-            void this.saveSettingsWithFeedback();
+            await this.saveSettingsWithFeedback();
+        }
+    }
+
+    /** Push favicon harmonisation onto any bookmark/search icon already in the DOM. */
+    applyIconStylingLive() {
+        const d = this.dash;
+        window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(d.settings);
+        if (d.isBookmarksView?.()) {
+            d.renderDashboard?.({ animate: false, incremental: 'settings' });
+        }
+        if (d.searchComponent?.isActive?.()) {
+            d.searchComponent.updateSearch?.();
         }
     }
 
@@ -4138,16 +4189,26 @@ class DashboardConfig {
      */
     async saveSettingsWithFeedback() {
         this.setSaveState('saving');
-        let ok = false;
+        const promise = (async () => {
+            let ok = false;
+            try {
+                // saveSettings resolves false rather than rejecting; it reports its
+                // own error toast as well.
+                ok = (await this.dash.saveSettings?.()) !== false;
+            } catch {
+                ok = false;
+            }
+            this.setSaveState(ok ? 'saved' : 'error');
+            return ok;
+        })();
+        this._settingsSavePromise = promise;
         try {
-            // saveSettings resolves false rather than rejecting; it reports its
-            // own error toast as well.
-            ok = (await this.dash.saveSettings?.()) !== false;
-        } catch {
-            ok = false;
+            return await promise;
+        } finally {
+            if (this._settingsSavePromise === promise) {
+                this._settingsSavePromise = null;
+            }
         }
-        this.setSaveState(ok ? 'saved' : 'error');
-        return ok;
     }
 
     /** Re-render whichever schema-driven panel body is currently showing. */
