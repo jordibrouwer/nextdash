@@ -800,7 +800,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 - 57+ built-in families (dark/light pairs), including twenty new pairs from **v2026.07.26** (Patina Verdigris, Rhubarb Tart, Bio Abyss, Sumi Ink, Denim Fade, and fifteen more).  
 - **config → appearance → custom themes** — build, edit, and delete your own palettes. A contrast check warns when text against background is too weak to read. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard half-edited.
 - **config → appearance → general** — pick the active theme for the whole app (built-in or one of your own).
-- **Random theme** (**v2026.07.26**) — under **config → appearance → general**, below your saved theme. Choose **Off** (always use the saved theme), **On page refresh** (new built-in pick on each reload), or **On view change** (new pick when switching bookmarks ↔ config ↔ inbox ↔ health). A **Currently showing** hint names the active theme while random is on. With **auto dark mode**, only variants matching your system light/dark are eligible; custom single-palette themes are skipped.
+- **Random theme** (**v2026.07.26**) — under **config → appearance → Theme**, below your saved theme. Choose **Off** (always use the saved theme), **On page refresh** (new built-in pick on each reload), or **On view change** (new pick when switching bookmarks ↔ config ↔ inbox ↔ health). A **Currently showing** hint names the active theme while random is on. With **auto dark mode**, only variants matching your system light/dark are eligible; custom single-palette themes are skipped. The first desktop visit to Appearance may show a one-time popover pointing at this control (**v2026.07.26.1**).
 - **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
 - **Favicon harmonisation** — recolours site favicons that clash with your theme (styles: **Muted**, **Tinted**, **Overlay**, with an intensity slider). Set per theme under **config → appearance → theme**, so the dark and light variant of a pair are configured separately. **New installs start with it on** (Muted, intensity 0.5) for both Moss & Stone variants; existing dashboards keep whatever they had.
 
@@ -827,7 +827,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 **Not every release is in the modal.** A small presentation hotfix can ship without release notes of its own — **v2026.07.23.4**, which repaired the health view's see-through **More** menu, is one. The [changelog](CHANGELOG.md) carries the complete history either way.
 
-**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. The latest release loads first; scroll to load up to the **25 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same releases are summarized under **What's new** in **Config → Help**, and in full in the [changelog](CHANGELOG.md).
+**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. **Config → Overview → Latest update** summarises the newest release in plain text (from the same `modalLead` as the ★ modal) with a **Show what's new** button beside it. The latest release loads first; scroll to load up to the **25 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same releases are summarized under **What's new** in **Config → Help**, and in full in the [changelog](CHANGELOG.md).
 
 ---
 
@@ -956,7 +956,7 @@ Pick a section from the rail on the left, or link straight to one with `/#config
 
 | Section | What lives there |
 |---------|------------------|
-| **Overview** | At-a-glance health, headline counts, anything needing attention, and the latest release notes |
+| **Overview** | At-a-glance health, headline counts, anything needing attention, and **Latest update** (release tag + summary from what's-new data) |
 | **Pages & tags** | Pages, categories, tags, finders, and custom collections — five sub-tabs |
 | **Bookmarks** | The bookmark list and its editor, with bulk actions |
 | **Appearance** | Theme, background, fonts, icon size, and custom themes |
@@ -980,7 +980,7 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 | Section | Sub-tabs |
 |---------|----------|
 | **Pages & tags** | Finders · Tags · Collections · Pages · Categories |
-| **Appearance** | General · Custom themes |
+| **Appearance** | Theme · Custom themes |
 | **Behavior** | General · Date & weather · Layout · Display · Search & inbox · Status & health · Privacy |
 | **Data & backups** | Backups & data · Reset |
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
@@ -994,7 +994,7 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 
 ### Appearance
 
-**General** covers theme, background (none / gradient / image / auto, with opacity), fonts, icon size, and the display toggles. Pick a built-in dark/light family or a custom theme, then optionally set **Random theme** to **Off**, **On page refresh**, or **On view change** — see [Themes](#themes) above for how the pool and auto dark mode interact. A **Currently showing** line appears while random is active.
+**Theme** covers your saved theme, **Random theme**, background (none / gradient / image / auto, with opacity), fonts, icon size, and the display toggles. Pick a built-in dark/light family or a custom theme, then optionally set **Random theme** to **Off**, **On page refresh**, or **On view change** — see [Themes](#themes) above for how the pool and auto dark mode interact. A **Currently showing** line appears while random is active. On desktop, the first visit to this tab may show a one-time themed popover below **Random theme** (**v2026.07.26.1**); dismiss it with **Got it** or **Esc**.
 
 **Custom themes** is a full editor: build a palette, check its contrast, and apply it. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard in a half-edited state.
 

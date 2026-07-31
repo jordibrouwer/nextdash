@@ -1,0 +1,44 @@
+{
+  "tag": "v2026.07.26.1",
+  "date": "July 2026",
+  "releasedAt": "2026-07-31",
+  "modalLead": "The first time you open Config → Appearance, a themed popover points at Random theme — the start of a reusable highlight system for new settings. Help and the manual now explain random picks and page-tab colour dots in more detail, the appearance sub-tab reads Theme instead of General, and the favicon asset is refreshed.",
+  "sections": [
+    {
+      "title": "Discoverability",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Config setting promo for Random theme</strong> — on desktop, the first visit to <strong>Config → Appearance</strong> shows a one-time themed popover below the <strong>Random theme</strong> dropdown, with a pulsing highlight on the field. Dismiss with <em>Got it</em>, <kbd>Esc</kbd>, or by changing the setting. Progress syncs via <code>discoverabilityState.seenSettingPromos</code> in <code>settings.json</code>. Add future highlights by registering an entry in <code>config-setting-promos.js</code> and anchoring the field with <code>data-config-setting-promo-anchor</code>."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Appearance sub-tab labelled Theme</strong> — the panel that holds your saved theme, random picks, fonts, and background is now <em>Theme</em> (not <em>General</em> / <em>Algemeen</em>), beside <em>Custom themes</em>, so it matches what you actually configure there."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Help and MANUAL cover random theme and page-tab dots</strong> — <strong>Config → Help → Appearance</strong> and <strong>Workspace</strong> explain random theme modes and double-click tab colour dots; <code>MANUAL.md</code> matches. <strong>Config → Overview → Latest update</strong> summarises this patch from the same what's-new data as the ★ modal."
+        }
+      ]
+    },
+    {
+      "title": "Assets",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Favicon updated</strong> — the root <code>favicon.png</code> is replaced with a smaller, cleaner asset."
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.26.1 — July 2026](#v202607261--july-2026)
 - [v2026.07.26 — July 2026](#v20260726--july-2026)
 - [v2026.07.25.2 — July 2026](#v202607252--july-2026)
 - [v2026.07.25.1 — July 2026](#v202607251--july-2026)
@@ -125,6 +126,25 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.07.26.1 — July 2026
+
+**A one-time popover on Config → Appearance points at Random theme — the first use of a reusable setting-highlight system.** Help and the manual catch up on random picks and page-tab colour dots; the appearance sub-tab is labelled Theme; the favicon is refreshed.
+
+### New
+
+- **new** **Reusable config setting promo** — `config-setting-promo.js` + `config-setting-promos.js` show a themed, animated popover anchored to a config field. The first desktop visit to **Appearance** highlights **Random theme** once; dismissal persists in `discoverabilityState.seenSettingPromos`. New highlights add a catalog entry and `data-config-setting-promo-anchor` on the field (`config-setting-promo.css`, `dashboard-config.js`, `discoverability-state.js`, `models.go`).
+
+### Fixes
+
+- **fix** **Appearance sub-tab label** — **General** renamed to **Theme** in EN/NL/DE/FR so the tab matches its contents beside **Custom themes** (locales).
+- **fix** **Favicon** — root `favicon.png` replaced with a smaller asset.
+
+### Docs
+
+- **fix** — **Config → Help** (Appearance, Workspace, Pages intro) and **MANUAL.md** expanded for random theme modes and page-tab colour dots; **Config → Overview → Latest update** reads this release from `whats-new/index.json` and `v2026.07.26.1.json` `modalLead`; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v145`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v203`.
 
 ---
 
