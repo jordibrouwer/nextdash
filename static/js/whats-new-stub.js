@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    const DASHBOARD_RELEASE = '2026.07-dashboard-release-v148';
+    const DASHBOARD_RELEASE = '2026.07-dashboard-release-v149';
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
     const SEARCH_PROMO_START_KEY = 'nextdash:whats-new-search-promo-start';
     const SEARCH_PROMO_RELEASE_KEY = 'nextdash:whats-new-search-promo-release';
@@ -18,7 +18,7 @@
         || '/static/js/whats-new-modal.js';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v206';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v207';
 
     let loadPromise = null;
 

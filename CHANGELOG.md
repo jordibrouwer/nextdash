@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.07.27 — August 2026](#v20260727--august-2026)
 - [v2026.07.26.3 — July 2026](#v202607263--july-2026)
 - [v2026.07.26.2 — July 2026](#v202607262--july-2026)
 - [v2026.07.26.1 — July 2026](#v202607261--july-2026)
@@ -131,7 +132,27 @@ Nothing yet.
 
 ---
 
-## v2026.07.26.3 — July 2026
+## v2026.07.27 — August 2026
+
+**Config is fully keyboard-navigable — and it remembers where you left off.** Navigate sections, sub-tabs, Pages & tags lists, and the bookmarks editor from the keyboard. **Ctrl/Cmd+Shift+K** finds any setting; **Shift+S** and the gear icon reopen the same section and sub-tab; **0–9** leave config for Inbox or a bookmark page. Config → Overview → Latest update and Advanced → What's new summarise this release.
+
+### New
+
+- **new** **Config keyboard navigation** — section rail (`j`/`k`, arrows, `g`/`G`), sub-tabs (`[`/`]`, `Alt+←/→`), Pages & tags list rows (`↑/↓`, `Enter`), and bookmarks list (`j`/`k`, `/`, `g`/`G`) (`dashboard-config.js`, `keyboard-navigation.js`).
+- **new** **Settings jump overlay** — `Ctrl/Cmd+Shift+K` filters sections, sub-tabs, help topics, and visited field labels; **Find settings** below Help in the left nav opens the same overlay (`config-settings-jump`).
+- **new** **Keyboard discoverability in config** — form footer legends, Help → Search & keyboard → Config navigation panel, and a one-time intro toast on first config open (`dashboard-keyboard-tip.js`, locales).
+
+### Fixes
+
+- **fix** **Config remembers last section and sub-tab** — `localStorage` persists location on exit; `Shift+S`, `<`, the gear icon, and bare `#config` restore it; `#config/…` deep links still win (`dashboard-config.js`, `dashboard-data.js`).
+- **fix** **`0`–`9` from config** — switch to Inbox or bookmark pages like on the dashboard grid (replaces `1`–`8` section digits in config).
+- **fix** **Letter keys deferred in config** — shortcut search no longer steals bare letters while config is active (`search.js`).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, Config → Help, and cheat sheet updated for **v2026.07.27**; Playwright specs for config keyboard, location memory, and discoverability; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v149`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v207`.
+
+---
 
 **Faster first load, live favicon harmonisation, health feed paging, and a reliable random theme on every view switch — including config.** Heavy modules load on demand; the health list scrolls with the page; harmonisation stays enabled with a custom theme and shares one setting across a random rotation instead of resetting per theme. Picking a theme while random is on saves your choice and shows a toast that the display keeps rotating until you turn random off. Config → Overview and Advanced → What's new summarise this patch.
 

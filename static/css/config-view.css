@@ -66,18 +66,26 @@
 
 /* ── Section navigation ─────────────────────────────────────────────────── */
 
-.config-nav {
+.config-nav-column {
     display: flex;
     flex-direction: column;
-    gap: 2px;
     position: sticky;
     top: 8px;
     align-self: start;
 }
 
+.config-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 @media (max-width: 720px) {
-    .config-nav {
+    .config-nav-column {
         position: static;
+    }
+
+    .config-nav {
         flex-direction: row;
         flex-wrap: wrap;
         gap: 6px;
@@ -111,6 +119,27 @@
 .config-nav-item:focus-visible {
     outline: 2px solid var(--accent-color, #4a90d9);
     outline-offset: 1px;
+}
+
+.config-nav-search {
+    margin-top: 14px;
+    font-weight: 500;
+}
+
+.config-nav-search-shortcut {
+    display: block;
+    margin-top: 2px;
+    font-size: calc(var(--font-size-text) * 0.857);
+    font-weight: 400;
+    opacity: 0.72;
+    letter-spacing: 0.02em;
+}
+
+@media (max-width: 720px) {
+    .config-nav-search {
+        margin-top: 10px;
+        flex-basis: 100%;
+    }
 }
 
 /* ── Section body ───────────────────────────────────────────────────────── */

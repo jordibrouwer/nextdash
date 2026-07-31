@@ -20,6 +20,15 @@ test.describe('config settings jump', () => {
             document.activeElement?.id === 'config-settings-jump-filter'), { timeout: 15_000 }).toBe(true);
     });
 
+    test('the nav search item opens settings jump below Help', async ({ page }) => {
+        await openConfig(page, 'help');
+        const search = page.locator('[data-config-action="settings-jump"]');
+        await expect(search).toBeVisible();
+        await expect(search).toContainText(/Find settings|Instellingen vinden|Einstellungen finden|Trouver un réglage/i);
+        await search.click();
+        await expect(page.locator('.config-settings-jump-modal')).toBeVisible();
+    });
+
     test('filtering and Enter navigates to a section', async ({ page }) => {
         await openConfig(page, 'overview');
         await page.locator('#config-section-panel').focus();

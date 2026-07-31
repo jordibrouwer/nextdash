@@ -830,6 +830,12 @@ class DashboardConfig {
 
     /* ── Render ────────────────────────────────────────────────────────────── */
 
+    /** Shortcut hint for the settings-jump nav item and legends. */
+    settingsJumpShortcutLabel() {
+        const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(navigator.platform || '');
+        return mac ? '⌘⇧K' : 'Ctrl+Shift+K';
+    }
+
     /** Human labels for the section rail. */
     sectionLabel(section) {
         const map = {
@@ -1734,12 +1740,24 @@ class DashboardConfig {
                     ${esc(this.sectionLabel(section))}
                 </button>`;
         }).join('');
+        const searchLabel = this.t('config.settingsSearchLabel', 'Find settings');
+        const searchShortcut = this.settingsJumpShortcutLabel();
 
         return `
             <div class="config-view">
+                <div class="config-nav-column">
                 <nav class="config-nav" role="tablist" aria-label="${esc(this.t('config.sectionsNavAria', 'Config sections'))}">
                     ${nav}
                 </nav>
+                <button type="button" class="config-nav-item config-nav-search"
+                        data-config-action="settings-jump"
+                        tabindex="0"
+                        aria-keyshortcuts="Control+Shift+K Meta+Shift+K"
+                        title="${esc(`${searchLabel} (${searchShortcut})`)}">
+                    ${esc(searchLabel)}
+                    <span class="config-nav-search-shortcut">${esc(searchShortcut)}</span>
+                </button>
+                </div>
                 <div class="config-view-main" id="${panelId}" role="tabpanel" tabindex="0"
                      aria-labelledby="${activeNavId}">
                     <div class="config-view-head">
@@ -2202,7 +2220,32 @@ class DashboardConfig {
 
     bindSectionNav(container) {
         const buttons = [...container.querySelectorAll('[data-config-section]')];
-        buttons.forEach((btn, i) => {
+        const searchBtn = container.querySelector('[data-config-action="settings-jump"]');
+        const focusables = searchBtn ? [...buttons, searchBtn] : buttons;
+
+        const moveFocus = (fromEl, key) => {
+            const idx = focusables.indexOf(fromEl);
+            if (idx < 0) return;
+            const last = focusables.length - 1;
+            const nextIdx = key === 'Home' ? 0
+                : key === 'End' ? last
+                    : (key === 'ArrowDown' || key === 'ArrowRight') ? (idx === last ? 0 : idx + 1)
+                        : (idx === 0 ? last : idx - 1);
+            const target = focusables[nextIdx];
+            if (!target) return;
+            if (target === searchBtn) {
+                target.focus();
+                return;
+            }
+            const section = target.getAttribute('data-config-section');
+            target.focus();
+            this.selectSection(section, 'keyboard');
+            if (!target.isConnected) {
+                document.querySelector(`[data-config-section="${CSS.escape(section)}"]`)?.focus();
+            }
+        };
+
+        buttons.forEach((btn) => {
             btn.addEventListener('click', () => {
                 this.selectSection(btn.getAttribute('data-config-section'), 'click');
             });
@@ -2210,21 +2253,21 @@ class DashboardConfig {
                 const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
                 if (!keys.includes(e.key)) return;
                 e.preventDefault();
-                const last = buttons.length - 1;
-                const nextIdx = e.key === 'Home' ? 0
-                    : e.key === 'End' ? last
-                        : (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? (i === last ? 0 : i + 1)
-                            : (i === 0 ? last : i - 1);
-                const target = buttons[nextIdx];
-                if (!target) return;
-                const section = target.getAttribute('data-config-section');
-                target.focus();
-                this.selectSection(section, 'keyboard');
-                // render() replaces the rail wholesale; re-focus the rebuilt tab.
-                if (!target.isConnected) {
-                    document.querySelector(`[data-config-section="${CSS.escape(section)}"]`)?.focus();
-                }
+                moveFocus(btn, e.key);
             });
+        });
+
+        searchBtn?.addEventListener('click', () => this.openSettingsJump());
+        searchBtn?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.openSettingsJump();
+                return;
+            }
+            const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+            if (!keys.includes(e.key)) return;
+            e.preventDefault();
+            moveFocus(searchBtn, e.key);
         });
     }
 
