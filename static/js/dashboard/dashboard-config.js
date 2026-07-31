@@ -68,6 +68,10 @@ class DashboardConfig {
         this._latestRelease = undefined;
         // Pages & tags CRUD list row highlighted via j/k (health/inbox feed pattern).
         this._listKeyboardKey = null;
+        /** Cached field labels seen while browsing config — merged into settings jump. */
+        this._settingsJumpCache = new Map();
+        this._settingsJumpHandler = null;
+        this._settingsJumpSelected = 0;
     }
 
     isEnabled() {
@@ -446,6 +450,13 @@ class DashboardConfig {
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
 
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.openSettingsJump();
+            return true;
+        }
+
         const target = e.target;
         const tag = target?.tagName;
         const isTagFilter = target?.id === 'config-tag-filter';
@@ -748,6 +759,7 @@ class DashboardConfig {
         }
         window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
         this.bindFormKeyboard(container);
+        this.cacheSettingsJumpFields();
     }
 
     /**
@@ -1057,6 +1069,304 @@ class DashboardConfig {
             }
         }
         return false;
+    }
+
+    /* ── Settings jump (Ctrl/Cmd+Shift+K) ──────────────────────────────────── */
+
+    static HELP_JUMP_PANELS = [
+        { tab: 'start', titleKey: 'config.helpStartTitle', fallback: 'Getting started' },
+        { tab: 'start', titleKey: 'config.helpTipsTitle', fallback: 'Everyday keys' },
+        { tab: 'config', titleKey: 'config.helpConfigTitle', fallback: 'Finding your way around config' },
+        { tab: 'config', titleKey: 'config.helpAppearanceTitle', fallback: 'Appearance & themes' },
+        { tab: 'organizing', titleKey: 'config.helpWorkspaceTitle', fallback: 'Pages & categories' },
+        { tab: 'organizing', titleKey: 'config.helpBookmarksTitle', fallback: 'Bookmarks' },
+        { tab: 'organizing', titleKey: 'config.helpTagsTitle', fallback: 'Tags & collections' },
+        { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
+        { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
+        { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
+        { tab: 'search', titleKey: 'config.helpKeyboardTitle', fallback: 'Keyboard' },
+        { tab: 'health', titleKey: 'config.helpHealthTitle', fallback: 'Availability & health' },
+        { tab: 'health', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
+        { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
+        { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
+        { tab: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
+    ];
+
+    subTabLabel(section, tab) {
+        switch (section) {
+            case 'behavior': return this.behaviorTabLabel(tab);
+            case 'pages-tags': return this.ptTabLabel(tab);
+            case 'appearance': return this.appearanceTabLabel(tab);
+            case 'stats': return this.statsTabLabel(tab);
+            case 'data-backups': return this.dbTabLabel(tab);
+            case 'help': return this.helpTabLabel(tab);
+            default: return tab;
+        }
+    }
+
+    settingsJumpSubtitle(section, subTab) {
+        const parts = [this.sectionLabel(section)];
+        if (subTab) parts.push(this.subTabLabel(section, subTab));
+        return parts.join(' › ');
+    }
+
+    buildSettingsJumpNavEntries() {
+        const entries = [];
+        DashboardConfig.SECTIONS.forEach((section) => {
+            entries.push({
+                id: `section:${section}`,
+                kind: 'section',
+                title: this.sectionLabel(section),
+                subtitle: this.sectionLabel(section),
+                section,
+                subTab: null,
+                focusSelector: `[data-config-section="${section}"]`,
+            });
+            const tabs = DashboardConfig.SUB_TABS[section];
+            if (tabs?.length) {
+                tabs.forEach((tab) => {
+                    entries.push({
+                        id: `subtab:${section}:${tab}`,
+                        kind: 'subtab',
+                        title: this.subTabLabel(section, tab),
+                        subtitle: this.settingsJumpSubtitle(section, tab),
+                        section,
+                        subTab: tab,
+                        focusSelector: null,
+                    });
+                });
+            }
+        });
+        if (DashboardConfig.HELP_JUMP_PANELS?.length) {
+            DashboardConfig.HELP_JUMP_PANELS.forEach((panel, i) => {
+                const title = this.t(panel.titleKey, panel.fallback);
+                entries.push({
+                    id: `help:${panel.tab}:${i}`,
+                    kind: 'help',
+                    title,
+                    subtitle: `${this.sectionLabel('help')} › ${this.helpTabLabel(panel.tab)}`,
+                    section: 'help',
+                    subTab: panel.tab,
+                    helpTitle: title,
+                    focusSelector: null,
+                });
+            });
+        }
+        return entries;
+    }
+
+    cacheSettingsJumpFields() {
+        const panel = document.getElementById('config-section-panel');
+        if (!panel) return;
+        const section = this.section;
+        const subTab = DashboardConfig.SUB_TAB_STATE[section] ? this[DashboardConfig.SUB_TAB_STATE[section]] : null;
+        const subtitle = this.settingsJumpSubtitle(section, subTab);
+        let seq = 0;
+        panel.querySelectorAll('.config-field-label, .config-panel-title').forEach((labelEl) => {
+            const title = labelEl.textContent?.trim();
+            if (!title) return;
+            const field = labelEl.closest('.config-field');
+            const focusEl = field?.querySelector(
+                'input:not([type="hidden"]), select, textarea, .config-choices .config-choice.is-active, .config-choices .config-choice'
+            ) || labelEl;
+            const jumpId = `jump-${section}-${subTab || 'root'}-${seq += 1}`;
+            focusEl.setAttribute('data-config-jump', jumpId);
+            this._settingsJumpCache.set(jumpId, {
+                id: jumpId,
+                kind: 'field',
+                title,
+                subtitle,
+                section,
+                subTab,
+                focusSelector: `[data-config-jump="${jumpId}"]`,
+            });
+        });
+    }
+
+    getSettingsJumpEntries() {
+        const byId = new Map();
+        this.buildSettingsJumpNavEntries().forEach((e) => byId.set(e.id, e));
+        this._settingsJumpCache.forEach((e, id) => byId.set(id, e));
+        return [...byId.values()];
+    }
+
+    filterSettingsJumpEntries(query) {
+        const q = String(query || '').trim().toLowerCase();
+        const all = this.getSettingsJumpEntries();
+        if (!q) return all;
+        return all.filter((e) => `${e.title} ${e.subtitle}`.toLowerCase().includes(q));
+    }
+
+    isSettingsJumpOpen() {
+        const overlay = document.getElementById('app-modal');
+        return Boolean(overlay?.classList.contains('show')
+            && overlay.querySelector('.config-settings-jump-modal'));
+    }
+
+    cleanupSettingsJumpHandler() {
+        if (!this._settingsJumpHandler) return;
+        document.removeEventListener('keydown', this._settingsJumpHandler, true);
+        this._settingsJumpHandler = null;
+    }
+
+    renderSettingsJumpResults(entries) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!entries.length) {
+            return `<p class="config-settings-jump-empty">${esc(this.t('config.settingsSearchNoResults', 'No settings match.'))}</p>`;
+        }
+        return `<ul class="config-settings-jump-results" role="listbox">
+            ${entries.map((entry, i) => `
+                <li class="config-settings-jump-result${i === this._settingsJumpSelected ? ' is-active' : ''}"
+                    role="option" aria-selected="${i === this._settingsJumpSelected ? 'true' : 'false'}"
+                    data-settings-jump-index="${i}">
+                    <span class="config-settings-jump-result-title">${esc(entry.title)}</span>
+                    <span class="config-settings-jump-result-sub">${esc(entry.subtitle)}</span>
+                </li>`).join('')}
+        </ul>`;
+    }
+
+    syncSettingsJumpResults(entries) {
+        const host = document.querySelector('.config-settings-jump-body');
+        if (!host) return;
+        host.innerHTML = this.renderSettingsJumpResults(entries);
+        host.querySelectorAll('[data-settings-jump-index]').forEach((row) => {
+            row.addEventListener('click', () => {
+                const idx = Number(row.getAttribute('data-settings-jump-index'));
+                const entry = entries[idx];
+                if (entry) void this.activateSettingsJumpEntry(entry);
+            });
+        });
+        host.querySelector('.config-settings-jump-result.is-active')
+            ?.scrollIntoView({ block: 'nearest' });
+    }
+
+    setupSettingsJumpKeyboard(entries) {
+        this.cleanupSettingsJumpHandler();
+        this._settingsJumpHandler = (e) => {
+            if (!this.isSettingsJumpOpen()) {
+                this.cleanupSettingsJumpHandler();
+                return;
+            }
+            const panel = document.querySelector('.config-settings-jump-modal');
+            if (!panel?.contains(document.activeElement) && document.activeElement?.id !== 'config-settings-jump-filter') {
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                this._settingsJumpSelected = entries.length
+                    ? (this._settingsJumpSelected + 1) % entries.length
+                    : 0;
+                this.syncSettingsJumpResults(entries);
+                return;
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopPropagation();
+                this._settingsJumpSelected = entries.length
+                    ? (this._settingsJumpSelected - 1 + entries.length) % entries.length
+                    : 0;
+                this.syncSettingsJumpResults(entries);
+                return;
+            }
+            if (e.key === 'Enter') {
+                const entry = entries[this._settingsJumpSelected];
+                if (entry) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void this.activateSettingsJumpEntry(entry);
+                }
+            }
+        };
+        document.addEventListener('keydown', this._settingsJumpHandler, true);
+    }
+
+    openSettingsJump() {
+        if (this.isSettingsJumpOpen()) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        let entries = this.filterSettingsJumpEntries('');
+        this._settingsJumpSelected = 0;
+        const label = this.t('config.settingsSearchLabel', 'Find a setting');
+        const placeholder = this.t('config.settingsSearchPlaceholder', 'Settings, tabs, help…');
+        const html = `
+            <div class="config-settings-jump">
+                <input type="search" id="config-settings-jump-filter" class="config-settings-jump-filter cheat-sheet-filter"
+                       placeholder="${esc(placeholder)}" autocomplete="off" spellcheck="false"
+                       aria-label="${esc(label)}">
+                <div class="config-settings-jump-body">${this.renderSettingsJumpResults(entries)}</div>
+            </div>`;
+        window.AppModal.show({
+            title: label,
+            htmlMessage: html,
+            confirmText: this.t('config.close', 'Close'),
+            showCancel: false,
+            modalClass: 'config-settings-jump-modal keyboard-cheat-sheet-modal',
+            initialFocusSelector: '#config-settings-jump-filter',
+            onHide: () => this.cleanupSettingsJumpHandler(),
+        });
+        const filter = document.getElementById('config-settings-jump-filter');
+        if (!filter) return;
+        const refresh = () => {
+            entries = this.filterSettingsJumpEntries(filter.value);
+            if (this._settingsJumpSelected >= entries.length) {
+                this._settingsJumpSelected = Math.max(0, entries.length - 1);
+            }
+            this.syncSettingsJumpResults(entries);
+            this.setupSettingsJumpKeyboard(entries);
+        };
+        filter.addEventListener('input', refresh);
+        this.setupSettingsJumpKeyboard(entries);
+    }
+
+    async activateSettingsJumpEntry(entry) {
+        if (!entry) return;
+        window.AppModal.hide();
+        this.cleanupSettingsJumpHandler();
+        if (entry.section !== this.section) {
+            this.selectSection(entry.section, 'keyboard');
+        }
+        if (entry.subTab) {
+            const prop = DashboardConfig.SUB_TAB_STATE[entry.section];
+            if (prop && this[prop] !== entry.subTab) {
+                if (entry.section === 'appearance') {
+                    await this.switchAppearanceTab(entry.subTab);
+                } else if (entry.section === 'help') {
+                    this.helpTab = entry.subTab;
+                    this.render();
+                    this.restoreConfigHash();
+                } else {
+                    this.switchSubTab(entry.subTab, 'keyboard');
+                }
+            }
+        }
+        await new Promise((r) => requestAnimationFrame(r));
+        this.cacheSettingsJumpFields();
+        let focusSelector = entry.focusSelector;
+        if (entry.kind === 'field') {
+            const refreshed = [...this._settingsJumpCache.values()].find((e) => (
+                e.kind === 'field'
+                && e.title === entry.title
+                && e.section === entry.section
+                && e.subTab === entry.subTab
+            ));
+            if (refreshed) focusSelector = refreshed.focusSelector;
+        }
+        if (entry.helpTitle && entry.section === 'help') {
+            const titles = [...document.querySelectorAll('#config-help-body .config-panel-title')];
+            const match = titles.find((el) => el.textContent.trim() === entry.helpTitle);
+            match?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            match?.focus?.({ preventScroll: true });
+            return;
+        }
+        const focusEl = focusSelector ? document.querySelector(focusSelector) : null;
+        if (focusEl) {
+            focusEl.scrollIntoView({ block: 'nearest', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
+            if (typeof focusEl.focus === 'function') {
+                focusEl.focus({ preventScroll: true });
+            }
+            return;
+        }
+        document.querySelector(`[data-config-section="${CSS.escape(entry.section)}"]`)?.focus();
     }
 
     renderShell() {

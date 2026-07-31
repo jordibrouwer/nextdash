@@ -193,6 +193,7 @@
             "cvListEdit": "Erstes Feld in der ausgewählten Listenzeile fokussieren",
             "cvListFirstLast": "Zur ersten / letzten Zeile in einer Pages-&-Tags-Liste springen",
             "cvListFilter": "Tag-Filter fokussieren auf dem Unter-Tab Tags",
+            "cvSettingsJump": "Einstellung, Sektion oder Hilfethema finden",
             "cvClose": "Vom Config zurück zum Dashboard",
             "cvEsc": "Listenauswahl löschen oder Config schließen und zum Dashboard zurück",
             "sectionSearchModes": "Suchmodi",

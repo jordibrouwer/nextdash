@@ -209,6 +209,7 @@ class DashboardUiHelpers {
                 item('Enter / Space (list row)', 'cvListEdit', 'Focus the first field in the selected list row'),
                 item('g / G (list row)', 'cvListFirstLast', 'Jump to the first / last row in a Pages & tags list'),
                 item('/ (Tags tab)', 'cvListFilter', 'Focus the tag filter while on the Tags sub-tab'),
+                item('Ctrl/Cmd + Shift + K', 'cvSettingsJump', 'Find a setting, section, or help topic'),
                 item('< / Shift + S', 'cvClose', 'Return to the dashboard from config'),
                 item('Esc', 'cvEsc', 'Clear list selection, or close config and return to the dashboard'),
             ]));

@@ -193,6 +193,7 @@
             "cvListEdit": "Focus le premier champ de la ligne sélectionnée",
             "cvListFirstLast": "Aller à la première / dernière ligne d’une liste Pages & tags",
             "cvListFilter": "Focus le filtre de tags sur le sous-onglet Tags",
+            "cvSettingsJump": "Trouver un réglage, une section ou une rubrique d’aide",
             "cvClose": "Revenir au tableau de bord depuis config",
             "cvEsc": "Effacer la sélection de liste, ou fermer config et revenir au tableau de bord",
             "sectionSearchModes": "Modes de recherche",

@@ -214,6 +214,7 @@
             "cvListEdit": "Focus het eerste veld in de geselecteerde lijstrij",
             "cvListFirstLast": "Spring naar de eerste / laatste rij in een Pages & tags-lijst",
             "cvListFilter": "Focus het tagfilter op het sub-tab Tags",
+            "cvSettingsJump": "Vind een instelling, sectie of help-onderwerp",
             "cvClose": "Terug naar het dashboard vanuit config",
             "cvEsc": "Lijstselectie wissen, of config sluiten en terug naar het dashboard",
             "sectionSearchModes": "Zoekmodi",

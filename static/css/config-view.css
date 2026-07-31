@@ -2247,6 +2247,60 @@ body[data-layout-version="modern"] .config-subtab.is-active {
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
+/* ── Settings jump overlay (Ctrl/Cmd+Shift+K) ───────────────────────────── */
+
+.config-settings-jump {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: min(100%, 28rem);
+}
+
+.config-settings-jump-filter {
+    width: 100%;
+}
+
+.config-settings-jump-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: min(50vh, 22rem);
+    overflow: auto;
+}
+
+.config-settings-jump-result {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.config-settings-jump-result:hover,
+.config-settings-jump-result.is-active {
+    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+}
+
+.config-settings-jump-result-title {
+    font-weight: 600;
+    color: var(--text-color, inherit);
+}
+
+.config-settings-jump-result-sub {
+    font-size: 0.88em;
+    color: var(--text-muted, #777);
+}
+
+.config-settings-jump-empty {
+    margin: 0;
+    color: var(--text-muted, #777);
+}
+
+.modal.config-settings-jump-modal .modal-body {
+    padding-top: 8px;
+}
+
 /* ─── CRUD lists ────────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .config-crud-row {
