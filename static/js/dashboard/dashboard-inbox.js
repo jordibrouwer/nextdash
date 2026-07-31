@@ -610,7 +610,7 @@ class DashboardInbox {
         d._abortInlineEditForRender?.();
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         this.clearKeyboardSelection();
-        d.activeView = DashboardInbox.VIEW;
+        d.setActiveView(DashboardInbox.VIEW);
         window.nextdashTrack?.('view:inbox');
         d.pageNav?.setActiveInboxTab?.();
         d.pageNav?.updateDocumentTitle?.();
@@ -627,7 +627,7 @@ class DashboardInbox {
     async leaveInboxView(pageId) {
         const d = this.dash;
         this.clearKeyboardSelection();
-        d.activeView = 'bookmarks';
+        d.setActiveView('bookmarks');
         return d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
     }
 

@@ -265,7 +265,7 @@ class DashboardRenderCore {
         // A view whose feature is switched off falls back to bookmarks rather
         // than rendering nothing.
         if (d.activeView !== 'bookmarks') {
-            d.activeView = 'bookmarks';
+            d.setActiveView('bookmarks');
         }
         d.data?.schedulePageBookmarksHealIfNeeded?.();
         if (d.isInlineEditActive()) {

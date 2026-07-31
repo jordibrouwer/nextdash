@@ -143,8 +143,23 @@
         return `${match[1]}-${wantsDark ? 'dark' : 'light'}`;
     }
 
+    function effectiveBaseTheme(settings) {
+        const stored = settings?.theme || 'dark';
+        const mode = global.ThemeLoader?.normalizeRandomThemeMode?.(settings)
+            ?? (settings?.randomThemeMode === 'refresh' || settings?.randomThemeMode === 'view'
+                || settings?.randomThemeOnRefresh ? 'refresh' : 'off');
+        if (mode === 'off') {
+            return stored;
+        }
+        if (global.ThemeLoader?.getEffectiveBaseTheme) {
+            return global.ThemeLoader.getEffectiveBaseTheme(settings, stored);
+        }
+        const current = document.documentElement.getAttribute('data-theme');
+        return current || stored;
+    }
+
     function resolveTheme(settings) {
-        const baseTheme = settings?.theme || 'dark';
+        const baseTheme = effectiveBaseTheme(settings);
         if (!settings?.autoDarkMode || !global.matchMedia) {
             return baseTheme;
         }
@@ -242,8 +257,25 @@
         if (!autoDarkSettingsRef) {
             return;
         }
-        const displayTheme = applyDisplayTheme(autoDarkSettingsRef);
-        autoDarkOnApply?.(displayTheme, autoDarkSettingsRef);
+        const settings = autoDarkSettingsRef;
+        const randomMode = global.ThemeLoader?.normalizeRandomThemeMode?.(settings)
+            ?? (settings.randomThemeMode || (settings.randomThemeOnRefresh ? 'refresh' : 'off'));
+        // When the OS preference changes under random theme, re-pair the session
+        // pick instead of reverting to the stored theme.
+        if (randomMode !== 'off' && global.ThemeLoader?.resolveDisplayTheme) {
+            const base = effectiveBaseTheme(settings);
+            const displayTheme = global.ThemeLoader.resolveDisplayTheme(
+                base,
+                settings.autoDarkMode === true
+            );
+            const showDots = settings.showBackgroundDots !== false;
+            const fontSize = settings.fontSize || 'm';
+            global.ThemeLoader.applyTheme(displayTheme, showDots, fontSize);
+            autoDarkOnApply?.(displayTheme, settings);
+            return;
+        }
+        const displayTheme = applyDisplayTheme(settings);
+        autoDarkOnApply?.(displayTheme, settings);
     }
 
     function applyAutoDarkMode(settings, onApply) {

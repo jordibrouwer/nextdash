@@ -23,9 +23,10 @@ class DashboardVisual {
             window.VisualSettings.applyAnimations(d.settings.animationsEnabled !== false);
         } else {
             const opacity = Number(d.settings.backgroundOpacity ?? 1);
-            const clampedOpacity = Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1;
+            const clampedOpacity = window.VisualSettings?.clampBackgroundOpacity
+                ? window.VisualSettings.clampBackgroundOpacity(opacity)
+                : (Number.isFinite(opacity) ? Math.min(1, Math.max(0.65, opacity)) : 1);
             document.documentElement.style.setProperty('--dashboard-bg-opacity', String(clampedOpacity));
-            document.body.style.setProperty('opacity', String(Math.max(0.65, clampedOpacity)));
 
             const weight = d.settings.fontWeight || 'normal';
             document.body.style.setProperty('--dashboard-font-weight', weight);
@@ -97,6 +98,12 @@ class DashboardVisual {
             'data-auto-dark-mode',
             d.settings?.autoDarkMode ? 'true' : 'false'
         );
+        document.documentElement.setAttribute(
+            'data-random-theme-mode',
+            window.ThemeLoader?.normalizeRandomThemeMode?.(d.settings)
+                || d.settings?.randomThemeMode
+                || 'off'
+        );
 
         if (window.VisualSettings?.applyAutoDarkMode) {
             window.VisualSettings.applyAutoDarkMode(d.settings, () => {
@@ -107,7 +114,9 @@ class DashboardVisual {
 
         const displayTheme = window.ThemeLoader?.resolveDisplayTheme
             ? window.ThemeLoader.resolveDisplayTheme(
-                d.settings.theme || 'dark',
+                window.VisualSettings?.effectiveBaseTheme?.(d.settings)
+                    || window.ThemeLoader.getEffectiveBaseTheme?.(d.settings, d.settings.theme || 'dark')
+                    || d.settings.theme || 'dark',
                 d.settings.autoDarkMode === true
             )
             : (d.settings.theme || 'dark');

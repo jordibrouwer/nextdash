@@ -783,6 +783,24 @@ class Dashboard {
     }
 
     /**
+     * Switch the active shell view and optionally apply random-theme-on-view.
+     * @param {string} view
+     * @param {{ silent?: boolean }} [options] Pass silent:true for internal
+     *   activeView sync that is not a user navigation (keyboard DOM repair).
+     */
+    setActiveView(view, options = {}) {
+        const previous = this.activeView;
+        if (previous === view) {
+            return previous;
+        }
+        this.activeView = view;
+        if (!options.silent) {
+            this.visual?.onActiveViewChanged?.(previous, view);
+        }
+        return previous;
+    }
+
+    /**
      * True when the bookmark grid for a page is on screen, rather than one of the
      * full-container views (inbox, health). Prefer this over `activeView !== 'inbox'`:
      * that phrasing quietly means "bookmarks" and grows wrong with each new view.

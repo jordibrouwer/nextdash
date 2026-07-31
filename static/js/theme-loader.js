@@ -59,12 +59,106 @@
         return document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
     }
 
+    function normalizeRandomThemeMode(parsedSettings) {
+        const fromSettings = parsedSettings?.randomThemeMode;
+        if (fromSettings === 'refresh' || fromSettings === 'view' || fromSettings === 'off') {
+            return fromSettings;
+        }
+        if (parsedSettings && parsedSettings.randomThemeOnRefresh === true) {
+            return 'refresh';
+        }
+        const fromHtml = document.documentElement.getAttribute('data-random-theme-mode');
+        if (fromHtml === 'refresh' || fromHtml === 'view' || fromHtml === 'off') {
+            return fromHtml;
+        }
+        const legacyHtml = document.documentElement.getAttribute('data-random-theme-on-refresh');
+        if (legacyHtml === 'true') {
+            return 'refresh';
+        }
+        return 'off';
+    }
+
+    function getThemePool() {
+        const raw = document.documentElement.getAttribute('data-theme-pool') || '';
+        if (!raw.trim()) {
+            return [];
+        }
+        return raw.split(',').map((id) => id.trim()).filter(Boolean);
+    }
+
+    function filterPoolForAutoDark(pool, autoDarkMode) {
+        if (!autoDarkMode || !window.matchMedia) {
+            return pool;
+        }
+        const wantsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const filtered = pool.filter((id) => {
+            if (id === 'dark') return wantsDark;
+            if (id === 'light') return !wantsDark;
+            if (id.endsWith('-dark')) return wantsDark;
+            if (id.endsWith('-light')) return !wantsDark;
+            return false;
+        });
+        if (filtered.length) {
+            return filtered;
+        }
+        return wantsDark ? ['dark'] : ['light'];
+    }
+
+    function pickRandomFromPool(pool) {
+        if (!pool.length) {
+            return null;
+        }
+        return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function pickSessionRandomTheme(pool, autoDarkMode) {
+        if (sessionRandomTheme) {
+            return sessionRandomTheme;
+        }
+        const effectivePool = filterPoolForAutoDark(pool, autoDarkMode);
+        sessionRandomTheme = pickRandomFromPool(effectivePool) || 'dark';
+        return sessionRandomTheme;
+    }
+
+    function clearSessionRandomTheme() {
+        sessionRandomTheme = null;
+    }
+
+    /** Force a new random pick (used when randomThemeMode is "view"). */
+    function rotateSessionRandomTheme(parsedSettings) {
+        clearSessionRandomTheme();
+        const pool = getThemePool();
+        const autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
+        return pickSessionRandomTheme(pool, autoDarkMode);
+    }
+
     function resolveDisplayTheme(baseTheme, autoDarkMode) {
         const normalized = normalizeTheme(baseTheme);
         if (!autoDarkMode || !window.matchMedia) {
             return normalized;
         }
         return getPairedThemeVariant(normalized, window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+
+    /**
+     * Returns the stored theme choice, or the session-random base when random
+     * on refresh is enabled. Does not apply auto-dark pairing.
+     */
+    function getEffectiveBaseTheme(parsedSettings, storedTheme) {
+        const normalizedStored = normalizeTheme(storedTheme || 'dark');
+        const mode = normalizeRandomThemeMode(parsedSettings);
+        if (mode === 'off') {
+            return normalizedStored;
+        }
+        if (sessionRandomTheme) {
+            return sessionRandomTheme;
+        }
+        if (mode === 'refresh' || mode === 'view') {
+            const pool = getThemePool();
+            const autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
+            return pickSessionRandomTheme(pool, autoDarkMode);
+        }
+        return normalizedStored;
     }
     
     /**
@@ -73,16 +167,17 @@
      */
     function getTheme() {
         const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
-        let theme = 'dark'; // default
+        let storedTheme = 'dark';
+        let parsedSettings = null;
         let autoDarkMode = document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
         
         if (deviceSpecific) {
             const settings = localStorage.getItem('dashboardSettings');
             if (settings) {
                 try {
-                    const parsedSettings = JSON.parse(settings);
+                    parsedSettings = JSON.parse(settings);
                     const normalizedTheme = normalizeTheme(parsedSettings.theme || 'dark');
-                    theme = normalizedTheme;
+                    storedTheme = normalizedTheme;
                     autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
 
                     // Persist migrated theme for device-specific users.
@@ -96,18 +191,18 @@
                     }
                 } catch (e) {
                     console.error('Error parsing dashboard settings:', e);
-                    theme = 'dark';
+                    storedTheme = 'dark';
                 }
             }
         } else {
-            // Use server-side theme from html element data attribute
             const htmlTheme = document.documentElement.getAttribute('data-theme');
             if (htmlTheme) {
-                theme = normalizeTheme(htmlTheme);
+                storedTheme = normalizeTheme(htmlTheme);
             }
         }
-        
-        return resolveDisplayTheme(theme, autoDarkMode);
+
+        const baseTheme = getEffectiveBaseTheme(parsedSettings, storedTheme);
+        return resolveDisplayTheme(baseTheme, autoDarkMode);
     }
     
     /**
@@ -402,7 +497,15 @@
     
     // Export functions for use by other scripts (e.g., config.js)
     window.ThemeLoader = {
+        normalizeTheme,
+        normalizeRandomThemeMode,
         getTheme: getTheme,
+        getEffectiveBaseTheme,
+        getThemePool,
+        filterPoolForAutoDark,
+        pickSessionRandomTheme,
+        rotateSessionRandomTheme,
+        clearSessionRandomTheme,
         getPairedThemeVariant: getPairedThemeVariant,
         resolveDisplayTheme: resolveDisplayTheme,
         getShowBackgroundDots: getShowBackgroundDots,
@@ -420,4 +523,3 @@
         }
     };
 })();
-

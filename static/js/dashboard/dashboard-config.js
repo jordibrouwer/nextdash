@@ -264,7 +264,7 @@ class DashboardConfig {
         d.inbox?.clearKeyboardSelection?.();
         d.health?.clearKeyboardSelection?.();
         this.section = targetSection;
-        d.activeView = DashboardConfig.VIEW;
+        d.setActiveView(DashboardConfig.VIEW);
         window.nextdashTrack?.('view:config');
         d.pageNav?.setActiveConfigTab?.();
         d.pageNav?.updateDocumentTitle?.();
@@ -1789,7 +1789,7 @@ class DashboardConfig {
         const themeId = s.theme || 'dark';
         const theme = this.themeDisplayName(themeId, this._themeList?.[themeId]);
 
-        const bgType = s.backgroundType || 'auto';
+        const bgType = s.backgroundType || 'none';
         const bgLabel = {
             auto: this.t('config.backgroundAuto', 'Auto'),
             none: this.t('config.backgroundNone', 'None'),
@@ -1885,12 +1885,24 @@ class DashboardConfig {
             `<button type="button" class="config-choice${weight === val ? ' is-active' : ''}" data-appearance-weight="${esc(val)}" aria-pressed="${weight === val}">${esc(label)}</button>`
         ).join('');
 
-        const bgType = s.backgroundType || 'auto';
+        const bgType = s.backgroundType || 'none';
         const bgTypes = [['auto', this.t('config.backgroundAuto', 'Auto')], ['none', this.t('config.backgroundNone', 'None')], ['gradient', this.t('config.backgroundGradient', 'Gradient')], ['image', this.t('config.backgroundImage', 'Image')]];
         const bgChoices = bgTypes.map(([val, label]) =>
             `<button type="button" class="config-choice${bgType === val ? ' is-active' : ''}" data-appearance-bg="${esc(val)}" aria-pressed="${bgType === val}">${esc(label)}</button>`
         ).join('');
-        const opacity = Number.isFinite(Number(s.backgroundOpacity)) ? Number(s.backgroundOpacity) : 1;
+        const opacity = window.VisualSettings?.clampBackgroundOpacity
+            ? window.VisualSettings.clampBackgroundOpacity(s.backgroundOpacity)
+            : (Number.isFinite(Number(s.backgroundOpacity)) ? Number(s.backgroundOpacity) : 1);
+        const randomMode = window.ThemeLoader?.normalizeRandomThemeMode?.(s) ?? s.randomThemeMode ?? 'off';
+        const showingThemeId = randomMode !== 'off'
+            ? (document.documentElement.getAttribute('data-theme')
+                || window.VisualSettings?.resolveTheme?.(s)
+                || s.theme
+                || 'dark')
+            : '';
+        const randomShowingHint = randomMode !== 'off'
+            ? `<p class="config-field-hint">${esc(this.t('config.randomThemeShowingHint', 'Currently showing: {theme}').replace('{theme}', this.themeDisplayName(showingThemeId, this._themeList?.[showingThemeId])))}</p>`
+            : '';
 
         // Picking "Gradient" or "Image" only sets the type; these sub-sections
         // are what actually choose one, so the type buttons do not dead-end.
@@ -1952,6 +1964,7 @@ class DashboardConfig {
                     <select class="config-select" data-appearance-select="theme">${this.renderThemeOptions()}</select>
                     ${this.appearanceAff('theme')}
                 </div>
+                ${randomShowingHint}
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.appearanceMode', 'Quick mode'))}</span>
                     <div class="config-choices" role="group">
@@ -1959,12 +1972,17 @@ class DashboardConfig {
                         <button type="button" class="config-choice${theme === 'dark' ? ' is-active' : ''}" data-appearance-theme="dark" aria-pressed="${theme === 'dark'}">${esc(this.t('config.themeDark', 'Dark'))}</button>
                     </div>
                 </div>
-                <div class="config-field-row">
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="autoDarkMode" ${s.autoDarkMode ? 'checked' : ''}>
-                        <span>${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
                     </label>
                     ${this.appearanceAff('autoDarkMode')}
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
+                    <select class="config-select" data-appearance-select="randomThemeMode">${this.renderRandomThemeModeOptions(s)}</select>
+                    ${this.appearanceAff('randomThemeMode')}
                 </div>
                 ${this.renderIconStyling()}
                 <div class="config-actions" style="margin-top:14px">
@@ -2007,7 +2025,7 @@ class DashboardConfig {
                 ${bgDetail}
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.backgroundOpacityLabel', 'Opacity'))}</span>
-                    <input type="range" class="config-range" data-appearance-range="backgroundOpacity" min="0" max="1" step="0.05" value="${opacity}">
+                    <input type="range" class="config-range" data-appearance-range="backgroundOpacity" min="0.65" max="1" step="0.05" value="${opacity}">
                     <span class="config-range-value">${Math.round(opacity * 100)}%</span>
                     ${this.appearanceAff('backgroundOpacity')}
                 </div>
@@ -2093,6 +2111,21 @@ class DashboardConfig {
         if (themeId === 'light') return this.t('config.themeOldDefaultLight', 'Old Default [light]');
         if (name && String(name).trim()) return String(name);
         return themeId;
+    }
+
+    renderRandomThemeModeOptions(settings) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = window.ThemeLoader?.normalizeRandomThemeMode?.(settings)
+            || settings?.randomThemeMode
+            || 'off';
+        const modes = [
+            ['off', 'config.randomThemeModeOff', 'Off'],
+            ['refresh', 'config.randomThemeModeRefresh', 'On page refresh'],
+            ['view', 'config.randomThemeModeView', 'On view change'],
+        ];
+        return modes.map(([value, labelKey, fallback]) =>
+            `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${esc(this.t(labelKey, fallback))}</option>`
+        ).join('');
     }
 
     renderThemeOptions() {
@@ -2194,7 +2227,9 @@ class DashboardConfig {
         const range = container.querySelector('[data-appearance-range="backgroundOpacity"]');
         if (range) {
             range.addEventListener('input', () => {
-                const val = Number(range.value);
+                const val = window.VisualSettings?.clampBackgroundOpacity
+                    ? window.VisualSettings.clampBackgroundOpacity(range.value)
+                    : Number(range.value);
                 this.dash.settings.backgroundOpacity = val;
                 this.dash.visual?.applyVisualSettings?.();
                 const out = range.parentElement?.querySelector('.config-range-value');
@@ -2281,8 +2316,11 @@ class DashboardConfig {
     displayTheme() {
         const s = this.dash.settings || {};
         const stored = s.theme || 'dark';
-        const resolved = window.ThemeLoader?.resolveDisplayTheme?.(stored, s.autoDarkMode === true);
-        return resolved || stored;
+        const base = window.VisualSettings?.effectiveBaseTheme?.(s)
+            || window.ThemeLoader?.getEffectiveBaseTheme?.(s, stored)
+            || stored;
+        const resolved = window.ThemeLoader?.resolveDisplayTheme?.(base, s.autoDarkMode === true);
+        return resolved || base;
     }
 
     /**
@@ -2894,10 +2932,10 @@ class DashboardConfig {
             `<span class="config-icon-preview-dot icon-themed icon-themed--${esc(style)}" style="--icon-theme-intensity:${intensity}"><span class="preview-icon"></span></span>`
         ).join('');
         return `
-            <div class="config-field-row">
+            <div class="config-field">
+                <span class="config-field-label">${esc(this.t('config.iconStylingLabel', 'Favicon harmonization (per theme)'))}</span>
                 <label class="config-toggle">
                     <input type="checkbox" data-appearance-toggle-icons ${enabled ? 'checked' : ''}>
-                    <span>${esc(this.t('config.iconStylingLabel', 'Favicon harmonization (per theme)'))}</span>
                 </label>
                 ${this.appearanceAff('themeIconStyling')}
             </div>
@@ -2932,12 +2970,15 @@ class DashboardConfig {
             case 'fontWeight': this.setFontWeight(value); break;
             case 'backgroundType': this.setBackgroundType(value); break;
             case 'backgroundOpacity':
-                this.dash.settings.backgroundOpacity = Number(value);
+                this.dash.settings.backgroundOpacity = window.VisualSettings?.clampBackgroundOpacity
+                    ? window.VisualSettings.clampBackgroundOpacity(value)
+                    : Number(value);
                 this.dash.visual?.applyVisualSettings?.();
                 this.persistAppearance();
                 break;
             case 'launcherIconSize': this.setLauncherIconSize(value); break;
             case 'layoutVersion': this.setLayout(value); break;
+            case 'randomThemeMode': this.setRandomThemeMode(value); break;
             default:
                 // Fall back to a plain settings write + repaint for any field
                 // without a dedicated live setter.
@@ -3074,7 +3115,21 @@ class DashboardConfig {
         }
         if (name === 'theme') {
             this.setTheme(value);
+            return;
         }
+        if (name === 'randomThemeMode') {
+            this.setRandomThemeMode(value);
+        }
+    }
+
+    setRandomThemeMode(mode) {
+        const normalized = ['off', 'refresh', 'view'].includes(mode) ? mode : 'off';
+        this.dash.settings.randomThemeMode = normalized;
+        this.dash.settings.randomThemeOnRefresh = normalized !== 'off';
+        document.documentElement.setAttribute('data-random-theme-mode', normalized);
+        window.ThemeLoader?.clearSessionRandomTheme?.();
+        this.applyThemeLive();
+        this.persistAppearance();
     }
 
     /** Reload the server-rendered theme stylesheet so a theme change takes effect. */
@@ -3240,12 +3295,13 @@ class DashboardConfig {
         analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint' },
         // Appearance
         autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'] },
+        randomThemeMode: { info: ['randomThemeModeInfoTitle', 'randomThemeModeInfoMessage'], def: 'off' },
         showBackgroundDots: { info: ['showBackgroundDotsInfoTitle', 'showBackgroundDotsInfoMessage'] },
         themeIconStyling: { info: ['iconStylingInfoTitle', 'iconStylingInfoMessage'] },
         animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'] },
         fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
         fontWeight: { info: ['fontWeightInfoTitle', 'fontWeightInfoMessage'], def: 'normal' },
-        backgroundType: { info: ['backgroundPickerInfoTitle', 'backgroundPickerInfoMessage'], def: 'auto' },
+        backgroundType: { info: ['backgroundPickerInfoTitle', 'backgroundPickerInfoMessage'], def: 'none' },
         backgroundOpacity: { info: ['backgroundOpacityInfoTitle', 'backgroundOpacityInfoMessage'], def: 1 },
         enableCustomTitle: { info: ['enableCustomTitleInfoTitle', 'enableCustomTitleInfoMessage'] },
         enableCustomFavicon: { info: ['enableCustomFaviconInfoTitle', 'enableCustomFaviconInfoMessage'] },

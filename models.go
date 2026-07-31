@@ -181,6 +181,8 @@ type Settings struct {
 	FontWeight                   string                       `json:"fontWeight"`                   // Font weight: normal, 600, bold
 	FontPreset                   string                       `json:"fontPreset"`                   // UI font preset: source-code-pro, jetbrains-mono, etc.
 	AutoDarkMode                 bool                         `json:"autoDarkMode"`                 // Auto-detect dark mode from system
+	RandomThemeOnRefresh         bool                         `json:"randomThemeOnRefresh"`         // Legacy: migrated to randomThemeMode
+	RandomThemeMode              string                       `json:"randomThemeMode"`              // off, refresh, or view
 	ShowSmartRecentCollection    bool                         `json:"showSmartRecentCollection"`    // Show smart recently opened collection
 	ShowSmartTodayCollection     bool                         `json:"showSmartTodayCollection"`     // Show smart start "today" collection
 	ShowSmartStaleCollection     bool                         `json:"showSmartStaleCollection"`     // Show smart stale bookmarks collection
@@ -1935,6 +1937,8 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["categoryItemLimit"]; !ok || settings.CategoryItemLimit < 0 {
 			settings.CategoryItemLimit = 15
 		}
+		settings.RandomThemeMode = normalizeRandomThemeMode(settings.RandomThemeMode, settings.RandomThemeOnRefresh)
+		settings.RandomThemeOnRefresh = settings.RandomThemeMode == "refresh" || settings.RandomThemeMode == "view"
 		// Baselines default to -1 ("not captured yet"), not Go's zero value: 0
 		// would read as a captured baseline of no bookmarks, and the seeded
 		// examples would immediately tick the checklist's add/tag items.
