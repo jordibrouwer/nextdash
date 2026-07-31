@@ -38,7 +38,27 @@ class DashboardHealthLoader {
         return new Promise((resolve, reject) => {
             const selector = `script[data-${datasetKey}]`;
             const existing = document.querySelector(selector);
+            const ready = () => {
+                if (rel.includes('health-reason-utils.js')) {
+                    return typeof window.HealthReasonUtils !== 'undefined';
+                }
+                if (rel.includes('last-opened-format.js')) {
+                    return typeof window.formatLastOpened === 'function';
+                }
+                if (rel.includes('dashboard-health.js')) {
+                    return typeof window.DashboardHealth === 'function';
+                }
+                return false;
+            };
+            if (ready()) {
+                resolve();
+                return;
+            }
             if (existing) {
+                if (ready()) {
+                    resolve();
+                    return;
+                }
                 existing.addEventListener('load', () => resolve(), { once: true });
                 existing.addEventListener('error', () => reject(new Error(`${rel} failed to load`)), { once: true });
                 return;

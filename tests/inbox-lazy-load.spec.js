@@ -48,13 +48,24 @@ test.describe('inbox lazy load', () => {
         expect(await page.evaluate(() => window.dashboardInstance.inbox.isEnabled())).toBe(false);
     });
 
+    async function ensureInboxEnabled(page) {
+        await page.goto('/');
+        await waitReady(page);
+        await page.evaluate(async () => {
+            window.dashboardInstance.settings.inboxEnabled = true;
+            await window.dashboardInstance.saveSettings();
+        });
+        await page.goto(`/?_=${Date.now()}`);
+        await waitReady(page);
+    }
+
     test('the inbox module loads during bootstrap when enabled', async ({ page }) => {
         const requested = tracksInboxScripts(page);
 
-        await page.goto('/');
-        await waitReady(page);
+        await ensureInboxEnabled(page);
         await page.waitForFunction(
-            () => typeof DashboardInbox === 'function' && window.dashboardInstance.inbox?.items !== undefined,
+            () => typeof DashboardInbox === 'function'
+                && Array.isArray(window.dashboardInstance.inbox.instance?.items),
             null,
             { timeout: 15_000 }
         );
@@ -64,9 +75,15 @@ test.describe('inbox lazy load', () => {
     });
 
     test('opening inbox renders the view after bootstrap', async ({ page }) => {
-        await page.goto('/');
-        await waitReady(page);
-        await page.evaluate(() => window.dashboardInstance.inbox.openInboxView());
+        await ensureInboxEnabled(page);
+        await page.waitForFunction(
+            () => typeof DashboardInbox === 'function',
+            null,
+            { timeout: 15_000 }
+        );
+        await page.evaluate(async () => {
+            await window.dashboardInstance.inbox.openInboxView();
+        });
         await expect(page.locator('.inbox-layout')).toBeVisible();
     });
 });

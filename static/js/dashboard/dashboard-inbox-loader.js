@@ -38,7 +38,24 @@ class DashboardInboxLoader {
         return new Promise((resolve, reject) => {
             const selector = `script[data-${datasetKey}]`;
             const existing = document.querySelector(selector);
+            const ready = () => {
+                if (rel.includes('dashboard-inbox-triage.js')) {
+                    return typeof DashboardInboxTriage === 'function';
+                }
+                if (rel.includes('dashboard-inbox.js')) {
+                    return typeof DashboardInbox === 'function';
+                }
+                return false;
+            };
+            if (ready()) {
+                resolve();
+                return;
+            }
             if (existing) {
+                if (ready()) {
+                    resolve();
+                    return;
+                }
                 existing.addEventListener('load', () => resolve(), { once: true });
                 existing.addEventListener('error', () => reject(new Error(`${rel} failed to load`)), { once: true });
                 return;
