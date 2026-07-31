@@ -187,7 +187,6 @@ test.describe('config: browser push notifications', () => {
         await page.waitForTimeout(1500);
 
         const order = await page.evaluate(() => window.__order);
-        console.log('--- order:', JSON.stringify(order));
 
         expect(order).toContain('requestPermission-OK');
         expect(order).not.toContain('REJECTED-no-gesture');
