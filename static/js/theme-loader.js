@@ -135,6 +135,23 @@
         return normalizedStored;
     }
     
+    function readDeviceLocalSettings() {
+        const deviceSpecific = localStorage.getItem('deviceSpecificSettings') === 'true';
+        if (!deviceSpecific) {
+            return null;
+        }
+        const settings = localStorage.getItem('dashboardSettings');
+        if (!settings) {
+            return null;
+        }
+        try {
+            return JSON.parse(settings);
+        } catch (e) {
+            console.error('Error parsing dashboard settings:', e);
+            return null;
+        }
+    }
+
     /**
      * Gets the current theme based on device-specific settings or server default
      * @returns {string} The theme name ('dark' or 'light')
@@ -146,26 +163,20 @@
         let autoDarkMode = document.documentElement.getAttribute('data-auto-dark-mode') === 'true';
         
         if (deviceSpecific) {
-            const settings = localStorage.getItem('dashboardSettings');
-            if (settings) {
-                try {
-                    parsedSettings = JSON.parse(settings);
-                    const normalizedTheme = normalizeTheme(parsedSettings.theme || 'dark');
-                    storedTheme = normalizedTheme;
-                    autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
+            parsedSettings = readDeviceLocalSettings();
+            if (parsedSettings) {
+                const normalizedTheme = normalizeTheme(parsedSettings.theme || 'dark');
+                storedTheme = normalizedTheme;
+                autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
 
-                    // Persist migrated theme for device-specific users.
-                    if (parsedSettings.theme !== normalizedTheme) {
-                        parsedSettings.theme = normalizedTheme;
-                        if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
-                            window.DeviceSettingsMerge.saveDeviceLocalSettings(parsedSettings);
-                        } else {
-                            localStorage.setItem('dashboardSettings', JSON.stringify(parsedSettings));
-                        }
+                // Persist migrated theme for device-specific users.
+                if (parsedSettings.theme !== normalizedTheme) {
+                    parsedSettings.theme = normalizedTheme;
+                    if (window.DeviceSettingsMerge?.saveDeviceLocalSettings) {
+                        window.DeviceSettingsMerge.saveDeviceLocalSettings(parsedSettings);
+                    } else {
+                        localStorage.setItem('dashboardSettings', JSON.stringify(parsedSettings));
                     }
-                } catch (e) {
-                    console.error('Error parsing dashboard settings:', e);
-                    storedTheme = 'dark';
                 }
             }
         } else {
@@ -188,14 +199,9 @@
         let showBackgroundDots = true; // default
         
         if (deviceSpecific) {
-            const settings = localStorage.getItem('dashboardSettings');
-            if (settings) {
-                try {
-                    const parsed = JSON.parse(settings);
-                    showBackgroundDots = parsed.showBackgroundDots !== false;
-                } catch (e) {
-                    console.error('Error parsing dashboard settings:', e);
-                }
+            const parsed = readDeviceLocalSettings();
+            if (parsed) {
+                showBackgroundDots = parsed.showBackgroundDots !== false;
             }
         } else {
             // Use server-side setting from html element data attribute
@@ -217,14 +223,9 @@
         let fontSize = 'm'; // default
 
         if (deviceSpecific) {
-            const settings = localStorage.getItem('dashboardSettings');
-            if (settings) {
-                try {
-                    const parsed = JSON.parse(settings);
-                    fontSize = parsed.fontSize || 'm';
-                } catch (e) {
-                    console.error('Error parsing dashboard settings:', e);
-                }
+            const parsed = readDeviceLocalSettings();
+            if (parsed) {
+                fontSize = parsed.fontSize || 'm';
             }
         } else {
             // Use server-side fontSize from html element data attribute
@@ -254,14 +255,9 @@
         let layoutVersion = 'classic';
 
         if (deviceSpecific) {
-            const settings = localStorage.getItem('dashboardSettings');
-            if (settings) {
-                try {
-                    const parsed = JSON.parse(settings);
-                    layoutVersion = parsed.layoutVersion || 'classic';
-                } catch (e) {
-                    console.error('Error parsing dashboard settings:', e);
-                }
+            const parsed = readDeviceLocalSettings();
+            if (parsed) {
+                layoutVersion = parsed.layoutVersion || 'classic';
             }
         } else {
             const htmlAttr = document.documentElement.getAttribute('data-layout-version');
