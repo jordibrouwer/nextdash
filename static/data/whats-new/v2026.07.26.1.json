@@ -2,14 +2,14 @@
   "tag": "v2026.07.26.1",
   "date": "July 2026",
   "releasedAt": "2026-07-31",
-  "modalLead": "The first time you open Config → Appearance, a themed popover points at Random theme — the start of a reusable highlight system for new settings. Help and the manual now explain random picks and page-tab colour dots in more detail, the appearance sub-tab reads Theme instead of General, and the favicon asset is refreshed.",
+  "modalLead": "The first time you open Config → Appearance, a themed popover points at Random theme — dismissible with Got it, Esc, or by changing the setting. Modern layout keeps many page tabs from widening the header. Help and the manual explain random picks and page-tab colour dots; the appearance sub-tab reads Theme; the favicon is refreshed.",
   "sections": [
     {
       "title": "Discoverability",
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Config setting promo for Random theme</strong> — on desktop, the first visit to <strong>Config → Appearance</strong> shows a one-time themed popover below the <strong>Random theme</strong> dropdown, with a pulsing highlight on the field. Dismiss with <em>Got it</em>, <kbd>Esc</kbd>, or by changing the setting. Progress syncs via <code>discoverabilityState.seenSettingPromos</code> in <code>settings.json</code>. Add future highlights by registering an entry in <code>config-setting-promos.js</code> and anchoring the field with <code>data-config-setting-promo-anchor</code>."
+          "text": "<strong>Config setting promo for Random theme</strong> — on desktop, the first visit to <strong>Config → Appearance</strong> shows a one-time themed popover below the <strong>Random theme</strong> dropdown, with a pulsing highlight on the field. Dismiss with <em>Got it</em>, <kbd>Esc</kbd>, or by changing the setting. The <em>Got it</em> button stays put (no floating animation on the control). Progress syncs via <code>discoverabilityState.seenSettingPromos</code> in <code>settings.json</code>. Add future highlights by registering an entry in <code>config-setting-promos.js</code> and anchoring the field with <code>data-config-setting-promo-anchor</code>."
         }
       ]
     },
@@ -28,6 +28,15 @@
         {
           "badge": "fix",
           "text": "<strong>Help and MANUAL cover random theme and page-tab dots</strong> — <strong>Config → Help → Appearance</strong> and <strong>Workspace</strong> explain random theme modes and double-click tab colour dots; <code>MANUAL.md</code> matches. <strong>Config → Overview → Latest update</strong> summarises this patch from the same what's-new data as the ★ modal."
+        }
+      ]
+    },
+    {
+      "title": "Layout",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Modern layout header overflow</strong> — when you have many page tabs, the tab strip scrolls inside the header instead of widening the dashboard. The controls row clips horizontal overflow so the page no longer gains a sideways scrollbar."
         }
       ]
     },
