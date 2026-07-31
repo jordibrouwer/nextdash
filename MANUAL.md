@@ -215,7 +215,7 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Date/time · mini status          pages · health · config   │
+│  Date/time · mini status    [page tabs] · pages · inbox · health · config │
 ├─────────────────────────────────────────────────────────────┤
 │  Title (optional)                                           │
 ├─────────────────────────────────────────────────────────────┤
@@ -230,7 +230,7 @@ Side rail layout (optional — **Config → Behavior → Display → Button bar 
 
 ```
 ┌──┬─────────────────────────────────────────────────────────┐
-│+ │  [header: date · health · config · pages]               │
+│+ │  [header: date · page tabs · pages · inbox · health · config]          │
 │──│                                                         │
 │> │  [Smart collections]  [Tag collections]  [Categories…]  │
 │? │    └─ bookmark rows                                     │
@@ -245,10 +245,14 @@ Side rail layout (optional — **Config → Behavior → Display → Button bar 
 
 ### 🧭 Header
 
-- **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.  
-- **health** — A **heartbeat icon** linking to `/#health`, with an inline pill counter (e.g. `3`) when there is something to report — **red** for a monitored bookmark that is down right now or an ordinary broken link, **amber** for warnings, hidden when healthy (styled like the inbox tab). The most severe state wins the badge: a **down monitor** takes priority over a broken link, which takes priority over warnings. A down monitor is counted apart from a broken link — clicking opens `/?hv_filter=monitored#health` for an outage, `/?hv_filter=broken#health` for a broken link. When the number of down monitors **rises**, the icon **pulses once** to catch your eye; it stays quiet on a reload that merely finds an existing outage, on a recovery, and — via a 10-minute cooldown — on a monitor that flaps up and down. The pulse shares the broken red and is told apart by the movement, and it honours reduced-motion and the no-animations setting. Always shown. Open the same view from the keyboard with **`Shift+H`**.  
-- **config** — Settings and bookmark management.  
-- **pages** — Overview of all pages with counts (`,`).
+- **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.
+- **Page tabs** — Switch bookmark pages (`1`–`9`, `Shift + ←/→`, or click). On desktop the strip scrolls when you have many pages.
+- **pages** — Overview of all pages with counts (`,` or the header button).
+- **Inbox** — When enabled, an inbox tab beside **pages** opens the triage view (`Shift + I` or `0`). Unread count on the tab when something is waiting.
+- **health** — A **heartbeat icon** linking to `/#health`, with an inline pill counter (e.g. `3`) when there is something to report — **red** for a monitored bookmark that is down right now or an ordinary broken link, **amber** for warnings, hidden when healthy (styled like the inbox tab). The most severe state wins the badge: a **down monitor** takes priority over a broken link, which takes priority over warnings. A down monitor is counted apart from a broken link — clicking opens `/?hv_filter=monitored#health` for an outage, `/?hv_filter=broken#health` for a broken link. When the number of down monitors **rises**, the icon **pulses once** to catch your eye; it stays quiet on a reload that merely finds an existing outage, on a recovery, and — via a 10-minute cooldown — on a monitor that flaps up and down. The pulse shares the broken red and is told apart by the movement, and it honours reduced-motion and the no-animations setting. Always shown. Open the same view from the keyboard with **`Shift+H`**.
+- **config** — Settings and bookmark management.
+
+**pages**, inbox, health, and config share even spacing in one cluster to the right of the page tabs (wider gap before **pages**). On mobile the tab strip is hidden — **pages** and **config** stay in the header.
 
 ### 🎛️ Button bar / side rail
 

@@ -147,10 +147,11 @@ Nothing yet.
 - **fix** **Config remembers last section and sub-tab** — `localStorage` persists location on exit; `Shift+S`, `<`, the gear icon, and bare `#config` restore it; `#config/…` deep links still win (`dashboard-config.js`, `dashboard-data.js`).
 - **fix** **`0`–`9` from config** — switch to Inbox or bookmark pages like on the dashboard grid (replaces `1`–`8` section digits in config).
 - **fix** **Letter keys deferred in config** — shortcut search no longer steals bare letters while config is active (`search.js`).
+- **fix** **Header destination order** — page tabs, then **pages** overview, then inbox, health, and config in a uniform cluster (`header-destinations`, `dashboard-page-nav.js`).
 
 ### Docs
 
-- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, Config → Help, and cheat sheet updated for **v2026.07.27**; Playwright specs for config keyboard, location memory, and discoverability; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v149`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v207`.
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, Config → Help, and cheat sheet updated for **v2026.07.27**; Playwright specs for config keyboard, location memory, discoverability, and header destinations; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v149`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v207`.
 
 ---
 

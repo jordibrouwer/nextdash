@@ -34,11 +34,20 @@
       ]
     },
     {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Header destination order</strong> — page tabs, then the <strong>pages</strong> overview button, then inbox, health, and config share one tight cluster with even spacing. Inbox no longer sits inside the tab strip (<code>header-destinations</code>, <code>dashboard-page-nav.js</code>)."
+        }
+      ]
+    },
+    {
       "title": "Docs",
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Help, MANUAL, and Overview</strong> — Config → Help, <code>MANUAL.md</code>, README, and <strong>Config → Overview → Latest update</strong> describe the new shortcuts and return visits. Cheat sheet <em>Config view</em> group updated (<code>0</code>–<code>9</code>, no more <code>1</code>–<code>8</code> section digits)."
+          "text": "<strong>Help, MANUAL, and Overview</strong> — Config → Help, <code>MANUAL.md</code>, README, and <strong>Config → Overview → Latest update</strong> describe the new shortcuts, return visits, and header destination order. Cheat sheet <em>Config view</em> group updated (<code>0</code>–<code>9</code>, no more <code>1</code>–<code>8</code> section digits)."
         },
         {
           "badge": "fix",
