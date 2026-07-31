@@ -75,9 +75,15 @@
         return wantsDark ? ['dark'] : ['light'];
     }
 
-    function pickRandomFromPool(pool) {
+    function pickRandomFromPool(pool, exclude) {
         if (!pool.length) {
             return null;
+        }
+        if (exclude) {
+            const remaining = pool.filter((id) => id !== exclude);
+            if (remaining.length) {
+                return remaining[Math.floor(Math.random() * remaining.length)];
+            }
         }
         return pool[Math.floor(Math.random() * pool.length)];
     }
@@ -97,10 +103,15 @@
 
     /** Force a new random pick (used when randomThemeMode is "view"). */
     function rotateSessionRandomTheme(parsedSettings) {
+        const previous = sessionRandomTheme;
         clearSessionRandomTheme();
         const pool = getThemePool();
         const autoDarkMode = shouldUseAutoDarkMode(parsedSettings);
-        return pickSessionRandomTheme(pool, autoDarkMode);
+        const effectivePool = filterPoolForAutoDark(pool, autoDarkMode);
+        sessionRandomTheme = pickRandomFromPool(effectivePool, previous)
+            || pickRandomFromPool(effectivePool)
+            || 'dark';
+        return sessionRandomTheme;
     }
 
     function resolveDisplayTheme(baseTheme, autoDarkMode) {
