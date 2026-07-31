@@ -129,36 +129,26 @@ test.describe('modern layout — dashboard chrome', () => {
         await expect(page.locator('#page-nav-inbox-btn')).toBeVisible();
         await setLayout(page, 'modern');
 
-        // The inbox tab lives inside .page-navigation in the DOM but opens a
-        // view, like health and config. Giving the strip one container pill
-        // bundled it with the page numbers and read as though the inbox were a
-        // page. Assert the separation in the geometry: the gap before the inbox
-        // tab must be visibly wider than the gaps between page tabs.
-        const gaps = await page.evaluate(() => {
-            const nav = document.querySelector('.page-navigation');
-            const kids = [...nav.children].filter((el) => el.offsetParent !== null);
-            const inboxAt = kids.findIndex((el) => el.hasAttribute('data-view-tab'));
-            const rect = (el) => el.getBoundingClientRect();
-            return {
-                inboxAt,
-                beforeInbox: inboxAt > 0
-                    ? Math.round(rect(kids[inboxAt]).left - rect(kids[inboxAt - 1]).right)
-                    : null,
-                betweenPages: kids.slice(0, inboxAt).slice(1).map((el, i) =>
-                    Math.round(rect(el).left - rect(kids[i]).right)),
-            };
+        // Inbox lives after the pages overview button, outside the page-tab
+        // strip, so it reads with health/config rather than as another page.
+        const order = await page.evaluate(() => {
+            const destinations = document.querySelector('.header-destinations');
+            const ids = [...destinations.children]
+                .filter((el) => el.offsetParent !== null)
+                .map((el) => el.id || el.className.split(' ')[0]);
+            const pagesIdx = ids.indexOf('page-overview-header-btn');
+            const inboxIdx = ids.indexOf('page-nav-inbox-host');
+            const inboxInsideNav = !!document.querySelector('#page-navigation [data-view-tab]');
+            return { pagesIdx, inboxIdx, inboxInsideNav };
         });
 
-        expect(gaps.inboxAt).toBeGreaterThan(0);
-        expect(gaps.beforeInbox).toBeGreaterThan(0);
-        for (const g of gaps.betweenPages) {
-            expect(gaps.beforeInbox).toBeGreaterThan(g);
-        }
+        expect(order.pagesIdx).toBeGreaterThanOrEqual(0);
+        expect(order.inboxIdx).toBeGreaterThan(order.pagesIdx);
+        expect(await page.evaluate(() =>
+            !document.querySelector('#page-navigation [data-view-tab]'))).toBe(true);
 
-        // And the strip itself must not draw a surface around the whole run,
-        // which is what created the false grouping.
         const strip = await computed(page, '.page-navigation', ['backgroundColor']);
-        expect(strip.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+        expect(strip.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
     });
 
     test('gives the header links a pill surface', async ({ page }) => {

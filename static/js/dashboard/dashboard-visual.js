@@ -445,6 +445,10 @@ class DashboardVisual {
             // and the header icons on three different baselines.
             pageNavigation.style.display = d.settings.showPageTabs ? '' : 'none';
         }
+        const inboxHost = document.getElementById('page-nav-inbox-host');
+        if (inboxHost) {
+            inboxHost.style.display = d.settings.showPageTabs ? '' : 'none';
+        }
     }
 
 
