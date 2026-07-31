@@ -131,6 +131,22 @@ class DashboardVisual {
     }
 
 
+    onActiveViewChanged(previousView, nextView) {
+        if (!previousView || previousView === nextView) {
+            return;
+        }
+        const d = this.dash;
+        const mode = window.ThemeLoader?.normalizeRandomThemeMode?.(d.settings)
+            ?? d.settings?.randomThemeMode
+            ?? 'off';
+        if (mode !== 'view') {
+            return;
+        }
+        window.ThemeLoader?.rotateSessionRandomTheme?.(d.settings);
+        this.initializeAutoDarkMode();
+    }
+
+
     getPairedThemeVariant(themeId, wantsDark) {
         const d = this.dash;
         const base = String(themeId || 'dark');

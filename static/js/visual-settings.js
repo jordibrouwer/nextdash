@@ -4,6 +4,8 @@
 (function initVisualSettings(global) {
     'use strict';
 
+    const MIN_BACKGROUND_OPACITY = 0.65;
+
     const BACKGROUND_PRESETS = {
         sunset: 'linear-gradient(135deg, #c94b4b 0%, #4b134f 100%)',
         ocean: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
@@ -226,11 +228,14 @@
         global.ThemeLoader?.syncBackgroundDots?.(!forceNoDots && showDots);
     }
 
-    function applyBackgroundOpacity(value) {
+    function clampBackgroundOpacity(value) {
         const opacity = Number(value ?? 1);
-        const clamped = Number.isFinite(opacity) ? Math.min(1, Math.max(0.65, opacity)) : 1;
+        return Number.isFinite(opacity) ? Math.min(1, Math.max(MIN_BACKGROUND_OPACITY, opacity)) : 1;
+    }
+
+    function applyBackgroundOpacity(value) {
+        const clamped = clampBackgroundOpacity(value);
         document.documentElement.style.setProperty('--dashboard-bg-opacity', String(clamped));
-        document.body.style.opacity = String(clamped);
     }
 
     function applyFontWeight(value) {

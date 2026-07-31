@@ -3,6 +3,7 @@
 
 html {
     scrollbar-gutter: stable;
+    --dashboard-bg-opacity: 1;
 }
 
 /* Background Patterns */
@@ -31,15 +32,21 @@ body.no-background-dots:not(.has-custom-background) {
     background-image: none !important;
 }
 
-/* Custom Background (auto / gradient / image) */
-body.has-custom-background {
-    background-image: var(--custom-background-image) !important;
-    background-size: cover !important;
+/* Custom Background (auto / gradient / image) — ::after keeps opacity on the backdrop only */
+body.has-custom-background::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--custom-background-image);
+    background-size: cover;
+    opacity: var(--dashboard-bg-opacity, 1);
 }
 
-body.has-custom-background.bg-image {
-    background-position: center center !important;
-    background-repeat: no-repeat !important;
+body.has-custom-background.bg-image::after {
+    background-position: center center;
+    background-repeat: no-repeat;
 }
 
 /* Preview icons in config */
