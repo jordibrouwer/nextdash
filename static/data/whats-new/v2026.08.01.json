@@ -1,5 +1,5 @@
 {
-  "tag": "v2026.07.27",
+  "tag": "v2026.08.01",
   "date": "August 2026",
   "releasedAt": "2026-08-01",
   "modalLead": "Config is fully keyboard-navigable now — section rail, sub-tabs, Pages & tags lists, and the bookmarks editor. Ctrl/Cmd+Shift+K finds any setting (also under Help in the left nav); Shift+S and the gear icon reopen where you left off; 0–9 leave config for Inbox or a bookmark page.",
@@ -51,7 +51,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Cache-bust</strong> — <code>whats-new-v207</code> data version and <code>2026.07-dashboard-release-v149</code> dashboard release token; Playwright coverage for config keyboard, location memory, and discoverability."
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v208</code> data version and <code>2026.07-dashboard-release-v150</code> dashboard release token; Playwright coverage for config keyboard, location memory, discoverability, and header destinations."
         }
       ]
     }

@@ -9,7 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
-- [v2026.07.27 — August 2026](#v20260727--august-2026)
+- [v2026.08.01 — August 2026](#v20260801--august-2026)
 - [v2026.07.26.3 — July 2026](#v202607263--july-2026)
 - [v2026.07.26.2 — July 2026](#v202607262--july-2026)
 - [v2026.07.26.1 — July 2026](#v202607261--july-2026)
@@ -132,7 +132,7 @@ Nothing yet.
 
 ---
 
-## v2026.07.27 — August 2026
+## v2026.08.01 — August 2026
 
 **Config is fully keyboard-navigable — and it remembers where you left off.** Navigate sections, sub-tabs, Pages & tags lists, and the bookmarks editor from the keyboard. **Ctrl/Cmd+Shift+K** finds any setting; **Shift+S** and the gear icon reopen the same section and sub-tab; **0–9** leave config for Inbox or a bookmark page. Config → Overview → Latest update and Advanced → What's new summarise this release.
 
@@ -151,7 +151,7 @@ Nothing yet.
 
 ### Docs
 
-- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, Config → Help, and cheat sheet updated for **v2026.07.27**; Playwright specs for config keyboard, location memory, discoverability, and header destinations; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v149`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v207`.
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, Config → Help, and cheat sheet updated for **v2026.08.01**; Playwright specs for config keyboard, location memory, discoverability, and header destinations; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v150`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v208`.
 
 ---
 

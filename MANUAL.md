@@ -789,7 +789,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` switches between them.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, the **first config open** may show a one-time keyboard intro toast (**v2026.07.27**); an unread **What's new** release can surface a hint in search for seven days — the release modal never opens by itself (see [What's new](#whats-new)). Last-seen release syncs via **`settings.discoverabilityState`** in `settings.json` across browsers. The quick-start card and its checklist are the only other first-run prompts (see [Quick-start card](#quick-start-card-doesnt-appear)) — the tours, spotlights, and discoverability promo balloons this section used to describe were all removed in **v2026.07.17**.
+**Post-onboarding prompts** — On desktop, the **first config open** may show a one-time keyboard intro toast (**v2026.08.01**); an unread **What's new** release can surface a hint in search for seven days — the release modal never opens by itself (see [What's new](#whats-new)). Last-seen release syncs via **`settings.discoverabilityState`** in `settings.json` across browsers. The quick-start card and its checklist are the only other first-run prompts (see [Quick-start card](#quick-start-card-doesnt-appear)) — the tours, spotlights, and discoverability promo balloons this section used to describe were all removed in **v2026.07.17**.
 
 ### Layout presets
 
@@ -1044,7 +1044,7 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 | `Ctrl/Cmd + Shift + K` | Find a setting, section, or help topic (settings jump) — or click **Find settings** below Help in the left nav |
 | `Escape` | Close bookmark editor → clear list selection → exit config |
 
-Inline hints at the bottom of form sections and under list tabs summarise the keys for that panel — press **`Shift+K`** in a legend to open settings jump. **Help → Search & keyboard → Config navigation** repeats this in prose. The first config open on desktop may show a one-time intro toast pointing at **`!`** for the full cheat sheet (**v2026.07.27**).
+Inline hints at the bottom of form sections and under list tabs summarise the keys for that panel — press **`Shift+K`** in a legend to open settings jump. **Help → Search & keyboard → Config navigation** repeats this in prose. The first config open on desktop may show a one-time intro toast pointing at **`!`** for the full cheat sheet (**v2026.08.01**).
 
 Shortcuts do not fire while focus is in an input, textarea, select, or contenteditable field, except where noted (for example list keys from the tag filter or bookmark search).
 
