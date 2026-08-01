@@ -1,7 +1,7 @@
 {
-  "tag": "v2026.08.02.4",
+  "tag": "v2026.08.04",
   "date": "August 2026",
-  "releasedAt": "2026-08-02",
+  "releasedAt": "2026-08-04",
   "modalLead": "README and MANUAL show the ASCII logo at the top; obsolete Config → Keyboard documentation is gone from README, MANUAL, and Config → Help.",
   "sections": [
     {
@@ -17,7 +17,7 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>Release docs for v2026.08.02.4</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v154</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v212</code>."
+          "text": "<strong>Release docs for v2026.08.04</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v154</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v212</code>."
         }
       ]
     }
