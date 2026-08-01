@@ -188,6 +188,7 @@
     padding: 12px 10px;
     gap: 6px;
     border-radius: 10px;
+    min-width: 0;
 }
 
 .config-tiles--overview .config-tile-label {
@@ -204,7 +205,7 @@
     line-height: 1.25;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 720px) {
     .config-tiles--overview {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
