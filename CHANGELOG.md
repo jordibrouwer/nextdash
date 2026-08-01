@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.04 — August 2026](#v20260804--august-2026)
 - [v2026.08.02.3 — August 2026](#v202608023--august-2026)
 - [v2026.08.02.2 — August 2026](#v202608022--august-2026)
 - [v2026.08.02.1 — August 2026](#v202608021--august-2026)
@@ -137,6 +138,25 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.04 — August 2026
+
+**After v2026.08.02.3** — Config could reopen on Statistics (or another stale section) instead of Overview when returning via `Shift+S`, Escape, or the config link; bookmark rows in config used a different inline editor than Health/Inbox; random theme *On view change* could flash white in dark mode during view switches.
+
+### Config
+
+- **fix** **Overview on return** — `Shift+S`, Escape, and the config link land on **Overview**; stored section and sub-tab apply only when returning from Health or Inbox (`Shift+H` / `Shift+I`). Cold load on bare `#config` still restores a stored Shift+H/I location (`resolveConfigOpenTarget()`, `restoreConfigSectionFromHash()`, `dashboard-config-loader.js`, `dashboard-data.js`, `dashboard.js`).
+- **fix** **Bookmarks rows like Health/Inbox** — shared `bookmark-feed-row.js` action bar and row styling; **Edit** opens the prefilled add-bookmark modal instead of an inline row editor (`config-view.css`, locales, tests).
+
+### Appearance
+
+- **fix** **Random theme without white flash** — *On view change* applies the next palette before paint so dark mode no longer flashes white when switching views (`theme-loader.js`, `visual-settings.js`, `dashboard-visual.js`; test in `config-random-theme.spec.js`).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.04**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v155`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v213`.
 
 ---
 
