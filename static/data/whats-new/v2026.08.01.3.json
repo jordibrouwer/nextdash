@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.08.01.3",
+  "date": "August 2026",
+  "releasedAt": "2026-08-01",
+  "modalLead": "The Inbox view opens again in production — a syntax error in the lazy-loaded inbox module prevented it from registering.",
+  "sections": [
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Inbox module parse error</strong> — missing <code>});</code> and undeclared <code>sortSelect</code> in <code>dashboard-inbox.js</code> (<code>dashboard-inbox-loader.js</code> export wait)."
+        }
+      ]
+    }
+  ]
+}

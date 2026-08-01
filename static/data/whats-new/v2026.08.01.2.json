@@ -1,0 +1,34 @@
+{
+  "tag": "v2026.08.01.2",
+  "date": "August 2026",
+  "releasedAt": "2026-08-01",
+  "modalLead": "Health opens again; Find settings promos show translated copy instead of raw locale keys; overview carousel and breadcrumb labels are fixed in nl/de/fr.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Health module parse error</strong> — toolbar syntax in <code>dashboard-health.js</code>; lazy loader waits for exports (<code>dashboard-health-loader.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Find settings setting promo keys</strong> — <code>config-setting-promos.js</code> points at existing locale strings."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Overview carousel &amp; breadcrumb i18n</strong> — nl/de/fr carousel copy and <code>viewBreadcrumbRoot</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Overview → Health handoff</strong> — health filter applied after lazy load completes."
+        }
+      ]
+    }
+  ]
+}

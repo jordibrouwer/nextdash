@@ -1,0 +1,72 @@
+{
+  "tag": "v2026.08.02",
+  "date": "August 2026",
+  "releasedAt": "2026-08-01",
+  "modalLead": "Health and Inbox open reliably again after lazy-load fixes; Find settings promos and overview carousel copy are translated in nl/de/fr; Appearance summary tiles fit on one row. Docker production builds are smaller and faster — embed-only assets, non-root user, in-memory store cache, precomputed asset hashes, HTTP timeouts, optional Caddy reverse proxy, and compose resource limits.",
+  "sections": [
+    {
+      "title": "Health & Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Health view opens again</strong> — a missing <code>});</code> and an undeclared <code>searchInput</code> in <code>dashboard-health.js</code> stopped the module from parsing; the loader now waits for exports after <code>onload</code> (<code>dashboard-health-loader.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Inbox view opens again</strong> — the same toolbar syntax issue in <code>dashboard-inbox.js</code> blocked lazy load; <code>dashboard-inbox-loader.js</code> waits for registered exports."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Overview → Health handoff</strong> — overview tiles apply the health filter after <code>openHealthView()</code> so lazy loading does not drop the filter (<code>dashboard-config.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Find settings setting promo</strong> — uses <code>settingsSearchPromoTitle</code> / <code>settingsSearchPromoBody</code> locale keys instead of missing <code>findSettingsPromo*</code> strings (<code>config-setting-promos.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Overview carousel &amp; breadcrumb i18n</strong> — nl/de/fr translations for new-features carousel strings; <code>viewBreadcrumbRoot</code> and bookmarks page-filter promo copy added where missing."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Appearance summary tiles on one row</strong> — six compact columns for <code>config-tiles--text</code> so Custom themes no longer wraps alone on a second row (<code>config-view.css</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docker & performance",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Leaner production image</strong> — the Docker image ships only the Go binary (~40% smaller); static assets come from <code>go:embed</code>. The container runs as user <code>nextdash</code>; healthcheck uses <code>wget</code> instead of <code>curl</code>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Faster dashboard shell</strong> — parsed HTML templates are cached; bookmark/settings/pages reads stay in memory until a write or import; asset content hashes are precomputed at build time (<code>scripts/gen-asset-hashes.go</code>, <code>store_read_cache.go</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>HTTP server timeouts</strong> — read/write/idle limits on the Go server reduce stuck connections on small VPS hosts (<code>main.go</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Compose resource limits &amp; optional Caddy proxy</strong> — <code>docker-compose.prod.yml</code> sets a 256&nbsp;MB memory cap; <code>docker-compose.proxy.yml</code> + <code>deploy/Caddyfile</code> add TLS and long-cache static serving in front of the app."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.02</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, README, MANUAL, and Config → Help recap; whats-new entries for hotfixes <strong>v2026.08.01.2</strong>–<strong>.4</strong>; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v152</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v210</code>."
+        }
+      ]
+    }
+  ]
+}
