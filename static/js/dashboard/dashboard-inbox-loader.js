@@ -47,6 +47,26 @@ class DashboardInboxLoader {
                 }
                 return false;
             };
+            const waitForReady = () => {
+                if (ready()) {
+                    resolve();
+                    return;
+                }
+                let attempts = 0;
+                const tick = () => {
+                    if (ready()) {
+                        resolve();
+                        return;
+                    }
+                    if (attempts >= 40) {
+                        reject(new Error(`${rel} loaded without registering exports`));
+                        return;
+                    }
+                    attempts += 1;
+                    requestAnimationFrame(tick);
+                };
+                tick();
+            };
             if (ready()) {
                 resolve();
                 return;
@@ -56,7 +76,7 @@ class DashboardInboxLoader {
                     resolve();
                     return;
                 }
-                existing.addEventListener('load', () => resolve(), { once: true });
+                existing.addEventListener('load', () => waitForReady(), { once: true });
                 existing.addEventListener('error', () => reject(new Error(`${rel} failed to load`)), { once: true });
                 return;
             }
@@ -64,7 +84,7 @@ class DashboardInboxLoader {
             script.src = src;
             script.async = true;
             script.dataset[datasetKey] = 'true';
-            script.onload = () => resolve();
+            script.onload = () => waitForReady();
             script.onerror = () => reject(new Error(`${rel} failed to load`));
             document.head.appendChild(script);
         });
