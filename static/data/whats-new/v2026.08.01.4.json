@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.08.01.4",
+  "date": "August 2026",
+  "releasedAt": "2026-08-01",
+  "modalLead": "Appearance summary tiles now fit on one row at desktop widths — Custom themes no longer sits alone on a second line.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Appearance summary tiles on one row</strong> — six compact columns for <code>config-tiles--text</code> (<code>config-view.css</code>)."
+        }
+      ]
+    }
+  ]
+}

@@ -1395,7 +1395,7 @@ Before listening, the server checks `PORT` (1–65535) and that `NEXTDASH_DATA_D
 
 ### Production Docker
 
-Use `docker-compose.prod.yml` for deployments: assets ship inside the image; only `./data` is mounted. See commented environment examples in that file and [README.md → Production Docker example](README.md#production-docker-example).
+Use `docker-compose.prod.yml` for deployments: assets ship inside the binary via `go:embed`; only `./data` is mounted. Since **v2026.08.02** the image is slimmer (~40% smaller), runs as non-root user `nextdash`, caches parsed templates and store reads in memory, precomputes static asset hashes at build time, and applies HTTP read/write/idle timeouts. The compose file sets a 256 MB memory limit; for TLS and long-cache static assets in front of the app, see `docker-compose.proxy.yml` and `deploy/Caddyfile`. Commented environment examples live in the prod compose file and [README.md → Production Docker example](README.md#production-docker-example).
 
 ### Build metadata & cross-tab sync
 

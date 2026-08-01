@@ -1,0 +1,27 @@
+# Example Caddy reverse proxy for nextDash.
+#
+# Usage (from repo root):
+#   docker compose -f docker-compose.prod.yml -f docker-compose.proxy.yml up -d --build
+#
+# Set your domain below, then point DNS at this host. Caddy obtains TLS automatically.
+
+{$NEXTDASH_DOMAIN:localhost} {
+	encode gzip zstd
+
+	# Immutable versioned static assets — long browser cache, low container load.
+	@static path /static/*
+	handle @static {
+		header Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy nextdash:8080
+	}
+
+	@locales path /locales/*
+	handle @locales {
+		header Cache-Control "public, max-age=86400"
+		reverse_proxy nextdash:8080
+	}
+
+	handle {
+		reverse_proxy nextdash:8080
+	}
+}

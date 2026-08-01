@@ -1,0 +1,21 @@
+# Optional TLS reverse proxy in front of nextDash (see deploy/Caddyfile).
+# Requires docker-compose.prod.yml.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NEXTDASH_DOMAIN=${NEXTDASH_DOMAIN:-localhost}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - nextdash
+
+volumes:
+  caddy_data:
+  caddy_config:

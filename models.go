@@ -424,6 +424,8 @@ type Store interface {
 	MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIconUpdate) int
 	// GetDataRevision returns a fingerprint of on-disk data for client cache invalidation.
 	GetDataRevision() string
+	// InvalidateReadCache drops in-memory read caches after out-of-band disk writes (import/restore).
+	InvalidateReadCache()
 	// Inbox
 	GetInboxItems() []InboxLink
 	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, error)
@@ -458,6 +460,7 @@ type FileStore struct {
 	dataDir                      string
 	customThemesMigrationMarker  string
 	mutex                        sync.RWMutex
+	readCache                    storeReadCache
 	prefetchDefaultBookmarkIcons bool
 }
 
@@ -469,6 +472,7 @@ func NewStore() Store {
 		pageOrderFile:               filepath.Join(root, "pages.json"),
 		dataDir:                     root,
 		customThemesMigrationMarker: filepath.Join(root, ".custom-themes-reset-v1"),
+		readCache:                   newStoreReadCache(),
 	}
 
 	// Initialize default files if they don't exist
@@ -805,30 +809,47 @@ func formatRecoveredCategoryName(categoryID string) string {
 
 func (fs *FileStore) GetBookmarksByPage(pageID int) []Bookmark {
 	fs.mutex.RLock()
-	defer fs.mutex.RUnlock()
+	if cached, ok := fs.readCache.bookmarks[pageID]; ok {
+		out := cloneBookmarks(cached)
+		fs.mutex.RUnlock()
+		return out
+	}
+	fs.mutex.RUnlock()
 
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	if cached, ok := fs.readCache.bookmarks[pageID]; ok {
+		return cloneBookmarks(cached)
+	}
+
+	fs.ensureReadCacheMaps()
 	fs.ensureDataDir()
 
 	// Read directly from bookmarks-{pageID}.json
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
+		fs.readCache.bookmarks[pageID] = []Bookmark{}
 		return []Bookmark{}
 	}
 
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
+		fs.readCache.bookmarks[pageID] = []Bookmark{}
 		return []Bookmark{}
 	}
 
 	if pageWithBookmarks.Bookmarks == nil {
+		fs.readCache.bookmarks[pageID] = []Bookmark{}
 		return []Bookmark{}
 	}
 	for i := range pageWithBookmarks.Bookmarks {
 		pageWithBookmarks.Bookmarks[i].PageID = pageID
 	}
 
-	return pageWithBookmarks.Bookmarks
+	fs.readCache.bookmarks[pageID] = cloneBookmarks(pageWithBookmarks.Bookmarks)
+	return cloneBookmarks(pageWithBookmarks.Bookmarks)
 }
 
 func (fs *FileStore) readPageWithBookmarksLocked(pageID int) (PageWithBookmarks, error) {
@@ -855,7 +876,7 @@ func (fs *FileStore) writePageWithBookmarksLocked(pageID int, pageWithBookmarks 
 	for i := range pageWithBookmarks.Bookmarks {
 		pageWithBookmarks.Bookmarks[i].PageID = pageID
 	}
-	return writeIndentJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
 }
 
 func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) error {
@@ -960,7 +981,7 @@ func (fs *FileStore) saveBookmarksByPageLocked(pageID int, bookmarks []Bookmark)
 			Categories: getDefaultNewPageCategories(),
 			Bookmarks:  bookmarks,
 		}
-		return writeIndentJSONFile(filePath, pageWithBookmarks)
+		return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
@@ -970,7 +991,7 @@ func (fs *FileStore) saveBookmarksByPageLocked(pageID int, bookmarks []Bookmark)
 
 	stampBookmarkUpdatedAt(pageWithBookmarks.Bookmarks, bookmarks, time.Now().UnixMilli())
 	pageWithBookmarks.Bookmarks = bookmarks
-	return writeIndentJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
 }
 
 // stampBookmarkUpdatedAt sets UpdatedAt on every bookmark in next whose content
@@ -1092,7 +1113,7 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 			Categories: getDefaultNewPageCategories(),
 			Bookmarks:  []Bookmark{bookmark},
 		}
-		return writeIndentJSONFile(filePath, pageWithBookmarks)
+		return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
@@ -1105,7 +1126,7 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 		bookmark.UpdatedAt = time.Now().UnixMilli()
 	}
 	pageWithBookmarks.Bookmarks = append(pageWithBookmarks.Bookmarks, bookmark)
-	return writeIndentJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
 }
 
 func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmark) error {
@@ -1170,7 +1191,18 @@ func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Book
 
 func (fs *FileStore) GetAllBookmarks() []Bookmark {
 	fs.mutex.RLock()
-	defer fs.mutex.RUnlock()
+	if fs.readCache.allBookmarksOK {
+		out := cloneBookmarks(fs.readCache.allBookmarks)
+		fs.mutex.RUnlock()
+		return out
+	}
+	fs.mutex.RUnlock()
+
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	if fs.readCache.allBookmarksOK {
+		return cloneBookmarks(fs.readCache.allBookmarks)
+	}
 
 	fs.ensureDataDir()
 
@@ -1178,7 +1210,9 @@ func (fs *FileStore) GetAllBookmarks() []Bookmark {
 
 	files, err := os.ReadDir(fs.dataDir)
 	if err != nil {
-		return allBookmarks
+		fs.readCache.allBookmarks = []Bookmark{}
+		fs.readCache.allBookmarksOK = true
+		return []Bookmark{}
 	}
 
 	for _, file := range files {
@@ -1204,7 +1238,9 @@ func (fs *FileStore) GetAllBookmarks() []Bookmark {
 		allBookmarks = append(allBookmarks, pageWithBookmarks.Bookmarks...)
 	}
 
-	return allBookmarks
+	fs.readCache.allBookmarks = cloneBookmarks(allBookmarks)
+	fs.readCache.allBookmarksOK = true
+	return cloneBookmarks(allBookmarks)
 }
 
 // BookmarkURLExists reports whether url matches any bookmark (single pass; for /api/ping validation).
@@ -1251,22 +1287,39 @@ func (fs *FileStore) BookmarkURLExists(urlParam string) bool {
 
 func (fs *FileStore) GetFinders() []Finder {
 	fs.mutex.RLock()
-	defer fs.mutex.RUnlock()
+	if fs.readCache.findersOK {
+		out := cloneFinders(fs.readCache.finders)
+		fs.mutex.RUnlock()
+		return out
+	}
+	fs.mutex.RUnlock()
+
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	if fs.readCache.findersOK {
+		return cloneFinders(fs.readCache.finders)
+	}
 
 	fs.ensureDataDir()
 
 	filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
+		fs.readCache.finders = []Finder{}
+		fs.readCache.findersOK = true
 		return []Finder{}
 	}
 
 	var finders []Finder
 	if err := json.Unmarshal(data, &finders); err != nil {
+		fs.readCache.finders = []Finder{}
+		fs.readCache.findersOK = true
 		return []Finder{}
 	}
 
-	return finders
+	fs.readCache.finders = cloneFinders(finders)
+	fs.readCache.findersOK = true
+	return cloneFinders(finders)
 }
 
 func (fs *FileStore) SaveFinders(finders []Finder) error {
@@ -1276,34 +1329,53 @@ func (fs *FileStore) SaveFinders(finders []Finder) error {
 	fs.ensureDataDir()
 
 	filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
-	return writeIndentJSONFile(filePath, finders)
+	return fs.writeStoreJSONFile(filePath, finders)
 }
 
 // GetCategoriesByPage returns categories stored inside bookmarks-{pageID}.json if present
 func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 	fs.mutex.RLock()
-	defer fs.mutex.RUnlock()
+	if cached, ok := fs.readCache.categories[pageID]; ok {
+		out := cloneCategories(cached)
+		fs.mutex.RUnlock()
+		return out
+	}
+	fs.mutex.RUnlock()
 
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	if cached, ok := fs.readCache.categories[pageID]; ok {
+		return cloneCategories(cached)
+	}
+
+	fs.ensureReadCacheMaps()
 	fs.ensureDataDir()
 
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
+		fs.readCache.categories[pageID] = []Category{}
 		return []Category{}
 	}
 
 	var pageWithBookmarks PageWithBookmarks
 	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
+		fs.readCache.categories[pageID] = []Category{}
 		return []Category{}
 	}
 
+	var categories []Category
 	if len(pageWithBookmarks.Categories) == 0 {
 		if recovered := rebuildCategoriesFromBookmarkRefs(pageWithBookmarks.Bookmarks); len(recovered) > 0 {
-			return recovered
+			categories = recovered
+		} else {
+			categories = []Category{}
 		}
-		return []Category{}
+	} else {
+		categories = pageWithBookmarks.Categories
 	}
-	return pageWithBookmarks.Categories
+	fs.readCache.categories[pageID] = cloneCategories(categories)
+	return cloneCategories(categories)
 }
 
 // SaveCategoriesByPage saves categories inside bookmarks-{pageID}.json, creating the file if needed
@@ -1328,7 +1400,7 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 			Categories: categories,
 			Bookmarks:  []Bookmark{},
 		}
-		return writeIndentJSONFile(filePath, pageWithBookmarks)
+		return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
@@ -1370,14 +1442,28 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 	}
 
 	pageWithBookmarks.Categories = categories
-	return writeIndentJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
 }
 
 func (fs *FileStore) GetPages() []Page {
+	fs.mutex.RLock()
+	if fs.readCache.pagesOK {
+		out := clonePages(fs.readCache.pages)
+		fs.mutex.RUnlock()
+		return out
+	}
+	fs.mutex.RUnlock()
+
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
+	if fs.readCache.pagesOK {
+		return clonePages(fs.readCache.pages)
+	}
 
-	return fs.getPages()
+	pages := fs.getPages()
+	fs.readCache.pages = clonePages(pages)
+	fs.readCache.pagesOK = true
+	return clonePages(pages)
 }
 
 func (fs *FileStore) getPages() []Page {
@@ -1518,9 +1604,23 @@ func finalizePagesList(pages []Page, pageMap map[int]Page) []Page {
 
 func (fs *FileStore) GetPageOrder() []int {
 	fs.mutex.RLock()
-	defer fs.mutex.RUnlock()
+	if fs.readCache.pageOrderOK {
+		out := clonePageOrder(fs.readCache.pageOrder)
+		fs.mutex.RUnlock()
+		return out
+	}
+	fs.mutex.RUnlock()
 
-	return fs.getPageOrder()
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	if fs.readCache.pageOrderOK {
+		return clonePageOrder(fs.readCache.pageOrder)
+	}
+
+	order := fs.getPageOrder()
+	fs.readCache.pageOrder = clonePageOrder(order)
+	fs.readCache.pageOrderOK = true
+	return clonePageOrder(order)
 }
 
 func (fs *FileStore) getPageOrder() []int {
@@ -1553,7 +1653,7 @@ func (fs *FileStore) savePageOrder(order []int) error {
 		Order: order,
 	}
 
-	return writeIndentJSONFile(fs.pageOrderFile, pageOrder)
+	return fs.writeStoreJSONFile(fs.pageOrderFile, pageOrder)
 }
 
 func (fs *FileStore) SavePage(page Page) error {
@@ -1579,7 +1679,7 @@ func (fs *FileStore) SavePage(page Page) error {
 		existing.Categories = getDefaultNewPageCategories()
 	}
 
-	return writeIndentJSONFile(fileName, existing)
+	return fs.writeStoreJSONFile(fileName, existing)
 }
 
 func (fs *FileStore) removeFactoryResetUserAssets() {
@@ -1627,6 +1727,7 @@ func (fs *FileStore) resetAllDataLocked() error {
 	os.Remove(fs.settingsFile)
 	os.Remove(inboxFilePath(fs.dataDir))
 
+	fs.noteDataMutation()
 	return nil
 }
 
@@ -1709,6 +1810,7 @@ func (fs *FileStore) MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIc
 	if err := writeFileAtomic(filePath, newData, 0644); err != nil {
 		return 0
 	}
+	fs.noteDataMutation()
 	return applied
 }
 
@@ -1723,19 +1825,31 @@ func (fs *FileStore) DeletePage(pageID int) error {
 	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
 		return err
 	}
+	fs.noteDataMutation()
 	return nil
 }
 
 func (fs *FileStore) GetSettings() Settings {
 	fs.mutex.RLock()
-	defer fs.mutex.RUnlock()
+	if fs.readCache.settingsOK {
+		settings := fs.readCache.settings
+		fs.mutex.RUnlock()
+		return settings
+	}
+	fs.mutex.RUnlock()
+
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	if fs.readCache.settingsOK {
+		return fs.readCache.settings
+	}
 
 	fs.ensureDataDir()
 
 	data, err := os.ReadFile(fs.settingsFile)
 	if err != nil {
 		// Return default settings if file doesn't exist
-		return Settings{
+		settings := Settings{
 			CurrentPage:                    1,
 			Theme:                          defaultThemeID,
 			OpenInNewTab:                   true,
@@ -1840,6 +1954,9 @@ func (fs *FileStore) GetSettings() Settings {
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
 		}
+		fs.readCache.settings = settings
+		fs.readCache.settingsOK = true
+		return settings
 	}
 
 	var settings Settings
@@ -2136,6 +2253,8 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.MonitorNotifyRetries = clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 
+	fs.readCache.settings = settings
+	fs.readCache.settingsOK = true
 	return settings
 }
 
@@ -2166,7 +2285,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 		settings.Theme = defaultThemeID
 	}
 
-	return writeIndentJSONFile(fs.settingsFile, settings)
+	return fs.writeStoreJSONFile(fs.settingsFile, settings)
 }
 
 func getDefaultLightTheme() ThemeColors {
@@ -2405,19 +2524,35 @@ func getDefaultColors() ColorTheme {
 
 func (fs *FileStore) GetColors() ColorTheme {
 	fs.mutex.RLock()
-	defer fs.mutex.RUnlock()
+	if fs.readCache.colorsOK {
+		colors := fs.readCache.colors
+		fs.mutex.RUnlock()
+		return colors
+	}
+	fs.mutex.RUnlock()
+
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	if fs.readCache.colorsOK {
+		return fs.readCache.colors
+	}
 
 	fs.ensureDataDir()
 
 	data, err := os.ReadFile(fs.colorsFile)
 	if err != nil {
-		// Return default colors if file doesn't exist
-		return getDefaultColors()
+		colors := getDefaultColors()
+		fs.readCache.colors = colors
+		fs.readCache.colorsOK = true
+		return colors
 	}
 
 	var colors ColorTheme
 	if err := json.Unmarshal(data, &colors); err != nil {
-		return getDefaultColors()
+		colors := getDefaultColors()
+		fs.readCache.colors = colors
+		fs.readCache.colorsOK = true
+		return colors
 	}
 
 	// Ensure custom themes map is initialized
@@ -2434,6 +2569,8 @@ func (fs *FileStore) GetColors() ColorTheme {
 		}
 	}
 
+	fs.readCache.colors = colors
+	fs.readCache.colorsOK = true
 	return colors
 }
 
@@ -2455,7 +2592,7 @@ func (fs *FileStore) SaveColors(colors ColorTheme) error {
 		colors.Custom = map[string]ThemeColors{}
 	}
 
-	return writeIndentJSONFile(fs.colorsFile, colors)
+	return fs.writeStoreJSONFile(fs.colorsFile, colors)
 }
 
 type HealthSummary struct {
@@ -2623,7 +2760,18 @@ type BookmarkPreview struct {
 // Content hashes change when data changes; mtimes alone do not affect the revision.
 func (fs *FileStore) GetDataRevision() string {
 	fs.mutex.RLock()
-	defer fs.mutex.RUnlock()
+	if fs.readCache.revisionOK {
+		revision := fs.readCache.revision
+		fs.mutex.RUnlock()
+		return revision
+	}
+	fs.mutex.RUnlock()
+
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+	if fs.readCache.revisionOK {
+		return fs.readCache.revision
+	}
 
 	fs.ensureDataDir()
 
@@ -2660,5 +2808,8 @@ func (fs *FileStore) GetDataRevision() string {
 	}
 
 	sum := hash.Sum(nil)
-	return hex.EncodeToString(sum[:8])
+	revision := hex.EncodeToString(sum[:8])
+	fs.readCache.revision = revision
+	fs.readCache.revisionOK = true
+	return revision
 }

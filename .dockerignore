@@ -10,6 +10,7 @@ node_modules/
 package.json
 package-lock.json
 scripts/
+!scripts/gen-asset-hashes.go
 
 # Runtime / local data (mounted as a volume in compose)
 data/

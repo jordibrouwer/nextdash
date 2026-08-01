@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.02 — August 2026](#v20260802--august-2026)
 - [v2026.08.01.4 — August 2026](#v202608014--august-2026)
 - [v2026.08.01.3 — August 2026](#v202608013--august-2026)
 - [v2026.08.01.2 — August 2026](#v202608012--august-2026)
@@ -133,6 +134,35 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.02 — August 2026
+
+**Hotfixes plus a faster Docker production path.** Health and Inbox lazy-load modules parse again; config promos and overview i18n are fixed; Appearance summary tiles stay on one row. Production Docker images are smaller, serve embed-only assets as a non-root user, cache hot server paths, and ship optional Caddy reverse-proxy compose with resource limits.
+
+### Health & Inbox
+
+- **fix** **Health view opens again** — toolbar syntax in `dashboard-health.js` and export-wait in `dashboard-health-loader.js` (see v2026.08.01.2).
+- **fix** **Inbox view opens again** — toolbar syntax in `dashboard-inbox.js` and export-wait in `dashboard-inbox-loader.js` (see v2026.08.01.3).
+- **fix** **Overview → Health handoff** — health filter applied after `openHealthView()` completes lazy load.
+
+### Config
+
+- **fix** **Find settings setting promo** — locale keys corrected in `config-setting-promos.js` (v2026.08.01.2).
+- **fix** **Overview carousel & breadcrumb i18n** — nl/de/fr strings and missing promo keys (v2026.08.01.2).
+- **fix** **Appearance summary tiles on one row** — six-column compact grid for `config-tiles--text` (v2026.08.01.4).
+
+### Docker & performance
+
+- **new** **Leaner production image** — Docker image ships only the binary (~40% smaller); static assets from `go:embed`; runs as `nextdash` user (`Dockerfile`).
+- **new** **Faster dashboard shell** — cached parsed templates; in-memory store read cache with invalidation on writes/import; precomputed asset hashes at build time (`handlers.go`, `store_read_cache.go`, `asset_hashes_gen.go`, `scripts/gen-asset-hashes.go`).
+- **new** **HTTP server timeouts** — read/write/idle limits on the Go server (`main.go`).
+- **new** **Compose limits & optional Caddy proxy** — 256 MB memory cap in `docker-compose.prod.yml`; `docker-compose.proxy.yml` + `deploy/Caddyfile` for TLS and long-cache static assets.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.02**; whats-new JSON for hotfixes **v2026.08.01.2**–**.4**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v152`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v210`.
 
 ---
 
