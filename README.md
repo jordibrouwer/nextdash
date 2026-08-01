@@ -178,7 +178,7 @@ These statistics exist to answer exactly that — **which features get used, and
 - **Bookmark maintenance** — starting an edit and saving it (with whether that was on the dashboard or in config), deleting, moving to another category (with a bucketed count, so a bulk move counts once), and reordering by drag.
 - **Outcomes** — whether adding a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, or failure. This shows where the form trips people up.
 - **Inbox and health actions** — snooze, mark-read, wake, promote, delete, and bulk clean-ups; health rechecks, retest-all, redirect detection, title refresh, and delete.
-- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums. It carries the **release you are running** (`v2026.07.26.3`), so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
+- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums. It carries the **release you are running** (`v2026.08.01`), so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
 
 #### What is never measured
 
@@ -328,7 +328,7 @@ Rebinding shortcuts is not available at the moment.
 
 #### Config (for self-hosters)
 
-**Where things live** — config is a view inside the dashboard at `/#config`, opened with **`Shift+S`**, **`<`**, or the header link, and closed with **`Escape`**. It has eight sections: **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, and **Help**. Sections with sub-tabs are addressable too — `/#config/behavior/privacy` opens Behavior on Privacy — so a link to any setting can be shared.
+**Where things live** — config is a view inside the dashboard at `/#config`, opened with **`Shift+S`**, **`<`**, or the header link, and closed with **`Escape`**. Reopening it restores the **last section and sub-tab** you were on; a deep link like `/#config/behavior/privacy` still wins. It has eight sections: **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, and **Help**. Sections with sub-tabs are addressable too — `/#config/behavior/privacy` opens Behavior on Privacy — so a link to any setting can be shared.
 
 The settings a self-hoster reaches for most: **Behavior → General** (localhost & private-network bookmarks, HyprMode, session tips), **Behavior → Privacy** (analytics), **Behavior → Status & health** (background rechecks, downtime webhook), and **Data & backups** (backup, restore, import/export, and **Reset** on its own sub-tab).
 

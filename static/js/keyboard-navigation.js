@@ -70,6 +70,17 @@ class KeyboardNavigation {
                 return;
             }
 
+            const config = this.dashboard.config;
+            const configDomActive = layoutEl?.classList.contains('config-layout');
+            if (configDomActive && config?.isEnabled?.()) {
+                if (this.dashboard.activeView !== 'config') {
+                    this.dashboard.setActiveView('config', { silent: true });
+                }
+                config.handleKeyboardNavigation?.(e);
+                // Return either way: the bookmark grid is not on screen.
+                return;
+            }
+
             // Don't handle if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
                 return;

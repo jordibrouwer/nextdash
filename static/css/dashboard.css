@@ -484,6 +484,15 @@ body {
     margin-left: auto;
 }
 
+/* pages · inbox · health · config — tighter spacing than the page-tab strip. */
+.header-destinations {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    flex-shrink: 0;
+}
+
 .bookmark-link.find-hidden {
     display: none;
 }
@@ -906,6 +915,15 @@ body {
     display: none;
 }
 
+.page-nav-inbox-host {
+    display: flex;
+    align-items: center;
+}
+
+.page-nav-inbox-host:empty {
+    display: none;
+}
+
 .page-nav-btn {
     padding: 0.4rem 0.6rem;
     font-size: var(--font-size-controls);
@@ -1131,14 +1149,11 @@ body {
     color: var(--text-on-warning, #000);
 }
 
-/* Icon variant: health shown as an icon with an inline counter after it,
-   styled to match the inbox tab in the page navigation. Config uses the same
-   variant so all three header destinations read as one set. */
+/* Icon variant: health and config match the inbox tab styling. Spacing within
+   the destination cluster is handled by .header-destinations. */
 .health-link--icon,
 .config-link--icon {
-    /* Pull the icon closer to the inbox tab (the .header-actions gap of
-       1.5rem is too wide between two compact icon buttons). */
-    margin-left: -1rem;
+    margin-left: 0;
 }
 
 .health-link--icon a,

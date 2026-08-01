@@ -63,13 +63,15 @@ body[data-layout-version="modern"] .header-actions {
     max-width: 100%;
 }
 
-/* Classic pulls these two back by 1rem to close up a 1.5rem gap between what
-   are, there, bare icons. Modern sets its own gap and gives every header
-   control a filled pill, so the same negative margin makes them overlap their
-   neighbours instead. Drop it and let the gap do the spacing. */
+/* Classic pulled health/config back by 1rem when they sat in the main header
+   row gap. Destinations now share .header-destinations (0.5rem) instead. */
 body[data-layout-version="modern"] .health-link--icon,
 body[data-layout-version="modern"] .config-link--icon {
     margin-left: 0;
+}
+
+body[data-layout-version="modern"] .header-destinations {
+    gap: 0.5rem;
 }
 
 /* ─── Date & status ──────────────────────────────────────────────────────── */
@@ -155,11 +157,8 @@ body[data-layout-version="modern"] .page-overview-header-btn:focus-visible {
 
 /* ─── Page tabs ──────────────────────────────────────────────────────────── */
 
-/* The tab strip sits in a row of standalone pills (pages, health, config), so
-   it has to read as one of them rather than as a differently-shaped panel:
-   same pill radius, same translucent surface, same border. The strip is a
-   container with padding while its neighbours are single controls, so its
-   inner padding is what makes the two end up the same height. */
+/* The page-tab strip is its own pill; the pages overview button and inbox tab
+   sit as separate controls beside it (tabs · pages · inbox · health · config). */
 body[data-layout-version="modern"] .page-navigation {
     gap: 0.2rem;
     padding: 0.18rem;
@@ -171,57 +170,6 @@ body[data-layout-version="modern"] .page-navigation {
     overflow-x: auto;
     flex-wrap: nowrap;
     scrollbar-width: thin;
-}
-
-/* The inbox tab sits inside the page-tab strip in the DOM, but it opens a view
-   rather than a page — the same kind of destination as health and config. The
-   container pill would bundle it with the page numbers and say the opposite.
-
-   The strip cannot close around the page tabs alone while it also holds the
-   inbox tab, so instead the strip drops its own surface and each group gets
-   its own: the page tabs share one pill via an inset ring on the container,
-   and the inbox tab becomes a standalone pill like the icons beside it.
-
-   Using padding + inset ring rather than a wrapper keeps this to CSS — the
-   markup is shared with classic, which wants none of it. */
-body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) {
-    background: none;
-    border-color: transparent;
-    padding: 0;
-    /* Page tabs stay tight against each other; the wider gap before the inbox
-       tab is what separates the two groups. */
-    gap: 0;
-}
-
-/* Without the strip's padding wrapping them, these tabs are the outermost
-   element in the row and need the same vertical padding as the neighbouring
-   pills, or they render several pixels shorter than everything beside them. */
-body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn {
-    padding: 0.38rem 0.8rem;
-}
-
-/* The run of page tabs shares one surface: each carries the fill, and only the
-   first and last round their outer edge, so any number of them reads as a
-   single pill rather than a row of separate ones. */
-body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn:not([data-view-tab]) {
-    background: var(--layout-surface);
-    box-shadow: inset 0 0 0 1px var(--layout-surface-border);
-    border-radius: 0;
-}
-
-body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn:not([data-view-tab]):first-child {
-    border-radius: var(--layout-radius-pill) 0 0 var(--layout-radius-pill);
-}
-
-/* Last page tab: the inbox tab follows it, so :last-child never matches. */
-body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn:not([data-view-tab]):has(+ [data-view-tab]) {
-    border-radius: 0 var(--layout-radius-pill) var(--layout-radius-pill) 0;
-    margin-right: 0.5rem;
-}
-
-/* A single page tab is both ends of the run at once. */
-body[data-layout-version="modern"] .page-navigation:has(> [data-view-tab]) > .page-nav-btn:not([data-view-tab]):first-child:has(+ [data-view-tab]) {
-    border-radius: var(--layout-radius-pill);
 }
 
 body[data-layout-version="modern"] .page-nav-btn[data-view-tab] {

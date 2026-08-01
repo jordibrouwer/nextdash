@@ -1,0 +1,59 @@
+{
+  "tag": "v2026.08.01",
+  "date": "August 2026",
+  "releasedAt": "2026-08-01",
+  "modalLead": "Config is fully keyboard-navigable now — section rail, sub-tabs, Pages & tags lists, and the bookmarks editor. Ctrl/Cmd+Shift+K finds any setting (also under Help in the left nav); Shift+S and the gear icon reopen where you left off; 0–9 leave config for Inbox or a bookmark page.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Keyboard navigation across config</strong> — the section rail follows the ARIA tabs pattern (<code>j</code>/<code>k</code>, arrow keys, <code>g</code>/<code>G</code>). Sub-tabs cycle with <code>[</code>/<code>]</code> or <code>Alt + ←</code>/<code>→</code>. Pages &amp; tags lists move rows with <code>↑</code>/<code>↓</code>; the bookmarks master list uses <code>j</code>/<code>k</code>, <code>Enter</code>, <code>/</code>, and <code>g</code>/<code>G</code>. Choice rows and sliders honour arrow keys and <code>Home</code>/<code>End</code> (<code>dashboard-config.js</code>, <code>keyboard-navigation.js</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Settings jump</strong> — <code>Ctrl/Cmd + Shift + K</code> opens a filterable overlay to jump to any section, sub-tab, help topic, or field label you have visited (<code>config-settings-jump</code>). A <strong>Find settings</strong> entry below Help in the left nav opens the same overlay."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Keyboard discoverability</strong> — form sections show a footer legend; Help → Search &amp; keyboard adds a <em>Config navigation</em> panel; the first config open shows a one-time intro toast (<code>!</code> for the full cheat sheet). Press <code>Shift+K</code> in a form legend to open settings jump."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config remembers where you left off</strong> — reopening with <code>Shift+S</code>, <code>&lt;</code>, the gear icon, or bare <code>#config</code> restores the last section and sub-tab in <code>localStorage</code>. Deep links like <code>#config/appearance</code> still win."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Page and Inbox shortcuts from config</strong> — <code>0</code>–<code>9</code> leave config for Inbox (<code>0</code>) or a bookmark page (<code>1</code>–<code>9</code>), same as on the dashboard grid, instead of jumping config sections."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Letter keys stay in config</strong> — bare letters no longer open shortcut search while config is active; the config keyboard router owns the layer until you leave (<code>search.js</code>, <code>keyboard-navigation.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Header destination order</strong> — page tabs, then the <strong>pages</strong> overview button, then inbox, health, and config share one tight cluster with even spacing. Inbox no longer sits inside the tab strip (<code>header-destinations</code>, <code>dashboard-page-nav.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Help, MANUAL, and Overview</strong> — Config → Help, <code>MANUAL.md</code>, README, and <strong>Config → Overview → Latest update</strong> describe the new shortcuts, return visits, and header destination order. Cheat sheet <em>Config view</em> group updated (<code>0</code>–<code>9</code>, no more <code>1</code>–<code>8</code> section digits)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v208</code> data version and <code>2026.07-dashboard-release-v150</code> dashboard release token; Playwright coverage for config keyboard, location memory, discoverability, and header destinations."
+        }
+      ]
+    }
+  ]
+}

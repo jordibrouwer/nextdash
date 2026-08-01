@@ -194,6 +194,31 @@ class DashboardUiHelpers {
             ]));
         }
 
+        if (d.config?.isEnabled?.()) {
+            sections.push(section('sectionConfigView', 'Config view', [
+                item('0–9', 'cvSectionJump', 'Switch to Inbox (0) or a bookmark page (1–9)'),
+                item('j / k', 'cvSectionJk', 'Previous / next section in the left rail'),
+                item('g / G', 'cvSectionFirstLast', 'Jump to the first / last section'),
+                item('← / → (section rail)', 'cvSectionRail', 'Move between sections when the section rail is focused (↑ / ↓ on desktop)'),
+                item('Alt + ← / →', 'cvSubTab', 'Previous / next sub-tab in the current section'),
+                item('[ / ]', 'cvSubTabBrackets', 'Previous / next sub-tab in the current section'),
+                item('← / → (sub-tabs)', 'cvSubTabRail', 'Move between sub-tabs when a sub-tab strip is focused'),
+                item('← / → (choice row)', 'cvChoiceRow', 'Move between options in a choice group; Space selects'),
+                item('Home / End (slider)', 'cvRangeHomeEnd', 'Jump to min or max on a focused opacity or intensity slider'),
+                item('↑ / ↓ (Pages & tags lists)', 'cvListMove', 'Move between rows when focus is in the list panel'),
+                item('Enter / Space (list row)', 'cvListEdit', 'Focus the first field in the selected list row'),
+                item('g / G (list row)', 'cvListFirstLast', 'Jump to the first / last row in a Pages & tags list'),
+                item('/ (Tags tab)', 'cvListFilter', 'Focus the tag filter while on the Tags sub-tab'),
+                item('j / k (Bookmarks list)', 'cvBmMove', 'Move between bookmark rows when focus is in the list panel'),
+                item('Enter / Space (bookmark row)', 'cvBmEdit', 'Open the inline editor for the selected bookmark'),
+                item('g / G (Bookmarks list)', 'cvBmFirstLast', 'Jump to the first / last bookmark row'),
+                item('/ (Bookmarks)', 'cvBmFilter', 'Focus the bookmark search field'),
+                item('Ctrl/Cmd + Shift + K', 'cvSettingsJump', 'Find a setting, section, or help topic'),
+                item('< / Shift + S', 'cvClose', 'Return to the dashboard from config'),
+                item('Esc', 'cvEsc', 'Close bookmark editor, clear list selection, or exit config'),
+            ]));
+        }
+
         sections.push(
             section('sectionSearchModes', 'Search modes', [
                 item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),

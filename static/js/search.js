@@ -371,10 +371,18 @@ class SearchComponent {
         return document.getElementById('dashboard-layout')?.classList.contains('inbox-layout') ?? false;
     }
 
+    _isConfigViewActive() {
+        const dash = window.dashboardInstance;
+        if (dash?.activeView === 'config') {
+            return true;
+        }
+        return document.getElementById('dashboard-layout')?.classList.contains('config-layout') ?? false;
+    }
+
     /**
-     * A full-container view (inbox, health) is on screen. Such a view owns plain
-     * letter keys for its own shortcuts, so search must not swallow them as
-     * type-to-search.
+     * A full-container view (inbox, health, config) is on screen. Such a view
+     * owns plain letter keys for its own shortcuts, so search must not swallow
+     * them as type-to-search.
      */
     _isDashboardViewActive() {
         const dash = window.dashboardInstance;
@@ -384,7 +392,13 @@ class SearchComponent {
         if (dash?.activeView === 'health') {
             return true;
         }
-        return document.getElementById('dashboard-layout')?.classList.contains('health-layout') ?? false;
+        if (document.getElementById('dashboard-layout')?.classList.contains('health-layout')) {
+            return true;
+        }
+        if (this._isConfigViewActive()) {
+            return true;
+        }
+        return false;
     }
 
     _isInboxLauncherKey(e, key) {
@@ -558,9 +572,12 @@ class SearchComponent {
             return;
         }
 
-        // / toggles dashboard tag cloud when enabled; otherwise interleave fuzzy prefix
+        // / toggles dashboard tag cloud when enabled; config Tags tab uses / for its filter
         if (key === '/') {
             const dash = window.dashboardInstance;
+            if (!this.searchActive && dash?.config?.isActiveView?.()) {
+                return;
+            }
             if (!this.searchActive && dash && window.DashboardTagCloud?.isEligible?.()) {
                 return;
             }
@@ -687,6 +704,9 @@ class SearchComponent {
             return false;
         }
         if (this._isInboxViewActive()) {
+            return false;
+        }
+        if (this._isConfigViewActive()) {
             return false;
         }
         this.addToQuery(key);

@@ -25,6 +25,9 @@ class DashboardConfig {
         'help',
     ];
 
+    /** Device-local last config section (and sub-tab) for Shift+S / `<` return visits. */
+    static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
+
     constructor(dashboard) {
         this.dash = dashboard;
         this.section = 'overview';
@@ -66,6 +69,14 @@ class DashboardConfig {
         this._statsFinders = undefined;
         // Latest release for the overview: undefined until fetched, null on failure.
         this._latestRelease = undefined;
+        // Pages & tags CRUD list row highlighted via ↑/↓ (health/inbox feed pattern).
+        this._listKeyboardKey = null;
+        // Bookmarks master list row highlighted via j/k.
+        this._bmKeyboardKey = null;
+        /** Cached field labels seen while browsing config — merged into settings jump. */
+        this._settingsJumpCache = new Map();
+        this._settingsJumpHandler = null;
+        this._settingsJumpSelected = 0;
     }
 
     isEnabled() {
@@ -115,6 +126,11 @@ class DashboardConfig {
     }
 
     /* ── Hash / deep linking ───────────────────────────────────────────────── */
+
+    /** True for `#config` with no section — “open config”, not “open Overview”. */
+    static isGenericConfigHash(hash) {
+        return typeof hash === 'string' && hash.replace(/^#/, '') === 'config';
+    }
 
     /** Normalise a hash like `config/appearance` into a known section. */
     static sectionFromHash(hash) {
@@ -185,6 +201,16 @@ class DashboardConfig {
         'data-help-tab': 'help',
     };
 
+    /** data-* attribute on each section's sub-tab strip buttons. */
+    static SUB_TAB_ATTR = {
+        behavior: 'data-behavior-tab',
+        'pages-tags': 'data-pt-tab',
+        appearance: 'data-appearance-tab',
+        stats: 'data-stats-tab',
+        'data-backups': 'data-db-tab',
+        help: 'data-help-tab',
+    };
+
     /** Apply a sub-tab from the hash, if the section has one. */
     applySubTabFromHash(hash) {
         const section = DashboardConfig.sectionFromHash(hash);
@@ -220,9 +246,88 @@ class DashboardConfig {
         }
     }
 
+    /** Read the last config section/sub-tab the user opened (shortcut return visits). */
+    loadLastConfigLocation() {
+        try {
+            const raw = localStorage.getItem(DashboardConfig.CONFIG_LAST_KEY);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            const section = data?.section;
+            if (!section || !DashboardConfig.SECTIONS.includes(section)) return null;
+            let subTab = data?.subTab ?? null;
+            if (subTab) {
+                const tabs = DashboardConfig.SUB_TABS[section];
+                if (!tabs?.includes(subTab)) subTab = null;
+            }
+            return { section, subTab };
+        } catch {
+            return null;
+        }
+    }
+
+    /** Remember where the user left config — section rail and sub-tabs. */
+    saveLastConfigLocation() {
+        try {
+            const section = this.section;
+            if (!DashboardConfig.SECTIONS.includes(section)) return;
+            const prop = DashboardConfig.SUB_TAB_STATE[section];
+            const subTab = prop ? this[prop] : null;
+            localStorage.setItem(DashboardConfig.CONFIG_LAST_KEY, JSON.stringify({
+                section,
+                subTab: subTab || null,
+            }));
+        } catch {
+            // localStorage unavailable — skip silently
+        }
+    }
+
+    applyStoredSubTab(section, tab) {
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        const tabs = DashboardConfig.SUB_TABS[section];
+        if (!prop || !tabs?.includes(tab)) return false;
+        this[prop] = tab;
+        return true;
+    }
+
+    /**
+     * Section (and optional sub-tab) when opening config without an explicit
+     * target or `#config/…` hash — e.g. Shift+S from the bookmark grid.
+     */
+    resolveConfigOpenTarget(explicitSection) {
+        const hash = window.location.hash;
+        const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
+        const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
+        const stored = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
+        const targetSection = explicitSection || hashSection || stored?.section || 'overview';
+
+        if (!hashIsGeneric && hashSection === targetSection) {
+            this.applySubTabFromHash(hash);
+        } else if (!explicitSection && stored?.section === targetSection && stored.subTab) {
+            this.applyStoredSubTab(targetSection, stored.subTab);
+        }
+
+        return targetSection;
+    }
+
     /** Re-apply the section from the hash while the view is already open. */
     restoreConfigSectionFromHash() {
-        const section = DashboardConfig.sectionFromHash(window.location.hash);
+        const hash = window.location.hash;
+        if (DashboardConfig.isGenericConfigHash(hash)) {
+            const stored = this.loadLastConfigLocation();
+            if (!stored?.section) return;
+            if (stored.subTab) {
+                this.applyStoredSubTab(stored.section, stored.subTab);
+            }
+            if (stored.section !== this.section) {
+                this.section = stored.section;
+                this.render();
+            } else if (stored.subTab) {
+                this.render();
+            }
+            this.restoreConfigHash();
+            return;
+        }
+        const section = DashboardConfig.sectionFromHash(hash);
         const tabChanged = this.applySubTabFromHash(window.location.hash);
         if (section && section !== this.section) {
             this.section = section;
@@ -239,15 +344,7 @@ class DashboardConfig {
         if (!this.isEnabled()) {
             return false;
         }
-        const targetSection =
-            section || DashboardConfig.sectionFromHash(window.location.hash) || 'overview';
-        // Honour a sub-tab in the hash whenever it belongs to the section being
-        // opened. Callers pass the section explicitly on a cold deep link
-        // (dashboard-data reads it from the same hash), so keying this on
-        // "caller named no section" would drop the tab exactly then.
-        if (DashboardConfig.sectionFromHash(window.location.hash) === targetSection) {
-            this.applySubTabFromHash(window.location.hash);
-        }
+        const targetSection = this.resolveConfigOpenTarget(section);
         if (d.activeView === DashboardConfig.VIEW) {
             if (targetSection !== this.section) {
                 this.section = targetSection;
@@ -263,6 +360,8 @@ class DashboardConfig {
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
         d.inbox?.clearKeyboardSelection?.();
         d.health?.clearKeyboardSelection?.();
+        this.clearListKeyboardSelection();
+        this.clearBookmarkKeyboardSelection();
         this.section = targetSection;
         d.setActiveView(DashboardConfig.VIEW);
         window.nextdashTrack?.('view:config');
@@ -270,6 +369,7 @@ class DashboardConfig {
         d.pageNav?.updateDocumentTitle?.();
         await this.loadAndRender();
         this.restoreConfigHash();
+        requestAnimationFrame(() => window.DashboardKeyboardTip?.showConfigIntro?.());
         return true;
     }
 
@@ -278,6 +378,9 @@ class DashboardConfig {
         if (d.activeView !== DashboardConfig.VIEW) {
             return false;
         }
+        // Bookmark grid hash replaces #config/… on exit; persist section/sub-tab
+        // here so Shift+S can reopen where the user left off.
+        this.saveLastConfigLocation();
         // The save indicator lives on <body>, so leaving the view has to take it
         // down; otherwise a "Saved" would linger over the dashboard.
         clearTimeout(this._saveStateTimer);
@@ -327,8 +430,26 @@ class DashboardConfig {
             }
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
+            if (this.bmEditing) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.closeBookmarkEditorFromKeyboard();
+                return;
+            }
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) {
+                return;
+            }
+            if (this._bmKeyboardKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.clearBookmarkKeyboardSelection();
+                return;
+            }
+            if (this._listKeyboardKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.clearListKeyboardSelection();
                 return;
             }
             e.preventDefault();
@@ -362,6 +483,297 @@ class DashboardConfig {
     }
 
     /**
+     * Mark one button in the section rail as current and keep roving tabindex
+     * in sync — the same contract as syncSubTabStrip for the primary nav.
+     */
+    syncSectionNav(active) {
+        document.querySelectorAll('[data-config-section]').forEach((btn) => {
+            const on = btn.getAttribute('data-config-section') === active;
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+            btn.setAttribute('tabindex', on ? '0' : '-1');
+        });
+        const panel = document.getElementById('config-section-panel');
+        if (panel) {
+            panel.setAttribute('aria-labelledby', `config-section-${active}`);
+        }
+    }
+
+    moveSectionKeyboard(delta) {
+        const sections = DashboardConfig.SECTIONS;
+        let idx = sections.indexOf(this.section);
+        if (idx < 0) idx = 0;
+        idx = (idx + delta + sections.length) % sections.length;
+        const next = sections[idx];
+        if (next === this.section) return false;
+        this.selectSection(next, 'keyboard');
+        document.querySelector(`[data-config-section="${CSS.escape(next)}"]`)?.focus();
+        return true;
+    }
+
+    jumpSectionKeyboard(index) {
+        const sections = DashboardConfig.SECTIONS;
+        const clamped = Math.max(0, Math.min(index, sections.length - 1));
+        const next = sections[clamped];
+        if (next === this.section) return false;
+        this.selectSection(next, 'keyboard');
+        document.querySelector(`[data-config-section="${CSS.escape(next)}"]`)?.focus();
+        return true;
+    }
+
+    /**
+     * Pages & tags list rows use ↑/↓ (and g/G while focus sits in the list
+     * panel). j/k stay reserved for the section rail unless a row is already
+     * keyboard-selected.
+     */
+    shouldUseListKeyboardNav(target) {
+        if (this.section !== 'pages-tags') return false;
+        if (this._listKeyboardKey) return true;
+        const body = target?.closest?.('#config-pt-body');
+        if (!body) return false;
+        if (target?.closest?.('.config-sub-tabs, [data-pt-tab]')) return false;
+        return this.getListKeyboardRows().length > 0;
+    }
+
+    /**
+     * Bookmarks master list uses j/k (and g/G while focus sits in the list panel).
+     * Section-rail j/k stay reserved unless a row is already keyboard-selected.
+     */
+    shouldUseBookmarkKeyboardNav(target) {
+        if (this.section !== 'bookmarks') return false;
+        if (this._bmKeyboardKey) return true;
+        const inList = target?.closest?.('#config-bm-list');
+        if (inList) return this.getBookmarkKeyboardRows().length > 0;
+        if (target?.id === 'config-bm-search') return this.getBookmarkKeyboardRows().length > 0;
+        return false;
+    }
+
+    /**
+     * Config view keyboard handler — section digits and sub-tab shortcuts.
+     * Called from keyboard-navigation.js whenever #dashboard-layout carries
+     * config-layout.
+     */
+    handleKeyboardNavigation(e) {
+        if (!this.isActiveView() || !this.isEnabled()) return false;
+        const d = this.dash;
+        if (window.DashboardTagCloud?.modalOpen) return false;
+        if (d.isModalOpen?.()) return false;
+        if (d.searchComponent?.isActive?.()) return false;
+        if (d.isInlineEditActive?.()) return false;
+
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.openSettingsJump();
+            return true;
+        }
+
+        const target = e.target;
+        const tag = target?.tagName;
+        const isTagFilter = target?.id === 'config-tag-filter';
+        const isBmSearch = target?.id === 'config-bm-search';
+        const listNavFromFilter = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
+        const bmNavFromSearch = new Set(['j', 'k', 'Enter', ' ', 'g', 'G']);
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+            if (!(this.section === 'pages-tags' && isTagFilter && listNavFromFilter.has(e.key))
+                && !(this.section === 'bookmarks' && isBmSearch && bmNavFromSearch.has(e.key))) {
+                return false;
+            }
+        }
+
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            let subTabDelta = 0;
+            const inChoiceControl = Boolean(target?.closest?.('.config-choices, .config-bg-swatches'));
+            if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                subTabDelta = e.key === 'ArrowRight' ? 1 : -1;
+            } else if (!e.altKey && !inChoiceControl && (e.key === '[' || e.key === ']'
+                || e.code === 'BracketLeft' || e.code === 'BracketRight')) {
+                subTabDelta = (e.key === ']' || e.code === 'BracketRight') ? 1 : -1;
+            }
+            if (subTabDelta) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.moveSubTab(subTabDelta);
+            }
+        }
+
+        if (this.shouldUseListKeyboardNav(target) && this.handleListKeyboardNavigation(e)) {
+            return true;
+        }
+
+        if (this.shouldUseBookmarkKeyboardNav(target) && this.handleBookmarkKeyboardNavigation(e)) {
+            return true;
+        }
+
+        if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey
+            && !this.shouldUseListKeyboardNav(target)
+            && !this.shouldUseBookmarkKeyboardNav(target)
+            && !target?.closest?.('.config-choices, .config-bg-swatches, .config-sub-tabs')) {
+            if (e.key === 'j') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.moveSectionKeyboard(1);
+            }
+            if (e.key === 'k') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.moveSectionKeyboard(-1);
+            }
+            if (e.key === 'g') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.jumpSectionKeyboard(0);
+            }
+            if (e.key === 'G') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return this.jumpSectionKeyboard(DashboardConfig.SECTIONS.length - 1);
+            }
+        }
+
+        if (this.handleShellViewShortcut(e)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Page tabs (1–9) and Inbox (0) work from config too — same as on the
+     * bookmark grid — so you can leave without Esc first.
+     */
+    handleShellViewShortcut(e) {
+        if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
+        const d = this.dash;
+        if (d.keyboardNavigation?.isGChordActive?.()) return false;
+
+        const key = e.key;
+        if (key === '0') {
+            if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.saveLastConfigLocation();
+                void d.inbox.openInboxView();
+                return true;
+            }
+            return false;
+        }
+
+        if (key >= '1' && key <= '9') {
+            const pageIndex = parseInt(key, 10) - 1;
+            if (pageIndex >= d.pages.length) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.saveLastConfigLocation();
+            void d.requestPageNavigation(d.pages[pageIndex].id);
+            return true;
+        }
+
+        return false;
+    }
+
+    /** Active sub-tab strip for the current section, if any. */
+    getSubTabContext() {
+        const section = this.section;
+        const tabs = DashboardConfig.SUB_TABS[section];
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        const attr = DashboardConfig.SUB_TAB_ATTR[section];
+        if (!tabs?.length || !prop || !attr) return null;
+        return { section, tabs, prop, attr, current: this[prop] };
+    }
+
+    /**
+     * Activate a sub-tab programmatically — mirrors each strip's click handler
+     * so keyboard shortcuts do not depend on synthetic clicks.
+     */
+    switchSubTab(tab, via = 'keyboard') {
+        const ctx = this.getSubTabContext();
+        if (!ctx || !ctx.tabs.includes(tab) || tab === ctx.current) return false;
+
+        this._trackAction('subtab', { section: ctx.section, tab, via });
+
+        if (ctx.section === 'appearance') {
+            void this.switchAppearanceTab(tab).then(() => {
+                document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`)?.focus();
+            });
+            return true;
+        }
+
+        this[ctx.prop] = tab;
+        this.restoreConfigHash();
+
+        const container = document.getElementById('dashboard-layout');
+        switch (ctx.section) {
+            case 'behavior': {
+                const body = document.getElementById('config-behavior-body');
+                if (!body) {
+                    this.render();
+                    break;
+                }
+                body.innerHTML = this.renderBehaviorBody();
+                if (container) {
+                    this.bindControlPanels(container, 'behavior');
+                    this.bindBehaviorActions(container);
+                    this.bindFormKeyboard(container);
+                }
+                break;
+            }
+            case 'pages-tags':
+                this.clearListKeyboardSelection();
+                this.repaintPtBody();
+                break;
+            case 'data-backups': {
+                const body = document.getElementById('config-db-body');
+                if (body) {
+                    body.innerHTML = this.renderDbTab();
+                    this.bindDataBackupsActions(body);
+                }
+                break;
+            }
+            case 'stats':
+                if (tab === 'inbox' && this._statsInboxItems === undefined) {
+                    void this.loadStatsInbox();
+                }
+                if (tab === 'activity' && this._statsFinders === undefined) {
+                    void this.loadStatsFinders();
+                }
+                this.repaintStatsBody();
+                break;
+            case 'help': {
+                const body = document.getElementById('config-help-body');
+                if (!body) {
+                    this.render();
+                    break;
+                }
+                body.innerHTML = this.renderHelpBody();
+                this.bindHelpActions(body);
+                break;
+            }
+            default:
+                return false;
+        }
+
+        this.syncSubTabStrip(ctx.attr, tab);
+        const focusTarget = document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`);
+        focusTarget?.focus();
+        if (focusTarget && !focusTarget.isConnected) {
+            document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`)?.focus();
+        }
+        this.saveLastConfigLocation();
+        return true;
+    }
+
+    /** Wrap to previous/next sub-tab in the current section. */
+    moveSubTab(delta) {
+        const ctx = this.getSubTabContext();
+        if (!ctx) return false;
+        const idx = ctx.tabs.indexOf(ctx.current);
+        if (idx < 0) return false;
+        const next = ctx.tabs[(idx + delta + ctx.tabs.length) % ctx.tabs.length];
+        return this.switchSubTab(next, 'keyboard');
+    }
+
+    /**
      * Wire a `role="tablist"` strip: click plus the keys the role promises.
      *
      * These strips carried role="tab" and aria-selected but no key handling, so
@@ -382,6 +794,7 @@ class DashboardConfig {
         const activateTracked = (tab, via) => {
             if (tab) this._trackAction('subtab', { section: strip, tab, via });
             activate(tab);
+            this.saveLastConfigLocation();
         };
         buttons.forEach((btn, i) => {
             // Mirror the label into data-label so CSS can lay the tab out at its
@@ -417,6 +830,12 @@ class DashboardConfig {
 
     /* ── Render ────────────────────────────────────────────────────────────── */
 
+    /** Shortcut hint for the settings-jump nav item and legends. */
+    settingsJumpShortcutLabel() {
+        const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(navigator.platform || '');
+        return mac ? '⌘⇧K' : 'Ctrl+Shift+K';
+    }
+
     /** Human labels for the section rail. */
     sectionLabel(section) {
         const map = {
@@ -443,6 +862,7 @@ class DashboardConfig {
         // document before its text changes, or the change is not announced.
         this.ensureSaveStateHost();
         this.bindSectionNav(container);
+        this.syncSectionNav(this.section);
         this.bindTileActions(container);
         if (this.section === 'overview') {
             this.bindOverviewActions(container);
@@ -486,26 +906,860 @@ class DashboardConfig {
             this.bindHelp(container);
         }
         window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
+        this.bindFormKeyboard(container);
+        this.bindFormKeyboardLegend(container);
+        this.cacheSettingsJumpFields();
+    }
+
+    /**
+     * Wire keyboard patterns for schema-driven and appearance controls: choice
+     * rows behave as radiogroups, gradient swatches the same, and range sliders
+     * honour Home/End for min/max.
+     */
+    bindFormKeyboard(container) {
+        if (!container) return;
+        this.bindChoiceGroups(container);
+        this.bindSwatchGroups(container);
+        this.bindRangeInputs(container);
+    }
+
+    /** Footer hint on form-heavy sections (Behavior, Appearance, …). */
+    bindFormKeyboardLegend(container) {
+        const formSections = new Set(['behavior', 'appearance', 'stats', 'data-backups']);
+        if (!formSections.has(this.section)) return;
+        const body = container?.querySelector('#config-view-body') || document.getElementById('config-view-body');
+        if (!body) return;
+        if (body.querySelector('.config-form-keyboard-legend')) return;
+        if (!body.querySelector('.config-choices, .config-range, .config-subtabs')) return;
+        const legend = document.createElement('p');
+        legend.className = 'config-form-keyboard-legend config-field-hint';
+        legend.setAttribute('aria-hidden', 'true');
+        legend.textContent = this.t('config.formKeyboardLegend',
+            '←/→ choices · Home/End sliders · Alt+←/→ or [ ] sub-tabs · Ctrl/Cmd+Shift+K find setting · ! cheat sheet');
+        body.appendChild(legend);
+    }
+
+    /** Roving tabindex for a single `.config-choices` radiogroup. */
+    syncChoiceGroup(group) {
+        group.querySelectorAll('.config-choice').forEach((btn) => {
+            const on = btn.classList.contains('is-active');
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            btn.setAttribute('tabindex', on ? '0' : '-1');
+        });
+    }
+
+    syncSwatchGroup(group) {
+        group.querySelectorAll('.config-bg-swatch').forEach((btn) => {
+            const on = btn.classList.contains('is-active');
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            btn.setAttribute('tabindex', on ? '0' : '-1');
+        });
+    }
+
+    wireChoiceGroup(group) {
+        if (group.dataset.configChoiceWired) return;
+        group.dataset.configChoiceWired = '1';
+        const choices = [...group.querySelectorAll('.config-choice')];
+        if (!choices.length) return;
+        group.setAttribute('role', 'radiogroup');
+        const label = group.closest('.config-field')?.querySelector('.config-field-label')?.textContent?.trim();
+        if (label) {
+            group.setAttribute('aria-label', label);
+        }
+        this.syncChoiceGroup(group);
+        choices.forEach((btn) => {
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const current = choices.indexOf(btn);
+                const last = choices.length - 1;
+                const nextIdx = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (current === last ? 0 : current + 1)
+                            : (current === 0 ? last : current - 1);
+                const target = choices[nextIdx];
+                if (!target) return;
+                target.focus();
+                target.click();
+                queueMicrotask(() => this.syncChoiceGroup(group));
+            });
+        });
+        group.addEventListener('click', (e) => {
+            if (e.target.closest('.config-choice')) {
+                queueMicrotask(() => this.syncChoiceGroup(group));
+            }
+        });
+    }
+
+    wireSwatchGroup(group) {
+        if (group.dataset.configSwatchWired) return;
+        group.dataset.configSwatchWired = '1';
+        const swatches = [...group.querySelectorAll('.config-bg-swatch')];
+        if (!swatches.length) return;
+        group.setAttribute('role', 'radiogroup');
+        const label = group.closest('.config-field, .config-bg-picker')?.querySelector('.config-field-label')?.textContent?.trim();
+        if (label) {
+            group.setAttribute('aria-label', label);
+        }
+        this.syncSwatchGroup(group);
+        swatches.forEach((btn) => {
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const current = swatches.indexOf(btn);
+                const last = swatches.length - 1;
+                const nextIdx = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (current === last ? 0 : current + 1)
+                            : (current === 0 ? last : current - 1);
+                const target = swatches[nextIdx];
+                if (!target) return;
+                target.focus();
+                target.click();
+                queueMicrotask(() => this.syncSwatchGroup(group));
+            });
+        });
+        group.addEventListener('click', (e) => {
+            if (e.target.closest('.config-bg-swatch')) {
+                queueMicrotask(() => this.syncSwatchGroup(group));
+            }
+        });
+    }
+
+    bindChoiceGroups(container) {
+        container.querySelectorAll('.config-choices').forEach((group) => this.wireChoiceGroup(group));
+    }
+
+    bindSwatchGroups(container) {
+        container.querySelectorAll('.config-bg-swatches').forEach((group) => this.wireSwatchGroup(group));
+    }
+
+    bindRangeInputs(container) {
+        container.querySelectorAll('input.config-range[type="range"]').forEach((range) => {
+            if (range.dataset.configRangeWired) return;
+            range.dataset.configRangeWired = '1';
+            range.addEventListener('keydown', (e) => {
+                if (e.key !== 'Home' && e.key !== 'End') return;
+                e.preventDefault();
+                e.stopPropagation();
+                range.value = e.key === 'Home' ? range.min : range.max;
+                range.dispatchEvent(new Event('input', { bubbles: true }));
+                range.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+    }
+
+    /* ── Pages & tags list keyboard (feed pattern) ─────────────────────────── */
+
+    listRowKey(row) {
+        if (!row) return null;
+        if (row.hasAttribute('data-page-row')) return `page:${row.getAttribute('data-page-row')}`;
+        if (row.hasAttribute('data-cat-row')) return `cat:${row.getAttribute('data-cat-row')}`;
+        if (row.hasAttribute('data-tag-row')) return `tag:${row.getAttribute('data-tag-row')}`;
+        if (row.hasAttribute('data-finder-index')) return `finder:${row.getAttribute('data-finder-index')}`;
+        if (row.hasAttribute('data-collection-row')) return `collection:${row.getAttribute('data-collection-row')}`;
+        return null;
+    }
+
+    getListKeyboardRows() {
+        const body = document.getElementById('config-pt-body');
+        if (!body) return [];
+        return Array.from(body.querySelectorAll('.config-crud-list .config-crud-row'));
+    }
+
+    clearListKeyboardSelection() {
+        this._listKeyboardKey = null;
+        document.querySelectorAll('#config-pt-body .config-crud-row.keyboard-selected').forEach((row) => {
+            row.classList.remove('keyboard-selected');
+            row.removeAttribute('aria-selected');
+        });
+    }
+
+    applyListKeyboardSelection(rows) {
+        const list = Array.isArray(rows) && rows.length ? rows : this.getListKeyboardRows();
+        list.forEach((row) => {
+            const selected = this.listRowKey(row) === this._listKeyboardKey;
+            row.classList.toggle('keyboard-selected', selected);
+            if (selected) {
+                row.setAttribute('aria-selected', 'true');
+                row.scrollIntoView({
+                    block: 'nearest',
+                    behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
+                });
+            } else {
+                row.removeAttribute('aria-selected');
+            }
+        });
+    }
+
+    syncListKeyboardSelectionAfterRender() {
+        const rows = this.getListKeyboardRows();
+        if (!this._listKeyboardKey || !rows.some((row) => this.listRowKey(row) === this._listKeyboardKey)) {
+            this._listKeyboardKey = null;
+        }
+        this.applyListKeyboardSelection(rows);
+    }
+
+    moveListKeyboardSelection(delta, rows) {
+        const list = Array.isArray(rows) && rows.length ? rows : this.getListKeyboardRows();
+        if (!list.length) return;
+        let index = this._listKeyboardKey
+            ? list.findIndex((row) => this.listRowKey(row) === this._listKeyboardKey)
+            : -1;
+        if (index < 0) {
+            index = delta > 0 ? 0 : list.length - 1;
+        } else {
+            index += delta;
+            if (index < 0) index = list.length - 1;
+            else if (index >= list.length) index = 0;
+        }
+        this._listKeyboardKey = this.listRowKey(list[index]);
+        this.applyListKeyboardSelection(list);
+    }
+
+    focusListRow(row) {
+        if (!row) return;
+        const field = row.querySelector('.config-crud-fields input:not([type="hidden"]), .config-crud-fields select, .config-crud-fields textarea');
+        if (field) {
+            field.focus();
+            return;
+        }
+        row.querySelector('.config-crud-row-actions button:not(.config-btn--danger), [data-collection-edit]')?.focus();
+    }
+
+    appendListKeyboardLegend(body) {
+        const list = body?.querySelector('.config-crud-list');
+        if (!list || list.querySelector('.config-panel-empty')) return;
+        if (body.querySelector('.config-list-keyboard-legend')) return;
+        const legend = document.createElement('p');
+        legend.className = 'config-list-keyboard-legend config-field-hint';
+        legend.setAttribute('aria-hidden', 'true');
+        legend.textContent = this.t('config.listKeyboardLegend',
+            '↑/↓ move · Enter edit · g/G first/last · / filter tags · Esc clear');
+        list.after(legend);
+    }
+
+    bindListKeyboard(container) {
+        if (this.section !== 'pages-tags') return;
+        const body = container?.querySelector('#config-pt-body') || document.getElementById('config-pt-body');
+        if (!body) return;
+        this.appendListKeyboardLegend(body);
+        if (!body.dataset.configListKbdWired) {
+            body.dataset.configListKbdWired = '1';
+            body.addEventListener('click', (e) => {
+                const row = e.target.closest('.config-crud-row');
+                if (!row || !body.contains(row)) return;
+                this._listKeyboardKey = this.listRowKey(row);
+                this.applyListKeyboardSelection(this.getListKeyboardRows());
+            });
+        }
+        this.syncListKeyboardSelectionAfterRender();
+    }
+
+    handleListKeyboardNavigation(e) {
+        if (this.section !== 'pages-tags') return false;
+        if (e.ctrlKey || e.altKey || e.metaKey) return false;
+
+        const target = e.target;
+        const tag = target?.tagName;
+        const isTagFilter = target?.id === 'config-tag-filter';
+        const listNavKeys = new Set(['ArrowDown', 'ArrowUp', 'Enter', ' ', 'g', 'G']);
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+            if (!isTagFilter || !listNavKeys.has(e.key)) {
+                return false;
+            }
+        }
+
+        const onRowControl = Boolean(
+            target?.closest?.('.config-crud-row')
+            && target?.matches?.('button, a, input, select, textarea')
+        );
+
+        const rows = this.getListKeyboardRows();
+        if (!rows.length) return false;
+
+        if (e.key === 'ArrowDown') {
+            if (onRowControl) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (isTagFilter) target.blur();
+            this.moveListKeyboardSelection(1, rows);
+            return true;
+        }
+        if (e.key === 'ArrowUp') {
+            if (onRowControl) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (isTagFilter) target.blur();
+            this.moveListKeyboardSelection(-1, rows);
+            return true;
+        }
+        if (onRowControl) {
+            return false;
+        }
+        if ((e.key === 'Enter' || e.key === ' ') && this._listKeyboardKey) {
+            const row = rows.find((r) => this.listRowKey(r) === this._listKeyboardKey);
+            if (row) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.focusListRow(row);
+            }
+            return true;
+        }
+        if (e.key === 'g') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._listKeyboardKey = this.listRowKey(rows[0]);
+            this.applyListKeyboardSelection(rows);
+            return true;
+        }
+        if (e.key === 'G') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._listKeyboardKey = this.listRowKey(rows[rows.length - 1]);
+            this.applyListKeyboardSelection(rows);
+            return true;
+        }
+        if (e.key === '/' && this.ptTab === 'tags' && !isTagFilter) {
+            const filter = document.getElementById('config-tag-filter');
+            if (filter) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                filter.focus();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /* ── Bookmarks master/detail keyboard ──────────────────────────────────── */
+
+    bookmarkRowKey(row) {
+        return row?.getAttribute('data-bm-key') || null;
+    }
+
+    getBookmarkKeyboardRows() {
+        const host = document.getElementById('config-bm-list');
+        if (!host) return [];
+        return Array.from(host.querySelectorAll('.config-bm-row'));
+    }
+
+    clearBookmarkKeyboardSelection() {
+        this._bmKeyboardKey = null;
+        document.querySelectorAll('#config-bm-list .config-bm-row.keyboard-selected').forEach((row) => {
+            row.classList.remove('keyboard-selected');
+            row.removeAttribute('aria-selected');
+        });
+    }
+
+    applyBookmarkKeyboardSelection(rows) {
+        const list = Array.isArray(rows) && rows.length ? rows : this.getBookmarkKeyboardRows();
+        list.forEach((row) => {
+            const selected = this.bookmarkRowKey(row) === this._bmKeyboardKey;
+            row.classList.toggle('keyboard-selected', selected);
+            if (selected) {
+                row.setAttribute('aria-selected', 'true');
+                row.scrollIntoView({
+                    block: 'nearest',
+                    behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
+                });
+            } else {
+                row.removeAttribute('aria-selected');
+            }
+        });
+    }
+
+    syncBookmarkKeyboardSelectionAfterRender() {
+        const rows = this.getBookmarkKeyboardRows();
+        if (!this._bmKeyboardKey || !rows.some((row) => this.bookmarkRowKey(row) === this._bmKeyboardKey)) {
+            this._bmKeyboardKey = null;
+        }
+        this.applyBookmarkKeyboardSelection(rows);
+    }
+
+    moveBookmarkKeyboardSelection(delta, rows) {
+        const list = Array.isArray(rows) && rows.length ? rows : this.getBookmarkKeyboardRows();
+        if (!list.length) return;
+        let index = this._bmKeyboardKey
+            ? list.findIndex((row) => this.bookmarkRowKey(row) === this._bmKeyboardKey)
+            : -1;
+        if (index < 0) {
+            index = delta > 0 ? 0 : list.length - 1;
+        } else {
+            index += delta;
+            if (index < 0) index = list.length - 1;
+            else if (index >= list.length) index = 0;
+        }
+        this._bmKeyboardKey = this.bookmarkRowKey(list[index]);
+        this.applyBookmarkKeyboardSelection(list);
+    }
+
+    focusBookmarkEditor() {
+        document.querySelector('.config-bm-editor [data-bm-field="name"], #config-bm-name')?.focus();
+    }
+
+    async activateBookmarkKeyboardRow(key) {
+        if (!key) return;
+        if (this.bmEditing === key) {
+            this.focusBookmarkEditor();
+            return;
+        }
+        if (this.bmEditing && !(await this.confirmDiscardBookmarkEdit())) return;
+        this.bmEditing = key;
+        this.bmDirty = false;
+        this.repaintBookmarksList();
+        this.focusBookmarkEditor();
+    }
+
+    async closeBookmarkEditorFromKeyboard() {
+        if (!this.bmEditing) return false;
+        if (!(await this.confirmDiscardBookmarkEdit())) return true;
+        this.bmEditing = null;
+        this.bmDirty = false;
+        this.repaintBookmarksList();
+        return true;
+    }
+
+    appendBookmarkKeyboardLegend(host) {
+        const list = host?.querySelector('.config-crud-list');
+        if (!list || list.querySelector('.config-panel-empty')) return;
+        if (host.querySelector('.config-bm-keyboard-legend')) return;
+        const legend = document.createElement('p');
+        legend.className = 'config-bm-keyboard-legend config-field-hint';
+        legend.setAttribute('aria-hidden', 'true');
+        legend.textContent = this.t('config.bookmarksKeyboardLegend',
+            'j/k move · Enter edit · g/G first/last · / search · Esc clear');
+        list.after(legend);
+    }
+
+    bindBookmarkKeyboard(container) {
+        if (this.section !== 'bookmarks') return;
+        const host = container?.querySelector('#config-bm-list') || document.getElementById('config-bm-list');
+        if (!host) return;
+        this.appendBookmarkKeyboardLegend(host);
+        if (!host.dataset.configBmKbdWired) {
+            host.dataset.configBmKbdWired = '1';
+            host.addEventListener('click', (e) => {
+                const row = e.target.closest('.config-bm-row');
+                if (!row || !host.contains(row)) return;
+                this._bmKeyboardKey = this.bookmarkRowKey(row);
+                this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+            });
+        }
+        this.syncBookmarkKeyboardSelectionAfterRender();
+    }
+
+    handleBookmarkKeyboardNavigation(e) {
+        if (this.section !== 'bookmarks') return false;
+        if (e.ctrlKey || e.altKey || e.metaKey) return false;
+
+        const target = e.target;
+        const tag = target?.tagName;
+        const isBmSearch = target?.id === 'config-bm-search';
+        const bmNavKeys = new Set(['j', 'k', 'Enter', ' ', 'g', 'G']);
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+            if (!isBmSearch || !bmNavKeys.has(e.key)) {
+                return false;
+            }
+        }
+
+        const onRowControl = Boolean(
+            target?.closest?.('.config-bm-row')
+            && target?.matches?.('button, a, input, select, textarea')
+        );
+
+        const rows = this.getBookmarkKeyboardRows();
+        if (!rows.length) return false;
+
+        if (e.key === 'j') {
+            if (onRowControl) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (isBmSearch) target.blur();
+            this.moveBookmarkKeyboardSelection(1, rows);
+            return true;
+        }
+        if (e.key === 'k') {
+            if (onRowControl) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (isBmSearch) target.blur();
+            this.moveBookmarkKeyboardSelection(-1, rows);
+            return true;
+        }
+        if (onRowControl) {
+            return false;
+        }
+        if ((e.key === 'Enter' || e.key === ' ') && this._bmKeyboardKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
+            return true;
+        }
+        if (e.key === 'g') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._bmKeyboardKey = this.bookmarkRowKey(rows[0]);
+            this.applyBookmarkKeyboardSelection(rows);
+            return true;
+        }
+        if (e.key === 'G') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this._bmKeyboardKey = this.bookmarkRowKey(rows[rows.length - 1]);
+            this.applyBookmarkKeyboardSelection(rows);
+            return true;
+        }
+        if (e.key === '/' && !isBmSearch) {
+            const search = document.getElementById('config-bm-search');
+            if (search) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                search.focus();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /* ── Settings jump (Ctrl/Cmd+Shift+K) ──────────────────────────────────── */
+
+    static HELP_JUMP_PANELS = [
+        { tab: 'start', titleKey: 'config.helpStartTitle', fallback: 'Getting started' },
+        { tab: 'start', titleKey: 'config.helpTipsTitle', fallback: 'Everyday keys' },
+        { tab: 'config', titleKey: 'config.helpConfigTitle', fallback: 'Finding your way around config' },
+        { tab: 'config', titleKey: 'config.helpAppearanceTitle', fallback: 'Appearance & themes' },
+        { tab: 'organizing', titleKey: 'config.helpWorkspaceTitle', fallback: 'Pages & categories' },
+        { tab: 'organizing', titleKey: 'config.helpBookmarksTitle', fallback: 'Bookmarks' },
+        { tab: 'organizing', titleKey: 'config.helpTagsTitle', fallback: 'Tags & collections' },
+        { tab: 'search', titleKey: 'config.helpSearchTitle', fallback: 'Searching your bookmarks' },
+        { tab: 'search', titleKey: 'config.helpFindersTitle', fallback: 'Finders' },
+        { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
+        { tab: 'search', titleKey: 'config.helpKeyboardTitle', fallback: 'Keyboard' },
+        { tab: 'health', titleKey: 'config.helpHealthTitle', fallback: 'Availability & health' },
+        { tab: 'health', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
+        { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
+        { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
+        { tab: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
+    ];
+
+    subTabLabel(section, tab) {
+        switch (section) {
+            case 'behavior': return this.behaviorTabLabel(tab);
+            case 'pages-tags': return this.ptTabLabel(tab);
+            case 'appearance': return this.appearanceTabLabel(tab);
+            case 'stats': return this.statsTabLabel(tab);
+            case 'data-backups': return this.dbTabLabel(tab);
+            case 'help': return this.helpTabLabel(tab);
+            default: return tab;
+        }
+    }
+
+    settingsJumpSubtitle(section, subTab) {
+        const parts = [this.sectionLabel(section)];
+        if (subTab) parts.push(this.subTabLabel(section, subTab));
+        return parts.join(' › ');
+    }
+
+    buildSettingsJumpNavEntries() {
+        const entries = [];
+        DashboardConfig.SECTIONS.forEach((section) => {
+            entries.push({
+                id: `section:${section}`,
+                kind: 'section',
+                title: this.sectionLabel(section),
+                subtitle: this.sectionLabel(section),
+                section,
+                subTab: null,
+                focusSelector: `[data-config-section="${section}"]`,
+            });
+            const tabs = DashboardConfig.SUB_TABS[section];
+            if (tabs?.length) {
+                tabs.forEach((tab) => {
+                    entries.push({
+                        id: `subtab:${section}:${tab}`,
+                        kind: 'subtab',
+                        title: this.subTabLabel(section, tab),
+                        subtitle: this.settingsJumpSubtitle(section, tab),
+                        section,
+                        subTab: tab,
+                        focusSelector: null,
+                    });
+                });
+            }
+        });
+        if (DashboardConfig.HELP_JUMP_PANELS?.length) {
+            DashboardConfig.HELP_JUMP_PANELS.forEach((panel, i) => {
+                const title = this.t(panel.titleKey, panel.fallback);
+                entries.push({
+                    id: `help:${panel.tab}:${i}`,
+                    kind: 'help',
+                    title,
+                    subtitle: `${this.sectionLabel('help')} › ${this.helpTabLabel(panel.tab)}`,
+                    section: 'help',
+                    subTab: panel.tab,
+                    helpTitle: title,
+                    focusSelector: null,
+                });
+            });
+        }
+        return entries;
+    }
+
+    cacheSettingsJumpFields() {
+        const panel = document.getElementById('config-section-panel');
+        if (!panel) return;
+        const section = this.section;
+        const subTab = DashboardConfig.SUB_TAB_STATE[section] ? this[DashboardConfig.SUB_TAB_STATE[section]] : null;
+        const subtitle = this.settingsJumpSubtitle(section, subTab);
+        let seq = 0;
+        panel.querySelectorAll('.config-field-label, .config-panel-title').forEach((labelEl) => {
+            const title = labelEl.textContent?.trim();
+            if (!title) return;
+            const field = labelEl.closest('.config-field');
+            const focusEl = field?.querySelector(
+                'input:not([type="hidden"]), select, textarea, .config-choices .config-choice.is-active, .config-choices .config-choice'
+            ) || labelEl;
+            const jumpId = `jump-${section}-${subTab || 'root'}-${seq += 1}`;
+            focusEl.setAttribute('data-config-jump', jumpId);
+            this._settingsJumpCache.set(jumpId, {
+                id: jumpId,
+                kind: 'field',
+                title,
+                subtitle,
+                section,
+                subTab,
+                focusSelector: `[data-config-jump="${jumpId}"]`,
+            });
+        });
+    }
+
+    getSettingsJumpEntries() {
+        const byId = new Map();
+        this.buildSettingsJumpNavEntries().forEach((e) => byId.set(e.id, e));
+        this._settingsJumpCache.forEach((e, id) => byId.set(id, e));
+        return [...byId.values()];
+    }
+
+    filterSettingsJumpEntries(query) {
+        const q = String(query || '').trim().toLowerCase();
+        const all = this.getSettingsJumpEntries();
+        if (!q) return all;
+        return all.filter((e) => `${e.title} ${e.subtitle}`.toLowerCase().includes(q));
+    }
+
+    isSettingsJumpOpen() {
+        const overlay = document.getElementById('app-modal');
+        return Boolean(overlay?.classList.contains('show')
+            && overlay.querySelector('.config-settings-jump-modal'));
+    }
+
+    cleanupSettingsJumpHandler() {
+        if (!this._settingsJumpHandler) return;
+        document.removeEventListener('keydown', this._settingsJumpHandler, true);
+        this._settingsJumpHandler = null;
+    }
+
+    renderSettingsJumpResults(entries) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        if (!entries.length) {
+            return `<p class="config-settings-jump-empty">${esc(this.t('config.settingsSearchNoResults', 'No settings match.'))}</p>`;
+        }
+        return `<ul class="config-settings-jump-results" role="listbox">
+            ${entries.map((entry, i) => `
+                <li class="config-settings-jump-result${i === this._settingsJumpSelected ? ' is-active' : ''}"
+                    role="option" aria-selected="${i === this._settingsJumpSelected ? 'true' : 'false'}"
+                    data-settings-jump-index="${i}">
+                    <span class="config-settings-jump-result-title">${esc(entry.title)}</span>
+                    <span class="config-settings-jump-result-sub">${esc(entry.subtitle)}</span>
+                </li>`).join('')}
+        </ul>`;
+    }
+
+    syncSettingsJumpResults(entries) {
+        const host = document.querySelector('.config-settings-jump-body');
+        if (!host) return;
+        host.innerHTML = this.renderSettingsJumpResults(entries);
+        host.querySelectorAll('[data-settings-jump-index]').forEach((row) => {
+            row.addEventListener('click', () => {
+                const idx = Number(row.getAttribute('data-settings-jump-index'));
+                const entry = entries[idx];
+                if (entry) void this.activateSettingsJumpEntry(entry);
+            });
+        });
+        host.querySelector('.config-settings-jump-result.is-active')
+            ?.scrollIntoView({ block: 'nearest' });
+    }
+
+    setupSettingsJumpKeyboard(entries) {
+        this.cleanupSettingsJumpHandler();
+        this._settingsJumpHandler = (e) => {
+            if (!this.isSettingsJumpOpen()) {
+                this.cleanupSettingsJumpHandler();
+                return;
+            }
+            const panel = document.querySelector('.config-settings-jump-modal');
+            if (!panel?.contains(document.activeElement) && document.activeElement?.id !== 'config-settings-jump-filter') {
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                this._settingsJumpSelected = entries.length
+                    ? (this._settingsJumpSelected + 1) % entries.length
+                    : 0;
+                this.syncSettingsJumpResults(entries);
+                return;
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopPropagation();
+                this._settingsJumpSelected = entries.length
+                    ? (this._settingsJumpSelected - 1 + entries.length) % entries.length
+                    : 0;
+                this.syncSettingsJumpResults(entries);
+                return;
+            }
+            if (e.key === 'Enter') {
+                const entry = entries[this._settingsJumpSelected];
+                if (entry) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void this.activateSettingsJumpEntry(entry);
+                }
+            }
+        };
+        document.addEventListener('keydown', this._settingsJumpHandler, true);
+    }
+
+    openSettingsJump() {
+        if (this.isSettingsJumpOpen()) return;
+        const esc = (v) => this.dash.escapeHtml(v);
+        let entries = this.filterSettingsJumpEntries('');
+        this._settingsJumpSelected = 0;
+        const label = this.t('config.settingsSearchLabel', 'Find a setting');
+        const placeholder = this.t('config.settingsSearchPlaceholder', 'Settings, tabs, help…');
+        const html = `
+            <div class="config-settings-jump">
+                <input type="search" id="config-settings-jump-filter" class="config-settings-jump-filter cheat-sheet-filter"
+                       placeholder="${esc(placeholder)}" autocomplete="off" spellcheck="false"
+                       aria-label="${esc(label)}">
+                <div class="config-settings-jump-body">${this.renderSettingsJumpResults(entries)}</div>
+            </div>`;
+        window.AppModal.show({
+            title: label,
+            htmlMessage: html,
+            confirmText: this.t('config.close', 'Close'),
+            showCancel: false,
+            modalClass: 'config-settings-jump-modal keyboard-cheat-sheet-modal',
+            initialFocusSelector: '#config-settings-jump-filter',
+            onHide: () => this.cleanupSettingsJumpHandler(),
+        });
+        const filter = document.getElementById('config-settings-jump-filter');
+        if (!filter) return;
+        const refresh = () => {
+            entries = this.filterSettingsJumpEntries(filter.value);
+            if (this._settingsJumpSelected >= entries.length) {
+                this._settingsJumpSelected = Math.max(0, entries.length - 1);
+            }
+            this.syncSettingsJumpResults(entries);
+            this.setupSettingsJumpKeyboard(entries);
+        };
+        filter.addEventListener('input', refresh);
+        this.setupSettingsJumpKeyboard(entries);
+    }
+
+    async activateSettingsJumpEntry(entry) {
+        if (!entry) return;
+        window.AppModal.hide();
+        this.cleanupSettingsJumpHandler();
+        if (entry.section !== this.section) {
+            this.selectSection(entry.section, 'keyboard');
+        }
+        if (entry.subTab) {
+            const prop = DashboardConfig.SUB_TAB_STATE[entry.section];
+            if (prop && this[prop] !== entry.subTab) {
+                if (entry.section === 'appearance') {
+                    await this.switchAppearanceTab(entry.subTab);
+                } else if (entry.section === 'help') {
+                    this.helpTab = entry.subTab;
+                    this.render();
+                    this.restoreConfigHash();
+                } else {
+                    this.switchSubTab(entry.subTab, 'keyboard');
+                }
+            }
+        }
+        await new Promise((r) => requestAnimationFrame(r));
+        this.cacheSettingsJumpFields();
+        let focusSelector = entry.focusSelector;
+        if (entry.kind === 'field') {
+            const refreshed = [...this._settingsJumpCache.values()].find((e) => (
+                e.kind === 'field'
+                && e.title === entry.title
+                && e.section === entry.section
+                && e.subTab === entry.subTab
+            ));
+            if (refreshed) focusSelector = refreshed.focusSelector;
+        }
+        if (entry.helpTitle && entry.section === 'help') {
+            const titles = [...document.querySelectorAll('#config-help-body .config-panel-title')];
+            const match = titles.find((el) => el.textContent.trim() === entry.helpTitle);
+            match?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            match?.focus?.({ preventScroll: true });
+            return;
+        }
+        const focusEl = focusSelector ? document.querySelector(focusSelector) : null;
+        if (focusEl) {
+            focusEl.scrollIntoView({ block: 'nearest', behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth' });
+            if (typeof focusEl.focus === 'function') {
+                focusEl.focus({ preventScroll: true });
+            }
+            return;
+        }
+        document.querySelector(`[data-config-section="${CSS.escape(entry.section)}"]`)?.focus();
     }
 
     renderShell() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const panelId = 'config-section-panel';
+        const activeNavId = `config-section-${this.section}`;
         const nav = DashboardConfig.SECTIONS.map((section) => {
             const active = section === this.section;
             return `
                 <button type="button" class="config-nav-item${active ? ' is-active' : ''}"
                         role="tab" aria-selected="${active ? 'true' : 'false'}"
+                        tabindex="${active ? '0' : '-1'}"
+                        id="config-section-${esc(section)}"
+                        aria-controls="${panelId}"
                         data-config-section="${esc(section)}">
                     ${esc(this.sectionLabel(section))}
                 </button>`;
         }).join('');
+        const searchLabel = this.t('config.settingsSearchLabel', 'Find settings');
+        const searchShortcut = this.settingsJumpShortcutLabel();
 
         return `
             <div class="config-view">
+                <div class="config-nav-column">
                 <nav class="config-nav" role="tablist" aria-label="${esc(this.t('config.sectionsNavAria', 'Config sections'))}">
                     ${nav}
                 </nav>
-                <div class="config-view-main">
+                <button type="button" class="config-nav-item config-nav-search"
+                        data-config-action="settings-jump"
+                        tabindex="0"
+                        aria-keyshortcuts="Control+Shift+K Meta+Shift+K"
+                        title="${esc(`${searchLabel} (${searchShortcut})`)}">
+                    ${esc(searchLabel)}
+                    <span class="config-nav-search-shortcut">${esc(searchShortcut)}</span>
+                </button>
+                </div>
+                <div class="config-view-main" id="${panelId}" role="tabpanel" tabindex="0"
+                     aria-labelledby="${activeNavId}">
                     <div class="config-view-head">
                         <h2 class="config-view-section-title">${esc(this.sectionLabel(this.section))}</h2>
                         <!-- The save state itself lives on <body>, not here: this
@@ -951,21 +2205,69 @@ class DashboardConfig {
 
     /* ── Section navigation ────────────────────────────────────────────────── */
 
-    selectSection(section) {
+    selectSection(section, via = 'click') {
         if (!DashboardConfig.SECTIONS.includes(section) || section === this.section) {
             return;
         }
+        this.clearListKeyboardSelection();
+        this.clearBookmarkKeyboardSelection();
         this.section = section;
-        this._trackAction('section', { section });
+        this._trackAction('section', { section, via });
         this.render();
         this.restoreConfigHash();
+        this.saveLastConfigLocation();
     }
 
     bindSectionNav(container) {
-        container.querySelectorAll('[data-config-section]').forEach((btn) => {
+        const buttons = [...container.querySelectorAll('[data-config-section]')];
+        const searchBtn = container.querySelector('[data-config-action="settings-jump"]');
+        const focusables = searchBtn ? [...buttons, searchBtn] : buttons;
+
+        const moveFocus = (fromEl, key) => {
+            const idx = focusables.indexOf(fromEl);
+            if (idx < 0) return;
+            const last = focusables.length - 1;
+            const nextIdx = key === 'Home' ? 0
+                : key === 'End' ? last
+                    : (key === 'ArrowDown' || key === 'ArrowRight') ? (idx === last ? 0 : idx + 1)
+                        : (idx === 0 ? last : idx - 1);
+            const target = focusables[nextIdx];
+            if (!target) return;
+            if (target === searchBtn) {
+                target.focus();
+                return;
+            }
+            const section = target.getAttribute('data-config-section');
+            target.focus();
+            this.selectSection(section, 'keyboard');
+            if (!target.isConnected) {
+                document.querySelector(`[data-config-section="${CSS.escape(section)}"]`)?.focus();
+            }
+        };
+
+        buttons.forEach((btn) => {
             btn.addEventListener('click', () => {
-                this.selectSection(btn.getAttribute('data-config-section'));
+                this.selectSection(btn.getAttribute('data-config-section'), 'click');
             });
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                moveFocus(btn, e.key);
+            });
+        });
+
+        searchBtn?.addEventListener('click', () => this.openSettingsJump());
+        searchBtn?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.openSettingsJump();
+                return;
+            }
+            const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+            if (!keys.includes(e.key)) return;
+            e.preventDefault();
+            moveFocus(searchBtn, e.key);
         });
     }
 
@@ -2311,6 +3613,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
+        this.bindFormKeyboard(container);
     }
 
     /** Wait for any in-flight settings write before swapping appearance tabs. */
@@ -2335,6 +3638,7 @@ class DashboardConfig {
         }
         this.appearanceTab = tab;
         this.restoreConfigHash();
+        this.saveLastConfigLocation();
         // Leaving the tab drops any unsaved preview so the dashboard
         // does not keep showing colours from a theme you stopped editing.
         if (tab !== 'custom-themes') this.clearThemePreview();
@@ -4186,9 +5490,12 @@ class DashboardConfig {
             this.syncSubTabStrip('data-behavior-tab', this.behaviorTab);
             this.bindControlPanels(container, 'behavior');
             this.bindBehaviorActions(container);
+            this.bindFormKeyboard(container);
+            this.bindFormKeyboardLegend(container);
         });
         this.bindControlPanels(container, 'behavior');
         this.bindBehaviorActions(container);
+        this.bindFormKeyboard(container);
     }
 
     /**
@@ -4445,6 +5752,7 @@ class DashboardConfig {
     bindPagesTags(container) {
         this.bindSubTabStrip(container, 'data-pt-tab', (tab) => {
             if (tab === this.ptTab) return;
+            this.clearListKeyboardSelection();
             this.ptTab = tab;
             this.restoreConfigHash();
             this.repaintPtBody();
@@ -4470,6 +5778,7 @@ class DashboardConfig {
         else if (this.ptTab === 'collections') { this.bindCollections(container); }
         else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
         else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
+        this.bindListKeyboard(container);
     }
 
     /* ── Finders (native) ──────────────────────────────────────────────────── */
@@ -5898,7 +7207,7 @@ class DashboardConfig {
             if (b.pinned) bits.push(esc(this.t('config.pinnedShort', 'Pinned')));
             if (b.shortcut) bits.push(esc(b.shortcut));
             return `
-                <li class="config-crud-row config-bm-row${open ? ' is-open' : ''}">
+                <li class="config-crud-row config-bm-row${open ? ' is-open' : ''}" data-bm-key="${esc(key)}">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
                            aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
                     <div class="config-bm-main">
@@ -6236,6 +7545,7 @@ class DashboardConfig {
             ?.addEventListener('click', () => this.toggleSelectAllBookmarks());
         this.bindBookmarkRows(container);
         this.bindBulkToolbar(container);
+        this.bindBookmarkKeyboard(container);
     }
 
     /**
@@ -6990,6 +8300,7 @@ class DashboardConfig {
         if (!host) return;
         host.innerHTML = this.renderBookmarksList();
         this.bindBookmarkRows(host);
+        this.bindBookmarkKeyboard(host);
         this.repaintBulkToolbar();
     }
 
@@ -8575,6 +9886,7 @@ class DashboardConfig {
                 this.syncSubTabStrip('data-stats-tab', this.statsTab);
             });
         });
+        this.bindFormKeyboard(container);
     }
 
     /** The report as a flat CSV, so it can be worked through in a spreadsheet. */
@@ -8715,7 +10027,9 @@ class DashboardConfig {
                 'config.helpKeyboardBody', '',
                 `<div class="config-actions">
                     <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
-                </div>`);
+                </div>`)
+            + this.helpPanel('config.helpConfigKeyboardTitle', 'Config navigation',
+                'config.helpConfigKeyboardBody', '');
     }
 
     renderHelpHealth() {

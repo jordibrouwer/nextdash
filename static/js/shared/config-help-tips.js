@@ -63,6 +63,11 @@
                 'tipTuneCommands',
             ],
         },
+        {
+            titleKey: 'tipsGroupConfig',
+            titleFallback: 'Config',
+            tips: ['tipConfigKeyboard'],
+        },
     ];
 
     function t(language, key, fallback) {

@@ -197,7 +197,7 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 
 ### 4.5 Config vs dashboard
 
-Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** header link, or the `/#config` address; **`<`** takes you back.
+Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config returns you to the **last section and sub-tab** you were on; a deep link like `/#config/appearance` still takes priority.
 
 | Dashboard view | Config view |
 |-----------------|------------------|
@@ -215,7 +215,7 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Date/time · mini status          pages · health · config   │
+│  Date/time · mini status    [page tabs] · pages · inbox · health · config │
 ├─────────────────────────────────────────────────────────────┤
 │  Title (optional)                                           │
 ├─────────────────────────────────────────────────────────────┤
@@ -230,7 +230,7 @@ Side rail layout (optional — **Config → Behavior → Display → Button bar 
 
 ```
 ┌──┬─────────────────────────────────────────────────────────┐
-│+ │  [header: date · health · config · pages]               │
+│+ │  [header: date · page tabs · pages · inbox · health · config]          │
 │──│                                                         │
 │> │  [Smart collections]  [Tag collections]  [Categories…]  │
 │? │    └─ bookmark rows                                     │
@@ -245,10 +245,14 @@ Side rail layout (optional — **Config → Behavior → Display → Button bar 
 
 ### 🧭 Header
 
-- **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.  
-- **health** — A **heartbeat icon** linking to `/#health`, with an inline pill counter (e.g. `3`) when there is something to report — **red** for a monitored bookmark that is down right now or an ordinary broken link, **amber** for warnings, hidden when healthy (styled like the inbox tab). The most severe state wins the badge: a **down monitor** takes priority over a broken link, which takes priority over warnings. A down monitor is counted apart from a broken link — clicking opens `/?hv_filter=monitored#health` for an outage, `/?hv_filter=broken#health` for a broken link. When the number of down monitors **rises**, the icon **pulses once** to catch your eye; it stays quiet on a reload that merely finds an existing outage, on a recovery, and — via a 10-minute cooldown — on a monitor that flaps up and down. The pulse shares the broken red and is told apart by the movement, and it honours reduced-motion and the no-animations setting. Always shown. Open the same view from the keyboard with **`Shift+H`**.  
-- **config** — Settings and bookmark management.  
-- **pages** — Overview of all pages with counts (`,`).
+- **Date/time** — Click for a **week overview** popover (today highlighted; optional **Open calendar** link when configured in General). Optional weather line below.
+- **Page tabs** — Switch bookmark pages (`1`–`9`, `Shift + ←/→`, or click). On desktop the strip scrolls when you have many pages.
+- **pages** — Overview of all pages with counts (`,` or the header button).
+- **Inbox** — When enabled, an inbox tab beside **pages** opens the triage view (`Shift + I` or `0`). Unread count on the tab when something is waiting.
+- **health** — A **heartbeat icon** linking to `/#health`, with an inline pill counter (e.g. `3`) when there is something to report — **red** for a monitored bookmark that is down right now or an ordinary broken link, **amber** for warnings, hidden when healthy (styled like the inbox tab). The most severe state wins the badge: a **down monitor** takes priority over a broken link, which takes priority over warnings. A down monitor is counted apart from a broken link — clicking opens `/?hv_filter=monitored#health` for an outage, `/?hv_filter=broken#health` for a broken link. When the number of down monitors **rises**, the icon **pulses once** to catch your eye; it stays quiet on a reload that merely finds an existing outage, on a recovery, and — via a 10-minute cooldown — on a monitor that flaps up and down. The pulse shares the broken red and is told apart by the movement, and it honours reduced-motion and the no-animations setting. Always shown. Open the same view from the keyboard with **`Shift+H`**.
+- **config** — Settings and bookmark management.
+
+**pages**, inbox, health, and config share even spacing in one cluster to the right of the page tabs (wider gap before **pages**). On mobile the tab strip is hidden — **pages** and **config** stay in the header.
 
 ### 🎛️ Button bar / side rail
 
@@ -785,7 +789,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` switches between them.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, an unread **What's new** release may open automatically on dashboard load. Last-seen release syncs via **`settings.discoverabilityState`** in `settings.json` across browsers. The quick-start card and its checklist are the only other first-run prompts (see [Quick-start card](#quick-start-card-doesnt-appear)) — the tours, spotlights, and discoverability promo balloons this section used to describe were all removed in **v2026.07.17**.
+**Post-onboarding prompts** — On desktop, the **first config open** may show a one-time keyboard intro toast (**v2026.08.01**); an unread **What's new** release can surface a hint in search for seven days — the release modal never opens by itself (see [What's new](#whats-new)). Last-seen release syncs via **`settings.discoverabilityState`** in `settings.json` across browsers. The quick-start card and its checklist are the only other first-run prompts (see [Quick-start card](#quick-start-card-doesnt-appear)) — the tours, spotlights, and discoverability promo balloons this section used to describe were all removed in **v2026.07.17**.
 
 ### Layout presets
 
@@ -949,9 +953,13 @@ Configuration is a **view inside the dashboard**, not a separate page. It opens 
 
 | To open | To leave |
 |---------|----------|
-| **`Shift+S`**, **`<`** (`Shift+,`), the **config** link in the header, or the `/#config` address | **`Escape`** (unless you are typing in a field, or something is open on top of it), or the back link |
+| **`Shift+S`**, **`<`** (`Shift+,`), the **config** (gear) link in the header, or the `/#config` address | **`Escape`** (unless you are typing in a field, or something is open on top of it), or the back link |
+
+Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores the **last section and sub-tab** unless a `/#config/…` deep link names something else.
 
 Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/behavior/privacy` opens Behavior on its Privacy tab, and the address bar keeps up as you click, so whatever you are looking at can be copied and shared.
+
+Below **Help**, separated by a gap, **Find settings** opens the settings-jump overlay (`Ctrl/Cmd+Shift+K`) — the same search that jumps to any section, sub-tab, help topic, or field label you have visited.
 
 ### The eight sections
 
@@ -1012,18 +1020,37 @@ Back up first — neither can be undone.
 
 ### ⌨️ Keyboard
 
+Config has its own keyboard layer — dashboard grid shortcuts do not run while config is open. Press **`!`** or **`F1`** for the cheat sheet; the **Config view** group lists every binding.
+
 | Keys | Action |
 |------|--------|
-| `Shift+S` or `<` | Open config from the dashboard |
-| `Escape` | Close config and return to the dashboard |
-| `←` / `→` | Previous / next sub-tab (wraps at the ends) |
-| `Home` / `End` | First / last sub-tab |
+| `Shift+S` or `<` | Toggle config; reopening returns to the last section and sub-tab |
+| `0`–`9` | Leave config for Inbox (`0`) or a bookmark page (`1`–`9`) |
+| `j` / `k` | Previous / next section in the left rail |
+| `g` / `G` | First / last section |
+| `←` / `→` or `↑` / `↓` (section rail) | Move between sections when the rail is focused |
+| `Home` / `End` (section rail) | Jump to first / last section |
+| `Alt + ←` / `→` or `[` / `]` | Previous / next sub-tab |
+| `←` / `→` (sub-tabs) | Move between sub-tabs when a sub-tab strip is focused |
+| `↑` / `↓` (Pages & tags lists) | Move between rows when focus is in the list panel |
+| `Enter` / `Space` (list row) | Focus the first field in the selected list row |
+| `g` / `G` (list row) | Jump to first / last row in a Pages & tags list |
+| `/` (Tags tab) | Focus the tag filter |
+| `j` / `k` (Bookmarks list) | Move between bookmark rows |
+| `Enter` / `Space` (bookmark row) | Open the inline editor |
+| `/` (Bookmarks) | Focus the bookmark search field |
+| `←` / `→` (choice row) | Move between options; `Space` selects |
+| `Home` / `End` (slider) | Jump to min or max on a focused slider |
+| `Ctrl/Cmd + Shift + K` | Find a setting, section, or help topic (settings jump) — or click **Find settings** below Help in the left nav |
+| `Escape` | Close bookmark editor → clear list selection → exit config |
 
-Shortcuts do not fire while focus is in an input, textarea, select, contenteditable field, or a modal.
+Inline hints at the bottom of form sections and under list tabs summarise the keys for that panel — press **`Shift+K`** in a legend to open settings jump. **Help → Search & keyboard → Config navigation** repeats this in prose. The first config open on desktop may show a one-time intro toast pointing at **`!`** for the full cheat sheet (**v2026.08.01**).
 
-`Escape` closes one layer at a time. With a modal open over the config view — the add-bookmark form, say — the first press closes the modal and leaves you in config, on the section you were reading; a second press closes config. The same holds for the tag cloud, an active search and an inline edit.
+Shortcuts do not fire while focus is in an input, textarea, select, or contenteditable field, except where noted (for example list keys from the tag filter or bookmark search).
 
-Closing config also leaves the **dashboard underneath it untouched**: an active tag filter is still applied when you land back on it.
+`Escape` closes one layer at a time. With a modal open over config — the add-bookmark form, for example — the first press closes the modal and leaves you in config; a second press closes config. The same applies to search overlays and inline edit on the dashboard underneath.
+
+Closing config leaves the **dashboard underneath untouched**: an active tag filter stays applied when you return.
 
 ---
 

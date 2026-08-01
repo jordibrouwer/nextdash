@@ -31,6 +31,11 @@ class DashboardConfigLoader {
 
     static VIEW = 'config';
 
+    /** Mirrors DashboardConfig.isGenericConfigHash for pre-load hash routing. */
+    static isGenericConfigHash(hash) {
+        return typeof hash === 'string' && hash.replace(/^#/, '') === 'config';
+    }
+
     /** Mirrors DashboardConfig.sectionFromHash for pre-load hash routing. */
     static sectionFromHash(hash) {
         if (typeof hash !== 'string') return null;
@@ -96,6 +101,11 @@ class DashboardConfigLoader {
 
     isActiveView() {
         return this.dash.activeView === DashboardConfigLoader.VIEW;
+    }
+
+    /** Delegates to the loaded module; config must be open so the module exists. */
+    handleKeyboardNavigation(e) {
+        return this._module?.handleKeyboardNavigation?.(e) ?? false;
     }
 
     /** The real DashboardConfig instance once loaded, else null. */

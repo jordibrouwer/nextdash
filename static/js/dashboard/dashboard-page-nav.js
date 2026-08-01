@@ -189,8 +189,7 @@ class DashboardPageNav {
         const targetPageId = Number(pageId);
         const pageIndex = d.pages.findIndex((page) => Number(page.id) === targetPageId);
         container.querySelectorAll('.page-nav-btn').forEach((btn, index) => {
-            const isViewTab = btn.hasAttribute('data-view-tab');
-            const selected = !isViewTab && index === pageIndex && d.isBookmarksView();
+            const selected = index === pageIndex && d.isBookmarksView();
             btn.classList.toggle('active', selected);
             btn.setAttribute('aria-selected', selected ? 'true' : 'false');
             btn.tabIndex = selected ? 0 : -1;
@@ -307,6 +306,11 @@ class DashboardPageNav {
         const container = document.getElementById('page-navigation');
         if (!container) return;
 
+        const inboxHost = document.getElementById('page-nav-inbox-host');
+        if (inboxHost) {
+            inboxHost.innerHTML = '';
+        }
+
         container.innerHTML = '';
         container.setAttribute('role', 'tablist');
         const tabsLabel = d.formatDashboardLabel('pageTabsAria', {}, 'Dashboard pages');
@@ -391,7 +395,7 @@ class DashboardPageNav {
                     inboxBtn.click();
                 }
             });
-            container.appendChild(inboxBtn);
+            (inboxHost || container).appendChild(inboxBtn);
             this.updateInboxTabBadge();
             this.syncInboxTabHighlight();
         }
