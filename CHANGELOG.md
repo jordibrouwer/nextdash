@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.01.2.1 — August 2026](#v2026080121--august-2026)
 - [v2026.08.01.1 — August 2026](#v202608011--august-2026)
 - [v2026.08.01 — August 2026](#v20260801--august-2026)
 - [v2026.07.26.3 — July 2026](#v202607263--july-2026)
@@ -130,6 +131,23 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.01.2.1 — August 2026
+
+**Hotfix after v2026.08.01.1** — the lazy-loaded health module failed to parse, so the Health view would not open; the Find settings setting promo showed raw locale keys; overview carousel copy and breadcrumb labels were missing in nl/de/fr.
+
+### Health
+
+- **fix** **Health module parse error** — a missing `});` after the filter-pill click handler and an undeclared `searchInput` in `renderToolbar()` stopped `dashboard-health.js` from loading, so the lazy-loaded Health view never registered `window.DashboardHealth` (`dashboard-health.js`).
+- **fix** **Health lazy-load race** — the loader now waits until script exports are registered after `onload`, not only for the load event (`dashboard-health-loader.js`).
+
+### Config
+
+- **fix** **Find settings setting promo** — the promo catalog referenced `findSettingsPromoTitle` / `findSettingsPromoBody`, which do not exist in locales; it now uses `settingsSearchPromoTitle` / `settingsSearchPromoBody` (`config-setting-promos.js`).
+- **fix** **Overview → Health handoff** — overview tiles and needs-attention rows apply the health filter after `openHealthView()` so lazy loading and restored view state do not drop the filter (`dashboard-config.js`).
+- **fix** **Overview carousel & breadcrumb i18n** — nl/de/fr translations for the new-features carousel; `viewBreadcrumbRoot` and bookmarks page-filter promo strings added where missing (`locales/{nl,de,fr}.json`).
 
 ---
 
