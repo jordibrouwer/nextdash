@@ -9,7 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
-- [v2026.08.04 — August 2026](#v20260804--august-2026)
+- [v2026.08.05 — August 2026](#v20260805--august-2026)
 - [v2026.08.02.3 — August 2026](#v202608023--august-2026)
 - [v2026.08.02.2 — August 2026](#v202608022--august-2026)
 - [v2026.08.02.1 — August 2026](#v202608021--august-2026)
@@ -141,7 +141,7 @@ Nothing yet.
 
 ---
 
-## v2026.08.04 — August 2026
+## v2026.08.05 — August 2026
 
 **After v2026.08.02.3** — Config could reopen on Statistics (or another stale section) instead of Overview when returning via `Shift+S`, Escape, or the config link; bookmark rows in config used a different inline editor than Health/Inbox; random theme *On view change* could flash white in dark mode during view switches.
 
@@ -156,7 +156,7 @@ Nothing yet.
 
 ### Docs
 
-- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.04**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v155`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v213`.
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.05**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v155`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v213`.
 
 ---
 

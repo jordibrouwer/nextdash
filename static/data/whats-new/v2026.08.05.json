@@ -1,7 +1,7 @@
 {
-  "tag": "v2026.08.04",
+  "tag": "v2026.08.05",
   "date": "August 2026",
-  "releasedAt": "2026-08-04",
+  "releasedAt": "2026-08-05",
   "modalLead": "Config opens on Overview when you return normally; your last section is restored only after Shift+H or Shift+I, including cold load on bare #config. Config → Bookmarks rows match Health and Inbox, with Edit opening a prefilled modal. Random theme On view change no longer flashes white in dark mode.",
   "sections": [
     {
@@ -31,7 +31,7 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Release docs for v2026.08.04</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v155</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v213</code>."
+          "text": "<strong>Release docs for v2026.08.05</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v155</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v213</code>."
         }
       ]
     }
