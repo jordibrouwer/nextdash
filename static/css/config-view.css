@@ -2286,17 +2286,27 @@ body.no-animations .config-new-features-panel-star {
     border-bottom: none;
 }
 
-/* Appearance tiles hold words ("Source Code Pro"), not the short numbers the
-   stats tiles were sized for, so the value scales down and wraps rather than
-   overflowing its box. A minimum height keeps the row even when some tiles
-   carry a detail line and others do not. */
+/* Appearance fits six summary tiles on one row; values are words not numbers,
+   so they scale down and wrap rather than forcing a second row. */
+.config-tiles--text {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+}
+
 .config-tiles--text .config-tile {
-    min-height: 96px;
+    padding: 12px 10px;
+    gap: 6px;
+    border-radius: 10px;
     justify-content: flex-start;
 }
 
+.config-tiles--text .config-tile-label {
+    font-size: calc(var(--font-size-text) * 0.75);
+    letter-spacing: 0.04em;
+}
+
 .config-tiles--text .config-tile-value {
-    font-size: calc(var(--font-size-text) * 1.15);
+    font-size: calc(var(--font-size-text) * 1.05);
     line-height: 1.25;
     overflow-wrap: anywhere;
 }
@@ -2304,6 +2314,20 @@ body.no-animations .config-new-features-panel-star {
 .config-tiles--text .config-tile-detail {
     margin-top: auto;
     padding-top: 4px;
+    font-size: calc(var(--font-size-text) * 0.786);
+    line-height: 1.25;
+}
+
+@media (max-width: 960px) {
+    .config-tiles--text {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .config-tiles--text {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 /* ── Custom collections editor ───────────────────────────────────────────── */

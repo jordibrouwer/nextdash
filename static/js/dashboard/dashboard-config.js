@@ -3448,10 +3448,8 @@ class DashboardConfig {
     /**
      * A summary of everything the section controls, not just the theme.
      *
-     * Two tiles left the row looking half-finished — the grid is
-     * auto-fill/minmax, so a short row stretches to fill the width. These cover
-     * each panel below, so the strip reads as an at-a-glance answer to "how is
-     * my dashboard set up" and the count fills the row at common widths.
+     * Six tiles cover each Appearance panel below; the grid keeps them on one
+     * row at common widths (see config-tiles--text in config-view.css).
      */
     appearanceTiles() {
         const s = this.dash.settings || {};
