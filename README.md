@@ -1,4 +1,8 @@
-# 🚀 nextDash
+<p align="center">
+  <img src="logo-ascii-on-black-large.png" alt="nextDash" width="720">
+</p>
+
+# nextDash
 
 **A keyboard-first, self-hosted bookmark dashboard. No accounts, no cloud, no noise.**
 
@@ -178,7 +182,7 @@ These statistics exist to answer exactly that — **which features get used, and
 - **Bookmark maintenance** — starting an edit and saving it (with whether that was on the dashboard or in config), deleting, moving to another category (with a bucketed count, so a bulk move counts once), and reordering by drag.
 - **Outcomes** — whether adding a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, or failure. This shows where the form trips people up.
 - **Inbox and health actions** — snooze, mark-read, wake, promote, delete, and bulk clean-ups; health rechecks, retest-all, redirect detection, title refresh, and delete.
-- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums. It carries the **release you are running** (`v2026.08.02`), so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
+- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums. It carries the **release you are running** (`v2026.08.02.3`), so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
 
 #### What is never measured
 
@@ -196,7 +200,7 @@ On boot, nextDash validates `PORT` (1–65535, default `8080`) and ensures `NEXT
 
 ### Production Docker example
 
-`docker-compose.prod.yml` serves CSS/JS from the embedded binary (only `./data` is mounted). As of **v2026.08.02** the production image ships only the Go binary (~40% smaller), runs as user `nextdash`, sets a 256 MB memory cap, and caches hot server paths (parsed templates, store reads, precomputed asset hashes). Optional TLS and long-cache static serving: `docker compose -f docker-compose.proxy.yml up -d` with `deploy/Caddyfile`.
+`docker-compose.prod.yml` serves CSS/JS from the embedded binary (only `./data` is mounted). As of **v2026.08.02** the production image ships only the Go binary (~40% smaller), sets a 256 MB memory cap, and caches hot server paths (parsed templates, store reads, precomputed asset hashes). Since **v2026.08.02.1** the entrypoint starts as root for host Docker hooks, then runs the app as `nextdash` (`NEXTDASH_RUN_AS_ROOT=1` optional). Optional TLS and long-cache static serving: `docker compose -f docker-compose.proxy.yml up -d` with `deploy/Caddyfile`.
 
 Recommended LAN/VPS environment block:
 
@@ -322,8 +326,6 @@ environment:
 - `←`/`→` — previous/next sub-tab, wrapping at both ends
 - `Home` / `End` — first / last sub-tab
 
-Rebinding shortcuts is not available at the moment.
-
 > **Release history** — what changed in each version, with the reasoning behind it, lives in the
 > **[changelog](CHANGELOG.md)**. The **★** button in the dashboard shows the same notes in-app.
 > This section describes what nextDash does today.
@@ -345,10 +347,6 @@ The settings a self-hoster reaches for most: **Behavior → General** (localhost
 **Branding & PWA** — Custom title and favicon under Advanced → Branding apply to the browser tab, the web app manifest (`/manifest.webmanifest`), and “Add to Home Screen” / installed PWA name and icon. **Advanced → HyprMode** includes an **Add to home screen** panel with platform steps and a browser install button when available.
 
 In-app help: Config → Help tab → *General settings* (same content, translated).
-
-#### Config → Keyboard
-
-Open **`config#keyboard`** (link from Help → Keyboard shortcuts or the footer tip). **Fixed defaults** at the top match the cheat sheet — add bookmark (`&`, `+` / `Ctrl+Shift+A`, `:new`, `Ctrl+V`), **quick actions** on a selected row (`Shift+M`, `Shift+T`, `Shift+D`, `Ctrl+C`, `[`, `Delete`), **grid navigation** chords (`G+1–9`, `G+P`, `G G`, `Shift+←/→`, Home/End, Tab, `F1`), and a **Config tab bar** section (`1–9`, `←/→` with group wrap, `Alt+←/→` between groups, `S`, `Ctrl/Cmd+K`, `Ctrl/Cmd+Shift+K`, `Alt+↑/↓` on Bookmarks). **Rebindable** keys below include search (`>`), command palette (`:`), page overview (`,`), global search (`@`), tag cloud (`/`), inline edit (`;`), arrows, Enter, and page tabs `1`–`9`. Click **Rebind**, press a key, then **Save** — conflicts with fixed or existing bindings show a warning. **Export** / **import** your rebindable preset as JSON from the toolbar; fixed shortcuts stay on the cheat sheet.
 
 ### Search filters
 

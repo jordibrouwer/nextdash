@@ -1,10 +1,19 @@
-# 🚀 nextDash — User Manual
+<p align="center">
+  <img src="logo-ascii-on-black-large.png" alt="nextDash" width="640">
+</p>
+
+# nextDash — User Manual
 
 **A complete, step-by-step guide to the keyboard-first bookmark dashboard.**
 
-> Enhanced for GitHub Markdown with icons, cleaner visual structure, and improved scanability while preserving the original content as much as possible.
+| | Resource | Where to look |
+|---|----------|---------------|
+| 🚀 | **Install & security** | [README.md](README.md) — Docker, tokens, production setup |
+| 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
+| 🗂️ | **Shortcut cheat sheet** | [PDF reference](nextDash-cheatsheet.pdf?raw=true) — one-page printable |
+| 💬 | **Translated help** | **Config → Help** in the app (EN / NL / DE / FR) |
 
-This manual is written for new users and for anyone who wants a structured reference. It complements the shorter [README](README.md) (install, security, changelog) and the in-app help at **Config → Help** (same topics, translated)).
+This manual is for new users and anyone who wants a structured reference. It goes deeper than the README and mirrors the in-app Help topics.
 
 ---
 
@@ -61,7 +70,7 @@ Think of it as a personal start page: bookmarks grouped by **page** (e.g. Work, 
 
 ## 2. 🧰 Before you begin
 
-### 🧰 What you need
+### ✅ What you need
 
 - A machine or container to run nextDash (Docker or a single Go binary).
 - A modern browser (Chrome, Firefox, Edge, Safari).
@@ -503,7 +512,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 
 Press **`!`** or **`F1`**. Focus lands in the filter box automatically. Type to narrow the list. When the **side rail** is active, a **Layout (side rail)** section lists tab order and `:buttonbar` hints. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open. On first open (desktop), a one-time **Got it** balloon may appear beside the modal — dismissing it does not close the cheat sheet.
 
-**Rebinding shortcuts** — not available at the moment. The old configuration page had a **Keyboard** tab for remapping keys; it has not been rebuilt in the config view, and the setting behind it never took effect (it was stored but never read back), so it was retired rather than carried over half-working. **Custom key bindings are still in development.** Every shortcut keeps its default in the meantime.
+Every shortcut uses its **fixed default**. Custom key rebinding is not available — the cheat sheet is the authoritative list.
 
 **Occasional tips** — now and then the dashboard shows one keyboard tip as a small toast with a **Cheat sheet** button beside it. It draws from the built-in tips catalogue, appears at most once every few days, never repeats a tip you have already seen, and stays away during first-run setup, on touch, and while a dialog or the inline editor is open. Turn it off under **Config → Behavior → General**.
 
@@ -1025,9 +1034,9 @@ The destructive actions sit on their own sub-tab so they are not something you s
 
 Back up first — neither can be undone.
 
-### ⌨️ Keyboard
+### ⌨️ Config navigation keys
 
-Config has its own keyboard layer — dashboard grid shortcuts do not run while config is open. Press **`!`** or **`F1`** for the cheat sheet; the **Config view** group lists every binding.
+Config has its own keyboard layer — dashboard grid shortcuts do not run while config is open. Press **`!`** or **`F1`** for the cheat sheet; the **Config view** group lists every binding below.
 
 | Keys | Action |
 |------|--------|
@@ -1395,7 +1404,7 @@ Before listening, the server checks `PORT` (1–65535) and that `NEXTDASH_DATA_D
 
 ### Production Docker
 
-Use `docker-compose.prod.yml` for deployments: assets ship inside the binary via `go:embed`; only `./data` is mounted. Since **v2026.08.02** the image is slimmer (~40% smaller), runs as non-root user `nextdash`, caches parsed templates and store reads in memory, precomputes static asset hashes at build time, and applies HTTP read/write/idle timeouts. The compose file sets a 256 MB memory limit; for TLS and long-cache static assets in front of the app, see `docker-compose.proxy.yml` and `deploy/Caddyfile`. Commented environment examples live in the prod compose file and [README.md → Production Docker example](README.md#production-docker-example).
+Use `docker-compose.prod.yml` for deployments: assets ship inside the binary via `go:embed`; only `./data` is mounted. Since **v2026.08.02** the image is slimmer (~40% smaller), precomputes static asset hashes at build time, caches parsed templates and store reads in memory, and applies HTTP read/write/idle timeouts. Since **v2026.08.02.1** the container starts as root so host Docker hooks (e.g. Tailscale on Unraid) can run, then drops to user `nextdash` via `scripts/docker-entrypoint.sh` (`NEXTDASH_RUN_AS_ROOT=1` keeps root when required). The compose file sets a 256 MB memory limit; for TLS and long-cache static assets in front of the app, see `docker-compose.proxy.yml` and `deploy/Caddyfile`. Commented environment examples live in the prod compose file and [README.md → Production Docker example](README.md#production-docker-example).
 
 ### Build metadata & cross-tab sync
 
@@ -1507,11 +1516,13 @@ Docker: mounted volume (e.g. `./data`). Binary: `./data` next to the executable.
 
 ## 📖 Further reading
 
-- [README.md](README.md) — Install, security, and feature overview  
-- [CHANGELOG.md](CHANGELOG.md) — Complete release history (new / fix)  
-- **Config → Help** — Same topics as this manual, translated (EN/NL/DE/FR), with quick anchor links, **Browser extension**, **Security & self-hosting**, and a **What's new** recap  
-- **In-app What's new (★)** — Latest release highlights first; scroll for up to **25 recent** versions (each loads on demand with a skeleton while fetching)  
+| | Document | Contents |
+|---|----------|----------|
+| 🚀 | [README.md](README.md) | Install, security, Docker, and feature overview |
+| 📋 | [CHANGELOG.md](CHANGELOG.md) | Complete release history (new / fix) |
+| 💬 | **Config → Help** | Same topics as this manual, translated (EN/NL/DE/FR), with anchor links, **Browser extension**, **Security & self-hosting**, and a **What's new** recap |
+| ★ | **In-app What's new** | Latest release first; scroll for up to **25 recent** versions (each loads on demand with a skeleton while fetching) |
 
 ---
 
-*This manual describes nextDash as shipped in this repository. Minor details may vary by version; when in doubt, trust the in-app Help and What's new modal.*
+*This manual describes nextDash as shipped in this repository. Minor details may vary by version; when in doubt, trust **Config → Help** and the ★ What's new modal.*

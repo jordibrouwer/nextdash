@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.08.02.2",
+  "date": "August 2026",
+  "releasedAt": "2026-08-02",
+  "modalLead": "Config → Overview status tiles stay on one row at typical laptop widths — the responsive grid no longer switches to three columns at 960px viewport.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Overview status tiles on one row</strong> — delay the three-column breakpoint to 720px and add <code>min-width: 0</code> on tiles (<code>config-tiles--overview</code>, <code>config-view.css</code>)."
+        }
+      ]
+    }
+  ]
+}
