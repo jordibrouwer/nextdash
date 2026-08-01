@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.02.3 — August 2026](#v202608023--august-2026)
 - [v2026.08.02.2 — August 2026](#v202608022--august-2026)
 - [v2026.08.02.1 — August 2026](#v202608021--august-2026)
 - [v2026.08.02 — August 2026](#v20260802--august-2026)
@@ -136,6 +137,17 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.02.3 — August 2026
+
+**Hotfix after v2026.08.02.2** — Config → Bookmarks had no at-a-glance summary; Statistics → Overview headline tiles used the default auto-fill grid and wrapped to multiple rows.
+
+### Config
+
+- **new** **Bookmarks summary tiles** — five compact tiles above the list show global totals for bookmarks, tagged (with % of total), categories, shortcuts, and monitored (`bookmarksSummaryTiles()`, `config-tiles--bookmarks`, locales).
+- **fix** **Statistics overview tiles on one row** — the Overview tab reuses the six-column overview grid so headline counts stay on one line (`config-tiles--overview` in `renderStatsBody()`).
 
 ---
 
