@@ -26,38 +26,28 @@ test.describe('config: sections restored from the old config', () => {
         await loadDashboard(page);
         await openSection(page, 'bookmarks');
         await expect(page.locator('#config-bm-list')).toBeVisible();
-        const rows = page.locator('#config-bm-list .config-crud-row');
+        const rows = page.locator('#config-bm-list .config-bm-row');
         const before = await rows.count();
         expect(before).toBeGreaterThan(0);
         await page.fill('#config-bm-search', 'zzz-no-such-bookmark');
         await expect(page.locator('.config-panel-empty')).toBeVisible();
     });
 
-    test('editing a bookmark opens an inline editor', async ({ page }) => {
+    test('editing a bookmark opens the add-bookmark modal prefilled', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'bookmarks');
-        await page.locator('[data-bm-edit]').first().click();
-        await expect(page.locator('.config-bm-editor')).toBeVisible();
-        await expect(page.locator('[data-bm-field="name"]')).toBeVisible();
-        await expect(page.locator('[data-bm-field="url"]')).toBeVisible();
+        await page.locator('[data-feed-action="edit"]').first().click();
+        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
+        await expect(page.locator('#new-bookmark-name')).not.toHaveValue('');
+        await expect(page.locator('#new-bookmark-url')).not.toHaveValue('');
     });
 
-    /**
-     * The row shared its flex container with the expanded editor, which had no
-     * wrap, so the summary column collapsed to one character per line. Assert a
-     * real width rather than mere visibility — the broken layout was "visible".
-     */
-    test('bookmark rows keep a readable width, open or closed', async ({ page }) => {
+    test('bookmark rows keep a readable width', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'bookmarks');
-        const name = page.locator('.config-bm-name').first();
-        expect(await name.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(120);
+        const title = page.locator('.health-view-item-title').first();
+        expect(await title.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(120);
 
-        await page.locator('[data-bm-edit]').first().click();
-        await expect(page.locator('.config-bm-editor')).toBeVisible();
-        expect(await name.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(120);
-
-        // And the page itself must never scroll sideways because of it.
         const overflow = await page.evaluate(() =>
             document.documentElement.scrollWidth - document.documentElement.clientWidth);
         expect(overflow).toBeLessThanOrEqual(0);

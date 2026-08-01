@@ -162,6 +162,8 @@ class Dashboard {
         this.lastAppliedStructureSyncAt = 0;
         this.lastAppliedSettingsSyncAt = 0;
         this._configRefreshReady = false;
+        /** Once true, bare `#config` hash opens Overview instead of restoring Shift+H/I location. */
+        this._configInitialHashRouted = false;
         this._configReturnRefreshInFlight = false;
         this._pageBookmarksLoadId = 0;
         /** @type {Map<number, { bookmarks: object[], categories: object[], cachedAt: number }>} */
@@ -300,10 +302,18 @@ class Dashboard {
                     return;
                 }
                 if (hash === 'config' || hash.startsWith('config/')) {
+                    const genericConfig = hash === 'config';
+                    const deferRestore = genericConfig && !this._configInitialHashRouted;
                     if (this.activeView !== 'config') {
-                        void this.config?.openConfigView?.();
+                        void Promise.resolve(this.config?.openConfigView?.()).then(() => {
+                            if (deferRestore) {
+                                this.config?.restoreConfigSectionFromHash?.();
+                            }
+                            this._configInitialHashRouted = true;
+                        });
                     } else {
                         this.config?.restoreConfigSectionFromHash?.();
+                        this._configInitialHashRouted = true;
                     }
                     return;
                 }
@@ -328,6 +338,34 @@ class Dashboard {
 
             this._configRefreshReady = true;
             await this.reconcilePendingConfigSyncAfterLoad();
+
+            // Hash routing for config/inbox/health is applied at the end of init:
+            // during bootstrap loadData() the fragment can still be empty even when
+            // the navigation target is /#config, so a stored Shift+H/I location must
+            // be applied here once the shell (and lazy config module) are ready.
+            const bootHash = window.location.hash.substring(1);
+            if (this.config?.isEnabled?.()
+                && (bootHash === 'config' || bootHash.startsWith('config/'))) {
+                if (this.activeView !== 'config') {
+                    let section = bootHash === 'config'
+                        ? undefined
+                        : window.DashboardConfigLoader?.sectionFromHash?.(window.location.hash);
+                    if (bootHash === 'config') {
+                        const stored = window.DashboardConfigLoader?.loadLastConfigLocation?.();
+                        if (stored?.section) {
+                            section = stored.section;
+                            const prop = window.DashboardConfigLoader.SUB_TAB_STATE?.[stored.section];
+                            if (prop && stored.subTab) {
+                                this.config[prop] = stored.subTab;
+                            }
+                        }
+                    }
+                    await this.config.openConfigView(section);
+                } else if (window.DashboardConfigLoader?.isGenericConfigHash?.(window.location.hash)) {
+                    this.config?.restoreConfigSectionFromHash?.();
+                }
+                this._configInitialHashRouted = true;
+            }
 
             this.updateMiniStatusLine();
             // Feature-adoption snapshot, once settings are resolved.

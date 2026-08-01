@@ -63,21 +63,19 @@ test.describe('config to dashboard category sync', () => {
 
         // Narrow the list to the seeded bookmark and open its editor.
         await page.locator('#config-bm-search').fill(uniqueName);
-        const row = page.locator('#config-bm-list [data-bm-edit]').first();
+        const row = page.locator('#config-bm-list [data-feed-action="edit"]').first();
         await expect(row).toBeVisible({ timeout: 10_000 });
         await row.click();
-        await expect(page.locator('.config-bm-editor')).toBeVisible();
+        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
 
-        // Pick the first real category the page offers, then save — the editor
-        // marks itself dirty on change and only writes on Save.
-        const categorySelect = page.locator('[data-bm-field="category"]');
+        const categorySelect = page.locator('#new-bookmark-category');
         const targetCategory = await categorySelect.evaluate((el) => {
             const opt = [...el.options].find((o) => o.value && o.value !== '__new__');
             if (!opt) throw new Error('no category options available');
             return opt.value;
         });
         await categorySelect.selectOption(targetCategory);
-        await page.locator('[data-bm-save]').first().click();
+        await page.locator('#new-bookmark-create').click();
 
         // The change must reach the server, not just the in-page model.
         await expect.poll(async () => page.evaluate(async ({ targetPageId, targetUrl }) => {

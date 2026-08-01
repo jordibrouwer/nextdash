@@ -51,16 +51,16 @@ test.describe('config bookmarks keyboard navigation', () => {
         await expect(page.locator('.config-bm-row').first()).toHaveClass(/keyboard-selected/);
     });
 
-    test('Enter opens the inline editor and focuses the name field', async ({ page }) => {
+    test('e opens the edit bookmark modal', async ({ page }) => {
         await openBookmarksWithRows(page, [
             { name: 'Alpha', url: 'https://alpha.example', pageId: 1 },
         ]);
 
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
-        await page.keyboard.press('Enter');
-        await expect(page.locator('.config-bm-editor')).toBeVisible();
-        await expect(page.locator('#config-bm-name')).toBeFocused();
+        await page.keyboard.press('e');
+        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
+        await expect(page.locator('#new-bookmark-name')).toBeFocused();
     });
 
     test('g and Shift+G jump to first and last bookmark rows', async ({ page }) => {
@@ -89,18 +89,18 @@ test.describe('config bookmarks keyboard navigation', () => {
         await expect(page.locator('#config-bm-search')).toBeFocused();
     });
 
-    test('Escape closes the editor before clearing list selection', async ({ page }) => {
+    test('Escape closes the modal before clearing list selection', async ({ page }) => {
         await openBookmarksWithRows(page, [
             { name: 'Alpha', url: 'https://alpha.example', pageId: 1 },
         ]);
 
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
-        await page.keyboard.press('Enter');
-        await expect(page.locator('.config-bm-editor')).toBeVisible();
+        await page.keyboard.press('e');
+        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
 
         await page.keyboard.press('Escape');
-        await expect(page.locator('.config-bm-editor')).toBeHidden();
+        await expect(page.locator('#new-bookmark-modal.show')).toHaveCount(0);
         await expect(page.locator('.config-bm-row').first()).toHaveClass(/keyboard-selected/);
         await expect(page.locator('#dashboard-layout')).toHaveClass(/config-layout/);
 

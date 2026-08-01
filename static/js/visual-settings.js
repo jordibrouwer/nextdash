@@ -243,7 +243,15 @@
         }
         const newLink = link.cloneNode(true);
         newLink.href = `/api/theme.css?t=${Date.now()}`;
-        link.parentNode.replaceChild(newLink, link);
+        // Keep the old sheet until the new one has loaded so CSS variables never
+        // disappear for a frame (avoids a white flash during theme.css refresh).
+        newLink.addEventListener('load', () => {
+            link.remove();
+        }, { once: true });
+        newLink.addEventListener('error', () => {
+            newLink.remove();
+        }, { once: true });
+        link.parentNode.insertBefore(newLink, link.nextSibling);
     }
 
     function runAutoDarkApply() {

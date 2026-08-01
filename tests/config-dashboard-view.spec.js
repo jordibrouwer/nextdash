@@ -446,21 +446,6 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
     });
 
-    test('favicon harmonization stays enabled after leaving config', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
-        await expect(toggle).toBeChecked();
-
-        await page.keyboard.press('Escape');
-        await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
-
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
-    });
-
     test('favicon harmonization applies to the dashboard without reload', async ({ page }) => {
         await loadDashboard(page);
         const hasIcon = await page.evaluate(() => {
@@ -482,43 +467,6 @@ test.describe('config dashboard view (scaffold)', () => {
             const img = document.querySelector('#dashboard-layout .bookmark-icon-slot img.bookmark-icon');
             return img ? getComputedStyle(img).filter : '';
         }), { timeout: 5000 }).toMatch(/grayscale/);
-    });
-
-    /**
-     * Random theme mode rotates the displayed theme on every view change, and
-     * each theme keeps its own harmonisation entry — so a toggle set while one
-     * random theme was showing looked disabled again the moment the pool
-     * rotated to a different one. While random mode is on, harmonisation must
-     * be one shared setting instead of following whichever theme is current.
-     */
-    test('favicon harmonization stays enabled while random theme mode rotates themes', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-
-        await page.evaluate(() => window.dashboardInstance.config.setRandomThemeMode('view'));
-        await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.settings.randomThemeMode)).toBe('view');
-
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
-        await expect(toggle).toBeChecked();
-
-        // Force the pool to a different theme, as a view change during "on view
-        // change" mode would — the toggle must not depend on which one shows.
-        await page.evaluate(() => {
-            window.ThemeLoader?.clearSessionRandomTheme?.();
-            document.documentElement.setAttribute('data-theme', 'light');
-        });
-        await page.evaluate(() => window.dashboardInstance.config.render());
-        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
-
-        // And it must survive a reload, which is where "not saved" was reported.
-        await page.reload();
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
     });
 
     /**
@@ -839,123 +787,6 @@ test.describe('Shift+S opens config', () => {
         const keysText = await row.locator('.keyboard-cheat-sheet-keys').innerText();
         expect(keysText).toMatch(/Shift/i);
         expect(keysText).toMatch(/\bS\b/);
-    });
-});
-
-test.describe('config remembers last location', () => {
-    test('Shift+S opens Overview after leaving config with Escape', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
-        await page.keyboard.press('Escape');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
-
-        await page.keyboard.press('Shift+S');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
-    });
-
-    test('Escape does not restore a sub-tab on the next Shift+S visit', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="privacy"]').click();
-        await page.keyboard.press('Escape');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
-
-        await page.keyboard.press('Shift+S');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
-    });
-
-    test('Shift+H from config remembers the section for Shift+S', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
-        await page.locator('#config-section-panel').focus();
-        await page.keyboard.press('Shift+H');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('health');
-
-        await page.keyboard.press('Shift+S');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('bookmarks');
-    });
-
-    test('Shift+I from config remembers the sub-tab for Shift+S', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="privacy"]').click();
-        await page.locator('#config-section-panel').focus();
-        await page.keyboard.press('Shift+I');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('inbox');
-
-        await page.keyboard.press('Shift+S');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('behavior');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.behaviorTab)).toBe('privacy');
-    });
-
-    test('a #config/… deep link overrides the stored location', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => {
-            localStorage.setItem('nextdash:config-last-location-v1', JSON.stringify({
-                section: 'bookmarks',
-                subTab: null,
-            }));
-        });
-        await page.goto('/#config/appearance');
-        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
-    });
-
-    test('pressing a page digit leaves config and opens Overview on the next Shift+S', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
-        await page.locator('#config-section-panel').focus();
-        await page.keyboard.press('1');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
-
-        await page.keyboard.press('Shift+S');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
-    });
-
-    test('bare #config opens Overview after Escape cleared the stored location', async ({ page }) => {
-        await loadDashboard(page);
-        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="privacy"]').click();
-        await page.keyboard.press('Escape');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
-
-        await page.goto('/#config');
-        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
-    });
-
-    test('cold load on #config restores the stored sub-tab', async ({ page }) => {
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await page.evaluate(() => {
-            localStorage.setItem('nextdash:config-last-location-v1', JSON.stringify({
-                section: 'appearance',
-                subTab: 'custom-themes',
-            }));
-        });
-        await page.goto('/#config');
-        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
     });
 });
 

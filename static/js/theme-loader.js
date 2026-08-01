@@ -326,13 +326,33 @@
      * @param {boolean} showBackgroundDots - Whether to show background dots
      * @param {string} fontSize - The font size to apply ('xs', 's', 'sm', 'm', 'lg', 'l', 'xl')
      */
+    function preserveBodyBackgroundDuringThemeSwitch() {
+        const body = document.body;
+        if (!body) {
+            return;
+        }
+        const bg = getComputedStyle(body).backgroundColor;
+        if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') {
+            return;
+        }
+        body.style.setProperty('background-color', bg, 'important');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                body.style.removeProperty('background-color');
+                syncThemeColorMeta();
+            });
+        });
+    }
+
     function applyTheme(theme, showBackgroundDots = true, fontSize = 'm') {
         // Remove existing FOUC prevention style if present
         const existingStyle = document.head.querySelector('style[data-fouc-prevention]');
         if (existingStyle) {
             existingStyle.remove();
         }
-        
+
+        preserveBodyBackgroundDuringThemeSwitch();
+
         // Set data-theme on html element
         document.documentElement.setAttribute('data-theme', theme);
         syncBackgroundDots(showBackgroundDots);

@@ -55,6 +55,8 @@ class DashboardConfig {
         this.bmEditing = null;
         this.bmDirty = false;
         this.bmSelected = new Set();
+        /** Rows with an in-flight network action (recheck, favicon refresh, …). */
+        this._bmBusyKeys = new Set();
         /** Per-page category lists for the bookmarks section dropdowns. */
         this._bmCategoriesCache = new Map();
         // Statistics: undefined while the health fetch is in flight, null on failure.
@@ -351,12 +353,24 @@ class DashboardConfig {
     /**
      * Section (and optional sub-tab) when opening config without an explicit
      * target or `#config/…` hash — e.g. Shift+S from the bookmark grid.
+     *
+     * Saved location (Shift+H / Shift+I) applies when returning from health
+     * or inbox via Shift+S. Cold load to bare `#config` is handled in
+     * dashboard-data.js before the lazy module loads. Opening config from
+     * bookmarks with a page hash (#1) always lands on Overview.
      */
     resolveConfigOpenTarget(explicitSection) {
         const hash = window.location.hash;
         const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
         const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
-        const stored = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
+        const saved = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
+        let stored = null;
+        if (saved?.section) {
+            const fromView = this.dash.activeView;
+            if (fromView === 'health' || fromView === 'inbox') {
+                stored = saved;
+            }
+        }
         const targetSection = explicitSection || hashSection || stored?.section || 'overview';
 
         if (!hashIsGeneric && hashSection === targetSection) {
@@ -373,14 +387,21 @@ class DashboardConfig {
         const hash = window.location.hash;
         if (DashboardConfig.isGenericConfigHash(hash)) {
             const stored = this.loadLastConfigLocation();
-            if (!stored?.section) return;
-            if (stored.subTab) {
-                this.applyStoredSubTab(stored.section, stored.subTab);
+            if (stored?.section) {
+                if (stored.subTab) {
+                    this.applyStoredSubTab(stored.section, stored.subTab);
+                }
+                if (stored.section !== this.section) {
+                    this.section = stored.section;
+                    this.render();
+                } else if (stored.subTab) {
+                    this.render();
+                }
+                this.restoreConfigHash();
+                return;
             }
-            if (stored.section !== this.section) {
-                this.section = stored.section;
-                this.render();
-            } else if (stored.subTab) {
+            if (this.section !== 'overview') {
+                this.section = 'overview';
                 this.render();
             }
             this.restoreConfigHash();
@@ -1428,15 +1449,18 @@ class DashboardConfig {
 
     async activateBookmarkKeyboardRow(key) {
         if (!key) return;
-        if (this.bmEditing === key) {
-            this.focusBookmarkEditor();
-            return;
-        }
-        if (this.bmEditing && !(await this.confirmDiscardBookmarkEdit())) return;
-        this.bmEditing = key;
-        this.bmDirty = false;
-        this.repaintBookmarksList();
-        this.focusBookmarkEditor();
+        void this.openBookmarkEditModal(key);
+    }
+
+    findBookmarkByKey(key) {
+        return (this.dash.allBookmarks || []).find((b) => DashboardConfig.bookmarkKey(b) === key) || null;
+    }
+
+    openBookmarkByKey(key) {
+        const bookmark = this.findBookmarkByKey(key);
+        if (!bookmark?.url) return;
+        const href = this.dash.safeBookmarkOpenHref?.(bookmark.url) || bookmark.url;
+        window.open(href, '_blank', 'noopener,noreferrer');
     }
 
     async closeBookmarkEditorFromKeyboard() {
@@ -1449,15 +1473,14 @@ class DashboardConfig {
     }
 
     appendBookmarkKeyboardLegend(host) {
-        const list = host?.querySelector('.config-crud-list');
-        if (!list || list.querySelector('.config-panel-empty')) return;
+        const feed = host?.querySelector('.config-bm-feed');
+        if (!feed || feed.querySelector('.config-panel-empty')) return;
         if (host.querySelector('.config-bm-keyboard-legend')) return;
         const legend = document.createElement('p');
-        legend.className = 'config-bm-keyboard-legend config-field-hint';
+        legend.className = 'config-bm-keyboard-legend';
         legend.setAttribute('aria-hidden', 'true');
-        legend.textContent = this.t('config.bookmarksKeyboardLegend',
-            'j/k move · Enter edit · g/G first/last · / search · Esc clear');
-        list.after(legend);
+        legend.innerHTML = this.renderBookmarkKeyboardLegend();
+        feed.after(legend);
     }
 
     bindBookmarkKeyboard(container) {
@@ -1521,7 +1544,7 @@ class DashboardConfig {
         if ((e.key === 'Enter' || e.key === ' ') && this._bmKeyboardKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
+            this.openBookmarkByKey(this._bmKeyboardKey);
             return true;
         }
         if (e.key === 'g') {
@@ -1537,6 +1560,44 @@ class DashboardConfig {
             this._bmKeyboardKey = this.bookmarkRowKey(rows[rows.length - 1]);
             this.applyBookmarkKeyboardSelection(rows);
             return true;
+        }
+        if (this._bmKeyboardKey) {
+            if (e.key === 'e') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
+                return true;
+            }
+            if (e.key === 'p') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.recheckBookmarkByKey(this._bmKeyboardKey);
+                return true;
+            }
+            if (e.key === 'm') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.toggleBookmarkMenu(this._bmKeyboardKey, 'more');
+                return true;
+            }
+            if (e.key === 'c') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.toggleBookmarkMenu(this._bmKeyboardKey, 'check');
+                return true;
+            }
+            if (e.key === 'd') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                void this.deleteBookmarkByKey(this._bmKeyboardKey);
+                return true;
+            }
+            if (e.key === 'o') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.openBookmarkByKey(this._bmKeyboardKey);
+                return true;
+            }
         }
         if (e.key === '/' && !isBmSearch) {
             const search = document.getElementById('config-bm-search');
@@ -5070,11 +5131,7 @@ class DashboardConfig {
 
     /** Reload the server-rendered theme stylesheet so a theme change takes effect. */
     reloadThemeCSS() {
-        const link = document.querySelector('link[href^="/api/theme.css"]');
-        if (!link || !link.parentNode) return;
-        const next = link.cloneNode(true);
-        next.href = `/api/theme.css?t=${Date.now()}`;
-        link.parentNode.replaceChild(next, link);
+        window.VisualSettings?.reloadThemeCSS?.();
     }
 
     handleAppearanceAction(action) {
@@ -7745,43 +7802,55 @@ class DashboardConfig {
         }
         const pageName = (id) => (this.dash.pages || []).find((p) => String(p.id) === String(id))?.name || id;
         const showPageBadge = !this.bmPageFilter;
-        const modeLabel = (b) => {
-            const mode = window.CheckMode?.of?.(b) || 'off';
-            const found = (window.CheckMode?.options?.() || []).find((o) => o.mode === mode);
-            return mode === 'off' ? '' : (found?.label || mode);
-        };
         const items = rows.map((b) => {
             const key = DashboardConfig.bookmarkKey(b);
-            const open = this.bmEditing === key;
             const ticked = this.bmSelected.has(key);
-            const bits = [];
-            if (b.category) bits.push(esc(this.categoryLabelForBookmark(b)));
-            if ((b.tags || []).length) bits.push(esc((b.tags || []).join(', ')));
-            const mode = modeLabel(b);
-            if (mode) bits.push(esc(mode));
-            if (b.pinned) bits.push(esc(this.t('config.pinnedShort', 'Pinned')));
-            if (b.shortcut) bits.push(esc(b.shortcut));
+            const title = b.name || this.formatBookmarkUrlDisplay(b.url) || b.url;
+            const domain = this.formatBookmarkUrlDisplay(b.url);
+            const metaBits = [];
+            if (showPageBadge) metaBits.push(`<span class="config-bm-page-badge">${esc(pageName(b.pageId))}</span>`);
+            if (b.category) metaBits.push(`<span>${esc(this.categoryLabelForBookmark(b))}</span>`);
+            if ((b.tags || []).length) metaBits.push(`<span>${esc((b.tags || []).join(', '))}</span>`);
+            if (b.pinned) metaBits.push(`<span>${esc(this.t('config.pinnedShort', 'Pinned'))}</span>`);
+            if (b.shortcut) metaBits.push(`<span class="config-bm-shortcut-pill">${esc(b.shortcut)}</span>`);
+            const mode = window.CheckMode?.of?.(b) || 'off';
+            const feed = window.BookmarkFeedRow;
+            const noteHtml = b.note
+                ? `<p class="inbox-item-note">${esc(b.note)}</p>`
+                : '';
+            const iconSrc = this.resolveIconSrc(b.icon);
             return `
-                <li class="config-crud-row config-bm-row${open ? ' is-open' : ''}" data-bm-key="${esc(key)}">
-                    <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
-                           aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
-                    <div class="config-bm-main">
-                        <div class="config-bm-title-row">
-                            ${showPageBadge ? `<span class="config-bm-page-badge">${esc(pageName(b.pageId))}</span>` : ''}
-                            <span class="config-bm-name">${esc(b.name || b.url)}</span>
+                <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1">
+                    <label class="config-bm-check">
+                        <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
+                               aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
+                    </label>
+                    ${feed?.renderIcon?.(iconSrc, esc) || this.renderBookmarkIcon(b)}
+                    <div class="health-view-item-body">
+                        <div class="health-view-item-head">
+                            <h3 class="health-view-item-title config-bm-title">${esc(title)}</h3>
                         </div>
-                        <span class="config-bm-url">${esc(b.url)}</span>
-                        <span class="config-bm-meta">${bits.join(' · ')}</span>
-                        ${this.renderBookmarkUsageLine(b)}
+                        <p class="health-view-item-meta">
+                            <span>${esc(domain)}</span>
+                            ${metaBits.join('')}
+                            <span class="health-check-mode-wrap">
+                                ${feed?.renderCheckModeBadge?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
+                                ${feed?.renderCheckModeMenu?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
+                            </span>
+                            ${this.renderBookmarkUsageLine(b)}
+                        </p>
+                        ${noteHtml}
+                        ${feed?.renderActionsBar?.({
+                            key,
+                            escapeHtml: esc,
+                            t: (k, fb) => this.t(k, fb),
+                            showRecheck: mode !== 'off',
+                            moreMenuHtml: this.renderBookmarkRowMenu(b, key),
+                        }) || this.renderBookmarkRowActions(b, key, false)}
                     </div>
-                    <div class="config-crud-row-actions">
-                        <button type="button" class="config-btn config-btn--small" data-bm-edit="${esc(key)}">${esc(open ? this.t('config.close', 'Close') : this.t('config.edit', 'Edit'))}</button>
-                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-bm-delete="${esc(key)}">${esc(this.t('config.delete', 'Delete'))}</button>
-                    </div>
-                    ${open ? this.renderBookmarkEditor(b) : ''}
-                </li>`;
+                </article>`;
         }).join('');
-        return `<ul class="config-crud-list">${items}</ul>`;
+        return `<div class="health-view-feed config-bm-feed">${items}</div>`;
     }
 
     /**
@@ -7970,11 +8039,13 @@ class DashboardConfig {
         const opens = Number(b.openCount || 0);
         const { label, title, never } = window.formatLastOpened?.(b.lastOpened, { t: this.lastOpenedTranslator() })
             || { label: '', title: '', never: true };
-        if (never && opens === 0) {
-            return `<span class="config-bm-usage is-never">${esc(this.t('dashboard.healthNeverOpened', 'never opened'))}</span>`;
+        const openedCls = never ? 'health-view-item-opened is-never' : 'health-view-item-opened';
+        const openedHtml = `<span class="${openedCls}" title="${esc(title)}">${esc(never ? this.t('dashboard.healthNeverOpened', 'never opened') : label)}</span>`;
+        if (opens === 0) {
+            return openedHtml;
         }
         const count = this.t('config.bookmarkStatOpenCount', '{count}×').replace('{count}', String(opens));
-        return `<span class="config-bm-usage" title="${esc(title)}">${esc(`${count} · ${label}`)}</span>`;
+        return `${openedHtml}<span class="config-bm-usage" title="${esc(title)}">${esc(count)}</span>`;
     }
 
     /**
@@ -8069,6 +8140,438 @@ class DashboardConfig {
         if (!raw) return '';
         if (/^(https?:|data:|\/)/i.test(raw)) return raw;
         return `/data/icons/${raw}`;
+    }
+
+    formatBookmarkUrlDisplay(url) {
+        const raw = String(url || '').trim();
+        if (!raw) return '';
+        try {
+            const parsed = new URL(raw);
+            const host = parsed.hostname.replace(/^www\./i, '');
+            const path = parsed.pathname && parsed.pathname !== '/' ? parsed.pathname : '';
+            return `${host}${path}`;
+        } catch {
+            return raw;
+        }
+    }
+
+    renderBookmarkIcon(b) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const iconSrc = this.resolveIconSrc(b.icon);
+        if (iconSrc) {
+            return `<div class="config-bm-icon" aria-hidden="true"><img class="config-bm-icon-img" src="${esc(iconSrc)}" alt="" loading="lazy"></div>`;
+        }
+        return `<div class="config-bm-icon config-bm-icon--placeholder" aria-hidden="true">🔗</div>`;
+    }
+
+    renderBookmarkRowMenu(b, key) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const items = [];
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="redirect">${esc(this.t('dashboard.healthDetectRedirect', 'Detect redirect'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="title">${esc(this.t('dashboard.healthRefreshTitle', 'Refresh title'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="archive">${esc(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="copy-url">${esc(this.t('dashboard.contextMenuCopyUrl', 'Copy URL'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="share">${esc(this.shareBookmarkActionLabel())}</button>`);
+        const mode = window.CheckMode?.of?.(b) || 'off';
+        const modeLabel = window.BookmarkFeedRow?.checkModeMeta?.(mode)?.label || mode;
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="checkmode">${esc(
+            this.t('dashboard.healthMenuCheckMode', 'Change checking ({mode})', { mode: modeLabel })
+        )}</button>`);
+        items.push(`<p class="health-view-menu-label health-view-menu-label--danger" role="presentation">${esc(this.t('dashboard.healthMenuRemove', 'Remove'))}</p>`);
+        items.push(`<button type="button" class="health-view-menu-item health-view-menu-item--danger" role="menuitem" data-bm-menu-action="delete">${esc(this.t('dashboard.healthDelete', 'Delete bookmark'))}</button>`);
+        return window.BookmarkFeedRow?.renderMoreMenu?.(key, items.join(''), esc, (k, fb) => this.t(k, fb)) || '';
+    }
+
+    shareBookmarkActionLabel() {
+        const menu = this.dash.contextMenu;
+        if (menu?.shareActionLabel) {
+            return menu.shareActionLabel();
+        }
+        return typeof navigator.share === 'function'
+            ? this.t('dashboard.contextMenuShare', 'Share…')
+            : this.t('dashboard.contextMenuCopyNameUrl', 'Copy name + URL');
+    }
+
+    bookmarkListRoot() {
+        return document.getElementById('config-bm-list');
+    }
+
+    closeBookmarkMenus() {
+        window.BookmarkFeedRow?.closeAllMenus?.(this.bookmarkListRoot() || document);
+    }
+
+    toggleBookmarkMenu(key, kind = 'more') {
+        return window.BookmarkFeedRow?.toggleMenu?.(key, kind, this.bookmarkListRoot() || document) === true;
+    }
+
+    syncBookmarkRowBusy(key, busy) {
+        window.BookmarkFeedRow?.syncRowBusy?.(key, busy, this.bookmarkListRoot() || document);
+    }
+
+    async findBookmarkRecord(key) {
+        const bookmark = this.findBookmarkByKey(key);
+        if (!bookmark) return null;
+        const pageId = Number(bookmark.pageId);
+        if (!Number.isFinite(pageId)) return null;
+        try {
+            const res = await fetch(`/api/bookmarks?page=${pageId}`);
+            if (!res.ok) return null;
+            const list = await res.json();
+            if (!Array.isArray(list)) return null;
+            const index = list.findIndex((entry) => entry.url === bookmark.url);
+            if (index < 0 || !list[index]) return null;
+            return { pageId, index, record: list[index], bookmark };
+        } catch {
+            return null;
+        }
+    }
+
+    async openBookmarkEditModal(key) {
+        this.closeBookmarkMenus();
+        const record = await this.findBookmarkRecord(key);
+        const handler = this.dash.searchComponent?.commandsComponent?.newCommandHandler;
+        if (!handler?.openModal || !record) {
+            this.notify(this.t('config.addBookmarkUnavailable', 'The add-bookmark dialog is not available.'), 'error');
+            return;
+        }
+        handler.setContext?.(record.pageId, this.dash.categories || [], this.dash.pages || []);
+        handler.openModal({
+            mode: 'edit',
+            pageId: record.pageId,
+            index: record.index,
+            bookmark: record.record,
+            onSaved: async () => {
+                await this.refreshBookmarksAfterWrite();
+            },
+        });
+        this.watchAddBookmarkModal();
+    }
+
+    async recheckBookmarkByKey(key) {
+        if (this._bmBusyKeys.has(key)) return;
+        const bookmark = this.findBookmarkByKey(key);
+        const url = String(bookmark?.url || '').trim();
+        if (!url) return;
+        const record = await this.findBookmarkRecord(key);
+        this._bmBusyKeys.add(key);
+        this.syncBookmarkRowBusy(key, true);
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const persist = async (status, errorDetail, pingMs, httpStatus) => {
+            const cacheURL = url.replace(/\/+$/, '').toLowerCase();
+            if (cacheURL) {
+                await fetcher('/api/health/cache-scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: cacheURL,
+                        status,
+                        pingMs: pingMs || 0,
+                        error: errorDetail,
+                        code: Number(httpStatus) || 0,
+                    }),
+                }).catch(() => {});
+            }
+            if (record) {
+                await fetcher('/api/health/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pageId: record.pageId,
+                        index: record.index,
+                        status,
+                        error: status === 'online' ? '' : errorDetail,
+                    }),
+                });
+            }
+        };
+        try {
+            const res = await fetcher(`/api/ping?url=${encodeURIComponent(url)}`);
+            if (!res.ok) throw new Error(`ping HTTP ${res.status}`);
+            const result = await res.json();
+            const status = result.status === 'online' ? 'online' : 'offline';
+            const errorDetail = String(result.errorDetail || '').trim()
+                || (status === 'online' ? '' : this.t('dashboard.healthPingFailed', 'ping failed'));
+            await persist(status, errorDetail, result.ping, result.httpStatus);
+            this.dash.updateHealthBadge?.();
+            this.notify(
+                status === 'online'
+                    ? this.t('dashboard.healthRecheckOnline', 'Reachable')
+                    : this.t('dashboard.healthRecheckOffline', 'Unreachable: {error}', { error: errorDetail || 'offline' }),
+                status === 'online' ? 'success' : 'error',
+                { duration: 3500 }
+            );
+        } catch {
+            this.notify(this.t('dashboard.healthRecheckFailed', 'Could not re-check this bookmark'), 'error');
+        } finally {
+            this._bmBusyKeys.delete(key);
+            this.syncBookmarkRowBusy(key, false);
+        }
+    }
+
+    openBookmarkOnDashboard(b) {
+        this.closeBookmarkMenus();
+        const pageId = Number(b?.pageId);
+        if (!Number.isFinite(pageId)) return;
+        if (typeof DashboardDeepLink?.buildDashboardDeepLink === 'function') {
+            window.location.href = DashboardDeepLink.buildDashboardDeepLink({
+                pageId,
+                categoryId: b.category || null,
+                url: b.url || null,
+            });
+            return;
+        }
+        void this.dash.pageNav?.requestPageNavigation?.(pageId);
+    }
+
+    copyBookmarkUrl(b) {
+        this.closeBookmarkMenus();
+        const url = String(b?.url || '').trim();
+        if (!url) return;
+        this.dash.searchComponent?.commandsComponent?._copyUrlToClipboard?.(url);
+    }
+
+    async shareBookmark(b) {
+        const url = String(b?.url || '').trim();
+        if (!url) return;
+        const menu = this.dash.contextMenu;
+        if (!menu?.shareBookmark) return;
+        const couldShare = menu.canOpenShareSheet?.();
+        const shared = menu.shareBookmark({ name: b?.name || '', url }, null);
+        this.closeBookmarkMenus();
+        await shared;
+        if (couldShare && menu.canOpenShareSheet?.() === false) {
+            this.repaintBookmarksList();
+        }
+    }
+
+    openBookmarkArchive(b) {
+        this.closeBookmarkMenus();
+        const url = String(b?.url || '').trim();
+        if (!url) return;
+        window.open(`https://web.archive.org/web/*/${url}`, '_blank', 'noopener,noreferrer');
+    }
+
+    async refreshBookmarkFavicon(key) {
+        if (this._bmBusyKeys.has(key)) return;
+        const record = await this.findBookmarkRecord(key);
+        if (!record) return;
+        this.closeBookmarkMenus();
+        const url = String(record.record?.url || '').trim();
+        const fetchIcon = window.BookmarkPreviewService?.fetchAndUploadFavicon;
+        if (!url || typeof fetchIcon !== 'function') {
+            this.notify(this.t('dashboard.healthFaviconFailed', 'Could not refresh the favicon'), 'error');
+            return;
+        }
+        this._bmBusyKeys.add(key);
+        this.syncBookmarkRowBusy(key, true);
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const iconPath = await fetchIcon(url);
+            if (!iconPath) {
+                this.notify(this.t('dashboard.healthFaviconNone', 'No favicon found for this URL'), 'info');
+                return;
+            }
+            const res = await fetch(`/api/bookmarks?page=${record.pageId}`);
+            if (!res.ok) throw new Error(`load HTTP ${res.status}`);
+            const bookmarks = await res.json();
+            if (!Array.isArray(bookmarks) || !bookmarks[record.index]) {
+                throw new Error('bookmark not found');
+            }
+            bookmarks[record.index].icon = iconPath;
+            const save = await fetcher(`/api/bookmarks?page=${record.pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookmarks),
+            });
+            if (!save.ok) throw new Error(`save HTTP ${save.status}`);
+            this.notify(this.t('dashboard.healthFaviconDone', 'Favicon updated'), 'success', { duration: 3000 });
+            await this.refreshBookmarksAfterWrite();
+        } catch {
+            this.notify(this.t('dashboard.healthFaviconFailed', 'Could not refresh the favicon'), 'error');
+        } finally {
+            this._bmBusyKeys.delete(key);
+            this.syncBookmarkRowBusy(key, false);
+        }
+    }
+
+    async refreshBookmarkTitle(key) {
+        if (this._bmBusyKeys.has(key)) return;
+        const record = await this.findBookmarkRecord(key);
+        if (!record) return;
+        this.closeBookmarkMenus();
+        this._bmBusyKeys.add(key);
+        this.syncBookmarkRowBusy(key, true);
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/health/auto-heal-apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pageId: record.pageId,
+                    index: record.index,
+                    refreshTitle: true,
+                }),
+            });
+            if (!res.ok) throw new Error(`title HTTP ${res.status}`);
+            this.notify(this.t('dashboard.healthTitleDone', 'Title refreshed'), 'success', { duration: 3000 });
+            await this.refreshBookmarksAfterWrite();
+        } catch {
+            this.notify(this.t('dashboard.healthTitleFailed', 'Could not refresh the title'), 'error');
+        } finally {
+            this._bmBusyKeys.delete(key);
+            this.syncBookmarkRowBusy(key, false);
+        }
+    }
+
+    async detectBookmarkRedirect(key) {
+        if (this._bmBusyKeys.has(key)) return;
+        const record = await this.findBookmarkRecord(key);
+        if (!record) return;
+        this.closeBookmarkMenus();
+        this._bmBusyKeys.add(key);
+        this.syncBookmarkRowBusy(key, true);
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetch(
+                `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(record.pageId)}&index=${encodeURIComponent(record.index)}&redirectOnly=1`
+            );
+            if (!res.ok) throw new Error(`suggest HTTP ${res.status}`);
+            const suggestion = await res.json();
+            const redirectUrl = String(suggestion?.redirectUrl || '').trim();
+            if (!redirectUrl) {
+                this.notify(this.t('dashboard.healthNoRedirect', 'No redirect found for this bookmark'), 'info');
+                return;
+            }
+            const apply = await this.confirmAction(
+                this.t('dashboard.healthRedirectBody', 'This bookmark redirects to:\n\n{url}', { url: redirectUrl }),
+                {
+                    title: this.t('dashboard.healthRedirectTitle', 'Apply redirect?'),
+                    confirmLabel: this.t('config.confirmContinue', 'Continue'),
+                    danger: false,
+                }
+            );
+            if (!apply) return;
+            const applied = await fetcher('/api/health/auto-heal-apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pageId: record.pageId,
+                    index: record.index,
+                    newUrl: redirectUrl,
+                    refreshTitle: false,
+                }),
+            });
+            if (!applied.ok) throw new Error(`apply HTTP ${applied.status}`);
+            const body = await applied.json().catch(() => ({}));
+            const stillBroken = String(body?.lastError || '').trim();
+            this.notify(
+                stillBroken
+                    ? this.t('dashboard.healthRedirectStillBroken', 'URL updated, but it still fails: {error}', { error: stillBroken })
+                    : this.t('dashboard.healthRedirectDone', 'URL updated and reachable'),
+                stillBroken ? 'info' : 'success',
+                { duration: 4000 }
+            );
+            await this.refreshBookmarksAfterWrite();
+            this.dash.updateHealthBadge?.();
+        } catch {
+            this.notify(this.t('dashboard.healthRedirectFailed', 'Could not detect a redirect'), 'error');
+        } finally {
+            this._bmBusyKeys.delete(key);
+            this.syncBookmarkRowBusy(key, false);
+        }
+    }
+
+    async setBookmarkCheckMode(key, mode) {
+        const record = await this.findBookmarkRecord(key);
+        if (!record || !window.CheckMode) return;
+        this.closeBookmarkMenus();
+        const updated = { ...record.record };
+        window.CheckMode.assign(updated, mode);
+        try {
+            await this.writePageBookmarks(record.pageId, (list) => {
+                const next = [...list];
+                if (!next[record.index]) return next;
+                next[record.index] = { ...next[record.index], ...updated };
+                return next;
+            });
+            await this.refreshBookmarksAfterWrite();
+            this.dash.updateHealthBadge?.();
+        } catch {
+            this.notify(this.t('config.bookmarkSaveError', 'Could not save the bookmark.'), 'error');
+        }
+    }
+
+    handleBookmarkMenuAction(action, key) {
+        const bookmark = this.findBookmarkByKey(key);
+        if (!bookmark) return;
+        switch (action) {
+            case 'dashboard':
+                this.openBookmarkOnDashboard(bookmark);
+                break;
+            case 'redirect':
+                void this.detectBookmarkRedirect(key);
+                break;
+            case 'title':
+                void this.refreshBookmarkTitle(key);
+                break;
+            case 'favicon':
+                void this.refreshBookmarkFavicon(key);
+                break;
+            case 'archive':
+                this.openBookmarkArchive(bookmark);
+                break;
+            case 'copy-url':
+                this.copyBookmarkUrl(bookmark);
+                break;
+            case 'share':
+                void this.shareBookmark(bookmark);
+                break;
+            case 'checkmode':
+                this.toggleBookmarkMenu(key, 'check');
+                break;
+            case 'delete':
+                void this.deleteBookmarkByKey(key);
+                break;
+            default:
+                break;
+        }
+    }
+
+    renderBookmarkRowActions(b, key, open) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const editLabel = open
+            ? this.t('config.close', 'Close')
+            : this.t('config.edit', 'Edit');
+        const editKbd = open ? '' : '<kbd>e</kbd>';
+        return `
+            <div class="config-bm-actions">
+                <div class="config-bm-actions-inner">
+                    <button type="button" class="config-bm-action-btn" data-bm-open="${esc(key)}">${esc(this.t('config.openBookmark', 'Open'))}<kbd>Enter</kbd></button>
+                    <button type="button" class="config-bm-action-btn" data-bm-edit="${esc(key)}">${esc(editLabel)}${editKbd}</button>
+                    <button type="button" class="config-bm-action-btn config-bm-action-btn--danger" data-bm-delete="${esc(key)}">${esc(this.t('config.delete', 'Delete'))}<kbd>d</kbd></button>
+                </div>
+            </div>`;
+    }
+
+    renderBookmarkKeyboardLegend() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const keys = [
+            ['j / k', this.t('config.bookmarksKeyMove', 'move')],
+            ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
+            ['e', this.t('config.bookmarksKeyEdit', 'edit')],
+            ['p', this.t('config.bookmarksKeyRecheck', 're-check')],
+            ['m', this.t('config.bookmarksKeyMore', 'more')],
+            ['c', this.t('config.bookmarksKeyCheckMode', 'checking')],
+            ['d', this.t('config.bookmarksKeyDelete', 'delete')],
+            ['g / G', this.t('config.bookmarksKeyFirstLast', 'first / last')],
+            ['/', this.t('config.bookmarksKeySearch', 'search')],
+            ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
+        ];
+        return keys
+            .map(([k, label]) => `<span><kbd>${esc(k)}</kbd> ${esc(label)}</span>`)
+            .join('');
     }
 
     bindBookmarksSection(container) {
@@ -8206,32 +8709,75 @@ class DashboardConfig {
 
     /** Row-level handlers, rebound after every list repaint. */
     bindBookmarkRows(root) {
-        root.querySelectorAll('[data-bm-edit]').forEach((btn) => {
-            btn.addEventListener('click', async () => {
-                const key = btn.getAttribute('data-bm-edit');
-                if (this.bmEditing === key) {
-                    if (!(await this.confirmDiscardBookmarkEdit())) return;
-                    this.bmEditing = null;
-                } else {
-                    if (this.bmEditing && !(await this.confirmDiscardBookmarkEdit())) return;
-                    this.bmEditing = key;
-                }
-                this.bmDirty = false;
-                this.repaintBookmarksList();
+        const listRoot = root.querySelector('#config-bm-list') || root;
+        listRoot.querySelectorAll('[data-feed-action="open"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
+                if (key) this.openBookmarkByKey(key);
             });
         });
-        root.querySelectorAll('[data-bm-delete]').forEach((btn) => {
-            btn.addEventListener('click', () => this.deleteBookmarkByKey(btn.getAttribute('data-bm-delete')));
+        listRoot.querySelectorAll('[data-feed-action="edit"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
+                if (key) void this.openBookmarkEditModal(key);
+            });
         });
-        root.querySelectorAll('[data-bm-tick]').forEach((box) => {
+        listRoot.querySelectorAll('[data-feed-action="recheck"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
+                if (key) void this.recheckBookmarkByKey(key);
+            });
+        });
+        listRoot.querySelectorAll('.health-view-more-btn').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = btn.getAttribute('data-menu-toggle');
+                if (key) this.toggleBookmarkMenu(key, 'more');
+            });
+        });
+        listRoot.querySelectorAll('.health-check-mode').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = btn.getAttribute('data-menu-toggle');
+                if (key) this.toggleBookmarkMenu(key, 'check');
+            });
+        });
+        listRoot.querySelectorAll('[data-check-mode]').forEach((item) => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = item.closest('.health-view-menu')?.getAttribute('data-menu-for');
+                const mode = item.getAttribute('data-check-mode');
+                if (key && mode) void this.setBookmarkCheckMode(key, mode);
+            });
+        });
+        listRoot.querySelectorAll('[data-bm-menu-action]').forEach((item) => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = item.closest('.health-view-menu')?.getAttribute('data-menu-for');
+                const action = item.getAttribute('data-bm-menu-action');
+                if (key && action) this.handleBookmarkMenuAction(action, key);
+            });
+        });
+        listRoot.querySelectorAll('[data-bm-tick]').forEach((box) => {
             box.addEventListener('change', () => {
                 const key = box.getAttribute('data-bm-tick');
                 if (box.checked) this.bmSelected.add(key);
                 else this.bmSelected.delete(key);
                 this.repaintBulkToolbar();
+                box.closest('.config-bm-item')?.classList.toggle('is-checked', box.checked);
             });
         });
-        this.bindBookmarkEditorControls(root);
+        listRoot.querySelectorAll('.health-view-item-icon-img').forEach((img) => {
+            window.BookmarkFeedRow?.bindIconFallback?.(img);
+        });
+        if (!listRoot.dataset.configBmPointerWired) {
+            listRoot.dataset.configBmPointerWired = '1';
+            listRoot.addEventListener('click', (e) => {
+                if (!e.target.closest('.health-view-menu') && !e.target.closest('[aria-haspopup="menu"]')) {
+                    this.closeBookmarkMenus();
+                }
+            });
+        }
     }
 
     /** Everything inside the open editor. */

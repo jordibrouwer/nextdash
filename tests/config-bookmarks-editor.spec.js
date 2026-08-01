@@ -21,8 +21,7 @@ async function applyBookmarkStats(page, stats) {
     if (!stats) return;
     await page.evaluate((s) => {
         const cfg = window.dashboardInstance.config;
-        const key = cfg.bmEditing
-            || document.querySelector('#config-bm-list .config-bm-row[data-bm-key]')?.getAttribute('data-bm-key');
+        const key = document.querySelector('#config-bm-list .config-bm-row[data-bm-key]')?.getAttribute('data-bm-key');
         const parsed = key ? cfg.parseBookmarkKey(key) : null;
         const bm = parsed
             ? window.dashboardInstance.allBookmarks.find(
@@ -35,18 +34,17 @@ async function applyBookmarkStats(page, stats) {
     }, stats);
 }
 
-/** Seed usage stats and open the first bookmark editor in one turn — avoids a background reload wiping stats. */
+/** Open the first bookmark in the shared edit modal. */
 async function openFirstEditor(page, stats = null) {
     await page.evaluate((s) => {
         const cfg = window.dashboardInstance.config;
         const bm = cfg.visibleBookmarks()[0];
         if (!bm) throw new Error('no visible bookmark');
         if (s) Object.assign(bm, s);
-        cfg.bmEditing = `${bm.pageId}::${bm.url}`;
-        cfg.bmDirty = false;
         cfg.repaintBookmarksList();
     }, stats);
-    await expect(page.locator('.config-bm-editor')).toBeVisible();
+    await page.locator('[data-feed-action="edit"]').first().click();
+    await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
     await applyBookmarkStats(page, stats);
 }
 
@@ -58,28 +56,28 @@ test.describe('config bookmarks editor', () => {
             await expect(page.locator(`[data-bm-field="${f}"]`)).toBeVisible();
         }
         // Availability checking with its three modes.
-        await expect(page.locator('input[name="config-bm-mode"]')).toHaveCount(3);
+        await expect(page.locator('input[name="new-bookmark-check-mode"]')).toHaveCount(3);
         // Icon and link-preview controls.
-        await expect(page.locator('[data-bm-icon="upload"]')).toBeVisible();
-        await expect(page.locator('[data-bm-icon="clear"]')).toBeVisible();
+        await expect(page.locator('#new-bookmark-icon-file')).toBeVisible();
+        await expect(page.locator('#new-bookmark-icon-clear')).toBeVisible();
         await expect(page.locator('[data-bm-preview="refresh"]')).toBeVisible();
         await expect(page.locator('[data-bm-preview="clear"]')).toBeVisible();
         // An explicit save, not a save-on-blur — offered at both ends of the form.
-        await expect(page.locator('[data-bm-save]').first()).toBeVisible();
+        await expect(page.locator("#new-bookmark-create")).toBeVisible();
     });
 
     test('category is a dropdown of existing categories and can add a new one', async ({ page }) => {
         await openBookmarks(page);
         await openFirstEditor(page);
-        const sel = page.locator('[data-bm-field="category"]');
+        const sel = page.locator('#new-bookmark-category');
         // More than just the blank option: real categories plus the "new" entry.
         expect(await sel.locator('option').count()).toBeGreaterThan(2);
         await expect(sel.locator('option[value="__new__"]')).toHaveCount(1);
 
         await sel.selectOption('__new__');
-        await expect(page.locator('[data-bm-newcat]')).toBeVisible();
-        await page.fill('[data-bm-newcat-input]', 'freshcat');
-        await page.click('[data-bm-newcat-ok]');
+        await expect(page.locator('#new-category-create')).toBeVisible();
+        await page.fill('#new-category-create-input', 'freshcat');
+        await page.click('#new-category-create-ok');
         // The option carries a generated id and shows the typed name.
         await expect(sel.locator('option:checked')).toHaveText('freshcat');
         expect(await sel.inputValue()).not.toBe('__new__');
@@ -94,14 +92,14 @@ test.describe('config bookmarks editor', () => {
         await openBookmarks(page);
         await openFirstEditor(page);
 
-        const sel = page.locator('[data-bm-field="category"]');
+        const sel = page.locator('#new-bookmark-category');
         await sel.selectOption('__new__');
-        await page.fill('[data-bm-newcat-input]', 'brandnew');
-        await page.click('[data-bm-newcat-ok]');
+        await page.fill('#new-category-create-input', 'brandnew');
+        await page.click('#new-category-create-ok');
         const catId = await sel.inputValue();
 
-        await page.locator('[data-bm-save]').first().click();
-        await expect(page.locator('.config-bm-editor')).toBeHidden();
+        await page.locator("#new-bookmark-create").click();
+        await expect(page.locator('#new-bookmark-modal.show')).toBeHidden();
 
         // The page now defines the category under the id the bookmark uses.
         await expect.poll(async () => page.evaluate(async (id) => {
@@ -123,14 +121,14 @@ test.describe('config bookmarks editor', () => {
         await openBookmarks(page);
         await openFirstEditor(page);
 
-        const sel = page.locator('[data-bm-field="category"]');
+        const sel = page.locator('#new-bookmark-category');
         const existing = sel.locator('option').nth(1);
         const existingId = await existing.getAttribute('value');
         const existingLabel = (await existing.textContent() || '').trim();
 
         await sel.selectOption('__new__');
-        await page.fill('[data-bm-newcat-input]', existingLabel);
-        await page.click('[data-bm-newcat-ok]');
+        await page.fill('#new-category-create-input', existingLabel);
+        await page.click('#new-category-create-ok');
 
         // Resolved back to the existing category, and no duplicate option added.
         await expect(sel).toHaveValue(existingId || '');
@@ -151,11 +149,11 @@ test.describe('config bookmarks editor', () => {
 
         // Both save bars carry a marker; they move together.
         await expect(page.locator('[data-bm-dirty]').first()).toBeHidden();
-        await page.fill('[data-bm-field="note"]', 'a note from the test');
+        await page.fill('#new-bookmark-note', 'a note from the test');
         await expect(page.locator('[data-bm-dirty]').first()).toBeVisible();
         await expect(page.locator('[data-bm-dirty]').last()).toBeVisible();
 
-        await page.locator('[data-bm-save]').first().click();
+        await page.locator("#new-bookmark-create").click();
         await expect.poll(() => posted && posted.some((b) => b.note === 'a note from the test')).toBe(true);
     });
 
@@ -193,11 +191,11 @@ test.describe('config bookmarks editor', () => {
 
         await openFirstEditor(page);
         const hint = page.locator('[data-bm-conflict="shortcut"]');
-        await page.fill('[data-bm-field="shortcut"]', String(other));
+        await page.fill('#new-bookmark-shortcut', String(other));
         await expect(hint).toBeVisible();
 
         // A free shortcut clears the warning again.
-        await page.fill('[data-bm-field="shortcut"]', 'QQ');
+        await page.fill('#new-bookmark-shortcut', 'QQ');
         await expect(hint).toBeHidden();
     });
 
@@ -262,7 +260,7 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await mockMeta(page);
         await openBookmarks(page);
         await openFirstEditor(page);
-        const url = page.locator('[data-bm-field="url"]');
+        const url = page.locator('#new-bookmark-url');
         await url.fill('example.com/path');
         await url.blur();
         await expect(url).toHaveValue('https://example.com/path');
@@ -273,13 +271,13 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await openBookmarks(page);
         await openFirstEditor(page);
 
-        await page.fill('[data-bm-field="name"]', '');
-        const url = page.locator('[data-bm-field="url"]');
+        await page.fill('#new-bookmark-name', '');
+        const url = page.locator('#new-bookmark-url');
         await url.fill('https://example.com/fresh');
         await url.blur();
 
-        await expect(page.locator('[data-bm-field="icon"]')).toHaveValue('fetched.png');
-        await expect(page.locator('[data-bm-field="name"]')).toHaveValue('Fetched Name');
+        await expect(page.locator('#new-bookmark-icon-url')).toHaveValue('fetched.png');
+        await expect(page.locator('#new-bookmark-name')).toHaveValue('Fetched Name');
         // Fetching counts as a change, so Save is offered.
         await expect(page.locator('[data-bm-dirty]').first()).toBeVisible();
     });
@@ -288,21 +286,21 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await mockMeta(page, { title: 'Should Not Win' });
         await openBookmarks(page);
         await openFirstEditor(page);
-        await page.fill('[data-bm-field="name"]', 'My own name');
-        const url = page.locator('[data-bm-field="url"]');
+        await page.fill('#new-bookmark-name', 'My own name');
+        const url = page.locator('#new-bookmark-url');
         await url.fill('https://example.com/other');
         await url.blur();
         await page.waitForTimeout(600);
-        await expect(page.locator('[data-bm-field="name"]')).toHaveValue('My own name');
+        await expect(page.locator('#new-bookmark-name')).toHaveValue('My own name');
     });
 
     test('Retry re-fetches even when an icon is already set', async ({ page }) => {
         await mockMeta(page, { icon: 'retried.png' });
         await openBookmarks(page);
         await openFirstEditor(page);
-        await page.fill('[data-bm-field="icon"]', 'old.png');
+        await page.fill('#new-bookmark-icon-url', 'old.png');
         await page.click('[data-bm-refetch]');
-        await expect(page.locator('[data-bm-field="icon"]')).toHaveValue('retried.png');
+        await expect(page.locator('#new-bookmark-icon-url')).toHaveValue('retried.png');
     });
 
 
@@ -312,12 +310,12 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await openFirstEditor(page);
 
         // The row starts with its own icon; changing the URL makes it stale.
-        await page.fill('[data-bm-field="icon"]', 'oldsite.png');
-        const url = page.locator('[data-bm-field="url"]');
+        await page.fill('#new-bookmark-icon-url', 'oldsite.png');
+        const url = page.locator('#new-bookmark-url');
         await url.fill('https://changed.example.com/page');
         await url.blur();
 
-        await expect(page.locator('[data-bm-field="icon"]')).toHaveValue('newsite.png');
+        await expect(page.locator('#new-bookmark-icon-url')).toHaveValue('newsite.png');
     });
 
     test('blurring an unchanged URL leaves a hand-picked icon alone', async ({ page }) => {
@@ -326,13 +324,13 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await openFirstEditor(page);
 
         // Type an icon by hand, then leave the URL field without touching the URL.
-        await page.fill('[data-bm-field="icon"]', 'mine.png');
-        const url = page.locator('[data-bm-field="url"]');
+        await page.fill('#new-bookmark-icon-url', 'mine.png');
+        const url = page.locator('#new-bookmark-url');
         await url.click();
         await url.blur();
         await page.waitForTimeout(700);
 
-        await expect(page.locator('[data-bm-field="icon"]')).toHaveValue('mine.png');
+        await expect(page.locator('#new-bookmark-icon-url')).toHaveValue('mine.png');
     });
 
     test('completing a bare host to https does not count as a URL change', async ({ page }) => {
@@ -340,17 +338,17 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await openBookmarks(page);
         await openFirstEditor(page);
 
-        const current = await page.locator('[data-bm-field="url"]').inputValue();
+        const current = await page.locator('#new-bookmark-url').inputValue();
         const bare = current.replace(/^https?:\/\//, '');
-        await page.fill('[data-bm-field="icon"]', 'keepme.png');
-        const url = page.locator('[data-bm-field="url"]');
+        await page.fill('#new-bookmark-icon-url', 'keepme.png');
+        const url = page.locator('#new-bookmark-url');
         await url.fill(bare);
         await url.blur();
         await page.waitForTimeout(700);
 
         // Normalised back to the same address, so the icon is not replaced.
         await expect(url).toHaveValue(current);
-        await expect(page.locator('[data-bm-field="icon"]')).toHaveValue('keepme.png');
+        await expect(page.locator('#new-bookmark-icon-url')).toHaveValue('keepme.png');
     });
 
     test('Save and Revert appear both above and below the form', async ({ page }) => {
@@ -374,12 +372,12 @@ test.describe('config bookmarks editor — URL auto-fill', () => {
         await openBookmarks(page);
         await openFirstEditor(page);
         const w = (sel) => page.locator(sel).evaluate((el) => el.getBoundingClientRect().width);
-        const name = await w('[data-bm-field="name"]');
-        const shortcut = await w('[data-bm-field="shortcut"]');
+        const name = await w('#new-bookmark-name');
+        const shortcut = await w('#new-bookmark-shortcut');
         expect(name).toBeGreaterThan(shortcut * 1.5);
         // Paired cells line up with each other.
-        const pageSel = await w('[data-bm-field="pageId"]');
-        const catSel = await w('[data-bm-field="category"]');
+        const pageSel = await w('#new-bookmark-page');
+        const catSel = await w('#new-bookmark-category');
         expect(Math.abs(pageSel - catSel)).toBeLessThan(4);
     });
 });
@@ -401,7 +399,7 @@ test.describe('config bookmarks — category options', () => {
         expect(new Set(lowered).size).toBe(lowered.length);
 
         await openFirstEditor(page);
-        const opts = await page.locator('[data-bm-field="category"] option').allTextContents();
+        const opts = await page.locator('#new-bookmark-category option').allTextContents();
         const cats = opts.filter((t) => !/No category|New category/.test(t));
         expect(new Set(cats).size).toBe(cats.length);
     });
@@ -410,7 +408,7 @@ test.describe('config bookmarks — category options', () => {
         await openBookmarks(page);
         const expected = await page.evaluate(() => window.dashboardInstance.allBookmarks[0].category || '');
         await openFirstEditor(page);
-        await expect(page.locator('[data-bm-field="category"]')).toHaveValue(expected);
+        await expect(page.locator('#new-bookmark-category')).toHaveValue(expected);
     });
 
     test('filtering by a category keeps only its bookmarks', async ({ page }) => {
@@ -705,9 +703,9 @@ test.describe('bookmark statistics', () => {
 
         // The whole feature rests on the save spreading form fields over the
         // stored record: bind a stat to an input and it would be wiped here.
-        await page.locator('[data-bm-field="note"]').fill('stats must survive');
-        await page.locator('[data-bm-save]').first().click();
-        await expect(page.locator('.config-bm-editor')).toHaveCount(0);
+        await page.locator('#new-bookmark-note').fill('stats must survive');
+        await page.locator("#new-bookmark-create").click();
+        await expect(page.locator('#new-bookmark-modal.show')).toHaveCount(0);
 
         await expect.poll(() => page.evaluate(() => {
             const key = window.dashboardInstance.config.bmEditing
