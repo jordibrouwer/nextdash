@@ -371,10 +371,22 @@ class DashboardData {
                     await d.health.openHealthView();
                 } else if ((initialHash === 'config' || initialHash.startsWith('config/')) && d.config?.isEnabled?.()) {
                     // Bare #config means “open config”, not “open Overview”; a
-                    // sectioned hash is an explicit deep link.
-                    const section = initialHash === 'config'
+                    // sectioned hash is an explicit deep link. On cold load, a
+                    // stored Shift+H/I location is read here (before the lazy
+                    // module loads) so sub-tabs can be buffered on the loader.
+                    let section = initialHash === 'config'
                         ? undefined
                         : window.DashboardConfigLoader?.sectionFromHash?.(`#${initialHash}`);
+                    if (initialHash === 'config') {
+                        const stored = window.DashboardConfigLoader?.loadLastConfigLocation?.();
+                        if (stored?.section) {
+                            section = stored.section;
+                            const prop = DashboardConfigLoader.SUB_TAB_STATE?.[stored.section];
+                            if (prop && stored.subTab) {
+                                d.config[prop] = stored.subTab;
+                            }
+                        }
+                    }
                     await d.config.openConfigView(section);
                 }
             }

@@ -379,13 +379,13 @@ Arrow keys move through the items and `Enter` activates one; `Esc` or a click ou
 
 ### 7.6 Config → bookmarks (bulk and detail)
 
-**config → bookmarks** is the place for many edits at once: a searchable list with a page filter, an editor that expands the row you are working on, and a bulk toolbar for whole selections.
+**config → bookmarks** is the place for many edits at once: a searchable list with a page filter, Health/Inbox-style rows with an action bar, and a bulk toolbar for whole selections.
 
-**Edit** on a row opens it in place. It carries every field a bookmark has — name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor). Unlike the rest of config, the editor does not save as you type: it collects your changes and writes them when you press **Save**, so a half-finished row is never persisted. It warns you before discarding unsaved edits.
+**Edit** on a row opens the same add-bookmark modal the dashboard uses, prefilled with that bookmark's fields — name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor). Save from the modal writes your changes; closing without saving leaves the row untouched.
 
-**+ Bookmark** opens the same add form the dashboard uses. Tick several rows to get the **bulk toolbar** — move to another page or category, pin, refresh favicons, add / replace / remove tags across the whole selection, or delete. **Select all** ticks the rows your filters are currently showing, not every bookmark you own.
+**+ Bookmark** opens the same add form empty. Tick several rows to get the **bulk toolbar** — move to another page or category, pin, refresh favicons, add / replace / remove tags across the whole selection, or delete. **Select all** ticks the rows your filters are currently showing, not every bookmark you own.
 
-The bookmark editor is comfortable on a wide window; on a narrow one the fields stack.
+The bookmark modal is comfortable on a wide window; on a narrow one the fields stack.
 
 All bookmark lists in config (per-page editor, tags tab, stats) read from one **central bookmark store**, so tags and edits stay in sync across tabs.
 
@@ -1009,7 +1009,7 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 
 ### Working with bookmarks
 
-**Bookmarks** lists every bookmark with a search field and a **page filter**. With **All pages**, category labels read `Page · Category` and each row carries a page badge. Pick one page to scope categories and share the view as `/#config/bookmarks/<pageId>`. **Edit** expands a row in place rather than opening a separate panel, carrying name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor).
+**Bookmarks** lists every bookmark with a search field and a **page filter**. With **All pages**, category labels read `Page · Category` and each row carries a page badge. Pick one page to scope categories and share the view as `/#config/bookmarks/<pageId>`. Rows use the same Health/Inbox action bar; **Edit** opens the prefilled add-bookmark modal with name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor).
 
 **+ Bookmark** opens the same add form the dashboard uses. Tick several rows for the bulk toolbar — move to another page or category, pin, refresh favicons, edit tags across the selection, or delete. **Select all** applies to the rows your filters are currently showing, not the whole library.
 
@@ -1053,12 +1053,13 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 | `g` / `G` (list row) | Jump to first / last row in a Pages & tags list |
 | `/` (Tags tab) | Focus the tag filter |
 | `j` / `k` (Bookmarks list) | Move between bookmark rows |
-| `Enter` / `Space` (bookmark row) | Open the inline editor |
+| `Enter` / `Space` (bookmark row) | Open the bookmark editor modal |
+| `e` (bookmark row) | Open the bookmark editor modal |
 | `/` (Bookmarks) | Focus the bookmark search field |
 | `←` / `→` (choice row) | Move between options; `Space` selects |
 | `Home` / `End` (slider) | Jump to min or max on a focused slider |
 | `Ctrl/Cmd + Shift + K` | Find a setting, section, or help topic (settings jump) — or click **Find settings** below Help in the left nav |
-| `Escape` | Close bookmark editor → clear list selection → exit config |
+| `Escape` | Close bookmark modal → clear list selection → exit config |
 
 Inline hints at the bottom of form sections and under list tabs summarise the keys for that panel — press **`Shift+K`** in a legend to open settings jump. **Help → Search & keyboard → Config navigation** repeats this in prose. The first config open on desktop may show a one-time intro toast pointing at **`!`** for the full cheat sheet (**v2026.08.01**).
 

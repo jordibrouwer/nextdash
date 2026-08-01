@@ -1,0 +1,39 @@
+{
+  "tag": "v2026.08.05",
+  "date": "August 2026",
+  "releasedAt": "2026-08-05",
+  "modalLead": "Config opens on Overview when you return normally; your last section is restored only after Shift+H or Shift+I, including cold load on bare #config. Config → Bookmarks rows match Health and Inbox, with Edit opening a prefilled modal. Random theme On view change no longer flashes white in dark mode.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Overview on return</strong> — <code>Shift+S</code>, <code>Escape</code>, and the config link land on <strong>Overview</strong>; stored section and sub-tab apply only when returning from Health or Inbox (<code>Shift+H</code> / <code>Shift+I</code>). Cold load on bare <code>#config</code> still restores a stored Shift+H/I location (<code>resolveConfigOpenTarget()</code>, <code>restoreConfigSectionFromHash()</code>, <code>dashboard-config-loader.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmarks rows like Health/Inbox</strong> — shared <code>bookmark-feed-row.js</code> action bar and row styling; <strong>Edit</strong> opens the prefilled add-bookmark modal instead of an inline row editor (<code>config-view.css</code>, locales)."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Random theme without white flash</strong> — <em>On view change</em> applies the next palette before paint so dark mode no longer flashes white when switching views (<code>theme-loader.js</code>, <code>visual-settings.js</code>, <code>dashboard-visual.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.05</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v155</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v213</code>."
+        }
+      ]
+    }
+  ]
+}

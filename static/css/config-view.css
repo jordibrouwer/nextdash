@@ -1639,18 +1639,286 @@ body.no-animations .config-new-features-panel-star {
    shared .config-crud-row is flex with no wrap, which would squeeze the summary
    column to nothing, so this overrides the display outright rather than trying
    to make the editor fit beside it. */
-.config-bm-row {
+/* A bookmark row stacks icon + body like the health/inbox feeds, with the
+   inline editor spanning the full width when expanded. */
+.config-bm-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin: 0 0 16px;
+}
+
+.config-bm-item {
+    position: relative;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: start;
-    row-gap: 10px;
-    column-gap: 10px;
+    grid-template-columns: 3rem 1fr;
+    gap: 0.85rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.config-bm-item:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
+}
+
+.config-bm-item.keyboard-selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
+}
+
+.config-bm-item.is-checked {
+    border-left: 3px solid var(--accent-primary);
+}
+
+.config-bm-check {
+    position: absolute;
+    top: 0.55rem;
+    left: 0.55rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
 
 .config-bm-tick {
-    margin-top: 3px;
-    flex: none;
+    width: 0.95rem;
+    height: 0.95rem;
+    margin: 0;
+    accent-color: var(--accent-primary);
     cursor: pointer;
+    border-radius: 0.2rem;
+    box-shadow: 0 0 0 2px var(--background-secondary);
+    background: var(--background-secondary);
+}
+
+.config-bm-tick:not(:checked) {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.config-bm-item:hover .config-bm-tick:not(:checked),
+.config-bm-item:focus-within .config-bm-tick:not(:checked),
+.config-bm-item.keyboard-selected .config-bm-tick:not(:checked),
+.config-bm-item.is-checked .config-bm-tick:not(:checked) {
+    opacity: 1;
+}
+
+.config-bm-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: calc(var(--layout-radius-sm, 8px) - 2px);
+    background: var(--background-primary) center/contain no-repeat;
+    border: 1px solid var(--border-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--text-tertiary);
+    overflow: hidden;
+}
+
+.config-bm-icon .config-bm-icon-img {
+    width: 1.7rem;
+    height: 1.7rem;
+    object-fit: contain;
+}
+
+.config-bm-icon--placeholder {
+    color: var(--text-tertiary);
+}
+
+.config-bm-body {
+    min-width: 0;
+}
+
+.config-bm-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.6rem;
+}
+
+.config-bm-title {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.config-bm-meta {
+    margin: 0.2rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.config-bm-domain {
+    color: var(--text-secondary);
+}
+
+.config-bm-note-line {
+    margin: 0.35rem 0 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.config-bm-shortcut-pill {
+    font-variant-numeric: tabular-nums;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.config-bm-actions {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    opacity: 0;
+    transition: grid-template-rows 0.14s ease, opacity 0.12s ease, margin-top 0.14s ease;
+}
+
+.config-bm-actions-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.config-bm-item:hover .config-bm-actions,
+.config-bm-item:focus-within .config-bm-actions,
+.config-bm-item.keyboard-selected .config-bm-actions,
+.config-bm-item.is-open .config-bm-actions {
+    grid-template-rows: 1fr;
+    margin-top: 0.55rem;
+    opacity: 1;
+}
+
+.config-bm-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.35rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.config-bm-action-btn kbd {
+    font-size: 0.68rem;
+    padding: 0.02rem 0.28rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-tertiary);
+    line-height: 1.4;
+}
+
+.config-bm-action-btn:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+.config-bm-action-btn--danger:hover {
+    border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
+    color: var(--accent-error);
+}
+
+.config-bm-keyboard-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    margin: 1rem 0 0.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-secondary);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.config-bm-keyboard-legend kbd {
+    font-size: 0.7rem;
+    padding: 0.05rem 0.32rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+}
+
+/* Config → Bookmarks reuses the health feed row chrome (icon column, meta line,
+   action bar, overflow menu). Only the bulk-select checkbox is config-specific. */
+.config-bm-feed .health-view-item {
+    position: relative;
+}
+
+.config-bm-feed .health-view-item.is-checked {
+    border-left: 3px solid var(--accent-primary);
+}
+
+.config-bm-feed .config-bm-check {
+    position: absolute;
+    top: 0.55rem;
+    left: 0.55rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.config-bm-feed .config-bm-tick {
+    width: 0.95rem;
+    height: 0.95rem;
+    margin: 0;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+    border-radius: 0.2rem;
+    box-shadow: 0 0 0 2px var(--background-secondary);
+    background: var(--background-secondary);
+}
+
+.config-bm-feed .config-bm-tick:not(:checked) {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.config-bm-feed .health-view-item:hover .config-bm-tick:not(:checked),
+.config-bm-feed .health-view-item:focus-within .config-bm-tick:not(:checked),
+.config-bm-feed .health-view-item.keyboard-selected .config-bm-tick:not(:checked),
+.config-bm-feed .health-view-item.is-checked .config-bm-tick:not(:checked) {
+    opacity: 1;
+}
+
+.config-bm-shortcut-pill {
+    font-variant-numeric: tabular-nums;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.config-bm-page-badge {
+    font-weight: var(--font-weight-semibold);
+}
+
+.config-bm-usage {
+    color: var(--text-secondary);
+}
+
+/* Legacy hooks kept for tests; layout lives on .health-view-item. */
+.config-bm-row {
 }
 
 /* Bulk bar: groups wrap as a unit so a group's controls never split across lines. */
@@ -1864,6 +2132,11 @@ body.no-animations .config-new-features-panel-star {
     display: none;
 }
 
+.config-bm-editor .config-text,
+.config-bm-editor .config-select {
+    min-width: 0;
+}
+
 .config-bm-main {
     display: flex;
     flex-direction: column;
@@ -1916,9 +2189,11 @@ body.no-animations .config-new-features-panel-star {
    bookmark lives, this says whether it is used. Never-opened is tinted rather
    than merely worded, so a list of dead links is visible without reading it. */
 .config-bm-usage {
-    font-size: calc(var(--font-size-text) * 0.857);
-    color: var(--text-muted, #888);
+    font-size: inherit;
+    color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+    white-space: nowrap;
 }
 
 .config-bm-usage.is-never {
@@ -1966,11 +2241,6 @@ body.no-animations .config-new-features-panel-star {
     min-width: 0;
     padding-top: 10px;
     border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
-}
-
-.config-bm-editor .config-text,
-.config-bm-editor .config-select {
-    min-width: 0;
 }
 
 .config-help-tips {
@@ -2760,6 +3030,30 @@ body[data-layout-version="modern"] .config-crud-row {
     border-radius: var(--layout-radius-md);
     border-color: var(--layout-surface-border);
     background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+}
+
+body[data-layout-version="modern"] .config-bm-item {
+    border-radius: var(--layout-radius-md);
+    border-color: var(--layout-surface-border, var(--border-primary));
+    background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .config-bm-item:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
+    box-shadow: var(--layout-shadow-md);
+}
+
+body[data-layout-version="modern"] .config-bm-item.keyboard-selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
+}
+
+body[data-layout-version="modern"] .config-bm-action-btn {
+    border-radius: var(--layout-radius-sm);
+    border-color: var(--layout-surface-border, var(--border-primary));
 }
 
 body[data-layout-version="modern"] .config-tag-count {

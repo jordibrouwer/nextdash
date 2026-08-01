@@ -46,6 +46,36 @@ class DashboardConfigLoader {
         return DashboardConfigLoader.SECTIONS.includes(match[1]) ? match[1] : 'overview';
     }
 
+    static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
+
+    /** Mirrors DashboardConfig.SUB_TAB_STATE for pre-load sub-tab replay. */
+    static SUB_TAB_STATE = {
+        behavior: 'behaviorTab',
+        'pages-tags': 'ptTab',
+        appearance: 'appearanceTab',
+        stats: 'statsTab',
+        'data-backups': 'dataTab',
+        help: 'helpTab',
+    };
+
+    /** Mirrors DashboardConfig.loadLastConfigLocation for cold load on bare `#config`. */
+    static loadLastConfigLocation() {
+        try {
+            const raw = localStorage.getItem(DashboardConfigLoader.CONFIG_LAST_KEY);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            const section = data?.section;
+            if (!section || !DashboardConfigLoader.SECTIONS.includes(section)) return null;
+            let subTab = data?.subTab ?? null;
+            if (section === 'behavior' && (subTab === 'layout' || subTab === 'display')) {
+                return { section: 'appearance', subTab };
+            }
+            return { section, subTab: subTab || null };
+        } catch {
+            return null;
+        }
+    }
+
     /**
      * View state that callers read or write through `dash.config` directly,
      * rather than through a method: the current section, and the per-section

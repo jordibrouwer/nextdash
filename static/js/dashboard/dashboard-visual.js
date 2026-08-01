@@ -156,7 +156,9 @@ class DashboardVisual {
         }
         window.ThemeLoader?.rotateSessionRandomTheme?.(d.settings);
         this.initializeAutoDarkMode();
-        window.VisualSettings?.reloadThemeCSS?.();
+        // All built-in/custom themes already live in /api/theme.css; switching
+        // data-theme is enough. Reloading the stylesheet removes variables for a
+        // frame and causes a white flash, especially in dark mode.
     }
 
 
