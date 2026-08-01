@@ -246,7 +246,7 @@ class DashboardConfig {
         }
     }
 
-    /** Read the last config section/sub-tab the user opened (shortcut return visits). */
+    /** Read the last config section/sub-tab saved when leaving via Shift+H or Shift+I. */
     loadLastConfigLocation() {
         try {
             const raw = localStorage.getItem(DashboardConfig.CONFIG_LAST_KEY);
@@ -265,7 +265,7 @@ class DashboardConfig {
         }
     }
 
-    /** Remember where the user left config — section rail and sub-tabs. */
+    /** Remember where the user left config — only when exiting via Shift+H or Shift+I. */
     saveLastConfigLocation() {
         try {
             const section = this.section;
@@ -276,6 +276,15 @@ class DashboardConfig {
                 section,
                 subTab: subTab || null,
             }));
+        } catch {
+            // localStorage unavailable — skip silently
+        }
+    }
+
+    /** Drop stored config location so the next visit starts on Overview. */
+    clearLastConfigLocation() {
+        try {
+            localStorage.removeItem(DashboardConfig.CONFIG_LAST_KEY);
         } catch {
             // localStorage unavailable — skip silently
         }
@@ -378,9 +387,8 @@ class DashboardConfig {
         if (d.activeView !== DashboardConfig.VIEW) {
             return false;
         }
-        // Bookmark grid hash replaces #config/… on exit; persist section/sub-tab
-        // here so Shift+S can reopen where the user left off.
-        this.saveLastConfigLocation();
+        // Escape and other non–Shift+H/I exits start fresh on Overview next time.
+        this.clearLastConfigLocation();
         // The save indicator lives on <body>, so leaving the view has to take it
         // down; otherwise a "Saved" would linger over the dashboard.
         clearTimeout(this._saveStateTimer);
@@ -635,12 +643,32 @@ class DashboardConfig {
             return true;
         }
 
+        if (!e.ctrlKey && !e.metaKey && !e.altKey && e.shiftKey) {
+            const d = this.dash;
+            // e.code, not e.key — layout-safe, same as dashboard-setup.js.
+            if (e.code === 'KeyH' && d.health?.isEnabled?.()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.saveLastConfigLocation();
+                void d.health.openHealthView();
+                return true;
+            }
+            if (e.code === 'KeyI' && d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.saveLastConfigLocation();
+                void d.inbox.openInboxView();
+                return true;
+            }
+        }
+
         return false;
     }
 
     /**
      * Page tabs (1–9) and Inbox (0) work from config too — same as on the
-     * bookmark grid — so you can leave without Esc first.
+     * bookmark grid — so you can leave without Esc first. Unlike Shift+H/I,
+     * these do not remember where you were in config.
      */
     handleShellViewShortcut(e) {
         if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
@@ -652,7 +680,7 @@ class DashboardConfig {
             if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                this.saveLastConfigLocation();
+                this.clearLastConfigLocation();
                 void d.inbox.openInboxView();
                 return true;
             }
@@ -664,7 +692,7 @@ class DashboardConfig {
             if (pageIndex >= d.pages.length) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.saveLastConfigLocation();
+            this.clearLastConfigLocation();
             void d.requestPageNavigation(d.pages[pageIndex].id);
             return true;
         }
@@ -759,7 +787,6 @@ class DashboardConfig {
         if (focusTarget && !focusTarget.isConnected) {
             document.querySelector(`[${ctx.attr}="${CSS.escape(tab)}"]`)?.focus();
         }
-        this.saveLastConfigLocation();
         return true;
     }
 
@@ -794,7 +821,6 @@ class DashboardConfig {
         const activateTracked = (tab, via) => {
             if (tab) this._trackAction('subtab', { section: strip, tab, via });
             activate(tab);
-            this.saveLastConfigLocation();
         };
         buttons.forEach((btn, i) => {
             // Mirror the label into data-label so CSS can lay the tab out at its
@@ -2215,7 +2241,6 @@ class DashboardConfig {
         this._trackAction('section', { section, via });
         this.render();
         this.restoreConfigHash();
-        this.saveLastConfigLocation();
     }
 
     bindSectionNav(container) {
@@ -3638,7 +3663,6 @@ class DashboardConfig {
         }
         this.appearanceTab = tab;
         this.restoreConfigHash();
-        this.saveLastConfigLocation();
         // Leaving the tab drops any unsaved preview so the dashboard
         // does not keep showing colours from a theme you stopped editing.
         if (tab !== 'custom-themes') this.clearThemePreview();

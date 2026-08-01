@@ -747,7 +747,7 @@ test.describe('Shift+S opens config', () => {
 });
 
 test.describe('config remembers last location', () => {
-    test('Shift+S returns to the last section after leaving config', async ({ page }) => {
+    test('Shift+S opens Overview after leaving config with Escape', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
@@ -756,16 +756,42 @@ test.describe('config remembers last location', () => {
 
         await page.keyboard.press('Shift+S');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('bookmarks');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
     });
 
-    test('Shift+S restores the last sub-tab within a section', async ({ page }) => {
+    test('Escape does not restore a sub-tab on the next Shift+S visit', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
         await page.locator('[data-behavior-tab="privacy"]').click();
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
+    });
+
+    test('Shift+H from config remembers the section for Shift+S', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('Shift+H');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('health');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('bookmarks');
+    });
+
+    test('Shift+I from config remembers the sub-tab for Shift+S', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.locator('[data-behavior-tab="privacy"]').click();
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('Shift+I');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('inbox');
 
         await page.keyboard.press('Shift+S');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('behavior');
@@ -788,7 +814,7 @@ test.describe('config remembers last location', () => {
         await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
     });
 
-    test('pressing a page digit leaves config and remembers the section for Shift+S', async ({ page }) => {
+    test('pressing a page digit leaves config and opens Overview on the next Shift+S', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
@@ -798,10 +824,10 @@ test.describe('config remembers last location', () => {
 
         await page.keyboard.press('Shift+S');
         await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('stats');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
     });
 
-    test('bare #config opens the stored section, not Overview', async ({ page }) => {
+    test('bare #config opens Overview after Escape cleared the stored location', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
@@ -814,8 +840,7 @@ test.describe('config remembers last location', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('behavior');
-        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.behaviorTab)).toBe('privacy');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
     });
 
     test('cold load on #config restores the stored sub-tab', async ({ page }) => {
