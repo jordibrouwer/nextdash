@@ -246,8 +246,7 @@ test.describe('custom theme editor', () => {
         await dismissBlockingOverlays(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
 
-        // Two tiles left the row looking unfinished: the grid is auto-fill, so
-        // a short row stretches to fill the width. One per panel below.
+        // Six tiles on one row — one per panel below (config-tiles--text).
         const tiles = page.locator('.config-tiles--text .config-tile');
         await expect(tiles).toHaveCount(6);
         const labels = await page.locator('.config-tiles--text .config-tile-label').allTextContents();
