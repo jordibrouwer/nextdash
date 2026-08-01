@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.02.1 — August 2026](#v202608021--august-2026)
 - [v2026.08.02 — August 2026](#v20260802--august-2026)
 - [v2026.08.01.4 — August 2026](#v202608014--august-2026)
 - [v2026.08.01.3 — August 2026](#v202608013--august-2026)
@@ -134,6 +135,16 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.02.1 — August 2026
+
+**Hotfix after v2026.08.02** — Unraid and other hosts that run a Tailscale (or similar) Docker hook at container start failed with “No root privileges” because the image fixed `USER nextdash`. The app still ran, but the hook aborted and Tailscale never came up.
+
+### Docker
+
+- **fix** **Entrypoint drops privileges instead of fixed USER** — container starts as root so host hooks can run; `scripts/docker-entrypoint.sh` chowns `/app/data`, then `su-exec`s to `nextdash` for the Go process. Set `NEXTDASH_RUN_AS_ROOT=1` to keep root when a host requires it (`Dockerfile`, `.dockerignore`).
 
 ---
 

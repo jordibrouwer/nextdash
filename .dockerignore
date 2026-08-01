@@ -11,6 +11,7 @@ package.json
 package-lock.json
 scripts/
 !scripts/gen-asset-hashes.go
+!scripts/docker-entrypoint.sh
 
 # Runtime / local data (mounted as a volume in compose)
 data/

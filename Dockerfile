@@ -20,23 +20,23 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
 # Final stage — binary only; static/templates/locales come from go:embed.
 FROM alpine:3.21
 
-RUN apk --no-cache add ca-certificates tzdata \
+RUN apk --no-cache add ca-certificates tzdata su-exec \
     && addgroup -S nextdash \
     && adduser -S nextdash -G nextdash
 
 WORKDIR /app
 
 COPY --from=builder /app/main .
+COPY scripts/docker-entrypoint.sh /entrypoint.sh
 
-RUN mkdir -p /app/data && chown nextdash:nextdash /app/data
-
-USER nextdash
+RUN chmod +x /entrypoint.sh \
+    && mkdir -p /app/data && chown nextdash:nextdash /app/data
 
 EXPOSE 8080
 
 ENV PORT=8080
 
-CMD ["./main"]
+ENTRYPOINT ["/entrypoint.sh"]
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget -qO- http://127.0.0.1:8080/api/health >/dev/null || exit 1
