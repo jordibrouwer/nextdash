@@ -16,8 +16,8 @@ class DashboardConfig {
      */
     static SECTIONS = [
         'overview',
-        'pages-tags',
         'bookmarks',
+        'pages-tags',
         'appearance',
         'behavior',
         'data-backups',
@@ -55,6 +55,8 @@ class DashboardConfig {
         this.bmEditing = null;
         this.bmDirty = false;
         this.bmSelected = new Set();
+        /** Per-page category lists for the bookmarks section dropdowns. */
+        this._bmCategoriesCache = new Map();
         // Statistics: undefined while the health fetch is in flight, null on failure.
         this._statsHealth = undefined;
         // How far back the activity chart looks, in days.
@@ -69,6 +71,8 @@ class DashboardConfig {
         this._statsFinders = undefined;
         // Latest release for the overview: undefined until fetched, null on failure.
         this._latestRelease = undefined;
+        /** Which spotlight is showing in the overview New features carousel. */
+        this.overviewFeatureIndex = 0;
         // Pages & tags CRUD list row highlighted via ↑/↓ (health/inbox feed pattern).
         this._listKeyboardKey = null;
         // Bookmarks master list row highlighted via j/k.
@@ -136,6 +140,8 @@ class DashboardConfig {
     static sectionFromHash(hash) {
         if (typeof hash !== 'string') return null;
         const raw = hash.replace(/^#/, '');
+        if (raw === 'config/behavior/layout') return 'appearance';
+        if (raw === 'config/behavior/display') return 'appearance';
         if (raw === 'config') return 'overview';
         // A trailing /<tab> is optional and handled by subTabFromHash.
         const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z-]+))?$/);
@@ -152,10 +158,34 @@ class DashboardConfig {
      */
     static subTabFromHash(hash) {
         if (typeof hash !== 'string') return null;
-        const match = hash.replace(/^#/, '').match(/^config\/([a-z-]+)\/([a-z-]+)$/);
-        if (!match) return null;
+        const raw = hash.replace(/^#/, '');
+        if (raw === 'config/behavior/layout') return 'layout';
+        if (raw === 'config/behavior/display') return 'display';
+        const match = raw.match(/^config\/([a-z-]+)\/([a-z-]+)$/);
+        if (!match || match[1] === 'bookmarks') return null;
         const tabs = DashboardConfig.SUB_TABS[match[1]];
         return tabs && tabs.includes(match[2]) ? match[2] : null;
+    }
+
+    /** Page filter encoded as `#config/bookmarks/<pageId>`. */
+    static bookmarksPageFromHash(hash) {
+        if (typeof hash !== 'string') return null;
+        const match = hash.replace(/^#/, '').match(/^config\/bookmarks\/([^/]+)$/);
+        return match ? decodeURIComponent(match[1]) : null;
+    }
+
+    /** Composite category filter value when scoping to a page. */
+    static categoryFilterKey(pageId, categoryId) {
+        if (!categoryId) return '';
+        return pageId ? `${pageId}::${categoryId}` : String(categoryId);
+    }
+
+    static parseCategoryFilter(value) {
+        const raw = String(value || '');
+        if (!raw) return { pageId: null, categoryId: '' };
+        const idx = raw.indexOf('::');
+        if (idx < 0) return { pageId: null, categoryId: raw };
+        return { pageId: raw.slice(0, idx), categoryId: raw.slice(idx + 2) };
     }
 
     /**
@@ -222,8 +252,25 @@ class DashboardConfig {
         return true;
     }
 
+    applyBookmarksPageFromHash(hash) {
+        const section = DashboardConfig.sectionFromHash(hash);
+        if (section !== 'bookmarks') return false;
+        const pageId = DashboardConfig.bookmarksPageFromHash(hash);
+        if (pageId == null) {
+            if (!this.bmPageFilter) return false;
+            this.bmPageFilter = '';
+            return true;
+        }
+        if (String(this.bmPageFilter) === String(pageId)) return false;
+        this.bmPageFilter = pageId;
+        return true;
+    }
+
     hashForSection(section) {
         if (!section || section === 'overview') return 'config';
+        if (section === 'bookmarks' && this.bmPageFilter) {
+            return `config/bookmarks/${encodeURIComponent(this.bmPageFilter)}`;
+        }
         // Keep the sub-tab in the URL so the address bar is a link you can
         // actually hand to someone.
         const prop = DashboardConfig.SUB_TAB_STATE[section];
@@ -255,6 +302,9 @@ class DashboardConfig {
             const section = data?.section;
             if (!section || !DashboardConfig.SECTIONS.includes(section)) return null;
             let subTab = data?.subTab ?? null;
+            if (section === 'behavior' && (subTab === 'layout' || subTab === 'display')) {
+                return { section: 'appearance', subTab };
+            }
             if (subTab) {
                 const tabs = DashboardConfig.SUB_TABS[section];
                 if (!tabs?.includes(subTab)) subTab = null;
@@ -338,10 +388,11 @@ class DashboardConfig {
         }
         const section = DashboardConfig.sectionFromHash(hash);
         const tabChanged = this.applySubTabFromHash(window.location.hash);
+        const pageChanged = this.applyBookmarksPageFromHash(hash);
         if (section && section !== this.section) {
             this.section = section;
             this.render();
-        } else if (tabChanged) {
+        } else if (tabChanged || pageChanged) {
             this.render();
         }
     }
@@ -372,10 +423,12 @@ class DashboardConfig {
         this.clearListKeyboardSelection();
         this.clearBookmarkKeyboardSelection();
         this.section = targetSection;
+        this.applyBookmarksPageFromHash(window.location.hash);
         d.setActiveView(DashboardConfig.VIEW);
         window.nextdashTrack?.('view:config');
         d.pageNav?.setActiveConfigTab?.();
         d.pageNav?.updateDocumentTitle?.();
+        d.pageNav?.updatePageTitle?.();
         await this.loadAndRender();
         this.restoreConfigHash();
         requestAnimationFrame(() => window.DashboardKeyboardTip?.showConfigIntro?.());
@@ -878,6 +931,47 @@ class DashboardConfig {
         return this.t(key, fallback);
     }
 
+    pageLabel(pageId) {
+        const page = (this.dash.pages || []).find((p) => String(p.id) === String(pageId));
+        return page?.name || String(pageId ?? '');
+    }
+
+    /** Breadcrumb trail for the shell header and document title. */
+    headerBreadcrumb() {
+        const root = this.t('config.viewBreadcrumbRoot', 'Config').toLowerCase();
+        const parts = [root, this.sectionLabel(this.section).toLowerCase()];
+        const prop = DashboardConfig.SUB_TAB_STATE[this.section];
+        const tabs = DashboardConfig.SUB_TABS[this.section];
+        const tab = prop ? this[prop] : null;
+        if (tab && tabs?.includes(tab) && tab !== tabs[0]) {
+            parts.push(this.subTabHeaderLabel(this.section, tab).toLowerCase());
+        }
+        if (this.section === 'bookmarks' && this.bmPageFilter) {
+            parts.push(this.pageLabel(this.bmPageFilter).toLowerCase());
+        }
+        return parts.join(' › ');
+    }
+
+    subTabHeaderLabel(section, tab) {
+        switch (section) {
+            case 'behavior': return this.behaviorTabLabel?.(tab) || tab;
+            case 'pages-tags': return this.ptTabLabel?.(tab) || tab;
+            case 'appearance': return this.appearanceTabLabel?.(tab) || tab;
+            case 'stats': return this.statsTabLabel?.(tab) || tab;
+            case 'data-backups': return this.dbTabLabel?.(tab) || tab;
+            case 'help': return this.helpTabLabel?.(tab) || tab;
+            default: return tab;
+        }
+    }
+
+    /** Refresh section title in the panel head and dashboard header breadcrumb. */
+    updateConfigShellHead() {
+        const title = document.querySelector('.config-view-section-title');
+        if (title) title.textContent = this.sectionLabel(this.section);
+        this.dash.pageNav?.updatePageTitle?.();
+        this.dash.pageNav?.updateDocumentTitle?.();
+    }
+
     render() {
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
@@ -917,6 +1011,7 @@ class DashboardConfig {
             this.bindPagesTags(container);
         } else if (this.section === 'bookmarks') {
             this.bindBookmarksSection(container);
+            void this.prefetchAllBookmarkCategories();
         } else if (this.section === 'stats') {
             this.bindStats(container);
             void this.loadStats();
@@ -935,6 +1030,9 @@ class DashboardConfig {
         this.bindFormKeyboard(container);
         this.bindFormKeyboardLegend(container);
         this.cacheSettingsJumpFields();
+        if (this.isActiveView()) {
+            this.updateConfigShellHead();
+        }
     }
 
     /**
@@ -1777,6 +1875,7 @@ class DashboardConfig {
                 </nav>
                 <button type="button" class="config-nav-item config-nav-search"
                         data-config-action="settings-jump"
+                        data-config-setting-promo-anchor="settingsJump"
                         tabindex="0"
                         aria-keyshortcuts="Control+Shift+K Meta+Shift+K"
                         title="${esc(`${searchLabel} (${searchShortcut})`)}">
@@ -1848,6 +1947,11 @@ class DashboardConfig {
             || (Array.isArray(d.bookmarks) ? d.bookmarks.length : 0);
         const broken = Number(summary.brokenCount) || 0;
         const duplicate = Number(summary.duplicateCount) || 0;
+        const monitored = Number(summary.monitoredCount)
+            || (Array.isArray(d.health?.report?.issues)
+                ? d.health.report.issues.filter((i) => i?.monitor).length
+                : 0);
+        const monitorDown = Number(summary.monitorDownCount) || 0;
         const pages = Array.isArray(d.pages) ? d.pages.length : 0;
         const inboxUnread = d.inbox?.unreadCount?.() || 0;
 
@@ -1856,6 +1960,17 @@ class DashboardConfig {
                 key: 'bookmarks', tone: 'accent',
                 label: this.t('config.tileBookmarks', 'Bookmarks'),
                 value: totalBookmarks,
+            },
+            {
+                key: 'monitored', tone: monitorDown > 0 ? 'crit' : (monitored > 0 ? 'accent' : 'neutral'),
+                label: this.t('config.tileMonitored', 'Monitored'),
+                value: monitored,
+                action: monitored > 0 ? { view: 'health', filter: 'monitored' } : null,
+                detail: monitorDown > 0
+                    ? this.t('config.tileMonitoredDown', 'Not responding')
+                    : (monitored > 0
+                        ? this.t('config.tileMonitoredActive', 'Live uptime checks')
+                        : this.t('config.tileMonitoredNone', 'None enabled')),
             },
             {
                 key: 'broken', tone: broken > 0 ? 'crit' : 'good',
@@ -1925,12 +2040,19 @@ class DashboardConfig {
 
         return `
             <p class="config-view-intro">${intro}</p>
-            <div class="config-tiles" role="list">${tiles}</div>
-            ${this.renderOverviewAttention()}
-            <div class="config-overview-columns">
-                ${this.renderOverviewAbout()}
-                ${this.renderOverviewStats()}
-                ${this.renderOverviewWhatsNew()}
+            <div class="config-tiles config-tiles--overview" role="list">${tiles}</div>
+            <div class="config-overview-attention-zone">
+                ${this.renderOverviewAttention()}
+            </div>
+            <div class="config-overview-layout">
+                <div class="config-overview-top">
+                    ${this.renderOverviewNewFeatures()}
+                    ${this.renderOverviewStats()}
+                </div>
+                <div class="config-overview-about-row">
+                    ${this.renderOverviewAbout()}
+                    ${this.renderOverviewWhatsNew()}
+                </div>
                 ${this.renderOverviewTips()}
             </div>
         `;
@@ -1939,10 +2061,8 @@ class DashboardConfig {
     /**
      * Who makes nextDash, with the two links that follow from it.
      *
-     * Sits directly under "needs attention", so the first two things the
-     * overview says are what the install wants from you and who is behind it.
-     * Everything below is reference material you go looking for rather than
-     * read on the way past.
+     * Sits beside the latest-update panel at half width — reference material
+     * you go looking for rather than read on the way past.
      *
      * The Ko-fi button reuses the shared .wn-kofi-* set from modal.css — the
      * same markup the what's-new modal uses, including the twinkling stars — so
@@ -2037,6 +2157,157 @@ class DashboardConfig {
                 <h3 class="config-panel-title">${esc(this.t('config.overviewAttentionTitle', 'Needs attention'))}</h3>
                 ${body}
             </div>`;
+    }
+
+    /**
+     * Short guides to recent capabilities — one at a time in a compact carousel
+     * so the overview row stays the same height as At a glance beside it.
+     */
+    renderOverviewNewFeatures() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const items = this.overviewNewFeatures();
+        if (!items.length) return '';
+
+        const total = items.length;
+        const index = Math.min(Math.max(0, this.overviewFeatureIndex), total - 1);
+        this.overviewFeatureIndex = index;
+        const showNav = total > 1;
+        const counter = this.overviewNewFeaturesCounterLabel(index, total);
+        const navLabel = esc(this.t('config.overviewNewFeaturesNavAria', 'Browse new features'));
+
+        return `
+            <div class="config-panel config-new-features-panel config-new-features-panel--animated">
+                ${this.renderNewFeaturesPanelStars()}
+                <div class="config-new-features-panel-inner">
+                    <div class="config-new-features-head">
+                        <h3 class="config-panel-title">${esc(this.t('config.overviewNewFeaturesTitle', 'New features'))}</h3>
+                        ${showNav ? `
+                            <div class="config-new-features-nav" role="group" aria-label="${navLabel}">
+                                <button type="button" class="config-new-features-nav-btn"
+                                        data-overview-feature="prev"
+                                        aria-label="${esc(this.t('config.overviewNewFeaturesPrev', 'Previous feature'))}">‹</button>
+                                <span class="config-new-features-counter" aria-live="polite">${esc(counter)}</span>
+                                <button type="button" class="config-new-features-nav-btn"
+                                        data-overview-feature="next"
+                                        aria-label="${esc(this.t('config.overviewNewFeaturesNext', 'Next feature'))}">›</button>
+                            </div>` : ''}
+                    </div>
+                    <div class="config-new-features-carousel" id="config-new-features-carousel" tabindex="${showNav ? '0' : '-1'}"
+                         aria-roledescription="carousel"
+                         aria-label="${navLabel}">
+                        ${this.renderOverviewFeatureSpotlight(items[index])}
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    renderOverviewFeatureSpotlight(item) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <article class="config-feature-spotlight">
+                <h4 class="config-feature-spotlight-title">${esc(this.t(item.titleKey, item.titleFallback))}</h4>
+                <p class="config-panel-note">${esc(this.t(item.whatKey, item.whatFallback))}</p>
+                <p class="config-panel-note config-feature-spotlight-enable">${esc(this.t(item.enableKey, item.enableFallback))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn config-btn--small"
+                            data-overview-go='${esc(JSON.stringify(item.go))}'>${esc(this.t(item.ctaKey, item.ctaFallback))}</button>
+                </div>
+            </article>`;
+    }
+
+    overviewNewFeaturesCounterLabel(index, total) {
+        return this.t('config.overviewNewFeaturesCounter', '{current} / {total}')
+            .replace('{current}', String(index + 1))
+            .replace('{total}', String(total));
+    }
+
+    stepOverviewFeature(delta) {
+        const items = this.overviewNewFeatures();
+        if (items.length <= 1) return;
+        const n = items.length;
+        this.overviewFeatureIndex = ((this.overviewFeatureIndex + delta) % n + n) % n;
+        this.repaintOverviewNewFeatures();
+        requestAnimationFrame(() => {
+            document.getElementById('config-new-features-carousel')
+                ?.focus({ preventScroll: true });
+        });
+    }
+
+    repaintOverviewNewFeatures() {
+        if (!this.isActiveView() || this.section !== 'overview') return;
+        const host = document.querySelector('.config-new-features-panel-inner');
+        if (!host) return;
+        const panel = host.closest('.config-new-features-panel');
+        if (!panel) return;
+        const fresh = this.renderOverviewNewFeatures();
+        const wrap = document.createElement('div');
+        wrap.innerHTML = fresh;
+        const nextPanel = wrap.firstElementChild;
+        if (!nextPanel) return;
+        panel.replaceWith(nextPanel);
+    }
+
+    /** Twinkling stars around the new-features panel border (decorative). */
+    renderNewFeaturesPanelStars() {
+        return `<span class="config-new-features-panel-stars" aria-hidden="true">${'<span class="config-new-features-panel-star"></span>'.repeat(8)}</span>`;
+    }
+
+    /** Catalog of feature spotlights shown on the overview. */
+    overviewNewFeatures() {
+        return [
+            {
+                titleKey: 'config.overviewNewFeatureKeyboardTitle',
+                titleFallback: 'Config keyboard navigation',
+                whatKey: 'config.overviewNewFeatureKeyboardWhat',
+                whatFallback: 'Move through every config section, sub-tab, and list from the keyboard — no mouse required.',
+                howKey: 'config.overviewNewFeatureKeyboardHow',
+                howFallback: 'Use j/k or arrow keys on the section rail, [ and ] for sub-tabs, and list keys on Pages & tags and Bookmarks. Ctrl/Cmd+Shift+K opens Find settings.',
+                enableKey: 'config.overviewNewFeatureKeyboardEnable',
+                enableFallback: 'Press ! for the full cheat sheet, or open Help → Config navigation.',
+                ctaKey: 'config.overviewNewFeatureKeyboardCta',
+                ctaFallback: 'Open Help →',
+                go: { section: 'help', helpTab: 'config' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureFindSettingsTitle',
+                titleFallback: 'Find settings',
+                whatKey: 'config.overviewNewFeatureFindSettingsWhat',
+                whatFallback: 'Jump straight to any config section, sub-tab, help topic, or field you have visited.',
+                howKey: 'config.overviewNewFeatureFindSettingsHow',
+                howFallback: 'Press Ctrl/Cmd+Shift+K anywhere in config, or click Find settings below Help in the left nav. Type to filter, then Enter to go.',
+                enableKey: 'config.overviewNewFeatureFindSettingsEnable',
+                enableFallback: 'The shortcut works on every config section; the nav button is always below Help.',
+                ctaKey: 'config.overviewNewFeatureFindSettingsCta',
+                ctaFallback: 'Try Find settings →',
+                go: { section: 'overview' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureBookmarkPagesTitle',
+                titleFallback: 'Page-scoped bookmark categories',
+                whatKey: 'config.overviewNewFeatureBookmarkPagesWhat',
+                whatFallback: 'Each page keeps its own category list. The Bookmarks filter shows only categories for the page you pick.',
+                howKey: 'config.overviewNewFeatureBookmarkPagesHow',
+                howFallback: 'Choose a page in the filter dropdown to scope categories and deep-link with #config/bookmarks/<pageId>. With All pages, categories show as Page · Category.',
+                enableKey: 'config.overviewNewFeatureBookmarkPagesEnable',
+                enableFallback: 'Open Config → Bookmarks and use the page filter at the top of the list.',
+                ctaKey: 'config.overviewNewFeatureBookmarkPagesCta',
+                ctaFallback: 'Open Bookmarks →',
+                go: { section: 'bookmarks' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureRandomThemeTitle',
+                titleFallback: 'Random theme',
+                whatKey: 'config.overviewNewFeatureRandomThemeWhat',
+                whatFallback: 'Let nextDash pick a different built-in theme from the pool instead of always showing your saved choice. Your saved theme remains the default whenever random is off.',
+                howKey: 'config.overviewNewFeatureRandomThemeHow',
+                howFallback: 'Choose Off (always your saved theme), On page refresh (new pick on each reload), or On view change (new pick when switching between bookmarks, config, inbox, health, or dashboard pages). With auto dark mode, only matching light or dark variants are eligible. While random is on, a Currently showing hint names the active theme.',
+                enableKey: 'config.overviewNewFeatureRandomThemeEnable',
+                enableFallback: 'Open Config → Appearance → Theme and set Random theme to the mode you want.',
+                ctaKey: 'config.overviewNewFeatureRandomThemeCta',
+                ctaFallback: 'Open Appearance →',
+                go: { section: 'appearance', appearanceTab: 'general' },
+            },
+        ];
     }
 
     /** A few headline numbers, with the full report a click away. */
@@ -2207,26 +2478,69 @@ class DashboardConfig {
 
     /** Jump-off points: another config section, or one of the shell's views. */
     bindOverviewActions(container) {
-        container.querySelectorAll('[data-overview-go]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                let target;
-                try {
-                    target = JSON.parse(btn.getAttribute('data-overview-go') || '{}');
-                } catch {
-                    return;
-                }
-                if (target.section) {
-                    this.selectSection(target.section);
-                    return;
-                }
-                // Same hand-off the status tiles use, which knows that the health
-                // filter is set on the component rather than passed as an argument.
-                if (target.view) this.openViewFromTile(target.view, target.filter);
-            });
+        const body = container.querySelector('#config-view-body');
+        if (!body || body.dataset.overviewClickBound) return;
+        body.dataset.overviewClickBound = '1';
+        body.addEventListener('click', (e) => {
+            if (this.section !== 'overview') return;
+            if (e.target.closest('[data-overview-feature="prev"]')) {
+                this.stepOverviewFeature(-1);
+                return;
+            }
+            if (e.target.closest('[data-overview-feature="next"]')) {
+                this.stepOverviewFeature(1);
+                return;
+            }
+            const go = e.target.closest('[data-overview-go]');
+            if (go) {
+                this.handleOverviewGo(go);
+                return;
+            }
+            if (e.target.closest('[data-overview-action="whats-new"]')) {
+                void this.openWhatsNew();
+            }
         });
-        container.querySelectorAll('[data-overview-action="whats-new"]').forEach((btn) => {
-            btn.addEventListener('click', () => this.openWhatsNew());
+        body.addEventListener('keydown', (e) => {
+            if (this.section !== 'overview') return;
+            if (!e.target.closest('.config-new-features-carousel')) return;
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                this.stepOverviewFeature(-1);
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                this.stepOverviewFeature(1);
+            }
         });
+    }
+
+    handleOverviewGo(btn) {
+        let target;
+        try {
+            target = JSON.parse(btn.getAttribute('data-overview-go') || '{}');
+        } catch {
+            return;
+        }
+        if (target.section) {
+            if (target.bmPageFilter != null) {
+                this.bmPageFilter = String(target.bmPageFilter);
+            }
+            if (target.helpTab && target.section === 'help') {
+                this.helpTab = target.helpTab;
+            }
+            if (target.appearanceTab && target.section === 'appearance') {
+                if (this.section !== 'appearance') {
+                    this.selectSection('appearance');
+                }
+                void this.switchAppearanceTab(target.appearanceTab);
+                return;
+            }
+            this.selectSection(target.section);
+            if (target.bmPageFilter != null) {
+                void this.onBookmarksPageFilterChange();
+            }
+            return;
+        }
+        if (target.view) this.openViewFromTile(target.view, target.filter);
     }
 
     /* ── Section navigation ────────────────────────────────────────────────── */
@@ -3216,8 +3530,6 @@ class DashboardConfig {
             return `<button type="button" class="config-choice${active ? ' is-active' : ''}" data-appearance-font="${esc(size)}" aria-pressed="${active ? 'true' : 'false'}">${esc(this.fontSizeLabel(size))}</button>`;
         }).join('');
 
-        const layout = s.layoutVersion === 'modern' ? 'modern' : 'classic';
-
         const presets = (window.DashboardFont?.PRESET_IDS) || ['source-code-pro', 'jetbrains-mono', 'ibm-plex-mono', 'inter', 'ibm-plex-sans', 'dm-sans', 'system'];
         const activePreset = window.DashboardFont?.resolveActiveFontPreset?.(s) || s.fontPreset || 'source-code-pro';
         const fontPresetOptions = presets.map((p) =>
@@ -3276,29 +3588,27 @@ class DashboardConfig {
                    </div>`
                 : '';
 
-        const iconSize = s.launcherIconSize || 'normal';
-        const iconSizes = [['small', this.t('config.launcherIconSizeSmall', 'Small')], ['normal', this.t('config.launcherIconSizeNormal', 'Normal')], ['large', this.t('config.launcherIconSizeLarge', 'Large')]];
-        const iconSizeChoices = iconSizes.map(([val, label]) =>
-            `<button type="button" class="config-choice${iconSize === val ? ' is-active' : ''}" data-appearance-iconsize="${esc(val)}" aria-pressed="${iconSize === val}">${esc(label)}</button>`
-        ).join('');
-
         const apTabs = DashboardConfig.APPEARANCE_TABS.map((tab) => {
             const active = tab === this.appearanceTab;
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-appearance-body" data-appearance-tab="${esc(tab)}">${esc(this.appearanceTabLabel(tab))}</button>`;
         }).join('');
 
-        if (this.appearanceTab === 'custom-themes') {
-            return `
-                <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
-                <div class="config-subtabs" role="tablist">${apTabs}</div>
-                <div id="config-appearance-body" role="tabpanel" tabindex="0">${this.renderCustomThemes()}</div>
-            `;
-        }
-
-        return `
+        const shell = (body) => `
             <p class="config-view-intro">${esc(this.t('config.appearanceIntro', 'Theme, type, and layout. Changes apply immediately and are saved.'))}</p>
             <div class="config-subtabs" role="tablist">${apTabs}</div>
-            <div id="config-appearance-body" role="tabpanel" tabindex="0">
+            <div id="config-appearance-body" role="tabpanel" tabindex="0">${body}</div>`;
+
+        if (this.appearanceTab === 'custom-themes') {
+            return shell(this.renderCustomThemes());
+        }
+        if (this.appearanceTab === 'layout') {
+            return shell(this.renderAppearanceLayoutBody());
+        }
+        if (this.appearanceTab === 'display') {
+            return shell(this.renderAppearanceDisplayBody());
+        }
+
+        return shell(`
             ${tiles}
 
             <div class="config-panel">
@@ -3384,7 +3694,39 @@ class DashboardConfig {
             </div>
 
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutTitle', 'Layout & display'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
+                <div class="config-field-row">
+                    <label class="config-toggle">
+                        <input type="checkbox" data-appearance-toggle="enableCustomTitle" ${s.enableCustomTitle ? 'checked' : ''}>
+                        <span>${esc(this.t('config.enableCustomTitle', 'Use a custom page title'))}</span>
+                    </label>
+                    ${this.appearanceAff('enableCustomTitle')}
+                </div>
+                <div class="config-field" style="margin-top:10px">
+                    <span class="config-field-label">${esc(this.t('config.customTitleLabel', 'Title'))}</span>
+                    <input type="text" class="config-text" data-appearance-text="customTitle" value="${esc(s.customTitle || '')}" ${s.enableCustomTitle ? '' : 'disabled'} placeholder="nextDash">
+                </div>
+                <div class="config-field" style="margin-top:10px">
+                    <span class="config-field-label">${esc(this.t('config.uploadFaviconLabel', 'Custom favicon'))}</span>
+                    <button type="button" class="config-btn config-btn--small" data-appearance-action="upload-favicon">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
+                    <input type="file" id="config-favicon-input" accept="image/*,.ico" hidden>
+                </div>
+            </div>`);
+    }
+
+    renderAppearanceLayoutBody() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const layout = s.layoutVersion === 'modern' ? 'modern' : 'classic';
+        const iconSize = s.launcherIconSize || 'normal';
+        const iconSizes = [['small', this.t('config.launcherIconSizeSmall', 'Small')], ['normal', this.t('config.launcherIconSizeNormal', 'Normal')], ['large', this.t('config.launcherIconSizeLarge', 'Large')]];
+        const iconSizeChoices = iconSizes.map(([val, label]) =>
+            `<button type="button" class="config-choice${iconSize === val ? ' is-active' : ''}" data-appearance-iconsize="${esc(val)}" aria-pressed="${iconSize === val}">${esc(label)}</button>`
+        ).join('');
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutVersionTitle', 'Layout version'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.layoutVersionDescIntro', 'Choose a layout style. Classic is recommended; Modern is still in early beta.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.appearanceLayoutVersion', 'Layout'))}</span>
@@ -3403,6 +3745,17 @@ class DashboardConfig {
                     <div class="config-choices" role="group">${iconSizeChoices}</div>
                     ${this.appearanceAff('launcherIconSize')}
                 </div>
+            </div>
+            ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'layout'), 'behavior')}`;
+    }
+
+    renderAppearanceDisplayBody() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live in the panels below.'))}</p>
                 <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="showIcons" ${s.showIcons !== false ? 'checked' : ''}>
@@ -3425,29 +3778,7 @@ class DashboardConfig {
                     ${this.appearanceAff('animationsEnabled')}
                 </div>
             </div>
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
-                <div class="config-field-row">
-                    <label class="config-toggle">
-                        <input type="checkbox" data-appearance-toggle="enableCustomTitle" ${s.enableCustomTitle ? 'checked' : ''}>
-                        <span>${esc(this.t('config.enableCustomTitle', 'Use a custom page title'))}</span>
-                    </label>
-                    ${this.appearanceAff('enableCustomTitle')}
-                </div>
-                <div class="config-field" style="margin-top:10px">
-                    <span class="config-field-label">${esc(this.t('config.customTitleLabel', 'Title'))}</span>
-                    <input type="text" class="config-text" data-appearance-text="customTitle" value="${esc(s.customTitle || '')}" ${s.enableCustomTitle ? '' : 'disabled'} placeholder="nextDash">
-                </div>
-                <div class="config-field" style="margin-top:10px">
-                    <span class="config-field-label">${esc(this.t('config.uploadFaviconLabel', 'Custom favicon'))}</span>
-                    <button type="button" class="config-btn config-btn--small" data-appearance-action="upload-favicon">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
-                    <input type="file" id="config-favicon-input" accept="image/*,.ico" hidden>
-                </div>
-            </div>
-
-            </div>
-        `;
+            ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'display'), 'behavior')}`;
     }
 
     /** Friendly name for a theme id, matching the old config's labels. */
@@ -3638,6 +3969,9 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
+        if (this.appearanceTab === 'layout' || this.appearanceTab === 'display') {
+            this.bindControlPanels(container, 'behavior');
+        }
         this.bindFormKeyboard(container);
     }
 
@@ -3731,7 +4065,9 @@ class DashboardConfig {
 
     appearanceTabLabel(tab) {
         const map = {
-            general: ['config.appearanceTabGeneral', 'General'],
+            general: ['config.appearanceTabGeneral', 'Theme'],
+            layout: ['config.appearanceTabLayout', 'Layout'],
+            display: ['config.appearanceTabDisplay', 'Display'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -4969,7 +5305,7 @@ class DashboardConfig {
             {
                 tab: 'layout',
                 title: t('config.generalGroupLayout', 'Bookmarks layout'),
-                note: t('config.generalLayoutIntro', 'Layout version (Classic or Modern), grid structure, column count, layout preset, and density.'),
+                note: t('config.generalLayoutIntro', 'Grid structure, column count, layout preset, and density.'),
                 controls: [
                     { field: 'columnsPerRow', type: 'number', label: t('config.columnsLabel', 'Columns'), min: 1, max: 12, special: 'render' },
                     // The preset drives the grid's `layout-*` class and the
@@ -5424,14 +5760,12 @@ class DashboardConfig {
         });
     }
 
-    static BEHAVIOR_TABS = ['general', 'datetime', 'layout', 'display', 'search', 'status', 'privacy'];
+    static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'status', 'privacy'];
 
     behaviorTabLabel(tab) {
         const map = {
             general: ['config.behaviorTabGeneral', 'General'],
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
-            layout: ['config.behaviorTabLayout', 'Layout'],
-            display: ['config.behaviorTabDisplay', 'Display'],
             search: ['config.behaviorTabSearch', 'Search & inbox'],
             status: ['config.behaviorTabStatus', 'Status & health'],
             privacy: ['config.behaviorTabPrivacy', 'Privacy'],
@@ -5733,7 +6067,7 @@ class DashboardConfig {
     /** Data & backups keeps its destructive actions on a separate tab. */
     static DB_TABS = ['backups', 'reset'];
 
-    static APPEARANCE_TABS = ['general', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'layout', 'display', 'custom-themes'];
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
 
@@ -6991,6 +7325,7 @@ class DashboardConfig {
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.dash.renderDashboard?.({ animate: false });
+            this.invalidateBookmarkCategoriesCache(this._catPageId);
         } catch {
             this.notify(this.t('config.categoriesSaveError', 'Could not save categories.'), 'error');
         }
@@ -7034,7 +7369,8 @@ class DashboardConfig {
             <div class="config-panel">
                 <div class="config-crud-toolbar">
                     <input type="search" class="config-text" id="config-bm-search" placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}" value="${esc(this.bmQuery || '')}">
-                    <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}">${pageOptions}</select>
+                    <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}"
+                            data-config-setting-promo-anchor="bookmarksPageFilter">${pageOptions}</select>
                     <select class="config-select" id="config-bm-category" aria-label="${esc(this.t('config.category', 'Category'))}">${catOptions}</select>
                     <select class="config-select" id="config-bm-sort" aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
                     <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
@@ -7082,34 +7418,166 @@ class DashboardConfig {
 
     /** Every category name in use, across all pages, de-duplicated and sorted. */
     /**
-     * The categories to offer, as {id, label} pairs.
+     * Categories to offer in bookmarks dropdowns, as {id, label} pairs.
+     *
+     * When a page is selected — via the list filter or explicitly — only that
+     * page's category list is included, so "Development" on Main is not mixed
+     * up with the same label on another page. With no page filter, every
+     * category in use across the install is offered.
      *
      * A bookmark stores its category by *id* ("development") while the category
      * list carries a display *name* ("Development"). Keying on the id is what
-     * keeps those from being counted as two different categories — collecting
-     * both into one set listed everything twice.
-     *
-     * The page's own category list wins on labels; anything a bookmark refers to
-     * that is not in that list is still offered, so an orphaned category never
-     * silently disappears from the dropdown.
+     * keeps those from being counted as two different categories.
      */
-    knownCategories() {
-        const byId = new Map();
-        (this.dash.categories || []).forEach((c) => {
-            if (typeof c === 'string') {
-                if (c) byId.set(c, c);
-                return;
+    knownCategories(pageId) {
+        const scopedPage = pageId != null && pageId !== ''
+            ? String(pageId)
+            : (this.bmPageFilter ? String(this.bmPageFilter) : '');
+
+        const categoriesForPage = (pid) => {
+            const byId = new Map();
+            const addFromList = (list) => {
+                (list || []).forEach((c) => {
+                    if (typeof c === 'string') {
+                        if (c) byId.set(c, c);
+                        return;
+                    }
+                    const id = c?.id || c?.name;
+                    if (id) byId.set(String(id), String(c?.name || id));
+                });
+            };
+
+            const bookmarks = this.dash.allBookmarks || [];
+            const key = String(pid);
+            const cached = this._bmCategoriesCache.get(key);
+            if (cached) {
+                addFromList(cached);
+            } else if (String(this.dash.currentPageId) === key) {
+                addFromList(this.dash.categories);
             }
-            const id = c?.id || c?.name;
-            if (id) byId.set(String(id), String(c?.name || id));
+            bookmarks
+                .filter((b) => String(b.pageId) === key)
+                .forEach((b) => {
+                    const id = b.category;
+                    if (id && !byId.has(String(id))) byId.set(String(id), String(id));
+                });
+            return [...byId.entries()]
+                .map(([id, label]) => ({ id, label }))
+                .sort((a, b) => a.label.localeCompare(b.label));
+        };
+
+        if (scopedPage) {
+            return categoriesForPage(scopedPage);
+        }
+
+        const pages = this.dash.pages || [];
+        const out = [];
+        const seen = new Set();
+        pages.forEach((p) => {
+            const pageName = this.pageLabel(p.id);
+            categoriesForPage(p.id).forEach((c) => {
+                const compositeId = DashboardConfig.categoryFilterKey(p.id, c.id);
+                if (seen.has(compositeId)) return;
+                seen.add(compositeId);
+                out.push({ id: compositeId, label: `${pageName} · ${c.label}` });
+            });
         });
-        (this.dash.allBookmarks || []).forEach((b) => {
-            const id = b.category;
-            if (id && !byId.has(String(id))) byId.set(String(id), String(id));
+        return out.sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    /** Category options for bulk actions — scoped to the selected rows' page(s). */
+    bulkKnownCategories(picked) {
+        if (!picked?.length) return this.knownCategories();
+        const pageIds = [...new Set(picked.map((b) => String(b.pageId)))];
+        if (pageIds.length === 1) {
+            return this.knownCategories(pageIds[0]);
+        }
+        const out = [];
+        pageIds.forEach((pageId) => {
+            const pageName = this.pageLabel(pageId);
+            this.knownCategories(pageId).forEach((c) => {
+                out.push({
+                    id: DashboardConfig.categoryFilterKey(pageId, c.id),
+                    label: `${pageName} · ${c.label}`,
+                });
+            });
         });
-        return [...byId.entries()]
-            .map(([id, label]) => ({ id, label }))
-            .sort((a, b) => a.label.localeCompare(b.label));
+        return out.sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    bookmarksFromKeys(keys) {
+        const all = this.dash.allBookmarks || [];
+        const wanted = new Set(keys || []);
+        return all.filter((b) => wanted.has(DashboardConfig.bookmarkKey(b)));
+    }
+
+    categoryLabelForBookmark(b) {
+        const id = String(b.category || '');
+        if (!id) return '';
+        if (this.bmPageFilter) {
+            return this.knownCategories(this.bmPageFilter).find((c) => c.id === id)?.label || id;
+        }
+        const composite = DashboardConfig.categoryFilterKey(b.pageId, id);
+        return this.knownCategories().find((c) => c.id === composite)?.label
+            || `${this.pageLabel(b.pageId)} · ${id}`;
+    }
+
+    async prefetchAllBookmarkCategories() {
+        const pages = this.dash.pages || [];
+        await Promise.all(pages.map((p) => this.loadBookmarkCategoriesForPage(p.id)));
+        if (this.isActiveView() && this.section === 'bookmarks') {
+            this.repaintBookmarksFilters();
+            this.repaintBookmarksList();
+        }
+    }
+
+    async loadBookmarkCategoriesForPage(pageId) {
+        const key = String(pageId || '');
+        if (!key) return [];
+        if (this._bmCategoriesCache.has(key)) {
+            return this._bmCategoriesCache.get(key);
+        }
+        try {
+            const res = await fetch(`/api/categories?page=${encodeURIComponent(key)}`);
+            const data = res && res.ok ? await res.json() : [];
+            const list = Array.isArray(data) ? data : [];
+            this._bmCategoriesCache.set(key, list);
+            return list;
+        } catch {
+            this._bmCategoriesCache.set(key, []);
+            return [];
+        }
+    }
+
+    invalidateBookmarkCategoriesCache(pageId) {
+        if (pageId != null && pageId !== '') {
+            this._bmCategoriesCache.delete(String(pageId));
+        }
+    }
+
+    async ensureBookmarkCategoriesForFilter() {
+        const pageId = String(this.bmPageFilter || '');
+        if (!pageId) return;
+        await this.loadBookmarkCategoriesForPage(pageId);
+        if (this.bmCategoryFilter) {
+            const valid = this.knownCategories(pageId).some((c) => {
+                if (this.bmPageFilter) return c.id === this.bmCategoryFilter;
+                return c.id === this.bmCategoryFilter
+                    || c.id === DashboardConfig.categoryFilterKey(pageId, this.bmCategoryFilter);
+            });
+            if (!valid) this.bmCategoryFilter = '';
+        }
+    }
+
+    repaintBookmarksFilters() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const catEl = document.getElementById('config-bm-category');
+        if (!catEl) return;
+        catEl.innerHTML = [`<option value="">${esc(this.t('config.allCategories', 'All categories'))}</option>`]
+            .concat(this.knownCategories().map((c) => {
+                const sel = this.bmCategoryFilter === c.id ? ' selected' : '';
+                return `<option value="${esc(c.id)}"${sel}>${esc(c.label)}</option>`;
+            })).join('');
     }
 
     /** The rows currently passing search, page filter, category filter and sort. */
@@ -7133,10 +7601,14 @@ class DashboardConfig {
         const pageFilter = String(this.bmPageFilter || '');
         const catFilter = this.bmCategoryFilter || '';
         const cleanup = DashboardConfig.CLEANUP_FILTERS[this.bmCleanupFilter] || null;
+        const { pageId: catPage, categoryId } = DashboardConfig.parseCategoryFilter(catFilter);
         const rows = all.filter((b) => {
             if (cleanup && !cleanup(b)) return false;
             if (pageFilter && String(b.pageId) !== pageFilter) return false;
-            if (catFilter && (b.category || '') !== catFilter) return false;
+            if (categoryId) {
+                if (catPage && String(b.pageId) !== String(catPage)) return false;
+                if ((b.category || '') !== categoryId) return false;
+            }
             if (!q) return true;
             return [b.name, b.url, b.category, b.note, (b.tags || []).join(' ')]
                 .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
@@ -7162,10 +7634,11 @@ class DashboardConfig {
         const n = this.bmSelected.size;
         if (n === 0) return '';
         const pages = this.dash.pages || [];
+        const picked = this.bookmarksFromKeys([...this.bmSelected]);
         const pageOpts = [`<option value="">${esc(this.t('config.bulkMovePagePlaceholder', 'Move to page…'))}</option>`]
             .concat(pages.map((p) => `<option value="${esc(p.id)}">${esc(p.name || p.id)}</option>`)).join('');
         const catOpts = [`<option value="">${esc(this.t('config.bulkMoveCategoryPlaceholder', 'Set category…'))}</option>`]
-            .concat(this.knownCategories().map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`)).join('');
+            .concat(this.bulkKnownCategories(picked).map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`)).join('');
         const modeOpts = [
             ['add', this.t('config.bulkTagsAdd', 'Add')],
             ['replace', this.t('config.bulkTagsReplace', 'Replace')],
@@ -7204,16 +7677,24 @@ class DashboardConfig {
     renderBookmarksList() {
         const esc = (v) => this.dash.escapeHtml(v);
         if (!(this.dash.allBookmarks || []).length) {
-            return `<p class="config-panel-empty">${esc(this.t('config.noBookmarksYet', 'No bookmarks yet.'))}</p>`;
+            return `
+                <div class="config-panel-empty config-panel-empty--action">
+                    <p>${esc(this.t('config.noBookmarksYet', 'No bookmarks yet.'))}</p>
+                    <button type="button" class="config-btn config-btn--primary" data-bm-empty-add>${esc(this.t('config.addBookmarkBtn', 'Add bookmark'))}</button>
+                </div>`;
         }
         const rows = this.visibleBookmarks();
         if (!rows.length) {
-            return `<p class="config-panel-empty">${esc(this.t('config.noBookmarksMatch', 'No bookmarks match your search.'))}</p>`;
+            const hasFilters = !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter || this.bmCleanupFilter);
+            return `
+                <div class="config-panel-empty config-panel-empty--action">
+                    <p>${esc(this.t('config.noBookmarksMatch', 'No bookmarks match your search.'))}</p>
+                    ${hasFilters ? `<button type="button" class="config-btn" data-bm-empty-clear>${esc(this.t('config.clearBookmarkFilters', 'Clear filters'))}</button>` : ''}
+                    <button type="button" class="config-btn config-btn--primary" data-bm-empty-add>${esc(this.t('config.addBookmarkBtn', 'Add bookmark'))}</button>
+                </div>`;
         }
         const pageName = (id) => (this.dash.pages || []).find((p) => String(p.id) === String(id))?.name || id;
-        // Rows show the category's display name; the bookmark stores its id.
-        const catLabels = new Map(this.knownCategories().map((c) => [c.id, c.label]));
-        const catName = (id) => catLabels.get(String(id)) || id;
+        const showPageBadge = !this.bmPageFilter;
         const modeLabel = (b) => {
             const mode = window.CheckMode?.of?.(b) || 'off';
             const found = (window.CheckMode?.options?.() || []).find((o) => o.mode === mode);
@@ -7223,8 +7704,8 @@ class DashboardConfig {
             const key = DashboardConfig.bookmarkKey(b);
             const open = this.bmEditing === key;
             const ticked = this.bmSelected.has(key);
-            const bits = [esc(pageName(b.pageId))];
-            if (b.category) bits.push(esc(catName(b.category)));
+            const bits = [];
+            if (b.category) bits.push(esc(this.categoryLabelForBookmark(b)));
             if ((b.tags || []).length) bits.push(esc((b.tags || []).join(', ')));
             const mode = modeLabel(b);
             if (mode) bits.push(esc(mode));
@@ -7235,7 +7716,10 @@ class DashboardConfig {
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
                            aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
                     <div class="config-bm-main">
-                        <span class="config-bm-name">${esc(b.name || b.url)}</span>
+                        <div class="config-bm-title-row">
+                            ${showPageBadge ? `<span class="config-bm-page-badge">${esc(pageName(b.pageId))}</span>` : ''}
+                            <span class="config-bm-name">${esc(b.name || b.url)}</span>
+                        </div>
                         <span class="config-bm-url">${esc(b.url)}</span>
                         <span class="config-bm-meta">${bits.join(' · ')}</span>
                         ${this.renderBookmarkUsageLine(b)}
@@ -7263,7 +7747,7 @@ class DashboardConfig {
         const pageOpts = pages.map((p) =>
             `<option value="${esc(p.id)}" ${String(p.id) === String(b.pageId) ? 'selected' : ''}>${esc(p.name || p.id)}</option>`
         ).join('');
-        const cats = this.knownCategories();
+        const cats = this.knownCategories(b.pageId);
         const catOpts = [`<option value="">${esc(this.t('config.noCategory', 'No category'))}</option>`]
             .concat(cats.map((c) =>
                 `<option value="${esc(c.id)}" ${c.id === (b.category || '') ? 'selected' : ''}>${esc(c.label)}</option>`))
@@ -7560,16 +8044,57 @@ class DashboardConfig {
                 this.repaintBookmarksList();
             });
         };
-        wire('#config-bm-page', 'bmPageFilter');
-        wire('#config-bm-category', 'bmCategoryFilter');
         wire('#config-bm-sort', 'bmSort');
+        const pageEl = container.querySelector('#config-bm-page');
+        pageEl?.addEventListener('change', () => {
+            this.bmPageFilter = pageEl.value;
+            void this.onBookmarksPageFilterChange();
+        });
+        wire('#config-bm-category', 'bmCategoryFilter');
+        void this.ensureBookmarkCategoriesForFilter().then(() => {
+            this.repaintBookmarksFilters();
+            this.repaintBookmarksList();
+        });
         container.querySelector('#config-bm-add')
             ?.addEventListener('click', () => this.openAddBookmarkModal());
+        container.querySelector('#config-bm-list')?.addEventListener('click', (e) => {
+            if (e.target.closest('[data-bm-empty-add]')) {
+                this.openAddBookmarkModal();
+                return;
+            }
+            if (e.target.closest('[data-bm-empty-clear]')) {
+                this.clearBookmarkFilters();
+            }
+        });
         container.querySelector('#config-bm-select-all')
             ?.addEventListener('click', () => this.toggleSelectAllBookmarks());
         this.bindBookmarkRows(container);
         this.bindBulkToolbar(container);
         this.bindBookmarkKeyboard(container);
+    }
+
+    clearBookmarkFilters() {
+        this.bmQuery = '';
+        this.bmPageFilter = '';
+        this.bmCategoryFilter = '';
+        this.bmCleanupFilter = '';
+        this.bmSelected.clear();
+        this.render();
+        this.restoreConfigHash();
+    }
+
+    async onBookmarksPageFilterChange() {
+        if (this.bmPageFilter && this.bmCategoryFilter) {
+            const parsed = DashboardConfig.parseCategoryFilter(this.bmCategoryFilter);
+            if (parsed.pageId && String(parsed.pageId) !== String(this.bmPageFilter)) {
+                this.bmCategoryFilter = parsed.categoryId || '';
+            }
+        }
+        await this.ensureBookmarkCategoriesForFilter();
+        this.repaintBookmarksFilters();
+        this.repaintBookmarksList();
+        this.restoreConfigHash();
+        this.updateConfigShellHead();
     }
 
     /**
@@ -7676,6 +8201,9 @@ class DashboardConfig {
             const evt = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
             el.addEventListener(evt, () => {
                 markDirty();
+                if (el.getAttribute('data-bm-field') === 'pageId') {
+                    void this.refreshEditorCategories(editor, el.value);
+                }
                 if (el.getAttribute('data-bm-field') === 'category' && el.value === '__new__') {
                     this.openNewCategoryInput(editor);
                 }
@@ -7802,6 +8330,10 @@ class DashboardConfig {
             this.normalizeEditorUrl(editor);
             void this.autoFetchEditorMeta(editor, { force: true });
         });
+        const editorPageId = editor.querySelector('[data-bm-field="pageId"]')?.value;
+        void this.loadBookmarkCategoriesForPage(editorPageId).then(() => {
+            void this.refreshEditorCategories(editor, editorPageId);
+        });
     }
 
     /**
@@ -7914,6 +8446,23 @@ class DashboardConfig {
             : `<span class="config-bm-icon-empty">—</span>`;
     }
 
+    async refreshEditorCategories(editor, pageId) {
+        if (pageId) await this.loadBookmarkCategoriesForPage(pageId);
+        const sel = editor.querySelector('[data-bm-field="category"]');
+        if (!sel) return;
+        const current = sel.value;
+        const esc = (v) => this.dash.escapeHtml(v);
+        const cats = this.knownCategories(pageId);
+        sel.innerHTML = [`<option value="">${esc(this.t('config.noCategory', 'No category'))}</option>`]
+            .concat(cats.map((c) =>
+                `<option value="${esc(c.id)}" ${c.id === current ? 'selected' : ''}>${esc(c.label)}</option>`))
+            .concat([`<option value="__new__">${esc(this.t('config.addNewCategoryOption', '➕ New category…'))}</option>`])
+            .join('');
+        if (!cats.some((c) => c.id === current) && current !== '__new__') {
+            sel.value = '';
+        }
+    }
+
     openNewCategoryInput(editor) {
         const box = editor.querySelector('[data-bm-newcat]');
         if (!box) return;
@@ -7942,7 +8491,8 @@ class DashboardConfig {
         if (!name || !sel) return;
         // Reuse an existing category whose id or label already matches, so
         // typing the name of a category that exists does not duplicate it.
-        const existing = this.knownCategories()
+        const pageId = editor.querySelector('[data-bm-field="pageId"]')?.value;
+        const existing = this.knownCategories(pageId)
             .find((c) => c.id === name || c.label.toLowerCase() === name.toLowerCase());
         const id = existing ? existing.id : `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
         if (!existing) {
@@ -7979,7 +8529,7 @@ class DashboardConfig {
         const list = Array.isArray(current) ? current : [];
         if (list.some((c) => String(c.id) === String(categoryId))) return;
         const name = this._pendingCategories?.get(categoryId)
-            || this.knownCategories().find((c) => String(c.id) === String(categoryId))?.label
+            || this.knownCategories(pageId).find((c) => String(c.id) === String(categoryId))?.label
             || String(categoryId);
         const saveRes = await this.writeFetch(`/api/categories?page=${encodeURIComponent(pageId)}`, {
             method: 'POST',
@@ -7988,6 +8538,7 @@ class DashboardConfig {
         });
         if (!saveRes.ok) throw new Error(`HTTP ${saveRes.status}`);
         this._pendingCategories?.delete(categoryId);
+        this.invalidateBookmarkCategoriesCache(pageId);
         if (String(this._catLoadedFor) === String(pageId)) this._catLoadedFor = null;
     }
 
@@ -8489,17 +9040,20 @@ class DashboardConfig {
 
     async bulkMove(picked) {
         const targetPage = document.getElementById('config-bulk-page')?.value || '';
-        const targetCat = document.getElementById('config-bulk-category')?.value || '';
+        const rawCat = document.getElementById('config-bulk-category')?.value || '';
+        const { pageId: catPage, categoryId: targetCat } = DashboardConfig.parseCategoryFilter(rawCat);
         if (!targetPage && !targetCat) return;
 
         if (targetCat && !targetPage) {
-            // The selection can span pages, and each one needs the category in
-            // its own list or those rows land in "unknown categories".
-            const pages = new Set(picked.map((b) => String(b.pageId)));
+            const applyTo = catPage
+                ? picked.filter((b) => String(b.pageId) === String(catPage))
+                : picked;
+            if (!applyTo.length) return;
+            const pages = new Set(applyTo.map((b) => String(b.pageId)));
             for (const pageId of pages) {
                 await this.ensureCategoryOnPage(pageId, targetCat);
             }
-            await this.mutateSelected(picked, (b) => ({ ...b, category: targetCat }));
+            await this.mutateSelected(applyTo, (b) => ({ ...b, category: targetCat }));
             this.notify(this.t('config.bulkMoveDone', 'Bookmarks updated.'), 'success');
             return;
         }
