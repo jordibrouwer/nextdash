@@ -2,12 +2,16 @@
 const { test, expect } = require('@playwright/test');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
-async function openBookmarks(page) {
+async function loadDashboard(page) {
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !window.dashboardInstance._deferredAllBookmarksLoadInFlight);
+}
+
+async function openBookmarks(page) {
+    await loadDashboard(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
     await expect(page.locator('#config-bm-list')).toBeVisible();
 }
@@ -411,14 +415,82 @@ test.describe('config bookmarks — category options', () => {
 
     test('filtering by a category keeps only its bookmarks', async ({ page }) => {
         await openBookmarks(page);
-        const id = await page.evaluate(() =>
-            (window.dashboardInstance.allBookmarks.find((b) => b.category) || {}).category || '');
-        test.skip(!id, 'needs a categorised bookmark');
-        await page.selectOption('#config-bm-category', id);
+        const meta = await page.evaluate(() => {
+            const b = window.dashboardInstance.allBookmarks.find((bm) => bm.category);
+            if (!b) return null;
+            return { pageId: String(b.pageId), category: String(b.category) };
+        });
+        test.skip(!meta, 'needs a categorised bookmark');
+        const composite = `${meta.pageId}::${meta.category}`;
+        await page.selectOption('#config-bm-category', composite);
         const shown = await page.locator('.config-bm-row').count();
-        const expected = await page.evaluate((c) =>
-            window.dashboardInstance.allBookmarks.filter((b) => (b.category || '') === c).length, id);
+        const expected = await page.evaluate(({ pageId, category }) =>
+            window.dashboardInstance.allBookmarks.filter((b) =>
+                String(b.pageId) === pageId && String(b.category || '') === category).length,
+        meta);
         expect(shown).toBe(expected);
+    });
+
+    test('the category filter lists only categories from the selected page', async ({ page }) => {
+        await openBookmarks(page);
+        const pages = await page.evaluate(() => window.dashboardInstance.pages.map((p) => String(p.id)));
+        test.skip(pages.length < 2, 'needs at least two pages');
+
+        const targetPage = pages[1];
+        await page.selectOption('#config-bm-page', targetPage);
+        await expect.poll(async () => {
+            const labels = await page.locator('#config-bm-category option').allTextContents();
+            return labels.length > 1;
+        }).toBe(true);
+
+        const filterLabels = (await page.locator('#config-bm-category option').allTextContents()).slice(1);
+        const expectedLabels = await page.evaluate(async (pageId) => {
+            const cfg = window.dashboardInstance.config;
+            await cfg.loadBookmarkCategoriesForPage(pageId);
+            return cfg.knownCategories(pageId).map((c) => c.label).sort();
+        }, targetPage);
+        expect(filterLabels.sort()).toEqual(expectedLabels);
+    });
+
+    test('with all pages, category labels include the page name', async ({ page }) => {
+        await openBookmarks(page);
+        const pages = await page.evaluate(() => window.dashboardInstance.pages.map((p) => String(p.id)));
+        test.skip(pages.length < 2, 'needs at least two pages');
+
+        await page.selectOption('#config-bm-page', '');
+        await expect.poll(async () => {
+            const labels = await page.locator('#config-bm-category option').allTextContents();
+            return labels.some((l) => l.includes('·'));
+        }).toBe(true);
+    });
+
+    test('with all pages, rows show a page badge', async ({ page }) => {
+        await openBookmarks(page);
+        await page.selectOption('#config-bm-page', '');
+        await expect(page.locator('.config-bm-page-badge').first()).toBeVisible();
+    });
+
+    test('#config/bookmarks/<pageId> deep link sets the page filter', async ({ page }) => {
+        await loadDashboard(page);
+        const targetPage = await page.evaluate(() => String(window.dashboardInstance.pages[1]?.id || ''));
+        test.skip(!targetPage, 'needs at least two pages');
+        await page.goto(`/#config/bookmarks/${encodeURIComponent(targetPage)}`);
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('bookmarks');
+        await expect.poll(() => page.evaluate(() => String(window.dashboardInstance.config.bmPageFilter))).toBe(targetPage);
+    });
+
+    test('clear filters restores the full bookmark list', async ({ page }) => {
+        await openBookmarks(page);
+        const total = await page.locator('.config-bm-row').count();
+        test.skip(total < 2, 'needs multiple bookmarks');
+        await page.fill('#config-bm-search', 'zzzz-no-match-zzzz');
+        await page.dispatchEvent('#config-bm-search', 'input');
+        await expect(page.locator('[data-bm-empty-clear]')).toBeVisible();
+        await page.locator('[data-bm-empty-clear]').click();
+        await expect(page.locator('.config-bm-row')).toHaveCount(total);
     });
 });
 
@@ -554,7 +626,7 @@ test.describe('bookmark statistics', () => {
 
     test('relative labels interpolate their count', async ({ page }) => {
         await openBookmarks(page);
-        const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+        const threeHoursAgo = hoursAgoOnSameDay(3);
         const twentyMinAgo = Date.now() - 20 * 60 * 1000;
         const expectedHours = await page.evaluate((ts) => window.formatLastOpened(ts).label, threeHoursAgo);
         const expectedMinutes = await page.evaluate((ts) => window.formatLastOpened(ts).label, twentyMinAgo);

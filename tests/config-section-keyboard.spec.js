@@ -73,7 +73,7 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
         await openSection(page, 'overview');
         await page.locator('#config-section-panel').focus();
         await page.keyboard.press('j');
-        await expect(page.locator('[data-config-section="pages-tags"][aria-selected="true"]')).toBeVisible();
+        await expect(page.locator('[data-config-section="bookmarks"][aria-selected="true"]')).toBeVisible();
         await page.keyboard.press('k');
         await expect(page.locator('[data-config-section="overview"][aria-selected="true"]')).toBeVisible();
     });

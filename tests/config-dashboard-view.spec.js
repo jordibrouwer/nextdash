@@ -177,6 +177,22 @@ test.describe('config dashboard view (scaffold)', () => {
         expect(labels.join(' ').toLowerCase()).toContain('bookmarks');
     });
 
+    test('the new features carousel shows one spotlight and steps with arrows', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+
+        await expect(page.locator('.config-feature-spotlight')).toHaveCount(1);
+        await expect(page.locator('.config-new-features-nav')).toBeVisible();
+        const firstTitle = await page.locator('.config-feature-spotlight-title').textContent();
+
+        await page.locator('[data-overview-feature="next"]').click();
+        await expect(page.locator('.config-feature-spotlight-title')).not.toHaveText(firstTitle || '');
+        await expect(page.locator('.config-new-features-counter')).toContainText('2 /');
+
+        await page.locator('[data-overview-feature="prev"]').click();
+        await expect(page.locator('.config-feature-spotlight-title')).toHaveText(firstTitle || '');
+    });
+
     test('clicking a section nav item switches section and hash', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView());
@@ -415,6 +431,21 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
     });
 
+    test('favicon harmonization stays enabled after leaving config', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await expect(toggle).toBeChecked();
+
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+    });
+
     test('favicon harmonization applies to the dashboard without reload', async ({ page }) => {
         await loadDashboard(page);
         const hasIcon = await page.evaluate(() => {
@@ -436,6 +467,43 @@ test.describe('config dashboard view (scaffold)', () => {
             const img = document.querySelector('#dashboard-layout .bookmark-icon-slot img.bookmark-icon');
             return img ? getComputedStyle(img).filter : '';
         }), { timeout: 5000 }).toMatch(/grayscale/);
+    });
+
+    /**
+     * Random theme mode rotates the displayed theme on every view change, and
+     * each theme keeps its own harmonisation entry — so a toggle set while one
+     * random theme was showing looked disabled again the moment the pool
+     * rotated to a different one. While random mode is on, harmonisation must
+     * be one shared setting instead of following whichever theme is current.
+     */
+    test('favicon harmonization stays enabled while random theme mode rotates themes', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        await page.evaluate(() => window.dashboardInstance.config.setRandomThemeMode('view'));
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.settings.randomThemeMode)).toBe('view');
+
+        const toggle = page.locator('[data-appearance-toggle-icons]');
+        if (!(await toggle.isChecked())) await toggle.click();
+        await expect(toggle).toBeChecked();
+
+        // Force the pool to a different theme, as a view change during "on view
+        // change" mode would — the toggle must not depend on which one shows.
+        await page.evaluate(() => {
+            window.ThemeLoader?.clearSessionRandomTheme?.();
+            document.documentElement.setAttribute('data-theme', 'light');
+        });
+        await page.evaluate(() => window.dashboardInstance.config.render());
+        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+
+        // And it must survive a reload, which is where "not saved" was reported.
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
     });
 
     /**
@@ -506,12 +574,16 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-weight="bold"]')).toBeVisible();
         await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
         await expect(page.locator('[data-appearance-range="backgroundOpacity"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-iconsize="large"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-toggle="animationsEnabled"]')).toBeVisible();
         await expect(page.locator('[data-appearance-action="upload-font"]')).toBeVisible();
         await expect(page.locator('[data-appearance-action="upload-favicon"]')).toBeVisible();
         await expect(page.locator('[data-appearance-action="edit-colors"]')).toBeVisible();
+
+        await page.locator('[data-appearance-tab="layout"]').click();
+        await expect(page.locator('[data-appearance-iconsize="large"]')).toBeVisible();
+
+        await page.locator('[data-appearance-tab="display"]').click();
+        await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-toggle="animationsEnabled"]')).toBeVisible();
     });
 
     /**
@@ -612,6 +684,19 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-theme-add]')).toBeVisible();
     });
 
+    test('appearance has layout and display sub-tabs', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+
+        await page.locator('[data-appearance-tab="layout"]').click();
+        await expect(page.locator('[data-behavior-field="columnsPerRow"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-layout="classic"]')).toBeVisible();
+
+        await page.locator('[data-appearance-tab="display"]').click();
+        await expect(page.locator('[data-behavior-field="showStatus"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
+    });
+
     test('the behavior section renders grouped settings across sub-tabs', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
@@ -621,10 +706,6 @@ test.describe('config dashboard view (scaffold)', () => {
         // Other groups live under their own sub-tabs.
         await page.locator('[data-behavior-tab="datetime"]').click();
         await expect(page.locator('[data-behavior-field="dateFormat"]')).toBeVisible();
-        await page.locator('[data-behavior-tab="layout"]').click();
-        await expect(page.locator('[data-behavior-field="columnsPerRow"]')).toBeVisible();
-        await page.locator('[data-behavior-tab="display"]').click();
-        await expect(page.locator('[data-behavior-field="showStatus"]')).toBeVisible();
         await page.locator('[data-behavior-tab="search"]').click();
         await expect(page.locator('[data-behavior-field="pasteDestination"]')).toBeVisible();
     });
@@ -863,6 +944,123 @@ test.describe('config remembers last location', () => {
     });
 });
 
+test.describe('config remembers last location', () => {
+    test('Shift+S opens Overview after leaving config with Escape', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
+    });
+
+    test('Escape does not restore a sub-tab on the next Shift+S visit', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.locator('[data-behavior-tab="privacy"]').click();
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
+    });
+
+    test('Shift+H from config remembers the section for Shift+S', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('Shift+H');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('health');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('bookmarks');
+    });
+
+    test('Shift+I from config remembers the sub-tab for Shift+S', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.locator('[data-behavior-tab="privacy"]').click();
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('Shift+I');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('inbox');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('behavior');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.behaviorTab)).toBe('privacy');
+    });
+
+    test('a #config/… deep link overrides the stored location', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => {
+            localStorage.setItem('nextdash:config-last-location-v1', JSON.stringify({
+                section: 'bookmarks',
+                subTab: null,
+            }));
+        });
+        await page.goto('/#config/appearance');
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
+    });
+
+    test('pressing a page digit leaves config and opens Overview on the next Shift+S', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
+        await page.locator('#config-section-panel').focus();
+        await page.keyboard.press('1');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.keyboard.press('Shift+S');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('config');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
+    });
+
+    test('bare #config opens Overview after Escape cleared the stored location', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:config-last-location-v1'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.locator('[data-behavior-tab="privacy"]').click();
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance?.activeView)).toBe('bookmarks');
+
+        await page.goto('/#config');
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('overview');
+    });
+
+    test('cold load on #config restores the stored sub-tab', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await page.evaluate(() => {
+            localStorage.setItem('nextdash:config-last-location-v1', JSON.stringify({
+                section: 'appearance',
+                subTab: 'custom-themes',
+            }));
+        });
+        await page.goto('/#config');
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('custom-themes');
+    });
+});
+
 test.describe('< opens the config view', () => {
     test('opens in place rather than loading the old /config page', async ({ page }) => {
         await loadDashboard(page);
@@ -916,6 +1114,22 @@ test.describe('sub-tab deep links', () => {
             window.dashboardInstance.config.behaviorTab)).toBe('general');
     });
 
+    test('legacy behavior layout and display hashes open appearance tabs', async ({ page }) => {
+        await page.goto('/#config/behavior/layout');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.section)).toBe('appearance');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('layout');
+        await expect(page.locator('[data-appearance-layout="classic"]')).toBeVisible();
+        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/appearance/layout');
+
+        await page.goto('/#config/behavior/display');
+        await page.waitForFunction(() => window.dashboardInstance?.activeView === 'config', null, { timeout: 15_000 });
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('display');
+        await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
+        await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#config/appearance/display');
+    });
+
     test('the analytics modal links straight to privacy', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => document.querySelector('.quickstart-setup')?.remove());
@@ -953,5 +1167,15 @@ test.describe('sub-tab deep links', () => {
             window.dashboardInstance?.activeView), { timeout: 15_000 }).toBe('config');
         await expect(page.locator('[data-behavior-field="analyticsOptIn"]')).toBeVisible();
         await expect(page.locator('[data-behavior-field="analyticsOptIn"]')).toBeChecked();
+    });
+
+    test('config header breadcrumb reflects section and bookmarks page filter', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+        const pageId = await page.evaluate(() => String(window.dashboardInstance.pages[0]?.id || ''));
+        await page.selectOption('#config-bm-page', pageId);
+        await expect(page.locator('.config-view-breadcrumb')).toHaveCount(0);
+        await expect.poll(async () => page.locator('.title').textContent()).toMatch(/bookmarks/i);
+        await expect.poll(async () => page.locator('.title').textContent()).not.toBe('config › bookmarks');
     });
 });

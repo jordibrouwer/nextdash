@@ -13,8 +13,8 @@ async function openDisplayTab(page) {
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-    await page.locator('[data-behavior-tab="display"]').click();
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+    await page.locator('[data-appearance-tab="display"]').click();
     await expect(page.locator('[data-behavior-field="showRecentButton"]')).toBeVisible();
 }
 
@@ -104,8 +104,8 @@ test.describe('config save feedback', () => {
         expect(parent).toBe('BODY');
 
         // Save immediately after a view switch, while the transform is running.
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        await page.locator('[data-behavior-tab="display"]').click();
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.locator('[data-appearance-tab="display"]').click();
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
         await page.locator('[data-behavior-field="showRecentButton"]').click();
         await page.waitForSelector('#config-save-state.is-saved');

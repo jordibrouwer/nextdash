@@ -5,7 +5,7 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-h
 const PROBLEMS = {
     summary: {
         totalBookmarks: 7, healthyCount: 3, brokenCount: 2, monitorDownCount: 1,
-        duplicateCount: 1, uncheckedCount: 1, staleCount: 2, shortcutConflictCount: 0,
+        monitoredCount: 2, duplicateCount: 1, uncheckedCount: 1, staleCount: 2, shortcutConflictCount: 0,
     },
     issues: [], duplicateGroups: [],
 };
@@ -39,6 +39,21 @@ async function loadOverview(page) {
 }
 
 test.describe('config overview', () => {
+    test('status tiles include monitored bookmarks on one row', async ({ page }) => {
+        await openOverview(page);
+        await expect(page.locator('.config-tiles--overview .config-tile')).toHaveCount(6);
+        const monitored = page.locator('.config-tile[data-tile-view="health"][data-tile-filter="monitored"]');
+        await expect(monitored).toBeVisible();
+        await expect(monitored.locator('.config-tile-value')).toHaveText('2');
+        const row = await page.evaluate(() => {
+            const tiles = [...document.querySelectorAll('.config-tiles--overview .config-tile')];
+            const ys = tiles.map((el) => Math.round(el.getBoundingClientRect().y));
+            return { count: tiles.length, sameRow: Math.max(...ys) - Math.min(...ys) < 8 };
+        });
+        expect(row.count).toBe(6);
+        expect(row.sameRow).toBe(true);
+    });
+
     test('problems are listed with a way to act on each', async ({ page }) => {
         await openOverview(page);
         const rows = page.locator('.config-attention-row');
@@ -144,45 +159,45 @@ test.describe('config overview', () => {
         expect(glow).not.toBe('none');
     });
 
-    // Every panel shares the overview's two-column grid. As a full-width block
-    // between "needs attention" and that grid, the about panel pushed everything
-    // below it down the page and the overview stopped reading as a summary.
-    test('the overview panels form a two-by-two grid', async ({ page }) => {
+    // Developer and latest update share one row at half width each; tips sit
+    // full width underneath.
+    test('the overview places developer beside latest update with tips below', async ({ page }) => {
         await loadOverview(page);
 
-        const inColumns = await page.evaluate(() =>
-            !!document.querySelector('.config-overview-columns .config-about-panel'));
-        expect(inColumns).toBe(true);
+        const inAboutRow = await page.evaluate(() =>
+            !!document.querySelector('.config-overview-about-row .config-about-panel'));
+        expect(inAboutRow).toBe(true);
 
-        // The four panels form a 2x2 grid: about + stats on the first row,
-        // release notes + tips on the second.
         const box = await page.evaluate(() => {
-            const find = (text) => [...document.querySelectorAll('.config-overview-columns .config-panel')]
+            const find = (text) => [...document.querySelectorAll('.config-overview-layout .config-panel')]
                 .find((el) => el.textContent.includes(text));
             const rect = (text) => {
                 const el = find(text);
                 if (!el) return null;
                 const r = el.getBoundingClientRect();
-                return { x: Math.round(r.x), y: Math.round(r.y) };
+                return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width) };
             };
             return {
                 about: rect('About the developer'),
-                glance: rect('At a glance'),
                 latest: rect('Latest update'),
                 tips: rect('Tips'),
+                glance: rect('At a glance'),
             };
         });
 
-        // Every panel is inside the grid.
         for (const [name, r] of Object.entries(box)) {
-            expect(r, `${name} should sit in the overview grid`).not.toBeNull();
+            expect(r, `${name} should be on the overview`).not.toBeNull();
         }
-        // Side by side, not stacked.
-        expect(Math.abs(box.about.y - box.glance.y)).toBeLessThan(20);
-        expect(box.glance.x).toBeGreaterThan(box.about.x);
-        // Tips sits beside the release notes rather than below everything.
-        expect(Math.abs(box.latest.y - box.tips.y)).toBeLessThan(20);
-        expect(box.tips.x).toBeGreaterThan(box.latest.x);
+        // Developer and latest update side by side at roughly half width each.
+        expect(Math.abs(box.about.y - box.latest.y)).toBeLessThan(20);
+        expect(box.latest.x).toBeGreaterThan(box.about.x);
+        expect(box.about.w).toBeGreaterThan(200);
+        expect(Math.abs(box.about.w - box.latest.w)).toBeLessThan(40);
+        // Tips sits below that row, not beside it.
+        expect(box.tips.y).toBeGreaterThan(box.about.y + 40);
+        expect(box.tips.y).toBeGreaterThan(box.latest.y + 40);
+        // At a glance stays in the top row above developer.
+        expect(box.glance.y).toBeLessThan(box.about.y - 20);
     });
 
     test('the about buttons stay on one line beside each other', async ({ page }) => {

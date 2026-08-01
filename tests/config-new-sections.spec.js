@@ -17,7 +17,7 @@ test.describe('config: sections restored from the old config', () => {
     test('the rail lists every section including bookmarks, stats and help', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'overview');
-        for (const s of ['overview', 'pages-tags', 'bookmarks', 'appearance', 'behavior', 'data-backups', 'stats', 'help']) {
+        for (const s of ['overview', 'bookmarks', 'pages-tags', 'appearance', 'behavior', 'data-backups', 'stats', 'help']) {
             await expect(page.locator(`[data-config-section="${s}"]`)).toBeVisible();
         }
     });
@@ -170,8 +170,8 @@ test.describe('config: sections restored from the old config', () => {
 
     test('toolbar button toggles restored to the display tab', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="display"]').click();
+        await openSection(page, 'appearance');
+        await page.locator('[data-appearance-tab="display"]').click();
         for (const f of ['showRecentButton', 'showCheatSheetButton', 'showConfigButton', 'showHealthDashboard']) {
             await expect(page.locator(`[data-behavior-field="${f}"]`)).toBeVisible();
         }
@@ -198,7 +198,7 @@ test.describe('config: sections restored from the old config', () => {
         await loadDashboard(page);
         await openSection(page, 'behavior');
 
-        for (const tab of ['general', 'datetime', 'layout', 'display', 'search', 'status']) {
+        for (const tab of ['general', 'datetime', 'search', 'status']) {
             await page.locator(`[data-behavior-tab="${tab}"]`).click();
             const panels = await page.locator('.config-panel').count();
             const notes = await page.locator('.config-panel-note').count();
@@ -208,6 +208,14 @@ test.describe('config: sections restored from the old config', () => {
         // Privacy explains itself through the control's own hint.
         await page.locator('[data-behavior-tab="privacy"]').click();
         await expect(page.locator('.config-field-hint').first()).toBeVisible();
+
+        await openSection(page, 'appearance');
+        for (const tab of ['layout', 'display']) {
+            await page.locator(`[data-appearance-tab="${tab}"]`).click();
+            const panels = await page.locator('.config-panel').count();
+            const notes = await page.locator('.config-panel-note').count();
+            expect(notes, `appearance/${tab} has ${panels} panels but ${notes} notes`).toBeGreaterThanOrEqual(panels);
+        }
     });
 
     test('the smart-collection panels explain what they do', async ({ page }) => {
@@ -222,6 +230,7 @@ test.describe('config: sections restored from the old config', () => {
     test('choosing the beta layout warns before you commit to it', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'appearance');
+        await page.locator('[data-appearance-tab="layout"]').click();
 
         await page.locator('[data-appearance-layout="modern"]').click();
         await expect(page.locator('.config-field-warning')).toBeVisible();
@@ -233,8 +242,8 @@ test.describe('config: sections restored from the old config', () => {
 
     test('the layout tab offers the preset and per-category limit', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="layout"]').click();
+        await openSection(page, 'appearance');
+        await page.locator('[data-appearance-tab="layout"]').click();
 
         const preset = page.locator('[data-behavior-field="layoutPreset"]');
         const limit = page.locator('[data-behavior-field="categoryItemLimit"]');
