@@ -1725,9 +1725,9 @@ class DashboardInbox {
                 this.persistViewState();
                 this.syncUrlState();
                 this.render();
+                this.dash.pageNav?.updatePageTitle?.();
+                this.dash.pageNav?.updateDocumentTitle?.();
             });
-        });
-        const sortSelect = toolbar.querySelector('.inbox-sort-select');
         sortSelect?.addEventListener('change', (e) => {
             this.sort = e.target.value || 'newest';
             this._trackAction('sort', { sort: this.sort });
