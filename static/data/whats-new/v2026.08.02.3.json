@@ -2,7 +2,7 @@
   "tag": "v2026.08.02.3",
   "date": "August 2026",
   "releasedAt": "2026-08-02",
-  "modalLead": "Bookmarks gains five summary tiles above the list; Statistics → Overview headline counts stay on one row. Patch series since v2026.08.02 also covers Unraid Tailscale Docker hooks (.1) and Config → Overview status tiles at laptop widths (.2).",
+  "modalLead": "Bookmarks gains five summary tiles above the list; Statistics → Overview headline counts stay on one row. README and MANUAL show the ASCII logo; obsolete Config → Keyboard docs are gone. Patch series since v2026.08.02 also covers Unraid Tailscale Docker hooks (.1) and Config → Overview status tiles at laptop widths (.2).",
   "sections": [
     {
       "title": "Config",
@@ -35,11 +35,15 @@
       "items": [
         {
           "badge": "fix",
-          "text": "<strong>Release docs for v2026.08.02.3</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, and Config → Help recap; whats-new JSON for hotfixes <strong>v2026.08.02.1</strong>–<strong>.3</strong>; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v153</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v211</code>."
+          "text": "<strong>Release docs for v2026.08.02.3</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, README, MANUAL, and Config → Help recap; whats-new JSON for hotfixes <strong>v2026.08.02.1</strong>–<strong>.3</strong>; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v154</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v212</code>."
         },
         {
           "badge": "fix",
-          "text": "<strong>README, MANUAL &amp; Help keyboard copy</strong> — ASCII logo at the top of <code>README.md</code> and <code>MANUAL.md</code> (<code>logo-ascii-on-black-large.png</code>); removed obsolete <strong>Config → Keyboard</strong> section and rebinding instructions from README, MANUAL, and Config → Help (EN/NL/DE/FR); MANUAL resource table and further-reading polish."
+          "text": "<strong>README &amp; MANUAL branding</strong> — ASCII logo (<code>logo-ascii-on-black-large.png</code>) centred above the title; MANUAL resource table and further-reading layout polish."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Keyboard docs removed</strong> — rebinding tab no longer exists; README, MANUAL, and Config → Help (EN/NL/DE/FR) point to the cheat sheet (<code>!</code> / <code>F1</code>) instead."
         }
       ]
     }

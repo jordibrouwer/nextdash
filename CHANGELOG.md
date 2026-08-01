@@ -142,7 +142,7 @@ Nothing yet.
 
 ## v2026.08.02.3 — August 2026
 
-**Hotfix after v2026.08.02.2** — Config → Bookmarks had no at-a-glance summary; Statistics → Overview headline tiles used the default auto-fill grid and wrapped to multiple rows.
+**Hotfix after v2026.08.02.2** — Config → Bookmarks had no at-a-glance summary; Statistics → Overview headline tiles used the default auto-fill grid and wrapped to multiple rows. This patch also ships README/MANUAL branding docs and removes obsolete Config → Keyboard documentation.
 
 ### Config
 
@@ -151,8 +151,9 @@ Nothing yet.
 
 ### Docs
 
-- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, and Config → Help **What's new** recap for **v2026.08.02.3**; whats-new JSON for hotfixes **v2026.08.02.1**–**.3**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v153`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v211`.
-- **fix** — README and MANUAL ASCII logo (`logo-ascii-on-black-large.png`); removed obsolete **Config → Keyboard** section and rebinding copy from README, MANUAL, and Config → Help (EN/NL/DE/FR); MANUAL intro resource table and further-reading layout polish.
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.02.3**; whats-new JSON for hotfixes **v2026.08.02.1**–**.3**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v154`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v212`.
+- **fix** — ASCII logo (`logo-ascii-on-black-large.png`) at the top of **README.md** and **MANUAL.md**; MANUAL intro resource table and further-reading layout polish.
+- **fix** — Removed obsolete **Config → Keyboard** section and rebinding copy from README, MANUAL, and Config → Help (EN/NL/DE/FR); cheat sheet (`!` / `F1`) is the shortcut reference.
 
 ---
 
