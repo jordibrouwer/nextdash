@@ -1826,6 +1826,9 @@ class DashboardHealth {
                 this.dash.pageNav?.updatePageTitle?.();
                 this.dash.pageNav?.updateDocumentTitle?.();
             });
+        });
+
+        const searchInput = toolbar.querySelector('.health-view-search-input');
         searchInput?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value;
             this._resetFeedPaging();

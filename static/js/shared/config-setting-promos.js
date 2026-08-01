@@ -25,8 +25,8 @@
             section: 'overview',
             anchor: 'settingsJump',
             placement: 'beside',
-            titleKey: 'config.findSettingsPromoTitle',
-            bodyKey: 'config.findSettingsPromoBody',
+            titleKey: 'config.settingsSearchPromoTitle',
+            bodyKey: 'config.settingsSearchPromoBody',
         },
         {
             id: 'bookmarks-page-filter-v1',

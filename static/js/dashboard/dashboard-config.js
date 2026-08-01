@@ -2540,7 +2540,7 @@ class DashboardConfig {
             }
             return;
         }
-        if (target.view) this.openViewFromTile(target.view, target.filter);
+        if (target.view) return this.openViewFromTile(target.view, target.filter);
     }
 
     /* ── Section navigation ────────────────────────────────────────────────── */
@@ -2628,11 +2628,21 @@ class DashboardConfig {
         // people there — and which problem type did it.
         this._trackAction('tile-open', { view, ...(filter ? { filter } : {}) });
         if (view === 'health' && d.health?.openHealthView) {
-            if (filter) d.health.filter = filter;
-            void d.health.openHealthView();
-        } else if (view === 'inbox' && d.inbox?.openInboxView) {
-            void d.inbox.openInboxView();
+            return (async () => {
+                await d.health.openHealthView();
+                const mod = d.health.instance;
+                if (filter && mod) {
+                    mod.filter = filter;
+                    if (mod.isActiveView?.()) {
+                        mod.render();
+                    }
+                }
+            })();
         }
+        if (view === 'inbox' && d.inbox?.openInboxView) {
+            return d.inbox.openInboxView();
+        }
+        return Promise.resolve();
     }
 
     /* ── Data & backups ────────────────────────────────────────────────────── */
