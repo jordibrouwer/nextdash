@@ -21,6 +21,9 @@ func TestMonitorDownCountedApartFromBroken(t *testing.T) {
 	if s.MonitorDownCount != 1 {
 		t.Errorf("MonitorDownCount = %d, want 1 (only the down monitor)", s.MonitorDownCount)
 	}
+	if s.MonitoredCount != 2 {
+		t.Errorf("MonitoredCount = %d, want 2", s.MonitoredCount)
+	}
 }
 
 // A monitor that recovered clears LastError, so it must leave MonitorDownCount

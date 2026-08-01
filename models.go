@@ -2467,6 +2467,7 @@ type HealthSummary struct {
 	// distinctly from an ordinary dead link. A down monitor is not also in
 	// BrokenCount — it is one or the other, never both, so totals stay honest.
 	MonitorDownCount      int `json:"monitorDownCount"`
+	MonitoredCount        int `json:"monitoredCount"`
 	DuplicateCount        int `json:"duplicateCount"`
 	UncheckedCount        int `json:"uncheckedCount"`
 	StaleCount            int `json:"staleCount"`
