@@ -2,6 +2,33 @@
 const { test, expect } = require('@playwright/test');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
+async function dismissConfigSettingPromoIfPresent(page) {
+    const promo = page.locator('.config-setting-promo');
+    if (await promo.count()) {
+        await promo.locator('.config-setting-promo-dismiss').click();
+        await expect(promo).toHaveCount(0, { timeout: 3000 });
+    }
+}
+
+async function waitForOverviewHealth(page, health) {
+    await page.evaluate((healthPayload) => {
+        const d = window.dashboardInstance;
+        if (d?.health) {
+            d.health.report = healthPayload;
+        }
+        if (d?.config?.isActiveView?.() && d.config.section === 'overview') {
+            d.config.repaintOverview();
+        }
+    }, health);
+    const expectedBroken = Number(health.summary.brokenCount) || 0;
+    const expectedMonitored = Number(health.summary.monitoredCount) || 0;
+    if (expectedMonitored > 0) {
+        await expect(page.locator('.config-tile[data-tile-filter="monitored"]')).toBeVisible({ timeout: 5000 });
+    }
+    if (expectedBroken > 0) {
+        await expect(page.locator('.config-attention-row').first()).toBeVisible({ timeout: 5000 });
+    }
+}
 const PROBLEMS = {
     summary: {
         totalBookmarks: 7, healthyCount: 3, brokenCount: 2, monitorDownCount: 1,
@@ -12,21 +39,28 @@ const PROBLEMS = {
 const CLEAN = {
     summary: {
         totalBookmarks: 7, healthyCount: 7, brokenCount: 0, monitorDownCount: 0,
-        duplicateCount: 0, uncheckedCount: 0, staleCount: 0, shortcutConflictCount: 0,
+        monitoredCount: 0, duplicateCount: 0, uncheckedCount: 0, staleCount: 0, shortcutConflictCount: 0,
     },
     issues: [], duplicateGroups: [],
 };
 
 async function openOverview(page, health = PROBLEMS) {
-    await page.route('**/api/bookmark-health', (route) => route.fulfill({
+    await page.route('**/api/bookmark-health**', (route) => route.fulfill({
         status: 200, contentType: 'application/json', body: JSON.stringify(health),
     }));
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    await page.evaluate(() => {
+        ['random-theme-v2', 'find-settings-v1', 'bookmarks-page-filter-v1'].forEach((id) => {
+            window.DiscoverabilityState?.markSettingPromoSeen?.(id, { persist: false });
+        });
+    });
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
     await expect(page.locator('.config-tiles')).toBeVisible();
+    await waitForOverviewHealth(page, health);
+    await dismissConfigSettingPromoIfPresent(page);
 }
 
 async function loadOverview(page) {
@@ -52,6 +86,15 @@ test.describe('config overview', () => {
         });
         expect(row.count).toBe(6);
         expect(row.sameRow).toBe(true);
+    });
+
+    test('new features carousel shows translated copy, not locale keys', async ({ page }) => {
+        await openOverview(page);
+        const spotlight = page.locator('.config-feature-spotlight');
+        await expect(spotlight).toBeVisible();
+        const text = await spotlight.innerText();
+        expect(text).not.toMatch(/config\.overviewNewFeature/);
+        await expect(spotlight.locator('.config-feature-spotlight-title')).not.toHaveText(/config\./);
     });
 
     test('problems are listed with a way to act on each', async ({ page }) => {
@@ -126,7 +169,8 @@ test.describe('config overview', () => {
         await page.locator('.config-attention-row').first().locator('[data-overview-go]').click();
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.activeView)).toBe('health');
-        expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('broken');
+        expect(await page.evaluate(() => window.dashboardInstance.health.instance?.filter
+            ?? window.dashboardInstance.health.filter)).toBe('broken');
     });
 
     // The Ko-fi button reuses the what's-new modal's markup and CSS, so the two
