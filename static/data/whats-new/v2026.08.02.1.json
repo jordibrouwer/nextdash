@@ -1,0 +1,17 @@
+{
+  "tag": "v2026.08.02.1",
+  "date": "August 2026",
+  "releasedAt": "2026-08-02",
+  "modalLead": "Unraid and similar hosts can run Tailscale Docker hooks again — the container no longer starts with a fixed non-root USER that blocked root-only hook scripts.",
+  "sections": [
+    {
+      "title": "Docker",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Entrypoint drops privileges instead of fixed USER</strong> — container starts as root so host hooks can run; <code>scripts/docker-entrypoint.sh</code> chowns <code>/app/data</code>, then <code>su-exec</code>s to <code>nextdash</code>. Set <code>NEXTDASH_RUN_AS_ROOT=1</code> to keep root when required (<code>Dockerfile</code>)."
+        }
+      ]
+    }
+  ]
+}

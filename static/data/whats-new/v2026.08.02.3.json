@@ -1,0 +1,47 @@
+{
+  "tag": "v2026.08.02.3",
+  "date": "August 2026",
+  "releasedAt": "2026-08-02",
+  "modalLead": "Bookmarks gains five summary tiles above the list; Statistics → Overview headline counts stay on one row. Patch series since v2026.08.02 also covers Unraid Tailscale Docker hooks (.1) and Config → Overview status tiles at laptop widths (.2).",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Bookmarks summary tiles</strong> — five compact tiles above the list show global totals for bookmarks, tagged (with % of total), categories, shortcuts, and monitored (<code>bookmarksSummaryTiles()</code>, <code>config-tiles--bookmarks</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Statistics overview tiles on one row</strong> — the Overview tab reuses the six-column overview grid (<code>config-tiles--overview</code> in <code>renderStatsBody()</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Overview status tiles on one row</strong> — delay the three-column breakpoint to 720px (<strong>v2026.08.02.2</strong>, <code>config-view.css</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docker",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Unraid Tailscale hook</strong> — entrypoint starts as root so host Docker hooks can run, then drops to <code>nextdash</code> via <code>su-exec</code> (<strong>v2026.08.02.1</strong>, <code>scripts/docker-entrypoint.sh</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.02.3</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, and Config → Help recap; whats-new JSON for hotfixes <strong>v2026.08.02.1</strong>–<strong>.3</strong>; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v153</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v211</code>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>README, MANUAL &amp; Help keyboard copy</strong> — ASCII logo at the top of <code>README.md</code> and <code>MANUAL.md</code> (<code>logo-ascii-on-black-large.png</code>); removed obsolete <strong>Config → Keyboard</strong> section and rebinding instructions from README, MANUAL, and Config → Help (EN/NL/DE/FR); MANUAL resource table and further-reading polish."
+        }
+      ]
+    }
+  ]
+}
