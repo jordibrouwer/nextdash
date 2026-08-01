@@ -13,6 +13,8 @@ services:
       - ./templates:/app/templates
     environment:
       - PORT=8080
+      # Live static mounts: re-hash assets on every read so ?v= tokens track edits.
+      - NEXTDASH_STATIC_MUTABLE=1
       # Disable privacy-friendly usage analytics for the whole instance.
       # When true, nothing is sent and the Privacy toggle in Config is
       # disabled until this is unset again.

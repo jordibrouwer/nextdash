@@ -35,6 +35,8 @@ func withDiskAssets(t *testing.T, files map[string]string) {
 		t.Fatalf("chdir: %v", err)
 	}
 
+	t.Setenv("NEXTDASH_STATIC_MUTABLE", "1")
+
 	prevSources, prevHashes := assetHashSources, assetHashes
 	t.Cleanup(func() {
 		_ = os.Chdir(wd)

@@ -3,49 +3,40 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-# Copy go mod files
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
-# Copy source code and static files (needed for embedding)
 COPY . .
 
-# Build the application (embedded files will be included)
+# Precompute static asset hashes at build time (served from embed in production).
+RUN go run scripts/gen-asset-hashes.go
+
 ARG VERSION=dev
 ARG COMMIT=unknown
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
-    -ldflags "-X main.buildVersion=${VERSION} -X main.buildCommit=${COMMIT}" \
+    -ldflags "-s -w -X main.buildVersion=${VERSION} -X main.buildCommit=${COMMIT}" \
     -o main .
 
-# Final stage
-FROM alpine:latest
+# Final stage — binary only; static/templates/locales come from go:embed.
+FROM alpine:3.21
 
-RUN apk --no-cache add ca-certificates tzdata curl
+RUN apk --no-cache add ca-certificates tzdata \
+    && addgroup -S nextdash \
+    && adduser -S nextdash -G nextdash
 
 WORKDIR /app
 
-# Copy the binary from builder stage (includes embedded files)
 COPY --from=builder /app/main .
 
-# Copy static and template files (for development/debugging if needed)
-COPY --from=builder /app/static ./static
-COPY --from=builder /app/templates ./templates
-COPY --from=builder /app/locales ./locales
+RUN mkdir -p /app/data && chown nextdash:nextdash /app/data
 
-# Create data directory
-RUN mkdir -p /app/data
+USER nextdash
 
-# Expose port
 EXPOSE 8080
 
-# Set environment variable
 ENV PORT=8080
 
-# Command to run
 CMD ["./main"]
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-CMD curl -f http://localhost:8080/api/health || exit 1
+    CMD wget -qO- http://127.0.0.1:8080/api/health >/dev/null || exit 1

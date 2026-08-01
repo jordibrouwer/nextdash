@@ -27,6 +27,8 @@ import (
 type Handlers struct {
 	store             Store
 	files             embed.FS
+	pageTemplates     map[string]*template.Template
+	pageTemplatesMu   sync.RWMutex
 	previewCacheMu    sync.RWMutex
 	previewCache      PreviewCacheFile
 	previewLoaded     bool
@@ -157,16 +159,45 @@ var pageTemplateFuncs = template.FuncMap{
 }
 
 func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Template, error) {
-	if info, err := os.Stat("templates"); err == nil && info.IsDir() {
+	key := strings.Join(templateFiles, "|")
+
+	h.pageTemplatesMu.RLock()
+	if h.pageTemplates != nil {
+		if tmpl, ok := h.pageTemplates[key]; ok {
+			h.pageTemplatesMu.RUnlock()
+			return tmpl, nil
+		}
+	}
+	h.pageTemplatesMu.RUnlock()
+
+	var tmpl *template.Template
+	var err error
+	if info, statErr := os.Stat("templates"); statErr == nil && info.IsDir() {
 		diskFiles := make([]string, len(templateFiles))
 		for i, name := range templateFiles {
 			diskFiles[i] = filepath.FromSlash(name)
 		}
 		name := filepath.Base(diskFiles[0])
-		return template.New(name).Funcs(pageTemplateFuncs).ParseFiles(diskFiles...)
+		tmpl, err = template.New(name).Funcs(pageTemplateFuncs).ParseFiles(diskFiles...)
+	} else {
+		name := path.Base(templateFiles[0])
+		tmpl, err = template.New(name).Funcs(pageTemplateFuncs).ParseFS(h.files, templateFiles...)
 	}
-	name := path.Base(templateFiles[0])
-	return template.New(name).Funcs(pageTemplateFuncs).ParseFS(h.files, templateFiles...)
+	if err != nil {
+		return nil, err
+	}
+
+	h.pageTemplatesMu.Lock()
+	if h.pageTemplates == nil {
+		h.pageTemplates = make(map[string]*template.Template)
+	}
+	if cached, ok := h.pageTemplates[key]; ok {
+		h.pageTemplatesMu.Unlock()
+		return cached, nil
+	}
+	h.pageTemplates[key] = tmpl
+	h.pageTemplatesMu.Unlock()
+	return tmpl, nil
 }
 
 func (h *Handlers) FlushCaches() {

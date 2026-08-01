@@ -17,6 +17,8 @@ import (
 
 // Content-hashed asset URLs.
 //
+//go:generate go run scripts/gen-asset-hashes.go
+//
 // Cache-bust tokens used to be hand-written strings in asset_versions.go, one per
 // file. That failed in two ways this replaces outright: two files sharing a token
 // meant bumping one silently moved the other, and a file with no token at all was
@@ -57,13 +59,22 @@ func initAssetHashing(embedded fs.FS) {
 		useDisk:  err == nil && info.IsDir(),
 	}
 	assetHashes = map[string]string{}
+	if assetHashCacheEnabled() {
+		for rel, sum := range precomputedAssetHashes {
+			assetHashes[rel] = sum
+		}
+	}
 }
 
-// assetHashCacheEnabled reports whether a computed hash may be memoised. On a dev
-// mount the files change under a running process, so caching there would serve a
-// stale token for the rest of the session — exactly the bug this file removes.
+// staticAssetsMutable is true when ./static is bind-mounted for live edits
+// (dev Docker). Hashes are recomputed on every read so ?v= tokens track changes.
+func staticAssetsMutable() bool {
+	return os.Getenv("NEXTDASH_STATIC_MUTABLE") == "1"
+}
+
+// assetHashCacheEnabled reports whether a computed hash may be memoised.
 func assetHashCacheEnabled() bool {
-	return !assetHashSources.useDisk
+	return !staticAssetsMutable()
 }
 
 // assetHash returns a short content hash for a /static-relative path such as
@@ -73,6 +84,9 @@ func assetHash(rel string) string {
 	rel = strings.TrimPrefix(strings.TrimPrefix(rel, "/"), "static/")
 
 	if assetHashCacheEnabled() {
+		if sum, ok := precomputedAssetHashes[rel]; ok {
+			return sum
+		}
 		assetHashMu.RLock()
 		cached, ok := assetHashes[rel]
 		assetHashMu.RUnlock()

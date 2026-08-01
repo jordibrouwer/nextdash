@@ -611,6 +611,8 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 		return 0, &importError{msg: fmt.Sprintf("commit failed: %v", err), code: http.StatusInternalServerError}
 	}
 
+	h.store.InvalidateReadCache()
+
 	for pageID, categories := range importedCategoriesByPage {
 		if err := h.store.SaveCategoriesByPage(pageID, categories); err != nil {
 			return 0, &importError{msg: fmt.Sprintf("save categories for page %d failed: %v", pageID, err), code: http.StatusInternalServerError}

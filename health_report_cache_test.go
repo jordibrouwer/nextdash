@@ -60,9 +60,8 @@ func TestGetBookmarkHealthCacheExpires(t *testing.T) {
 	if err := os.WriteFile(settingsPath, []byte(`{}`), 0o644); err != nil {
 		t.Fatalf("write settings: %v", err)
 	}
-	pagePath := filepath.Join(dir, "bookmarks-1.json")
 
-	h := &Handlers{store: &FileStore{settingsFile: settingsPath, dataDir: dir}}
+	h := &Handlers{store: &FileStore{settingsFile: settingsPath, dataDir: dir, readCache: newStoreReadCache()}}
 
 	first := httptest.NewRecorder()
 	h.GetBookmarkHealth(first, httptest.NewRequest(http.MethodGet, "/api/bookmark-health", nil))
@@ -71,8 +70,8 @@ func TestGetBookmarkHealthCacheExpires(t *testing.T) {
 		t.Fatalf("initial total = %d, want 0", report1.Summary.TotalBookmarks)
 	}
 
-	if err := os.WriteFile(pagePath, []byte(`{"id":1,"name":"Page 1","bookmarks":[{"name":"A","url":"https://example.com"}]}`), 0o644); err != nil {
-		t.Fatalf("write bookmarks: %v", err)
+	if err := h.store.SaveBookmarksByPage(1, []Bookmark{{Name: "A", URL: "https://example.com"}}); err != nil {
+		t.Fatalf("SaveBookmarksByPage: %v", err)
 	}
 
 	cached := httptest.NewRecorder()

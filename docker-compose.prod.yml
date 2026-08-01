@@ -1,4 +1,4 @@
-# Production Docker Compose — assets served from the image (no static/templates mounts).
+# Production Docker Compose — assets served from the image embed (no static/templates mounts).
 # Use docker-compose.yml for local dev (live CSS/JS from ./static without rebuild).
 services:
   nextdash:
@@ -18,10 +18,17 @@ services:
       # - NEXTDASH_CORS_ORIGINS=https://dash.example.com,chrome-extension://your-extension-id
       # - NEXTDASH_ACTIVITY_LOG=mutate,status,security
       # - NEXTDASH_ACTIVITY_LOG_PERSIST=1
-      # Optional tuning:
+      # Optional tuning (background CPU/network on small VPS):
+      # - NEXTDASH_DISABLE_PREFETCH=1
       # - NEXTDASH_OUTBOUND_REQUESTS_PER_MIN=120
       # - NEXTDASH_SSRF_API_RATE_PER_MIN=60
       # - NEXTDASH_CSP=off
-      # - NEXTDASH_DISABLE_PREFETCH=1
     restart: unless-stopped
     container_name: nextdash
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M
+        reservations:
+          memory: 64M

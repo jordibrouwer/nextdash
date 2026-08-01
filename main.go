@@ -160,8 +160,12 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: requestLogging(gzipMiddleware(securityHeaders(r))),
+		Addr:              ":" + port,
+		Handler:           requestLogging(gzipMiddleware(securityHeaders(r))),
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	// Weekly automatic local backups (keeps the latest few, respects the setting).
