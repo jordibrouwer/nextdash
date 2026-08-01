@@ -2001,6 +2001,47 @@ class DashboardConfig {
         ];
     }
 
+    /** Headline counts for every bookmark — always global, not filter-scoped. */
+    bookmarksSummaryTiles() {
+        const s = this.computeStats();
+        const pct = s.total ? Math.round((s.tagged / s.total) * 100) : 0;
+        return [
+            {
+                key: 'total',
+                tone: 'accent',
+                label: this.t('config.statsBookmarks', 'Bookmarks'),
+                value: s.total,
+            },
+            {
+                key: 'tagged',
+                tone: 'neutral',
+                label: this.t('config.statsTaggedBookmarks', 'Tagged'),
+                value: s.tagged,
+                detail: s.total
+                    ? this.t('config.bookmarksTileTaggedPct', '{pct}% of total').replace('{pct}', String(pct))
+                    : undefined,
+            },
+            {
+                key: 'categories',
+                tone: 'neutral',
+                label: this.t('config.statsCategoryCount', 'Categories'),
+                value: s.categories,
+            },
+            {
+                key: 'shortcut',
+                tone: 'neutral',
+                label: this.t('config.statsWithShortcut', 'With a shortcut'),
+                value: s.withShortcut,
+            },
+            {
+                key: 'monitored',
+                tone: s.monitored > 0 ? 'accent' : 'neutral',
+                label: this.t('config.statsMonitored', 'Monitored'),
+                value: s.monitored,
+            },
+        ];
+    }
+
     renderTile(tile) {
         const esc = (v) => this.dash.escapeHtml(v);
         const clickable = tile.action ? ' config-tile--action' : '';
@@ -7374,6 +7415,7 @@ class DashboardConfig {
 
         return `
             <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+            <div class="config-tiles config-tiles--bookmarks" role="list">${this.bookmarksSummaryTiles().map((t) => this.renderTile(t)).join('')}</div>
             <div class="config-panel">
                 <div class="config-crud-toolbar">
                     <input type="search" class="config-text" id="config-bm-search" placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}" value="${esc(this.bmQuery || '')}">
@@ -9254,7 +9296,7 @@ class DashboardConfig {
                     <div class="config-actions" style="margin-bottom:16px">
                         <button type="button" class="config-btn config-btn--small" data-stats-action="export">${esc(this.t('config.statsExportCsv', 'Export as CSV'))}</button>
                     </div>
-                    <div class="config-tiles" role="list">
+                    <div class="config-tiles config-tiles--overview" role="list">
                         ${tile(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
                         ${tile(this.t('config.statsPages', 'Pages'), s.pages)}
                         ${tile(this.t('config.statsCategoryCount', 'Categories'), s.categories)}

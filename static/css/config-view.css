@@ -178,29 +178,39 @@
     gap: 12px;
 }
 
-/* Overview fits six summary tiles on one row; each tile scales down a little. */
+/* Overview fits six summary tiles on one row; bookmarks summary uses five. */
 .config-tiles--overview {
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 10px;
 }
 
-.config-tiles--overview .config-tile {
+.config-tiles--bookmarks {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.config-tiles--overview .config-tile,
+.config-tiles--bookmarks .config-tile {
     padding: 12px 10px;
     gap: 6px;
     border-radius: 10px;
     min-width: 0;
 }
 
-.config-tiles--overview .config-tile-label {
+.config-tiles--overview .config-tile-label,
+.config-tiles--bookmarks .config-tile-label {
     font-size: calc(var(--font-size-text) * 0.75);
     letter-spacing: 0.04em;
 }
 
-.config-tiles--overview .config-tile-value {
+.config-tiles--overview .config-tile-value,
+.config-tiles--bookmarks .config-tile-value {
     font-size: calc(var(--font-size-text) * 1.571);
 }
 
-.config-tiles--overview .config-tile-detail {
+.config-tiles--overview .config-tile-detail,
+.config-tiles--bookmarks .config-tile-detail {
     font-size: calc(var(--font-size-text) * 0.786);
     line-height: 1.25;
 }
@@ -209,10 +219,18 @@
     .config-tiles--overview {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+
+    .config-tiles--bookmarks {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 520px) {
     .config-tiles--overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .config-tiles--bookmarks {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

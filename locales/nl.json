@@ -3121,6 +3121,7 @@
         "bookmarkSaveError": "Kon de bookmark niet bewaren.",
         "bookmarkSaved": "Bookmark bewaard.",
         "bookmarksIntro": "Elke bookmark op al je pagina's. Zoek, bewerk of verwijder ze hier.",
+        "bookmarksTileTaggedPct": "{pct}% van totaal",
         "browserImportDone": "Browser-bookmarks geïmporteerd.",
         "bulkRefreshFaviconsBtn": "Alle favicons vernieuwen",
         "bulkRefreshFaviconsConfirm": "Elk bookmark-icoon opnieuw downloaden? Dit kan even duren bij een groot dashboard.",
