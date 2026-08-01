@@ -560,7 +560,7 @@ While typing a partial value (e.g. `status:on`), autocomplete stays visible unti
 
 ### 10.2 Tag word cloud (`/`, desktop)
 
-When **Tag cloud (/)** is enabled (config → behavior → display, on by default on desktop):
+When **Tag cloud (/)** is enabled (config → appearance → display, on by default on desktop):
 
 - Press **`/`** on the dashboard (search closed) or click the **/** button to open a word cloud of all tags (size = usage). With the **side rail**, the button sits under **\*** recent and the modal opens to the **right** of the rail, growing with tag count instead of using a fixed clipped height. With an **active tag filter**, the modal anchors **left below the filter banner** / **/** FAB (not centered over bookmarks).
 - **Click** or **`Enter`** / **`Space`** on a tag **toggles** it in the filter; the modal **stays open** so you can combine several tags.
@@ -869,6 +869,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Action runtime** | Row actions are guarded against overlap and refresh the health report after changes |
 | **Detect redirect** | Overflow **detect redirect** uses a fast redirect-only suggest (`redirectOnly=1`, skips title fetch); confirm shows the proposed URL; errors and timeouts appear in the status bar |
 | **Feed paging** | Long lists scroll with the page — no nested scrollbar. The first fifty filtered rows render immediately; scrolling loads more in batches of fifty. **Shift+G** jumps to the last filtered row (**v2026.07.26.3**) |
+| **Feed paging** | Long lists scroll with the page — no nested scrollbar. The first fifty filtered rows render immediately; scrolling loads more in batches of fifty. **Shift+G** jumps to the last filtered row (**v2026.07.26.3**) |
 | **Keyboard** | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `Enter` → inline editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row); `c` → availability checking; `i` → enlarged monitoring statistics on a monitored row. The shortcut legend under the feed lists them |
 | **Background rechecks** | Optional server-side schedule under **Config → Behavior → Status & health**; keeps the Health view current without opening Retest all |
 | **Check mode per row** | Each row shows its current mode (**Off** / **Periodic** / **Monitor**) as a button. Click it, or press `c`, to change it — the list keeps its scroll position and filter, so a filtered list does not reshuffle while you work down it. Options carry their own letters: `o`, `p`, `m` |
@@ -958,6 +959,8 @@ Configuration is a **view inside the dashboard**, not a separate page. It opens 
 Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores the **last section and sub-tab** unless a `/#config/…` deep link names something else.
 
 Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/behavior/privacy` opens Behavior on its Privacy tab, and the address bar keeps up as you click, so whatever you are looking at can be copied and shared.
+
+Below **Help**, separated by a gap, **Find settings** opens the settings-jump overlay (`Ctrl/Cmd+Shift+K`) — the same search that jumps to any section, sub-tab, help topic, or field label you have visited.
 
 Below **Help**, separated by a gap, **Find settings** opens the settings-jump overlay (`Ctrl/Cmd+Shift+K`) — the same search that jumps to any section, sub-tab, help topic, or field label you have visited.
 
