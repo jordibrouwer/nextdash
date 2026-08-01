@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.01.4 — August 2026](#v202608014--august-2026)
 - [v2026.08.01.3 — August 2026](#v202608013--august-2026)
 - [v2026.08.01.2 — August 2026](#v202608012--august-2026)
 - [v2026.08.01.1 — August 2026](#v202608011--august-2026)
@@ -132,6 +133,16 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.01.4 — August 2026
+
+**Hotfix after v2026.08.01.3** — the Appearance summary tiles wrapped to a second row, leaving Custom themes alone on its own line.
+
+### Config
+
+- **fix** **Appearance summary tiles on one row** — six compact columns for `config-tiles--text` so Active theme, Typeface, Background, Layout, Density, and Custom themes fit on one row at desktop widths (`config-view.css`).
 
 ---
 
