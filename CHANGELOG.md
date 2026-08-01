@@ -9,7 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
-- [v2026.08.04 — August 2026](#v20260804--august-2026)
+- [v2026.08.02.4 — August 2026](#v202608024--august-2026)
 - [v2026.08.02.3 — August 2026](#v202608023--august-2026)
 - [v2026.08.02.2 — August 2026](#v202608022--august-2026)
 - [v2026.08.02.1 — August 2026](#v202608021--august-2026)
@@ -141,15 +141,15 @@ Nothing yet.
 
 ---
 
-## v2026.08.04 — August 2026
+## v2026.08.02.4 — August 2026
 
-**Docs-only release** — README and MANUAL branding plus removal of obsolete Config → Keyboard documentation (the rebinding tab no longer exists).
+**Hotfix after v2026.08.02.3** — README and MANUAL branding plus removal of obsolete Config → Keyboard documentation (the rebinding tab no longer exists).
 
 ### Docs
 
 - **fix** — ASCII logo (`logo-ascii-on-black-large.png`) at the top of **README.md** and **MANUAL.md**; MANUAL intro resource table and further-reading layout polish.
 - **fix** — Removed obsolete **Config → Keyboard** section and rebinding copy from README, MANUAL, and Config → Help (EN/NL/DE/FR); cheat sheet (`!` / `F1`) is the shortcut reference.
-- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, and Config → Help **What's new** recap for **v2026.08.04**; whats-new JSON **v2026.08.04**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v154`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v212`.
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, and Config → Help **What's new** recap for **v2026.08.02.4**; whats-new JSON **v2026.08.02.4**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v154`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v212`.
 
 ---
 
