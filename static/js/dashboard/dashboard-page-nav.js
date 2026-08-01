@@ -74,19 +74,38 @@ class DashboardPageNav {
 
     /** Lowercase header label on the inbox view (same in all locales). */
     inboxHeaderTitle() {
-        return 'inbox';
+        const d = this.dash;
+        const filter = d.inbox?.filter || 'all';
+        if (filter === 'all') return 'inbox';
+        const labels = {
+            unread: d.language?.t?.('dashboard.inboxFilterUnread') || 'Unread',
+            snoozed: d.language?.t?.('dashboard.inboxFilterSnoozed') || 'Snoozed',
+        };
+        const label = labels[filter] || filter;
+        return `inbox › ${String(label).toLowerCase()}`;
     }
 
 
     /** Lowercase header label on the health view (same in all locales). */
     healthHeaderTitle() {
-        return 'health';
+        const d = this.dash;
+        const filter = d.health?.filter || 'broken';
+        if (filter === 'broken') return 'health';
+        const labels = {
+            duplicate: d.language?.t?.('dashboard.healthFilterDuplicates') || 'Duplicates',
+            unchecked: d.language?.t?.('dashboard.healthFilterUnchecked') || 'Never checked',
+            monitored: d.language?.t?.('dashboard.healthFilterMonitored') || 'Monitored',
+            all: d.language?.t?.('dashboard.healthFilterAll') || 'All',
+        };
+        const label = labels[filter] || filter;
+        return `health › ${String(label).toLowerCase()}`;
     }
 
 
     /** Lowercase header label on the config view (same in all locales). */
     configHeaderTitle() {
-        return 'config';
+        const d = this.dash;
+        return d.config?.headerBreadcrumb?.() || 'config';
     }
 
 
@@ -106,6 +125,13 @@ class DashboardPageNav {
 
     configPageLabel() {
         const d = this.dash;
+        const bc = d.config?.headerBreadcrumb?.();
+        if (bc) {
+            return bc.split(' › ').map((part) => {
+                const s = String(part).trim();
+                return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+            }).join(' › ');
+        }
         const configLabel = d.language?.t?.('dashboard.config');
         return configLabel && configLabel !== 'dashboard.config' ? configLabel : 'Config';
     }

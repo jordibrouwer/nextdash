@@ -20,6 +20,22 @@
             titleKey: 'config.randomThemePromoTitle',
             bodyKey: 'config.randomThemePromoBody',
         },
+        {
+            id: 'find-settings-v1',
+            section: 'overview',
+            anchor: 'settingsJump',
+            placement: 'beside',
+            titleKey: 'config.findSettingsPromoTitle',
+            bodyKey: 'config.findSettingsPromoBody',
+        },
+        {
+            id: 'bookmarks-page-filter-v1',
+            section: 'bookmarks',
+            anchor: 'bookmarksPageFilter',
+            placement: 'below',
+            titleKey: 'config.bookmarksPageFilterPromoTitle',
+            bodyKey: 'config.bookmarksPageFilterPromoBody',
+        },
     ];
 
     global.ConfigSettingPromo?.registerAll?.(PROMOS);

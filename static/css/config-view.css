@@ -178,6 +178,44 @@
     gap: 12px;
 }
 
+/* Overview fits six summary tiles on one row; each tile scales down a little. */
+.config-tiles--overview {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.config-tiles--overview .config-tile {
+    padding: 12px 10px;
+    gap: 6px;
+    border-radius: 10px;
+}
+
+.config-tiles--overview .config-tile-label {
+    font-size: calc(var(--font-size-text) * 0.75);
+    letter-spacing: 0.04em;
+}
+
+.config-tiles--overview .config-tile-value {
+    font-size: calc(var(--font-size-text) * 1.571);
+}
+
+.config-tiles--overview .config-tile-detail {
+    font-size: calc(var(--font-size-text) * 0.786);
+    line-height: 1.25;
+}
+
+@media (max-width: 960px) {
+    .config-tiles--overview {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .config-tiles--overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 .config-tile {
     display: flex;
     flex-direction: column;
@@ -836,12 +874,272 @@
 
 /* ── Overview ────────────────────────────────────────────────────────────── */
 
-/* Two columns where there is room; the panels stack on a narrow window. */
-.config-overview-columns {
+.config-overview-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 8px;
+}
+
+.config-overview-attention-zone {
+    margin-top: 8px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+}
+
+.config-panel-empty--action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.config-bm-title-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.config-bm-page-badge {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: calc(var(--font-size-text) * 0.786);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: color-mix(in srgb, var(--accent-primary, #4a90d9) 14%, transparent);
+    color: var(--text-color, inherit);
+}
+
+.config-overview-layout > .config-panel,
+.config-overview-top > .config-panel,
+.config-overview-about-row > .config-panel {
+    margin-top: 0;
+}
+
+/* New features beside at-a-glance stats; stacks on a narrow window. */
+.config-overview-top {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 0 18px;
+    gap: 18px;
     align-items: start;
+}
+
+/* About the developer beside latest update — half width each. */
+.config-overview-about-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+}
+
+@media (max-width: 720px) {
+    .config-overview-about-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.config-feature-spotlights {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.config-new-features-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.config-new-features-head .config-panel-title {
+    margin: 0;
+}
+
+.config-new-features-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.config-new-features-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+    border-radius: 6px;
+    background: var(--surface-primary, transparent);
+    color: var(--text-color, inherit);
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.config-new-features-nav-btn:hover {
+    border-color: color-mix(in srgb, var(--accent-primary, #4a7038) 40%, var(--border-primary, rgba(128, 128, 128, 0.25)));
+    background: color-mix(in srgb, var(--accent-primary, #4a7038) 8%, transparent);
+}
+
+.config-new-features-counter {
+    min-width: 3.2rem;
+    text-align: center;
+    font-size: calc(var(--font-size-text) * 0.857);
+    color: var(--text-muted, rgba(128, 128, 128, 0.85));
+    font-variant-numeric: tabular-nums;
+}
+
+.config-new-features-carousel {
+    outline: none;
+}
+
+.config-new-features-carousel:focus-visible {
+    border-radius: 8px;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, #4a7038) 35%, transparent);
+}
+
+.config-feature-spotlight {
+    padding: 10px 12px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
+    border-radius: 10px;
+    background: color-mix(in srgb, #fff 14%, var(--surface-secondary, rgba(128, 128, 128, 0.04)) 86%);
+}
+
+.config-new-features-panel {
+    position: relative;
+    isolation: isolate;
+    overflow: visible;
+    border: none;
+    background: transparent;
+    padding: 0;
+    border-radius: 12px;
+}
+
+.config-new-features-panel--animated {
+    animation: config-new-features-panel-glow 3.4s ease-in-out infinite;
+}
+
+.config-new-features-panel-inner {
+    position: relative;
+    z-index: 1;
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--accent-primary, #4a7038) 18%, var(--border-primary, rgba(128, 128, 128, 0.2)));
+    background: var(--surface-secondary, rgba(128, 128, 128, 0.04));
+}
+
+.config-new-features-panel-stars {
+    position: absolute;
+    inset: -0.55rem -0.65rem;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.config-new-features-panel-star {
+    position: absolute;
+    line-height: 1;
+    color: color-mix(in srgb, var(--accent-primary, #4a7038) 88%, #fff 12%);
+    text-shadow: 0 0 7px color-mix(in srgb, var(--accent-primary, #4a7038) 50%, transparent);
+    opacity: 0;
+    transform: scale(0.45) rotate(-12deg);
+    animation: config-new-features-panel-star-twinkle 2.8s ease-in-out infinite;
+}
+
+.config-new-features-panel-star::before {
+    content: '★';
+    display: block;
+    font-size: 0.62rem;
+}
+
+.config-new-features-panel-star:nth-child(1) { top: -0.05rem; left: 8%; animation-delay: 0s; }
+.config-new-features-panel-star:nth-child(2) { top: -0.35rem; left: 42%; animation-delay: 0.45s; }
+.config-new-features-panel-star:nth-child(2)::before { content: '✦'; font-size: 0.5rem; }
+.config-new-features-panel-star:nth-child(3) { top: -0.05rem; right: 6%; animation-delay: 0.9s; }
+.config-new-features-panel-star:nth-child(4) { top: 46%; right: -0.35rem; animation-delay: 1.35s; }
+.config-new-features-panel-star:nth-child(4)::before { content: '✦'; font-size: 0.48rem; }
+.config-new-features-panel-star:nth-child(5) { bottom: -0.1rem; right: 14%; animation-delay: 1.8s; }
+.config-new-features-panel-star:nth-child(6) { bottom: -0.35rem; left: 48%; animation-delay: 2.25s; }
+.config-new-features-panel-star:nth-child(6)::before { content: '✦'; font-size: 0.52rem; }
+.config-new-features-panel-star:nth-child(7) { bottom: -0.05rem; left: 10%; animation-delay: 2.7s; }
+.config-new-features-panel-star:nth-child(8) { top: 44%; left: -0.35rem; animation-delay: 3.15s; }
+.config-new-features-panel-star:nth-child(8)::before { content: '✦'; font-size: 0.46rem; }
+
+@keyframes config-new-features-panel-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary, #4a7038) 0%, transparent);
+    }
+    50% {
+        box-shadow: 0 0 0.85rem 0.16rem color-mix(in srgb, var(--accent-primary, #4a7038) 30%, transparent);
+    }
+}
+
+@keyframes config-new-features-panel-star-twinkle {
+    0%, 100% {
+        opacity: 0;
+        transform: scale(0.45) rotate(-12deg);
+    }
+    45%, 55% {
+        opacity: 1;
+        transform: scale(1.12) rotate(10deg);
+    }
+}
+
+.config-new-features-panel--animated:hover {
+    animation: none;
+    box-shadow: 0 0 0.95rem 0.18rem color-mix(in srgb, var(--accent-primary, #4a7038) 36%, transparent);
+}
+
+.config-new-features-panel--animated:hover .config-new-features-panel-star {
+    animation-duration: 1.5s;
+}
+
+body.no-animations .config-new-features-panel--animated,
+body.no-animations .config-new-features-panel-star {
+    animation: none;
+}
+
+body.no-animations .config-new-features-panel--animated {
+    box-shadow: 0 0 0.55rem 0.1rem color-mix(in srgb, var(--accent-primary, #4a7038) 24%, transparent);
+}
+
+body.no-animations .config-new-features-panel-star {
+    opacity: 0.78;
+    transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .config-new-features-panel--animated,
+    .config-new-features-panel-star {
+        animation: none;
+    }
+
+    .config-new-features-panel--animated {
+        box-shadow: 0 0 0.55rem 0.1rem color-mix(in srgb, var(--accent-primary, #4a7038) 24%, transparent);
+    }
+
+    .config-new-features-panel-star {
+        opacity: 0.78;
+        transform: scale(1);
+    }
+}
+
+.config-feature-spotlight-title {
+    margin: 0 0 6px;
+    font-size: calc(var(--font-size-text) * 1.05);
+    font-weight: 650;
+}
+
+.config-feature-spotlight .config-panel-note {
+    margin-bottom: 6px;
+}
+
+.config-feature-spotlight-enable {
+    margin-bottom: 8px;
 }
 
 /* "Needs attention" rows: count, what it is, and the way to deal with it. */
@@ -1880,6 +2178,25 @@
     border-top: 1px solid color-mix(in srgb, var(--text-color, #ccc) 12%, transparent);
 }
 
+.config-crud-row.keyboard-selected {
+    border-color: var(--accent-primary, var(--accent-success, #4A7038));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--accent-success, #4A7038)) 28%, transparent);
+}
+
+.config-list-keyboard-legend {
+    margin: 8px 0 0;
+}
+
+.config-bm-keyboard-legend {
+    margin: 8px 0 0;
+}
+
+.config-form-keyboard-legend {
+    margin: 16px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--text-color, #ccc) 12%, transparent);
+}
+
 .config-theme-groups {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -2284,6 +2601,60 @@ body[data-layout-version="modern"] .config-subtab.is-active {
     background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
     color: var(--accent-primary);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+/* ── Settings jump overlay (Ctrl/Cmd+Shift+K) ───────────────────────────── */
+
+.config-settings-jump {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: min(100%, 28rem);
+}
+
+.config-settings-jump-filter {
+    width: 100%;
+}
+
+.config-settings-jump-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: min(50vh, 22rem);
+    overflow: auto;
+}
+
+.config-settings-jump-result {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.config-settings-jump-result:hover,
+.config-settings-jump-result.is-active {
+    background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+}
+
+.config-settings-jump-result-title {
+    font-weight: 600;
+    color: var(--text-color, inherit);
+}
+
+.config-settings-jump-result-sub {
+    font-size: 0.88em;
+    color: var(--text-muted, #777);
+}
+
+.config-settings-jump-empty {
+    margin: 0;
+    color: var(--text-muted, #777);
+}
+
+.modal.config-settings-jump-modal .modal-body {
+    padding-top: 8px;
 }
 
 /* ── Settings jump overlay (Ctrl/Cmd+Shift+K) ───────────────────────────── */

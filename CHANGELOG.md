@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.01.1 — August 2026](#v202608011--august-2026)
 - [v2026.08.01 — August 2026](#v20260801--august-2026)
 - [v2026.07.26.3 — July 2026](#v202607263--july-2026)
 - [v2026.07.26.2 — July 2026](#v202607262--july-2026)
@@ -132,6 +133,31 @@ Nothing yet.
 
 ---
 
+## v2026.08.01.1 — August 2026
+
+**Config overview is sharper — and Appearance owns layout again.** Six headline tiles include monitored bookmarks; a new-features carousel and a tidier panel layout sit on Overview. Layout and Display moved under Appearance; bookmarks gain page-scoped categories and shareable page filters. The dashboard header breadcrumb shows where you are; config remembers your place only when you leave via **Shift+H** or **Shift+I**. Config → Overview → Latest update and Advanced → What's new summarise this patch.
+
+### New
+
+- **new** **Overview monitored tile** — six compact headline tiles on one row; **Monitored** opens Health on the monitored filter (`monitoredCount` on the bookmark-health summary).
+- **new** **New features carousel** — Config → Overview spotlights one highlight at a time with ‹ › and arrow keys (`overviewNewFeatures`).
+- **new** **Page-scoped bookmark categories** — Bookmarks page filter scopes categories, shows page badges and `Page · Category` labels, deep-links with `#config/bookmarks/<pageId>`, and scopes bulk category moves (`dashboard-config.js`).
+- **new** **Header breadcrumb** — config, health, and inbox views show `config › section › tab` (and filters) in the large dashboard title (`dashboard-page-nav.js`, `dashboard-health.js`, `dashboard-inbox.js`).
+- **new** **Setting promos** — one-time balloons for Find settings and the Bookmarks page filter (`config-setting-promos.js`).
+
+### Fixes
+
+- **fix** **Layout & Display under Appearance** — grid, columns, density, toolbar, and bookmark-row display moved from Behavior to **Appearance → Layout** and **Appearance → Display**; legacy `#config/behavior/layout|display` hashes redirect.
+- **fix** **Overview panel layout** — About the developer beside Latest update at half width; Tips full width below; needs-attention separated from the carousel.
+- **fix** **Duplicate in-panel breadcrumb removed** — only the header trail remains; the section title stays in the panel.
+- **fix** **Config location memory** — section/sub-tab stored only when leaving via **Shift+H** or **Shift+I**; **Escape** and **0–9** clear it so the next visit starts on Overview.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, Config → Help **What's new** recap, and Playwright specs for appearance tabs, overview layout, monitored tile, bookmarks filters, and hash migration; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v151`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v209`.
+
+---
+
 ## v2026.08.01 — August 2026
 
 **Config is fully keyboard-navigable — and it remembers where you left off.** Navigate sections, sub-tabs, Pages & tags lists, and the bookmarks editor from the keyboard. **Ctrl/Cmd+Shift+K** finds any setting; **Shift+S** and the gear icon reopen the same section and sub-tab; **0–9** leave config for Inbox or a bookmark page. Config → Overview → Latest update and Advanced → What's new summarise this release.
@@ -154,6 +180,8 @@ Nothing yet.
 - **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README, MANUAL, Config → Help, and cheat sheet updated for **v2026.08.01**; Playwright specs for config keyboard, location memory, discoverability, and header destinations; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v150`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v208`.
 
 ---
+
+## v2026.07.26.3 — July 2026
 
 **Faster first load, live favicon harmonisation, health feed paging, and a reliable random theme on every view switch — including config.** Heavy modules load on demand; the health list scrolls with the page; harmonisation stays enabled with a custom theme and shares one setting across a random rotation instead of resetting per theme. Picking a theme while random is on saves your choice and shows a toast that the display keeps rotating until you turn random off. Config → Overview and Advanced → What's new summarise this patch.
 

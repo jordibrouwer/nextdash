@@ -1454,6 +1454,57 @@ class DashboardHealth {
         container.appendChild(more);
     }
 
+    /* ── Feed paging (page scroll) ─────────────────────────────────────── */
+
+    _resetFeedPaging() {
+        this.visibleLimit = 50;
+    }
+
+    _teardownLoadMoreObserver() {
+        this._loadMoreObserver?.disconnect?.();
+        this._loadMoreObserver = null;
+    }
+
+    /**
+     * Loads the next page of rows when the sentinel nears the viewport. Uses
+     * the document scroll — no nested feed scrollbar.
+     */
+    _bindLoadMoreObserver(sentinel, filteredLength) {
+        this._teardownLoadMoreObserver();
+        if (!sentinel || this.visibleLimit >= filteredLength) return;
+
+        if (typeof IntersectionObserver !== 'function') {
+            return;
+        }
+
+        this._loadMoreObserver = new IntersectionObserver((entries) => {
+            if (!this.isActiveView()) return;
+            if (!entries.some((entry) => entry.isIntersecting)) return;
+            const total = this.getFilteredIssues().length;
+            if (this.visibleLimit >= total) {
+                this._teardownLoadMoreObserver();
+                return;
+            }
+            this.visibleLimit = Math.min(total, this.visibleLimit + 50);
+            this.render();
+        }, { root: null, rootMargin: '320px 0px' });
+        this._loadMoreObserver.observe(sentinel);
+    }
+
+    _appendLoadMoreFallback(container, filteredLength) {
+        if (this.visibleLimit >= filteredLength) return;
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'health-view-load-more-btn';
+        const remaining = filteredLength - this.visibleLimit;
+        more.textContent = this.t('dashboard.healthLoadMore', 'Show {count} more', { count: remaining });
+        more.addEventListener('click', () => {
+            this.visibleLimit = Math.min(filteredLength, this.visibleLimit + 50);
+            this.render();
+        });
+        container.appendChild(more);
+    }
+
     /* ── Render ────────────────────────────────────────────────────────── */
 
     scheduleSearchRender() {
@@ -1772,10 +1823,9 @@ class DashboardHealth {
                 this._resetFeedPaging();
                 this.persistViewState();
                 this.render();
+                this.dash.pageNav?.updatePageTitle?.();
+                this.dash.pageNav?.updateDocumentTitle?.();
             });
-        });
-
-        const searchInput = toolbar.querySelector('.health-view-search-input');
         searchInput?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value;
             this._resetFeedPaging();

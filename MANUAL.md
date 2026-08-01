@@ -197,7 +197,7 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 
 ### 4.5 Config vs dashboard
 
-Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config returns you to the **last section and sub-tab** you were on; a deep link like `/#config/appearance` still takes priority.
+Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config with **`Shift+S`**, **`<`**, or the gear icon restores the **last section and sub-tab** only when you left via **`Shift+H`** or **`Shift+I`**; **`Escape`** and **`0`–`9`** clear stored location so the next visit starts on **Overview**. A deep link like `/#config/appearance` still takes priority.
 
 | Dashboard view | Config view |
 |-----------------|------------------|
@@ -226,7 +226,7 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Side rail layout (optional — **Config → Behavior → Display → Button bar position → Side rail**):
+Side rail layout (optional — **Config → Appearance → Display → Button bar position → Side rail**):
 
 ```
 ┌──┬─────────────────────────────────────────────────────────┐
@@ -256,7 +256,7 @@ Side rail layout (optional — **Config → Behavior → Display → Button bar 
 
 ### 🎛️ Button bar / side rail
 
-The button bar can appear as a **floating bottom bar** (default) or as a **44 px left side rail** — set via **Config → Behavior → Display → Button bar position** or the `:buttonbar` command.
+The button bar can appear as a **floating bottom bar** (default) or as a **44 px left side rail** — set via **Config → Appearance → Display → Button bar position** or the `:buttonbar` command.
 
 **Bottom bar** — buttons float centred at the bottom of the viewport.
 
@@ -560,7 +560,7 @@ While typing a partial value (e.g. `status:on`), autocomplete stays visible unti
 
 ### 10.2 Tag word cloud (`/`, desktop)
 
-When **Tag cloud (/)** is enabled (config → behavior → display, on by default on desktop):
+When **Tag cloud (/)** is enabled (config → appearance → display, on by default on desktop):
 
 - Press **`/`** on the dashboard (search closed) or click the **/** button to open a word cloud of all tags (size = usage). With the **side rail**, the button sits under **\*** recent and the modal opens to the **right** of the rail, growing with tag count instead of using a fixed clipped height. With an **active tag filter**, the modal anchors **left below the filter banner** / **/** FAB (not centered over bookmarks).
 - **Click** or **`Enter`** / **`Space`** on a tag **toggles** it in the filter; the modal **stays open** so you can combine several tags.
@@ -869,6 +869,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Action runtime** | Row actions are guarded against overlap and refresh the health report after changes |
 | **Detect redirect** | Overflow **detect redirect** uses a fast redirect-only suggest (`redirectOnly=1`, skips title fetch); confirm shows the proposed URL; errors and timeouts appear in the status bar |
 | **Feed paging** | Long lists scroll with the page — no nested scrollbar. The first fifty filtered rows render immediately; scrolling loads more in batches of fifty. **Shift+G** jumps to the last filtered row (**v2026.07.26.3**) |
+| **Feed paging** | Long lists scroll with the page — no nested scrollbar. The first fifty filtered rows render immediately; scrolling loads more in batches of fifty. **Shift+G** jumps to the last filtered row (**v2026.07.26.3**) |
 | **Keyboard** | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `Enter` → inline editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row); `c` → availability checking; `i` → enlarged monitoring statistics on a monitored row. The shortcut legend under the feed lists them |
 | **Background rechecks** | Optional server-side schedule under **Config → Behavior → Status & health**; keeps the Health view current without opening Retest all |
 | **Check mode per row** | Each row shows its current mode (**Off** / **Periodic** / **Monitor**) as a button. Click it, or press `c`, to change it — the list keeps its scroll position and filter, so a filtered list does not reshuffle while you work down it. Options carry their own letters: `o`, `p`, `m` |
@@ -957,7 +958,9 @@ Configuration is a **view inside the dashboard**, not a separate page. It opens 
 
 Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores the **last section and sub-tab** unless a `/#config/…` deep link names something else.
 
-Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/behavior/privacy` opens Behavior on its Privacy tab, and the address bar keeps up as you click, so whatever you are looking at can be copied and shared.
+Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/appearance/layout` opens Appearance on Layout, `/#config/bookmarks/<pageId>` scopes Bookmarks to one page, and the address bar keeps up as you click.
+
+While config, health, or inbox is open, the **large dashboard title** shows where you are — for example `config › bookmarks` or `health › broken` — instead of a second breadcrumb inside the panel.
 
 Below **Help**, separated by a gap, **Find settings** opens the settings-jump overlay (`Ctrl/Cmd+Shift+K`) — the same search that jumps to any section, sub-tab, help topic, or field label you have visited.
 
@@ -965,11 +968,11 @@ Below **Help**, separated by a gap, **Find settings** opens the settings-jump ov
 
 | Section | What lives there |
 |---------|------------------|
-| **Overview** | At-a-glance health, headline counts, anything needing attention, and **Latest update** (release tag + summary from what's-new data) |
+| **Overview** | Six headline tiles (including **Monitored**), anything needing attention, a **New features** carousel, **Latest update**, tips, and about-the-developer panels |
 | **Pages & tags** | Pages, categories, tags, finders, and custom collections — five sub-tabs |
-| **Bookmarks** | The bookmark list and its editor, with bulk actions |
-| **Appearance** | Theme, background, fonts, icon size, and custom themes |
-| **Behavior** | Every setting, grouped into seven sub-tabs |
+| **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) |
+| **Appearance** | Theme, layout, display, and custom themes — four sub-tabs |
+| **Behavior** | General, date & weather, search, status, and privacy — five sub-tabs |
 | **Data & backups** | Backup, restore, import, export — plus **Reset** on its own tab |
 | **Statistics** | Usage insights across five sub-tabs |
 | **Help** | In-app documentation (EN/NL/DE/FR) across seven sub-tabs |
@@ -989,21 +992,25 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 | Section | Sub-tabs |
 |---------|----------|
 | **Pages & tags** | Finders · Tags · Collections · Pages · Categories |
-| **Appearance** | Theme · Custom themes |
-| **Behavior** | General · Date & weather · Layout · Display · Search & inbox · Status & health · Privacy |
+| **Appearance** | Theme · Layout · Display · Custom themes |
+| **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
 | **Data & backups** | Backups & data · Reset |
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
 | **Help** | Getting started · Configuring · Pages & bookmarks · Search & keyboard · Health & inbox · Data & hosting · About |
 
 ### Working with bookmarks
 
-**Bookmarks** lists every bookmark with a search field and a page filter. **Edit** expands a row in place rather than opening a separate panel, carrying name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor).
+**Bookmarks** lists every bookmark with a search field and a **page filter**. With **All pages**, category labels read `Page · Category` and each row carries a page badge. Pick one page to scope categories and share the view as `/#config/bookmarks/<pageId>`. **Edit** expands a row in place rather than opening a separate panel, carrying name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor).
 
 **+ Bookmark** opens the same add form the dashboard uses. Tick several rows for the bulk toolbar — move to another page or category, pin, refresh favicons, edit tags across the selection, or delete. **Select all** applies to the rows your filters are currently showing, not the whole library.
 
 ### Appearance
 
-**Theme** covers your saved theme, **Random theme**, background (none / gradient / image / auto, with opacity), fonts, icon size, and the display toggles. Pick a built-in dark/light family or a custom theme, then optionally set **Random theme** to **Off**, **On page refresh**, or **On view change** (includes dashboard page switches since **v2026.07.26.2**) — see [Themes](#themes) above for how the pool and auto dark mode interact. A **Currently showing** line appears while random is active; picking another theme while random is on saves your choice and shows a toast that rotation continues until random is off (**v2026.07.26.3**). On desktop, the first visit to this tab may show a one-time themed popover below **Random theme** (**v2026.07.26.1**); dismiss it with **Got it** or **Esc** (the button does not float with the card).
+**Theme** covers your saved theme, **Random theme**, background (none / gradient / image / auto, with opacity), fonts, and branding. Pick a built-in dark/light family or a custom theme, then optionally set **Random theme** to **Off**, **On page refresh**, or **On view change** (includes dashboard page switches since **v2026.07.26.2**) — see [Themes](#themes) above for how the pool and auto dark mode interact. A **Currently showing** line appears while random is active; picking another theme while random is on saves your choice and shows a toast that rotation continues until random is off (**v2026.07.26.3**). On desktop, the first visit to this tab may show a one-time themed popover below **Random theme** (**v2026.07.26.1**); dismiss it with **Got it** or **Esc** (the button does not float with the card).
+
+**Layout** holds layout version (Classic / Modern), launcher icon size, column count, layout preset, and density.
+
+**Display** holds bookmark-row toggles (icons, status colour, animations), toolbar and tab visibility, tag cloud, and the button-bar position.
 
 **Custom themes** is a full editor: build a palette, check its contrast, and apply it. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard in a half-edited state.
 
@@ -1024,8 +1031,8 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 
 | Keys | Action |
 |------|--------|
-| `Shift+S` or `<` | Toggle config; reopening returns to the last section and sub-tab |
-| `0`–`9` | Leave config for Inbox (`0`) or a bookmark page (`1`–`9`) |
+| `Shift+S` or `<` | Toggle config; reopening restores the last section and sub-tab only after leaving via `Shift+H` or `Shift+I` |
+| `0`–`9` | Leave config for Inbox (`0`) or a bookmark page (`1`–`9`); clears stored config location |
 | `j` / `k` | Previous / next section in the left rail |
 | `g` / `G` | First / last section |
 | `←` / `→` or `↑` / `↓` (section rail) | Move between sections when the rail is focused |

@@ -1,0 +1,71 @@
+{
+  "tag": "v2026.08.01.1",
+  "date": "August 2026",
+  "releasedAt": "2026-08-01",
+  "modalLead": "Config overview is sharper: six headline tiles including monitored bookmarks, a new-features carousel, and a tidier panel layout. Layout and Display live under Appearance now; bookmarks gain page-scoped categories and shareable page filters. The dashboard header shows where you are in config, health, or inbox. Config remembers your place only when you leave via Shift+H or Shift+I.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Overview headline tiles</strong> — six compact tiles on one row, including a <strong>Monitored</strong> count that opens Health on the monitored filter when clicked (<code>overviewTiles</code>, <code>monitoredCount</code> on the health summary)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>New features carousel</strong> — <strong>Config → Overview</strong> spotlights one release highlight at a time with ‹ › navigation, a counter, and keyboard ←/→ (<code>overviewNewFeatures</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Overview panel layout</strong> — <em>About the developer</em> and <em>Latest update</em> sit side by side at half width; <em>Tips</em> spans the row below. Needs-attention stays visually separate from the carousel."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Layout &amp; Display under Appearance</strong> — grid structure, columns, density, toolbar visibility, and bookmark row display moved out of Behavior into <strong>Appearance → Layout</strong> and <strong>Appearance → Display</strong>. Legacy <code>#config/behavior/layout</code> and <code>#config/behavior/display</code> links redirect."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Page-scoped bookmark categories</strong> — the Bookmarks page filter scopes categories per page, shows <em>Page · Category</em> labels with <em>All pages</em>, adds a page badge per row, and deep-links with <code>#config/bookmarks/&lt;pageId&gt;</code>. Bulk category moves respect the selected pages."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Header breadcrumb</strong> — while config, health, or inbox is open, the large dashboard title reads <code>config › bookmarks</code>, <code>health › broken</code>, or similar — including config sub-tabs and the bookmarks page filter."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No duplicate config breadcrumb</strong> — the small trail inside the config panel is gone; the section title (<em>Bookmarks</em>, <em>Appearance</em>, …) remains."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config location memory</strong> — your section and sub-tab are remembered only when you leave config via <code>Shift+H</code> or <code>Shift+I</code>. <code>Escape</code> and <code>0</code>–<code>9</code> clear stored location so the next visit starts on Overview."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Setting promos</strong> — one-time balloons for <strong>Find settings</strong> and the Bookmarks page filter (<code>config-setting-promos.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong><code>monitoredCount</code> on the health summary</strong> — the bookmark-health API reports how many bookmarks have monitoring enabled, feeding the config overview tile without scanning every issue row."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Help, MANUAL, and Overview</strong> — Config → Help → What's new, <code>MANUAL.md</code>, README, CHANGELOG, and <strong>Config → Overview → Latest update</strong> describe this patch. Playwright specs cover appearance tabs, overview layout, monitored tile, bookmarks page filters, and legacy hash migration."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Cache-bust</strong> — <code>whats-new-v209</code> data version and <code>2026.07-dashboard-release-v151</code> dashboard release token."
+        }
+      ]
+    }
+  ]
+}
