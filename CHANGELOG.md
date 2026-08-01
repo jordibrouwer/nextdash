@@ -9,7 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
-- [v2026.08.01.2.1 — August 2026](#v2026080121--august-2026)
+- [v2026.08.01.2 — August 2026](#v202608012--august-2026)
 - [v2026.08.01.1 — August 2026](#v202608011--august-2026)
 - [v2026.08.01 — August 2026](#v20260801--august-2026)
 - [v2026.07.26.3 — July 2026](#v202607263--july-2026)
@@ -134,7 +134,7 @@ Nothing yet.
 
 ---
 
-## v2026.08.01.2.1 — August 2026
+## v2026.08.01.2 — August 2026
 
 **Hotfix after v2026.08.01.1** — the lazy-loaded health module failed to parse, so the Health view would not open; the Find settings setting promo showed raw locale keys; overview carousel copy and breadcrumb labels were missing in nl/de/fr.
 
