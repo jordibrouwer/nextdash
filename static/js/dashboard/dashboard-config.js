@@ -9296,7 +9296,7 @@ class DashboardConfig {
                     <div class="config-actions" style="margin-bottom:16px">
                         <button type="button" class="config-btn config-btn--small" data-stats-action="export">${esc(this.t('config.statsExportCsv', 'Export as CSV'))}</button>
                     </div>
-                    <div class="config-tiles" role="list">
+                    <div class="config-tiles config-tiles--overview" role="list">
                         ${tile(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
                         ${tile(this.t('config.statsPages', 'Pages'), s.pages)}
                         ${tile(this.t('config.statsCategoryCount', 'Categories'), s.categories)}

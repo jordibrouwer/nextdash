@@ -31,6 +31,19 @@ async function openStatsTab(page, tab) {
 }
 
 test.describe('config statistics visualisations', () => {
+    test('the overview tab shows six headline tiles on one row', async ({ page }) => {
+        await openStats(page);
+        const tiles = page.locator('#config-stats-body .config-tiles--overview .config-tile');
+        await expect(tiles).toHaveCount(6);
+        const row = await page.evaluate(() => {
+            const els = [...document.querySelectorAll('#config-stats-body .config-tiles--overview .config-tile')];
+            const ys = els.map((el) => Math.round(el.getBoundingClientRect().y));
+            return { count: els.length, sameRow: Math.max(...ys) - Math.min(...ys) < 8 };
+        });
+        expect(row.count).toBe(6);
+        expect(row.sameRow).toBe(true);
+    });
+
     test('the cleanup score shows a value, a bar and its penalties', async ({ page }) => {
         await openStats(page);
         const val = page.locator('.config-score-value');
