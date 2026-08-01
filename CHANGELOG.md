@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.02.2 — August 2026](#v202608022--august-2026)
 - [v2026.08.02.1 — August 2026](#v202608021--august-2026)
 - [v2026.08.02 — August 2026](#v20260802--august-2026)
 - [v2026.08.01.4 — August 2026](#v202608014--august-2026)
@@ -135,6 +136,16 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.02.2 — August 2026
+
+**Hotfix after v2026.08.02.1** — on Config → Overview, the six headline status tiles dropped to two rows at common laptop widths because the responsive grid switched to three columns at 960px viewport.
+
+### Config
+
+- **fix** **Overview status tiles on one row** — delay the three-column breakpoint to 720px and let tiles shrink with `min-width: 0` so all six summary tiles stay on one line at typical config widths (`config-view.css`).
 
 ---
 
