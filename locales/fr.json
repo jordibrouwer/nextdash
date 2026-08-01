@@ -3121,6 +3121,7 @@
         "bookmarkSaveError": "Impossible d'enregistrer le favori.",
         "bookmarkSaved": "Favori enregistré.",
         "bookmarksIntro": "Tous vos favoris, toutes pages confondues. Cherchez, modifiez ou supprimez-les ici.",
+        "bookmarksTileTaggedPct": "{pct} % du total",
         "browserImportDone": "Favoris du navigateur importés.",
         "bulkRefreshFaviconsBtn": "Actualiser tous les favicons",
         "bulkRefreshFaviconsConfirm": "Télécharger à nouveau chaque icône de favori ? Cela peut prendre du temps sur un grand tableau de bord.",

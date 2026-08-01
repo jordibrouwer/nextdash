@@ -177,6 +177,21 @@ test.describe('config dashboard view (scaffold)', () => {
         expect(labels.join(' ').toLowerCase()).toContain('bookmarks');
     });
 
+    test('the bookmarks section shows five summary tiles on one row', async ({ page }) => {
+        await loadDashboard(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+
+        const tiles = page.locator('.config-tiles--bookmarks .config-tile');
+        await expect(tiles).toHaveCount(5);
+        const row = await page.evaluate(() => {
+            const els = [...document.querySelectorAll('.config-tiles--bookmarks .config-tile')];
+            const ys = els.map((el) => Math.round(el.getBoundingClientRect().y));
+            return { count: els.length, sameRow: Math.max(...ys) - Math.min(...ys) < 8 };
+        });
+        expect(row.count).toBe(5);
+        expect(row.sameRow).toBe(true);
+    });
+
     test('the new features carousel shows one spotlight and steps with arrows', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));

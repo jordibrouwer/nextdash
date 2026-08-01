@@ -3121,6 +3121,7 @@
         "bookmarkSaveError": "Could not save the bookmark.",
         "bookmarkSaved": "Bookmark saved.",
         "bookmarksIntro": "Every bookmark across your pages. Search, edit, or remove them here.",
+        "bookmarksTileTaggedPct": "{pct}% of total",
         "browserImportDone": "Imported {i}, skipped {s} duplicates. Reloading…",
         "bulkRefreshFaviconsBtn": "Refresh all favicons",
         "bulkRefreshFaviconsConfirm": "Download every bookmark icon again? This can take a while on a large dashboard.",

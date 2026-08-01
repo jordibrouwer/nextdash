@@ -3121,6 +3121,7 @@
         "bookmarkSaveError": "Lesezeichen konnte nicht gespeichert werden.",
         "bookmarkSaved": "Lesezeichen gespeichert.",
         "bookmarksIntro": "Jedes Lesezeichen über alle Seiten hinweg. Hier suchen, bearbeiten oder entfernen.",
+        "bookmarksTileTaggedPct": "{pct} % insgesamt",
         "browserImportDone": "Browser-Lesezeichen importiert.",
         "bulkRefreshFaviconsBtn": "Alle Favicons erneuern",
         "bulkRefreshFaviconsConfirm": "Jedes Lesezeichen-Symbol erneut herunterladen? Bei einem großen Dashboard kann das dauern.",
