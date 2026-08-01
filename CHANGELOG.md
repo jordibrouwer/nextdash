@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.01.3 — August 2026](#v202608013--august-2026)
 - [v2026.08.01.2 — August 2026](#v202608012--august-2026)
 - [v2026.08.01.1 — August 2026](#v202608011--august-2026)
 - [v2026.08.01 — August 2026](#v20260801--august-2026)
@@ -131,6 +132,17 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.01.3 — August 2026
+
+**Hotfix after v2026.08.01.2** — the lazy-loaded inbox module failed to parse, so the Inbox view would not open in production.
+
+### Inbox
+
+- **fix** **Inbox module parse error** — a missing `});` after the filter-pill click handler and an undeclared `sortSelect` in `render()` stopped `dashboard-inbox.js` from loading, so the lazy-loaded Inbox view never registered `DashboardInbox` (`dashboard-inbox.js`).
+- **fix** **Inbox lazy-load race** — the loader now waits until script exports are registered after `onload`, not only for the load event (`dashboard-inbox-loader.js`).
 
 ---
 
