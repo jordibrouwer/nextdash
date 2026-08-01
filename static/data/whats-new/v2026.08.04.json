@@ -1,0 +1,25 @@
+{
+  "tag": "v2026.08.04",
+  "date": "August 2026",
+  "releasedAt": "2026-08-04",
+  "modalLead": "README and MANUAL show the ASCII logo at the top; obsolete Config → Keyboard documentation is gone from README, MANUAL, and Config → Help.",
+  "sections": [
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>README &amp; MANUAL branding</strong> — ASCII logo (<code>logo-ascii-on-black-large.png</code>) centred above the title; MANUAL resource table and further-reading layout polish."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config → Keyboard docs removed</strong> — rebinding tab no longer exists; README, MANUAL, and Config → Help (EN/NL/DE/FR) point to the cheat sheet (<code>!</code> / <code>F1</code>) instead."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.04</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v154</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v212</code>."
+        }
+      ]
+    }
+  ]
+}

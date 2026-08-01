@@ -36,10 +36,6 @@
         {
           "badge": "fix",
           "text": "<strong>Release docs for v2026.08.02.3</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, CHANGELOG, and Config → Help recap; whats-new JSON for hotfixes <strong>v2026.08.02.1</strong>–<strong>.3</strong>; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v153</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v211</code>."
-        },
-        {
-          "badge": "fix",
-          "text": "<strong>README, MANUAL &amp; Help keyboard copy</strong> — ASCII logo at the top of <code>README.md</code> and <code>MANUAL.md</code> (<code>logo-ascii-on-black-large.png</code>); removed obsolete <strong>Config → Keyboard</strong> section and rebinding instructions from README, MANUAL, and Config → Help (EN/NL/DE/FR); MANUAL resource table and further-reading polish."
         }
       ]
     }
