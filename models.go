@@ -250,7 +250,8 @@ type Settings struct {
 	PushNotifySubject    string                `json:"pushNotifySubject,omitempty"`    // VAPID contact (mailto: or https:) sent to push services
 	PushNotifyMonitor    bool                  `json:"pushNotifyMonitor"`              // Push when a monitored bookmark goes down/recovers
 	PushNotifyBackup     bool                  `json:"pushNotifyBackup"`               // Push when an automatic backup succeeds or fails
-	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Push when a newer nextDash release is available
+	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
+	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 }
 
@@ -624,6 +625,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			AutoBackupEnabled:              true,
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
+			UpdateCheckEnabled:             true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
 		writeFileAtomic(fs.settingsFile, data, 0644)
@@ -1953,6 +1955,7 @@ func (fs *FileStore) GetSettings() Settings {
 			AutoBackupEnabled:              true,
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
+			UpdateCheckEnabled:             true,
 		}
 		fs.readCache.settings = settings
 		fs.readCache.settingsOK = true
@@ -2008,6 +2011,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["showRecentButton"]; !ok {
 			settings.ShowRecentButton = true
+		}
+		if _, ok := rawSettings["updateCheckEnabled"]; !ok {
+			settings.UpdateCheckEnabled = true
 		}
 		if _, ok := rawSettings["showAddBookmarkButton"]; !ok {
 			settings.ShowAddBookmarkButton = true
