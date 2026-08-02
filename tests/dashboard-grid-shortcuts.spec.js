@@ -177,9 +177,9 @@ test.describe('dashboard grid shortcuts', () => {
         )), { timeout: 10_000 }).toBe(true);
     });
 
-    test('semicolon opens inline edit for selected bookmark', async ({ page }) => {
+    test('semicolon opens bookmark form modal for selected bookmark', async ({ page }) => {
         await page.keyboard.press(';');
-        await expect(page.locator('.bookmark-inline-editing')).toBeVisible({ timeout: 3000 });
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible({ timeout: 3000 });
     });
 
     test('grid shortcuts work after closing search overlay', async ({ page }) => {

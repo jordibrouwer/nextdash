@@ -59,20 +59,22 @@ test.describe('dashboard bookmark add category placement', () => {
         const uniqueName = `Category placement ${Date.now()}`;
 
         await page.locator('#quick-add-toolbar-btn').click();
-        await page.waitForSelector('#new-bookmark-modal.show', { timeout: 10_000 });
+        await page.waitForSelector('#bookmark-form-modal.show', { timeout: 10_000 });
 
-        await page.fill('#new-bookmark-url', uniqueUrl);
-        await page.fill('#new-bookmark-name', uniqueName);
-        await page.locator('#new-bookmark-url').blur();
+        const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
+        await form.locator('input[type="url"]').fill(uniqueUrl);
+        await form.locator('.bookmark-inline-input').first().fill(uniqueName);
+        await form.locator('input[type="url"]').blur();
 
         await page.waitForFunction(() => {
-            const select = document.getElementById('new-bookmark-category');
-            return select && select.options.length > 1;
+            const selects = document.querySelectorAll('#bookmark-form-modal .bookmark-inline-select:not(.bookmark-inline-toggle-select)');
+            const catSelect = selects[selects.length - 1];
+            return catSelect && catSelect.options.length > 1;
         }, { timeout: 10_000 });
 
-        await page.selectOption('#new-bookmark-category', 'media');
-        await page.locator('#new-bookmark-create').click();
-        await expect(page.locator('#new-bookmark-modal')).not.toHaveClass(/show/, { timeout: 10_000 });
+        await form.locator('.bookmark-inline-select:not(.bookmark-inline-toggle-select)').last().selectOption('media');
+        await form.locator('.bookmark-inline-save').click();
+        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/, { timeout: 10_000 });
 
         const mediaSelector = `.category[data-category-id="media"]:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`;
         await expect(page.locator(mediaSelector)).toBeVisible({ timeout: 10_000 });

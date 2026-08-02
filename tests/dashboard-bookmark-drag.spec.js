@@ -160,8 +160,8 @@ test.describe('dashboard bookmark drag', () => {
         await page.waitForTimeout(650); // past ROW_LONG_PRESS_MS (500)
 
         const editing = await page.evaluate(() =>
-            Boolean(document.querySelector('.bookmark-link.bookmark-inline-editing'))
-            || document.body.classList.contains('bookmark-inline-edit-active'));
+            document.getElementById('bookmark-form-modal')?.classList.contains('show') === true
+            || document.body.classList.contains('bookmark-form-modal-open'));
         expect(editing).toBe(false);
     });
 
@@ -186,8 +186,8 @@ test.describe('dashboard bookmark drag', () => {
         await page.waitForTimeout(650); // past the 500 ms long-press threshold, no movement
 
         const editing = await page.evaluate(() =>
-            Boolean(document.querySelector('.bookmark-link.bookmark-inline-editing'))
-            || document.body.classList.contains('bookmark-inline-edit-active'));
+            document.getElementById('bookmark-form-modal')?.classList.contains('show') === true
+            || document.body.classList.contains('bookmark-form-modal-open'));
         expect(editing).toBe(true);
     });
 

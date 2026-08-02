@@ -8,6 +8,10 @@ const { markWhatsNewSeen, prepareDashboardInteraction } = require('./e2e-helpers
  * closing it returns you to the row instead of the bookmarks grid.
  */
 test.describe('health Edit → bookmark modal', () => {
+    function bookmarkForm(page) {
+        return page.locator('#bookmark-form-modal .bookmark-inline-form');
+    }
+
     /** Stub the health report around the first real bookmark on the page. */
     async function openHealthWithOneIssue(page) {
         await markWhatsNewSeen(page);
@@ -69,24 +73,25 @@ test.describe('health Edit → bookmark modal', () => {
         const issue = await openHealthWithOneIssue(page);
         await clickEdit(page);
 
-        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible({ timeout: 15_000 });
         // The view underneath is still Health, which is the point of the change.
         await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
 
-        await expect(page.locator('#new-bookmark-url')).toHaveValue(issue.url);
-        await expect(page.locator('#new-bookmark-name')).toHaveValue(issue.name);
+        const form = bookmarkForm(page);
+        await expect(form.locator('input[type="url"]')).toHaveValue(issue.url);
+        await expect(form.locator('.bookmark-inline-input').first()).toHaveValue(issue.name);
         // Edit mode retitles the form and drops "Create + New".
-        await expect(page.locator('#new-bookmark-modal .nbm-title')).toHaveText(/edit/i);
-        await expect(page.locator('#new-bookmark-create-another')).toHaveCount(0);
+        await expect(page.locator('#bookmark-form-modal-title')).toHaveText(/edit/i);
+        await expect(page.locator('#bookmark-form-create-another')).toHaveCount(0);
     });
 
     test('closing the modal returns to the Health row', async ({ page }) => {
         await openHealthWithOneIssue(page);
         await clickEdit(page);
-        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible({ timeout: 15_000 });
 
-        await page.locator('#new-bookmark-cancel').click();
-        await expect(page.locator('#new-bookmark-modal')).toHaveCount(0, { timeout: 10_000 });
+        await bookmarkForm(page).locator('.bookmark-inline-action-btn', { hasText: /cancel/i }).click();
+        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/, { timeout: 10_000 });
         await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
         await expect(page.locator('.health-view-item').first()).toBeVisible();
     });
@@ -94,14 +99,15 @@ test.describe('health Edit → bookmark modal', () => {
     test('saving writes the bookmark back and keeps Health open', async ({ page }) => {
         const issue = await openHealthWithOneIssue(page);
         await clickEdit(page);
-        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible({ timeout: 15_000 });
 
         const newName = `Renamed from health ${Date.now()}`;
-        await page.locator('#new-bookmark-name').fill(newName);
+        const form = bookmarkForm(page);
+        await form.locator('.bookmark-inline-input').first().fill(newName);
 
         const savePost = page.waitForRequest((req) =>
             req.url().includes(`/api/bookmarks?page=${issue.pageId}`) && req.method() === 'POST');
-        await page.locator('#new-bookmark-create').click();
+        await form.locator('.bookmark-inline-save').click();
         const request = await savePost;
 
         // The whole page list is written back with the edited entry replaced.
@@ -111,7 +117,7 @@ test.describe('health Edit → bookmark modal', () => {
         // Nothing was appended: an edit replaces, it does not add a second copy.
         expect(body.filter((b) => b.url === issue.url).length).toBe(1);
 
-        await expect(page.locator('#new-bookmark-modal')).toHaveCount(0, { timeout: 10_000 });
+        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/, { timeout: 10_000 });
         await expect(page.locator('#dashboard-layout')).toHaveClass(/health-layout/);
     });
 
@@ -165,14 +171,16 @@ test.describe('health Edit → bookmark modal', () => {
         await page.click('.health-link a.health-link-anchor');
         await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
         await clickEdit(page);
-        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible({ timeout: 15_000 });
-        await expect(page.locator('#new-bookmark-url')).toHaveValue(target.last.url);
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible({ timeout: 15_000 });
+
+        const form = bookmarkForm(page);
+        await expect(form.locator('input[type="url"]')).toHaveValue(target.last.url);
 
         const newName = `Stale index edit ${Date.now()}`;
-        await page.locator('#new-bookmark-name').fill(newName);
+        await form.locator('.bookmark-inline-input').first().fill(newName);
         const savePost = page.waitForRequest((r) =>
             r.url().includes(`/api/bookmarks?page=${target.pageId}`) && r.method() === 'POST');
-        await page.locator('#new-bookmark-create').click();
+        await form.locator('.bookmark-inline-save').click();
         const body = JSON.parse((await savePost).postData() || '[]');
 
         // The bookmark the URL names was renamed; index 0 was left alone.

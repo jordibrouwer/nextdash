@@ -59,8 +59,8 @@ test.describe('config bookmarks keyboard navigation', () => {
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
         await page.keyboard.press('e');
-        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
-        await expect(page.locator('#new-bookmark-name')).toBeFocused();
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
+        await expect(page.locator('#bookmark-form-modal .bookmark-inline-input').first()).toBeFocused();
     });
 
     test('g and Shift+G jump to first and last bookmark rows', async ({ page }) => {
@@ -97,10 +97,10 @@ test.describe('config bookmarks keyboard navigation', () => {
         await page.locator('#config-bm-list').click();
         await page.keyboard.press('j');
         await page.keyboard.press('e');
-        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
 
         await page.keyboard.press('Escape');
-        await expect(page.locator('#new-bookmark-modal.show')).toHaveCount(0);
+        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
         await expect(page.locator('.config-bm-row').first()).toHaveClass(/keyboard-selected/);
         await expect(page.locator('#dashboard-layout')).toHaveClass(/config-layout/);
 

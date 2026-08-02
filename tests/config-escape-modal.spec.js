@@ -23,15 +23,15 @@ test.describe('config view escape handling', () => {
     test('escape closing a modal keeps the config view open', async ({ page }) => {
         // Ctrl+Shift+A is the global add-bookmark chord.
         await page.keyboard.press('Control+Shift+KeyA');
-        await page.waitForSelector('#new-bookmark-modal.show', { timeout: 10_000 });
+        await page.waitForSelector('#bookmark-form-modal.show', { timeout: 10_000 });
 
         // Blur so the guard is exercised on its own merits rather than bailing
         // out via the INPUT/TEXTAREA check.
         await page.evaluate(() => document.activeElement?.blur());
         await page.keyboard.press('Escape');
 
-        // The modal goes away...
-        await expect(page.locator('#new-bookmark-modal')).toHaveCount(0, { timeout: 10_000 });
+        // The modal closes...
+        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/, { timeout: 10_000 });
         // ...and the config view is still the one on screen.
         expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('config');
         expect(await page.evaluate(() => location.hash)).toBe('#config');

@@ -71,7 +71,7 @@ test.describe('bookmark interactions lazy load', () => {
         });
         await page.keyboard.press(';');
 
-        await expect(page.locator('.bookmark-inline-editing')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible({ timeout: 15_000 });
         expect(await page.evaluate(() => typeof window.DashboardInlineEdit)).toBe('function');
     });
 });

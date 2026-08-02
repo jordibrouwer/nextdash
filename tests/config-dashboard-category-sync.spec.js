@@ -66,7 +66,7 @@ test.describe('config to dashboard category sync', () => {
         const row = page.locator('#config-bm-list [data-feed-action="edit"]').first();
         await expect(row).toBeVisible({ timeout: 10_000 });
         await row.click();
-        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
 
         const categorySelect = page.locator('#new-bookmark-category');
         const targetCategory = await categorySelect.evaluate((el) => {

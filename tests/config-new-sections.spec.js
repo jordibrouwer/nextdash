@@ -37,9 +37,10 @@ test.describe('config: sections restored from the old config', () => {
         await loadDashboard(page);
         await openSection(page, 'bookmarks');
         await page.locator('[data-feed-action="edit"]').first().click();
-        await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
-        await expect(page.locator('#new-bookmark-name')).not.toHaveValue('');
-        await expect(page.locator('#new-bookmark-url')).not.toHaveValue('');
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
+        const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
+        await expect(form.locator('.bookmark-inline-input').first()).not.toHaveValue('');
+        await expect(form.locator('input[type="url"]')).not.toHaveValue('');
     });
 
     test('bookmark rows keep a readable width', async ({ page }) => {

@@ -2,7 +2,15 @@
 const { test, expect } = require('@playwright/test');
 const { markWhatsNewSeen, dismissOnboardingIfPresent, prepareDashboardInteraction } = require('./e2e-helpers');
 
-test.describe('dashboard inline edit', () => {
+function bookmarkFormModal(page) {
+    return page.locator('#bookmark-form-modal');
+}
+
+async function isBookmarkFormModalOpen(page) {
+    return page.evaluate(() => document.getElementById('bookmark-form-modal')?.classList.contains('show') === true);
+}
+
+test.describe('dashboard bookmark form modal', () => {
     test.beforeEach(async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/');
@@ -15,7 +23,7 @@ test.describe('dashboard inline edit', () => {
         ))).toBeGreaterThanOrEqual(0);
     });
 
-    test('; opens inline edit and Esc cancels without saving', async ({ page }) => {
+    test('; opens bookmark edit modal and Esc cancels without saving', async ({ page }) => {
         const nameBefore = await page.evaluate(() => {
             const kn = window.dashboardInstance?.keyboardNavigation;
             const row = kn?.navigableElements?.[kn.currentIndex];
@@ -26,19 +34,18 @@ test.describe('dashboard inline edit', () => {
         await page.keyboard.press(';');
         const nameInput = page.locator('.bookmark-inline-input').first();
         await expect(nameInput).toBeVisible({ timeout: 3000 });
+        await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(true);
         await expect.poll(async () => page.evaluate(() => (
-            document.body.classList.contains('bookmark-inline-edit-active')
+            document.body.classList.contains('bookmark-form-modal-open')
         ))).toBe(true);
         await expect.poll(async () => page.evaluate(() => (
-            document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
+            document.getElementById('dashboard-layout')?.hasAttribute('inert') === true
         ))).toBe(true);
 
         await page.keyboard.press('Escape');
+        await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(false);
         await expect.poll(async () => page.evaluate(() => (
-            !document.querySelector('.bookmark-inline-editing')
-        ))).toBe(true);
-        await expect.poll(async () => page.evaluate(() => (
-            document.body.classList.contains('bookmark-inline-edit-active')
+            document.body.classList.contains('bookmark-form-modal-open')
         ))).toBe(false);
         await expect.poll(async () => page.evaluate(() => (
             document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
@@ -63,9 +70,9 @@ test.describe('dashboard inline edit', () => {
         await expect.poll(async () => page.evaluate(() => (
             document.activeElement?.matches('.bookmark-inline-form input[type="url"]') === true
         ))).toBe(true);
-        await expect(page.locator('.bookmark-inline-editing')).toHaveCount(1);
+        await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(1);
         await expect.poll(async () => page.evaluate(() => (
-            document.getElementById('dashboard-layout')?.hasAttribute('inert') === false
+            document.getElementById('dashboard-layout')?.hasAttribute('inert') === true
         ))).toBe(true);
     });
 
@@ -80,7 +87,7 @@ test.describe('dashboard inline edit', () => {
         await page.locator('.bookmark-inline-form .bookmark-inline-select:not(.bookmark-inline-toggle-select)')
             .first().click({ force: true });
         await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).first().click();
-        await expect(page.locator('.bookmark-inline-editing')).toHaveCount(0);
+        await expect(bookmarkFormModal(page)).not.toHaveClass(/show/);
     });
 
     test('can type in inline form without discard modal', async ({ page }) => {
@@ -95,9 +102,7 @@ test.describe('dashboard inline edit', () => {
         await expect(nameInput).toHaveValue(`${original} typed`);
         await nameInput.fill(original);
         await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).click();
-        await expect.poll(async () => page.evaluate(() => (
-            !document.querySelector('.bookmark-inline-editing')
-        ))).toBe(true);
+        await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(false);
     });
 
     test('Esc cancels inline edit when grid keyboard promo is still open', async ({ page }) => {
@@ -123,9 +128,7 @@ test.describe('dashboard inline edit', () => {
         await page.keyboard.press(';');
         await expect(page.locator('.bookmark-inline-input').first()).toBeVisible({ timeout: 3000 });
         await page.keyboard.press('Escape');
-        await expect.poll(async () => page.evaluate(() => (
-            !document.querySelector('.bookmark-inline-editing')
-        ))).toBe(true);
+        await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(false);
     });
 
     test('save commits inline edit changes', async ({ page }) => {
@@ -155,9 +158,7 @@ test.describe('dashboard inline edit', () => {
         const edited = baseName ? `${baseName} ${suffix}` : suffix;
         await nameInput.fill(edited);
         await page.keyboard.press('Control+Enter');
-        await expect.poll(async () => page.evaluate(() => (
-            !document.querySelector('.bookmark-inline-editing')
-        ))).toBe(true);
+        await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(false);
         await expect.poll(async () => page.evaluate(({ url, expected }) => {
             const normalizedUrl = String(url || '').trim();
             const normalizedExpected = String(expected || '').trim();
@@ -223,13 +224,11 @@ test.describe('dashboard inline edit', () => {
         await expect.poll(async () => page.evaluate(() => (
             document.activeElement?.matches('.bookmark-inline-form input[type="url"]') === true
         ))).toBe(true);
-        await expect(page.locator('.bookmark-inline-editing')).toHaveCount(1);
+        await expect(page.locator('#bookmark-form-modal.show')).toHaveCount(1);
         await urlInput.fill('https://example.com/safari-field-test');
         await expect(urlInput).toHaveValue('https://example.com/safari-field-test');
         await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).click();
-        await expect.poll(async () => page.evaluate(() => (
-            !document.querySelector('.bookmark-inline-editing')
-        ))).toBe(true);
+        await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(false);
     });
 
     test('delete button opens confirm modal and removes bookmark', async ({ page }) => {
@@ -283,9 +282,7 @@ test.describe('dashboard inline edit', () => {
         await expect(modal.locator('.inline-edit-confirm-modal')).toBeVisible();
         await modal.locator('.modal-button.danger').click();
 
-        await expect.poll(async () => page.evaluate(() => (
-            !document.querySelector('.bookmark-inline-editing')
-        ))).toBe(true);
+        await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(false);
         await expect.poll(async () => page.evaluate((url) => {
             const rows = [...document.querySelectorAll('#dashboard-layout .bookmark-link[data-bookmark-url]')];
             return {
@@ -303,31 +300,25 @@ test.describe('dashboard inline edit', () => {
         )).toBeLessThan(countBefore);
     });
 
-    test('inline form uses opaque surfaces above dimmed grid', async ({ page }) => {
+    test('modal form uses opaque field surfaces', async ({ page }) => {
         await page.keyboard.press(';');
         await expect(page.locator('.bookmark-inline-form')).toBeVisible({ timeout: 3000 });
 
         const surfaces = await page.evaluate(() => {
-            const form = document.querySelector('.bookmark-inline-form');
-            const input = document.querySelector('.bookmark-inline-form .bookmark-inline-input');
+            const form = document.querySelector('#bookmark-form-modal .bookmark-inline-form');
+            const input = document.querySelector('#bookmark-form-modal .bookmark-inline-input');
             const parseAlpha = (color) => {
                 const rgba = color.match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)$/);
                 if (rgba) return Number(rgba[4]);
                 return color.startsWith('rgb(') ? 1 : null;
             };
             const formStyle = form ? getComputedStyle(form) : null;
-            const beforeStyle = getComputedStyle(document.body, '::before');
             return {
-                hasBodyOverlay: beforeStyle.content !== 'none' && beforeStyle.backdropFilter !== 'none',
-                formBackdrop: formStyle?.backdropFilter || '',
                 formAlpha: formStyle ? parseAlpha(formStyle.backgroundColor) : null,
                 inputAlpha: input ? parseAlpha(getComputedStyle(input).backgroundColor) : null,
             };
         });
 
-        expect(surfaces.hasBodyOverlay).toBe(false);
-        expect(surfaces.formBackdrop).toBe('none');
-        expect(surfaces.formAlpha).toBe(1);
         expect(surfaces.inputAlpha).toBe(1);
     });
 });

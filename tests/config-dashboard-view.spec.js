@@ -764,7 +764,7 @@ test.describe('Shift+S opens config', () => {
         // swallow them and navigate instead.
         await page.locator('#new-bookmark-name').type('Shift Stress');
         await expect(page.locator('#new-bookmark-name')).toHaveValue('Shift Stress');
-        await expect(page.locator('#new-bookmark-modal')).toHaveClass(/show/);
+        await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     });
 
     test('the cheat sheet documents the shortcut', async ({ page }) => {

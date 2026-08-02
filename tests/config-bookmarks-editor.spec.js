@@ -44,7 +44,7 @@ async function openFirstEditor(page, stats = null) {
         cfg.repaintBookmarksList();
     }, stats);
     await page.locator('[data-feed-action="edit"]').first().click();
-    await expect(page.locator('#new-bookmark-modal.show')).toBeVisible();
+    await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
     await applyBookmarkStats(page, stats);
 }
 
@@ -99,7 +99,7 @@ test.describe('config bookmarks editor', () => {
         const catId = await sel.inputValue();
 
         await page.locator("#new-bookmark-create").click();
-        await expect(page.locator('#new-bookmark-modal.show')).toBeHidden();
+        await expect(page.locator('#bookmark-form-modal.show')).toBeHidden();
 
         // The page now defines the category under the id the bookmark uses.
         await expect.poll(async () => page.evaluate(async (id) => {
@@ -496,7 +496,7 @@ test.describe('config bookmarks add button', () => {
     test('opens the shared add-bookmark modal', async ({ page }) => {
         await openBookmarks(page);
         await page.locator('#config-bm-add').click();
-        await expect(page.locator('#new-bookmark-modal')).toHaveClass(/show/);
+        await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
         // The same modal the toolbar and :new use, so its fields must be present.
         await expect(page.locator('#new-bookmark-url')).toBeVisible();
         await expect(page.locator('#new-bookmark-page')).toBeAttached();
@@ -522,7 +522,7 @@ test.describe('config bookmarks add button', () => {
         const name = `Config Add ${stamp}`;
 
         await page.locator('#config-bm-add').click();
-        await expect(page.locator('#new-bookmark-modal')).toHaveClass(/show/);
+        await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
         // The URL has to be unique per run, not just the name: a fixed one is
         // still in the data after the first run, so every later run is rejected
         // as a duplicate and the modal stays open to show that error.
@@ -531,7 +531,7 @@ test.describe('config bookmarks add button', () => {
         await page.locator('#new-bookmark-form').evaluate((f) => f.requestSubmit());
 
         // The list must repaint on its own — no reload, no re-opening the section.
-        await expect(page.locator('#new-bookmark-modal')).not.toHaveClass(/show/);
+        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
         await expect(page.locator('.config-bm-row')).toHaveCount(before + 1);
         await expect(page.locator('#config-bm-list')).toContainText(name);
     });
@@ -705,7 +705,7 @@ test.describe('bookmark statistics', () => {
         // stored record: bind a stat to an input and it would be wiped here.
         await page.locator('#new-bookmark-note').fill('stats must survive');
         await page.locator("#new-bookmark-create").click();
-        await expect(page.locator('#new-bookmark-modal.show')).toHaveCount(0);
+        await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
 
         await expect.poll(() => page.evaluate(() => {
             const key = window.dashboardInstance.config.bmEditing

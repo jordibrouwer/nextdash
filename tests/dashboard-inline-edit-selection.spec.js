@@ -51,7 +51,7 @@ async function closeEditor(page, how) {
         await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i })
             .first().click();
     }
-    await expect(page.locator('.bookmark-inline-editing')).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/, { timeout: 10_000 });
 }
 
 test.describe('keyboard selection after the inline editor closes', () => {
