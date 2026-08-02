@@ -25,12 +25,20 @@ class DashboardHealth {
         this.searchQuery = '';
         this.visibleLimit = 50;
         this.selectedKey = null;
+        /** Deep-link target from `?hv_id=` — applied after the feed renders. */
+        this.focusIssueKey = null;
         this.expandedScores = new Set();
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
         this._loadPromise = null;
+        this._loadPromiseRefresh = false;
         this._busyKeys = new Set();
         this._loadMoreObserver = null;
+        this._outsideMenuHandler = null;
+        this._monitorRefreshTimer = null;
+        this._visibilityHandler = null;
+        this._openBrokenRunning = false;
+        this._mergeRunning = false;
     }
 
     isEnabled() {
@@ -132,11 +140,19 @@ class DashboardHealth {
      * refresh the report, and a burst of them (retest, then a re-check, then a
      * merge) would otherwise stack identical fetches — the pattern that made the
      * old page loop.
+     *
+     * A refresh request must not join a plain fetch: the server would answer
+     * from cache and the caller would still see stale rows. Plain callers may
+     * join an in-flight refresh — that result is at least as fresh.
      */
     fetchReport({ refresh = false } = {}) {
         if (this._loadPromise) {
+            if (refresh && !this._loadPromiseRefresh) {
+                return this._loadPromise.finally(() => this.fetchReport({ refresh: true }));
+            }
             return this._loadPromise;
         }
+        this._loadPromiseRefresh = refresh;
         const url = refresh ? '/api/bookmark-health?refresh=1' : '/api/bookmark-health';
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         this._loadPromise = fetcher(url)
@@ -152,6 +168,7 @@ class DashboardHealth {
             })
             .finally(() => {
                 this._loadPromise = null;
+                this._loadPromiseRefresh = false;
             });
         return this._loadPromise;
     }
@@ -168,6 +185,9 @@ class DashboardHealth {
         } finally {
             this.loading = false;
         }
+        if (this.focusIssueKey) {
+            this.prepareIssueFocus(this.focusIssueKey);
+        }
         this.render();
     }
 
@@ -182,6 +202,69 @@ class DashboardHealth {
 
     brokenCount() {
         return Number(this.report?.summary?.brokenCount) || 0;
+    }
+
+    /** Share of bookmarks with no active issue (0–100). Shown in the header badge. */
+    healthyPercent() {
+        const summary = this.report?.summary || {};
+        const total = Number(summary.totalBookmarks) || 0;
+        const healthy = Number(summary.healthyCount) || 0;
+        if (!total) {
+            return 100;
+        }
+        return Math.round((healthy / total) * 100);
+    }
+
+    /** Mean row score — matches the 0–100 semantics used on each bookmark row. */
+    averageHeaderScore() {
+        const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
+        if (!issues.length) {
+            return 100;
+        }
+        const total = issues.reduce((sum, issue) => sum + (Number(issue?.score) || 0), 0);
+        return Math.round(total / issues.length);
+    }
+
+    duplicateGroups() {
+        return Array.isArray(this.report?.duplicateGroups) ? this.report.duplicateGroups : [];
+    }
+
+    startLiveRefresh() {
+        this.stopLiveRefresh();
+        if (!this.isActiveView()) {
+            return;
+        }
+        this._visibilityHandler = () => {
+            if (document.visibilityState !== 'visible' || !this.isActiveView()) {
+                return;
+            }
+            if (this.filter === 'monitored') {
+                void this.loadAndRender({ refresh: true });
+            }
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
+        if (this.filter === 'monitored') {
+            this._monitorRefreshTimer = setInterval(() => {
+                if (!this.isActiveView() || this.filter !== 'monitored') {
+                    return;
+                }
+                if (document.visibilityState !== 'visible') {
+                    return;
+                }
+                void this.loadAndRender({ refresh: true });
+            }, 60000);
+        }
+    }
+
+    stopLiveRefresh() {
+        if (this._visibilityHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityHandler);
+            this._visibilityHandler = null;
+        }
+        if (this._monitorRefreshTimer) {
+            clearInterval(this._monitorRefreshTimer);
+            this._monitorRefreshTimer = null;
+        }
     }
 
     /* ── View lifecycle ────────────────────────────────────────────────── */
@@ -208,53 +291,6 @@ class DashboardHealth {
         }
     }
 
-    consumeLegacyEntryParams() {
-        const url = new URL(window.location.href);
-        const params = url.searchParams;
-        const filters = new Set(['all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked', 'stale', 'unused', 'missing-preview', 'healthy']);
-        const sorts = new Set(['score', 'status', 'last-checked', 'last-checked-desc', 'name']);
-        let refresh = false;
-        let consumed = false;
-
-        const filter = (params.get('hv_filter') || '').toLowerCase();
-        if (filter && filters.has(filter)) {
-            this.filter = filter;
-            consumed = true;
-        }
-
-        const query = params.get('hv_q');
-        if (typeof query === 'string' && query.trim() !== '') {
-            this.searchQuery = query.trim();
-            consumed = true;
-        }
-
-        const sort = (params.get('hv_sort') || '').toLowerCase();
-        if (sort && sorts.has(sort)) {
-            this.sort = sort;
-            consumed = true;
-        }
-
-        const refreshRaw = (params.get('hv_refresh') || '').toLowerCase();
-        if (refreshRaw === '1' || refreshRaw === 'true') {
-            refresh = true;
-            consumed = true;
-        }
-
-        if (consumed) {
-            params.delete('hv_filter');
-            params.delete('hv_q');
-            params.delete('hv_sort');
-            params.delete('hv_refresh');
-            const nextQuery = params.toString();
-            const nextUrl = `${url.pathname}${nextQuery ? `?${nextQuery}` : ''}#health`;
-            history.replaceState(history.state, '', nextUrl);
-        }
-
-        // `consumed` also tells the caller whether a deep link already set the
-        // view, so stored state does not overwrite a link someone shared.
-        return { refresh, consumed };
-    }
-
     async openHealthView() {
         const d = this.dash;
         if (!this.isEnabled()) {
@@ -274,13 +310,11 @@ class DashboardHealth {
         window.nextdashTrack?.('view:health');
         d.pageNav?.setActiveHealthTab?.();
         d.pageNav?.updateDocumentTitle?.();
-        const legacyEntry = this.consumeLegacyEntryParams();
-        // A deep link wins: it describes the view the sender meant to share.
-        if (!legacyEntry.consumed) {
-            this.restoreViewState();
-        }
-        await this.loadAndRender({ refresh: legacyEntry.refresh });
+        const { refresh } = this.restoreViewState();
+        await this.loadAndRender({ refresh });
         this.restoreHealthHash();
+        this.syncUrlState();
+        this.startLiveRefresh();
         return true;
     }
 
@@ -289,8 +323,11 @@ class DashboardHealth {
         if (d.activeView !== DashboardHealth.VIEW) {
             return false;
         }
+        this.stopLiveRefresh();
+        this.unbindOutsideMenuDismiss();
         this._teardownLoadMoreObserver();
         this.clearKeyboardSelection();
+        this.focusIssueKey = null;
         const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
         if (restored) {
             d.keyboardNavigation?.scheduleUpdate?.();
@@ -346,8 +383,8 @@ class DashboardHealth {
             case 'monitored':
                 return issue.monitor === true;
             // stale / unused / missing-preview / shortcut-conflict / healthy reach
-            // this view only through deep links (consumeLegacyEntryParams). Each maps
-            // to a single issue.status, so match on that rather than falling through
+            // this view through deep links and filter pills. Each maps to a single
+            // issue.status, so match on that rather than falling through
             // to `return true`, which showed every issue under a filter that lit no
             // pill.
             case 'stale':
@@ -439,7 +476,9 @@ class DashboardHealth {
         const next = String(key || '').trim();
         if (!next) return;
         this.selectedKey = next;
+        this.focusIssueKey = next;
         this.applyKeyboardSelection();
+        this.syncUrlState();
     }
 
     moveKeyboardSelection(delta, rows) {
@@ -458,12 +497,15 @@ class DashboardHealth {
         const needed = index + 1;
         if (needed > this.visibleLimit) {
             this.selectedKey = this.issueKey(filtered[index]);
+            this.focusIssueKey = this.selectedKey;
             this.visibleLimit = Math.min(filtered.length, needed + 5);
             this.render();
             return;
         }
         this.selectedKey = this.issueKey(filtered[index]);
+        this.focusIssueKey = this.selectedKey;
         this.applyKeyboardSelection(rows);
+        this.syncUrlState();
     }
 
     applyKeyboardSelection(rows) {
@@ -555,6 +597,13 @@ class DashboardHealth {
             return true;
         }
 
+        if ((e.key === 'R' || e.key === 'r' || e.key === '?') && !onRowControl && !isSearch) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.refreshReportFromKeyboard();
+            return true;
+        }
+
         const rows = this.getVisibleRows();
         if (!rows.length) return false;
 
@@ -625,15 +674,16 @@ class DashboardHealth {
             }
             return true;
         }
-        if (e.key === 'g') {
+        if (e.key === 'g' || e.key === 'Home') {
             e.preventDefault();
             e.stopImmediatePropagation();
             const filtered = this.getFilteredIssues();
             this.selectedKey = filtered[0] ? this.issueKey(filtered[0]) : null;
+            if (isSearch) target.blur();
             this.applyKeyboardSelection(rows);
             return true;
         }
-        if (e.key === 'G') {
+        if (e.key === 'G' || e.key === 'End') {
             e.preventDefault();
             e.stopImmediatePropagation();
             const filtered = this.getFilteredIssues();
@@ -645,6 +695,7 @@ class DashboardHealth {
                 return true;
             }
             this.selectedKey = lastIndex >= 0 ? this.issueKey(filtered[lastIndex]) : null;
+            if (isSearch) target.blur();
             this.applyKeyboardSelection(rows);
             return true;
         }
@@ -663,6 +714,14 @@ class DashboardHealth {
             this.closeAllMenus();
         };
         document.addEventListener('click', this._outsideMenuHandler, true);
+    }
+
+    unbindOutsideMenuDismiss() {
+        if (!this._outsideMenuHandler) {
+            return;
+        }
+        document.removeEventListener('click', this._outsideMenuHandler, true);
+        this._outsideMenuHandler = null;
     }
 
     bindPointerNavigation(container) {
@@ -1124,8 +1183,8 @@ class DashboardHealth {
     }
 
     async shareIssue(issue) {
-        const url = String(issue?.url || '').trim();
-        if (!url) return;
+        const shareUrl = this.buildIssueShareUrl(issue);
+        if (!shareUrl) return;
         const menu = this.dash.contextMenu;
         if (!menu?.shareBookmark) return;
 
@@ -1139,7 +1198,7 @@ class DashboardHealth {
         // Started before the menu closes and awaited after, so the sheet still
         // opens over a menu that is on its way out rather than a stuck one.
         const couldShare = menu.canOpenShareSheet?.();
-        const shared = menu.shareBookmark({ name: issue?.name || '', url }, null);
+        const shared = menu.shareBookmark({ name: issue?.name || '', url: shareUrl }, null);
         this.closeAllMenus();
         await shared;
 
@@ -1388,70 +1447,19 @@ class DashboardHealth {
     }
 
     /** AppModal.confirm when it exists, window.confirm as the fallback. */
-    async confirm(title, message, { danger = false } = {}) {
+    async confirm(title, message, { danger = false, confirmText = null } = {}) {
         if (typeof window.AppModal?.confirm === 'function') {
             return Boolean(await window.AppModal.confirm({
                 title: title || '',
                 message,
-                confirmText: danger
+                confirmText: confirmText || (danger
                     ? this.t('dashboard.healthDeleteAction', 'Delete')
-                    : this.t('dashboard.healthConfirmAction', 'Confirm'),
+                    : this.t('dashboard.healthConfirmAction', 'Confirm')),
                 cancelText: this.t('dashboard.healthCancel', 'Cancel'),
                 confirmClass: danger ? 'danger' : '',
             }));
         }
         return window.confirm(message);
-    }
-
-    /* ── Feed paging (page scroll) ─────────────────────────────────────── */
-
-    _resetFeedPaging() {
-        this.visibleLimit = 50;
-    }
-
-    _teardownLoadMoreObserver() {
-        this._loadMoreObserver?.disconnect?.();
-        this._loadMoreObserver = null;
-    }
-
-    /**
-     * Loads the next page of rows when the sentinel nears the viewport. Uses
-     * the document scroll — no nested feed scrollbar.
-     */
-    _bindLoadMoreObserver(sentinel, filteredLength) {
-        this._teardownLoadMoreObserver();
-        if (!sentinel || this.visibleLimit >= filteredLength) return;
-
-        if (typeof IntersectionObserver !== 'function') {
-            return;
-        }
-
-        this._loadMoreObserver = new IntersectionObserver((entries) => {
-            if (!this.isActiveView()) return;
-            if (!entries.some((entry) => entry.isIntersecting)) return;
-            const total = this.getFilteredIssues().length;
-            if (this.visibleLimit >= total) {
-                this._teardownLoadMoreObserver();
-                return;
-            }
-            this.visibleLimit = Math.min(total, this.visibleLimit + 50);
-            this.render();
-        }, { root: null, rootMargin: '320px 0px' });
-        this._loadMoreObserver.observe(sentinel);
-    }
-
-    _appendLoadMoreFallback(container, filteredLength) {
-        if (this.visibleLimit >= filteredLength) return;
-        const more = document.createElement('button');
-        more.type = 'button';
-        more.className = 'health-view-load-more-btn';
-        const remaining = filteredLength - this.visibleLimit;
-        more.textContent = this.t('dashboard.healthLoadMore', 'Show {count} more', { count: remaining });
-        more.addEventListener('click', () => {
-            this.visibleLimit = Math.min(filteredLength, this.visibleLimit + 50);
-            this.render();
-        });
-        container.appendChild(more);
     }
 
     /* ── Feed paging (page scroll) ─────────────────────────────────────── */
@@ -1513,8 +1521,108 @@ class DashboardHealth {
         }
         this._searchRenderTimer = setTimeout(() => {
             this._searchRenderTimer = null;
+            this.focusIssueKey = null;
+            this.syncUrlState();
             this.render();
         }, 80);
+    }
+
+    /**
+     * Adjust filter/search/limit so `key` will appear in the next render.
+     * Returns false when the issue does not exist.
+     */
+    prepareIssueFocus(key) {
+        const id = String(key || '').trim();
+        if (!id || !/^\d+:\d+$/.test(id)) {
+            return false;
+        }
+        const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
+        if (!issues.some((issue) => this.issueKey(issue) === id)) {
+            return false;
+        }
+
+        this.searchQuery = '';
+        let filtered = this.getFilteredIssues();
+        let index = filtered.findIndex((issue) => this.issueKey(issue) === id);
+        if (index < 0) {
+            this.filter = 'all';
+            filtered = this.getFilteredIssues();
+            index = filtered.findIndex((issue) => this.issueKey(issue) === id);
+        }
+        if (index < 0) {
+            return false;
+        }
+        if (index >= this.visibleLimit) {
+            this.visibleLimit = Math.ceil((index + 1) / 50) * 50;
+        }
+
+        this.focusIssueKey = id;
+        this.selectedKey = id;
+        return true;
+    }
+
+    /** Scroll to and select a row after render — for `?hv_id=` deep links. */
+    applyPendingIssueFocus() {
+        const key = this.focusIssueKey;
+        if (!key) {
+            return;
+        }
+        const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(key)}"]`);
+        if (!row) {
+            return;
+        }
+        this.selectedKey = key;
+        this.applyKeyboardSelection();
+        this.highlightIssue(key);
+        row.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+    }
+
+    highlightIssue(key) {
+        const id = String(key || '').trim();
+        if (!id) {
+            return;
+        }
+        const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(id)}"]`);
+        if (!row) {
+            return;
+        }
+        row.classList.add('health-view-item--highlight');
+        setTimeout(() => row.classList.remove('health-view-item--highlight'), 1800);
+    }
+
+    /**
+     * Scroll to, select, and highlight one row. Adjusts filter/search so the row
+     * is visible — used for `?hv_id=` deep links.
+     */
+    focusIssue(key, { updateUrl = true } = {}) {
+        if (!this.prepareIssueFocus(key)) {
+            return false;
+        }
+        if (updateUrl) {
+            this.syncUrlState();
+        }
+        if (this.isActiveView()) {
+            this.render();
+        }
+        return true;
+    }
+
+    /** A shareable dashboard URL that opens this row in the health view. */
+    buildIssueShareUrl(issue) {
+        const url = new URL(`${window.location.origin}${window.location.pathname}`);
+        url.hash = 'health';
+        url.searchParams.set('hv_id', this.issueKey(issue));
+        if (this.filter !== 'broken') {
+            url.searchParams.set('hv_filter', this.filter);
+        }
+        if (this.sort !== 'score') {
+            url.searchParams.set('hv_sort', this.sort);
+        }
+        const query = String(this.searchQuery || '').trim();
+        if (query) {
+            url.searchParams.set('hv_q', query);
+        }
+        return url.toString();
     }
 
     finishRenderFocus(container, preserveSearch, searchCaret) {
@@ -1528,6 +1636,7 @@ class DashboardHealth {
             return;
         }
         this.syncKeyboardSelectionAfterRender();
+        this.applyPendingIssueFocus();
         container.tabIndex = -1;
         const active = document.activeElement;
         const focusInToolbar = active?.closest?.('.health-view-toolbar, .page-nav-btn');
@@ -1557,8 +1666,8 @@ class DashboardHealth {
         container.className = 'health-layout';
         container.removeAttribute('aria-colcount');
         container.removeAttribute('aria-rowcount');
-        container.setAttribute('role', 'feed');
-        container.setAttribute('aria-label', this.t('dashboard.healthPageTitle', 'Health'));
+        container.removeAttribute('role');
+        container.removeAttribute('aria-label');
         container.removeAttribute('data-i18n-aria');
 
         container.appendChild(this.renderHeader());
@@ -1580,7 +1689,11 @@ class DashboardHealth {
             failed.innerHTML = `
                 <p class="health-view-empty-title">${this.escape(this.t('dashboard.healthLoadFailed', 'Unable to load the health report'))}</p>
                 <p class="health-view-empty-hint">${this.escape(this.t('dashboard.healthLoadFailedHint', 'Check that the server is reachable and try again.'))}</p>
+                <button type="button" class="health-view-retry-btn">${this.escape(this.t('dashboard.healthRetry', 'Retry'))}</button>
             `;
+            failed.querySelector('.health-view-retry-btn')?.addEventListener('click', () => {
+                void this.loadAndRender({ refresh: true });
+            });
             container.appendChild(failed);
             this.finishRenderFocus(container, preserveSearch, searchCaret);
             return;
@@ -1602,6 +1715,8 @@ class DashboardHealth {
         const visible = filtered.slice(0, this.visibleLimit);
         const feed = document.createElement('div');
         feed.className = 'health-view-feed';
+        feed.setAttribute('role', 'feed');
+        feed.setAttribute('aria-label', this.t('dashboard.healthPageTitle', 'Health'));
         visible.forEach((issue) => feed.appendChild(this.createIssueElement(issue)));
         container.appendChild(feed);
         this.bindOutsideMenuDismiss();
@@ -1619,25 +1734,61 @@ class DashboardHealth {
 
         container.appendChild(this.renderLegend());
         this.bindPointerNavigation(container);
+        this.syncUrlState();
         this.finishRenderFocus(container, preserveSearch, searchCaret);
+        this.startLiveRefresh();
+    }
+
+    /** Lowercase filter label for breadcrumbs and the document title. */
+    filterLabel(filter = this.filter) {
+        const labels = {
+            broken: this.t('dashboard.healthFilterBroken', 'Broken'),
+            duplicate: this.t('dashboard.healthFilterDuplicates', 'Duplicates'),
+            unchecked: this.t('dashboard.healthFilterUnchecked', 'Never checked'),
+            monitored: this.t('dashboard.healthFilterMonitored', 'Monitored'),
+            stale: this.t('dashboard.healthFilterStale', 'Stale'),
+            unused: this.t('dashboard.healthFilterUnused', 'Unused'),
+            'shortcut-conflict': this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts'),
+            'missing-preview': this.t('dashboard.healthFilterMissingPreview', 'Missing preview'),
+            healthy: this.t('dashboard.healthFilterHealthy', 'Healthy'),
+            all: this.t('dashboard.healthFilterAll', 'All'),
+        };
+        return labels[filter] || String(filter || '');
+    }
+
+    /** Breadcrumb trail for the panel head — `health › filter`. */
+    headerBreadcrumb() {
+        const root = this.t('dashboard.healthPageTitle', 'Health').toLowerCase();
+        if (this.filter === 'broken') {
+            return root;
+        }
+        const label = this.filterLabel().toLowerCase();
+        return label ? `${root} › ${label}` : root;
     }
 
     renderHeader() {
-        const summary = this.report?.summary || {};
-        const total = Number(summary.totalBookmarks) || 0;
-        const healthy = Number(summary.healthyCount) || 0;
-        const score = total > 0 ? Math.round((healthy / total) * 100) : 100;
+        const pct = this.healthyPercent();
         const broken = this.brokenCount();
+        const pctLabel = this.t('dashboard.healthHeaderHealthyPct', '{pct}% healthy', { pct });
+        const summary = this.report?.summary || {};
+        const healthy = Number(summary.healthyCount) || 0;
+        const total = Number(summary.totalBookmarks) || 0;
+        const detail = total
+            ? this.t('dashboard.healthHeaderHealthyDetail', '{count} of {total} healthy', { count: healthy, total })
+            : pctLabel;
+        const trail = this.headerBreadcrumb();
+        const showTrail = trail.includes(' › ');
 
         const header = document.createElement('div');
         header.className = 'health-view-header';
         header.innerHTML = `
             <div class="health-view-header-text">
                 <h2 class="health-view-title">${this.escape(this.t('dashboard.healthPageTitle', 'Health'))}</h2>
+                <p class="health-view-head-breadcrumb"${showTrail ? '' : ' hidden'}>${this.escape(trail)}</p>
                 <p class="health-view-subtitle">${this.escape(this.t('dashboard.healthPageSubtitle', 'Bookmarks that need attention'))}</p>
             </div>
             <div class="health-view-header-meta">
-                <span class="health-view-score-badge ${this.bandClass(score)}">${score}</span>
+                <span class="health-view-score-badge ${this.bandClass(pct)}" title="${this.escape(detail)}" aria-label="${this.escape(pctLabel)}">${pct}%</span>
                 ${broken > 0
                     ? `<span class="health-view-issue-count">${broken} ${this.escape(this.t('dashboard.healthBroken', 'broken'))}</span>`
                     : ''}
@@ -1660,9 +1811,9 @@ class DashboardHealth {
         const healthy = Number(summary.healthyCount) || 0;
 
         // Monitored sits next to Healthy because it answers the same question —
-        // is anything wrong right now — where Broken/Duplicates/Unchecked are
-        // backlogs to work through. Its tone is live rather than fixed: red the
-        // moment a monitor stops responding, green while they all answer.
+        // is anything wrong right now — where Broken/Unchecked are backlogs to
+        // work through. Its tone is live rather than fixed: red the moment a
+        // monitor stops responding, green while they all answer.
         const monitored = this.filterCount('monitored');
         const monitorsDown = this.monitorsDownCount();
 
@@ -1685,8 +1836,9 @@ class DashboardHealth {
                     : '',
             },
             { key: 'broken', label: this.t('dashboard.healthTileBroken', 'Broken'), value: Number(summary.brokenCount) || 0, tone: 'bad' },
-            { key: 'duplicate', label: this.t('dashboard.healthTileDuplicates', 'Duplicates'), value: Number(summary.duplicateCount) || 0, tone: 'warn' },
             { key: 'unchecked', label: this.t('dashboard.healthTileUnchecked', 'Unchecked'), value: Number(summary.uncheckedCount) || 0, tone: 'warn' },
+            { key: 'stale', label: this.t('dashboard.healthTileStale', 'Stale'), value: Number(summary.staleCount) || 0, tone: 'warn' },
+            { key: 'unused', label: this.t('dashboard.healthTileUnused', 'Unused'), value: Number(summary.unusedCount) || 0, tone: 'warn' },
         ];
 
         const wrap = document.createElement('div');
@@ -1716,12 +1868,16 @@ class DashboardHealth {
         wrap.querySelectorAll('[data-health-tile]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-health-tile') || 'broken';
+                this.focusIssueKey = null;
                 this._trackAction('filter', { filter: this.filter, via: 'tile' });
                 this._resetFeedPaging();
                 // Same as the filter pills: a tile is a filter choice, and one
                 // that is forgotten on the way out is not really a choice.
                 this.persistViewState();
+                this.syncUrlState();
                 this.render();
+                this.dash.pageNav?.updatePageTitle?.();
+                this.dash.pageNav?.updateDocumentTitle?.();
             });
         });
         return wrap;
@@ -1734,18 +1890,279 @@ class DashboardHealth {
     }
 
     /**
-     * "Monitor these N" for the current list. Only offered on a narrowed list:
-     * on "All" it would mean the whole collection, which is the one thing bulk
-     * enabling must not be able to do, so it is left out rather than shown
-     * disabled — a greyed button invites the question of how to enable it.
+     * "Monitor these N" / "Periodic these N" for the current list. Only offered on
+     * a narrowed list: on "All" it would mean the whole collection, which is the
+     * one thing bulk enabling must not be able to do, so it is left out rather than
+     * shown disabled — a greyed button invites the question of how to enable it.
      */
-    renderBulkEnableButton() {
+    renderBulkEnableButtons() {
         if (this.filter === 'all') return '';
-        const count = this.bulkEnableTargets('monitor').length;
-        if (!count) return '';
-        return `<button type="button" class="health-view-bulk-monitor-btn" title="${this.escape(
-            this.t('dashboard.healthBulkEnableHint', 'Set the {count} bookmark(s) in this list to Monitor', { count })
-        )}">${this.escape(this.t('dashboard.healthBulkEnable', 'Monitor these {count}', { count }))}</button>`;
+        const monitorCount = this.bulkEnableTargets('monitor').length;
+        const periodicCount = this.bulkEnableTargets('periodic').length;
+        let html = '';
+        if (monitorCount) {
+            html += `<button type="button" class="health-view-bulk-monitor-btn" title="${this.escape(
+                this.t('dashboard.healthBulkEnableHint', 'Set the {count} bookmark(s) in this list to Monitor', { count: monitorCount })
+            )}">${this.escape(this.t('dashboard.healthBulkEnable', 'Monitor these {count}', { count: monitorCount }))}</button>`;
+        }
+        if (periodicCount) {
+            html += `<button type="button" class="health-view-bulk-periodic-btn" title="${this.escape(
+                this.t('dashboard.healthBulkEnablePeriodicHint', 'Set the {count} bookmark(s) in this list to Periodic', { count: periodicCount })
+            )}">${this.escape(this.t('dashboard.healthBulkEnablePeriodic', 'Periodic these {count}', { count: periodicCount }))}</button>`;
+        }
+        return html;
+    }
+
+    renderOpenBrokenButton() {
+        if (this.filter !== 'broken' || this.brokenCount() <= 0) {
+            return '';
+        }
+        return `<button type="button" class="health-view-open-broken-btn" title="${this.escape(
+            this.t('dashboard.openBrokenTitle', 'Open all broken bookmarks in new tabs')
+        )}">${this.escape(this.t('dashboard.openBrokenLinks', 'Open broken links'))}</button>`;
+    }
+
+    renderMergeDuplicateButton() {
+        if (this.filter !== 'duplicate' || !this.duplicateGroups().length) {
+            return '';
+        }
+        return `<span class="health-view-menu-wrap"><button type="button" class="health-view-merge-duplicates-btn" title="${this.escape(
+            this.t('dashboard.mergeDuplicateTitle', 'Merge selected duplicate group')
+        )}">${this.escape(this.t('dashboard.mergeDuplicateGroup', 'Merge duplicate group'))}</button></span>`;
+    }
+
+    /**
+     * Ask which duplicate URL group to merge when more than one exists.
+     * Returns null when the user cancels.
+     */
+    chooseDuplicateGroup(anchor) {
+        const groups = this.duplicateGroups().filter((group) => Array.isArray(group?.bookmarks) && group.bookmarks.length > 1);
+        if (!groups.length) {
+            return Promise.resolve(null);
+        }
+        if (groups.length === 1) {
+            return Promise.resolve(groups[0]);
+        }
+        return new Promise((resolve) => {
+            this.closeAllMenus();
+            const menu = document.createElement('div');
+            menu.className = 'health-view-menu health-view-merge-group-menu';
+            menu.setAttribute('role', 'menu');
+            menu.innerHTML = [
+                `<p class="health-view-menu-label" role="presentation">${this.escape(
+                    this.t('dashboard.selectDuplicateGroup', 'Select a duplicate group to merge')
+                )}</p>`,
+                ...groups.map((group, index) => {
+                    const count = group.bookmarks.length;
+                    const label = group.url || group.bookmarks[0]?.name || `#${index + 1}`;
+                    return `<button type="button" class="health-view-menu-item" role="menuitem" data-merge-group="${index}">${this.escape(label)} (${count})</button>`;
+                }),
+            ].join('');
+            const wrap = anchor?.closest?.('.health-view-menu-wrap') || anchor?.parentElement;
+            if (!wrap) {
+                resolve(null);
+                return;
+            }
+            wrap.appendChild(menu);
+            menu.hidden = false;
+            const dismiss = () => {
+                menu.remove();
+                resolve(null);
+            };
+            const onDocClick = (e) => {
+                if (menu.contains(e.target) || wrap.contains(e.target)) {
+                    return;
+                }
+                document.removeEventListener('click', onDocClick, true);
+                dismiss();
+            };
+            setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
+            menu.querySelectorAll('[data-merge-group]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    document.removeEventListener('click', onDocClick, true);
+                    const index = Number(btn.getAttribute('data-merge-group'));
+                    menu.remove();
+                    resolve(groups[index] || null);
+                });
+            });
+            menu.querySelector('.health-view-menu-item')?.focus({ preventScroll: true });
+        });
+    }
+
+    async openBrokenLinks(button) {
+        if (this._openBrokenRunning) {
+            return;
+        }
+        const totalBroken = this.brokenCount();
+        if (!totalBroken) {
+            return;
+        }
+        const batchLimit = 10;
+        const maxLimit = 25;
+        const openCount = Math.min(batchLimit, totalBroken);
+        const ok = await this.confirm(
+            this.t('dashboard.openBrokenTitle', 'Open all broken bookmarks in new tabs'),
+            this.t(
+                'dashboard.openBrokenConfirm',
+                'Open {count} broken link(s) in new tabs? (max {max} at a time; {total} total broken.)',
+                { count: openCount, max: maxLimit, total: totalBroken }
+            ),
+            { confirmText: this.t('dashboard.openBrokenConfirmBtn', 'Open links') }
+        );
+        if (!ok) {
+            return;
+        }
+
+        this._openBrokenRunning = true;
+        window.nextdashTrack?.('health:open-broken');
+        if (button) {
+            button.disabled = true;
+        }
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/health/open-broken', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ limit: batchLimit }),
+            });
+            if (!res.ok) {
+                throw new Error(`open-broken HTTP ${res.status}`);
+            }
+            const body = await res.json().catch(() => ({}));
+            const urls = Array.isArray(body?.urls) ? body.urls : [];
+            urls.forEach((url) => {
+                const target = String(url || '').trim();
+                if (target) {
+                    window.open(target, '_blank', 'noopener,noreferrer');
+                }
+            });
+            const remaining = Math.max(0, Number(body?.totalBroken || totalBroken) - urls.length);
+            const message = remaining > 0
+                ? `${this.t('dashboard.openBrokenLinks', 'Open broken links')} ${this.t(
+                    'dashboard.openBrokenRemaining',
+                    '({remaining} more in health view.)',
+                    { remaining }
+                )}`
+                : this.t('dashboard.openBrokenLinks', 'Open broken links');
+            d.showNotification(message, 'success', { duration: 5000 });
+        } catch {
+            d.showNotification(this.t('dashboard.openBrokenFailed', 'Failed to open broken links'), 'error');
+        } finally {
+            this._openBrokenRunning = false;
+            const live = document.querySelector('.health-view-open-broken-btn');
+            if (live) {
+                live.disabled = false;
+            }
+        }
+    }
+
+    async mergeDuplicateGroup(group) {
+        if (this._mergeRunning || !group) {
+            return;
+        }
+        const bookmarks = Array.isArray(group.bookmarks) ? group.bookmarks : [];
+        if (bookmarks.length < 2) {
+            return;
+        }
+        const keeper = bookmarks[0];
+        const removeCount = bookmarks.length - 1;
+        const pinnedSuffix = keeper.pinned ? ', pinned' : '';
+        const ok = await this.confirm(
+            this.t('dashboard.mergeDuplicateTitle', 'Merge selected duplicate group'),
+            this.t(
+                'dashboard.mergeConfirmBest',
+                'Merge {count} bookmark(s) with the same URL?\n\nKeeps best: "{keep}" ({opens}x opened{pinned})\nRemoves: {remove} duplicate(s).',
+                {
+                    count: bookmarks.length,
+                    keep: keeper.name || group.url || keeper.url || '',
+                    opens: Number(keeper.openCount) || 0,
+                    pinned: pinnedSuffix,
+                    remove: removeCount,
+                }
+            ),
+            {
+                confirmText: this.t('dashboard.mergeConfirmBtn', 'Merge duplicates'),
+            }
+        );
+        if (!ok) {
+            return;
+        }
+
+        this._mergeRunning = true;
+        window.nextdashTrack?.('health:merge-duplicates');
+        const d = this.dash;
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const sourcePageIds = [];
+            const sourceIndices = [];
+            bookmarks.slice(1).forEach((ref) => {
+                sourcePageIds.push(ref.pageId);
+                sourceIndices.push(ref.index);
+            });
+            const res = await fetcher('/api/health/merge-duplicates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    targetPageId: keeper.pageId,
+                    targetIndex: keeper.index,
+                    sourcePageIds,
+                    sourceIndices,
+                }),
+            });
+            if (!res.ok) {
+                throw new Error(`merge HTTP ${res.status}`);
+            }
+            const body = await res.json().catch(() => ({}));
+            d.data?.invalidatePageDataCache?.();
+            await d.loadBookmarks?.().catch?.(() => {});
+            await this.loadAndRender({ refresh: true });
+            d.renderDashboard?.({ incremental: false });
+            d.updateHealthBadge?.();
+            d.showNotification(
+                this.t('dashboard.mergedDuplicates', 'Merged {count} duplicates', {
+                    count: Number(body?.count) || removeCount,
+                }),
+                'success',
+                { duration: 4000 }
+            );
+        } catch {
+            d.showNotification(this.t('dashboard.mergeFailed', 'Failed to merge duplicates'), 'error');
+        } finally {
+            this._mergeRunning = false;
+        }
+    }
+
+    async startMergeDuplicateFlow(button) {
+        const groups = this.duplicateGroups().filter((group) => Array.isArray(group?.bookmarks) && group.bookmarks.length > 1);
+        if (!groups.length) {
+            this.dash.showNotification?.(
+                this.t('dashboard.noDuplicateGroupsToMerge', 'No duplicate groups to merge.'),
+                'info'
+            );
+            return;
+        }
+        const group = await this.chooseDuplicateGroup(button);
+        if (group) {
+            await this.mergeDuplicateGroup(group);
+        }
+    }
+
+    /** Secondary filters appear once they have rows, or stay visible while active. */
+    appendSecondaryFilterPills(filters) {
+        const secondary = [
+            ['stale', this.t('dashboard.healthFilterStale', 'Stale')],
+            ['unused', this.t('dashboard.healthFilterUnused', 'Unused')],
+            ['shortcut-conflict', this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts')],
+            ['missing-preview', this.t('dashboard.healthFilterMissingPreview', 'Missing preview')],
+            ['healthy', this.t('dashboard.healthFilterHealthy', 'Healthy')],
+        ];
+        for (const [key, label] of secondary) {
+            const count = this.filterCount(key);
+            if (count > 0 || this.filter === key) {
+                filters.push([key, label]);
+            }
+        }
     }
 
     renderToolbar() {
@@ -1765,6 +2182,7 @@ class DashboardHealth {
         if (monitoredCount > 0 || hasBookmarks || this.filter === 'monitored') {
             filters.push(['monitored', this.t('dashboard.healthFilterMonitored', 'Monitored')]);
         }
+        this.appendSecondaryFilterPills(filters);
         filters.push(['all', this.t('dashboard.healthFilterAll', 'All')]);
 
         const toolbar = document.createElement('div');
@@ -1791,15 +2209,27 @@ class DashboardHealth {
             <input type="search" class="health-view-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}">
             <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
             <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export'))}</button>
+            ${this.renderOpenBrokenButton()}
+            ${this.renderMergeDuplicateButton()}
             <button type="button" class="health-view-retest-btn">${this.escape(this.t('dashboard.healthRetest', 'Retest all'))}</button>
             <button type="button" class="health-view-checkoff-btn"${checkedCount ? '' : ' disabled'} title="${this.escape(checkedCount
                 ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
                 : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
-            ${this.renderBulkEnableButton()}
+            ${this.renderBulkEnableButtons()}
         `;
 
         toolbar.querySelector('.health-view-export-btn')?.addEventListener('click', () => {
             this.exportFilteredCsv();
+        });
+
+        const openBrokenBtn = toolbar.querySelector('.health-view-open-broken-btn');
+        openBrokenBtn?.addEventListener('click', () => {
+            void this.openBrokenLinks(openBrokenBtn);
+        });
+
+        const mergeBtn = toolbar.querySelector('.health-view-merge-duplicates-btn');
+        mergeBtn?.addEventListener('click', () => {
+            void this.startMergeDuplicateFlow(mergeBtn);
         });
 
         const sortSelect = toolbar.querySelector('.health-view-sort-select');
@@ -1808,6 +2238,7 @@ class DashboardHealth {
             this._trackAction('sort', { sort: this.sort });
             this._resetFeedPaging();
             this.persistViewState();
+            this.syncUrlState();
             this.render();
             // Focus returns to the list, not the select: leaving it focused would
             // swallow every row shortcut afterwards (handleKeyboardNavigation
@@ -1819,9 +2250,11 @@ class DashboardHealth {
         toolbar.querySelectorAll('[data-health-filter]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 this.filter = btn.getAttribute('data-health-filter') || 'broken';
+                this.focusIssueKey = null;
                 this._trackAction('filter', { filter: this.filter, via: 'pill' });
                 this._resetFeedPaging();
                 this.persistViewState();
+                this.syncUrlState();
                 this.render();
                 this.dash.pageNav?.updatePageTitle?.();
                 this.dash.pageNav?.updateDocumentTitle?.();
@@ -1856,6 +2289,11 @@ class DashboardHealth {
         const bulkMonitorBtn = toolbar.querySelector('.health-view-bulk-monitor-btn');
         bulkMonitorBtn?.addEventListener('click', () => {
             void this.enableCheckingForVisible('monitor', bulkMonitorBtn);
+        });
+
+        const bulkPeriodicBtn = toolbar.querySelector('.health-view-bulk-periodic-btn');
+        bulkPeriodicBtn?.addEventListener('click', () => {
+            void this.enableCheckingForVisible('periodic', bulkPeriodicBtn);
         });
 
         return toolbar;
@@ -2099,6 +2537,26 @@ class DashboardHealth {
                 this.t('dashboard.healthEmptyAll', 'No issues found'),
                 this.t('dashboard.healthEmptyAllHint', 'Every bookmark scores full marks.'),
             ],
+            stale: [
+                this.t('dashboard.healthEmptyStale', 'No stale bookmarks'),
+                this.t('dashboard.healthEmptyStaleHint', 'Nothing here has gone unopened for 30+ days.'),
+            ],
+            unused: [
+                this.t('dashboard.healthEmptyUnused', 'No never-opened bookmarks'),
+                this.t('dashboard.healthEmptyUnusedHint', 'Every bookmark has been opened at least once.'),
+            ],
+            'shortcut-conflict': [
+                this.t('dashboard.healthEmptyShortcutConflict', 'No shortcut conflicts'),
+                this.t('dashboard.healthEmptyShortcutConflictHint', 'No shortcut is shared by more than one bookmark.'),
+            ],
+            'missing-preview': [
+                this.t('dashboard.healthEmptyMissingPreview', 'No missing previews'),
+                this.t('dashboard.healthEmptyMissingPreviewHint', 'Every bookmark has preview metadata.'),
+            ],
+            healthy: [
+                this.t('dashboard.healthEmptyHealthy', 'No fully healthy rows'),
+                this.t('dashboard.healthEmptyHealthyHint', 'Nothing here is issue-free under the current filters.'),
+            ],
         };
         const [title, hint] = messages[this.filter] || messages.all;
         const searching = String(this.searchQuery || '').trim().length > 0;
@@ -2119,15 +2577,17 @@ class DashboardHealth {
     renderLegend(position = 'bottom') {
         const legend = document.createElement('p');
         legend.className = `health-view-legend health-view-legend--${position}`;
+        legend.setAttribute('aria-hidden', 'true');
         const keys = [
             ['j / k', this.t('dashboard.healthKeyMove', 'move')],
             ['s', this.t('dashboard.healthKeyScore', 'score')],
             ['i', this.t('dashboard.healthKeyStats', 'statistics')],
             ['p', this.t('dashboard.healthKeyRecheck', 're-check')],
+            ['R / ?', this.t('dashboard.healthKeyRefresh', 'refresh report')],
             ['c', this.t('dashboard.healthKeyCheckMode', 'checking')],
             ['m', this.t('dashboard.healthKeyMore', 'more actions')],
-            ['Enter', this.t('dashboard.healthKeyOpen', 'open')],
-            ['g / G', this.t('dashboard.healthKeyFirstLast', 'first / last')],
+            ['Enter / Space', this.t('dashboard.healthKeyOpen', 'open')],
+            ['g / G / Home / End', this.t('dashboard.healthKeyFirstLast', 'first / last')],
             ['Esc', this.t('dashboard.healthKeyClose', 'back to bookmarks')],
         ];
         legend.innerHTML = keys
@@ -2293,17 +2753,55 @@ class DashboardHealth {
     static PERSISTED_SORTS = new Set(['score', 'status', 'last-checked', 'last-checked-desc', 'name']);
 
     /**
-     * Restore the last filter and sort. Called only when no deep link supplied
-     * them, so a shared ?hv_filter= link still describes what the recipient sees.
+     * Restore filter, sort, and search. URL first and stored state second.
+     *
+     * A link someone shared has to win over what this browser last did, or the
+     * link does not describe what the recipient sees. Search is deliberately not
+     * persisted — a stored query would silently hide most of the list on the next
+     * visit, with only a small input to explain why.
      */
     restoreViewState() {
+        let stateFromUrl = false;
+        let refresh = false;
         try {
-            const stored = JSON.parse(localStorage.getItem(DashboardHealth.STATE_KEY) || '{}');
-            if (DashboardHealth.PERSISTED_FILTERS.has(stored.filter)) this.filter = stored.filter;
-            if (DashboardHealth.PERSISTED_SORTS.has(stored.sort)) this.sort = stored.sort;
-        } catch { /* unreadable storage falls back to the defaults */ }
+            const params = new URL(window.location.href).searchParams;
+            const filter = (params.get('hv_filter') || '').toLowerCase();
+            if (DashboardHealth.PERSISTED_FILTERS.has(filter)) {
+                this.filter = filter;
+                stateFromUrl = true;
+            }
+            const sort = (params.get('hv_sort') || '').toLowerCase();
+            if (DashboardHealth.PERSISTED_SORTS.has(sort)) {
+                this.sort = sort;
+                stateFromUrl = true;
+            }
+            const query = params.get('hv_q');
+            if (typeof query === 'string' && query.trim() !== '') {
+                this.searchQuery = query.trim();
+                stateFromUrl = true;
+            }
+            const issueKey = (params.get('hv_id') || '').trim();
+            if (/^\d+:\d+$/.test(issueKey)) {
+                this.focusIssueKey = issueKey;
+                stateFromUrl = true;
+            }
+            const refreshRaw = (params.get('hv_refresh') || '').toLowerCase();
+            if (refreshRaw === '1' || refreshRaw === 'true') {
+                refresh = true;
+            }
+        } catch { /* a malformed URL just means no deep link */ }
+
+        if (!stateFromUrl) {
+            try {
+                const stored = JSON.parse(localStorage.getItem(DashboardHealth.STATE_KEY) || '{}');
+                if (DashboardHealth.PERSISTED_FILTERS.has(stored.filter)) this.filter = stored.filter;
+                if (DashboardHealth.PERSISTED_SORTS.has(stored.sort)) this.sort = stored.sort;
+            } catch { /* unreadable storage falls back to the defaults */ }
+        }
+        return { refresh };
     }
 
+    /** Remember filter and sort for the next visit. Best-effort by design. */
     persistViewState() {
         try {
             localStorage.setItem(
@@ -2311,6 +2809,38 @@ class DashboardHealth {
                 JSON.stringify({ filter: this.filter, sort: this.sort })
             );
         } catch { /* private mode / full quota: the view still works */ }
+    }
+
+    /**
+     * Keep the address bar describing the current view so it can be copied and
+     * shared. replaceState, not pushState: a filter click is not a navigation
+     * step, and Back should leave the health view rather than walk its filter
+     * history. hv_refresh is one-shot only — read on open, never written back.
+     */
+    syncUrlState() {
+        if (!this.isActiveView()) return;
+        try {
+            const url = new URL(window.location.href);
+            const params = url.searchParams;
+            const setOrDelete = (key, value, isDefault) => {
+                if (value && !isDefault) params.set(key, value);
+                else params.delete(key);
+            };
+            setOrDelete('hv_filter', this.filter, this.filter === 'broken');
+            setOrDelete('hv_sort', this.sort, this.sort === 'score');
+            setOrDelete('hv_q', String(this.searchQuery || '').trim(), !String(this.searchQuery || '').trim());
+            setOrDelete('hv_id', String(this.focusIssueKey || this.selectedKey || '').trim(), !String(this.focusIssueKey || this.selectedKey || '').trim());
+            params.delete('hv_refresh');
+            const query = params.toString();
+            history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#health`);
+        } catch { /* history is unavailable in some embedded contexts */ }
+    }
+
+    /** Keyboard R / ?: reload the cached report, not a full retest-all run. */
+    async refreshReportFromKeyboard() {
+        window.nextdashTrack?.('health:refresh-report');
+        await this.loadAndRender({ refresh: true });
+        this.dash.updateHealthBadge?.();
     }
 
     /* ── Export ────────────────────────────────────────────────────────── */

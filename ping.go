@@ -61,21 +61,30 @@ func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResul
 
 	if err == nil && resp != nil {
 		defer drainAndCloseResponse(resp)
-		if resp.StatusCode >= 200 && resp.StatusCode < 400 {
-			return PingResult{Status: "online", PingMs: elapsed, HTTPStatus: resp.StatusCode}
+		code := resp.StatusCode
+		if httpStatusReachable(code) {
+			return PingResult{Status: "online", PingMs: elapsed, HTTPStatus: code}
 		}
-		if resp.StatusCode >= 400 {
-			return PingResult{
-				Status:      "offline",
-				PingMs:      elapsed,
-				ErrorDetail: fmt.Sprintf("HTTP %d", resp.StatusCode),
-				HTTPStatus:  resp.StatusCode,
-			}
+		return PingResult{
+			Status:      "offline",
+			PingMs:      elapsed,
+			ErrorDetail: fmt.Sprintf("HTTP %d", code),
+			HTTPStatus:  code,
 		}
 	}
 
 	detail := classifyPingError(err, resp)
 	return PingResult{Status: "offline", PingMs: elapsed, ErrorDetail: detail, HTTPStatus: httpStatusFromResponse(resp)}
+}
+
+// httpStatusReachable reports whether an HTTP status means the host answered.
+//
+// Client errors (4xx) still prove reachability: login-gated pages often return
+// 401/403, and GitHub /issues returns 404 without a session even though the
+// link opens fine in a logged-in browser. Only 5xx is treated as down for
+// bookmark health and uptime monitoring.
+func httpStatusReachable(code int) bool {
+	return code >= 200 && code < 500
 }
 
 func httpStatusFromResponse(resp *http.Response) int {

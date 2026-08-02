@@ -1,0 +1,93 @@
+{
+  "tag": "v2026.08.08.4",
+  "date": "August 2026",
+  "releasedAt": "2026-08-03",
+  "modalLead": "Health and Inbox pick up where v2026.08.08.3 left off — shareable row links, a healthy-percent badge in the view, filter trails under the section title like Config, a header badge that keeps refreshing while you stay on bookmarks, and a pile of reliability fixes from the health audit.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Shareable row links with <code>hv_id</code></strong> — open, select, and share one health row with a URL like <code>/?hv_id=1:4#health</code>, the same idea as Inbox <code>ib_id</code>. Filter, sort, and search still sync to <code>hv_filter</code>, <code>hv_sort</code>, and <code>hv_q</code>; <strong>Share</strong> in the row menu copies a dashboard deep link instead of the raw bookmark URL (<code>dashboard-health.js</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Healthy % in the panel head</strong> — the header badge shows how many bookmarks have no active issue (e.g. <strong>25%</strong>), with a tooltip for the exact count. The old average-score-only reading is gone (<code>dashboard-health.js</code>, locales)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Filter trail under the title</strong> — <code>health › monitored</code> sits below <strong>Health</strong> and above the subtitle, matching Config subpages. The large dashboard title stays the view name only (<code>dashboard-health.js</code>, <code>dashboard-page-nav.js</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>More filters and tiles</strong> — stale, unused, missing preview, shortcut conflicts, and healthy appear when they have rows; KPI tiles add stale and unused; <strong>Periodic these N</strong> sits beside bulk Monitor; pills and tiles scroll on one row (<code>dashboard-health.js</code>, <code>health-view.css</code>)."
+        },
+        {
+          "badge": "improved",
+          "text": "<strong><code>R</code> / <code>?</code> reload the cached report</strong> — keyboard refresh fetches a fresh server report without a retest-all run; <code>Home</code>/<code>End</code> jump to first and last row (<code>dashboard-health.js</code>)."
+        },
+        {
+          "badge": "improved",
+          "text": "<strong>Parallel report fetches dedupe</strong> — overlapping <code>/api/bookmark-health</code> calls share one in-flight request; a refresh request never joins a plain fetch that would return stale rows (<code>dashboard-health.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Escape while the view is still loading</strong> — closing Health during lazy load no longer leaves a stuck loading shell (<code>dashboard-health-loader.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Filter trail under the title</strong> — <code>inbox › unread</code> (or a domain filter) sits below <strong>Inbox</strong>, same placement as Health and Config (<code>dashboard-inbox.js</code>, <code>dashboard-page-nav.js</code>)."
+        },
+        {
+          "badge": "improved",
+          "text": "<strong>Parallel inbox fetches dedupe</strong> — concurrent <code>/api/inbox</code> calls share one in-flight <code>fetchItems</code> promise (<code>dashboard-inbox.js</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Right-click Share on inbox rows</strong> — inbox items expose the same copy/share entries as bookmark rows once the context menu module is loaded (<code>dashboard-inbox.js</code>, <code>dashboard-context-menu.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "improved",
+          "text": "<strong>Header health badge polls outside the view</strong> — the heartbeat icon refreshes about once a minute on bookmarks and Inbox while Health keeps its own live refresh on the Monitored filter (<code>dashboard-visual.js</code>, <code>dashboard-setup.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Share works before the context menu module loads</strong> — health and inbox rows reach clipboard/share through a loader stub on the first click, not after a silent no-op (<code>dashboard-bookmark-interactions-loader.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Server",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Health report builds singleflight</strong> — concurrent <code>/api/bookmark-health</code> requests wait on one in-flight build instead of each recomputing the full report (<code>handlers.go</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>HTTP 4xx counts as reachable</strong> — GitHub and similar hosts that answer probes with 404 are no longer marked down; only 5xx is treated as unreachable (<code>ping.go</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.08.4</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v164</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v222</code>."
+        }
+      ]
+    }
+  ]
+}

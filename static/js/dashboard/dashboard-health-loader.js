@@ -148,7 +148,20 @@ class DashboardHealthLoader {
     }
 
     closeHealthView(...args) {
-        return this._module?.closeHealthView?.(...args);
+        return this._module?.closeHealthView?.(...args) ?? this.closeHealthViewWhileLoading();
+    }
+
+    closeHealthViewWhileLoading() {
+        const d = this.dash;
+        if (!this.isActiveView()) {
+            return false;
+        }
+        this._teardownEscapeShortcut();
+        const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
+        if (restored) {
+            d.keyboardNavigation?.scheduleUpdate?.();
+        }
+        return restored;
     }
 
     restoreViewIfNeeded(...args) {
@@ -170,7 +183,12 @@ class DashboardHealthLoader {
         this._escapeHandler = (e) => {
             if (e.key !== 'Escape') return;
             if (!this.isActiveView()) return;
-            if (!this._module) return;
+            if (!this._module) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.closeHealthViewWhileLoading();
+                return;
+            }
             this._module.setupEscapeShortcut?.();
             this._teardownEscapeShortcut();
         };

@@ -10,6 +10,19 @@
     const CONTEXT_MENU = 'js/dashboard/dashboard-context-menu.js';
 
     let sharedLoadPromise = null;
+    /** Mirrors DashboardContextMenu._shareRefused before that class is fetched. */
+    let shareRefused = false;
+
+    function markShareRefused() {
+        shareRefused = true;
+        if (typeof window.DashboardContextMenu !== 'undefined') {
+            window.DashboardContextMenu.markShareRefused();
+        }
+    }
+
+    function isShareRefused() {
+        return shareRefused || window.DashboardContextMenu?._shareRefused === true;
+    }
 
     function assetURL(rel) {
         return (window.NEXTDASH_ASSETS && window.NEXTDASH_ASSETS[rel]) || `/static/${rel}`;
@@ -344,6 +357,9 @@
 
             this._modulePromise = loadInteractionModules().then(() => {
                 this._module = new window.DashboardContextMenu(this.dash);
+                if (shareRefused) {
+                    window.DashboardContextMenu.markShareRefused();
+                }
                 return this._module;
             }).catch((err) => {
                 this._modulePromise = null;
@@ -366,7 +382,105 @@
                 return this._module.canOpenShareSheet();
             }
             if (typeof navigator.share !== 'function') return false;
-            return window.DashboardContextMenu?._shareRefused !== true;
+            return !isShareRefused();
+        }
+
+        menuT(key, fallback, params) {
+            const d = this.dash;
+            const val = d.language?.t?.(key);
+            const text = (val && val !== key) ? val : fallback;
+            return params
+                ? Object.entries(params).reduce(
+                    (acc, [name, value]) => acc.replaceAll(`{${name}}`, String(value)),
+                    String(text)
+                )
+                : String(text);
+        }
+
+        execCopyFallback(value) {
+            const ta = document.createElement('textarea');
+            ta.value = value;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch { ok = false; }
+            document.body.removeChild(ta);
+            return ok;
+        }
+
+        copyShareText(text, row) {
+            const d = this.dash;
+            const value = String(text || '').trim();
+            if (!value) return false;
+
+            const done = () => {
+                if (row) {
+                    row.classList.remove('bookmark-copy-flash');
+                    void row.offsetWidth;
+                    row.classList.add('bookmark-copy-flash');
+                    row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
+                }
+                const refused = isShareRefused();
+                const insecure = !refused && window.isSecureContext === false;
+                const explained = refused || insecure;
+                let message;
+                if (refused) {
+                    message = this.menuT(
+                        'dashboard.shareCopiedUnavailable',
+                        'Copied — this browser will not open a share sheet here'
+                    );
+                } else if (insecure) {
+                    message = this.menuT(
+                        'dashboard.shareCopiedInsecure',
+                        'Copied — sharing needs HTTPS or localhost'
+                    );
+                } else {
+                    message = this.menuT('dashboard.shareCopied', 'Link copied to share');
+                }
+                d.showNotification?.(message, 'success', { duration: explained ? 4000 : 2000 });
+            };
+
+            if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(value).then(done).catch(() => {
+                    if (this.execCopyFallback(value)) done();
+                });
+                return true;
+            }
+            if (this.execCopyFallback(value)) {
+                done();
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Synchronous entry point for health/config row menus. Must not await
+         * module load first — navigator.share() and clipboard writes need the
+         * click gesture that opened the menu.
+         */
+        async shareBookmark(bookmark, row) {
+            if (this._module) {
+                return this._module.shareBookmark(bookmark, row);
+            }
+            const url = String(bookmark?.url || '').trim();
+            if (!url) return 'none';
+            const title = String(bookmark?.name || '').trim();
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(title ? { title, text: title, url } : { url });
+                    return 'shared';
+                } catch (err) {
+                    if (err?.name === 'AbortError') return 'cancelled';
+                    if (err?.name === 'NotAllowedError') {
+                        markShareRefused();
+                    }
+                }
+            }
+
+            return this.copyShareText(title ? `${title} — ${url}` : url, row) ? 'copied' : 'none';
         }
 
         /**
@@ -384,6 +498,23 @@
             }
             const d = this.dash;
             if (!row) return null;
+            if (row.classList.contains('inbox-item')) {
+                const id = row.getAttribute('data-inbox-id');
+                const item = (d.inbox?.items || []).find((entry) => entry.id === id);
+                const url = String(item?.url || row.getAttribute('data-bookmark-url') || '').trim();
+                if (!url) return null;
+                const name = String(
+                    item?.previewTitle || item?.title || item?.domain
+                    || row.getAttribute('data-inbox-share-name') || ''
+                ).trim();
+                return {
+                    bookmark: { name, url },
+                    index: -1,
+                    scope: 'inbox',
+                    pageId: 0,
+                    original: null,
+                };
+            }
             const rawIndex = row.getAttribute('data-bookmark-index');
             if (rawIndex !== null) {
                 const index = Number(rawIndex);

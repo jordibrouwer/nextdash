@@ -307,6 +307,7 @@
         metaEl.hidden = statusEl.hidden
             && !root.querySelector('[data-wn-update-release-link]')
             && !root.querySelector('[data-wn-update-dismiss]');
+        root.hidden = metaEl.hidden;
     }
 
     function setupUpdateCheckBar(checkRoot) {

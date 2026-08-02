@@ -416,8 +416,8 @@ HTML export from Chrome/Firefox/Edge (see [Import, export, and backup](#17-impor
 
 1. Open **Inbox** — header tab, **`Shift+I`**, **`0`**, or **`:inbox`**.  
 2. **Add** — paste `Ctrl+V` on the dashboard and choose *Save to Inbox*, use the extension **Save to Inbox**, or rely on *Always save to Inbox* in General settings. Fresh items show a preview placeholder until the server fills it in.  
-3. **Browse** — filter *All* / *Unread* / *Snoozed*, search, and scroll date groups. Unread items show a badge on the Inbox tab.  
-4. **Act on a row** — *Open* in a new tab, *Promote* to open the new-bookmark form pre-filled — with every page and category available in its dropdowns, so the bookmark can be filed anywhere (status-checked bookmarks are health-checked right away), *Mark read*, *Snooze* (`z`: 3h / tomorrow / weekend / next week), add a *Note* (`n`), or *Delete* (undo in the toast). Use the toolbar to **Mark all read** or **Clear read**.  
+3. **Browse** — filter *All* / *Unread* / *Snoozed*, search, and scroll date groups. The active filter appears under the **Inbox** title as a breadcrumb (e.g. `inbox › unread`), same placement as Health and Config (**v2026.08.08.4**). Unread items show a badge on the Inbox tab.  
+4. **Act on a row** — *Open* in a new tab, *Promote* to open the new-bookmark form pre-filled — with every page and category available in its dropdowns, so the bookmark can be filed anywhere (status-checked bookmarks are health-checked right away), *Mark read*, *Snooze* (`z`: 3h / tomorrow / weekend / next week), add a *Note* (`n`), **Share** or copy from the right-click menu (**v2026.08.08.4**), or *Delete* (undo in the toast). Use the toolbar to **Mark all read** or **Clear read**.  
 5. **Keyboard** — `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `d` delete (legend under the list).  
 6. **Triage** — click **Triage** or run **`:inbox triage`** to walk unread items one by one: `J`/`K` move, `O` open, `P` promote, `R` keep (mark read), `D` delete, `Esc` close.
 
@@ -887,12 +887,12 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Edit** | Row Edit (or `Enter`) leaves the Health view, opens the bookmark’s page, and launches the dashboard **inline editor** (falls back to Config when unavailable) |
 | **Favicon** | Shows stored bookmark icon; refresh per row |
 | **Action toolbar** | Config-style buttons per row: open URL, dashboard deep link, re-check status, favicon, overflow (**Status** → re-check status; **detect redirect**, **refresh title**, **archive**, **copy URL**, **share**, delete) |
-| **Copy URL and Share** | The **More** menu carries the same two entries as the dashboard's right-click menu, so a row found here can be copied or sent on without going back to the dashboard first. The second reads **Share…** where your browser has a share sheet and **Copy name + URL** where it does not, copying `name — URL` in that case. Both apply to any row, healthy or broken |
+| **Copy URL and Share** | The **More** menu carries the same two entries as the dashboard's right-click menu. **Share** copies a dashboard deep link with `?hv_id=` so the recipient lands on the same row in Health, not the raw bookmark URL. The second reads **Share…** where your browser has a share sheet and **Copy name + URL** where it does not. Both apply to any row, healthy or broken |
 | **Action runtime** | Row actions are guarded against overlap and refresh the health report after changes |
 | **Detect redirect** | Overflow **detect redirect** uses a fast redirect-only suggest (`redirectOnly=1`, skips title fetch); confirm shows the proposed URL; errors and timeouts appear in the status bar |
 | **Feed paging** | Long lists scroll with the page — no nested scrollbar. The first fifty filtered rows render immediately; scrolling loads more in batches of fifty. **Shift+G** jumps to the last filtered row (**v2026.07.26.3**) |
-| **Feed paging** | Long lists scroll with the page — no nested scrollbar. The first fifty filtered rows render immediately; scrolling loads more in batches of fifty. **Shift+G** jumps to the last filtered row (**v2026.07.26.3**) |
-| **Keyboard** | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `Enter` → inline editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row); `c` → availability checking; `i` → enlarged monitoring statistics on a monitored row. The shortcut legend under the feed lists them |
+| **Panel head** | Below the **Health** title, a breadcrumb shows the active filter (e.g. `health › broken`) and a **% healthy** badge names how many bookmarks have no active issue — same placement as Config subpages (**v2026.08.08.4**) |
+| **Keyboard** | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `R` or `?` reload the cached report without retest-all; `Enter` → inline editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row); `c` → availability checking; `i` → enlarged monitoring statistics on a monitored row. The shortcut legend under the feed lists them |
 | **Background rechecks** | Optional server-side schedule under **Config → Behavior → Status & health**; keeps the Health view current without opening Retest all |
 | **Check mode per row** | Each row shows its current mode (**Off** / **Periodic** / **Monitor**) as a button. Click it, or press `c`, to change it — the list keeps its scroll position and filter, so a filtered list does not reshuffle while you work down it. Options carry their own letters: `o`, `p`, `m` |
 | **Bulk enable** | On a **filtered** list, a button offers to switch the visible rows to Periodic or Monitor at once, confirming the exact count first. Never offered on the unfiltered **All** list, where it would point the scheduler at every bookmark you own |
@@ -909,13 +909,14 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Retest scope** | Bookmarks only get status checks when **Check status** is on for them (off by default, set per bookmark in **Config → Bookmarks**). Retest used to skip everything else — including rows flagged **broken**, which this page can't switch on — so those could never be cleared here. Retest now also tests any bookmark with a recorded error, tells you plainly when there is nothing to test, and stops after 250 checks per run (each takes up to 3s; run it again to continue) |
 | **Detect redirect result** | An applied redirect is checked against the new address before the row counts as healthy. If the replacement fails too, the row stays red with the reason instead of reporting a fix that was never verified |
 
-Filter, sort, and search state persist in the session across refreshes and sync to the URL (`hv_filter`, `hv_sort`, `hv_q`).
+Filter, sort, and search state persist in the session across refreshes and sync to the URL (`hv_filter`, `hv_sort`, `hv_q`, `hv_id`).
 
 **URL deep links** — Open health view with query parameters:
 
 | Parameter | Example | Effect |
 |-----------|---------|--------|
 | `hv_filter` | `/?hv_filter=broken#health` | Pre-select a filter pill |
+| `hv_id` | `/?hv_id=1:4#health` | Open health and select row 4 on page 1 (shareable deep link) |
 | `page` | `/?page=2#health` | Open health with a specific page context |
 | `hv_sort` | `/?hv_sort=name#health` | Set sort order |
 | `hv_q` | `/?hv_q=github#health` | Pre-fill search |
@@ -923,7 +924,7 @@ Filter, sort, and search state persist in the session across refreshes and sync 
 
 From the dashboard, **`Shift+H`** opens the Health view directly. **`:health`** (command mode) opens it with optional filters (`broken`, `duplicate`, `stale`, …) or `refresh` to re-scan. **`:stale`** overflow rows link to `/?hv_filter=stale#health`.
 
-The dashboard **health** icon (a heartbeat glyph styled like the inbox tab) shows a compact counter pill for broken links and warnings (including shortcut conflicts) — broken count takes priority over warnings, red for broken and amber for warnings, hidden when healthy. When broken issues exist, the link opens `/?hv_filter=broken#health`. Keyboard entry is **`Shift+H`**. The config view's **Overview** links to the same place when something needs attention.
+The dashboard **health** icon (a heartbeat glyph styled like the inbox tab) shows a compact counter pill for broken links and warnings (including shortcut conflicts) — broken count takes priority over warnings, red for broken and amber for warnings, hidden when healthy. While you stay on bookmarks or Inbox, it refreshes about once a minute so a new outage surfaces without opening Health (**v2026.08.08.4**). When broken issues exist, the link opens `/?hv_filter=broken#health`. Keyboard entry is **`Shift+H`**. The config view's **Overview** links to the same place when something needs attention.
 
 ### Browser notifications
 
@@ -982,7 +983,7 @@ Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores
 
 Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/appearance/layout` opens Appearance on Layout, `/#config/bookmarks/<pageId>` scopes Bookmarks to one page, and the address bar keeps up as you click.
 
-While config, health, or inbox is open, the **large dashboard title** shows where you are — for example `config › bookmarks` or `health › broken` — instead of a second breadcrumb inside the panel.
+While config, health, or inbox is open, the **large dashboard title** shows only the view name (for example **Health** or **Config**). The active sub-context — `config › bookmarks`, `health › broken`, or `inbox › unread` — appears as a breadcrumb **under the section title inside the panel**, matching Config subpages (**v2026.08.08.4**).
 
 Below **Help**, separated by a gap, **Find settings** opens the settings-jump overlay (`Ctrl/Cmd+Shift+K`) — the same search that jumps to any section, sub-tab, help topic, or field label you have visited.
 

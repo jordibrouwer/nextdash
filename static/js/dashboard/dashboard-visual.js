@@ -14,6 +14,7 @@ class DashboardVisual {
     constructor(dashboard) {
         this.dash = dashboard;
         this._themeIconStylingListenerAttached = false;
+        this._healthBadgePollTimer = null;
     }
 
     setupThemeIconStylingListener() {
@@ -367,8 +368,38 @@ class DashboardVisual {
             }
             this.bindHealthLinkToView(healthLink);
             this.updateHealthBadge();
+            this.syncHealthBadgePolling();
         } else if (healthLink) {
             healthLink.remove();
+            this.stopHealthBadgePolling();
+        }
+    }
+
+    /**
+     * Keep the header badge fresh while bookmarks or monitors change elsewhere.
+     * The health view has its own live refresh — polling is paused there.
+     */
+    syncHealthBadgePolling() {
+        this.stopHealthBadgePolling();
+        const d = this.dash;
+        if (d.settings.showHealthDashboard !== true) {
+            return;
+        }
+        this._healthBadgePollTimer = setInterval(() => {
+            if (document.visibilityState !== 'visible') {
+                return;
+            }
+            if (d.activeView === 'health') {
+                return;
+            }
+            void this.updateHealthBadge();
+        }, 60000);
+    }
+
+    stopHealthBadgePolling() {
+        if (this._healthBadgePollTimer) {
+            clearInterval(this._healthBadgePollTimer);
+            this._healthBadgePollTimer = null;
         }
     }
 

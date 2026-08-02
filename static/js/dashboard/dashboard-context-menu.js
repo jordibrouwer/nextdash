@@ -51,6 +51,23 @@ class DashboardContextMenu {
 
     resolveRowBookmark(row) {
         const d = this.dash;
+        if (row?.classList?.contains('inbox-item')) {
+            const id = row.getAttribute('data-inbox-id');
+            const item = (d.inbox?.items || []).find((entry) => entry.id === id);
+            const url = String(item?.url || row.getAttribute('data-bookmark-url') || '').trim();
+            if (!url) return null;
+            const name = String(
+                item?.previewTitle || item?.title || item?.domain
+                || row.getAttribute('data-inbox-share-name') || ''
+            ).trim();
+            return {
+                bookmark: { name, url },
+                index: -1,
+                scope: 'inbox',
+                pageId: 0,
+                original: null,
+            };
+        }
         const rawIndex = row.getAttribute('data-bookmark-index');
         if (rawIndex !== null) {
             const index = Number(rawIndex);
@@ -104,8 +121,15 @@ class DashboardContextMenu {
 
         // Naming the current mode saves opening the submenu just to read it, the
         // same way the health view's row menu labels itself.
-        const currentMode = window.CheckMode?.meta(window.CheckMode.of(bookmark));
-        const actions = [
+        const currentMode = bookmarkRef.scope === 'inbox'
+            ? null
+            : window.CheckMode?.meta(window.CheckMode.of(bookmark));
+        const inboxActions = [
+            { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
+            { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
+            { id: 'share', label: this.shareActionLabel(), icon: '↪' },
+        ];
+        const actions = bookmarkRef.scope === 'inbox' ? inboxActions : [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
@@ -120,7 +144,7 @@ class DashboardContextMenu {
                     submenu: true,
                 }]
                 : []),
-            { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true }
+            { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
         ];
 
         const items = [];

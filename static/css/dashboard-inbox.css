@@ -25,6 +25,18 @@
     color: var(--text-primary);
 }
 
+/* Full-width under the heading, above the section intro — same placement as
+   health-view-head-breadcrumb and config-view-head-breadcrumb. */
+.inbox-head-breadcrumb {
+    margin: 0.15rem 0 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.inbox-head-breadcrumb[hidden] {
+    display: none;
+}
+
 .inbox-subtitle {
     margin: 0.25rem 0 0;
     font-size: var(--font-size-controls);
@@ -876,6 +888,14 @@ body.inbox-triage-active {
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
+    overflow: hidden;
+}
+
+.inbox-triage-thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .inbox-triage-title {
@@ -948,6 +968,45 @@ body.inbox-triage-active {
 .inbox-sort-select:hover {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
     color: var(--accent-primary);
+}
+
+.inbox-domain-select {
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    max-width: 11rem;
+}
+
+.inbox-domain-select:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+.inbox-item-domain-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.12em;
+}
+
+.inbox-item-domain-btn:hover {
+    color: var(--accent-primary);
+}
+
+.inbox-triage-btn kbd {
+    margin-left: 0.25rem;
+    font-size: 0.68rem;
+    opacity: 0.75;
 }
 
 /* ─── Multi-select ──────────────────────────────────────────────────────── */

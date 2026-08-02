@@ -75,11 +75,18 @@ class DashboardPageNav {
     /** Lowercase header label on the inbox view (same in all locales). */
     inboxHeaderTitle() {
         const d = this.dash;
+        const domain = String(d.inbox?.domainFilter || '').trim();
+        if (domain) {
+            return `inbox › ${domain}`;
+        }
         const filter = d.inbox?.filter || 'all';
-        if (filter === 'all') return 'inbox';
+        if (filter === 'all') {
+            return 'inbox';
+        }
         const labels = {
             unread: d.language?.t?.('dashboard.inboxFilterUnread') || 'Unread',
             snoozed: d.language?.t?.('dashboard.inboxFilterSnoozed') || 'Snoozed',
+            noted: d.language?.t?.('dashboard.inboxFilterNoted') || 'With note',
         };
         const label = labels[filter] || filter;
         return `inbox › ${String(label).toLowerCase()}`;
@@ -169,25 +176,17 @@ class DashboardPageNav {
      * wherever the trail is just the view name again: repeating 'health'
      * directly under 'health' is noise, not orientation.
      *
-     * Config is absent on purpose — its trail belongs to the section heading in
-     * the panel, next to the section it describes, rather than out in the
-     * left-hand column under the view name. See renderConfigHeadBreadcrumb().
+     * Config, health, and inbox are absent on purpose — their trails belong to
+     * the section heading in the panel, next to the section they describe,
+     * rather than out in the left-hand column under the view name.
      */
     updatePageBreadcrumb() {
         const d = this.dash;
         const el = document.querySelector('.title-breadcrumb');
         if (!el) return;
 
-        let trail = '';
-        if (d.activeView === 'inbox') {
-            trail = this.inboxHeaderTitle();
-        } else if (d.activeView === 'health') {
-            trail = this.healthHeaderTitle();
-        }
-        if (!trail.includes(' › ')) trail = '';
-
-        el.textContent = trail;
-        el.hidden = !trail;
+        el.textContent = '';
+        el.hidden = true;
     }
 
 

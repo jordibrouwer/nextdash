@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.08.4 — August 2026](#v202608084--august-2026)
 - [v2026.08.08.3 — August 2026](#v202608083--august-2026)
 - [v2026.08.08.2 — August 2026](#v202608082--august-2026)
 - [v2026.08.08 — August 2026](#v20260808--august-2026)
@@ -145,6 +146,42 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.08.4 — August 2026
+
+**Health and Inbox polish** — shareable health row links, a healthy-percent badge in the view, filter trails under section titles like Config, a header badge that keeps refreshing while you stay on bookmarks, and reliability fixes from the health audit (deduped fetches, singleflight report builds, ping 4xx).
+
+### Health
+
+- **new** **Shareable row links with `hv_id`** — open, select, and share one health row with a URL like `/?hv_id=1:4#health`; filter, sort, and search still sync to `hv_filter`, `hv_sort`, and `hv_q`; Share in the row menu copies a dashboard deep link instead of the raw bookmark URL (`dashboard-health.js`).
+- **new** **Healthy % in the panel head** — the header badge shows how many bookmarks have no active issue (e.g. **25%**), with a tooltip for the exact count (`dashboard-health.js`, locales).
+- **new** **Filter trail under the title** — `health › monitored` sits below **Health** and above the subtitle, matching Config subpages; the large dashboard title stays the view name only (`dashboard-health.js`, `dashboard-page-nav.js`).
+- **new** **More filters and tiles** — stale, unused, missing preview, shortcut conflicts, and healthy appear when they have rows; KPI tiles add stale and unused; **Periodic these N** beside bulk Monitor; pills and tiles scroll on one row (`dashboard-health.js`, `health-view.css`).
+- **improved** **`R` / `?` reload the cached report** — keyboard refresh fetches a fresh server report without retest-all; `Home`/`End` jump to first and last row (`dashboard-health.js`).
+- **improved** **Parallel report fetches dedupe** — overlapping `/api/bookmark-health` calls share one in-flight request (`dashboard-health.js`).
+- **fix** **Escape while the view is still loading** — closing Health during lazy load no longer leaves a stuck loading shell (`dashboard-health-loader.js`).
+
+### Inbox
+
+- **new** **Filter trail under the title** — `inbox › unread` sits below **Inbox**, same placement as Health and Config (`dashboard-inbox.js`, `dashboard-page-nav.js`).
+- **improved** **Parallel inbox fetches dedupe** — concurrent `/api/inbox` calls share one in-flight `fetchItems` promise (`dashboard-inbox.js`).
+- **new** **Right-click Share on inbox rows** — inbox items expose copy/share entries like bookmark rows once the context menu module is loaded (`dashboard-inbox.js`, `dashboard-context-menu.js`).
+
+### Dashboard
+
+- **improved** **Header health badge polls outside the view** — the heartbeat icon refreshes about once a minute on bookmarks and Inbox while Health keeps live refresh on the Monitored filter (`dashboard-visual.js`, `dashboard-setup.js`).
+- **fix** **Share works before the context menu module loads** — health and inbox rows reach clipboard/share through a loader stub on the first click (`dashboard-bookmark-interactions-loader.js`).
+
+### Server
+
+- **fix** **Health report builds singleflight** — concurrent `/api/bookmark-health` requests wait on one in-flight build instead of each recomputing the full report (`handlers.go`).
+- **fix** **HTTP 4xx counts as reachable** — GitHub and similar hosts that answer probes with 404 are no longer marked down; only 5xx is unreachable (`ping.go`).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, New features carousel, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.08.4**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v164`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v222`.
 
 ---
 
