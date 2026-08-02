@@ -25,6 +25,18 @@
     color: var(--text-primary);
 }
 
+/* Full-width under the heading, above the section intro — same placement as
+   health-view-head-breadcrumb and config-view-head-breadcrumb. */
+.inbox-head-breadcrumb {
+    margin: 0.15rem 0 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.inbox-head-breadcrumb[hidden] {
+    display: none;
+}
+
 .inbox-subtitle {
     margin: 0.25rem 0 0;
     font-size: var(--font-size-controls);

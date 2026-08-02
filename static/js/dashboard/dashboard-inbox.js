@@ -22,6 +22,7 @@ class DashboardInbox {
         this.triage = typeof DashboardInboxTriage === 'function' ? new DashboardInboxTriage(this) : null;
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
+        this._fetchPromise = null;
     }
 
     isEnabled() {
@@ -212,6 +213,31 @@ class DashboardInbox {
     static FILTERS = new Set(['all', 'unread', 'snoozed', 'noted']);
     static SORTS = new Set(['newest', 'oldest', 'title', 'domain']);
     static STATE_KEY = 'nextdash:inbox-view-state';
+
+    /** Lowercase filter label for breadcrumbs. */
+    filterLabel(filter = this.filter) {
+        const labels = {
+            all: this.t('dashboard.inboxFilterAll', 'All'),
+            unread: this.t('dashboard.inboxFilterUnread', 'Unread'),
+            snoozed: this.t('dashboard.inboxFilterSnoozed', 'Snoozed'),
+            noted: this.t('dashboard.inboxFilterNoted', 'With note'),
+        };
+        return labels[filter] || String(filter || '');
+    }
+
+    /** Breadcrumb trail for the panel head — `inbox › filter` or `inbox › domain`. */
+    headerBreadcrumb() {
+        const root = this.t('dashboard.inboxPageTitle', 'Inbox').toLowerCase();
+        const domain = String(this.domainFilter || '').trim();
+        if (domain) {
+            return `${root} › ${domain.toLowerCase()}`;
+        }
+        if (this.filter === 'all') {
+            return root;
+        }
+        const label = this.filterLabel().toLowerCase();
+        return label ? `${root} › ${label}` : root;
+    }
 
     /**
      * Restore filter and sort, URL first and stored state second.
@@ -438,13 +464,23 @@ class DashboardInbox {
     }
 
     async fetchItems() {
-        const res = await fetch('/api/inbox');
-        if (!res.ok) {
-            throw new Error(`inbox HTTP ${res.status}`);
+        if (this._fetchPromise) {
+            return this._fetchPromise;
         }
-        const data = await res.json();
-        this.items = Array.isArray(data.items) ? data.items : [];
-        return this.items;
+        this._fetchPromise = (async () => {
+            try {
+                const res = await fetch('/api/inbox');
+                if (!res.ok) {
+                    throw new Error(`inbox HTTP ${res.status}`);
+                }
+                const data = await res.json();
+                this.items = Array.isArray(data.items) ? data.items : [];
+                return this.items;
+            } finally {
+                this._fetchPromise = null;
+            }
+        })();
+        return this._fetchPromise;
     }
 
     async loadItems() {
@@ -1986,6 +2022,8 @@ class DashboardInbox {
 
         const title = this.t('dashboard.inboxPageTitle', 'Inbox');
         const subtitle = this.t('dashboard.inboxPageSubtitle', 'Links saved to read or review later');
+        const trail = this.headerBreadcrumb();
+        const showTrail = trail.includes(' › ');
         const count = this.items.length;
         const unread = this.unreadCount();
         const filtered = this.getFilteredItems();
@@ -1995,6 +2033,7 @@ class DashboardInbox {
         header.innerHTML = `
             <div class="inbox-header-text">
                 <h2 class="inbox-title">${this.escape(title)}</h2>
+                <p class="inbox-head-breadcrumb"${showTrail ? '' : ' hidden'}>${this.escape(trail)}</p>
                 <p class="inbox-subtitle">${this.escape(subtitle)}</p>
             </div>
             <div class="inbox-header-meta">
@@ -2249,6 +2288,8 @@ class DashboardInbox {
         const card = document.createElement('article');
         card.className = 'inbox-item' + (item.readAt ? ' is-read' : ' is-unread');
         card.dataset.inboxId = item.id;
+        card.dataset.bookmarkUrl = item.url || '';
+        card.dataset.inboxShareName = item.previewTitle || item.title || item.domain || '';
         card.tabIndex = -1;
         card.setAttribute('aria-selected', 'false');
 
@@ -2407,6 +2448,8 @@ class DashboardInbox {
             e.preventDefault();
             this.openItem(item);
         });
+
+        d.contextMenu?.bindRow?.(card);
 
         return card;
     }

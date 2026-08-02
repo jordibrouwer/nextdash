@@ -255,6 +255,22 @@ test.describe('dashboard inbox phase 1', () => {
         await expect(page.locator('.title')).toHaveText(pageName);
     });
 
+    test('filter breadcrumb sits in the panel head, not the dashboard header', async ({ page }) => {
+        await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+
+        await expect(page.locator('.title')).toHaveText('inbox');
+        await expect(page.locator('.title-breadcrumb')).toBeHidden();
+
+        await page.locator('[data-inbox-filter="unread"]').click();
+        await expect(page.locator('.title-breadcrumb')).toBeHidden();
+        await expect(page.locator('.inbox-head-breadcrumb')).toBeVisible();
+        await expect(page.locator('.inbox-head-breadcrumb')).toContainText(/unread/i);
+        await expect(page.locator('.inbox-title')).toHaveText(/inbox/i);
+        await expect(page.locator('.inbox-subtitle')).toBeVisible();
+    });
+
     /* ── Sorting, deep links, selection and custom snooze ─────────────── */
 
     async function seedInbox(page, titles) {
@@ -462,6 +478,33 @@ test.describe('dashboard inbox phase 1', () => {
         await page.locator('[data-inbox-export="csv"]').click();
         const download = await downloadPromise;
         expect(download.suggestedFilename()).toMatch(/^nextdash-inbox-.*\.csv$/);
+    });
+
+    test('right-click Share copies the inbox row title and URL', async ({ page }) => {
+        await seedInbox(page, ['Share me']);
+        await page.evaluate(() => {
+            // @ts-ignore
+            delete navigator.share;
+            window.__writes = [];
+            Object.defineProperty(navigator, 'clipboard', {
+                configurable: true,
+                value: { writeText: (t) => { window.__writes.push(t); return Promise.resolve(); } },
+            });
+            const loader = window.dashboardInstance.contextMenu;
+            loader._module = null;
+            loader._modulePromise = null;
+            delete window.DashboardContextMenu;
+        });
+
+        const row = page.locator('.inbox-item').first();
+        await row.click({ button: 'right' });
+        await page.waitForSelector('#bookmark-context-menu', { timeout: 15_000 });
+        await page.locator('#bookmark-context-menu [data-action="share"]').click();
+
+        await expect.poll(() => page.evaluate(() => window.__writes?.length)).toBe(1);
+        const written = await page.evaluate(() => window.__writes[0]);
+        expect(written).toContain('Share me');
+        expect(written).toContain('http');
     });
 
 });
