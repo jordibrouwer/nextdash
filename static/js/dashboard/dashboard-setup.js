@@ -437,6 +437,7 @@ class DashboardSetup {
 
     teardownDashboardTimers() {
         const d = this.dash;
+        d.visual?.stopHealthBadgePolling?.();
         if (d._postOnboardingPromptsTimer) {
             clearTimeout(d._postOnboardingPromptsTimer);
             d._postOnboardingPromptsTimer = null;
