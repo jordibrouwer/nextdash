@@ -35,10 +35,13 @@ type Handlers struct {
 	previewCacheDirty bool
 	healthCacheMu     sync.RWMutex
 	healthHistoryMu   sync.Mutex
-	healthReportMu    sync.RWMutex
-	healthReport      BookmarkHealthReport
-	healthReportAt    time.Time
-	healthReportOK    bool
+	healthReportMu        sync.RWMutex
+	healthReport          BookmarkHealthReport
+	healthReportAt        time.Time
+	healthReportOK        bool
+	healthReportBuildMu   sync.Mutex
+	healthReportBuildCond *sync.Cond
+	healthReportBuilding  bool
 	prefetchMu        sync.Mutex
 	autoBackupMu      sync.Mutex
 	ssrfAPILimiter    *slidingWindowLimiter
@@ -215,6 +218,7 @@ func NewHandlers(store Store, files embed.FS) *Handlers {
 		ssrfAPILimiter:    newSlidingWindowLimiter(ssrfAPIRequestsPerMinute(), time.Minute),
 		statusPingLimiter: newSlidingWindowLimiter(statusPingRequestsPerMinute(), time.Minute),
 	}
+	h.healthReportBuildCond = sync.NewCond(&h.healthReportBuildMu)
 	h.startPreviewCacheFlushLoop()
 	if store.TakeDefaultBookmarkIconPrefetch() {
 		h.startDefaultBookmarkIconPrefetch()
@@ -258,27 +262,60 @@ func (h *Handlers) GetBookmarkHealth(w http.ResponseWriter, r *http.Request) {
 
 	refresh := r.URL.Query().Get("refresh")
 	forceRefresh := refresh == "1" || refresh == "true"
+	report := h.loadBookmarkHealthReport(forceRefresh)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(report)
+}
+
+func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthReport {
+	if h.healthReportBuildCond == nil {
+		h.healthReportBuildCond = sync.NewCond(&h.healthReportBuildMu)
+	}
 	if !forceRefresh {
 		h.healthReportMu.RLock()
 		if h.healthReportOK && time.Since(h.healthReportAt) < healthReportCacheTTL {
 			report := h.healthReport
 			h.healthReportMu.RUnlock()
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(report)
-			return
+			return report
 		}
 		h.healthReportMu.RUnlock()
 	}
 
+	h.healthReportBuildMu.Lock()
+	for h.healthReportBuilding {
+		h.healthReportBuildCond.Wait()
+		if !forceRefresh {
+			h.healthReportMu.RLock()
+			cached := h.healthReportOK && time.Since(h.healthReportAt) < healthReportCacheTTL
+			var report BookmarkHealthReport
+			if cached {
+				report = h.healthReport
+			}
+			h.healthReportMu.RUnlock()
+			if cached {
+				h.healthReportBuildMu.Unlock()
+				return report
+			}
+		}
+	}
+	h.healthReportBuilding = true
+	h.healthReportBuildMu.Unlock()
+
 	report := h.buildBookmarkHealthReport()
+
 	h.healthReportMu.Lock()
 	h.healthReport = report
 	h.healthReportOK = true
 	h.healthReportAt = time.Now()
 	h.healthReportMu.Unlock()
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(report)
+	h.healthReportBuildMu.Lock()
+	h.healthReportBuilding = false
+	h.healthReportBuildCond.Broadcast()
+	h.healthReportBuildMu.Unlock()
+
+	return report
 }
 
 func (h *Handlers) invalidateHealthReportCache() {

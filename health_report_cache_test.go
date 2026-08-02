@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 )
@@ -90,5 +91,40 @@ func TestGetBookmarkHealthCacheExpires(t *testing.T) {
 	report2 := decodeHealthReport(t, second)
 	if report2.Summary.TotalBookmarks != 1 {
 		t.Fatalf("expired cache total = %d, want 1", report2.Summary.TotalBookmarks)
+	}
+}
+
+func TestLoadBookmarkHealthReportSingleflight(t *testing.T) {
+	dir := t.TempDir()
+	settingsPath := filepath.Join(dir, "settings.json")
+	if err := os.WriteFile(settingsPath, []byte(`{}`), 0o644); err != nil {
+		t.Fatalf("write settings: %v", err)
+	}
+	pagePath := filepath.Join(dir, "bookmarks-1.json")
+	if err := os.WriteFile(pagePath, []byte(`{"id":1,"name":"Page 1","bookmarks":[{"name":"A","url":"https://example.com"}]}`), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+
+	h := &Handlers{store: &FileStore{settingsFile: settingsPath, dataDir: dir}}
+	h.healthReportBuildCond = sync.NewCond(&h.healthReportBuildMu)
+
+	const workers = 8
+	var wg sync.WaitGroup
+	reports := make([]BookmarkHealthReport, workers)
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
+		i := i
+		go func() {
+			defer wg.Done()
+			reports[i] = h.loadBookmarkHealthReport(false)
+		}()
+	}
+	wg.Wait()
+
+	first := reports[0].GeneratedAt
+	for i := 1; i < workers; i++ {
+		if reports[i].GeneratedAt != first {
+			t.Fatalf("worker %d GeneratedAt = %d, want %d", i, reports[i].GeneratedAt, first)
+		}
 	}
 }
