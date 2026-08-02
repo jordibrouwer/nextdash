@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.08.3 — August 2026](#v202608083--august-2026)
 - [v2026.08.08.2 — August 2026](#v202608082--august-2026)
 - [v2026.08.08 — August 2026](#v20260808--august-2026)
 - [v2026.08.07.1 — August 2026](#v202608071--august-2026)
@@ -144,6 +145,25 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.08.3 — August 2026
+
+**Hotfix after v2026.08.08.2** — two silent failures found by fixing the tests that had been red for them. Both were reported by the suite as flakiness and were neither: the share did nothing at all, and the confirmation for it arrived up to fourteen seconds late.
+
+### Dashboard
+
+- **fix** **Share from the right-click menu reaches the clipboard again** — `resolveRowBookmark()` went through the loader proxy's generic path, which answers with a Promise until the module is fetched. Callers read `ref.bookmark` straight away, got `undefined`, and did nothing, so a share never fell through to its clipboard copy. Answered synchronously on the stub now, the way `canOpenShareSheet()` and `shareActionLabel()` already were after v2026.08.07.1 (`dashboard-bookmark-interactions-loader.js`).
+- **fix** **A confirmation no longer waits behind the Shift+B promo** — that tip runs for fourteen seconds and held the single toast host for all of it, so a confirmation raised while it was up sat in the queue and appeared long after the action it confirmed. A non-promo notification now takes the slot instead of queueing (`app-notification.js`).
+
+### Testing
+
+- **fix** **The What's new modal no longer reopens mid-test** — closing it did not record the release as seen, so on any release the browser had not seen (every cache-token bump) it reopened a second or two later and marked the grid `inert`, leaving rows unclickable. The shared helper marks it seen when dismissing; the check-mode setup also re-runs the overlay teardown after its reload (`e2e-helpers.js`, `dashboard-check-mode-menu.spec.js`).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, New features carousel, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.08.3**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v163`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v221`.
 
 ---
 
