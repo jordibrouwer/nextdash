@@ -43,6 +43,8 @@ type Handlers struct {
 	autoBackupMu      sync.Mutex
 	ssrfAPILimiter    *slidingWindowLimiter
 	statusPingLimiter *slidingWindowLimiter
+	updateCheckMu     sync.RWMutex
+	updateCheckCache  updateCheckCacheEntry
 }
 
 const healthReportCacheTTL = 3 * time.Minute
@@ -713,6 +715,8 @@ type htmlPageData struct {
 	// TelemetryLockedOff mirrors DISABLE_TELEMETRY so config can render the
 	// Privacy checkbox disabled and explain why it cannot be changed.
 	TelemetryLockedOff bool
+	// UpdateCheckLockedOff mirrors DISABLE_UPDATE_CHECK for the same reason.
+	UpdateCheckLockedOff bool
 }
 
 // analyticsWebsiteID / analyticsScriptSrc are the project's shared Umami instance.
@@ -736,6 +740,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		AnalyticsScriptSrc: analyticsScriptSrc,
 		AnalyticsEnabled:   analyticsEnabled(settings),
 		TelemetryLockedOff: telemetryDisabledByEnv(),
+		UpdateCheckLockedOff: updateCheckDisabledByEnv(),
 	}
 }
 
@@ -1343,6 +1348,9 @@ func (h *Handlers) GetSettings(w http.ResponseWriter, r *http.Request) {
 	if telemetryDisabledByEnv() {
 		settings.AnalyticsOptIn = false
 	}
+	if updateCheckDisabledByEnv() {
+		settings.UpdateCheckEnabled = false
+	}
 	writeJSONWithETag(w, r, settings)
 }
 
@@ -1395,6 +1403,9 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	// it returns unchanged once the operator unsets it.
 	if telemetryDisabledByEnv() {
 		settings.AnalyticsOptIn = h.store.GetSettings().AnalyticsOptIn
+	}
+	if updateCheckDisabledByEnv() {
+		settings.UpdateCheckEnabled = h.store.GetSettings().UpdateCheckEnabled
 	}
 
 	// Validate and sanitize collections

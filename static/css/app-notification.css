@@ -56,6 +56,13 @@
     border-color: var(--border-primary);
 }
 
+/* Software update available — accent brand colour, distinct from success/error. */
+.app-notification.update {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
+}
+
 /* Session tip: a longer, quieter toast that carries inline <code> keys. */
 .app-notification.info .app-notification-text {
     font-weight: var(--font-weight-medium);

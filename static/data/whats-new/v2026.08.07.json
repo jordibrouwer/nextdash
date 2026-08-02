@@ -1,0 +1,38 @@
+{
+  "tag": "v2026.08.07",
+  "date": "August 2026",
+  "releasedAt": "2026-08-07",
+  "modalLead": "nextDash checks GitHub once a day for a newer release — a dot on ★, a toast while you are actively using the app, and a manual check in the ★ modal header and Config → Overview. Turn it off under Config → Behavior → Privacy.",
+  "sections": [
+    {
+      "title": "Update check",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>GitHub release check</strong> — the server polls the public GitHub Releases API at most once every 24 hours (<code>GET /api/update-status</code>, cached). When a newer tag exists, Config → Overview shows a compact notice above Tips, the ★ button gets a dot, and a toast appears once per release while the app tab is active (<code>update_check.go</code>, <code>update-notice.js</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>What's new modal header</strong> — version line and <strong>Check for updates</strong> sit on one row; release summary and personal project link share the row below at 50/50 (<code>whats-new-modal.js</code>, <code>modal.css</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Privacy toggle</strong> — <strong>Check GitHub for new releases</strong> under Config → Behavior → Privacy (on by default). When off, the badge, toast, and update bars disappear everywhere (<code>dashboard-config.js</code>, locales)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Release web push removed</strong> — software updates no longer use browser push notifications; in-app toast while actively using nextDash replaces them (<code>push_release.go</code> removed)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.07</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v157</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v215</code>."
+        }
+      ]
+    }
+  ]
+}
