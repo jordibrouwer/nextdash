@@ -31,6 +31,18 @@
     color: var(--text-primary);
 }
 
+/* Full-width under the heading, above the section intro — same placement as
+   config-view-head-breadcrumb. */
+.health-view-head-breadcrumb {
+    margin: 0.15rem 0 0;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.health-view-head-breadcrumb[hidden] {
+    display: none;
+}
+
 .health-view-subtitle {
     margin: 0.25rem 0 0;
     font-size: var(--font-size-controls);
@@ -74,17 +86,24 @@
 
 /* ─── Summary tiles ─────────────────────────────────────────────────────── */
 
-/* Auto-fit rather than a fixed column count: the row reflows instead of
-   overflowing when the sidebar or a narrow window squeezes the container. */
+/* One row: equal-width tiles that scroll horizontally on narrow viewports. */
 .health-view-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
     gap: 0.5rem;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
     padding: 0 0.35rem;
 }
 
 .health-view-tile {
     display: flex;
+    flex: 1 1 0;
+    flex-shrink: 0;
+    min-width: 5.5rem;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.15rem;
@@ -219,7 +238,8 @@ button.health-view-tile:hover {
 }
 
 .health-view-retest-btn,
-.health-view-load-more-btn {
+.health-view-load-more-btn,
+.health-view-retry-btn {
     padding: 0.35rem 0.7rem;
     border-radius: 0.4rem;
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
@@ -266,7 +286,8 @@ button.health-view-tile:hover {
 
 /* Same shape as its "off" counterpart, but tinted toward the accent rather than
    the error colour: this one adds monitoring rather than taking it away. */
-.health-view-bulk-monitor-btn {
+.health-view-bulk-monitor-btn,
+.health-view-bulk-periodic-btn {
     padding: 0.35rem 0.7rem;
     border-radius: 0.4rem;
     border: 1px solid var(--border-secondary);
@@ -276,7 +297,8 @@ button.health-view-tile:hover {
     cursor: pointer;
 }
 
-.health-view-bulk-monitor-btn:hover {
+.health-view-bulk-monitor-btn:hover,
+.health-view-bulk-periodic-btn:hover {
     border-color: var(--accent-primary);
     color: var(--accent-primary);
 }
@@ -333,6 +355,10 @@ button.health-view-tile:hover {
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
     background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
+}
+
+.health-view-item--highlight {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 35%, transparent);
 }
 
 .health-view-item-icon {
@@ -1207,8 +1233,11 @@ body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
     font-size: 0.85rem;
 }
 
-/* Rendered twice — above and below the list — so a long list never pushes the
-   shortcut hints out of sight. */
+.health-view-retry-btn {
+    margin-top: 0.85rem;
+}
+
+/* Keyboard shortcut hints below the list so a long scroll never hides them. */
 .health-view-legend {
     display: flex;
     flex-wrap: wrap;
@@ -1279,7 +1308,7 @@ body.no-animations .health-view-item-score-caret {
     }
 
     .health-view-tiles {
-        grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+        flex-wrap: nowrap;
     }
 }
 
@@ -1303,6 +1332,7 @@ body[data-layout-version="modern"] .health-view-action-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-export-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-checkoff-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-bulk-monitor-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-bulk-periodic-btn:focus-visible,
 body[data-layout-version="modern"] .health-monitor-expand-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-item:focus-visible {
     outline: var(--layout-focus-ring);
@@ -1369,7 +1399,8 @@ body[data-layout-version="modern"] .health-view-filter-btn.is-active {
    sharing one shape here rather than pinning each to its own radius. */
 body[data-layout-version="modern"] .health-view-export-btn,
 body[data-layout-version="modern"] .health-view-checkoff-btn,
-body[data-layout-version="modern"] .health-view-bulk-monitor-btn {
+body[data-layout-version="modern"] .health-view-bulk-monitor-btn,
+body[data-layout-version="modern"] .health-view-bulk-periodic-btn {
     border-radius: var(--layout-radius-sm);
     border-color: var(--layout-surface-border);
     transition:
@@ -1379,7 +1410,8 @@ body[data-layout-version="modern"] .health-view-bulk-monitor-btn {
 }
 
 body[data-layout-version="modern"] .health-view-export-btn:hover,
-body[data-layout-version="modern"] .health-view-bulk-monitor-btn:hover {
+body[data-layout-version="modern"] .health-view-bulk-monitor-btn:hover,
+body[data-layout-version="modern"] .health-view-bulk-periodic-btn:hover {
     background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 

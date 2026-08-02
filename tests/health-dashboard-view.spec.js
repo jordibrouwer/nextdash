@@ -18,6 +18,8 @@ function report() {
             brokenCount: 1,
             duplicateCount: 2,
             uncheckedCount: 1,
+            staleCount: 1,
+            unusedCount: 1,
         },
         issues: [
             {
@@ -64,6 +66,22 @@ function report() {
                 // Monitored, but the scheduler has not produced a sample yet, so the
                 // server sends no monitorStats at all.
                 monitor: true, checkStatus: true,
+            },
+            {
+                pageId: 1, index: 6, pageName: 'dev', name: 'Stale one',
+                url: 'https://example.com/stale', category: 'tools',
+                status: 'stale', score: 80, duplicateCount: 0,
+                openCount: 5, lastOpened: 1,
+                reasons: ['Not opened in over 30 days'],
+                reasonDetails: [{ code: 'not_opened_30_days', penalty: 10 }],
+            },
+            {
+                pageId: 1, index: 7, pageName: 'dev', name: 'Unused one',
+                url: 'https://example.com/unused', category: 'tools',
+                status: 'unused', score: 85, duplicateCount: 0,
+                openCount: 0, lastOpened: 0,
+                reasons: ['Never opened'],
+                reasonDetails: [{ code: 'never_opened', penalty: 10 }],
             },
         ],
         duplicateGroups: [],
@@ -132,7 +150,7 @@ test.describe('health dashboard view', () => {
         // The view owns the container, exactly as inbox does.
         const layout = page.locator('#dashboard-layout');
         await expect(layout).toHaveClass(/health-layout/);
-        await expect(layout).toHaveAttribute('role', 'feed');
+        await expect(page.locator('.health-view-feed')).toHaveAttribute('role', 'feed');
         await expect(page.locator('.bookmark-link')).toHaveCount(0);
 
         expect(await page.evaluate(() => window.location.hash)).toBe('#health');
@@ -153,6 +171,45 @@ test.describe('health dashboard view', () => {
 
         // The dashboard icon should stay hash-based, even while the badge refreshes.
         await expect(page.locator('.health-link a.health-link-anchor')).toHaveAttribute('href', '/#health');
+    });
+
+    test('the header shows the healthy percentage badge', async ({ page }) => {
+        await openHealthView(page);
+
+        // Fixture: 1 healthy of 4 total → 25%.
+        await expect(page.locator('.health-view-score-badge')).toHaveText('25%');
+        await expect(page.locator('.health-view-score-badge')).toHaveAttribute('aria-label', /25%.*healthy/i);
+    });
+
+    test('filter breadcrumb sits in the panel head, not the dashboard header', async ({ page }) => {
+        await openHealthView(page);
+
+        await expect(page.locator('.title')).toHaveText('health');
+        await expect(page.locator('.title-breadcrumb')).toBeHidden();
+
+        await page.locator('[data-health-filter="monitored"]').click();
+        await expect(page.locator('.title-breadcrumb')).toBeHidden();
+        await expect(page.locator('.health-view-head-breadcrumb')).toBeVisible();
+        await expect(page.locator('.health-view-head-breadcrumb')).toContainText(/monitored/i);
+        await expect(page.locator('.health-view-title')).toHaveText(/health/i);
+        await expect(page.locator('.health-view-subtitle')).toBeVisible();
+    });
+
+    test('hv_id deep link highlights and selects the target row', async ({ page }) => {
+        await page.route('**/api/bookmark-health**', async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(report()),
+            });
+        });
+        await page.goto('/?hv_id=1%3A4#health');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
+
+        await expect(page.locator('[data-health-key="1:4"].keyboard-selected')).toBeVisible();
+        await expect(page.locator('[data-health-key="1:4"].health-view-item--highlight')).toBeVisible();
     });
 
     test('the header icon still opens dashboard health in a new tab', async ({ page, context }) => {
@@ -188,13 +245,13 @@ test.describe('health dashboard view', () => {
         await openHealthView(page);
 
         const tiles = page.locator('.health-view-tile');
-        // Total, Healthy, Monitored, Broken, Duplicates, Unchecked.
-        await expect(tiles).toHaveCount(6);
+        // Total, Healthy, Monitored, Broken, Unchecked, Stale, Unused.
+        await expect(tiles).toHaveCount(7);
         await expect(page.locator('[data-health-tile="broken"]')).toContainText('1');
         // Broken is the default filter, so its tile starts marked.
         await expect(page.locator('[data-health-tile="broken"]')).toHaveClass(/is-active/);
 
-        await page.click('[data-health-tile="duplicate"]');
+        await page.click('[data-health-filter="duplicate"]');
         await expect(page.locator('.health-view-item-title')).toHaveText('Dup A');
         await expect(page.locator('.health-view-filter-btn.is-active')).toContainText('Duplicates');
     });
@@ -218,6 +275,31 @@ test.describe('health dashboard view', () => {
 
         // A wall of zeroes above "nothing to fix" is noise, not information.
         await expect(page.locator('.health-view-tile')).toHaveCount(0);
+    });
+
+    test('a failed load shows a retry button that refetches the report', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+
+        let failCount = 0;
+        await page.route('**/api/bookmark-health**', async (route) => {
+            failCount += 1;
+            if (failCount === 1) {
+                await route.fulfill({ status: 503, body: 'unavailable' });
+                return;
+            }
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(report()),
+            });
+        });
+
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('.health-view-retry-btn', { timeout: 15_000 });
+        await page.locator('.health-view-retry-btn').click();
+        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
     });
 
     test('row actions stay collapsed until the row is selected', async ({ page }) => {
@@ -253,8 +335,9 @@ test.describe('health dashboard view', () => {
         const feedIndex = order.findIndex((c) => c.includes('health-view-feed'));
         expect(legendIndex).toBeGreaterThan(feedIndex);
 
-        // The sole copy stays announced to assistive tech (no longer aria-hidden).
-        await expect(page.locator('.health-view-legend--bottom')).not.toHaveAttribute('aria-hidden', 'true');
+        // Decorative copy for sighted users — row buttons are the AT path.
+        await expect(page.locator('.health-view-legend--bottom')).toHaveAttribute('aria-hidden', 'true');
+        await expect(page.locator('.health-view-legend')).toContainText('Enter / Space');
     });
 
     test('m opens the row menu, arrows walk it, Escape closes it without leaving', async ({ page }) => {
@@ -345,17 +428,19 @@ test.describe('health dashboard view', () => {
         // Score ascending by default: worst first. The two monitored rows both
         // score 100, so they tie and fall back to name order.
         await expect(page.locator('.health-view-item-title')).toHaveText([
-            'Broken one', 'Dup A', 'Never checked one', 'Monitored one', 'Monitored pending',
+            'Broken one', 'Stale one', 'Dup A', 'Unused one', 'Never checked one',
+            'Monitored one', 'Monitored pending',
         ]);
 
         await page.selectOption('.health-view-sort-select', 'name');
         await expect(page.locator('.health-view-item-title')).toHaveText([
-            'Broken one', 'Dup A', 'Monitored one', 'Monitored pending', 'Never checked one',
+            'Broken one', 'Dup A', 'Monitored one', 'Monitored pending',
+            'Never checked one', 'Stale one', 'Unused one',
         ]);
 
         await page.selectOption('.health-view-sort-select', 'last-checked-desc');
         const byChecked = await page.locator('.health-view-item-title').allTextContents();
-        expect(byChecked).toHaveLength(5);
+        expect(byChecked).toHaveLength(7);
 
         // Focus must not stay on the select: a focused SELECT swallows every row
         // shortcut, so j/k/m would go dead until the user clicked away.
@@ -505,7 +590,7 @@ test.describe('health dashboard view', () => {
         await expect(page.locator('.health-view-item-reason')).toContainText('Duplicate URL in 2 bookmarks');
 
         await page.click('[data-health-filter="all"]');
-        await expect(page.locator('.health-view-item')).toHaveCount(5);
+        await expect(page.locator('.health-view-item')).toHaveCount(7);
     });
 
     test('j and k move the selection without opening search', async ({ page }) => {
@@ -836,6 +921,68 @@ test.describe('health view — export, persistence and monitor discoverability',
         await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
 
         expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('unchecked');
+        await expect(page).toHaveURL(/hv_filter=unchecked/);
+    });
+
+    test('filter, sort, and search sync to the address bar', async ({ page }) => {
+        await openHealthView(page);
+
+        await page.click('[data-health-filter="duplicate"]');
+        await expect(page).toHaveURL(/hv_filter=duplicate/);
+
+        await page.selectOption('.health-view-sort-select', 'name');
+        await expect(page).toHaveURL(/hv_sort=name/);
+
+        await page.fill('.health-view-search-input', 'broken');
+        await expect(page).toHaveURL(/hv_q=broken/);
+    });
+
+    test('R refreshes the cached report without retesting bookmarks', async ({ page }) => {
+        let refreshHits = 0;
+        let retestHits = 0;
+        await page.route('**/api/bookmark-health**', async (route) => {
+            if (route.request().url().includes('refresh=1')) refreshHits += 1;
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(report()),
+            });
+        });
+        await page.route('**/api/health/retest-all**', async (route) => {
+            retestHits += 1;
+            await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
+        await page.locator('#dashboard-layout').focus();
+        await page.keyboard.press('R');
+        await expect.poll(() => refreshHits).toBeGreaterThanOrEqual(1);
+        expect(retestHits).toBe(0);
+    });
+
+    test('secondary filter pills appear when they have rows', async ({ page }) => {
+        await openHealthView(page);
+        await expect(page.locator('[data-health-filter="stale"]')).toBeVisible();
+        await expect(page.locator('[data-health-filter="unused"]')).toBeVisible();
+        await page.click('[data-health-filter="stale"]');
+        expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('stale');
+        await expect(page).toHaveURL(/hv_filter=stale/);
+    });
+
+    test('Home and End jump to the first and last visible row', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+        await page.locator('#dashboard-layout').focus();
+        await page.keyboard.press('End');
+        const lastKey = await page.locator('.health-view-item.keyboard-selected').getAttribute('data-health-key');
+        await page.keyboard.press('Home');
+        const firstKey = await page.locator('.health-view-item.keyboard-selected').getAttribute('data-health-key');
+        expect(firstKey).toBeTruthy();
+        expect(lastKey).toBeTruthy();
+        expect(firstKey).not.toBe(lastKey);
     });
 
     test('export downloads the filtered rows as CSV', async ({ page }) => {
@@ -881,6 +1028,65 @@ test.describe('health view — export, persistence and monitor discoverability',
         expect(fields.plain).toBe('"ordinary"');
         expect(fields.nullish).toBe('""');
     });
+
+    test('open broken links calls the API and opens returned URLs', async ({ page, context }) => {
+        await page.route('**/api/health/open-broken', async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    count: 1,
+                    totalBroken: 1,
+                    limit: 10,
+                    urls: ['https://example.com/broken'],
+                }),
+            });
+        });
+        await openHealthView(page);
+        const popupPromise = context.waitForEvent('page');
+        await page.locator('.health-view-open-broken-btn').click();
+        await page.locator('#app-modal.show').getByRole('button', { name: /Open links/i }).click();
+        const popup = await popupPromise;
+        expect(popup.url()).toBe('https://example.com/broken');
+        await popup.close();
+    });
+
+    test('merge duplicate group calls the merge API', async ({ page }) => {
+        let mergeCalled = false;
+        await page.route('**/api/bookmark-health**', async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    ...report(),
+                    duplicateGroups: [{
+                        url: 'https://dup.test/x',
+                        bookmarks: [
+                            { name: 'Dup A', pageId: 1, index: 2, openCount: 3 },
+                            { name: 'Dup B', pageId: 1, index: 6, openCount: 1 },
+                        ],
+                    }],
+                }),
+            });
+        });
+        await page.route('**/api/health/merge-duplicates', async (route) => {
+            mergeCalled = true;
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ status: 'merged', count: 1 }),
+            });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
+        await page.locator('[data-health-filter="duplicate"]').click();
+        await page.locator('.health-view-merge-duplicates-btn').click();
+        await page.locator('#app-modal.show').getByRole('button', { name: /Merge duplicates/i }).click();
+        await expect.poll(() => mergeCalled).toBe(true);
+    });
 });
 
 test.describe('health view — monitored tile', () => {
@@ -907,10 +1113,10 @@ test.describe('health view — monitored tile', () => {
         await withMonitorState(page, { down: false });
 
         // Monitored answers the same question as Healthy — is anything wrong
-        // now — where Broken/Duplicates/Unchecked are backlogs to work through.
+        // now — where Broken/Unchecked are backlogs to work through.
         const labels = await page.locator('.health-view-tile-label').allTextContents();
         expect(labels.map((t) => t.trim())).toEqual(
-            ['Total', 'Healthy', 'Monitored', 'Broken', 'Duplicates', 'Unchecked']
+            ['Total', 'Healthy', 'Monitored', 'Broken', 'Unchecked', 'Stale', 'Unused']
         );
     });
 

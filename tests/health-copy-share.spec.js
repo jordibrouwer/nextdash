@@ -84,6 +84,24 @@ async function runMenuAction(page, action) {
     }, action);
 }
 
+/** Share copies/opens a deep link to this row in the health view. */
+async function expectedShareClipboardLine(page) {
+    return page.evaluate(({ name }) => {
+        const health = window.dashboardInstance.health;
+        const issue = health.report.issues.find((row) => row.name === name);
+        const url = health.buildIssueShareUrl(issue);
+        return `${name} — ${url}`;
+    }, { name: TARGET.name });
+}
+
+async function expectedShareUrl(page) {
+    return page.evaluate(({ name }) => {
+        const health = window.dashboardInstance.health;
+        const issue = health.report.issues.find((row) => row.name === name);
+        return health.buildIssueShareUrl(issue);
+    }, { name: TARGET.name });
+}
+
 test.describe('health view row menu — copy and share', () => {
     test.describe.configure({ mode: 'serial' });
 
@@ -230,10 +248,24 @@ test.describe('health view row menu — copy and share', () => {
         await openRowMenu(page);
         await runMenuAction(page, 'share');
 
-        // The title travels with the link, exactly as on the dashboard — that is
-        // what separates Share from Copy URL two rows above it.
+        // Share deep-links the row in the health view rather than the raw bookmark URL.
         await expect.poll(() => page.evaluate(() => window.__writes))
-            .toEqual([`${TARGET.name} — ${TARGET.url}`]);
+            .toEqual([await expectedShareClipboardLine(page)]);
+    });
+
+    test('Share works before the context menu module has loaded', async ({ page }) => {
+        await openHealthView(page);
+        await stubClipboardOnly(page);
+        await page.evaluate(() => {
+            const loader = window.dashboardInstance.contextMenu;
+            loader._module = null;
+            loader._modulePromise = null;
+            delete window.DashboardContextMenu;
+        });
+        await openRowMenu(page);
+        await runMenuAction(page, 'share');
+        await expect.poll(() => page.evaluate(() => window.__writes))
+            .toEqual([await expectedShareClipboardLine(page)]);
     });
 
     test('Share hands the sheet the row\'s own title and URL', async ({ page }) => {
@@ -251,7 +283,7 @@ test.describe('health view row menu — copy and share', () => {
 
         await expect.poll(() => page.evaluate(() => window.__shared)).toHaveLength(1);
         const call = await page.evaluate(() => window.__shared[0]);
-        expect(call.url).toBe(TARGET.url);
+        expect(call.url).toBe(await expectedShareUrl(page));
         expect(call.title).toBe(TARGET.name);
     });
 
