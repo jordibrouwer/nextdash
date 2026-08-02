@@ -2400,6 +2400,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureUpdateCheckTitle',
+                titleFallback: 'GitHub update check',
+                whatKey: 'config.overviewNewFeatureUpdateCheckWhat',
+                whatFallback: 'nextDash can compare your running version with GitHub once a day — a dot on ★, a toast while you are actively using the app, and a manual check in the ★ modal and Config → Overview.',
+                howKey: 'config.overviewNewFeatureUpdateCheckHow',
+                howFallback: 'Press Check for updates in the ★ modal header or on Config → Overview. When a newer release exists, open GitHub from the notice or dismiss it until the next version.',
+                enableKey: 'config.overviewNewFeatureUpdateCheckEnable',
+                enableFallback: 'On by default under Config → Behavior → Privacy. Turn off Check GitHub for new releases if you prefer no outbound request.',
+                ctaKey: 'config.overviewNewFeatureUpdateCheckCta',
+                ctaFallback: 'Open Privacy →',
+                go: { section: 'behavior' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureBookmarksFiltersTitle',
                 titleFallback: 'Bookmarks filters & search',
                 whatKey: 'config.overviewNewFeatureBookmarksFiltersWhat',
