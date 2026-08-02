@@ -80,6 +80,23 @@ class DashboardInbox {
         if (!existing) {
             bar.className = 'inbox-selection-bar';
             bar.setAttribute('role', 'toolbar');
+            bar.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-inbox-selection]');
+                if (!btn) {
+                    return;
+                }
+                const action = btn.getAttribute('data-inbox-selection');
+                if (action === 'read') {
+                    void this.bulkMarkRead();
+                } else if (action === 'delete') {
+                    void this.bulkDelete();
+                } else if (action === 'clear') {
+                    this.clearChecked();
+                } else if (action === 'snooze') {
+                    this.openSnoozeMenu(null, btn, this.checkedItems());
+                }
+            });
+            container.querySelector('.inbox-toolbar')?.after(bar);
         }
         bar.innerHTML = `
             <span class="inbox-selection-count">${this.escape(
@@ -90,16 +107,6 @@ class DashboardInbox {
             <button type="button" class="inbox-bulk-btn inbox-bulk-btn--danger" data-inbox-selection="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="clear">${this.escape(this.t('dashboard.inboxSelectionClear', 'Clear selection'))}</button>
         `;
-        if (!existing) {
-            container.querySelector('.inbox-toolbar')?.after(bar);
-        }
-
-        bar.querySelector('[data-inbox-selection="read"]')?.addEventListener('click', () => void this.bulkMarkRead());
-        bar.querySelector('[data-inbox-selection="delete"]')?.addEventListener('click', () => void this.bulkDelete());
-        bar.querySelector('[data-inbox-selection="clear"]')?.addEventListener('click', () => this.clearChecked());
-        bar.querySelector('[data-inbox-selection="snooze"]')?.addEventListener('click', (e) => {
-            this.openSnoozeMenu(null, e.currentTarget, this.checkedItems());
-        });
     }
 
     async bulkMarkRead() {
@@ -870,9 +877,110 @@ class DashboardInbox {
         }
         this._trackAction('mark-read');
         await this.markRead(item.id);
-        const card = document.querySelector(`[data-inbox-id="${CSS.escape(item.id)}"]`);
+        this.applyItemReadLocally(item.id);
+    }
+
+    /** Row class + header tiles/toolbar after a read without a full re-render. */
+    applyItemReadLocally(id) {
+        const card = document.querySelector(`[data-inbox-id="${CSS.escape(String(id))}"]`);
         card?.classList.remove('is-unread');
         card?.classList.add('is-read');
+        this.refreshInboxSummary();
+    }
+
+    /**
+     * Sync summary tiles, header badges, and toolbar bulk buttons with this.items
+     * after a lightweight mutation (mark read, open) rather than rebuilding the feed.
+     */
+    refreshInboxSummary() {
+        const container = document.getElementById('dashboard-layout');
+        if (!container?.classList.contains('inbox-layout') || !this.isActiveView()) {
+            return;
+        }
+
+        const count = this.items.length;
+        const unread = this.unreadCount();
+        const readCount = this.items.filter((entry) => entry.readAt).length;
+        const snoozedCount = this.snoozedCount();
+        const weekCount = this.weekAddedCount();
+
+        const countBadge = container.querySelector('.inbox-count-badge');
+        if (countBadge) {
+            countBadge.textContent = String(count);
+        }
+
+        const headerMeta = container.querySelector('.inbox-header-meta');
+        if (headerMeta) {
+            let unreadBadge = headerMeta.querySelector('.inbox-unread-badge');
+            if (unread > 0) {
+                if (!unreadBadge) {
+                    unreadBadge = document.createElement('span');
+                    unreadBadge.className = 'inbox-unread-badge';
+                    headerMeta.appendChild(unreadBadge);
+                }
+                unreadBadge.textContent = `${unread} ${this.t('dashboard.inboxUnread', 'unread')}`;
+            } else {
+                unreadBadge?.remove();
+            }
+        }
+
+        const tileValues = { all: count, unread, snoozed: snoozedCount };
+        container.querySelectorAll('[data-inbox-tile]').forEach((btn) => {
+            const key = btn.getAttribute('data-inbox-tile');
+            const value = tileValues[key];
+            if (value === undefined) {
+                return;
+            }
+            const valueEl = btn.querySelector('.inbox-tile-value');
+            if (valueEl) {
+                valueEl.textContent = String(value);
+            }
+            btn.classList.toggle('inbox-tile--zero', value === 0);
+        });
+        const weekValueEl = container.querySelector('.inbox-tiles > .inbox-tile:not([data-inbox-tile]) .inbox-tile-value');
+        if (weekValueEl) {
+            weekValueEl.textContent = String(weekCount);
+            weekValueEl.closest('.inbox-tile')?.classList.toggle('inbox-tile--zero', weekCount === 0);
+        }
+
+        const toolbar = container.querySelector('.inbox-toolbar');
+        if (!toolbar) {
+            return;
+        }
+
+        let markAllBtn = toolbar.querySelector('[data-inbox-bulk="read"]');
+        if (unread > 0) {
+            if (!markAllBtn) {
+                markAllBtn = document.createElement('button');
+                markAllBtn.type = 'button';
+                markAllBtn.className = 'inbox-bulk-btn';
+                markAllBtn.dataset.inboxBulk = 'read';
+                markAllBtn.textContent = this.t('dashboard.inboxMarkAllRead', 'Mark all read');
+                markAllBtn.addEventListener('click', () => {
+                    void this.markAllRead();
+                });
+                toolbar.querySelector('.inbox-triage-btn')?.before(markAllBtn);
+            }
+        } else {
+            markAllBtn?.remove();
+        }
+
+        let clearReadBtn = toolbar.querySelector('[data-inbox-bulk="clear-read"]');
+        if (readCount > 0) {
+            if (!clearReadBtn) {
+                clearReadBtn = document.createElement('button');
+                clearReadBtn.type = 'button';
+                clearReadBtn.className = 'inbox-bulk-btn';
+                clearReadBtn.dataset.inboxBulk = 'clear-read';
+                clearReadBtn.textContent = this.t('dashboard.inboxClearRead', 'Clear read');
+                clearReadBtn.addEventListener('click', () => {
+                    void this.clearReadItems();
+                });
+                toolbar.querySelector('.inbox-triage-btn')?.before(clearReadBtn);
+            }
+        } else {
+            clearReadBtn?.remove();
+        }
     }
 
     /* ── Snooze ────────────────────────────────────────────────────────────── */
@@ -1847,7 +1955,22 @@ class DashboardInbox {
 
         this.schedulePreviewRefresh();
         this.scheduleWakeRefresh();
+        this.applyPendingItemFocus();
         this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
+    }
+
+    applyPendingItemFocus() {
+        const id = this.focusItemId;
+        if (!id) {
+            return;
+        }
+        const card = document.querySelector(`[data-inbox-id="${CSS.escape(String(id))}"]`);
+        if (!card) {
+            return;
+        }
+        this.selectedItemId = id;
+        this.applyKeyboardSelection();
+        this.highlightItem(id);
     }
 
     createItemElement(item) {
@@ -2006,9 +2129,7 @@ class DashboardInbox {
         }
         window.open(url, '_blank', 'noopener,noreferrer');
         void this.markRead(item.id).then(() => {
-            const card = document.querySelector(`[data-inbox-id="${item.id}"]`);
-            card?.classList.remove('is-unread');
-            card?.classList.add('is-read');
+            this.applyItemReadLocally(item.id);
         });
     }
 

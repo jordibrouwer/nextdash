@@ -52,6 +52,15 @@ class DashboardInboxTriage {
             document.removeEventListener('keydown', this._keyHandler, true);
             this._keyHandler = null;
         }
+        const card = this.overlay?.querySelector('.inbox-triage-card');
+        if (card && this._cardClickHandler) {
+            card.removeEventListener('click', this._cardClickHandler);
+        }
+        if (card && this._cardErrorHandler) {
+            card.removeEventListener('error', this._cardErrorHandler, true);
+        }
+        this._cardClickHandler = null;
+        this._cardErrorHandler = null;
         this.overlay?.remove();
         this.overlay = null;
         document.body.classList.remove('inbox-triage-active');
@@ -79,8 +88,61 @@ class DashboardInboxTriage {
         document.body.appendChild(overlay);
         this.overlay = overlay;
 
+        const card = overlay.querySelector('.inbox-triage-card');
+        this._cardClickHandler = (e) => {
+            if (e.target.closest('.inbox-triage-close')) {
+                this.close();
+                return;
+            }
+            const btn = e.target.closest('[data-triage]');
+            if (!btn) {
+                return;
+            }
+            const action = btn.getAttribute('data-triage');
+            if (action === 'open') {
+                void this.actOpen();
+            } else if (action === 'promote') {
+                this.actPromote();
+            } else if (action === 'keep') {
+                void this.actKeep();
+            } else if (action === 'delete') {
+                void this.actDelete();
+            }
+        };
+        card?.addEventListener('click', this._cardClickHandler);
+        this._cardErrorHandler = (e) => {
+            const img = e.target;
+            if (!img?.matches?.('.inbox-triage-thumb-img')) {
+                return;
+            }
+            const fallback = img.getAttribute('data-fallback');
+            if (fallback) {
+                img.removeAttribute('data-fallback');
+                img.src = fallback;
+                return;
+            }
+            const slot = img.parentElement;
+            img.remove();
+            if (slot) {
+                slot.classList.add('inbox-triage-thumb--placeholder');
+                slot.textContent = '🔗';
+            }
+        };
+        card?.addEventListener('error', this._cardErrorHandler, true);
+
         this._keyHandler = (e) => this.handleKeydown(e);
         document.addEventListener('keydown', this._keyHandler, true);
+    }
+
+    renderThumb(item) {
+        const iconSrc = this.inbox.resolveIconSrc(item.icon);
+        const previewSrc = String(item.previewImage || '').trim();
+        if (iconSrc || previewSrc) {
+            const primary = iconSrc || previewSrc;
+            const fallback = iconSrc && previewSrc ? previewSrc : '';
+            return `<div class="inbox-triage-thumb" aria-hidden="true"><img class="inbox-triage-thumb-img" src="${this.escape(primary)}" alt="" loading="lazy"${fallback ? ` data-fallback="${this.escape(fallback)}"` : ''}></div>`;
+        }
+        return `<div class="inbox-triage-thumb inbox-triage-thumb--placeholder" aria-hidden="true">🔗</div>`;
     }
 
     handleKeydown(e) {
@@ -226,9 +288,7 @@ class DashboardInboxTriage {
             current: position,
             total,
         });
-        const thumb = item.previewImage
-            ? `<div class="inbox-triage-thumb" style="background-image:url('${this.escape(item.previewImage)}')"></div>`
-            : `<div class="inbox-triage-thumb inbox-triage-thumb--placeholder" aria-hidden="true">🔗</div>`;
+        const thumb = this.renderThumb(item);
 
         card.innerHTML = `
             <header class="inbox-triage-header">
@@ -255,11 +315,5 @@ class DashboardInboxTriage {
             </div>
             <p class="inbox-triage-hint">${this.escape(this.t('dashboard.inboxTriageHint', 'J/K next · O open · P promote · R keep · D delete · Esc close'))}</p>
         `;
-
-        card.querySelector('.inbox-triage-close')?.addEventListener('click', () => this.close());
-        card.querySelector('[data-triage="open"]')?.addEventListener('click', () => void this.actOpen());
-        card.querySelector('[data-triage="promote"]')?.addEventListener('click', () => this.actPromote());
-        card.querySelector('[data-triage="keep"]')?.addEventListener('click', () => void this.actKeep());
-        card.querySelector('[data-triage="delete"]')?.addEventListener('click', () => void this.actDelete());
     }
 }
