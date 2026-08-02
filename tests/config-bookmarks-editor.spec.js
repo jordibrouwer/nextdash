@@ -347,10 +347,33 @@ test.describe('config bookmarks — category options', () => {
         }).toBe(true);
     });
 
-    test('with all pages, rows show a page badge', async ({ page }) => {
+    test('with all pages, a row without a category shows a page badge', async ({ page }) => {
         await openBookmarks(page);
         await page.selectOption('#config-bm-page', '');
+        // Rows that have a category already read "page · category" on the line
+        // above, so the badge would repeat the page name; it is kept only where
+        // nothing else names the page.
+        await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config;
+            const bm = cfg.visibleBookmarks()[0];
+            bm.category = '';
+            cfg.repaintBookmarksList();
+        });
         await expect(page.locator('.config-bm-page-badge').first()).toBeVisible();
+    });
+
+    test('with all pages, a categorised row does not repeat the page name', async ({ page }) => {
+        await openBookmarks(page);
+        await page.selectOption('#config-bm-page', '');
+        const repeated = await page.evaluate(() => {
+            const cfg = window.dashboardInstance.config;
+            const bm = cfg.visibleBookmarks().find((b) => b.category);
+            if (!bm) return null;
+            const row = document.querySelector(`.config-bm-row[data-bm-key="${CSS.escape(cfg.bookmarkKey(bm))}"]`);
+            return !!row?.querySelector('.config-bm-page-badge');
+        });
+        test.skip(repeated === null, 'needs a categorised bookmark');
+        expect(repeated).toBe(false);
     });
 
     test('#config/bookmarks/<pageId> deep link sets the page filter', async ({ page }) => {

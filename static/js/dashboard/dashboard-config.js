@@ -8366,7 +8366,12 @@ class DashboardConfig {
         const categoryLine = b.category
             ? `<p class="config-bm-meta-category"><button type="button" class="config-bm-meta-category-link" data-bm-row-key="${esc(key)}">${esc(this.categoryLabelForBookmark(b))}</button></p>`
             : '';
-        const pageFooter = ctx.showPageBadge
+        // The category line above already reads "page · category" whenever no
+        // page filter is on, so repeating the page name in the footer says the
+        // same thing twice. Keep the badge only where that line cannot: on
+        // bookmarks with no category at all.
+        const pageShownInCategoryLine = !!b.category && !this.bmPageFilter;
+        const pageFooter = ctx.showPageBadge && !pageShownInCategoryLine
             ? `<button type="button" class="config-bm-page-badge config-bm-page-name config-bm-page-name--link" data-bm-filter-page="${esc(String(b.pageId))}">${esc(ctx.pageName(b.pageId))}</button>`
             : '<span class="config-bm-page-name config-bm-page-name--empty" aria-hidden="true"></span>';
         const usageTip = esc(this.bookmarkUsageTooltip(b));
