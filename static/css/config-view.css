@@ -1913,6 +1913,208 @@ body.no-animations .config-new-features-panel-star {
     font-weight: var(--font-weight-semibold);
 }
 
+.config-bm-meta-category {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.config-bm-meta-footer {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+    min-height: 1.35rem;
+}
+
+.config-bm-page-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-bm-page-name--empty {
+    visibility: hidden;
+}
+
+.config-bm-usage-col {
+    flex: none;
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    min-width: 10rem;
+    max-width: 48%;
+    text-align: right;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.config-bm-feed .config-bm-meta-footer .health-view-item-opened,
+.config-bm-feed .config-bm-meta-footer .config-bm-usage {
+    font-size: inherit;
+}
+
+.config-bm-tiles-wrap {
+    margin-bottom: 0.75rem;
+}
+
+.config-bm-tiles-hint {
+    margin: 0 0 0.35rem;
+    font-size: calc(var(--font-size-text) * 0.821);
+    color: var(--text-muted, #888);
+}
+
+.config-bm-list-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0 0 0.65rem;
+}
+
+.config-bm-count {
+    font-size: calc(var(--font-size-text) * 0.914);
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.config-bm-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.config-bm-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.config-bm-filter-chip:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+.config-bm-filter-chip--clear {
+    font-weight: 600;
+}
+
+.config-bm-tag-chip {
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-secondary);
+    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.config-bm-tag-chip:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.config-bm-pin-icon {
+    font-size: 0.85em;
+    line-height: 1;
+}
+
+.config-bm-duplicate-badge {
+    padding: 0.05rem 0.35rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent-warning) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-warning) 12%, transparent);
+    color: var(--accent-warning);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.config-bm-meta-category-link,
+.config-bm-page-name--link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 0.12em;
+}
+
+.config-bm-meta-category-link:hover,
+.config-bm-page-name--link:hover {
+    color: var(--accent-primary);
+}
+
+.config-bm-load-sentinel {
+    height: 1px;
+    width: 100%;
+    pointer-events: none;
+}
+
+.config-bm-load-hint {
+    margin: 0.35rem 0 0;
+    font-size: calc(var(--font-size-text) * 0.821);
+    color: var(--text-muted, #888);
+    text-align: center;
+}
+
+.config-bm-feed .health-view-item-actions {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    opacity: 0;
+    transition: grid-template-rows 0.14s ease, opacity 0.12s ease, margin-top 0.14s ease;
+}
+
+.config-bm-feed .health-view-item:hover .health-view-item-actions,
+.config-bm-feed .health-view-item:focus-within .health-view-item-actions,
+.config-bm-feed .health-view-item.keyboard-selected .health-view-item-actions {
+    grid-template-rows: 1fr;
+    margin-top: 0.55rem;
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .config-bm-feed .health-view-item-actions {
+        grid-template-rows: 1fr;
+        margin-top: 0.55rem;
+        opacity: 1;
+    }
+}
+
+@media (max-width: 720px) {
+    .config-bm-usage-col {
+        min-width: 7rem;
+        max-width: 52%;
+    }
+}
+
 .config-bm-usage {
     color: var(--text-secondary);
 }
