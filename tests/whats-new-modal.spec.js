@@ -67,7 +67,7 @@ test.describe("what's new modal", () => {
                 if (url.includes('/api/update-status')) {
                     return Promise.resolve(new Response(JSON.stringify({
                         enabled: true,
-                        current: 'v2026.08.06',
+                        current: 'v2026.08.07',
                         latest: 'v9999.99.99',
                         updateAvailable: true,
                         releaseUrl: 'https://github.com/jordibrouwer/nextdash/releases/tag/v9999.99.99',
