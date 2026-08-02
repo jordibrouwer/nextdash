@@ -75,11 +75,18 @@ class DashboardPageNav {
     /** Lowercase header label on the inbox view (same in all locales). */
     inboxHeaderTitle() {
         const d = this.dash;
+        const domain = String(d.inbox?.domainFilter || '').trim();
+        if (domain) {
+            return `inbox › ${domain}`;
+        }
         const filter = d.inbox?.filter || 'all';
-        if (filter === 'all') return 'inbox';
+        if (filter === 'all') {
+            return 'inbox';
+        }
         const labels = {
             unread: d.language?.t?.('dashboard.inboxFilterUnread') || 'Unread',
             snoozed: d.language?.t?.('dashboard.inboxFilterSnoozed') || 'Snoozed',
+            noted: d.language?.t?.('dashboard.inboxFilterNoted') || 'With note',
         };
         const label = labels[filter] || filter;
         return `inbox › ${String(label).toLowerCase()}`;

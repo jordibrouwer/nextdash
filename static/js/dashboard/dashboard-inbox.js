@@ -10,9 +10,12 @@ class DashboardInbox {
         this.loading = false;
         this.filter = 'all';
         this.searchQuery = '';
+        this.domainFilter = '';
         this.sort = 'newest';
         this.visibleLimit = 50;
         this.selectedItemId = null;
+        /** Deep-link target from `?ib_id=` — applied after the feed renders. */
+        this.focusItemId = null;
         // Ids ticked for a bulk action. Kept separate from selectedItemId, which is
         // the keyboard cursor: moving the cursor must not change what is ticked.
         this.checkedIds = new Set();
@@ -206,7 +209,7 @@ class DashboardInbox {
 
     /* ── View state: URL and persistence ───────────────────────────────── */
 
-    static FILTERS = new Set(['all', 'unread', 'snoozed']);
+    static FILTERS = new Set(['all', 'unread', 'snoozed', 'noted']);
     static SORTS = new Set(['newest', 'oldest', 'title', 'domain']);
     static STATE_KEY = 'nextdash:inbox-view-state';
 
@@ -235,6 +238,16 @@ class DashboardInbox {
             const query = params.get('ib_q');
             if (typeof query === 'string' && query.trim() !== '') {
                 this.searchQuery = query.trim();
+                fromUrl = true;
+            }
+            const domain = (params.get('ib_domain') || '').trim().toLowerCase();
+            if (domain) {
+                this.domainFilter = domain;
+                fromUrl = true;
+            }
+            const itemId = (params.get('ib_id') || '').trim();
+            if (itemId) {
+                this.focusItemId = itemId;
                 fromUrl = true;
             }
         } catch { /* a malformed URL just means no deep link */ }
@@ -275,6 +288,8 @@ class DashboardInbox {
             setOrDelete('ib_filter', this.filter, this.filter === 'all');
             setOrDelete('ib_sort', this.sort, this.sort === 'newest');
             setOrDelete('ib_q', String(this.searchQuery || '').trim(), !String(this.searchQuery || '').trim());
+            setOrDelete('ib_domain', String(this.domainFilter || '').trim(), !String(this.domainFilter || '').trim());
+            setOrDelete('ib_id', String(this.focusItemId || '').trim(), !String(this.focusItemId || '').trim());
             const query = params.toString();
             history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#inbox`);
         } catch { /* history is unavailable in some embedded contexts */ }
@@ -470,8 +485,11 @@ class DashboardInbox {
                 const body = await res.json().catch(() => ({}));
                 const msg = this.t('dashboard.inboxDuplicate', 'Already in Inbox');
                 d.showNotification(msg, 'info', { duration: 3500 });
-                if (body?.item?.id && this.isActiveView()) {
-                    this.highlightItem(body.item.id);
+                if (body?.item?.id) {
+                    if (!this.isActiveView()) {
+                        await this.openInboxView();
+                    }
+                    this.focusItem(body.item.id);
                 }
                 await this.refreshBadge();
                 return body?.item || null;
@@ -551,7 +569,7 @@ class DashboardInbox {
         const copy = JSON.parse(JSON.stringify(snapshot));
         try {
             await this.deleteItem(id);
-            if (this.isActiveView()) {
+            if (this.isActiveView() && !options.skipRender) {
                 this.render();
             }
             if (!options.silent) {
@@ -886,21 +904,64 @@ class DashboardInbox {
             void this.deleteItemWithUndo(selected.id);
             return true;
         }
-        if (e.key === 'g') {
+        if (e.key === 'g' || e.key === 'Home') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.selectedItemId = cards[0]?.dataset?.inboxId || null;
             this.applyKeyboardSelection(cards);
             return true;
         }
-        if (e.key === 'G') {
+        if (e.key === 'G' || e.key === 'End') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.selectedItemId = cards[cards.length - 1]?.dataset?.inboxId || null;
             this.applyKeyboardSelection(cards);
             return true;
         }
+        if (e.key === 't' && !onRowControl) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.startTriage();
+            return true;
+        }
         return false;
+    }
+
+    /** Drop one row and refresh summary tiles without rebuilding the whole feed. */
+    removeItemFromFeed(id) {
+        const sid = String(id || '');
+        if (!sid) {
+            return;
+        }
+        document.querySelector(`[data-inbox-id="${CSS.escape(sid)}"]`)?.remove();
+        this.refreshInboxSummary();
+        const container = document.getElementById('dashboard-layout');
+        if (this.isActiveView() && container && !container.querySelector('.inbox-item')) {
+            if (!this.getFilteredItems().length) {
+                this.render();
+            }
+        }
+    }
+
+    /** Patch the note line on an existing row after a light-weight edit. */
+    syncItemNoteInFeed(id) {
+        const item = this.items.find((entry) => entry.id === id);
+        const card = document.querySelector(`[data-inbox-id="${CSS.escape(String(id))}"]`);
+        if (!card || !item) {
+            return;
+        }
+        let noteEl = card.querySelector('.inbox-item-note');
+        const note = String(item.note || '').trim();
+        if (note) {
+            if (!noteEl) {
+                noteEl = document.createElement('p');
+                noteEl.className = 'inbox-item-note';
+                card.querySelector('.inbox-item-body')?.appendChild(noteEl);
+            }
+            noteEl.textContent = note;
+        } else {
+            noteEl?.remove();
+        }
     }
 
     /** Mark an item read without opening it — the keyboard "keep" action. */
@@ -1068,8 +1129,10 @@ class DashboardInbox {
      *
      * `bulkTargets` reuses the same menu for the selection bar, so one date
      * picker and one preset list serve both paths rather than drifting apart.
+     * `options.onApplied` runs after a single-item snooze (triage) instead of
+     * the default full re-render path.
      */
-    openSnoozeMenu(item, anchor, bulkTargets = null) {
+    openSnoozeMenu(item, anchor, bulkTargets = null, options = {}) {
         this.closeSnoozeMenu();
         const menu = document.createElement('div');
         menu.className = 'inbox-snooze-menu';
@@ -1106,6 +1169,45 @@ class DashboardInbox {
             this.closeSnoozeMenu();
             if (Array.isArray(bulkTargets)) {
                 void this.bulkSnooze(bulkTargets, until);
+            } else if (typeof options.onApplied === 'function') {
+                void (async () => {
+                    const value = Number(until);
+                    if (!(value > Date.now())) {
+                        return;
+                    }
+                    this._trackAction('snooze');
+                    const d = this.dash;
+                    try {
+                        await this.patchSnooze(item.id, value);
+                        d.pageNav?.updateInboxTabBadge?.();
+                        await options.onApplied(item, value);
+                        d.showNotification(
+                            this.t('dashboard.inboxSnoozedToast', 'Snoozed until {time}', {
+                                time: this.formatSnoozeWake(value),
+                            }),
+                            'success',
+                            {
+                                duration: 6000,
+                                undoCallback: async () => {
+                                    try {
+                                        await this.patchSnooze(item.id, 0);
+                                        d.pageNav?.updateInboxTabBadge?.();
+                                        if (this.isActiveView()) {
+                                            this.render();
+                                        }
+                                    } catch {
+                                        d.showNotification(
+                                            this.t('dashboard.inboxSnoozeFailed', 'Could not snooze the link'),
+                                            'error'
+                                        );
+                                    }
+                                },
+                            }
+                        );
+                    } catch {
+                        d.showNotification(this.t('dashboard.inboxSnoozeFailed', 'Could not snooze the link'), 'error');
+                    }
+                })();
             } else {
                 void this.snoozeItem(item, until);
             }
@@ -1435,6 +1537,9 @@ class DashboardInbox {
         } finally {
             this.loading = false;
         }
+        if (this.focusItemId) {
+            this.prepareItemFocus(this.focusItemId);
+        }
         this.render();
     }
 
@@ -1499,7 +1604,13 @@ class DashboardInbox {
             list = list.filter((item) => !this.isSnoozed(item));
             if (this.filter === 'unread') {
                 list = list.filter((item) => !item.readAt);
+            } else if (this.filter === 'noted') {
+                list = list.filter((item) => String(item.note || '').trim());
             }
+        }
+        const domainWant = String(this.domainFilter || '').trim().toLowerCase();
+        if (domainWant) {
+            list = list.filter((item) => this.itemDomain(item) === domainWant);
         }
         const query = String(this.searchQuery || '').trim().toLowerCase();
         if (query) {
@@ -1515,6 +1626,100 @@ class DashboardInbox {
             });
         }
         return this.sortItems(list);
+    }
+
+    /** Distinct site hosts currently in the inbox, for the domain filter control. */
+    uniqueDomains() {
+        const hosts = new Set();
+        (this.items || []).forEach((item) => {
+            const host = this.itemDomain(item);
+            if (host) {
+                hosts.add(host);
+            }
+        });
+        return [...hosts].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    }
+
+    /**
+     * Adjust filter/search/domain/limit so `id` will appear in the next render.
+     * Returns false when the item does not exist.
+     */
+    prepareItemFocus(id) {
+        const sid = String(id || '').trim();
+        if (!sid) {
+            return false;
+        }
+        const item = (this.items || []).find((entry) => entry.id === sid);
+        if (!item) {
+            return false;
+        }
+
+        if (this.isSnoozed(item)) {
+            this.filter = 'snoozed';
+        } else {
+            if (this.filter === 'snoozed') {
+                this.filter = 'all';
+            }
+            if (this.filter === 'unread' && item.readAt) {
+                this.filter = 'all';
+            }
+            if (this.filter === 'noted' && !String(item.note || '').trim()) {
+                this.filter = 'all';
+            }
+        }
+        this.searchQuery = '';
+        this.domainFilter = '';
+
+        let filtered = this.getFilteredItems();
+        let index = filtered.findIndex((entry) => entry.id === sid);
+        if (index < 0) {
+            this.filter = 'all';
+            this.searchQuery = '';
+            this.domainFilter = '';
+            filtered = this.getFilteredItems();
+            index = filtered.findIndex((entry) => entry.id === sid);
+        }
+        if (index < 0) {
+            return false;
+        }
+        if (index >= this.visibleLimit) {
+            this.visibleLimit = Math.ceil((index + 1) / 50) * 50;
+        }
+
+        this.focusItemId = sid;
+        this.selectedItemId = sid;
+        return true;
+    }
+
+    /**
+     * Scroll to, select, and highlight one item. Adjusts filter/search/domain so
+     * the row is visible — used for `?ib_id=` deep links and duplicate paste.
+     */
+    focusItem(id, { updateUrl = true } = {}) {
+        if (!this.prepareItemFocus(id)) {
+            return false;
+        }
+        if (updateUrl) {
+            this.syncUrlState();
+        }
+        if (this.isActiveView()) {
+            this.render();
+        }
+        return true;
+    }
+
+    applyPendingItemFocus() {
+        const id = this.focusItemId;
+        if (!id) {
+            return;
+        }
+        const card = document.querySelector(`[data-inbox-id="${CSS.escape(String(id))}"]`);
+        if (!card) {
+            return;
+        }
+        this.selectedItemId = id;
+        this.applyKeyboardSelection();
+        this.highlightItem(id);
     }
 
     /**
@@ -1695,13 +1900,15 @@ class DashboardInbox {
         const keys = [
             ['j / k', this.t('dashboard.inboxKeyMove', 'move')],
             ['Enter / Space', this.t('dashboard.inboxKeyOpen', 'open')],
+            ['dblclick', this.t('dashboard.inboxKeyDblClick', 'open')],
             ['p', this.t('dashboard.inboxKeyPromote', 'promote')],
             ['n', this.t('dashboard.inboxKeyNote', 'note')],
             ['r', this.t('dashboard.inboxKeyKeep', 'mark read')],
             ['z', this.t('dashboard.inboxKeySnooze', 'snooze')],
             ['x', this.t('dashboard.inboxKeySelect', 'select')],
             ['d', this.t('dashboard.inboxKeyDelete', 'delete')],
-            ['g / G', this.t('dashboard.inboxKeyFirstLast', 'first / last')],
+            ['g / G / Home / End', this.t('dashboard.inboxKeyFirstLast', 'first / last')],
+            ['t', this.t('dashboard.inboxKeyTriage', 'triage')],
             ['Esc', this.t('dashboard.inboxKeyEsc', 'clear selection · back to bookmarks')],
         ];
         legend.innerHTML = keys
@@ -1719,6 +1926,9 @@ class DashboardInbox {
             // Ticks from a previous query would act on rows the user can no longer
             // see, so a search change starts the selection over (same as filter).
             this.checkedIds.clear();
+            // Ticks from a previous query would act on rows the user can no longer
+            // see, so a search change starts the selection over (same as filter).
+            this.focusItemId = null;
             // Debounced with the render: syncing on every keystroke would rewrite
             // the address bar a dozen times per word.
             this.syncUrlState();
@@ -1825,6 +2035,7 @@ class DashboardInbox {
                 this._trackAction('filter', { filter: this.filter, via: 'tile' });
                 this.visibleLimit = 50;
                 this.checkedIds.clear();
+                this.focusItemId = null;
                 this.persistViewState();
                 this.syncUrlState();
                 this.render();
@@ -1836,6 +2047,12 @@ class DashboardInbox {
         // The Snoozed pill only appears when something is asleep (or is the active
         // filter, so it does not vanish under the user when the last item wakes).
         const showSnoozePill = snoozedCount > 0 || this.filter === 'snoozed';
+        const notedCount = (this.items || []).filter(
+            (item) => !this.isSnoozed(item) && String(item.note || '').trim()
+        ).length;
+        const showNotedPill = notedCount > 0 || this.filter === 'noted';
+        const domains = this.uniqueDomains();
+        const showDomainSelect = domains.length > 0;
 
         const sortOptions = [
             ['newest', this.t('dashboard.inboxSortNewest', 'newest first')],
@@ -1846,17 +2063,28 @@ class DashboardInbox {
             `<option value="${value}"${this.sort === value ? ' selected' : ''}>${this.escape(label)}</option>`
         ).join('');
 
+        const domainOptions = [
+            `<option value="">${this.escape(this.t('dashboard.inboxDomainAll', 'All sites'))}</option>`,
+            ...domains.map((host) =>
+                `<option value="${this.escape(host)}"${this.domainFilter === host ? ' selected' : ''}>${this.escape(host)}</option>`
+            ),
+        ].join('');
+
         toolbar.innerHTML = `
             <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">
                 <button type="button" class="inbox-filter-btn${this.filter === 'all' ? ' is-active' : ''}" data-inbox-filter="all">${this.escape(this.t('dashboard.inboxFilterAll', 'All'))}</button>
                 <button type="button" class="inbox-filter-btn${this.filter === 'unread' ? ' is-active' : ''}" data-inbox-filter="unread">${this.escape(this.t('dashboard.inboxFilterUnread', 'Unread'))}</button>
                 ${showSnoozePill ? `<button type="button" class="inbox-filter-btn${this.filter === 'snoozed' ? ' is-active' : ''}" data-inbox-filter="snoozed">${this.escape(this.t('dashboard.inboxFilterSnoozed', 'Snoozed'))}<span class="inbox-filter-count">${snoozedCount}</span></button>` : ''}
+                ${showNotedPill ? `<button type="button" class="inbox-filter-btn${this.filter === 'noted' ? ' is-active' : ''}" data-inbox-filter="noted">${this.escape(this.t('dashboard.inboxFilterNoted', 'With note'))}<span class="inbox-filter-count">${notedCount}</span></button>` : ''}
             </div>
+            ${showDomainSelect ? `<select class="inbox-domain-select" aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}">${domainOptions}</select>` : ''}
             <input type="search" class="inbox-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
             ${this.filter === 'snoozed' ? '' : `<select class="inbox-sort-select" aria-label="${this.escape(this.t('dashboard.inboxSortLabel', 'Sort inbox'))}">${sortOptions}</select>`}
             ${unread > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="read">${this.escape(this.t('dashboard.inboxMarkAllRead', 'Mark all read'))}</button>` : ''}
             ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
-            <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
+            <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
         `;
         toolbar.querySelectorAll('[data-inbox-filter]').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -1866,6 +2094,7 @@ class DashboardInbox {
                 // Ticks from the previous filter would act on rows the user can no
                 // longer see, so a filter change starts the selection over.
                 this.checkedIds.clear();
+                this.focusItemId = null;
                 this.persistViewState();
                 this.syncUrlState();
                 this.render();
@@ -1884,6 +2113,20 @@ class DashboardInbox {
             this.render();
             // Same reason as the health view: a focused SELECT swallows every row
             // shortcut, so j/k/p/d would go dead until the user clicked away.
+            document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
+        });
+
+        const domainSelect = toolbar.querySelector('.inbox-domain-select');
+        domainSelect?.addEventListener('change', (e) => {
+            this.domainFilter = String(e.target.value || '').trim().toLowerCase();
+            this._trackAction('filter', { filter: 'domain', via: 'domain-select' });
+            this.visibleLimit = 50;
+            this.checkedIds.clear();
+            this.focusItemId = null;
+            this.syncUrlState();
+            this.render();
+            this.dash.pageNav?.updatePageTitle?.();
+            this.dash.pageNav?.updateDocumentTitle?.();
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
@@ -1911,6 +2154,12 @@ class DashboardInbox {
         });
         toolbar.querySelector('.inbox-triage-btn')?.addEventListener('click', () => {
             void this.startTriage();
+        });
+        toolbar.querySelector('[data-inbox-export="csv"]')?.addEventListener('click', () => {
+            this.exportFilteredCsv();
+        });
+        toolbar.querySelector('[data-inbox-export="json"]')?.addEventListener('click', () => {
+            this.exportFilteredJson();
         });
         container.appendChild(toolbar);
 
@@ -1995,20 +2244,6 @@ class DashboardInbox {
         this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
     }
 
-    applyPendingItemFocus() {
-        const id = this.focusItemId;
-        if (!id) {
-            return;
-        }
-        const card = document.querySelector(`[data-inbox-id="${CSS.escape(String(id))}"]`);
-        if (!card) {
-            return;
-        }
-        this.selectedItemId = id;
-        this.applyKeyboardSelection();
-        this.highlightItem(id);
-    }
-
     createItemElement(item) {
         const d = this.dash;
         const card = document.createElement('article');
@@ -2065,7 +2300,7 @@ class DashboardInbox {
             <div class="inbox-item-body">
                 <h3 class="inbox-item-title">${this.escape(title)}</h3>
                 <p class="inbox-item-meta">
-                    <span class="inbox-item-domain">${this.escape(domain)}</span>
+                    <button type="button" class="inbox-item-domain inbox-item-domain-btn" data-inbox-domain="${this.escape(this.itemDomain(item))}">${this.escape(domain)}</button>
                     ${addedLabel ? `<span class="inbox-item-date" title="${this.escape(this.t('dashboard.inboxAddedOn', 'Added on {date}', { date: addedLabel }))}">${this.escape(addedLabel)}</span>` : ''}
                     ${timeLabel ? `<span class="inbox-item-time">${this.escape(timeLabel)}</span>` : ''}
                     ${wakeLabel}
@@ -2110,6 +2345,24 @@ class DashboardInbox {
         // The checkbox is inside the row, which opens on click — without this,
         // ticking a box would also launch the link.
         card.querySelector('.inbox-item-check')?.addEventListener('click', (e) => e.stopPropagation());
+
+        card.querySelector('.inbox-item-domain-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const host = String(e.currentTarget.getAttribute('data-inbox-domain') || '').trim().toLowerCase();
+            if (!host) {
+                return;
+            }
+            this.domainFilter = host;
+            this.filter = 'all';
+            this.visibleLimit = 50;
+            this.checkedIds.clear();
+            this.focusItemId = null;
+            this._trackAction('filter', { filter: 'domain', via: 'domain-click' });
+            this.syncUrlState();
+            this.render();
+            this.dash.pageNav?.updatePageTitle?.();
+            this.dash.pageNav?.updateDocumentTitle?.();
+        });
 
         card.querySelector('[data-inbox-action="open"]')?.addEventListener('click', () => {
             this.openItem(item);
@@ -2228,7 +2481,7 @@ class DashboardInbox {
      * (PATCH /api/inbox), it just had no way in from the list. clearNote=1 lets an
      * emptied field actually blank the note rather than being ignored as "unset".
      */
-    async editNote(item) {
+    async editNote(item, options = {}) {
         if (!item) {
             return;
         }
@@ -2253,7 +2506,11 @@ class DashboardInbox {
                 stored.note = next.trim();
             }
             if (this.isActiveView()) {
-                this.render();
+                if (options.skipRender) {
+                    this.syncItemNoteInFeed(item.id);
+                } else {
+                    this.render();
+                }
             }
             this.dash.showNotification(
                 next.trim()
@@ -2299,6 +2556,103 @@ class DashboardInbox {
                 input.value = current;
             }
         });
+    }
+
+    csvField(value) {
+        let text = String(value ?? '');
+        if (/^[=+\-@\t\r]/.test(text)) {
+            text = `'${text}`;
+        }
+        return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    downloadExportFile(filename, content, mime) {
+        try {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (error) {
+            console.error('inbox export failed', error);
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxExportFailed', 'Could not create the export file.'),
+                'error'
+            );
+        }
+    }
+
+    exportFilteredCsv() {
+        const items = this.getFilteredItems();
+        if (!items.length) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxExportEmpty', 'Nothing to export in this view.'),
+                'info'
+            );
+            return;
+        }
+        const header = [
+            this.t('dashboard.inboxExportColTitle', 'Title'),
+            this.t('dashboard.inboxExportColUrl', 'URL'),
+            this.t('dashboard.inboxExportColDomain', 'Domain'),
+            this.t('dashboard.inboxExportColNote', 'Note'),
+            this.t('dashboard.inboxExportColAdded', 'Added'),
+            this.t('dashboard.inboxExportColRead', 'Read'),
+            this.t('dashboard.inboxExportColSnoozedUntil', 'Snoozed until'),
+            this.t('dashboard.inboxExportColSource', 'Source'),
+        ];
+        const rows = items.map((item) => [
+            item.previewTitle || item.title || '',
+            item.url || '',
+            this.itemDomain(item),
+            item.note || '',
+            item.addedAt ? new Date(item.addedAt).toISOString() : '',
+            item.readAt ? new Date(item.readAt).toISOString() : '',
+            item.snoozedUntil ? new Date(item.snoozedUntil).toISOString() : '',
+            item.source || '',
+        ]);
+        const csv = '﻿' + [header, ...rows]
+            .map((row) => row.map((cell) => this.csvField(cell)).join(','))
+            .join('\r\n');
+        const stamp = new Date().toISOString().slice(0, 10);
+        const suffix = this.domainFilter ? `-${this.domainFilter}` : '';
+        this.downloadExportFile(`nextdash-inbox-${this.filter}${suffix}-${stamp}.csv`, csv, 'text/csv;charset=utf-8');
+        this._trackAction('export-csv', { size: this._countBucket(items.length) });
+    }
+
+    exportFilteredJson() {
+        const items = this.getFilteredItems();
+        if (!items.length) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxExportEmpty', 'Nothing to export in this view.'),
+                'info'
+            );
+            return;
+        }
+        const payload = items.map((item) => ({
+            id: item.id,
+            url: item.url,
+            title: item.title || '',
+            previewTitle: item.previewTitle || '',
+            domain: this.itemDomain(item),
+            note: item.note || '',
+            addedAt: item.addedAt || 0,
+            readAt: item.readAt || 0,
+            snoozedUntil: item.snoozedUntil || 0,
+            source: item.source || '',
+        }));
+        const stamp = new Date().toISOString().slice(0, 10);
+        const suffix = this.domainFilter ? `-${this.domainFilter}` : '';
+        this.downloadExportFile(
+            `nextdash-inbox-${this.filter}${suffix}-${stamp}.json`,
+            `${JSON.stringify(payload, null, 2)}\n`,
+            'application/json;charset=utf-8'
+        );
+        this._trackAction('export-json', { size: this._countBucket(items.length) });
     }
 
     highlightItem(id) {

@@ -70,6 +70,18 @@ class DashboardInboxTriage {
         return this.queue[this.index] || null;
     }
 
+    /** Keep the in-memory queue row aligned with this.items after a mutation. */
+    syncQueueItem(id) {
+        if (!id) {
+            return;
+        }
+        const stored = this.inbox.items.find((entry) => entry.id === id);
+        const slot = this.queue.find((entry) => entry.id === id);
+        if (stored && slot) {
+            Object.assign(slot, stored);
+        }
+    }
+
     mount() {
         this.unmount();
         document.body.classList.add('inbox-triage-active');
@@ -107,6 +119,10 @@ class DashboardInboxTriage {
                 void this.actKeep();
             } else if (action === 'delete') {
                 void this.actDelete();
+            } else if (action === 'snooze') {
+                void this.actSnooze(btn);
+            } else if (action === 'note') {
+                void this.actNote();
             }
         };
         card?.addEventListener('click', this._cardClickHandler);
@@ -192,6 +208,17 @@ class DashboardInboxTriage {
         if (key === 'r' || key === ' ') {
             e.preventDefault();
             void this.actKeep();
+            return;
+        }
+        if (key === 'z') {
+            e.preventDefault();
+            const anchor = this.overlay?.querySelector('[data-triage="snooze"]');
+            void this.actSnooze(anchor);
+            return;
+        }
+        if (key === 'n') {
+            e.preventDefault();
+            void this.actNote();
         }
     }
 
@@ -209,8 +236,15 @@ class DashboardInboxTriage {
         if (!item) {
             return;
         }
-        this.inbox.openItem(item);
-        await this.afterAction(false);
+        const url = String(item.url || '').trim();
+        if (url) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+        if (!item.readAt) {
+            await this.inbox.markRead(item.id);
+            item.readAt = Date.now();
+        }
+        await this.afterAction(false, { readId: item.id });
     }
 
     actPromote() {
@@ -232,8 +266,9 @@ class DashboardInboxTriage {
         }
         if (!item.readAt) {
             await this.inbox.markRead(item.id);
+            item.readAt = Date.now();
         }
-        await this.afterAction(false);
+        await this.afterAction(false, { readId: item.id });
     }
 
     async actDelete() {
@@ -241,12 +276,41 @@ class DashboardInboxTriage {
         if (!item) {
             return;
         }
-        await this.inbox.deleteItemWithUndo(item.id, { silent: true });
-        await this.afterAction(true);
+        await this.inbox.deleteItemWithUndo(item.id, { silent: true, skipRender: true });
+        await this.afterAction(true, { removedId: item.id });
     }
 
-    async afterAction(removed) {
+    async actSnooze(anchor) {
+        const item = this.currentItem();
+        if (!item) {
+            return;
+        }
+        if (this.inbox.isSnoozed(item)) {
+            await this.inbox.wakeItem(item);
+            this.syncQueueItem(item.id);
+            this.render();
+            return;
+        }
+        this.inbox.openSnoozeMenu(item, anchor, null, {
+            onApplied: async () => {
+                await this.afterAction(true, { removedId: item.id });
+            },
+        });
+    }
+
+    async actNote() {
+        const item = this.currentItem();
+        if (!item) {
+            return;
+        }
+        await this.inbox.editNote(item, { skipRender: true });
+        this.syncQueueItem(item.id);
+        this.render();
+    }
+
+    async afterAction(removed, sync = {}) {
         if (removed) {
+            const removedId = sync.removedId ?? this.queue[this.index]?.id;
             this.queue.splice(this.index, 1);
             if (!this.queue.length) {
                 this.close();
@@ -258,17 +322,27 @@ class DashboardInboxTriage {
             if (this.index >= this.queue.length) {
                 this.index = this.queue.length - 1;
             }
-        } else if (this.index < this.queue.length - 1) {
+            this.render();
+            if (this.inbox.isActiveView()) {
+                if (removedId) {
+                    this.inbox.removeItemFromFeed(removedId);
+                }
+            } else {
+                await this.inbox.refreshBadge();
+            }
+            return;
+        }
+
+        if (sync.readId) {
+            this.inbox.applyItemReadLocally(sync.readId);
+        }
+        if (this.index < this.queue.length - 1) {
             this.index += 1;
         } else if (this.queue.length > 1) {
             this.index = 0;
         }
+        this.syncQueueItem(this.currentItem()?.id);
         this.render();
-        if (this.inbox.isActiveView()) {
-            await this.inbox.loadAndRender();
-        } else {
-            await this.inbox.refreshBadge();
-        }
     }
 
     render() {
@@ -289,6 +363,13 @@ class DashboardInboxTriage {
             total,
         });
         const thumb = this.renderThumb(item);
+        const snoozed = this.inbox.isSnoozed(item);
+        const snoozeLabel = snoozed
+            ? this.t('dashboard.inboxWake', 'Wake now')
+            : this.t('dashboard.inboxSnooze', 'Snooze');
+        const noteLabel = item.note
+            ? this.t('dashboard.inboxEditNote', 'Edit note')
+            : this.t('dashboard.inboxAddNote', 'Note');
 
         card.innerHTML = `
             <header class="inbox-triage-header">
@@ -311,9 +392,11 @@ class DashboardInboxTriage {
                 <button type="button" class="inbox-action-btn" data-triage="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))} <kbd>O</kbd></button>
                 <button type="button" class="inbox-action-btn" data-triage="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))} <kbd>P</kbd></button>
                 <button type="button" class="inbox-action-btn" data-triage="keep">${this.escape(this.t('dashboard.inboxTriageKeep', 'Keep'))} <kbd>R</kbd></button>
+                <button type="button" class="inbox-action-btn" data-triage="snooze">${this.escape(snoozeLabel)} <kbd>Z</kbd></button>
+                <button type="button" class="inbox-action-btn" data-triage="note">${this.escape(noteLabel)} <kbd>N</kbd></button>
                 <button type="button" class="inbox-action-btn inbox-action-btn--danger" data-triage="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))} <kbd>D</kbd></button>
             </div>
-            <p class="inbox-triage-hint">${this.escape(this.t('dashboard.inboxTriageHint', 'J/K next · O open · P promote · R keep · D delete · Esc close'))}</p>
+            <p class="inbox-triage-hint">${this.escape(this.t('dashboard.inboxTriageHint', 'J/K next · O open · P promote · R keep · Z snooze · N note · D delete · Esc close'))}</p>
         `;
     }
 }
