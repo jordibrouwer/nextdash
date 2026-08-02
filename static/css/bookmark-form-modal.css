@@ -1,0 +1,105 @@
+/* Shared bookmark add/edit form — modal shell around the inline editor form. */
+
+.bookmark-form-modal {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+    z-index: 10050;
+}
+
+.bookmark-form-modal.show {
+    display: flex;
+}
+
+.bookmark-form-modal-dialog {
+    width: min(520px, 100%);
+    max-height: min(90vh, 920px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    flex-shrink: 0;
+    border-radius: 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.28));
+    background: var(--background-primary, #fff);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+.bookmark-form-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+}
+
+.bookmark-form-modal-header h2 {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.12);
+    font-weight: 600;
+}
+
+.bookmark-form-modal-close {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.bookmark-form-modal-close:hover {
+    background: var(--background-secondary, rgba(128, 128, 128, 0.12));
+}
+
+.bookmark-form-modal-body {
+    overflow-y: auto;
+    padding: 14px 16px 18px;
+}
+
+.bookmark-form-modal-body .bookmark-inline-form {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.bookmark-form-modal-open .bookmark-inline-form,
+body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-input,
+body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-select,
+body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-textarea,
+body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-action-btn,
+body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-icon-preview {
+    background: var(--inline-edit-field-bg, var(--background-secondary));
+}
+
+/* Delete/discard confirms and other #app-modal prompts opened from the form. */
+body.bookmark-form-modal-open #app-modal.modal-overlay.show {
+    z-index: 10100;
+}
+
+/* Tag autocomplete dropdown (appended to body) must sit above the form modal. */
+body.bookmark-form-modal-open .tag-ac-dropdown {
+    z-index: 10150;
+}
+
+@media (max-width: 520px) {
+    .bookmark-form-modal {
+        padding: 12px 8px;
+        align-items: center;
+    }
+
+    .bookmark-form-modal-dialog {
+        max-height: none;
+        min-height: min(90vh, 100%);
+    }
+}

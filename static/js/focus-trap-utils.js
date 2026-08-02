@@ -91,14 +91,20 @@
         return document.body.classList.contains('bookmark-inline-edit-active');
     }
 
+    function isBookmarkFormModalOpen() {
+        return document.getElementById('bookmark-form-modal')?.classList.contains('show') === true;
+    }
+
     function shouldTrapDashboardBackground() {
         return document.getElementById('shortcut-search')?.classList.contains('show') === true
             || document.getElementById('app-modal')?.classList.contains('show') === true
+            || isBookmarkFormModalOpen()
             || isPageOverviewOpen()
             || isOmniboxOpen()
             || isTagCloudModalOpen()
             || isMoveOrDeletePopoverOpen()
-            || isDatePopoverOpen();
+            || isDatePopoverOpen()
+            || isInlineEditActive();
     }
 
     function getTagFilterViewBody() {
@@ -162,6 +168,7 @@
                     const id = mutation.target.id || '';
                     const cls = mutation.target.classList;
                     return id === 'shortcut-search' || id === 'app-modal' || id === 'tag-cloud-modal'
+                        || id === 'bookmark-form-modal'
                         || id === 'move-popover' || id === 'delete-popover' || id === 'tag-popover'
                         || id === 'date-popover' || id === 'omnibox-overlay'
                         || (mutation.attributeName === 'class' && mutation.target === document.body);
@@ -175,7 +182,8 @@
                         const id = el.id || '';
                         return id === 'move-popover' || id === 'delete-popover' || id === 'tag-popover'
                             || id === 'date-popover' || id === 'omnibox-overlay'
-                            || el.id === 'shortcut-search' || el.id === 'app-modal';
+                            || el.id === 'shortcut-search' || el.id === 'app-modal'
+                            || el.id === 'bookmark-form-modal';
                     });
                 }
                 return false;

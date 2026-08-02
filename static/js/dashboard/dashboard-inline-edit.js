@@ -7,8 +7,186 @@ class DashboardInlineEdit {
     }
 
     isInlineEditActive() {
+        if (document.getElementById('bookmark-form-modal')?.classList.contains('show')) {
+            return true;
+        }
         const d = this.dash;
         return d.inlineEditingBookmarkIndex !== null || Boolean(document.querySelector('.bookmark-inline-editing'));
+    }
+
+    ensureBookmarkFormModalShell() {
+        if (this._formModalShell?.isConnected) {
+            return this._formModalShell;
+        }
+        const existing = document.getElementById('bookmark-form-modal');
+        if (existing) {
+            this._formModalShell = existing;
+            return existing;
+        }
+        const d = this.dash;
+        const cfg = (key, fb) => d.configLabel(key, fb);
+        const shell = document.createElement('div');
+        shell.id = 'bookmark-form-modal';
+        shell.className = 'bookmark-form-modal modal-overlay';
+        shell.setAttribute('aria-hidden', 'true');
+        shell.innerHTML = `
+            <div class="bookmark-form-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="bookmark-form-modal-title">
+                <div class="bookmark-form-modal-header">
+                    <h2 id="bookmark-form-modal-title"></h2>
+                    <button type="button" class="bookmark-form-modal-close" aria-label="${cfg('close', 'Close')}">×</button>
+                </div>
+                <div class="bookmark-form-modal-body"></div>
+            </div>`;
+        shell.addEventListener('click', (e) => {
+            if (e.target === shell) {
+                void this.requestCloseBookmarkFormModal();
+            }
+        });
+        shell.querySelector('.bookmark-form-modal-close')?.addEventListener('click', () => {
+            void this.requestCloseBookmarkFormModal();
+        });
+        document.body.appendChild(shell);
+        this._formModalShell = shell;
+        return shell;
+    }
+
+    async requestCloseBookmarkFormModal() {
+        if (!(await this.confirmDiscardInlineEdit())) {
+            return;
+        }
+        this.closeBookmarkFormModal();
+    }
+
+    closeBookmarkFormModal({ silent = false, clearInboxPromote = true } = {}) {
+        const d = this.dash;
+        const ctx = this._formModalContext;
+        const row = ctx?.row;
+        const bookmarkRef = ctx?.bookmarkRef;
+        if (clearInboxPromote) {
+            d._pendingInboxPromoteId = null;
+        }
+        d._inlineEditGlobalCleanup?.();
+        d._inlineEditAutoFetchClear?.();
+        d._inlineEditAutoFetchClear = null;
+        d._inlineEditContext = null;
+        d.inlineEditingBookmarkIndex = null;
+        d._inlineEditWasKeyboardSelected = false;
+        this.clearInlineEditSurfaceOverrides();
+        document.body.classList.remove('bookmark-form-modal-open');
+        document.body.classList.remove('bookmark-inline-edit-active');
+        d.keyboardNavigation?.enable?.();
+        window.FocusTrapUtils?.syncDashboardInert?.();
+        const shell = this._formModalShell || document.getElementById('bookmark-form-modal');
+        if (shell) {
+            shell.classList.remove('show');
+            shell.setAttribute('aria-hidden', 'true');
+            shell.querySelector('.bookmark-form-modal-body')?.replaceChildren();
+        }
+        this._formModalContext = null;
+        if (!silent && row && bookmarkRef) {
+            this.restoreInlineEditRow(row, bookmarkRef);
+        }
+    }
+
+    /**
+     * Shared bookmark form — add or edit — in a modal usable from every view.
+     */
+    openBookmarkFormModal(options = {}) {
+        const d = this.dash;
+        const isEdit = options.mode === 'edit' && (options.bookmark != null || options.bookmarkRef?.bookmark);
+        window.nextdashTrack?.(isEdit ? 'modal:edit-bookmark' : 'modal:new-bookmark');
+
+        d.dismissBookmarkPreviewInteractions?.();
+
+        let bookmarkRef = options.bookmarkRef;
+        let row = options.row || null;
+
+        if (isEdit) {
+            if (!bookmarkRef && options.bookmark) {
+                bookmarkRef = d.resolveBookmarkReference(options.bookmark);
+                if (!bookmarkRef) {
+                    const pageId = Number(options.pageId || d.currentPageId || 1);
+                    const idx = Number.isFinite(Number(options.index)) ? Number(options.index) : -1;
+                    bookmarkRef = {
+                        bookmark: { ...options.bookmark },
+                        pageId,
+                        index: idx,
+                        scope: pageId === Number(d.currentPageId) && idx >= 0 ? 'current' : 'remote',
+                        original: null,
+                    };
+                }
+            }
+            if (!bookmarkRef?.bookmark) {
+                return;
+            }
+            window.nextdashTrack?.('bookmark:edit-open', { source: options.source || 'modal' });
+        } else {
+            const pageId = Number(options.pageId || options.currentPageId || d.currentPageId || 1);
+            bookmarkRef = {
+                bookmark: {
+                    name: String(options.name || '').trim(),
+                    url: String(options.url || '').trim(),
+                    note: String(options.note || '').trim(),
+                    shortcut: '',
+                    category: String(options.category || ''),
+                    tags: Array.isArray(options.tags) ? [...options.tags] : [],
+                    icon: '',
+                    pinned: false,
+                    checkStatus: false,
+                    monitor: false,
+                    monitorIntervalMinutes: window.CheckMode?.DEFAULT_INTERVAL_MINUTES || 60,
+                },
+                pageId,
+                index: -1,
+                scope: 'create',
+                original: null,
+            };
+        }
+
+        if (row?._bookmarkLongPressAbort) {
+            row._bookmarkLongPressAbort.abort();
+            row._bookmarkLongPressAbort = null;
+        }
+
+        const kbdNav = d.keyboardNavigation;
+        d._inlineEditWasKeyboardSelected = Boolean(row)
+            && kbdNav?._selectionFromKeyboard === true
+            && kbdNav?.navigableElements?.[kbdNav.currentIndex] === row;
+
+        this.ensureBookmarkFormModalShell();
+        this.closeBookmarkFormModal({ silent: true, clearInboxPromote: false });
+
+        const shell = this._formModalShell;
+        const titleEl = shell.querySelector('#bookmark-form-modal-title');
+        const cfg = (key, fb) => d.configLabel(key, fb);
+        titleEl.textContent = isEdit
+            ? cfg('editBookmark', 'Edit bookmark')
+            : cfg('addNewBookmark', 'Add bookmark');
+
+        this._formModalContext = {
+            mode: isEdit ? 'edit' : 'create',
+            bookmarkRef,
+            row,
+            onSaved: typeof options.onSaved === 'function' ? options.onSaved : null,
+        };
+
+        d.inlineEditingBookmarkIndex = isEdit && bookmarkRef.scope === 'current' ? bookmarkRef.index : null;
+
+        shell.classList.add('show');
+        shell.setAttribute('aria-hidden', 'false');
+
+        const body = shell.querySelector('.bookmark-form-modal-body');
+        body.innerHTML = '';
+
+        this._renderBookmarkForm(body, bookmarkRef, row);
+
+        d.keyboardNavigation?.disable?.();
+        window.FocusTrapUtils?.syncDashboardInert?.();
+        document.body.classList.add('bookmark-form-modal-open');
+    }
+
+    openBookmarkInlineEditor(row, bookmarkRef) {
+        return this.openBookmarkFormModal({ mode: 'edit', row, bookmarkRef, source: 'dashboard' });
     }
 
     /** Resolve a theme surface to opaque rgb() — CSS vars may be rgba or color-mix. */
@@ -365,40 +543,14 @@ class DashboardInlineEdit {
     }
 
 
-    openBookmarkInlineEditor(row, bookmarkRef) {
+    _renderBookmarkForm(container, bookmarkRef, row) {
         const d = this.dash;
-        if (!bookmarkRef || !bookmarkRef.bookmark) {
+        if (!container || !bookmarkRef || !bookmarkRef.bookmark) {
             return;
         }
-        // Inline editor should always take focus; clear any active preview card/timers first.
-        d.dismissBookmarkPreviewInteractions();
         const bookmark = bookmarkRef.bookmark;
-        if (!bookmark) {
-            return;
-        }
-        // Pairs with bookmark:edit (which fires on save) to show how often an
-        // edit is started but abandoned.
-        window.nextdashTrack?.('bookmark:edit-open', { source: 'dashboard' });
-        if (row._bookmarkLongPressAbort) {
-            row._bookmarkLongPressAbort.abort();
-            row._bookmarkLongPressAbort = null;
-        }
-
-        const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
-        d.inlineEditingBookmarkIndex = bookmarkIndex;
-        // Whether the row was reached with the keyboard decides where the
-        // selection goes when the editor closes. Read before disable() clears it.
-        // Both conditions matter: the cursor has to be on this row *and* have got
-        // there by key — a mouse click also focuses the row and moves the cursor.
-        const kbdNav = d.keyboardNavigation;
-        d._inlineEditWasKeyboardSelected = kbdNav?._selectionFromKeyboard === true
-            && kbdNav?.navigableElements?.[kbdNav.currentIndex] === row;
-        row.classList.add('bookmark-inline-editing');
-        // Whole-row drag stays armed from DragReorder; form controls inside a
-        // draggable ancestor can swallow clicks. Restore happens via reorder re-init.
-        row.draggable = false;
-        row.innerHTML = '';
-
+        const isCreate = this._formModalContext?.mode === 'create';
+        const bookmarkIndex = Number.isFinite(Number(bookmarkRef.index)) ? Number(bookmarkRef.index) : -1;
         const form = document.createElement('div');
         form.className = 'bookmark-inline-form';
 
@@ -636,12 +788,17 @@ class DashboardInlineEdit {
         tagsInput.placeholder = cfg('detailTagsPlaceholder', 'work, dev, personal…');
         tagsInput.value = (Array.isArray(bookmark.tags) ? bookmark.tags : []).join(', ');
         const tagsField = mkField(cfg('detailTagsLabel', 'Tags'), tagsInput);
-        // Seed session pool from loaded bookmarks
-        (d.allBookmarks?.length ? d.allBookmarks : d.bookmarks ?? []).forEach(bm => (bm.tags || []).forEach(t => _sessionTags.add(t)));
-        TagAutocomplete.attach(tagsInput, () => {
-            tagsInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean).forEach(t => _sessionTags.add(t));
-            return [..._sessionTags];
-        });
+        const sessionTags = new Set();
+        (d.allBookmarks?.length ? d.allBookmarks : d.bookmarks ?? []).forEach((bm) => (
+            (bm.tags || []).forEach((t) => sessionTags.add(t))
+        ));
+        if (typeof TagAutocomplete !== 'undefined') {
+            TagAutocomplete.attach(tagsInput, () => {
+                tagsInput.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
+                    .forEach((t) => sessionTags.add(t));
+                return [...sessionTags];
+            });
+        }
 
         const shortcutInput = document.createElement('input');
         shortcutInput.type = 'text';
@@ -916,7 +1073,7 @@ class DashboardInlineEdit {
             saveBtn.classList.toggle('bookmark-inline-save--invalid', !valid);
         };
 
-        const runSave = async (e) => {
+        const runSave = async (e, { keepOpen = false } = {}) => {
             e.preventDefault();
             e.stopPropagation();
             if (saveBtn.dataset.saving === '1') {
@@ -927,30 +1084,60 @@ class DashboardInlineEdit {
             }
             saveBtn.dataset.saving = '1';
             try {
-                await this.commitBookmarkInlineEdit(bookmarkRef, {
-                    nameInput,
-                    urlInput,
-                    iconUrlInput,
-                    shortcutInput,
-                    catSelect,
-                    pageSelect,
-                    pinInput,
-                    statusInput,
-                    monitorInput,
-                    monitorIntervalInput,
-                    noteInput,
-                    tagsInput,
-                    getPendingIcon: () => pendingIcon
-                }, row);
+                if (isCreate) {
+                    await this.createBookmarkFromForm(bookmarkRef, {
+                        nameInput,
+                        urlInput,
+                        iconUrlInput,
+                        shortcutInput,
+                        catSelect,
+                        pageSelect,
+                        pinInput,
+                        statusInput,
+                        monitorInput,
+                        monitorIntervalInput,
+                        noteInput,
+                        tagsInput,
+                        getPendingIcon: () => pendingIcon,
+                        resetPendingIcon: () => { pendingIcon = ''; syncIconState(); },
+                    }, { keepOpen });
+                } else {
+                    await this.commitBookmarkInlineEdit(bookmarkRef, {
+                        nameInput,
+                        urlInput,
+                        iconUrlInput,
+                        shortcutInput,
+                        catSelect,
+                        pageSelect,
+                        pinInput,
+                        statusInput,
+                        monitorInput,
+                        monitorIntervalInput,
+                        noteInput,
+                        tagsInput,
+                        getPendingIcon: () => pendingIcon,
+                    }, row);
+                }
             } finally {
                 delete saveBtn.dataset.saving;
             }
         };
 
+        const createAnotherBtn = document.createElement('button');
+        createAnotherBtn.type = 'button';
+        createAnotherBtn.id = 'bookmark-form-create-another';
+        createAnotherBtn.className = 'bookmark-inline-action-btn bookmark-inline-create-another';
+        createAnotherBtn.textContent = cfg('createAndAddAnother', 'Create + New');
+        createAnotherBtn.title = cfg('createAndAddAnotherTitle', 'Save this bookmark and keep the form open to add another');
+        createAnotherBtn.hidden = !isCreate;
+        createAnotherBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); });
+        createAnotherBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
+        createAnotherBtn.addEventListener('click', (e) => { void runSave(e, { keepOpen: true }); });
+
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
         saveBtn.className = 'bookmark-inline-action-btn bookmark-inline-save';
-        saveBtn.textContent = cfg('saveChanges', 'Save');
+        saveBtn.textContent = isCreate ? cfg('addNewBookmark', 'Add bookmark') : cfg('saveChanges', 'Save');
         saveBtn.setAttribute('aria-disabled', 'false');
         saveBtn.addEventListener('mousedown', (e) => {
             e.stopPropagation();
@@ -985,13 +1172,14 @@ class DashboardInlineEdit {
         cancelBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.cancelBookmarkInlineEdit(row, bookmarkRef);
+            void this.requestCloseBookmarkFormModal();
         });
 
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
         deleteBtn.className = 'bookmark-inline-action-btn bookmark-inline-delete';
         deleteBtn.textContent = cfg('delete', 'Delete');
+        deleteBtn.hidden = isCreate;
         deleteBtn.addEventListener('mousedown', stopActionPointer);
         deleteBtn.addEventListener('pointerdown', stopActionPointer);
         deleteBtn.addEventListener('touchstart', stopActionPointer, { passive: true });
@@ -1007,6 +1195,9 @@ class DashboardInlineEdit {
         });
 
         actions.appendChild(saveBtn);
+        if (isCreate) {
+            actions.appendChild(createAnotherBtn);
+        }
         actions.appendChild(cancelBtn);
         actions.appendChild(deleteBtn);
 
@@ -1028,15 +1219,14 @@ class DashboardInlineEdit {
             }
         });
 
-        const rowRect = row.getBoundingClientRect();
-        const formExpectedWidth = Math.max(rowRect.width, Math.min(420, window.innerWidth * 0.9));
-        const rightOverflow = (rowRect.left + formExpectedWidth) - (window.innerWidth - 8);
-        if (rightOverflow > 0) {
-            form.style.marginLeft = `-${Math.ceil(rightOverflow)}px`;
+        container.appendChild(form);
+        const dialog = this._formModalShell?.querySelector('.bookmark-form-modal-dialog');
+        this.applySolidInlineEditSurfaces(null, form);
+        if (dialog) {
+            const panelBg = this.readSolidThemeSurface('--background-primary', '--background-secondary');
+            dialog.style.background = panelBg;
+            form.style.background = panelBg;
         }
-
-        row.appendChild(form);
-        this.applySolidInlineEditSurfaces(row, form);
         d._inlineEditContext = {
             bookmarkRef,
             row,
@@ -1052,69 +1242,34 @@ class DashboardInlineEdit {
                 monitorIntervalInput,
                 noteInput,
                 tagsInput,
-                getPendingIcon: () => pendingIcon
-            }
+                getPendingIcon: () => pendingIcon,
+            },
         };
         this.refreshInlineEditBaseline(bookmarkRef, d._inlineEditContext.fields);
-        this.enterBookmarkInlineEditFocusMode();
-        const ensureInlineFormVisible = () => {
-            const margin = 12;
-            const rect = form.getBoundingClientRect();
-            const viewportH = window.innerHeight;
-            if (rect.bottom > viewportH - margin) {
-                window.scrollBy({ top: rect.bottom - viewportH + margin, behavior: 'auto' });
-            }
-            const topRect = form.getBoundingClientRect();
-            if (topRect.top < margin) {
-                window.scrollBy({ top: topRect.top - margin, behavior: 'auto' });
-            }
-        };
-        const revealInlineEditor = () => {
-            ensureInlineFormVisible();
-            nameInput.focus({ preventScroll: true });
-        };
-        revealInlineEditor();
-        requestAnimationFrame(revealInlineEditor);
+        nameInput.focus({ preventScroll: true });
 
-        const openedAt = Date.now();
-
-        // Click-outside: bubble phase only — capture + layout inert caused Safari/Chrome regressions.
-        const onGlobalClickOutside = async (e) => {
+        const onGlobalEsc = async (e) => {
+            if (e.key !== 'Escape') return;
             if (!document.contains(form)) {
                 globalCleanup();
                 return;
             }
-            if (Date.now() - openedAt < DashboardInlineEdit.CLICK_OUTSIDE_DELAY_MS) {
-                return;
-            }
-            if (d._inlineEditConfirmOpen) {
-                return;
-            }
-            if (this.isPointerInsideInlineEdit(e)) {
-                return;
-            }
-            if (d.isModalOpen()) {
-                return;
-            }
-            if (!(await this.confirmDiscardInlineEdit())) {
-                return;
-            }
-            globalCleanup();
-            this.cancelBookmarkInlineEdit(row, bookmarkRef);
-        };
-
-        // Global ESC: close the form even when focus has drifted outside it
-        const onGlobalEsc = async (e) => {
-            if (e.key !== 'Escape') return;
-            if (!document.contains(form)) { globalCleanup(); return; }
-            if (d.isModalOpen()) return;
+            if (d.isModalOpen() && !this._formModalShell?.classList.contains('show')) return;
             e.preventDefault();
             e.stopPropagation();
             if (!(await this.confirmDiscardInlineEdit())) {
                 return;
             }
             globalCleanup();
-            this.cancelBookmarkInlineEdit(row, bookmarkRef);
+            this.closeBookmarkFormModal();
+        };
+
+        const globalCleanup = () => {
+            document.removeEventListener('keydown', onGlobalEsc, true);
+            if (d._inlineEditGlobalCleanup === globalCleanup) d._inlineEditGlobalCleanup = null;
+            if (d._inlineEditAutoFetchClear === clearInlineAutoFetchTimer) {
+                d._inlineEditAutoFetchClear = null;
+            }
         };
 
         const clearInlineAutoFetchTimer = () => {
@@ -1125,24 +1280,9 @@ class DashboardInlineEdit {
             inlineAutoFetchInFlight = false;
         };
 
-        const globalCleanup = () => {
-            document.removeEventListener('keydown', onGlobalEsc, true);
-            document.removeEventListener('mousedown', onGlobalClickOutside, false);
-            clearInlineAutoFetchTimer();
-            if (d._inlineEditGlobalCleanup === globalCleanup) d._inlineEditGlobalCleanup = null;
-            if (d._inlineEditAutoFetchClear === clearInlineAutoFetchTimer) {
-                d._inlineEditAutoFetchClear = null;
-            }
-        };
-
         d._inlineEditAutoFetchClear = clearInlineAutoFetchTimer;
-
         d._inlineEditGlobalCleanup = globalCleanup;
         document.addEventListener('keydown', onGlobalEsc, true);
-        setTimeout(
-            () => document.addEventListener('mousedown', onGlobalClickOutside, false),
-            DashboardInlineEdit.CLICK_OUTSIDE_DELAY_MS
-        );
     }
 
 
@@ -1215,6 +1355,7 @@ class DashboardInlineEdit {
             Object.assign(bookmark, nextBookmarkState);
             this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
             await d.saveBookmarkOrder();
+            await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
             return;
         }
 
@@ -1224,14 +1365,140 @@ class DashboardInlineEdit {
         }
 
         this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
-        if (Number(bookmarkRef.pageId) !== Number(d.currentPageId)) {
-            await d.loadAllBookmarks();
-            d.renderDashboard({ incremental: false });
+        await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
+    }
+
+
+    async createBookmarkFromForm(bookmarkRef, fields, { keepOpen = false } = {}) {
+        const d = this.dash;
+        window.nextdashTrack?.('bookmark-created', { source: 'modal' });
+
+        const name = fields.nameInput.value.trim();
+        let url = fields.urlInput.value.trim();
+        url = window.BookmarkUrlUtils?.ensureHttpUrl?.(url) || url;
+        const shortcut = fields.shortcutInput.value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
+        const category = fields.catSelect.value;
+        const pageId = fields.pageSelect ? Number(fields.pageSelect.value) : Number(bookmarkRef.pageId || d.currentPageId || 1);
+
+        if (!name || !url) {
+            d.notifyDashboard('nameAndUrlRequired', 'Name and URL are required.', 'error');
+            return;
+        }
+
+        const emptyRef = { bookmark: {}, pageId, index: -1, scope: 'create' };
+        if (shortcut && this.hasShortcutConflict(shortcut, emptyRef)) {
+            d.notifyDashboard('shortcutMustBeUnique', 'Shortcut must be unique across all bookmarks.', 'error');
+            fields.shortcutInput.focus();
+            return;
+        }
+
+        const bookmark = {
+            name,
+            url,
+            note: fields.noteInput ? String(fields.noteInput.value || '').trim() : '',
+            shortcut,
+            category,
+            pinned: fields.pinInput ? fields.pinInput.checked : false,
+            tags: fields.tagsInput
+                ? fields.tagsInput.value.split(',').map((t) => t.trim().toLowerCase()).filter((t, i, arr) => t && arr.indexOf(t) === i)
+                : [],
+            icon: typeof fields.getPendingIcon === 'function' ? fields.getPendingIcon() : '',
+            createdAt: Date.now(),
+        };
+        if (window.CheckMode) {
+            bookmark.monitorIntervalMinutes = fields.monitorIntervalInput
+                ? Number(fields.monitorIntervalInput.value) || window.CheckMode.DEFAULT_INTERVAL_MINUTES
+                : 0;
+            const mode = fields.monitorInput?.checked ? 'monitor' : (fields.statusInput?.checked ? 'periodic' : 'off');
+            window.CheckMode.assign(bookmark, mode);
+        } else {
+            bookmark.checkStatus = Boolean(fields.statusInput?.checked);
+            bookmark.monitor = Boolean(fields.monitorInput?.checked);
+            bookmark.monitorIntervalMinutes = fields.monitorIntervalInput
+                ? Number(fields.monitorIntervalInput.value) || 60
+                : 0;
+        }
+
+        if (!Number.isFinite(pageId) || pageId < 1) {
+            d.showErrorNotification(d.formatDashboardLabel('invalidPage', {}, 'Invalid page selected.'));
+            return;
+        }
+
+        try {
+            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmarks/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: pageId, bookmark }),
+            });
+            if (!response.ok) {
+                throw new Error(d.formatDashboardLabel('errorCreatingBookmark', {}, 'Could not create bookmark.'));
+            }
+            const onSaved = this._formModalContext?.onSaved;
+            const pendingInboxPromoteId = d._pendingInboxPromoteId;
+
+            if (keepOpen) {
+                const keepPage = fields.pageSelect ? String(fields.pageSelect.value) : String(pageId);
+                const keepCategory = fields.catSelect ? String(fields.catSelect.value) : category;
+                fields.nameInput.value = '';
+                fields.urlInput.value = '';
+                if (fields.shortcutInput) fields.shortcutInput.value = '';
+                if (fields.noteInput) fields.noteInput.value = '';
+                if (fields.tagsInput) fields.tagsInput.value = '';
+                if (fields.iconUrlInput) fields.iconUrlInput.value = '';
+                if (fields.pinInput) fields.pinInput.checked = false;
+                if (typeof fields.resetPendingIcon === 'function') fields.resetPendingIcon();
+                if (fields.pageSelect) fields.pageSelect.value = keepPage;
+                if (fields.catSelect) fields.catSelect.value = keepCategory;
+                delete fields.nameInput.dataset.touched;
+                delete fields.urlInput.dataset.touched;
+                this.refreshInlineEditBaseline(bookmarkRef, fields);
+                fields.urlInput.focus({ preventScroll: true });
+            } else {
+                // Close before refresh: while the modal is open, isInlineEditActive()
+                // is true and loadPageBookmarks would prompt to discard unsaved edits —
+                // often behind the modal, which looks like a freeze.
+                this.closeBookmarkFormModal({ silent: true, clearInboxPromote: false });
+            }
+
+            if (pendingInboxPromoteId && d.inbox) {
+                d._pendingInboxPromoteId = null;
+                await d.inbox.completePromote(pendingInboxPromoteId);
+                if (bookmark.checkStatus === true || bookmark.monitor === true) {
+                    d.inbox.triggerHealthCheckForUrl?.(bookmark.url);
+                }
+            }
+
+            d.data?.invalidatePageDataCache?.(pageId);
+            try {
+                await d.data?.refreshAfterBookmarkMutation?.({
+                    pageIds: [pageId],
+                    despiteModal: keepOpen,
+                });
+            } catch (refreshError) {
+                console.warn('Bookmark created but dashboard refresh failed:', refreshError);
+            }
+
+            d.showNotification(d.formatDashboardLabel('bookmarkCreated', {}, 'Bookmark created.'), 'success');
+            window.nextdashTrack?.('bookmark-created', {
+                result: 'ok',
+                withIcon: Boolean(bookmark.icon),
+                withTags: Array.isArray(bookmark.tags) && bookmark.tags.length > 0,
+                withShortcut: Boolean(bookmark.shortcut),
+            });
+            if (typeof onSaved === 'function') {
+                await onSaved();
+            }
+        } catch (error) {
+            d.showErrorNotification(error.message || d.formatDashboardLabel('errorCreatingBookmark', {}, 'Could not create bookmark.'));
         }
     }
 
 
     cancelBookmarkInlineEdit(row, bookmarkRef) {
+        if (document.getElementById('bookmark-form-modal')?.classList.contains('show')) {
+            void this.requestCloseBookmarkFormModal();
+            return;
+        }
         const d = this.dash;
         d._inlineEditGlobalCleanup?.();
         d._inlineEditAutoFetchClear?.();
@@ -1269,16 +1536,18 @@ class DashboardInlineEdit {
 
     finishInlineEditCommit(row) {
         const d = this.dash;
+        const onSaved = this._formModalContext?.onSaved;
         d._inlineEditGlobalCleanup?.();
         d._inlineEditAutoFetchClear?.();
         d._inlineEditAutoFetchClear = null;
         d.inlineEditingBookmarkIndex = null;
         d._inlineEditContext = null;
-        // Cleared here too: the save path does not run restoreInlineEditRow(), and
-        // a stale true would misroute the selection on the next editor close.
         d._inlineEditWasKeyboardSelected = false;
-        this.leaveBookmarkInlineEditFocusMode();
         row?.classList?.remove('bookmark-inline-editing');
+        this.closeBookmarkFormModal({ silent: true });
+        if (typeof onSaved === 'function') {
+            void onSaved();
+        }
     }
 
 
@@ -1312,20 +1581,8 @@ class DashboardInlineEdit {
 
     finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl) {
         const d = this.dash;
-        const bookmark = bookmarkRef?.bookmark;
-        const prevCategoryId = row?.getAttribute('data-category-id') || bookmark?.category || '';
-        const prevTagsKey = d.data?._bookmarkTagsKey?.(bookmarkRef?.original?.tags) ?? '';
         this.finishInlineEditCommit(row);
         d.syncEditedBookmarkAcrossCollections(bookmarkRef, previousUrl);
-        const nextCategoryId = bookmark?.category || '';
-        const tagsChanged = prevTagsKey !== (d.data?._bookmarkTagsKey?.(bookmark?.tags) ?? '');
-        if (String(prevCategoryId) !== String(nextCategoryId) || tagsChanged || !row || !document.contains(row)) {
-            d.renderDashboard({ incremental: false });
-            return;
-        }
-        if (!this.restoreInlineEditRow(row, bookmarkRef)) {
-            d.renderDashboard({ incremental: false });
-        }
     }
 
 
@@ -1586,9 +1843,9 @@ class DashboardInlineEdit {
         d.removeBookmarkFromAllBookmarks(deleteRef);
         d.bookmarks.splice(deleteIndex, 1);
         this.finishInlineEditCommit(d._inlineEditContext?.row);
-        d.renderDashboard();
 
         await d.saveBookmarkOrder();
+        await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [deleteRef.pageId] });
 
         const deletedLabel = String(deletedBookmark.name || deletedBookmark.url).slice(0, 40);
         d.showNotification(
@@ -1600,9 +1857,9 @@ class DashboardInlineEdit {
                     d.bookmarks.splice(deletedIndex, 0, deletedBookmark);
                     d.restoreBookmarkInAllBookmarks(deletedBookmark, deleteRef.pageId);
                     d.pendingReorderSnapshot = null;
-                    d.renderDashboard();
                     try {
                         await d.saveBookmarkOrder();
+                        await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [deleteRef.pageId] });
                     } catch (_error) {
                         // saveBookmarkOrder already surfaces errors and reverts when possible.
                     }
@@ -1653,10 +1910,9 @@ class DashboardInlineEdit {
 
             d._inlineEditGlobalCleanup?.();
             d.inlineEditingBookmarkIndex = null;
+            this.finishInlineEditCommit(d._inlineEditContext?.row);
             d.data?.invalidatePageDataCache?.(sourcePageId);
-            void d.data?.fetchAndStoreDataRevision?.();
-            await d.loadAllBookmarks();
-            d.renderDashboard();
+            await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
 
             const deletedLabel = String(deletedBookmark.name || deletedBookmark.url).slice(0, 40);
             d.showNotification(
@@ -1793,19 +2049,11 @@ class DashboardInlineEdit {
             d._inlineEditAutoFetchClear = null;
             d.inlineEditingBookmarkIndex = null;
             d._inlineEditContext = null;
-            this.leaveBookmarkInlineEditFocusMode();
+            this.finishInlineEditCommit(row);
 
-            if (isCurrentScope) {
-                d.data?.invalidatePageDataCache?.(Number(d.currentPageId));
-                void d.data?.fetchAndStoreDataRevision?.();
-                await d.loadPageBookmarks(d.currentPageId, { forceFetch: true });
-            } else {
-                d.data?.invalidatePageDataCache?.(sourcePageId);
-                d.data?.invalidatePageDataCache?.(targetPageId);
-                void d.data?.fetchAndStoreDataRevision?.();
-                await d.loadAllBookmarks();
-                d.renderDashboard();
-            }
+            await d.data?.refreshAfterBookmarkMutation?.({
+                pageIds: [sourcePageId, targetPageId],
+            });
             d.showNotification(
                 d.formatDashboardLabel('movedToCategory', { name: targetName }, `Moved to "${targetName}".`),
                 'success'
