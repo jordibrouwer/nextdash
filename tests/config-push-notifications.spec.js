@@ -16,11 +16,11 @@ async function openStatusTab(page) {
 }
 
 test.describe('config: browser push notifications', () => {
-    test('the status tab shows the push panel with all four toggles', async ({ page }) => {
+    test('the status tab shows the push panel with all three toggles', async ({ page }) => {
         await loadDashboard(page);
         await openStatusTab(page);
 
-        for (const field of ['pushNotifyEnabled', 'pushNotifyMonitor', 'pushNotifyBackup', 'pushNotifyRelease']) {
+        for (const field of ['pushNotifyEnabled', 'pushNotifyMonitor', 'pushNotifyBackup']) {
             await expect(page.locator(`[data-behavior-field="${field}"]`)).toBeVisible();
         }
         await expect(page.locator('[data-behavior-field="pushNotifySubject"]')).toBeVisible();
