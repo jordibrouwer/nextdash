@@ -1347,9 +1347,17 @@ class KeyboardNavigation {
         if (!bookmark) {
             const url = (openLink && openLink.href) || row.dataset.bookmarkUrl || '';
             if (url) {
-                bookmark = (dash.bookmarks || []).find(b => b.url === url)
-                    || (dash.allBookmarks || []).find(b => b.url === url)
-                    || null;
+                // The same URL may appear more than once, so prefer the copy whose
+                // name matches the row being acted on — matching on URL alone
+                // resolved every copy to the first one, and Delete then removed a
+                // bookmark other than the selected row.
+                const label = (row.querySelector('.bookmark-text')?.textContent || '').trim();
+                const pick = (list) => {
+                    const hits = (list || []).filter((b) => b.url === url);
+                    if (hits.length <= 1) return hits[0] || null;
+                    return hits.find((b) => String(b.name || '').trim() === label) || hits[0];
+                };
+                bookmark = pick(dash.bookmarks) || pick(dash.allBookmarks) || null;
             }
         }
         return bookmark || null;

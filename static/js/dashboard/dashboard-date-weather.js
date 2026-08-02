@@ -6,7 +6,26 @@ class DashboardDateWeather {
         this.dash = dashboard;
     }
 
+    /**
+     * Stops the clock for good: the interval and any pending resume listener.
+     *
+     * Callers use this to turn the date line off entirely, so a listener left
+     * behind would restart the clock for an element that is no longer shown.
+     * The pause path uses _stopDateTimeInterval() instead, which keeps the
+     * resume hook alive on purpose.
+     */
     clearDateTimeRefreshTimer() {
+        const d = this.dash;
+        this._stopDateTimeInterval();
+        if (d._dateTimeResumeHandler) {
+            document.removeEventListener('visibilitychange', d._dateTimeResumeHandler);
+            d._dateTimeResumeHandler = null;
+        }
+        d._dateTimeResumeBound = false;
+    }
+
+
+    _stopDateTimeInterval() {
         const d = this.dash;
         if (d.dateTimeRefreshTimer) {
             clearInterval(d.dateTimeRefreshTimer);
@@ -15,14 +34,46 @@ class DashboardDateWeather {
     }
 
 
+    /**
+     * Ticks the clock once a minute while the tab is visible.
+     *
+     * The timer is dropped when the tab is hidden rather than left running to
+     * skip its own work — a background tab has no clock to keep. Returning to
+     * the tab re-renders the line immediately (see the visibilitychange handler
+     * in dashboard.js), so nothing is stale by the time it is on screen again.
+     */
     scheduleDateTimeRefresh() {
         const d = this.dash;
         this.clearDateTimeRefreshTimer();
+        if (document.hidden) {
+            this.bindDateTimeVisibilityResume();
+            return;
+        }
         d.dateTimeRefreshTimer = setInterval(() => {
-            if (!document.hidden) {
-                this.renderDateWeatherLine();
+            if (document.hidden) {
+                this._stopDateTimeInterval();
+                this.bindDateTimeVisibilityResume();
+                return;
             }
+            this.renderDateWeatherLine();
         }, 60 * 1000);
+    }
+
+
+    /** Restart the clock the next time the tab becomes visible. */
+    bindDateTimeVisibilityResume() {
+        const d = this.dash;
+        if (d._dateTimeResumeBound) return;
+        d._dateTimeResumeBound = true;
+        const onVisible = () => {
+            if (document.hidden) return;
+            document.removeEventListener('visibilitychange', onVisible);
+            d._dateTimeResumeHandler = null;
+            d._dateTimeResumeBound = false;
+            this.scheduleDateTimeRefresh();
+        };
+        d._dateTimeResumeHandler = onVisible;
+        document.addEventListener('visibilitychange', onVisible);
     }
 
 

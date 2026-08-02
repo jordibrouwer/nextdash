@@ -92,36 +92,53 @@ class DashboardSmartCollections {
 
         const pageAllowed = (pageIds) => this._isSmartCollectionPageAllowed(pageIds);
 
-        const recentBookmarks = normalized.filter((bookmark) => {
+        // Each list is built on first use rather than up front: this runs on every
+        // dashboard render, and a collection that is switched off — Most used is,
+        // by default — was still costing a full scan of every bookmark, plus a
+        // sort in that one case.
+        const memo = (fn) => {
+            let value;
+            let done = false;
+            return () => {
+                if (!done) { value = fn(); done = true; }
+                return value;
+            };
+        };
+
+        const recentBookmarks = memo(() => normalized.filter((bookmark) => {
             const lastOpened = Number(bookmark.lastOpened || 0);
             return lastOpened > 0 && (now - lastOpened) <= oneWeekMs;
-        });
+        }));
 
-        const staleBookmarks = normalized.filter((bookmark) => {
+        const staleBookmarks = memo(() => normalized.filter((bookmark) => {
             const lastOpened = Number(bookmark.lastOpened || 0);
             return lastOpened === 0 || (now - lastOpened) > staleWindowMs;
-        });
-        const mostUsedBookmarks = normalized
+        }));
+
+        const mostUsedBookmarks = memo(() => normalized
             .filter((bookmark) => Number(bookmark.openCount || 0) > 0)
-            .sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0));
+            .sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0)));
+
+        const todayBookmarks = memo(() => this.getSmartStartTodayBookmarks(normalized));
 
         const collections = [];
-        const todayBookmarks = this.getSmartStartTodayBookmarks(normalized);
 
-        if (d.settings.showSmartTodayCollection !== false && pageAllowed(d.settings.smartTodayPageIds) && todayBookmarks.length > 0) {
+        if (d.settings.showSmartTodayCollection !== false && pageAllowed(d.settings.smartTodayPageIds) && todayBookmarks().length > 0) {
+            const today = todayBookmarks();
             const translatedTodayLabel = d.language?.t?.('dashboard.smartTodayCollection');
             const todayLabel = translatedTodayLabel && translatedTodayLabel !== 'dashboard.smartTodayCollection'
                 ? translatedTodayLabel
                 : 'Today';
             collections.push({
                 id: '__smart_today__',
-                name: `${todayLabel} (${todayBookmarks.length})`,
+                name: `${todayLabel} (${today.length})`,
                 icon: '☀',
-                bookmarks: todayBookmarks
+                bookmarks: today
             });
         }
 
-        if (d.settings.showSmartRecentCollection !== false && pageAllowed(d.settings.smartRecentPageIds) && recentBookmarks.length > 0) {
+        if (d.settings.showSmartRecentCollection !== false && pageAllowed(d.settings.smartRecentPageIds) && recentBookmarks().length > 0) {
+            const recent = recentBookmarks();
             const configuredLimit = Number(d.settings.smartRecentLimit ?? 50);
             const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
                 ? configuredLimit
@@ -130,16 +147,17 @@ class DashboardSmartCollections {
             const recentTitle = recentLabel && recentLabel !== 'dashboard.smartRecentCollection'
                 ? recentLabel
                 : 'Recently opened';
-            const recentCount = effectiveLimit ? Math.min(recentBookmarks.length, effectiveLimit) : recentBookmarks.length;
+            const recentCount = effectiveLimit ? Math.min(recent.length, effectiveLimit) : recent.length;
             collections.push({
                 id: '__smart_recent__',
                 name: `${recentTitle} (${recentCount})`,
                 icon: '⚡',
-                bookmarks: effectiveLimit ? recentBookmarks.slice(0, effectiveLimit) : recentBookmarks
+                bookmarks: effectiveLimit ? recent.slice(0, effectiveLimit) : recent
             });
         }
 
-        if (d.settings.showSmartStaleCollection !== false && pageAllowed(d.settings.smartStalePageIds) && staleBookmarks.length > 0) {
+        if (d.settings.showSmartStaleCollection !== false && pageAllowed(d.settings.smartStalePageIds) && staleBookmarks().length > 0) {
+            const stale = staleBookmarks();
             const configuredLimit = Number(d.settings.smartStaleLimit ?? 50);
             const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
                 ? configuredLimit
@@ -148,16 +166,17 @@ class DashboardSmartCollections {
             const staleTitle = staleLabel && staleLabel !== 'dashboard.smartStaleCollection'
                 ? staleLabel
                 : 'Stale bookmarks';
-            const staleCount = effectiveLimit ? Math.min(staleBookmarks.length, effectiveLimit) : staleBookmarks.length;
+            const staleCount = effectiveLimit ? Math.min(stale.length, effectiveLimit) : stale.length;
             collections.push({
                 id: '__smart_stale__',
                 name: `${staleTitle} (${staleCount})`,
                 icon: '⌛',
-                bookmarks: effectiveLimit ? staleBookmarks.slice(0, effectiveLimit) : staleBookmarks
+                bookmarks: effectiveLimit ? stale.slice(0, effectiveLimit) : stale
             });
         }
 
-        if (d.settings.showSmartMostUsedCollection === true && pageAllowed(d.settings.smartMostUsedPageIds) && mostUsedBookmarks.length > 0) {
+        if (d.settings.showSmartMostUsedCollection === true && pageAllowed(d.settings.smartMostUsedPageIds) && mostUsedBookmarks().length > 0) {
+            const mostUsed = mostUsedBookmarks();
             const configuredLimit = Number(d.settings.smartMostUsedLimit ?? 25);
             const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
                 ? configuredLimit
@@ -170,7 +189,7 @@ class DashboardSmartCollections {
                 id: '__smart_most_used__',
                 name: mostUsedTitle,
                 icon: '📈',
-                bookmarks: effectiveLimit ? mostUsedBookmarks.slice(0, effectiveLimit) : mostUsedBookmarks
+                bookmarks: effectiveLimit ? mostUsed.slice(0, effectiveLimit) : mostUsed
             });
         }
 

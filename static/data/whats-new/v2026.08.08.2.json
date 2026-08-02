@@ -1,0 +1,46 @@
+{
+  "tag": "v2026.08.08.2",
+  "date": "August 2026",
+  "releasedAt": "2026-08-02",
+  "modalLead": "Hotfix after v2026.08.08 — two bookmarks sharing a URL are no longer mistaken for one another on the dashboard, so a keyboard delete removes the row you actually selected. Deleted pages stop leaving view state behind, smart collections and the clock do less work per render, and this modal drops its own Check for updates button while the summary and Ko-fi block stack again.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The right row is resolved when two bookmarks share a URL</strong> — rows resolve by identity first, but a detached copy (what the smart collections hand back) fell through to a URL lookup that returned the first match. Acting on the second copy hit the first one, so a keyboard delete could remove a bookmark other than the selected row. Both fallbacks now narrow on the fields that tell the copies apart (<code>dashboard-bookmark-rows.js</code>, <code>keyboard-navigation.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Deleted pages stop leaving view state behind</strong> — the remembered expand/collapse state is keyed per page and category, and nothing ever removed an entry, so every deleted page kept its rows in local storage for good (<code>dashboard-render-core.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Check for updates removed from this modal</strong> — reading release notes and polling GitHub are separate jobs. The daily check still runs on its own and <strong>Config → Overview</strong> keeps the manual trigger; the header here reports the result, with a link to the release and <strong>Dismiss</strong> (<code>whats-new-modal.js</code>, <code>modal.css</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Release summary and Ko-fi block stack again</strong> — side by side the summary was squeezed into half the width while the shorter Ko-fi block left dead space beside it. One column at every width, not only below 42rem (<code>modal.css</code>)."
+        },
+        {
+          "badge": "improved",
+          "text": "<strong>Smart collections do less work per render</strong> — all four lists were built up front on every render, including a sort for <strong>Most used</strong>, which is off by default. Each list is now built only when the collection that needs it is on (<code>dashboard-smart-collections.js</code>)."
+        },
+        {
+          "badge": "improved",
+          "text": "<strong>The clock stops ticking in a background tab</strong> — the minute timer kept firing only to skip its own work; it now pauses while the tab is hidden and resumes when you come back (<code>dashboard-date-weather.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.08.2</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v162</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v220</code>. The manual also corrects the release-history depth from 25 to 50, raised in v2026.08.08."
+        }
+      ]
+    }
+  ]
+}

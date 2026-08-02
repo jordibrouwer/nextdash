@@ -318,7 +318,33 @@ class DashboardBookmarkRows {
             return -1;
         }
         const key = this.canonicalBookmarkURLKey(bookmark.url);
-        return d.bookmarks.findIndex((b) => this.canonicalBookmarkURLKey(b.url) === key);
+        const matches = [];
+        d.bookmarks.forEach((b, i) => {
+            if (this.canonicalBookmarkURLKey(b.url) === key) matches.push(i);
+        });
+        if (matches.length <= 1) {
+            return matches.length ? matches[0] : -1;
+        }
+        // The same URL can sit on a page more than once, and a detached copy of
+        // a row — what the smart collections hand back — has no identity to match
+        // on. Taking the first hit would resolve every copy to the same entry, so
+        // a delete from such a row removed the wrong bookmark. Narrow with the
+        // fields that actually distinguish them before falling back.
+        const narrowed = matches.find((i) => this.sameBookmarkContent(d.bookmarks[i], bookmark));
+        return narrowed !== undefined ? narrowed : matches[0];
+    }
+
+
+    /** Do two bookmark objects describe the same row, beyond a shared URL? */
+    sameBookmarkContent(a, b) {
+        if (!a || !b) return false;
+        const norm = (v) => String(v ?? '');
+        return norm(a.name) === norm(b.name)
+            && norm(a.category) === norm(b.category)
+            && norm(a.shortcut) === norm(b.shortcut)
+            && norm(a.icon) === norm(b.icon)
+            && Number(a.createdAt || 0) === Number(b.createdAt || 0)
+            && (a.tags || []).join(',') === (b.tags || []).join(',');
     }
 
 
