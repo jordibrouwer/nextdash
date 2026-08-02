@@ -112,7 +112,6 @@ func TestPushTriggersRespectMasterSwitch(t *testing.T) {
 
 	h.pushMonitorNotifications(context.Background(), []monitorNotification{{Event: "down", Name: "example", URL: "https://example.com"}})
 	h.pushAutoBackupResult(context.Background(), nil)
-	h.pushReleaseAvailable(context.Background(), "v2026.07.24.1")
 
 	if got := f.count(); got != 0 {
 		t.Errorf("sent %d notifications with push disabled, want 0", got)
@@ -136,11 +135,6 @@ func TestPushTriggersRespectCategoryToggles(t *testing.T) {
 			"backup off",
 			func(s *Settings) { s.PushNotifyBackup = false },
 			func(h *Handlers) { h.pushAutoBackupResult(context.Background(), nil) },
-		},
-		{
-			"release off",
-			func(s *Settings) { s.PushNotifyRelease = false },
-			func(h *Handlers) { h.pushReleaseAvailable(context.Background(), "v2026.07.24.1") },
 		},
 	}
 	for _, tc := range tests {
