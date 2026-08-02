@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.04 — August 2026](#v20260804--august-2026)
 - [v2026.08.06 — August 2026](#v20260806--august-2026)
 - [v2026.08.05 — August 2026](#v20260805--august-2026)
 - [v2026.08.02.3 — August 2026](#v202608023--august-2026)
@@ -139,6 +140,23 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.04 — August 2026
+
+**After v2026.08.02.3** — there was no in-app way to learn about a newer GitHub release without opening release notes yourself; release web push was noisy and often missed.
+
+### Update check
+
+- **new** **GitHub release check** — server polls the public GitHub Releases API at most once every 24 hours (`GET /api/update-status`, cached). When a newer tag exists, Config → Overview shows a compact notice above Tips, the ★ button gets a dot, and a toast appears once per release while the app tab is active (`update_check.go`, `update-notice.js`).
+- **new** **What's new modal header** — version line and **Check for updates** on one row; release summary and personal project link share the row below at 50/50 (`whats-new-modal.js`, `modal.css`).
+- **new** **Privacy toggle** — **Check GitHub for new releases** under Config → Behavior → Privacy (on by default). When off, badge, toast, and update bars disappear everywhere (`dashboard-config.js`, locales).
+- **fix** **Release web push removed** — software updates no longer use browser push notifications; in-app toast while actively using nextDash replaces them (`push_release.go` removed).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, New features carousel, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.04**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v157`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v215`.
 
 ---
 

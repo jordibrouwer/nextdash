@@ -228,6 +228,9 @@ class DashboardData {
             if (typeof d.settings.showSyncToasts === 'undefined') {
                 d.settings.showSyncToasts = false;
             }
+            if (typeof d.settings.updateCheckEnabled === 'undefined') {
+                d.settings.updateCheckEnabled = true;
+            }
             if (typeof d.settings.packedColumns === 'undefined') {
                 d.settings.packedColumns = true;
             }
