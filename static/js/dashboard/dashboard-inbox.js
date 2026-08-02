@@ -113,45 +113,78 @@ class DashboardInbox {
         const targets = this.checkedItems().filter((i) => !i.readAt);
         if (!targets.length) return;
         this._trackAction('bulk-read', { size: this._countBucket(targets.length) });
-        for (const item of targets) {
-            await this.markRead(item.id);
-        }
+        await Promise.allSettled(targets.map((item) => this.markRead(item.id)));
         this.clearChecked();
-        await this.loadAndRender();
+        if (this.isActiveView()) {
+            this.render();
+        }
     }
 
     async bulkSnooze(items, until) {
         const targets = (items || []).filter(Boolean);
         if (!targets.length || !until) return;
         this._trackAction('bulk-snooze', { size: this._countBucket(targets.length) });
-        for (const item of targets) {
-            await this.patchSnooze(item.id, until);
-        }
+        await Promise.allSettled(targets.map((item) => this.patchSnooze(item.id, until)));
         this.clearChecked();
-        await this.loadAndRender();
+        if (this.isActiveView()) {
+            this.render();
+        } else {
+            await this.refreshBadge();
+        }
     }
 
     /**
-     * Delete every ticked row. Confirmed first: this is the one bulk action that
-     * cannot be walked back item by item, and the count is named so "5" is not
-     * discovered after the fact.
+     * Delete every ticked row. Confirmed first; snapshots allow one Undo to restore
+     * the whole batch, matching Clear read.
      */
     async bulkDelete() {
         const targets = this.checkedItems();
         if (!targets.length) return;
         const message = this.t(
             'dashboard.inboxSelectionDeleteConfirm',
-            'Delete {count} selected items? This cannot be undone.',
+            'Delete {count} selected items?',
             { count: targets.length }
         );
         const ok = await this.confirmBulkDelete(message);
         if (!ok) return;
         this._trackAction('bulk-delete', { size: this._countBucket(targets.length) });
-        for (const item of targets) {
-            await this.deleteItem(item.id);
-        }
+        const d = this.dash;
+        const snapshots = targets.map((item) => JSON.parse(JSON.stringify(item)));
+        const results = await Promise.allSettled(targets.map((item) => this.deleteItem(item.id)));
+        const removed = results.filter((r) => r.status === 'fulfilled').length;
         this.clearChecked();
-        await this.loadAndRender();
+        if (this.isActiveView()) {
+            this.render();
+        } else {
+            await this.refreshBadge();
+        }
+        if (!removed) {
+            d.showNotification(this.t('dashboard.inboxDeleteFailed', 'Could not delete'), 'error');
+            return;
+        }
+        d.showNotification(
+            this.t('dashboard.inboxSelectionDeleteDone', 'Removed {count} selected items', { count: removed }),
+            'success',
+            {
+                duration: 8000,
+                undoCallback: async () => {
+                    const restores = await Promise.allSettled(snapshots.map((snap) => this.restoreItem(snap)));
+                    const back = restores.filter((r) => r.status === 'fulfilled' && r.value).length;
+                    if (this.isActiveView()) {
+                        await this.loadAndRender();
+                    } else {
+                        await this.refreshBadge();
+                    }
+                    d.showNotification(
+                        back
+                            ? this.t('dashboard.inboxSelectionDeleteRestored', 'Restored {count} links', { count: back })
+                            : this.t('dashboard.inboxUndoFailed', 'Could not restore'),
+                        back ? 'success' : 'error',
+                        { duration: 3000 }
+                    );
+                },
+            }
+        );
     }
 
     confirmBulkDelete(message) {
@@ -1661,7 +1694,7 @@ class DashboardInbox {
         legend.setAttribute('aria-hidden', 'true');
         const keys = [
             ['j / k', this.t('dashboard.inboxKeyMove', 'move')],
-            ['Enter', this.t('dashboard.inboxKeyOpen', 'open')],
+            ['Enter / Space', this.t('dashboard.inboxKeyOpen', 'open')],
             ['p', this.t('dashboard.inboxKeyPromote', 'promote')],
             ['n', this.t('dashboard.inboxKeyNote', 'note')],
             ['r', this.t('dashboard.inboxKeyKeep', 'mark read')],
@@ -1669,7 +1702,7 @@ class DashboardInbox {
             ['x', this.t('dashboard.inboxKeySelect', 'select')],
             ['d', this.t('dashboard.inboxKeyDelete', 'delete')],
             ['g / G', this.t('dashboard.inboxKeyFirstLast', 'first / last')],
-            ['Esc', this.t('dashboard.inboxKeyClose', 'back to bookmarks')],
+            ['Esc', this.t('dashboard.inboxKeyEsc', 'clear selection · back to bookmarks')],
         ];
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
@@ -1683,6 +1716,9 @@ class DashboardInbox {
         }
         this._searchRenderTimer = setTimeout(() => {
             this._searchRenderTimer = null;
+            // Ticks from a previous query would act on rows the user can no longer
+            // see, so a search change starts the selection over (same as filter).
+            this.checkedIds.clear();
             // Debounced with the render: syncing on every keystroke would rewrite
             // the address bar a dozen times per word.
             this.syncUrlState();

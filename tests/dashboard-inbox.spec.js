@@ -349,6 +349,20 @@ test.describe('dashboard inbox phase 1', () => {
         expect(await page.evaluate(() => window.dashboardInstance.inbox.checkedIds.size)).toBe(0);
     });
 
+    test('a search change clears ticks so bulk cannot touch hidden rows', async ({ page }) => {
+        await seedInbox(page, ['Zebra one', 'Apple two']);
+
+        await page.evaluate(() => {
+            const ib = window.dashboardInstance.inbox;
+            ib.getFilteredItems().forEach((i) => ib.setChecked(i.id, true));
+        });
+        await expect(page.locator('.inbox-selection-bar')).toBeVisible();
+
+        await page.locator('.inbox-search-input').fill('Zebra');
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox.checkedIds.size)).toBe(0);
+        await expect(page.locator('.inbox-selection-bar')).toHaveCount(0);
+    });
+
     test('the snooze menu offers a date of your own', async ({ page }) => {
         await seedInbox(page, ['Zebra one']);
 
