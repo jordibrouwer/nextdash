@@ -133,7 +133,7 @@ const AppNotification = {
         const actionEl = this._actionEl(host);
         if (!host || !messageEl) { this._busy = false; return; }
 
-        const normalized = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'success';
+        const normalized = ['success', 'error', 'warning', 'info', 'update'].includes(type) ? type : 'success';
         const persist = options.persist === true;
 
         // textContent by default — messages can contain user data (bookmark names).
@@ -188,7 +188,7 @@ const AppNotification = {
         }
         const host = document.getElementById('app-notification');
         if (host) {
-            host.classList.remove('show', 'success', 'error', 'warning', 'info', 'has-action', 'persist');
+            host.classList.remove('show', 'success', 'error', 'warning', 'info', 'update', 'has-action', 'persist');
             host.setAttribute('aria-hidden', 'true');
             const actionEl = this._actionEl(host);
             if (actionEl) {
