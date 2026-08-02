@@ -353,6 +353,8 @@ One shared **bookmark form modal** is used for add and edit everywhere — dashb
 
 Since **v2026.08.07.1**, success toasts show translated labels again (not raw locale keys), row tooltips and the preview card include last-opened text, and category edits from **Config → Bookmarks** persist reliably to the server.
 
+Since **v2026.08.08**, the example bookmarks on a new install are dated at the moment the install is seeded, so **Recently added** and the age columns have something to work with from the first run instead of reading as undated. A factory reset seeds them the same way. Bookmarks created before that release keep their original blank date.
+
 The modal includes page, category, preview, tags, and note.
 
 **Availability, Shortcut and Pinned sit above the *More options* fold**. Availability is the same **Off / Periodic / Monitor** choice as the bookmark editor in Config — with the interval picker for Monitor and the same explanation behind the **(i)** — so a bookmark can be set up for monitoring at the moment you add it. Before this the modal offered only a *Status check* box, which could not express the three-way choice: Monitor is a superset of Periodic, so *monitored* was unreachable here. **Pinned** uses the same pin pill as the inline editor and Config rather than a bare checkbox.
@@ -390,7 +392,11 @@ Arrow keys move through the items and `Enter` activates one; `Esc` or a click ou
 
 **Edit** on a row opens the same add-bookmark modal the dashboard uses, prefilled with that bookmark's fields — name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor). Save from the modal writes your changes; closing without saving leaves the row untouched.
 
-**+ Bookmark** opens the same add form empty. Tick several rows to get the **bulk toolbar** — move to another page or category, pin, refresh favicons, add / replace / remove tags across the whole selection, or delete. **Select all** ticks the rows your filters are currently showing, not every bookmark you own.
+**+ Bookmark** opens the same add form empty. Tick several rows to get the **bulk toolbar** — move to another page or category, pin, refresh favicons, add / replace / remove tags across the whole selection, or delete. **Select all** ticks the rows your filters are currently showing, not every bookmark you own; since **v2026.08.08** it names that count when the list is longer than the rows on screen, because the rest arrive as you scroll.
+
+Selections survive a filter change, so you can gather rows from several pages before acting. When part of a selection is hidden by the filters you have on, the bulk bar says how many and offers **Select only these** to drop them — worth a look before **Delete**, which reaches every ticked row whether or not you can see it.
+
+Since **v2026.08.08**, two bookmarks that share a URL on the same page are treated as separate rows by every bulk and single-row action. Before this they were identified by page and URL alone, so ticking one and deleting removed both; the **Duplicate URLs** cleanup filter under Statistics is the fastest way to find such pairs.
 
 The bookmark modal is comfortable on a wide window; on a narrow one the fields stack.
 
