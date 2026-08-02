@@ -5,7 +5,7 @@
     'use strict';
 
     const STORAGE_KEY = 'nextdash:last-whats-new-dashboard-release';
-    const MAX_VISIBLE_RELEASES = 25;
+    const MAX_VISIBLE_RELEASES = 50;
 
     let manifestCache = null;
     let manifestFetch = null;
