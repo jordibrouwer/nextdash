@@ -85,7 +85,9 @@ test.describe('add bookmark — Create + New', () => {
 
         const uniqueUrl = `https://example.com/create-another-grid-${Date.now()}.test`;
         const uniqueName = `Create another grid ${Date.now()}`;
-        const gridLink = page.locator(`#dashboard-layout .bookmark-link[data-bookmark-url="${uniqueUrl}"]`);
+        const gridLink = page.locator(
+            `#dashboard-layout .category:not([data-smart-collection="true"]) .bookmark-link[data-bookmark-url="${uniqueUrl}"]`
+        );
 
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         await form.locator('input[type="url"]').fill(uniqueUrl);
@@ -115,7 +117,7 @@ test.describe('add bookmark — Create + New', () => {
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         await form.locator('input[type="url"]').fill('https://example.net');
         await form.locator('.bookmark-inline-input').first().fill('Closes');
-        await form.locator('.bookmark-inline-save').click();
+        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
         await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
     });
 });

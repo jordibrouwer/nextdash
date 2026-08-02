@@ -32,8 +32,13 @@ async function twoPages(page) {
 }
 
 const pageOptions = (page) => page.evaluate(() => {
-    const sel = document.getElementById('new-bookmark-page');
+    const sel = document.querySelector('#bookmark-form-modal .bookmark-inline-form .bookmark-inline-select:not(.bookmark-inline-toggle-select)');
     return sel ? [...sel.options].map((o) => o.textContent.trim()) : [];
+});
+
+const pinnedPageValue = (page) => page.evaluate(() => {
+    const sel = document.querySelector('#bookmark-form-modal .bookmark-inline-form .bookmark-inline-select:not(.bookmark-inline-toggle-select)');
+    return sel ? Number(sel.value) : NaN;
 });
 
 test.describe('add-bookmark modal page dropdown', () => {
@@ -107,8 +112,7 @@ test.describe('add-bookmark modal page dropdown', () => {
             h.openModal({});
             return Number(other.id);
         });
-        await expect.poll(async () => page.evaluate(() =>
-            Number(document.getElementById('new-bookmark-page')?.value)), { timeout: 10_000 })
+        await expect.poll(async () => pinnedPageValue(page), { timeout: 10_000 })
             .toBe(pinned);
     });
 });

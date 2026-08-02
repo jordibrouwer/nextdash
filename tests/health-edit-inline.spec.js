@@ -107,7 +107,7 @@ test.describe('health Edit → bookmark modal', () => {
 
         const savePost = page.waitForRequest((req) =>
             req.url().includes(`/api/bookmarks?page=${issue.pageId}`) && req.method() === 'POST');
-        await form.locator('.bookmark-inline-save').click();
+        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
         const request = await savePost;
 
         // The whole page list is written back with the edited entry replaced.
@@ -180,7 +180,7 @@ test.describe('health Edit → bookmark modal', () => {
         await form.locator('.bookmark-inline-input').first().fill(newName);
         const savePost = page.waitForRequest((r) =>
             r.url().includes(`/api/bookmarks?page=${target.pageId}`) && r.method() === 'POST');
-        await form.locator('.bookmark-inline-save').click();
+        await form.locator('.bookmark-inline-actions > .bookmark-inline-save').click();
         const body = JSON.parse((await savePost).postData() || '[]');
 
         // The bookmark the URL names was renamed; index 0 was left alone.

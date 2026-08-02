@@ -758,12 +758,13 @@ test.describe('Shift+S opens config', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
         await page.locator('#config-bm-add').click();
-        await page.waitForSelector('#new-bookmark-name');
-        await page.locator('#new-bookmark-name').click();
+        await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
+        const nameInput = page.locator('#bookmark-form-modal .bookmark-inline-form .bookmark-inline-input').first();
+        await nameInput.click();
         // Two capital S characters: a shortcut that ignored input focus would
         // swallow them and navigate instead.
-        await page.locator('#new-bookmark-name').type('Shift Stress');
-        await expect(page.locator('#new-bookmark-name')).toHaveValue('Shift Stress');
+        await nameInput.type('Shift Stress');
+        await expect(nameInput).toHaveValue('Shift Stress');
         await expect(page.locator('#bookmark-form-modal')).toHaveClass(/show/);
     });
 

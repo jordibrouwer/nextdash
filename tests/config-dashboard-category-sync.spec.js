@@ -24,14 +24,15 @@ test.describe('config to dashboard category sync', () => {
     test('bookmark categorised in config appears in that column on dashboard', async ({ page }) => {
         const uniqueUrl = `https://example.com/config-media-sync-${Date.now()}.test`;
         const uniqueName = `Config media sync ${Date.now()}`;
-        const pageId = 1;
 
         await page.goto(`/?_=${Date.now()}`);
         await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
-        // Seed an uncategorised bookmark on page 1.
+        const pageId = await page.evaluate(() => Number(window.dashboardInstance?.currentPageId) || 1);
+
+        // Seed an uncategorised bookmark on the current page.
         await page.evaluate(async ({ targetPageId, targetUrl, targetName }) => {
             const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const res = await api('/api/bookmarks/add', {
@@ -63,26 +64,32 @@ test.describe('config to dashboard category sync', () => {
 
         // Narrow the list to the seeded bookmark and open its editor.
         await page.locator('#config-bm-search').fill(uniqueName);
-        const row = page.locator('#config-bm-list [data-feed-action="edit"]').first();
+        const row = page.locator('#config-bm-list .config-bm-row', { hasText: uniqueName });
         await expect(row).toBeVisible({ timeout: 10_000 });
-        await row.click();
+        await row.locator('[data-feed-action="edit"]').evaluate((el) => el.click());
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
 
-        const categorySelect = page.locator('#new-bookmark-category');
+        const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
+        const categorySelect = form.locator('.bookmark-inline-select:not(.bookmark-inline-toggle-select)').nth(1);
         const targetCategory = await categorySelect.evaluate((el) => {
             const opt = [...el.options].find((o) => o.value && o.value !== '__new__');
             if (!opt) throw new Error('no category options available');
             return opt.value;
         });
         await categorySelect.selectOption(targetCategory);
-        await page.locator('#new-bookmark-create').click();
+        await expect(categorySelect).toHaveValue(targetCategory);
+        const savePromise = page.waitForResponse(
+            (r) => r.url().includes('/api/bookmarks') && r.request().method() === 'POST' && r.ok(),
+        );
+        await page.locator('#bookmark-form-modal .bookmark-inline-actions > .bookmark-inline-save').click();
+        await savePromise;
 
         // The change must reach the server, not just the in-page model.
         await expect.poll(async () => page.evaluate(async ({ targetPageId, targetUrl }) => {
-            const res = await fetch(`/api/bookmarks?page=${targetPageId}`);
+            const res = await fetch(`/api/bookmarks?page=${targetPageId}`, { cache: 'no-store' });
             const list = res.ok ? await res.json() : [];
             const bm = (list || []).find(
-                (b) => String(b?.url || '').trim().toLowerCase() === String(targetUrl).trim().toLowerCase()
+                (b) => String(b?.url || '').trim().toLowerCase() === String(targetUrl).trim().toLowerCase(),
             );
             return String(bm?.category ?? '');
         }, { targetPageId: pageId, targetUrl: uniqueUrl }), { timeout: 10_000 }).toBe(targetCategory);

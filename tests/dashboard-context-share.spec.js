@@ -175,6 +175,7 @@ test.describe('dashboard share from the right-click menu', () => {
         const row = await firstRow(page);
         const result = await page.evaluate(async () => {
             const d = window.dashboardInstance;
+            await d.contextMenu.load();
             const el = document.querySelector('.bookmark-link');
             const ref = d.contextMenu.resolveRowBookmark(el);
             const outcome = await d.contextMenu.shareBookmark(ref.bookmark, el);

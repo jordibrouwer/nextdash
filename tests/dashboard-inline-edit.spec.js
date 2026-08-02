@@ -228,6 +228,10 @@ test.describe('dashboard bookmark form modal', () => {
         await urlInput.fill('https://example.com/safari-field-test');
         await expect(urlInput).toHaveValue('https://example.com/safari-field-test');
         await page.locator('.bookmark-inline-form .bookmark-inline-action-btn', { hasText: /cancel/i }).click();
+        const discard = page.locator('.inline-edit-discard-modal .modal-button.danger');
+        if (await discard.count()) {
+            await discard.click();
+        }
         await expect.poll(async () => isBookmarkFormModalOpen(page)).toBe(false);
     });
 
