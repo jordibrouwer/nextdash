@@ -2385,20 +2385,24 @@ body.no-animations .category-chevron {
 
 .category-rename-input {
     background: transparent;
-    border: none;
-    border-bottom: 1px solid currentColor;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
     color: inherit;
     font: inherit;
     font-size: inherit;
     font-weight: inherit;
     letter-spacing: inherit;
-    padding: 0;
+    padding: 0 0.25em;
     margin: 0;
     width: 12ch;
     min-width: 4ch;
     max-width: 28ch;
     outline: none;
     opacity: 1;
+}
+
+.category-rename-input:focus {
+    border-color: var(--accent-primary);
 }
 
 /* Bookmarks */
