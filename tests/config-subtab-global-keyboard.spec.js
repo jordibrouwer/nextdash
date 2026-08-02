@@ -30,14 +30,14 @@ test.describe('config sub-tab shortcuts from the panel', () => {
 
     test('[ and ] cycle pages & tags sub-tabs', async ({ page }) => {
         await openSection(page, 'pages-tags');
-        await expect(page.locator('[data-pt-tab="finders"][aria-selected="true"]')).toBeVisible();
+        await expect(page.locator('[data-pt-tab="categories"][aria-selected="true"]')).toBeVisible();
         await page.locator('#config-section-panel').focus();
 
         await page.keyboard.press(']');
         await expect(page.locator('[data-pt-tab="tags"][aria-selected="true"]')).toBeVisible();
 
         await page.keyboard.press('[');
-        await expect(page.locator('[data-pt-tab="finders"][aria-selected="true"]')).toBeVisible();
+        await expect(page.locator('[data-pt-tab="categories"][aria-selected="true"]')).toBeVisible();
     });
 
     test('sub-tab shortcuts do nothing in sections without sub-tabs', async ({ page }) => {

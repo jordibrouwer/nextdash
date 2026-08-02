@@ -20,9 +20,10 @@ test.describe('config pages & tags', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
 
-        for (const tab of ['finders', 'tags', 'collections', 'pages', 'categories']) {
+        for (const tab of ['categories', 'tags', 'pages', 'finders', 'collections']) {
             await expect(page.locator(`[data-pt-tab="${tab}"]`)).toBeVisible();
         }
+        await page.locator('[data-pt-tab="finders"]').click();
         await expect(page.locator('[data-finder="name"]')).toHaveValue('Wikipedia');
     });
 
@@ -37,6 +38,7 @@ test.describe('config pages & tags', () => {
         });
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.locator('[data-pt-tab="finders"]').click();
         await page.locator('[data-finder-add]').click();
 
         // Add alone no longer persists an all-blank row — a refresh mid-typing

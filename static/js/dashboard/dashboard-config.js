@@ -34,7 +34,7 @@ class DashboardConfig {
         this.loading = false;
         this._loadPromise = null;
         // Pages & tags sub-tab (finders/tags/collections native; pages/categories embedded).
-        this.ptTab = 'finders';
+        this.ptTab = 'categories';
         // Appearance sub-tab.
         this.appearanceTab = 'general';
         this._finders = null;
@@ -6168,7 +6168,7 @@ class DashboardConfig {
 
     /* ── Pages & tags ──────────────────────────────────────────────────────── */
 
-    static PT_TABS = ['finders', 'tags', 'collections', 'pages', 'categories'];
+    static PT_TABS = ['categories', 'tags', 'pages', 'finders', 'collections'];
 
     /** Data & backups keeps its destructive actions on a separate tab. */
     static DB_TABS = ['backups', 'reset'];
