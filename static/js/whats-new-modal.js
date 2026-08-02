@@ -222,12 +222,14 @@
         if (!updateCheckEnabled()) {
             return '';
         }
+        // Status only — no "Check for updates" button. The daily check still runs
+        // on its own, and Config → Overview keeps the manual trigger; this modal
+        // is for reading release notes, so it just reports what the check found.
         return `
             <div class="wn-update-check-header" data-wn-update-check>
                 <div class="wn-update-check-meta" data-wn-update-meta>
                     <p class="wn-update-check-status" id="wn-update-status-text" data-wn-update-status aria-live="polite"></p>
                 </div>
-                <button type="button" class="wn-update-check-btn" data-wn-update-check-btn aria-describedby="wn-update-status-text">${wnTranslate('config.updateCheckNow', 'Check for updates')}</button>
             </div>
         `;
     }
@@ -262,8 +264,7 @@
         const root = document.querySelector('#app-modal .whats-new-modal [data-wn-update-check]');
         if (!root) return;
         const statusEl = root.querySelector('[data-wn-update-status]');
-        const btn = root.querySelector('[data-wn-update-check-btn]');
-        if (!statusEl || !btn) return;
+        if (!statusEl) return;
 
         const status = window.dashboardInstance?.updateStatus || null;
         const desc = describeModalUpdateStatus(status, checking);
@@ -271,16 +272,6 @@
         statusEl.className = `wn-update-check-status wn-update-check-status--${desc.tone || 'neutral'}`;
         statusEl.hidden = !desc.message;
         root.classList.toggle('wn-update-check-header--warn', desc.tone === 'warn');
-        btn.disabled = Boolean(checking);
-        btn.setAttribute('aria-busy', checking ? 'true' : 'false');
-        if (desc.message) {
-            btn.setAttribute('aria-describedby', 'wn-update-status-text');
-        } else {
-            btn.removeAttribute('aria-describedby');
-        }
-        btn.textContent = checking
-            ? wnTranslate('config.updateCheckChecking', 'Checking GitHub…')
-            : wnTranslate('config.updateCheckNow', 'Check for updates');
 
         let link = root.querySelector('[data-wn-update-release-link]');
         const metaEl = root.querySelector('[data-wn-update-meta]') || root;
@@ -320,16 +311,9 @@
 
     function setupUpdateCheckBar(checkRoot) {
         if (!checkRoot || !updateCheckEnabled()) return;
-        const btn = checkRoot.querySelector('[data-wn-update-check-btn]');
-        if (!btn || btn.dataset.bound === '1') return;
-        btn.dataset.bound = '1';
+        if (checkRoot.dataset.bound === '1') return;
+        checkRoot.dataset.bound = '1';
         syncWhatsNewUpdateBar(false);
-        btn.addEventListener('click', () => {
-            syncWhatsNewUpdateBar(true);
-            window.nextdashRunUpdateCheck?.().finally(() => {
-                syncWhatsNewUpdateBar(false);
-            });
-        });
         checkRoot.addEventListener('click', (e) => {
             if (e.target.closest('[data-wn-update-dismiss]')) {
                 const tag = window.dashboardInstance?.updateStatus?.latest;

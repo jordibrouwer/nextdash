@@ -182,7 +182,7 @@ These statistics exist to answer exactly that — **which features get used, and
 - **Bookmark maintenance** — starting an edit and saving it (with whether that was on the dashboard or in config), deleting, moving to another category (with a bucketed count, so a bulk move counts once), and reordering by drag.
 - **Outcomes** — whether adding a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, or failure. This shows where the form trips people up.
 - **Inbox and health actions** — snooze, mark-read, wake, promote, delete, and bulk clean-ups; health rechecks, retest-all, redirect detection, title refresh, and delete.
-- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums. It carries the **release you are running** (`v2026.08.08`), so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
+- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums. It carries the **release you are running** (`v2026.08.08.1`), so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
 
 #### What is never measured
 
@@ -394,7 +394,7 @@ Dynamic bookmark groups that appear automatically:
 - **Show favicons** — toggle bookmark favicons in **Config → General → Bookmarks** or with `:favicons on/off` on the dashboard
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
-- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **25 recent versions** (each loads on demand)
+- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **50 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Optional hover preview cards (off by default) — enable in **Config → General → Advanced → Bookmarks**; configurable hover delay

@@ -145,23 +145,18 @@ body.no-animations .wn-skeleton-line {
 }
 
 /* ── What's New intro block ─────────────────────────────────────── */
+/* One column at every width: the release summary reads as a paragraph, and
+   side by side with the Ko-fi block it was squeezed into a narrow column while
+   the shorter block left dead space beside it. */
 .wn-top-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
     margin-bottom: 1.5rem;
     align-items: stretch;
 }
 
-.wn-top-row--intro-only {
-    grid-template-columns: minmax(0, 1fr);
-}
-
 @media (max-width: 42rem) {
-    .wn-top-row:not(.wn-top-row--intro-only) {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
     .wn-update-check-header {
         flex-wrap: wrap;
     }
@@ -187,7 +182,6 @@ body.no-animations .wn-skeleton-line {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    justify-content: space-between;
     gap: 0.75rem;
     padding: 0.8rem 1rem;
     margin-bottom: 0;
@@ -195,7 +189,6 @@ body.no-animations .wn-skeleton-line {
     border-radius: var(--layout-radius-sm, 8px);
     background: var(--background-secondary);
     min-width: 0;
-    height: 100%;
     box-sizing: border-box;
 }
 
@@ -247,28 +240,6 @@ body.no-animations .wn-skeleton-line {
     gap: 0.35rem 0.45rem;
     min-width: 0;
     flex: 1 1 auto;
-}
-
-.wn-update-check-btn {
-    padding: 0.28rem 0.65rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 0.4rem;
-    background: var(--background-primary);
-    color: var(--text-primary);
-    font: inherit;
-    font-size: var(--font-size-controls);
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.wn-update-check-btn:hover:not(:disabled) {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-}
-
-.wn-update-check-btn:disabled {
-    opacity: 0.65;
-    cursor: wait;
 }
 
 .wn-feature-lead--skeleton {
