@@ -115,6 +115,15 @@ const AppNotification = {
 
     show(message, type = 'success', options = {}) {
         if (this._busy) {
+            // A promo is an unprompted tip on a long timer (14s). Queueing an
+            // answer to something the user just did behind it means the
+            // confirmation lands seconds after the action, long past the point
+            // where it confirms anything — so a real notification takes the slot
+            // instead of waiting for the tip to finish.
+            if (this._currentType === 'promo' && type !== 'promo') {
+                this._showNow(message, type, options);
+                return;
+            }
             if (this._queue.length >= this._QUEUE_MAX) {
                 // Replace the last queued item instead of growing unboundedly
                 this._queue[this._queue.length - 1] = { message, type, options };
@@ -134,6 +143,7 @@ const AppNotification = {
         if (!host || !messageEl) { this._busy = false; return; }
 
         const normalized = ['success', 'error', 'warning', 'info', 'update', 'promo'].includes(type) ? type : 'success';
+        this._currentType = normalized;
         const persist = options.persist === true;
 
         // textContent by default — messages can contain user data (bookmark names).
@@ -197,6 +207,10 @@ const AppNotification = {
                 actionEl.onclick = null;
             }
         }
+        // The promo is gone from the host, so it must stop granting the takeover
+        // above — during the gap below _busy is still true and the next caller
+        // should queue normally.
+        this._currentType = null;
         const next = this._queue.shift();
         if (next) {
             // Keep _busy = true during the gap so new show() calls queue correctly

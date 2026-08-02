@@ -1,0 +1,30 @@
+{
+  "tag": "v2026.08.08.3",
+  "date": "August 2026",
+  "releasedAt": "2026-08-02",
+  "modalLead": "Hotfix after v2026.08.08.2 — sharing a bookmark from the right-click menu works on the first attempt again, and a confirmation toast no longer waits behind the Shift+B tip. Both were silent: the share simply did nothing, and the toast arrived up to fourteen seconds after the action it was confirming.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Share from the right-click menu reaches the clipboard again</strong> — resolving a row to its bookmark went through the lazy loader's generic path, which answers with a Promise until the module is fetched. Callers read the bookmark straight away, got nothing, and did nothing, so a share never fell through to its clipboard copy. The loader now answers this one synchronously, like the share labels beside it (<code>dashboard-bookmark-interactions-loader.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Confirmations no longer wait behind the Shift+B tip</strong> — that tip holds the toast area for fourteen seconds, and anything raised while it was up sat in the queue behind it. A change you had just made was confirmed long after the fact, or looked like it had not registered at all. A real notification now takes the slot instead of waiting (<code>app-notification.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.08.3</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v163</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v221</code>."
+        }
+      ]
+    }
+  ]
+}
