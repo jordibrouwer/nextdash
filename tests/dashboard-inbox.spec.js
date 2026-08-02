@@ -146,6 +146,28 @@ test.describe('dashboard inbox phase 1', () => {
         await readRequest;
     });
 
+    test('Home and End jump to first and last inbox row', async ({ page }) => {
+        await page.evaluate(() => {
+            window.dashboardInstance.settings.inboxEnabled = true;
+        });
+
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-feed .inbox-item').first()).toBeVisible();
+
+        await page.keyboard.press('End');
+        const lastId = await page.evaluate(() => {
+            const cards = [...document.querySelectorAll('.inbox-item')];
+            return cards[cards.length - 1]?.dataset?.inboxId || '';
+        });
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox.selectedItemId)).toBe(lastId);
+
+        await page.keyboard.press('Home');
+        const firstId = await page.evaluate(() => {
+            return document.querySelector('.inbox-item')?.dataset?.inboxId || '';
+        });
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.inbox.selectedItemId)).toBe(firstId);
+    });
+
     test('inbox keyboard survives background bookmark refresh', async ({ page }) => {
         await page.evaluate(() => {
             window.dashboardInstance.settings.inboxEnabled = true;
@@ -388,6 +410,58 @@ test.describe('dashboard inbox phase 1', () => {
         const asDate = new Date(parsed);
         expect(asDate.getDate()).toBe(1);
         expect(asDate.getHours()).toBe(9);
+    });
+
+    test('ib_id deep link highlights and selects the target row', async ({ page }) => {
+        await seedInbox(page, ['Alpha', 'Beta target', 'Gamma']);
+        const targetId = await page.evaluate(() => {
+            const item = window.dashboardInstance.inbox.items.find((i) => i.title === 'Beta target');
+            return item?.id || '';
+        });
+        expect(targetId).toBeTruthy();
+
+        await page.goto(`/?ib_id=${encodeURIComponent(targetId)}#inbox`);
+        await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+        await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+
+        await expect(page.locator(`[data-inbox-id="${targetId}"].keyboard-selected`)).toBeVisible();
+        await expect(page.locator(`[data-inbox-id="${targetId}"].inbox-item--highlight`)).toBeVisible();
+    });
+
+    test('noted filter shows only items with a note', async ({ page }) => {
+        await seedInbox(page, ['Plain link', 'Annotated link']);
+        await page.evaluate(async () => {
+            const ib = window.dashboardInstance.inbox;
+            const item = ib.items.find((entry) => entry.title === 'Annotated link');
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/inbox', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: item.id, note: 'review later' }),
+            });
+            await ib.loadAndRender();
+        });
+
+        await page.locator('[data-inbox-filter="noted"]').click();
+        await expect(page.locator('.inbox-item')).toHaveCount(1);
+        await expect(page.locator('.inbox-item')).toContainText('Annotated link');
+    });
+
+    test('t opens triage from the inbox feed', async ({ page }) => {
+        await seedInbox(page, ['Triage me']);
+        await page.locator('#dashboard-layout').focus();
+        await page.keyboard.press('t');
+        await expect(page.locator('#inbox-triage-overlay')).toBeVisible();
+    });
+
+    test('CSV export downloads the filtered inbox list', async ({ page, context }) => {
+        await seedInbox(page, ['Export row']);
+        const downloadPromise = page.waitForEvent('download');
+        await page.locator('[data-inbox-export="csv"]').click();
+        const download = await downloadPromise;
+        expect(download.suggestedFilename()).toMatch(/^nextdash-inbox-.*\.csv$/);
     });
 
 });
