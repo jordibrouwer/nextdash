@@ -284,7 +284,7 @@ environment:
 - `! or F1` — keyboard cheat sheet (filterable with a type-to-search input; blocked while page overview `,` is open)
 - `category:` / `tag:` / `page:` / `status:` — filter directly in the search bar; autocomplete suggests values after each prefix (single **Filters** group)
 - `:goto <url-or-domain>` — navigate to a URL or bare domain (e.g. `:goto github.com`); `:goto config` / `stats` / `health` for quick navigation
-- `:new` — open new-bookmark modal (same as `+` / `Ctrl+Shift+A`)
+- `:new` — open new-bookmark modal (same as `+` / `Shift+B` / `Ctrl+Shift+A`)
 - `:add` — quick-add omnibox (same as `&`)
 - `:note` — edit the note of the focused bookmark
 - `:move` / `:edit` / `:copy` / `:quicktag` (`:qt`) — move, inline edit, copy URL, or open quick-tag popover (`Shift+T`) on the keyboard-selected bookmark
