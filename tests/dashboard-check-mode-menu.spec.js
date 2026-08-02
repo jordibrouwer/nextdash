@@ -64,6 +64,10 @@ async function setup(page) {
     }
     await page.reload();
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+    // Again after the reload, not just before it: a release the browser has not
+    // seen opens the What's new modal on load, and that marks the grid inert —
+    // every row then reads as "not stable" and never takes a click.
+    await prepareDashboardInteraction(page);
     await page.evaluate(() => document.querySelectorAll('.quickstart-card').forEach((el) => el.remove()));
 }
 
@@ -96,22 +100,24 @@ test.describe('dashboard check-mode menu', () => {
      */
     test('a chosen mode is still shown when the menu is reopened', async ({ page }) => {
         await setup(page);
-        const row = await firstRow(page);
 
-        await openCheckModeSubmenu(page, row);
+        // Re-resolved after every change: applying a mode ends in a full
+        // renderDashboard(), which replaces the row element. Holding one handle
+        // across that would be waiting on a node no longer in the document.
+        await openCheckModeSubmenu(page, await firstRow(page));
         await page.locator('[data-check-mode="monitor"]').click();
         await expect(page.locator('.app-notification')).toContainText(/monitor/i, { timeout: 10_000 });
 
         // No reload in between — that is the whole point.
-        await openCheckModeSubmenu(page, row);
+        await openCheckModeSubmenu(page, await firstRow(page));
         expect(await activeMode(page)).toBe('monitor');
 
         await page.keyboard.press('Escape');
-        await openCheckModeSubmenu(page, row);
+        await openCheckModeSubmenu(page, await firstRow(page));
         await page.locator('[data-check-mode="periodic"]').click();
         await expect(page.locator('.app-notification')).toContainText(/periodic/i, { timeout: 10_000 });
 
-        await openCheckModeSubmenu(page, row);
+        await openCheckModeSubmenu(page, await firstRow(page));
         expect(await activeMode(page)).toBe('periodic');
     });
 

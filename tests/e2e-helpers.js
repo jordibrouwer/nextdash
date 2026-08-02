@@ -79,6 +79,18 @@ async function suppressStatusEmptyHint(page) {
 
 /** @param {import('@playwright/test').Page} page */
 async function dismissWhatsNewIfPresent(page) {
+    // Mark the running release as seen first. Closing the modal does not record
+    // it, so on a release the browser has not seen — every time the cache token
+    // is bumped — it simply reopens a second or two later and marks the grid
+    // inert again, mid-test.
+    await page.evaluate(() => {
+        const release = window.NEXTDASH_WHATS_NEW_RELEASE;
+        if (release) {
+            try {
+                localStorage.setItem('nextdash:last-whats-new-dashboard-release', release);
+            } catch { /* storage unavailable — modal may reopen, nothing else to do */ }
+        }
+    });
     const modal = page.locator('#app-modal.show');
     if (await modal.count()) {
         await page.keyboard.press('Escape');
