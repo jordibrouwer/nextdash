@@ -34,7 +34,7 @@ class DashboardConfig {
         this.loading = false;
         this._loadPromise = null;
         // Pages & tags sub-tab (finders/tags/collections native; pages/categories embedded).
-        this.ptTab = 'finders';
+        this.ptTab = 'categories';
         // Appearance sub-tab.
         this.appearanceTab = 'general';
         this._finders = null;
@@ -51,7 +51,9 @@ class DashboardConfig {
         // A named cleanup filter arrived at from Statistics ('untagged', …).
         // Empty means the list is unfiltered by it.
         this.bmCleanupFilter = '';
+        this.bmTagFilter = '';
         this.bmSort = 'page';
+        this.bmVisibleLimit = DashboardConfig.BM_PAGE_SIZE;
         this.bmEditing = null;
         this.bmDirty = false;
         this.bmSelected = new Set();
@@ -79,6 +81,12 @@ class DashboardConfig {
         this._listKeyboardKey = null;
         // Bookmarks master list row highlighted via j/k.
         this._bmKeyboardKey = null;
+        /** Restores keyboard focus on this row after the add/edit modal closes. */
+        this._bmModalRestoreKey = null;
+        this._bmSearchTimer = null;
+        this._bmLoadMoreObserver = null;
+        /** Cached URL set for duplicate detection — rebuilt when the list repaints. */
+        this._bmDuplicateUrls = null;
         /** Cached field labels seen while browsing config — merged into settings jump. */
         this._settingsJumpCache = new Map();
         this._settingsJumpHandler = null;
@@ -1568,12 +1576,6 @@ class DashboardConfig {
                 void this.activateBookmarkKeyboardRow(this._bmKeyboardKey);
                 return true;
             }
-            if (e.key === 'p') {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                void this.recheckBookmarkByKey(this._bmKeyboardKey);
-                return true;
-            }
             if (e.key === 'm') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -2062,9 +2064,9 @@ class DashboardConfig {
         ];
     }
 
-    /** Headline counts for every bookmark — always global, not filter-scoped. */
-    bookmarksSummaryTiles() {
-        const s = this.computeStats();
+    /** Headline counts — pass a subset stats object when filters are active. */
+    bookmarksSummaryTiles(stats) {
+        const s = stats || this.computeStats();
         const pct = s.total ? Math.round((s.tagged / s.total) * 100) : 0;
         return [
             {
@@ -2357,6 +2359,32 @@ class DashboardConfig {
     /** Catalog of feature spotlights shown on the overview. */
     overviewNewFeatures() {
         return [
+            {
+                titleKey: 'config.overviewNewFeatureBookmarksFiltersTitle',
+                titleFallback: 'Bookmarks filters & search',
+                whatKey: 'config.overviewNewFeatureBookmarksFiltersWhat',
+                whatFallback: 'Search, filter, and sort the full bookmark library from one list — with chips that show what is active and summary tiles that follow your filters.',
+                howKey: 'config.overviewNewFeatureBookmarksFiltersHow',
+                howFallback: 'Type in the search box (shortcuts match too), pick page or category from the dropdowns, or click a page, category, or tag on a row. Sort by last opened, most opened, or pinned first. Tick rows for bulk favicon refresh or CSV export.',
+                enableKey: 'config.overviewNewFeatureBookmarksFiltersEnable',
+                enableFallback: 'Open Config → Bookmarks. Scroll to load more rows; press o or double-click a row to open its URL.',
+                ctaKey: 'config.overviewNewFeatureBookmarksFiltersCta',
+                ctaFallback: 'Open Bookmarks →',
+                go: { section: 'bookmarks' },
+            },
+            {
+                titleKey: 'config.overviewNewFeaturePagesTagsTabsTitle',
+                titleFallback: 'Categories & tags first',
+                whatKey: 'config.overviewNewFeaturePagesTagsTabsWhat',
+                whatFallback: 'Pages & tags now opens on Categories, with Tags right beside it — the two lists you reach for most often.',
+                howKey: 'config.overviewNewFeaturePagesTagsTabsHow',
+                howFallback: 'Use [ and ] to cycle sub-tabs from anywhere in config, or click Categories or Tags in the strip. Pages, Finders, and Collections follow after.',
+                enableKey: 'config.overviewNewFeaturePagesTagsTabsEnable',
+                enableFallback: 'Open Config → Pages & tags — Categories is selected by default.',
+                ctaKey: 'config.overviewNewFeaturePagesTagsTabsCta',
+                ctaFallback: 'Open Pages & tags →',
+                go: { section: 'pages-tags' },
+            },
             {
                 titleKey: 'config.overviewNewFeatureKeyboardTitle',
                 titleFallback: 'Config keyboard navigation',
@@ -6168,7 +6196,7 @@ class DashboardConfig {
 
     /* ── Pages & tags ──────────────────────────────────────────────────────── */
 
-    static PT_TABS = ['finders', 'tags', 'collections', 'pages', 'categories'];
+    static PT_TABS = ['categories', 'tags', 'pages', 'finders', 'collections'];
 
     /** Data & backups keeps its destructive actions on a separate tab. */
     static DB_TABS = ['backups', 'reset'];
@@ -7445,6 +7473,219 @@ class DashboardConfig {
      * row expands in place, which keeps the list as the anchor and avoids a
      * second scroll region.
      */
+    /**
+     * The bookmarks section: summary tiles, filters, bulk bar, and the feed.
+     * List scrolls with the page — no second scroll region.
+     */
+    ensureDuplicateUrlSet() {
+        if (this._bmDuplicateUrls) return this._bmDuplicateUrls;
+        const counts = new Map();
+        (this.dash.allBookmarks || []).forEach((b) => {
+            const url = String(b.url || '').trim().toLowerCase();
+            if (url) counts.set(url, (counts.get(url) || 0) + 1);
+        });
+        this._bmDuplicateUrls = new Set(
+            [...counts.entries()].filter(([, c]) => c > 1).map(([url]) => url)
+        );
+        return this._bmDuplicateUrls;
+    }
+
+    bookmarkIsDuplicate(b) {
+        const url = String(b?.url || '').trim().toLowerCase();
+        return url && this.ensureDuplicateUrlSet().has(url);
+    }
+
+    bookmarksFiltersActive() {
+        return !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter
+            || this.bmCleanupFilter || this.bmTagFilter);
+    }
+
+    computeBookmarkSubsetStats(bookmarks) {
+        const all = bookmarks || [];
+        let tagged = 0;
+        let withShortcut = 0;
+        let monitored = 0;
+        const categoryKeys = new Set();
+        all.forEach((b) => {
+            if ((b.tags || []).length) tagged += 1;
+            if (b.shortcut) withShortcut += 1;
+            if (b.monitor === true) monitored += 1;
+            if (b.category) categoryKeys.add(`${b.pageId}::${b.category}`);
+        });
+        return {
+            total: all.length,
+            tagged,
+            categories: categoryKeys.size,
+            withShortcut,
+            monitored,
+        };
+    }
+
+    bookmarkListScrollHost() {
+        return document.getElementById('config-bm-list')?.closest('.config-view-body')
+            || document.getElementById('config-bm-list')?.parentElement;
+    }
+
+    resetBookmarkVisibleLimit() {
+        this.bmVisibleLimit = DashboardConfig.BM_PAGE_SIZE;
+    }
+
+    scheduleBookmarkSearchRepaint() {
+        clearTimeout(this._bmSearchTimer);
+        this._bmSearchTimer = setTimeout(() => {
+            this._bmSearchTimer = null;
+            this.resetBookmarkVisibleLimit();
+            this.repaintBookmarksList();
+        }, 180);
+    }
+
+    bookmarkUsageTooltip(b) {
+        const translate = this.lastOpenedTranslator();
+        const fmt = (ts) => window.formatLastOpened?.(ts, { t: translate })
+            || { label: '—', never: true };
+        const opens = Number(b.openCount || 0);
+        const openLabel = this.t('config.bookmarkStatOpenCount', '{count}×').replace('{count}', String(opens));
+        const last = fmt(b.lastOpened);
+        const added = fmt(b.createdAt);
+        const parts = [openLabel];
+        if (!last.never) parts.push(`${this.t('config.bookmarkStatLastOpened', 'Last opened')}: ${last.label}`);
+        if (!added.never) parts.push(`${this.t('config.bookmarkStatAdded', 'Added')}: ${added.label}`);
+        return parts.join(' · ');
+    }
+
+    renderBookmarkFilterChips() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const chips = [];
+        const add = (key, label) => {
+            chips.push(`<button type="button" class="config-bm-filter-chip" data-bm-filter-clear="${esc(key)}">${esc(label)}<span aria-hidden="true">×</span></button>`);
+        };
+        if (this.bmPageFilter) {
+            const pageName = this.pageLabel(this.bmPageFilter);
+            add('page', this.t('config.bookmarksFilterPage', 'Page: {name}').replace('{name}', pageName));
+        }
+        if (this.bmCategoryFilter) {
+            const parsed = DashboardConfig.parseCategoryFilter(this.bmCategoryFilter);
+            const label = parsed.categoryId
+                ? (this.knownCategories().find((c) => c.id === this.bmCategoryFilter)?.label || parsed.categoryId)
+                : this.bmCategoryFilter;
+            add('category', this.t('config.bookmarksFilterCategory', 'Category: {name}').replace('{name}', label));
+        }
+        if (this.bmTagFilter) {
+            add('tag', this.t('config.bookmarksFilterTag', 'Tag: {tag}').replace('{tag}', this.bmTagFilter));
+        }
+        if (String(this.bmQuery || '').trim()) {
+            const q = String(this.bmQuery).trim();
+            add('search', this.t('config.bookmarksFilterSearch', 'Search: {q}').replace('{q}', q));
+        }
+        if (this.bmCleanupFilter) {
+            add('cleanup', this.cleanupFilterLabel(this.bmCleanupFilter));
+        }
+        if (chips.length > 1) {
+            chips.push(`<button type="button" class="config-bm-filter-chip config-bm-filter-chip--clear" data-bm-filter-clear="all">${esc(this.t('config.bookmarksClearAllFilters', 'Clear all'))}</button>`);
+        }
+        return chips.join('');
+    }
+
+    renderBookmarkCountLabel(shown, total) {
+        if (this.bookmarksFiltersActive() && shown !== total) {
+            return this.t('config.bookmarksCountFiltered', '{shown} of {total}')
+                .replace('{shown}', String(shown))
+                .replace('{total}', String(total));
+        }
+        return this.t('config.bookmarksCountAll', '{n} bookmarks').replace('{n}', String(total));
+    }
+
+    updateBookmarkListChrome() {
+        const filtered = this.visibleBookmarks();
+        const total = (this.dash.allBookmarks || []).length;
+        const shown = filtered.length;
+        const countEl = document.getElementById('config-bm-count');
+        if (countEl) countEl.textContent = this.renderBookmarkCountLabel(shown, total);
+        const live = document.getElementById('config-bm-count-live');
+        if (live) live.textContent = this.renderBookmarkCountLabel(shown, total);
+        const chips = document.getElementById('config-bm-filter-chips');
+        if (chips) {
+            chips.innerHTML = this.renderBookmarkFilterChips();
+            this.bindBookmarkFilterChips(chips);
+        }
+        const hint = document.getElementById('config-bm-tiles-hint');
+        if (hint) {
+            const active = this.bookmarksFiltersActive();
+            hint.hidden = !active;
+            hint.textContent = active
+                ? this.t('config.bookmarksTilesFilteredHint', 'Filtered view — counts below match your filters')
+                : '';
+        }
+        const tilesHost = document.getElementById('config-bm-tiles');
+        if (tilesHost) {
+            const stats = this.bookmarksFiltersActive()
+                ? this.computeBookmarkSubsetStats(filtered)
+                : this.computeStats();
+            tilesHost.innerHTML = this.bookmarksSummaryTiles(stats).map((t) => this.renderTile(t)).join('');
+        }
+    }
+
+    bindBookmarkFilterChips(root) {
+        root.querySelectorAll('[data-bm-filter-clear]').forEach((btn) => {
+            btn.addEventListener('click', () => this.clearBookmarkFilterChip(btn.getAttribute('data-bm-filter-clear')));
+        });
+    }
+
+    clearBookmarkFilterChip(key) {
+        if (key === 'all' || key === 'page') this.bmPageFilter = '';
+        if (key === 'all' || key === 'category') this.bmCategoryFilter = '';
+        if (key === 'all' || key === 'tag') this.bmTagFilter = '';
+        if (key === 'all' || key === 'search') {
+            this.bmQuery = '';
+            const search = document.getElementById('config-bm-search');
+            if (search) search.value = '';
+        }
+        if (key === 'all' || key === 'cleanup') this.bmCleanupFilter = '';
+        if (key === 'all') {
+            this.clearBookmarkFilters();
+            return;
+        }
+        const pageEl = document.getElementById('config-bm-page');
+        if (pageEl && key === 'page') pageEl.value = this.bmPageFilter;
+        const catEl = document.getElementById('config-bm-category');
+        if (catEl && key === 'category') catEl.value = this.bmCategoryFilter;
+        this.resetBookmarkVisibleLimit();
+        this._bmDuplicateUrls = null;
+        void this.ensureBookmarkCategoriesForFilter().then(() => {
+            this.repaintBookmarksFilters();
+            this.repaintBookmarksList();
+            this.restoreConfigHash();
+            this.updateConfigShellHead();
+        });
+    }
+
+    async filterBookmarksByPage(pageId) {
+        this.bmPageFilter = String(pageId);
+        this.resetBookmarkVisibleLimit();
+        await this.onBookmarksPageFilterChange();
+        this.updateBookmarkListChrome();
+    }
+
+    filterBookmarksByCategory(b) {
+        if (!b?.category) return;
+        const catKey = this.bmPageFilter
+            ? String(b.category)
+            : DashboardConfig.categoryFilterKey(b.pageId, b.category);
+        this.bmCategoryFilter = catKey;
+        this.resetBookmarkVisibleLimit();
+        this.repaintBookmarksFilters();
+        this.repaintBookmarksList();
+        this.updateBookmarkListChrome();
+    }
+
+    filterBookmarksByTag(tag) {
+        if (!tag) return;
+        this.bmTagFilter = String(tag);
+        this.resetBookmarkVisibleLimit();
+        this.repaintBookmarksList();
+        this.updateBookmarkListChrome();
+    }
+
     renderBookmarksSection() {
         const esc = (v) => this.dash.escapeHtml(v);
         const pages = this.dash.pages || [];
@@ -7466,13 +7707,22 @@ class DashboardConfig {
             ['url', this.t('config.sortByUrl', 'URL')],
             ['category', this.t('config.sortByCategory', 'Category')],
             ['recent', this.t('config.sortByRecent', 'Recently added')],
+            ['lastOpened', this.t('config.sortByLastOpened', 'Last opened')],
+            ['opens', this.t('config.sortByOpens', 'Most opened')],
+            ['pinned', this.t('config.sortByPinned', 'Pinned first')],
         ].map(([v, label]) =>
             `<option value="${esc(v)}" ${this.bmSort === v ? 'selected' : ''}>${esc(label)}</option>`
         ).join('');
+        const filtered = this.visibleBookmarks();
+        const totalAll = (this.dash.allBookmarks || []).length;
+        const countLabel = this.renderBookmarkCountLabel(filtered.length, totalAll);
 
         return `
             <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
-            <div class="config-tiles config-tiles--bookmarks" role="list">${this.bookmarksSummaryTiles().map((t) => this.renderTile(t)).join('')}</div>
+            <div class="config-bm-tiles-wrap">
+                <p class="config-bm-tiles-hint" id="config-bm-tiles-hint"${this.bookmarksFiltersActive() ? '' : ' hidden'}>${esc(this.t('config.bookmarksTilesFilteredHint', 'Filtered view — counts below match your filters'))}</p>
+                <div class="config-tiles config-tiles--bookmarks" id="config-bm-tiles" role="list">${this.bookmarksSummaryTiles(this.bookmarksFiltersActive() ? this.computeBookmarkSubsetStats(filtered) : null).map((t) => this.renderTile(t)).join('')}</div>
+            </div>
             <div class="config-panel">
                 <div class="config-crud-toolbar">
                     <input type="search" class="config-text" id="config-bm-search" placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}" value="${esc(this.bmQuery || '')}">
@@ -7482,6 +7732,11 @@ class DashboardConfig {
                     <select class="config-select" id="config-bm-sort" aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
                     <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.t('config.selectAllBookmarks', 'Select all'))}</button>
+                </div>
+                <div class="config-bm-list-meta">
+                    <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
+                    <div class="config-bm-filter-chips" id="config-bm-filter-chips">${this.renderBookmarkFilterChips()}</div>
+                    <span class="config-sr-only" id="config-bm-count-live" aria-live="polite" aria-atomic="true">${esc(countLabel)}</span>
                 </div>
                 ${this.renderCleanupFilterBanner()}
                 <div id="config-bm-bulk">${this.renderBulkToolbar()}</div>
@@ -7498,6 +7753,7 @@ class DashboardConfig {
             untagged: ['config.cleanupFilterUntagged', 'Without tags'],
             insecure: ['config.cleanupFilterInsecure', 'Not using HTTPS'],
             noicon: ['config.cleanupFilterNoIcon', 'Without an icon'],
+            duplicate: ['config.cleanupFilterDuplicate', 'Duplicate URLs'],
         }[key];
         return map ? this.t(map[0], map[1]) : '';
     }
@@ -7694,12 +7950,18 @@ class DashboardConfig {
      * Kept as predicates in one place so the count shown there and the rows
      * shown here can never drift apart: both read this map.
      */
+    static BM_PAGE_SIZE = 50;
+
     static CLEANUP_FILTERS = {
         never: (b) => !Number(b.openCount || 0) && !Number(b.lastOpened || 0),
         once: (b) => Number(b.openCount || 0) === 1,
         untagged: (b) => !(Array.isArray(b.tags) && b.tags.length),
         insecure: (b) => /^http:\/\//i.test(String(b.url || '')),
         noicon: (b) => !String(b.icon || '').trim(),
+        duplicate: (b, dupes) => {
+            const url = String(b.url || '').trim().toLowerCase();
+            return url && dupes && dupes.has(url);
+        },
     };
 
     visibleBookmarks() {
@@ -7707,17 +7969,27 @@ class DashboardConfig {
         const q = String(this.bmQuery || '').trim().toLowerCase();
         const pageFilter = String(this.bmPageFilter || '');
         const catFilter = this.bmCategoryFilter || '';
-        const cleanup = DashboardConfig.CLEANUP_FILTERS[this.bmCleanupFilter] || null;
+        const tagFilter = String(this.bmTagFilter || '').trim().toLowerCase();
+        const cleanupKey = this.bmCleanupFilter;
+        const dupes = cleanupKey === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
+        const cleanup = DashboardConfig.CLEANUP_FILTERS[cleanupKey] || null;
         const { pageId: catPage, categoryId } = DashboardConfig.parseCategoryFilter(catFilter);
         const rows = all.filter((b) => {
-            if (cleanup && !cleanup(b)) return false;
+            if (cleanup) {
+                const ok = cleanupKey === 'duplicate' ? cleanup(b, dupes) : cleanup(b);
+                if (!ok) return false;
+            }
             if (pageFilter && String(b.pageId) !== pageFilter) return false;
             if (categoryId) {
                 if (catPage && String(b.pageId) !== String(catPage)) return false;
                 if ((b.category || '') !== categoryId) return false;
             }
+            if (tagFilter) {
+                const tags = (Array.isArray(b.tags) ? b.tags : []).map((t) => String(t).toLowerCase());
+                if (!tags.includes(tagFilter)) return false;
+            }
             if (!q) return true;
-            return [b.name, b.url, b.category, b.note, (b.tags || []).join(' ')]
+            return [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
                 .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
         });
         const pageIndex = (id) => (this.dash.pages || []).findIndex((p) => String(p.id) === String(id));
@@ -7727,6 +7999,13 @@ class DashboardConfig {
             category: (a, b) => String(a.category || '').localeCompare(String(b.category || '')),
             recent: (a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0),
             page: (a, b) => pageIndex(a.pageId) - pageIndex(b.pageId),
+            lastOpened: (a, b) => Number(b.lastOpened || 0) - Number(a.lastOpened || 0),
+            opens: (a, b) => Number(b.openCount || 0) - Number(a.openCount || 0),
+            pinned: (a, b) => {
+                const dp = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+                if (dp !== 0) return dp;
+                return pageIndex(a.pageId) - pageIndex(b.pageId);
+            },
         }[this.bmSort] || null;
         return cmp ? [...rows].sort(cmp) : rows;
     }
@@ -7774,15 +8053,89 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" data-bulk="pin">${esc(this.t('config.bulkTogglePin', 'Toggle pin'))}</button>
                 </div>
                 <div class="config-bulk-group">
+                    <button type="button" class="config-btn config-btn--small" data-bulk="favicons">${esc(this.t('config.bulkRefreshFavicons', 'Refresh favicons'))}</button>
+                    <button type="button" class="config-btn config-btn--small" data-bulk="export">${esc(this.t('config.bulkExportCsv', 'Export CSV'))}</button>
                     <button type="button" class="config-btn config-btn--small config-btn--danger" data-bulk="delete">${esc(this.t('config.bulkDelete', 'Delete'))}</button>
                     <button type="button" class="config-btn config-btn--small" data-bulk="clear">${esc(this.t('config.bulkClearSelection', 'Clear selection'))}</button>
                 </div>
             </div>`;
     }
 
+    /** One bookmark row in the config feed. */
+    renderBookmarkRow(b, ctx) {
+        const esc = ctx.esc;
+        const key = DashboardConfig.bookmarkKey(b);
+        const ticked = this.bmSelected.has(key);
+        const title = b.name || this.formatBookmarkUrlDisplay(b.url) || b.url;
+        const domain = this.formatBookmarkUrlDisplay(b.url);
+        const metaBits = [];
+        if (b.pinned) {
+            metaBits.push(`<span class="config-bm-pin-icon" aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">📌</span>`);
+        }
+        if (b.shortcut) metaBits.push(`<span class="config-bm-shortcut-pill">${esc(b.shortcut)}</span>`);
+        if (ctx.isDuplicate) {
+            metaBits.push(`<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>`);
+        }
+        const tagChips = (b.tags || []).map((tag) =>
+            `<button type="button" class="config-bm-tag-chip" data-bm-filter-tag="${esc(tag)}">${esc(tag)}</button>`
+        ).join('');
+        const mode = window.CheckMode?.of?.(b) || 'off';
+        const feed = window.BookmarkFeedRow;
+        const noteHtml = b.note
+            ? `<p class="inbox-item-note">${esc(b.note)}</p>`
+            : '';
+        const iconSrc = this.resolveIconSrc(b.icon);
+        const categoryLine = b.category
+            ? `<p class="config-bm-meta-category"><button type="button" class="config-bm-meta-category-link" data-bm-row-key="${esc(key)}">${esc(this.categoryLabelForBookmark(b))}</button></p>`
+            : '';
+        const pageFooter = ctx.showPageBadge
+            ? `<button type="button" class="config-bm-page-badge config-bm-page-name config-bm-page-name--link" data-bm-filter-page="${esc(String(b.pageId))}">${esc(ctx.pageName(b.pageId))}</button>`
+            : '<span class="config-bm-page-name config-bm-page-name--empty" aria-hidden="true"></span>';
+        const usageTip = esc(this.bookmarkUsageTooltip(b));
+        const usageFooter = `
+            <div class="config-bm-meta-footer">
+                ${pageFooter}
+                <div class="config-bm-usage-col" title="${usageTip}">${this.renderBookmarkUsageLine(b)}</div>
+            </div>`;
+        return `
+            <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1">
+                <label class="config-bm-check">
+                    <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
+                           aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
+                </label>
+                ${feed?.renderIcon?.(iconSrc, esc) || this.renderBookmarkIcon(b)}
+                <div class="health-view-item-body">
+                    <div class="health-view-item-head">
+                        <h3 class="health-view-item-title config-bm-title">${esc(title)}</h3>
+                    </div>
+                    <p class="health-view-item-meta config-bm-meta-primary">
+                        <span>${esc(domain)}</span>
+                        ${metaBits.join('')}
+                        ${tagChips}
+                        <span class="health-check-mode-wrap">
+                            ${feed?.renderCheckModeBadge?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
+                            ${feed?.renderCheckModeMenu?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
+                        </span>
+                    </p>
+                    ${categoryLine}
+                    ${noteHtml}
+                    ${feed?.renderActionsBar?.({
+                        key,
+                        escapeHtml: esc,
+                        t: (k, fb) => this.t(k, fb),
+                        showRecheck: false,
+                        moreMenuHtml: this.renderBookmarkRowMenu(b, key),
+                    }) || this.renderBookmarkRowActions(b, key, false)}
+                    ${usageFooter}
+                </div>
+            </article>`;
+    }
+
     /** The rows themselves, re-rendered on every search/filter/edit change. */
     renderBookmarksList() {
         const esc = (v) => this.dash.escapeHtml(v);
+        this._bmDuplicateUrls = null;
+        const dupes = this.ensureDuplicateUrlSet();
         if (!(this.dash.allBookmarks || []).length) {
             return `
                 <div class="config-panel-empty config-panel-empty--action">
@@ -7790,9 +8143,10 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--primary" data-bm-empty-add>${esc(this.t('config.addBookmarkBtn', 'Add bookmark'))}</button>
                 </div>`;
         }
-        const rows = this.visibleBookmarks();
-        if (!rows.length) {
-            const hasFilters = !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter || this.bmCleanupFilter);
+        const allRows = this.visibleBookmarks();
+        if (!allRows.length) {
+            const hasFilters = !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter
+                || this.bmCleanupFilter || this.bmTagFilter);
             return `
                 <div class="config-panel-empty config-panel-empty--action">
                     <p>${esc(this.t('config.noBookmarksMatch', 'No bookmarks match your search.'))}</p>
@@ -7802,55 +8156,19 @@ class DashboardConfig {
         }
         const pageName = (id) => (this.dash.pages || []).find((p) => String(p.id) === String(id))?.name || id;
         const showPageBadge = !this.bmPageFilter;
-        const items = rows.map((b) => {
-            const key = DashboardConfig.bookmarkKey(b);
-            const ticked = this.bmSelected.has(key);
-            const title = b.name || this.formatBookmarkUrlDisplay(b.url) || b.url;
-            const domain = this.formatBookmarkUrlDisplay(b.url);
-            const metaBits = [];
-            if (showPageBadge) metaBits.push(`<span class="config-bm-page-badge">${esc(pageName(b.pageId))}</span>`);
-            if (b.category) metaBits.push(`<span>${esc(this.categoryLabelForBookmark(b))}</span>`);
-            if ((b.tags || []).length) metaBits.push(`<span>${esc((b.tags || []).join(', '))}</span>`);
-            if (b.pinned) metaBits.push(`<span>${esc(this.t('config.pinnedShort', 'Pinned'))}</span>`);
-            if (b.shortcut) metaBits.push(`<span class="config-bm-shortcut-pill">${esc(b.shortcut)}</span>`);
-            const mode = window.CheckMode?.of?.(b) || 'off';
-            const feed = window.BookmarkFeedRow;
-            const noteHtml = b.note
-                ? `<p class="inbox-item-note">${esc(b.note)}</p>`
-                : '';
-            const iconSrc = this.resolveIconSrc(b.icon);
-            return `
-                <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1">
-                    <label class="config-bm-check">
-                        <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
-                               aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
-                    </label>
-                    ${feed?.renderIcon?.(iconSrc, esc) || this.renderBookmarkIcon(b)}
-                    <div class="health-view-item-body">
-                        <div class="health-view-item-head">
-                            <h3 class="health-view-item-title config-bm-title">${esc(title)}</h3>
-                        </div>
-                        <p class="health-view-item-meta">
-                            <span>${esc(domain)}</span>
-                            ${metaBits.join('')}
-                            <span class="health-check-mode-wrap">
-                                ${feed?.renderCheckModeBadge?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
-                                ${feed?.renderCheckModeMenu?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
-                            </span>
-                            ${this.renderBookmarkUsageLine(b)}
-                        </p>
-                        ${noteHtml}
-                        ${feed?.renderActionsBar?.({
-                            key,
-                            escapeHtml: esc,
-                            t: (k, fb) => this.t(k, fb),
-                            showRecheck: mode !== 'off',
-                            moreMenuHtml: this.renderBookmarkRowMenu(b, key),
-                        }) || this.renderBookmarkRowActions(b, key, false)}
-                    </div>
-                </article>`;
-        }).join('');
-        return `<div class="health-view-feed config-bm-feed">${items}</div>`;
+        const limit = Math.max(DashboardConfig.BM_PAGE_SIZE, Number(this.bmVisibleLimit) || DashboardConfig.BM_PAGE_SIZE);
+        const rows = allRows.slice(0, limit);
+        const ctx = { esc, pageName, showPageBadge, isDuplicate: (b) => {
+            const url = String(b.url || '').trim().toLowerCase();
+            return url && dupes.has(url);
+        } };
+        const items = rows.map((b) => this.renderBookmarkRow(b, { ...ctx, isDuplicate: ctx.isDuplicate(b) })).join('');
+        const more = allRows.length > rows.length
+            ? `<div class="config-bm-load-sentinel" data-bm-load-more hidden aria-hidden="true"></div>
+               <p class="config-bm-load-hint">${esc(this.t('config.bookmarksLoadMoreHint', '{shown} of {total} shown — scroll for more')
+                   .replace('{shown}', String(rows.length)).replace('{total}', String(allRows.length)))}</p>`
+            : '';
+        return `<div class="health-view-feed config-bm-feed">${items}${more}</div>`;
     }
 
     /**
@@ -8168,17 +8486,11 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const items = [];
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>`);
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="redirect">${esc(this.t('dashboard.healthDetectRedirect', 'Detect redirect'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="title">${esc(this.t('dashboard.healthRefreshTitle', 'Refresh title'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="archive">${esc(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="copy-url">${esc(this.t('dashboard.contextMenuCopyUrl', 'Copy URL'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="share">${esc(this.shareBookmarkActionLabel())}</button>`);
-        const mode = window.CheckMode?.of?.(b) || 'off';
-        const modeLabel = window.BookmarkFeedRow?.checkModeMeta?.(mode)?.label || mode;
-        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="checkmode">${esc(
-            this.t('dashboard.healthMenuCheckMode', 'Change checking ({mode})', { mode: modeLabel })
-        )}</button>`);
         items.push(`<p class="health-view-menu-label health-view-menu-label--danger" role="presentation">${esc(this.t('dashboard.healthMenuRemove', 'Remove'))}</p>`);
         items.push(`<button type="button" class="health-view-menu-item health-view-menu-item--danger" role="menuitem" data-bm-menu-action="delete">${esc(this.t('dashboard.healthDelete', 'Delete bookmark'))}</button>`);
         return window.BookmarkFeedRow?.renderMoreMenu?.(key, items.join(''), esc, (k, fb) => this.t(k, fb)) || '';
@@ -8230,6 +8542,7 @@ class DashboardConfig {
 
     async openBookmarkEditModal(key) {
         this.closeBookmarkMenus();
+        this._bmModalRestoreKey = key;
         const record = await this.findBookmarkRecord(key);
         const handler = this.dash.searchComponent?.commandsComponent?.newCommandHandler;
         if (!handler?.openModal || !record) {
@@ -8528,9 +8841,6 @@ class DashboardConfig {
             case 'share':
                 void this.shareBookmark(bookmark);
                 break;
-            case 'checkmode':
-                this.toggleBookmarkMenu(key, 'check');
-                break;
             case 'delete':
                 void this.deleteBookmarkByKey(key);
                 break;
@@ -8560,8 +8870,8 @@ class DashboardConfig {
         const keys = [
             ['j / k', this.t('config.bookmarksKeyMove', 'move')],
             ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
+            ['o', this.t('config.bookmarksKeyOpen', 'open')],
             ['e', this.t('config.bookmarksKeyEdit', 'edit')],
-            ['p', this.t('config.bookmarksKeyRecheck', 're-check')],
             ['m', this.t('config.bookmarksKeyMore', 'more')],
             ['c', this.t('config.bookmarksKeyCheckMode', 'checking')],
             ['d', this.t('config.bookmarksKeyDelete', 'delete')],
@@ -8579,9 +8889,10 @@ class DashboardConfig {
         if (search) {
             search.addEventListener('input', () => {
                 this.bmQuery = search.value;
-                this.repaintBookmarksList();
+                this.scheduleBookmarkSearchRepaint();
             });
         }
+        this.bindBookmarkFilterChips(container.querySelector('#config-bm-filter-chips'));
         container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
             this.bmCleanupFilter = '';
             this.bmSelected.clear();
@@ -8594,7 +8905,10 @@ class DashboardConfig {
             if (!el) return;
             el.addEventListener('change', () => {
                 this[prop] = el.value;
+                this.resetBookmarkVisibleLimit();
+                this._bmDuplicateUrls = null;
                 this.repaintBookmarksList();
+                this.updateBookmarkListChrome();
             });
         };
         wire('#config-bm-sort', 'bmSort');
@@ -8631,7 +8945,10 @@ class DashboardConfig {
         this.bmPageFilter = '';
         this.bmCategoryFilter = '';
         this.bmCleanupFilter = '';
+        this.bmTagFilter = '';
         this.bmSelected.clear();
+        this.resetBookmarkVisibleLimit();
+        this._bmDuplicateUrls = null;
         this.render();
         this.restoreConfigHash();
     }
@@ -8643,9 +8960,12 @@ class DashboardConfig {
                 this.bmCategoryFilter = parsed.categoryId || '';
             }
         }
+        this.resetBookmarkVisibleLimit();
+        this._bmDuplicateUrls = null;
         await this.ensureBookmarkCategoriesForFilter();
         this.repaintBookmarksFilters();
         this.repaintBookmarksList();
+        this.updateBookmarkListChrome();
         this.restoreConfigHash();
         this.updateConfigShellHead();
     }
@@ -8701,7 +9021,14 @@ class DashboardConfig {
             // The modal awaits its own dashboard refresh before closing, but
             // that runs on a separate promise chain; defer one frame so
             // allBookmarks is settled before we read it.
-            requestAnimationFrame(() => this.repaintBookmarksList());
+            requestAnimationFrame(() => {
+                this.repaintBookmarksList();
+                if (this._bmModalRestoreKey) {
+                    this._bmKeyboardKey = this._bmModalRestoreKey;
+                    this._bmModalRestoreKey = null;
+                    this.syncBookmarkKeyboardSelectionAfterRender();
+                }
+            });
         });
         observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
         this._bmModalWatcher = observer;
@@ -8769,6 +9096,34 @@ class DashboardConfig {
         });
         listRoot.querySelectorAll('.health-view-item-icon-img').forEach((img) => {
             window.BookmarkFeedRow?.bindIconFallback?.(img);
+        });
+        listRoot.querySelectorAll('[data-bm-filter-page]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const pageId = btn.getAttribute('data-bm-filter-page');
+                if (pageId) void this.filterBookmarksByPage(pageId);
+            });
+        });
+        listRoot.querySelectorAll('[data-bm-row-key]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = btn.getAttribute('data-bm-row-key');
+                const b = key ? this.findBookmarkByKey(key) : null;
+                if (b) this.filterBookmarksByCategory(b);
+            });
+        });
+        listRoot.querySelectorAll('[data-bm-filter-tag]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.filterBookmarksByTag(btn.getAttribute('data-bm-filter-tag'));
+            });
+        });
+        listRoot.querySelectorAll('.config-bm-row').forEach((row) => {
+            row.addEventListener('dblclick', (e) => {
+                if (e.target.closest('button, label, input, select, a')) return;
+                const key = row.getAttribute('data-bm-key');
+                if (key) this.openBookmarkByKey(key);
+            });
         });
         if (!listRoot.dataset.configBmPointerWired) {
             listRoot.dataset.configBmPointerWired = '1';
@@ -9463,16 +9818,52 @@ class DashboardConfig {
         } else {
             keys.forEach((k) => this.bmSelected.add(k));
         }
+        const host = document.getElementById('config-bm-list');
+        if (host) {
+            keys.forEach((key) => {
+                const row = host.querySelector(`.config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
+                if (!row) return;
+                const box = row.querySelector('.config-bm-tick');
+                if (box) box.checked = !allSelected;
+                row.classList.toggle('is-checked', !allSelected);
+            });
+            this.repaintBulkToolbar();
+            return;
+        }
         this.repaintBookmarksList();
+    }
+
+    setupBookmarkLoadMore(host) {
+        const sentinel = host?.querySelector('[data-bm-load-more]');
+        if (!sentinel) return;
+        sentinel.hidden = false;
+        sentinel.removeAttribute('aria-hidden');
+        this._bmLoadMoreObserver?.disconnect?.();
+        const root = this.bookmarkListScrollHost();
+        this._bmLoadMoreObserver = new IntersectionObserver((entries) => {
+            if (!entries.some((e) => e.isIntersecting)) return;
+            const total = this.visibleBookmarks().length;
+            if (this.bmVisibleLimit >= total) return;
+            this.bmVisibleLimit += DashboardConfig.BM_PAGE_SIZE;
+            this.repaintBookmarksList();
+        }, { root: root || null, rootMargin: '160px' });
+        this._bmLoadMoreObserver.observe(sentinel);
     }
 
     repaintBookmarksList() {
         const host = document.getElementById('config-bm-list');
         if (!host) return;
+        const scrollHost = this.bookmarkListScrollHost();
+        const scrollTop = scrollHost?.scrollTop ?? 0;
+        this._bmLoadMoreObserver?.disconnect?.();
+        this._bmLoadMoreObserver = null;
         host.innerHTML = this.renderBookmarksList();
         this.bindBookmarkRows(host);
         this.bindBookmarkKeyboard(host);
         this.repaintBulkToolbar();
+        this.updateBookmarkListChrome();
+        if (scrollHost) scrollHost.scrollTop = scrollTop;
+        this.setupBookmarkLoadMore(host);
     }
 
     repaintBulkToolbar() {
@@ -9609,6 +10000,8 @@ class DashboardConfig {
             else if (action === 'tags') await this.bulkTags(picked);
             else if (action === 'status') await this.bulkStatus(picked);
             else if (action === 'pin') await this.bulkPin(picked);
+            else if (action === 'favicons') await this.bulkFavicons(picked);
+            else if (action === 'export') this.bulkExportCsv(picked);
             else if (action === 'delete') await this.bulkDelete(picked);
         } catch {
             this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
@@ -9746,6 +10139,45 @@ class DashboardConfig {
         this.bmEditing = null;
         this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success');
         await this.refreshBookmarksAfterWrite();
+    }
+
+    async bulkFavicons(picked) {
+        let ok = 0;
+        for (const b of picked) {
+            const key = DashboardConfig.bookmarkKey(b);
+            try {
+                await this.refreshBookmarkFavicon(key);
+                ok += 1;
+            } catch {
+                /* refreshBookmarkFavicon notifies per row */
+            }
+        }
+        if (ok > 0) {
+            this.notify(
+                this.t('config.bulkFaviconsDone', 'Favicons refreshed for {n} bookmarks.').replace('{n}', String(ok)),
+                'success'
+            );
+        }
+    }
+
+    bulkExportCsv(picked) {
+        if (!picked?.length) return;
+        const pageNames = Object.fromEntries((this.dash.pages || []).map((p) => [p.id, p.name]));
+        const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        const header = ['Name', 'URL', 'Category', 'Page', 'Shortcut', 'Tags', 'Notes'].map(escape).join(',');
+        const rows = picked.map((bm) => [
+            escape(bm.name),
+            escape(bm.url),
+            escape(bm.category || ''),
+            escape(pageNames[bm.pageId] ?? bm.pageId ?? ''),
+            escape(bm.shortcut),
+            escape(Array.isArray(bm.tags) ? bm.tags.join(', ') : ''),
+            escape(bm.note || ''),
+        ].join(','));
+        const csv = '﻿' + [header, ...rows].join('\r\n');
+        const date = new Date().toISOString().slice(0, 10);
+        this.triggerDownload(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `nextdash-bookmarks-selected-${date}.csv`);
+        this.notify(this.t('config.bulkExportDone', 'Selection exported.'), 'success');
     }
 
     /** Reload the dashboard's bookmark copies and repaint both list and grid. */
@@ -11039,13 +11471,14 @@ class DashboardConfig {
                 const key = btn.getAttribute('data-cleanup-goto');
                 if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return;
                 this.bmCleanupFilter = key;
+                this.bmTagFilter = '';
                 // A stale search or category from an earlier visit would narrow
-                // the handed-over list further and misreport the count.
                 this.bmQuery = '';
                 this.bmPageFilter = '';
                 this.bmCategoryFilter = '';
                 this.bmSelected.clear();
-                this.bmEditing = null;
+                this.resetBookmarkVisibleLimit();
+                this._bmDuplicateUrls = null;
                 this.openConfigView('bookmarks');
             });
         });
