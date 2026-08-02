@@ -526,6 +526,7 @@
         "iconUploaded": "Icoon geüpload.",
         "iconUrlRequired": "Icoon-URL is verplicht.",
         "nameAndUrlRequired": "Naam en URL zijn verplicht.",
+        "invalidPage": "Ongeldige pagina geselecteerd.",
         "shortcutMustBeUnique": "Sneltoets moet uniek zijn over alle bladwijzers.",
         "keyboardSelectionAnnounce": "{name} geselecteerd",
         "bookmarkOrderSaved": "Bladwijzervolgorde opgeslagen.",

@@ -9,7 +9,13 @@ class DashboardUiHelpers {
 
     formatDashboardLabel(key, replacements = {}, fallback = '') {
         const d = this.dash;
-        let text = d.language?.t(`dashboard.${key}`) || fallback || key;
+        const dashKey = `dashboard.${key}`;
+        let text = d.language?.t(dashKey);
+        if (!text || text === dashKey) {
+            const configKey = `config.${key}`;
+            const configText = d.language?.t(configKey);
+            text = (configText && configText !== configKey) ? configText : (fallback || key);
+        }
         Object.entries(replacements).forEach(([name, value]) => {
             text = text.replace(new RegExp(`\\{${name}\\}`, 'g'), String(value));
         });

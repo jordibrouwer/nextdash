@@ -523,6 +523,7 @@
         "iconUploaded": "Symbol hochgeladen.",
         "iconUrlRequired": "Symbol-URL ist erforderlich.",
         "nameAndUrlRequired": "Name und URL sind erforderlich.",
+        "invalidPage": "Ungültige Seite ausgewählt.",
         "shortcutMustBeUnique": "Kürzel muss über alle Lesezeichen eindeutig sein.",
         "keyboardSelectionAnnounce": "{name} ausgewählt",
         "bookmarkOrderSaved": "Lesezeichenreihenfolge gespeichert.",

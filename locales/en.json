@@ -526,6 +526,7 @@
         "iconUploaded": "Icon uploaded.",
         "iconUrlRequired": "Icon URL is required.",
         "nameAndUrlRequired": "Name and URL are required.",
+        "invalidPage": "Invalid page selected.",
         "shortcutMustBeUnique": "Shortcut must be unique across all bookmarks.",
         "keyboardSelectionAnnounce": "{name} selected",
         "bookmarkOrderSaved": "Bookmark order saved.",

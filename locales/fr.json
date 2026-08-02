@@ -523,6 +523,7 @@
         "iconUploaded": "Icône importée.",
         "iconUrlRequired": "L'URL de l'icône est requise.",
         "nameAndUrlRequired": "Le nom et l'URL sont requis.",
+        "invalidPage": "Page sélectionnée invalide.",
         "shortcutMustBeUnique": "Le raccourci doit être unique sur tous les signets.",
         "keyboardSelectionAnnounce": "{name} sélectionné",
         "bookmarkOrderSaved": "Ordre des favoris enregistré.",
