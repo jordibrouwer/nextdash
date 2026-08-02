@@ -92,6 +92,39 @@ class SearchCommandNew {
         return this.t('config.duplicateBookmarkUrl', 'This bookmark URL already exists on this page.');
     }
 
+    /** Fallback label when a bookmark has no stored name (matches the dashboard row title). */
+    defaultBookmarkDisplayName(bookmarkOrUrl) {
+        const bm = bookmarkOrUrl && typeof bookmarkOrUrl === 'object' ? bookmarkOrUrl : null;
+        const url = bm ? bm.url : bookmarkOrUrl;
+        const stored = String(bm?.name || '').trim();
+        if (stored) return stored;
+        const preview = String(bm?.previewTitle || this.draftState?.previewTitle || '').trim();
+        if (preview) return preview;
+        const raw = String(url || '').trim();
+        if (!raw) return '';
+        try {
+            const parsed = new URL(window.BookmarkUrlUtils?.ensureHttpUrl?.(raw) || raw);
+            const host = parsed.hostname.replace(/^www\./i, '');
+            const path = parsed.pathname && parsed.pathname !== '/' ? parsed.pathname : '';
+            return `${host}${path}`;
+        } catch {
+            return raw;
+        }
+    }
+
+    /** Fill an empty name from preview title or URL before HTML5 validation runs. */
+    ensureBookmarkNameBeforeSubmit() {
+        const nameEl = document.getElementById('new-bookmark-name');
+        if (!nameEl || String(nameEl.value || '').trim()) return;
+        const urlInput = document.getElementById('new-bookmark-url');
+        const fallback = this.defaultBookmarkDisplayName({
+            url: this.normalizeUrlField(urlInput, false) || urlInput?.value,
+            previewTitle: this.draftState.previewTitle,
+            name: this.editTarget?.bookmark?.name,
+        });
+        if (fallback) nameEl.value = fallback;
+    }
+
     handle(args) {
         const argText = (args || []).join(' ').trim();
         return [{
@@ -449,7 +482,8 @@ class SearchCommandNew {
                         </div>
                         <div class="nbm-section nbm-wizard-step-1-panel">
                             <label class="nbm-label" for="new-bookmark-name">${this.t('config.bookmarkNamePlaceholder', 'Name')}</label>
-                            <input type="text" id="new-bookmark-name" name="name" class="nbm-input" required autocomplete="off">
+                            <input type="text" id="new-bookmark-name" name="name" class="nbm-input"${editing ? '' : ' required'} autocomplete="off"
+                                   placeholder="${escapeNewCommandHtml(this.t('config.bookmarkNameAutoHint', 'Left blank, the page title is used'))}">
                         </div>
                         ${compactStripHtml}
                         <div class="nbm-section nbm-section-row nbm-wizard-step-2-panel">
@@ -1226,7 +1260,7 @@ class SearchCommandNew {
         };
 
         setValue('new-bookmark-url', bm.url || '');
-        setValue('new-bookmark-name', bm.name || '');
+        setValue('new-bookmark-name', this.defaultBookmarkDisplayName(bm));
         setValue('new-bookmark-note', bm.note || '');
         setValue('new-bookmark-shortcut', String(bm.shortcut || '').toUpperCase());
         setValue('new-bookmark-tags', Array.isArray(bm.tags) ? bm.tags.join(', ') : '');
@@ -1283,6 +1317,7 @@ class SearchCommandNew {
      */
     async updateBookmark() {
         const form = document.getElementById('new-bookmark-form');
+        this.ensureBookmarkNameBeforeSubmit();
         if (!form?.checkValidity()) {
             form?.reportValidity();
             window.nextdashTrack?.('bookmark-edited', { result: 'invalid' });
@@ -1432,11 +1467,7 @@ class SearchCommandNew {
 
     async createBookmark({ keepOpen = false } = {}) {
         const form = document.getElementById('new-bookmark-form');
-        const nameEl = document.getElementById('new-bookmark-name');
-        if (nameEl && !String(nameEl.value || '').trim()) {
-            const fallback = this.draftState.previewTitle || '';
-            if (fallback) nameEl.value = fallback;
-        }
+        this.ensureBookmarkNameBeforeSubmit();
         if (!form?.checkValidity()) {
             form.reportValidity();
             window.nextdashTrack?.('bookmark-created', { result: 'invalid' });
