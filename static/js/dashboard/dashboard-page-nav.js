@@ -137,23 +137,63 @@ class DashboardPageNav {
     }
 
 
+    /**
+     * The big header names the view only ('config', 'health', …). The trail of
+     * sections that used to sit next to it drops to the smaller line below —
+     * the same name at the top on every render reads calmer than a heading that
+     * grows a new segment on each click.
+     */
     updatePageTitle(pageName) {
         const d = this.dash;
         const titleElement = document.querySelector('.title');
         if (titleElement) {
             let displayName;
             if (d.activeView === 'inbox') {
-                displayName = this.inboxHeaderTitle();
+                displayName = 'inbox';
             } else if (d.activeView === 'health') {
-                displayName = this.healthHeaderTitle();
+                displayName = 'health';
             } else if (d.activeView === 'config') {
-                displayName = this.configHeaderTitle();
+                displayName = this.t('config.viewBreadcrumbRoot', 'Config').toLowerCase();
             } else {
                 const defaultTitle = d.language.t('dashboard.defaultPageTitle');
                 displayName = pageName || (defaultTitle !== 'dashboard.defaultPageTitle' ? defaultTitle : '');
             }
             titleElement.textContent = displayName;
         }
+        this.updatePageBreadcrumb();
+    }
+
+
+    /**
+     * Fills the smaller line under the header with the full trail. Left empty
+     * wherever the trail is just the view name again: repeating 'health'
+     * directly under 'health' is noise, not orientation.
+     *
+     * Config is absent on purpose — its trail belongs to the section heading in
+     * the panel, next to the section it describes, rather than out in the
+     * left-hand column under the view name. See renderConfigHeadBreadcrumb().
+     */
+    updatePageBreadcrumb() {
+        const d = this.dash;
+        const el = document.querySelector('.title-breadcrumb');
+        if (!el) return;
+
+        let trail = '';
+        if (d.activeView === 'inbox') {
+            trail = this.inboxHeaderTitle();
+        } else if (d.activeView === 'health') {
+            trail = this.healthHeaderTitle();
+        }
+        if (!trail.includes(' › ')) trail = '';
+
+        el.textContent = trail;
+        el.hidden = !trail;
+    }
+
+
+    t(key, fallback) {
+        const value = this.dash.language?.t?.(key);
+        return value && value !== key ? value : fallback;
     }
 
 

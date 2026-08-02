@@ -1022,7 +1022,10 @@ test.describe('sub-tab deep links', () => {
         const pageId = await page.evaluate(() => String(window.dashboardInstance.pages[0]?.id || ''));
         await page.selectOption('#config-bm-page', pageId);
         await expect(page.locator('.config-view-breadcrumb')).toHaveCount(0);
-        await expect.poll(async () => page.locator('.title').textContent()).toMatch(/bookmarks/i);
-        await expect.poll(async () => page.locator('.title').textContent()).not.toBe('config › bookmarks');
+        // The dashboard heading names the view; the trail sits in the panel head
+        // with the section it describes, and carries the page filter.
+        await expect(page.locator('.title')).toHaveText('config');
+        await expect.poll(async () => page.locator('.config-view-head-breadcrumb').textContent()).toMatch(/bookmarks/i);
+        await expect.poll(async () => page.locator('.config-view-head-breadcrumb').textContent()).not.toBe('config › bookmarks');
     });
 });

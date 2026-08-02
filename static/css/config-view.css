@@ -1332,6 +1332,19 @@ body.no-animations .config-new-features-panel-star {
     flex-wrap: wrap;
 }
 
+/* Full-width so it breaks onto its own line under the heading rather than
+   trailing beside it, and sits directly above the section intro. */
+.config-view-head-breadcrumb {
+    flex-basis: 100%;
+    margin: 0 0 4px;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.config-view-head-breadcrumb[hidden] {
+    display: none;
+}
+
 /*
  * Settings here save on change, so this indicator is the only confirmation a
  * change landed. It is fixed rather than sitting in the header because the

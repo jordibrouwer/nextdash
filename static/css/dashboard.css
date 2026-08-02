@@ -477,6 +477,20 @@ body {
     color: var(--text-primary);
 }
 
+/* Section trail under the view name. Sits in the header's own type scale, not
+   the title's, so it reads as orientation rather than a second heading. */
+.title-breadcrumb {
+    margin: 0.15rem 0 0;
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.title-breadcrumb[hidden] {
+    display: none;
+}
+
 .header-actions {
     display: flex;
     align-items: center;

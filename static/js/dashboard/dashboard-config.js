@@ -997,6 +997,14 @@ class DashboardConfig {
     updateConfigShellHead() {
         const title = document.querySelector('.config-view-section-title');
         if (title) title.textContent = this.sectionLabel(this.section);
+        const crumb = document.querySelector('.config-view-head-breadcrumb');
+        if (crumb) {
+            const trail = this.headerBreadcrumb();
+            // A trail with no separator is just the section name again, which
+            // the heading directly above already says.
+            crumb.textContent = trail;
+            crumb.hidden = !trail.includes(' › ');
+        }
         this.dash.pageNav?.updatePageTitle?.();
         this.dash.pageNav?.updateDocumentTitle?.();
     }
@@ -1950,6 +1958,7 @@ class DashboardConfig {
                      aria-labelledby="${activeNavId}">
                     <div class="config-view-head">
                         <h2 class="config-view-section-title">${esc(this.sectionLabel(this.section))}</h2>
+                        <p class="config-view-head-breadcrumb"${this.headerBreadcrumb().includes(' › ') ? '' : ' hidden'}>${esc(this.headerBreadcrumb())}</p>
                         <!-- The save state itself lives on <body>, not here: this
                              container animates with a transform on view change,
                              which would make it a containing block and pin the
