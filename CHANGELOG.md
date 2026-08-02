@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.07.1 — August 2026](#v202608071--august-2026)
 - [v2026.08.07 — August 2026](#v20260807--august-2026)
 - [v2026.08.04 — August 2026](#v20260804--august-2026)
 - [v2026.08.06 — August 2026](#v20260806--august-2026)
@@ -141,6 +142,29 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.07.1 — August 2026
+
+**Hotfix after v2026.08.07** — the shared bookmark form modal regressed several paths that v2026.08.07 had just unified: success toasts could show raw locale keys, usage lines on the grid omitted last-opened text, Health and Config could label share as `[object Promise]`, config lazy-load prefetched the heavy module on every dashboard visit, legacy `#config/behavior/layout` deep links landed on the wrong section, and categorising a bookmark from Config → Bookmarks did not reach the server.
+
+### Dashboard
+
+- **fix** **Success and error toasts resolve labels again** — `formatDashboardLabel()` treated a missing `dashboard.*` translation as success because `t()` returns the key string (truthy), so keys such as `bookmarkCreated` never fell through to `config.*` (`dashboard-ui-helpers.js`, locales).
+- **fix** **Usage lines on rows and the preview card** — `last-opened-format.js` loads with the dashboard shell again, so tooltips and the preview card show *yesterday* / *3h ago* instead of only the open count (`templates/dashboard.html`).
+- **fix** **Share menu labels before the context-menu module loads** — Health and Config render menu text synchronously; the loader stub now answers `shareActionLabel()` and `canOpenShareSheet()` instead of returning a Promise (`dashboard-bookmark-interactions-loader.js`).
+
+### Config
+
+- **fix** **Config stays lazy-loaded on a plain dashboard visit** — `repaintOverview()` on the loader stub is a no-op until the module exists, so `update-notice.js` no longer pulls `dashboard-config.js` in on every load (`dashboard-config-loader.js`).
+- **fix** **Legacy behavior layout/display deep links** — `#config/behavior/layout` and `#config/behavior/display` redirect to Appearance on cold load, matching `DashboardConfig.sectionFromHash()` (`dashboard-config-loader.js`).
+- **fix** **Loader section order** — `DashboardConfigLoader.SECTIONS` matches `DashboardConfig.SECTIONS` again (`dashboard-config-loader.js`).
+- **fix** **Editing a bookmark from Config → Bookmarks persists** — the modal receives an API copy of the row; edits now save through the remote path and update the live `d.bookmarks` entry only when the URL matches at the resolved index (`dashboard-inline-edit.js`).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, New features carousel, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.07.1**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v159`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v217`.
 
 ---
 
