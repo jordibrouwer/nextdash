@@ -24,10 +24,14 @@ async function openWhatsNew(page) {
 }
 
 test.describe("what's new modal", () => {
-    test('shows the update check control in the header when enabled', async ({ page }) => {
+    // The modal reports what the daily check found but no longer triggers one:
+    // reading release notes and polling GitHub are separate jobs, and the manual
+    // trigger lives in Config → Overview.
+    test('shows the update status bar but no check button', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
-        await expect(page.locator('.whats-new-modal [data-wn-update-check-btn]')).toBeVisible();
+        await expect(page.locator('.whats-new-modal [data-wn-update-check]')).toHaveCount(1);
+        await expect(page.locator('.whats-new-modal [data-wn-update-check-btn]')).toHaveCount(0);
     });
 
     test('the ko-fi link is safe to open externally', async ({ page }) => {
@@ -44,18 +48,12 @@ test.describe("what's new modal", () => {
         await expect(page.locator('.whats-new-modal [data-wn-load-hint]')).toBeVisible();
     });
 
-    test('the check button exposes accessibility attributes', async ({ page }) => {
+    test('the update status is announced politely', async ({ page }) => {
         await loadDashboard(page);
         await openWhatsNew(page);
-        const btn = page.locator('.whats-new-modal [data-wn-update-check-btn]');
-        await expect(btn).toHaveAttribute('aria-busy', 'false');
-        await expect
-            .poll(async () => {
-                const describedBy = await btn.getAttribute('aria-describedby');
-                const statusHidden = await page.locator('#wn-update-status-text').getAttribute('hidden');
-                return describedBy === 'wn-update-status-text' || statusHidden !== null;
-            })
-            .toBe(true);
+        const status = page.locator('.whats-new-modal [data-wn-update-status]');
+        await expect(status).toHaveCount(1);
+        await expect(status).toHaveAttribute('aria-live', 'polite');
     });
 
     test('shows dismiss when an update is available', async ({ page }) => {

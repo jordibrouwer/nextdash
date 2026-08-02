@@ -25,7 +25,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/layout-modern.css": "2ae82e72453b",
 	"css/layout-side-rail.css": "fd06380d20e0",
 	"css/mobile-experience.css": "ae0b039cfac3",
-	"css/modal.css": "8607d2ece629",
+	"css/modal.css": "bc08c6f5b5a0",
 	"css/overlays-modern.css": "c24dabbb1af5",
 	"css/reorder.css": "2385788b4c31",
 	"css/responsive.css": "d62c3ba676b9",
@@ -136,7 +136,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/update-notice.js": "d2790b658755",
 	"js/visual-settings.js": "665da573cc09",
 	"js/weather.js": "2e4cddbdcd40",
-	"js/whats-new-modal.js": "c11fb85e76be",
+	"js/whats-new-modal.js": "84c9c8ae76fa",
 	"js/whats-new-stub.js": "88ba42b3474b",
 	"js/write-api.js": "25afcd408905",
 }
