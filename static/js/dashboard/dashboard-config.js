@@ -2144,7 +2144,10 @@ class DashboardConfig {
 
         return `
             <p class="config-view-intro">${intro}</p>
-            <div class="config-tiles config-tiles--overview" role="list">${tiles}</div>
+            <div class="config-overview-tiles-zone">
+                ${this.renderOverviewUpdates()}
+                <div class="config-tiles config-tiles--overview" role="list">${tiles}</div>
+            </div>
             <div class="config-overview-attention-zone">
                 ${this.renderOverviewAttention()}
             </div>
@@ -2157,7 +2160,6 @@ class DashboardConfig {
                     ${this.renderOverviewAbout()}
                     ${this.renderOverviewWhatsNew()}
                 </div>
-                ${this.renderOverviewUpdates()}
                 ${this.renderOverviewTips()}
             </div>
         `;
@@ -2399,6 +2401,19 @@ class DashboardConfig {
     /** Catalog of feature spotlights shown on the overview. */
     overviewNewFeatures() {
         return [
+            {
+                titleKey: 'config.overviewNewFeatureBookmarkFormTitle',
+                titleFallback: 'Shared bookmark form',
+                whatKey: 'config.overviewNewFeatureBookmarkFormWhat',
+                whatFallback: 'Add and edit bookmarks in one centered modal — from the dashboard, Health, Inbox, Config, and search.',
+                howKey: 'config.overviewNewFeatureBookmarkFormHow',
+                howFallback: 'Press +, Shift+B, or Ctrl+Shift+A to open the form. Use Create + New to save and immediately add another; the grid updates behind the modal.',
+                enableKey: 'config.overviewNewFeatureBookmarkFormEnable',
+                enableFallback: 'Press ! for the full cheat sheet. Edit a row with ; or from Health and Inbox action bars.',
+                ctaKey: 'config.overviewNewFeatureBookmarkFormCta',
+                ctaFallback: 'Add a bookmark →',
+                go: { openBookmarkForm: true },
+            },
             {
                 titleKey: 'config.overviewNewFeatureUpdateCheckTitle',
                 titleFallback: 'GitHub update check',
@@ -2760,6 +2775,11 @@ class DashboardConfig {
             if (target.bmPageFilter != null) {
                 void this.onBookmarksPageFilterChange();
             }
+            return;
+        }
+        if (target.openBookmarkForm) {
+            this.closeConfigView();
+            window.dashboardInstance?.openBookmarkFormModal?.({ mode: 'create', source: 'config-overview' });
             return;
         }
         if (target.view) return this.openViewFromTile(target.view, target.filter);
@@ -9109,7 +9129,8 @@ class DashboardConfig {
      * disconnected for the same reason.
      */
     watchAddBookmarkModal() {
-        const overlay = document.getElementById('new-bookmark-modal');
+        const overlay = document.getElementById('bookmark-form-modal')
+            || document.getElementById('new-bookmark-modal');
         if (!overlay) return;
         this._bmModalWatcher?.disconnect();
         const observer = new MutationObserver(() => {
@@ -10280,11 +10301,10 @@ class DashboardConfig {
 
     /** Reload the dashboard's bookmark copies and repaint both list and grid. */
     async refreshBookmarksAfterWrite({ silent = false } = {}) {
-        await this.dash.loadAllBookmarks?.();
-        await this.dash.loadPageBookmarks?.(this.dash.currentPageId, { forceFetch: true });
-        if (silent) return;
-        this.dash.renderDashboard?.({ animate: false });
-        if (this.isActiveView() && this.section === 'bookmarks') this.repaintBookmarksList();
+        await this.dash.data?.refreshAfterBookmarkMutation?.({
+            pageId: this.dash.currentPageId,
+            repaintActiveView: !silent,
+        });
     }
 
     /* ── Statistics (native) ───────────────────────────────────────────────── */
@@ -11809,6 +11829,7 @@ class DashboardConfig {
             kbd('?', this.t('config.tipFinders', 'Open finders')),
             kbd('!', this.t('config.tipCheatsheet', 'Open the keyboard cheat sheet')),
             kbd('+', this.t('config.tipAddBookmark', 'Add a bookmark')),
+            kbd('Shift + B', this.t('config.tipAddBookmarkShift', 'Open the new-bookmark form')),
             kbd('.', this.t('config.tipCollapseAll', 'Collapse or expand every category')),
             kbd('Shift + H', this.t('config.tipHealth', 'Open the health view')),
             kbd('Shift + I', this.t('config.tipInbox', 'Open the inbox')),

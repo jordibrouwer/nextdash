@@ -1,6 +1,6 @@
 /**
  * Search Command: :new
- * Unified bookmark add modal (also used by QuickAdd / + / Ctrl+Shift+A)
+ * Unified bookmark add modal (also used by QuickAdd / + / Shift+B / Ctrl+Shift+A)
  */
 
 function escapeNewCommandHtml(value) {
@@ -146,6 +146,29 @@ class SearchCommandNew {
      * second form to keep in step.
      */
     openModal(options = {}) {
+        const dash = window.dashboardInstance;
+        if (dash?.openBookmarkFormModal) {
+            if (options.mode === 'edit' && options.bookmark != null) {
+                return dash.openBookmarkFormModal({
+                    mode: 'edit',
+                    pageId: options.pageId,
+                    index: options.index,
+                    bookmark: options.bookmark,
+                    onSaved: options.onSaved,
+                });
+            }
+            const pageId = this._contextPinned ? this.currentPageId : undefined;
+            return dash.openBookmarkFormModal({
+                url: options.url,
+                name: options.name,
+                note: options.note,
+                pageId: pageId || options.pageId,
+            });
+        }
+        return this._legacyOpenModal(options);
+    }
+
+    _legacyOpenModal(options = {}) {
         // Tracked here rather than at the call sites: the modal is opened from the
         // `+` key, the toolbar, the empty state, the `:new` command and config, and
         // every one of those funnels through this method.

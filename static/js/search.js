@@ -175,7 +175,7 @@ class SearchComponent {
             if (
                 !this.searchActive
                 && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-                && (e.code === 'KeyM' || e.code === 'KeyD' || e.code === 'KeyT')
+                && (e.code === 'KeyM' || e.code === 'KeyD' || e.code === 'KeyT' || e.code === 'KeyB')
             ) {
                 return;
             }

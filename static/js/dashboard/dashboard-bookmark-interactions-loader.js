@@ -92,6 +92,9 @@
          * Mirrors DashboardInlineEdit.isInlineEditActive.
          */
         isInlineEditActive() {
+            if (document.getElementById('bookmark-form-modal')?.classList.contains('show')) {
+                return true;
+            }
             const d = this.dash;
             return d.inlineEditingBookmarkIndex !== null
                 || Boolean(document.querySelector('.bookmark-inline-editing'));
@@ -227,6 +230,10 @@
             }
             void this.load().then((mod) => mod.openBookmarkInlineEditor(el, bookmarkRef)).catch(() => {});
             return true;
+        }
+
+        openBookmarkFormModal(options) {
+            return this.load().then((mod) => mod.openBookmarkFormModal(options));
         }
 
         load() {

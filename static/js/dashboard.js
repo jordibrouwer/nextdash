@@ -906,6 +906,10 @@ class Dashboard {
         return this.data.loadAllBookmarks(...arguments);
     }
 
+    async refreshAfterBookmarkMutation(options = {}) {
+        return this.data.refreshAfterBookmarkMutation(...arguments);
+    }
+
     async saveSettings() {
         return this.data.saveSettings(...arguments);
     }
@@ -1143,6 +1147,10 @@ class Dashboard {
 
     async confirmDiscardInlineEdit() {
         return this.inlineEdit.confirmDiscardInlineEdit(...arguments);
+    }
+
+    openBookmarkFormModal(options) {
+        return this.inlineEdit.openBookmarkFormModal(...arguments);
     }
 
     tryOpenInlineBookmarkEdit() {

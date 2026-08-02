@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.07 — August 2026](#v20260807--august-2026)
 - [v2026.08.04 — August 2026](#v20260804--august-2026)
 - [v2026.08.06 — August 2026](#v20260806--august-2026)
 - [v2026.08.05 — August 2026](#v20260805--august-2026)
@@ -140,6 +141,24 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.07 — August 2026
+
+**After v2026.08.06** — add and edit bookmarks still used separate modals and inline paths; Create + New did not refresh the grid while the form stayed open; tag autocomplete in the modal rendered behind the overlay; there was no dedicated keyboard chord besides `+` and `Ctrl+Shift+A`.
+
+### Dashboard
+
+- **new** **Shared bookmark form modal** — `#bookmark-form-modal` wraps the inline editor for add and edit from the dashboard, Health, Inbox, Config, and search (`+`, `Shift+B`, `Ctrl+Shift+A`, `:new`; `dashboard-inline-edit.js`, `search-commands-new.js`, `bookmark-form-modal.css`, tests).
+- **new** **`Shift+B`** — opens the full new-bookmark form when not typing in a field; cheat sheet, Help tips, and keyboard docs updated (`quick-add.js`, locales).
+- **new** **Create + New** — saves, clears fields, preserves page/category, and repaints the bookmark grid while the modal stays open (`despiteModal` in `refreshAfterBookmarkMutation()` / `renderDashboard()`).
+- **fix** **Tag autocomplete in modal** — dropdown z-index above the form overlay (`bookmark-form-modal.css`).
+- **fix** **Mutations stay in sync** — grid, config bookmarks list, Health, Inbox, and search refresh after add/edit/delete; delete/discard confirms above the form modal; inbox promote removes the item after save (`dashboard-data.js`, `dashboard-inline-edit.js`).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, New features carousel, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.07**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v158`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v216`.
 
 ---
 

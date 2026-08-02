@@ -1,6 +1,6 @@
 /**
  * Quick Add Widget — delegates to the unified :new bookmark modal.
- * Shortcuts: + (dashboard) and Ctrl+Shift+A (global).
+ * Shortcuts: + (dashboard), Shift+B and Ctrl+Shift+A (global).
  */
 class QuickAddWidget {
     constructor(dashboard) {
@@ -31,14 +31,36 @@ class QuickAddWidget {
         return handler;
     }
 
+    static isTypingTarget(e) {
+        const tag = e?.target?.tagName;
+        return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || Boolean(e?.target?.isContentEditable);
+    }
+
     static matchesChordShortcut(e) {
-        return Boolean(e?.ctrlKey && e.shiftKey && e.code === 'KeyA');
+        return Boolean(e?.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && e.code === 'KeyA');
+    }
+
+    static matchesShiftBShortcut(e) {
+        if (!e?.shiftKey || e.ctrlKey || e.altKey || e.metaKey || e.code !== 'KeyB') {
+            return false;
+        }
+        if (QuickAddWidget.isTypingTarget(e)) {
+            return false;
+        }
+        if (document.body.classList.contains('bookmark-inline-edit-active')) {
+            return false;
+        }
+        return true;
+    }
+
+    static matchesAddBookmarkShortcut(e) {
+        return QuickAddWidget.matchesChordShortcut(e) || QuickAddWidget.matchesShiftBShortcut(e);
     }
 
     attachGlobalShortcut() {
         if (this.shortcutBound) return;
         document.addEventListener('keydown', (e) => {
-            if (!QuickAddWidget.matchesChordShortcut(e)) return;
+            if (!QuickAddWidget.matchesAddBookmarkShortcut(e)) return;
             e.preventDefault();
             this.toggle();
         });

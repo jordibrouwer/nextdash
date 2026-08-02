@@ -906,25 +906,103 @@ class DashboardData {
     }
 
     /**
+     * Reload bookmark data and repaint every surface that reads it — grid, config
+     * bookmarks list, health, inbox, search — after add/edit/delete.
+     */
+    async refreshAfterBookmarkMutation(options = {}) {
+        const d = this.dash;
+        const pageIds = this._bookmarkMutationPageIds(options);
+        const {
+            animate = false,
+            refreshHealthReport = true,
+            repaintActiveView = true,
+            despiteModal = false,
+        } = options;
+
+        pageIds.forEach((pid) => this.invalidatePageDataCache(pid));
+
+        await this.loadAllBookmarks();
+
+        const currentPageId = Number(d.currentPageId);
+        if (pageIds.includes(currentPageId)) {
+            await this.loadPageBookmarks(currentPageId, {
+                forceFetch: true,
+                animate,
+                skipInlineEditConfirm: true,
+                skipRender: true,
+            });
+        }
+
+        await this.fetchAndStoreDataRevision();
+
+        d.updateSearchComponent?.();
+
+        if (repaintActiveView) {
+            this.repaintBookmarkMutationSurfaces({ animate, refreshHealthReport, despiteModal });
+        } else {
+            d.config?.repaintBookmarksFilters?.();
+            d.config?.repaintBookmarksList?.();
+        }
+
+        d.updateHealthBadge?.();
+        d.updateTagFilterIndicator?.();
+    }
+
+    _bookmarkMutationPageIds(options = {}) {
+        const d = this.dash;
+        if (Array.isArray(options.pageIds) && options.pageIds.length > 0) {
+            return [...new Set(
+                options.pageIds
+                    .map((id) => Number(id))
+                    .filter((id) => Number.isFinite(id) && id > 0)
+            )];
+        }
+        const single = Number(options.pageId ?? d.currentPageId);
+        return Number.isFinite(single) && single > 0 ? [single] : [];
+    }
+
+    repaintBookmarkMutationSurfaces({ animate = false, refreshHealthReport = true, despiteModal = false } = {}) {
+        const d = this.dash;
+
+        d.config?.repaintBookmarksFilters?.();
+        d.config?.repaintBookmarksList?.();
+
+        const renderOpts = { incremental: false, animate, despiteModal };
+
+        if (d.activeView === 'health' && d.health?.isEnabled?.()) {
+            if (d.isInlineEditActive() && !despiteModal) {
+                return;
+            }
+            if (refreshHealthReport && typeof d.health.loadAndRender === 'function') {
+                void d.health.loadAndRender({ refresh: true });
+            } else {
+                d.health.render?.();
+            }
+            return;
+        }
+        if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
+            if (d.isInlineEditActive() && !despiteModal) {
+                return;
+            }
+            d.inbox.render?.();
+            return;
+        }
+        if (d.activeView === 'config' && d.config?.isEnabled?.()) {
+            if (d.isInlineEditActive() && !despiteModal) {
+                return;
+            }
+            d.config.render?.();
+            return;
+        }
+        d.renderDashboard?.(renderOpts);
+    }
+
+    /**
      * Refresh dashboard data after a bookmark was added/updated on a page.
      * Invalidates the per-page cache so category columns match smart collections.
      */
     async refreshAfterBookmarkAdded(pageId, options = {}) {
-        const d = this.dash;
-        const pid = Number(pageId);
-        if (!Number.isFinite(pid) || pid < 1) {
-            return;
-        }
-        this.invalidatePageDataCache(pid);
-        await this.loadAllBookmarks({ rethrow: options.rethrow });
-        if (Number(d.currentPageId) === pid) {
-            await this.loadPageBookmarks(pid, {
-                forceFetch: true,
-                animate: options.animate ?? false,
-                rethrow: options.rethrow,
-            });
-        }
-        await this.fetchAndStoreDataRevision();
+        return this.refreshAfterBookmarkMutation({ ...options, pageId });
     }
 
     async saveSettings() {

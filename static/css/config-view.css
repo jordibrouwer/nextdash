@@ -893,6 +893,18 @@
 
 /* ── Overview ────────────────────────────────────────────────────────────── */
 
+.config-overview-tiles-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.config-overview-tiles-zone > .config-update-bar {
+    align-self: flex-end;
+    max-width: 100%;
+}
+
 .config-overview-layout {
     display: flex;
     flex-direction: column;

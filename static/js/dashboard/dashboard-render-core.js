@@ -239,9 +239,10 @@ class DashboardRenderCore {
 
     renderDashboard(options = {}) {
         const d = this.dash;
+        const blockForInlineEdit = d.isInlineEditActive() && options.despiteModal !== true;
         if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
             d.data?.schedulePageBookmarksHealIfNeeded?.();
-            if (d.isInlineEditActive()) {
+            if (blockForInlineEdit) {
                 return;
             }
             d.inbox.render();
@@ -249,14 +250,14 @@ class DashboardRenderCore {
         }
         if (d.activeView === 'health' && d.health?.isEnabled?.()) {
             d.data?.schedulePageBookmarksHealIfNeeded?.();
-            if (d.isInlineEditActive()) {
+            if (blockForInlineEdit) {
                 return;
             }
             d.health.render();
             return;
         }
         if (d.activeView === 'config' && d.config?.isEnabled?.()) {
-            if (d.isInlineEditActive()) {
+            if (blockForInlineEdit) {
                 return;
             }
             d.config.render();
@@ -268,7 +269,7 @@ class DashboardRenderCore {
             d.setActiveView('bookmarks');
         }
         d.data?.schedulePageBookmarksHealIfNeeded?.();
-        if (d.isInlineEditActive()) {
+        if (blockForInlineEdit) {
             if (options.incremental === 'status') {
                 d.statusMonitor?.refreshAllStatuses?.();
             }

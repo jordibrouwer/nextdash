@@ -97,6 +97,7 @@ class DashboardUiHelpers {
         if (document.getElementById('paste-choice-modal')?.classList.contains('show')) return true;
         if (this.dash.inbox?.triage?.isOpen?.()) return true;
         if (document.getElementById('new-bookmark-modal')?.classList.contains('show')) return true;
+        if (document.getElementById('bookmark-form-modal')?.classList.contains('show')) return true;
         return false;
     }
 
@@ -159,7 +160,8 @@ class DashboardUiHelpers {
             section('sectionBookmarks', 'Bookmarks', [
                 item('&', 'bmQuickAdd', 'Quick-add — type name | url | shortcut in one line'),
                 item('Ctrl + V', 'bmPasteUrlModal', 'Paste a URL to open the new-bookmark modal pre-filled'),
-                item('+', 'bmNewBookmarkModal', 'Open full new-bookmark modal (+ on dashboard)'),
+                item('+', 'bmNewBookmarkModal', 'Open full new-bookmark modal on the dashboard'),
+                item('Shift + B', 'bmNewBookmarkModalShift', 'Open full new-bookmark modal from anywhere (skipped while typing in a field)'),
                 item('Ctrl + Shift + A', 'bmNewBookmarkModalGlobal', 'Open full new-bookmark modal from anywhere'),
                 item(';', 'bmInlineEdit', 'Inline-edit focused bookmark'),
                 item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page; Esc close restores selection on same row'),
@@ -234,7 +236,7 @@ class DashboardUiHelpers {
                 item('category: / tag: / page: / status:', 'smFieldFilters', 'Filter results by field directly in the search bar'),
             ]),
             section('sectionCommandsBookmarks', 'Commands — bookmarks', [
-                item(':new / :add', 'cbNew', 'Open new-bookmark modal (+ / Ctrl+Shift+A) or quick-add omnibox (&)'),
+                item(':new / :add', 'cbNew', 'Open new-bookmark modal (+ / Shift+B / Ctrl+Shift+A) or quick-add omnibox (&)'),
                 item(':note', 'cbNote', 'Edit note on the focused bookmark'),
                 item(':move / :edit / :copy', 'cbMoveEditCopy', 'Move, inline-edit, or copy URL of the keyboard-selected bookmark'),
                 item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
