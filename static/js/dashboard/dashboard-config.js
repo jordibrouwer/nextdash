@@ -2157,6 +2157,7 @@ class DashboardConfig {
                     ${this.renderOverviewAbout()}
                     ${this.renderOverviewWhatsNew()}
                 </div>
+                ${this.renderOverviewUpdates()}
                 ${this.renderOverviewTips()}
             </div>
         `;
@@ -2192,6 +2193,45 @@ class DashboardConfig {
                         <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
                         <span class="wn-kofi-label">${esc(this.t('config.helpSupportKofi', 'Support me on Ko-fi'))}</span>
                     </a>
+                </div>
+            </div>`;
+    }
+
+    /**
+     * GitHub update check — manual refresh and status (opt-in).
+     */
+    renderOverviewUpdates() {
+        if (!window.nextdashUpdateCheckEnabled?.()) return '';
+
+        const esc = (v) => this.dash.escapeHtml(v);
+        const desc = window.nextdashDescribeUpdateStatus?.(
+            this._updateStatus,
+            this._updateStatusChecking
+        ) || { tone: 'neutral', message: '' };
+        const toneClass = esc(desc.tone || 'neutral');
+        const showDismiss = desc.tone === 'warn'
+            && this._updateStatus?.latest
+            && !this._updateStatusChecking;
+        let statusMessage = desc.message || '';
+        if (desc.tone === 'warn' && this._updateStatus?.latest && !this._updateStatusChecking) {
+            statusMessage = this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.')
+                .replace(/\{latest\}/g, this._updateStatus.latest);
+        }
+        const statusHidden = !statusMessage && !this._updateStatusChecking;
+
+        return `
+            <div class="config-update-bar config-update-bar--${toneClass}" role="region" aria-label="${esc(this.t('config.updateCheckPanelTitle', 'Software updates'))}">
+                <p class="config-update-status" id="config-overview-update-status" aria-live="polite"${statusHidden ? ' hidden' : ''}>${esc(statusMessage)}</p>
+                <div class="config-update-actions config-actions">
+                    ${desc.releaseUrl ? `<a class="config-btn config-btn--small" href="${esc(desc.releaseUrl)}" target="_blank" rel="noopener noreferrer">${esc(this.t('config.overviewUpdateAvailableCta', 'View release on GitHub →'))}</a>` : ''}
+                    ${showDismiss ? `<button type="button" class="config-btn config-btn--small" data-overview-action="dismiss-update">${esc(this.t('config.overviewUpdateDismiss', 'Dismiss'))}</button>` : ''}
+                    <button type="button" class="config-btn config-btn--small"
+                            data-overview-action="check-update"
+                            ${statusHidden ? '' : 'aria-describedby="config-overview-update-status" '}
+                            aria-busy="${this._updateStatusChecking ? 'true' : 'false'}"
+                            ${this._updateStatusChecking ? 'disabled' : ''}>${esc(this._updateStatusChecking
+                                ? this.t('config.updateCheckChecking', 'Checking GitHub…')
+                                : this.t('config.updateCheckNow', 'Check for updates'))}</button>
                 </div>
             </div>`;
     }
@@ -2544,8 +2584,38 @@ class DashboardConfig {
         if (this._latestRelease === undefined) {
             jobs.push(this.loadLatestRelease());
         }
+        if (d.settings?.updateCheckEnabled !== false && !document.querySelector('meta[name="nextdash-update-check-locked"]')) {
+            jobs.push(this.loadUpdateStatus());
+        } else {
+            this._updateStatus = null;
+        }
         await Promise.all(jobs);
         this.repaintOverview();
+    }
+
+    /** GitHub release status from /api/update-status (server-side check). */
+    async loadUpdateStatus() {
+        try {
+            const res = await fetch('/api/update-status', { cache: 'no-store' });
+            this._updateStatus = res.ok ? await res.json() : null;
+            if (this.dash) this.dash.updateStatus = this._updateStatus;
+            window.dispatchEvent(new CustomEvent('nextdash:update-status', { detail: this._updateStatus }));
+        } catch {
+            this._updateStatus = null;
+        }
+    }
+
+    async runUpdateCheck() {
+        if (!window.nextdashUpdateCheckEnabled?.()) return;
+        this._updateStatusChecking = true;
+        this.repaintOverview();
+        try {
+            await window.nextdashRunUpdateCheck?.();
+            this._updateStatus = this.dash.updateStatus ?? null;
+        } finally {
+            this._updateStatusChecking = false;
+            this.repaintOverview();
+        }
     }
 
     /**
@@ -2628,6 +2698,15 @@ class DashboardConfig {
             }
             if (e.target.closest('[data-overview-action="whats-new"]')) {
                 void this.openWhatsNew();
+                return;
+            }
+            if (e.target.closest('[data-overview-action="check-update"]')) {
+                void this.runUpdateCheck();
+                return;
+            }
+            if (e.target.closest('[data-overview-action="dismiss-update"]')) {
+                const tag = this._updateStatus?.latest || this.dash.updateStatus?.latest;
+                window.nextdashDismissUpdateNotice?.(tag);
             }
         });
         body.addEventListener('keydown', (e) => {
@@ -5291,7 +5370,6 @@ class DashboardConfig {
         pushNotifyEnabled: { info: ['pushNotifyInfoTitle', 'pushNotifyInfoMessage'], def: false },
         pushNotifyMonitor: { def: false },
         pushNotifyBackup: { def: false },
-        pushNotifyRelease: { def: false },
         pushNotifySubject: { def: '' },
         // Toolbar & chrome
         showRecentButton: { def: true },
@@ -5314,6 +5392,7 @@ class DashboardConfig {
         faviconRefreshPolicy: { info: ['faviconRefreshPolicyInfoTitle', 'faviconRefreshPolicyInfoMessage'], def: 'monthly' },
         // Privacy
         analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint' },
+        updateCheckEnabled: { info: ['updateCheckInfoTitle', 'updateCheckInfoMessage'], hint: 'updateCheckHint', def: true },
         // Appearance
         autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'] },
         randomThemeMode: { info: ['randomThemeModeInfoTitle', 'randomThemeModeInfoMessage'], def: 'off' },
@@ -5581,7 +5660,6 @@ class DashboardConfig {
                     bool('pushNotifyEnabled', 'config.pushNotifyEnabledLabel', 'Enable browser notifications'),
                     bool('pushNotifyMonitor', 'config.pushNotifyMonitorLabel', 'Notify on downtime and recovery'),
                     bool('pushNotifyBackup', 'config.pushNotifyBackupLabel', 'Notify on automatic backups'),
-                    bool('pushNotifyRelease', 'config.pushNotifyReleaseLabel', 'Notify when an update is available'),
                     { field: 'pushNotifySubject', type: 'text', label: t('config.pushNotifySubjectLabel', 'Contact address for push services') },
                     { type: 'pushDevice' },
                 ],
@@ -5600,6 +5678,7 @@ class DashboardConfig {
                 title: t('config.generalGroupPrivacy', 'Privacy'),
                 controls: [
                     { field: 'analyticsOptIn', type: 'checkbox', label: t('config.usageAnalyticsLabel', 'Share anonymous usage analytics'), disabled: this.dash.telemetryLockedOff === true },
+                    { field: 'updateCheckEnabled', type: 'checkbox', label: t('config.updateCheckLabel', 'Check GitHub for new releases'), disabled: !!document.querySelector('meta[name="nextdash-update-check-locked"]') },
                 ],
             },
         ];
@@ -6028,6 +6107,12 @@ class DashboardConfig {
             if (qs && typeof qs === 'object') {
                 qs.analyticsChoiceMade = true;
                 qs.analyticsAskAfter = 0; // answered; no snooze left to honour
+            }
+        }
+        if (field === 'updateCheckEnabled') {
+            void window.nextdashRefreshUpdateStatus?.(value !== false);
+            if (this.section === 'overview') {
+                this.repaintOverview();
             }
         }
         switch (special) {
