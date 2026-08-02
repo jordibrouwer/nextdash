@@ -357,6 +357,31 @@
          * Deferred contextmenu binding — rows render without the menu module.
          * Guards that must fire before fetch mirror DashboardContextMenu.handleContextMenu.
          */
+        /**
+         * Health and config build share menu labels before this module loads.
+         * Mirrors DashboardContextMenu.canOpenShareSheet without fetching the script.
+         */
+        canOpenShareSheet() {
+            if (this._module) {
+                return this._module.canOpenShareSheet();
+            }
+            if (typeof navigator.share !== 'function') return false;
+            return window.DashboardContextMenu?._shareRefused !== true;
+        }
+
+        /** Sync label for menu markup — must not return a Promise from the loader proxy. */
+        shareActionLabel() {
+            if (this._module) {
+                return this._module.shareActionLabel();
+            }
+            const d = this.dash;
+            const share = d.language?.t?.('dashboard.contextMenuShare');
+            const copy = d.language?.t?.('dashboard.contextMenuCopyNameUrl');
+            return this.canOpenShareSheet()
+                ? (share && share !== 'dashboard.contextMenuShare' ? share : 'Share…')
+                : (copy && copy !== 'dashboard.contextMenuCopyNameUrl' ? copy : 'Copy name + URL');
+        }
+
         bindRow(row) {
             if (!(row instanceof HTMLElement) || row.dataset.contextMenuBound === '1') return;
             row.dataset.contextMenuBound = '1';

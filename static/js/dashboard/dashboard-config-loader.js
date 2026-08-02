@@ -20,8 +20,8 @@ class DashboardConfigLoader {
      */
     static SECTIONS = [
         'overview',
-        'pages-tags',
         'bookmarks',
+        'pages-tags',
         'appearance',
         'behavior',
         'data-backups',
@@ -40,6 +40,8 @@ class DashboardConfigLoader {
     static sectionFromHash(hash) {
         if (typeof hash !== 'string') return null;
         const raw = hash.replace(/^#/, '');
+        if (raw === 'config/behavior/layout') return 'appearance';
+        if (raw === 'config/behavior/display') return 'appearance';
         if (raw === 'config') return 'overview';
         const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z-]+))?$/);
         if (!match) return null;
@@ -228,6 +230,14 @@ class DashboardConfigLoader {
 
     closeConfigView(...args) {
         return this._module?.closeConfigView?.(...args);
+    }
+
+    /**
+     * Overview tiles refresh after update-status arrives; that must not pull in
+     * the config module on a plain dashboard load (update-notice.js).
+     */
+    repaintOverview() {
+        return this._module?.repaintOverview?.();
     }
 
     restoreConfigSectionFromHash(...args) {

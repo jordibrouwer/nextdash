@@ -351,6 +351,8 @@ One shared **bookmark form modal** is used for add and edit everywhere — dashb
 
 **Create + New** (footer button while adding) saves the bookmark, clears the form for the next entry, keeps your page and category, and updates the grid behind the modal.
 
+Since **v2026.08.07.1**, success toasts show translated labels again (not raw locale keys), row tooltips and the preview card include last-opened text, and category edits from **Config → Bookmarks** persist reliably to the server.
+
 The modal includes page, category, preview, tags, and note.
 
 **Availability, Shortcut and Pinned sit above the *More options* fold**. Availability is the same **Off / Periodic / Monitor** choice as the bookmark editor in Config — with the interval picker for Monitor and the same explanation behind the **(i)** — so a bookmark can be set up for monitoring at the moment you add it. Before this the modal offered only a *Status check* box, which could not express the three-way choice: Monitor is a superset of Periodic, so *monitored* was unreachable here. **Pinned** uses the same pin pill as the inline editor and Config rather than a bare checkbox.

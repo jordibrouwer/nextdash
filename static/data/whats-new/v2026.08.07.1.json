@@ -1,0 +1,51 @@
+{
+  "tag": "v2026.08.07.1",
+  "date": "August 2026",
+  "releasedAt": "2026-08-02",
+  "modalLead": "Hotfix after the shared bookmark form — success toasts show real labels again, row tooltips and the preview card include last-opened, Health share menus label correctly, config stays lazy-loaded on a plain visit, legacy layout/display deep links open Appearance, and category edits from Config → Bookmarks reach the server.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Success and error toasts resolve labels again</strong> — <code>formatDashboardLabel()</code> no longer treats a missing <code>dashboard.*</code> key as a hit, so keys such as <code>bookmarkCreated</code> fall through to <code>config.*</code> (<code>dashboard-ui-helpers.js</code>, locales)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Usage lines on rows and the preview card</strong> — <code>last-opened-format.js</code> loads with the dashboard shell again, so tooltips show <em>yesterday</em> / <em>3h ago</em> instead of only the open count (<code>templates/dashboard.html</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Share menu labels before the context-menu module loads</strong> — the loader stub answers <code>shareActionLabel()</code> synchronously instead of returning a Promise (<code>dashboard-bookmark-interactions-loader.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Config stays lazy-loaded on a plain dashboard visit</strong> — <code>repaintOverview()</code> on the loader stub is a no-op until the module exists, so <code>update-notice.js</code> no longer pulls <code>dashboard-config.js</code> in on every load (<code>dashboard-config-loader.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Legacy behavior layout/display deep links</strong> — <code>#config/behavior/layout</code> and <code>#config/behavior/display</code> redirect to Appearance on cold load (<code>dashboard-config-loader.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Editing a bookmark from Config → Bookmarks persists</strong> — the modal receives an API copy of the row; saves go through the remote path and update the live grid when the URL matches (<code>dashboard-inline-edit.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.07.1</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v159</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v217</code>."
+        }
+      ]
+    }
+  ]
+}

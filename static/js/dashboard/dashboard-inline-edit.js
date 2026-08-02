@@ -111,7 +111,10 @@ class DashboardInlineEdit {
                         bookmark: { ...options.bookmark },
                         pageId,
                         index: idx,
-                        scope: pageId === Number(d.currentPageId) && idx >= 0 ? 'current' : 'remote',
+                        // A bookmark object passed in from config/search is a copy,
+                        // not the live row in d.bookmarks — remote save loads the page
+                        // from the API and writes the edit back.
+                        scope: 'remote',
                         original: null,
                     };
                 }
@@ -1351,12 +1354,20 @@ class DashboardInlineEdit {
         }
 
         if (bookmarkRef.scope === 'current') {
-            this.ensureBookmarkMutationSnapshot();
-            Object.assign(bookmark, nextBookmarkState);
-            this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
-            await d.saveBookmarkOrder();
-            await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
-            return;
+            const idx = Number(bookmarkRef.index);
+            const live = (Number.isInteger(idx) && idx >= 0 && Array.isArray(d.bookmarks))
+                ? d.bookmarks[idx]
+                : null;
+            const sameLive = live
+                && String(live.url || '').trim() === String(bookmark?.url || '').trim();
+            if (sameLive) {
+                this.ensureBookmarkMutationSnapshot();
+                Object.assign(live, nextBookmarkState);
+                this.finalizeInlineEditAfterSave(row, bookmarkRef, previousUrl);
+                await d.saveBookmarkOrder();
+                await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
+                return;
+            }
         }
 
         const savedRemote = await this.saveRemoteBookmarkEdit(bookmarkRef, nextBookmarkState);
