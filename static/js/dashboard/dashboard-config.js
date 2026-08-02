@@ -1469,7 +1469,7 @@ class DashboardConfig {
     }
 
     findBookmarkByKey(key) {
-        return (this.dash.allBookmarks || []).find((b) => DashboardConfig.bookmarkKey(b) === key) || null;
+        return (this.dash.allBookmarks || []).find((b) => this.bookmarkKey(b) === key) || null;
     }
 
     openBookmarkByKey(key) {
@@ -7858,7 +7858,7 @@ class DashboardConfig {
                     <select class="config-select" id="config-bm-category" aria-label="${esc(this.t('config.category', 'Category'))}">${catOptions}</select>
                     <select class="config-select" id="config-bm-sort" aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
                     <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
-                    <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.t('config.selectAllBookmarks', 'Select all'))}</button>
+                    <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
                 </div>
                 <div class="config-bm-list-meta">
                     <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
@@ -7998,7 +7998,7 @@ class DashboardConfig {
     bookmarksFromKeys(keys) {
         const all = this.dash.allBookmarks || [];
         const wanted = new Set(keys || []);
-        return all.filter((b) => wanted.has(DashboardConfig.bookmarkKey(b)));
+        return all.filter((b) => wanted.has(this.bookmarkKey(b)));
     }
 
     categoryLabelForBookmark(b) {
@@ -8137,8 +8137,79 @@ class DashboardConfig {
         return cmp ? [...rows].sort(cmp) : rows;
     }
 
-    static bookmarkKey(b) {
+    /**
+     * Base identity: page plus URL. Not unique on its own — the same URL may sit
+     * twice on one page, which is exactly what the "Duplicate URLs" cleanup
+     * filter exists to surface. Use bookmarkKey() for anything that selects or
+     * mutates rows; this is only the prefix it builds on.
+     */
+    static bookmarkKeyBase(b) {
         return `${b.pageId}::${b.url}`;
+    }
+
+    /**
+     * Stable per-row identity.
+     *
+     * Bookmarks carry no id in storage, so identity has to be derived. Page and
+     * URL alone collide on duplicates, and a bulk delete keyed on that pair
+     * takes every copy with it — you tick one row, the confirm says "1", and two
+     * bookmarks disappear. Appending which occurrence this is, counted in the
+     * order the page stores them, separates the copies.
+     *
+     * The suffix is only added from the second occurrence on, so keys for the
+     * overwhelmingly common unique case are unchanged.
+     */
+    bookmarkKey(b) {
+        const base = DashboardConfig.bookmarkKeyBase(b);
+        const occurrence = this.bookmarkOccurrenceIndex().get(b);
+        return occurrence ? `${base}::${occurrence}` : base;
+    }
+
+    /**
+     * Maps each bookmark object to its occurrence number within its own page (0
+     * for the first with that URL, 1 for the next, …). Keyed by object identity,
+     * so it holds regardless of how the list is later filtered or sorted.
+     *
+     * Rebuilt whenever allBookmarks is replaced — the array identity is the
+     * cache token, so a reload after a write invalidates it on its own.
+     */
+    bookmarkOccurrenceIndex() {
+        const all = this.dash.allBookmarks || [];
+        if (this._bmOccurrenceSource === all && this._bmOccurrence) return this._bmOccurrence;
+        const seen = new Map();
+        const index = new Map();
+        all.forEach((b) => {
+            const base = DashboardConfig.bookmarkKeyBase(b);
+            const n = seen.get(base) || 0;
+            index.set(b, n);
+            seen.set(base, n + 1);
+        });
+        this._bmOccurrenceSource = all;
+        this._bmOccurrence = index;
+        return index;
+    }
+
+    /**
+     * Warns when part of the selection sits outside the current filters.
+     *
+     * Ticks survive a filter change, so selecting rows on one page and then
+     * switching to another leaves a bar reading "7 selected" above a list where
+     * nothing is ticked — and Delete would still take all seven. Naming the
+     * hidden count, with a way to drop them, keeps the destructive buttons
+     * honest about their reach.
+     */
+    renderBulkOffscreenNotice(picked) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const visibleKeys = new Set(this.visibleBookmarks().map((b) => this.bookmarkKey(b)));
+        const hidden = picked.filter((b) => !visibleKeys.has(this.bookmarkKey(b))).length;
+        if (!hidden) return '';
+        const label = this.t('config.bulkSelectedOffscreen', '{n} not shown by the current filters')
+            .replace('{n}', String(hidden));
+        return `
+            <span class="config-bulk-offscreen">
+                <span class="config-bulk-offscreen-text">${esc(label)}</span>
+                <button type="button" class="config-btn config-btn--small" data-bulk="keep-visible">${esc(this.t('config.bulkKeepVisible', 'Select only these'))}</button>
+            </span>`;
     }
 
     /** The bulk-action bar, shown only once rows are ticked. */
@@ -8164,6 +8235,7 @@ class DashboardConfig {
         return `
             <div class="config-bulk-bar" role="group" aria-label="${esc(this.t('config.bulkActions', 'Bulk actions'))}">
                 <span class="config-bulk-count">${esc(this.t('config.bulkSelectedCount', '{n} selected').replace('{n}', String(n)))}</span>
+                ${this.renderBulkOffscreenNotice(picked)}
                 <div class="config-bulk-group">
                     <select class="config-select" id="config-bulk-page">${pageOpts}</select>
                     <select class="config-select" id="config-bulk-category">${catOpts}</select>
@@ -8191,7 +8263,7 @@ class DashboardConfig {
     /** One bookmark row in the config feed. */
     renderBookmarkRow(b, ctx) {
         const esc = ctx.esc;
-        const key = DashboardConfig.bookmarkKey(b);
+        const key = this.bookmarkKey(b);
         const ticked = this.bmSelected.has(key);
         const title = b.name || this.formatBookmarkUrlDisplay(b.url) || b.url;
         const domain = this.formatBookmarkUrlDisplay(b.url);
@@ -8343,7 +8415,7 @@ class DashboardConfig {
             </div>`;
 
         return `
-            <div class="config-bm-editor" data-bm-editor-key="${esc(DashboardConfig.bookmarkKey(b))}">
+            <div class="config-bm-editor" data-bm-editor-key="${esc(this.bookmarkKey(b))}">
                 ${saveBar('top')}
 
                 <div class="config-bm-grid">
@@ -8659,7 +8731,11 @@ class DashboardConfig {
             if (!res.ok) return null;
             const list = await res.json();
             if (!Array.isArray(list)) return null;
-            const index = list.findIndex((entry) => entry.url === bookmark.url);
+            // findIndex on the URL alone always lands on the first copy, so
+            // acting on the second of two identical URLs would edit the wrong
+            // row. Count occurrences and take the one the key names.
+            const isTarget = DashboardConfig.matchesParsedKey(this.parseBookmarkKey(key) || { url: bookmark.url });
+            const index = list.findIndex((entry) => isTarget(entry));
             if (index < 0 || !list[index]) return null;
             return { pageId, index, record: list[index], bookmark };
         } catch {
@@ -9767,8 +9843,9 @@ class DashboardConfig {
                 fields = { previewTitle: '', previewDesc: '', previewImage: '' };
             }
 
+            const isTarget = DashboardConfig.matchesParsedKey(parsed);
             await this.writePageBookmarks(parsed.pageId, (list) =>
-                list.map((b) => (b.url === parsed.url ? { ...b, ...fields } : b)));
+                list.map((b) => (isTarget(b) ? { ...b, ...fields } : b)));
             this.notify(action === 'refresh'
                 ? this.t('config.bookmarkLinkPreviewRefreshed', 'Link preview updated.')
                 : this.t('config.bookmarkLinkPreviewCleared', 'Link preview cleared.'), 'success');
@@ -9937,9 +10014,23 @@ class DashboardConfig {
      * are. Scoped to the visible rows, not the whole collection: acting on
      * bookmarks you cannot see is how a bulk delete goes wrong.
      */
+    /**
+     * "Select all" ticks every row the current filters match, which is usually
+     * more than the ~50 rendered — the rest arrive on scroll. Naming the count
+     * says so up front, since the next click may well be Delete.
+     */
+    selectAllBookmarksLabel() {
+        const total = this.visibleBookmarks().length;
+        const shown = Math.min(total, Math.max(DashboardConfig.BM_PAGE_SIZE, Number(this.bmVisibleLimit) || DashboardConfig.BM_PAGE_SIZE));
+        if (total > shown) {
+            return this.t('config.selectAllBookmarksCount', 'Select all {n}').replace('{n}', String(total));
+        }
+        return this.t('config.selectAllBookmarks', 'Select all');
+    }
+
     toggleSelectAllBookmarks() {
         const rows = this.visibleBookmarks();
-        const keys = rows.map((b) => DashboardConfig.bookmarkKey(b));
+        const keys = rows.map((b) => this.bookmarkKey(b));
         const allSelected = keys.length > 0 && keys.every((k) => this.bmSelected.has(k));
         if (allSelected) {
             keys.forEach((k) => this.bmSelected.delete(k));
@@ -10008,10 +10099,26 @@ class DashboardConfig {
     }
 
     /** Split a "pageId::url" row key back into its parts. */
+    /**
+     * Splits a row key back into page, URL and which copy of that URL it is.
+     *
+     * Keys are "pageId::url" for a unique bookmark and "pageId::url::n" for the
+     * n-th further copy of a duplicated URL. Only a trailing all-digits segment
+     * counts as the occurrence marker, so a URL that itself ends in "::something"
+     * is left intact.
+     */
     parseBookmarkKey(key) {
-        const idx = String(key || '').indexOf('::');
+        const raw = String(key || '');
+        const idx = raw.indexOf('::');
         if (idx < 0) return null;
-        return { pageId: key.slice(0, idx), url: key.slice(idx + 2) };
+        let url = raw.slice(idx + 2);
+        let occurrence = 0;
+        const tail = url.lastIndexOf('::');
+        if (tail >= 0 && /^\d+$/.test(url.slice(tail + 2))) {
+            occurrence = Number(url.slice(tail + 2));
+            url = url.slice(0, tail);
+        }
+        return { pageId: raw.slice(0, idx), url, occurrence };
     }
 
     /** Re-save one page's bookmark list with a mutation applied. */
@@ -10037,7 +10144,8 @@ class DashboardConfig {
         if (!parsed) return;
         if (!await this.confirmAction(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
         try {
-            await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => b.url !== parsed.url));
+            const isTarget = DashboardConfig.matchesParsedKey(parsed);
+            await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => !isTarget(b)));
             this.bmSelected.delete(key);
             if (this.bmEditing === key) { this.bmEditing = null; this.bmDirty = false; }
             this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success');
@@ -10085,15 +10193,19 @@ class DashboardConfig {
             // invented in this editor and one carried to a page that has never
             // used it — moving a bookmark across pages hits the latter.
             if (category) await this.ensureCategoryOnPage(targetPage, category);
+            const findOriginal = DashboardConfig.matchesParsedKey(parsed);
             const original = (this.dash.allBookmarks || [])
-                .find((b) => String(b.pageId) === String(parsed.pageId) && b.url === parsed.url) || {};
+                .filter((b) => String(b.pageId) === String(parsed.pageId))
+                .find(findOriginal) || {};
             if (targetPage === String(parsed.pageId)) {
+                const isTarget = DashboardConfig.matchesParsedKey(parsed);
                 await this.writePageBookmarks(parsed.pageId, (list) =>
-                    list.map((b) => (b.url === parsed.url ? { ...b, ...updated } : b)));
+                    list.map((b) => (isTarget(b) ? { ...b, ...updated } : b)));
             } else {
                 // Moving pages is two writes: drop it from the old page, then
                 // append it to the new one so it cannot exist on both at once.
-                await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => b.url !== parsed.url));
+                const isTarget = DashboardConfig.matchesParsedKey(parsed);
+                await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => !isTarget(b)));
                 await this.refreshBookmarksAfterWrite({ silent: true });
                 await this.writePageBookmarks(targetPage, (list) => [...list, { ...original, ...updated }]);
             }
@@ -10111,12 +10223,20 @@ class DashboardConfig {
     /** The ticked bookmarks, resolved back to live objects. */
     selectedBookmarks() {
         const keys = this.bmSelected;
-        return (this.dash.allBookmarks || []).filter((b) => keys.has(DashboardConfig.bookmarkKey(b)));
+        return (this.dash.allBookmarks || []).filter((b) => keys.has(this.bookmarkKey(b)));
     }
 
     async handleBulkAction(action) {
         if (action === 'clear') {
             this.bmSelected.clear();
+            this.repaintBookmarksList();
+            return;
+        }
+        if (action === 'keep-visible') {
+            const visibleKeys = new Set(this.visibleBookmarks().map((b) => this.bookmarkKey(b)));
+            [...this.bmSelected].forEach((k) => {
+                if (!visibleKeys.has(k)) this.bmSelected.delete(k);
+            });
             this.repaintBookmarksList();
             return;
         }
@@ -10133,7 +10253,54 @@ class DashboardConfig {
             else if (action === 'delete') await this.bulkDelete(picked);
         } catch {
             this.notify(this.t('config.bulkActionError', 'Could not apply the bulk action.'), 'error');
+            // A selection spanning several pages is written one page at a time,
+            // so a failure part-way leaves the earlier pages already saved. The
+            // list still shows the pre-action state, which would misreport what
+            // is stored — reload so the rows match what actually landed.
+            await this.refreshBookmarksAfterWrite();
         }
+    }
+
+    /**
+     * Groups picked bookmarks per page as sets of "url::occurrence" targets.
+     *
+     * Matching on the URL alone would hit every copy of a duplicated URL, so
+     * ticking one of two identical rows would mutate or delete both. The
+     * occurrence number pins which copy was meant. The stored list is walked in
+     * the same order the occurrence index was built from, so the counts line up.
+     */
+    selectionTargetsByPage(picked) {
+        const occurrence = this.bookmarkOccurrenceIndex();
+        const byPage = new Map();
+        picked.forEach((b) => {
+            const set = byPage.get(String(b.pageId)) || new Set();
+            set.add(`${b.url}::${occurrence.get(b) || 0}`);
+            byPage.set(String(b.pageId), set);
+        });
+        return byPage;
+    }
+
+    /**
+     * Predicate matching exactly one stored entry: the n-th bookmark with that
+     * URL. Built for the single-row paths, where matching on URL alone would
+     * edit or delete every copy of a duplicated URL at once.
+     */
+    static matchesParsedKey(parsed) {
+        let n = 0;
+        return (b) => {
+            if (b.url !== parsed.url) return false;
+            return n++ === (parsed.occurrence || 0);
+        };
+    }
+
+    /** Walks a stored page list, tagging each entry with its occurrence number. */
+    static withOccurrence(list) {
+        const seen = new Map();
+        return (list || []).map((b) => {
+            const n = seen.get(b.url) || 0;
+            seen.set(b.url, n + 1);
+            return { bookmark: b, target: `${b.url}::${n}` };
+        });
     }
 
     /**
@@ -10141,15 +10308,9 @@ class DashboardConfig {
      * is written exactly once rather than once per bookmark.
      */
     async mutateSelected(picked, mutate) {
-        const byPage = new Map();
-        picked.forEach((b) => {
-            const list = byPage.get(String(b.pageId)) || [];
-            list.push(b.url);
-            byPage.set(String(b.pageId), list);
-        });
-        for (const [pageId, urls] of byPage) {
-            const set = new Set(urls);
-            await this.writePageBookmarks(pageId, (list) => list.map((b) => (set.has(b.url) ? mutate({ ...b }) : b)));
+        for (const [pageId, targets] of this.selectionTargetsByPage(picked)) {
+            await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
+                .map(({ bookmark, target }) => (targets.has(target) ? mutate({ ...bookmark }) : bookmark)));
         }
         this.bmSelected.clear();
         await this.refreshBookmarksAfterWrite();
@@ -10179,33 +10340,31 @@ class DashboardConfig {
         // through mutateSelected.
         if (targetCat) await this.ensureCategoryOnPage(targetPage, targetCat);
         const moving = picked.filter((b) => String(b.pageId) !== String(targetPage));
-        const byPage = new Map();
-        moving.forEach((b) => {
-            const list = byPage.get(String(b.pageId)) || [];
-            list.push(b.url);
-            byPage.set(String(b.pageId), list);
-        });
+        const byPage = this.selectionTargetsByPage(moving);
         const carried = moving.map((b) => {
             const copy = { ...b };
             delete copy.pageId;
             if (targetCat) copy.category = targetCat;
             return copy;
         });
-        for (const [pageId, urls] of byPage) {
-            const set = new Set(urls);
-            await this.writePageBookmarks(pageId, (list) => list.filter((b) => !set.has(b.url)));
+        for (const [pageId, targets] of byPage) {
+            await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
+                .filter(({ target }) => !targets.has(target))
+                .map(({ bookmark }) => bookmark));
         }
         await this.refreshBookmarksAfterWrite({ silent: true });
         if (carried.length) {
             await this.writePageBookmarks(targetPage, (list) => [...list, ...carried]);
         }
         // Anything already on the target page still needs its category applied.
+        // Targets are resolved before the refresh below, while the occurrence
+        // index still describes the list these bookmarks were picked from.
         const staying = picked.filter((b) => String(b.pageId) === String(targetPage));
         if (targetCat && staying.length) {
-            const set = new Set(staying.map((b) => b.url));
+            const targets = this.selectionTargetsByPage(staying).get(String(targetPage)) || new Set();
             await this.refreshBookmarksAfterWrite({ silent: true });
-            await this.writePageBookmarks(targetPage, (list) =>
-                list.map((b) => (set.has(b.url) ? { ...b, category: targetCat } : b)));
+            await this.writePageBookmarks(targetPage, (list) => DashboardConfig.withOccurrence(list)
+                .map(({ bookmark, target }) => (targets.has(target) ? { ...bookmark, category: targetCat } : bookmark)));
         }
         this.bmSelected.clear();
         await this.refreshBookmarksAfterWrite();
@@ -10253,15 +10412,10 @@ class DashboardConfig {
         const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks? This cannot be undone.')
             .replace('{n}', String(picked.length));
         if (!await this.confirmAction(msg)) return;
-        const byPage = new Map();
-        picked.forEach((b) => {
-            const list = byPage.get(String(b.pageId)) || [];
-            list.push(b.url);
-            byPage.set(String(b.pageId), list);
-        });
-        for (const [pageId, urls] of byPage) {
-            const set = new Set(urls);
-            await this.writePageBookmarks(pageId, (list) => list.filter((b) => !set.has(b.url)));
+        for (const [pageId, targets] of this.selectionTargetsByPage(picked)) {
+            await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
+                .filter(({ target }) => !targets.has(target))
+                .map(({ bookmark }) => bookmark));
         }
         this.bmSelected.clear();
         this.bmEditing = null;
@@ -10272,7 +10426,7 @@ class DashboardConfig {
     async bulkFavicons(picked) {
         let ok = 0;
         for (const b of picked) {
-            const key = DashboardConfig.bookmarkKey(b);
+            const key = this.bookmarkKey(b);
             try {
                 await this.refreshBookmarkFavicon(key);
                 ok += 1;

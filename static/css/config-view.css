@@ -2217,6 +2217,21 @@ body.no-animations .config-new-features-panel-star {
     white-space: nowrap;
 }
 
+/* Reach warning: part of the selection is hidden by the active filters. Tinted
+   like a warning because the buttons beside it include Delete. */
+.config-bulk-offscreen {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    font-size: calc(var(--font-size-text) * 0.9);
+    color: var(--accent-warning, var(--text-secondary));
+}
+
+.config-bulk-offscreen-text {
+    white-space: nowrap;
+}
+
 .config-bulk-group {
     display: flex;
     align-items: center;
