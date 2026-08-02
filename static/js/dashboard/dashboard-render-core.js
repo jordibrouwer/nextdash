@@ -239,6 +239,7 @@ class DashboardRenderCore {
 
     renderDashboard(options = {}) {
         const d = this.dash;
+        this.pruneStaleCategoryViewState();
         const blockForInlineEdit = d.isInlineEditActive() && options.despiteModal !== true;
         if (d.activeView === 'inbox' && d.inbox?.isEnabled?.()) {
             d.data?.schedulePageBookmarksHealIfNeeded?.();
@@ -1238,6 +1239,53 @@ class DashboardRenderCore {
             localStorage.setItem('expandedOverflowCategories', JSON.stringify(d._expandedOverflowCategories || {}));
         } catch {
             // localStorage unavailable — state kept in memory only
+        }
+    }
+
+    /**
+     * Drops remembered expand/collapse state for pages that no longer exist.
+     *
+     * Both stores are keyed "pageId:categoryId" and nothing ever removed an
+     * entry, so every deleted page left its rows behind for good. Only page ids
+     * are checked, never category ids: the categories of other pages are not
+     * loaded here, and pruning on that would throw away live state.
+     *
+     * Runs once per session — this is housekeeping, not a hot path.
+     */
+    pruneStaleCategoryViewState() {
+        const d = this.dash;
+        if (d._prunedCategoryViewState) return;
+        const pages = Array.isArray(d.pages) ? d.pages : [];
+        if (!pages.length) return;
+        d._prunedCategoryViewState = true;
+
+        const known = new Set(pages.map((p) => String(p.id)));
+        const isStale = (key) => {
+            const sep = String(key).indexOf(':');
+            if (sep < 0) return false; // legacy un-scoped key — leave alone
+            return !known.has(String(key).slice(0, sep));
+        };
+
+        const overflow = this._loadExpandedOverflow();
+        let overflowChanged = false;
+        Object.keys(overflow).forEach((key) => {
+            if (isStale(key)) { delete overflow[key]; overflowChanged = true; }
+        });
+        if (overflowChanged) this._saveExpandedOverflow();
+
+        const collapsed = d.collapsedCategories;
+        if (collapsed && typeof collapsed === 'object') {
+            let collapsedChanged = false;
+            Object.keys(collapsed).forEach((key) => {
+                if (isStale(key)) { delete collapsed[key]; collapsedChanged = true; }
+            });
+            if (collapsedChanged) {
+                try {
+                    localStorage.setItem('collapsedCategories', JSON.stringify(collapsed));
+                } catch {
+                    // localStorage unavailable — in-memory prune still applies
+                }
+            }
         }
     }
 
