@@ -2144,7 +2144,10 @@ class DashboardConfig {
 
         return `
             <p class="config-view-intro">${intro}</p>
-            <div class="config-tiles config-tiles--overview" role="list">${tiles}</div>
+            <div class="config-overview-tiles-zone">
+                ${this.renderOverviewUpdates()}
+                <div class="config-tiles config-tiles--overview" role="list">${tiles}</div>
+            </div>
             <div class="config-overview-attention-zone">
                 ${this.renderOverviewAttention()}
             </div>
@@ -2157,7 +2160,6 @@ class DashboardConfig {
                     ${this.renderOverviewAbout()}
                     ${this.renderOverviewWhatsNew()}
                 </div>
-                ${this.renderOverviewUpdates()}
                 ${this.renderOverviewTips()}
             </div>
         `;
