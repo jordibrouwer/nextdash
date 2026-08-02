@@ -369,6 +369,42 @@
             return window.DashboardContextMenu?._shareRefused !== true;
         }
 
+        /**
+         * Resolving a row to its bookmark answers synchronously here too.
+         *
+         * Callers read the result straight away — `ref.bookmark` — so going
+         * through the proxy's generic path, which answers with a Promise until
+         * the module is fetched, left them holding an object with no bookmark on
+         * it and silently doing nothing. Same shape as
+         * DashboardContextMenu.resolveRowBookmark, which this mirrors.
+         */
+        resolveRowBookmark(row) {
+            if (this._module) {
+                return this._module.resolveRowBookmark(row);
+            }
+            const d = this.dash;
+            if (!row) return null;
+            const rawIndex = row.getAttribute('data-bookmark-index');
+            if (rawIndex !== null) {
+                const index = Number(rawIndex);
+                const bookmark = d.bookmarks?.[index];
+                if (bookmark) {
+                    return {
+                        bookmark,
+                        index,
+                        scope: 'current',
+                        pageId: Number(d.currentPageId),
+                        original: { ...bookmark },
+                    };
+                }
+            }
+            const url = row.getAttribute('data-bookmark-url');
+            if (!url) return null;
+            const bookmark = (d.bookmarks || []).find((b) => b.url === url)
+                || (d.allBookmarks || []).find((b) => b.url === url);
+            return bookmark ? d.resolveBookmarkReference(bookmark) : null;
+        }
+
         /** Sync label for menu markup — must not return a Promise from the loader proxy. */
         shareActionLabel() {
             if (this._module) {
