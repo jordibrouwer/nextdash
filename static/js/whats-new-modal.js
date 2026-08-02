@@ -91,13 +91,13 @@
     function renderRelease({ tag, date, sections }) {
         // A section with "kind": "keys" lists new shortcuts and is tinted with its
         // own accent so it stands apart from the ordinary new/fix rundown.
-        const sectionsHtml = (sections || []).map(({ title, items, kind }) => {
+        const sectionsHtml = sections.map(({ title, items, kind }) => {
             const isKeys = kind === 'keys';
             return `
             <div class="wn-section${isKeys ? ' wn-section-keys' : ''}">
                 <h4 class="wn-section-title">${title}</h4>
                 <ul class="wn-list">
-                    ${(items || []).map(({ badge, text, keys }) => {
+                    ${items.map(({ badge, text, keys }) => {
                         if (isKeys) {
                             return `
                         <li class="wn-item wn-item-keys">
@@ -106,12 +106,9 @@
                         </li>
                     `;
                         }
-                        const badgeLabel = badge === 'new'
-                            ? wnTranslate('dashboard.whatsNewBadgeNew', 'new')
-                            : wnTranslate('dashboard.whatsNewBadgeFix', 'fix');
                         return `
                         <li class="wn-item">
-                            <span class="wn-badge ${badge === 'new' ? 'wn-badge-new' : 'wn-badge-fix'}">${badgeLabel}</span>
+                            <span class="wn-badge ${badge === 'new' ? 'wn-badge-new' : 'wn-badge-fix'}">${badge}</span>
                             <span class="wn-item-text">${text}</span>
                         </li>
                     `;
@@ -146,7 +143,7 @@
     function buildIntroHtml() {
         return `
             <div class="wn-intro">
-                <p class="wn-intro-text">${wnTranslate('dashboard.whatsNewIntro', 'nextDash is a personal project I build and maintain in my spare time. — if you enjoy using it, a small contribution means a lot and helps keep the project going.')}</p>
+                <p class="wn-intro-text">nextDash is a personal project I build and maintain in my spare time. — if you enjoy using it, a small contribution means a lot and helps keep the project going.</p>
                 <a class="wn-kofi-btn wn-kofi-btn--animated" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener">
                     <span class="wn-kofi-stars" aria-hidden="true">
                         <span class="wn-kofi-star"></span>
@@ -155,203 +152,8 @@
                         <span class="wn-kofi-star"></span>
                     </span>
                     <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
-                    <span class="wn-kofi-label">${wnTranslate('config.helpSupportKofi', 'Support me on Ko-fi')}</span>
+                    <span class="wn-kofi-label">Support me on Ko-fi</span>
                 </a>
-            </div>
-        `;
-    }
-
-    function updateCheckEnabled() {
-        return window.nextdashUpdateCheckEnabled?.() === true;
-    }
-
-    function wnTranslate(key, fallback, vars) {
-        const lang = window.dashboardInstance?.language;
-        let text = fallback != null ? fallback : key;
-        if (lang && typeof lang.t === 'function') {
-            const translated = lang.t(key);
-            if (translated && translated !== key) {
-                text = translated;
-            }
-        }
-        if (vars && typeof vars === 'object') {
-            Object.keys(vars).forEach((name) => {
-                text = text.replace(new RegExp(`\\{${name}\\}`, 'g'), String(vars[name]));
-            });
-        }
-        return text;
-    }
-
-    function describeModalUpdateStatus(status, checking) {
-        const desc = window.nextdashDescribeUpdateStatus?.(status, checking)
-            || { tone: 'neutral', message: '' };
-        if (checking || desc.tone === 'loading') {
-            return desc;
-        }
-        if (desc.tone === 'warn' && status?.latest) {
-            return {
-                ...desc,
-                message: wnTranslate(
-                    'config.updateCheckModalAvailable',
-                    '{latest} is available on GitHub.',
-                    { latest: status.latest }
-                ),
-            };
-        }
-        if (desc.tone === 'neutral' && !status) {
-            return { ...desc, message: '' };
-        }
-        return desc;
-    }
-
-    function buildTopRowHtml(featureLead) {
-        const leadHtml = buildFeatureLeadHtml(featureLead);
-        const introHtml = buildIntroHtml();
-        if (!leadHtml) {
-            return `<div class="wn-top-row wn-top-row--intro-only">${introHtml}</div>`;
-        }
-        return `
-            <div class="wn-top-row">
-                ${leadHtml}
-                ${introHtml}
-            </div>
-        `;
-    }
-
-    function buildUpdateCheckHeaderHtml() {
-        if (!updateCheckEnabled()) {
-            return '';
-        }
-        return `
-            <div class="wn-update-check-header" data-wn-update-check>
-                <div class="wn-update-check-meta" data-wn-update-meta>
-                    <p class="wn-update-check-status" id="wn-update-status-text" data-wn-update-status aria-live="polite"></p>
-                </div>
-                <button type="button" class="wn-update-check-btn" data-wn-update-check-btn aria-describedby="wn-update-status-text">${wnTranslate('config.updateCheckNow', 'Check for updates')}</button>
-            </div>
-        `;
-    }
-
-    function teardownWhatsNewUpdateCheckHeader() {
-        document.querySelector('#app-modal .whats-new-modal [data-wn-update-check]')?.remove();
-    }
-
-    function mountWhatsNewUpdateCheckHeader() {
-        teardownWhatsNewUpdateCheckHeader();
-        if (!updateCheckEnabled()) {
-            return;
-        }
-        const header = document.querySelector('#app-modal .whats-new-modal .modal-header');
-        if (!header) {
-            return;
-        }
-        const wrap = document.createElement('div');
-        wrap.innerHTML = buildUpdateCheckHeaderHtml().trim();
-        const el = wrap.firstElementChild;
-        if (el) {
-            header.appendChild(el);
-        }
-        setupUpdateCheckBar(el);
-    }
-
-    function syncWhatsNewUpdateBar(checking) {
-        if (!updateCheckEnabled()) {
-            teardownWhatsNewUpdateCheckHeader();
-            return;
-        }
-        const root = document.querySelector('#app-modal .whats-new-modal [data-wn-update-check]');
-        if (!root) return;
-        const statusEl = root.querySelector('[data-wn-update-status]');
-        const btn = root.querySelector('[data-wn-update-check-btn]');
-        if (!statusEl || !btn) return;
-
-        const status = window.dashboardInstance?.updateStatus || null;
-        const desc = describeModalUpdateStatus(status, checking);
-        statusEl.textContent = desc.message || '';
-        statusEl.className = `wn-update-check-status wn-update-check-status--${desc.tone || 'neutral'}`;
-        statusEl.hidden = !desc.message;
-        root.classList.toggle('wn-update-check-header--warn', desc.tone === 'warn');
-        btn.disabled = Boolean(checking);
-        btn.setAttribute('aria-busy', checking ? 'true' : 'false');
-        if (desc.message) {
-            btn.setAttribute('aria-describedby', 'wn-update-status-text');
-        } else {
-            btn.removeAttribute('aria-describedby');
-        }
-        btn.textContent = checking
-            ? wnTranslate('config.updateCheckChecking', 'Checking GitHub…')
-            : wnTranslate('config.updateCheckNow', 'Check for updates');
-
-        let link = root.querySelector('[data-wn-update-release-link]');
-        const metaEl = root.querySelector('[data-wn-update-meta]') || root;
-        if (desc.tone === 'warn' && desc.releaseUrl) {
-            if (!link) {
-                link = document.createElement('a');
-                link.className = 'wn-update-check-link';
-                link.setAttribute('data-wn-update-release-link', '');
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                metaEl.appendChild(link);
-            }
-            link.href = desc.releaseUrl;
-            link.textContent = wnTranslate('config.overviewUpdateAvailableCta', 'View release on GitHub →');
-        } else if (link) {
-            link.remove();
-        }
-
-        let dismissBtn = root.querySelector('[data-wn-update-dismiss]');
-        if (desc.tone === 'warn' && status?.latest) {
-            if (!dismissBtn) {
-                dismissBtn = document.createElement('button');
-                dismissBtn.type = 'button';
-                dismissBtn.className = 'wn-update-check-dismiss';
-                dismissBtn.setAttribute('data-wn-update-dismiss', '');
-                dismissBtn.textContent = wnTranslate('config.overviewUpdateDismiss', 'Dismiss');
-                metaEl.appendChild(dismissBtn);
-            }
-        } else if (dismissBtn) {
-            dismissBtn.remove();
-        }
-
-        metaEl.hidden = statusEl.hidden
-            && !root.querySelector('[data-wn-update-release-link]')
-            && !root.querySelector('[data-wn-update-dismiss]');
-    }
-
-    function setupUpdateCheckBar(checkRoot) {
-        if (!checkRoot || !updateCheckEnabled()) return;
-        const btn = checkRoot.querySelector('[data-wn-update-check-btn]');
-        if (!btn || btn.dataset.bound === '1') return;
-        btn.dataset.bound = '1';
-        syncWhatsNewUpdateBar(false);
-        btn.addEventListener('click', () => {
-            syncWhatsNewUpdateBar(true);
-            window.nextdashRunUpdateCheck?.().finally(() => {
-                syncWhatsNewUpdateBar(false);
-            });
-        });
-        checkRoot.addEventListener('click', (e) => {
-            if (e.target.closest('[data-wn-update-dismiss]')) {
-                const tag = window.dashboardInstance?.updateStatus?.latest;
-                window.nextdashDismissUpdateNotice?.(tag);
-                syncWhatsNewUpdateBar(false);
-            }
-        });
-    }
-
-    window.nextdashSyncWhatsNewUpdateBar = syncWhatsNewUpdateBar;
-    window.nextdashTeardownWhatsNewUpdateCheck = teardownWhatsNewUpdateCheckHeader;
-    window.nextdashMountWhatsNewUpdateCheck = mountWhatsNewUpdateCheckHeader;
-
-    function buildTopRowSkeletonHtml() {
-        return `
-            <div class="wn-top-row wn-top-row--loading">
-                <div class="wn-feature-lead wn-feature-lead--skeleton" aria-hidden="true">
-                    <div class="wn-skeleton-line"></div>
-                    <div class="wn-skeleton-line"></div>
-                    <div class="wn-skeleton-line wn-skeleton-line--short"></div>
-                </div>
-                ${buildIntroHtml()}
             </div>
         `;
     }
@@ -359,7 +161,7 @@
     function buildSkeletonHtml() {
         return `
             <div class="wn-content wn-content--loading" aria-busy="true" aria-live="polite">
-                ${buildTopRowSkeletonHtml()}
+                ${buildIntroHtml()}
                 <div class="wn-skeleton-stack" aria-hidden="true">
                     <div class="wn-skeleton-line"></div>
                     <div class="wn-skeleton-line"></div>
@@ -404,23 +206,18 @@
         return document.getElementById('app-modal')?.classList.contains('show') === true;
     }
 
-    function buildScrollHintHtml(hiddenCount) {
-        if (hiddenCount <= 0) return '';
-        if (hiddenCount === 1) {
-            return `<p class="wn-load-more-hint" data-wn-load-hint>${wnTranslate('dashboard.whatsNewScrollMoreOne', 'Scroll for 1 more release…')}</p>`;
-        }
-        return `<p class="wn-load-more-hint" data-wn-load-hint>${wnTranslate('dashboard.whatsNewScrollMoreMany', 'Scroll for {count} more releases…', { count: hiddenCount })}</p>`;
-    }
-
     function buildShellHtml(manifestEntries, firstReleaseHtml, featureLead) {
         const hiddenCount = Math.max(0, manifestEntries.length - 1);
-        const moreHtml = buildScrollHintHtml(hiddenCount);
+        const moreHtml = hiddenCount > 0
+            ? `<p class="wn-load-more-hint" data-wn-load-hint>Scroll for ${hiddenCount} more release${hiddenCount === 1 ? '' : 's'}…</p>`
+            : '';
         const sentinel = hiddenCount > 0
             ? '<div class="wn-lazy-sentinel" data-wn-sentinel aria-hidden="true"></div>'
             : '';
         return `
             <div class="wn-content" data-wn-content tabindex="-1">
-                ${buildTopRowHtml(featureLead)}
+                ${buildFeatureLeadHtml(featureLead)}
+                ${buildIntroHtml()}
                 <div class="wn-releases-root" data-wn-releases-root>
                     ${firstReleaseHtml || ''}
                     ${moreHtml}
@@ -529,11 +326,7 @@
                     }
                     const err = document.createElement('p');
                     err.className = 'wn-empty';
-                    err.textContent = wnTranslate(
-                        'dashboard.whatsNewReleaseLoadFailed',
-                        'Could not load {tag}.',
-                        { tag: entry.tag || entryId }
-                    );
+                    err.textContent = `Could not load ${entry.tag || entryId}.`;
                     releasesRoot.insertBefore(err, sentinel || null);
                     nextIndex += 1;
                 })
@@ -665,32 +458,20 @@
         const finishOnce = () => {
             if (finished) return;
             finished = true;
-            teardownWhatsNewUpdateCheckHeader();
             finish();
         };
 
         teardownLazyLoader();
-        const modalLang = window.dashboardInstance?.language;
-        if (modalLang && typeof window.AppModal?.setLanguage === 'function') {
-            window.AppModal.setLanguage(modalLang);
-        }
         window.AppModal.show({
-            title: wnTranslate('dashboard.whatsNewModalTitle', "what's new"),
+            title: "what's new",
             htmlMessage: buildSkeletonHtml(),
-            confirmText: wnTranslate('dashboard.whatsNewModalClose', 'close'),
+            confirmText: 'close',
             showCancel: false,
             modalClass: 'whats-new-modal',
             onConfirm: finishOnce,
             onCancel: finishOnce,
             onHide: finishOnce,
         });
-
-        mountWhatsNewUpdateCheckHeader();
-        if (updateCheckEnabled()) {
-            void window.nextdashRefreshUpdateStatus?.(false);
-        } else {
-            teardownWhatsNewUpdateCheckHeader();
-        }
 
         return fetchManifest()
             .then((manifest) => {
@@ -699,10 +480,7 @@
                 }
                 const visible = getVisibleManifest(manifest);
                 if (visible.length === 0) {
-                    showEmptyMessage(wnTranslate(
-                        'dashboard.whatsNewEmpty',
-                        'No release notes found. See <strong>CHANGELOG.md</strong> in Config → Help.'
-                    ));
+                    showEmptyMessage('No release notes found. See <strong>CHANGELOG.md</strong> in Config → Help.');
                     return;
                 }
                 return fetchRelease(visible[0].id).then((first) => {
@@ -729,10 +507,7 @@
             })
             .catch(() => {
                 if (isModalStillOpen()) {
-                    showEmptyMessage(wnTranslate(
-                        'dashboard.whatsNewLoadFailed',
-                        'Could not load release notes. Try again or see <strong>CHANGELOG.md</strong> in Config → Help.'
-                    ));
+                    showEmptyMessage('Could not load release notes. Try again or see <strong>CHANGELOG.md</strong> in Config → Help.');
                 }
             });
     };

@@ -338,7 +338,6 @@ class Dashboard {
 
             this._configRefreshReady = true;
             await this.reconcilePendingConfigSyncAfterLoad();
-            void window.nextdashRefreshUpdateStatus?.(false);
 
             // Hash routing for config/inbox/health is applied at the end of init:
             // during bootstrap loadData() the fragment can still be empty even when

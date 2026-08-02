@@ -69,7 +69,6 @@ func main() {
 	r.HandleFunc("/api/pages", handlers.SavePages).Methods("POST")
 	r.HandleFunc("/api/data-revision", handlers.GetDataRevision).Methods("GET")
 	r.HandleFunc("/api/app-version", handlers.AppVersion).Methods("GET")
-	r.HandleFunc("/api/update-status", handlers.GetUpdateStatus).Methods("GET")
 	r.HandleFunc("/api/pages/{id:[0-9]+}", handlers.DeletePage).Methods("DELETE")
 	r.HandleFunc("/api/reset", handlers.ResetAllData).Methods("POST")
 	r.HandleFunc("/api/settings", handlers.GetSettings).Methods("GET")
@@ -176,7 +175,9 @@ func main() {
 	handlers.StartHealthRecheckScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
-	handlers.StartUpdateCheckScheduler(schedulerStop)
+	// Announce a newer release once per version, off the startup path so a slow
+	// push service never delays the server coming up.
+	go handlers.notifyReleaseOnStartup()
 
 	go func() {
 		log.Printf("Server starting on port %s", port)

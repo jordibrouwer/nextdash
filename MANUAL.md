@@ -840,7 +840,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 **Not every release is in the modal.** A small presentation hotfix can ship without release notes of its own — **v2026.07.23.4**, which repaired the health view's see-through **More** menu, is one. The [changelog](CHANGELOG.md) carries the complete history either way.
 
-**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. **Config → Overview → Latest update** summarises the newest release in plain text (from the same `modalLead` as the ★ modal) with a **Show what's new** button beside it. Since **v2026.08.07**, nextDash can also **check GitHub for a newer release** once a day: a dot on ★, a toast while you are actively using the app, and **Check for updates** in the ★ modal header and on Config → Overview (above Tips). Turn it off under **Config → Behavior → Privacy**. The latest release loads first; scroll to load up to the **25 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same releases are summarized under **What's new** in **Config → Help**, and in full in the [changelog](CHANGELOG.md).
+**★** opens release notes from a **corner FAB** below the `/` tag cloud on desktop (bottom-left by default; mirrored when the button bar is docked left/right; pinned at the bottom of the side rail). It is **not** in the centre dock toolbar. **Config → Help** also has **Show what's new** at the top. **Config → Overview → Latest update** summarises the newest release in plain text (from the same `modalLead` as the ★ modal) with a **Show what's new** button beside it. The latest release loads first; scroll to load up to the **25 most recent** versions (each fetches its own JSON on demand, with a loading skeleton). The same releases are summarized under **What's new** in **Config → Help**, and in full in the [changelog](CHANGELOG.md).
 
 ---
 
@@ -977,7 +977,7 @@ Below **Help**, separated by a gap, **Find settings** opens the settings-jump ov
 
 | Section | What lives there |
 |---------|------------------|
-| **Overview** | Six headline tiles (including **Monitored**), anything needing attention, a **New features** carousel, **Latest update**, optional **GitHub update check** (since **v2026.08.07**), tips, and about-the-developer panels |
+| **Overview** | Six headline tiles (including **Monitored**), anything needing attention, a **New features** carousel, **Latest update**, tips, and about-the-developer panels |
 | **Pages & tags** | Categories, tags, pages, finders, and custom collections — five sub-tabs (**Categories** opens first since **v2026.08.06**) |
 | **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) |
 | **Appearance** | Theme, layout, display, and custom themes — four sub-tabs |
@@ -1345,15 +1345,7 @@ Per-client limits on outbound fetches and SSRF-sensitive APIs (`NEXTDASH_OUTBOUN
 
 HTML pages send a restrictive CSP by default. Set `NEXTDASH_CSP=off` only when required by your proxy or integration.
 
-#### GitHub update checks
-
-Since **v2026.08.07**, nextDash can compare your running release tag with the latest on GitHub once a day. When a newer version exists, Config → Overview shows a compact notice above Tips, the ★ button gets a dot, and a toast appears once per release while you are actively using the app. Press **Check for updates** in the ★ modal header or on Overview to compare manually.
-
-Go to **Config → Behavior → Privacy** and tick or clear **Check GitHub for new releases** (on by default). When off, the dot, toast, and update bars disappear everywhere. Only a public GET to the GitHub Releases API is sent — no bookmarks or settings.
-
-**For the whole server (self-hosting).** Set **`DISABLE_UPDATE_CHECK=true`** to turn update checks off for every user; the Privacy toggle then appears greyed out with a note that the operator disabled it.
-
-#### Analytics and privacy
+### Analytics and privacy
 
 nextDash can record **anonymous, privacy-friendly usage statistics** through a self-hosted [Umami](https://umami.is) instance at `stats.nextdash.cc`. Since **v2026.07.21** it is **opt-in**: off until you turn it on, and nothing is measured before then.
 

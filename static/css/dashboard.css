@@ -1913,43 +1913,6 @@ body[data-launcher-icon-size="large"] .layout-launcher .bookmark-icon { width: 6
     display: block;
     flex-shrink: 0;
 }
-.whats-new-btn-update-dot {
-    position: absolute;
-    top: 0.35rem;
-    right: 0.35rem;
-    width: 0.45rem;
-    height: 0.45rem;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--background-secondary) 80%, transparent);
-    pointer-events: none;
-    opacity: 0;
-    transform: scale(0);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.whats-new-btn.has-update-available .whats-new-btn-update-dot {
-    opacity: 1;
-    transform: scale(1);
-    animation: whats-new-update-pulse 1.8s ease-in-out infinite;
-}
-@keyframes whats-new-update-pulse {
-    0%, 100% {
-        transform: scale(1);
-        box-shadow:
-            0 0 0 2px color-mix(in srgb, var(--background-secondary) 80%, transparent),
-            0 0 0 0 color-mix(in srgb, var(--accent-primary) 0%, transparent);
-    }
-    50% {
-        transform: scale(1.2);
-        box-shadow:
-            0 0 0 2px color-mix(in srgb, var(--background-secondary) 80%, transparent),
-            0 0 0 5px color-mix(in srgb, var(--accent-primary) 38%, transparent);
-    }
-}
-body.no-animations .whats-new-btn-update-dot {
-    animation: none;
-    transform: scale(1);
-}
 .whats-new-btn:hover {
     background: color-mix(in srgb, var(--background-primary) 94%, transparent);
     border-color: var(--accent-primary);

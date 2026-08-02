@@ -81,3 +81,24 @@ func (h *Handlers) pushAutoBackupResult(ctx context.Context, err error) {
 
 	h.sendWebPushNotification(ctx, msg)
 }
+
+// pushReleaseAvailable announces a newer published release.
+func (h *Handlers) pushReleaseAvailable(ctx context.Context, tag string) {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return
+	}
+	settings := h.store.GetSettings()
+	if !settings.PushNotifyEnabled || !settings.PushNotifyRelease {
+		return
+	}
+
+	h.sendWebPushNotification(ctx, webPushMessage{
+		Title: "nextDash " + tag + " is available",
+		Body:  "A newer release has been published.",
+		Kind:  "release",
+		// A single tag across releases: only the newest one is worth showing.
+		Tag: "nextdash-release",
+		URL: "/config",
+	})
+}

@@ -1207,56 +1207,6 @@ body.no-animations .config-new-features-panel-star {
     font-size: calc(var(--font-size-text) * 0.95);
 }
 
-.config-update-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
-}
-
-.config-update-status {
-    margin: 0;
-    flex: 1 1 auto;
-    min-width: 0;
-    text-align: left;
-    font-size: calc(var(--font-size-text) * 0.971);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.config-update-actions {
-    flex-shrink: 0;
-    margin-left: auto;
-}
-
-.config-update-bar--warn .config-update-status {
-    color: var(--accent-primary);
-}
-
-.config-update-bar--error .config-update-status {
-    color: var(--accent-error, #d1493f);
-}
-
-.config-update-bar--ok .config-update-status {
-    color: var(--text-secondary);
-}
-
-@media (max-width: 42rem) {
-    .config-update-bar {
-        flex-wrap: wrap;
-    }
-
-    .config-update-status {
-        white-space: normal;
-        flex-basis: 100%;
-    }
-}
-
 /* Compact key/value list used by the at-a-glance panel. */
 .config-mini-list {
     list-style: none;
