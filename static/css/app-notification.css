@@ -63,6 +63,34 @@
     background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
 }
 
+/* One-time discoverability promos — themed like config setting highlights. */
+.app-notification.promo {
+    color: var(--text-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 11%, var(--background-secondary));
+    box-shadow:
+        0 4px 18px color-mix(in srgb, var(--accent-primary) 16%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}
+
+.app-notification.promo .app-notification-text {
+    font-weight: var(--font-weight-medium);
+}
+
+.app-notification-promo-label {
+    display: inline-block;
+    margin-right: 0.35rem;
+    padding: 0.1rem 0.42rem;
+    border-radius: 999px;
+    font-size: 0.72em;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    vertical-align: baseline;
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+
 /* Session tip: a longer, quieter toast that carries inline <code> keys. */
 .app-notification.info .app-notification-text {
     font-weight: var(--font-weight-medium);

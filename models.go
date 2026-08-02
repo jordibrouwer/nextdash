@@ -482,6 +482,22 @@ func NewStore() Store {
 	return store
 }
 
+// stampDefaultBookmarkCreatedAt dates the starter bookmarks to the moment the
+// install was seeded, so CreatedAt carries a real value from the first run
+// rather than the zero that "Recently added" and the age columns read as
+// "unknown".
+//
+// Each entry is one millisecond after the one before it. A single shared
+// timestamp would leave the recency sort with nothing to order by, making the
+// list of starter bookmarks shuffle between renders; the offsets keep it in the
+// order they are written here.
+func stampDefaultBookmarkCreatedAt(bookmarks []Bookmark, now time.Time) {
+	base := now.UnixMilli()
+	for i := range bookmarks {
+		bookmarks[i].CreatedAt = base + int64(i)
+	}
+}
+
 func (fs *FileStore) initializeDefaultFiles() {
 	fs.ensureDataDir()
 
@@ -510,6 +526,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 				{Name: "Google", URL: "https://google.com", Shortcut: "", Category: "search", CheckStatus: false, Tags: []string{"search"}},
 			},
 		}
+		stampDefaultBookmarkCreatedAt(defaultPageWithBookmarks.Bookmarks, time.Now())
 		data, _ := json.MarshalIndent(defaultPageWithBookmarks, "", "  ")
 		writeFileAtomic(mainPageBookmarksFile, data, 0644)
 		fs.markDefaultBookmarkIconPrefetch()

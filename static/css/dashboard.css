@@ -477,6 +477,20 @@ body {
     color: var(--text-primary);
 }
 
+/* Section trail under the view name. Sits in the header's own type scale, not
+   the title's, so it reads as orientation rather than a second heading. */
+.title-breadcrumb {
+    margin: 0.15rem 0 0;
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.title-breadcrumb[hidden] {
+    display: none;
+}
+
 .header-actions {
     display: flex;
     align-items: center;
@@ -2385,20 +2399,24 @@ body.no-animations .category-chevron {
 
 .category-rename-input {
     background: transparent;
-    border: none;
-    border-bottom: 1px solid currentColor;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
     color: inherit;
     font: inherit;
     font-size: inherit;
     font-weight: inherit;
     letter-spacing: inherit;
-    padding: 0;
+    padding: 0 0.25em;
     margin: 0;
     width: 12ch;
     min-width: 4ch;
     max-width: 28ch;
     outline: none;
     opacity: 1;
+}
+
+.category-rename-input:focus {
+    border-color: var(--accent-primary);
 }
 
 /* Bookmarks */

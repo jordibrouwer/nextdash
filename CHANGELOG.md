@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.08 — August 2026](#v20260808--august-2026)
 - [v2026.08.07.1 — August 2026](#v202608071--august-2026)
 - [v2026.08.07 — August 2026](#v20260807--august-2026)
 - [v2026.08.04 — August 2026](#v20260804--august-2026)
@@ -142,6 +143,35 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.08 — August 2026
+
+**After v2026.08.07.1** — Config → Bookmarks derived a row's identity from page + URL, a pair that collides when the same URL sits twice on one page, so bulk actions silently took every copy; Select all and a filtered selection both reached further than the visible list without saying so; the list recomputed its filtered set and its per-row lookups several times per repaint; view headings carried the whole breadcrumb; and a fresh install seeded bookmarks with no creation date.
+
+### Config
+
+- **fix** **Bulk actions stop hitting every copy of a duplicate URL** — bookmarks carry no id, so identity was derived as `pageId::url`. That collides on duplicates — the case the Duplicate URLs cleanup filter exists to surface — and every write keyed on it hit both copies: ticking one row and confirming a delete of *1* removed two bookmarks. Row keys now carry which occurrence of that URL they are, and the write paths match on it: bulk delete, move, tag, pin and status, plus single-row delete, edit, link-preview refresh, and `findBookmarkRecord()`, which used `findIndex` on the URL and so always resolved to the first copy (`dashboard-config.js`, tests).
+- **fix** **Select all names its reach** — it ticks every row the current filters match, not just the ~50 rendered, so the button now shows the count when more are waiting behind the scroll (`dashboard-config.js`, locales).
+- **fix** **A selection hidden by the filters is called out** — ticks survive a filter change, leaving a bar reading *7 selected* above a list where nothing is ticked and a Delete button that still reached all seven. The bar now reports how many fall outside the current filters and offers to drop them (`dashboard-config.js`, `config-view.css`, locales).
+- **fix** **A failed bulk action reloads the list** — a selection spanning several pages is written one page at a time, so a failure part-way left the earlier pages saved while the rows still showed the pre-action state (`dashboard-config.js`).
+- **fix** **Rows no longer repeat the page name** — with no page filter on, a row's category line already reads *page · category*, so the badge in the footer said the same thing twice. It is kept only on bookmarks with no category, where nothing else names the page (`dashboard-config.js`, tests).
+- **improved** **Fewer rebuilds per repaint** — `visibleBookmarks()` ran three or four times a pass, each time filtering and sorting the whole collection; the page-order lookup inside the sort comparator was a linear `findIndex` per comparison; and `categoryLabelForBookmark()` rebuilt the entire category list once per rendered row, making a 50-row repaint 50 full rebuilds. The visible list is now memoised against its filters and sort, and the page-order, page-name and category-label lookups are built once per render (`dashboard-config.js`).
+
+### Dashboard
+
+- **improved** **View headings name the view, with the trail below** — the large heading read `config › overview` while the smaller line under it repeated only the section. The heading now reads `config`, and the trail moves to the line beneath: in the panel head for Config, next to the section it describes, and under the title for Inbox and Health, which have no such panel. The trail is left off when it would only repeat the view name (`dashboard-page-nav.js`, `dashboard-config.js`, `templates/dashboard.html`, `dashboard.css`, `config-view.css`).
+- **fix** **The category rename field has a full border again** — holding a category name on the dashboard opened a field showing only an underline, because the rule reset `border` and then restored just `border-bottom` (`dashboard.css`).
+- **improved** **What's new lists up to 50 releases** — raised from 25 so older entries stay reachable in the history (`whats-new-modal.js`).
+
+### Install
+
+- **improved** **Starter bookmarks arrive dated** — the seven default bookmarks were written with `CreatedAt` left at zero, so every surface reading that field (Recently added, the age column, the cleanup filters) treated a brand-new install as having no history. They are stamped at seeding time, one millisecond apart in written order so the recency sort has a defined order to work with. A factory reset reseeds through the same path (`models.go`, tests).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, New features carousel, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.08**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v160`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v218`.
 
 ---
 

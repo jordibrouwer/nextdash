@@ -1332,6 +1332,19 @@ body.no-animations .config-new-features-panel-star {
     flex-wrap: wrap;
 }
 
+/* Full-width so it breaks onto its own line under the heading rather than
+   trailing beside it, and sits directly above the section intro. */
+.config-view-head-breadcrumb {
+    flex-basis: 100%;
+    margin: 0 0 4px;
+    font-size: var(--font-size-controls);
+    color: var(--text-secondary);
+}
+
+.config-view-head-breadcrumb[hidden] {
+    display: none;
+}
+
 /*
  * Settings here save on change, so this indicator is the only confirmation a
  * change landed. It is fixed rather than sitting in the header because the
@@ -2201,6 +2214,21 @@ body.no-animations .config-new-features-panel-star {
 .config-bulk-count {
     font-weight: 600;
     font-size: calc(var(--font-size-text) * 0.971);
+    white-space: nowrap;
+}
+
+/* Reach warning: part of the selection is hidden by the active filters. Tinted
+   like a warning because the buttons beside it include Delete. */
+.config-bulk-offscreen {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    font-size: calc(var(--font-size-text) * 0.9);
+    color: var(--accent-warning, var(--text-secondary));
+}
+
+.config-bulk-offscreen-text {
     white-space: nowrap;
 }
 
