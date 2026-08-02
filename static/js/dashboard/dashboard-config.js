@@ -7735,6 +7735,8 @@ class DashboardConfig {
             chips.innerHTML = this.renderBookmarkFilterChips();
             this.bindBookmarkFilterChips(chips);
         }
+        const selectAll = document.getElementById('config-bm-select-all');
+        if (selectAll) selectAll.textContent = this.selectAllBookmarksLabel();
         const hint = document.getElementById('config-bm-tiles-hint');
         if (hint) {
             const active = this.bookmarksFiltersActive();
@@ -8001,15 +8003,32 @@ class DashboardConfig {
         return all.filter((b) => wanted.has(this.bookmarkKey(b)));
     }
 
+    /**
+     * Category id → label, as one map instead of a fresh knownCategories() scan
+     * per row. Building that list walks every page and every category, so doing
+     * it once per rendered row made a 50-row repaint 50 full rebuilds.
+     *
+     * Invalidated by the page filter (which scopes the list) and by the category
+     * data itself, which arrives asynchronously per page.
+     */
+    categoryLabelIndex() {
+        const scope = String(this.bmPageFilter || '');
+        const token = `${scope}|${this._bmCategoryRevision || 0}`;
+        if (this._bmCategoryLabelToken === token && this._bmCategoryLabels) return this._bmCategoryLabels;
+        const index = new Map();
+        this.knownCategories(scope || undefined).forEach((c) => index.set(c.id, c.label));
+        this._bmCategoryLabelToken = token;
+        this._bmCategoryLabels = index;
+        return index;
+    }
+
     categoryLabelForBookmark(b) {
         const id = String(b.category || '');
         if (!id) return '';
-        if (this.bmPageFilter) {
-            return this.knownCategories(this.bmPageFilter).find((c) => c.id === id)?.label || id;
-        }
+        const labels = this.categoryLabelIndex();
+        if (this.bmPageFilter) return labels.get(id) || id;
         const composite = DashboardConfig.categoryFilterKey(b.pageId, id);
-        return this.knownCategories().find((c) => c.id === composite)?.label
-            || `${this.pageLabel(b.pageId)} · ${id}`;
+        return labels.get(composite) || `${this.pageLabel(b.pageId)} · ${id}`;
     }
 
     async prefetchAllBookmarkCategories() {
@@ -8032,14 +8051,17 @@ class DashboardConfig {
             const data = res && res.ok ? await res.json() : [];
             const list = Array.isArray(data) ? data : [];
             this._bmCategoriesCache.set(key, list);
+            this._bmCategoryRevision = (this._bmCategoryRevision || 0) + 1;
             return list;
         } catch {
             this._bmCategoriesCache.set(key, []);
+            this._bmCategoryRevision = (this._bmCategoryRevision || 0) + 1;
             return [];
         }
     }
 
     invalidateBookmarkCategoriesCache(pageId) {
+        this._bmCategoryRevision = (this._bmCategoryRevision || 0) + 1;
         if (pageId != null && pageId !== '') {
             this._bmCategoriesCache.delete(String(pageId));
         }
@@ -8091,7 +8113,63 @@ class DashboardConfig {
         },
     };
 
+    /** Page id → position, built once so sort comparators can look up in O(1). */
+    pageOrderIndex() {
+        const pages = this.dash.pages || [];
+        if (this._bmPageOrderSource === pages && this._bmPageOrder) return this._bmPageOrder;
+        const index = new Map();
+        pages.forEach((p, i) => index.set(String(p.id), i));
+        this._bmPageOrderSource = pages;
+        this._bmPageOrder = index;
+        return index;
+    }
+
+    /** Page id → display name, same idea as pageOrderIndex. */
+    pageNameIndex() {
+        const pages = this.dash.pages || [];
+        if (this._bmPageNameSource === pages && this._bmPageNames) return this._bmPageNames;
+        const index = new Map();
+        pages.forEach((p) => index.set(String(p.id), p.name || p.id));
+        this._bmPageNameSource = pages;
+        this._bmPageNames = index;
+        return index;
+    }
+
+    /**
+     * A render pass asks for this list three or four times over — the section
+     * shell, the cleanup banner, the list itself and the chrome update. Filtering
+     * and sorting the whole set each time is pure repeat work, so the result is
+     * memoised against everything it depends on.
+     */
     visibleBookmarks() {
+        const all = this.dash.allBookmarks || [];
+        // JSON rather than a joined string: query, tag and category all hold free
+        // text, so a plain separator could be ambiguous — query "a b" with no tag
+        // versus query "a" with tag "b" must not share a token.
+        const token = JSON.stringify([
+            this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
+            this.bmTagFilter, this.bmCleanupFilter, this.bmSort,
+        ]);
+        if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
+            return this._bmVisible;
+        }
+        const result = this.computeVisibleBookmarks();
+        this._bmVisibleSource = all;
+        this._bmVisibleToken = token;
+        this._bmVisible = result;
+        return result;
+    }
+
+    /** Drops the memo so the next visibleBookmarks() recomputes from scratch. */
+    invalidateVisibleBookmarks() {
+        this._bmVisible = null;
+        this._bmVisibleSource = null;
+        this._bmVisibleToken = null;
+        this._bmOccurrence = null;
+        this._bmOccurrenceSource = null;
+    }
+
+    computeVisibleBookmarks() {
         const all = this.dash.allBookmarks || [];
         const q = String(this.bmQuery || '').trim().toLowerCase();
         const pageFilter = String(this.bmPageFilter || '');
@@ -8119,7 +8197,8 @@ class DashboardConfig {
             return [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
                 .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
         });
-        const pageIndex = (id) => (this.dash.pages || []).findIndex((p) => String(p.id) === String(id));
+        const order = this.pageOrderIndex();
+        const pageIndex = (id) => (order.has(String(id)) ? order.get(String(id)) : -1);
         const cmp = {
             name: (a, b) => String(a.name || '').localeCompare(String(b.name || '')),
             url: (a, b) => String(a.url || '').localeCompare(String(b.url || '')),
@@ -8344,8 +8423,7 @@ class DashboardConfig {
         }
         const allRows = this.visibleBookmarks();
         if (!allRows.length) {
-            const hasFilters = !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter
-                || this.bmCleanupFilter || this.bmTagFilter);
+            const hasFilters = this.bookmarksFiltersActive();
             return `
                 <div class="config-panel-empty config-panel-empty--action">
                     <p>${esc(this.t('config.noBookmarksMatch', 'No bookmarks match your search.'))}</p>
@@ -8353,7 +8431,8 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--primary" data-bm-empty-add>${esc(this.t('config.addBookmarkBtn', 'Add bookmark'))}</button>
                 </div>`;
         }
-        const pageName = (id) => (this.dash.pages || []).find((p) => String(p.id) === String(id))?.name || id;
+        const names = this.pageNameIndex();
+        const pageName = (id) => names.get(String(id)) || id;
         const showPageBadge = !this.bmPageFilter;
         const limit = Math.max(DashboardConfig.BM_PAGE_SIZE, Number(this.bmVisibleLimit) || DashboardConfig.BM_PAGE_SIZE);
         const rows = allRows.slice(0, limit);
@@ -10072,6 +10151,10 @@ class DashboardConfig {
     repaintBookmarksList() {
         const host = document.getElementById('config-bm-list');
         if (!host) return;
+        // An explicit repaint means the caller believes something changed, and
+        // bookmarks are routinely edited in place — the array identity the memo
+        // keys on would not have moved. Drop it and recompute.
+        this.invalidateVisibleBookmarks();
         const scrollHost = this.bookmarkListScrollHost();
         const scrollTop = scrollHost?.scrollTop ?? 0;
         this._bmLoadMoreObserver?.disconnect?.();
