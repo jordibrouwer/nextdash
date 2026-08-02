@@ -1,0 +1,42 @@
+{
+  "tag": "v2026.08.07",
+  "date": "August 2026",
+  "releasedAt": "2026-08-07",
+  "modalLead": "Add and edit bookmarks share one centered modal everywhere — Create + New keeps it open and refreshes the grid behind it; Shift+B opens the form from the keyboard. Tag autocomplete stays visible inside the modal, and every view stays in sync after save or delete.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Shared bookmark form modal</strong> — <code>+</code>, <code>Shift+B</code>, <code>Ctrl+Shift+A</code>, and <code>:new</code> open the same centered add/edit shell (<code>#bookmark-form-modal</code>) from the dashboard, Health, Inbox, Config, and search. Inline row edit and the config bookmark editor use the same form (<code>dashboard-inline-edit.js</code>, <code>bookmark-form-modal.css</code>)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong><code>Shift+B</code> add bookmark</strong> — opens the full new-bookmark form from anywhere on the dashboard when you are not typing in a field; documented on the cheat sheet, in Help tips, and under Config → Keyboard fixed shortcuts (<code>quick-add.js</code>, locales)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Create + New</strong> — saves the bookmark, clears the form for the next entry, keeps page/category, and repaints the bookmark grid while the modal stays open (<code>despiteModal</code> in <code>refreshAfterBookmarkMutation()</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tag autocomplete in the modal</strong> — the tags dropdown sits above the form overlay instead of behind it (<code>body.bookmark-form-modal-open .tag-ac-dropdown</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Save and delete without freezing</strong> — confirm dialogs stack above the form modal; the grid, config bookmarks list, Health, Inbox, and search refresh after every mutation; inbox promote removes the item after save (<code>dashboard-data.js</code>, <code>dashboard-inline-edit.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.07</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v158</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v216</code>."
+        }
+      ]
+    }
+  ]
+}

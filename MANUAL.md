@@ -340,11 +340,16 @@ Example: `GitHub | https://github.com | g`
 
 Favicon is fetched automatically when possible.
 
-### 7.2 Full modal (`+` or `Ctrl+Shift+A`)
+### 7.2 Full modal (`+`, `Shift+B`, or `Ctrl+Shift+A`)
+
+One shared **bookmark form modal** is used for add and edit everywhere — dashboard, Health, Inbox, Config, and search (`:new`).
 
 - **`+`** on the dashboard (toolbar **+** button uses the same shortcut).  
-- **`Ctrl+Shift+A`** from anywhere on the dashboard when not typing in a field.  
+- **`Shift+B`** from anywhere on the dashboard when not typing in a field.  
+- **`Ctrl+Shift+A`** from anywhere (legacy global chord).  
 - **`:new`** from command mode.
+
+**Create + New** (footer button while adding) saves the bookmark, clears the form for the next entry, keeps your page and category, and updates the grid behind the modal.
 
 The modal includes page, category, preview, tags, and note.
 
