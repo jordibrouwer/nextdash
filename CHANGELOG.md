@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.08.1 — August 2026](#v202608081--august-2026)
 - [v2026.08.08 — August 2026](#v20260808--august-2026)
 - [v2026.08.07.1 — August 2026](#v202608071--august-2026)
 - [v2026.08.07 — August 2026](#v20260807--august-2026)
@@ -143,6 +144,21 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.08.1 — August 2026
+
+**Hotfix after v2026.08.08** — two corrections to the **What's new** modal itself. Note that this release ships no What's new entry of its own: the modal and the Config → Overview carousel still describe v2026.08.08.
+
+### Dashboard
+
+- **fix** **Check for updates removed from the What's new modal** — the modal is for reading release notes; the daily check runs on its own and **Config → Overview** keeps the manual trigger. The status bar stays, so an available release is still reported there with its GitHub link and **Dismiss** (`whats-new-modal.js`, `modal.css`, tests).
+- **fix** **Release summary and Ko-fi block stack again** — side by side the summary was squeezed into half the width while the shorter Ko-fi block left dead space beside it. One column at every width, not only below 42rem (`modal.css`).
+
+### Docs
+
+- **fix** — CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.08.1**. What's new modal data and the Config → Overview carousel are deliberately unchanged and still show v2026.08.08.
 
 ---
 
