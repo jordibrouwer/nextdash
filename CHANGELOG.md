@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.06 — August 2026](#v20260806--august-2026)
 - [v2026.08.05 — August 2026](#v20260805--august-2026)
 - [v2026.08.02.3 — August 2026](#v202608023--august-2026)
 - [v2026.08.02.2 — August 2026](#v202608022--august-2026)
@@ -138,6 +139,23 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.06 — August 2026
+
+**After v2026.08.05** — Config → Bookmarks had basic filters but no filter chips, debounced search, or bulk export; summary tiles always showed global counts; Pages & tags opened on Finders; the edit modal could not save bookmarks with an empty stored name.
+
+### Config
+
+- **new** **Bookmarks filters & search** — debounced search (including shortcuts), removable filter chips, sort by last opened / most opened / pinned first, filter-aware summary tiles and row counter, duplicate-URL cleanup filter, lazy-loaded rows (50 at a time), clickable page/category/tag filters, bulk **Refresh favicons** and **Export CSV**, keyboard `o` and double-click to open (`dashboard-config.js`, `config-view.css`, locales, tests).
+- **new** **Pages & tags tab order** — **Categories** first (default sub-tab), **Tags** second, then Pages, Finders, and Collections (`PT_TABS`, `dashboard-config.js`, tests).
+- **fix** **Bookmark edit save** — edit modal no longer blocks save when a bookmark has no stored name; name prefilled from preview title or URL and not required in edit mode (`search-commands-new.js`).
+- **fix** **Filter chip labels** — page and category chips show actual names instead of `{name}` placeholders (`renderBookmarkFilterChips()`).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, New features carousel, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.06**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v156`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v214`.
 
 ---
 

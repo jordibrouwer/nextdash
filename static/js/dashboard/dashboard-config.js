@@ -2360,6 +2360,32 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureBookmarksFiltersTitle',
+                titleFallback: 'Bookmarks filters & search',
+                whatKey: 'config.overviewNewFeatureBookmarksFiltersWhat',
+                whatFallback: 'Search, filter, and sort the full bookmark library from one list — with chips that show what is active and summary tiles that follow your filters.',
+                howKey: 'config.overviewNewFeatureBookmarksFiltersHow',
+                howFallback: 'Type in the search box (shortcuts match too), pick page or category from the dropdowns, or click a page, category, or tag on a row. Sort by last opened, most opened, or pinned first. Tick rows for bulk favicon refresh or CSV export.',
+                enableKey: 'config.overviewNewFeatureBookmarksFiltersEnable',
+                enableFallback: 'Open Config → Bookmarks. Scroll to load more rows; press o or double-click a row to open its URL.',
+                ctaKey: 'config.overviewNewFeatureBookmarksFiltersCta',
+                ctaFallback: 'Open Bookmarks →',
+                go: { section: 'bookmarks' },
+            },
+            {
+                titleKey: 'config.overviewNewFeaturePagesTagsTabsTitle',
+                titleFallback: 'Categories & tags first',
+                whatKey: 'config.overviewNewFeaturePagesTagsTabsWhat',
+                whatFallback: 'Pages & tags now opens on Categories, with Tags right beside it — the two lists you reach for most often.',
+                howKey: 'config.overviewNewFeaturePagesTagsTabsHow',
+                howFallback: 'Use [ and ] to cycle sub-tabs from anywhere in config, or click Categories or Tags in the strip. Pages, Finders, and Collections follow after.',
+                enableKey: 'config.overviewNewFeaturePagesTagsTabsEnable',
+                enableFallback: 'Open Config → Pages & tags — Categories is selected by default.',
+                ctaKey: 'config.overviewNewFeaturePagesTagsTabsCta',
+                ctaFallback: 'Open Pages & tags →',
+                go: { section: 'pages-tags' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureKeyboardTitle',
                 titleFallback: 'Config keyboard navigation',
                 whatKey: 'config.overviewNewFeatureKeyboardWhat',

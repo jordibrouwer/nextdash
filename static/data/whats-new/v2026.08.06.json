@@ -1,0 +1,38 @@
+{
+  "tag": "v2026.08.06",
+  "date": "August 2026",
+  "releasedAt": "2026-08-06",
+  "modalLead": "Config → Bookmarks gains debounced search with filter chips, new sort options, lazy-loaded rows, and bulk favicon refresh and CSV export — summary tiles follow your active filters. Pages & tags opens on Categories with Tags second. Editing a bookmark without a stored name saves correctly.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Bookmarks filters &amp; search</strong> — debounced search (including shortcuts), removable filter chips, sort by last opened / most opened / pinned first, filter-aware summary tiles and row counter, duplicate-URL cleanup filter, lazy-loaded rows (50 at a time), clickable page/category/tag filters, bulk <strong>Refresh favicons</strong> and <strong>Export CSV</strong>, keyboard <code>o</code> and double-click to open (<code>dashboard-config.js</code>, <code>config-view.css</code>, locales)."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Pages &amp; tags tab order</strong> — <strong>Categories</strong> is the first sub-tab (and the default), <strong>Tags</strong> second, then Pages, Finders, and Collections (<code>PT_TABS</code>, <code>dashboard-config.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Bookmark edit save</strong> — the edit modal no longer blocks save when a bookmark has no stored name; the name field is prefilled from preview title or URL and is not required in edit mode (<code>search-commands-new.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Filter chip labels</strong> — page and category filter chips show the actual names instead of <code>{name}</code> placeholders (<code>renderBookmarkFilterChips()</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.06</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v156</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v214</code>."
+        }
+      ]
+    }
+  ]
+}

@@ -58,7 +58,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-category-title-fit.js": "02a4e3822dbd",
 	"js/dashboard/dashboard-config-loader.js": "7b60ad8566c1",
 	"js/dashboard/dashboard-config-sync.js": "331473adbebb",
-	"js/dashboard/dashboard-config.js": "dbf6c68a77f5",
+	"js/dashboard/dashboard-config.js": "3d39342c9065",
 	"js/dashboard/dashboard-context-menu.js": "f626a4a561b2",
 	"js/dashboard/dashboard-data.js": "4588be815a35",
 	"js/dashboard/dashboard-date-weather.js": "78a84d47afef",
@@ -134,6 +134,6 @@ var precomputedAssetHashes = map[string]string{
 	"js/visual-settings.js": "665da573cc09",
 	"js/weather.js": "2e4cddbdcd40",
 	"js/whats-new-modal.js": "f90a8c2e330c",
-	"js/whats-new-stub.js": "4cb1a918d345",
+	"js/whats-new-stub.js": "7ffee1ecc017",
 	"js/write-api.js": "25afcd408905",
 }

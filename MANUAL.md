@@ -978,7 +978,7 @@ Below **Help**, separated by a gap, **Find settings** opens the settings-jump ov
 | Section | What lives there |
 |---------|------------------|
 | **Overview** | Six headline tiles (including **Monitored**), anything needing attention, a **New features** carousel, **Latest update**, tips, and about-the-developer panels |
-| **Pages & tags** | Pages, categories, tags, finders, and custom collections — five sub-tabs |
+| **Pages & tags** | Categories, tags, pages, finders, and custom collections — five sub-tabs (**Categories** opens first since **v2026.08.06**) |
 | **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) |
 | **Appearance** | Theme, layout, display, and custom themes — four sub-tabs |
 | **Behavior** | General, date & weather, search, status, and privacy — five sub-tabs |
@@ -1000,7 +1000,7 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 
 | Section | Sub-tabs |
 |---------|----------|
-| **Pages & tags** | Finders · Tags · Collections · Pages · Categories |
+| **Pages & tags** | Categories · Tags · Pages · Finders · Collections |
 | **Appearance** | Theme · Layout · Display · Custom themes |
 | **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
 | **Data & backups** | Backups & data · Reset |
@@ -1009,9 +1009,9 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 
 ### Working with bookmarks
 
-**Bookmarks** lists every bookmark with a search field and a **page filter**. With **All pages**, category labels read `Page · Category` and each row carries a page badge. Pick one page to scope categories and share the view as `/#config/bookmarks/<pageId>`. Rows use the same Health/Inbox action bar; **Edit** opens the prefilled add-bookmark modal with name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor).
+**Bookmarks** lists every bookmark with a **debounced search** field (matches name, URL, category, note, shortcut, and tags), **filter chips** for page, category, tag, and search text, and a **page filter**. With **All pages**, category labels read `Page · Category` and each row carries a page badge; click a page or category on a row to filter. Pick one page to scope categories and share the view as `/#config/bookmarks/<pageId>`. **Summary tiles** above the list follow active filters when any are set. Rows load **50 at a time** as you scroll. Sort includes last opened, most opened, and pinned first. Rows use the same Health/Inbox action bar; **Edit** opens the prefilled add-bookmark modal with name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor). Press **`o`** or double-click a row to open the URL.
 
-**+ Bookmark** opens the same add form the dashboard uses. Tick several rows for the bulk toolbar — move to another page or category, pin, refresh favicons, edit tags across the selection, or delete. **Select all** applies to the rows your filters are currently showing, not the whole library.
+**+ Bookmark** opens the same add form the dashboard uses. Tick several rows for the bulk toolbar — move to another page or category, pin, **refresh favicons**, **export CSV**, edit tags across the selection, or delete. **Select all** applies to the rows your filters are currently showing, not the whole library.
 
 ### Appearance
 
@@ -1053,8 +1053,9 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 | `g` / `G` (list row) | Jump to first / last row in a Pages & tags list |
 | `/` (Tags tab) | Focus the tag filter |
 | `j` / `k` (Bookmarks list) | Move between bookmark rows |
-| `Enter` / `Space` (bookmark row) | Open the bookmark editor modal |
+| `Enter` / `o` / double-click (bookmark row) | Open the bookmark URL |
 | `e` (bookmark row) | Open the bookmark editor modal |
+| `m` / `c` (bookmark row) | Open the More menu / checking mode menu |
 | `/` (Bookmarks) | Focus the bookmark search field |
 | `←` / `→` (choice row) | Move between options; `Space` selects |
 | `Home` / `End` (slider) | Jump to min or max on a focused slider |
