@@ -39,7 +39,7 @@ test.describe('view analytics events', () => {
         await page.locator('[data-behavior-tab="privacy"]').first().click();
 
         const seen = await tracks(page);
-        expect(seen).toContainEqual({ name: 'config:section', props: { section: 'behavior' } });
+        expect(seen).toContainEqual({ name: 'config:section', props: { section: 'behavior', via: 'click' } });
         expect(seen).toContainEqual({
             name: 'config:subtab',
             props: { section: 'behavior', tab: 'privacy', via: 'click' },

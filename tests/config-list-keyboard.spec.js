@@ -19,6 +19,7 @@ async function openPagesTags(page, finders = []) {
         window.DiscoverabilityState?.init?.({ seenTips: ['tipConfigKeyboard'] });
         return window.dashboardInstance.config.openConfigView('pages-tags');
     });
+    await page.locator('[data-pt-tab="finders"]').click();
     await expect(page.locator('[data-finder-index="0"]')).toBeVisible({ timeout: 10_000 });
 }
 

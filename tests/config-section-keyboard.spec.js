@@ -19,6 +19,7 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
     test('arrow keys move between sections and wrap around', async ({ page }) => {
         await openSection(page, 'overview');
         const tabs = page.locator('[data-config-section]');
+        const searchJump = page.locator('[data-config-action="settings-jump"]');
         const count = await tabs.count();
         expect(count).toBe(8);
 
@@ -28,17 +29,18 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
 
         await tabs.first().focus();
         await page.keyboard.press('ArrowUp');
-        await expect(tabs.nth(count - 1)).toHaveAttribute('aria-selected', 'true');
+        // The settings-jump button sits after Help in the rail focus order.
+        await expect(searchJump).toBeFocused();
     });
 
     test('Home and End jump to the ends', async ({ page }) => {
         await openSection(page, 'stats');
         const tabs = page.locator('[data-config-section]');
-        const count = await tabs.count();
+        const searchJump = page.locator('[data-config-action="settings-jump"]');
 
         await tabs.nth(6).focus();
         await page.keyboard.press('End');
-        await expect(tabs.nth(count - 1)).toHaveAttribute('aria-selected', 'true');
+        await expect(searchJump).toBeFocused();
 
         await page.keyboard.press('Home');
         await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');

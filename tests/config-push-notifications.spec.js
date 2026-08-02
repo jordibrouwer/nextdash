@@ -175,12 +175,15 @@ test.describe('config: browser push notifications', () => {
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
         await page.locator('[data-behavior-tab="status"]').click();
+        await dismissBlockingOverlays(page);
 
         const master = page.locator('[data-behavior-field="pushNotifyEnabled"]');
         if (!(await master.isChecked())) await master.click();
         await page.waitForTimeout(1000);
 
         await page.evaluate(() => { window.__order = []; });
+
+        await dismissBlockingOverlays(page);
 
         // A genuine click on the button, as a user would.
         await page.locator('[data-push-toggle]').click();

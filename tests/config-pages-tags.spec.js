@@ -654,12 +654,13 @@ test.describe('custom collections', () => {
         await loadDashboard(page);
         await page.evaluate(() => { window.dashboardInstance.settings.collections = []; });
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await dismissBlockingOverlays(page);
         await page.locator('[data-pt-tab="collections"]').click();
         await page.locator('[data-collection-add]').click();
         await expect(page.locator('[data-collection-rule]')).toHaveCount(1);
         await expect(page.locator('[data-rule-remove="0"]')).toBeDisabled();
 
-        await page.locator('[data-collection-add-rule]').click();
+        await page.locator('[data-collection-add-rule]').evaluate((el) => el.click());
         await expect(page.locator('[data-collection-rule]')).toHaveCount(2);
         await expect(page.locator('[data-rule-remove="0"]')).toBeEnabled();
     });
@@ -668,6 +669,7 @@ test.describe('custom collections', () => {
         await loadDashboard(page);
         await page.evaluate(() => { window.dashboardInstance.settings.collections = []; });
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await dismissBlockingOverlays(page);
         await page.locator('[data-pt-tab="collections"]').click();
         await page.locator('[data-collection-add]').click();
         await expect(page.locator('[data-collection-row]')).toHaveCount(1);

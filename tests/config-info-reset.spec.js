@@ -17,8 +17,8 @@ test.describe('config info + reset affordances', () => {
         await expect(page.locator('[data-info-field="openInNewTab"]')).toBeVisible();
         // Privacy tab: the long analytics hint text is shown inline.
         await page.locator('[data-behavior-tab="privacy"]').click();
-        await expect(page.locator('#config-behavior-body .config-field-hint:not(.config-form-keyboard-legend)'))
-            .toContainText(/Umami|analytics/i);
+        await expect(page.locator('#config-behavior-body .config-field-hint').filter({ hasText: /Umami|analytics/i }))
+            .toBeVisible();
         await expect(page.locator('[data-info-field="analyticsOptIn"]')).toBeVisible();
     });
 
@@ -96,8 +96,12 @@ test.describe('config info + reset affordances', () => {
     test('behavior is split into sub-tabs', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        for (const tab of ['general', 'datetime', 'layout', 'display', 'search', 'privacy']) {
+        for (const tab of ['general', 'datetime', 'search', 'privacy', 'status']) {
             await expect(page.locator(`[data-behavior-tab="${tab}"]`)).toBeVisible();
+        }
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        for (const tab of ['general', 'layout', 'display']) {
+            await expect(page.locator(`[data-appearance-tab="${tab}"]`)).toBeVisible();
         }
     });
 

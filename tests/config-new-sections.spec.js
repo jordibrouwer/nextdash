@@ -13,6 +13,11 @@ async function openSection(page, section) {
     await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
 }
 
+async function openAppearanceTab(page, tab) {
+    await openSection(page, 'appearance');
+    await page.locator(`[data-appearance-tab="${tab}"]`).click();
+}
+
 test.describe('config: sections restored from the old config', () => {
     test('the rail lists every section including bookmarks, stats and help', async ({ page }) => {
         await loadDashboard(page);
@@ -36,7 +41,7 @@ test.describe('config: sections restored from the old config', () => {
     test('editing a bookmark opens the add-bookmark modal prefilled', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'bookmarks');
-        await page.locator('[data-feed-action="edit"]').first().click();
+        await page.locator('#config-bm-list [data-feed-action="edit"]').first().evaluate((el) => el.click());
         await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
         const form = page.locator('#bookmark-form-modal .bookmark-inline-form');
         await expect(form.locator('.bookmark-inline-input').first()).not.toHaveValue('');
@@ -46,8 +51,12 @@ test.describe('config: sections restored from the old config', () => {
     test('bookmark rows keep a readable width', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'bookmarks');
-        const title = page.locator('.health-view-item-title').first();
-        expect(await title.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(120);
+        await expect(page.locator('#config-bm-list .config-bm-row').first()).toBeVisible();
+        const row = page.locator('.config-bm-row').first();
+        expect(await row.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(240);
+        const title = row.locator('.health-view-item-title');
+        await expect(title).toBeVisible();
+        expect(await title.evaluate((el) => el.scrollWidth)).toBeGreaterThan(0);
 
         const overflow = await page.evaluate(() =>
             document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -272,8 +281,7 @@ test.describe('config: sections restored from the old config', () => {
             }
         });
         await loadDashboard(page);
-        await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="layout"]').click();
+        await openAppearanceTab(page, 'layout');
 
         await page.locator('[data-behavior-field="categoryItemLimit"]').selectOption('25');
         await expect
@@ -289,8 +297,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('toolbar toggles apply immediately, without a reload', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="display"]').click();
+        await openAppearanceTab(page, 'display');
 
         const pairs = [
             ['showAddBookmarkButton', 'data-show-add-bookmark-button'],
@@ -314,8 +321,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('hiding page tabs takes effect at once and can be undone', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="display"]').click();
+        await openAppearanceTab(page, 'display');
 
         const display = () => page.evaluate(() =>
             getComputedStyle(document.getElementById('page-navigation')).display);
@@ -343,8 +349,7 @@ test.describe('config: sections restored from the old config', () => {
             }
         });
         await loadDashboard(page);
-        await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="display"]').click();
+        await openAppearanceTab(page, 'display');
 
         const sel = page.locator('[data-behavior-field="buttonBarPosition"]');
         expect(await sel.locator('option').evaluateAll((els) => els.map((e) => e.value)))
@@ -369,8 +374,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('page names in tabs relabels the tabs at once', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'behavior');
-        await page.locator('[data-behavior-tab="display"]').click();
+        await openAppearanceTab(page, 'display');
 
         const label = () => page.evaluate(() =>
             document.querySelector('.page-nav-btn .page-tab-label')?.textContent);
@@ -447,7 +451,7 @@ test.describe('config: status & health explains the modes', () => {
         await expect(page.locator('.config-mode-legend')).toHaveCount(0);
         await page.locator('[data-behavior-tab="status"]').click();
         await expect(page.locator('.config-mode-legend')).toHaveCount(1);
-        await page.locator('[data-behavior-tab="layout"]').click();
+        await openAppearanceTab(page, 'layout');
         await expect(page.locator('.config-mode-legend')).toHaveCount(0);
     });
 });

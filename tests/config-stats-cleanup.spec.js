@@ -42,6 +42,13 @@ test.describe('category effectiveness and concentration', () => {
 
     test('concentration reports the share held by the busiest bookmarks', async ({ page }) => {
         await openStatsContent(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.allBookmarks.slice(0, 3).forEach((bm) => {
+                bm.openCount = 10;
+                bm.lastOpened = Date.now();
+            });
+            window.dashboardInstance.config.render();
+        });
         const c = await page.evaluate(() => window.dashboardInstance.config.computeStats().concentration);
         expect(c.share).toBeGreaterThanOrEqual(0);
         expect(c.share).toBeLessThanOrEqual(100);

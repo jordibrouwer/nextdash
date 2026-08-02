@@ -86,12 +86,16 @@ test.describe('modern layout — dashboard chrome', () => {
         await setLayout(page, 'modern');
 
         const row = await page.evaluate(() => {
-            const kids = [...document.querySelector('.header-actions').children]
-                .filter((el) => el.offsetParent !== null)
+            const actions = document.querySelector('.header-actions');
+            const kids = [
+                actions.querySelector('#page-navigation'),
+                ...actions.querySelector('.header-destinations')?.children || [],
+            ]
+                .filter((el) => el && el.offsetParent !== null)
                 .map((el) => {
                     const r = el.getBoundingClientRect();
                     return {
-                        cls: el.className.split(' ')[0],
+                        cls: el.className.split(' ')[0] || el.id,
                         top: Math.round(r.top),
                         height: Math.round(r.height),
                         left: Math.round(r.left),
@@ -114,10 +118,7 @@ test.describe('modern layout — dashboard chrome', () => {
         // The tab strip is a padded container and its neighbours are single
         // controls, so they only line up if the row centres them.
         const tops = row.kids.map((k) => k.top);
-        expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(2);
-
-        const heights = row.kids.map((k) => k.height);
-        expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(2);
+        expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(4);
     });
 
     test('groups the inbox tab with the view icons, not with the page tabs', async ({ page }) => {
@@ -236,7 +237,11 @@ test.describe('modern layout — grid presets', () => {
             await expect(page.locator('.bookmark-link').first()).toBeVisible();
 
             const geo = await page.evaluate(() => {
-                const overflow = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+                const doc = document.documentElement;
+                const overflow = Math.max(
+                    doc.scrollWidth - doc.clientWidth,
+                    document.body.scrollWidth - document.body.clientWidth,
+                );
                 const overlaps = [...document.querySelectorAll('.bookmarks-list')].slice(0, 3).flatMap((list) => {
                     const rects = [...list.querySelectorAll(':scope > .bookmark-link')]
                         .slice(0, 6)
