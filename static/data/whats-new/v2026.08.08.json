@@ -1,0 +1,72 @@
+{
+  "tag": "v2026.08.08",
+  "date": "August 2026",
+  "releasedAt": "2026-08-02",
+  "modalLead": "Bulk actions in Config → Bookmarks no longer touch every copy of a duplicated URL, and both Select all and a filtered selection now say how far they reach. The bookmarks list rebuilds far less per repaint, view headings name the view with the trail below them, starter bookmarks arrive dated, and the category rename field has its border back.",
+  "sections": [
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Bulk actions stop hitting every copy of a duplicate URL</strong> — rows were identified by page + URL, which collides when the same URL sits twice on a page, so ticking one row and confirming a delete of <em>1</em> removed two bookmarks. Row keys now carry which copy they are, and delete, move, tag, pin, status, single-row edit and link-preview refresh all match on it (<code>dashboard-config.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Select all says how many it selects</strong> — it ticks every row the filters match, not just the ~50 rendered, so the button now names the count when more are waiting behind the scroll (<code>dashboard-config.js</code>, locales)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A selection hidden by filters is called out</strong> — ticks survive a filter change, which left a bar reading <em>7 selected</em> above a list where nothing was ticked. The bar now reports how many fall outside the current filters and offers to drop them (<code>dashboard-config.js</code>, <code>config-view.css</code>, locales)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A failed bulk action reloads the list</strong> — a selection spanning several pages is written one page at a time, so a failure part-way left earlier pages saved while the rows still showed the old state (<code>dashboard-config.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Rows no longer repeat the page name</strong> — with no page filter on, the category line already reads <em>page · category</em>, so the badge below it said the same thing twice. It is kept only on bookmarks without a category (<code>dashboard-config.js</code>)."
+        },
+        {
+          "badge": "improved",
+          "text": "<strong>The bookmarks list rebuilds less per repaint</strong> — the visible list is memoised against its filters and sort instead of being recomputed three or four times a pass, and the page-order, page-name and category-label lookups are built once per render rather than per row (<code>dashboard-config.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "improved",
+          "text": "<strong>View headings name the view, with the trail below</strong> — the large heading read <code>config › overview</code> while the smaller line under it repeated just the section. The heading now reads <code>config</code>, and the trail moves to the line beneath: in the panel head for Config, under the title for Inbox and Health, and left off when it would only repeat the view name (<code>dashboard-page-nav.js</code>, <code>dashboard-config.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The category rename field has a full border again</strong> — holding a category name on the dashboard opened a field with only an underline, because the rule reset the border and restored just <code>border-bottom</code> (<code>dashboard.css</code>)."
+        },
+        {
+          "badge": "improved",
+          "text": "<strong>What's new lists up to 50 releases</strong> — raised from 25 so older entries stay reachable in the history (<code>whats-new-modal.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Install",
+      "items": [
+        {
+          "badge": "improved",
+          "text": "<strong>Starter bookmarks arrive dated</strong> — the seven default bookmarks were written with no creation date, so a brand-new install looked to <em>Recently added</em>, the age column and the cleanup filters as though it had no history. They are now stamped at seeding time, a millisecond apart so the recency sort has a defined order. A factory reset reseeds through the same path (<code>models.go</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.08</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v160</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v218</code>."
+        }
+      ]
+    }
+  ]
+}
