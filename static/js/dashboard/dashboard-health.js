@@ -3431,14 +3431,18 @@ class DashboardHealth {
                     </button>
                 </div>
                 <p class="health-view-item-meta">
-                    <span>${this.escape(domain)}</span>
-                    <span class="health-check-mode-wrap">
-                        ${this.renderCheckModeBadge(issue, key)}
-                        ${this.renderCheckModeMenu(issue, key)}
+                    <span class="health-view-item-meta-primary">
+                        <span>${this.escape(domain)}</span>
+                        <span class="health-check-mode-wrap">
+                            ${this.renderCheckModeBadge(issue, key)}
+                            ${this.renderCheckModeMenu(issue, key)}
+                        </span>
                     </span>
-                    ${this.renderLastOpened(issue)}
-                    ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
-                    ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
+                    <span class="health-view-item-meta-trail">
+                        ${this.renderLastOpened(issue)}
+                        ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
+                        ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
+                    </span>
                 </p>
                 ${this.renderMonitorStrip(issue)}
                 <div class="health-view-score-panel" ${expanded ? '' : 'hidden'}>${this.renderScorePanel(issue)}</div>
