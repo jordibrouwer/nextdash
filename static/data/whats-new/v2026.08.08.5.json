@@ -1,0 +1,26 @@
+{
+  "tag": "v2026.08.08.5",
+  "date": "August 2026",
+  "releasedAt": "2026-08-03",
+  "modalLead": "A small polish pass after v2026.08.08.4 — the last-opened date and issue reasons on each Health row now sit in a right-aligned column, so they line up down the feed instead of drifting with every domain length.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Last-opened metadata aligns down the feed</strong> — domain and the check-mode badge stay on the left; last opened, the primary issue reason, and <em>+N more</em> share a right-aligned trail so the date column no longer shifts per row (<code>dashboard-health.js</code>, <code>health-view.css</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.08.5</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v165</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v223</code>."
+        }
+      ]
+    }
+  ]
+}

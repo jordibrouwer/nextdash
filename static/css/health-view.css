@@ -433,10 +433,34 @@ button.health-view-tile:hover {
 .health-view-item-meta {
     margin: 0.2rem 0 0;
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem 0.6rem;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
     font-size: 0.78rem;
     color: var(--text-secondary);
+    min-width: 0;
+}
+
+.health-view-item-meta-primary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.6rem;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Last opened and issue reasons share one right column so the date line aligns
+   down the feed regardless of domain or check-mode width on the left. */
+.health-view-item-meta-trail {
+    flex: 0 0 auto;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.35rem 0.6rem;
+    max-width: 58%;
+    text-align: right;
 }
 
 .health-view-item-reason {
@@ -451,6 +475,7 @@ button.health-view-tile:hover {
     color: var(--text-secondary);
     opacity: 0.85;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
 /* Never opened is a finding — the same signal the Stale filter and the score

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.08.5 — August 2026](#v202608085--august-2026)
 - [v2026.08.08.4 — August 2026](#v202608084--august-2026)
 - [v2026.08.08.3 — August 2026](#v202608083--august-2026)
 - [v2026.08.08.2 — August 2026](#v202608082--august-2026)
@@ -146,6 +147,20 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.08.5 — August 2026
+
+**Hotfix after v2026.08.08.4** — the last-opened date and issue reasons on each Health row now share a right-aligned column so they line up down the feed.
+
+### Health
+
+- **fix** **Last-opened metadata aligns down the feed** — domain and the check-mode badge stay on the left; last opened, the primary issue reason, and *+N more* share a right-aligned trail so the date column no longer shifts per row (`dashboard-health.js`, `health-view.css`).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, New features carousel, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.08.5**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v165`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v223`.
 
 ---
 
