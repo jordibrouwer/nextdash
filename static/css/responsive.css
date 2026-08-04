@@ -141,7 +141,7 @@
     }
     
     .header-actions {
-        gap: 1rem;
+        gap: var(--header-control-gap, 0.5rem);
         margin-left: auto;
     }
     

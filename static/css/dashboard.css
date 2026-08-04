@@ -492,17 +492,18 @@ body {
 }
 
 .header-actions {
+    --header-control-gap: 0.5rem;
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: var(--header-control-gap);
     margin-left: auto;
 }
 
-/* pages · inbox · health · config — tighter spacing than the page-tab strip. */
+/* inbox · health · config — same gap as between page tabs and the pages icon. */
 .header-destinations {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--header-control-gap, 0.5rem);
     min-width: 0;
     flex-shrink: 0;
 }
@@ -1163,15 +1164,18 @@ body {
     color: var(--text-on-warning, #000);
 }
 
-/* Icon variant: health and config match the inbox tab styling. Spacing within
-   the destination cluster is handled by .header-destinations. */
+/* Icon variant: pages, health, config, and inbox (in the destination cluster)
+   share one chrome; spacing is .header-actions / .header-destinations gap. */
+.pages-link--icon,
 .health-link--icon,
 .config-link--icon {
     margin-left: 0;
 }
 
+.pages-link--icon .pages-link-anchor,
 .health-link--icon a,
-.config-link--icon a {
+.config-link--icon a,
+.header-destinations .page-nav-btn--inbox {
     animation: none;
     display: inline-flex;
     align-items: center;
@@ -1181,40 +1185,66 @@ body {
     border-radius: var(--layout-radius-sm, 8px);
 }
 
+.pages-link--icon .pages-link-anchor {
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.pages-link--icon .pages-link-anchor:hover,
 .health-link--icon a:hover,
-.config-link--icon a:hover {
+.config-link--icon a:hover,
+.header-destinations .page-nav-btn--inbox:hover {
+    color: var(--text-primary);
     text-shadow: none;
 }
 
-/* Active state matched to .page-nav-btn.active: the health icon is a header link
-   rather than a page tab, but it is the same kind of destination, so "you are
-   here" must look the same. The transparent border reserves the underline's
-   space at rest, so marking it active never shifts the header. */
+.pages-link--icon .pages-link-anchor:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* Active state matched to .page-nav-btn.active: header destinations are the
+   same kind of tab as page tabs, so "you are here" must look the same. */
+.pages-link--icon .pages-link-anchor,
 .health-link--icon a,
-.config-link--icon a {
+.config-link--icon a,
+.header-destinations .page-nav-btn--inbox {
     border-bottom: 2px solid transparent;
 }
 
+.pages-link--icon .pages-link-anchor.active,
 .health-link--icon a.active,
-.config-link--icon a.active {
+.config-link--icon a.active,
+.header-destinations .page-nav-btn--inbox.active {
     background: var(--background-secondary);
     color: var(--text-primary);
     border-bottom-color: var(--accent-primary);
-    /* Square off the bottom corners while active so the underline runs straight
-       edge-to-edge, like the page-nav tab. On the rounded box the border-bottom
-       otherwise curves up at both ends. The top corners stay rounded. */
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
 
+.pages-link--icon .pages-link-icon,
 .health-link--icon .health-link-icon,
-.config-link--icon .config-link-icon {
+.config-link--icon .config-link-icon,
+.header-destinations .page-nav-btn--inbox .page-tab-icon--svg {
     width: 1.15rem;
     height: 1.15rem;
     display: inline-flex;
     align-items: center;
     color: currentColor;
     flex-shrink: 0;
+}
+
+.header-destinations .page-nav-btn--inbox {
+    margin-left: 0;
 }
 
 /* Inline pill counter after the icon (overrides the absolute superscript dot). */

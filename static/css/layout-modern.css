@@ -8,6 +8,7 @@
 
 body[data-layout-version="modern"] .page-nav-btn:focus-visible,
 body[data-layout-version="modern"] .page-overview-header-btn:focus-visible,
+body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor:focus-visible,
 body[data-layout-version="modern"] .health-link a:focus-visible,
 body[data-layout-version="modern"] .config-link a:focus-visible,
 body[data-layout-version="modern"] .search-button:focus-visible,
@@ -54,7 +55,7 @@ body[data-layout-version="modern"] .header-top-primary {
    container with its own padding, the rest are single controls), so without
    this they align to the top and the pills sit a few pixels above the strip. */
 body[data-layout-version="modern"] .header-actions {
-    gap: 0.5rem;
+    gap: var(--header-control-gap, 0.5rem);
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
@@ -66,12 +67,13 @@ body[data-layout-version="modern"] .header-actions {
 /* Classic pulled health/config back by 1rem when they sat in the main header
    row gap. Destinations now share .header-destinations (0.5rem) instead. */
 body[data-layout-version="modern"] .health-link--icon,
-body[data-layout-version="modern"] .config-link--icon {
+body[data-layout-version="modern"] .config-link--icon,
+body[data-layout-version="modern"] .pages-link--icon {
     margin-left: 0;
 }
 
 body[data-layout-version="modern"] .header-destinations {
-    gap: 0.5rem;
+    gap: var(--header-control-gap, 0.5rem);
 }
 
 /* ─── Date & status ──────────────────────────────────────────────────────── */
@@ -107,7 +109,9 @@ body[data-layout-version="modern"] .dashboard-mini-status {
 /* ─── Header links (health / config) ─────────────────────────────────────── */
 
 body[data-layout-version="modern"] .health-link a,
-body[data-layout-version="modern"] .config-link a {
+body[data-layout-version="modern"] .config-link a,
+body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor,
+body[data-layout-version="modern"] .header-destinations .page-nav-btn--inbox {
     display: inline-flex;
     align-items: center;
     padding: 0.38rem 0.8rem;
@@ -122,7 +126,9 @@ body[data-layout-version="modern"] .config-link a {
 }
 
 body[data-layout-version="modern"] .health-link a:hover,
-body[data-layout-version="modern"] .config-link a:hover {
+body[data-layout-version="modern"] .config-link a:hover,
+body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor:hover,
+body[data-layout-version="modern"] .header-destinations .page-nav-btn--inbox:hover {
     color: var(--text-primary);
     border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
     background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
@@ -136,6 +142,7 @@ body[data-layout-version="modern"] .health-link a {
 
 /* ─── Pages overview button ──────────────────────────────────────────────── */
 
+body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor,
 body[data-layout-version="modern"] .page-overview-header-btn {
     padding: 0.38rem 0.8rem;
     border-radius: var(--layout-radius-pill);
@@ -149,7 +156,9 @@ body[data-layout-version="modern"] .page-overview-header-btn {
 }
 
 body[data-layout-version="modern"] .page-overview-header-btn:hover,
-body[data-layout-version="modern"] .page-overview-header-btn:focus-visible {
+body[data-layout-version="modern"] .page-overview-header-btn:focus-visible,
+body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor:hover,
+body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor:focus-visible {
     border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
     background: color-mix(in srgb, var(--accent-primary) 10%, var(--background-secondary));
     box-shadow: var(--layout-shadow-sm);
@@ -157,8 +166,8 @@ body[data-layout-version="modern"] .page-overview-header-btn:focus-visible {
 
 /* ─── Page tabs ──────────────────────────────────────────────────────────── */
 
-/* The page-tab strip is its own pill; the pages overview button and inbox tab
-   sit as separate controls beside it (tabs · pages · inbox · health · config). */
+/* The page-tab strip is its own pill; the pages overview icon sits beside it,
+   then inbox · health · config share .header-destinations — all at .header-actions gap. */
 body[data-layout-version="modern"] .page-navigation {
     gap: 0.2rem;
     padding: 0.18rem;
@@ -205,7 +214,8 @@ body[data-layout-version="modern"] .page-nav-btn.active {
    health and config icons are the same kind of destination, so they follow suit
    here too. */
 body[data-layout-version="modern"] .health-link--icon a.active,
-body[data-layout-version="modern"] .config-link--icon a.active {
+body[data-layout-version="modern"] .config-link--icon a.active,
+body[data-layout-version="modern"] .header-destinations .page-nav-btn--inbox.active {
     background: color-mix(in srgb, var(--accent-primary) 16%, var(--background-secondary));
     color: var(--text-primary);
     border-bottom-color: transparent;
@@ -485,6 +495,8 @@ body[data-layout-version="modern"].no-animations .tag-filter-indicator-chip:hove
 
     body[data-layout-version="modern"] .health-link a,
     body[data-layout-version="modern"] .config-link a,
+    body[data-layout-version="modern"] .pages-link--icon .pages-link-anchor,
+    body[data-layout-version="modern"] .header-destinations .page-nav-btn--inbox,
     body[data-layout-version="modern"] .page-overview-header-btn {
         padding: 0.32rem 0.62rem;
     }
@@ -977,14 +989,18 @@ body[data-layout-version="modern"][data-mobile-layout="true"] .dashboard-section
 }
 
 body[data-layout-version="modern"][data-mobile-layout="true"] #page-overview-header-btn,
-body[data-layout-version="modern"][data-mobile-layout="true"] .config-link a {
+body[data-layout-version="modern"][data-mobile-layout="true"] .pages-link--icon .pages-link-anchor,
+body[data-layout-version="modern"][data-mobile-layout="true"] .config-link a,
+body[data-layout-version="modern"][data-mobile-layout="true"] .header-destinations .page-nav-btn--inbox {
     border-radius: var(--layout-radius-pill);
     border: 1px solid var(--layout-surface-border);
     background: var(--layout-surface);
 }
 
 body[data-layout-version="modern"][data-mobile-layout="true"] #page-overview-header-btn:active,
-body[data-layout-version="modern"][data-mobile-layout="true"] .config-link a:active {
+body[data-layout-version="modern"][data-mobile-layout="true"] .pages-link--icon .pages-link-anchor:active,
+body[data-layout-version="modern"][data-mobile-layout="true"] .config-link a:active,
+body[data-layout-version="modern"][data-mobile-layout="true"] .header-destinations .page-nav-btn--inbox:active {
     background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
     border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-primary));
 }

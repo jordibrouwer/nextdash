@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.08.6 — August 2026](#v202608086--august-2026)
 - [v2026.08.08.5 — August 2026](#v202608085--august-2026)
 - [v2026.08.08.4 — August 2026](#v202608084--august-2026)
 - [v2026.08.08.3 — August 2026](#v202608083--august-2026)
@@ -147,6 +148,21 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.08.6 — August 2026
+
+**Dashboard header polish** — the pages overview is a grid icon matching inbox, health, and config, with uniform spacing from page tabs through every destination.
+
+### Dashboard
+
+- **improved** **Pages overview is a header icon** — the text **pages** button is a 2×2 grid icon with the same stroke, padding, and hover/active chrome as inbox, health, and config (`templates/dashboard.html`, `dashboard.css`).
+- **fix** **Even spacing across header destinations** — page tabs, the pages icon, inbox, health, and config all sit at one `--header-control-gap` (0.5rem); the pages control moved beside the tab strip so it no longer inherited a wider outer gap (`dashboard.css`, `layout-modern.css`).
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, New features carousel, CHANGELOG, README, MANUAL, and Config → Help **What's new** recap for **v2026.08.08.6**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v166`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v224`.
 
 ---
 
