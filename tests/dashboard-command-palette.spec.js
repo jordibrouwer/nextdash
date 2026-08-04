@@ -141,6 +141,27 @@ test.describe('dashboard command palette', () => {
         await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 3000 });
     });
 
+    test(':help is an alias for :cheat', async ({ page }) => {
+        await page.keyboard.press(':');
+        await page.keyboard.type('help', { delay: 20 });
+        await expect(page.locator('#shortcut-search.show')).toBeVisible({ timeout: 3000 });
+        await page.keyboard.press('Enter');
+
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+        await expect(page.locator('#app-modal.show .keyboard-cheat-sheet-modal')).toBeVisible({ timeout: 3000 });
+    });
+
+    test(':cheat sheet lists health and inbox view sections', async ({ page }) => {
+        await page.keyboard.press(':');
+        await page.keyboard.type('cheat', { delay: 20 });
+        await page.keyboard.press('Enter');
+        const sheet = page.locator('#app-modal.show .keyboard-cheat-sheet-modal');
+        await expect(sheet).toBeVisible({ timeout: 3000 });
+        await expect(sheet.locator('summary', { hasText: /Health view/i })).toBeVisible();
+        await expect(sheet.locator('summary', { hasText: /Inbox view/i })).toBeVisible();
+        await expect(sheet.getByText(/refresh report|Refresh the cached/i)).toBeVisible();
+    });
+
     test(':overview closes palette and opens page overview', async ({ page }) => {
         const pageCount = await page.evaluate(() => window.dashboardInstance?.pages?.length || 0);
         test.skip(pageCount < 1, 'needs at least one page');
