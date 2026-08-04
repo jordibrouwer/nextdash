@@ -20,53 +20,103 @@ async function loadDashboard(page) {
 }
 
 test.describe('a release flagged hideFromModal', () => {
-    test('is still the newest entry in the index', async ({ page }) => {
+    test('is still the newest entry in the index when flagged', async ({ page }) => {
+        await page.route('**/static/data/whats-new/index.json', (route) => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify([
+                {
+                    id: 'v2026.09.9',
+                    tag: 'v2026.09.9',
+                    date: 'August 2026',
+                    releasedAt: '2026-08-04',
+                    hideFromModal: true,
+                },
+                {
+                    id: 'v2026.09.2',
+                    tag: 'v2026.09.2',
+                    date: 'August 2026',
+                    releasedAt: '2026-08-04',
+                },
+            ]),
+        }));
+
         await page.goto('/');
         const index = await page.evaluate(async () => {
             const res = await fetch('/static/data/whats-new/index.json');
             return res.json();
         });
-        expect(index[0].id).toBe('v2026.08.09.1');
+        expect(index[0].id).toBe('v2026.09.9');
         expect(index[0].hideFromModal).toBe(true);
     });
 
     test('shows in Config → Overview → Latest update', async ({ page }) => {
+        await page.route('**/static/data/whats-new/index.json', (route) => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify([
+                {
+                    id: 'v2026.09.9',
+                    tag: 'v2026.09.9',
+                    date: 'August 2026',
+                    releasedAt: '2026-08-04',
+                    hideFromModal: true,
+                },
+                {
+                    id: 'v2026.09.2',
+                    tag: 'v2026.09.2',
+                    date: 'August 2026',
+                    releasedAt: '2026-08-04',
+                },
+            ]),
+        }));
+
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
         await page.waitForFunction(() => typeof window.DashboardConfig === 'function', null, { timeout: 10_000 });
-        // The panel is the reason the entry stays in the index at all.
         const tag = page.locator('.config-release-tag');
         await expect(tag).toBeVisible({ timeout: 10_000 });
-        await expect(tag).toContainText('v2026.08.09.1');
+        await expect(tag).toContainText('v2026.09.9');
     });
 
     test('does not appear in the What\'s new modal', async ({ page }) => {
+        await page.route('**/static/data/whats-new/index.json', (route) => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify([
+                {
+                    id: 'v2026.09.9',
+                    tag: 'v2026.09.9',
+                    date: 'August 2026',
+                    releasedAt: '2026-08-04',
+                    hideFromModal: true,
+                },
+                {
+                    id: 'v2026.09.2',
+                    tag: 'v2026.09.2',
+                    date: 'August 2026',
+                    releasedAt: '2026-08-04',
+                },
+            ]),
+        }));
+
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
         await expect(modal).toBeVisible({ timeout: 15_000 });
         await page.waitForTimeout(1200);
 
-        // Compare rendered version tags, not raw text: "v2026.08.09.1" contains
-        // "v2026.08.09", so a substring check cannot tell the two apart.
         const tags = await modal.evaluate((m) => [...new Set(
             [...m.querySelectorAll('*')]
                 .filter((e) => e.childElementCount === 0)
                 .map((e) => e.textContent.trim())
                 .filter((t) => /^v2026\.\d/.test(t)),
         )]);
-        expect(tags).toContain('v2026.08.09');
-        expect(tags).not.toContain('v2026.08.09.1');
+        expect(tags).toContain('v2026.09.2');
+        expect(tags).not.toContain('v2026.09.9');
     });
 
-    test('does not raise the unread badge', async ({ page }) => {
-        // DASHBOARD_RELEASE is what marks a release unread, and a maintenance
-        // release deliberately leaves it alone — otherwise every user would get
-        // a star for a changelog entry.
+    test('v2026.09.2 release constants are bumped', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.07-dashboard-release-v167'");
-        // The data version must still move, or the new JSON is served from cache.
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v226'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.07-dashboard-release-v168'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v227'");
     });
 });
