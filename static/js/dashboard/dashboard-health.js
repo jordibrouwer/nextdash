@@ -2611,18 +2611,12 @@ class DashboardHealth {
         const legend = document.createElement('p');
         legend.className = `health-view-legend health-view-legend--${position}`;
         legend.setAttribute('aria-hidden', 'true');
-        const keys = [
-            ['j / k', this.t('dashboard.healthKeyMove', 'move')],
-            ['s', this.t('dashboard.healthKeyScore', 'score')],
-            ['i', this.t('dashboard.healthKeyStats', 'statistics')],
-            ['p', this.t('dashboard.healthKeyRecheck', 're-check')],
-            ['R / ?', this.t('dashboard.healthKeyRefresh', 'refresh report')],
-            ['c', this.t('dashboard.healthKeyCheckMode', 'checking')],
-            ['m', this.t('dashboard.healthKeyMore', 'more actions')],
-            ['Enter / Space', this.t('dashboard.healthKeyOpen', 'open')],
-            ['g / G / Home / End', this.t('dashboard.healthKeyFirstLast', 'first / last')],
-            ['Esc', this.t('dashboard.healthKeyClose', 'back to bookmarks')],
-        ];
+        const keys = window.KeyboardViewLegends
+            ? window.KeyboardViewLegends.toLegendPairs(
+                window.KeyboardViewLegends.HEALTH_VIEW,
+                (key, fallback) => this.t(`dashboard.${key}`, fallback),
+            )
+            : [];
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
             .join('');

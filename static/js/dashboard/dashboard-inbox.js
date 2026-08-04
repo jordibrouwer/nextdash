@@ -2028,20 +2028,15 @@ class DashboardInbox {
         const legend = document.createElement('p');
         legend.className = 'inbox-legend';
         legend.setAttribute('aria-hidden', 'true');
-        const keys = [
-            ['j / k', this.t('dashboard.inboxKeyMove', 'move')],
-            ['Enter / Space', this.t('dashboard.inboxKeyOpen', 'open')],
-            ['dblclick', this.t('dashboard.inboxKeyDblClick', 'open')],
-            ['p', this.t('dashboard.inboxKeyPromote', 'promote')],
-            ['n', this.t('dashboard.inboxKeyNote', 'note')],
-            ['r', this.t('dashboard.inboxKeyKeep', 'mark read')],
-            ['z', this.t('dashboard.inboxKeySnooze', 'snooze')],
-            ['x', this.t('dashboard.inboxKeySelect', 'select')],
-            ['d', this.t('dashboard.inboxKeyDelete', 'delete')],
-            ['g / G / Home / End', this.t('dashboard.inboxKeyFirstLast', 'first / last')],
-            ['t', this.t('dashboard.inboxKeyTriage', 'triage')],
-            ['Esc', this.t('dashboard.inboxKeyEsc', 'clear selection · back to bookmarks')],
-        ];
+        const keys = window.KeyboardViewLegends
+            ? window.KeyboardViewLegends.toLegendPairs(
+                window.KeyboardViewLegends.INBOX_VIEW,
+                (key, fallback) => this.t(`dashboard.${key}`, fallback),
+            )
+            : [];
+        if (keys.length > 1) {
+            keys.splice(2, 0, ['dblclick', this.t('dashboard.inboxKeyDblClick', 'open')]);
+        }
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
             .join('');
