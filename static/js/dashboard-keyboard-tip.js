@@ -81,12 +81,6 @@
         // Never compete with the quick-start or analytics cards for attention.
         if (document.querySelector('.quickstart-card')) return false;
 
-        if (!global.DiscoverabilityState?.hasSeenTip?.('promoShiftBAddBookmark')
-            && typeof global.DashboardShiftBPromo?.shouldShow === 'function'
-            && global.DashboardShiftBPromo.shouldShow()) {
-            return false;
-        }
-
         const notBefore = Number(global.DiscoverabilityState?.getTipsNotBefore?.() || 0);
         if (notBefore && Date.now() < notBefore) return false;
         return true;
