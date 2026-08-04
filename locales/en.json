@@ -3748,7 +3748,12 @@
         "helpPageTroubleshootBody": "<p>If bookmarks disappear, check the page selector and category filter in config — an empty page looks like data loss but is usually a filter. Sorting surprises usually mean a category is in A–Z or Recent mode instead of manual order, or pins are doing their job. When tips never show, enable <em>Show tips above buttons</em> under General → Dashboard.</p><p>Search gaps often clear up with fuzzy mode or filters like <code>tag:work</code>. Collections that never appear need at least one rule with a value; tag collections need enough tagged bookmarks to meet the minimum. Extension save failures almost always trace to server URL, write token, or CORS. API <code>401</code> means a missing token; <code>429</code> means rate limits — wait or raise the configured limits.</p>",
         "tipAddAnywhere": "<code>Shift+B</code> opens the new-bookmark form from anywhere on the dashboard, even while something else has focus.",
         "cheatsheetPdfLink": "Shortcuts PDF",
-        "cheatsheetPdfHint": "One-page keyboard reference (opens in a new tab)"
+        "cheatsheetPdfHint": "One-page keyboard reference (opens in a new tab)",
+        "bookmarksTagCloudTitle": "Tags",
+        "bookmarksTagCloudHint": "Filter by one or more tags",
+        "bookmarksTagCloudActive": "{count} selected",
+        "bookmarksTagCloudSelect": "Select these bookmarks",
+        "bookmarksTagCloudClear": "Clear tags"
     },
     "colors": {
         "title": "theme customization",

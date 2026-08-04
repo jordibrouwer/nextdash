@@ -3748,7 +3748,12 @@
         "helpPageTroubleshootBody": "<p>Verdwenen bladwijzers? Controleer paginaselector en categoriefilter — vaak een filter, geen dataverlies. Vreemd sorteren: check A–Z/Recent of vastgezette items. Geen tips: zet <em>Tips boven knoppen weergeven</em> aan onder Algemeen → Dashboard.</p><p>Zoeken mist items: fuzzy of <code>tag:werk</code>. Collecties zonder regelwaarde verschijnen niet. Extensie faalt: URL, token of CORS. <code>401</code> = token; <code>429</code> = rate limit.</p>",
         "tipAddAnywhere": "<code>Shift+B</code> opent het bladwijzerformulier vanaf elke plek op het dashboard, ook als iets anders focus heeft.",
         "cheatsheetPdfLink": "Sneltoetsen-PDF",
-        "cheatsheetPdfHint": "Keyboard-overzicht van één pagina (opent in een nieuw tabblad)"
+        "cheatsheetPdfHint": "Keyboard-overzicht van één pagina (opent in een nieuw tabblad)",
+        "bookmarksTagCloudTitle": "Tags",
+        "bookmarksTagCloudHint": "Filter op een of meer tags",
+        "bookmarksTagCloudActive": "{count} geselecteerd",
+        "bookmarksTagCloudSelect": "Selecteer deze bladwijzers",
+        "bookmarksTagCloudClear": "Tags wissen"
     },
     "colors": {
         "title": "thema-aanpassing",

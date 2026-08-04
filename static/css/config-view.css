@@ -2167,6 +2167,108 @@ body.no-animations .config-new-features-panel-star {
     font-weight: 600;
 }
 
+/* ── Bookmark tag cloud ──────────────────────────────────────────────────── */
+
+.config-bm-cloud {
+    margin: 0 0 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--background-secondary) 40%, transparent);
+}
+
+.config-bm-cloud-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    list-style: none;
+}
+
+.config-bm-cloud-summary::-webkit-details-marker {
+    display: none;
+}
+
+.config-bm-cloud-summary::before {
+    content: "▸";
+    font-size: 0.7em;
+    transition: transform 0.15s ease;
+}
+
+.config-bm-cloud[open] .config-bm-cloud-summary::before {
+    transform: rotate(90deg);
+}
+
+.config-bm-cloud-summary-note {
+    font-weight: var(--font-weight-normal);
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+.config-bm-cloud-body {
+    padding: 0 0.6rem 0.55rem;
+}
+
+.config-bm-cloud-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.35rem;
+    /* A large library can carry a hundred tags; cap the cloud and scroll rather
+       than pushing the list it filters off the screen. */
+    max-height: 11rem;
+    overflow-y: auto;
+}
+
+.config-bm-cloud-tag {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.28rem;
+    padding: 0.08rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-secondary);
+    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.74rem;
+    cursor: pointer;
+}
+
+/* Weight by use, in four steps — enough to show which tags matter without the
+   rows losing their common baseline. */
+.config-bm-cloud-tag--s1 { font-size: 0.79rem; }
+.config-bm-cloud-tag--s2 { font-size: 0.85rem; }
+.config-bm-cloud-tag--s3 { font-size: 0.92rem; font-weight: var(--font-weight-semibold); }
+
+.config-bm-cloud-tag:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+.config-bm-cloud-tag.is-active {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--text-primary);
+}
+
+.config-bm-cloud-count {
+    font-size: 0.68em;
+    color: var(--text-tertiary, var(--text-secondary));
+    font-variant-numeric: tabular-nums;
+}
+
+.config-bm-cloud-tag.is-active .config-bm-cloud-count {
+    color: inherit;
+}
+
+.config-bm-cloud-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+
 .config-bm-tag-chip {
     padding: 0.05rem 0.4rem;
     border-radius: 999px;

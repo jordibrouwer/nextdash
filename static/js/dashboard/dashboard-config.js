@@ -51,7 +51,7 @@ class DashboardConfig {
         // A named cleanup filter arrived at from Statistics ('untagged', …).
         // Empty means the list is unfiltered by it.
         this.bmCleanupFilter = '';
-        this.bmTagFilter = '';
+        this.bmTagFilter = [];
         this.bmSort = 'page';
         this.bmVisibleLimit = DashboardConfig.BM_PAGE_SIZE;
         this.bmEditing = null;
@@ -7655,8 +7655,10 @@ class DashboardConfig {
     }
 
     bookmarksFiltersActive() {
+        // bmTagFilter is a list, and an empty array is truthy — ask for its
+        // length or an unfiltered view would claim to be filtered.
         return !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter
-            || this.bmCleanupFilter || this.bmTagFilter);
+            || this.bmCleanupFilter || this.bookmarkTagFilters().length);
     }
 
     computeBookmarkSubsetStats(bookmarks) {
@@ -7729,8 +7731,10 @@ class DashboardConfig {
                 : this.bmCategoryFilter;
             add('category', this.t('config.bookmarksFilterCategory', 'Category: {name}').replace('{name}', label));
         }
-        if (this.bmTagFilter) {
-            add('tag', this.t('config.bookmarksFilterTag', 'Tag: {tag}').replace('{tag}', this.bmTagFilter));
+        // One chip per tag rather than one lumped "Tag: a, b, c": each stays
+        // removable on its own, which is the point of picking several.
+        for (const tag of this.bookmarkTagFilters()) {
+            add(`tag:${tag}`, this.t('config.bookmarksFilterTag', 'Tag: {tag}').replace('{tag}', tag));
         }
         if (String(this.bmQuery || '').trim()) {
             const q = String(this.bmQuery).trim();
@@ -7755,6 +7759,7 @@ class DashboardConfig {
     }
 
     updateBookmarkListChrome() {
+        this.updateBookmarkTagCloud();
         const filtered = this.visibleBookmarks();
         const total = (this.dash.allBookmarks || []).length;
         const shown = filtered.length;
@@ -7795,7 +7800,11 @@ class DashboardConfig {
     clearBookmarkFilterChip(key) {
         if (key === 'all' || key === 'page') this.bmPageFilter = '';
         if (key === 'all' || key === 'category') this.bmCategoryFilter = '';
-        if (key === 'all' || key === 'tag') this.bmTagFilter = '';
+        if (key === 'all' || key === 'tag') this.bmTagFilter = [];
+        if (key.startsWith('tag:')) {
+            const tag = key.slice(4);
+            this.bmTagFilter = this.bookmarkTagFilters().filter((t) => t !== tag);
+        }
         if (key === 'all' || key === 'search') {
             this.bmQuery = '';
             const search = document.getElementById('config-bm-search');
@@ -7839,12 +7848,64 @@ class DashboardConfig {
         this.updateBookmarkListChrome();
     }
 
-    filterBookmarksByTag(tag) {
-        if (!tag) return;
-        this.bmTagFilter = String(tag);
+    /**
+     * Active tag filters, always as a normalised list.
+     *
+     * bmTagFilter was a single string before the tag cloud landed; accepting
+     * both shapes keeps older stored state and the row chips working.
+     */
+    bookmarkTagFilters() {
+        const raw = this.bmTagFilter;
+        const list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+        const seen = new Set();
+        const out = [];
+        for (const entry of list) {
+            const tag = String(entry || '').trim().toLowerCase();
+            if (!tag || seen.has(tag)) continue;
+            seen.add(tag);
+            out.push(tag);
+        }
+        return out.sort((a, b) => a.localeCompare(b));
+    }
+
+    /** Every tag in use, with how many bookmarks carry it. */
+    bookmarkTagCounts() {
+        const counts = new Map();
+        for (const b of this.dash.allBookmarks || []) {
+            for (const raw of b.tags || []) {
+                const tag = String(raw || '').trim().toLowerCase();
+                if (!tag) continue;
+                counts.set(tag, (counts.get(tag) || 0) + 1);
+            }
+        }
+        return [...counts.entries()]
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+            .map(([tag, count]) => ({ tag, count }));
+    }
+
+    setBookmarkTagFilters(tags) {
+        this.bmTagFilter = Array.isArray(tags) ? tags : [];
         this.resetBookmarkVisibleLimit();
         this.repaintBookmarksList();
         this.updateBookmarkListChrome();
+    }
+
+    /** Add or remove one tag, leaving the rest of the selection alone. */
+    toggleBookmarkTagFilter(tag) {
+        const wanted = String(tag || '').trim().toLowerCase();
+        if (!wanted) return;
+        const current = this.bookmarkTagFilters();
+        const next = current.includes(wanted)
+            ? current.filter((t) => t !== wanted)
+            : current.concat(wanted);
+        this.setBookmarkTagFilters(next);
+    }
+
+    filterBookmarksByTag(tag) {
+        if (!tag) return;
+        // Clicking a tag chip on a row means "show me this tag", replacing any
+        // cloud selection rather than quietly adding to it.
+        this.setBookmarkTagFilters([String(tag)]);
     }
 
     renderBookmarksSection() {
@@ -7894,6 +7955,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
                 </div>
+                ${this.renderBookmarkTagCloud()}
                 <div class="config-bm-list-meta">
                     <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
                     <div class="config-bm-filter-chips" id="config-bm-filter-chips">${this.renderBookmarkFilterChips()}</div>
@@ -7904,6 +7966,116 @@ class DashboardConfig {
                 <div id="config-bm-list">${this.renderBookmarksList()}</div>
             </div>
         `;
+    }
+
+    /**
+     * Tag cloud above the bookmark list.
+     *
+     * Collapsed by default: with a few dozen tags it would otherwise push the
+     * list itself off the screen on every visit. Tags are ordered by how many
+     * bookmarks carry them, so the ones worth filtering on come first, and each
+     * is sized by that count the way the dashboard cloud is.
+     */
+    renderBookmarkTagCloud() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const tags = this.bookmarkTagCounts();
+        if (!tags.length) return '';
+
+        const active = new Set(this.bookmarkTagFilters());
+        const max = tags[0].count || 1;
+        const chips = tags.map(({ tag, count }) => {
+            const on = active.has(tag);
+            // Four steps rather than a continuous scale: enough to show weight,
+            // few enough that the rows still line up.
+            const step = Math.min(3, Math.floor((count / max) * 4));
+            return `<button type="button"
+                    class="config-bm-cloud-tag config-bm-cloud-tag--s${step}${on ? ' is-active' : ''}"
+                    role="option" aria-selected="${on}"
+                    data-bm-cloud-tag="${esc(tag)}">${esc(tag)}<span class="config-bm-cloud-count">${count}</span></button>`;
+        }).join('');
+
+        const activeCount = active.size;
+        const summary = activeCount
+            ? this.t('config.bookmarksTagCloudActive', '{count} selected').replace('{count}', activeCount)
+            : this.t('config.bookmarksTagCloudHint', 'Filter by one or more tags');
+        return `
+            <details class="config-bm-cloud" id="config-bm-cloud"${activeCount ? ' open' : ''}>
+                <summary class="config-bm-cloud-summary">
+                    <span>${esc(this.t('config.bookmarksTagCloudTitle', 'Tags'))}</span>
+                    <span class="config-bm-cloud-summary-note">${esc(summary)}</span>
+                </summary>
+                <div class="config-bm-cloud-body">
+                    <div class="config-bm-cloud-tags" role="listbox" aria-multiselectable="true"
+                         aria-label="${esc(this.t('config.bookmarksTagCloudTitle', 'Tags'))}">${chips}</div>
+                    <div class="config-bm-cloud-actions"${activeCount ? '' : ' hidden'}>
+                        <button type="button" class="config-btn config-btn--small" data-bm-cloud-select>${esc(this.t('config.bookmarksTagCloudSelect', 'Select these bookmarks'))}</button>
+                        <button type="button" class="config-btn config-btn--small" data-bm-cloud-clear>${esc(this.t('config.bookmarksTagCloudClear', 'Clear tags'))}</button>
+                    </div>
+                </div>
+            </details>`;
+    }
+
+    /**
+     * Wire the tag cloud.
+     *
+     * Delegated from the container: repainting the list replaces the cloud's
+     * own markup, so listeners bound to individual chips would not survive the
+     * first click.
+     */
+    bindBookmarkTagCloud(container) {
+        const cloud = container.querySelector('#config-bm-cloud');
+        if (!cloud || cloud._bmCloudBound) return;
+        cloud._bmCloudBound = true;
+        cloud.addEventListener('click', (e) => {
+            const tagBtn = e.target.closest('[data-bm-cloud-tag]');
+            if (tagBtn) {
+                e.preventDefault();
+                this.toggleBookmarkTagFilter(tagBtn.getAttribute('data-bm-cloud-tag'));
+                return;
+            }
+            if (e.target.closest('[data-bm-cloud-clear]')) {
+                e.preventDefault();
+                this.setBookmarkTagFilters([]);
+                return;
+            }
+            if (e.target.closest('[data-bm-cloud-select]')) {
+                e.preventDefault();
+                this.selectFilteredBookmarks();
+            }
+        });
+    }
+
+    /**
+     * Repaint the cloud's chips in place.
+     *
+     * Rebuilding the whole <details> would snap it shut mid-selection and throw
+     * away the scroll position, so only the parts that change are rewritten.
+     */
+    updateBookmarkTagCloud() {
+        const cloud = document.getElementById('config-bm-cloud');
+        if (!cloud) return;
+        const active = new Set(this.bookmarkTagFilters());
+        cloud.querySelectorAll('[data-bm-cloud-tag]').forEach((btn) => {
+            const on = active.has(btn.getAttribute('data-bm-cloud-tag'));
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-selected', String(on));
+        });
+        const note = cloud.querySelector('.config-bm-cloud-summary-note');
+        if (note) {
+            note.textContent = active.size
+                ? this.t('config.bookmarksTagCloudActive', '{count} selected').replace('{count}', active.size)
+                : this.t('config.bookmarksTagCloudHint', 'Filter by one or more tags');
+        }
+        const actions = cloud.querySelector('.config-bm-cloud-actions');
+        if (actions) actions.hidden = active.size === 0;
+    }
+
+    /** Tick every row the current filters leave visible, for the bulk bar. */
+    selectFilteredBookmarks() {
+        const rows = this.visibleBookmarks() || [];
+        for (const b of rows) this.bmSelected.add(this.bookmarkKey(b));
+        this.repaintBookmarksList();
+        this.updateBookmarkListChrome();
     }
 
     /** Human label for each named cleanup filter. */
@@ -8180,7 +8352,7 @@ class DashboardConfig {
         // versus query "a" with tag "b" must not share a token.
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
-            this.bmTagFilter, this.bmCleanupFilter, this.bmSort,
+            this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmSort,
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -8206,7 +8378,7 @@ class DashboardConfig {
         const q = String(this.bmQuery || '').trim().toLowerCase();
         const pageFilter = String(this.bmPageFilter || '');
         const catFilter = this.bmCategoryFilter || '';
-        const tagFilter = String(this.bmTagFilter || '').trim().toLowerCase();
+        const tagFilter = this.bookmarkTagFilters();
         const cleanupKey = this.bmCleanupFilter;
         const dupes = cleanupKey === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
         const cleanup = DashboardConfig.CLEANUP_FILTERS[cleanupKey] || null;
@@ -8221,9 +8393,11 @@ class DashboardConfig {
                 if (catPage && String(b.pageId) !== String(catPage)) return false;
                 if ((b.category || '') !== categoryId) return false;
             }
-            if (tagFilter) {
+            if (tagFilter.length) {
                 const tags = (Array.isArray(b.tags) ? b.tags : []).map((t) => String(t).toLowerCase());
-                if (!tags.includes(tagFilter)) return false;
+                // OR, matching the dashboard tag cloud: picking a second tag
+                // widens the result rather than narrowing it to nothing.
+                if (!tagFilter.some((t) => tags.includes(t))) return false;
             }
             if (!q) return true;
             return [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
@@ -9223,6 +9397,7 @@ class DashboardConfig {
             });
         }
         this.bindBookmarkFilterChips(container.querySelector('#config-bm-filter-chips'));
+        this.bindBookmarkTagCloud(container);
         container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
             this.bmCleanupFilter = '';
             this.bmSelected.clear();
@@ -9275,7 +9450,7 @@ class DashboardConfig {
         this.bmPageFilter = '';
         this.bmCategoryFilter = '';
         this.bmCleanupFilter = '';
-        this.bmTagFilter = '';
+        this.bmTagFilter = [];
         this.bmSelected.clear();
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;
@@ -11883,7 +12058,7 @@ class DashboardConfig {
                 const key = btn.getAttribute('data-cleanup-goto');
                 if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return;
                 this.bmCleanupFilter = key;
-                this.bmTagFilter = '';
+                this.bmTagFilter = [];
                 // A stale search or category from an earlier visit would narrow
                 this.bmQuery = '';
                 this.bmPageFilter = '';
