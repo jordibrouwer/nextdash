@@ -11080,9 +11080,9 @@ class DashboardConfig {
         if (!a.buckets.length) {
             return `
                 <div class="config-panel">
-                    <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Opens over time'))}</h3>
+                    <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Bookmarks used over time'))}</h3>
                     <div class="config-choices" role="group">${ranges}</div>
-                    <p class="config-panel-empty">${esc(this.t('config.statsNoActivity', 'No opens recorded in this period.'))}</p>
+                    <p class="config-panel-empty">${esc(this.t('config.statsNoActivity', 'No bookmarks were used in this period.'))}</p>
                 </div>`;
         }
 
@@ -11106,7 +11106,7 @@ class DashboardConfig {
             // too, per the same rule that puts them on hover.
             return `<g class="config-chart-bar" tabindex="0" role="listitem"
                        data-bar-date="${esc(date)}" data-bar-value="${esc(String(val))}" data-bar-unit="${esc(unit)}"
-                       aria-label="${esc(date)}: ${esc(String(val))} ${esc(this.t('config.statsActivityOpens', 'opens'))}">
+                       aria-label="${esc(date)}: ${esc(String(val))} ${esc(this.t('config.statsActivityUsedLabel', 'bookmarks last used'))}">
                 <rect class="config-chart-bar-hit" x="${Math.max(0, x - gap / 2)}" y="0" width="${barW + gap}" height="${H}"></rect>
                 <rect class="config-chart-bar-fill" x="${x}" y="${H - h}" width="${barW}" height="${Math.max(h, val > 0 ? 2 : 0)}" rx="1" fill="var(--accent-color, #4a90d9)" opacity="${opacity}"></rect>
             </g>`;
@@ -11117,17 +11117,18 @@ class DashboardConfig {
 
         return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Opens over time'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Bookmarks used over time'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.statsActivityNote', 'Each bar counts the bookmarks whose last use falls in that period. A bookmark appears once, on the day you last opened it.'))}</p>
                 <div class="config-choices" role="group">${ranges}</div>
                 <div class="config-stat-figures">
-                    <span><strong>${esc(String(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityOpens', 'opens'))}</span>
                     <span><strong>${esc(String(a.activeCount))}</strong> ${esc(this.t('config.statsActivityActive', 'bookmarks used'))}</span>
+                    <span title="${esc(this.t('config.statsActivityLifetimeHint', 'Counted over the whole life of these bookmarks, not only this period — nextDash stores a total per bookmark, not a date for every open.'))}"><strong>${esc(String(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityLifetimeOpens', 'opens all-time'))}</span>
                     ${a.wow !== null ? `<span class="config-stat-trend config-stat-trend--${a.wow >= 0 ? 'up' : 'down'}">${a.wow >= 0 ? '▲' : '▼'} ${esc(String(Math.abs(a.wow)))}% ${esc(this.t('config.statsActivityVsPrev', 'vs previous period'))}</span>` : ''}
                 </div>
                 <div class="config-chart">
                     <div class="config-chart-plot">
                         <span class="config-chart-axis-y" aria-hidden="true">
-                            <span class="config-chart-axis-title">${esc(this.t('config.statsAxisOpens', 'Opens'))}</span>
+                            <span class="config-chart-axis-title">${esc(this.t('config.statsAxisBookmarksUsed', 'Bookmarks'))}</span>
                             <span class="config-chart-axis-ticks">
                                 <span>${esc(String(max))}</span>
                                 <span>0</span>
@@ -11135,7 +11136,7 @@ class DashboardConfig {
                         </span>
                         <span class="config-chart-plot-area">
                             <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="list"
-                                 aria-label="${esc(this.t('config.statsSparklineAriaView', 'Opens per period'))}: ${esc(summary)}">${bars}</svg>
+                                 aria-label="${esc(this.t('config.statsSparklineAriaView', 'Bookmarks last used per period'))}: ${esc(summary)}">${bars}</svg>
                             <span class="config-chart-ticks" aria-hidden="true">${this.statsActivityTicks(a)}</span>
                         </span>
                     </div>
@@ -11143,7 +11144,7 @@ class DashboardConfig {
                     <div class="config-chart-tip" role="status" aria-live="polite" hidden></div>
                 </div>
                 <table class="config-sr-only">
-                    <caption>${esc(this.t('config.statsSparklineTableCaptionView', 'Opens per period'))}</caption>
+                    <caption>${esc(this.t('config.statsSparklineTableCaptionView', 'Bookmarks last used per period'))}</caption>
                     <tbody>${srRows}</tbody>
                 </table>
             </div>`;
@@ -12032,8 +12033,20 @@ class DashboardConfig {
     }
 
     /**
-     * Opens bucketed over the chosen range. Buckets are days for a week or a
-     * month and weeks beyond that, so the bar count stays readable.
+     * Bookmarks last used, bucketed over the chosen range. Buckets are days for
+     * a week or a month and weeks beyond that, so the bar count stays readable.
+     *
+     * Each bookmark counts once, in the bucket holding its lastOpened. It used
+     * to add its whole openCount there instead, which put a lifetime of use on
+     * a single day: a link opened 100 times over a year, last touched on
+     * Tuesday, drew a bar of 100 on Tuesday. The chart called itself "opens over
+     * time" while showing no such thing.
+     *
+     * A real opens-per-day series is not derivable here — a bookmark stores one
+     * lastOpened and a cumulative openCount, with no per-open history anywhere
+     * (the activity log is a diagnostic file, not a queryable series). So the
+     * chart now measures what the data can actually answer: how many bookmarks
+     * were last reached for in each period. Every label says so.
      */
     computeActivity(all) {
         const days = this.statsRange || 30;
@@ -12049,7 +12062,7 @@ class DashboardConfig {
             if (!last || last < cutoff) return;
             const age = now - last;
             const idx = bucketCount - 1 - Math.min(bucketCount - 1, Math.floor(age / (bucketDays * DAY)));
-            buckets[idx] += Math.max(1, Number(b.openCount || 1));
+            buckets[idx] += 1;
         });
 
         const labels = buckets.map((_, i) => {
@@ -12073,7 +12086,13 @@ class DashboardConfig {
         });
 
         const activeCount = all.filter((b) => Number(b.lastOpened || 0) >= cutoff).length;
-        const totalOpens = buckets.reduce((a, b) => a + b, 0);
+        // Lifetime opens of the bookmarks used in this window — a real figure,
+        // but not one the bars can carry, since those opens are spread over
+        // history we do not have. Summing the buckets would now just restate
+        // activeCount, so this stays a separate headline number.
+        const totalOpens = all.reduce((sum, b) => (
+            Number(b.lastOpened || 0) >= cutoff ? sum + Math.max(1, Number(b.openCount || 1)) : sum
+        ), 0);
 
         // Compare the latter half of the range with the former, which is what the
         // old tab's week-over-week figure did for a 7-day window.
@@ -12344,7 +12363,7 @@ class DashboardConfig {
         const tip = chart?.querySelector('.config-chart-tip');
         if (!chart || !tip) return;
 
-        const openLabel = this.t('config.statsActivityOpens', 'opens');
+        const openLabel = this.t('config.statsActivityUsedLabel', 'bookmarks last used');
         const hide = () => {
             tip.hidden = true;
             chart.querySelectorAll('.config-chart-bar.is-active')
