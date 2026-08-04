@@ -871,6 +871,12 @@ class DashboardInbox {
         if (this.triage?.isOpen?.()) {
             return false;
         }
+        // An open snooze menu owns the arrow keys: this handler runs first and
+        // would otherwise consume them to move the row cursor behind the menu,
+        // leaving the menu's own navigation dead.
+        if (this._snoozeMenu?.isConnected) {
+            return false;
+        }
         if (window.DashboardTagCloud?.modalOpen) {
             return false;
         }
@@ -2073,6 +2079,11 @@ class DashboardInbox {
         }
         this.syncKeyboardSelectionAfterRender();
         container.tabIndex = -1;
+        // The triage overlay is modal and holds its own focus; a feed render
+        // underneath it must not pull focus out to the container behind it.
+        if (this.triage?.isOpen?.()) {
+            return;
+        }
         const active = document.activeElement;
         const focusInToolbar = active?.closest?.('.inbox-toolbar, .page-nav-btn');
         if (!active || active === document.body || focusInToolbar) {

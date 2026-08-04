@@ -74,10 +74,16 @@ class DashboardInboxTriage {
             const opener = this._opener;
             this._opener = null;
             if (opener) {
+                // Closing re-renders the feed, which rebuilds the toolbar and
+                // detaches the button that opened this. Fall back to the live
+                // replacement so focus still lands where the user left it.
+                const fallback = opener.classList?.contains('inbox-triage-btn')
+                    ? document.querySelector('.inbox-triage-btn')
+                    : null;
                 if (window.FocusTrapUtils?.focusIfConnected) {
-                    window.FocusTrapUtils.focusIfConnected(opener);
-                } else if (opener.isConnected) {
-                    opener.focus({ preventScroll: true });
+                    window.FocusTrapUtils.focusIfConnected(opener, fallback);
+                } else {
+                    (opener.isConnected ? opener : fallback)?.focus?.({ preventScroll: true });
                 }
             }
         }
@@ -208,15 +214,16 @@ class DashboardInboxTriage {
         if (!this.isOpen()) {
             return;
         }
-        if (this.dash.isModalOpen?.() && e.key !== 'Escape') {
-            return;
-        }
-        // Ahead of the text-field bail-out below: Tab has to stay caught even
-        // when the caret sits in the note input, or it walks out of the overlay.
+        // Tab is trapped before every other check: the overlay is aria-modal, so
+        // focus must not leave it even while a notification or quickstart card is
+        // on screen, and even when the caret sits in the note input below.
         if (e.key === 'Tab' && this.overlay) {
             if (window.FocusTrapUtils?.trapTabKey(e, this.overlay)) {
                 return;
             }
+        }
+        if (this.dash.isModalOpen?.() && e.key !== 'Escape') {
+            return;
         }
         const tag = e.target?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) {
