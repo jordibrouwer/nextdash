@@ -6,6 +6,8 @@
     "test:e2e": "playwright test",
     "test:e2e:reuse": "PLAYWRIGHT_REUSE_SERVER=true playwright test",
     "generate:cheatsheet": "node scripts/generate-cheatsheet.cjs",
+    "validate:cheatsheet-registry": "node scripts/validate-cheatsheet-registry.cjs",
+    "validate:cheatsheet": "npm run validate:cheatsheet-registry && npm run validate:cheatsheet-i18n",
     "validate:cheatsheet-i18n": "node scripts/validate-cheatsheet-i18n.cjs"
   },
   "devDependencies": {

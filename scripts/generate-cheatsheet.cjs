@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 /**
- * Regenerate nextDash-cheatsheet.html and nextDash-cheatsheet.pdf from locales/en.json
- * and static/js/shared/keyboard-view-legends.js.
+ * Regenerate nextDash-cheatsheet.html and nextDash-cheatsheet.pdf from
+ * locales/en.json and static/js/shared/keyboard-cheat-sheet-registry.js.
+ *
+ * This sheet is a deliberate subset, not the whole modal: it is A4 and meant to
+ * be read at a glance, so it carries only rows the registry marks `print: true`
+ * and prefers their short `printFallback` wording. Widening it to every row
+ * would spill onto a second page and defeat the point.
  *
  * Usage: node scripts/generate-cheatsheet.cjs
  * Requires: playwright (devDependency)
@@ -16,10 +21,18 @@ const root = path.join(__dirname, '..');
 const en = JSON.parse(fs.readFileSync(path.join(root, 'locales/en.json'), 'utf8'));
 const cs = en.dashboard.cheatsheet;
 
-const legendSrc = fs.readFileSync(path.join(root, 'static/js/shared/keyboard-view-legends.js'), 'utf8');
-const legendCtx = { window: {} };
-vm.runInNewContext(legendSrc, legendCtx);
-const legends = legendCtx.window.KeyboardViewLegends;
+// The registry is the same file the dashboard modal builds from, so the sheet
+// cannot list a key the app no longer has. It reads KeyboardViewLegends for the
+// health/inbox/triage rows, so both load into one context.
+const sandbox = { window: {} };
+sandbox.global = sandbox;
+for (const file of [
+    'static/js/shared/keyboard-view-legends.js',
+    'static/js/shared/keyboard-cheat-sheet-registry.js',
+]) {
+    vm.runInNewContext(fs.readFileSync(path.join(root, file), 'utf8'), sandbox);
+}
+const registry = sandbox.window.KeyboardCheatSheetRegistry;
 
 function esc(text) {
     return String(text ?? '')
@@ -45,57 +58,14 @@ function formatKeysHtml(keys) {
     }).join('');
 }
 
-function legendSection(titleKey, titleFallback, rows) {
-    const title = cheatLabel(titleKey, titleFallback);
-    const body = rows.map((row) => `
-        <tr><td class="keys">${formatKeysHtml(row.keys)}</td><td class="desc">${esc(cheatLabel(row.cheatKey, row.fallback))}</td></tr>
+function renderSection({ title, items }) {
+    const body = items.map(({ keys, description }) => `
+        <tr><td class="keys">${formatKeysHtml(keys)}</td><td class="desc">${esc(description)}</td></tr>
     `).join('');
     return `<section class="cheat-group"><h2>${esc(title)}</h2><table>${body}</table></section>`;
 }
 
-function staticSection(titleKey, titleFallback, items) {
-    const title = cheatLabel(titleKey, titleFallback);
-    const body = items.map(({ keys, key, fallback }) => `
-        <tr><td class="keys">${formatKeysHtml(keys)}</td><td class="desc">${esc(cheatLabel(key, fallback))}</td></tr>
-    `).join('');
-    return `<section class="cheat-group"><h2>${esc(title)}</h2><table>${body}</table></section>`;
-}
-
-const sections = [
-    staticSection('sectionNavigation', 'Navigation', [
-        { keys: '1–9', key: 'navPageTab', fallback: 'Switch to bookmark page' },
-        { keys: 'Shift + I', key: 'navInboxView', fallback: 'Open Inbox' },
-        { keys: 'Shift + H', key: 'navHealthView', fallback: 'Open Health' },
-        { keys: 'Shift + S', key: 'navSettingsView', fallback: 'Open config' },
-        { keys: 'Shift + ← / →', key: 'navPrevNextPage', fallback: 'Previous / next page' },
-        { keys: ',', key: 'navPageOverview', fallback: 'Page overview' },
-        { keys: '! / F1', key: 'otCheatSheet', fallback: 'Keyboard cheat sheet' },
-        { keys: '↑ ↓ ← →', key: 'navFocusUpDown', fallback: 'Move focus' },
-        { keys: 'Enter / Space', key: 'navOpenFocused', fallback: 'Open focused bookmark' },
-        { keys: 'Esc', key: 'navEscClear', fallback: 'Clear selection / close overlay' },
-    ]),
-    legendSection('sectionHealthView', 'Health view', legends.HEALTH_VIEW),
-    legendSection('sectionInboxView', 'Inbox view', legends.INBOX_VIEW),
-    legendSection('sectionInboxTriage', 'Inbox triage', legends.INBOX_TRIAGE),
-    staticSection('sectionConfigView', 'Config view', [
-        { keys: 'j / k', key: 'cvSectionJk', fallback: 'Previous / next section' },
-        { keys: '[ / ]', key: 'cvSubTabBrackets', fallback: 'Previous / next sub-tab' },
-        { keys: 'Ctrl/Cmd + Shift + K', key: 'cvSettingsJump', fallback: 'Find a setting' },
-        { keys: 'Shift + S / <', key: 'cvClose', fallback: 'Return to dashboard' },
-        { keys: 'Esc', key: 'cvEsc', fallback: 'Close editor or exit config' },
-    ]),
-    staticSection('sectionSearchModes', 'Search modes', [
-        { keys: '>', key: 'smRegularSearch', fallback: 'Search' },
-        { keys: ':', key: 'smCommandPalette', fallback: 'Commands' },
-        { keys: '?', key: 'smFinders', fallback: 'Finders' },
-        { keys: '*', key: 'smRecentPanel', fallback: 'Recent bookmarks' },
-    ]),
-    staticSection('sectionCommandsNavigation', 'Commands — navigation', [
-        { keys: ':inbox', key: 'cnInbox', fallback: 'Open Inbox (Shift + I)' },
-        { keys: ':cheat / :help', key: 'cnCheat', fallback: 'Open cheat sheet' },
-        { keys: ':config', key: 'cnConfig', fallback: 'Open config' },
-    ]),
-];
+const sections = registry.buildPrintSections(cheatLabel).map(renderSection);
 
 const logoSource = path.join(root, 'logo-ascii-on-black-large.png');
 const logoTransparent = path.join(root, 'logo-ascii-transparent.png');
