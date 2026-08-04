@@ -62,7 +62,6 @@ class QuickAddWidget {
         document.addEventListener('keydown', (e) => {
             if (!QuickAddWidget.matchesAddBookmarkShortcut(e)) return;
             e.preventDefault();
-            window.DashboardShiftBPromo?.markSeen?.();
             this.toggle();
         });
         this.shortcutBound = true;

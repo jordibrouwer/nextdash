@@ -51,7 +51,7 @@ class DashboardConfig {
         // A named cleanup filter arrived at from Statistics ('untagged', …).
         // Empty means the list is unfiltered by it.
         this.bmCleanupFilter = '';
-        this.bmTagFilter = '';
+        this.bmTagFilter = [];
         this.bmSort = 'page';
         this.bmVisibleLimit = DashboardConfig.BM_PAGE_SIZE;
         this.bmEditing = null;
@@ -1801,6 +1801,18 @@ class DashboardConfig {
             if (!panel?.contains(document.activeElement) && document.activeElement?.id !== 'config-settings-jump-filter') {
                 return;
             }
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'f') {
+                const filter = document.getElementById('config-settings-jump-filter');
+                if (filter instanceof HTMLElement) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    filter.focus({ preventScroll: true });
+                    if (typeof filter.select === 'function') {
+                        filter.select();
+                    }
+                }
+                return;
+            }
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 e.stopPropagation();
@@ -2607,8 +2619,28 @@ class DashboardConfig {
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--small"
                             data-overview-go='{"section":"help"}'>${esc(this.t('config.overviewMoreTips', 'More tips →'))}</button>
+                    ${this.renderCheatSheetPdfLink()}
                 </div>
             </div>`;
+    }
+
+    /**
+     * Link to the printable one-page shortcut sheet.
+     *
+     * A PDF, so it always opens in a new tab: replacing the dashboard with a
+     * document viewer would lose whatever the user had open, and there is no way
+     * back other than the browser's back button.
+     */
+    renderCheatSheetPdfLink() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.cheatsheetPdfLink', 'Shortcuts PDF');
+        const hint = this.t('config.cheatsheetPdfHint', 'One-page keyboard reference (opens in a new tab)');
+        return `<a class="config-btn config-btn--small config-cheatsheet-pdf"
+                   href="/static/nextDash-cheatsheet.pdf" target="_blank" rel="noopener noreferrer"
+                   title="${esc(hint)}">
+                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 1.5H4.5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5z"/><path d="M9 1.5V5h3.5"/><path d="M6.5 8.5h3M6.5 11h3"/></svg>
+                    <span>${esc(label)}</span>
+                </a>`;
     }
 
     /** Refresh the health report and the release notes, then repaint. */
@@ -2898,8 +2930,8 @@ class DashboardConfig {
 
     /* ── Data & backups ────────────────────────────────────────────────────── */
 
-    notify(message, type = 'info') {
-        this.dash.showNotification?.(message, type, { duration: 3500 });
+    notify(message, type = 'info', options = {}) {
+        this.dash.showNotification?.(message, type, { duration: 3500, ...options });
     }
 
     /** Write-token-aware fetch, matching the other views' POST/DELETE calls. */
@@ -7623,8 +7655,10 @@ class DashboardConfig {
     }
 
     bookmarksFiltersActive() {
+        // bmTagFilter is a list, and an empty array is truthy — ask for its
+        // length or an unfiltered view would claim to be filtered.
         return !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter
-            || this.bmCleanupFilter || this.bmTagFilter);
+            || this.bmCleanupFilter || this.bookmarkTagFilters().length);
     }
 
     computeBookmarkSubsetStats(bookmarks) {
@@ -7697,8 +7731,10 @@ class DashboardConfig {
                 : this.bmCategoryFilter;
             add('category', this.t('config.bookmarksFilterCategory', 'Category: {name}').replace('{name}', label));
         }
-        if (this.bmTagFilter) {
-            add('tag', this.t('config.bookmarksFilterTag', 'Tag: {tag}').replace('{tag}', this.bmTagFilter));
+        // One chip per tag rather than one lumped "Tag: a, b, c": each stays
+        // removable on its own, which is the point of picking several.
+        for (const tag of this.bookmarkTagFilters()) {
+            add(`tag:${tag}`, this.t('config.bookmarksFilterTag', 'Tag: {tag}').replace('{tag}', tag));
         }
         if (String(this.bmQuery || '').trim()) {
             const q = String(this.bmQuery).trim();
@@ -7723,6 +7759,7 @@ class DashboardConfig {
     }
 
     updateBookmarkListChrome() {
+        this.updateBookmarkTagCloud();
         const filtered = this.visibleBookmarks();
         const total = (this.dash.allBookmarks || []).length;
         const shown = filtered.length;
@@ -7763,7 +7800,11 @@ class DashboardConfig {
     clearBookmarkFilterChip(key) {
         if (key === 'all' || key === 'page') this.bmPageFilter = '';
         if (key === 'all' || key === 'category') this.bmCategoryFilter = '';
-        if (key === 'all' || key === 'tag') this.bmTagFilter = '';
+        if (key === 'all' || key === 'tag') this.bmTagFilter = [];
+        if (key.startsWith('tag:')) {
+            const tag = key.slice(4);
+            this.bmTagFilter = this.bookmarkTagFilters().filter((t) => t !== tag);
+        }
         if (key === 'all' || key === 'search') {
             this.bmQuery = '';
             const search = document.getElementById('config-bm-search');
@@ -7807,12 +7848,72 @@ class DashboardConfig {
         this.updateBookmarkListChrome();
     }
 
-    filterBookmarksByTag(tag) {
-        if (!tag) return;
-        this.bmTagFilter = String(tag);
+    /**
+     * Active tag filters, always as a normalised list.
+     *
+     * bmTagFilter was a single string before the tag cloud landed; accepting
+     * both shapes keeps older stored state and the row chips working.
+     */
+    bookmarkTagFilters() {
+        const raw = this.bmTagFilter;
+        const list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+        const seen = new Set();
+        const out = [];
+        for (const entry of list) {
+            const tag = String(entry || '').trim().toLowerCase();
+            if (!tag || seen.has(tag)) continue;
+            seen.add(tag);
+            out.push(tag);
+        }
+        return out.sort((a, b) => a.localeCompare(b));
+    }
+
+    /**
+     * Every tag in use, with how many bookmarks carry it.
+     *
+     * Ranked by the same function the dashboard tag cloud uses, so both clouds
+     * order and count identically instead of drifting through two copies.
+     */
+    bookmarkTagCounts() {
+        const all = this.dash.allBookmarks || [];
+        const shared = window.DashboardTagCloud?.countTagsFromBookmarks;
+        if (typeof shared === 'function') return shared(all);
+        const counts = new Map();
+        for (const b of all) {
+            for (const raw of b.tags || []) {
+                const tag = String(raw || '').trim().toLowerCase();
+                if (!tag) continue;
+                counts.set(tag, (counts.get(tag) || 0) + 1);
+            }
+        }
+        return [...counts.entries()]
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+            .map(([tag, count]) => ({ tag, count }));
+    }
+
+    setBookmarkTagFilters(tags) {
+        this.bmTagFilter = Array.isArray(tags) ? tags : [];
         this.resetBookmarkVisibleLimit();
         this.repaintBookmarksList();
         this.updateBookmarkListChrome();
+    }
+
+    /** Add or remove one tag, leaving the rest of the selection alone. */
+    toggleBookmarkTagFilter(tag) {
+        const wanted = String(tag || '').trim().toLowerCase();
+        if (!wanted) return;
+        const current = this.bookmarkTagFilters();
+        const next = current.includes(wanted)
+            ? current.filter((t) => t !== wanted)
+            : current.concat(wanted);
+        this.setBookmarkTagFilters(next);
+    }
+
+    filterBookmarksByTag(tag) {
+        if (!tag) return;
+        // Clicking a tag chip on a row means "show me this tag", replacing any
+        // cloud selection rather than quietly adding to it.
+        this.setBookmarkTagFilters([String(tag)]);
     }
 
     renderBookmarksSection() {
@@ -7862,6 +7963,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
                 </div>
+                ${this.renderBookmarkTagCloud()}
                 <div class="config-bm-list-meta">
                     <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
                     <div class="config-bm-filter-chips" id="config-bm-filter-chips">${this.renderBookmarkFilterChips()}</div>
@@ -7872,6 +7974,116 @@ class DashboardConfig {
                 <div id="config-bm-list">${this.renderBookmarksList()}</div>
             </div>
         `;
+    }
+
+    /**
+     * Tag cloud above the bookmark list.
+     *
+     * Collapsed by default: with a few dozen tags it would otherwise push the
+     * list itself off the screen on every visit. Tags are ordered by how many
+     * bookmarks carry them, so the ones worth filtering on come first, and each
+     * is sized by that count the way the dashboard cloud is.
+     */
+    renderBookmarkTagCloud() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const tags = this.bookmarkTagCounts();
+        if (!tags.length) return '';
+
+        const active = new Set(this.bookmarkTagFilters());
+        const max = tags[0].count || 1;
+        const chips = tags.map(({ tag, count }) => {
+            const on = active.has(tag);
+            // Four steps rather than a continuous scale: enough to show weight,
+            // few enough that the rows still line up.
+            const step = Math.min(3, Math.floor((count / max) * 4));
+            return `<button type="button"
+                    class="config-bm-cloud-tag config-bm-cloud-tag--s${step}${on ? ' is-active' : ''}"
+                    role="option" aria-selected="${on}"
+                    data-bm-cloud-tag="${esc(tag)}">${esc(tag)}<span class="config-bm-cloud-count">${count}</span></button>`;
+        }).join('');
+
+        const activeCount = active.size;
+        const summary = activeCount
+            ? this.t('config.bookmarksTagCloudActive', '{count} selected').replace('{count}', activeCount)
+            : this.t('config.bookmarksTagCloudHint', 'Filter by one or more tags');
+        return `
+            <details class="config-bm-cloud" id="config-bm-cloud"${activeCount ? ' open' : ''}>
+                <summary class="config-bm-cloud-summary">
+                    <span>${esc(this.t('config.bookmarksTagCloudTitle', 'Tags'))}</span>
+                    <span class="config-bm-cloud-summary-note">${esc(summary)}</span>
+                </summary>
+                <div class="config-bm-cloud-body">
+                    <div class="config-bm-cloud-tags" role="listbox" aria-multiselectable="true"
+                         aria-label="${esc(this.t('config.bookmarksTagCloudTitle', 'Tags'))}">${chips}</div>
+                    <div class="config-bm-cloud-actions"${activeCount ? '' : ' hidden'}>
+                        <button type="button" class="config-btn config-btn--small" data-bm-cloud-select>${esc(this.t('config.bookmarksTagCloudSelect', 'Select these bookmarks'))}</button>
+                        <button type="button" class="config-btn config-btn--small" data-bm-cloud-clear>${esc(this.t('config.bookmarksTagCloudClear', 'Clear tags'))}</button>
+                    </div>
+                </div>
+            </details>`;
+    }
+
+    /**
+     * Wire the tag cloud.
+     *
+     * Delegated from the container: repainting the list replaces the cloud's
+     * own markup, so listeners bound to individual chips would not survive the
+     * first click.
+     */
+    bindBookmarkTagCloud(container) {
+        const cloud = container.querySelector('#config-bm-cloud');
+        if (!cloud || cloud._bmCloudBound) return;
+        cloud._bmCloudBound = true;
+        cloud.addEventListener('click', (e) => {
+            const tagBtn = e.target.closest('[data-bm-cloud-tag]');
+            if (tagBtn) {
+                e.preventDefault();
+                this.toggleBookmarkTagFilter(tagBtn.getAttribute('data-bm-cloud-tag'));
+                return;
+            }
+            if (e.target.closest('[data-bm-cloud-clear]')) {
+                e.preventDefault();
+                this.setBookmarkTagFilters([]);
+                return;
+            }
+            if (e.target.closest('[data-bm-cloud-select]')) {
+                e.preventDefault();
+                this.selectFilteredBookmarks();
+            }
+        });
+    }
+
+    /**
+     * Repaint the cloud's chips in place.
+     *
+     * Rebuilding the whole <details> would snap it shut mid-selection and throw
+     * away the scroll position, so only the parts that change are rewritten.
+     */
+    updateBookmarkTagCloud() {
+        const cloud = document.getElementById('config-bm-cloud');
+        if (!cloud) return;
+        const active = new Set(this.bookmarkTagFilters());
+        cloud.querySelectorAll('[data-bm-cloud-tag]').forEach((btn) => {
+            const on = active.has(btn.getAttribute('data-bm-cloud-tag'));
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-selected', String(on));
+        });
+        const note = cloud.querySelector('.config-bm-cloud-summary-note');
+        if (note) {
+            note.textContent = active.size
+                ? this.t('config.bookmarksTagCloudActive', '{count} selected').replace('{count}', active.size)
+                : this.t('config.bookmarksTagCloudHint', 'Filter by one or more tags');
+        }
+        const actions = cloud.querySelector('.config-bm-cloud-actions');
+        if (actions) actions.hidden = active.size === 0;
+    }
+
+    /** Tick every row the current filters leave visible, for the bulk bar. */
+    selectFilteredBookmarks() {
+        const rows = this.visibleBookmarks() || [];
+        for (const b of rows) this.bmSelected.add(this.bookmarkKey(b));
+        this.repaintBookmarksList();
+        this.updateBookmarkListChrome();
     }
 
     /** Human label for each named cleanup filter. */
@@ -8148,7 +8360,7 @@ class DashboardConfig {
         // versus query "a" with tag "b" must not share a token.
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
-            this.bmTagFilter, this.bmCleanupFilter, this.bmSort,
+            this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmSort,
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -8174,7 +8386,7 @@ class DashboardConfig {
         const q = String(this.bmQuery || '').trim().toLowerCase();
         const pageFilter = String(this.bmPageFilter || '');
         const catFilter = this.bmCategoryFilter || '';
-        const tagFilter = String(this.bmTagFilter || '').trim().toLowerCase();
+        const tagFilter = this.bookmarkTagFilters();
         const cleanupKey = this.bmCleanupFilter;
         const dupes = cleanupKey === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
         const cleanup = DashboardConfig.CLEANUP_FILTERS[cleanupKey] || null;
@@ -8189,9 +8401,11 @@ class DashboardConfig {
                 if (catPage && String(b.pageId) !== String(catPage)) return false;
                 if ((b.category || '') !== categoryId) return false;
             }
-            if (tagFilter) {
+            if (tagFilter.length) {
                 const tags = (Array.isArray(b.tags) ? b.tags : []).map((t) => String(t).toLowerCase());
-                if (!tags.includes(tagFilter)) return false;
+                // OR, matching the dashboard tag cloud: picking a second tag
+                // widens the result rather than narrowing it to nothing.
+                if (!tagFilter.some((t) => tags.includes(t))) return false;
             }
             if (!q) return true;
             return [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
@@ -8354,9 +8568,19 @@ class DashboardConfig {
         if (ctx.isDuplicate) {
             metaBits.push(`<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>`);
         }
-        const tagChips = (b.tags || []).map((tag) =>
+        const tags = b.tags || [];
+        const tagChips = tags.map((tag) =>
             `<button type="button" class="config-bm-tag-chip" data-bm-filter-tag="${esc(tag)}">${esc(tag)}</button>`
         ).join('');
+        // One or two tags read fine beside the domain. Beyond that they crowd it
+        // out, so they move to a line of their own — the identifying line stays
+        // scannable and the tags keep their own left edge down the feed.
+        const TAGS_INLINE_MAX = 2;
+        const tagsOnOwnLine = tags.length > TAGS_INLINE_MAX;
+        const inlineTagChips = tagsOnOwnLine ? '' : tagChips;
+        const tagRow = tagsOnOwnLine
+            ? `<p class="config-bm-tag-row">${tagChips}</p>`
+            : '';
         const mode = window.CheckMode?.of?.(b) || 'off';
         const feed = window.BookmarkFeedRow;
         const noteHtml = b.note
@@ -8381,7 +8605,8 @@ class DashboardConfig {
                 <div class="config-bm-usage-col" title="${usageTip}">${this.renderBookmarkUsageLine(b)}</div>
             </div>`;
         return `
-            <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1">
+            <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1"
+                     role="listitem"${ctx.setSize ? ` aria-posinset="${ctx.posInSet}" aria-setsize="${ctx.setSize}"` : ''}>
                 <label class="config-bm-check">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
                            aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
@@ -8394,12 +8619,13 @@ class DashboardConfig {
                     <p class="health-view-item-meta config-bm-meta-primary">
                         <span>${esc(domain)}</span>
                         ${metaBits.join('')}
-                        ${tagChips}
+                        ${inlineTagChips}
                         <span class="health-check-mode-wrap">
                             ${feed?.renderCheckModeBadge?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
                             ${feed?.renderCheckModeMenu?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
                         </span>
                     </p>
+                    ${tagRow}
                     ${categoryLine}
                     ${noteHtml}
                     ${feed?.renderActionsBar?.({
@@ -8445,13 +8671,21 @@ class DashboardConfig {
             const url = String(b.url || '').trim().toLowerCase();
             return url && dupes.has(url);
         } };
-        const items = rows.map((b) => this.renderBookmarkRow(b, { ...ctx, isDuplicate: ctx.isDuplicate(b) })).join('');
+        // Position is passed down so each row can carry aria-posinset: with
+        // paging the DOM holds only part of the list, and without setsize a
+        // screen reader would announce "3 of 50" on a library of 500.
+        const items = rows.map((b, i) => this.renderBookmarkRow(b, {
+            ...ctx,
+            isDuplicate: ctx.isDuplicate(b),
+            posInSet: i + 1,
+            setSize: allRows.length,
+        })).join('');
         const more = allRows.length > rows.length
             ? `<div class="config-bm-load-sentinel" data-bm-load-more hidden aria-hidden="true"></div>
                <p class="config-bm-load-hint">${esc(this.t('config.bookmarksLoadMoreHint', '{shown} of {total} shown — scroll for more')
                    .replace('{shown}', String(rows.length)).replace('{total}', String(allRows.length)))}</p>`
             : '';
-        return `<div class="health-view-feed config-bm-feed">${items}${more}</div>`;
+        return `<div class="health-view-feed config-bm-feed" role="list">${items}${more}</div>`;
     }
 
     /**
@@ -9180,6 +9414,7 @@ class DashboardConfig {
             });
         }
         this.bindBookmarkFilterChips(container.querySelector('#config-bm-filter-chips'));
+        this.bindBookmarkTagCloud(container);
         container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
             this.bmCleanupFilter = '';
             this.bmSelected.clear();
@@ -9232,7 +9467,7 @@ class DashboardConfig {
         this.bmPageFilter = '';
         this.bmCategoryFilter = '';
         this.bmCleanupFilter = '';
-        this.bmTagFilter = '';
+        this.bmTagFilter = [];
         this.bmSelected.clear();
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;
@@ -10136,6 +10371,20 @@ class DashboardConfig {
         this.repaintBookmarksList();
     }
 
+    /**
+     * Load the next page when the sentinel scrolls into view.
+     *
+     * Growing the list re-renders it, which rebuilds this observer; if the
+     * sentinel is still on screen at that moment it fires again straight away.
+     * With a short window — or a list that simply does not overflow — that loop
+     * ran to the end of the library on its own: 500 bookmarks were all in the
+     * DOM within a couple of seconds without anyone scrolling, and the 50-row
+     * page size did nothing.
+     *
+     * Each batch now needs a fresh scroll. `_bmLoadMoreArmed` is lowered as soon
+     * as one page is added and only raised again by a scroll on the list's own
+     * host, so an idle screen stays at the size it was rendered with.
+     */
     setupBookmarkLoadMore(host) {
         const sentinel = host?.querySelector('[data-bm-load-more]');
         if (!sentinel) return;
@@ -10143,14 +10392,37 @@ class DashboardConfig {
         sentinel.removeAttribute('aria-hidden');
         this._bmLoadMoreObserver?.disconnect?.();
         const root = this.bookmarkListScrollHost();
+        this.armBookmarkLoadMore(root);
         this._bmLoadMoreObserver = new IntersectionObserver((entries) => {
+            if (!this._bmLoadMoreArmed) return;
             if (!entries.some((e) => e.isIntersecting)) return;
             const total = this.visibleBookmarks().length;
             if (this.bmVisibleLimit >= total) return;
+            this._bmLoadMoreArmed = false;
             this.bmVisibleLimit += DashboardConfig.BM_PAGE_SIZE;
             this.repaintBookmarksList();
         }, { root: root || null, rootMargin: '160px' });
         this._bmLoadMoreObserver.observe(sentinel);
+    }
+
+    /**
+     * Re-arm the loader on the next scroll of the list's scroll host.
+     *
+     * The host is whichever element actually scrolls — the config body, or the
+     * window when the panel is not its own scroller — so both are listened to.
+     */
+    armBookmarkLoadMore(root) {
+        if (this._bmLoadMoreScrollTarget) {
+            this._bmLoadMoreScrollTarget.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
+            window.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
+        }
+        this._bmLoadMoreArmed = false;
+        this._bmLoadMoreScrollHandler = () => {
+            this._bmLoadMoreArmed = true;
+        };
+        this._bmLoadMoreScrollTarget = root || document;
+        this._bmLoadMoreScrollTarget.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
+        window.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
     }
 
     repaintBookmarksList() {
@@ -10232,11 +10504,35 @@ class DashboardConfig {
         if (!parsed) return;
         if (!await this.confirmAction(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
         try {
+            // Snapshot before the write, so the toast can put this row back —
+            // same as bulk delete and the :remove command.
+            const snapshot = (this.dash.allBookmarks || [])
+                .filter((b) => String(b.pageId) === String(parsed.pageId))
+                .map((b) => {
+                    const copy = { ...b };
+                    delete copy.pageId;
+                    return copy;
+                });
             const isTarget = DashboardConfig.matchesParsedKey(parsed);
             await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => !isTarget(b)));
             this.bmSelected.delete(key);
             if (this.bmEditing === key) { this.bmEditing = null; this.bmDirty = false; }
-            this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success');
+            this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success', {
+                duration: 8000,
+                undoCallback: async () => {
+                    try {
+                        await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(parsed.pageId)}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(snapshot),
+                        });
+                        await this.refreshBookmarksAfterWrite();
+                        this.notify(this.t('config.bookmarkRestored', 'Bookmark restored.'), 'success');
+                    } catch {
+                        this.notify(this.t('config.bookmarkRestoreFailed', 'Could not restore the bookmark.'), 'error');
+                    }
+                },
+            });
             await this.refreshBookmarksAfterWrite();
         } catch {
             this.notify(this.t('config.bookmarkDeleteError', 'Could not delete the bookmark.'), 'error');
@@ -10497,17 +10793,53 @@ class DashboardConfig {
     }
 
     async bulkDelete(picked) {
-        const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks? This cannot be undone.')
+        const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks?')
             .replace('{n}', String(picked.length));
         if (!await this.confirmAction(msg)) return;
-        for (const [pageId, targets] of this.selectionTargetsByPage(picked)) {
+
+        const byPage = [...this.selectionTargetsByPage(picked)];
+        // Snapshot each affected page before touching it, so the toast can put
+        // the rows back. The same approach the :remove command already uses —
+        // deleting in bulk is exactly where getting it wrong hurts most.
+        const snapshots = new Map();
+        for (const [pageId] of byPage) {
+            snapshots.set(String(pageId), (this.dash.allBookmarks || [])
+                .filter((b) => String(b.pageId) === String(pageId))
+                .map((b) => {
+                    const copy = { ...b };
+                    delete copy.pageId;
+                    return copy;
+                }));
+        }
+
+        for (const [pageId, targets] of byPage) {
             await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
                 .filter(({ target }) => !targets.has(target))
                 .map(({ bookmark }) => bookmark));
         }
         this.bmSelected.clear();
         this.bmEditing = null;
-        this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success');
+
+        const undoCallback = async () => {
+            try {
+                for (const [pageId, rows] of snapshots) {
+                    await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(rows),
+                    });
+                }
+                await this.refreshBookmarksAfterWrite();
+                this.notify(this.t('config.bulkDeleteUndone', 'Bookmarks restored.'), 'success');
+            } catch {
+                this.notify(this.t('config.bulkDeleteUndoFailed', 'Could not restore the bookmarks.'), 'error');
+            }
+        };
+
+        this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success', {
+            undoCallback,
+            duration: 8000,
+        });
         await this.refreshBookmarksAfterWrite();
     }
 
@@ -11840,7 +12172,7 @@ class DashboardConfig {
                 const key = btn.getAttribute('data-cleanup-goto');
                 if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return;
                 this.bmCleanupFilter = key;
-                this.bmTagFilter = '';
+                this.bmTagFilter = [];
                 // A stale search or category from an earlier visit would narrow
                 this.bmQuery = '';
                 this.bmPageFilter = '';
@@ -11924,7 +12256,10 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-help-body" data-help-tab="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`;
         }).join('');
         return `
-            <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
+            <div class="config-help-header">
+                <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
+                ${this.renderCheatSheetPdfLink()}
+            </div>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-help-body" role="tabpanel" tabindex="0">${this.renderHelpBody()}</div>
         `;
@@ -12003,6 +12338,7 @@ class DashboardConfig {
                 'config.helpKeyboardBody', '',
                 `<div class="config-actions">
                     <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
+                    ${this.renderCheatSheetPdfLink()}
                 </div>`)
             + this.helpPanel('config.helpConfigKeyboardTitle', 'Config navigation',
                 'config.helpConfigKeyboardBody', '');

@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.09 — August 2026](#v20260809--august-2026)
 - [v2026.08.08.6 — August 2026](#v202608086--august-2026)
 - [v2026.08.08.5 — August 2026](#v202608085--august-2026)
 - [v2026.08.08.4 — August 2026](#v202608084--august-2026)
@@ -148,6 +149,33 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.09 — August 2026
+
+**Bookmarks and the cheat sheet** — config → bookmarks gets a tag cloud for filtering and selecting, deleting a bookmark can be undone, and the cheat sheet opens on the shortcuts for whatever view you are in.
+
+### Bookmarks
+
+- **new** **Filter and select from a tag cloud** — **Tags** above the list shows every tag in use, most-used first and sized by count. Picking several matches bookmarks carrying *any* of them, the same OR the dashboard tag cloud uses; **Select these bookmarks** turns the filtered result into a ticked selection for the bulk toolbar, and each tag also gets its own removable chip (`dashboard-config.js`, `config-view.css`).
+- **new** **Deleting a bookmark can be undone** — one row or a whole selection, with **Undo** in the toast. Single-row delete had no undo at all, and the bulk one could be pushed off screen by a keyboard tip: tips are unprompted and run for 12–14s, so a confirmation queued behind one landed long after the action. A real confirmation now takes the slot from a tip (`dashboard-config.js`, `dashboard-keyboard-tip.js`).
+- **fix** **Rows line up again** — the row borrowed a layout built for two children and put six in it, so domain, shortcut, tags and the checking badge spread across the full width and shifted with every row's tag count; long text also ran outside the card. Tags move to their own line past two, and the checking badge sits in a right-hand column with the usage line (`dashboard-config.js`, `config-view.css`).
+- **fix** **Long lists stay fast** — the load-more sentinel re-triggered itself after every repaint, so the list loaded to the end on open rather than a page at a time. Each batch now waits for a scroll; on a 500-bookmark library the redraw that runs on every keystroke in the search field drops from ~64ms to ~8ms (`dashboard-config.js`).
+- **improved** **Rows announce their position** — the feed is exposed as a list, with `aria-posinset`/`aria-setsize` counting the whole filtered set rather than the rows paging has rendered (`dashboard-config.js`).
+
+### Cheat sheet
+
+- **new** **Opens on the view you are in** — from Health the health shortcuts lead and are marked, likewise Inbox, inbox triage, and config. Nothing is hidden or reordered and the filter still searches every section; opening it from the bookmark grid is unchanged (`keyboard-cheat-sheet-registry.js`, `dashboard-ui-helpers.js`, `modal.css`).
+- **new** **Printable one-page PDF** — linked from **Config → Overview** and the top of **Config → Help**, always opening in a new tab (`dashboard-config.js`, `generate-cheatsheet.cjs`).
+- **new** **`:help` opens it too** — an alias for `:cheat`, alongside `!` and `F1` (`search-commands.js`).
+- **improved** **Health, inbox and triage shortcuts listed** — the sheet carries the same rows as the legends under those views, from one shared registry that also feeds the printable sheet, so the two cannot drift apart (`keyboard-view-legends.js`, `keyboard-cheat-sheet-registry.js`).
+
+### Dashboard
+
+- **fix** **Header tooltips are no longer cut off** — the tooltips on **pages**, **inbox**, **health** and **config** anchored above their icon and ran off the top of the window. They open downwards, stay inside the window near the right edge, and their key chips carry the same fill as the toolbar buttons (`dashboard-toolbar.js`, `dashboard-enhancements.css`).
+- **improved** **The Shift+B tip joins the normal rotation** — it was pinned to first place after install and gated every other tip until it had been seen. It is now one of the tips in the catalog, subject to the same multi-day gap and the **Show occasional keyboard tips** switch (`dashboard-keyboard-tip.js`, `config-help-tips.js`).
+- **fix** **Inbox triage keeps focus** — Tab could walk out of the triage overlay into the page behind it, and closing it dropped focus to the top of the document rather than the button that opened it; the snooze menu answers arrow keys (`dashboard-inbox-triage.js`, `dashboard-inbox.js`, `focus-trap-utils.js`).
 
 ---
 

@@ -77,6 +77,10 @@
         return document.getElementById('omnibox-overlay') != null;
     }
 
+    function isInboxTriageOpen() {
+        return document.getElementById('inbox-triage-overlay') != null;
+    }
+
     function isMoveOrDeletePopoverOpen() {
         return document.getElementById('move-popover') != null
             || document.getElementById('delete-popover') != null
@@ -101,6 +105,7 @@
             || isBookmarkFormModalOpen()
             || isPageOverviewOpen()
             || isOmniboxOpen()
+            || isInboxTriageOpen()
             || isTagCloudModalOpen()
             || isMoveOrDeletePopoverOpen()
             || isDatePopoverOpen()

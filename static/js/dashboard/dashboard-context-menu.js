@@ -213,7 +213,7 @@ class DashboardContextMenu {
         const confirm = (item) => {
             const action = item.getAttribute('data-action');
             close();
-            this.runAction(action, row, bookmarkRef);
+            this.runAction(action, row, bookmarkRef, { parentPoint: point });
         };
 
         const onKey = (e) => {
@@ -249,11 +249,15 @@ class DashboardContextMenu {
      * monitor is the tier that records uptime — so each carries its sentence
      * instead of leaving the user to guess what the next click selects.
      */
-    showCheckModeMenu(row, bookmarkRef) {
+    showCheckModeMenu(row, bookmarkRef, options = {}) {
         const d = this.dash;
         const bookmark = bookmarkRef.bookmark;
         const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
         if (!window.CheckMode) return;
+        // Where Escape should land. Opened from the parent menu it goes back
+        // there, the way a native submenu does; opened straight from Shift+C
+        // there is no parent to return to, so Escape just closes.
+        const parentPoint = options.parentPoint || null;
         this.close();
 
         const active = window.CheckMode.of(bookmark);
@@ -384,7 +388,18 @@ class DashboardContextMenu {
         };
 
         const onKey = (e) => {
-            if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); return; }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                close();
+                // Step back out to the menu this was opened from, so Escape
+                // walks the levels rather than dropping the whole stack. A
+                // second Escape then closes the parent.
+                if (parentPoint) {
+                    this.show(row, bookmarkRef, parentPoint);
+                }
+                return;
+            }
             if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx + 1) % items.length); return; }
             if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx - 1 + items.length) % items.length); return; }
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopImmediatePropagation(); if (items[focusedIdx]) void choose(items[focusedIdx]); return; }
@@ -448,29 +463,6 @@ class DashboardContextMenu {
      */
     static markShareRefused() {
         DashboardContextMenu._shareRefused = true;
-    }
-
-    /**
-     * Whether a share sheet is missing only because the page is not a secure
-     * context — the case worth explaining, because it is the user's to fix.
-     *
-     * Safari and Chromium both implement Web Share but withhold it outside a
-     * secure origin, and a self-hosted dashboard on `http://192.168.x.x` is
-     * exactly that. `localhost` counts as secure, so this is specifically the
-     * LAN-address case: reaching the same instance over HTTPS or through a
-     * tunnel brings the share sheet back.
-     *
-     * Not knowable for certain — a browser with no Web Share at all looks the
-     * same from here — so it only ever adds a hint, never a promise.
-     */
-    shareBlockedByInsecureOrigin() {
-        if (this.canOpenShareSheet()) return false;
-        // Either the page is not a secure context, or a call was refused with
-        // NotAllowedError — which Safari also raises over plain HTTP on
-        // localhost, a context it otherwise reports as secure. Both point at the
-        // address rather than the browser, and both are fixed the same way.
-        return window.isSecureContext === false
-            || DashboardContextMenu._shareRefused === true;
     }
 
     /**
@@ -662,7 +654,7 @@ class DashboardContextMenu {
         pop.style.top = `${Math.round(top)}px`;
     }
 
-    runAction(action, row, bookmarkRef) {
+    runAction(action, row, bookmarkRef, options = {}) {
         const d = this.dash;
         const bookmark = bookmarkRef.bookmark;
         const bookmarkIndex = bookmarkRef.scope === 'current' ? bookmarkRef.index : -1;
@@ -678,9 +670,18 @@ class DashboardContextMenu {
             case 'copy-url':
                 d.searchComponent?.commandsComponent?._copyUrlToClipboard?.(bookmark.url, row);
                 break;
-            case 'share':
-                void this.shareBookmark(bookmark, row);
+            case 'share': {
+                let shareTarget = bookmark;
+                if (bookmarkRef.scope === 'inbox') {
+                    const id = row.getAttribute('data-inbox-id');
+                    const shareUrl = d.inbox?.buildItemShareUrl?.(id);
+                    if (shareUrl) {
+                        shareTarget = { name: bookmark.name, url: shareUrl };
+                    }
+                }
+                void this.shareBookmark(shareTarget, row);
                 break;
+            }
             case 'edit':
                 d.openBookmarkInlineEditor?.(row, bookmarkRef);
                 break;
@@ -691,7 +692,7 @@ class DashboardContextMenu {
                 d.showMovePopover?.(row, bookmark, bookmarkIndex);
                 break;
             case 'check-mode':
-                this.showCheckModeMenu(row, bookmarkRef);
+                this.showCheckModeMenu(row, bookmarkRef, { parentPoint: options.parentPoint });
                 break;
             case 'delete':
                 // Confirm popover rather than deleteBookmarkInline() — a menu click is

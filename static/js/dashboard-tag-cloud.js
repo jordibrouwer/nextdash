@@ -910,4 +910,7 @@
     };
 
     window.DashboardTagCloud = DashboardTagCloud;
+    // Shared with the config bookmarks tag cloud, which ranks the same tags the
+    // same way. Exported rather than copied so the two orderings cannot drift.
+    window.DashboardTagCloud.countTagsFromBookmarks = countTagsFromBookmarks;
 })();

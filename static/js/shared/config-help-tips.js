@@ -21,13 +21,14 @@
                 'tipEverydayArrows',
                 'tipEverydayEsc',
                 'tipEverydayOverview',
+                'tipEverydayViews',
                 'tipEverydayCheatsheet',
             ],
         },
         {
             titleKey: 'tipsGroupAdding',
             titleFallback: 'Adding bookmarks',
-            tips: ['tipAddPaste', 'tipAddQuickAdd', 'tipAddFullModal', 'tipAddShortcut'],
+            tips: ['tipAddPaste', 'tipAddQuickAdd', 'tipAddAnywhere', 'tipAddFullModal', 'tipAddShortcut'],
         },
         {
             titleKey: 'tipsGroupEditing',

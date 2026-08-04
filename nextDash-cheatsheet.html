@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>nextDash — keyboard shortcuts</title>
+<style>
+  @font-face {
+    font-family: 'Source Code Pro';
+    font-style: normal;
+    font-weight: 400 700;
+    src: url('file:///Users/jordibrw/dev/nextdash/static/fonts/source-code-pro-latin.woff2') format('woff2');
+  }
+
+  *, *::before, *::after { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  :root {
+    --bg: #0a0a0a;
+    --bg-card: #141414;
+    --bg-dots: #1c2418;
+    --text: #e4e8e0;
+    --text-muted: #8a9688;
+    --text-section: #6b8060;
+    --accent: #39ff14;
+    --accent-soft: rgba(57, 255, 20, 0.14);
+    --border: #2a3528;
+    --radius: 10px;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Source Code Pro", ui-monospace, monospace;
+    font-size: 9.5pt;
+    line-height: 1.45;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: radial-gradient(var(--bg-dots) 0.65px, transparent 0.65px);
+    background-size: 14px 14px;
+    opacity: 0.55;
+  }
+
+  .page {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 1.1cm 1.25cm 1.4cm;
+  }
+
+  .brand {
+    text-align: center;
+    margin: 0 0 1.1rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand img {
+    display: block;
+    width: min(24rem, 92vw);
+    height: auto;
+    margin: 0 auto 0.55rem;
+    filter: drop-shadow(0 0 22px rgba(57, 255, 20, 0.28));
+  }
+
+  .brand-tag {
+    margin: 0;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.92;
+  }
+
+  .sheet {
+    background: color-mix(in srgb, var(--bg-card) 92%, #000 8%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.95rem 1.05rem 0.75rem;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(57, 255, 20, 0.06);
+  }
+
+  .lead {
+    margin: 0 0 0.85rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .lead strong, .lead code {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .lead code {
+    padding: 0.05em 0.3em;
+    border-radius: 0.25em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.95em;
+  }
+
+  .cheat-group {
+    margin: 0;
+    padding: 0.85rem 0 0.45rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .cheat-group:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  h2 {
+    margin: 0 0 0.55rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin: 0;
+  }
+
+  td {
+    vertical-align: top;
+    padding: 0.18rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+    line-height: 1.35;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  td.keys {
+    width: 38%;
+    padding-right: 0.65rem;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  td.desc {
+    width: 62%;
+    color: var(--text-muted);
+    font-size: 0.84rem;
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 0.04em 0.32em;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+    border-radius: 0.28em;
+    background: color-mix(in srgb, var(--accent-soft) 80%, #111 20%);
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+
+  .kbd-sep, .kbd-plus {
+    margin: 0 0.18em;
+    color: var(--text-section);
+    font-size: 0.72rem;
+    font-weight: 400;
+  }
+
+  .footer {
+    margin: 0.85rem 0 0;
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--text-section);
+    letter-spacing: 0.04em;
+  }
+
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  @media print {
+    .page { padding: 0.75cm 1cm 1cm; }
+    .sheet { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="brand">
+    <img src="file:///Users/jordibrw/dev/nextdash/logo-ascii-transparent.png" alt="nextDash">
+    <p class="brand-tag">keyboard shortcuts</p>
+  </header>
+  <div class="sheet">
+    <p class="lead">Press <strong>!</strong> or <strong>F1</strong> on the dashboard for the searchable live list (also <strong>Config → Help → Keyboard</strong>). <code>:cheat</code> and <code>:help</code> open the same modal. This printable sheet is generated from the same source.</p>
+<section class="cheat-group"><h2>Navigation</h2><table>
+        <tr><td class="keys"><kbd>1–9</kbd></td><td class="desc">Switch to bookmark page</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>I</kbd></td><td class="desc">Open Inbox — links saved to read later</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>H</kbd></td><td class="desc">Open Health — bookmarks that need attention</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>S</kbd></td><td class="desc">Open config — settings, pages, and bookmarks</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→</kbd></td><td class="desc">Previous / next page</td></tr>
+    
+        <tr><td class="keys"><kbd>,</kbd></td><td class="desc">Page overview with bookmark counts</td></tr>
+    
+        <tr><td class="keys"><kbd>!</kbd><span class="kbd-sep">/</span><kbd>F1</kbd></td><td class="desc">This cheat sheet</td></tr>
+    
+        <tr><td class="keys"><kbd>↑ ↓ ← →</kbd></td><td class="desc">Move focus up / down through bookmarks</td></tr>
+    
+        <tr><td class="keys"><kbd>Enter</kbd><span class="kbd-sep">/</span><kbd>Space</kbd></td><td class="desc">Open focused bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Clear selection / close overlay; undo unsaved drag reorder</td></tr>
+    </table></section>
+<section class="cheat-group"><h2>Health view</h2><table>
+        <tr><td class="keys"><kbd>j</kbd><span class="kbd-sep">/</span><kbd>k</kbd></td><td class="desc">Move between rows (↑ / ↓ work too)</td></tr>
+    
+        <tr><td class="keys"><kbd>s</kbd></td><td class="desc">Unfold the score breakdown for the selected row</td></tr>
+    
+        <tr><td class="keys"><kbd>i</kbd></td><td class="desc">Open uptime statistics for the selected row</td></tr>
+    
+        <tr><td class="keys"><kbd>p</kbd></td><td class="desc">Re-check the selected bookmark now</td></tr>
+    
+        <tr><td class="keys"><kbd>R</kbd><span class="kbd-sep">/</span><kbd>?</kbd></td><td class="desc">Refresh the cached health report</td></tr>
+    
+        <tr><td class="keys"><kbd>c</kbd></td><td class="desc">Change availability checking — off, periodic or monitor</td></tr>
+    
+        <tr><td class="keys"><kbd>m</kbd></td><td class="desc">Row menu — redirect, title, favicon, archive, delete</td></tr>
+    
+        <tr><td class="keys"><kbd>Enter</kbd><span class="kbd-sep">/</span><kbd>Space</kbd></td><td class="desc">Open the selected bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>g</kbd><span class="kbd-sep">/</span><kbd>G</kbd><span class="kbd-sep">/</span><kbd>Home</kbd><span class="kbd-sep">/</span><kbd>End</kbd></td><td class="desc">Jump to the first / last row</td></tr>
+    
+        <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Close a menu, or leave the view</td></tr>
+    </table></section>
+<section class="cheat-group"><h2>Inbox view</h2><table>
+        <tr><td class="keys"><kbd>j</kbd><span class="kbd-sep">/</span><kbd>k</kbd></td><td class="desc">Move between rows (↑ / ↓ work too)</td></tr>
+    
+        <tr><td class="keys"><kbd>Enter</kbd><span class="kbd-sep">/</span><kbd>Space</kbd></td><td class="desc">Open the selected item</td></tr>
+    
+        <tr><td class="keys"><kbd>p</kbd></td><td class="desc">Promote to a full bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>n</kbd></td><td class="desc">Add or edit a note</td></tr>
+    
+        <tr><td class="keys"><kbd>r</kbd></td><td class="desc">Mark as read</td></tr>
+    
+        <tr><td class="keys"><kbd>z</kbd></td><td class="desc">Snooze until later</td></tr>
+    
+        <tr><td class="keys"><kbd>x</kbd></td><td class="desc">Toggle row selection for bulk actions</td></tr>
+    
+        <tr><td class="keys"><kbd>d</kbd></td><td class="desc">Delete the selected item</td></tr>
+    
+        <tr><td class="keys"><kbd>g</kbd><span class="kbd-sep">/</span><kbd>G</kbd><span class="kbd-sep">/</span><kbd>Home</kbd><span class="kbd-sep">/</span><kbd>End</kbd></td><td class="desc">Jump to the first / last row</td></tr>
+    
+        <tr><td class="keys"><kbd>t</kbd></td><td class="desc">Open triage — walk the list one item at a time</td></tr>
+    
+        <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Clear selection, or return to bookmarks</td></tr>
+    </table></section>
+<section class="cheat-group"><h2>Inbox triage</h2><table>
+        <tr><td class="keys"><kbd>j</kbd><span class="kbd-sep">/</span><kbd>k</kbd></td><td class="desc">Move to the previous / next item</td></tr>
+    
+        <tr><td class="keys"><kbd>o</kbd><span class="kbd-sep">/</span><kbd>Enter</kbd></td><td class="desc">Open the current item</td></tr>
+    
+        <tr><td class="keys"><kbd>p</kbd></td><td class="desc">Promote to a full bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>r</kbd><span class="kbd-sep">/</span><kbd>Space</kbd></td><td class="desc">Keep and mark as read</td></tr>
+    
+        <tr><td class="keys"><kbd>z</kbd></td><td class="desc">Snooze until later</td></tr>
+    
+        <tr><td class="keys"><kbd>n</kbd></td><td class="desc">Add or edit a note</td></tr>
+    
+        <tr><td class="keys"><kbd>d</kbd></td><td class="desc">Remove the current item</td></tr>
+    
+        <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Close triage</td></tr>
+    </table></section>
+<section class="cheat-group"><h2>Config view</h2><table>
+        <tr><td class="keys"><kbd>j</kbd><span class="kbd-sep">/</span><kbd>k</kbd></td><td class="desc">Previous / next section in the left rail</td></tr>
+    
+        <tr><td class="keys"><kbd>[</kbd><span class="kbd-sep">/</span><kbd>]</kbd></td><td class="desc">Previous / next sub-tab in the current section</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-sep">/</span><kbd>Cmd</kbd><span class="kbd-plus">+</span><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>K</kbd></td><td class="desc">Find a setting, section, or help topic</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>S</kbd><span class="kbd-sep">/</span><kbd>&lt;</kbd></td><td class="desc">Return to the dashboard from config</td></tr>
+    
+        <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Close bookmark editor, clear list selection, or exit config</td></tr>
+    </table></section>
+<section class="cheat-group"><h2>Search modes</h2><table>
+        <tr><td class="keys"><kbd>&gt;</kbd></td><td class="desc">Regular search — filter bookmarks on current page by name</td></tr>
+    
+        <tr><td class="keys"><kbd>:</kbd></td><td class="desc">Command palette — type a command name to run it</td></tr>
+    
+        <tr><td class="keys"><kbd>?</kbd></td><td class="desc">Finders — e.g. ?g query to search Google</td></tr>
+    
+        <tr><td class="keys"><kbd>*</kbd></td><td class="desc">Recent bookmarks panel</td></tr>
+    </table></section>
+<section class="cheat-group"><h2>Commands — navigation</h2><table>
+        <tr><td class="keys"><kbd>:inbox</kbd></td><td class="desc">Open Inbox (Shift + I)</td></tr>
+    
+        <tr><td class="keys"><kbd>:cheat</kbd><span class="kbd-sep">/</span><kbd>:help</kbd></td><td class="desc">Open keyboard cheat sheet (same as !, F1, or :help)</td></tr>
+    
+        <tr><td class="keys"><kbd>:config</kbd></td><td class="desc">Open config</td></tr>
+    </table></section>
+  </div>
+  <p class="footer">nextdash.cc · generated 2026-08-04 · <code>npm run generate:cheatsheet</code></p>
+</div>
+</body>
+</html>
