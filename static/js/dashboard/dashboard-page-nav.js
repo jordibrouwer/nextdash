@@ -87,8 +87,24 @@ class DashboardPageNav {
 
 
 
+    /**
+     * Title-case a panel breadcrumb for the tab title.
+     *
+     * The panel trails are lowercase by design ('health › duplicates'); a browser
+     * tab reads as a proper name, so each segment is capitalised on the way out.
+     */
+    capitalizeTrail(trail) {
+        return String(trail).split(' › ').map((part) => {
+            const s = String(part).trim();
+            return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+        }).join(' › ');
+    }
+
+
     inboxPageLabel() {
         const d = this.dash;
+        const bc = d.inbox?.headerBreadcrumb?.();
+        if (bc) return this.capitalizeTrail(bc);
         const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
         return inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
     }
@@ -96,6 +112,8 @@ class DashboardPageNav {
 
     healthPageLabel() {
         const d = this.dash;
+        const bc = d.health?.headerBreadcrumb?.();
+        if (bc) return this.capitalizeTrail(bc);
         const healthLabel = d.language?.t?.('dashboard.healthPageTitle');
         return healthLabel && healthLabel !== 'dashboard.healthPageTitle' ? healthLabel : 'Health';
     }
@@ -104,12 +122,7 @@ class DashboardPageNav {
     configPageLabel() {
         const d = this.dash;
         const bc = d.config?.headerBreadcrumb?.();
-        if (bc) {
-            return bc.split(' › ').map((part) => {
-                const s = String(part).trim();
-                return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-            }).join(' › ');
-        }
+        if (bc) return this.capitalizeTrail(bc);
         const configLabel = d.language?.t?.('dashboard.config');
         return configLabel && configLabel !== 'dashboard.config' ? configLabel : 'Config';
     }

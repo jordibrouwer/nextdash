@@ -351,20 +351,21 @@ class DashboardUiHelpers {
             return keys;
         };
         const filterPlaceholder = d.language?.t('dashboard.cheatsheetFilterPlaceholder') || 'Filter shortcuts…';
+        const esc = (text) => this.escapeHtml(String(text ?? ''));
         const html = `
             <div class="keyboard-cheat-sheet">
                 <input type="text" id="cheat-sheet-filter" class="cheat-sheet-filter"
-                       placeholder="${filterPlaceholder}" autocomplete="off" spellcheck="false"
-                       aria-label="${filterPlaceholder}">
+                       placeholder="${esc(filterPlaceholder)}" autocomplete="off" spellcheck="false"
+                       aria-label="${esc(filterPlaceholder)}">
                 ${sections.map((section, i) => `
                     <details class="cheat-sheet-group" ${i === 0 ? 'open' : ''}>
-                        <summary class="cheat-sheet-group-title">${section.title}</summary>
+                        <summary class="cheat-sheet-group-title">${esc(section.title)}</summary>
                         <table class="keyboard-cheat-sheet-table">
                             <tbody>
                                 ${section.items.map((shortcut) => `
                                     <tr>
                                         <td class="keyboard-cheat-sheet-keys">${formatKeys(shortcut.keys)}</td>
-                                        <td class="keyboard-cheat-sheet-description">${shortcut.description}</td>
+                                        <td class="keyboard-cheat-sheet-description">${esc(shortcut.description)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>

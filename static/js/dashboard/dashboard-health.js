@@ -2197,7 +2197,8 @@ class DashboardHealth {
         toolbar.className = 'health-view-toolbar';
         const pills = filters.map(([key, label]) => {
             const count = this.filterCount(key);
-            return `<button type="button" class="health-view-filter-btn${this.filter === key ? ' is-active' : ''}" data-health-filter="${key}">
+            const active = this.filter === key;
+            return `<button type="button" class="health-view-filter-btn${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-health-filter="${key}">
                 ${this.escape(label)}<span class="health-view-filter-count">${count}</span>
             </button>`;
         }).join('');
@@ -2255,17 +2256,41 @@ class DashboardHealth {
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
-        toolbar.querySelectorAll('[data-health-filter]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                this.filter = btn.getAttribute('data-health-filter') || 'broken';
-                this.focusIssueKey = null;
-                this._trackAction('filter', { filter: this.filter, via: 'pill' });
-                this._resetFeedPaging();
-                this.persistViewState();
-                this.syncUrlState();
-                this.render();
-                this.dash.pageNav?.updatePageTitle?.();
-                this.dash.pageNav?.updateDocumentTitle?.();
+        const filterBtns = [...toolbar.querySelectorAll('[data-health-filter]')];
+        const applyFilter = (key, via) => {
+            this.filter = key || 'broken';
+            this.focusIssueKey = null;
+            this._trackAction('filter', { filter: this.filter, via });
+            this._resetFeedPaging();
+            this.persistViewState();
+            this.syncUrlState();
+            this.render();
+            this.dash.pageNav?.updatePageTitle?.();
+            this.dash.pageNav?.updateDocumentTitle?.();
+        };
+        filterBtns.forEach((btn, i) => {
+            btn.addEventListener('click', () => applyFilter(btn.getAttribute('data-health-filter'), 'pill'));
+            // The group announces itself as a tablist, so the keys that role
+            // promises have to work: arrows wrap, Home/End jump to the ends.
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                const last = filterBtns.length - 1;
+                const next = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (i === last ? 0 : i + 1)
+                            : (i === 0 ? last : i - 1);
+                const target = filterBtns[next];
+                if (!target) return;
+                const key = target.getAttribute('data-health-filter');
+                target.focus();
+                applyFilter(key, 'keyboard');
+                // render() rebuilds the toolbar wholesale and drops the focus set
+                // above, so re-focus the replacement to keep arrowing usable.
+                if (!target.isConnected) {
+                    document.querySelector(`[data-health-filter="${CSS.escape(key)}"]`)?.focus();
+                }
             });
         });
 

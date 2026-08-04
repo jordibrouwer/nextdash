@@ -38,6 +38,7 @@ class DashboardInboxTriage {
         }
         this.mount();
         this.render();
+        this.focusCard();
         return this.isOpen();
     }
 
@@ -61,9 +62,25 @@ class DashboardInboxTriage {
         }
         this._cardClickHandler = null;
         this._cardErrorHandler = null;
+        const wasOpen = Boolean(this.overlay);
         this.overlay?.remove();
         this.overlay = null;
         document.body.classList.remove('inbox-triage-active');
+        if (wasOpen) {
+            // Drop inert before restoring focus: the opener is inside the
+            // background that was just made unreachable, so focusing it first
+            // would be refused.
+            window.FocusTrapUtils?.syncDashboardInert?.();
+            const opener = this._opener;
+            this._opener = null;
+            if (opener) {
+                if (window.FocusTrapUtils?.focusIfConnected) {
+                    window.FocusTrapUtils.focusIfConnected(opener);
+                } else if (opener.isConnected) {
+                    opener.focus({ preventScroll: true });
+                }
+            }
+        }
     }
 
     currentItem() {
@@ -84,6 +101,10 @@ class DashboardInboxTriage {
 
     mount() {
         this.unmount();
+        // Remember who opened it so focus can go back there on close; without
+        // this the caret lands at the top of the document and a keyboard user
+        // has to tab back down to where they were.
+        this._opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         document.body.classList.add('inbox-triage-active');
         const overlay = document.createElement('div');
         overlay.id = 'inbox-triage-overlay';
@@ -148,6 +169,28 @@ class DashboardInboxTriage {
 
         this._keyHandler = (e) => this.handleKeydown(e);
         document.addEventListener('keydown', this._keyHandler, true);
+        // The overlay is aria-modal, so the dashboard behind it must stop being
+        // reachable — by Tab or by screen reader — while it is up.
+        window.FocusTrapUtils?.syncDashboardInert?.();
+    }
+
+    /**
+     * Put focus on the primary action once a card is on screen.
+     *
+     * Called after render() rather than from mount(): the card is empty until
+     * render fills it, so there is nothing to focus at mount time.
+     */
+    focusCard() {
+        if (!this.isOpen()) {
+            return;
+        }
+        const card = this.overlay?.querySelector('.inbox-triage-card');
+        if (!card || card.contains(document.activeElement)) {
+            return;
+        }
+        const primary = card.querySelector('[data-triage="open"]')
+            || card.querySelector('.inbox-triage-close');
+        primary?.focus({ preventScroll: true });
     }
 
     renderThumb(item) {
@@ -167,6 +210,13 @@ class DashboardInboxTriage {
         }
         if (this.dash.isModalOpen?.() && e.key !== 'Escape') {
             return;
+        }
+        // Ahead of the text-field bail-out below: Tab has to stay caught even
+        // when the caret sits in the note input, or it walks out of the overlay.
+        if (e.key === 'Tab' && this.overlay) {
+            if (window.FocusTrapUtils?.trapTabKey(e, this.overlay)) {
+                return;
+            }
         }
         const tag = e.target?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) {
@@ -352,6 +402,7 @@ class DashboardInboxTriage {
             this.close();
             return;
         }
+        const hadFocusInCard = card.contains(document.activeElement);
 
         const title = item.previewTitle || item.title || item.domain || item.url;
         const domain = item.domain || this.inbox.formatUrlDisplay(item.url);
@@ -398,5 +449,13 @@ class DashboardInboxTriage {
             </div>
             <p class="inbox-triage-hint">${this.escape(this.t('dashboard.inboxTriageHint', 'J/K next · O open · P promote · R keep · Z snooze · N note · D delete · Esc close'))}</p>
         `;
+
+        // Rewriting the card destroys whatever was focused inside it, which
+        // would drop focus to <body> — outside the trap — every time the queue
+        // advanced. Only re-focus when focus was already in the card, so this
+        // never steals it from the note prompt or a modal opened on top.
+        if (hadFocusInCard) {
+            this.focusCard();
+        }
     }
 }

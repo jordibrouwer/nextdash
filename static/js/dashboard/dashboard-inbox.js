@@ -1330,7 +1330,33 @@ class DashboardInbox {
                 e.stopImmediatePropagation();
                 this.closeSnoozeMenu();
                 anchor?.focus?.({ preventScroll: true });
+                return;
             }
+            // role="menu" promises arrow navigation; without it the presets were
+            // reachable only by Tab, which the menu role tells readers not to use.
+            // The date field is the last stop so a custom date stays keyboard-only.
+            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') {
+                return;
+            }
+            if (!menu.contains(document.activeElement)) {
+                return;
+            }
+            const stops = [...menu.querySelectorAll('[role="menuitem"]')];
+            if (dateInput) {
+                stops.push(dateInput);
+            }
+            if (!stops.length) {
+                return;
+            }
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const last = stops.length - 1;
+            const current = stops.indexOf(document.activeElement);
+            const next = e.key === 'Home' ? 0
+                : e.key === 'End' ? last
+                    : e.key === 'ArrowDown' ? (current >= last ? 0 : current + 1)
+                        : (current <= 0 ? last : current - 1);
+            stops[next]?.focus({ preventScroll: true });
         };
         setTimeout(() => document.addEventListener('click', this._snoozeOutside, true), 0);
         document.addEventListener('keydown', this._snoozeEsc, true);
@@ -2174,10 +2200,10 @@ class DashboardInbox {
 
         toolbar.innerHTML = `
             <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">
-                <button type="button" class="inbox-filter-btn${this.filter === 'all' ? ' is-active' : ''}" data-inbox-filter="all">${this.escape(this.t('dashboard.inboxFilterAll', 'All'))}</button>
-                <button type="button" class="inbox-filter-btn${this.filter === 'unread' ? ' is-active' : ''}" data-inbox-filter="unread">${this.escape(this.t('dashboard.inboxFilterUnread', 'Unread'))}</button>
-                ${showSnoozePill ? `<button type="button" class="inbox-filter-btn${this.filter === 'snoozed' ? ' is-active' : ''}" data-inbox-filter="snoozed">${this.escape(this.t('dashboard.inboxFilterSnoozed', 'Snoozed'))}<span class="inbox-filter-count">${snoozedCount}</span></button>` : ''}
-                ${showNotedPill ? `<button type="button" class="inbox-filter-btn${this.filter === 'noted' ? ' is-active' : ''}" data-inbox-filter="noted">${this.escape(this.t('dashboard.inboxFilterNoted', 'With note'))}<span class="inbox-filter-count">${notedCount}</span></button>` : ''}
+                <button type="button" class="inbox-filter-btn${this.filter === 'all' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'all'}" tabindex="${this.filter === 'all' ? 0 : -1}" data-inbox-filter="all">${this.escape(this.t('dashboard.inboxFilterAll', 'All'))}</button>
+                <button type="button" class="inbox-filter-btn${this.filter === 'unread' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'unread'}" tabindex="${this.filter === 'unread' ? 0 : -1}" data-inbox-filter="unread">${this.escape(this.t('dashboard.inboxFilterUnread', 'Unread'))}</button>
+                ${showSnoozePill ? `<button type="button" class="inbox-filter-btn${this.filter === 'snoozed' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'snoozed'}" tabindex="${this.filter === 'snoozed' ? 0 : -1}" data-inbox-filter="snoozed">${this.escape(this.t('dashboard.inboxFilterSnoozed', 'Snoozed'))}<span class="inbox-filter-count">${snoozedCount}</span></button>` : ''}
+                ${showNotedPill ? `<button type="button" class="inbox-filter-btn${this.filter === 'noted' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'noted'}" tabindex="${this.filter === 'noted' ? 0 : -1}" data-inbox-filter="noted">${this.escape(this.t('dashboard.inboxFilterNoted', 'With note'))}<span class="inbox-filter-count">${notedCount}</span></button>` : ''}
             </div>
             ${showDomainSelect ? `<select class="inbox-domain-select" aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}">${domainOptions}</select>` : ''}
             <input type="search" class="inbox-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
@@ -2188,20 +2214,44 @@ class DashboardInbox {
             <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
             <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
         `;
-        toolbar.querySelectorAll('[data-inbox-filter]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                this.filter = btn.getAttribute('data-inbox-filter') || 'all';
-                this._trackAction('filter', { filter: this.filter, via: 'pill' });
-                this.visibleLimit = 50;
-                // Ticks from the previous filter would act on rows the user can no
-                // longer see, so a filter change starts the selection over.
-                this.checkedIds.clear();
-                this.focusItemId = null;
-                this.persistViewState();
-                this.syncUrlState();
-                this.render();
-                this.dash.pageNav?.updatePageTitle?.();
-                this.dash.pageNav?.updateDocumentTitle?.();
+        const filterBtns = [...toolbar.querySelectorAll('[data-inbox-filter]')];
+        const applyFilter = (key, via) => {
+            this.filter = key || 'all';
+            this._trackAction('filter', { filter: this.filter, via });
+            this.visibleLimit = 50;
+            // Ticks from the previous filter would act on rows the user can no
+            // longer see, so a filter change starts the selection over.
+            this.checkedIds.clear();
+            this.focusItemId = null;
+            this.persistViewState();
+            this.syncUrlState();
+            this.render();
+            this.dash.pageNav?.updatePageTitle?.();
+            this.dash.pageNav?.updateDocumentTitle?.();
+        };
+        filterBtns.forEach((btn, i) => {
+            btn.addEventListener('click', () => applyFilter(btn.getAttribute('data-inbox-filter'), 'pill'));
+            // The group announces itself as a tablist, so the keys that role
+            // promises have to work: arrows wrap, Home/End jump to the ends.
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                const last = filterBtns.length - 1;
+                const next = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (i === last ? 0 : i + 1)
+                            : (i === 0 ? last : i - 1);
+                const target = filterBtns[next];
+                if (!target) return;
+                const key = target.getAttribute('data-inbox-filter');
+                target.focus();
+                applyFilter(key, 'keyboard');
+                // render() rebuilds the toolbar wholesale and drops the focus set
+                // above, so re-focus the replacement to keep arrowing usable.
+                if (!target.isConnected) {
+                    document.querySelector(`[data-inbox-filter="${CSS.escape(key)}"]`)?.focus();
+                }
             });
         });
 

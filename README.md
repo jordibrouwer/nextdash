@@ -12,7 +12,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📋 **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — complete release history (new / fix).
 
-🗂️ **[Cheat sheet (PDF)](nextDash-cheatsheet.pdf?raw=true)** — one-page printable reference of the keyboard shortcuts and command palette for quick lookup.
+🗂️ **[Cheat sheet](nextDash-cheatsheet.pdf?raw=true)** — printable shortcut reference ([HTML](nextDash-cheatsheet.html?raw=true)); press **!** or **F1** on the dashboard for the live searchable list. Regenerate with `npm run generate:cheatsheet`.
 
 ---
 

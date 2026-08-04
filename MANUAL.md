@@ -10,7 +10,7 @@
 |---|----------|---------------|
 | 🚀 | **Install & security** | [README.md](README.md) — Docker, tokens, production setup |
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
-| 🗂️ | **Shortcut cheat sheet** | [PDF reference](nextDash-cheatsheet.pdf?raw=true) — one-page printable |
+| 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
 | 💬 | **Translated help** | **Config → Help** in the app (EN / NL / DE / FR) |
 
 This manual is for new users and anyone who wants a structured reference. It goes deeper than the README and mirrors the in-app Help topics.
@@ -627,7 +627,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:open tag <name>` / `:open category <name>` | Open bookmarks matching tag or category on current page |
 | `:open last [n]` | Open N recently opened on page (default 5, max 50) |
 | `:page` | Switch page by name or number (palette stays open, `✓` on current) |
-| `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` | Recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload |
+| `:recent` / `:overview` / `:cheat` / `:help` / `:whatsnew` / `:reload` | Recent modal (`*`), page overview (`,`), cheat sheet (`!` / `F1`), what's new, reload |
 | `:inbox` / `:inbox triage` | Open Inbox (`Shift+I`, or `0`) or triage unread items one by one |
 | `:config [section]` | Open config or tab (`bookmarks`, `backups`, `stats`, …) |
 | `:stale [days]` | List stale bookmarks |
