@@ -7682,9 +7682,34 @@ class DashboardConfig {
         };
     }
 
+    /**
+     * The element the bookmark list actually scrolls inside, or null when that
+     * is the viewport itself.
+     *
+     * This used to name `.config-view-body` outright, which reads as the right
+     * answer and is not: that class carries no CSS at all, so the div grows to
+     * fit its rows and never scrolls. Handing it to the load-more observer as a
+     * root meant the sentinel sat permanently inside the root's bounds, the
+     * intersection state never changed, and the callback never ran — 50 of 102
+     * rows, scrolling forever. `repaintBookmarksList` had the same node for its
+     * scroll save/restore, where a non-scrolling element reads scrollTop 0.
+     *
+     * So ask the layout rather than trusting a class name: walk up for the
+     * first ancestor that both allows overflow and has content overflowing it.
+     * Returning null for the viewport case is meaningful — IntersectionObserver
+     * reads `root: null` as the viewport, which is exactly what is wanted.
+     */
     bookmarkListScrollHost() {
-        return document.getElementById('config-bm-list')?.closest('.config-view-body')
-            || document.getElementById('config-bm-list')?.parentElement;
+        let el = document.getElementById('config-bm-list')?.parentElement;
+        while (el && el !== document.body && el !== document.documentElement) {
+            const overflowY = getComputedStyle(el).overflowY;
+            if ((overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay')
+                && el.scrollHeight > el.clientHeight + 1) {
+                return el;
+            }
+            el = el.parentElement;
+        }
+        return null;
     }
 
     resetBookmarkVisibleLimit() {
@@ -10408,8 +10433,10 @@ class DashboardConfig {
     /**
      * Re-arm the loader on the next scroll of the list's scroll host.
      *
-     * The host is whichever element actually scrolls — the config body, or the
-     * window when the panel is not its own scroller — so both are listened to.
+     * `root` is whichever element actually scrolls, or null when that is the
+     * viewport. Window is listened to either way: a scroll container can still
+     * be carried up the page by an outer scroll, and with a null root the
+     * window listener is the only one that fires.
      */
     armBookmarkLoadMore(root) {
         if (this._bmLoadMoreScrollTarget) {
@@ -10432,8 +10459,10 @@ class DashboardConfig {
         // bookmarks are routinely edited in place — the array identity the memo
         // keys on would not have moved. Drop it and recompute.
         this.invalidateVisibleBookmarks();
+        // A null host means the page itself scrolls, so the position to keep
+        // across the repaint lives on the window, not on an element.
         const scrollHost = this.bookmarkListScrollHost();
-        const scrollTop = scrollHost?.scrollTop ?? 0;
+        const scrollTop = scrollHost ? scrollHost.scrollTop : window.scrollY;
         this._bmLoadMoreObserver?.disconnect?.();
         this._bmLoadMoreObserver = null;
         host.innerHTML = this.renderBookmarksList();
@@ -10442,6 +10471,7 @@ class DashboardConfig {
         this.repaintBulkToolbar();
         this.updateBookmarkListChrome();
         if (scrollHost) scrollHost.scrollTop = scrollTop;
+        else window.scrollTo(0, scrollTop);
         this.setupBookmarkLoadMore(host);
     }
 
