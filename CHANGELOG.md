@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.08.09.1 — August 2026](#v202608091--august-2026)
 - [v2026.08.09 — August 2026](#v20260809--august-2026)
 - [v2026.08.08.6 — August 2026](#v202608086--august-2026)
 - [v2026.08.08.5 — August 2026](#v202608085--august-2026)
@@ -149,6 +150,25 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.08.09.1 — August 2026
+
+**Statistics counting fixes** — categories with the same name on two pages were counted as one, and a bookmark dated in the future corrupted the activity chart. The keyboard legend under the config form sections now matches the one under Inbox and Health.
+
+### Statistics
+
+- **fix** **Categories are counted per page** — a bookmark stores a bare category name plus the page it belongs to, so the same name on two pages is two categories, and the **Categories** tile counted them that way. The panels underneath keyed on the name alone, merging the two into one row and averaging their opens together — a category used ten times on one page and never on another reported five opens per bookmark for both. The same mis-keying broke the label lookup, so rows showed the raw id rather than a display name. Labels are also no longer affected by a page filter left on **Config → Bookmarks**, and the page name is prefixed only when a category name occurs on more than one page (`dashboard-config.js`).
+- **fix** **A bookmark dated in the future no longer breaks the activity chart** — clock skew between devices, or an import carrying a bad date, produced a negative bucket offset that wrote past the end of the bucket array. The array grew holes, every total over it came out as `NaN`, and a 30-day range drew 31 bars. Such a date now falls in the newest bucket, a non-numeric timestamp is ignored rather than poisoning the total, and one shared rule feeds the bars together with the figures beneath them — those had their own unbounded check, so a bookmark could be counted in **bookmarks used** while appearing in no bar (`dashboard-config.js`).
+
+### Config
+
+- **improved** **One keyboard legend across the config sections** — Inbox, Health and **Config → Bookmarks** draw each key as a chip beside its label; the form sections (Statistics, Behavior, Appearance, Data & backups) and the pages/tags list instead printed one flat sentence with the keys buried in prose, under a divider mixed from the text colour at 12% alpha that was nearly invisible against the panel. All three config legends now share one rule and one helper. Keys stay untranslated — they are what is printed on the keyboard — and only the action labels are translated, matching how Inbox and Health already split them (`dashboard-config.js`, `config-view.css`).
+
+### Docs
+
+- **fix** — **Config → Overview → Latest update**, CHANGELOG, README and MANUAL for **v2026.08.09.1**; `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v226`. This release is kept out of the What's new modal through a new `hideFromModal` flag on its index entry: it corrects counting errors and aligns a divider, which is worth recording but not worth interrupting anyone for. `DASHBOARD_RELEASE` stays at `2026.07-dashboard-release-v167`, so no star badge appears either (`whats-new-modal.js`, `whats-new-stub.js`).
 
 ---
 

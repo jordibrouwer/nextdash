@@ -18,7 +18,7 @@
         || '/static/js/whats-new-modal.js';
 
     window.NEXTDASH_WHATS_NEW_RELEASE = DASHBOARD_RELEASE;
-    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v225';
+    window.NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v226';
 
     let loadPromise = null;
 
