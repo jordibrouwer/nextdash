@@ -1,0 +1,30 @@
+{
+  "tag": "v2026.08.08.6",
+  "date": "August 2026",
+  "releasedAt": "2026-08-04",
+  "modalLead": "The dashboard header gets a small visual tidy — the pages overview is a grid icon like inbox, health, and config, and every hop from page tabs through pages, inbox, health, and config uses the same gap.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "improved",
+          "text": "<strong>Pages overview is a header icon</strong> — the text <strong>pages</strong> button is a 2×2 grid icon with the same stroke, padding, and hover/active chrome as inbox, health, and config (<code>templates/dashboard.html</code>, <code>dashboard.css</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Even spacing across header destinations</strong> — page tabs, the pages icon, inbox, health, and config all sit at one <code>--header-control-gap</code> (0.5rem); the pages control moved beside the tab strip so it no longer inherited a wider outer gap (<code>dashboard.css</code>, <code>layout-modern.css</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.08.6</strong> — What's new modal, <strong>Config → Overview → Latest update</strong>, New features carousel, CHANGELOG, README, MANUAL, and Config → Help recap; <code>DASHBOARD_RELEASE</code> → <code>2026.07-dashboard-release-v166</code>, <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v224</code>."
+        }
+      ]
+    }
+  ]
+}
