@@ -8597,7 +8597,8 @@ class DashboardConfig {
                 <div class="config-bm-usage-col" title="${usageTip}">${this.renderBookmarkUsageLine(b)}</div>
             </div>`;
         return `
-            <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1">
+            <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1"
+                     role="listitem"${ctx.setSize ? ` aria-posinset="${ctx.posInSet}" aria-setsize="${ctx.setSize}"` : ''}>
                 <label class="config-bm-check">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
                            aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
@@ -8662,13 +8663,21 @@ class DashboardConfig {
             const url = String(b.url || '').trim().toLowerCase();
             return url && dupes.has(url);
         } };
-        const items = rows.map((b) => this.renderBookmarkRow(b, { ...ctx, isDuplicate: ctx.isDuplicate(b) })).join('');
+        // Position is passed down so each row can carry aria-posinset: with
+        // paging the DOM holds only part of the list, and without setsize a
+        // screen reader would announce "3 of 50" on a library of 500.
+        const items = rows.map((b, i) => this.renderBookmarkRow(b, {
+            ...ctx,
+            isDuplicate: ctx.isDuplicate(b),
+            posInSet: i + 1,
+            setSize: allRows.length,
+        })).join('');
         const more = allRows.length > rows.length
             ? `<div class="config-bm-load-sentinel" data-bm-load-more hidden aria-hidden="true"></div>
                <p class="config-bm-load-hint">${esc(this.t('config.bookmarksLoadMoreHint', '{shown} of {total} shown — scroll for more')
                    .replace('{shown}', String(rows.length)).replace('{total}', String(allRows.length)))}</p>`
             : '';
-        return `<div class="health-view-feed config-bm-feed">${items}${more}</div>`;
+        return `<div class="health-view-feed config-bm-feed" role="list">${items}${more}</div>`;
     }
 
     /**
