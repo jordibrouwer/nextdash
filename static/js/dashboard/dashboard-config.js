@@ -2930,8 +2930,8 @@ class DashboardConfig {
 
     /* ── Data & backups ────────────────────────────────────────────────────── */
 
-    notify(message, type = 'info') {
-        this.dash.showNotification?.(message, type, { duration: 3500 });
+    notify(message, type = 'info', options = {}) {
+        this.dash.showNotification?.(message, type, { duration: 3500, ...options });
     }
 
     /** Write-token-aware fetch, matching the other views' POST/DELETE calls. */
@@ -10487,11 +10487,35 @@ class DashboardConfig {
         if (!parsed) return;
         if (!await this.confirmAction(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
         try {
+            // Snapshot before the write, so the toast can put this row back —
+            // same as bulk delete and the :remove command.
+            const snapshot = (this.dash.allBookmarks || [])
+                .filter((b) => String(b.pageId) === String(parsed.pageId))
+                .map((b) => {
+                    const copy = { ...b };
+                    delete copy.pageId;
+                    return copy;
+                });
             const isTarget = DashboardConfig.matchesParsedKey(parsed);
             await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => !isTarget(b)));
             this.bmSelected.delete(key);
             if (this.bmEditing === key) { this.bmEditing = null; this.bmDirty = false; }
-            this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success');
+            this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success', {
+                duration: 8000,
+                undoCallback: async () => {
+                    try {
+                        await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(parsed.pageId)}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(snapshot),
+                        });
+                        await this.refreshBookmarksAfterWrite();
+                        this.notify(this.t('config.bookmarkRestored', 'Bookmark restored.'), 'success');
+                    } catch {
+                        this.notify(this.t('config.bookmarkRestoreFailed', 'Could not restore the bookmark.'), 'error');
+                    }
+                },
+            });
             await this.refreshBookmarksAfterWrite();
         } catch {
             this.notify(this.t('config.bookmarkDeleteError', 'Could not delete the bookmark.'), 'error');
@@ -10752,17 +10776,53 @@ class DashboardConfig {
     }
 
     async bulkDelete(picked) {
-        const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks? This cannot be undone.')
+        const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks?')
             .replace('{n}', String(picked.length));
         if (!await this.confirmAction(msg)) return;
-        for (const [pageId, targets] of this.selectionTargetsByPage(picked)) {
+
+        const byPage = [...this.selectionTargetsByPage(picked)];
+        // Snapshot each affected page before touching it, so the toast can put
+        // the rows back. The same approach the :remove command already uses —
+        // deleting in bulk is exactly where getting it wrong hurts most.
+        const snapshots = new Map();
+        for (const [pageId] of byPage) {
+            snapshots.set(String(pageId), (this.dash.allBookmarks || [])
+                .filter((b) => String(b.pageId) === String(pageId))
+                .map((b) => {
+                    const copy = { ...b };
+                    delete copy.pageId;
+                    return copy;
+                }));
+        }
+
+        for (const [pageId, targets] of byPage) {
             await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
                 .filter(({ target }) => !targets.has(target))
                 .map(({ bookmark }) => bookmark));
         }
         this.bmSelected.clear();
         this.bmEditing = null;
-        this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success');
+
+        const undoCallback = async () => {
+            try {
+                for (const [pageId, rows] of snapshots) {
+                    await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(rows),
+                    });
+                }
+                await this.refreshBookmarksAfterWrite();
+                this.notify(this.t('config.bulkDeleteUndone', 'Bookmarks restored.'), 'success');
+            } catch {
+                this.notify(this.t('config.bulkDeleteUndoFailed', 'Could not restore the bookmarks.'), 'error');
+            }
+        };
+
+        this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success', {
+            undoCallback,
+            duration: 8000,
+        });
         await this.refreshBookmarksAfterWrite();
     }
 

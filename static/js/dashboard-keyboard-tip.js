@@ -112,8 +112,13 @@
             allowHtml: true,
         };
 
+        // 'promo', not 'info': this is an unprompted tip on a 12s timer, and
+        // AppNotification lets a real notification take the slot from a promo
+        // rather than queue behind it. Sent as 'info' it held the queue, so a
+        // confirmation for something the user had just done — a delete and its
+        // Undo — waited out the tip and effectively never appeared.
         if (global.AppNotification?.show) {
-            global.AppNotification.show(message, 'info', opts);
+            global.AppNotification.show(message, 'promo', opts);
         } else {
             return false;
         }
@@ -179,8 +184,10 @@
             allowHtml: true,
         };
 
+        // 'promo' for the same reason as the session tip above: unprompted, on a
+        // long timer, and it must yield to anything the user actually triggered.
         if (!global.AppNotification?.show) return false;
-        global.AppNotification.show(message, 'info', opts);
+        global.AppNotification.show(message, 'promo', opts);
         global.DiscoverabilityState?.markTipSeen?.(TIP_ID);
         global.nextdashTrack?.('tip:shown', { tip: TIP_ID, context: 'config-intro' });
         return true;

@@ -3476,7 +3476,7 @@
         "bulkActionError": "Impossible d'appliquer l'action groupée.",
         "bulkClearSelection": "Effacer la sélection",
         "bulkDelete": "Supprimer",
-        "bulkDeleteConfirm": "Supprimer {n} favoris ? Cette action est irréversible.",
+        "bulkDeleteConfirm": "Supprimer {n} favoris ?",
         "bulkDeleteDone": "Favoris supprimés.",
         "bulkMoveCategoryPlaceholder": "Définir la catégorie…",
         "bulkMoveDone": "Favoris mis à jour.",
@@ -3753,7 +3753,11 @@
         "bookmarksTagCloudHint": "Filtrer par un ou plusieurs tags",
         "bookmarksTagCloudActive": "{count} sélectionnés",
         "bookmarksTagCloudSelect": "Sélectionner ces favoris",
-        "bookmarksTagCloudClear": "Effacer les tags"
+        "bookmarksTagCloudClear": "Effacer les tags",
+        "bulkDeleteUndone": "Favoris restaurés.",
+        "bulkDeleteUndoFailed": "Impossible de restaurer les favoris.",
+        "bookmarkRestored": "Favori restauré.",
+        "bookmarkRestoreFailed": "Impossible de restaurer le favori."
     },
     "colors": {
         "title": "personnalisation du thème",

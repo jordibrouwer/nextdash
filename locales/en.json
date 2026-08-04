@@ -3476,7 +3476,7 @@
         "bulkActionError": "Could not apply the bulk action.",
         "bulkClearSelection": "Clear selection",
         "bulkDelete": "Delete",
-        "bulkDeleteConfirm": "Delete {n} bookmarks? This cannot be undone.",
+        "bulkDeleteConfirm": "Delete {n} bookmarks?",
         "bulkDeleteDone": "Bookmarks deleted.",
         "bulkMoveCategoryPlaceholder": "Set category…",
         "bulkMoveDone": "Bookmarks updated.",
@@ -3753,7 +3753,11 @@
         "bookmarksTagCloudHint": "Filter by one or more tags",
         "bookmarksTagCloudActive": "{count} selected",
         "bookmarksTagCloudSelect": "Select these bookmarks",
-        "bookmarksTagCloudClear": "Clear tags"
+        "bookmarksTagCloudClear": "Clear tags",
+        "bulkDeleteUndone": "Bookmarks restored.",
+        "bulkDeleteUndoFailed": "Could not restore the bookmarks.",
+        "bookmarkRestored": "Bookmark restored.",
+        "bookmarkRestoreFailed": "Could not restore the bookmark."
     },
     "colors": {
         "title": "theme customization",

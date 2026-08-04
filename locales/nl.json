@@ -3476,7 +3476,7 @@
         "bulkActionError": "Kon de bulkactie niet uitvoeren.",
         "bulkClearSelection": "Selectie wissen",
         "bulkDelete": "Verwijderen",
-        "bulkDeleteConfirm": "{n} bookmarks verwijderen? Dit kan niet ongedaan worden gemaakt.",
+        "bulkDeleteConfirm": "{n} bladwijzers verwijderen?",
         "bulkDeleteDone": "Bookmarks verwijderd.",
         "bulkMoveCategoryPlaceholder": "Categorie instellen…",
         "bulkMoveDone": "Bookmarks bijgewerkt.",
@@ -3753,7 +3753,11 @@
         "bookmarksTagCloudHint": "Filter op een of meer tags",
         "bookmarksTagCloudActive": "{count} geselecteerd",
         "bookmarksTagCloudSelect": "Selecteer deze bladwijzers",
-        "bookmarksTagCloudClear": "Tags wissen"
+        "bookmarksTagCloudClear": "Tags wissen",
+        "bulkDeleteUndone": "Bladwijzers hersteld.",
+        "bulkDeleteUndoFailed": "Kon de bladwijzers niet herstellen.",
+        "bookmarkRestored": "Bladwijzer hersteld.",
+        "bookmarkRestoreFailed": "Kon de bladwijzer niet herstellen."
     },
     "colors": {
         "title": "thema-aanpassing",

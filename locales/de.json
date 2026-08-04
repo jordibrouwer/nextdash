@@ -3476,7 +3476,7 @@
         "bulkActionError": "Sammelaktion konnte nicht ausgeführt werden.",
         "bulkClearSelection": "Auswahl aufheben",
         "bulkDelete": "Löschen",
-        "bulkDeleteConfirm": "{n} Lesezeichen löschen? Das kann nicht rückgängig gemacht werden.",
+        "bulkDeleteConfirm": "{n} Lesezeichen löschen?",
         "bulkDeleteDone": "Lesezeichen gelöscht.",
         "bulkMoveCategoryPlaceholder": "Kategorie setzen…",
         "bulkMoveDone": "Lesezeichen aktualisiert.",
@@ -3753,7 +3753,11 @@
         "bookmarksTagCloudHint": "Nach einem oder mehreren Tags filtern",
         "bookmarksTagCloudActive": "{count} ausgewählt",
         "bookmarksTagCloudSelect": "Diese Lesezeichen auswählen",
-        "bookmarksTagCloudClear": "Tags zurücksetzen"
+        "bookmarksTagCloudClear": "Tags zurücksetzen",
+        "bulkDeleteUndone": "Lesezeichen wiederhergestellt.",
+        "bulkDeleteUndoFailed": "Lesezeichen konnten nicht wiederhergestellt werden.",
+        "bookmarkRestored": "Lesezeichen wiederhergestellt.",
+        "bookmarkRestoreFailed": "Lesezeichen konnte nicht wiederhergestellt werden."
     },
     "colors": {
         "title": "themenanpassung",
