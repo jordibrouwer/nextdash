@@ -15,7 +15,6 @@ class DashboardVisual {
         this.dash = dashboard;
         this._themeIconStylingListenerAttached = false;
         this._healthBadgePollTimer = null;
-        this._healthBadgeVisibilityHandler = null;
     }
 
     setupThemeIconStylingListener() {
@@ -251,25 +250,11 @@ class DashboardVisual {
     }
 
 
-    /** inbox · health · config cluster in the header row. */
-    headerDestinationsHost() {
-        return document.querySelector('.header-destinations')
-            || document.querySelector('.header-actions');
-    }
-
-
     updateConfigButtonVisibility() {
         const d = this.dash;
-        const show = d.settings.showConfigButton !== false;
         let configLink = document.querySelector('.config-link');
 
-        // Hidden via body[data-show-config-button] from setupDOM — do not remove
-        // the node or SSR/i18n markup is lost and recreation lands outside
-        // .header-destinations.
-        if (!show) {
-            return;
-        }
-
+        // Config button is always visible
         if (!configLink) {
             configLink = document.createElement('div');
             configLink.className = 'config-link config-link--icon';
@@ -280,7 +265,10 @@ class DashboardVisual {
             const label = d.escapeHtml ? d.escapeHtml(raw) : raw;
             configLink.innerHTML = `<a href="/#config" class="config-link-anchor" aria-label="${label}" title="${label}">${DashboardVisual.CONFIG_ICON_SVG}</a>`;
 
-            this.headerDestinationsHost()?.appendChild(configLink);
+            const headerActions = document.querySelector('.header-actions');
+            if (headerActions) {
+                headerActions.appendChild(configLink);
+            }
         }
         this.syncConfigLinkActiveState();
     }
@@ -368,13 +356,13 @@ class DashboardVisual {
                 const label = d.escapeHtml ? d.escapeHtml(raw) : raw;
                 healthLink.innerHTML = `<a href="/#health" class="health-link-anchor" aria-label="${label}" title="${label}"><svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></a>`;
 
-                const host = this.headerDestinationsHost();
-                if (host) {
-                    const configLink = host.querySelector('.config-link');
+                const headerActions = document.querySelector('.header-actions');
+                if (headerActions) {
+                    const configLink = headerActions.querySelector('.config-link');
                     if (configLink) {
-                        host.insertBefore(healthLink, configLink);
+                        headerActions.insertBefore(healthLink, configLink);
                     } else {
-                        host.appendChild(healthLink);
+                        headerActions.appendChild(healthLink);
                     }
                 }
             }
@@ -397,7 +385,7 @@ class DashboardVisual {
         if (d.settings.showHealthDashboard !== true) {
             return;
         }
-        const tick = () => {
+        this._healthBadgePollTimer = setInterval(() => {
             if (document.visibilityState !== 'visible') {
                 return;
             }
@@ -405,41 +393,13 @@ class DashboardVisual {
                 return;
             }
             void this.updateHealthBadge();
-        };
-        const start = () => {
-            if (this._healthBadgePollTimer) {
-                return;
-            }
-            this._healthBadgePollTimer = setInterval(tick, 60000);
-        };
-        const stop = () => {
-            if (this._healthBadgePollTimer) {
-                clearInterval(this._healthBadgePollTimer);
-                this._healthBadgePollTimer = null;
-            }
-        };
-        this._healthBadgeVisibilityHandler = () => {
-            if (document.visibilityState === 'visible') {
-                void this.updateHealthBadge();
-                start();
-            } else {
-                stop();
-            }
-        };
-        document.addEventListener('visibilitychange', this._healthBadgeVisibilityHandler);
-        if (document.visibilityState === 'visible') {
-            start();
-        }
+        }, 60000);
     }
 
     stopHealthBadgePolling() {
         if (this._healthBadgePollTimer) {
             clearInterval(this._healthBadgePollTimer);
             this._healthBadgePollTimer = null;
-        }
-        if (this._healthBadgeVisibilityHandler) {
-            document.removeEventListener('visibilitychange', this._healthBadgeVisibilityHandler);
-            this._healthBadgeVisibilityHandler = null;
         }
     }
 

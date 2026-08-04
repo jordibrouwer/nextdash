@@ -402,6 +402,29 @@ body[data-layout-version="modern"][data-button-position="side-left"] .tag-cloud-
     -webkit-backdrop-filter: none;
 }
 
+/* ─── Page overview overlay ───────────────────────────────────────────────── */
+
+body[data-layout-version="modern"] .page-overview-overlay {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+body[data-layout-version="modern"] .page-overview-panel {
+    border-radius: var(--layout-radius-lg);
+    box-shadow: var(--layout-shadow-lg);
+    overflow: hidden;
+}
+
+body[data-layout-version="modern"] .page-overview-close {
+    border-radius: var(--layout-radius-sm);
+}
+
+body[data-layout-version="modern"] .page-overview-link {
+    border-radius: var(--layout-radius-sm);
+    margin: 0 0.35rem;
+    width: calc(100% - 0.7rem);
+}
+
 /* ─── Date popover ─────────────────────────────────────────────────────────── */
 
 body[data-layout-version="modern"] .date-popover {
@@ -997,6 +1020,25 @@ body[data-layout-version="modern"][data-mobile-layout="true"] .btn-group-primary
 body[data-layout-version="modern"][data-mobile-layout="true"] .search-button-labeled {
     border-radius: var(--layout-radius-md);
     min-height: 44px;
+}
+
+body[data-layout-version="modern"][data-mobile-layout="true"] .page-overview-overlay--mobile .page-overview-panel {
+    border-radius: var(--layout-radius-lg) var(--layout-radius-lg) 0 0;
+    box-shadow: var(--layout-shadow-lg);
+}
+
+body[data-layout-version="modern"][data-mobile-layout="true"] .page-overview-overlay--mobile .page-overview-link {
+    border-radius: var(--layout-radius-sm);
+    margin: 0 0.35rem;
+    width: calc(100% - 0.7rem);
+}
+
+body[data-layout-version="modern"][data-mobile-layout="true"] .page-overview-overlay--mobile .page-overview-item + .page-overview-item {
+    border-top: none;
+}
+
+body[data-layout-version="modern"][data-mobile-layout="true"] .page-overview-overlay--mobile .page-overview-item + .page-overview-item .page-overview-link {
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 35%, transparent);
 }
 
 body[data-layout-version="modern"][data-mobile-layout="true"] .shortcut-search .search-container {

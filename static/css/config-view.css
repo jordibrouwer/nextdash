@@ -161,31 +161,6 @@
     line-height: 1.5;
 }
 
-/*
- * Help intro with the printable sheet beside it. The link sits at the top
- * because it answers the same question the page does, and someone reaching for
- * it should not have to read the tabs first.
- */
-.config-help-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.config-help-header .config-view-intro {
-    flex: 1 1 32ch;
-}
-
-.config-cheatsheet-pdf {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
-    flex-shrink: 0;
-    text-decoration: none;
-}
-
 .config-view-placeholder {
     margin: 0;
     padding: 24px;
@@ -1862,54 +1837,6 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-secondary);
 }
 
-/*
- * The row borrows .health-view-item-meta, which is built for that feed's two
- * children: a left block and a right-aligned date column, spread by
- * space-between. This row puts six kinds of child in there — domain, pin,
- * shortcut, duplicate badge, every tag chip, check mode — so space-between
- * pushed each one to a position that depended on how many tags the bookmark
- * happened to have, and no two rows lined up.
- *
- * Left-aligned and wrapping instead, so the domain always starts at the same x
- * and a long tag list breaks to the next line rather than overflowing the card.
- */
-.config-bm-meta-primary {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 0.35rem 0.6rem;
-    min-width: 0;
-}
-
-.config-bm-meta-primary > * {
-    min-width: 0;
-}
-
-/*
- * Check mode is a property of the bookmark rather than part of its name, so it
- * sits in the right-hand column with the usage line below it instead of
- * trailing the tags at whatever x the tag list happens to end. `margin-left:
- * auto` rather than space-between on the parent: the left group must stay
- * packed, and only this one child is pushed over.
- */
-.config-bm-meta-primary .health-check-mode-wrap {
-    margin-left: auto;
-    flex: none;
-}
-
-/*
- * Tags get their own line once there are more than two, so a long list stops
- * competing with the domain for the identifying line above it.
- */
-.config-bm-tag-row {
-    margin: 0.25rem 0 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.3rem 0.35rem;
-    min-width: 0;
-}
-
 .config-bm-domain {
     color: var(--text-secondary);
 }
@@ -2051,6 +1978,12 @@ body.no-animations .config-new-features-panel-star {
     opacity: 1;
 }
 
+.config-bm-shortcut-pill {
+    font-variant-numeric: tabular-nums;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
 .config-bm-page-badge {
     font-weight: var(--font-weight-semibold);
 }
@@ -2159,111 +2092,6 @@ body.no-animations .config-new-features-panel-star {
 
 .config-bm-filter-chip--clear {
     font-weight: 600;
-}
-
-/* ── Bookmark tag cloud ──────────────────────────────────────────────────── */
-
-.config-bm-cloud {
-    margin: 0 0 0.6rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 0.5rem;
-    background: color-mix(in srgb, var(--background-secondary) 40%, transparent);
-}
-
-.config-bm-cloud-summary {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    padding: 0.4rem 0.6rem;
-    cursor: pointer;
-    font-size: 0.78rem;
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-secondary);
-    list-style: none;
-}
-
-.config-bm-cloud-summary::-webkit-details-marker {
-    display: none;
-}
-
-.config-bm-cloud-summary::before {
-    content: "▸";
-    font-size: 0.7em;
-    transition: transform 0.15s ease;
-}
-
-.config-bm-cloud[open] .config-bm-cloud-summary::before {
-    transform: rotate(90deg);
-}
-
-.config-bm-cloud-summary-note {
-    font-weight: var(--font-weight-normal);
-    color: var(--text-tertiary, var(--text-secondary));
-}
-
-.config-bm-cloud-body {
-    padding: 0 0.6rem 0.55rem;
-}
-
-.config-bm-cloud-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem 0.35rem;
-    /* A large library can carry a hundred tags; cap the cloud and scroll rather
-       than pushing the list it filters off the screen. */
-    max-height: 11rem;
-    overflow-y: auto;
-}
-
-.config-bm-cloud-tag {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.28rem;
-    padding: 0.08rem 0.45rem;
-    border-radius: 999px;
-    border: 1px solid var(--border-secondary);
-    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
-    color: var(--text-secondary);
-    font-family: inherit;
-    font-size: 0.74rem;
-    cursor: pointer;
-}
-
-/* Weight by use, in four steps — enough to show which tags matter without the
-   rows losing their common baseline. */
-/* --s0 is the base size the rule above already sets; it exists so every chip
-   carries a step class and the scale reads as four deliberate steps. */
-.config-bm-cloud-tag--s0 { font-size: 0.74rem; }
-.config-bm-cloud-tag--s1 { font-size: 0.79rem; }
-.config-bm-cloud-tag--s2 { font-size: 0.85rem; }
-.config-bm-cloud-tag--s3 { font-size: 0.92rem; font-weight: var(--font-weight-semibold); }
-
-.config-bm-cloud-tag:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
-    color: var(--accent-primary);
-}
-
-.config-bm-cloud-tag.is-active {
-    border-color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
-    color: var(--text-primary);
-}
-
-.config-bm-cloud-count {
-    font-size: 0.68em;
-    color: var(--text-tertiary, var(--text-secondary));
-    font-variant-numeric: tabular-nums;
-}
-
-.config-bm-cloud-tag.is-active .config-bm-cloud-count {
-    color: inherit;
-}
-
-.config-bm-cloud-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.5rem;
 }
 
 .config-bm-tag-chip {
@@ -2936,6 +2764,20 @@ body.no-animations .config-new-features-panel-star {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--accent-success, #4A7038)) 28%, transparent);
 }
 
+.config-list-keyboard-legend {
+    margin: 8px 0 0;
+}
+
+.config-bm-keyboard-legend {
+    margin: 8px 0 0;
+}
+
+.config-form-keyboard-legend {
+    margin: 16px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--text-color, #ccc) 12%, transparent);
+}
+
 .config-theme-groups {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -3422,9 +3264,52 @@ body[data-layout-version="modern"] .config-subtab.is-active {
 
 /* ── Settings jump overlay (Ctrl/Cmd+Shift+K) ───────────────────────────── */
 
+.config-settings-jump {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: min(100%, 28rem);
+}
+
+.config-settings-jump-filter {
+    width: 100%;
+}
+
+.config-settings-jump-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: min(50vh, 22rem);
+    overflow: auto;
+}
+
+.config-settings-jump-result {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
 .config-settings-jump-result:hover,
 .config-settings-jump-result.is-active {
     background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+}
+
+.config-settings-jump-result-title {
+    font-weight: 600;
+    color: var(--text-color, inherit);
+}
+
+.config-settings-jump-result-sub {
+    font-size: 0.88em;
+    color: var(--text-muted, #777);
+}
+
+.config-settings-jump-empty {
+    margin: 0;
+    color: var(--text-muted, #777);
 }
 
 .modal.config-settings-jump-modal .modal-body {

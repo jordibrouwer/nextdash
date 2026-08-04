@@ -35,10 +35,7 @@ kbd,
 .toolbar-kbd-tooltip {
     position: fixed;
     z-index: 10050;
-    /* --kbd-tooltip-shift nudges the box back inside the window when centring on
-       the anchor would push it past the left or right edge. */
-    --kbd-tooltip-shift: 0px;
-    transform: translate(calc(-50% + var(--kbd-tooltip-shift)), calc(-100% - 8px));
+    transform: translate(-50%, calc(-100% - 8px));
     display: none;
     flex-direction: column;
     align-items: center;
@@ -60,12 +57,6 @@ kbd,
     opacity: 1;
 }
 
-/* Header icons: tooltip appears BELOW the button, because there is no room
-   above them at the top of the window. */
-.toolbar-kbd-tooltip--below {
-    transform: translate(calc(-50% + var(--kbd-tooltip-shift)), 8px);
-}
-
 /* Side rail: tooltip appears to the RIGHT of the button */
 .toolbar-kbd-tooltip--side-rail {
     transform: translateY(-50%);
@@ -83,17 +74,6 @@ kbd,
     gap: 0.15rem;
     flex-wrap: wrap;
     justify-content: center;
-}
-
-/*
- * These chips name the same shortcuts as the toolbar buttons at the bottom of
- * the screen, so they carry that button's fill. The bare `kbd` rule in
- * enhanced-features.css loads later and would otherwise win with
- * --background-primary, which reads as a different, denser block here.
- */
-#toolbar-kbd-tooltip .toolbar-kbd-tooltip-keys kbd {
-    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
-    border-color: var(--border-primary);
 }
 
 /* Dashboard discoverability: header, mobile bar, mini status, a11y */

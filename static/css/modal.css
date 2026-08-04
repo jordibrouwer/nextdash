@@ -1137,35 +1137,8 @@ body.no-animations .modal-button.danger.selected {
     opacity: 0.65;
 }
 
-.cheat-sheet-no-results {
-    margin: 0.75rem 0 0;
-    color: var(--text-tertiary);
-    font-size: 0.9rem;
-}
-
-/*
- * One line naming the view the sheet was opened from, above the filter. Only
- * shown outside the bookmarks default, where there is nothing to explain.
- */
-.cheat-sheet-context-lead {
-    margin: 0 0 0.6rem;
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-}
-
 .cheat-sheet-group {
     border-bottom: 1px solid var(--border-primary);
-}
-
-/*
- * The section matching the current view. Marked rather than moved or isolated:
- * every other section stays in place and the filter still searches them all.
- */
-.cheat-sheet-group--context > .cheat-sheet-group-title {
-    border-left: 2px solid var(--accent-primary);
-    padding-left: 0.5rem;
-    margin-left: -0.5rem;
-    color: var(--accent-primary);
 }
 
 .cheat-sheet-group:last-child {

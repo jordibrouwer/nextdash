@@ -49,25 +49,10 @@ class DashboardPageNav {
         d.setActiveView('bookmarks');
         const targetPageId = Number(pageId);
         const pageIndex = d.pages.findIndex((page) => Number(page.id) === targetPageId);
-        try {
-            const url = new URL(window.location.href);
-            const params = url.searchParams;
-            [
-                'hv_filter', 'hv_sort', 'hv_q', 'hv_id', 'hv_refresh',
-                'ib_filter', 'ib_sort', 'ib_q', 'ib_domain', 'ib_id',
-            ].forEach((key) => params.delete(key));
-            const query = params.toString();
-            const nextHash = pageIndex >= 0 ? `#${pageIndex + 1}` : '';
-            const nextUrl = `${url.pathname}${query ? `?${query}` : ''}${nextHash}`;
-            if (`${url.pathname}${url.search}${url.hash}` !== nextUrl) {
-                history.replaceState(history.state, '', nextUrl);
-            }
-        } catch {
-            if (pageIndex >= 0) {
-                const nextHash = `#${pageIndex + 1}`;
-                if (window.location.hash !== nextHash) {
-                    window.location.hash = nextHash;
-                }
+        if (pageIndex >= 0) {
+            const nextHash = `#${pageIndex + 1}`;
+            if (window.location.hash !== nextHash) {
+                window.location.hash = nextHash;
             }
         }
         const page = d.pages.find((entry) => Number(entry.id) === targetPageId);
@@ -87,24 +72,52 @@ class DashboardPageNav {
 
 
 
-    /**
-     * Title-case a panel breadcrumb for the tab title.
-     *
-     * The panel trails are lowercase by design ('health › duplicates'); a browser
-     * tab reads as a proper name, so each segment is capitalised on the way out.
-     */
-    capitalizeTrail(trail) {
-        return String(trail).split(' › ').map((part) => {
-            const s = String(part).trim();
-            return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-        }).join(' › ');
+    /** Lowercase header label on the inbox view (same in all locales). */
+    inboxHeaderTitle() {
+        const d = this.dash;
+        const domain = String(d.inbox?.domainFilter || '').trim();
+        if (domain) {
+            return `inbox › ${domain}`;
+        }
+        const filter = d.inbox?.filter || 'all';
+        if (filter === 'all') {
+            return 'inbox';
+        }
+        const labels = {
+            unread: d.language?.t?.('dashboard.inboxFilterUnread') || 'Unread',
+            snoozed: d.language?.t?.('dashboard.inboxFilterSnoozed') || 'Snoozed',
+            noted: d.language?.t?.('dashboard.inboxFilterNoted') || 'With note',
+        };
+        const label = labels[filter] || filter;
+        return `inbox › ${String(label).toLowerCase()}`;
+    }
+
+
+    /** Lowercase header label on the health view (same in all locales). */
+    healthHeaderTitle() {
+        const d = this.dash;
+        const filter = d.health?.filter || 'broken';
+        if (filter === 'broken') return 'health';
+        const labels = {
+            duplicate: d.language?.t?.('dashboard.healthFilterDuplicates') || 'Duplicates',
+            unchecked: d.language?.t?.('dashboard.healthFilterUnchecked') || 'Never checked',
+            monitored: d.language?.t?.('dashboard.healthFilterMonitored') || 'Monitored',
+            all: d.language?.t?.('dashboard.healthFilterAll') || 'All',
+        };
+        const label = labels[filter] || filter;
+        return `health › ${String(label).toLowerCase()}`;
+    }
+
+
+    /** Lowercase header label on the config view (same in all locales). */
+    configHeaderTitle() {
+        const d = this.dash;
+        return d.config?.headerBreadcrumb?.() || 'config';
     }
 
 
     inboxPageLabel() {
         const d = this.dash;
-        const bc = d.inbox?.headerBreadcrumb?.();
-        if (bc) return this.capitalizeTrail(bc);
         const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
         return inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
     }
@@ -112,8 +125,6 @@ class DashboardPageNav {
 
     healthPageLabel() {
         const d = this.dash;
-        const bc = d.health?.headerBreadcrumb?.();
-        if (bc) return this.capitalizeTrail(bc);
         const healthLabel = d.language?.t?.('dashboard.healthPageTitle');
         return healthLabel && healthLabel !== 'dashboard.healthPageTitle' ? healthLabel : 'Health';
     }
@@ -122,7 +133,12 @@ class DashboardPageNav {
     configPageLabel() {
         const d = this.dash;
         const bc = d.config?.headerBreadcrumb?.();
-        if (bc) return this.capitalizeTrail(bc);
+        if (bc) {
+            return bc.split(' › ').map((part) => {
+                const s = String(part).trim();
+                return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+            }).join(' › ');
+        }
         const configLabel = d.language?.t?.('dashboard.config');
         return configLabel && configLabel !== 'dashboard.config' ? configLabel : 'Config';
     }
@@ -453,23 +469,15 @@ class DashboardPageNav {
             requestAnimationFrame(() => activeBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
         }
 
-        const navRoot = container.closest('.header-actions') || container;
-        if (d._pageNavKeyHandler && d._pageNavKeyRoot) {
-            d._pageNavKeyRoot.removeEventListener('keydown', d._pageNavKeyHandler);
+        if (d._pageNavKeyHandler) {
+            container.removeEventListener('keydown', d._pageNavKeyHandler);
         }
-        d._pageNavKeyRoot = navRoot;
         d._pageNavKeyHandler = (e) => {
             if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
                 return;
             }
-            const tabs = [
-                ...Array.from(container.querySelectorAll('.page-nav-btn')),
-                ...(inboxHost ? Array.from(inboxHost.querySelectorAll('.page-nav-btn')) : []),
-            ];
+            const tabs = Array.from(container.querySelectorAll('.page-nav-btn'));
             if (tabs.length === 0) {
-                return;
-            }
-            if (!tabs.includes(document.activeElement)) {
                 return;
             }
             let idx = tabs.findIndex((tab) => tab === document.activeElement);
@@ -495,7 +503,7 @@ class DashboardPageNav {
             tabs[idx].focus({ preventScroll: true });
             tabs[idx].scrollIntoView({ block: 'nearest', inline: 'nearest' });
         };
-        navRoot.addEventListener('keydown', d._pageNavKeyHandler);
+        container.addEventListener('keydown', d._pageNavKeyHandler);
 
         d.updateMiniStatusLine();
     }

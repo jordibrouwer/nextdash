@@ -108,37 +108,219 @@ class DashboardUiHelpers {
     }
 
 
-    /**
-     * Rows come from KeyboardCheatSheetRegistry so the modal, the printable
-     * one-pager, and the validation scripts cannot drift apart.
-     */
     getKeyboardCheatSheetItems() {
         const d = this.dash;
-        const t = (key, fallback, opts) => {
+        const t = (key, fallback) => {
             if (!d.language?.t) return fallback;
-            // Legend keys shared with the inline view legends live flat under
-            // dashboard.*, not under dashboard.cheatsheet.*.
-            const fullKey = opts?.flatKey ? `dashboard.${key}` : `dashboard.cheatsheet.${key}`;
+            const fullKey = `dashboard.cheatsheet.${key}`;
             const value = d.language.t(fullKey);
             return value !== fullKey ? value : fallback;
         };
-        const registry = window.KeyboardCheatSheetRegistry;
-        if (!registry) {
-            return [];
+        const item = (keys, key, fallback) => ({ keys, description: t(key, fallback) });
+        const section = (titleKey, titleFallback, items) => ({
+            title: t(titleKey, titleFallback),
+            items,
+        });
+
+        const isSideRail = d.settings?.buttonBarPosition === 'side-left';
+        const sections = [
+            section('sectionNavigation', 'Navigation', [
+                item('1–9', 'navPageTab', 'Switch to bookmark page'),
+                // '0' still opens the Inbox but is deliberately undocumented: Shift+I
+                // replaces it, and listing both would teach a shortcut that is going away.
+                ...(d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false
+                    ? [item('Shift + I', 'navInboxView', 'Open Inbox — links saved to read later')]
+                    : []),
+                ...(d.health?.isEnabled?.()
+                    ? [item('Shift + H', 'navHealthView', 'Open Health — bookmarks that need attention')]
+                    : []),
+                ...(d.config?.isEnabled?.()
+                    ? [item('Shift + S', 'navSettingsView', 'Open config — settings, pages, and bookmarks')]
+                    : []),
+                item('Shift + ← / →', 'navPrevNextPage', 'Previous / next page'),
+                item(',', 'navPageOverview', 'Page overview with bookmark counts'),
+                item('<', 'navOpenConfig', 'Open config (< is Shift+,; in config < returns here)'),
+                item('.', 'navCollapseAll', 'Collapse or expand all categories'),
+                item('↑ / ↓', 'navFocusUpDown', 'Move focus up / down through bookmarks'),
+                item('← / →', 'navFocusLeftRight', 'Move focus left / right in grid'),
+                item('Home / End', 'navCategoryHomeEnd', 'First / last bookmark in the focused category'),
+                item('Ctrl + Home / End', 'navGridHomeEnd', 'First / last bookmark on the page'),
+                item('Page Up / Page Down', 'navPageScroll', 'Jump one screen up / down through bookmarks'),
+                item('Tab / Shift+Tab', 'navTabLinear', 'Step linearly through all bookmarks'),
+                item('G + 1–9', 'navGotoCategory', 'Jump to first bookmark in nth category or smart collection'),
+                item('G + P', 'navGotoPinned', 'Jump to first pinned bookmark on the page'),
+                item('Enter / Space', 'navOpenFocused', 'Open focused bookmark'),
+                item('Esc', 'navEscClear', 'Clear selection / close overlay; undo unsaved drag reorder'),
+            ]),
+        ];
+
+        if (isSideRail) {
+            sections.push(section('sectionLayout', 'Layout (side rail)', [
+                item('Tab', 'layoutSideRailFocus', 'Toolbar is first in tab order — then page header, then bookmark grid'),
+                item('← / →', 'layoutPageTabScroll', 'Scroll page tabs horizontally when many pages'),
+                item(':buttonbar bottom', 'layoutSideRailButtonbar', 'Return button bar to bottom — :buttonbar bottom-left / bottom-right also work'),
+            ]));
         }
-        return registry.buildSections(d, t);
+
+        sections.push(
+            section('sectionBookmarks', 'Bookmarks', [
+                item('&', 'bmQuickAdd', 'Quick-add — type name | url | shortcut in one line'),
+                item('Ctrl + V', 'bmPasteUrlModal', 'Paste a URL to open the new-bookmark modal pre-filled'),
+                item('+', 'bmNewBookmarkModal', 'Open full new-bookmark modal on the dashboard'),
+                item('Shift + B', 'bmNewBookmarkModalShift', 'Open full new-bookmark modal from anywhere (skipped while typing in a field)'),
+                item('Ctrl + Shift + A', 'bmNewBookmarkModalGlobal', 'Open full new-bookmark modal from anywhere'),
+                item(';', 'bmInlineEdit', 'Inline-edit focused bookmark'),
+                item('Shift + M', 'bmQuickMove', 'Quick-move focused bookmark — choose category or page; Esc close restores selection on same row'),
+                item('Shift + D', 'bmQuickDelete', 'Quick-delete focused bookmark — confirm in popover; Esc close restores selection on same row'),
+                item('Shift + T', 'bmQuickTag', 'Quick-tag focused bookmark — ↑/↓ navigate; Enter/Space toggles tag and advances; ✓ shows tags on bookmark; Esc close restores selection on same row'),
+                item('Shift + C', 'bmQuickCheckMode', 'Availability checking for focused bookmark — o off, p periodic, m monitor; ↑/↓ and Enter also work; Esc closes'),
+                item('Ctrl + C', 'bmCopyUrl', 'Copy URL of focused bookmark (row flashes green)'),
+                item('[', 'bmTogglePreview', 'Toggle hover preview card on focused bookmark'),
+                item('Enter on "+ N more"', 'bmShowMoreToggle', 'Expand or collapse a long category — selection returns to the last bookmark above the toggle'),
+                item('Delete', 'bmDelete', 'Delete focused bookmark (confirmation dialog)'),
+                item('Right-click bookmark', 'bmContextMenu', 'Menu with open in new tab, copy URL, edit, tags, move, checking, delete (Shift + right-click for the browser menu)'),
+                item('Double-click page tab', 'bmRenamePageTab', 'Rename page tab — also set emoji icon and colour dot'),
+                item('Long-press category (~500 ms)', 'bmRenameCategory', 'Rename category header (not on sort buttons)'),
+                item('Drag left strip', 'bmDragReorder', 'Reorder a bookmark within or across categories'),
+                item('Drag // in category title', 'bmDragCategory', 'Reorder categories (grab the // prefix in the header)'),
+            ]),
+        );
+
+        // Only when the view exists, matching the Shift+H entry above: teaching row
+        // shortcuts for a view someone cannot open is noise. These mirror the legend
+        // under the health list, which is the same set in context.
+        if (d.health?.isEnabled?.()) {
+            sections.push(section('sectionHealthView', 'Health view', [
+                item('j / k', 'hvMove', 'Move between rows (↑ / ↓ work too)'),
+                item('s', 'hvScore', 'Unfold the score breakdown for the selected row'),
+                item('p', 'hvRecheck', 'Re-check the selected bookmark now'),
+                item('c', 'hvCheckMode', 'Change availability checking — off, periodic or monitor'),
+                item('m', 'hvMore', 'Row menu — redirect, title, favicon, archive, delete'),
+                item('Enter', 'hvOpen', 'Open the selected bookmark'),
+                item('g / G', 'hvFirstLast', 'Jump to the first / last row'),
+                item('Esc', 'hvClose', 'Close a menu, or leave the view'),
+            ]));
+        }
+
+        if (d.config?.isEnabled?.()) {
+            sections.push(section('sectionConfigView', 'Config view', [
+                item('0–9', 'cvSectionJump', 'Switch to Inbox (0) or a bookmark page (1–9)'),
+                item('j / k', 'cvSectionJk', 'Previous / next section in the left rail'),
+                item('g / G', 'cvSectionFirstLast', 'Jump to the first / last section'),
+                item('← / → (section rail)', 'cvSectionRail', 'Move between sections when the section rail is focused (↑ / ↓ on desktop)'),
+                item('Alt + ← / →', 'cvSubTab', 'Previous / next sub-tab in the current section'),
+                item('[ / ]', 'cvSubTabBrackets', 'Previous / next sub-tab in the current section'),
+                item('← / → (sub-tabs)', 'cvSubTabRail', 'Move between sub-tabs when a sub-tab strip is focused'),
+                item('← / → (choice row)', 'cvChoiceRow', 'Move between options in a choice group; Space selects'),
+                item('Home / End (slider)', 'cvRangeHomeEnd', 'Jump to min or max on a focused opacity or intensity slider'),
+                item('↑ / ↓ (Pages & tags lists)', 'cvListMove', 'Move between rows when focus is in the list panel'),
+                item('Enter / Space (list row)', 'cvListEdit', 'Focus the first field in the selected list row'),
+                item('g / G (list row)', 'cvListFirstLast', 'Jump to the first / last row in a Pages & tags list'),
+                item('/ (Tags tab)', 'cvListFilter', 'Focus the tag filter while on the Tags sub-tab'),
+                item('j / k (Bookmarks list)', 'cvBmMove', 'Move between bookmark rows when focus is in the list panel'),
+                item('Enter / Space (bookmark row)', 'cvBmEdit', 'Open the inline editor for the selected bookmark'),
+                item('g / G (Bookmarks list)', 'cvBmFirstLast', 'Jump to the first / last bookmark row'),
+                item('/ (Bookmarks)', 'cvBmFilter', 'Focus the bookmark search field'),
+                item('Ctrl/Cmd + Shift + K', 'cvSettingsJump', 'Find a setting, section, or help topic'),
+                item('< / Shift + S', 'cvClose', 'Return to the dashboard from config'),
+                item('Esc', 'cvEsc', 'Close bookmark editor, clear list selection, or exit config'),
+            ]));
+        }
+
+        sections.push(
+            section('sectionSearchModes', 'Search modes', [
+                item('>', 'smRegularSearch', 'Regular search — filter bookmarks on current page by name'),
+                ...(d.isTagCloudDesktopShortcutVisible()
+                    ? [item('/', 'smTagCloudSlash', 'Open tag word cloud (desktop); arrow keys select tag or clear filter, Enter apply, Esc close; with interleave search on and modal closed, / can start fuzzy search')]
+                    : []),
+                item('@', 'smGlobalSearch', 'Global search — fuzzy search across all pages at once; result shows page name as context'),
+                item(':', 'smCommandPalette', 'Command palette — 5 collapsible groups at lone : ; recent commands at top; toggles stay open after Enter'),
+                item('?', 'smFinders', 'Finders — e.g. ?g query to search Google'),
+                item('*', 'smRecentPanel', 'Recent bookmarks panel'),
+                item('mode chips', 'smModeChips', 'Click › search · : commands · ? finders at the top of the overlay to switch mode instantly'),
+                item('← / → (chip row)', 'smEmptyStateChips', 'Empty overlay — with a recent-search or recent-command chip row highlighted, cycle chips and Enter applies'),
+                item('category: / tag: / page: / status:', 'smFieldFilters', 'Filter results by field directly in the search bar'),
+            ]),
+            section('sectionCommandsBookmarks', 'Commands — bookmarks', [
+                item(':new / :add', 'cbNew', 'Open new-bookmark modal (+ / Shift+B / Ctrl+Shift+A) or quick-add omnibox (&)'),
+                item(':note', 'cbNote', 'Edit note on the focused bookmark'),
+                item(':move / :edit / :copy', 'cbMoveEditCopy', 'Move, inline-edit, or copy URL of the keyboard-selected bookmark'),
+                item(':pin / :unpin', 'cbPin', 'Toggle pin flag on the focused bookmark'),
+                item(':tag', 'cbTagList', 'List all tags in the command palette (dashboard layout unchanged)'),
+                item(':tag <name>', 'cbTagBrowse', 'Browse bookmarks by tag in the palette — :tag work or :tag:work'),
+                item(':tag +name / :tag -name', 'cbTagMutate', 'Add or remove a tag on the focused bookmark — :tag +name / :tag -name'),
+                item(':category / :cat', 'cbCategory', 'Jump to a category or smart collection by number or name'),
+                item(':filter <tag> / :filter clear', 'cbFilter', 'Apply or clear dashboard tag filter (OR logic, same as tag cloud)'),
+                item(':remove', 'cbRemove', 'Delete the focused bookmark'),
+                item(':find <text> / :find clear', 'cbFind', 'Filter bookmark tiles on the current page — :find clear removes the filter'),
+                item(
+                    ':open all / :open pinned',
+                    'cbOpenAll',
+                    'Open every bookmark or pinned bookmarks on the current page (capped at 15)'
+                ),
+                item(':open tag <name> / :open category <name>', 'cbOpenTagCat', 'Open bookmarks matching a tag or category on the current page'),
+                item(':open last [n]', 'cbOpenLast', 'Open the N most recently opened bookmarks on this page (default 5, max 50; tab batch capped at 15; :open recent is an alias)'),
+                item(':goto <url or domain>', 'cbGoto', 'Navigate directly — full URLs open as-is, bare domains get https:// prepended'),
+                item(':goto config / stats / health', 'cbGotoNav', 'Quick navigation to config, stats, or health view'),
+                item(':duplicate / :duplicates', 'cbDuplicates', 'Find bookmarks with duplicate URLs across all pages (opens Health duplicates view)'),
+                item(':history / :history clear', 'cbHistory', 'Browse recent searches from the command bar / wipe all search history'),
+                item(':stale <days>', 'cbStale', 'Show bookmarks not opened in <days> days (default 30)'),
+                item(':health [filter]', 'caHealth', 'Open health view — broken / duplicate / stale / refresh'),
+                item(':health page [n]', 'cbHealthPage', 'Open health view with a specific page context'),
+                item(':save / :saved', 'cbSave', 'Save the current search query / show saved searches'),
+            ]),
+            section('sectionCommandsNavigation', 'Commands — navigation', [
+                item(':page', 'cnPage', 'Switch page by name or number — palette stays open, ✓ on current page'),
+                item(':inbox', 'cnInbox', 'Open Inbox page (Shift + I)'),
+                item(':inbox triage', 'cnInboxTriage', 'Triage inbox items one by one'),
+                item(':recent', 'cnRecent', 'Open recent bookmarks modal (same as *)'),
+                item(':overview', 'cnOverview', 'Open page overview with bookmark counts (same as ,)'),
+                item(':cheat', 'cnCheat', 'Open keyboard cheat sheet (same as ! or F1)'),
+                item(':whatsnew', 'cnWhatsnew', 'Open what\'s new release notes'),
+                item(':reload', 'cnReload', 'Reload the dashboard'),
+                item(':config [section]', 'cnConfig', 'Open config or a tab — bookmarks, backups, stats, …'),
+            ]),
+            section('sectionCommandsAppearance', 'Commands — appearance', [
+                item(':layout <preset>', 'caLayout', 'Switch layout — default / compact / cards / masonry / list / launcher'),
+                item(':layoutversion <mode>', 'caLayoutversion', 'Switch layout version — classic / modern / toggle (not the same as :layout presets)'),
+                item(':theme <name>', 'caTheme', 'Switch colour theme'),
+                item(':density <mode>', 'caDensity', 'Change density — comfortable / compact / dense'),
+                item(':columns <n>', 'caColumns', 'Set number of columns (1–6)'),
+                item(':fontsize <size>', 'caFontsize', 'Change font size'),
+                item(':favicons on/off', 'caFavicons', 'Toggle favicons on/off'),
+                item(':favicons fetch', 'caFaviconsFetch', 'Re-download every bookmark icon across all pages (replaces existing icons)'),
+                item(':preview on/off', 'caPreview', 'Toggle hover preview cards'),
+                item(':packed on/off', 'caPacked', 'Toggle packed (variable-width) columns'),
+                item(':buttonbar <position>', 'caButtonbar', 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left'),
+                item(':sort <method>', 'caSort', 'Sort focused category (shows category name) — order / az / recent'),
+                item(':dark / :title / :lang', 'caDisplayToggles', 'Toggle dark mode, dashboard title visibility, or UI language'),
+                item(':animations / :status / :opacity', 'caDisplayMore', 'Toggle animations, status monitor, or background opacity'),
+                item(':collections', 'caCollections', 'Toggle smart collections (today, recent, stale, most used)'),
+            ]),
+            section('sectionCommandsTools', 'Commands — tools', [
+                item(':backup / :export', 'ctBackup', 'Open config backups or download a ZIP backup immediately'),
+                item(':metadata', 'ctMetadata', 'Open health missing previews or config bookmarks metadata view'),
+                item(':monitor off', 'ctMonitor', 'Turn availability checking off for every bookmark at once (asks for confirmation first)'),
+                item(':telemetry on / off', 'ctTelemetry', 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)'),
+            ]),
+            section('sectionOther', 'Other', [
+                item('! or F1', 'otCheatSheet', 'This cheat sheet'),
+                item('★ (corner button)', 'otWhatsNew', 'Open what\'s new release notes'),
+                item('Ctrl + V (dashboard)', 'otPasteUrlDashboard', 'Paste URL anywhere on the dashboard to quick-add a bookmark'),
+                item('1–9 (config page)', 'otConfigTabs', 'Jump to the Nth visible config tab'),
+                item('← / → (config page)', 'otConfigTabArrows', 'Previous / next config tab; crosses tab groups at the edges'),
+                item('Alt + ← / → (config page)', 'otConfigTabGroupJump', 'Jump to first tab of previous / next tab group'),
+                item('< (config page)', 'otConfigBackDashboard', 'Back to dashboard (asks to confirm if there are unsaved changes)'),
+                item('S (config page)', 'otConfigSave', 'Save config changes'),
+                item('Alt + ↑ / ↓ (config page)', 'otConfigReorder', 'Reorder selected bookmark'),
+                item('Ctrl/Cmd + Shift + K (config page)', 'otConfigSettingsSearch', 'Find settings, tabs, and help on config'),
+                item('Ctrl/Cmd + K (config page)', 'otConfigPalette', 'Quick actions on config (new page, bookmark, …)'),
+                item('config → keyboard', 'otConfigKeyboard', 'Customize rebindable dashboard shortcuts — fixed quick actions and grid chords listed too'),
+            ]),
+        );
+        return sections;
     }
 
-    /**
-     * Which section the sheet should lead with, from where it was opened.
-     * Triage wins over the inbox behind it — that overlay is what the user is
-     * actually looking at.
-     */
-    getKeyboardCheatSheetContext() {
-        const registry = window.KeyboardCheatSheetRegistry;
-        if (!registry) return 'bookmarks';
-        return registry.activeContextId(registry.buildContext(this.dash));
-    }
 
     showKeyboardCheatSheet() {
         const d = this.dash;
@@ -169,50 +351,26 @@ class DashboardUiHelpers {
             return keys;
         };
         const filterPlaceholder = d.language?.t('dashboard.cheatsheetFilterPlaceholder') || 'Filter shortcuts…';
-        const noResultsText = d.language?.t('dashboard.cheatsheetNoResults') || 'No shortcuts match your filter.';
-        const esc = (text) => this.escapeHtml(String(text ?? ''));
-        // Opening from Health should not mean scrolling past eight sections to
-        // reach the rows for the view you are looking at. The matching section
-        // opens and leads; nothing is hidden, so the filter still sees everything.
-        const context = this.getKeyboardCheatSheetContext();
-        // Bookmarks is the default the sheet has always opened on, so it gets no
-        // lead line and no marked section: there is nothing to orient someone to.
-        const contextIndex = context === 'bookmarks'
-            ? -1
-            : sections.findIndex((section) => section.contextId === context);
-        const leadKey = `cheatsheetContext${context.replace(/(^|-)([a-z])/g, (_m, _d, c) => c.toUpperCase())}Lead`;
-        const leadText = context === 'bookmarks'
-            ? ''
-            : (d.language?.t(`dashboard.${leadKey}`) || '');
-        const showLead = leadText && leadText !== `dashboard.${leadKey}`;
         const html = `
-            <div class="keyboard-cheat-sheet" data-context="${esc(context)}">
-                ${showLead ? `<p class="cheat-sheet-context-lead">${esc(leadText)}</p>` : ''}
+            <div class="keyboard-cheat-sheet">
                 <input type="text" id="cheat-sheet-filter" class="cheat-sheet-filter"
-                       placeholder="${esc(filterPlaceholder)}" autocomplete="off" spellcheck="false"
-                       aria-label="${esc(filterPlaceholder)}">
-                <p id="cheat-sheet-no-results" class="cheat-sheet-no-results" hidden>${esc(noResultsText)}</p>
-                ${sections.map((section, i) => {
-                    const isContext = contextIndex >= 0 && i === contextIndex;
-                    // Falls back to the first section when the view has no section
-                    // of its own, which is the behaviour this always had.
-                    const open = contextIndex >= 0 ? isContext : i === 0;
-                    return `
-                    <details class="cheat-sheet-group${isContext ? ' cheat-sheet-group--context' : ''}" ${open ? 'open' : ''}${isContext ? ' data-context-section="true"' : ''}>
-                        <summary class="cheat-sheet-group-title">${esc(section.title)}</summary>
+                       placeholder="${filterPlaceholder}" autocomplete="off" spellcheck="false"
+                       aria-label="${filterPlaceholder}">
+                ${sections.map((section, i) => `
+                    <details class="cheat-sheet-group" ${i === 0 ? 'open' : ''}>
+                        <summary class="cheat-sheet-group-title">${section.title}</summary>
                         <table class="keyboard-cheat-sheet-table">
                             <tbody>
                                 ${section.items.map((shortcut) => `
                                     <tr>
                                         <td class="keyboard-cheat-sheet-keys">${formatKeys(shortcut.keys)}</td>
-                                        <td class="keyboard-cheat-sheet-description">${esc(shortcut.description)}</td>
+                                        <td class="keyboard-cheat-sheet-description">${shortcut.description}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
                         </table>
                     </details>
-                `;
-                }).join('')}
+                `).join('')}
             </div>
         `;
 
@@ -234,8 +392,6 @@ class DashboardUiHelpers {
         filterInput.addEventListener('input', () => {
             const q = filterInput.value.toLowerCase().trim();
             const groups = document.querySelectorAll('.cheat-sheet-group');
-            const noResults = document.getElementById('cheat-sheet-no-results');
-            let anyVisible = false;
             groups.forEach((group, i) => {
                 const rows = group.querySelectorAll('tr');
                 let visible = 0;
@@ -246,19 +402,12 @@ class DashboardUiHelpers {
                 });
                 if (q) {
                     group.hidden = visible === 0;
-                    if (visible > 0) {
-                        group.open = true;
-                        anyVisible = true;
-                    }
+                    if (visible > 0) group.open = true;
                 } else {
                     group.hidden = false;
                     group.open = i === 0;
-                    anyVisible = true;
                 }
             });
-            if (noResults) {
-                noResults.hidden = !q || anyVisible;
-            }
         });
         this._setupCheatSheetKeyboardNav();
     }

@@ -248,10 +248,6 @@ func (h *Handlers) HealthPage(w http.ResponseWriter, r *http.Request) {
 	if page := strings.TrimSpace(q.Get("page")); page != "" && !strings.EqualFold(page, "all") {
 		target.Set("page", page)
 	}
-	// Legacy deep links used ?id=pageId:index before hv_id existed.
-	if id := strings.TrimSpace(q.Get("id")); id != "" {
-		target.Set("hv_id", id)
-	}
 
 	redirectURL := "/#health"
 	if encoded := target.Encode(); encoded != "" {

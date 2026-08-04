@@ -58,7 +58,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'telemetry'],
+                commands: ['config', 'backup', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'whatsnew', 'telemetry'],
             },
         ];
         // Track which groups are expanded (none by default)
@@ -101,7 +101,6 @@ class SearchCommandsComponent {
             'overview': this.handleOverviewCommand.bind(this),
             'inbox': this.handleInboxCommand.bind(this),
             'cheat': this.handleCheatCommand.bind(this),
-            'help': this.handleCheatCommand.bind(this),
             'whatsnew': this.handleWhatsNewCommand.bind(this),
             'add': this.handleAddCommand.bind(this),
             'config': this.handleConfigCommand.bind(this),

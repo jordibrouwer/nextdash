@@ -10,7 +10,7 @@
 |---|----------|---------------|
 | 🚀 | **Install & security** | [README.md](README.md) — Docker, tokens, production setup |
 | 📋 | **Release history** | [CHANGELOG.md](CHANGELOG.md) — every version, new and fix |
-| 🗂️ | **Shortcut cheat sheet** | Press **!** or **F1** on the dashboard (live, searchable). Printable: [PDF](nextDash-cheatsheet.pdf?raw=true) / [HTML](nextDash-cheatsheet.html?raw=true) — regenerate with `npm run generate:cheatsheet`. |
+| 🗂️ | **Shortcut cheat sheet** | [PDF reference](nextDash-cheatsheet.pdf?raw=true) — one-page printable |
 | 💬 | **Translated help** | **Config → Help** in the app (EN / NL / DE / FR) |
 
 This manual is for new users and anyone who wants a structured reference. It goes deeper than the README and mirrors the in-app Help topics.
@@ -293,7 +293,7 @@ The button bar can appear as a **floating bottom bar** (default) or as a **44 px
 | | `!` | `!` / `F1` | Keyboard cheat sheet |
 | Bottom | `★` | — | What's new |
 
-Hover a button on desktop for a tooltip with shortcuts. In side-rail mode, tooltips appear to the **right** of the rail. The header icons — **pages**, **inbox**, **health**, **config** — carry the same tooltips (**v2026.08.08.6**) and open **below** the icon, since there is no room above them at the top of the window (**v2026.08.09**).
+Hover a button on desktop for a tooltip with shortcuts. In side-rail mode, tooltips appear to the **right** of the rail.
 
 ### 🔗 Deep links from Health
 
@@ -394,11 +394,7 @@ Arrow keys move through the items and `Enter` activates one; `Esc` or a click ou
 
 **+ Bookmark** opens the same add form empty. Tick several rows to get the **bulk toolbar** — move to another page or category, pin, refresh favicons, add / replace / remove tags across the whole selection, or delete. **Select all** ticks the rows your filters are currently showing, not every bookmark you own; since **v2026.08.08** it names that count when the list is longer than the rows on screen, because the rest arrive as you scroll.
 
-**Tags** above the list is a tag cloud of every tag in use, most-used first and sized by count (**v2026.08.09**). Click one or more to filter — several tags match bookmarks carrying *any* of them, the same OR logic as the dashboard tag cloud. **Select these bookmarks** turns the filtered result into a ticked selection for the bulk toolbar, and each tag also gets its own removable chip beside the count. The panel starts collapsed and opens on its own when a tag filter is already active.
-
 Selections survive a filter change, so you can gather rows from several pages before acting. When part of a selection is hidden by the filters you have on, the bulk bar says how many and offers **Select only these** to drop them — worth a look before **Delete**, which reaches every ticked row whether or not you can see it.
-
-Deleting — a single row or a whole selection — offers **Undo** in the toast that follows (**v2026.08.09**). Before this, single-row delete had no undo at all, and the bulk one could be pushed off screen by a keyboard tip; a confirmation now takes the slot from a tip rather than queueing behind it.
 
 Since **v2026.08.08**, two bookmarks that share a URL on the same page are treated as separate rows by every bulk and single-row action. Before this they were identified by page and URL alone, so ticking one and deleting removed both; the **Duplicate URLs** cleanup filter under Statistics is the fastest way to find such pairs.
 
@@ -527,9 +523,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 
 ### 9.4 Cheat sheet
 
-Press **`!`** or **`F1`** (or run **`:cheat`** / **`:help`**). Focus lands in the filter box automatically. Type to narrow the list. When the **side rail** is active, a **Layout (side rail)** section lists tab order and `:buttonbar` hints. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open. On first open (desktop), a one-time **Got it** balloon may appear beside the modal — dismissing it does not close the cheat sheet.
-
-Since **v2026.08.09** the sheet opens on the section for the view you are in: from **Health** the health shortcuts lead and are marked, from **Inbox** the inbox ones (inbox triage when that overlay is up), from **config** the config ones. Nothing is hidden or reordered — the filter still searches every section — and opening it from the bookmark grid behaves as before. A one-page **Shortcuts PDF** is linked from **Config → Overview** (Tips panel) and at the top of **Config → Help**; it always opens in a new tab.
+Press **`!`** or **`F1`**. Focus lands in the filter box automatically. Type to narrow the list. When the **side rail** is active, a **Layout (side rail)** section lists tab order and `:buttonbar` hints. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open. On first open (desktop), a one-time **Got it** balloon may appear beside the modal — dismissing it does not close the cheat sheet.
 
 Every shortcut uses its **fixed default**. Custom key rebinding is not available — the cheat sheet is the authoritative list.
 
@@ -633,7 +627,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:open tag <name>` / `:open category <name>` | Open bookmarks matching tag or category on current page |
 | `:open last [n]` | Open N recently opened on page (default 5, max 50) |
 | `:page` | Switch page by name or number (palette stays open, `✓` on current) |
-| `:recent` / `:overview` / `:cheat` / `:help` / `:whatsnew` / `:reload` | Recent modal (`*`), page overview (`,`), cheat sheet (`!` / `F1`), what's new, reload |
+| `:recent` / `:overview` / `:cheat` / `:whatsnew` / `:reload` | Recent modal (`*`), page overview (`,`), cheat sheet, what's new, reload |
 | `:inbox` / `:inbox triage` | Open Inbox (`Shift+I`, or `0`) or triage unread items one by one |
 | `:config [section]` | Open config or tab (`bookmarks`, `backups`, `stats`, …) |
 | `:stale [days]` | List stale bookmarks |

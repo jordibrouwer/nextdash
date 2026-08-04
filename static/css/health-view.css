@@ -254,6 +254,8 @@ button.health-view-tile:hover {
     cursor: default;
 }
 
+/* Secondary styling on purpose: this clears a setting on many bookmarks, so it
+   must not compete with "Retest all" for the primary action. */
 /* Secondary weight: exporting is a side errand next to "Retest all", which is
    the button this toolbar exists for. */
 .health-view-export-btn,
@@ -1354,13 +1356,6 @@ body[data-layout-version="modern"] .health-view-filter-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-action-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-export-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-checkoff-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-retest-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-search-input:focus-visible,
-body[data-layout-version="modern"] .health-view-sort-select:focus-visible,
-body[data-layout-version="modern"] .health-view-load-more-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-retry-btn:focus-visible,
-body[data-layout-version="modern"] .health-view-item-score:focus-visible,
-body[data-layout-version="modern"] .health-check-mode:focus-visible,
 body[data-layout-version="modern"] .health-view-bulk-monitor-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-bulk-periodic-btn:focus-visible,
 body[data-layout-version="modern"] .health-monitor-expand-btn:focus-visible,
