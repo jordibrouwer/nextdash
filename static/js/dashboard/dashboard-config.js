@@ -7868,10 +7868,18 @@ class DashboardConfig {
         return out.sort((a, b) => a.localeCompare(b));
     }
 
-    /** Every tag in use, with how many bookmarks carry it. */
+    /**
+     * Every tag in use, with how many bookmarks carry it.
+     *
+     * Ranked by the same function the dashboard tag cloud uses, so both clouds
+     * order and count identically instead of drifting through two copies.
+     */
     bookmarkTagCounts() {
+        const all = this.dash.allBookmarks || [];
+        const shared = window.DashboardTagCloud?.countTagsFromBookmarks;
+        if (typeof shared === 'function') return shared(all);
         const counts = new Map();
-        for (const b of this.dash.allBookmarks || []) {
+        for (const b of all) {
             for (const raw of b.tags || []) {
                 const tag = String(raw || '').trim().toLowerCase();
                 if (!tag) continue;
