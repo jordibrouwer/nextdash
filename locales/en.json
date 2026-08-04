@@ -878,7 +878,11 @@
         "healthEmptyMonitoredHint": "Monitoring checks a bookmark on its own schedule and keeps 30 days of uptime history. Press c on any row — or use its ⋯ menu — and choose Monitor.",
         "healthTileMonitored": "Monitored",
         "healthTileMonitoredDown": "{count} of {total} not responding",
-        "healthTileMonitoredUp": "All {count} responding"
+        "healthTileMonitoredUp": "All {count} responding",
+        "cheatsheetContextHealthLead": "Showing shortcuts for the Health view first.",
+        "cheatsheetContextInboxLead": "Showing shortcuts for the Inbox view first.",
+        "cheatsheetContextInboxTriageLead": "Showing shortcuts for inbox triage first.",
+        "cheatsheetContextConfigLead": "Showing shortcuts for the config view first."
     },
     "health": {
         "pageTitle": "health beta",

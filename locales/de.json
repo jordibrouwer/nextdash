@@ -878,7 +878,11 @@
         "healthEmptyMonitoredHint": "Die Überwachung prüft ein Lesezeichen in einem eigenen Intervall und bewahrt 30 Tage Verlauf. Drücken Sie c in einer Zeile — oder nutzen Sie das ⋯-Menü — und wählen Sie Monitor.",
         "healthTileMonitored": "Überwacht",
         "healthTileMonitoredDown": "{count} von {total} antworten nicht",
-        "healthTileMonitoredUp": "Alle {count} antworten"
+        "healthTileMonitoredUp": "Alle {count} antworten",
+        "cheatsheetContextHealthLead": "Kürzel für die Health-Ansicht stehen zuerst.",
+        "cheatsheetContextInboxLead": "Kürzel für die Inbox-Ansicht stehen zuerst.",
+        "cheatsheetContextInboxTriageLead": "Kürzel für die Inbox-Triage stehen zuerst.",
+        "cheatsheetContextConfigLead": "Kürzel für die Konfigurationsansicht stehen zuerst."
     },
     "health": {
         "pageTitle": "health beta",

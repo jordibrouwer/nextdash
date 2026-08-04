@@ -878,7 +878,11 @@
         "healthEmptyMonitoredHint": "La surveillance vérifie un favori selon son propre intervalle et conserve 30 jours d’historique. Appuyez sur c sur une ligne — ou utilisez son menu ⋯ — et choisissez Monitor.",
         "healthTileMonitored": "Surveillés",
         "healthTileMonitoredDown": "{count} sur {total} ne répondent pas",
-        "healthTileMonitoredUp": "Les {count} répondent"
+        "healthTileMonitoredUp": "Les {count} répondent",
+        "cheatsheetContextHealthLead": "Les raccourcis de la vue Health apparaissent en premier.",
+        "cheatsheetContextInboxLead": "Les raccourcis de la vue Inbox apparaissent en premier.",
+        "cheatsheetContextInboxTriageLead": "Les raccourcis du tri de l'inbox apparaissent en premier.",
+        "cheatsheetContextConfigLead": "Les raccourcis de la vue configuration apparaissent en premier."
     },
     "health": {
         "pageTitle": "health beta",

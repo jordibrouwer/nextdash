@@ -878,7 +878,11 @@
         "healthEmptyMonitoredHint": "Monitoring controleert een bookmark op een eigen interval en bewaart 30 dagen geschiedenis. Druk op c bij een rij — of gebruik het ⋯-menu — en kies Monitor.",
         "healthTileMonitored": "Gemonitord",
         "healthTileMonitoredDown": "{count} van {total} reageren niet",
-        "healthTileMonitoredUp": "Alle {count} reageren"
+        "healthTileMonitoredUp": "Alle {count} reageren",
+        "cheatsheetContextHealthLead": "Sneltoetsen voor de Health-weergave staan bovenaan.",
+        "cheatsheetContextInboxLead": "Sneltoetsen voor de Inbox-weergave staan bovenaan.",
+        "cheatsheetContextInboxTriageLead": "Sneltoetsen voor inbox-triage staan bovenaan.",
+        "cheatsheetContextConfigLead": "Sneltoetsen voor de configuratieweergave staan bovenaan."
     },
     "health": {
         "pageTitle": "health beta",
