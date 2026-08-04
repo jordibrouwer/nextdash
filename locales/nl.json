@@ -3757,7 +3757,10 @@
         "bulkDeleteUndone": "Bladwijzers hersteld.",
         "bulkDeleteUndoFailed": "Kon de bladwijzers niet herstellen.",
         "bookmarkRestored": "Bladwijzer hersteld.",
-        "bookmarkRestoreFailed": "Kon de bladwijzer niet herstellen."
+        "bookmarkRestoreFailed": "Kon de bladwijzer niet herstellen.",
+        "shortcutTooltipsLabel": "Sneltoetshints op werkbalkknoppen tonen",
+        "shortcutTooltipsInfoTitle": "Informatie over sneltoetshints",
+        "shortcutTooltipsInfoMessage": "Wanneer ingeschakeld toont een headerlink of werkbalkknop bij hover zijn naam en sneltoets.\n\n• Helpt je de toetsen te leren\n• Zet uit voor een rustiger dashboard\n\nOok beschikbaar als :shortcuts on|off in het commandopaneel."
     },
     "colors": {
         "title": "thema-aanpassing",

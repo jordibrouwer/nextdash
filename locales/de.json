@@ -3757,7 +3757,10 @@
         "bulkDeleteUndone": "Lesezeichen wiederhergestellt.",
         "bulkDeleteUndoFailed": "Lesezeichen konnten nicht wiederhergestellt werden.",
         "bookmarkRestored": "Lesezeichen wiederhergestellt.",
-        "bookmarkRestoreFailed": "Lesezeichen konnte nicht wiederhergestellt werden."
+        "bookmarkRestoreFailed": "Lesezeichen konnte nicht wiederhergestellt werden.",
+        "shortcutTooltipsLabel": "Tastenkürzel-Hinweise auf Symbolleisten anzeigen",
+        "shortcutTooltipsInfoTitle": "Informationen zu Tastenkürzel-Hinweisen",
+        "shortcutTooltipsInfoMessage": "Wenn aktiviert, zeigt ein Header-Link oder eine Symbolleistenschaltfläche beim Überfahren Namen und Tastenkürzel an.\n\n• Hilft beim Erlernen der Tasten\n• Ausschalten für ein ruhigeres Dashboard\n\nAuch verfügbar als :shortcuts on|off im Befehlspanel."
     },
     "colors": {
         "title": "themenanpassung",

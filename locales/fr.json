@@ -3757,7 +3757,10 @@
         "bulkDeleteUndone": "Favoris restaurés.",
         "bulkDeleteUndoFailed": "Impossible de restaurer les favoris.",
         "bookmarkRestored": "Favori restauré.",
-        "bookmarkRestoreFailed": "Impossible de restaurer le favori."
+        "bookmarkRestoreFailed": "Impossible de restaurer le favori.",
+        "shortcutTooltipsLabel": "Afficher les raccourcis sur les icônes de la barre",
+        "shortcutTooltipsInfoTitle": "Informations sur les indices de raccourcis",
+        "shortcutTooltipsInfoMessage": "Lorsque cette option est activée, survoler un lien d'en-tête ou un bouton de la barre affiche son nom et son raccourci clavier.\n\n• Vous aide à apprendre les touches\n• Désactivez pour un tableau de bord plus sobre\n\nAussi disponible via :shortcuts on|off dans le panneau de commandes."
     },
     "colors": {
         "title": "personnalisation du thème",

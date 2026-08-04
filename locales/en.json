@@ -3757,7 +3757,10 @@
         "bulkDeleteUndone": "Bookmarks restored.",
         "bulkDeleteUndoFailed": "Could not restore the bookmarks.",
         "bookmarkRestored": "Bookmark restored.",
-        "bookmarkRestoreFailed": "Could not restore the bookmark."
+        "bookmarkRestoreFailed": "Could not restore the bookmark.",
+        "shortcutTooltipsLabel": "Show shortcut hints on toolbar icons",
+        "shortcutTooltipsInfoTitle": "Shortcut Hints Information",
+        "shortcutTooltipsInfoMessage": "When enabled, hovering a header link or toolbar button shows its name and keyboard shortcut.\n\n• Helps you learn the keys\n• Turn off for a quieter dashboard\n\nAlso available as :shortcuts on|off in the command panel."
     },
     "colors": {
         "title": "theme customization",

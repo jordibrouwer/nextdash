@@ -103,9 +103,27 @@ class DashboardToolbar {
     }
 
 
+    /**
+     * Whether the shortcut popovers may appear at all.
+     *
+     * Default on: they are how the keys get discovered. Absent means never
+     * chosen, which is on — only an explicit false switches them off.
+     */
+    shortcutTooltipsEnabled() {
+        return this.dash.settings?.showShortcutTooltips !== false;
+    }
+
     setupToolbarKbdTooltips() {
         const d = this.dash;
         if (d.isCoarsePointer()) return;
+
+        // Switched off: tear down anything a previous run left behind rather
+        // than just skipping setup, so flipping the toggle takes effect at once
+        // instead of at the next reload.
+        if (!this.shortcutTooltipsEnabled()) {
+            this.teardownToolbarKbdTooltips();
+            return;
+        }
 
         let tip = document.getElementById('toolbar-kbd-tooltip');
         if (!tip) {
@@ -270,6 +288,23 @@ class DashboardToolbar {
 
         hide();
         syncToolbarKbdTooltip();
+    }
+
+    /**
+     * Remove the popover and stop tracking hover/focus.
+     *
+     * The pointermove listener is the one that matters: left bound, it keeps
+     * running on every mouse move for a feature the user has switched off.
+     */
+    teardownToolbarKbdTooltips() {
+        const d = this.dash;
+        if (d._toolbarKbdTooltipSync) {
+            document.removeEventListener('pointermove', d._toolbarKbdTooltipSync);
+            document.removeEventListener('focusin', d._toolbarKbdTooltipSync);
+            document.removeEventListener('focusout', d._toolbarKbdTooltipSync);
+            d._toolbarKbdTooltipSync = null;
+        }
+        document.getElementById('toolbar-kbd-tooltip')?.remove();
     }
 
 
