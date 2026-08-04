@@ -1801,6 +1801,18 @@ class DashboardConfig {
             if (!panel?.contains(document.activeElement) && document.activeElement?.id !== 'config-settings-jump-filter') {
                 return;
             }
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'f') {
+                const filter = document.getElementById('config-settings-jump-filter');
+                if (filter instanceof HTMLElement) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    filter.focus({ preventScroll: true });
+                    if (typeof filter.select === 'function') {
+                        filter.select();
+                    }
+                }
+                return;
+            }
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 e.stopPropagation();
