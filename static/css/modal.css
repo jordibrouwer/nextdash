@@ -1137,6 +1137,12 @@ body.no-animations .modal-button.danger.selected {
     opacity: 0.65;
 }
 
+.cheat-sheet-no-results {
+    margin: 0.75rem 0 0;
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+}
+
 .cheat-sheet-group {
     border-bottom: 1px solid var(--border-primary);
 }

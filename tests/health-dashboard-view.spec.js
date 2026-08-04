@@ -526,6 +526,23 @@ test.describe('health dashboard view', () => {
         // '0' still works but is on the way out; documenting it would teach a
         // shortcut that is going away.
         await expect(sheet).not.toContainText('0 = Inbox');
+
+        const healthGroup = sheet.locator('.cheat-sheet-group').filter({
+            has: page.locator('summary.cheat-sheet-group-title', { hasText: /Health view/i }),
+        });
+        await expect(healthGroup).toContainText(/refresh report|Refresh the cached/i);
+        await expect(healthGroup).toContainText(/statistics/i);
+
+        const inboxGroup = sheet.locator('.cheat-sheet-group').filter({
+            has: page.locator('summary.cheat-sheet-group-title', { hasText: /Inbox view/i }),
+        });
+        await expect(inboxGroup).toContainText(/triage/i);
+        await expect(inboxGroup).toContainText(/snooze/i);
+
+        const triageGroup = sheet.locator('.cheat-sheet-group').filter({
+            has: page.locator('summary.cheat-sheet-group-title', { hasText: /Inbox triage/i }),
+        });
+        await expect(triageGroup).toContainText(/mark as read|Keep and mark/i);
     });
 
     test('the header icon is marked active exactly like the inbox tab', async ({ page }) => {

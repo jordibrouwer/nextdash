@@ -125,6 +125,16 @@ test.describe('dashboard overlay focus', () => {
         }
     });
 
+    test('cheat sheet filter shows empty state when nothing matches', async ({ page }) => {
+        await closeDashboardOverlays(page);
+        await page.keyboard.press('!');
+        await expect(page.locator('#cheat-sheet-filter')).toBeVisible({ timeout: 5000 });
+        await page.fill('#cheat-sheet-filter', 'zzznomatchzzz');
+        await expect(page.locator('#cheat-sheet-no-results')).toBeVisible();
+        await page.fill('#cheat-sheet-filter', '');
+        await expect(page.locator('#cheat-sheet-no-results')).toBeHidden();
+    });
+
     test('cheat sheet toggles focused section with Space', async ({ page }) => {
         await closeDashboardOverlays(page);
         await page.keyboard.press('!');

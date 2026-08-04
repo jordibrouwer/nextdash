@@ -190,16 +190,30 @@ class DashboardUiHelpers {
         // shortcuts for a view someone cannot open is noise. These mirror the legend
         // under the health list, which is the same set in context.
         if (d.health?.isEnabled?.()) {
-            sections.push(section('sectionHealthView', 'Health view', [
-                item('j / k', 'hvMove', 'Move between rows (↑ / ↓ work too)'),
-                item('s', 'hvScore', 'Unfold the score breakdown for the selected row'),
-                item('p', 'hvRecheck', 'Re-check the selected bookmark now'),
-                item('c', 'hvCheckMode', 'Change availability checking — off, periodic or monitor'),
-                item('m', 'hvMore', 'Row menu — redirect, title, favicon, archive, delete'),
-                item('Enter', 'hvOpen', 'Open the selected bookmark'),
-                item('g / G', 'hvFirstLast', 'Jump to the first / last row'),
-                item('Esc', 'hvClose', 'Close a menu, or leave the view'),
-            ]));
+            const rows = window.KeyboardViewLegends?.HEALTH_VIEW;
+            const items = rows
+                ? window.KeyboardViewLegends.toCheatSheetItems(rows, (key, fallback) => t(key, fallback))
+                : [];
+            sections.push(section('sectionHealthView', 'Health view', items));
+        }
+
+        if (d.inbox?.isEnabled?.()) {
+            const inboxRows = window.KeyboardViewLegends?.INBOX_VIEW;
+            const triageRows = window.KeyboardViewLegends?.INBOX_TRIAGE;
+            if (inboxRows?.length) {
+                sections.push(section(
+                    'sectionInboxView',
+                    'Inbox view',
+                    window.KeyboardViewLegends.toCheatSheetItems(inboxRows, (key, fallback) => t(key, fallback)),
+                ));
+            }
+            if (triageRows?.length) {
+                sections.push(section(
+                    'sectionInboxTriage',
+                    'Inbox triage',
+                    window.KeyboardViewLegends.toCheatSheetItems(triageRows, (key, fallback) => t(key, fallback)),
+                ));
+            }
         }
 
         if (d.config?.isEnabled?.()) {
@@ -271,11 +285,11 @@ class DashboardUiHelpers {
             ]),
             section('sectionCommandsNavigation', 'Commands — navigation', [
                 item(':page', 'cnPage', 'Switch page by name or number — palette stays open, ✓ on current page'),
-                item(':inbox', 'cnInbox', 'Open Inbox page (Shift + I)'),
+                item(':inbox', 'cnInbox', 'Open Inbox (Shift + I)'),
                 item(':inbox triage', 'cnInboxTriage', 'Triage inbox items one by one'),
                 item(':recent', 'cnRecent', 'Open recent bookmarks modal (same as *)'),
                 item(':overview', 'cnOverview', 'Open page overview with bookmark counts (same as ,)'),
-                item(':cheat', 'cnCheat', 'Open keyboard cheat sheet (same as ! or F1)'),
+                item(':cheat / :help', 'cnCheat', 'Open keyboard cheat sheet (same as ! or F1)'),
                 item(':whatsnew', 'cnWhatsnew', 'Open what\'s new release notes'),
                 item(':reload', 'cnReload', 'Reload the dashboard'),
                 item(':config [section]', 'cnConfig', 'Open config or a tab — bookmarks, backups, stats, …'),
@@ -307,15 +321,7 @@ class DashboardUiHelpers {
                 item('! or F1', 'otCheatSheet', 'This cheat sheet'),
                 item('★ (corner button)', 'otWhatsNew', 'Open what\'s new release notes'),
                 item('Ctrl + V (dashboard)', 'otPasteUrlDashboard', 'Paste URL anywhere on the dashboard to quick-add a bookmark'),
-                item('1–9 (config page)', 'otConfigTabs', 'Jump to the Nth visible config tab'),
-                item('← / → (config page)', 'otConfigTabArrows', 'Previous / next config tab; crosses tab groups at the edges'),
-                item('Alt + ← / → (config page)', 'otConfigTabGroupJump', 'Jump to first tab of previous / next tab group'),
-                item('< (config page)', 'otConfigBackDashboard', 'Back to dashboard (asks to confirm if there are unsaved changes)'),
-                item('S (config page)', 'otConfigSave', 'Save config changes'),
-                item('Alt + ↑ / ↓ (config page)', 'otConfigReorder', 'Reorder selected bookmark'),
-                item('Ctrl/Cmd + Shift + K (config page)', 'otConfigSettingsSearch', 'Find settings, tabs, and help on config'),
-                item('Ctrl/Cmd + K (config page)', 'otConfigPalette', 'Quick actions on config (new page, bookmark, …)'),
-                item('config → keyboard', 'otConfigKeyboard', 'Customize rebindable dashboard shortcuts — fixed quick actions and grid chords listed too'),
+                item('config → Help → Keyboard', 'otConfigKeyboard', 'Open the keyboard cheat sheet — all shortcuts use fixed defaults'),
             ]),
         );
         return sections;
@@ -351,12 +357,14 @@ class DashboardUiHelpers {
             return keys;
         };
         const filterPlaceholder = d.language?.t('dashboard.cheatsheetFilterPlaceholder') || 'Filter shortcuts…';
+        const noResultsText = d.language?.t('dashboard.cheatsheetNoResults') || 'No shortcuts match your filter.';
         const esc = (text) => this.escapeHtml(String(text ?? ''));
         const html = `
             <div class="keyboard-cheat-sheet">
                 <input type="text" id="cheat-sheet-filter" class="cheat-sheet-filter"
                        placeholder="${esc(filterPlaceholder)}" autocomplete="off" spellcheck="false"
                        aria-label="${esc(filterPlaceholder)}">
+                <p id="cheat-sheet-no-results" class="cheat-sheet-no-results" hidden>${esc(noResultsText)}</p>
                 ${sections.map((section, i) => `
                     <details class="cheat-sheet-group" ${i === 0 ? 'open' : ''}>
                         <summary class="cheat-sheet-group-title">${esc(section.title)}</summary>
@@ -393,6 +401,8 @@ class DashboardUiHelpers {
         filterInput.addEventListener('input', () => {
             const q = filterInput.value.toLowerCase().trim();
             const groups = document.querySelectorAll('.cheat-sheet-group');
+            const noResults = document.getElementById('cheat-sheet-no-results');
+            let anyVisible = false;
             groups.forEach((group, i) => {
                 const rows = group.querySelectorAll('tr');
                 let visible = 0;
@@ -403,12 +413,19 @@ class DashboardUiHelpers {
                 });
                 if (q) {
                     group.hidden = visible === 0;
-                    if (visible > 0) group.open = true;
+                    if (visible > 0) {
+                        group.open = true;
+                        anyVisible = true;
+                    }
                 } else {
                     group.hidden = false;
                     group.open = i === 0;
+                    anyVisible = true;
                 }
             });
+            if (noResults) {
+                noResults.hidden = !q || anyVisible;
+            }
         });
         this._setupCheatSheetKeyboardNav();
     }
