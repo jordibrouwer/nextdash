@@ -337,6 +337,109 @@
     max-width: 60ch;
 }
 
+/* The one conclusion the tiles above add up to. It sits in an ordinary
+   .config-panel, which supplies the border, radius and background, so this only
+   sets the sentence itself. */
+.config-stats-headline {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.05);
+    line-height: 1.5;
+    max-width: 70ch;
+}
+
+/* Two series need a legend: colour alone cannot carry identity. */
+.config-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 0 0 10px;
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
+.config-chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* A short stroke rather than a filled box — at this size a block of data-weight
+   ink would be doing a label's job. */
+.config-chart-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 3px;
+    border-radius: 2px;
+    flex: 0 0 auto;
+}
+
+/* The two series must stay distinguishable in every theme, and several themes
+   define --accent-success as the same colour as --accent-primary, which made
+   both series identical. So the second is derived from the first — same hue,
+   clearly lighter — rather than trusting a second variable to differ. The pair
+   also survives greyscale, since the separation is lightness rather than hue. */
+.config-chart-swatch--a {
+    background: var(--accent-primary, #4a90d9);
+}
+
+.config-chart-swatch--b {
+    background: color-mix(in srgb, var(--accent-primary, #4a90d9) 42%, var(--background-primary, #fff));
+}
+
+/* SVG rects take fill, not background. */
+.config-chart-bar-fill--a {
+    fill: var(--accent-primary, #4a90d9);
+}
+
+.config-chart-bar-fill--b {
+    fill: color-mix(in srgb, var(--accent-primary, #4a90d9) 42%, var(--background-primary, #fff));
+}
+
+.config-chart-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* When the figures above were worked out. Recessive — it dates the page, it is
+   not one of its numbers. */
+.config-stats-updated {
+    margin: 14px 0 0;
+    text-align: right;
+    font-size: calc(var(--font-size-text) * 0.78);
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Nothing to measure yet: one explanation where a page of zeroes used to be. */
+.config-panel--empty-state {
+    text-align: center;
+}
+
+.config-panel--empty-state .config-panel-note {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.config-panel--empty-state .config-actions {
+    justify-content: center;
+}
+
+/* "20 of 214 shown" under a list that had to cut off, with the button that
+   reaches the rest. Sits below the list and reads as chrome, not as a row. */
+.config-list-truncated {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+    font-size: calc(var(--font-size-text) * 0.85);
+    color: var(--text-muted, #888);
+}
+
 .config-panel-empty {
     margin: 0;
     color: var(--text-muted, #888);
@@ -1533,17 +1636,178 @@ body.no-animations .config-new-features-panel-star {
     margin-top: 6px;
 }
 
+.config-chart {
+    position: relative;
+}
+
 .config-chart svg {
     display: block;
     width: 100%;
-    height: 72px;
+    /* Half again taller than the original 72px: at that height neighbouring
+       days differed by a pixel or two and could not be compared by eye. */
+    height: 108px;
+    overflow: visible;
 }
 
-.config-chart-labels {
-    display: flex;
-    justify-content: space-between;
+/* The bar's hit area spans the full plot height and half the gap either side,
+   so a one-open day — or an empty one — is still easy to hit. */
+.config-chart-bar {
+    cursor: pointer;
+}
+
+.config-chart-bar-hit {
+    fill: transparent;
+}
+
+.config-chart-bar-fill {
+    transition: opacity 0.12s ease;
+}
+
+/* The hovered bar lifts so the reader sees the chart respond, rather than only
+   the tooltip appearing somewhere else. */
+.config-chart-bar:hover .config-chart-bar-fill,
+.config-chart-bar.is-active .config-chart-bar-fill {
+    opacity: 1 !important;
+}
+
+.config-chart-bar:focus {
+    outline: none;
+}
+
+.config-chart-bar:focus-visible .config-chart-bar-fill {
+    opacity: 1 !important;
+    stroke: var(--text-primary, #222);
+    stroke-width: 1.5;
+    paint-order: stroke;
+}
+
+/* Dated ticks under the plot. Absolutely positioned at the bar's own centre and
+   translated back by half their width, so each label sits under its bar. */
+.config-chart-ticks {
+    display: block;
+    position: relative;
+    height: 1.1em;
     margin-top: 4px;
+    font-size: calc(var(--font-size-text) * 0.72);
+    color: var(--text-muted, #888);
+}
+
+.config-chart-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+/* The end labels sit at 0% and 100%, so centring them would hang half the text
+   outside the plot. Anchor each to its own edge and let it grow inwards. */
+.config-chart-tick--first {
+    transform: none;
+}
+
+.config-chart-tick--last {
+    left: auto !important;
+    right: 0;
+    transform: none;
+}
+
+/* Per-bar readout. Sits above the plot rather than following the pointer
+   vertically, so it never covers the bar being read. */
+.config-chart-tip {
+    position: absolute;
+    bottom: calc(100% - 18px);
+    transform: translateX(-50%);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+
+    gap: 1px;
+    padding: 5px 9px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.35));
+    border-radius: 6px;
+    background: var(--background-primary, #fff);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.14);
     font-size: calc(var(--font-size-text) * 0.8);
+    line-height: 1.3;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* `display: flex` above would otherwise beat the hidden attribute's UA style,
+   leaving an empty box on screen every time the tooltip is dismissed. */
+.config-chart-tip[hidden] {
+    display: none;
+}
+
+.config-chart-tip strong {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary, #222);
+}
+
+.config-chart-tip span {
+    color: var(--text-muted, #888);
+}
+
+/* Axis furniture: what the bars count (y) and what one bar covers (x).
+   Recessive by design — muted text tokens, never the series colour, so the
+   labels explain the chart without competing with it. */
+.config-chart-plot {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.config-chart-plot-area {
+    display: block;
+    flex: 1;
+    min-width: 0;
+}
+
+.config-chart-axis-y {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    font-size: calc(var(--font-size-text) * 0.72);
+    color: var(--text-muted, #888);
+}
+
+/* Rotated so the title reads along the axis it belongs to, which keeps the
+   chart's own width for the bars rather than spending it on a word. */
+.config-chart-axis-title {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+/* Spans exactly the plot height (.config-chart svg) so the max/0 pair lines up
+   with the top of the tallest bar and the baseline. */
+.config-chart-axis-ticks {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 108px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The shared scale for a group of full-width bars, stated once above them. */
+.config-chart-scale {
+    margin: 0 0 10px;
+    font-size: calc(var(--font-size-text) * 0.72);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, #888);
+}
+
+.config-chart-axis-x {
+    margin: 6px 0 0;
+    text-align: center;
+    font-size: calc(var(--font-size-text) * 0.72);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--text-muted, #888);
 }
 
@@ -1590,6 +1854,53 @@ body.no-animations .config-new-features-panel-star {
     gap: 12px;
 }
 
+/* Names what the rows are and what the bar measures — the bar lists have no
+   axes to title, but they have the same unlabelled-number problem. Mirrors the
+   row grid so each caption sits over its own column; the bar column stays
+   blank because the measure name belongs with the figure it explains. */
+.config-dist-axis {
+    display: grid;
+    /* The third track is pinned rather than `auto`: the rows size theirs to a
+       short number (.config-dist-count, min-width 2.5em at the body font size),
+       and an `auto` track here would size to the caption instead, so the header
+       drifted out of alignment with the rows it labels. 2.5em is resolved
+       against that same font size, not the caption's smaller one. */
+    grid-template-columns:
+        minmax(6rem, 11rem)
+        minmax(0, 1fr)
+        calc(var(--font-size-text) * 0.95 * 2.5);
+    align-items: end;
+    gap: 12px;
+    margin-bottom: 7px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+    font-size: calc(var(--font-size-text) * 0.72);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, #888);
+}
+
+/* The rows size their count column to a short number (min-width: 2.5em), so a
+   long caption must not widen the track or the header stops lining up with the
+   rows beneath it. Overflow to the left, where the empty bar column is. */
+.config-dist-axis-value {
+    grid-column: 3;
+    width: 2.5em;
+    min-width: 2.5em;
+    white-space: nowrap;
+    /* Anchored to the column's right edge and allowed to run left over the
+       empty bar column, so the caption sits above the numbers it names. */
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* For .config-stat-details, whose rows are two flex columns rather than the
+   three-column dist grid. */
+.config-dist-axis--pair {
+    display: flex;
+    justify-content: space-between;
+}
+
 .config-dist-label {
     font-size: calc(var(--font-size-text) * 0.95);
     overflow-wrap: anywhere;
@@ -1604,12 +1915,19 @@ body.no-animations .config-new-features-panel-star {
 }
 
 @media (max-width: 560px) {
-    .config-dist-row {
+    .config-dist-row,
+    .config-dist-axis {
         grid-template-columns: minmax(0, 1fr) auto;
     }
 
     .config-dist-row .config-bar {
         grid-column: 1 / -1;
+    }
+
+    /* The row's third column becomes the second here, so the caption has to
+       follow or it would sit over the wrong one. */
+    .config-dist-axis-value {
+        grid-column: 2;
     }
 }
 
@@ -1914,7 +2232,12 @@ body.no-animations .config-new-features-panel-star {
     color: var(--accent-error);
 }
 
-.config-bm-keyboard-legend {
+/* The keyboard legend that closes a view. Inbox (.inbox-legend) and Health
+   (.health-view-legend) draw the same thing outside this stylesheet; these three
+   are its config-side instances and must not drift from them. */
+.config-bm-keyboard-legend,
+.config-form-keyboard-legend,
+.config-list-keyboard-legend {
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem 1rem;
@@ -1925,7 +2248,9 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-tertiary);
 }
 
-.config-bm-keyboard-legend kbd {
+.config-bm-keyboard-legend kbd,
+.config-form-keyboard-legend kbd,
+.config-list-keyboard-legend kbd {
     font-size: 0.7rem;
     padding: 0.05rem 0.32rem;
     border-radius: 0.25rem;
@@ -2745,18 +3070,14 @@ body.no-animations .config-new-features-panel-star {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--accent-success, #4A7038)) 28%, transparent);
 }
 
-.config-list-keyboard-legend {
-    margin: 8px 0 0;
-}
-
-.config-bm-keyboard-legend {
-    margin: 8px 0 0;
-}
-
+/* Tighter top margin than the shared rule's 1rem, since a config section already
+   ends on panel padding. The border and kbd chrome stay as the shared rule sets
+   them — the form legend used to override the border here with a near-invisible
+   text-color mix, which is what made it read as a different component. */
+.config-list-keyboard-legend,
+.config-bm-keyboard-legend,
 .config-form-keyboard-legend {
-    margin: 16px 0 0;
-    padding-top: 12px;
-    border-top: 1px solid color-mix(in srgb, var(--text-color, #ccc) 12%, transparent);
+    margin: 8px 0 0;
 }
 
 .config-crud-row.keyboard-selected {
