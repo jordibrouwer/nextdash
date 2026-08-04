@@ -314,6 +314,10 @@ ${sections.join('\n')}
 
 const htmlPath = path.join(root, 'nextDash-cheatsheet.html');
 const pdfPath = path.join(root, 'nextDash-cheatsheet.pdf');
+// The repo-root copies are the artifacts people download from the project page.
+// A second copy lands in static/ because only static/, templates/ and locales/
+// are embedded in the binary — without it the in-app link would 404.
+const staticPdfPath = path.join(root, 'static', 'nextDash-cheatsheet.pdf');
 fs.writeFileSync(htmlPath, html, 'utf8');
 console.log('Wrote', htmlPath);
 
@@ -357,12 +361,20 @@ function printPdfWithChromeCli(executablePath, htmlPath, pdfPath) {
     }
 }
 
+/** Mirror the finished PDF into static/ so the running app can serve it. */
+function copyPdfToStatic() {
+    fs.mkdirSync(path.dirname(staticPdfPath), { recursive: true });
+    fs.copyFileSync(pdfPath, staticPdfPath);
+    console.log('Wrote', staticPdfPath);
+}
+
 (async () => {
     const executablePath = resolveChromiumExecutable();
     if (executablePath) {
         try {
             printPdfWithChromeCli(executablePath, htmlPath, pdfPath);
             console.log('Wrote', pdfPath);
+            copyPdfToStatic();
             return;
         } catch (cliErr) {
             console.warn('Chrome CLI PDF failed, trying Playwright:', cliErr.message);
@@ -380,6 +392,7 @@ function printPdfWithChromeCli(executablePath, htmlPath, pdfPath) {
     });
     await browser.close();
     console.log('Wrote', pdfPath);
+    copyPdfToStatic();
 })().catch((err) => {
     console.error('PDF generation failed (HTML was still written):', err.message);
     process.exitCode = 1;

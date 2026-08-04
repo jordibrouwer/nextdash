@@ -3746,7 +3746,9 @@
         "helpPageExtensionBody": "<p>De browserextensie in <code>extension/</code> slaat het huidige tabblad op. Installeer unpacked in Chrome, stel server-URL en schrijftoken in. Optionele sneltoets, tags en notities; waarschuwing bij dubbele URL.</p><p>Bij beperkte CORS: voeg <code>chrome-extension://</code> toe aan <code>NEXTDASH_CORS_ORIGINS</code>. Na opslaan kun je direct naar nextDash; een open dashboard kan toasten en verversen.</p>",
         "helpPageSecurityBody": "<p>nextDash heeft geen ingebouwde accounts — wie de URL bereikt kan lezen en schrijven tenzij je VPN, privénetwerk of proxy-auth gebruikt. Geen plain HTTP naar het openbare internet.</p><p><code>NEXTDASH_WRITE_TOKEN</code> beschermt schrijf-API's; <code>NEXTDASH_CORS_ORIGINS</code> beperkt CORS voor de extensie. Uitgaande requests valideren publieke IP's tegen SSRF. Zie de README voor alle omgevingsvariabelen.</p>",
         "helpPageTroubleshootBody": "<p>Verdwenen bladwijzers? Controleer paginaselector en categoriefilter — vaak een filter, geen dataverlies. Vreemd sorteren: check A–Z/Recent of vastgezette items. Geen tips: zet <em>Tips boven knoppen weergeven</em> aan onder Algemeen → Dashboard.</p><p>Zoeken mist items: fuzzy of <code>tag:werk</code>. Collecties zonder regelwaarde verschijnen niet. Extensie faalt: URL, token of CORS. <code>401</code> = token; <code>429</code> = rate limit.</p>",
-        "tipAddAnywhere": "<code>Shift+B</code> opent het bladwijzerformulier vanaf elke plek op het dashboard, ook als iets anders focus heeft."
+        "tipAddAnywhere": "<code>Shift+B</code> opent het bladwijzerformulier vanaf elke plek op het dashboard, ook als iets anders focus heeft.",
+        "cheatsheetPdfLink": "Sneltoetsen-PDF",
+        "cheatsheetPdfHint": "Keyboard-overzicht van één pagina (opent in een nieuw tabblad)"
     },
     "colors": {
         "title": "thema-aanpassing",

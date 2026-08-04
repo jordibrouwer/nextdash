@@ -2619,8 +2619,28 @@ class DashboardConfig {
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--small"
                             data-overview-go='{"section":"help"}'>${esc(this.t('config.overviewMoreTips', 'More tips →'))}</button>
+                    ${this.renderCheatSheetPdfLink()}
                 </div>
             </div>`;
+    }
+
+    /**
+     * Link to the printable one-page shortcut sheet.
+     *
+     * A PDF, so it always opens in a new tab: replacing the dashboard with a
+     * document viewer would lose whatever the user had open, and there is no way
+     * back other than the browser's back button.
+     */
+    renderCheatSheetPdfLink() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.cheatsheetPdfLink', 'Shortcuts PDF');
+        const hint = this.t('config.cheatsheetPdfHint', 'One-page keyboard reference (opens in a new tab)');
+        return `<a class="config-btn config-btn--small config-cheatsheet-pdf"
+                   href="/static/nextDash-cheatsheet.pdf" target="_blank" rel="noopener noreferrer"
+                   title="${esc(hint)}">
+                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 1.5H4.5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5z"/><path d="M9 1.5V5h3.5"/><path d="M6.5 8.5h3M6.5 11h3"/></svg>
+                    <span>${esc(label)}</span>
+                </a>`;
     }
 
     /** Refresh the health report and the release notes, then repaint. */
@@ -11936,7 +11956,10 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-help-body" data-help-tab="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`;
         }).join('');
         return `
-            <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
+            <div class="config-help-header">
+                <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
+                ${this.renderCheatSheetPdfLink()}
+            </div>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-help-body" role="tabpanel" tabindex="0">${this.renderHelpBody()}</div>
         `;
@@ -12015,6 +12038,7 @@ class DashboardConfig {
                 'config.helpKeyboardBody', '',
                 `<div class="config-actions">
                     <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
+                    ${this.renderCheatSheetPdfLink()}
                 </div>`)
             + this.helpPanel('config.helpConfigKeyboardTitle', 'Config navigation',
                 'config.helpConfigKeyboardBody', '');

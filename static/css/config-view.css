@@ -161,6 +161,31 @@
     line-height: 1.5;
 }
 
+/*
+ * Help intro with the printable sheet beside it. The link sits at the top
+ * because it answers the same question the page does, and someone reaching for
+ * it should not have to read the tabs first.
+ */
+.config-help-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.config-help-header .config-view-intro {
+    flex: 1 1 32ch;
+}
+
+.config-cheatsheet-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
 .config-view-placeholder {
     margin: 0;
     padding: 24px;
