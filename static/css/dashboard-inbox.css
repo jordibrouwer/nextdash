@@ -1058,6 +1058,12 @@ body.inbox-triage-active {
     opacity: 1;
 }
 
+@media (hover: none) {
+    .inbox-item-check-input:not(:checked) {
+        opacity: 1;
+    }
+}
+
 .inbox-item.is-checked {
     border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
     background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));

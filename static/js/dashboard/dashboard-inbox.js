@@ -23,6 +23,8 @@ class DashboardInbox {
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
         this._fetchPromise = null;
+        /** True after the first successful `/api/inbox` fetch this session. */
+        this._itemsLoaded = false;
     }
 
     isEnabled() {
@@ -321,6 +323,35 @@ class DashboardInbox {
         } catch { /* history is unavailable in some embedded contexts */ }
     }
 
+    /** A shareable dashboard URL that opens this row in the inbox view. */
+    buildItemShareUrl(itemOrId) {
+        const item = typeof itemOrId === 'object' && itemOrId
+            ? itemOrId
+            : (this.items || []).find((entry) => entry.id === itemOrId);
+        const id = String(item?.id || itemOrId || '').trim();
+        if (!id) {
+            return '';
+        }
+        const url = new URL(`${window.location.origin}${window.location.pathname}`);
+        url.hash = 'inbox';
+        url.searchParams.set('ib_id', id);
+        if (this.filter !== 'all') {
+            url.searchParams.set('ib_filter', this.filter);
+        }
+        if (this.sort !== 'newest') {
+            url.searchParams.set('ib_sort', this.sort);
+        }
+        const query = String(this.searchQuery || '').trim();
+        if (query) {
+            url.searchParams.set('ib_q', query);
+        }
+        const domain = String(this.domainFilter || '').trim();
+        if (domain) {
+            url.searchParams.set('ib_domain', domain);
+        }
+        return url.toString();
+    }
+
     /**
      * Report an inbox triage action. Tracked at the user-action layer rather than in
      * markRead()/patchSnooze(), so a bulk run fires one event with a size bucket
@@ -467,6 +498,11 @@ class DashboardInbox {
         if (this._fetchPromise) {
             return this._fetchPromise;
         }
+        const preserveRead = new Map(
+            (this.items || [])
+                .filter((item) => item?.readAt)
+                .map((item) => [item.id, Number(item.readAt)])
+        );
         this._fetchPromise = (async () => {
             try {
                 const res = await fetch('/api/inbox');
@@ -475,6 +511,13 @@ class DashboardInbox {
                 }
                 const data = await res.json();
                 this.items = Array.isArray(data.items) ? data.items : [];
+                this.items.forEach((item) => {
+                    const local = preserveRead.get(item.id);
+                    if (local && (!item.readAt || Number(item.readAt) < local)) {
+                        item.readAt = local;
+                    }
+                });
+                this._itemsLoaded = true;
                 return this.items;
             } finally {
                 this._fetchPromise = null;
@@ -1571,22 +1614,30 @@ class DashboardInbox {
     }
 
 
-    async loadAndRender() {
-        this.loading = !(this.items && this.items.length);
+    async loadAndRender({ refresh = false } = {}) {
+        const needsFetch = refresh || !this._itemsLoaded;
+        this.loading = needsFetch && !(this.items && this.items.length);
         if (this.loading) {
             this.render();
         }
-        try {
-            await this.fetchItems();
-        } catch {
-            if (!this.items?.length) {
-                this.items = [];
+        if (needsFetch) {
+            try {
+                await this.fetchItems();
+            } catch {
+                if (!this.items?.length) {
+                    this.items = [];
+                }
             }
-        } finally {
-            this.loading = false;
         }
+        this.loading = false;
         if (this.focusItemId) {
-            this.prepareItemFocus(this.focusItemId);
+            if (!this.prepareItemFocus(this.focusItemId)) {
+                this.dash.showNotification?.(
+                    this.t('dashboard.inboxDeepLinkNotFound', 'That inbox link is no longer available'),
+                    'info'
+                );
+                this.focusItemId = null;
+            }
         }
         this.render();
     }

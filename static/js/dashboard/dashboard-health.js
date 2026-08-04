@@ -405,7 +405,8 @@ class DashboardHealth {
 
     matchesQuery(issue, query) {
         if (!query) return true;
-        const haystack = [issue.name, issue.url, issue.pageName, issue.category]
+        const reasonText = this.reasonEntries(issue).map((entry) => entry.label).join(' ');
+        const haystack = [issue.name, issue.url, issue.pageName, issue.category, reasonText]
             .filter(Boolean)
             .join(' ')
             .toLowerCase();
@@ -1797,7 +1798,11 @@ class DashboardHealth {
             <div class="health-view-header-meta">
                 <span class="health-view-score-badge ${this.bandClass(pct)}" title="${this.escape(detail)}" aria-label="${this.escape(pctLabel)}">${pct}%</span>
                 ${broken > 0
-                    ? `<span class="health-view-issue-count">${broken} ${this.escape(this.t('dashboard.healthBroken', 'broken'))}</span>`
+                    ? `<span class="health-view-issue-count">${this.escape(
+                        broken === 1
+                            ? this.t('dashboard.healthBrokenOne', '1 broken')
+                            : this.t('dashboard.healthBrokenCount', '{count} broken', { count: broken })
+                    )}</span>`
                     : ''}
             </div>
         `;
@@ -1826,7 +1831,7 @@ class DashboardHealth {
 
         const tiles = [
             { key: 'all', label: this.t('dashboard.healthTileTotal', 'Total'), value: total, tone: 'neutral' },
-            { key: null, label: this.t('dashboard.healthTileHealthy', 'Healthy'), value: healthy, tone: 'good' },
+            { key: 'healthy', label: this.t('dashboard.healthTileHealthy', 'Healthy'), value: healthy, tone: 'good' },
             {
                 key: 'monitored',
                 label: this.t('dashboard.healthTileMonitored', 'Monitored'),
@@ -1859,12 +1864,6 @@ class DashboardHealth {
             // without the tone classes having to mean something different here.
             const named = tile.key === 'monitored' ? ' health-view-tile--monitored' : '';
             const cls = `health-view-tile health-view-tile--${tile.tone}${zero}${named}${active}`;
-            if (!tile.key) {
-                return `<article class="${cls}">
-                    <span class="health-view-tile-label">${this.escape(tile.label)}</span>
-                    <span class="health-view-tile-value">${this.escape(tile.value)}</span>
-                </article>`;
-            }
             const title = tile.title ? ` title="${this.escape(tile.title)}"` : '';
             return `<button type="button" class="${cls}" data-health-tile="${tile.key}" tabindex="-1"${title} aria-label="${this.escape(tile.label)}: ${this.escape(tile.value)}">
                 <span class="health-view-tile-label">${this.escape(tile.label)}</span>
@@ -2614,10 +2613,16 @@ class DashboardHealth {
         const h = Math.floor((total % 86400) / 3600);
         const m = Math.floor((total % 3600) / 60);
         const s = Math.floor(total % 60);
-        if (d > 0) return `${d}d ${h}h`;
-        if (h > 0) return `${h}h ${m}m`;
-        if (m > 0) return `${m}m`;
-        return `${s}s`;
+        if (d > 0) {
+            return this.t('dashboard.healthDurationDaysHours', '{days}d {hours}h', { days: d, hours: h });
+        }
+        if (h > 0) {
+            return this.t('dashboard.healthDurationHoursMinutes', '{hours}h {minutes}m', { hours: h, minutes: m });
+        }
+        if (m > 0) {
+            return this.t('dashboard.healthDurationMinutes', '{minutes}m', { minutes: m });
+        }
+        return this.t('dashboard.healthDurationSeconds', '{seconds}s', { seconds: s });
     }
 
     /** Uptime as a percentage, or null when the window holds no samples at all. */

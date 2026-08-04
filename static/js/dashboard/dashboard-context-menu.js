@@ -451,29 +451,6 @@ class DashboardContextMenu {
     }
 
     /**
-     * Whether a share sheet is missing only because the page is not a secure
-     * context — the case worth explaining, because it is the user's to fix.
-     *
-     * Safari and Chromium both implement Web Share but withhold it outside a
-     * secure origin, and a self-hosted dashboard on `http://192.168.x.x` is
-     * exactly that. `localhost` counts as secure, so this is specifically the
-     * LAN-address case: reaching the same instance over HTTPS or through a
-     * tunnel brings the share sheet back.
-     *
-     * Not knowable for certain — a browser with no Web Share at all looks the
-     * same from here — so it only ever adds a hint, never a promise.
-     */
-    shareBlockedByInsecureOrigin() {
-        if (this.canOpenShareSheet()) return false;
-        // Either the page is not a secure context, or a call was refused with
-        // NotAllowedError — which Safari also raises over plain HTTP on
-        // localhost, a context it otherwise reports as secure. Both point at the
-        // address rather than the browser, and both are fixed the same way.
-        return window.isSecureContext === false
-            || DashboardContextMenu._shareRefused === true;
-    }
-
-    /**
      * The label for the share entry, naming what will actually happen — the
      * share sheet where there is one, a clipboard copy where there is not.
      */
@@ -678,9 +655,18 @@ class DashboardContextMenu {
             case 'copy-url':
                 d.searchComponent?.commandsComponent?._copyUrlToClipboard?.(bookmark.url, row);
                 break;
-            case 'share':
-                void this.shareBookmark(bookmark, row);
+            case 'share': {
+                let shareTarget = bookmark;
+                if (bookmarkRef.scope === 'inbox') {
+                    const id = row.getAttribute('data-inbox-id');
+                    const shareUrl = d.inbox?.buildItemShareUrl?.(id);
+                    if (shareUrl) {
+                        shareTarget = { name: bookmark.name, url: shareUrl };
+                    }
+                }
+                void this.shareBookmark(shareTarget, row);
                 break;
+            }
             case 'edit':
                 d.openBookmarkInlineEditor?.(row, bookmarkRef);
                 break;

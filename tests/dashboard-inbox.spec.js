@@ -480,7 +480,7 @@ test.describe('dashboard inbox phase 1', () => {
         expect(download.suggestedFilename()).toMatch(/^nextdash-inbox-.*\.csv$/);
     });
 
-    test('right-click Share copies the inbox row title and URL', async ({ page }) => {
+    test('right-click Share copies the inbox row title and deep link', async ({ page }) => {
         await seedInbox(page, ['Share me']);
         await page.evaluate(() => {
             // @ts-ignore
@@ -497,6 +497,7 @@ test.describe('dashboard inbox phase 1', () => {
         });
 
         const row = page.locator('.inbox-item').first();
+        const itemId = await row.getAttribute('data-inbox-id');
         await row.click({ button: 'right' });
         await page.waitForSelector('#bookmark-context-menu', { timeout: 15_000 });
         await page.locator('#bookmark-context-menu [data-action="share"]').click();
@@ -504,7 +505,9 @@ test.describe('dashboard inbox phase 1', () => {
         await expect.poll(() => page.evaluate(() => window.__writes?.length)).toBe(1);
         const written = await page.evaluate(() => window.__writes[0]);
         expect(written).toContain('Share me');
-        expect(written).toContain('http');
+        expect(written).toContain('ib_id=');
+        expect(written).toContain(itemId);
+        expect(written).toContain('#inbox');
     });
 
 });

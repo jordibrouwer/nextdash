@@ -87,50 +87,6 @@ class DashboardPageNav {
 
 
 
-    /** Lowercase header label on the inbox view (same in all locales). */
-    inboxHeaderTitle() {
-        const d = this.dash;
-        const domain = String(d.inbox?.domainFilter || '').trim();
-        if (domain) {
-            return `inbox › ${domain}`;
-        }
-        const filter = d.inbox?.filter || 'all';
-        if (filter === 'all') {
-            return 'inbox';
-        }
-        const labels = {
-            unread: d.language?.t?.('dashboard.inboxFilterUnread') || 'Unread',
-            snoozed: d.language?.t?.('dashboard.inboxFilterSnoozed') || 'Snoozed',
-            noted: d.language?.t?.('dashboard.inboxFilterNoted') || 'With note',
-        };
-        const label = labels[filter] || filter;
-        return `inbox › ${String(label).toLowerCase()}`;
-    }
-
-
-    /** Lowercase header label on the health view (same in all locales). */
-    healthHeaderTitle() {
-        const d = this.dash;
-        const filter = d.health?.filter || 'broken';
-        if (filter === 'broken') return 'health';
-        const labels = {
-            duplicate: d.language?.t?.('dashboard.healthFilterDuplicates') || 'Duplicates',
-            unchecked: d.language?.t?.('dashboard.healthFilterUnchecked') || 'Never checked',
-            monitored: d.language?.t?.('dashboard.healthFilterMonitored') || 'Monitored',
-            all: d.language?.t?.('dashboard.healthFilterAll') || 'All',
-        };
-        const label = labels[filter] || filter;
-        return `health › ${String(label).toLowerCase()}`;
-    }
-
-
-    /** Lowercase header label on the config view (same in all locales). */
-    configHeaderTitle() {
-        const d = this.dash;
-        return d.config?.headerBreadcrumb?.() || 'config';
-    }
-
-
     inboxPageLabel() {
         const d = this.dash;
         const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');

@@ -15,6 +15,7 @@ class DashboardVisual {
         this.dash = dashboard;
         this._themeIconStylingListenerAttached = false;
         this._healthBadgePollTimer = null;
+        this._healthBadgeVisibilityHandler = null;
     }
 
     setupThemeIconStylingListener() {
@@ -396,7 +397,7 @@ class DashboardVisual {
         if (d.settings.showHealthDashboard !== true) {
             return;
         }
-        this._healthBadgePollTimer = setInterval(() => {
+        const tick = () => {
             if (document.visibilityState !== 'visible') {
                 return;
             }
@@ -404,13 +405,41 @@ class DashboardVisual {
                 return;
             }
             void this.updateHealthBadge();
-        }, 60000);
+        };
+        const start = () => {
+            if (this._healthBadgePollTimer) {
+                return;
+            }
+            this._healthBadgePollTimer = setInterval(tick, 60000);
+        };
+        const stop = () => {
+            if (this._healthBadgePollTimer) {
+                clearInterval(this._healthBadgePollTimer);
+                this._healthBadgePollTimer = null;
+            }
+        };
+        this._healthBadgeVisibilityHandler = () => {
+            if (document.visibilityState === 'visible') {
+                void this.updateHealthBadge();
+                start();
+            } else {
+                stop();
+            }
+        };
+        document.addEventListener('visibilitychange', this._healthBadgeVisibilityHandler);
+        if (document.visibilityState === 'visible') {
+            start();
+        }
     }
 
     stopHealthBadgePolling() {
         if (this._healthBadgePollTimer) {
             clearInterval(this._healthBadgePollTimer);
             this._healthBadgePollTimer = null;
+        }
+        if (this._healthBadgeVisibilityHandler) {
+            document.removeEventListener('visibilitychange', this._healthBadgeVisibilityHandler);
+            this._healthBadgeVisibilityHandler = null;
         }
     }
 
