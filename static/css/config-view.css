@@ -1862,6 +1862,54 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-secondary);
 }
 
+/*
+ * The row borrows .health-view-item-meta, which is built for that feed's two
+ * children: a left block and a right-aligned date column, spread by
+ * space-between. This row puts six kinds of child in there — domain, pin,
+ * shortcut, duplicate badge, every tag chip, check mode — so space-between
+ * pushed each one to a position that depended on how many tags the bookmark
+ * happened to have, and no two rows lined up.
+ *
+ * Left-aligned and wrapping instead, so the domain always starts at the same x
+ * and a long tag list breaks to the next line rather than overflowing the card.
+ */
+.config-bm-meta-primary {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.35rem 0.6rem;
+    min-width: 0;
+}
+
+.config-bm-meta-primary > * {
+    min-width: 0;
+}
+
+/*
+ * Check mode is a property of the bookmark rather than part of its name, so it
+ * sits in the right-hand column with the usage line below it instead of
+ * trailing the tags at whatever x the tag list happens to end. `margin-left:
+ * auto` rather than space-between on the parent: the left group must stay
+ * packed, and only this one child is pushed over.
+ */
+.config-bm-meta-primary .health-check-mode-wrap {
+    margin-left: auto;
+    flex: none;
+}
+
+/*
+ * Tags get their own line once there are more than two, so a long list stops
+ * competing with the domain for the identifying line above it.
+ */
+.config-bm-tag-row {
+    margin: 0.25rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.35rem;
+    min-width: 0;
+}
+
 .config-bm-domain {
     color: var(--text-secondary);
 }

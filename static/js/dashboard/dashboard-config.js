@@ -8386,9 +8386,19 @@ class DashboardConfig {
         if (ctx.isDuplicate) {
             metaBits.push(`<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>`);
         }
-        const tagChips = (b.tags || []).map((tag) =>
+        const tags = b.tags || [];
+        const tagChips = tags.map((tag) =>
             `<button type="button" class="config-bm-tag-chip" data-bm-filter-tag="${esc(tag)}">${esc(tag)}</button>`
         ).join('');
+        // One or two tags read fine beside the domain. Beyond that they crowd it
+        // out, so they move to a line of their own — the identifying line stays
+        // scannable and the tags keep their own left edge down the feed.
+        const TAGS_INLINE_MAX = 2;
+        const tagsOnOwnLine = tags.length > TAGS_INLINE_MAX;
+        const inlineTagChips = tagsOnOwnLine ? '' : tagChips;
+        const tagRow = tagsOnOwnLine
+            ? `<p class="config-bm-tag-row">${tagChips}</p>`
+            : '';
         const mode = window.CheckMode?.of?.(b) || 'off';
         const feed = window.BookmarkFeedRow;
         const noteHtml = b.note
@@ -8426,12 +8436,13 @@ class DashboardConfig {
                     <p class="health-view-item-meta config-bm-meta-primary">
                         <span>${esc(domain)}</span>
                         ${metaBits.join('')}
-                        ${tagChips}
+                        ${inlineTagChips}
                         <span class="health-check-mode-wrap">
                             ${feed?.renderCheckModeBadge?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
                             ${feed?.renderCheckModeMenu?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
                         </span>
                     </p>
+                    ${tagRow}
                     ${categoryLine}
                     ${noteHtml}
                     ${feed?.renderActionsBar?.({
