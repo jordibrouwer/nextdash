@@ -645,11 +645,18 @@ class DashboardInbox {
 
     async markRead(id) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        await fetcher('/api/inbox', {
+        const res = await fetcher('/api/inbox', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, readAt: Date.now() }),
         });
+        if (!res.ok) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxMarkReadFailed', 'Could not mark as read'),
+                'error'
+            );
+            return;
+        }
         const item = this.items.find((entry) => entry.id === id);
         if (item) {
             item.readAt = Date.now();
@@ -1565,11 +1572,16 @@ class DashboardInbox {
 
 
     async loadAndRender() {
-        this.loading = true;
+        this.loading = !(this.items && this.items.length);
+        if (this.loading) {
+            this.render();
+        }
         try {
             await this.fetchItems();
         } catch {
-            this.items = [];
+            if (!this.items?.length) {
+                this.items = [];
+            }
         } finally {
             this.loading = false;
         }

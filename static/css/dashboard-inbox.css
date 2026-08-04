@@ -743,6 +743,11 @@ body.no-animations .inbox-item-actions {
     color: var(--accent-primary);
 }
 
+.inbox-filter-count {
+    margin-left: 0.3rem;
+    opacity: 0.7;
+}
+
 .inbox-search-input {
     flex: 1 1 12rem;
     min-width: 8rem;

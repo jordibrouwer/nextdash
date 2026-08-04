@@ -252,9 +252,14 @@ class DashboardVisual {
 
     updateConfigButtonVisibility() {
         const d = this.dash;
+        const show = d.settings.showConfigButton !== false;
         let configLink = document.querySelector('.config-link');
 
-        // Config button is always visible
+        if (!show) {
+            configLink?.remove();
+            return;
+        }
+
         if (!configLink) {
             configLink = document.createElement('div');
             configLink.className = 'config-link config-link--icon';

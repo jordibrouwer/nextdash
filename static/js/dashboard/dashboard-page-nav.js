@@ -49,10 +49,25 @@ class DashboardPageNav {
         d.setActiveView('bookmarks');
         const targetPageId = Number(pageId);
         const pageIndex = d.pages.findIndex((page) => Number(page.id) === targetPageId);
-        if (pageIndex >= 0) {
-            const nextHash = `#${pageIndex + 1}`;
-            if (window.location.hash !== nextHash) {
-                window.location.hash = nextHash;
+        try {
+            const url = new URL(window.location.href);
+            const params = url.searchParams;
+            [
+                'hv_filter', 'hv_sort', 'hv_q', 'hv_id', 'hv_refresh',
+                'ib_filter', 'ib_sort', 'ib_q', 'ib_domain', 'ib_id',
+            ].forEach((key) => params.delete(key));
+            const query = params.toString();
+            const nextHash = pageIndex >= 0 ? `#${pageIndex + 1}` : '';
+            const nextUrl = `${url.pathname}${query ? `?${query}` : ''}${nextHash}`;
+            if (`${url.pathname}${url.search}${url.hash}` !== nextUrl) {
+                history.replaceState(history.state, '', nextUrl);
+            }
+        } catch {
+            if (pageIndex >= 0) {
+                const nextHash = `#${pageIndex + 1}`;
+                if (window.location.hash !== nextHash) {
+                    window.location.hash = nextHash;
+                }
             }
         }
         const page = d.pages.find((entry) => Number(entry.id) === targetPageId);
@@ -469,15 +484,23 @@ class DashboardPageNav {
             requestAnimationFrame(() => activeBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
         }
 
-        if (d._pageNavKeyHandler) {
-            container.removeEventListener('keydown', d._pageNavKeyHandler);
+        const navRoot = container.closest('.header-actions') || container;
+        if (d._pageNavKeyHandler && d._pageNavKeyRoot) {
+            d._pageNavKeyRoot.removeEventListener('keydown', d._pageNavKeyHandler);
         }
+        d._pageNavKeyRoot = navRoot;
         d._pageNavKeyHandler = (e) => {
             if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
                 return;
             }
-            const tabs = Array.from(container.querySelectorAll('.page-nav-btn'));
+            const tabs = [
+                ...Array.from(container.querySelectorAll('.page-nav-btn')),
+                ...(inboxHost ? Array.from(inboxHost.querySelectorAll('.page-nav-btn')) : []),
+            ];
             if (tabs.length === 0) {
+                return;
+            }
+            if (!tabs.includes(document.activeElement)) {
                 return;
             }
             let idx = tabs.findIndex((tab) => tab === document.activeElement);
@@ -503,7 +526,7 @@ class DashboardPageNav {
             tabs[idx].focus({ preventScroll: true });
             tabs[idx].scrollIntoView({ block: 'nearest', inline: 'nearest' });
         };
-        container.addEventListener('keydown', d._pageNavKeyHandler);
+        navRoot.addEventListener('keydown', d._pageNavKeyHandler);
 
         d.updateMiniStatusLine();
     }

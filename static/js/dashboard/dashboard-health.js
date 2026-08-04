@@ -181,7 +181,12 @@ class DashboardHealth {
         try {
             await this.fetchReport({ refresh });
         } catch {
-            this.report = null;
+            if (this.report) {
+                this.dash.showNotification?.(
+                    this.t('dashboard.healthLoadFailed', 'Unable to load the health report'),
+                    'error'
+                );
+            }
         } finally {
             this.loading = false;
         }
@@ -681,6 +686,7 @@ class DashboardHealth {
             this.selectedKey = filtered[0] ? this.issueKey(filtered[0]) : null;
             if (isSearch) target.blur();
             this.applyKeyboardSelection(rows);
+            this.syncUrlState();
             return true;
         }
         if (e.key === 'G' || e.key === 'End') {
@@ -697,6 +703,7 @@ class DashboardHealth {
             this.selectedKey = lastIndex >= 0 ? this.issueKey(filtered[lastIndex]) : null;
             if (isSearch) target.blur();
             this.applyKeyboardSelection(rows);
+            this.syncUrlState();
             return true;
         }
         return false;
@@ -1700,8 +1707,8 @@ class DashboardHealth {
         }
 
         const filtered = this.getFilteredIssues();
-        // Tiles ride above the toolbar, but only when there is a list to summarise.
-        if (filtered.length) {
+        // Tiles summarise the full report even when the active filter hides every row.
+        if (this.report?.issues?.length) {
             container.appendChild(this.renderTiles());
         }
         container.appendChild(this.renderToolbar());
@@ -2067,7 +2074,9 @@ class DashboardHealth {
         }
         const keeper = bookmarks[0];
         const removeCount = bookmarks.length - 1;
-        const pinnedSuffix = keeper.pinned ? ', pinned' : '';
+        const pinnedSuffix = keeper.pinned
+            ? this.t('dashboard.mergePinnedSuffix', ', pinned')
+            : '';
         const ok = await this.confirm(
             this.t('dashboard.mergeDuplicateTitle', 'Merge selected duplicate group'),
             this.t(

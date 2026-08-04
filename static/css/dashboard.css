@@ -3886,7 +3886,7 @@ body[data-show-title="false"] .title-wrapper {
 }
 
 /* Hide config button when showConfigButton is false */
-body[data-show-config-button="false"] .config-button {
+body[data-show-config-button="false"] .config-link {
     display: none;
 }
 
