@@ -250,13 +250,22 @@ class DashboardVisual {
     }
 
 
+    /** inbox · health · config cluster in the header row. */
+    headerDestinationsHost() {
+        return document.querySelector('.header-destinations')
+            || document.querySelector('.header-actions');
+    }
+
+
     updateConfigButtonVisibility() {
         const d = this.dash;
         const show = d.settings.showConfigButton !== false;
         let configLink = document.querySelector('.config-link');
 
+        // Hidden via body[data-show-config-button] from setupDOM — do not remove
+        // the node or SSR/i18n markup is lost and recreation lands outside
+        // .header-destinations.
         if (!show) {
-            configLink?.remove();
             return;
         }
 
@@ -270,10 +279,7 @@ class DashboardVisual {
             const label = d.escapeHtml ? d.escapeHtml(raw) : raw;
             configLink.innerHTML = `<a href="/#config" class="config-link-anchor" aria-label="${label}" title="${label}">${DashboardVisual.CONFIG_ICON_SVG}</a>`;
 
-            const headerActions = document.querySelector('.header-actions');
-            if (headerActions) {
-                headerActions.appendChild(configLink);
-            }
+            this.headerDestinationsHost()?.appendChild(configLink);
         }
         this.syncConfigLinkActiveState();
     }
@@ -361,13 +367,13 @@ class DashboardVisual {
                 const label = d.escapeHtml ? d.escapeHtml(raw) : raw;
                 healthLink.innerHTML = `<a href="/#health" class="health-link-anchor" aria-label="${label}" title="${label}"><svg class="health-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></a>`;
 
-                const headerActions = document.querySelector('.header-actions');
-                if (headerActions) {
-                    const configLink = headerActions.querySelector('.config-link');
+                const host = this.headerDestinationsHost();
+                if (host) {
+                    const configLink = host.querySelector('.config-link');
                     if (configLink) {
-                        headerActions.insertBefore(healthLink, configLink);
+                        host.insertBefore(healthLink, configLink);
                     } else {
-                        headerActions.appendChild(healthLink);
+                        host.appendChild(healthLink);
                     }
                 }
             }
