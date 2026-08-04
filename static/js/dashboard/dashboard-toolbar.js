@@ -136,6 +136,28 @@ class DashboardToolbar {
             { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] }
         ];
 
+        const headerDefs = [
+            { selector: '#page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','] },
+            {
+                selector: '#page-nav-inbox-btn',
+                labelKey: 'dashboard.inboxPageTitle',
+                keys: ['Shift+I'],
+                when: () => d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false,
+            },
+            {
+                selector: '.health-link-anchor',
+                labelKey: 'dashboard.health',
+                keys: ['Shift+H'],
+                when: () => d.health?.isEnabled?.(),
+            },
+            {
+                selector: '.config-link-anchor',
+                labelKey: 'dashboard.config',
+                keys: ['Shift+S'],
+                when: () => d.config?.isEnabled?.(),
+            },
+        ];
+
         const toolbarButtons = [];
         const defByButton = new Map();
 
@@ -185,6 +207,14 @@ class DashboardToolbar {
         };
 
         const syncToolbarKbdTooltip = () => {
+            for (const def of headerDefs) {
+                if (def.when && !def.when()) continue;
+                const btn = document.querySelector(def.selector);
+                if (btn?.matches(':hover') || btn?.matches(':focus-visible')) {
+                    show(btn, def.labelKey, def.keys);
+                    return;
+                }
+            }
             const hoveredBtn = toolbarButtons.find((btn) => btn.matches(':hover'));
             if (hoveredBtn) {
                 const def = defByButton.get(hoveredBtn);
