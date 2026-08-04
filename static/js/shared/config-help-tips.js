@@ -21,6 +21,7 @@
                 'tipEverydayArrows',
                 'tipEverydayEsc',
                 'tipEverydayOverview',
+                'tipEverydayViews',
                 'tipEverydayCheatsheet',
             ],
         },
