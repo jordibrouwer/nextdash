@@ -5,7 +5,8 @@
     "validate:json": "bash scripts/validate-json.sh",
     "test:e2e": "playwright test",
     "test:e2e:reuse": "PLAYWRIGHT_REUSE_SERVER=true playwright test",
-    "generate:cheatsheet": "node scripts/generate-cheatsheet.cjs"
+    "generate:cheatsheet": "node scripts/generate-cheatsheet.cjs",
+    "validate:cheatsheet-i18n": "node scripts/validate-cheatsheet-i18n.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
