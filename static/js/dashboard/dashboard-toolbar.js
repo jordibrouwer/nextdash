@@ -103,9 +103,27 @@ class DashboardToolbar {
     }
 
 
+    /**
+     * Whether the shortcut popovers may appear at all.
+     *
+     * Default on: they are how the keys get discovered. Absent means never
+     * chosen, which is on — only an explicit false switches them off.
+     */
+    shortcutTooltipsEnabled() {
+        return this.dash.settings?.showShortcutTooltips !== false;
+    }
+
     setupToolbarKbdTooltips() {
         const d = this.dash;
         if (d.isCoarsePointer()) return;
+
+        // Switched off: tear down anything a previous run left behind rather
+        // than just skipping setup, so flipping the toggle takes effect at once
+        // instead of at the next reload.
+        if (!this.shortcutTooltipsEnabled()) {
+            this.teardownToolbarKbdTooltips();
+            return;
+        }
 
         let tip = document.getElementById('toolbar-kbd-tooltip');
         if (!tip) {
@@ -136,6 +154,28 @@ class DashboardToolbar {
             { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] }
         ];
 
+        const headerDefs = [
+            { selector: '#page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','] },
+            {
+                selector: '#page-nav-inbox-btn',
+                labelKey: 'dashboard.inboxPageTitle',
+                keys: ['Shift+I'],
+                when: () => d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false,
+            },
+            {
+                selector: '.health-link-anchor',
+                labelKey: 'dashboard.health',
+                keys: ['Shift+H'],
+                when: () => d.health?.isEnabled?.(),
+            },
+            {
+                selector: '.config-link-anchor',
+                labelKey: 'dashboard.config',
+                keys: ['Shift+S'],
+                when: () => d.config?.isEnabled?.(),
+            },
+        ];
+
         const toolbarButtons = [];
         const defByButton = new Map();
 
@@ -154,7 +194,7 @@ class DashboardToolbar {
             tip.removeAttribute('data-for');
         };
 
-        const show = (btn, labelKey, keys) => {
+        const show = (btn, labelKey, keys, options = {}) => {
             const label = d.language?.t(labelKey) || labelKey;
             tip.replaceChildren();
             const labelSpan = document.createElement('span');
@@ -175,16 +215,46 @@ class DashboardToolbar {
             const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
             if (isSideRail) {
                 tip.classList.add('toolbar-kbd-tooltip--side-rail');
+                tip.classList.remove('toolbar-kbd-tooltip--below');
                 tip.style.left = `${rect.right + 8}px`;
                 tip.style.top = `${rect.top + rect.height / 2}px`;
             } else {
                 tip.classList.remove('toolbar-kbd-tooltip--side-rail');
+                // The toolbar sits at the bottom of the window, so its tooltips
+                // open upwards. The header icons sit at the top, where that same
+                // direction runs off the screen and the popover gets clipped —
+                // those open downwards instead.
+                const below = options.below === true;
+                tip.classList.toggle('toolbar-kbd-tooltip--below', below);
                 tip.style.left = `${rect.left + rect.width / 2}px`;
-                tip.style.top = `${rect.top}px`;
+                tip.style.top = below ? `${rect.bottom}px` : `${rect.top}px`;
+            }
+            // Keep the box inside the viewport horizontally. A header icon near
+            // the right edge would otherwise centre itself past the edge and lose
+            // its right-hand side.
+            tip.style.setProperty('--kbd-tooltip-shift', '0px');
+            const box = tip.getBoundingClientRect();
+            const margin = 8;
+            let shift = 0;
+            if (box.right > window.innerWidth - margin) {
+                shift = window.innerWidth - margin - box.right;
+            } else if (box.left < margin) {
+                shift = margin - box.left;
+            }
+            if (shift) {
+                tip.style.setProperty('--kbd-tooltip-shift', `${Math.round(shift)}px`);
             }
         };
 
         const syncToolbarKbdTooltip = () => {
+            for (const def of headerDefs) {
+                if (def.when && !def.when()) continue;
+                const btn = document.querySelector(def.selector);
+                if (btn?.matches(':hover') || btn?.matches(':focus-visible')) {
+                    show(btn, def.labelKey, def.keys, { below: true });
+                    return;
+                }
+            }
             const hoveredBtn = toolbarButtons.find((btn) => btn.matches(':hover'));
             if (hoveredBtn) {
                 const def = defByButton.get(hoveredBtn);
@@ -218,6 +288,23 @@ class DashboardToolbar {
 
         hide();
         syncToolbarKbdTooltip();
+    }
+
+    /**
+     * Remove the popover and stop tracking hover/focus.
+     *
+     * The pointermove listener is the one that matters: left bound, it keeps
+     * running on every mouse move for a feature the user has switched off.
+     */
+    teardownToolbarKbdTooltips() {
+        const d = this.dash;
+        if (d._toolbarKbdTooltipSync) {
+            document.removeEventListener('pointermove', d._toolbarKbdTooltipSync);
+            document.removeEventListener('focusin', d._toolbarKbdTooltipSync);
+            document.removeEventListener('focusout', d._toolbarKbdTooltipSync);
+            d._toolbarKbdTooltipSync = null;
+        }
+        document.getElementById('toolbar-kbd-tooltip')?.remove();
     }
 
 

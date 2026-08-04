@@ -46,6 +46,7 @@ class SearchCommandsComponent {
                 commands: [
                     'theme', 'layoutversion', 'layout', 'density', 'columns', 'fontsize', 'buttonbar', 'packed',
                     'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'buttons',
+                    'shortcuts',
                 ],
             },
             {
@@ -58,7 +59,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'whatsnew', 'telemetry'],
+                commands: ['config', 'backup', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'telemetry'],
             },
         ];
         // Track which groups are expanded (none by default)
@@ -101,6 +102,7 @@ class SearchCommandsComponent {
             'overview': this.handleOverviewCommand.bind(this),
             'inbox': this.handleInboxCommand.bind(this),
             'cheat': this.handleCheatCommand.bind(this),
+            'help': this.handleCheatCommand.bind(this),
             'whatsnew': this.handleWhatsNewCommand.bind(this),
             'add': this.handleAddCommand.bind(this),
             'config': this.handleConfigCommand.bind(this),
@@ -114,6 +116,7 @@ class SearchCommandsComponent {
             'title': this.handleTitleCommand.bind(this),
             'lang': this.handleLangCommand.bind(this),
             'animations': this.handleAnimationsCommand.bind(this),
+            'shortcuts': this.handleShortcutTooltipsCommand.bind(this),
             'status': this.handleStatusCommand.bind(this),
             'telemetry': this.handleTelemetryCommand.bind(this),
             'monitor': this.handleMonitorCommand.bind(this),
@@ -325,6 +328,23 @@ class SearchCommandsComponent {
             dashboard.saveSettings();
         }
         return this._paletteRefresh(enabled ? 'animations:on' : 'animations:off');
+    }
+
+    /**
+     * The keyboard-shortcut popovers on the header links and the button bar.
+     *
+     * setupToolbarActions() rebuilds them from the setting, adding or removing
+     * the listeners, so the change lands without a reload either way.
+     */
+    setShortcutTooltips(dashboard, enabled) {
+        dashboard.settings.showShortcutTooltips = enabled;
+        if (typeof dashboard.setupToolbarKbdTooltips === 'function') {
+            dashboard.setupToolbarKbdTooltips();
+        }
+        if (typeof dashboard.saveSettings === 'function') {
+            dashboard.saveSettings();
+        }
+        return this._paletteRefresh(enabled ? 'shortcuts:on' : 'shortcuts:off');
     }
 
     setStatusVisibility(dashboard, enabled) {
@@ -2990,6 +3010,14 @@ class SearchCommandsComponent {
         const enabled = dashboard.settings.animationsEnabled !== false;
         const apply = (value) => this.setAnimationsEnabled(dashboard, value);
         return this._handleSimpleToggle(args, { shortcut: ':ANIMATIONS', prefix: 'animations', enabled, apply });
+    }
+
+    handleShortcutTooltipsCommand(args) {
+        const dashboard = window.dashboardInstance;
+        if (!dashboard) return [];
+        const enabled = dashboard.settings.showShortcutTooltips !== false;
+        const apply = (value) => this.setShortcutTooltips(dashboard, value);
+        return this._handleSimpleToggle(args, { shortcut: ':SHORTCUTS', prefix: 'shortcuts', enabled, apply });
     }
 
     handleStatusCommand(args) {

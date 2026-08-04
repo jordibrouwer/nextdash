@@ -1,0 +1,40 @@
+{
+  "tag": "v2026.08.09.1",
+  "date": "August 2026",
+  "releasedAt": "2026-08-04",
+  "hideFromModal": true,
+  "modalLead": "Maintenance after v2026.08.09 — Statistics counted categories with the same name on two different pages as one, and a bookmark dated in the future corrupted the activity chart. The keyboard legend under Statistics and the pages/tags list now matches the one under Inbox, Health and Config → Bookmarks.",
+  "sections": [
+    {
+      "title": "Statistics",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Categories are counted per page</strong> — a bookmark stores a bare category name plus the page it belongs to, so the same name on two pages is two categories, and the <strong>Categories</strong> tile counted them that way. The panels underneath keyed on the name alone, merging the two into one row and averaging their opens together; the same mis-keying broke the label lookup, so rows showed the raw id instead of a display name. The page name is added only when a name occurs on more than one page (<code>dashboard-config.js</code>)."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A bookmark dated in the future no longer breaks the activity chart</strong> — clock skew between devices, or an import carrying a bad date, produced a negative bucket offset that wrote past the end of the array. The array grew holes, every total over it came out as <code>NaN</code>, and a 30-day range drew 31 bars. Such a date now falls in the newest bucket, and one shared rule feeds the bars and the figures beneath them so a bookmark can no longer be counted in <strong>bookmarks used</strong> while appearing in no bar (<code>dashboard-config.js</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "improved",
+          "text": "<strong>One keyboard legend across the config sections</strong> — Inbox, Health and <strong>Config → Bookmarks</strong> draw each key as a chip; the form sections (Statistics among them) and the pages/tags list printed one flat sentence with the keys buried in prose, under a divider so faint it was almost invisible. All three now share one rule and one helper. Keys stay untranslated, as they are what is printed on the keyboard; only the action labels are translated (<code>dashboard-config.js</code>, <code>config-view.css</code>)."
+        }
+      ]
+    },
+    {
+      "title": "Docs",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Release docs for v2026.08.09.1</strong> — <strong>Config → Overview → Latest update</strong>, CHANGELOG, README and MANUAL; <code>NEXTDASH_WHATS_NEW_DATA_VERSION</code> → <code>whats-new-v226</code>. This release is deliberately kept out of the What's new modal via <code>hideFromModal</code>: it fixes counting errors and aligns a divider, which is worth recording but not worth interrupting anyone for. <code>DASHBOARD_RELEASE</code> stays at <code>2026.07-dashboard-release-v167</code> for the same reason, so no star badge appears."
+        }
+      ]
+    }
+  ]
+}

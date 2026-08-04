@@ -126,6 +126,7 @@ type Settings struct {
 	ShowTagCloudButton           bool                         `json:"showTagCloudButton"`                    // Dashboard / key: horizontal tag cloud toggle
 	TagCloudDefaultMigrated      bool                         `json:"tagCloudDefaultMigrated,omitempty"`     // one-time: enable tag cloud for existing installs
 	LinkPreviewCardsOffMigrated  bool                         `json:"linkPreviewCardsOffMigrated,omitempty"` // one-time: default hover preview cards to off
+	ConfigButtonDefaultOnMigrated bool                        `json:"configButtonDefaultOnMigrated,omitempty"` // one-time: restore config header icon after visibility fix
 	ShowSearchFlowBanner         bool                         `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton         bool                         `json:"showCheatSheetButton"`
 	ShowSearchButtonText         bool                         `json:"showSearchButtonText"`
@@ -207,6 +208,7 @@ type Settings struct {
 	OnboardingCompleted          bool                         `json:"onboardingCompleted"`
 	AnalyticsOptIn               bool                         `json:"analyticsOptIn"`    // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
 	EnableSessionTips            bool                         `json:"enableSessionTips"` // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
+	ShowShortcutTooltips         bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default on, opt-out in Config → Behavior or `:shortcuts off`)
 	QuickStart                   QuickStartState              `json:"quickStart"`        // First-run quick-start progress (server-side, per-user)
 	// ConfigGeneralLayer is the last Essentials/Advanced/all layer used in
 	// Config → General. Empty means "never chosen", which starts on Essentials.
@@ -540,6 +542,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			OpenInNewTab:                   true,
 			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
+			ShowShortcutTooltips:           true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -677,6 +680,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	fs.migrateCustomThemesToUserManaged()
 	fs.migrateLinkPreviewCardsDefaultOff()
 	fs.migrateHideEmptyCategoriesDefaultOn()
+	fs.migrateConfigButtonDefaultOn()
 
 }
 
@@ -765,6 +769,43 @@ func (fs *FileStore) migrateHideEmptyCategoriesDefaultOn() {
 		return
 	}
 	_ = writeFileAtomic(fs.settingsFile, out, 0644)
+}
+
+// One-time: turn the config header icon back on for existing installs. A broken
+// hide selector and a DOM-removal bug could leave the button missing even when
+// users wanted it; this migration resets visibility once on upgrade. Users can
+// still turn it off afterwards in Config → Essentials.
+func (fs *FileStore) migrateConfigButtonDefaultOn() {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return
+	}
+	if migrated, ok := raw["configButtonDefaultOnMigrated"]; ok {
+		var done bool
+		if json.Unmarshal(migrated, &done) == nil && done {
+			return
+		}
+	}
+
+	raw["showConfigButton"] = json.RawMessage(`true`)
+	raw["configButtonDefaultOnMigrated"] = json.RawMessage(`true`)
+
+	out, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = writeFileAtomic(fs.settingsFile, out, 0644)
+	fs.readCache.settingsOK = false
 }
 
 func (fs *FileStore) ensureDataDir() {
@@ -1874,6 +1915,7 @@ func (fs *FileStore) GetSettings() Settings {
 			OpenInNewTab:                   true,
 			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
+			ShowShortcutTooltips:           true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -2055,6 +2097,10 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ShowTagCloudButton = true
 			settings.TagCloudDefaultMigrated = true
 		}
+		if !settings.ConfigButtonDefaultOnMigrated {
+			settings.ShowConfigButton = true
+			settings.ConfigButtonDefaultOnMigrated = true
+		}
 		if _, ok := rawSettings["showSearchFlowBanner"]; !ok {
 			settings.ShowSearchFlowBanner = true
 		}
@@ -2165,6 +2211,11 @@ func (fs *FileStore) GetSettings() Settings {
 		// local UI nicety, not data leaving the machine.
 		if _, ok := rawSettings["enableSessionTips"]; !ok {
 			settings.EnableSessionTips = true
+		}
+		// Same default-on, opt-out contract: the shortcut popovers are how the
+		// keys are discovered in the first place, so they stay on until asked.
+		if _, ok := rawSettings["showShortcutTooltips"]; !ok {
+			settings.ShowShortcutTooltips = true
 		}
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true
@@ -2295,6 +2346,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 			settings.TagCloudDefaultMigrated = stored.TagCloudDefaultMigrated
 			settings.LinkPreviewCardsOffMigrated = stored.LinkPreviewCardsOffMigrated
 			settings.HideEmptyCategoriesMigrated = stored.HideEmptyCategoriesMigrated
+			settings.ConfigButtonDefaultOnMigrated = stored.ConfigButtonDefaultOnMigrated
 		}
 	}
 

@@ -23,6 +23,8 @@ class DashboardInbox {
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
         this._fetchPromise = null;
+        /** True after the first successful `/api/inbox` fetch this session. */
+        this._itemsLoaded = false;
     }
 
     isEnabled() {
@@ -321,6 +323,35 @@ class DashboardInbox {
         } catch { /* history is unavailable in some embedded contexts */ }
     }
 
+    /** A shareable dashboard URL that opens this row in the inbox view. */
+    buildItemShareUrl(itemOrId) {
+        const item = typeof itemOrId === 'object' && itemOrId
+            ? itemOrId
+            : (this.items || []).find((entry) => entry.id === itemOrId);
+        const id = String(item?.id || itemOrId || '').trim();
+        if (!id) {
+            return '';
+        }
+        const url = new URL(`${window.location.origin}${window.location.pathname}`);
+        url.hash = 'inbox';
+        url.searchParams.set('ib_id', id);
+        if (this.filter !== 'all') {
+            url.searchParams.set('ib_filter', this.filter);
+        }
+        if (this.sort !== 'newest') {
+            url.searchParams.set('ib_sort', this.sort);
+        }
+        const query = String(this.searchQuery || '').trim();
+        if (query) {
+            url.searchParams.set('ib_q', query);
+        }
+        const domain = String(this.domainFilter || '').trim();
+        if (domain) {
+            url.searchParams.set('ib_domain', domain);
+        }
+        return url.toString();
+    }
+
     /**
      * Report an inbox triage action. Tracked at the user-action layer rather than in
      * markRead()/patchSnooze(), so a bulk run fires one event with a size bucket
@@ -467,6 +498,11 @@ class DashboardInbox {
         if (this._fetchPromise) {
             return this._fetchPromise;
         }
+        const preserveRead = new Map(
+            (this.items || [])
+                .filter((item) => item?.readAt)
+                .map((item) => [item.id, Number(item.readAt)])
+        );
         this._fetchPromise = (async () => {
             try {
                 const res = await fetch('/api/inbox');
@@ -475,6 +511,13 @@ class DashboardInbox {
                 }
                 const data = await res.json();
                 this.items = Array.isArray(data.items) ? data.items : [];
+                this.items.forEach((item) => {
+                    const local = preserveRead.get(item.id);
+                    if (local && (!item.readAt || Number(item.readAt) < local)) {
+                        item.readAt = local;
+                    }
+                });
+                this._itemsLoaded = true;
                 return this.items;
             } finally {
                 this._fetchPromise = null;
@@ -645,11 +688,18 @@ class DashboardInbox {
 
     async markRead(id) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-        await fetcher('/api/inbox', {
+        const res = await fetcher('/api/inbox', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, readAt: Date.now() }),
         });
+        if (!res.ok) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxMarkReadFailed', 'Could not mark as read'),
+                'error'
+            );
+            return;
+        }
         const item = this.items.find((entry) => entry.id === id);
         if (item) {
             item.readAt = Date.now();
@@ -819,6 +869,12 @@ class DashboardInbox {
             return false;
         }
         if (this.triage?.isOpen?.()) {
+            return false;
+        }
+        // An open snooze menu owns the arrow keys: this handler runs first and
+        // would otherwise consume them to move the row cursor behind the menu,
+        // leaving the menu's own navigation dead.
+        if (this._snoozeMenu?.isConnected) {
             return false;
         }
         if (window.DashboardTagCloud?.modalOpen) {
@@ -1280,7 +1336,33 @@ class DashboardInbox {
                 e.stopImmediatePropagation();
                 this.closeSnoozeMenu();
                 anchor?.focus?.({ preventScroll: true });
+                return;
             }
+            // role="menu" promises arrow navigation; without it the presets were
+            // reachable only by Tab, which the menu role tells readers not to use.
+            // The date field is the last stop so a custom date stays keyboard-only.
+            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') {
+                return;
+            }
+            if (!menu.contains(document.activeElement)) {
+                return;
+            }
+            const stops = [...menu.querySelectorAll('[role="menuitem"]')];
+            if (dateInput) {
+                stops.push(dateInput);
+            }
+            if (!stops.length) {
+                return;
+            }
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const last = stops.length - 1;
+            const current = stops.indexOf(document.activeElement);
+            const next = e.key === 'Home' ? 0
+                : e.key === 'End' ? last
+                    : e.key === 'ArrowDown' ? (current >= last ? 0 : current + 1)
+                        : (current <= 0 ? last : current - 1);
+            stops[next]?.focus({ preventScroll: true });
         };
         setTimeout(() => document.addEventListener('click', this._snoozeOutside, true), 0);
         document.addEventListener('keydown', this._snoozeEsc, true);
@@ -1564,17 +1646,30 @@ class DashboardInbox {
     }
 
 
-    async loadAndRender() {
-        this.loading = true;
-        try {
-            await this.fetchItems();
-        } catch {
-            this.items = [];
-        } finally {
-            this.loading = false;
+    async loadAndRender({ refresh = false } = {}) {
+        const needsFetch = refresh || !this._itemsLoaded;
+        this.loading = needsFetch && !(this.items && this.items.length);
+        if (this.loading) {
+            this.render();
         }
+        if (needsFetch) {
+            try {
+                await this.fetchItems();
+            } catch {
+                if (!this.items?.length) {
+                    this.items = [];
+                }
+            }
+        }
+        this.loading = false;
         if (this.focusItemId) {
-            this.prepareItemFocus(this.focusItemId);
+            if (!this.prepareItemFocus(this.focusItemId)) {
+                this.dash.showNotification?.(
+                    this.t('dashboard.inboxDeepLinkNotFound', 'That inbox link is no longer available'),
+                    'info'
+                );
+                this.focusItemId = null;
+            }
         }
         this.render();
     }
@@ -1933,20 +2028,15 @@ class DashboardInbox {
         const legend = document.createElement('p');
         legend.className = 'inbox-legend';
         legend.setAttribute('aria-hidden', 'true');
-        const keys = [
-            ['j / k', this.t('dashboard.inboxKeyMove', 'move')],
-            ['Enter / Space', this.t('dashboard.inboxKeyOpen', 'open')],
-            ['dblclick', this.t('dashboard.inboxKeyDblClick', 'open')],
-            ['p', this.t('dashboard.inboxKeyPromote', 'promote')],
-            ['n', this.t('dashboard.inboxKeyNote', 'note')],
-            ['r', this.t('dashboard.inboxKeyKeep', 'mark read')],
-            ['z', this.t('dashboard.inboxKeySnooze', 'snooze')],
-            ['x', this.t('dashboard.inboxKeySelect', 'select')],
-            ['d', this.t('dashboard.inboxKeyDelete', 'delete')],
-            ['g / G / Home / End', this.t('dashboard.inboxKeyFirstLast', 'first / last')],
-            ['t', this.t('dashboard.inboxKeyTriage', 'triage')],
-            ['Esc', this.t('dashboard.inboxKeyEsc', 'clear selection · back to bookmarks')],
-        ];
+        const keys = window.KeyboardViewLegends
+            ? window.KeyboardViewLegends.toLegendPairs(
+                window.KeyboardViewLegends.INBOX_VIEW,
+                (key, fallback) => this.t(`dashboard.${key}`, fallback),
+            )
+            : [];
+        if (keys.length > 1) {
+            keys.splice(2, 0, ['dblclick', this.t('dashboard.inboxKeyDblClick', 'open')]);
+        }
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
             .join('');
@@ -1984,6 +2074,11 @@ class DashboardInbox {
         }
         this.syncKeyboardSelectionAfterRender();
         container.tabIndex = -1;
+        // The triage overlay is modal and holds its own focus; a feed render
+        // underneath it must not pull focus out to the container behind it.
+        if (this.triage?.isOpen?.()) {
+            return;
+        }
         const active = document.activeElement;
         const focusInToolbar = active?.closest?.('.inbox-toolbar, .page-nav-btn');
         if (!active || active === document.body || focusInToolbar) {
@@ -2111,10 +2206,10 @@ class DashboardInbox {
 
         toolbar.innerHTML = `
             <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">
-                <button type="button" class="inbox-filter-btn${this.filter === 'all' ? ' is-active' : ''}" data-inbox-filter="all">${this.escape(this.t('dashboard.inboxFilterAll', 'All'))}</button>
-                <button type="button" class="inbox-filter-btn${this.filter === 'unread' ? ' is-active' : ''}" data-inbox-filter="unread">${this.escape(this.t('dashboard.inboxFilterUnread', 'Unread'))}</button>
-                ${showSnoozePill ? `<button type="button" class="inbox-filter-btn${this.filter === 'snoozed' ? ' is-active' : ''}" data-inbox-filter="snoozed">${this.escape(this.t('dashboard.inboxFilterSnoozed', 'Snoozed'))}<span class="inbox-filter-count">${snoozedCount}</span></button>` : ''}
-                ${showNotedPill ? `<button type="button" class="inbox-filter-btn${this.filter === 'noted' ? ' is-active' : ''}" data-inbox-filter="noted">${this.escape(this.t('dashboard.inboxFilterNoted', 'With note'))}<span class="inbox-filter-count">${notedCount}</span></button>` : ''}
+                <button type="button" class="inbox-filter-btn${this.filter === 'all' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'all'}" tabindex="${this.filter === 'all' ? 0 : -1}" data-inbox-filter="all">${this.escape(this.t('dashboard.inboxFilterAll', 'All'))}</button>
+                <button type="button" class="inbox-filter-btn${this.filter === 'unread' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'unread'}" tabindex="${this.filter === 'unread' ? 0 : -1}" data-inbox-filter="unread">${this.escape(this.t('dashboard.inboxFilterUnread', 'Unread'))}</button>
+                ${showSnoozePill ? `<button type="button" class="inbox-filter-btn${this.filter === 'snoozed' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'snoozed'}" tabindex="${this.filter === 'snoozed' ? 0 : -1}" data-inbox-filter="snoozed">${this.escape(this.t('dashboard.inboxFilterSnoozed', 'Snoozed'))}<span class="inbox-filter-count">${snoozedCount}</span></button>` : ''}
+                ${showNotedPill ? `<button type="button" class="inbox-filter-btn${this.filter === 'noted' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'noted'}" tabindex="${this.filter === 'noted' ? 0 : -1}" data-inbox-filter="noted">${this.escape(this.t('dashboard.inboxFilterNoted', 'With note'))}<span class="inbox-filter-count">${notedCount}</span></button>` : ''}
             </div>
             ${showDomainSelect ? `<select class="inbox-domain-select" aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}">${domainOptions}</select>` : ''}
             <input type="search" class="inbox-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
@@ -2125,20 +2220,44 @@ class DashboardInbox {
             <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
             <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
         `;
-        toolbar.querySelectorAll('[data-inbox-filter]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                this.filter = btn.getAttribute('data-inbox-filter') || 'all';
-                this._trackAction('filter', { filter: this.filter, via: 'pill' });
-                this.visibleLimit = 50;
-                // Ticks from the previous filter would act on rows the user can no
-                // longer see, so a filter change starts the selection over.
-                this.checkedIds.clear();
-                this.focusItemId = null;
-                this.persistViewState();
-                this.syncUrlState();
-                this.render();
-                this.dash.pageNav?.updatePageTitle?.();
-                this.dash.pageNav?.updateDocumentTitle?.();
+        const filterBtns = [...toolbar.querySelectorAll('[data-inbox-filter]')];
+        const applyFilter = (key, via) => {
+            this.filter = key || 'all';
+            this._trackAction('filter', { filter: this.filter, via });
+            this.visibleLimit = 50;
+            // Ticks from the previous filter would act on rows the user can no
+            // longer see, so a filter change starts the selection over.
+            this.checkedIds.clear();
+            this.focusItemId = null;
+            this.persistViewState();
+            this.syncUrlState();
+            this.render();
+            this.dash.pageNav?.updatePageTitle?.();
+            this.dash.pageNav?.updateDocumentTitle?.();
+        };
+        filterBtns.forEach((btn, i) => {
+            btn.addEventListener('click', () => applyFilter(btn.getAttribute('data-inbox-filter'), 'pill'));
+            // The group announces itself as a tablist, so the keys that role
+            // promises have to work: arrows wrap, Home/End jump to the ends.
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                const last = filterBtns.length - 1;
+                const next = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (i === last ? 0 : i + 1)
+                            : (i === 0 ? last : i - 1);
+                const target = filterBtns[next];
+                if (!target) return;
+                const key = target.getAttribute('data-inbox-filter');
+                target.focus();
+                applyFilter(key, 'keyboard');
+                // render() rebuilds the toolbar wholesale and drops the focus set
+                // above, so re-focus the replacement to keep arrowing usable.
+                if (!target.isConnected) {
+                    document.querySelector(`[data-inbox-filter="${CSS.escape(key)}"]`)?.focus();
+                }
             });
         });
 

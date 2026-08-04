@@ -181,7 +181,12 @@ class DashboardHealth {
         try {
             await this.fetchReport({ refresh });
         } catch {
-            this.report = null;
+            if (this.report) {
+                this.dash.showNotification?.(
+                    this.t('dashboard.healthLoadFailed', 'Unable to load the health report'),
+                    'error'
+                );
+            }
         } finally {
             this.loading = false;
         }
@@ -400,7 +405,8 @@ class DashboardHealth {
 
     matchesQuery(issue, query) {
         if (!query) return true;
-        const haystack = [issue.name, issue.url, issue.pageName, issue.category]
+        const reasonText = this.reasonEntries(issue).map((entry) => entry.label).join(' ');
+        const haystack = [issue.name, issue.url, issue.pageName, issue.category, reasonText]
             .filter(Boolean)
             .join(' ')
             .toLowerCase();
@@ -681,6 +687,7 @@ class DashboardHealth {
             this.selectedKey = filtered[0] ? this.issueKey(filtered[0]) : null;
             if (isSearch) target.blur();
             this.applyKeyboardSelection(rows);
+            this.syncUrlState();
             return true;
         }
         if (e.key === 'G' || e.key === 'End') {
@@ -697,6 +704,7 @@ class DashboardHealth {
             this.selectedKey = lastIndex >= 0 ? this.issueKey(filtered[lastIndex]) : null;
             if (isSearch) target.blur();
             this.applyKeyboardSelection(rows);
+            this.syncUrlState();
             return true;
         }
         return false;
@@ -1700,8 +1708,8 @@ class DashboardHealth {
         }
 
         const filtered = this.getFilteredIssues();
-        // Tiles ride above the toolbar, but only when there is a list to summarise.
-        if (filtered.length) {
+        // Tiles summarise the full report even when the active filter hides every row.
+        if (this.report?.issues?.length) {
             container.appendChild(this.renderTiles());
         }
         container.appendChild(this.renderToolbar());
@@ -1790,7 +1798,11 @@ class DashboardHealth {
             <div class="health-view-header-meta">
                 <span class="health-view-score-badge ${this.bandClass(pct)}" title="${this.escape(detail)}" aria-label="${this.escape(pctLabel)}">${pct}%</span>
                 ${broken > 0
-                    ? `<span class="health-view-issue-count">${broken} ${this.escape(this.t('dashboard.healthBroken', 'broken'))}</span>`
+                    ? `<span class="health-view-issue-count">${this.escape(
+                        broken === 1
+                            ? this.t('dashboard.healthBrokenOne', '1 broken')
+                            : this.t('dashboard.healthBrokenCount', '{count} broken', { count: broken })
+                    )}</span>`
                     : ''}
             </div>
         `;
@@ -1819,7 +1831,7 @@ class DashboardHealth {
 
         const tiles = [
             { key: 'all', label: this.t('dashboard.healthTileTotal', 'Total'), value: total, tone: 'neutral' },
-            { key: null, label: this.t('dashboard.healthTileHealthy', 'Healthy'), value: healthy, tone: 'good' },
+            { key: 'healthy', label: this.t('dashboard.healthTileHealthy', 'Healthy'), value: healthy, tone: 'good' },
             {
                 key: 'monitored',
                 label: this.t('dashboard.healthTileMonitored', 'Monitored'),
@@ -1852,12 +1864,6 @@ class DashboardHealth {
             // without the tone classes having to mean something different here.
             const named = tile.key === 'monitored' ? ' health-view-tile--monitored' : '';
             const cls = `health-view-tile health-view-tile--${tile.tone}${zero}${named}${active}`;
-            if (!tile.key) {
-                return `<article class="${cls}">
-                    <span class="health-view-tile-label">${this.escape(tile.label)}</span>
-                    <span class="health-view-tile-value">${this.escape(tile.value)}</span>
-                </article>`;
-            }
             const title = tile.title ? ` title="${this.escape(tile.title)}"` : '';
             return `<button type="button" class="${cls}" data-health-tile="${tile.key}" tabindex="-1"${title} aria-label="${this.escape(tile.label)}: ${this.escape(tile.value)}">
                 <span class="health-view-tile-label">${this.escape(tile.label)}</span>
@@ -2067,7 +2073,9 @@ class DashboardHealth {
         }
         const keeper = bookmarks[0];
         const removeCount = bookmarks.length - 1;
-        const pinnedSuffix = keeper.pinned ? ', pinned' : '';
+        const pinnedSuffix = keeper.pinned
+            ? this.t('dashboard.mergePinnedSuffix', ', pinned')
+            : '';
         const ok = await this.confirm(
             this.t('dashboard.mergeDuplicateTitle', 'Merge selected duplicate group'),
             this.t(
@@ -2189,7 +2197,8 @@ class DashboardHealth {
         toolbar.className = 'health-view-toolbar';
         const pills = filters.map(([key, label]) => {
             const count = this.filterCount(key);
-            return `<button type="button" class="health-view-filter-btn${this.filter === key ? ' is-active' : ''}" data-health-filter="${key}">
+            const active = this.filter === key;
+            return `<button type="button" class="health-view-filter-btn${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-health-filter="${key}">
                 ${this.escape(label)}<span class="health-view-filter-count">${count}</span>
             </button>`;
         }).join('');
@@ -2247,17 +2256,41 @@ class DashboardHealth {
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
-        toolbar.querySelectorAll('[data-health-filter]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                this.filter = btn.getAttribute('data-health-filter') || 'broken';
-                this.focusIssueKey = null;
-                this._trackAction('filter', { filter: this.filter, via: 'pill' });
-                this._resetFeedPaging();
-                this.persistViewState();
-                this.syncUrlState();
-                this.render();
-                this.dash.pageNav?.updatePageTitle?.();
-                this.dash.pageNav?.updateDocumentTitle?.();
+        const filterBtns = [...toolbar.querySelectorAll('[data-health-filter]')];
+        const applyFilter = (key, via) => {
+            this.filter = key || 'broken';
+            this.focusIssueKey = null;
+            this._trackAction('filter', { filter: this.filter, via });
+            this._resetFeedPaging();
+            this.persistViewState();
+            this.syncUrlState();
+            this.render();
+            this.dash.pageNav?.updatePageTitle?.();
+            this.dash.pageNav?.updateDocumentTitle?.();
+        };
+        filterBtns.forEach((btn, i) => {
+            btn.addEventListener('click', () => applyFilter(btn.getAttribute('data-health-filter'), 'pill'));
+            // The group announces itself as a tablist, so the keys that role
+            // promises have to work: arrows wrap, Home/End jump to the ends.
+            btn.addEventListener('keydown', (e) => {
+                const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                if (!keys.includes(e.key)) return;
+                e.preventDefault();
+                const last = filterBtns.length - 1;
+                const next = e.key === 'Home' ? 0
+                    : e.key === 'End' ? last
+                        : e.key === 'ArrowRight' ? (i === last ? 0 : i + 1)
+                            : (i === 0 ? last : i - 1);
+                const target = filterBtns[next];
+                if (!target) return;
+                const key = target.getAttribute('data-health-filter');
+                target.focus();
+                applyFilter(key, 'keyboard');
+                // render() rebuilds the toolbar wholesale and drops the focus set
+                // above, so re-focus the replacement to keep arrowing usable.
+                if (!target.isConnected) {
+                    document.querySelector(`[data-health-filter="${CSS.escape(key)}"]`)?.focus();
+                }
             });
         });
 
@@ -2578,18 +2611,12 @@ class DashboardHealth {
         const legend = document.createElement('p');
         legend.className = `health-view-legend health-view-legend--${position}`;
         legend.setAttribute('aria-hidden', 'true');
-        const keys = [
-            ['j / k', this.t('dashboard.healthKeyMove', 'move')],
-            ['s', this.t('dashboard.healthKeyScore', 'score')],
-            ['i', this.t('dashboard.healthKeyStats', 'statistics')],
-            ['p', this.t('dashboard.healthKeyRecheck', 're-check')],
-            ['R / ?', this.t('dashboard.healthKeyRefresh', 'refresh report')],
-            ['c', this.t('dashboard.healthKeyCheckMode', 'checking')],
-            ['m', this.t('dashboard.healthKeyMore', 'more actions')],
-            ['Enter / Space', this.t('dashboard.healthKeyOpen', 'open')],
-            ['g / G / Home / End', this.t('dashboard.healthKeyFirstLast', 'first / last')],
-            ['Esc', this.t('dashboard.healthKeyClose', 'back to bookmarks')],
-        ];
+        const keys = window.KeyboardViewLegends
+            ? window.KeyboardViewLegends.toLegendPairs(
+                window.KeyboardViewLegends.HEALTH_VIEW,
+                (key, fallback) => this.t(`dashboard.${key}`, fallback),
+            )
+            : [];
         legend.innerHTML = keys
             .map(([k, label]) => `<span><kbd>${this.escape(k)}</kbd> ${this.escape(label)}</span>`)
             .join('');
@@ -2605,10 +2632,16 @@ class DashboardHealth {
         const h = Math.floor((total % 86400) / 3600);
         const m = Math.floor((total % 3600) / 60);
         const s = Math.floor(total % 60);
-        if (d > 0) return `${d}d ${h}h`;
-        if (h > 0) return `${h}h ${m}m`;
-        if (m > 0) return `${m}m`;
-        return `${s}s`;
+        if (d > 0) {
+            return this.t('dashboard.healthDurationDaysHours', '{days}d {hours}h', { days: d, hours: h });
+        }
+        if (h > 0) {
+            return this.t('dashboard.healthDurationHoursMinutes', '{hours}h {minutes}m', { hours: h, minutes: m });
+        }
+        if (m > 0) {
+            return this.t('dashboard.healthDurationMinutes', '{minutes}m', { minutes: m });
+        }
+        return this.t('dashboard.healthDurationSeconds', '{seconds}s', { seconds: s });
     }
 
     /** Uptime as a percentage, or null when the window holds no samples at all. */

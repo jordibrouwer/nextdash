@@ -172,6 +172,38 @@
         window.AppNotification?.show?.(message);
     }
 
+    /** Put the failure on the card, where it stays until the user acts on it. */
+    function showError(message) {
+        const el = cardEl;
+        if (!el) return;
+        let box = el.querySelector('.push-notice-error');
+        if (!box) {
+            box = document.createElement('p');
+            box.className = 'push-notice-error';
+            box.setAttribute('role', 'alert');
+            el.querySelector('.push-notice-actions')?.before(box);
+        }
+        box.textContent = message;
+    }
+
+    /**
+     * Undo the server-side switch that beforeRegister turned on.
+     *
+     * enableServerSide() commits before the browser is asked to register, so a
+     * failure after that point left push enabled server-side while this device
+     * was never subscribed — a half-applied state no screen showed, with the
+     * card still offering to turn on what was already on. Only the values that
+     * hook sets are reverted, and only when this attempt turned them on: another
+     * device may legitimately be subscribed already.
+     */
+    async function rollbackServerSide(previous) {
+        const d = dash();
+        if (!d?.settings || !previous) return;
+        d.settings.pushNotifyEnabled = previous.pushNotifyEnabled;
+        d.settings.pushNotifyMonitor = previous.pushNotifyMonitor;
+        await save();
+    }
+
     /**
      * Turn notifications on, from the click that is still a user gesture.
      *
@@ -191,6 +223,16 @@
         // both necessary (the register call refuses otherwise) and warranted (the
         // user has committed). Doing it when the card merely appeared would change
         // settings nobody asked to change.
+        // Captured synchronously, before anything can change it, so a failure can
+        // put the settings back exactly as they were.
+        const d = dash();
+        const previous = d?.settings
+            ? {
+                pushNotifyEnabled: d.settings.pushNotifyEnabled,
+                pushNotifyMonitor: d.settings.pushNotifyMonitor,
+            }
+            : null;
+
         const pending = push.subscribe({ beforeRegister: enableServerSide });
         button.disabled = true;
 
@@ -202,10 +244,17 @@
             // Confirm delivery actually works, rather than leaving the user to
             // wonder until the first real outage.
             try { await push.sendTest(); } catch (err) { /* the toast above already confirmed the opt-in */ }
-        }).catch((err) => {
+        }).catch(async (err) => {
             button.disabled = false;
+            await rollbackServerSide(previous);
+            const message = err?.message || String(err);
+            // Show it on the card itself, not only in a toast. The toast is gone
+            // in seconds and the card stays behind unchanged, which reads as the
+            // click having done nothing at all — the reason a failed opt-in was
+            // impossible to act on.
+            showError(message);
             notify(t('dashboard.pushPromptFailed', 'Could not turn notifications on: {error}', {
-                error: err?.message || String(err),
+                error: message,
             }));
         });
     }

@@ -743,6 +743,11 @@ body.no-animations .inbox-item-actions {
     color: var(--accent-primary);
 }
 
+.inbox-filter-count {
+    margin-left: 0.3rem;
+    opacity: 0.7;
+}
+
 .inbox-search-input {
     flex: 1 1 12rem;
     min-width: 8rem;
@@ -1051,6 +1056,12 @@ body.inbox-triage-active {
 .inbox-item.keyboard-selected .inbox-item-check-input,
 .inbox-item-check-input:focus-visible {
     opacity: 1;
+}
+
+@media (hover: none) {
+    .inbox-item-check-input:not(:checked) {
+        opacity: 1;
+    }
 }
 
 .inbox-item.is-checked {
