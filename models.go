@@ -207,7 +207,6 @@ type Settings struct {
 	OnboardingCompleted          bool                         `json:"onboardingCompleted"`
 	AnalyticsOptIn               bool                         `json:"analyticsOptIn"`    // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
 	EnableSessionTips            bool                         `json:"enableSessionTips"` // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
-	ShowShortcutTooltips         bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default on, opt-out in Config → Behavior or `:shortcuts off`)
 	QuickStart                   QuickStartState              `json:"quickStart"`        // First-run quick-start progress (server-side, per-user)
 	// ConfigGeneralLayer is the last Essentials/Advanced/all layer used in
 	// Config → General. Empty means "never chosen", which starts on Essentials.
@@ -541,7 +540,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			OpenInNewTab:                   true,
 			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
-			ShowShortcutTooltips:           true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -1876,7 +1874,6 @@ func (fs *FileStore) GetSettings() Settings {
 			OpenInNewTab:                   true,
 			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
-			ShowShortcutTooltips:           true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -2168,11 +2165,6 @@ func (fs *FileStore) GetSettings() Settings {
 		// local UI nicety, not data leaving the machine.
 		if _, ok := rawSettings["enableSessionTips"]; !ok {
 			settings.EnableSessionTips = true
-		}
-		// Same default-on, opt-out contract: the shortcut popovers are how the
-		// keys are discovered in the first place, so they stay on until asked.
-		if _, ok := rawSettings["showShortcutTooltips"]; !ok {
-			settings.ShowShortcutTooltips = true
 		}
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true

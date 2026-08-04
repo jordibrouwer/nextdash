@@ -28,16 +28,6 @@ class DashboardConfig {
     /** Device-local last config section (and sub-tab) for Shift+S / `<` return visits. */
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
-    /**
-     * The activity chart's range, remembered per browser.
-     *
-     * The sub-tab you were on already survives a visit (SUB_TAB_STATE, via the
-     * hash), so returning to Statistics and finding the chart snapped back to 30
-     * days was the odd one out. Kept in localStorage rather than settings: it is
-     * a view preference, not data worth a write to the server on every click.
-     */
-    static STATS_RANGE_KEY = 'nextdash:config-stats-range-v1';
-
     constructor(dashboard) {
         this.dash = dashboard;
         this.section = 'overview';
@@ -61,7 +51,7 @@ class DashboardConfig {
         // A named cleanup filter arrived at from Statistics ('untagged', …).
         // Empty means the list is unfiltered by it.
         this.bmCleanupFilter = '';
-        this.bmTagFilter = [];
+        this.bmTagFilter = '';
         this.bmSort = 'page';
         this.bmVisibleLimit = DashboardConfig.BM_PAGE_SIZE;
         this.bmEditing = null;
@@ -73,9 +63,8 @@ class DashboardConfig {
         this._bmCategoriesCache = new Map();
         // Statistics: undefined while the health fetch is in flight, null on failure.
         this._statsHealth = undefined;
-        // How far back the activity chart looks, in days. Restored from the last
-        // visit, falling back to 30.
-        this.statsRange = DashboardConfig.readStoredStatsRange();
+        // How far back the activity chart looks, in days.
+        this.statsRange = 30;
         // Statistics sub-tab.
         this.statsTab = 'overview';
         // Data & backups sub-tab.
@@ -333,45 +322,6 @@ class DashboardConfig {
             return { section, subTab };
         } catch {
             return null;
-        }
-    }
-
-    /**
-     * Fetch what a Statistics tab needs, once.
-     *
-     * Three tabs each own an endpoint that is of no use to the others, and the
-     * "have I fetched this yet" check was repeated at four call sites — the tab
-     * strip, the jump buttons, the sub-tab router and the section open. Health
-     * was missing from three of them and so was fetched eagerly on every visit
-     * instead; keeping the rule in one place is what stops that recurring.
-     */
-    loadStatsTabData(tab) {
-        if (tab === 'inbox' && this._statsInboxItems === undefined) void this.loadStatsInbox();
-        if (tab === 'activity' && this._statsFinders === undefined) void this.loadStatsFinders();
-        if (tab === 'health' && this._statsHealth === undefined) void this.loadStatsHealth();
-    }
-
-    /**
-     * The stored activity range, or the 30-day default.
-     *
-     * Validated against STATS_RANGES rather than trusted: a stale or hand-edited
-     * value would otherwise reach computeActivity() and bucket against a range
-     * with no button to switch away from it.
-     */
-    static readStoredStatsRange() {
-        try {
-            const raw = Number(localStorage.getItem(DashboardConfig.STATS_RANGE_KEY));
-            return DashboardConfig.STATS_RANGES.includes(raw) ? raw : 30;
-        } catch {
-            return 30;
-        }
-    }
-
-    saveStatsRange(days) {
-        try {
-            localStorage.setItem(DashboardConfig.STATS_RANGE_KEY, String(days));
-        } catch {
-            // localStorage unavailable — the range still applies for this visit
         }
     }
 
@@ -891,7 +841,12 @@ class DashboardConfig {
                 break;
             }
             case 'stats':
-                this.loadStatsTabData(tab);
+                if (tab === 'inbox' && this._statsInboxItems === undefined) {
+                    void this.loadStatsInbox();
+                }
+                if (tab === 'activity' && this._statsFinders === undefined) {
+                    void this.loadStatsFinders();
+                }
                 this.repaintStatsBody();
                 break;
             case 'help': {
@@ -1096,9 +1051,15 @@ class DashboardConfig {
             void this.prefetchAllBookmarkCategories();
         } else if (this.section === 'stats') {
             this.bindStats(container);
+            void this.loadStats();
             // The tab can be the one restored from a previous visit rather than
             // one just clicked, so the fetch cannot hang off the click alone.
-            this.loadStatsTabData(this.statsTab);
+            if (this.statsTab === 'inbox' && this._statsInboxItems === undefined) {
+                void this.loadStatsInbox();
+            }
+            if (this.statsTab === 'activity' && this._statsFinders === undefined) {
+                void this.loadStatsFinders();
+            }
         } else if (this.section === 'help') {
             this.bindHelp(container);
         }
@@ -1123,20 +1084,6 @@ class DashboardConfig {
         this.bindRangeInputs(container);
     }
 
-    /**
-     * Renders `[key, label]` pairs as the keyboard legend used across the app.
-     *
-     * Inbox, Health and Config → Bookmarks all draw a key as a <kbd> chip beside
-     * its label; the form and list sections used to draw one flat sentence with
-     * the keys buried in prose. This is the shared shape, so those two now match.
-     */
-    renderKeyboardLegendPairs(pairs) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        return pairs
-            .map(([k, label]) => `<span><kbd>${esc(k)}</kbd> ${esc(label)}</span>`)
-            .join('');
-    }
-
     /** Footer hint on form-heavy sections (Behavior, Appearance, …). */
     bindFormKeyboardLegend(container) {
         const formSections = new Set(['behavior', 'appearance', 'stats', 'data-backups']);
@@ -1146,17 +1093,10 @@ class DashboardConfig {
         if (body.querySelector('.config-form-keyboard-legend')) return;
         if (!body.querySelector('.config-choices, .config-range, .config-subtabs')) return;
         const legend = document.createElement('p');
-        legend.className = 'config-form-keyboard-legend';
+        legend.className = 'config-form-keyboard-legend config-field-hint';
         legend.setAttribute('aria-hidden', 'true');
-        // Keys stay untranslated (they are what is printed on the keyboard);
-        // only the action each one performs is a translated string.
-        legend.innerHTML = this.renderKeyboardLegendPairs([
-            ['←/→', this.t('config.formKeyChoices', 'choices')],
-            ['Home / End', this.t('config.formKeySliders', 'sliders')],
-            ['Alt+←/→', this.t('config.formKeySubtabs', 'sub-tabs')],
-            ['Ctrl/Cmd+Shift+K', this.t('config.formKeyFindSetting', 'find setting')],
-            ['!', this.t('config.formKeyCheatSheet', 'cheat sheet')],
-        ]);
+        legend.textContent = this.t('config.formKeyboardLegend',
+            '←/→ choices · Home/End sliders · Alt+←/→ or [ ] sub-tabs · Ctrl/Cmd+Shift+K find setting · ! cheat sheet');
         body.appendChild(legend);
     }
 
@@ -1357,15 +1297,10 @@ class DashboardConfig {
         if (!list || list.querySelector('.config-panel-empty')) return;
         if (body.querySelector('.config-list-keyboard-legend')) return;
         const legend = document.createElement('p');
-        legend.className = 'config-list-keyboard-legend';
+        legend.className = 'config-list-keyboard-legend config-field-hint';
         legend.setAttribute('aria-hidden', 'true');
-        legend.innerHTML = this.renderKeyboardLegendPairs([
-            ['↑/↓', this.t('config.listKeyMove', 'move')],
-            ['Enter', this.t('config.listKeyEdit', 'edit')],
-            ['g / G', this.t('config.listKeyFirstLast', 'first / last')],
-            ['/', this.t('config.listKeyFilterTags', 'filter tags')],
-            ['Esc', this.t('config.listKeyClear', 'clear')],
-        ]);
+        legend.textContent = this.t('config.listKeyboardLegend',
+            '↑/↓ move · Enter edit · g/G first/last · / filter tags · Esc clear');
         list.after(legend);
     }
 
@@ -1864,18 +1799,6 @@ class DashboardConfig {
             }
             const panel = document.querySelector('.config-settings-jump-modal');
             if (!panel?.contains(document.activeElement) && document.activeElement?.id !== 'config-settings-jump-filter') {
-                return;
-            }
-            if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'f') {
-                const filter = document.getElementById('config-settings-jump-filter');
-                if (filter instanceof HTMLElement) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    filter.focus({ preventScroll: true });
-                    if (typeof filter.select === 'function') {
-                        filter.select();
-                    }
-                }
                 return;
             }
             if (e.key === 'ArrowDown') {
@@ -2684,28 +2607,8 @@ class DashboardConfig {
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--small"
                             data-overview-go='{"section":"help"}'>${esc(this.t('config.overviewMoreTips', 'More tips →'))}</button>
-                    ${this.renderCheatSheetPdfLink()}
                 </div>
             </div>`;
-    }
-
-    /**
-     * Link to the printable one-page shortcut sheet.
-     *
-     * A PDF, so it always opens in a new tab: replacing the dashboard with a
-     * document viewer would lose whatever the user had open, and there is no way
-     * back other than the browser's back button.
-     */
-    renderCheatSheetPdfLink() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const label = this.t('config.cheatsheetPdfLink', 'Shortcuts PDF');
-        const hint = this.t('config.cheatsheetPdfHint', 'One-page keyboard reference (opens in a new tab)');
-        return `<a class="config-btn config-btn--small config-cheatsheet-pdf"
-                   href="/static/nextDash-cheatsheet.pdf" target="_blank" rel="noopener noreferrer"
-                   title="${esc(hint)}">
-                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 1.5H4.5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5z"/><path d="M9 1.5V5h3.5"/><path d="M6.5 8.5h3M6.5 11h3"/></svg>
-                    <span>${esc(label)}</span>
-                </a>`;
     }
 
     /** Refresh the health report and the release notes, then repaint. */
@@ -2995,8 +2898,8 @@ class DashboardConfig {
 
     /* ── Data & backups ────────────────────────────────────────────────────── */
 
-    notify(message, type = 'info', options = {}) {
-        this.dash.showNotification?.(message, type, { duration: 3500, ...options });
+    notify(message, type = 'info') {
+        this.dash.showNotification?.(message, type, { duration: 3500 });
     }
 
     /** Write-token-aware fetch, matching the other views' POST/DELETE calls. */
@@ -5452,7 +5355,6 @@ class DashboardConfig {
         language: { info: ['languageInfoTitle', 'languageInfoMessage'], def: 'en' },
         openInNewTab: { info: ['openLinksInNewTabInfoTitle', 'openLinksInNewTabInfoMessage'] },
         globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'] },
-        showShortcutTooltips: { info: ['shortcutTooltipsInfoTitle', 'shortcutTooltipsInfoMessage'], def: true },
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'] },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
@@ -5614,7 +5516,6 @@ class DashboardConfig {
                     ] },
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
-                    bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'),
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
                     bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
                 ],
@@ -7722,10 +7623,8 @@ class DashboardConfig {
     }
 
     bookmarksFiltersActive() {
-        // bmTagFilter is a list, and an empty array is truthy — ask for its
-        // length or an unfiltered view would claim to be filtered.
         return !!(this.bmQuery || this.bmPageFilter || this.bmCategoryFilter
-            || this.bmCleanupFilter || this.bookmarkTagFilters().length);
+            || this.bmCleanupFilter || this.bmTagFilter);
     }
 
     computeBookmarkSubsetStats(bookmarks) {
@@ -7749,34 +7648,9 @@ class DashboardConfig {
         };
     }
 
-    /**
-     * The element the bookmark list actually scrolls inside, or null when that
-     * is the viewport itself.
-     *
-     * This used to name `.config-view-body` outright, which reads as the right
-     * answer and is not: that class carries no CSS at all, so the div grows to
-     * fit its rows and never scrolls. Handing it to the load-more observer as a
-     * root meant the sentinel sat permanently inside the root's bounds, the
-     * intersection state never changed, and the callback never ran — 50 of 102
-     * rows, scrolling forever. `repaintBookmarksList` had the same node for its
-     * scroll save/restore, where a non-scrolling element reads scrollTop 0.
-     *
-     * So ask the layout rather than trusting a class name: walk up for the
-     * first ancestor that both allows overflow and has content overflowing it.
-     * Returning null for the viewport case is meaningful — IntersectionObserver
-     * reads `root: null` as the viewport, which is exactly what is wanted.
-     */
     bookmarkListScrollHost() {
-        let el = document.getElementById('config-bm-list')?.parentElement;
-        while (el && el !== document.body && el !== document.documentElement) {
-            const overflowY = getComputedStyle(el).overflowY;
-            if ((overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay')
-                && el.scrollHeight > el.clientHeight + 1) {
-                return el;
-            }
-            el = el.parentElement;
-        }
-        return null;
+        return document.getElementById('config-bm-list')?.closest('.config-view-body')
+            || document.getElementById('config-bm-list')?.parentElement;
     }
 
     resetBookmarkVisibleLimit() {
@@ -7823,10 +7697,8 @@ class DashboardConfig {
                 : this.bmCategoryFilter;
             add('category', this.t('config.bookmarksFilterCategory', 'Category: {name}').replace('{name}', label));
         }
-        // One chip per tag rather than one lumped "Tag: a, b, c": each stays
-        // removable on its own, which is the point of picking several.
-        for (const tag of this.bookmarkTagFilters()) {
-            add(`tag:${tag}`, this.t('config.bookmarksFilterTag', 'Tag: {tag}').replace('{tag}', tag));
+        if (this.bmTagFilter) {
+            add('tag', this.t('config.bookmarksFilterTag', 'Tag: {tag}').replace('{tag}', this.bmTagFilter));
         }
         if (String(this.bmQuery || '').trim()) {
             const q = String(this.bmQuery).trim();
@@ -7851,7 +7723,6 @@ class DashboardConfig {
     }
 
     updateBookmarkListChrome() {
-        this.updateBookmarkTagCloud();
         const filtered = this.visibleBookmarks();
         const total = (this.dash.allBookmarks || []).length;
         const shown = filtered.length;
@@ -7892,11 +7763,7 @@ class DashboardConfig {
     clearBookmarkFilterChip(key) {
         if (key === 'all' || key === 'page') this.bmPageFilter = '';
         if (key === 'all' || key === 'category') this.bmCategoryFilter = '';
-        if (key === 'all' || key === 'tag') this.bmTagFilter = [];
-        if (key.startsWith('tag:')) {
-            const tag = key.slice(4);
-            this.bmTagFilter = this.bookmarkTagFilters().filter((t) => t !== tag);
-        }
+        if (key === 'all' || key === 'tag') this.bmTagFilter = '';
         if (key === 'all' || key === 'search') {
             this.bmQuery = '';
             const search = document.getElementById('config-bm-search');
@@ -7940,72 +7807,12 @@ class DashboardConfig {
         this.updateBookmarkListChrome();
     }
 
-    /**
-     * Active tag filters, always as a normalised list.
-     *
-     * bmTagFilter was a single string before the tag cloud landed; accepting
-     * both shapes keeps older stored state and the row chips working.
-     */
-    bookmarkTagFilters() {
-        const raw = this.bmTagFilter;
-        const list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-        const seen = new Set();
-        const out = [];
-        for (const entry of list) {
-            const tag = String(entry || '').trim().toLowerCase();
-            if (!tag || seen.has(tag)) continue;
-            seen.add(tag);
-            out.push(tag);
-        }
-        return out.sort((a, b) => a.localeCompare(b));
-    }
-
-    /**
-     * Every tag in use, with how many bookmarks carry it.
-     *
-     * Ranked by the same function the dashboard tag cloud uses, so both clouds
-     * order and count identically instead of drifting through two copies.
-     */
-    bookmarkTagCounts() {
-        const all = this.dash.allBookmarks || [];
-        const shared = window.DashboardTagCloud?.countTagsFromBookmarks;
-        if (typeof shared === 'function') return shared(all);
-        const counts = new Map();
-        for (const b of all) {
-            for (const raw of b.tags || []) {
-                const tag = String(raw || '').trim().toLowerCase();
-                if (!tag) continue;
-                counts.set(tag, (counts.get(tag) || 0) + 1);
-            }
-        }
-        return [...counts.entries()]
-            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-            .map(([tag, count]) => ({ tag, count }));
-    }
-
-    setBookmarkTagFilters(tags) {
-        this.bmTagFilter = Array.isArray(tags) ? tags : [];
+    filterBookmarksByTag(tag) {
+        if (!tag) return;
+        this.bmTagFilter = String(tag);
         this.resetBookmarkVisibleLimit();
         this.repaintBookmarksList();
         this.updateBookmarkListChrome();
-    }
-
-    /** Add or remove one tag, leaving the rest of the selection alone. */
-    toggleBookmarkTagFilter(tag) {
-        const wanted = String(tag || '').trim().toLowerCase();
-        if (!wanted) return;
-        const current = this.bookmarkTagFilters();
-        const next = current.includes(wanted)
-            ? current.filter((t) => t !== wanted)
-            : current.concat(wanted);
-        this.setBookmarkTagFilters(next);
-    }
-
-    filterBookmarksByTag(tag) {
-        if (!tag) return;
-        // Clicking a tag chip on a row means "show me this tag", replacing any
-        // cloud selection rather than quietly adding to it.
-        this.setBookmarkTagFilters([String(tag)]);
     }
 
     renderBookmarksSection() {
@@ -8055,7 +7862,6 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" id="config-bm-add">${esc(this.t('config.addBookmark', 'Add bookmark'))}</button>
                     <button type="button" class="config-btn config-btn--small" id="config-bm-select-all">${esc(this.selectAllBookmarksLabel())}</button>
                 </div>
-                ${this.renderBookmarkTagCloud()}
                 <div class="config-bm-list-meta">
                     <span class="config-bm-count" id="config-bm-count">${esc(countLabel)}</span>
                     <div class="config-bm-filter-chips" id="config-bm-filter-chips">${this.renderBookmarkFilterChips()}</div>
@@ -8066,116 +7872,6 @@ class DashboardConfig {
                 <div id="config-bm-list">${this.renderBookmarksList()}</div>
             </div>
         `;
-    }
-
-    /**
-     * Tag cloud above the bookmark list.
-     *
-     * Collapsed by default: with a few dozen tags it would otherwise push the
-     * list itself off the screen on every visit. Tags are ordered by how many
-     * bookmarks carry them, so the ones worth filtering on come first, and each
-     * is sized by that count the way the dashboard cloud is.
-     */
-    renderBookmarkTagCloud() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const tags = this.bookmarkTagCounts();
-        if (!tags.length) return '';
-
-        const active = new Set(this.bookmarkTagFilters());
-        const max = tags[0].count || 1;
-        const chips = tags.map(({ tag, count }) => {
-            const on = active.has(tag);
-            // Four steps rather than a continuous scale: enough to show weight,
-            // few enough that the rows still line up.
-            const step = Math.min(3, Math.floor((count / max) * 4));
-            return `<button type="button"
-                    class="config-bm-cloud-tag config-bm-cloud-tag--s${step}${on ? ' is-active' : ''}"
-                    role="option" aria-selected="${on}"
-                    data-bm-cloud-tag="${esc(tag)}">${esc(tag)}<span class="config-bm-cloud-count">${count}</span></button>`;
-        }).join('');
-
-        const activeCount = active.size;
-        const summary = activeCount
-            ? this.t('config.bookmarksTagCloudActive', '{count} selected').replace('{count}', activeCount)
-            : this.t('config.bookmarksTagCloudHint', 'Filter by one or more tags');
-        return `
-            <details class="config-bm-cloud" id="config-bm-cloud"${activeCount ? ' open' : ''}>
-                <summary class="config-bm-cloud-summary">
-                    <span>${esc(this.t('config.bookmarksTagCloudTitle', 'Tags'))}</span>
-                    <span class="config-bm-cloud-summary-note">${esc(summary)}</span>
-                </summary>
-                <div class="config-bm-cloud-body">
-                    <div class="config-bm-cloud-tags" role="listbox" aria-multiselectable="true"
-                         aria-label="${esc(this.t('config.bookmarksTagCloudTitle', 'Tags'))}">${chips}</div>
-                    <div class="config-bm-cloud-actions"${activeCount ? '' : ' hidden'}>
-                        <button type="button" class="config-btn config-btn--small" data-bm-cloud-select>${esc(this.t('config.bookmarksTagCloudSelect', 'Select these bookmarks'))}</button>
-                        <button type="button" class="config-btn config-btn--small" data-bm-cloud-clear>${esc(this.t('config.bookmarksTagCloudClear', 'Clear tags'))}</button>
-                    </div>
-                </div>
-            </details>`;
-    }
-
-    /**
-     * Wire the tag cloud.
-     *
-     * Delegated from the container: repainting the list replaces the cloud's
-     * own markup, so listeners bound to individual chips would not survive the
-     * first click.
-     */
-    bindBookmarkTagCloud(container) {
-        const cloud = container.querySelector('#config-bm-cloud');
-        if (!cloud || cloud._bmCloudBound) return;
-        cloud._bmCloudBound = true;
-        cloud.addEventListener('click', (e) => {
-            const tagBtn = e.target.closest('[data-bm-cloud-tag]');
-            if (tagBtn) {
-                e.preventDefault();
-                this.toggleBookmarkTagFilter(tagBtn.getAttribute('data-bm-cloud-tag'));
-                return;
-            }
-            if (e.target.closest('[data-bm-cloud-clear]')) {
-                e.preventDefault();
-                this.setBookmarkTagFilters([]);
-                return;
-            }
-            if (e.target.closest('[data-bm-cloud-select]')) {
-                e.preventDefault();
-                this.selectFilteredBookmarks();
-            }
-        });
-    }
-
-    /**
-     * Repaint the cloud's chips in place.
-     *
-     * Rebuilding the whole <details> would snap it shut mid-selection and throw
-     * away the scroll position, so only the parts that change are rewritten.
-     */
-    updateBookmarkTagCloud() {
-        const cloud = document.getElementById('config-bm-cloud');
-        if (!cloud) return;
-        const active = new Set(this.bookmarkTagFilters());
-        cloud.querySelectorAll('[data-bm-cloud-tag]').forEach((btn) => {
-            const on = active.has(btn.getAttribute('data-bm-cloud-tag'));
-            btn.classList.toggle('is-active', on);
-            btn.setAttribute('aria-selected', String(on));
-        });
-        const note = cloud.querySelector('.config-bm-cloud-summary-note');
-        if (note) {
-            note.textContent = active.size
-                ? this.t('config.bookmarksTagCloudActive', '{count} selected').replace('{count}', active.size)
-                : this.t('config.bookmarksTagCloudHint', 'Filter by one or more tags');
-        }
-        const actions = cloud.querySelector('.config-bm-cloud-actions');
-        if (actions) actions.hidden = active.size === 0;
-    }
-
-    /** Tick every row the current filters leave visible, for the bulk bar. */
-    selectFilteredBookmarks() {
-        const rows = this.visibleBookmarks() || [];
-        for (const b of rows) this.bmSelected.add(this.bookmarkKey(b));
-        this.repaintBookmarksList();
-        this.updateBookmarkListChrome();
     }
 
     /** Human label for each named cleanup filter. */
@@ -8452,7 +8148,7 @@ class DashboardConfig {
         // versus query "a" with tag "b" must not share a token.
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
-            this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmSort,
+            this.bmTagFilter, this.bmCleanupFilter, this.bmSort,
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -8478,7 +8174,7 @@ class DashboardConfig {
         const q = String(this.bmQuery || '').trim().toLowerCase();
         const pageFilter = String(this.bmPageFilter || '');
         const catFilter = this.bmCategoryFilter || '';
-        const tagFilter = this.bookmarkTagFilters();
+        const tagFilter = String(this.bmTagFilter || '').trim().toLowerCase();
         const cleanupKey = this.bmCleanupFilter;
         const dupes = cleanupKey === 'duplicate' ? this.ensureDuplicateUrlSet() : null;
         const cleanup = DashboardConfig.CLEANUP_FILTERS[cleanupKey] || null;
@@ -8493,11 +8189,9 @@ class DashboardConfig {
                 if (catPage && String(b.pageId) !== String(catPage)) return false;
                 if ((b.category || '') !== categoryId) return false;
             }
-            if (tagFilter.length) {
+            if (tagFilter) {
                 const tags = (Array.isArray(b.tags) ? b.tags : []).map((t) => String(t).toLowerCase());
-                // OR, matching the dashboard tag cloud: picking a second tag
-                // widens the result rather than narrowing it to nothing.
-                if (!tagFilter.some((t) => tags.includes(t))) return false;
+                if (!tags.includes(tagFilter)) return false;
             }
             if (!q) return true;
             return [b.name, b.url, b.category, b.note, b.shortcut, (b.tags || []).join(' ')]
@@ -8660,19 +8354,9 @@ class DashboardConfig {
         if (ctx.isDuplicate) {
             metaBits.push(`<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>`);
         }
-        const tags = b.tags || [];
-        const tagChips = tags.map((tag) =>
+        const tagChips = (b.tags || []).map((tag) =>
             `<button type="button" class="config-bm-tag-chip" data-bm-filter-tag="${esc(tag)}">${esc(tag)}</button>`
         ).join('');
-        // One or two tags read fine beside the domain. Beyond that they crowd it
-        // out, so they move to a line of their own — the identifying line stays
-        // scannable and the tags keep their own left edge down the feed.
-        const TAGS_INLINE_MAX = 2;
-        const tagsOnOwnLine = tags.length > TAGS_INLINE_MAX;
-        const inlineTagChips = tagsOnOwnLine ? '' : tagChips;
-        const tagRow = tagsOnOwnLine
-            ? `<p class="config-bm-tag-row">${tagChips}</p>`
-            : '';
         const mode = window.CheckMode?.of?.(b) || 'off';
         const feed = window.BookmarkFeedRow;
         const noteHtml = b.note
@@ -8697,8 +8381,7 @@ class DashboardConfig {
                 <div class="config-bm-usage-col" title="${usageTip}">${this.renderBookmarkUsageLine(b)}</div>
             </div>`;
         return `
-            <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1"
-                     role="listitem"${ctx.setSize ? ` aria-posinset="${ctx.posInSet}" aria-setsize="${ctx.setSize}"` : ''}>
+            <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1">
                 <label class="config-bm-check">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
                            aria-label="${esc(this.t('config.selectBookmark', 'Select bookmark'))}">
@@ -8711,13 +8394,12 @@ class DashboardConfig {
                     <p class="health-view-item-meta config-bm-meta-primary">
                         <span>${esc(domain)}</span>
                         ${metaBits.join('')}
-                        ${inlineTagChips}
+                        ${tagChips}
                         <span class="health-check-mode-wrap">
                             ${feed?.renderCheckModeBadge?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
                             ${feed?.renderCheckModeMenu?.(key, mode, esc, (k, fb) => this.t(k, fb)) || ''}
                         </span>
                     </p>
-                    ${tagRow}
                     ${categoryLine}
                     ${noteHtml}
                     ${feed?.renderActionsBar?.({
@@ -8763,21 +8445,13 @@ class DashboardConfig {
             const url = String(b.url || '').trim().toLowerCase();
             return url && dupes.has(url);
         } };
-        // Position is passed down so each row can carry aria-posinset: with
-        // paging the DOM holds only part of the list, and without setsize a
-        // screen reader would announce "3 of 50" on a library of 500.
-        const items = rows.map((b, i) => this.renderBookmarkRow(b, {
-            ...ctx,
-            isDuplicate: ctx.isDuplicate(b),
-            posInSet: i + 1,
-            setSize: allRows.length,
-        })).join('');
+        const items = rows.map((b) => this.renderBookmarkRow(b, { ...ctx, isDuplicate: ctx.isDuplicate(b) })).join('');
         const more = allRows.length > rows.length
             ? `<div class="config-bm-load-sentinel" data-bm-load-more hidden aria-hidden="true"></div>
                <p class="config-bm-load-hint">${esc(this.t('config.bookmarksLoadMoreHint', '{shown} of {total} shown — scroll for more')
                    .replace('{shown}', String(rows.length)).replace('{total}', String(allRows.length)))}</p>`
             : '';
-        return `<div class="health-view-feed config-bm-feed" role="list">${items}${more}</div>`;
+        return `<div class="health-view-feed config-bm-feed">${items}${more}</div>`;
     }
 
     /**
@@ -9479,6 +9153,7 @@ class DashboardConfig {
     }
 
     renderBookmarkKeyboardLegend() {
+        const esc = (v) => this.dash.escapeHtml(v);
         const keys = [
             ['j / k', this.t('config.bookmarksKeyMove', 'move')],
             ['Enter', this.t('config.bookmarksKeyOpen', 'open')],
@@ -9491,7 +9166,9 @@ class DashboardConfig {
             ['/', this.t('config.bookmarksKeySearch', 'search')],
             ['Esc', this.t('config.bookmarksKeyClear', 'clear')],
         ];
-        return this.renderKeyboardLegendPairs(keys);
+        return keys
+            .map(([k, label]) => `<span><kbd>${esc(k)}</kbd> ${esc(label)}</span>`)
+            .join('');
     }
 
     bindBookmarksSection(container) {
@@ -9503,7 +9180,6 @@ class DashboardConfig {
             });
         }
         this.bindBookmarkFilterChips(container.querySelector('#config-bm-filter-chips'));
-        this.bindBookmarkTagCloud(container);
         container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
             this.bmCleanupFilter = '';
             this.bmSelected.clear();
@@ -9556,7 +9232,7 @@ class DashboardConfig {
         this.bmPageFilter = '';
         this.bmCategoryFilter = '';
         this.bmCleanupFilter = '';
-        this.bmTagFilter = [];
+        this.bmTagFilter = '';
         this.bmSelected.clear();
         this.resetBookmarkVisibleLimit();
         this._bmDuplicateUrls = null;
@@ -10460,20 +10136,6 @@ class DashboardConfig {
         this.repaintBookmarksList();
     }
 
-    /**
-     * Load the next page when the sentinel scrolls into view.
-     *
-     * Growing the list re-renders it, which rebuilds this observer; if the
-     * sentinel is still on screen at that moment it fires again straight away.
-     * With a short window — or a list that simply does not overflow — that loop
-     * ran to the end of the library on its own: 500 bookmarks were all in the
-     * DOM within a couple of seconds without anyone scrolling, and the 50-row
-     * page size did nothing.
-     *
-     * Each batch now needs a fresh scroll. `_bmLoadMoreArmed` is lowered as soon
-     * as one page is added and only raised again by a scroll on the list's own
-     * host, so an idle screen stays at the size it was rendered with.
-     */
     setupBookmarkLoadMore(host) {
         const sentinel = host?.querySelector('[data-bm-load-more]');
         if (!sentinel) return;
@@ -10481,39 +10143,14 @@ class DashboardConfig {
         sentinel.removeAttribute('aria-hidden');
         this._bmLoadMoreObserver?.disconnect?.();
         const root = this.bookmarkListScrollHost();
-        this.armBookmarkLoadMore(root);
         this._bmLoadMoreObserver = new IntersectionObserver((entries) => {
-            if (!this._bmLoadMoreArmed) return;
             if (!entries.some((e) => e.isIntersecting)) return;
             const total = this.visibleBookmarks().length;
             if (this.bmVisibleLimit >= total) return;
-            this._bmLoadMoreArmed = false;
             this.bmVisibleLimit += DashboardConfig.BM_PAGE_SIZE;
             this.repaintBookmarksList();
         }, { root: root || null, rootMargin: '160px' });
         this._bmLoadMoreObserver.observe(sentinel);
-    }
-
-    /**
-     * Re-arm the loader on the next scroll of the list's scroll host.
-     *
-     * `root` is whichever element actually scrolls, or null when that is the
-     * viewport. Window is listened to either way: a scroll container can still
-     * be carried up the page by an outer scroll, and with a null root the
-     * window listener is the only one that fires.
-     */
-    armBookmarkLoadMore(root) {
-        if (this._bmLoadMoreScrollTarget) {
-            this._bmLoadMoreScrollTarget.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
-            window.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
-        }
-        this._bmLoadMoreArmed = false;
-        this._bmLoadMoreScrollHandler = () => {
-            this._bmLoadMoreArmed = true;
-        };
-        this._bmLoadMoreScrollTarget = root || document;
-        this._bmLoadMoreScrollTarget.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
-        window.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
     }
 
     repaintBookmarksList() {
@@ -10523,10 +10160,8 @@ class DashboardConfig {
         // bookmarks are routinely edited in place — the array identity the memo
         // keys on would not have moved. Drop it and recompute.
         this.invalidateVisibleBookmarks();
-        // A null host means the page itself scrolls, so the position to keep
-        // across the repaint lives on the window, not on an element.
         const scrollHost = this.bookmarkListScrollHost();
-        const scrollTop = scrollHost ? scrollHost.scrollTop : window.scrollY;
+        const scrollTop = scrollHost?.scrollTop ?? 0;
         this._bmLoadMoreObserver?.disconnect?.();
         this._bmLoadMoreObserver = null;
         host.innerHTML = this.renderBookmarksList();
@@ -10535,7 +10170,6 @@ class DashboardConfig {
         this.repaintBulkToolbar();
         this.updateBookmarkListChrome();
         if (scrollHost) scrollHost.scrollTop = scrollTop;
-        else window.scrollTo(0, scrollTop);
         this.setupBookmarkLoadMore(host);
     }
 
@@ -10598,35 +10232,11 @@ class DashboardConfig {
         if (!parsed) return;
         if (!await this.confirmAction(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
         try {
-            // Snapshot before the write, so the toast can put this row back —
-            // same as bulk delete and the :remove command.
-            const snapshot = (this.dash.allBookmarks || [])
-                .filter((b) => String(b.pageId) === String(parsed.pageId))
-                .map((b) => {
-                    const copy = { ...b };
-                    delete copy.pageId;
-                    return copy;
-                });
             const isTarget = DashboardConfig.matchesParsedKey(parsed);
             await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => !isTarget(b)));
             this.bmSelected.delete(key);
             if (this.bmEditing === key) { this.bmEditing = null; this.bmDirty = false; }
-            this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success', {
-                duration: 8000,
-                undoCallback: async () => {
-                    try {
-                        await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(parsed.pageId)}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(snapshot),
-                        });
-                        await this.refreshBookmarksAfterWrite();
-                        this.notify(this.t('config.bookmarkRestored', 'Bookmark restored.'), 'success');
-                    } catch {
-                        this.notify(this.t('config.bookmarkRestoreFailed', 'Could not restore the bookmark.'), 'error');
-                    }
-                },
-            });
+            this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success');
             await this.refreshBookmarksAfterWrite();
         } catch {
             this.notify(this.t('config.bookmarkDeleteError', 'Could not delete the bookmark.'), 'error');
@@ -10887,53 +10497,17 @@ class DashboardConfig {
     }
 
     async bulkDelete(picked) {
-        const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks?')
+        const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks? This cannot be undone.')
             .replace('{n}', String(picked.length));
         if (!await this.confirmAction(msg)) return;
-
-        const byPage = [...this.selectionTargetsByPage(picked)];
-        // Snapshot each affected page before touching it, so the toast can put
-        // the rows back. The same approach the :remove command already uses —
-        // deleting in bulk is exactly where getting it wrong hurts most.
-        const snapshots = new Map();
-        for (const [pageId] of byPage) {
-            snapshots.set(String(pageId), (this.dash.allBookmarks || [])
-                .filter((b) => String(b.pageId) === String(pageId))
-                .map((b) => {
-                    const copy = { ...b };
-                    delete copy.pageId;
-                    return copy;
-                }));
-        }
-
-        for (const [pageId, targets] of byPage) {
+        for (const [pageId, targets] of this.selectionTargetsByPage(picked)) {
             await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
                 .filter(({ target }) => !targets.has(target))
                 .map(({ bookmark }) => bookmark));
         }
         this.bmSelected.clear();
         this.bmEditing = null;
-
-        const undoCallback = async () => {
-            try {
-                for (const [pageId, rows] of snapshots) {
-                    await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(rows),
-                    });
-                }
-                await this.refreshBookmarksAfterWrite();
-                this.notify(this.t('config.bulkDeleteUndone', 'Bookmarks restored.'), 'success');
-            } catch {
-                this.notify(this.t('config.bulkDeleteUndoFailed', 'Could not restore the bookmarks.'), 'error');
-            }
-        };
-
-        this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success', {
-            undoCallback,
-            duration: 8000,
-        });
+        this.notify(this.t('config.bulkDeleteDone', 'Bookmarks deleted.'), 'success');
         await this.refreshBookmarksAfterWrite();
     }
 
@@ -10989,9 +10563,6 @@ class DashboardConfig {
     /** How far back the activity chart looks, in days. */
     static STATS_RANGES = [7, 30, 90, 365];
 
-    /** How many rows the ranked Statistics lists show before cutting off. */
-    static STATS_LIST_LIMIT = 20;
-
     /**
      * A read-only report on what is actually in the dashboard: a cleanup score,
      * an activity chart, ratio bars, top lists and per-page/tag distributions.
@@ -11030,67 +10601,18 @@ class DashboardConfig {
             <p class="config-view-intro">${esc(this.t('config.statsIntroView', 'What is in your dashboard right now. These numbers update as you change things.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-stats-body" role="tabpanel" tabindex="0">${this.renderStatsBody()}</div>
-            ${this.renderStatsTimestamp()}
         `;
-    }
-
-    /**
-     * When these numbers were worked out.
-     *
-     * They are recomputed from whatever is in memory at render time, not
-     * fetched, so nothing on the page said whether you were looking at a
-     * snapshot from ten seconds or ten minutes ago. It sits below the body
-     * rather than in the intro: it dates everything above it, including the
-     * panels that repaint on a tab switch.
-     */
-    renderStatsTimestamp() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const time = new Intl.DateTimeFormat(this.dash.settings?.language || undefined,
-            { hour: '2-digit', minute: '2-digit' }).format(new Date());
-        return `<p class="config-stats-updated">${esc(this.t('config.statsUpdatedAt', 'Worked out at {time}')
-            .replace('{time}', time))}</p>`;
-    }
-
-    /**
-     * One explanation instead of a page of zeroes.
-     *
-     * With nothing to measure, every panel still rendered: five coverage bars
-     * reading "0 / 0 · 0%", a category list with no rows, a cleanup score of 0
-     * out of 100. That reads as something broken rather than as a dashboard
-     * nobody has filled yet, so the whole body is replaced by a single line
-     * saying what to do — except on Inbox, whose numbers come from the server
-     * and mean something even with no bookmarks.
-     */
-    renderStatsEmpty() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        return `
-            <div class="config-panel config-panel--empty-state">
-                <h3 class="config-panel-title">${esc(this.t('config.statsEmptyTitle', 'Nothing to measure yet'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.statsEmptyBody', 'Statistics fill in as you add bookmarks and start opening them. Add a few and this page will have something to say.'))}</p>
-                <div class="config-actions">
-                    <button type="button" class="config-btn config-btn--primary" data-stats-action="add-bookmark">${esc(this.t('config.addBookmarkBtn', 'Add bookmark'))}</button>
-                </div>
-            </div>`;
     }
 
     renderStatsBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.computeStats();
 
-        // Inbox is server-side and still meaningful on an empty dashboard.
-        if (!s.total && this.statsTab !== 'inbox') {
-            return this.renderStatsEmpty();
-        }
-
-        // The label and the value are separate spans, so a screen reader read
-        // them as two loose strings that only made sense because they happened
-        // to be adjacent. aria-label names the tile as one thing — "Bookmarks:
-        // 102" — and the spans are hidden so it is not then read twice.
         const tile = (label, value, hint) => `
-            <div class="config-tile" role="listitem" aria-label="${esc(label)}: ${esc(String(value))}${hint ? `. ${esc(hint)}` : ''}">
-                <span class="config-tile-label" aria-hidden="true">${esc(label)}</span>
-                <span class="config-tile-value" aria-hidden="true">${esc(String(value))}</span>
-                ${hint ? `<p class="config-tile-detail" aria-hidden="true">${esc(hint)}</p>` : ''}
+            <div class="config-tile" role="listitem">
+                <span class="config-tile-label">${esc(label)}</span>
+                <span class="config-tile-value">${esc(String(value))}</span>
+                ${hint ? `<p class="config-tile-detail">${esc(hint)}</p>` : ''}
             </div>`;
 
         switch (this.statsTab) {
@@ -11129,7 +10651,6 @@ class DashboardConfig {
                         ${tile(this.t('config.statsWithShortcut', 'With a shortcut'), s.withShortcut)}
                         ${tile(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
                     </div>
-                    ${this.renderStatsHeadline(s)}
                     ${this.renderStatsInsights(s)}
                     ${this.renderStatsScore(s)}`;
         }
@@ -11139,10 +10660,6 @@ class DashboardConfig {
         const host = document.getElementById('config-stats-body');
         if (!host) { this.render(); return; }
         host.innerHTML = this.renderStatsBody();
-        // The stamp lives outside the body, so it would otherwise keep claiming
-        // the time of the first render while the numbers under it were fresh.
-        const stamp = host.parentElement?.querySelector('.config-stats-updated');
-        if (stamp) stamp.outerHTML = this.renderStatsTimestamp();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindStats(container);
     }
@@ -11199,36 +10716,23 @@ class DashboardConfig {
         if (!a.buckets.length) {
             return `
                 <div class="config-panel">
-                    <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Bookmarks used over time'))}</h3>
+                    <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Opens over time'))}</h3>
                     <div class="config-choices" role="group">${ranges}</div>
-                    <p class="config-panel-empty">${esc(this.t('config.statsNoActivity', 'No bookmarks were used in this period.'))}</p>
+                    <p class="config-panel-empty">${esc(this.t('config.statsNoActivity', 'No opens recorded in this period.'))}</p>
                 </div>`;
         }
 
         const W = 500;
-        // 108 = the old 72 plus half again, as the bars were too short to compare
-        // neighbouring days by eye.
-        const H = 108;
+        const H = 72;
         const gap = 3;
         const n = a.buckets.length;
         const max = Math.max(...a.buckets, 1);
         const barW = Math.max(1, Math.floor((W - gap * (n - 1)) / n));
-        const unit = this.statsActivityBucketUnit();
         const bars = a.buckets.map((val, i) => {
             const h = Math.round((val / max) * H);
             const x = i * (barW + gap);
             const opacity = val === 0 ? 0.15 : (0.75 + (val / max) * 0.25).toFixed(2);
-            const date = a.dateLabels?.[i] || a.labels[i] || '';
-            // The <g> is the hit target, not the painted bar: it spans the full
-            // height and half the gap either side, so a short bar — or an empty
-            // one — is still reachable. Focusable so the values are on keyboard
-            // too, per the same rule that puts them on hover.
-            return `<g class="config-chart-bar" tabindex="0" role="listitem"
-                       data-bar-date="${esc(date)}" data-bar-value="${esc(String(val))}" data-bar-unit="${esc(unit)}"
-                       aria-label="${esc(date)}: ${esc(String(val))} ${esc(this.t('config.statsActivityUsedLabel', 'bookmarks last used'))}">
-                <rect class="config-chart-bar-hit" x="${Math.max(0, x - gap / 2)}" y="0" width="${barW + gap}" height="${H}"></rect>
-                <rect class="config-chart-bar-fill" x="${x}" y="${H - h}" width="${barW}" height="${Math.max(h, val > 0 ? 2 : 0)}" rx="1" fill="var(--accent-color, #4a90d9)" opacity="${opacity}"></rect>
-            </g>`;
+            return `<rect x="${x}" y="${H - h}" width="${barW}" height="${Math.max(h, val > 0 ? 2 : 0)}" rx="1" fill="var(--accent-color, #4a90d9)" opacity="${opacity}"></rect>`;
         }).join('');
         const summary = a.labels.map((l, i) => `${l}: ${a.buckets[i]}`).join(', ');
         const srRows = a.labels.map((l, i) =>
@@ -11236,34 +10740,23 @@ class DashboardConfig {
 
         return `
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Bookmarks used over time'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.statsActivityNote', 'Each bar counts the bookmarks whose last use falls in that period. A bookmark appears once, on the day you last opened it.'))}</p>
+                <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Opens over time'))}</h3>
                 <div class="config-choices" role="group">${ranges}</div>
                 <div class="config-stat-figures">
+                    <span><strong>${esc(String(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityOpens', 'opens'))}</span>
                     <span><strong>${esc(String(a.activeCount))}</strong> ${esc(this.t('config.statsActivityActive', 'bookmarks used'))}</span>
-                    <span title="${esc(this.t('config.statsActivityLifetimeHint', 'Counted over the whole life of these bookmarks, not only this period — nextDash stores a total per bookmark, not a date for every open.'))}"><strong>${esc(String(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityLifetimeOpens', 'opens all-time'))}</span>
                     ${a.wow !== null ? `<span class="config-stat-trend config-stat-trend--${a.wow >= 0 ? 'up' : 'down'}">${a.wow >= 0 ? '▲' : '▼'} ${esc(String(Math.abs(a.wow)))}% ${esc(this.t('config.statsActivityVsPrev', 'vs previous period'))}</span>` : ''}
                 </div>
                 <div class="config-chart">
-                    <div class="config-chart-plot">
-                        <span class="config-chart-axis-y" aria-hidden="true">
-                            <span class="config-chart-axis-title">${esc(this.t('config.statsAxisBookmarksUsed', 'Bookmarks'))}</span>
-                            <span class="config-chart-axis-ticks">
-                                <span>${esc(String(max))}</span>
-                                <span>0</span>
-                            </span>
-                        </span>
-                        <span class="config-chart-plot-area">
-                            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="list"
-                                 aria-label="${esc(this.t('config.statsSparklineAriaView', 'Bookmarks last used per period'))}: ${esc(summary)}">${bars}</svg>
-                            <span class="config-chart-ticks" aria-hidden="true">${this.statsActivityTicks(a)}</span>
-                        </span>
+                    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+                         aria-label="${esc(this.t('config.statsSparklineAriaView', 'Opens per period'))}: ${esc(summary)}">${bars}</svg>
+                    <div class="config-chart-labels">
+                        <span>${esc(a.labels[0] || '')}</span>
+                        <span>${esc(a.labels[a.labels.length - 1] || '')}</span>
                     </div>
-                    <p class="config-chart-axis-x" aria-hidden="true">${esc(this.statsActivityAxisXLabel())}</p>
-                    <div class="config-chart-tip" role="status" aria-live="polite" hidden></div>
                 </div>
                 <table class="config-sr-only">
-                    <caption>${esc(this.t('config.statsSparklineTableCaptionView', 'Bookmarks last used per period'))}</caption>
+                    <caption>${esc(this.t('config.statsSparklineTableCaptionView', 'Opens per period'))}</caption>
                     <tbody>${srRows}</tbody>
                 </table>
             </div>`;
@@ -11272,69 +10765,6 @@ class DashboardConfig {
     statsRangeLabel(days) {
         if (days === 365) return this.t('config.statsRangeYear', '1 year');
         return this.t('config.statsRangeDays', '{n} days').replace('{n}', String(days));
-    }
-
-    /** The noun for one bucket, used in the tooltip's date line. */
-    statsActivityBucketUnit() {
-        const days = this.statsRange || 30;
-        if (days <= 30) return this.t('config.statsAxisUnitDay', 'day');
-        if (days <= 90) return this.t('config.statsAxisUnitWeek', 'week');
-        return this.t('config.statsAxisUnitMonth', 'month');
-    }
-
-    /**
-     * Dated ticks along the x-axis.
-     *
-     * The axis used to carry only its two end-caps, so a bar in the middle sat
-     * above no date at all. A handful of evenly spaced dates is enough to place
-     * any bar by eye, and the tooltip gives the exact one.
-     *
-     * How many fit depends on how wide they are, not on the bar count: a daily
-     * label is "Jul 6" but a weekly one is "Jul 29 – Aug 4", three times the
-     * width. Six of those ran into each other and off the panel, so the cap is
-     * derived from the longest label rather than fixed.
-     */
-    statsActivityTicks(a) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const dates = a.dateLabels || [];
-        const n = dates.length;
-        if (!n) return '';
-        // ~500px of plot at roughly 6px per character, plus a gap, is how many
-        // labels of this width can sit side by side without touching.
-        const widest = dates.reduce((w, d) => Math.max(w, String(d).length), 0);
-        const fits = Math.floor(500 / (widest * 6 + 16));
-        const maxTicks = Math.max(2, Math.min(6, fits, n));
-        const step = Math.max(1, Math.round((n - 1) / Math.max(1, maxTicks - 1)));
-        const picked = [];
-        for (let i = 0; i < n; i += step) picked.push(i);
-        // The last bar is the one people look for ("where does it end?"), so it
-        // is always labelled even when the stride would have skipped it.
-        if (picked[picked.length - 1] !== n - 1) picked.push(n - 1);
-        const last = picked.length - 1;
-        return picked.map((i, k) => {
-            const pct = n === 1 ? 50 : (i / (n - 1)) * 100;
-            // Centring every label would push the first one off the left edge
-            // and the last one past the right — visible as a date hanging
-            // outside the panel. The end labels anchor to their own edge
-            // instead; only the middle ones centre on their bar.
-            const edge = k === 0 ? ' config-chart-tick--first'
-                : k === last ? ' config-chart-tick--last' : '';
-            return `<span class="config-chart-tick${edge}" style="left:${pct.toFixed(2)}%">${esc(dates[i])}</span>`;
-        }).join('');
-    }
-
-    /**
-     * What one bar covers, which the selected range decides.
-     *
-     * computeActivity() buckets by day, week or month depending on the range, so
-     * a fixed "Date" would be wrong two times out of three — the whole reason to
-     * name the axis is to say what a bar actually is.
-     */
-    statsActivityAxisXLabel() {
-        const days = this.statsRange || 30;
-        if (days <= 30) return this.t('config.statsAxisPerDay', 'Day (oldest → newest)');
-        if (days <= 90) return this.t('config.statsAxisPerWeek', 'Week (oldest → newest)');
-        return this.t('config.statsAxisPerMonth', 'Month (oldest → newest)');
     }
 
     /** Coverage bars: how much of the collection carries tags, shortcuts, notes. */
@@ -11357,8 +10787,6 @@ class DashboardConfig {
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsCoverageTitle', 'Coverage'))}</h3>
-                ${this.statsScaleCaption(this.t('config.statsAxisShareOfCollection',
-                    'Share of all {total} bookmarks — 0% to 100%').replace('{total}', String(s.total)))}
                 ${bar(this.t('config.statsTaggedBookmarks', 'Tagged'), s.tagged, s.total)}
                 ${bar(this.t('config.statsWithShortcut', 'With a shortcut'), s.withShortcut, s.total)}
                 ${bar(this.t('config.statsWithNote', 'With a note'), s.withNote, s.total)}
@@ -11375,9 +10803,7 @@ class DashboardConfig {
     renderStatsTopLists(s) {
         const esc = (v) => this.dash.escapeHtml(v);
 
-        // axis: [what the rows are, what the bar measures]. The two callers count
-        // different things, so neither the label nor the measure can be hardcoded.
-        const rankedList = (title, rows, emptyText, hint, axis, total) => {
+        const rankedList = (title, rows, emptyText, hint) => {
             if (!rows.length) {
                 return `
                 <div class="config-panel">
@@ -11403,15 +10829,13 @@ class DashboardConfig {
                 <div class="config-panel">
                     <h3 class="config-panel-title">${esc(title)}</h3>
                     ${hint ? `<p class="config-panel-note">${esc(hint)}</p>` : ''}
-                    ${axis ? this.statsListAxisHeader(axis[0], axis[1]) : ''}
                     <ul class="config-dist-list">${items}</ul>
-                    ${this.statsListTruncationNote(rows.length, total)}
                 </div>`;
         };
 
         // Never-opened is a plain list: its second column is a URL, not a count,
         // so there is nothing to scale a bar against.
-        const plainList = (title, rows, emptyText, hint, total, cleanupKey) => {
+        const plainList = (title, rows, emptyText, hint) => {
             const items = rows.length
                 ? rows.map(([label, sub]) => `
                     <li class="config-crud-row">
@@ -11428,97 +10852,16 @@ class DashboardConfig {
                     ${items
                         ? `<ul class="config-crud-list">${items}</ul>`
                         : `<p class="config-panel-empty">${esc(emptyText)}</p>`}
-                    ${this.statsListTruncationNote(rows.length, total, cleanupKey)}
                 </div>`;
         };
 
-        const totals = s.listTotals || {};
         return rankedList(this.t('config.statsTopOpened', 'Most opened'), s.topOpened,
-                this.t('config.statsNoOpens', 'Nothing has been opened yet.'), '',
-                [this.t('config.statsAxisBookmark', 'Bookmark'), this.t('config.statsAxisOpens', 'Opens')],
-                totals.topOpened)
+                this.t('config.statsNoOpens', 'Nothing has been opened yet.'))
             + rankedList(this.t('config.statsTopTags', 'Most used tags'), s.topTags,
-                this.t('config.noTagsYet', 'No tags yet.'), '',
-                [this.t('config.statsAxisTag', 'Tag'), this.t('config.statsAxisBookmarks', 'Bookmarks')],
-                totals.topTags)
-            // 'never' is the cleanup filter that reproduces this list in full,
-            // so the panel can hand off the rows it could not show.
+                this.t('config.noTagsYet', 'No tags yet.'))
             + plainList(this.t('config.statsNeverOpenedTitle', 'Never opened'), s.neverOpenedList,
                 this.t('config.statsAllOpened', 'Everything has been opened at least once.'),
-                this.t('config.statsNeverOpenedHint', 'Candidates to tidy up — they have never been used.'),
-                totals.neverOpened, 'never');
-    }
-
-    /**
-     * Column header for the bar lists, naming what the label column and the
-     * measure column hold.
-     *
-     * These lists are not x/y plots, so they have no axes to title — but they
-     * have the same problem an unlabelled axis has: a name, a bar and a number,
-     * with nothing saying what the number counts. This is the equivalent
-     * header, and it doubles as the list's own axis legend.
-     */
-    /**
-     * One-line caption naming the scale a set of full-width bars is drawn on.
-     *
-     * For the panels where every bar shares one axis (coverage is 0–100% of the
-     * collection), so the scale is stated once above them rather than repeated
-     * on each row.
-     */
-    statsScaleCaption(text) {
-        return `<p class="config-chart-scale" aria-hidden="true">${this.dash.escapeHtml(text)}</p>`;
-    }
-
-    /**
-     * The same caption pair for the label/value lists that have no bar column.
-     *
-     * .config-stat-detail is a two-column flex row, not the three-column grid
-     * .config-dist-row uses, so its header has to match that shape or the
-     * measure name lands over the wrong column.
-     */
-    statsPairAxisHeader(labelText, valueText) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        return `
-            <div class="config-dist-axis config-dist-axis--pair" aria-hidden="true">
-                <span>${esc(labelText)}</span>
-                <span>${esc(valueText)}</span>
-            </div>`;
-    }
-
-    /**
-     * "20 of 214 shown" under a list that had to cut off.
-     *
-     * These panels are leaderboards, so cutting off is right — but saying
-     * nothing was not. "Never opened" is the clearest case: it heads itself
-     * "candidates to tidy up", showed twenty rows, and let you believe that was
-     * all, while the cleanup panel beside it counted two hundred.
-     *
-     * Where a cleanup filter can reproduce the list in full, the note carries
-     * the button that does it rather than leaving the rest unreachable.
-     */
-    statsListTruncationNote(shown, total, cleanupKey) {
-        const count = Number(total) || 0;
-        if (!shown || count <= shown) return '';
-        const esc = (v) => this.dash.escapeHtml(v);
-        const text = this.t('config.statsListTruncated', '{shown} of {total} shown')
-            .replace('{shown}', String(shown)).replace('{total}', String(count));
-        const button = cleanupKey && DashboardConfig.CLEANUP_FILTERS[cleanupKey]
-            ? `<button type="button" class="config-btn config-btn--small" data-cleanup-goto="${esc(cleanupKey)}">${esc(this.t('config.statsListShowAll', 'Show all in bookmarks'))}</button>`
-            : '';
-        return `
-            <div class="config-list-truncated">
-                <span>${esc(text)}</span>
-                ${button}
-            </div>`;
-    }
-
-    statsListAxisHeader(labelText, valueText) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        return `
-            <div class="config-dist-axis" aria-hidden="true">
-                <span class="config-dist-axis-label">${esc(labelText)}</span>
-                <span class="config-dist-axis-value">${esc(valueText)}</span>
-            </div>`;
+                this.t('config.statsNeverOpenedHint', 'Candidates to tidy up — they have never been used.'));
     }
 
     /** Where the bookmarks sit: per page, per category. */
@@ -11538,16 +10881,10 @@ class DashboardConfig {
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsPerPage', 'Bookmarks per page'))}</h3>
-                ${this.statsListAxisHeader(
-                    this.t('config.statsAxisPage', 'Page'),
-                    this.t('config.statsAxisBookmarks', 'Bookmarks'))}
                 <ul class="config-dist-list">${rows(s.perPage)}</ul>
             </div>
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsPerCategory', 'Bookmarks per category'))}</h3>
-                ${this.statsListAxisHeader(
-                    this.t('config.statsAxisCategory', 'Category'),
-                    this.t('config.statsAxisBookmarks', 'Bookmarks'))}
                 <ul class="config-dist-list">${rows(s.perCategory)}</ul>
             </div>`;
     }
@@ -11586,9 +10923,6 @@ class DashboardConfig {
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsCategoryEffTitle', 'Opens per bookmark, by category'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.statsCategoryEffNote', 'How often a bookmark in this category gets opened. A low figure on a large category is one you built but do not use.'))}</p>
-                ${this.statsListAxisHeader(
-                    this.t('config.statsAxisCategory', 'Category'),
-                    this.t('config.statsAxisOpensPerBookmark', 'Opens per bookmark'))}
                 <ul class="config-dist-list">${rows}</ul>
             </div>`;
     }
@@ -11604,13 +10938,7 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const c = s.concentration || {};
         if (!c.totalOpens) {
-            // Returning '' left a gap between two panels, which reads as a
-            // rendering fault rather than as "you have not opened anything yet".
-            return `
-                <div class="config-panel">
-                    <h3 class="config-panel-title">${esc(this.t('config.statsConcentrationTitle', 'Where your usage sits'))}</h3>
-                    <p class="config-panel-empty">${esc(this.t('config.statsConcentrationEmpty', 'Nothing has been opened yet, so there is no usage to weigh up.'))}</p>
-                </div>`;
+            return '';
         }
         const sentence = this.t(
             'config.statsConcentrationBody',
@@ -11622,8 +10950,6 @@ class DashboardConfig {
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsConcentrationTitle', 'Where your usage sits'))}</h3>
-                ${this.statsScaleCaption(this.t('config.statsAxisShareOfOpens',
-                    'Share of all {total} opens — 0% to 100%').replace('{total}', String(c.totalOpens)))}
                 <div class="config-ratio">
                     <div class="config-ratio-head">
                         <span class="config-ratio-label">${esc(this.t('config.statsConcentrationTop', 'Top {n}').replace('{n}', String(c.topCount)))}</span>
@@ -11696,61 +11022,6 @@ class DashboardConfig {
                     ${line(this.t('config.statsStale90', 'Not opened in 90 days'), s.stale90)}
                     ${line(this.t('config.statsUntagged', 'Untagged'), s.total - s.tagged)}
                 </ul>
-            </div>`;
-    }
-
-    /**
-     * How this collection is actually used, in one line.
-     *
-     * Everything below already states facts — 94% has a shortcut, 12% is
-     * tagged, the top ten account for 43% of opens — but each sits on a
-     * different tab, so the conclusion they add up to was never drawn anywhere.
-     * This says which way of reaching for a bookmark is yours, which is the one
-     * thing a stats page ought to be able to answer at a glance.
-     *
-     * Deliberately one claim, not a second list: the insights panel underneath
-     * already enumerates, and repeating it louder would not be a summary.
-     */
-    renderStatsHeadline(s) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const all = this.dash.allBookmarks || [];
-        const total = all.length;
-        if (!total) return '';
-
-        const shortcutPct = Math.round((s.withShortcut / total) * 100);
-        const taggedPct = Math.round((s.tagged / total) * 100);
-        const concentration = s.concentration || {};
-        const share = Number(concentration.share) || 0;
-        const everOpened = Number(concentration.usedCount) || 0;
-
-        // Ordered by how much each says about a habit, so the strongest signal
-        // wins rather than whichever happens to be first.
-        let text;
-        if (everOpened === 0) {
-            text = this.t('config.statsHeadlineUnused',
-                'Nothing has been opened yet, so there is no habit to read from this collection.');
-        } else if (shortcutPct >= 60 && shortcutPct > taggedPct) {
-            text = this.t('config.statsHeadlineShortcuts',
-                'You reach for bookmarks by keystroke: {pct}% carry a shortcut, against {tagPct}% carrying tags.')
-                .replace('{pct}', String(shortcutPct)).replace('{tagPct}', String(taggedPct));
-        } else if (taggedPct >= 60) {
-            text = this.t('config.statsHeadlineTags',
-                'You organise by tag: {pct}% of bookmarks carry one, against {shortcutPct}% carrying a shortcut.')
-                .replace('{pct}', String(taggedPct)).replace('{shortcutPct}', String(shortcutPct));
-        } else if (share >= 50) {
-            text = this.t('config.statsHeadlineNarrow',
-                'A narrow habit on a broad collection: your busiest {top} bookmarks account for {share}% of all opens.')
-                .replace('{top}', String(concentration.topCount)).replace('{share}', String(share));
-        } else {
-            text = this.t('config.statsHeadlineBroad',
-                'Your usage is spread out: {used} of {total} bookmarks have been opened, with no small group dominating.')
-                .replace('{used}', String(everOpened)).replace('{total}', String(total));
-        }
-
-        return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.statsHeadlineTitle', 'How you use this collection'))}</h3>
-                <p class="config-stats-headline">${esc(text)}</p>
             </div>`;
     }
 
@@ -11901,11 +11172,10 @@ class DashboardConfig {
                     <td>${esc(String(Number(f.useCount) || 0))}</td>
                 </tr>`).join('');
 
-        // One accessible name per tile; see the overview tile for why.
         const tile = (label, value) => `
-            <div class="config-tile" role="listitem" aria-label="${esc(label)}: ${esc(String(value))}">
-                <span class="config-tile-label" aria-hidden="true">${esc(label)}</span>
-                <span class="config-tile-value" aria-hidden="true">${esc(String(value))}</span>
+            <div class="config-tile" role="listitem">
+                <span class="config-tile-label">${esc(label)}</span>
+                <span class="config-tile-value">${esc(String(value))}</span>
             </div>`;
 
         return `
@@ -12043,35 +11313,6 @@ class DashboardConfig {
      * Everything derivable from the shell's own bookmark/page copies, including
      * the cleanup score and the activity buckets.
      */
-    /**
-     * Labels a `pageId::category` key for the statistics panels.
-     *
-     * knownCategories() is page-scoped — it reads bmPageFilter — so calling it
-     * here would label against whatever filter the Bookmarks section was left
-     * on. This walks every page instead, and only prefixes the page name when
-     * the same category name exists on more than one page: without that, every
-     * row on a single-page install would read "main · Development".
-     */
-    statsCategoryLabeller() {
-        const labels = new Map();
-        const nameCounts = new Map();
-        (this.dash.pages || []).forEach((p) => {
-            this.knownCategories(p.id).forEach((c) => {
-                const key = DashboardConfig.categoryFilterKey(p.id, c.id);
-                if (labels.has(key)) return;
-                labels.set(key, { name: c.label, page: this.pageLabel(p.id) });
-                nameCounts.set(c.label, (nameCounts.get(c.label) || 0) + 1);
-            });
-        });
-        return (key) => {
-            const hit = labels.get(key);
-            // A category whose page is gone still has bookmarks pointing at it,
-            // so fall back to the bare name rather than showing "p2::dev".
-            if (!hit) return DashboardConfig.parseCategoryFilter(key).categoryId || String(key);
-            return (nameCounts.get(hit.name) || 0) > 1 ? `${hit.page} · ${hit.name}` : hit.name;
-        };
-    }
-
     computeStats() {
         const all = this.dash.allBookmarks || [];
         const pages = this.dash.pages || [];
@@ -12099,16 +11340,9 @@ class DashboardConfig {
             tags.forEach((t) => tagCounts.set(t, (tagCounts.get(t) || 0) + 1));
             if (tags.length) tagged += 1;
             if (b.category) {
-                // Key on page::category, not on the bare category name. The
-                // Categories tile already counted that way, so keying the panels
-                // on the name alone merged "Development" on one page with the
-                // same name on another — the tile said 2 while the panel below
-                // showed one row, and its opens-per-bookmark averaged two
-                // unrelated categories together.
-                const key = DashboardConfig.categoryFilterKey(b.pageId, b.category);
-                categoryKeys.add(key);
-                perCategoryCount.set(key, (perCategoryCount.get(key) || 0) + 1);
-                perCategoryOpens.set(key, (perCategoryOpens.get(key) || 0) + Number(b.openCount || 0));
+                categoryKeys.add(`${b.pageId}::${b.category}`);
+                perCategoryCount.set(b.category, (perCategoryCount.get(b.category) || 0) + 1);
+                perCategoryOpens.set(b.category, (perCategoryOpens.get(b.category) || 0) + Number(b.openCount || 0));
             }
             if (b.shortcut) withShortcut += 1;
             if (b.monitor === true) monitored += 1;
@@ -12136,9 +11370,9 @@ class DashboardConfig {
         const duplicateUrls = duplicateUrlList.length;
         const shortcutConflicts = shortcutConflictList.length;
 
-        const catLabel = this.statsCategoryLabeller();
+        const catLabels = new Map(this.knownCategories().map((c) => [c.id, c.label]));
         const perCategory = [...perCategoryCount.entries()]
-            .map(([id, n]) => [catLabel(id), n])
+            .map(([id, n]) => [catLabels.get(id) || id, n])
             .sort((a, b) => b[1] - a[1]);
 
         // Opens per bookmark, per category. The raw open total just restates
@@ -12146,7 +11380,7 @@ class DashboardConfig {
         // category you built and then never used.
         const categoryEffectiveness = [...perCategoryCount.entries()]
             .map(([id, n]) => ({
-                label: catLabel(id),
+                label: catLabels.get(id) || id,
                 count: n,
                 opens: perCategoryOpens.get(id) || 0,
                 perBookmark: n > 0 ? (perCategoryOpens.get(id) || 0) / n : 0,
@@ -12158,27 +11392,16 @@ class DashboardConfig {
             all.filter((b) => String(b.pageId) === String(p.id)).length,
         ]);
 
-        // The ranked panels show a leaderboard, not the whole collection, so
-        // they cut off — but the count behind each cut is carried alongside, or
-        // a panel headed "candidates to tidy up" silently claims there are ten
-        // when there are two hundred, contradicting the cleanup panel next to it.
-        const LIST_LIMIT = DashboardConfig.STATS_LIST_LIMIT;
-        const topTagsAll = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
-        const topTags = topTagsAll.slice(0, LIST_LIMIT);
-        const topOpenedAll = all
+        const topTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const topOpened = all
             .filter((b) => Number(b.openCount || 0) > 0)
             .sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0))
+            .slice(0, 10)
             .map((b) => [b.name || b.url, Number(b.openCount || 0)]);
-        const topOpened = topOpenedAll.slice(0, LIST_LIMIT);
-        const neverOpenedAll = all
+        const neverOpenedList = all
             .filter((b) => !Number(b.openCount || 0) && !Number(b.lastOpened || 0))
+            .slice(0, 10)
             .map((b) => [b.name || b.url, b.url]);
-        const neverOpenedList = neverOpenedAll.slice(0, LIST_LIMIT);
-        const listTotals = {
-            topTags: topTagsAll.length,
-            topOpened: topOpenedAll.length,
-            neverOpened: neverOpenedAll.length,
-        };
 
         // How much of the total usage the busiest handful accounts for. A high
         // share means the collection is broad but the habit is narrow, which no
@@ -12229,11 +11452,6 @@ class DashboardConfig {
             topTags,
             topOpened,
             neverOpenedList,
-            listTotals,
-            // Untruncated, for the CSV: an export that quietly stops at 20 rows
-            // is worse than no export, because it looks complete.
-            topTagsAll,
-            topOpenedAll,
             cleanup: this.computeCleanupScore(all, { neverOpened, stale90, duplicateUrls, shortcutConflicts }),
             activity: this.computeActivity(all),
         };
@@ -12301,20 +11519,8 @@ class DashboardConfig {
     }
 
     /**
-     * Bookmarks last used, bucketed over the chosen range. Buckets are days for
-     * a week or a month and weeks beyond that, so the bar count stays readable.
-     *
-     * Each bookmark counts once, in the bucket holding its lastOpened. It used
-     * to add its whole openCount there instead, which put a lifetime of use on
-     * a single day: a link opened 100 times over a year, last touched on
-     * Tuesday, drew a bar of 100 on Tuesday. The chart called itself "opens over
-     * time" while showing no such thing.
-     *
-     * A real opens-per-day series is not derivable here — a bookmark stores one
-     * lastOpened and a cumulative openCount, with no per-open history anywhere
-     * (the activity log is a diagnostic file, not a queryable series). So the
-     * chart now measures what the data can actually answer: how many bookmarks
-     * were last reached for in each period. Every label says so.
+     * Opens bucketed over the chosen range. Buckets are days for a week or a
+     * month and weeks beyond that, so the bar count stays readable.
      */
     computeActivity(all) {
         const days = this.statsRange || 30;
@@ -12325,26 +11531,12 @@ class DashboardConfig {
         const buckets = new Array(bucketCount).fill(0);
         const cutoff = now - days * DAY;
 
-        // One predicate for the bars and the headline figures beneath them, so a
-        // bookmark can never be counted in "42 bookmarks used" while missing
-        // from every bar.
-        const inWindow = (b) => {
-            const last = Number(b.lastOpened || 0);
-            return Number.isFinite(last) && last > 0 && last >= cutoff;
-        };
-
         all.forEach((b) => {
-            if (!inWindow(b)) return;
             const last = Number(b.lastOpened || 0);
-            // A timestamp ahead of now (clock skew between devices, or an import
-            // carrying a bad date) makes age negative, and floor() of that is
-            // negative too — which pushed idx past the end and wrote outside the
-            // array, stretching it with holes so every sum came out NaN. Clamping
-            // both ends folds a future date into the newest bucket instead.
+            if (!last || last < cutoff) return;
             const age = now - last;
-            const offset = Math.floor(age / (bucketDays * DAY));
-            const idx = bucketCount - 1 - Math.max(0, Math.min(bucketCount - 1, offset));
-            buckets[idx] += 1;
+            const idx = bucketCount - 1 - Math.min(bucketCount - 1, Math.floor(age / (bucketDays * DAY)));
+            buckets[idx] += Math.max(1, Number(b.openCount || 1));
         });
 
         const labels = buckets.map((_, i) => {
@@ -12354,27 +11546,8 @@ class DashboardConfig {
             return this.t('config.statsSparklineDaysAgoView', '{n}d ago').replace('{n}', String(agoDays));
         });
 
-        // The actual date each bar covers. "12d ago" is fine as an axis end-cap
-        // but useless in a tooltip, where the question is which day this is.
-        const dateFmt = new Intl.DateTimeFormat(this.dash.settings?.language || undefined,
-            { day: 'numeric', month: 'short' });
-        const dateLabels = buckets.map((_, i) => {
-            const agoBuckets = bucketCount - 1 - i;
-            const end = new Date(now - agoBuckets * bucketDays * DAY);
-            if (bucketDays === 1) return dateFmt.format(end);
-            // A multi-day bucket is a span, so name both ends of it.
-            const start = new Date(end.getTime() - (bucketDays - 1) * DAY);
-            return `${dateFmt.format(start)} – ${dateFmt.format(end)}`;
-        });
-
-        const activeCount = all.filter(inWindow).length;
-        // Lifetime opens of the bookmarks used in this window — a real figure,
-        // but not one the bars can carry, since those opens are spread over
-        // history we do not have. Summing the buckets would now just restate
-        // activeCount, so this stays a separate headline number.
-        const totalOpens = all.reduce((sum, b) => (
-            inWindow(b) ? sum + Math.max(1, Number(b.openCount || 1)) : sum
-        ), 0);
+        const activeCount = all.filter((b) => Number(b.lastOpened || 0) >= cutoff).length;
+        const totalOpens = buckets.reduce((a, b) => a + b, 0);
 
         // Compare the latter half of the range with the former, which is what the
         // old tab's week-over-week figure did for a 7-day window.
@@ -12387,7 +11560,7 @@ class DashboardConfig {
             else if (recent > 0) wow = 100;
         }
 
-        return { buckets, labels, dateLabels, activeCount, totalOpens, wow, bucketDays };
+        return { buckets, labels, activeCount, totalOpens, wow, bucketDays };
     }
 
     renderStatsHealth() {
@@ -12407,8 +11580,6 @@ class DashboardConfig {
                 <span class="config-stat-penalty">${esc(String(n))}</span>
             </li>`;
         return `
-            ${this.statsScaleCaption(this.t('config.statsAxisShareHealthy',
-                'Healthy share of {total} tracked bookmarks — 0% to 100%').replace('{total}', String(total)))}
             <div class="config-ratio">
                 <div class="config-ratio-head">
                     <span class="config-ratio-label">${esc(this.t('config.statsHealthy', 'Healthy'))}</span>
@@ -12418,9 +11589,6 @@ class DashboardConfig {
                     <span class="config-bar-fill config-bar-fill--good" style="width:${pct}%"></span>
                 </div>
             </div>
-            ${this.statsPairAxisHeader(
-                this.t('config.statsAxisState', 'State'),
-                this.t('config.statsAxisBookmarks', 'Bookmarks'))}
             <ul class="config-stat-details">
                 ${line(this.t('config.statsHealthy', 'Healthy'), h.healthy, 'good')}
                 ${line(this.t('config.statsBroken', 'Broken'), h.broken, h.broken ? 'bad' : '')}
@@ -12518,11 +11686,10 @@ class DashboardConfig {
             ? Number(agg.sumRetentionMs || 0) / Number(agg.retentionCount)
             : 0;
 
-        // One accessible name per tile; see the overview tile for why.
         const tile = (label, value) => `
-            <div class="config-tile" role="listitem" aria-label="${esc(label)}: ${esc(String(value))}">
-                <span class="config-tile-label" aria-hidden="true">${esc(label)}</span>
-                <span class="config-tile-value" aria-hidden="true">${esc(String(value))}</span>
+            <div class="config-tile" role="listitem">
+                <span class="config-tile-label">${esc(label)}</span>
+                <span class="config-tile-value">${esc(String(value))}</span>
             </div>`;
 
         // Inflow per source, current inbox against lifetime, so a source that
@@ -12549,7 +11716,6 @@ class DashboardConfig {
             : '';
 
         return `
-            ${this.renderStatsInboxTrend(agg)}
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsInboxSubCurrent', 'Current inbox'))}</h3>
                 <div class="config-tiles" role="list">
@@ -12601,135 +11767,11 @@ class DashboardConfig {
     }
 
     /**
-     * Inbox throughput per day: what came in against what was dealt with.
-     *
-     * The server has kept this all along — inbox-stats.json carries dailyBuckets
-     * keyed YYYY-MM-DD, and its own comment says "for the trend chart" — but
-     * nothing ever drew it, so the Inbox tab showed lifetime totals and no sense
-     * of whether the backlog was growing or shrinking.
-     *
-     * It is also the only honest time series in Statistics. The activity chart
-     * can only bucket bookmarks by their single lastOpened; here each day was
-     * genuinely recorded as it happened.
-     *
-     * Two series, so a legend is required rather than optional; triaged stacks
-     * promoted and discarded, since together they are "dealt with" and the split
-     * between them is secondary.
-     */
-    renderStatsInboxTrend(agg) {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const daily = agg?.dailyBuckets && typeof agg.dailyBuckets === 'object' ? agg.dailyBuckets : null;
-        const keys = daily ? Object.keys(daily).sort() : [];
-        if (!keys.length) return '';
-
-        // Days with no events are absent from the map, not zero — without
-        // filling them a quiet week would compress into a misleadingly busy
-        // chart. Bounded by the range the user already picked for activity.
-        const DAY = 86400000;
-        const days = Math.min(this.statsRange || 30, 90);
-        const today = new Date();
-        const iso = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-        const series = [];
-        for (let i = days - 1; i >= 0; i--) {
-            const date = new Date(today.getTime() - i * DAY);
-            const key = iso(date);
-            const b = daily[key] || {};
-            series.push({
-                key,
-                date,
-                added: Number(b.added || 0),
-                triaged: Number(b.promoted || 0) + Number(b.deleted || 0),
-            });
-        }
-        // Nothing inside the window, even though history exists further back.
-        if (!series.some((d) => d.added || d.triaged)) {
-            return `
-                <div class="config-panel">
-                    <h3 class="config-panel-title">${esc(this.t('config.statsInboxTrendTitle', 'Inbox flow per day'))}</h3>
-                    <p class="config-panel-empty">${esc(this.t('config.statsInboxTrendEmpty', 'No inbox activity in this period.'))}</p>
-                </div>`;
-        }
-
-        const W = 500;
-        const H = 108;
-        const n = series.length;
-        const slot = W / n;
-        const barW = Math.max(1, (slot - 3) / 2);
-        const max = Math.max(...series.map((d) => Math.max(d.added, d.triaged)), 1);
-        const fmt = new Intl.DateTimeFormat(this.dash.settings?.language || undefined,
-            { day: 'numeric', month: 'short' });
-
-        const addedLabel = this.t('config.statsInboxTrendAdded', 'Added');
-        const triagedLabel = this.t('config.statsInboxTrendTriaged', 'Dealt with');
-        const bars = series.map((d, i) => {
-            const x = i * slot;
-            const hA = Math.round((d.added / max) * H);
-            const hT = Math.round((d.triaged / max) * H);
-            const label = `${fmt.format(d.date)}: ${d.added} ${addedLabel}, ${d.triaged} ${triagedLabel}`;
-            return `<g class="config-chart-bar" tabindex="0" role="listitem"
-                       data-bar-date="${esc(fmt.format(d.date))}"
-                       data-bar-value="${esc(String(d.added))}"
-                       data-bar-value2="${esc(String(d.triaged))}"
-                       aria-label="${esc(label)}">
-                <rect class="config-chart-bar-hit" x="${x.toFixed(2)}" y="0" width="${slot.toFixed(2)}" height="${H}"></rect>
-                <rect class="config-chart-bar-fill config-chart-bar-fill--a" x="${x.toFixed(2)}" y="${H - hA}" width="${barW.toFixed(2)}" height="${Math.max(hA, d.added > 0 ? 2 : 0)}" rx="1"></rect>
-                <rect class="config-chart-bar-fill config-chart-bar-fill--b" x="${(x + barW + 2).toFixed(2)}" y="${H - hT}" width="${barW.toFixed(2)}" height="${Math.max(hT, d.triaged > 0 ? 2 : 0)}" rx="1"></rect>
-            </g>`;
-        }).join('');
-
-        const srRows = series.map((d) =>
-            `<tr><th scope="row">${esc(fmt.format(d.date))}</th><td>${esc(String(d.added))}</td><td>${esc(String(d.triaged))}</td></tr>`).join('');
-        const totalAdded = series.reduce((s2, d) => s2 + d.added, 0);
-        const totalTriaged = series.reduce((s2, d) => s2 + d.triaged, 0);
-        const net = totalAdded - totalTriaged;
-
-        return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.statsInboxTrendTitle', 'Inbox flow per day'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.statsInboxTrendNote',
-                    'What arrived against what you dealt with. Recorded per day as it happened, so this is real history rather than a snapshot.'))}</p>
-                <div class="config-chart-legend">
-                    <span class="config-chart-legend-item"><span class="config-chart-swatch config-chart-swatch--a"></span>${esc(addedLabel)}</span>
-                    <span class="config-chart-legend-item"><span class="config-chart-swatch config-chart-swatch--b"></span>${esc(triagedLabel)}</span>
-                </div>
-                <div class="config-stat-figures">
-                    <span><strong>${esc(String(totalAdded))}</strong> ${esc(addedLabel.toLowerCase())}</span>
-                    <span><strong>${esc(String(totalTriaged))}</strong> ${esc(triagedLabel.toLowerCase())}</span>
-                    <span class="config-stat-trend config-stat-trend--${net > 0 ? 'down' : 'up'}">${esc(net > 0
-                        ? this.t('config.statsInboxTrendGrowing', 'backlog grew by {n}').replace('{n}', String(net))
-                        : this.t('config.statsInboxTrendShrinking', 'backlog shrank by {n}').replace('{n}', String(Math.abs(net))))}</span>
-                </div>
-                <div class="config-chart">
-                    <div class="config-chart-plot">
-                        <span class="config-chart-axis-y" aria-hidden="true">
-                            <span class="config-chart-axis-title">${esc(this.t('config.statsInboxTrendAxisY', 'Items'))}</span>
-                            <span class="config-chart-axis-ticks"><span>${esc(String(max))}</span><span>0</span></span>
-                        </span>
-                        <span class="config-chart-plot-area">
-                            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="list"
-                                 aria-label="${esc(this.t('config.statsInboxTrendTitle', 'Inbox flow per day'))}">${bars}</svg>
-                            <span class="config-chart-ticks" aria-hidden="true">${this.statsActivityTicks({
-                                dateLabels: series.map((d) => fmt.format(d.date)),
-                            })}</span>
-                        </span>
-                    </div>
-                    <p class="config-chart-axis-x" aria-hidden="true">${esc(this.t('config.statsAxisPerDay', 'Day (oldest → newest)'))}</p>
-                    <div class="config-chart-tip" role="status" aria-live="polite" hidden></div>
-                </div>
-                <table class="config-sr-only">
-                    <caption>${esc(this.t('config.statsInboxTrendTitle', 'Inbox flow per day'))}</caption>
-                    <thead><tr><th scope="col">${esc(this.t('config.statsAxisPerDay', 'Day'))}</th><th scope="col">${esc(addedLabel)}</th><th scope="col">${esc(triagedLabel)}</th></tr></thead>
-                    <tbody>${srRows}</tbody>
-                </table>
-            </div>`;
-    }
-
-    /**
      * The health endpoint already aggregates the counts, so read its summary
      * rather than re-deriving them from the issue list (which only carries the
      * bookmarks that have something wrong with them).
      */
-    async loadStatsHealth() {
+    async loadStats() {
         try {
             const res = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmark-health');
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -12754,108 +11796,20 @@ class DashboardConfig {
         }
     }
 
-    /**
-     * Per-bar readout on the activity chart.
-     *
-     * On a bar chart the mark is the hit target — no crosshair — so each bar
-     * carries its own tooltip on hover *and* on focus, because a value that
-     * only exists under a pointer is not reachable by keyboard. The screen
-     * reader gets the same numbers from the bar's aria-label and the sr-only
-     * table, so this layer enhances rather than gates.
-     *
-     * Values are written with textContent: the labels are dates we format, but
-     * the rule holds regardless — never build tooltip DOM by string concat.
-     */
-    bindActivityChartTooltip(container) {
-        // Every chart on the page, not just the first: the Inbox tab has its own
-        // trend chart, and binding only container.querySelector('.config-chart')
-        // would leave whichever came second inert.
-        container.querySelectorAll('.config-chart').forEach((chart) => {
-            this.bindOneChartTooltip(chart);
-        });
-    }
-
-    bindOneChartTooltip(chart) {
-        const tip = chart?.querySelector('.config-chart-tip');
-        if (!chart || !tip) return;
-
-        const openLabel = this.t('config.statsActivityUsedLabel', 'bookmarks last used');
-        const hide = () => {
-            tip.hidden = true;
-            chart.querySelectorAll('.config-chart-bar.is-active')
-                .forEach((el) => el.classList.remove('is-active'));
-        };
-
-        const show = (bar) => {
-            const value = bar.getAttribute('data-bar-value') || '0';
-            const value2 = bar.getAttribute('data-bar-value2');
-            const date = bar.getAttribute('data-bar-date') || '';
-            tip.replaceChildren();
-            // Value leads, label follows: the reader already knows which bar
-            // they are pointing at and wants the number.
-            if (value2 === null) {
-                const strong = document.createElement('strong');
-                strong.textContent = `${value} ${openLabel}`;
-                tip.append(strong);
-            } else {
-                // Two series: both are listed, each keyed by its own colour, so
-                // the pointer never has to land on the right one of the pair.
-                const rows = [
-                    [value, this.t('config.statsInboxTrendAdded', 'Added'), 'a'],
-                    [value2, this.t('config.statsInboxTrendTriaged', 'Dealt with'), 'b'],
-                ];
-                rows.forEach(([n, label, key]) => {
-                    const row = document.createElement('strong');
-                    row.className = 'config-chart-tip-row';
-                    const swatch = document.createElement('span');
-                    swatch.className = `config-chart-swatch config-chart-swatch--${key}`;
-                    const text = document.createElement('span');
-                    text.textContent = `${n} ${label}`;
-                    row.append(swatch, text);
-                    tip.append(row);
-                });
-            }
-            const when = document.createElement('span');
-            when.textContent = date;
-            tip.append(when);
-            tip.hidden = false;
-
-            chart.querySelectorAll('.config-chart-bar.is-active')
-                .forEach((el) => el.classList.remove('is-active'));
-            bar.classList.add('is-active');
-
-            // Follow the bar horizontally, clamped so the box cannot hang off
-            // either end of the panel.
-            const barBox = bar.getBoundingClientRect();
-            const chartBox = chart.getBoundingClientRect();
-            const centre = barBox.left + barBox.width / 2 - chartBox.left;
-            const half = tip.offsetWidth / 2;
-            const clamped = Math.max(half, Math.min(centre, chartBox.width - half));
-            tip.style.left = `${clamped}px`;
-        };
-
-        chart.querySelectorAll('.config-chart-bar').forEach((bar) => {
-            bar.addEventListener('pointerenter', () => show(bar));
-            bar.addEventListener('pointerleave', hide);
-            bar.addEventListener('focus', () => show(bar));
-            bar.addEventListener('blur', hide);
-        });
-        // The <g> elements do not tile the plot — the SVG has padding around
-        // them — so leaving a bar sideways lands on the svg, not on another bar.
-        // Both leave paths are needed: the bar's own, and the chart's for when
-        // the pointer exits the panel altogether.
-        chart.addEventListener('pointerleave', hide);
-    }
-
     bindStats(container) {
         this.bindSubTabStrip(container, 'data-stats-tab', (tab) => {
             {
                 if (tab === this.statsTab) return;
                 this.statsTab = tab;
                 this.restoreConfigHash();
-                // Fetched on first open rather than with the section: each
-                // tab's endpoint is of no use to the other tabs.
-                this.loadStatsTabData(tab);
+                // Fetched on first open rather than with the section: the two
+                // inbox endpoints are of no use on the other tabs.
+                if (tab === 'inbox' && this._statsInboxItems === undefined) {
+                    void this.loadStatsInbox();
+                }
+                if (tab === 'activity' && this._statsFinders === undefined) {
+                    void this.loadStatsFinders();
+                }
                 // Only the body changes; repainting the tab strip too would
                 // rebuild the buttons under the pointer that just clicked one.
                 this.repaintStatsBody();
@@ -12867,11 +11821,9 @@ class DashboardConfig {
                 const next = Number(btn.getAttribute('data-stats-range'));
                 if (!next || next === this.statsRange) return;
                 this.statsRange = next;
-                this.saveStatsRange(next);
                 this.repaintStatsBody();
             });
         });
-        this.bindActivityChartTooltip(container);
         container.querySelectorAll('[data-stats-action]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-stats-action');
@@ -12879,7 +11831,6 @@ class DashboardConfig {
                 // Duplicates are the actionable half of this panel, and health
                 // is where they can actually be merged.
                 if (action === 'open-health') this.openViewFromTile('health', 'duplicate');
-                if (action === 'add-bookmark') this.openAddBookmarkModal();
             });
         });
         // Cleanup candidates hand off to the bookmarks list, which is where the
@@ -12889,7 +11840,7 @@ class DashboardConfig {
                 const key = btn.getAttribute('data-cleanup-goto');
                 if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return;
                 this.bmCleanupFilter = key;
-                this.bmTagFilter = [];
+                this.bmTagFilter = '';
                 // A stale search or category from an earlier visit would narrow
                 this.bmQuery = '';
                 this.bmPageFilter = '';
@@ -12905,7 +11856,8 @@ class DashboardConfig {
                 const tab = btn.getAttribute('data-stats-goto');
                 if (!tab || tab === this.statsTab) return;
                 this.statsTab = tab;
-                this.loadStatsTabData(tab);
+                if (tab === 'activity' && this._statsFinders === undefined) void this.loadStatsFinders();
+                if (tab === 'inbox' && this._statsInboxItems === undefined) void this.loadStatsInbox();
                 this.repaintStatsBody();
                 this.syncSubTabStrip('data-stats-tab', this.statsTab);
             });
@@ -12916,7 +11868,6 @@ class DashboardConfig {
     /** The report as a flat CSV, so it can be worked through in a spreadsheet. */
     exportStatsCSV() {
         const s = this.computeStats();
-        const a = s.activity;
         const rows = [
             ['metric', 'value'],
             ['bookmarks', s.total],
@@ -12934,27 +11885,10 @@ class DashboardConfig {
             ['duplicate_urls', s.duplicateUrls],
             ['shortcut_conflicts', s.shortcutConflicts],
             ['cleanup_score', s.cleanup.score],
-            // The activity panel's own figures, which the export omitted
-            // entirely — the tab you are looking at contributed nothing to it.
-            ['activity_range_days', this.statsRange || 30],
-            ['activity_bucket_days', a.bucketDays],
-            ['activity_bookmarks_used', a.activeCount],
-            ['activity_opens_all_time', a.totalOpens],
-            ['opens_total', s.concentration.totalOpens],
-            ['bookmarks_ever_opened', s.concentration.usedCount],
-            ['top10_share_of_opens_pct', s.concentration.share],
         ];
         s.perPage.forEach(([name, n]) => rows.push([`page:${name}`, n]));
         s.perCategory.forEach(([name, n]) => rows.push([`category:${name}`, n]));
-        // The untruncated lists: the rows are labelled `tag:` and `bookmark:`,
-        // so stopping at the twenty the panel happens to show would be a
-        // silently partial export dressed as a complete one.
-        (s.topTagsAll || s.topTags).forEach(([tag, n]) => rows.push([`tag:${tag}`, n]));
-        (s.topOpenedAll || s.topOpened).forEach(([name, n]) => rows.push([`bookmark_opens:${name}`, n]));
-        s.categoryEffectiveness.forEach((c) => rows.push([`category_opens_per_bookmark:${c.label}`, c.perBookmark.toFixed(2)]));
-        // The chart series itself, one row per bar, so the shape is reproducible
-        // in a spreadsheet rather than only visible on screen.
-        (a.dateLabels || []).forEach((d, i) => rows.push([`bookmarks_last_used:${d}`, a.buckets[i]]));
+        s.topTags.forEach(([tag, n]) => rows.push([`tag:${tag}`, n]));
 
         const esc = (v) => {
             const str = String(v ?? '');
@@ -12990,10 +11924,7 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-help-body" data-help-tab="${esc(tab)}">${esc(this.helpTabLabel(tab))}</button>`;
         }).join('');
         return `
-            <div class="config-help-header">
-                <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
-                ${this.renderCheatSheetPdfLink()}
-            </div>
+            <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-help-body" role="tabpanel" tabindex="0">${this.renderHelpBody()}</div>
         `;
@@ -13072,7 +12003,6 @@ class DashboardConfig {
                 'config.helpKeyboardBody', '',
                 `<div class="config-actions">
                     <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
-                    ${this.renderCheatSheetPdfLink()}
                 </div>`)
             + this.helpPanel('config.helpConfigKeyboardTitle', 'Config navigation',
                 'config.helpConfigKeyboardBody', '');

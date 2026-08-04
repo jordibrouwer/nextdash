@@ -17,32 +17,12 @@ class ConfigLanguage {
     }
 
     /**
-     * The app-version token the page was rendered with, or '' if absent.
-     *
-     * Locales are served by a plain file server: no content hash in the name and
-     * no cache-control, so a browser is free to reuse its stored copy for as
-     * long as it likes. That is exactly what happened — an updated en.json kept
-     * resolving to the old strings, and a new key came back empty, which showed
-     * up as an info modal with a "Got it" button and nothing above it. The
-     * fingerprint changes whenever any asset does, so appending it makes the URL
-     * new after a deploy and stable in between.
-     */
-    static assetVersion() {
-        if (typeof document === 'undefined') return '';
-        return document.querySelector('meta[name="nextdash-app-version"]')?.content || '';
-    }
-
-    /**
      * Load translations for a specific language
      * @param {string} lang - Language code
      */
     async loadTranslations(lang) {
         try {
-            const version = ConfigLanguage.assetVersion();
-            const url = version
-                ? `/locales/${lang}.json?v=${encodeURIComponent(version)}`
-                : `/locales/${lang}.json`;
-            const response = await fetch(url);
+            const response = await fetch(`/locales/${lang}.json`);
             if (response.ok) {
                 this.translations = await response.json();
                 this.currentLanguage = lang;

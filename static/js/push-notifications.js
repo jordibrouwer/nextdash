@@ -30,18 +30,6 @@
         return window.isSecureContext === true;
     }
 
-    /**
-     * Whether this is the localhost exemption rather than real TLS.
-     *
-     * isSecureContext() cannot tell the two apart — localhost is a secure context
-     * by spec — but WebKit only honours the second, so the distinction is what
-     * makes the failure explainable.
-     */
-    function isLocalhostOrigin() {
-        return location.protocol !== 'https:'
-            && /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i.test(location.hostname);
-    }
-
     function permission() {
         return isSupported() ? Notification.permission : 'unsupported';
     }
@@ -137,34 +125,12 @@
                 // shapes at once; whichever the browser honours resolves first.
                 const maybePromise = Notification.requestPermission(done);
                 if (maybePromise && typeof maybePromise.then === 'function') {
-                    maybePromise.then(done, (err) => done(refusalOutcome(err)));
+                    maybePromise.then(done, () => done(Notification.permission));
                 }
             } catch (err) {
-                // WebKit does not answer "denied" when it declines to prompt — it
-                // throws, leaving permission at "default". Reporting that as the
-                // plain default made subscribe() call it a dismissal, or a block
-                // once an earlier answer was on record, and both told the user to
-                // go change a browser setting that was never the problem. Keep
-                // the refusal distinguishable instead.
-                done(refusalOutcome(err));
+                done(Notification.permission);
             }
         });
-    }
-
-    /**
-     * WebKit's own sentinel for "I would not even ask".
-     *
-     * Not a permission state, so it can never collide with default/granted/denied.
-     */
-    const PROMPT_REFUSED = 'prompt-refused';
-
-    function refusalOutcome(err) {
-        // A late answer beats any error: if the browser recorded a decision, that
-        // decision is the truth regardless of how the promise settled.
-        if (Notification.permission !== 'default') return Notification.permission;
-        return /user gesture|not allowed|NotAllowedError/i.test(String(err?.message || err || ''))
-            ? PROMPT_REFUSED
-            : Notification.permission;
     }
 
     /**
@@ -186,15 +152,6 @@
         // laxer, which is exactly why this is easy to get wrong.
         const permissionResult = await requestPermissionFromGesture();
         if (permissionResult !== 'granted') {
-            if (permissionResult === PROMPT_REFUSED) {
-                // Almost always WebKit on plain http://localhost: isSecureContext
-                // is true there (the spec trusts localhost) so the guard above
-                // lets it through, but Safari wants real HTTPS before it will so
-                // much as ask. Name that, rather than blaming a browser setting.
-                throw new Error(isLocalhostOrigin()
-                    ? 'Safari only allows notifications over HTTPS — http://localhost will not prompt. Open nextDash over HTTPS and try again.'
-                    : 'The browser would not show the permission prompt. Try again from a direct click on the button.');
-            }
             throw new Error(permissionResult === 'denied'
                 ? 'Notifications are blocked for this site. Allow them in your browser settings.'
                 : 'Notification permission was dismissed');

@@ -407,17 +407,6 @@
     opacity: 0.9;
 }
 
-/* Why the opt-in failed, kept on the card rather than in a toast that fades
-   before it can be read. Styled like the caveat, in the error colour. */
-.push-notice-error {
-    margin: 0.5rem 0 0;
-    padding-left: 0.55rem;
-    border-left: 2px solid var(--accent-error, #c0392b);
-    font-size: var(--font-size-small, 0.72rem);
-    color: var(--accent-error, #c0392b);
-    line-height: 1.45;
-}
-
 .push-notice-actions {
     display: flex;
     flex-wrap: wrap;
