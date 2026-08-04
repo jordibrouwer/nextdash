@@ -10354,6 +10354,20 @@ class DashboardConfig {
         this.repaintBookmarksList();
     }
 
+    /**
+     * Load the next page when the sentinel scrolls into view.
+     *
+     * Growing the list re-renders it, which rebuilds this observer; if the
+     * sentinel is still on screen at that moment it fires again straight away.
+     * With a short window — or a list that simply does not overflow — that loop
+     * ran to the end of the library on its own: 500 bookmarks were all in the
+     * DOM within a couple of seconds without anyone scrolling, and the 50-row
+     * page size did nothing.
+     *
+     * Each batch now needs a fresh scroll. `_bmLoadMoreArmed` is lowered as soon
+     * as one page is added and only raised again by a scroll on the list's own
+     * host, so an idle screen stays at the size it was rendered with.
+     */
     setupBookmarkLoadMore(host) {
         const sentinel = host?.querySelector('[data-bm-load-more]');
         if (!sentinel) return;
@@ -10361,14 +10375,37 @@ class DashboardConfig {
         sentinel.removeAttribute('aria-hidden');
         this._bmLoadMoreObserver?.disconnect?.();
         const root = this.bookmarkListScrollHost();
+        this.armBookmarkLoadMore(root);
         this._bmLoadMoreObserver = new IntersectionObserver((entries) => {
+            if (!this._bmLoadMoreArmed) return;
             if (!entries.some((e) => e.isIntersecting)) return;
             const total = this.visibleBookmarks().length;
             if (this.bmVisibleLimit >= total) return;
+            this._bmLoadMoreArmed = false;
             this.bmVisibleLimit += DashboardConfig.BM_PAGE_SIZE;
             this.repaintBookmarksList();
         }, { root: root || null, rootMargin: '160px' });
         this._bmLoadMoreObserver.observe(sentinel);
+    }
+
+    /**
+     * Re-arm the loader on the next scroll of the list's scroll host.
+     *
+     * The host is whichever element actually scrolls — the config body, or the
+     * window when the panel is not its own scroller — so both are listened to.
+     */
+    armBookmarkLoadMore(root) {
+        if (this._bmLoadMoreScrollTarget) {
+            this._bmLoadMoreScrollTarget.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
+            window.removeEventListener('scroll', this._bmLoadMoreScrollHandler);
+        }
+        this._bmLoadMoreArmed = false;
+        this._bmLoadMoreScrollHandler = () => {
+            this._bmLoadMoreArmed = true;
+        };
+        this._bmLoadMoreScrollTarget = root || document;
+        this._bmLoadMoreScrollTarget.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
+        window.addEventListener('scroll', this._bmLoadMoreScrollHandler, { passive: true });
     }
 
     repaintBookmarksList() {
