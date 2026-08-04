@@ -11087,16 +11087,29 @@ class DashboardConfig {
         }
 
         const W = 500;
-        const H = 72;
+        // 108 = the old 72 plus half again, as the bars were too short to compare
+        // neighbouring days by eye.
+        const H = 108;
         const gap = 3;
         const n = a.buckets.length;
         const max = Math.max(...a.buckets, 1);
         const barW = Math.max(1, Math.floor((W - gap * (n - 1)) / n));
+        const unit = this.statsActivityBucketUnit();
         const bars = a.buckets.map((val, i) => {
             const h = Math.round((val / max) * H);
             const x = i * (barW + gap);
             const opacity = val === 0 ? 0.15 : (0.75 + (val / max) * 0.25).toFixed(2);
-            return `<rect x="${x}" y="${H - h}" width="${barW}" height="${Math.max(h, val > 0 ? 2 : 0)}" rx="1" fill="var(--accent-color, #4a90d9)" opacity="${opacity}"></rect>`;
+            const date = a.dateLabels?.[i] || a.labels[i] || '';
+            // The <g> is the hit target, not the painted bar: it spans the full
+            // height and half the gap either side, so a short bar — or an empty
+            // one — is still reachable. Focusable so the values are on keyboard
+            // too, per the same rule that puts them on hover.
+            return `<g class="config-chart-bar" tabindex="0" role="listitem"
+                       data-bar-date="${esc(date)}" data-bar-value="${esc(String(val))}" data-bar-unit="${esc(unit)}"
+                       aria-label="${esc(date)}: ${esc(String(val))} ${esc(this.t('config.statsActivityOpens', 'opens'))}">
+                <rect class="config-chart-bar-hit" x="${Math.max(0, x - gap / 2)}" y="0" width="${barW + gap}" height="${H}"></rect>
+                <rect class="config-chart-bar-fill" x="${x}" y="${H - h}" width="${barW}" height="${Math.max(h, val > 0 ? 2 : 0)}" rx="1" fill="var(--accent-color, #4a90d9)" opacity="${opacity}"></rect>
+            </g>`;
         }).join('');
         const summary = a.labels.map((l, i) => `${l}: ${a.buckets[i]}`).join(', ');
         const srRows = a.labels.map((l, i) =>
@@ -11112,12 +11125,22 @@ class DashboardConfig {
                     ${a.wow !== null ? `<span class="config-stat-trend config-stat-trend--${a.wow >= 0 ? 'up' : 'down'}">${a.wow >= 0 ? '▲' : '▼'} ${esc(String(Math.abs(a.wow)))}% ${esc(this.t('config.statsActivityVsPrev', 'vs previous period'))}</span>` : ''}
                 </div>
                 <div class="config-chart">
-                    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
-                         aria-label="${esc(this.t('config.statsSparklineAriaView', 'Opens per period'))}: ${esc(summary)}">${bars}</svg>
-                    <div class="config-chart-labels">
-                        <span>${esc(a.labels[0] || '')}</span>
-                        <span>${esc(a.labels[a.labels.length - 1] || '')}</span>
+                    <div class="config-chart-plot">
+                        <span class="config-chart-axis-y" aria-hidden="true">
+                            <span class="config-chart-axis-title">${esc(this.t('config.statsAxisOpens', 'Opens'))}</span>
+                            <span class="config-chart-axis-ticks">
+                                <span>${esc(String(max))}</span>
+                                <span>0</span>
+                            </span>
+                        </span>
+                        <span class="config-chart-plot-area">
+                            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="list"
+                                 aria-label="${esc(this.t('config.statsSparklineAriaView', 'Opens per period'))}: ${esc(summary)}">${bars}</svg>
+                            <span class="config-chart-ticks" aria-hidden="true">${this.statsActivityTicks(a)}</span>
+                        </span>
                     </div>
+                    <p class="config-chart-axis-x" aria-hidden="true">${esc(this.statsActivityAxisXLabel())}</p>
+                    <div class="config-chart-tip" role="status" aria-live="polite" hidden></div>
                 </div>
                 <table class="config-sr-only">
                     <caption>${esc(this.t('config.statsSparklineTableCaptionView', 'Opens per period'))}</caption>
@@ -11129,6 +11152,69 @@ class DashboardConfig {
     statsRangeLabel(days) {
         if (days === 365) return this.t('config.statsRangeYear', '1 year');
         return this.t('config.statsRangeDays', '{n} days').replace('{n}', String(days));
+    }
+
+    /** The noun for one bucket, used in the tooltip's date line. */
+    statsActivityBucketUnit() {
+        const days = this.statsRange || 30;
+        if (days <= 30) return this.t('config.statsAxisUnitDay', 'day');
+        if (days <= 90) return this.t('config.statsAxisUnitWeek', 'week');
+        return this.t('config.statsAxisUnitMonth', 'month');
+    }
+
+    /**
+     * Dated ticks along the x-axis.
+     *
+     * The axis used to carry only its two end-caps, so a bar in the middle sat
+     * above no date at all. A handful of evenly spaced dates is enough to place
+     * any bar by eye, and the tooltip gives the exact one.
+     *
+     * How many fit depends on how wide they are, not on the bar count: a daily
+     * label is "Jul 6" but a weekly one is "Jul 29 – Aug 4", three times the
+     * width. Six of those ran into each other and off the panel, so the cap is
+     * derived from the longest label rather than fixed.
+     */
+    statsActivityTicks(a) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const dates = a.dateLabels || [];
+        const n = dates.length;
+        if (!n) return '';
+        // ~500px of plot at roughly 6px per character, plus a gap, is how many
+        // labels of this width can sit side by side without touching.
+        const widest = dates.reduce((w, d) => Math.max(w, String(d).length), 0);
+        const fits = Math.floor(500 / (widest * 6 + 16));
+        const maxTicks = Math.max(2, Math.min(6, fits, n));
+        const step = Math.max(1, Math.round((n - 1) / Math.max(1, maxTicks - 1)));
+        const picked = [];
+        for (let i = 0; i < n; i += step) picked.push(i);
+        // The last bar is the one people look for ("where does it end?"), so it
+        // is always labelled even when the stride would have skipped it.
+        if (picked[picked.length - 1] !== n - 1) picked.push(n - 1);
+        const last = picked.length - 1;
+        return picked.map((i, k) => {
+            const pct = n === 1 ? 50 : (i / (n - 1)) * 100;
+            // Centring every label would push the first one off the left edge
+            // and the last one past the right — visible as a date hanging
+            // outside the panel. The end labels anchor to their own edge
+            // instead; only the middle ones centre on their bar.
+            const edge = k === 0 ? ' config-chart-tick--first'
+                : k === last ? ' config-chart-tick--last' : '';
+            return `<span class="config-chart-tick${edge}" style="left:${pct.toFixed(2)}%">${esc(dates[i])}</span>`;
+        }).join('');
+    }
+
+    /**
+     * What one bar covers, which the selected range decides.
+     *
+     * computeActivity() buckets by day, week or month depending on the range, so
+     * a fixed "Date" would be wrong two times out of three — the whole reason to
+     * name the axis is to say what a bar actually is.
+     */
+    statsActivityAxisXLabel() {
+        const days = this.statsRange || 30;
+        if (days <= 30) return this.t('config.statsAxisPerDay', 'Day (oldest → newest)');
+        if (days <= 90) return this.t('config.statsAxisPerWeek', 'Week (oldest → newest)');
+        return this.t('config.statsAxisPerMonth', 'Month (oldest → newest)');
     }
 
     /** Coverage bars: how much of the collection carries tags, shortcuts, notes. */
@@ -11151,6 +11237,8 @@ class DashboardConfig {
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsCoverageTitle', 'Coverage'))}</h3>
+                ${this.statsScaleCaption(this.t('config.statsAxisShareOfCollection',
+                    'Share of all {total} bookmarks — 0% to 100%').replace('{total}', String(s.total)))}
                 ${bar(this.t('config.statsTaggedBookmarks', 'Tagged'), s.tagged, s.total)}
                 ${bar(this.t('config.statsWithShortcut', 'With a shortcut'), s.withShortcut, s.total)}
                 ${bar(this.t('config.statsWithNote', 'With a note'), s.withNote, s.total)}
@@ -11167,7 +11255,9 @@ class DashboardConfig {
     renderStatsTopLists(s) {
         const esc = (v) => this.dash.escapeHtml(v);
 
-        const rankedList = (title, rows, emptyText, hint) => {
+        // axis: [what the rows are, what the bar measures]. The two callers count
+        // different things, so neither the label nor the measure can be hardcoded.
+        const rankedList = (title, rows, emptyText, hint, axis) => {
             if (!rows.length) {
                 return `
                 <div class="config-panel">
@@ -11193,6 +11283,7 @@ class DashboardConfig {
                 <div class="config-panel">
                     <h3 class="config-panel-title">${esc(title)}</h3>
                     ${hint ? `<p class="config-panel-note">${esc(hint)}</p>` : ''}
+                    ${axis ? this.statsListAxisHeader(axis[0], axis[1]) : ''}
                     <ul class="config-dist-list">${items}</ul>
                 </div>`;
         };
@@ -11220,12 +11311,59 @@ class DashboardConfig {
         };
 
         return rankedList(this.t('config.statsTopOpened', 'Most opened'), s.topOpened,
-                this.t('config.statsNoOpens', 'Nothing has been opened yet.'))
+                this.t('config.statsNoOpens', 'Nothing has been opened yet.'), '',
+                [this.t('config.statsAxisBookmark', 'Bookmark'), this.t('config.statsAxisOpens', 'Opens')])
             + rankedList(this.t('config.statsTopTags', 'Most used tags'), s.topTags,
-                this.t('config.noTagsYet', 'No tags yet.'))
+                this.t('config.noTagsYet', 'No tags yet.'), '',
+                [this.t('config.statsAxisTag', 'Tag'), this.t('config.statsAxisBookmarks', 'Bookmarks')])
             + plainList(this.t('config.statsNeverOpenedTitle', 'Never opened'), s.neverOpenedList,
                 this.t('config.statsAllOpened', 'Everything has been opened at least once.'),
                 this.t('config.statsNeverOpenedHint', 'Candidates to tidy up — they have never been used.'));
+    }
+
+    /**
+     * Column header for the bar lists, naming what the label column and the
+     * measure column hold.
+     *
+     * These lists are not x/y plots, so they have no axes to title — but they
+     * have the same problem an unlabelled axis has: a name, a bar and a number,
+     * with nothing saying what the number counts. This is the equivalent
+     * header, and it doubles as the list's own axis legend.
+     */
+    /**
+     * One-line caption naming the scale a set of full-width bars is drawn on.
+     *
+     * For the panels where every bar shares one axis (coverage is 0–100% of the
+     * collection), so the scale is stated once above them rather than repeated
+     * on each row.
+     */
+    statsScaleCaption(text) {
+        return `<p class="config-chart-scale" aria-hidden="true">${this.dash.escapeHtml(text)}</p>`;
+    }
+
+    /**
+     * The same caption pair for the label/value lists that have no bar column.
+     *
+     * .config-stat-detail is a two-column flex row, not the three-column grid
+     * .config-dist-row uses, so its header has to match that shape or the
+     * measure name lands over the wrong column.
+     */
+    statsPairAxisHeader(labelText, valueText) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <div class="config-dist-axis config-dist-axis--pair" aria-hidden="true">
+                <span>${esc(labelText)}</span>
+                <span>${esc(valueText)}</span>
+            </div>`;
+    }
+
+    statsListAxisHeader(labelText, valueText) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <div class="config-dist-axis" aria-hidden="true">
+                <span class="config-dist-axis-label">${esc(labelText)}</span>
+                <span class="config-dist-axis-value">${esc(valueText)}</span>
+            </div>`;
     }
 
     /** Where the bookmarks sit: per page, per category. */
@@ -11245,10 +11383,16 @@ class DashboardConfig {
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsPerPage', 'Bookmarks per page'))}</h3>
+                ${this.statsListAxisHeader(
+                    this.t('config.statsAxisPage', 'Page'),
+                    this.t('config.statsAxisBookmarks', 'Bookmarks'))}
                 <ul class="config-dist-list">${rows(s.perPage)}</ul>
             </div>
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsPerCategory', 'Bookmarks per category'))}</h3>
+                ${this.statsListAxisHeader(
+                    this.t('config.statsAxisCategory', 'Category'),
+                    this.t('config.statsAxisBookmarks', 'Bookmarks'))}
                 <ul class="config-dist-list">${rows(s.perCategory)}</ul>
             </div>`;
     }
@@ -11287,6 +11431,9 @@ class DashboardConfig {
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsCategoryEffTitle', 'Opens per bookmark, by category'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.statsCategoryEffNote', 'How often a bookmark in this category gets opened. A low figure on a large category is one you built but do not use.'))}</p>
+                ${this.statsListAxisHeader(
+                    this.t('config.statsAxisCategory', 'Category'),
+                    this.t('config.statsAxisOpensPerBookmark', 'Opens per bookmark'))}
                 <ul class="config-dist-list">${rows}</ul>
             </div>`;
     }
@@ -11314,6 +11461,8 @@ class DashboardConfig {
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.statsConcentrationTitle', 'Where your usage sits'))}</h3>
+                ${this.statsScaleCaption(this.t('config.statsAxisShareOfOpens',
+                    'Share of all {total} opens — 0% to 100%').replace('{total}', String(c.totalOpens)))}
                 <div class="config-ratio">
                     <div class="config-ratio-head">
                         <span class="config-ratio-label">${esc(this.t('config.statsConcentrationTop', 'Top {n}').replace('{n}', String(c.topCount)))}</span>
@@ -11910,6 +12059,19 @@ class DashboardConfig {
             return this.t('config.statsSparklineDaysAgoView', '{n}d ago').replace('{n}', String(agoDays));
         });
 
+        // The actual date each bar covers. "12d ago" is fine as an axis end-cap
+        // but useless in a tooltip, where the question is which day this is.
+        const dateFmt = new Intl.DateTimeFormat(this.dash.settings?.language || undefined,
+            { day: 'numeric', month: 'short' });
+        const dateLabels = buckets.map((_, i) => {
+            const agoBuckets = bucketCount - 1 - i;
+            const end = new Date(now - agoBuckets * bucketDays * DAY);
+            if (bucketDays === 1) return dateFmt.format(end);
+            // A multi-day bucket is a span, so name both ends of it.
+            const start = new Date(end.getTime() - (bucketDays - 1) * DAY);
+            return `${dateFmt.format(start)} – ${dateFmt.format(end)}`;
+        });
+
         const activeCount = all.filter((b) => Number(b.lastOpened || 0) >= cutoff).length;
         const totalOpens = buckets.reduce((a, b) => a + b, 0);
 
@@ -11924,7 +12086,7 @@ class DashboardConfig {
             else if (recent > 0) wow = 100;
         }
 
-        return { buckets, labels, activeCount, totalOpens, wow, bucketDays };
+        return { buckets, labels, dateLabels, activeCount, totalOpens, wow, bucketDays };
     }
 
     renderStatsHealth() {
@@ -11944,6 +12106,8 @@ class DashboardConfig {
                 <span class="config-stat-penalty">${esc(String(n))}</span>
             </li>`;
         return `
+            ${this.statsScaleCaption(this.t('config.statsAxisShareHealthy',
+                'Healthy share of {total} tracked bookmarks — 0% to 100%').replace('{total}', String(total)))}
             <div class="config-ratio">
                 <div class="config-ratio-head">
                     <span class="config-ratio-label">${esc(this.t('config.statsHealthy', 'Healthy'))}</span>
@@ -11953,6 +12117,9 @@ class DashboardConfig {
                     <span class="config-bar-fill config-bar-fill--good" style="width:${pct}%"></span>
                 </div>
             </div>
+            ${this.statsPairAxisHeader(
+                this.t('config.statsAxisState', 'State'),
+                this.t('config.statsAxisBookmarks', 'Bookmarks'))}
             <ul class="config-stat-details">
                 ${line(this.t('config.statsHealthy', 'Healthy'), h.healthy, 'good')}
                 ${line(this.t('config.statsBroken', 'Broken'), h.broken, h.broken ? 'bad' : '')}
@@ -12160,6 +12327,70 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * Per-bar readout on the activity chart.
+     *
+     * On a bar chart the mark is the hit target — no crosshair — so each bar
+     * carries its own tooltip on hover *and* on focus, because a value that
+     * only exists under a pointer is not reachable by keyboard. The screen
+     * reader gets the same numbers from the bar's aria-label and the sr-only
+     * table, so this layer enhances rather than gates.
+     *
+     * Values are written with textContent: the labels are dates we format, but
+     * the rule holds regardless — never build tooltip DOM by string concat.
+     */
+    bindActivityChartTooltip(container) {
+        const chart = container.querySelector('.config-chart');
+        const tip = chart?.querySelector('.config-chart-tip');
+        if (!chart || !tip) return;
+
+        const openLabel = this.t('config.statsActivityOpens', 'opens');
+        const hide = () => {
+            tip.hidden = true;
+            chart.querySelectorAll('.config-chart-bar.is-active')
+                .forEach((el) => el.classList.remove('is-active'));
+        };
+
+        const show = (bar) => {
+            const value = bar.getAttribute('data-bar-value') || '0';
+            const date = bar.getAttribute('data-bar-date') || '';
+            tip.replaceChildren();
+            // Value leads, label follows: the reader already knows which bar
+            // they are pointing at and wants the number.
+            const strong = document.createElement('strong');
+            strong.textContent = `${value} ${openLabel}`;
+            const when = document.createElement('span');
+            when.textContent = date;
+            tip.append(strong, when);
+            tip.hidden = false;
+
+            chart.querySelectorAll('.config-chart-bar.is-active')
+                .forEach((el) => el.classList.remove('is-active'));
+            bar.classList.add('is-active');
+
+            // Follow the bar horizontally, clamped so the box cannot hang off
+            // either end of the panel.
+            const barBox = bar.getBoundingClientRect();
+            const chartBox = chart.getBoundingClientRect();
+            const centre = barBox.left + barBox.width / 2 - chartBox.left;
+            const half = tip.offsetWidth / 2;
+            const clamped = Math.max(half, Math.min(centre, chartBox.width - half));
+            tip.style.left = `${clamped}px`;
+        };
+
+        chart.querySelectorAll('.config-chart-bar').forEach((bar) => {
+            bar.addEventListener('pointerenter', () => show(bar));
+            bar.addEventListener('pointerleave', hide);
+            bar.addEventListener('focus', () => show(bar));
+            bar.addEventListener('blur', hide);
+        });
+        // The <g> elements do not tile the plot — the SVG has padding around
+        // them — so leaving a bar sideways lands on the svg, not on another bar.
+        // Both leave paths are needed: the bar's own, and the chart's for when
+        // the pointer exits the panel altogether.
+        chart.addEventListener('pointerleave', hide);
+    }
+
     bindStats(container) {
         this.bindSubTabStrip(container, 'data-stats-tab', (tab) => {
             {
@@ -12188,6 +12419,7 @@ class DashboardConfig {
                 this.repaintStatsBody();
             });
         });
+        this.bindActivityChartTooltip(container);
         container.querySelectorAll('[data-stats-action]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-stats-action');
