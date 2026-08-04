@@ -85,6 +85,17 @@ kbd,
     justify-content: center;
 }
 
+/*
+ * These chips name the same shortcuts as the toolbar buttons at the bottom of
+ * the screen, so they carry that button's fill. The bare `kbd` rule in
+ * enhanced-features.css loads later and would otherwise win with
+ * --background-primary, which reads as a different, denser block here.
+ */
+#toolbar-kbd-tooltip .toolbar-kbd-tooltip-keys kbd {
+    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
+    border-color: var(--border-primary);
+}
+
 /* Dashboard discoverability: header, mobile bar, mini status, a11y */
 
 .skip-to-content {
