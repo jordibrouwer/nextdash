@@ -144,15 +144,21 @@ body[data-mobile-layout="true"] .header-actions {
     flex-shrink: 0;
 }
 
-body[data-mobile-layout="true"] #page-overview-header-btn {
+body[data-mobile-layout="true"] #page-overview-header-btn,
+body[data-mobile-layout="true"] .pages-link--icon .pages-link-anchor {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 44px;
     min-width: 44px;
-    padding: 0.55rem 0.9rem;
-    font-size: var(--font-size-controls);
-    font-weight: var(--font-weight-semibold);
-    text-transform: capitalize;
+    padding: 0.55rem;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+}
+
+body[data-mobile-layout="true"] #page-overview-header-btn:active,
+body[data-mobile-layout="true"] .pages-link--icon .pages-link-anchor:active {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
 }
 
 body[data-mobile-layout="true"] .config-link a {
@@ -179,7 +185,8 @@ body[data-mobile-layout="true"] .config-link--icon {
 }
 
 body[data-mobile-layout="true"] .config-link a:active,
-body[data-mobile-layout="true"] #page-overview-header-btn:active {
+body[data-mobile-layout="true"] #page-overview-header-btn:active,
+body[data-mobile-layout="true"] .pages-link--icon .pages-link-anchor:active {
     background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
     color: var(--text-primary);
     border-color: var(--text-primary);

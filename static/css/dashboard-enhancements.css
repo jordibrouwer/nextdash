@@ -143,39 +143,8 @@ body[data-layout-version="classic"] .page-swipe-hint {
     background: color-mix(in srgb, var(--background-secondary) 55%, transparent);
 }
 
-.page-overview-header-btn {
-    font-family: var(--font-family-main);
-    font-size: var(--font-size-controls);
-    color: var(--text-secondary);
-    background: color-mix(in srgb, var(--background-secondary) 74%, transparent);
-    border: 1px solid var(--border-primary);
-    padding: 0.38rem 0.72rem;
-    cursor: pointer;
-    border-radius: 0.65rem;
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-.page-overview-header-btn:hover,
-.page-overview-header-btn:focus-visible {
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-    background: color-mix(in srgb, var(--background-primary) 94%, transparent);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
-    outline: none;
-}
-
-.page-overview-header-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-}
+/* Pages overview icon chrome lives in dashboard.css (.pages-link--icon), shared
+   with inbox, health, and config; spacing is .header-actions gap throughout. */
 
 .search-button-labeled {
     display: flex;

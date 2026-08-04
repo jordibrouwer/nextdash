@@ -89,6 +89,7 @@ test.describe('modern layout — dashboard chrome', () => {
             const actions = document.querySelector('.header-actions');
             const kids = [
                 actions.querySelector('#page-navigation'),
+                actions.querySelector('.pages-link--icon'),
                 ...actions.querySelector('.header-destinations')?.children || [],
             ]
                 .filter((el) => el && el.offsetParent !== null)
@@ -133,18 +134,15 @@ test.describe('modern layout — dashboard chrome', () => {
         // Inbox lives after the pages overview button, outside the page-tab
         // strip, so it reads with health/config rather than as another page.
         const order = await page.evaluate(() => {
-            const destinations = document.querySelector('.header-destinations');
-            const ids = [...destinations.children]
-                .filter((el) => el.offsetParent !== null)
-                .map((el) => el.id || el.className.split(' ')[0]);
-            const pagesIdx = ids.indexOf('page-overview-header-btn');
-            const inboxIdx = ids.indexOf('page-nav-inbox-host');
+            const pagesEl = document.querySelector('.pages-link--icon');
+            const inboxHost = document.getElementById('page-nav-inbox-host');
             const inboxInsideNav = !!document.querySelector('#page-navigation [data-view-tab]');
-            return { pagesIdx, inboxIdx, inboxInsideNav };
+            const pagesBeforeInbox = !!(pagesEl && inboxHost
+                && (pagesEl.compareDocumentPosition(inboxHost) & Node.DOCUMENT_POSITION_FOLLOWING));
+            return { pagesBeforeInbox, inboxInsideNav };
         });
 
-        expect(order.pagesIdx).toBeGreaterThanOrEqual(0);
-        expect(order.inboxIdx).toBeGreaterThan(order.pagesIdx);
+        expect(order.pagesBeforeInbox).toBe(true);
         expect(await page.evaluate(() =>
             !document.querySelector('#page-navigation [data-view-tab]'))).toBe(true);
 

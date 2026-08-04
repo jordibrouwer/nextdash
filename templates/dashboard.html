@@ -134,8 +134,17 @@
                         <!-- Pages will be loaded here -->
                     </div>
                     <span id="page-swipe-hint" class="page-swipe-hint" aria-hidden="true" hidden>&#8592;&nbsp;&#8594;</span>
+                    <div class="pages-link pages-link--icon">
+                        <button type="button" id="page-overview-header-btn" class="pages-link-anchor page-overview-header-btn" data-i18n-aria="dashboard.pagesOverviewAria" data-i18n-tooltip="dashboard.pagesOverview" aria-label="Choose a page" title="pages">
+                            <svg class="pages-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                <rect x="14" y="14" width="7" height="7" rx="1"/>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="header-destinations">
-                    <button type="button" id="page-overview-header-btn" class="page-overview-header-btn" data-i18n="dashboard.pagesOverview" data-i18n-aria="dashboard.pagesOverviewAria" aria-label="Choose a page">pages</button>
                     <div id="page-nav-inbox-host" class="page-nav-inbox-host"></div>
                     {{if .ShowHealthDashboard}}<div class="health-link health-link--icon">
                         <a href="/#health" class="health-link-anchor" data-i18n-aria="dashboard.health" data-i18n-tooltip="dashboard.health" aria-label="health" title="health">
