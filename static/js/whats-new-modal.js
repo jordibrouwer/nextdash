@@ -47,7 +47,16 @@
                     return res.json();
                 })
                 .then((data) => {
-                    manifestCache = Array.isArray(data) ? data : [];
+                    // Entries flagged hideFromModal stay in the index — the
+                    // release tag and Config → Overview → Latest update both
+                    // read index[0], so removing them would roll those back —
+                    // but they never reach this modal. Docs-only releases use
+                    // it: there is nothing in them for a user to read about.
+                    // Filtering here rather than at each call site keeps the
+                    // list, the lazy loader and the "n more releases" count
+                    // working off one set of entries.
+                    manifestCache = (Array.isArray(data) ? data : [])
+                        .filter((entry) => !entry?.hideFromModal);
                     return manifestCache;
                 })
                 .catch((error) => {
