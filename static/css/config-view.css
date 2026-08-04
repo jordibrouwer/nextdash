@@ -362,6 +362,109 @@
     max-width: 60ch;
 }
 
+/* The one conclusion the tiles above add up to. It sits in an ordinary
+   .config-panel, which supplies the border, radius and background, so this only
+   sets the sentence itself. */
+.config-stats-headline {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 1.05);
+    line-height: 1.5;
+    max-width: 70ch;
+}
+
+/* Two series need a legend: colour alone cannot carry identity. */
+.config-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 0 0 10px;
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+}
+
+.config-chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* A short stroke rather than a filled box — at this size a block of data-weight
+   ink would be doing a label's job. */
+.config-chart-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 3px;
+    border-radius: 2px;
+    flex: 0 0 auto;
+}
+
+/* The two series must stay distinguishable in every theme, and several themes
+   define --accent-success as the same colour as --accent-primary, which made
+   both series identical. So the second is derived from the first — same hue,
+   clearly lighter — rather than trusting a second variable to differ. The pair
+   also survives greyscale, since the separation is lightness rather than hue. */
+.config-chart-swatch--a {
+    background: var(--accent-primary, #4a90d9);
+}
+
+.config-chart-swatch--b {
+    background: color-mix(in srgb, var(--accent-primary, #4a90d9) 42%, var(--background-primary, #fff));
+}
+
+/* SVG rects take fill, not background. */
+.config-chart-bar-fill--a {
+    fill: var(--accent-primary, #4a90d9);
+}
+
+.config-chart-bar-fill--b {
+    fill: color-mix(in srgb, var(--accent-primary, #4a90d9) 42%, var(--background-primary, #fff));
+}
+
+.config-chart-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* When the figures above were worked out. Recessive — it dates the page, it is
+   not one of its numbers. */
+.config-stats-updated {
+    margin: 14px 0 0;
+    text-align: right;
+    font-size: calc(var(--font-size-text) * 0.78);
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Nothing to measure yet: one explanation where a page of zeroes used to be. */
+.config-panel--empty-state {
+    text-align: center;
+}
+
+.config-panel--empty-state .config-panel-note {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.config-panel--empty-state .config-actions {
+    justify-content: center;
+}
+
+/* "20 of 214 shown" under a list that had to cut off, with the button that
+   reaches the rest. Sits below the list and reads as chrome, not as a row. */
+.config-list-truncated {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+    font-size: calc(var(--font-size-text) * 0.85);
+    color: var(--text-muted, #888);
+}
+
 .config-panel-empty {
     margin: 0;
     color: var(--text-muted, #888);
@@ -2202,7 +2305,12 @@ body.no-animations .config-new-features-panel-star {
     color: var(--accent-error);
 }
 
-.config-bm-keyboard-legend {
+/* The keyboard legend that closes a view. Inbox (.inbox-legend) and Health
+   (.health-view-legend) draw the same thing outside this stylesheet; these three
+   are its config-side instances and must not drift from them. */
+.config-bm-keyboard-legend,
+.config-form-keyboard-legend,
+.config-list-keyboard-legend {
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem 1rem;
@@ -2213,7 +2321,9 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-tertiary);
 }
 
-.config-bm-keyboard-legend kbd {
+.config-bm-keyboard-legend kbd,
+.config-form-keyboard-legend kbd,
+.config-list-keyboard-legend kbd {
     font-size: 0.7rem;
     padding: 0.05rem 0.32rem;
     border-radius: 0.25rem;
@@ -3132,18 +3242,14 @@ body.no-animations .config-new-features-panel-star {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, var(--accent-success, #4A7038)) 28%, transparent);
 }
 
-.config-list-keyboard-legend {
-    margin: 8px 0 0;
-}
-
-.config-bm-keyboard-legend {
-    margin: 8px 0 0;
-}
-
+/* Tighter top margin than the shared rule's 1rem, since a config section already
+   ends on panel padding. The border and kbd chrome stay as the shared rule sets
+   them — the form legend used to override the border here with a near-invisible
+   text-color mix, which is what made it read as a different component. */
+.config-list-keyboard-legend,
+.config-bm-keyboard-legend,
 .config-form-keyboard-legend {
-    margin: 16px 0 0;
-    padding-top: 12px;
-    border-top: 1px solid color-mix(in srgb, var(--text-color, #ccc) 12%, transparent);
+    margin: 8px 0 0;
 }
 
 .config-crud-row.keyboard-selected {
