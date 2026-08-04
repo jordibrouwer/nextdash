@@ -176,7 +176,7 @@ class DashboardToolbar {
             tip.removeAttribute('data-for');
         };
 
-        const show = (btn, labelKey, keys) => {
+        const show = (btn, labelKey, keys, options = {}) => {
             const label = d.language?.t(labelKey) || labelKey;
             tip.replaceChildren();
             const labelSpan = document.createElement('span');
@@ -197,12 +197,34 @@ class DashboardToolbar {
             const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
             if (isSideRail) {
                 tip.classList.add('toolbar-kbd-tooltip--side-rail');
+                tip.classList.remove('toolbar-kbd-tooltip--below');
                 tip.style.left = `${rect.right + 8}px`;
                 tip.style.top = `${rect.top + rect.height / 2}px`;
             } else {
                 tip.classList.remove('toolbar-kbd-tooltip--side-rail');
+                // The toolbar sits at the bottom of the window, so its tooltips
+                // open upwards. The header icons sit at the top, where that same
+                // direction runs off the screen and the popover gets clipped —
+                // those open downwards instead.
+                const below = options.below === true;
+                tip.classList.toggle('toolbar-kbd-tooltip--below', below);
                 tip.style.left = `${rect.left + rect.width / 2}px`;
-                tip.style.top = `${rect.top}px`;
+                tip.style.top = below ? `${rect.bottom}px` : `${rect.top}px`;
+            }
+            // Keep the box inside the viewport horizontally. A header icon near
+            // the right edge would otherwise centre itself past the edge and lose
+            // its right-hand side.
+            tip.style.setProperty('--kbd-tooltip-shift', '0px');
+            const box = tip.getBoundingClientRect();
+            const margin = 8;
+            let shift = 0;
+            if (box.right > window.innerWidth - margin) {
+                shift = window.innerWidth - margin - box.right;
+            } else if (box.left < margin) {
+                shift = margin - box.left;
+            }
+            if (shift) {
+                tip.style.setProperty('--kbd-tooltip-shift', `${Math.round(shift)}px`);
             }
         };
 
@@ -211,7 +233,7 @@ class DashboardToolbar {
                 if (def.when && !def.when()) continue;
                 const btn = document.querySelector(def.selector);
                 if (btn?.matches(':hover') || btn?.matches(':focus-visible')) {
-                    show(btn, def.labelKey, def.keys);
+                    show(btn, def.labelKey, def.keys, { below: true });
                     return;
                 }
             }

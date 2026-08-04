@@ -35,7 +35,10 @@ kbd,
 .toolbar-kbd-tooltip {
     position: fixed;
     z-index: 10050;
-    transform: translate(-50%, calc(-100% - 8px));
+    /* --kbd-tooltip-shift nudges the box back inside the window when centring on
+       the anchor would push it past the left or right edge. */
+    --kbd-tooltip-shift: 0px;
+    transform: translate(calc(-50% + var(--kbd-tooltip-shift)), calc(-100% - 8px));
     display: none;
     flex-direction: column;
     align-items: center;
@@ -55,6 +58,12 @@ kbd,
     display: flex;
     visibility: visible;
     opacity: 1;
+}
+
+/* Header icons: tooltip appears BELOW the button, because there is no room
+   above them at the top of the window. */
+.toolbar-kbd-tooltip--below {
+    transform: translate(calc(-50% + var(--kbd-tooltip-shift)), 8px);
 }
 
 /* Side rail: tooltip appears to the RIGHT of the button */
