@@ -2164,12 +2164,14 @@ class DashboardConfig {
      * Grouped by what the reader is meant to do with each block, not by what the
      * data happens to be:
      *
-     *   act    — the update bar and Needs attention, at the top.
+     *   act    — the update bar and Needs attention. Framed panels, and the only
+     *            ones that are: a border here means "this wants you".
      *   know   — At a glance beside New features.
      *   read   — About and Latest update.
      *
-     * The status tile row is gone entirely: all six numbers were already on the
-     * page, in At a glance or in Needs attention.
+     * Everything below the act zone is deliberately unframed. Seven equally
+     * boxed blocks gave the eye nowhere to land, and the update bar — the one
+     * thing that must be seen — competed with six identical neighbours.
      */
     renderOverview() {
         const esc = (v) => this.dash.escapeHtml(v);
@@ -2211,7 +2213,7 @@ class DashboardConfig {
         const stars = '<span class="wn-kofi-star"></span>'.repeat(4);
 
         return `
-            <div class="config-panel config-about-panel">
+            <div class="config-panel config-panel--plain config-about-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewAboutTitle', 'About the developer'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.overviewAboutBody',
                     'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time, scratching my own itch: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. It is free and open-source, and it stays that way. If it saves you time too, a star on GitHub or a coffee is always appreciated — and bug reports and ideas are just as welcome.'))}</p>
@@ -2355,7 +2357,7 @@ class DashboardConfig {
         const navLabel = esc(this.t('config.overviewNewFeaturesNavAria', 'Browse new features'));
 
         return `
-            <div class="config-panel config-new-features-panel config-new-features-panel--animated">
+            <div class="config-panel config-panel--plain config-new-features-panel config-new-features-panel--animated">
                 ${this.renderNewFeaturesPanelStars()}
                 <div class="config-new-features-panel-inner">
                     <div class="config-new-features-head">
@@ -2555,7 +2557,7 @@ class DashboardConfig {
             </li>`;
 
         return `
-            <div class="config-panel">
+            <div class="config-panel config-panel--plain">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewStatsTitle', 'At a glance'))}</h3>
                 ${s.total ? `
                     <div class="config-score config-score--compact">
@@ -2602,7 +2604,7 @@ class DashboardConfig {
         }
 
         return `
-            <div class="config-panel">
+            <div class="config-panel config-panel--plain">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewWhatsNewTitle', 'Latest update'))}</h3>
                 ${body}
                 <div class="config-actions">

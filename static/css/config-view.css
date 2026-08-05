@@ -1056,6 +1056,18 @@
     opacity: 0.7;
 }
 
+/*
+ * Unframed blocks: a heading and whitespace carry the grouping instead of a
+ * box. Removing five of the seven borders is what makes the update bar and
+ * Needs attention read as the priorities they are.
+ */
+.config-panel--plain {
+    padding: 0;
+    border: 0;
+    background: none;
+    border-radius: 0;
+}
+
 .config-overview-layout {
     display: flex;
     flex-direction: column;

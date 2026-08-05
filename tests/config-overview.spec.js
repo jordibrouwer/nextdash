@@ -96,6 +96,7 @@ test.describe('config overview', () => {
     });
 
 
+
     test('new features carousel shows translated copy, not locale keys', async ({ page }) => {
         await openOverview(page);
         const spotlight = page.locator('.config-feature-spotlight');
@@ -121,6 +122,8 @@ test.describe('config overview', () => {
         await openOverview(page, CLEAN);
         await expect(page.locator('.config-attention-row')).toHaveCount(0);
         await expect(page.locator('.config-attention-clear')).toBeVisible();
+        // A quiet line, not a framed panel.
+        await expect(page.locator('.config-panel--attention')).toHaveCount(0);
     });
 
     test('at-a-glance shows the score and the headline counts', async ({ page }) => {
