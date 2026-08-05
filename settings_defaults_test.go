@@ -185,3 +185,48 @@ func TestGetSettingsRespectsExplicitShowIconsFalse(t *testing.T) {
 		t.Fatal("explicit showIcons:false should stay false")
 	}
 }
+
+// The dashboard reads this straight onto <body> and CSS keys off the value, so
+// an empty or unknown string would mean no emphasis rule matched at all — the
+// setting would silently behave like a fourth, undocumented mode.
+func TestMonitorEmphasisDefaultsAndRejectsUnknownValues(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+
+	store := NewStore()
+	if got := store.GetSettings().MonitorEmphasis; got != "problems" {
+		t.Fatalf("fresh install: monitorEmphasis = %q, want %q", got, "problems")
+	}
+
+	for _, tc := range []struct {
+		name  string
+		value any
+		want  string
+	}{
+		{"valid always", "always", "always"},
+		{"valid never", "never", "never"},
+		{"unknown value", "loud", "problems"},
+		{"empty string", "", "problems"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			t.Chdir(dir)
+			if err := os.MkdirAll("data", 0755); err != nil {
+				t.Fatal(err)
+			}
+			body, err := json.Marshal(map[string]any{
+				"currentPage":     1,
+				"monitorEmphasis": tc.value,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+				t.Fatal(err)
+			}
+			if got := NewStore().GetSettings().MonitorEmphasis; got != tc.want {
+				t.Fatalf("monitorEmphasis = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

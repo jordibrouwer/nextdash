@@ -133,7 +133,8 @@ type Settings struct {
 	ShowFindersButtonText        bool                         `json:"showFindersButtonText"`
 	ShowCommandsButtonText       bool                         `json:"showCommandsButtonText"`
 	ShowStatus                   bool                         `json:"showStatus"`
-	ColorizeStatus               bool                         `json:"colorizeStatus"` // Keep online/offline/checking color changes on bookmark rows
+	ColorizeStatus               bool                         `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
+	MonitorEmphasis              string                       `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
 	ShowPing                     bool                         `json:"showPing"`
 	ShowStatusLoading            bool                         `json:"showStatusLoading"`
 	SkipFastPing                 bool                         `json:"skipFastPing"`
@@ -571,6 +572,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowCommandsButtonText:         true,
 			ShowStatus:                     true,
 			ColorizeStatus:                 true,
+			MonitorEmphasis:                "problems",
 			ShowPing:                       true,
 			ShowStatusLoading:              false,
 			SkipFastPing:                   false,
@@ -1943,6 +1945,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowCommandsButtonText:         true,
 			ShowStatus:                     true,
 			ColorizeStatus:                 true,
+			MonitorEmphasis:                "problems",
 			ShowPing:                       true,
 			ShowStatusLoading:              false,
 			SkipFastPing:                   false,
@@ -2226,6 +2229,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["densityMode"]; !ok || (settings.DensityMode != "comfortable" && settings.DensityMode != "compact" && settings.DensityMode != "dense" && settings.DensityMode != "auto") {
 			settings.DensityMode = "compact"
+		}
+		if _, ok := rawSettings["monitorEmphasis"]; !ok || (settings.MonitorEmphasis != "problems" && settings.MonitorEmphasis != "always" && settings.MonitorEmphasis != "never") {
+			settings.MonitorEmphasis = "problems"
 		}
 		if _, ok := rawSettings["launcherIconSize"]; !ok || (settings.LauncherIconSize != "small" && settings.LauncherIconSize != "normal" && settings.LauncherIconSize != "large") {
 			settings.LauncherIconSize = "normal"

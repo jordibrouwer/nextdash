@@ -624,6 +624,69 @@
     outline-offset: 1px;
 }
 
+/* ── Large choice cards ──────────────────────────────────────────────────────
+   For a small set of options where each needs a sentence to be understood. The
+   `.config-choice` pills above cannot carry that sentence, and a <select> hides
+   every option but one behind a click.
+
+   `auto-fit` with a min width rather than a fixed column count: three cards sit
+   side by side on a wide panel and stack on a narrow one without a query. */
+
+.config-field--cards {
+    margin-bottom: 8px;
+}
+
+.config-choice-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.config-choice-card {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px 14px;
+    text-align: left;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 10px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    color: var(--text-muted, #888);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.config-choice-card:hover {
+    border-color: var(--accent-color, #4a90d9);
+    color: var(--text-color, inherit);
+}
+
+.config-choice-card.is-active {
+    border-color: var(--accent-color, #4a90d9);
+    background: var(--accent-soft, rgba(74, 144, 217, 0.14));
+    color: var(--text-color, inherit);
+}
+
+.config-choice-card:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+}
+
+.config-choice-card-title {
+    font-size: calc(var(--font-size-text) * 0.971);
+    font-weight: 600;
+    color: var(--text-color, inherit);
+}
+
+.config-choice-card-body {
+    font-size: calc(var(--font-size-text) * 0.885);
+    line-height: 1.45;
+    color: var(--text-muted, #888);
+}
+
+
 /* ── Background gradient swatches ────────────────────────────────────────── */
 
 .config-bg-swatches {

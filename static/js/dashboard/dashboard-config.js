@@ -5818,6 +5818,40 @@ class DashboardConfig {
             },
             {
                 tab: 'status',
+                title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
+                note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
+                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
+                highlight: true,
+                controls: [
+                    {
+                        field: 'monitorEmphasis',
+                        type: 'cards',
+                        // Body attribute only, so it needs `chrome` — `render`
+                        // redraws the rows but never rewrites <body>.
+                        special: 'chrome',
+                        label: t('config.monitorEmphasisLabel', 'Emphasis'),
+                        options: [
+                            {
+                                value: 'problems',
+                                label: t('config.monitorEmphasisProblems', 'Only when there is a problem'),
+                                body: t('config.monitorEmphasisProblemsBody', 'A healthy monitor looks like any other bookmark. Only an outage draws the eye.'),
+                            },
+                            {
+                                value: 'always',
+                                label: t('config.monitorEmphasisAlways', 'Always stand out'),
+                                body: t('config.monitorEmphasisAlwaysBody', 'Every monitored bookmark gets its own accent edge, so you can see at a glance what you are watching.'),
+                            },
+                            {
+                                value: 'never',
+                                label: t('config.monitorEmphasisNever', 'Never stand out'),
+                                body: t('config.monitorEmphasisNeverBody', 'Monitoring stays entirely in the Health view. The dashboard shows no marking at all, not even for an outage.'),
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                tab: 'status',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
                 note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. Off by default because it makes outbound requests.'),
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
@@ -5927,6 +5961,27 @@ class DashboardConfig {
                         <span class="config-field-affordances">${aff}</span>
                     </div>${hint}`;
             }
+            // Big labelled choice buttons, for a small set of options where the
+            // trade-off needs a sentence each. A <select> hides those sentences
+            // behind a click and gives no room for them.
+            if (c.type === 'cards') {
+                const cards = c.options.map((o) => {
+                    const on = String(val) === String(o.value);
+                    return `
+                        <button type="button" class="config-choice-card${on ? ' is-active' : ''}"
+                                ${dataAttrs} data-${prefix}-type="cards" data-${prefix}-value="${esc(o.value)}"
+                                role="radio" aria-checked="${on ? 'true' : 'false'}">
+                            <span class="config-choice-card-title">${esc(o.label)}</span>
+                            <span class="config-choice-card-body">${esc(o.body || '')}</span>
+                        </button>`;
+                }).join('');
+                return `
+                    <div class="config-field config-field--cards">
+                        <span class="config-field-label">${esc(c.label)}</span>
+                        <span class="config-field-affordances">${aff}</span>
+                    </div>
+                    <div class="config-choice-cards" role="radiogroup" aria-label="${esc(c.label)}">${cards}</div>${hint}`;
+            }
             let control;
             if (c.type === 'select') {
                 const opts = c.options.map((o) =>
@@ -5975,7 +6030,22 @@ class DashboardConfig {
             const type = el.getAttribute(`data-${prefix}-type`);
             const special = el.getAttribute(`data-${prefix}-special`) || '';
             const numericSelect = el.hasAttribute(`data-${prefix}-numeric`);
-            if (type === 'checkbox') {
+            if (type === 'cards') {
+                // Buttons, not an input: click rather than change, and the group
+                // has to repaint its own selection because several elements share
+                // one field and nothing else redraws this panel.
+                el.addEventListener('click', () => {
+                    const value = el.getAttribute(`data-${prefix}-value`);
+                    container.querySelectorAll(
+                        `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="cards"]`
+                    ).forEach((card) => {
+                        const on = card === el;
+                        card.classList.toggle('is-active', on);
+                        card.setAttribute('aria-checked', on ? 'true' : 'false');
+                    });
+                    void this.setBehavior(field, value, special);
+                });
+            } else if (type === 'checkbox') {
                 el.addEventListener('change', () => this.setBehavior(field, el.checked, special));
             } else if (type === 'number' || numericSelect) {
                 el.addEventListener('change', () => this.setBehavior(field, Number(el.value), special));

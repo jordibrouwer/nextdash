@@ -564,6 +564,15 @@ class DashboardBookmarkRows {
             row.appendChild(statusBadge);
         }
 
+        // Mark the mode on the row rather than deciding here how loud it should
+        // be: `body[data-monitor-emphasis]` makes that call in CSS, so changing
+        // the setting is a repaint instead of a re-render.
+        if (bookmark?.monitor) {
+            row.setAttribute('data-check-mode', 'monitor');
+        } else {
+            row.removeAttribute('data-check-mode');
+        }
+
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'bookmark-shortcut';
         shortcutSpan.setAttribute('role', 'presentation');

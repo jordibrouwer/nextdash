@@ -58,6 +58,10 @@ class DashboardSetup {
             document.body.setAttribute('data-layout-version', layoutVersion);
         }
         document.body.setAttribute('data-density-mode', d.settings.densityMode || 'compact');
+        // How loudly a monitored bookmark announces itself. CSS keys off this,
+        // so the rows carry their monitor state either way and only the styling
+        // changes — see status.css.
+        document.body.setAttribute('data-monitor-emphasis', d.settings.monitorEmphasis || 'problems');
 
         // Apply font size
         d.applyFontSize();
