@@ -238,3 +238,30 @@ body.status-color-lock .bookmark-link.status-checking:not(:hover):not(.keyboard-
         margin-left: 0.5rem;
     }
 }
+
+/* ── Monitor emphasis ───────────────────────────────────────────────────────
+   How loudly a monitored bookmark announces itself, chosen in Behavior →
+   Status & health and mirrored onto <body> by setupDOM.
+
+   The row always carries data-check-mode="monitor"; only the emphasis differs,
+   so switching modes is a repaint rather than a re-render.
+
+     problems (default) — a healthy monitor looks like any other bookmark; only
+                          an outage draws the eye, via the status-offline rules
+                          above. Nothing extra is needed here.
+     always             — an accent edge on every monitor, healthy or not.
+     never              — monitoring stays in the Health view, including the
+                          outage colouring the other two modes rely on.
+*/
+body[data-monitor-emphasis="always"] .bookmarks-list[data-bookmarks-list="true"]:not([data-smart-collection="true"]) .bookmark-link[data-check-mode="monitor"]:not(.status-offline):not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
+    box-shadow: inset 3px 0 0 var(--monitor-emphasis-bar, var(--accent-primary));
+}
+
+/* Deliberately also suppresses the offline colouring: "never stand out" that
+   still turned a row red would not be never. The Health view and the header
+   badge remain the places an outage is reported. */
+body[data-monitor-emphasis="never"] .bookmark-link[data-check-mode="monitor"]:not(:hover):not(.keyboard-selected):not(:focus-within):not(.bookmark-inline-editing) {
+    color: inherit;
+    background: none;
+    box-shadow: none;
+}

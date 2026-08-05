@@ -129,11 +129,13 @@ type Settings struct {
 	ConfigButtonDefaultOnMigrated bool                        `json:"configButtonDefaultOnMigrated,omitempty"` // one-time: restore config header icon after visibility fix
 	ShowSearchFlowBanner         bool                         `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton         bool                         `json:"showCheatSheetButton"`
+	ShowCollapseAllButton        bool                         `json:"showCollapseAllButton"`
 	ShowSearchButtonText         bool                         `json:"showSearchButtonText"`
 	ShowFindersButtonText        bool                         `json:"showFindersButtonText"`
 	ShowCommandsButtonText       bool                         `json:"showCommandsButtonText"`
 	ShowStatus                   bool                         `json:"showStatus"`
-	ColorizeStatus               bool                         `json:"colorizeStatus"` // Keep online/offline/checking color changes on bookmark rows
+	ColorizeStatus               bool                         `json:"colorizeStatus"`  // Keep online/offline/checking color changes on bookmark rows
+	MonitorEmphasis              string                       `json:"monitorEmphasis"` // How much monitored bookmarks stand out on the dashboard: problems, always, never
 	ShowPing                     bool                         `json:"showPing"`
 	ShowStatusLoading            bool                         `json:"showStatusLoading"`
 	SkipFastPing                 bool                         `json:"skipFastPing"`
@@ -566,11 +568,13 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowTagCloudButton:             true,
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           false,
+			ShowCollapseAllButton:          true,
 			ShowSearchButtonText:           true,
 			ShowFindersButtonText:          true,
 			ShowCommandsButtonText:         true,
 			ShowStatus:                     true,
 			ColorizeStatus:                 true,
+			MonitorEmphasis:                "problems",
 			ShowPing:                       true,
 			ShowStatusLoading:              false,
 			SkipFastPing:                   false,
@@ -1938,11 +1942,13 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowRecentButton:               true,
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           true,
+			ShowCollapseAllButton:          true,
 			ShowSearchButtonText:           true,
 			ShowFindersButtonText:          true,
 			ShowCommandsButtonText:         true,
 			ShowStatus:                     true,
 			ColorizeStatus:                 true,
+			MonitorEmphasis:                "problems",
 			ShowPing:                       true,
 			ShowStatusLoading:              false,
 			SkipFastPing:                   false,
@@ -2028,6 +2034,12 @@ func (fs *FileStore) GetSettings() Settings {
 	if err := json.Unmarshal(data, &rawSettings); err == nil {
 		if _, ok := rawSettings["showCheatSheetButton"]; !ok {
 			settings.ShowCheatSheetButton = true
+		}
+		// Absent for everyone until this setting existed, and the button it
+		// controls was visible all that time. Defaulting to false would take it
+		// away from every existing dashboard on upgrade.
+		if _, ok := rawSettings["showCollapseAllButton"]; !ok {
+			settings.ShowCollapseAllButton = true
 		}
 		if _, ok := rawSettings["colorizeStatus"]; !ok {
 			settings.ColorizeStatus = true
@@ -2226,6 +2238,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["densityMode"]; !ok || (settings.DensityMode != "comfortable" && settings.DensityMode != "compact" && settings.DensityMode != "dense" && settings.DensityMode != "auto") {
 			settings.DensityMode = "compact"
+		}
+		if _, ok := rawSettings["monitorEmphasis"]; !ok || (settings.MonitorEmphasis != "problems" && settings.MonitorEmphasis != "always" && settings.MonitorEmphasis != "never") {
+			settings.MonitorEmphasis = "problems"
 		}
 		if _, ok := rawSettings["launcherIconSize"]; !ok || (settings.LauncherIconSize != "small" && settings.LauncherIconSize != "normal" && settings.LauncherIconSize != "large") {
 			settings.LauncherIconSize = "normal"

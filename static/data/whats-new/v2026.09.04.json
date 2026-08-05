@@ -1,0 +1,43 @@
+{
+  "tag": "v2026.09.04",
+  "date": "August 2026",
+  "releasedAt": "2026-08-05",
+  "modalLead": "Monitored bookmarks finally show their status on the dashboard and you decide how loudly, any bookmark can be opened straight in the Health view, health rows answer the right mouse button, and the fold-all button gets a switch of its own.",
+  "sections": [
+    {
+      "title": "Status & health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A monitored bookmark shows its status</strong> — Monitor is the heavier of the two checking modes, yet it was the one that displayed nothing on the dashboard while Periodic showed a badge. Switching an existing bookmark from Periodic to Monitor also left the row untouched until the next full reload."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>You choose how much a monitored bookmark stands out</strong> — a healthy monitor can look like any other bookmark, carry its own accent edge so you can see at a glance what you are watching, or show nothing at all. A monitor that is down is still marked unless you pick Never. Under <strong>Config → Behavior → Status &amp; health</strong>."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Jump to a bookmark's health row</strong> — <strong>Show in Health</strong> in the right-click menu on the dashboard, and in the row menu under <strong>Config → Bookmarks</strong>, opens the Health view with that bookmark selected. Offered for every bookmark, including ones with checking switched off — that row is where you turn it on."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Health rows answer the right mouse button</strong> — the nine actions behind the <strong>More</strong> button were reachable only by hovering a row and finding the button. Right-clicking a row opens that same menu at the cursor, the way a bookmark on the dashboard already did. Shift and right-click still gets you the browser's own menu."
+        }
+      ]
+    },
+    {
+      "title": "Toolbar",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The fold-all button has its own switch</strong> — the <code>.</code> button that folds and unfolds every category had no setting at all, so it came and went with the cheat-sheet button beside it. Turning off <strong>Show the cheat-sheet button</strong> took two buttons away. It now has its own entry under <strong>Config → Appearance → Toolbar &amp; tabs</strong>, and appears in the side rail's key legend."
+        }
+      ]
+    }
+  ]
+}

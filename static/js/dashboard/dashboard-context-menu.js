@@ -144,6 +144,13 @@ class DashboardContextMenu {
                     submenu: true,
                 }]
                 : []),
+            // Offered for every bookmark, not only checked ones. The health
+            // report covers the whole library — an unchecked bookmark has a row
+            // there too (the `unchecked` filter and tile exist for exactly
+            // that), and that row is where its checking gets turned on. Hiding
+            // the entry made the destination unreachable from the one place
+            // someone would look for it.
+            { id: 'health', label: this.t('dashboard.healthOpenInHealth', 'Show in Health'), icon: '♥' },
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
         ];
 
@@ -654,6 +661,38 @@ class DashboardContextMenu {
         pop.style.top = `${Math.round(top)}px`;
     }
 
+    /**
+     * Open the Health view with this bookmark's row selected.
+     *
+     * The health key is `pageId:index` against the page's stored order, which
+     * is what `scope: 'current'` already carries. A smart-collection or
+     * cross-page row (`scope: 'remote'`) has no such index — its position in the
+     * rendered list is not its position on its own page — so that one is
+     * resolved from the server rather than guessed.
+     */
+    async revealInHealth(bookmarkRef) {
+        const d = this.dash;
+        const pageId = Number(bookmarkRef?.pageId);
+        if (!Number.isFinite(pageId)) return;
+
+        let index = bookmarkRef.scope === 'current' ? Number(bookmarkRef.index) : -1;
+        if (!(index >= 0)) {
+            const url = String(bookmarkRef.bookmark?.url || '').trim();
+            try {
+                const res = await fetch(`/api/bookmarks?page=${pageId}`);
+                const list = res.ok ? await res.json() : null;
+                index = Array.isArray(list)
+                    ? list.findIndex((entry) => String(entry?.url || '').trim() === url)
+                    : -1;
+            } catch {
+                index = -1;
+            }
+        }
+        if (!(index >= 0)) return;
+
+        await d.config?.openViewFromTile?.('health', null, `${pageId}:${index}`);
+    }
+
     runAction(action, row, bookmarkRef, options = {}) {
         const d = this.dash;
         const bookmark = bookmarkRef.bookmark;
@@ -693,6 +732,9 @@ class DashboardContextMenu {
                 break;
             case 'check-mode':
                 this.showCheckModeMenu(row, bookmarkRef, { parentPoint: options.parentPoint });
+                break;
+            case 'health':
+                void this.revealInHealth(bookmarkRef);
                 break;
             case 'delete':
                 // Confirm popover rather than deleteBookmarkInline() — a menu click is

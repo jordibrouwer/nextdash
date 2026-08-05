@@ -2440,6 +2440,32 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureHealthContextMenuTitle',
+                titleFallback: 'Right-click a health row',
+                whatKey: 'config.overviewNewFeatureHealthContextMenuWhat',
+                whatFallback: 'The nine actions behind a health row’s More button were reachable only by hovering the row and finding the button.',
+                howKey: 'config.overviewNewFeatureHealthContextMenuHow',
+                howFallback: 'Right-click any row in the Health view to open that same menu at the cursor, the way a bookmark on the dashboard already did. Shift and right-click still gives you the browser’s own menu.',
+                enableKey: 'config.overviewNewFeatureHealthContextMenuEnable',
+                enableFallback: 'Nothing to switch on — it is simply there. The ⋯ button and the m key keep working as before.',
+                ctaKey: 'config.overviewNewFeatureHealthContextMenuCta',
+                ctaFallback: 'Open Health →',
+                go: { view: 'health' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureMonitorEmphasisTitle',
+                titleFallback: 'Monitored bookmarks stand out',
+                whatKey: 'config.overviewNewFeatureMonitorEmphasisWhat',
+                whatFallback: 'A bookmark set to Monitor now shows its status on the dashboard, the way a Periodic one always did — and you can say how much it should stand out.',
+                howKey: 'config.overviewNewFeatureMonitorEmphasisHow',
+                howFallback: 'Right-click a bookmark and pick Show in Health to jump straight to its row, from the dashboard or from Config → Bookmarks.',
+                enableKey: 'config.overviewNewFeatureMonitorEmphasisEnable',
+                enableFallback: 'Set to draw the eye only when something is down. Choose Always or Never under Config → Behavior → Status & health.',
+                ctaKey: 'config.overviewNewFeatureMonitorEmphasisCta',
+                ctaFallback: 'Open Status & health →',
+                go: { section: 'behavior', behaviorTab: 'status' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureSideRailTitle',
                 titleFallback: 'Button bar position',
                 whatKey: 'config.overviewNewFeatureSideRailWhat',
@@ -2846,6 +2872,16 @@ class DashboardConfig {
                 void this.switchAppearanceTab(target.appearanceTab);
                 return;
             }
+            // Behavior has no switchAppearanceTab equivalent — the tab is only
+            // changed by its own strip — so the field is set before the section
+            // renders, which is what the strip itself reads.
+            if (target.behaviorTab && target.section === 'behavior') {
+                this.behaviorTab = target.behaviorTab;
+                if (this.section === 'behavior') {
+                    this.render();
+                    return;
+                }
+            }
             this.selectSection(target.section);
             if (target.bmPageFilter != null) {
                 void this.onBookmarksPageFilterChange();
@@ -2937,8 +2973,15 @@ class DashboardConfig {
         });
     }
 
-    /** A tile hands off to the view that acts on it (health with a filter, inbox). */
-    openViewFromTile(view, filter) {
+    /**
+     * A tile hands off to the view that acts on it (health with a filter, inbox).
+     *
+     * `focusKey` is a health issue key (`pageId:index`) to select on arrival —
+     * used by "Show in Health" on a single bookmark. focusIssue widens the
+     * filter by itself when the row would otherwise be hidden, so it is passed
+     * instead of a filter rather than alongside one.
+     */
+    openViewFromTile(view, filter, focusKey = null) {
         const d = this.dash;
         // The overview's "something needs attention" rows. Worth separating from
         // an ordinary view:health, because it says the summary is what sent
@@ -2953,6 +2996,9 @@ class DashboardConfig {
                     if (mod.isActiveView?.()) {
                         mod.render();
                     }
+                }
+                if (focusKey && mod?.focusIssue) {
+                    mod.focusIssue(focusKey);
                 }
             })();
         }
@@ -5558,6 +5604,7 @@ class DashboardConfig {
         // Toolbar & chrome
         showRecentButton: { def: true },
         showCheatSheetButton: { def: true },
+        showCollapseAllButton: { def: true },
         showConfigButton: { def: true },
         showHealthDashboard: { def: true },
         showAddBookmarkButton: { def: true },
@@ -5760,6 +5807,7 @@ class DashboardConfig {
                     chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
                     chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
                     chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                    chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
                     chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
                     // Button bar position lives on the Layout tab, as a button
@@ -5804,6 +5852,40 @@ class DashboardConfig {
                     bool('skipFastPing', 'config.skipFastPingLabel', 'Skip the fast ping pre-check'),
                     { field: 'statusOfflineRetries', type: 'number', label: t('config.statusOfflineRetriesLabel', 'Retries before offline'), min: 0, max: 10 },
                     { field: 'statusOfflineRetryDelayMs', type: 'number', label: t('config.statusOfflineRetryDelayLabel', 'Delay between retries (ms)'), min: 0, max: 60000 },
+                ],
+            },
+            {
+                tab: 'status',
+                title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
+                note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
+                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
+                highlight: true,
+                controls: [
+                    {
+                        field: 'monitorEmphasis',
+                        type: 'cards',
+                        // Body attribute only, so it needs `chrome` — `render`
+                        // redraws the rows but never rewrites <body>.
+                        special: 'chrome',
+                        label: t('config.monitorEmphasisLabel', 'Emphasis'),
+                        options: [
+                            {
+                                value: 'problems',
+                                label: t('config.monitorEmphasisProblems', 'Only when there is a problem'),
+                                body: t('config.monitorEmphasisProblemsBody', 'A healthy monitor looks like any other bookmark. Only an outage draws the eye.'),
+                            },
+                            {
+                                value: 'always',
+                                label: t('config.monitorEmphasisAlways', 'Always stand out'),
+                                body: t('config.monitorEmphasisAlwaysBody', 'Every monitored bookmark gets its own accent edge, so you can see at a glance what you are watching.'),
+                            },
+                            {
+                                value: 'never',
+                                label: t('config.monitorEmphasisNever', 'Never stand out'),
+                                body: t('config.monitorEmphasisNeverBody', 'Monitoring stays entirely in the Health view. The dashboard shows no marking at all, not even for an outage.'),
+                            },
+                        ],
+                    },
                 ],
             },
             {
@@ -5917,6 +5999,27 @@ class DashboardConfig {
                         <span class="config-field-affordances">${aff}</span>
                     </div>${hint}`;
             }
+            // Big labelled choice buttons, for a small set of options where the
+            // trade-off needs a sentence each. A <select> hides those sentences
+            // behind a click and gives no room for them.
+            if (c.type === 'cards') {
+                const cards = c.options.map((o) => {
+                    const on = String(val) === String(o.value);
+                    return `
+                        <button type="button" class="config-choice-card${on ? ' is-active' : ''}"
+                                ${dataAttrs} data-${prefix}-type="cards" data-${prefix}-value="${esc(o.value)}"
+                                role="radio" aria-checked="${on ? 'true' : 'false'}">
+                            <span class="config-choice-card-title">${esc(o.label)}</span>
+                            <span class="config-choice-card-body">${esc(o.body || '')}</span>
+                        </button>`;
+                }).join('');
+                return `
+                    <div class="config-field config-field--cards">
+                        <span class="config-field-label">${esc(c.label)}</span>
+                        <span class="config-field-affordances">${aff}</span>
+                    </div>
+                    <div class="config-choice-cards" role="radiogroup" aria-label="${esc(c.label)}">${cards}</div>${hint}`;
+            }
             let control;
             if (c.type === 'select') {
                 const opts = c.options.map((o) =>
@@ -5948,8 +6051,14 @@ class DashboardConfig {
                 ? `<span class="config-applies-to" title="${esc(this.t('config.appliesToTitle', 'These settings only take effect for bookmarks set to this mode'))}">${esc(panel.appliesTo)}</span>`
                 : '';
             const note = panel.note ? `<p class="config-panel-note">${esc(panel.note)}</p>` : '';
+            // `highlight` marks a panel as this release's new setting, with the
+            // same twinkle as the overview's New features panel. Declared by the
+            // schema rather than matched on a field name here, so retiring it is
+            // deleting one line where the setting is defined.
+            const stars = panel.highlight ? this.renderNewFeaturesPanelStars() : '';
             return `
-            <div class="config-panel">
+            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}">
+                ${stars}
                 <h3 class="config-panel-title">${esc(panel.title)}${badge}</h3>
                 ${note}
                 ${panel.controls.map(renderControl).join('')}
@@ -5965,7 +6074,22 @@ class DashboardConfig {
             const type = el.getAttribute(`data-${prefix}-type`);
             const special = el.getAttribute(`data-${prefix}-special`) || '';
             const numericSelect = el.hasAttribute(`data-${prefix}-numeric`);
-            if (type === 'checkbox') {
+            if (type === 'cards') {
+                // Buttons, not an input: click rather than change, and the group
+                // has to repaint its own selection because several elements share
+                // one field and nothing else redraws this panel.
+                el.addEventListener('click', () => {
+                    const value = el.getAttribute(`data-${prefix}-value`);
+                    container.querySelectorAll(
+                        `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="cards"]`
+                    ).forEach((card) => {
+                        const on = card === el;
+                        card.classList.toggle('is-active', on);
+                        card.setAttribute('aria-checked', on ? 'true' : 'false');
+                    });
+                    void this.setBehavior(field, value, special);
+                });
+            } else if (type === 'checkbox') {
                 el.addEventListener('change', () => this.setBehavior(field, el.checked, special));
             } else if (type === 'number' || numericSelect) {
                 el.addEventListener('change', () => this.setBehavior(field, Number(el.value), special));
@@ -6176,7 +6300,13 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.BEHAVIOR_TABS.map((tab) => {
             const active = tab === this.behaviorTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-behavior-body" data-behavior-tab="${esc(tab)}">${esc(this.behaviorTabLabel(tab))}</button>`;
+            // The Status tab carries this release's new setting, so it gets the
+            // same twinkle the overview's New features panel and the Ko-fi
+            // button use — the established "look here" mark in this app. Dropped
+            // once the setting is no longer new.
+            const isNew = tab === 'status';
+            const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-behavior-body" data-behavior-tab="${esc(tab)}">${esc(this.behaviorTabLabel(tab))}${stars}</button>`;
         }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>
@@ -9159,6 +9289,7 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const items = [];
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="health">${esc(this.t('dashboard.healthOpenInHealth', 'Show in Health'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="title">${esc(this.t('dashboard.healthRefreshTitle', 'Refresh title'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="archive">${esc(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
@@ -9313,6 +9444,27 @@ class DashboardConfig {
             return;
         }
         void this.dash.pageNav?.requestPageNavigation?.(pageId);
+    }
+
+    /**
+     * The mirror of openBookmarkOnDashboard: open the Health view with this
+     * bookmark's row selected.
+     *
+     * The index comes from findBookmarkRecord rather than from the in-memory
+     * list, because the health key is `pageId:index` against the page's stored
+     * order — and that helper already resolves the right one of two identical
+     * URLs. An index taken from the filtered config list would point at a
+     * different bookmark whenever a filter or sort is active.
+     */
+    async revealBookmarkInHealth(key) {
+        this.closeBookmarkMenus();
+        const record = await this.findBookmarkRecord(key);
+        if (!record) {
+            this.notify(this.t('config.bookmarkNotFound', 'Could not find this bookmark.'), 'error');
+            return;
+        }
+        this._trackAction('reveal-in-health');
+        await this.openViewFromTile('health', null, `${record.pageId}:${record.index}`);
     }
 
     copyBookmarkUrl(b) {
@@ -9499,6 +9651,9 @@ class DashboardConfig {
         switch (action) {
             case 'dashboard':
                 this.openBookmarkOnDashboard(bookmark);
+                break;
+            case 'health':
+                void this.revealBookmarkInHealth(key);
                 break;
             case 'redirect':
                 void this.detectBookmarkRedirect(key);

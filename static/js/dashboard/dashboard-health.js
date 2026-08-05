@@ -1078,8 +1078,25 @@ class DashboardHealth {
     /* ── More actions ──────────────────────────────────────────────────── */
 
     closeAllMenus() {
+        // Drop a placement frame that has not run yet, so it cannot write the old
+        // cursor position back onto a menu that is being closed right now.
+        if (this._menuPlacementFrame) {
+            cancelAnimationFrame(this._menuPlacementFrame);
+            this._menuPlacementFrame = 0;
+        }
+        if (this._menuPlacementSettle) {
+            clearTimeout(this._menuPlacementSettle);
+            this._menuPlacementSettle = 0;
+        }
         document.querySelectorAll('.health-view-menu').forEach((menu) => {
             menu.hidden = true;
+            // Drop any cursor placement, so the next open from the ⋯ button lands
+            // under the button again rather than where a right-click last put it.
+            if (menu.classList.contains('health-view-menu--at-cursor')) {
+                menu.classList.remove('health-view-menu--at-cursor');
+                menu.style.left = '';
+                menu.style.top = '';
+            }
         });
         document.querySelectorAll('[aria-haspopup="menu"]').forEach((btn) => {
             btn.setAttribute('aria-expanded', 'false');
@@ -1105,24 +1122,109 @@ class DashboardHealth {
     /**
      * Open or close one row menu. `kind` selects which of a row's menus is meant:
      * "more" for the ⋯ overflow, "check" for the check-mode popover.
+     *
+     * `at` opens the menu at a cursor position instead of under its button — the
+     * right-click path. The menu still lives inside the row's wrap and is still
+     * the same element the ⋯ button opens, so every action, the Escape handling
+     * and the outside-click dismiss keep working untouched; only where it lands
+     * differs.
      */
-    toggleMenu(key, kind = 'more') {
+    toggleMenu(key, kind = 'more', { at = null } = {}) {
         const menu = document.querySelector(
             `.health-view-menu[data-menu-for="${CSS.escape(key)}"][data-menu-owner="${CSS.escape(kind)}"]`
         );
         if (!menu) return;
         const btn = this.menuOwner(menu);
         if (!btn) return;
-        const willOpen = menu.hidden;
+        // Re-opening at a new cursor position counts as opening, not toggling:
+        // right-clicking a second row while the first row's menu is up should
+        // move the menu there rather than dismiss it.
+        const willOpen = menu.hidden || Boolean(at);
         this.closeAllMenus();
         if (!willOpen) return;
         menu.hidden = false;
         btn.setAttribute('aria-expanded', 'true');
         menu.querySelector('.health-view-menu-item')?.focus({ preventScroll: true });
+
+        if (at) {
+            this.positionMenuAtPoint(menu, at);
+            return;
+        }
         // Flip above the row when there is no room below.
         requestAnimationFrame(() => {
             const rect = menu.getBoundingClientRect();
             menu.classList.toggle('health-view-menu--up', rect.bottom > window.innerHeight - 8);
+        });
+    }
+
+    /**
+     * Place an open menu at a viewport point, clamped so it never hangs off an
+     * edge. Offsets are measured against the wrap because the menu is positioned
+     * within it — reading the wrap's box converts the cursor's viewport point
+     * into the menu's own coordinate space.
+     *
+     * The `--up` class is cleared rather than reused: it flips the menu with
+     * `bottom`, which would fight the explicit `top` set here.
+     */
+    positionMenuAtPoint(menu, { x, y }) {
+        const wrap = menu.closest('.health-view-menu-wrap');
+        const row = menu.closest('.health-view-item');
+        if (!wrap || !row) return;
+        menu.classList.remove('health-view-menu--up');
+        menu.classList.add('health-view-menu--at-cursor');
+
+        // Anchor to the row, not to the wrap. The wrap sits inside the actions
+        // bar, which expands over 0.14s when the row becomes selected, so its box
+        // keeps moving for several frames after the click — placement measured
+        // against it lands wherever the animation happened to be. The row's own
+        // box is stable, so the cursor is stored as an offset from it and
+        // converted back at write time.
+        const rowBox = row.getBoundingClientRect();
+        const offsetX = x - rowBox.left;
+        const offsetY = y - rowBox.top;
+
+        const place = () => {
+            // The menu can be closed between scheduling and running — Escape, or
+            // another right-click. Writing placement onto a closed menu would
+            // undo the teardown closeAllMenus() just did, and the ⋯ button would
+            // then open it at the stale cursor position.
+            if (menu.hidden || !menu.classList.contains('health-view-menu--at-cursor')) return;
+            const rect = menu.getBoundingClientRect();
+            const base = wrap.getBoundingClientRect();
+            const nowRow = row.getBoundingClientRect();
+            const margin = 8;
+            const wantLeft = nowRow.left + offsetX;
+            const wantTop = nowRow.top + offsetY;
+            const left = Math.max(margin, Math.min(wantLeft, window.innerWidth - rect.width - margin));
+            // Above the cursor when there is no room below, matching what the
+            // button path does with `--up`. A menu taller than the space above is
+            // then clamped to the top edge rather than flipped again — this list
+            // grows with the row's repair options and can outgrow a short window.
+            const flipUp = wantTop + rect.height + margin > window.innerHeight;
+            const top = Math.max(
+                margin,
+                Math.min(flipUp ? wantTop - rect.height : wantTop, window.innerHeight - rect.height - margin),
+            );
+            menu.style.left = `${left - base.left}px`;
+            menu.style.top = `${top - base.top}px`;
+        };
+
+        // Placed once the menu has a size, then again when the actions bar has
+        // finished expanding — the wrap it is positioned within moves during that
+        // transition, and only the second pass can read where it finally sits.
+        this._menuPlacementFrame = requestAnimationFrame(() => {
+            this._menuPlacementFrame = 0;
+            place();
+            const actions = row.querySelector('.health-view-item-actions');
+            if (!actions) return;
+            actions.addEventListener('transitionend', place, { once: true });
+            // A guard for the case where no transition runs at all — reduced
+            // motion, or a row that was already expanded — since `transitionend`
+            // would then never fire and the listener would leak.
+            this._menuPlacementSettle = setTimeout(() => {
+                actions.removeEventListener('transitionend', place);
+                place();
+            }, 200);
         });
     }
 
@@ -3522,6 +3624,23 @@ class DashboardHealth {
             e.stopPropagation();
             this.selectRowByKey(key);
             this.toggleMenu(key, 'more');
+        });
+
+        // Right-click opens the same More menu at the cursor, so a health row
+        // answers the mouse the way a dashboard bookmark row does. The actions
+        // are not duplicated here — this is a second way into the one menu.
+        row.addEventListener('contextmenu', (e) => {
+            // Shift is the escape hatch to the browser's own menu, matching the
+            // dashboard's rule, and the native menu is left alone in a text field
+            // so copy/paste keeps working while editing a row inline.
+            if (e.shiftKey) return;
+            if (this.dash.isModalOpen?.()) return;
+            const tag = e.target?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
+            e.preventDefault();
+            e.stopPropagation();
+            this.selectRowByKey(key);
+            this.toggleMenu(key, 'more', { at: { x: e.clientX, y: e.clientY } });
         });
         row.querySelector('.health-check-mode')?.addEventListener('click', (e) => {
             e.stopPropagation();

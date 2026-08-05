@@ -407,6 +407,7 @@ class DashboardToolbar {
                 { id: 'recent-bookmarks-button', key: '*', labelKey: 'tooltipRecent', fallback: 'recent' },
                 { id: 'tag-cloud-toggle-btn', key: '/', labelKey: 'tagCloudToggleAria', fallback: 'tag cloud' },
                 { id: 'help-button', key: '!', labelKey: 'tooltipCheatsheet', fallback: 'cheatsheet' },
+                { id: 'collapse-all-button', key: '.', labelKey: 'collapseAllLabel', fallback: 'fold' },
                 { id: 'whats-new-btn', key: '★', labelKey: 'whatsNewAria', fallback: "what's new" },
             ];
             return defs

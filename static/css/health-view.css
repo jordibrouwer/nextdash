@@ -1151,6 +1151,16 @@ body[data-layout-version="modern"] .health-view-menu {
     bottom: calc(100% + 0.3rem);
 }
 
+/* Opened by right-click rather than the ⋯ button: positionMenuAtPoint() writes
+   `top`/`left` inline, so the button-relative offset must not also apply.
+   `bottom: auto` matters because the row's actions bar can be reached while the
+   menu carries --up from an earlier open. */
+.health-view-menu--at-cursor {
+    top: 0;
+    left: 0;
+    bottom: auto;
+}
+
 .health-view-menu-item {
     padding: 0.45rem 0.85rem;
     margin: 0 0.3rem;

@@ -6,6 +6,20 @@ class DashboardBookmarkRows {
         this.dash = dashboard;
     }
 
+    /**
+     * Does this bookmark take part in availability checking at all?
+     *
+     * Off / periodic / monitor is one three-state choice stored as two mutually
+     * exclusive flags, so a monitored bookmark has `checkStatus === false`.
+     * status.js owns the answer; the fallback keeps rows rendering if that
+     * script has not loaded yet, and matches it exactly.
+     */
+    isChecked(bookmark) {
+        return typeof window.bookmarkIsChecked === 'function'
+            ? window.bookmarkIsChecked(bookmark)
+            : Boolean(bookmark?.checkStatus || bookmark?.monitor);
+    }
+
     bookmarkDisplayLabel(bookmark) {
         const d = this.dash;
         const name = String(bookmark?.name || '').trim();
@@ -543,11 +557,20 @@ class DashboardBookmarkRows {
 
         row.appendChild(openLink);
 
-        if (d.settings.showStatus && bookmark.checkStatus && d.settings.showPing) {
+        if (d.settings.showStatus && this.isChecked(bookmark) && d.settings.showPing) {
             const statusBadge = document.createElement('span');
             statusBadge.className = 'status-text bookmark-superscript-badge is-empty';
             statusBadge.setAttribute('aria-hidden', 'true');
             row.appendChild(statusBadge);
+        }
+
+        // Mark the mode on the row rather than deciding here how loud it should
+        // be: `body[data-monitor-emphasis]` makes that call in CSS, so changing
+        // the setting is a repaint instead of a re-render.
+        if (bookmark?.monitor) {
+            row.setAttribute('data-check-mode', 'monitor');
+        } else {
+            row.removeAttribute('data-check-mode');
         }
 
         const shortcutSpan = document.createElement('span');
@@ -652,7 +675,11 @@ class DashboardBookmarkRows {
             bookmark.category || '',
             bookmark.icon || '',
             bookmark.pinned ? '1' : '0',
-            bookmark.checkStatus ? '1' : '0',
+            // The mode, not just `checkStatus`: switching Periodic → Monitor
+            // clears that flag and sets `monitor`, so a fingerprint reading one
+            // flag stayed identical across the change and the incremental
+            // renderer skipped the row — the new badge never appeared.
+            window.CheckMode?.of?.(bookmark) || (bookmark.checkStatus ? 'periodic' : 'off'),
             String(bookmark.note || '').trim(),
             (bookmark.tags || []).join(','),
             String(bookmark.openCount || 0),
@@ -664,7 +691,7 @@ class DashboardBookmarkRows {
 
     restoreBookmarkRowStatus(row, bookmark) {
         const d = this.dash;
-        if (!d.statusMonitor || !d.settings.showStatus || !bookmark?.checkStatus || !row) {
+        if (!d.statusMonitor || !d.settings.showStatus || !this.isChecked(bookmark) || !row) {
             return;
         }
         const cached = d.statusMonitor.getCachedStatus(bookmark.url);

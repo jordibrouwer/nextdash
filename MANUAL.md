@@ -231,7 +231,7 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 │  [Smart collections]  [Tag collections]  [Categories…]      │
 │    └─ bookmark rows (icon · name · shortcut)                │
 ├─────────────────────────────────────────────────────────────┤
-│  [ + ] [ > ] [ : ] [ ? ] [ * ] [ ! ]   ← button bar         │
+│  [ + ] [ > ] [ : ] [ ? ] [ * ] [ ! ] [ . ]  ← button bar    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -248,6 +248,7 @@ Side rail layout (optional — **Config → Appearance → Layout → Button bar
 │──│                                                         │
 │/ │                                                         │
 │! │                                                         │
+│. │                                                         │
 │★ │                                                         │
 └──┴──────────── ────────────────────────────────────────────┘
 ```
@@ -277,6 +278,9 @@ The button bar can appear as a **floating bottom bar** (default), a **corner doc
 | `?` | `?` | Finders (external search shortcuts) |
 | `*` | `*` | Recent bookmarks on this page |
 | `!` | `!` / `F1` | Keyboard cheat sheet |
+| `.` | `.` | Fold or unfold every category |
+
+Each button can be shown or hidden individually under **Config → Appearance → Toolbar & tabs**. `*` recent, `!` cheat sheet and `.` fold-all share one group, and it disappears only when all three are switched off.
 
 **Side rail** — 44×44 px square cells stacked vertically against one edge; the dashboard grid shifts by 44 px to clear it. Available on the **left** (`side-left`) or the **right** (`side-right`); the two are mirror images, so the divider faces the content and tooltips open inward. On mobile (≤768 px) the rail automatically reverts to a centred bottom bar.
 
@@ -291,6 +295,7 @@ The button bar can appear as a **floating bottom bar** (default), a **corner doc
 | | `/` | `/` | Tag cloud (directly under recent in the rail flow) |
 | *(separator)* | — | — | — |
 | | `!` | `!` / `F1` | Keyboard cheat sheet |
+| | `.` | `.` | Fold or unfold every category |
 | Bottom | `★` | — | What's new |
 
 Hover a button on desktop for a tooltip with shortcuts. In side-rail mode, tooltips appear to the **right** of the rail. The header icons — **pages**, **inbox**, **health**, **config** — carry the same tooltips (**v2026.08.08.6**) and open **below** the icon, since there is no room above them at the top of the window (**v2026.09.2**).
@@ -380,6 +385,7 @@ Right-click any bookmark on the dashboard for its actions in one place:
 | **Tags…** | The quick-tag popover (also `Shift + T`) |
 | **Move to…** | The move popover — another category or page (also `Shift + M`) |
 | **Checking** | Names the bookmark's current availability mode and opens the three-way choice — **Off** / **Periodic** / **Monitor** (also `Shift + C`) |
+| **Show in Health** | Opens the [health view](#15-status-monitoring-and-health) with this bookmark's row selected. Offered for **every** bookmark, including ones with checking switched off — the report covers the whole library, and that row is where checking gets turned on |
 | **Delete** | Asks for confirmation first, then deletes with undo in the toast |
 
 Apart from sharing, nothing here is exclusive to the menu — the rest is reachable from the [command palette](#93-bookmark-actions) and config, and the menu just puts it where most people look first.
@@ -900,6 +906,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Panel head** | Below the **Health** title, a breadcrumb shows the active filter (e.g. `health › broken`) and a **% healthy** badge names how many bookmarks have no active issue — same placement as Config subpages (**v2026.08.08.4**) |
 | **Keyboard** | `j`/`k` or arrows move focus; `Tab` steps one row at a time (not through every control) and releases at either end; `g`/`G` (or `Home`/`End`) first/last; `R` or `?` reload the cached report without retest-all; `Enter` → inline editor; `o` → open URL; `s` → score breakdown; `p` → re-check; `f` → favicon; `x` → select; `m` → more actions (arrows inside the menu, `Esc` back to the row); `c` → availability checking; `i` → enlarged monitoring statistics on a monitored row. The shortcut legend under the feed lists them |
 | **Background rechecks** | Optional server-side schedule under **Config → Behavior → Status & health**; keeps the Health view current without opening Retest all |
+| **Emphasis on the dashboard** | How much a monitored bookmark stands out among the rest, under **Config → Behavior → Status & health**. **Only when there is a problem** (default) leaves a healthy monitor looking like any other bookmark and lets an outage draw the eye; **Always stand out** gives every monitored bookmark an accent edge, so you can see at a glance what you are watching; **Never stand out** keeps monitoring entirely in the health view and marks nothing on the dashboard, not even an outage. A monitored bookmark shows its status badge in all cases except Never |
 | **Check mode per row** | Each row shows its current mode (**Off** / **Periodic** / **Monitor**) as a button. Click it, or press `c`, to change it — the list keeps its scroll position and filter, so a filtered list does not reshuffle while you work down it. Options carry their own letters: `o`, `p`, `m` |
 | **Bulk enable** | On a **filtered** list, a button offers to switch the visible rows to Periodic or Monitor at once, confirming the exact count first. Never offered on the unfiltered **All** list, where it would point the scheduler at every bookmark you own |
 | **Monitoring** | A monitored row shows a **heartbeat bar** of recent checks, **uptime** over 24h / 7d / 30d, and a response-time **sparkline**; the expanded panel adds **outage history** (start, duration, cause), or *down since* while it is still down. A **Monitored** filter narrows the list to these rows. Interval is 5 minutes to 24 hours (default 15); history is kept 30 days in `data/health-history.json` |
@@ -909,6 +916,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Browser notifications** | The same downtime and recovery alerts, delivered to your browser rather than to a webhook — so they arrive while nextDash is closed. Switch them on from the card on the dashboard or under **Config → Behavior → Status & health**, then allow notifications once per device. Backup results and new-release notices are available there too, off by default. **Requires HTTPS**: Safari refuses notifications on `http://localhost`, as does every browser on iPhone and iPad (all WebKit); desktop Chrome and Firefox do allow localhost. See [Browser notifications](#browser-notifications) |
 | **Layout parity** | Uses the same **Classic / Modern** layout version and visual settings as the dashboard (preset, density, custom background, opacity, font weight, animations, auto dark mode); updates when you save in config |
 | **Row action styling** | Per-row toolbar buttons and overflow menu match the active layout (rounded chips). The **More** menu is drawn as the same opaque panel as the dashboard's right-click menu — same surface, radius, spacing and shadow, and the same blurred edge under the Modern layout |
+| **Right-click a row** | Opens that row's **More** menu at the cursor, the way right-clicking a bookmark does on the dashboard. It is the same menu the ⋯ button opens — a second way in, not a second set of actions — so it also answers `m`, arrow keys and `Esc`. **`Shift` + right-click** still gives you the browser's own menu |
 | **dashboard link** | Jump to bookmark on correct page/category |
 | **Re-check status** | Re-test a URL; failures show specific errors (e.g. HTTP 404, Timeout, DNS). The row updates immediately |
 | **Bulk** | **Retest statuses** from the toolbar |

@@ -46,6 +46,7 @@ class Dashboard {
 
             showSyncToasts: false,
             showCheatSheetButton: false,
+            showCollapseAllButton: true,
             showAddBookmarkButton: true,
             showStatus: true,
             colorizeStatus: true,
