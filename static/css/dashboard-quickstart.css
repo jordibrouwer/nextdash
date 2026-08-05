@@ -386,6 +386,45 @@
     margin-top: 0.8rem;
 }
 
+/* ── One-time side-rail invitation ──────────────────────────────────────
+   Same card chrome as the analytics notice; only the body differs. */
+.side-rail-notice-text {
+    margin: 0.35rem 0 0;
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.side-rail-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+}
+
+/* Shown only after the rail is applied: the command that moves it again,
+   for the one person who has just proved they care where the bar sits. */
+.side-rail-notice-hint {
+    margin: 0.6rem 0 0;
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-tertiary, var(--text-secondary));
+    line-height: 1.5;
+}
+
+.side-rail-notice-hint[hidden] {
+    display: none;
+}
+
+.side-rail-notice-hint kbd {
+    font-family: var(--font-family-main);
+    font-size: 0.68rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    color: var(--text-secondary);
+}
+
 /* ── One-time push-notification invitation ──────────────────────────────
    Same card chrome as the analytics notice; the caveat line is the addition. */
 .push-notice-text {

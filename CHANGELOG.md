@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.09.03 — August 2026](#v20260903--august-2026)
 - [v2026.09.2 — August 2026](#v2026092--august-2026)
 - [v2026.08.08.6 — August 2026](#v202608086--august-2026)
 - [v2026.08.08.5 — August 2026](#v202608085--august-2026)
@@ -149,6 +150,41 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.09.03 — August 2026
+
+**Side rail on either edge, and reduced motion respected** — the button bar can dock as a vertical rail on the left or right and is offered to you once in place, Appearance is split into its own tabs, the config overview is grouped by intent, and the operating system's reduced-motion preference finally stops animations on its own.
+
+### Layout
+
+- **new** — **The button bar can sit on either edge.** The rail was left-only, so the bottom positions offered a choice of corner and the rail did not — right-handed mouse users and RTL readers had no mirror to reach for. **Config → Appearance → Layout** now offers all five positions as buttons with an explanatory line, applied live. Rather than duplicating 68 rules, the selectors moved to a side-agnostic `[data-rail]` hook with direction driven by variables, so only two blocks know about sides (`layout-side-rail.css`, `dashboard-setup.js`, `models.go`).
+- **new** — **The side rail is offered once, in place.** A card asks whether to try it; **Try it** applies it immediately, then swaps to a follow-up naming both **Config → Appearance → Layout** and the `:buttonbar` command. Declining is final and stored in `DiscoverabilityState` server-side, so the answer follows the user across devices (`side-rail-notice.js`).
+- **improved** — **The rail mirrors properly.** The divider faces the content, tooltips and hints open inward rather than off-screen, and the hover nudge moves away from the rail's edge via `--rail-out`.
+
+### Accessibility
+
+- **fix** — **The OS reduced-motion preference is honoured.** Animation suppression was opt-in per component: each effect paired a `body.no-animations` rule with a hand-written `prefers-reduced-motion` block, and newer stylesheets only ever got the first half. No JS read the preference at all. The tag cloud FAB kept pulsing at 10.8s on an infinite loop for someone whose OS had asked for less motion. One global rule, loaded last, now stops all of it — a CSSOM sweep in the tests catches 14 such animations across health, inbox, modals and skeletons. Durations go near-zero rather than `animation: none`, because code waiting on `animationend` still needs the event (`reduced-motion.css`).
+
+### Appearance
+
+- **improved** — **Random theme and favicon harmonisation are button groups**, matching Quick mode and Style beside them instead of being a dropdown and a lone checkbox.
+- **new** — **Branding and Toolbar & tabs each get their own Appearance tab**, out of a **Display** tab that had grown long enough to hide them.
+- **improved** — **Appearance moves above Pages & tags** in the config navigation, directly under Bookmarks.
+
+### Config
+
+- **improved** — **The overview is grouped by intent.** A tile row and a stack of framed blocks competed for attention equally. The update check and Ko-fi button keep their place at the top; the panels below are grouped rather than boxed, and the tips collapse into one footer row.
+- **fix** — **Weather location, source, unit and refresh interval apply without a reload.** The weather is cached against location, source and unit, so changing any of those kept showing the old reading. Separately, the refresh interval is only read when the timer is armed — `scheduleWeatherRefresh` was reachable only from page load — so changing 30 to 5 left the old `setInterval` ticking at the previous cadence.
+- **fix** — **Shortcut hints on toolbar icons apply without a reload**, matching what `:shortcuts` in the command palette already did.
+- **fix** — **Setting promos no longer hijack the Appearance sub-tabs.** A promo could reset a sub-tab the user had just opened (leaving Branding blank) and could steal a deep link. Dismissal now sticks: a repaint used to re-show the promo because the click listener was destroyed with the DOM it lived on.
+- **fix** — **Legacy config hashes are rewritten** so the address bar and the visible tab agree.
+- **fix** — **The Statistics overview assertion matches the panel that actually leads**, after the Statistics rework put the headline summary ahead of the insights panel.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README and MANUAL for **v2026.09.03**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v169`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v228`. The **Docs** section is from here on recorded in the changelog only and no longer shown in the What's new modal, which is for user-facing change (`whats-new-stub.js`).
 
 ---
 

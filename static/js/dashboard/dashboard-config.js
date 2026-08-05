@@ -17,8 +17,8 @@ class DashboardConfig {
     static SECTIONS = [
         'overview',
         'bookmarks',
-        'pages-tags',
         'appearance',
+        'pages-tags',
         'behavior',
         'data-backups',
         'stats',
@@ -268,6 +268,9 @@ class DashboardConfig {
         const tab = DashboardConfig.subTabFromHash(hash);
         const prop = DashboardConfig.SUB_TAB_STATE[section];
         if (!tab || !prop) return false;
+        // A sub-tab named in the URL is as deliberate as clicking one, so a
+        // promo's ensureSubTab must not steer away from it.
+        window.ConfigSettingPromo?.markSubTabChosen?.();
         if (this[prop] === tab) return false;
         this[prop] = tab;
         return true;
@@ -474,6 +477,10 @@ class DashboardConfig {
         } else if (tabChanged || pageChanged) {
             this.render();
         }
+        // Rewrite to the canonical hash: the legacy `#config/behavior/layout`
+        // and `/display` links resolve to Appearance, and without this the old
+        // address stayed in the bar — so copying the URL handed on a dead link.
+        this.restoreConfigHash();
     }
 
     /* ── View lifecycle ────────────────────────────────────────────────────── */
@@ -2082,74 +2089,6 @@ class DashboardConfig {
         )}</p>`;
     }
 
-    /* ── Overview tiles ────────────────────────────────────────────────────── */
-
-    /**
-     * Read-only summary drawn from state the shell already holds, so the tiles
-     * never re-derive counts the health/inbox views own.
-     */
-    overviewTiles() {
-        const d = this.dash;
-        const summary = d.health?.report?.summary || {};
-        const totalBookmarks = Number(summary.totalBookmarks)
-            || (Array.isArray(d.allBookmarks) && d.allBookmarks.length)
-            || (Array.isArray(d.bookmarks) ? d.bookmarks.length : 0);
-        const broken = Number(summary.brokenCount) || 0;
-        const duplicate = Number(summary.duplicateCount) || 0;
-        const monitored = Number(summary.monitoredCount)
-            || (Array.isArray(d.health?.report?.issues)
-                ? d.health.report.issues.filter((i) => i?.monitor).length
-                : 0);
-        const monitorDown = Number(summary.monitorDownCount) || 0;
-        const pages = Array.isArray(d.pages) ? d.pages.length : 0;
-        const inboxUnread = d.inbox?.unreadCount?.() || 0;
-
-        return [
-            {
-                key: 'bookmarks', tone: 'accent',
-                label: this.t('config.tileBookmarks', 'Bookmarks'),
-                value: totalBookmarks,
-            },
-            {
-                key: 'monitored', tone: monitorDown > 0 ? 'crit' : (monitored > 0 ? 'accent' : 'neutral'),
-                label: this.t('config.tileMonitored', 'Monitored'),
-                value: monitored,
-                action: monitored > 0 ? { view: 'health', filter: 'monitored' } : null,
-                detail: monitorDown > 0
-                    ? this.t('config.tileMonitoredDown', 'Not responding')
-                    : (monitored > 0
-                        ? this.t('config.tileMonitoredActive', 'Live uptime checks')
-                        : this.t('config.tileMonitoredNone', 'None enabled')),
-            },
-            {
-                key: 'broken', tone: broken > 0 ? 'crit' : 'good',
-                label: this.t('config.tileBroken', 'Broken links'),
-                value: broken,
-                action: broken > 0 ? { view: 'health', filter: 'broken' } : null,
-                detail: broken > 0
-                    ? this.t('config.tileBrokenReview', 'Review in health')
-                    : this.t('config.tileBrokenNone', 'All links healthy'),
-            },
-            {
-                key: 'duplicate', tone: duplicate > 0 ? 'warn' : 'good',
-                label: this.t('config.tileDuplicates', 'Duplicates'),
-                value: duplicate,
-                action: duplicate > 0 ? { view: 'health', filter: 'duplicate' } : null,
-            },
-            {
-                key: 'pages', tone: 'neutral',
-                label: this.t('config.tilePages', 'Pages'),
-                value: pages,
-            },
-            {
-                key: 'inbox', tone: inboxUnread > 0 ? 'warn' : 'neutral',
-                label: this.t('config.tileInboxUnread', 'Inbox unread'),
-                value: inboxUnread,
-                action: inboxUnread > 0 ? { view: 'inbox' } : null,
-            },
-        ];
-    }
-
     /** Headline counts — pass a subset stats object when filters are active. */
     bookmarksSummaryTiles(stats) {
         const s = stats || this.computeStats();
@@ -2218,29 +2157,39 @@ class DashboardConfig {
     }
 
     /**
-     * The landing section: a snapshot of the whole install, arranged so the
-     * things that need attention come first and everything else reads as
-     * context. Each block links on to the view that acts on it, so the overview
-     * stays a summary rather than turning into a second place to fix things.
+     * The landing section: a snapshot of the whole install. Each block links on
+     * to the view that acts on it, so the overview stays a summary rather than
+     * turning into a second place to fix things.
+     *
+     * Grouped by what the reader is meant to do with each block, not by what the
+     * data happens to be:
+     *
+     *   act    — the update bar and Needs attention. Framed panels, and the only
+     *            ones that are: a border here means "this wants you".
+     *   know   — At a glance beside New features.
+     *   read   — About and Latest update.
+     *   tips   — a single line, not a panel.
+     *
+     * Everything below the act zone is deliberately unframed. Seven equally
+     * boxed blocks gave the eye nowhere to land, and the update bar — the one
+     * thing that must be seen — competed with six identical neighbours. The
+     * status tile row is gone entirely: all six numbers were already on the
+     * page, in At a glance or in Needs attention.
      */
     renderOverview() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const tiles = this.overviewTiles().map((t) => this.renderTile(t)).join('');
-        const intro = esc(this.t('config.overviewIntro', 'A snapshot of your setup. Tiles that need attention link straight to the view that fixes them.'));
+        const intro = esc(this.t('config.overviewIntro', 'A snapshot of your setup. Anything that needs you is at the top.'));
 
         return `
             <p class="config-view-intro">${intro}</p>
-            <div class="config-overview-tiles-zone">
+            <div class="config-overview-act">
                 ${this.renderOverviewUpdates()}
-                <div class="config-tiles config-tiles--overview" role="list">${tiles}</div>
-            </div>
-            <div class="config-overview-attention-zone">
                 ${this.renderOverviewAttention()}
             </div>
             <div class="config-overview-layout">
                 <div class="config-overview-top">
-                    ${this.renderOverviewNewFeatures()}
                     ${this.renderOverviewStats()}
+                    ${this.renderOverviewNewFeatures()}
                 </div>
                 <div class="config-overview-about-row">
                     ${this.renderOverviewAbout()}
@@ -2267,12 +2216,12 @@ class DashboardConfig {
         const stars = '<span class="wn-kofi-star"></span>'.repeat(4);
 
         return `
-            <div class="config-panel config-about-panel">
+            <div class="config-panel config-panel--plain config-about-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewAboutTitle', 'About the developer'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.overviewAboutBody',
-                    'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time, scratching my own itch: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. It is free and open-source, and it stays that way. If it saves you time too, a star on GitHub or a coffee is always appreciated — and bug reports and ideas are just as welcome.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.overviewAboutBodyShort',
+                    'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. Free and open-source, and it stays that way.'))}</p>
                 <div class="config-about-actions">
-                    <a class="config-btn config-about-github" href="https://github.com/jordibrouwer" target="_blank" rel="noopener noreferrer">
+                    <a class="config-btn config-about-github" href="https://github.com/jordibrouwer/nextdash" target="_blank" rel="noopener noreferrer">
                         <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
                         <span>${esc(this.t('config.overviewAboutGithub', 'GitHub'))}</span>
                     </a>
@@ -2374,20 +2323,23 @@ class DashboardConfig {
             },
         ].filter((i) => i.n > 0);
 
-        const body = items.length
-            ? `<ul class="config-attention-list">${items.map((i) => `
-                <li class="config-attention-row config-attention-row--${esc(i.tone)}">
-                    <span class="config-attention-count">${esc(String(i.n))}</span>
-                    <span class="config-attention-label">${esc(i.label)}</span>
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
-                </li>`).join('')}</ul>`
-            : `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
+        // Nothing wrong means no panel at all, not a panel saying so. A framed
+        // block costing ~110px to report the absence of problems was the single
+        // largest thing on a healthy install's Overview.
+        if (!items.length) {
+            return `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
+        }
 
         return `
-            <div class="config-panel">
+            <div class="config-panel config-panel--attention">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewAttentionTitle', 'Needs attention'))}</h3>
-                ${body}
+                <ul class="config-attention-list">${items.map((i) => `
+                    <li class="config-attention-row config-attention-row--${esc(i.tone)}">
+                        <span class="config-attention-count">${esc(String(i.n))}</span>
+                        <span class="config-attention-label">${esc(i.label)}</span>
+                        <button type="button" class="config-btn config-btn--small"
+                                data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
+                    </li>`).join('')}</ul>
             </div>`;
     }
 
@@ -2408,7 +2360,7 @@ class DashboardConfig {
         const navLabel = esc(this.t('config.overviewNewFeaturesNavAria', 'Browse new features'));
 
         return `
-            <div class="config-panel config-new-features-panel config-new-features-panel--animated">
+            <div class="config-panel config-panel--plain config-new-features-panel config-new-features-panel--animated">
                 ${this.renderNewFeaturesPanelStars()}
                 <div class="config-new-features-panel-inner">
                     <div class="config-new-features-head">
@@ -2487,6 +2439,19 @@ class DashboardConfig {
     /** Catalog of feature spotlights shown on the overview. */
     overviewNewFeatures() {
         return [
+            {
+                titleKey: 'config.overviewNewFeatureSideRailTitle',
+                titleFallback: 'Button bar position',
+                whatKey: 'config.overviewNewFeatureSideRailWhat',
+                whatFallback: 'The add, search, commands, and finders buttons can float center-bottom, dock into either bottom corner, or stand as a vertical rail down the left edge.',
+                howKey: 'config.overviewNewFeatureSideRailHow',
+                howFallback: 'Pick a position under Config → Appearance → Layout, or run :buttonbar from the command palette. The bar moves as you choose — no reload.',
+                enableKey: 'config.overviewNewFeatureSideRailEnable',
+                enableFallback: 'The side rail keeps the space under your bookmarks clear, which pays off on wide screens.',
+                ctaKey: 'config.overviewNewFeatureSideRailCta',
+                ctaFallback: 'Open Layout →',
+                go: { section: 'appearance', appearanceTab: 'layout' },
+            },
             {
                 titleKey: 'config.overviewNewFeatureBookmarkFormTitle',
                 titleFallback: 'Shared bookmark form',
@@ -2608,7 +2573,7 @@ class DashboardConfig {
             </li>`;
 
         return `
-            <div class="config-panel">
+            <div class="config-panel config-panel--plain">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewStatsTitle', 'At a glance'))}</h3>
                 ${s.total ? `
                     <div class="config-score config-score--compact">
@@ -2655,7 +2620,7 @@ class DashboardConfig {
         }
 
         return `
-            <div class="config-panel">
+            <div class="config-panel config-panel--plain">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewWhatsNewTitle', 'Latest update'))}</h3>
                 ${body}
                 <div class="config-actions">
@@ -2665,9 +2630,13 @@ class DashboardConfig {
     }
 
     /**
-     * A rotating handful of tips. Rotating rather than fixed so the panel is
-     * worth glancing at more than once; seeded by the day so it does not shuffle
-     * on every repaint.
+     * A rotating handful of tips. Rotating rather than fixed so the row is worth
+     * glancing at more than once; seeded by the day so it does not shuffle on
+     * every repaint.
+     *
+     * A footer row rather than a panel: three keyboard hints did not need a
+     * heading and a frame at the bottom of the page, and as a panel it read as
+     * another block competing with the two above it.
      */
     renderOverviewTips() {
         const esc = (v) => this.dash.escapeHtml(v);
@@ -2678,10 +2647,10 @@ class DashboardConfig {
         const picked = [0, 1, 2].map((i) => all[(start + i) % all.length]);
 
         return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewTipsTitle', 'Tips'))}</h3>
-                <ul class="config-help-tips">${picked.map((t) => `<li class="config-help-tip">${t}</li>`).join('')}</ul>
-                <div class="config-actions">
+            <div class="config-overview-tips-row">
+                <span class="config-overview-tips-label">${esc(this.t('config.overviewTipsTitle', 'Tips'))}</span>
+                <ul class="config-overview-tips-list">${picked.map((t) => `<li class="config-help-tip">${t}</li>`).join('')}</ul>
+                <div class="config-overview-tips-actions">
                     <button type="button" class="config-btn config-btn--small"
                             data-overview-go='{"section":"help"}'>${esc(this.t('config.overviewMoreTips', 'More tips →'))}</button>
                     ${this.renderCheatSheetPdfLink()}
@@ -3963,6 +3932,12 @@ class DashboardConfig {
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
         }
+        if (this.appearanceTab === 'toolbar') {
+            return shell(this.renderAppearanceToolbarBody());
+        }
+        if (this.appearanceTab === 'branding') {
+            return shell(this.renderAppearanceBrandingBody());
+        }
 
         return shell(`
             ${tiles}
@@ -3992,7 +3967,7 @@ class DashboardConfig {
                 </div>
                 <div class="config-field" data-config-setting-promo-anchor="randomThemeMode">
                     <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
-                    <select class="config-select" data-appearance-select="randomThemeMode">${this.renderRandomThemeModeOptions(s)}</select>
+                    <div class="config-choices" role="group">${this.renderRandomThemeModeChoices(s)}</div>
                     ${this.appearanceAff('randomThemeMode')}
                 </div>
                 ${this.renderIconStyling()}
@@ -4047,10 +4022,28 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('showBackgroundDots')}
                 </div>
-            </div>
+            </div>`);
+    }
 
+    /**
+     * Which buttons and tabs the dashboard chrome shows. Its own tab rather than
+     * a panel under Display: twelve visibility toggles plus the button-bar
+     * position buried the three everyday row options they sat beneath.
+     */
+    renderAppearanceToolbarBody() {
+        return this.renderControlPanels(
+            this.behaviorSchema().filter((p) => p.tab === 'toolbar'),
+            'behavior'
+        );
+    }
+
+    renderAppearanceBrandingBody() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceBrandingNote', 'The page title and favicon this dashboard uses in the browser tab.'))}</p>
                 <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="enableCustomTitle" ${s.enableCustomTitle ? 'checked' : ''}>
@@ -4067,7 +4060,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" data-appearance-action="upload-favicon">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
                     <input type="file" id="config-favicon-input" accept="image/*,.ico" hidden>
                 </div>
-            </div>`);
+            </div>`;
     }
 
     renderAppearanceLayoutBody() {
@@ -4078,6 +4071,23 @@ class DashboardConfig {
         const iconSizes = [['small', this.t('config.launcherIconSizeSmall', 'Small')], ['normal', this.t('config.launcherIconSizeNormal', 'Normal')], ['large', this.t('config.launcherIconSizeLarge', 'Large')]];
         const iconSizeChoices = iconSizes.map(([val, label]) =>
             `<button type="button" class="config-choice${iconSize === val ? ' is-active' : ''}" data-appearance-iconsize="${esc(val)}" aria-pressed="${iconSize === val}">${esc(label)}</button>`
+        ).join('');
+
+        // These five are the only values the server accepts; it silently
+        // rewrites anything else to 'bottom'. See models.go.
+        const barPosition = ['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right']
+            .includes(s.buttonBarPosition) ? s.buttonBarPosition : 'bottom';
+        // Short labels: the full ones carry "(default)" and "corner", which is
+        // more than a button in a five-up group can show.
+        const barPositions = [
+            ['bottom', this.t('config.buttonBarPositionBottomShort', 'Center-bottom')],
+            ['bottom-left', this.t('config.buttonBarPositionLeftShort', 'Bottom-left')],
+            ['bottom-right', this.t('config.buttonBarPositionRightShort', 'Bottom-right')],
+            ['side-left', this.t('config.buttonBarPositionSideLeftShort', 'Rail left')],
+            ['side-right', this.t('config.buttonBarPositionSideRightShort', 'Rail right')],
+        ];
+        const barChoices = barPositions.map(([val, label]) =>
+            `<button type="button" class="config-choice${barPosition === val ? ' is-active' : ''}" data-appearance-barpos="${esc(val)}" aria-pressed="${barPosition === val}">${esc(label)}</button>`
         ).join('');
 
         return `
@@ -4102,6 +4112,17 @@ class DashboardConfig {
                     ${this.appearanceAff('launcherIconSize')}
                 </div>
             </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.buttonBarPositionNote', 'Where the add, search, commands, and finders buttons sit on the dashboard. Center-bottom floats them above the bookmarks; the corner docks tuck them out of the way; the side rail stacks them vertically down the left edge.'))}</p>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.buttonBarPositionLabel', 'Button bar position'))}</span>
+                    <div class="config-choices" role="group">${barChoices}</div>
+                    ${this.appearanceAff('buttonBarPosition')}
+                    <p class="config-field-hint">${esc(this.t(`config.buttonBarPositionDesc.${barPosition}`, ''))}</p>
+                </div>
+            </div>
             ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'layout'), 'behavior')}`;
     }
 
@@ -4111,7 +4132,7 @@ class DashboardConfig {
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live in the panels below.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live on their own tab.'))}</p>
                 <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="showIcons" ${s.showIcons !== false ? 'checked' : ''}>
@@ -4145,7 +4166,7 @@ class DashboardConfig {
         return themeId;
     }
 
-    renderRandomThemeModeOptions(settings) {
+    renderRandomThemeModeChoices(settings) {
         const esc = (v) => this.dash.escapeHtml(v);
         const current = window.ThemeUtils?.normalizeRandomThemeMode?.(settings)
             || settings?.randomThemeMode
@@ -4156,7 +4177,7 @@ class DashboardConfig {
             ['view', 'config.randomThemeModeView', 'On view change'],
         ];
         return modes.map(([value, labelKey, fallback]) =>
-            `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${esc(this.t(labelKey, fallback))}</option>`
+            `<button type="button" class="config-choice${value === current ? ' is-active' : ''}" data-appearance-randommode="${esc(value)}" aria-pressed="${value === current}">${esc(this.t(labelKey, fallback))}</button>`
         ).join('');
     }
 
@@ -4226,6 +4247,9 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-weight]').forEach((btn) => {
             btn.addEventListener('click', () => this.setFontWeight(btn.getAttribute('data-appearance-weight')));
         });
+        container.querySelectorAll('[data-appearance-randommode]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setAppearanceSelect('randomThemeMode', btn.getAttribute('data-appearance-randommode')));
+        });
         container.querySelectorAll('[data-appearance-bg]').forEach((btn) => {
             btn.addEventListener('click', () => this.setBackgroundType(btn.getAttribute('data-appearance-bg')));
         });
@@ -4239,6 +4263,9 @@ class DashboardConfig {
         }
         container.querySelectorAll('[data-appearance-iconsize]').forEach((btn) => {
             btn.addEventListener('click', () => this.setLauncherIconSize(btn.getAttribute('data-appearance-iconsize')));
+        });
+        container.querySelectorAll('[data-appearance-barpos]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setButtonBarPosition(btn.getAttribute('data-appearance-barpos')));
         });
         container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
             input.addEventListener('change', () => this.setToggle(input.getAttribute('data-appearance-toggle'), input.checked));
@@ -4271,14 +4298,13 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleAppearanceAction(btn.getAttribute('data-appearance-action')));
         });
-        // Favicon harmonisation: the toggle and style repaint (they change which
-        // controls are shown); the slider updates live so it keeps the pointer.
-        const iconsToggle = container.querySelector('[data-appearance-toggle-icons]');
-        if (iconsToggle) {
-            iconsToggle.addEventListener('change', () => {
-                void this.setIconStyling({ enabled: iconsToggle.checked });
+        // Favicon harmonisation: the on/off and style buttons repaint (they change
+        // which controls are shown); the slider updates live so it keeps the pointer.
+        container.querySelectorAll('[data-appearance-toggle-icons]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.setIconStyling({ enabled: btn.getAttribute('data-appearance-toggle-icons') === 'on' });
             });
-        }
+        });
         container.querySelectorAll('[data-appearance-iconstyle]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 void this.setIconStyling({ style: btn.getAttribute('data-appearance-iconstyle') });
@@ -4325,7 +4351,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
-        if (this.appearanceTab === 'layout' || this.appearanceTab === 'display') {
+        if (['layout', 'display', 'toolbar'].includes(this.appearanceTab)) {
             this.bindControlPanels(container, 'behavior');
         }
         this.bindFormKeyboard(container);
@@ -4424,6 +4450,8 @@ class DashboardConfig {
             general: ['config.appearanceTabGeneral', 'Theme'],
             layout: ['config.appearanceTabLayout', 'Layout'],
             display: ['config.appearanceTabDisplay', 'Display'],
+            toolbar: ['config.appearanceTabToolbar', 'Toolbar & tabs'],
+            branding: ['config.appearanceTabBranding', 'Branding'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -5110,6 +5138,12 @@ class DashboardConfig {
         const choices = styles.map(([val, label]) =>
             `<button type="button" class="config-choice${style === val ? ' is-active' : ''}" data-appearance-iconstyle="${esc(val)}" aria-pressed="${style === val}">${esc(label)}</button>`
         ).join('');
+        const enabledChoices = [
+            [false, this.t('config.iconStylingOff', 'Off')],
+            [true, this.t('config.iconStylingOn', 'On')],
+        ].map(([val, label]) =>
+            `<button type="button" class="config-choice${enabled === val ? ' is-active' : ''}" data-appearance-toggle-icons="${val ? 'on' : 'off'}" aria-pressed="${enabled === val}">${esc(label)}</button>`
+        ).join('');
         // Three sample icons styled exactly as the dashboard styles a favicon, so
         // the effect is visible without leaving the section.
         // .preview-icon inside .icon-themed is what theme.css's variant rules
@@ -5120,9 +5154,7 @@ class DashboardConfig {
         return `
             <div class="config-field">
                 <span class="config-field-label">${esc(this.t('config.iconStylingLabel', 'Favicon harmonization (per theme)'))}</span>
-                <label class="config-toggle">
-                    <input type="checkbox" data-appearance-toggle-icons ${enabled ? 'checked' : ''}>
-                </label>
+                <div class="config-choices" role="group">${enabledChoices}</div>
                 ${this.appearanceAff('themeIconStyling')}
             </div>
             <p class="config-field-hint">${esc(this.iconStylingHint())}</p>
@@ -5319,6 +5351,18 @@ class DashboardConfig {
         if (!['small', 'normal', 'large'].includes(size)) return;
         this.dash.settings.launcherIconSize = size;
         this.dash.visual?.applyVisualSettings?.();
+        this.persistAppearance();
+    }
+
+    /**
+     * Where the button bar sits. The position is written onto <body> as
+     * data-button-position by setupDOM and the rest is CSS, so reapplying the
+     * chrome is what moves the bar — the same path `:buttonbar` uses.
+     */
+    setButtonBarPosition(position) {
+        if (!['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right'].includes(position)) return;
+        this.dash.settings.buttonBarPosition = position;
+        this.applyChromeSettings();
         this.persistAppearance();
     }
 
@@ -5614,7 +5658,7 @@ class DashboardConfig {
                     ] },
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
-                    bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'),
+                    { ...bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'), special: 'shortcutTooltips' },
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
                     bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
                 ],
@@ -5699,7 +5743,7 @@ class DashboardConfig {
                 ],
             },
             {
-                tab: 'display',
+                tab: 'toolbar',
                 title: t('config.generalGroupChrome', 'Toolbar & tabs'),
                 note: t('config.generalHeaderButtonsIntro', 'Button visibility in the dashboard footer and header.'),
                 // Chrome lives on <body> as data-* attributes rather than being
@@ -5718,15 +5762,8 @@ class DashboardConfig {
                     chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
                     chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
-                    // These four are the only values the server accepts; it
-                    // silently rewrites anything else to 'bottom', so inventing
-                    // names here made the control a no-op. See models.go.
-                    { field: 'buttonBarPosition', type: 'select', label: t('config.buttonBarPositionLabel', 'Button bar position'), special: 'chrome', options: [
-                        opt('bottom', t('config.buttonBarPositionBottom', 'Center-bottom (default)')),
-                        opt('bottom-left', t('config.buttonBarPositionLeft', 'Bottom-left corner')),
-                        opt('bottom-right', t('config.buttonBarPositionRight', 'Bottom-right corner')),
-                        opt('side-left', t('config.buttonBarPositionSideLeft', 'Side rail (left)')),
-                    ] },
+                    // Button bar position lives on the Layout tab, as a button
+                    // group beside the other two layout choices.
                 ],
             },
             {
@@ -6116,6 +6153,13 @@ class DashboardConfig {
 
     static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'status', 'privacy'];
 
+    /**
+     * Date & weather fields that need a fresh fetch rather than a redraw: each
+     * one is part of the weather cache key (weather.js getCacheKey), so the
+     * cached reading belongs to the old value.
+     */
+    static WEATHER_FETCH_FIELDS = ['weatherLocation', 'weatherSource', 'weatherUnit', 'showWeatherWithDate'];
+
     behaviorTabLabel(tab) {
         const map = {
             general: ['config.behaviorTabGeneral', 'General'],
@@ -6262,10 +6306,30 @@ class DashboardConfig {
                 d.renderDashboard?.({ animate: false });
                 break;
             case 'datetime':
-                d.renderDateWeatherLine?.();
+                // The clock and date line render from settings, but the weather
+                // comes from a cached fetch keyed by location, source and unit —
+                // so changing any of those has to refetch. Redrawing alone kept
+                // showing the old location's reading until a full reload.
+                if (DashboardConfig.WEATHER_FETCH_FIELDS.includes(field)) {
+                    void d.refreshWeather?.(true);
+                } else if (field === 'weatherRefreshMinutes') {
+                    // The interval is only read when the timer is armed, so
+                    // redrawing left the old setInterval running at the previous
+                    // cadence until a reload. Re-arm it at the new one.
+                    d.scheduleWeatherRefresh?.();
+                } else {
+                    d.renderDateWeatherLine?.();
+                }
                 break;
             case 'chrome':
                 this.applyChromeSettings();
+                break;
+            case 'shortcutTooltips':
+                // The popovers are listeners bound to the toolbar buttons, not
+                // markup read at render time — so re-run the setup, which adds
+                // or tears them down to match. This is what `:shortcuts on` in
+                // the command palette already did; only config lagged behind.
+                d.setupToolbarKbdTooltips?.();
                 break;
             case 'chromeRender':
                 // Both: the value is read at render time *and* mirrored onto
@@ -6427,7 +6491,7 @@ class DashboardConfig {
     /** Data & backups keeps its destructive actions on a separate tab. */
     static DB_TABS = ['backups', 'reset'];
 
-    static APPEARANCE_TABS = ['general', 'layout', 'display', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'branding', 'custom-themes'];
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
 

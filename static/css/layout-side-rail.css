@@ -1,9 +1,18 @@
-/* Side Rail navigation — body[data-button-position="side-left"]
-   Converts the bottom button bar into a 44px vertical rail on the left edge.
-   All other layouts (classic / modern) are unaffected. */
+/* Side Rail navigation — body[data-rail]
+   Converts the bottom button bar into a 44px vertical rail on a screen edge.
+   All other layouts (classic / modern) are unaffected.
+
+   The rail exists on both edges. Rather than duplicating every rule for
+   side-right, the selectors match a side-agnostic [data-rail] hook and the few
+   properties that actually carry a direction read from variables below. Adding
+   the right-hand rail is then the variable block, not 68 mirrored rules.
+
+   --rail-edge / --rail-edge-far: which physical side the rail is pinned to.
+   --rail-out: the direction "away from the rail", used by tooltips and popovers
+   that must open over the content rather than off-screen. */
 
 /* ── Variables ─────────────────────────────────────────────────────────────── */
-body[data-button-position="side-left"] {
+body[data-rail] {
     --rail-width: 44px;
     --rail-bg: color-mix(in srgb, var(--background-secondary) 88%, transparent);
     --rail-border: color-mix(in srgb, var(--border-primary) 45%, transparent);
@@ -12,10 +21,33 @@ body[data-button-position="side-left"] {
     --rail-sep-color: color-mix(in srgb, var(--border-primary) 35%, transparent);
 }
 
+/* Left rail (default) and its mirror. Only these two blocks know about sides. */
+body[data-button-position="side-left"] {
+    --rail-edge: 0;
+    --rail-edge-far: auto;
+    --rail-out: 1;               /* content lies to the right */
+}
+
+body[data-button-position="side-right"] {
+    --rail-edge: auto;
+    --rail-edge-far: 0;
+    --rail-out: -1;              /* content lies to the left */
+    /* Tooltips and hints open leftward, over the content, not off-screen. */
+    --rail-tip-left: auto;
+    --rail-tip-right: calc(100% + 8px);
+    --rail-hint-left: auto;
+    --rail-hint-right: calc(var(--rail-width) + 0.65rem);
+    --rail-content-left: 0;
+    --rail-content-right: var(--rail-width);
+    --rail-border-right: none;
+    --rail-border-left: 1px solid var(--rail-border);
+}
+
 /* ── Rail container ─────────────────────────────────────────────────────────── */
-body[data-button-position="side-left"] .button-container {
+body[data-rail] .button-container {
     position: fixed;
-    left: 0;
+    left: var(--rail-edge);
+    right: var(--rail-edge-far);
     top: 0;
     bottom: 0;
     transform: none;
@@ -32,7 +64,8 @@ body[data-button-position="side-left"] .button-container {
     gap: 0;
 
     background: var(--rail-bg);
-    border-right: 1px solid var(--rail-border);
+    /* The divider faces the content, so it swaps sides with the rail. */
+    border-right: var(--rail-border-right, 1px solid var(--rail-border));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 
@@ -43,27 +76,27 @@ body[data-button-position="side-left"] .button-container {
     border-radius: 0;
     border-top: none;
     border-bottom: none;
-    border-left: none;
+    border-left: var(--rail-border-left, none);
 }
 
 /* ── Button groups: flatten into rail flex flow ──────────────────────────────── */
-body[data-button-position="side-left"] .btn-group {
+body[data-rail] .btn-group {
     display: contents;
 }
 
 /* ── Button order & spacers ──────────────────────────────────────────────────── */
 /* 1. add bookmark — top */
-body[data-button-position="side-left"] #quick-add-toolbar-btn   { order: 1; }
+body[data-rail] #quick-add-toolbar-btn   { order: 1; }
 /* spacer (one button height) before search */
-body[data-button-position="side-left"] #search-button           { order: 2; margin-top: var(--corner-fab-height, 2.75rem); }
+body[data-rail] #search-button           { order: 2; margin-top: var(--corner-fab-height, 2.75rem); }
 /* finders before commands */
-body[data-button-position="side-left"] #finders-button          { order: 3; }
-body[data-button-position="side-left"] #commands-button         { order: 4; }
-body[data-button-position="side-left"] #recent-bookmarks-button { order: 5; }
-body[data-button-position="side-left"] #tag-cloud-toggle-btn { order: 6; }
+body[data-rail] #finders-button          { order: 3; }
+body[data-rail] #commands-button         { order: 4; }
+body[data-rail] #recent-bookmarks-button { order: 5; }
+body[data-rail] #tag-cloud-toggle-btn { order: 6; }
 
 /* cheatsheet: fixed directly above the what's new button */
-body[data-button-position="side-left"] #help-button {
+body[data-rail] #help-button {
     position: fixed;
     bottom: var(--corner-fab-height, 2.75rem);
     left: 0;
@@ -84,7 +117,7 @@ body[data-button-position="side-left"] #help-button {
 }
 
 /* ── Individual buttons: same style as what's new ────────────────────────────── */
-body[data-button-position="side-left"] .search-button {
+body[data-rail] .search-button {
     width: var(--rail-width);
     height: var(--corner-fab-height, 2.75rem);
     padding: 0;
@@ -97,46 +130,46 @@ body[data-button-position="side-left"] .search-button {
     box-shadow: none;
 }
 
-body[data-button-position="side-left"] .search-button-labeled {
+body[data-rail] .search-button-labeled {
     flex-direction: column;
     min-width: 0;
     gap: 0;
 }
 
-body[data-button-position="side-left"] .search-button-label {
+body[data-rail] .search-button-label {
     display: none !important;
 }
 
-body[data-button-position="side-left"] .search-button:hover {
-    transform: translateX(2px);
+body[data-rail] .search-button:hover {
+    transform: translateX(calc(var(--rail-out, 1) * 2px));
     background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
     border-color: var(--accent-primary);
     box-shadow: none;
 }
 
-body[data-button-position="side-left"] .search-button:active {
+body[data-rail] .search-button:active {
     transform: translateX(0);
 }
 
-body[data-button-position="side-left"] #help-button:hover {
-    transform: translateX(2px);
+body[data-rail] #help-button:hover {
+    transform: translateX(calc(var(--rail-out, 1) * 2px));
     background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
     border-color: var(--accent-primary);
     box-shadow: none;
 }
 
 /* ── Tooltips: show to the right of the rail ─────────────────────────────────── */
-body[data-button-position="side-left"] .search-button[data-tooltip]::after {
+body[data-rail] .search-button[data-tooltip]::after {
     bottom: auto;
     top: 50%;
-    left: calc(100% + 8px);
-    right: auto;
+    left: var(--rail-tip-left, calc(100% + 8px));
+    right: var(--rail-tip-right, auto);
     transform: translateY(-50%);
     white-space: nowrap;
 }
 
 /* ── Tag cloud: in rail flow directly under recents ─────────────────────────── */
-body[data-button-position="side-left"] #tag-cloud-toggle-btn.search-button {
+body[data-rail] #tag-cloud-toggle-btn.search-button {
     position: static;
     width: var(--rail-width);
     height: var(--corner-fab-height, 2.75rem);
@@ -152,24 +185,24 @@ body[data-button-position="side-left"] #tag-cloud-toggle-btn.search-button {
     pointer-events: auto;
 }
 
-body[data-button-position="side-left"] #tag-cloud-toggle-btn[data-tooltip]::after {
+body[data-rail] #tag-cloud-toggle-btn[data-tooltip]::after {
     bottom: auto;
     top: 50%;
-    left: calc(100% + 8px);
-    right: auto;
+    left: var(--rail-tip-left, calc(100% + 8px));
+    right: var(--rail-tip-right, auto);
     transform: translateY(-50%);
     white-space: nowrap;
 }
 
-body[data-button-position="side-left"] #tag-cloud-toggle-btn:hover {
-    transform: translateX(2px);
+body[data-rail] #tag-cloud-toggle-btn:hover {
+    transform: translateX(calc(var(--rail-out, 1) * 2px));
     background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 
 /* ── What's new button: anchor to rail bottom ────────────────────────────────── */
-body[data-button-position="side-left"] .whats-new-btn {
-    left: 0;
-    right: auto;
+body[data-rail] .whats-new-btn {
+    left: var(--rail-edge);
+    right: var(--rail-edge-far);
     bottom: 0;
     width: var(--rail-width);
     height: calc(var(--corner-fab-height, 2.75rem));
@@ -184,26 +217,26 @@ body[data-button-position="side-left"] .whats-new-btn {
     z-index: 1004;
 }
 
-body[data-button-position="side-left"] .whats-new-btn:hover {
-    transform: translateX(2px);
+body[data-rail] .whats-new-btn:hover {
+    transform: translateX(calc(var(--rail-out, 1) * 2px));
     box-shadow: none;
     border-color: var(--accent-primary);
     background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 
-body[data-button-position="side-left"] .whats-new-btn[data-tooltip]::after {
+body[data-rail] .whats-new-btn[data-tooltip]::after {
     bottom: auto;
     top: 50%;
-    left: calc(100% + 8px);
-    right: auto;
+    left: var(--rail-tip-left, calc(100% + 8px));
+    right: var(--rail-tip-right, auto);
     transform: translateY(-50%);
 }
 
 /* ── Hints: beside the rail (parity with bottom-toolbar discoverability) ───── */
-body[data-button-position="side-left"] .search-flow-hint {
+body[data-rail] .search-flow-hint {
     position: fixed;
-    left: calc(var(--rail-width) + 0.65rem);
-    right: auto;
+    left: var(--rail-hint-left, calc(var(--rail-width) + 0.65rem));
+    right: var(--rail-hint-right, auto);
     top: calc(var(--corner-fab-height, 2.75rem) * 2 + 0.35rem);
     bottom: auto;
     transform: none;
@@ -214,7 +247,7 @@ body[data-button-position="side-left"] .search-flow-hint {
     pointer-events: none;
 }
 
-body[data-button-position="side-left"] .search-flow-hint-text {
+body[data-rail] .search-flow-hint-text {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-start;
@@ -223,14 +256,15 @@ body[data-button-position="side-left"] .search-flow-hint-text {
     line-height: 1.45;
 }
 
-body[data-button-position="side-left"] .search-flow-hint-text > .sfh-seg:nth-child(even) {
+body[data-rail] .search-flow-hint-text > .sfh-seg:nth-child(even) {
     display: none;
 }
 
 /* ── One-time side-rail legend (icon → label map) ───────────────────────────── */
 .side-rail-legend {
     position: fixed;
-    left: calc(var(--rail-width) + 0.65rem);
+    left: var(--rail-hint-left, calc(var(--rail-width) + 0.65rem));
+    right: var(--rail-hint-right, auto);
     top: calc(var(--corner-fab-height, 2.75rem) + 0.35rem);
     z-index: 1002;
     width: min(13.5rem, calc(100vw - var(--rail-width) - 1.5rem));
@@ -322,7 +356,7 @@ body[data-button-position="side-left"] .search-flow-hint-text > .sfh-seg:nth-chi
     color: var(--accent-primary);
 }
 
-body[data-button-position="side-left"] .side-rail-legend kbd {
+body[data-rail] .side-rail-legend kbd {
     font: inherit;
     font-weight: var(--font-weight-semibold);
     border: none;
@@ -332,23 +366,24 @@ body[data-button-position="side-left"] .side-rail-legend kbd {
 }
 
 /* ── Content area: shift right to clear the rail ────────────────────────────── */
-body[data-button-position="side-left"] .container {
-    margin-left: var(--rail-width);
+body[data-rail] .container {
+    margin-left: var(--rail-content-left, var(--rail-width));
+    margin-right: var(--rail-content-right, 0);
 }
 
 /* ── Page section: reduce bottom padding (no floating bar) ───────────────────── */
-body[data-button-position="side-left"] .dashboard-section.section-content {
+body[data-rail] .dashboard-section.section-content {
     padding-bottom: 3rem;
 }
 
 /* ── Page tabs: keep numbers/names visible (respect showPageNamesInTabs) ─────── */
-body[data-button-position="side-left"] .page-nav-btn {
+body[data-rail] .page-nav-btn {
     font-size: var(--font-size-controls);
     padding: 0.4rem 0.6rem;
     min-width: 0;
 }
 
-body[data-button-position="side-left"] .page-tab-dot {
+body[data-rail] .page-tab-dot {
     display: inline-block;
     width: 0.45em;
     height: 0.45em;
@@ -357,38 +392,38 @@ body[data-button-position="side-left"] .page-tab-dot {
     flex-shrink: 0;
 }
 
-body[data-button-position="side-left"] .page-tab-icon {
+body[data-rail] .page-tab-icon {
     display: inline;
 }
 
-body[data-button-position="side-left"] .page-nav-btn.active {
+body[data-rail] .page-nav-btn.active {
     background: var(--background-secondary);
     border-bottom-color: var(--accent-primary);
 }
 
-body[data-button-position="side-left"] .page-nav-btn.active .page-tab-dot {
+body[data-rail] .page-nav-btn.active .page-tab-dot {
     box-shadow: none;
     width: 0.45em;
     height: 0.45em;
 }
 
-body[data-button-position="side-left"] .page-nav-btn:hover .page-tab-dot {
+body[data-rail] .page-nav-btn:hover .page-tab-dot {
     box-shadow: none;
 }
 
 /* ── Inline bookmark edit: keep rail visible ─────────────────────────────────── */
-body.bookmark-inline-edit-active[data-button-position="side-left"] .button-container {
+body.bookmark-inline-edit-active[data-rail] .button-container {
     opacity: 1;
     pointer-events: auto;
 }
 
 /* ── Prevent no-animations from re-centering the rail ────────────────────────── */
-body.no-animations[data-button-position="side-left"] .button-container {
+body.no-animations[data-rail] .button-container {
     transform: none !important;
 }
 
 /* ── Modern layout overrides ─────────────────────────────────────────────────── */
-body[data-layout-version="modern"][data-button-position="side-left"] .button-container {
+body[data-layout-version="modern"][data-rail] .button-container {
     background: var(--layout-surface);
     border-right-color: var(--layout-surface-border);
     box-shadow: 2px 0 12px color-mix(in srgb, var(--text-primary) 8%, transparent);
@@ -396,7 +431,7 @@ body[data-layout-version="modern"][data-button-position="side-left"] .button-con
     -webkit-backdrop-filter: blur(16px);
 }
 
-body[data-layout-version="modern"][data-button-position="side-left"] .search-button {
+body[data-layout-version="modern"][data-rail] .search-button {
     transition:
         background-color var(--layout-transition),
         border-color var(--layout-transition),
@@ -404,13 +439,13 @@ body[data-layout-version="modern"][data-button-position="side-left"] .search-but
         transform var(--layout-transition);
 }
 
-body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-btn {
+body[data-layout-version="modern"][data-rail] .whats-new-btn {
     background: transparent;
     border-top-color: var(--layout-surface-border);
 }
 /* ── Mobile: fall back to centered bottom bar ────────────────────────────────── */
 @media (max-width: 768px) {
-    body[data-button-position="side-left"] .button-container {
+    body[data-rail] .button-container {
         position: fixed;
         left: 50%;
         top: auto;
@@ -434,7 +469,7 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
     }
 
     /* undo display:contents so groups become rows again */
-    body[data-button-position="side-left"] .btn-group {
+    body[data-rail] .btn-group {
         display: flex;
         flex-direction: row;
         width: auto;
@@ -443,19 +478,19 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
     }
 
     /* reset button ordering and spacers */
-    body[data-button-position="side-left"] #quick-add-toolbar-btn,
-    body[data-button-position="side-left"] #search-button,
-    body[data-button-position="side-left"] #finders-button,
-    body[data-button-position="side-left"] #commands-button,
-    body[data-button-position="side-left"] #recent-bookmarks-button,
-    body[data-button-position="side-left"] #tag-cloud-toggle-btn,
-    body[data-button-position="side-left"] #help-button {
+    body[data-rail] #quick-add-toolbar-btn,
+    body[data-rail] #search-button,
+    body[data-rail] #finders-button,
+    body[data-rail] #commands-button,
+    body[data-rail] #recent-bookmarks-button,
+    body[data-rail] #tag-cloud-toggle-btn,
+    body[data-rail] #help-button {
         order: unset;
         margin-top: 0;
     }
 
     /* tag cloud: back into toolbar flow on mobile */
-    body[data-button-position="side-left"] #tag-cloud-toggle-btn.search-button {
+    body[data-rail] #tag-cloud-toggle-btn.search-button {
         position: static;
         left: auto;
         right: auto;
@@ -468,7 +503,7 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
     }
 
     /* cheatsheet: back into normal flow on mobile */
-    body[data-button-position="side-left"] #help-button {
+    body[data-rail] #help-button {
         position: static;
         bottom: auto;
         left: auto;
@@ -476,7 +511,7 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
         z-index: auto;
     }
 
-    body[data-button-position="side-left"] .search-button {
+    body[data-rail] .search-button {
         padding: 0.62rem 0.92rem;
         width: auto;
         height: auto;
@@ -485,40 +520,40 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
         background: var(--button-secondary-bg, var(--background-secondary));
     }
 
-    body[data-button-position="side-left"] .search-button:hover {
+    body[data-rail] .search-button:hover {
         transform: none;
     }
 
-    body[data-button-position="side-left"] .container {
+    body[data-rail] .container {
         margin-left: 0;
     }
 
-    body[data-button-position="side-left"] .dashboard-section.section-content {
+    body[data-rail] .dashboard-section.section-content {
         padding-bottom: 8rem;
     }
 
-    body[data-button-position="side-left"] .page-nav-btn {
+    body[data-rail] .page-nav-btn {
         font-size: var(--font-size-controls);
         padding: 0.4rem 0.6rem;
     }
 
-    body[data-button-position="side-left"] .page-tab-dot {
+    body[data-rail] .page-tab-dot {
         width: 0.45em;
         height: 0.45em;
         margin-right: 0.35em;
     }
 
-    body[data-button-position="side-left"] .page-tab-icon {
+    body[data-rail] .page-tab-icon {
         display: inline;
     }
 
-    body[data-button-position="side-left"] .page-nav-btn.active .page-tab-dot {
+    body[data-rail] .page-nav-btn.active .page-tab-dot {
         box-shadow: none;
         width: 0.45em;
         height: 0.45em;
     }
 
-    body[data-button-position="side-left"] .tag-cloud-toggle-btn.search-button {
+    body[data-rail] .tag-cloud-toggle-btn.search-button {
         left: auto;
         right: var(--corner-fab-edge, 1.5rem);
         bottom: calc(var(--corner-fab-edge, 1.5rem) + var(--corner-fab-height, 2.75rem) + var(--corner-fab-gap, 0.4rem));
@@ -528,13 +563,13 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
         transform: none;
     }
 
-    body[data-button-position="side-left"] #tag-cloud-toggle-btn.search-button {
+    body[data-rail] #tag-cloud-toggle-btn.search-button {
         position: static;
         right: auto;
         bottom: auto;
     }
 
-    body[data-button-position="side-left"] .whats-new-btn {
+    body[data-rail] .whats-new-btn {
         left: auto;
         right: var(--corner-fab-edge, 1.5rem);
         bottom: var(--corner-fab-edge, 1.5rem);
@@ -545,11 +580,11 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
         border-top: 1px solid var(--border-primary);
     }
 
-    body.no-animations[data-button-position="side-left"] .button-container {
+    body.no-animations[data-rail] .button-container {
         transform: translateX(-50%) !important;
     }
 
-    body[data-button-position="side-left"] .search-flow-hint {
+    body[data-rail] .search-flow-hint {
         position: absolute;
         left: 0;
         right: 0;
@@ -560,17 +595,17 @@ body[data-layout-version="modern"][data-button-position="side-left"] .whats-new-
         align-items: center;
     }
 
-    body[data-button-position="side-left"] .search-flow-hint-text {
+    body[data-rail] .search-flow-hint-text {
         flex-wrap: nowrap;
         justify-content: center;
         text-align: center;
     }
 
-    body[data-button-position="side-left"] .search-flow-hint-text > .sfh-seg:nth-child(even) {
+    body[data-rail] .search-flow-hint-text > .sfh-seg:nth-child(even) {
         display: inline;
     }
 
-    body[data-button-position="side-left"] .side-rail-legend {
+    body[data-rail] .side-rail-legend {
         display: none !important;
     }
 }

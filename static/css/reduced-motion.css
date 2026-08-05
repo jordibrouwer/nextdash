@@ -1,0 +1,33 @@
+/* Global reduced-motion honouring.
+ *
+ * Animation suppression used to be opt-in per component: each effect paired a
+ * `body.no-animations` rule (the in-app setting) with a matching
+ * prefers-reduced-motion block. That left gaps — newer stylesheets such as
+ * dashboard-tag-cloud.css and layout-side-rail.css never got the second half,
+ * so an infinitely pulsing FAB kept running for someone who had asked their OS
+ * to stop exactly that.
+ *
+ * The OS preference is an accessibility signal, not a styling preference, so it
+ * wins outright rather than being merged with the in-app toggle. There is
+ * deliberately no escape hatch: animationsEnabled defaults to true and is a
+ * plain bool, so "explicitly on" is indistinguishable from "never touched" —
+ * any opt-out would fire for every default user and undo the whole rule.
+ *
+ * Loaded last so this beats the `!important` declarations components already
+ * use. Durations are near-zero rather than `animation: none`, because code that
+ * waits on animationend (see dashboard-visual.js showHealthAlert) still needs
+ * the event to fire; `none` would strand those listeners.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        animation-delay: 0s !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+        scroll-behavior: auto !important;
+    }
+}

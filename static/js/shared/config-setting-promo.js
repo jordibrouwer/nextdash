@@ -26,6 +26,8 @@
     let retryTimer = null;
     let attempts = 0;
     let pendingSection = null;
+    /** Set once the sub-tab is chosen deliberately (click or deep link). */
+    let subTabTouched = false;
     /** @type {{ config?: object } | null} */
     let pendingCtx = null;
     let onReposition = null;
@@ -142,7 +144,10 @@
     function resolveAnchor(promo) {
         const field = document.querySelector(`[${ANCHOR_ATTR}="${CSS.escape(promo.anchor)}"]`);
         if (!field || !field.isConnected) return { field: null, target: null };
-        const target = field.querySelector('select, .config-select, input[type="checkbox"], input[type="range"], textarea, button.config-btn')
+        // .config-choices covers fields built from a button group (Random theme,
+        // Favicon harmonisation): the group is the control, so point at the row
+        // rather than falling through to the whole field including its label.
+        const target = field.querySelector('select, .config-select, input[type="checkbox"], input[type="range"], textarea, .config-choices, button.config-btn')
             || field;
         const rect = target.getBoundingClientRect();
         if (rect.width < 1 && rect.height < 1) return { field: null, target: null };
@@ -156,6 +161,10 @@
         const config = ctx?.config;
         const prop = subTabProp(promo.section);
         if (!tab || !config || !prop || config[prop] === tab) return false;
+        // Only pull the sub-tab over on the way in, before the user has picked a
+        // tab of their own. The retry loop reschedules on every repaint, so
+        // without this it drags them out of whatever tab they just opened.
+        if (subTabTouched) return false;
         config[prop] = tab;
         config.render?.();
         return true;
@@ -238,6 +247,44 @@
         field.querySelectorAll('select, input[type="checkbox"], input[type="range"], textarea').forEach((el) => {
             el.addEventListener('change', onAnchorInteract);
         });
+    }
+
+    /**
+     * Record that the sub-tab was chosen on purpose, so ensureSubTab stops
+     * steering. Called for a click on the tab strip, and by the config module
+     * when a `#config/<section>/<tab>` hash names one.
+     */
+    function markSubTabChosen() {
+        subTabTouched = true;
+    }
+
+    /**
+     * Button-group fields (Random theme, Favicon harmonisation) never fire
+     * `change`, and acting on one repaints the whole panel — so a listener bound
+     * to the button, or torn down per promo, is gone before the click lands.
+     * One permanent delegated listener matches on the anchor attribute instead,
+     * which the repaint preserves. Marking it seen here also stops the repaint's
+     * scheduleForSection from immediately showing the promo again.
+     */
+    function bindAnchorClickDelegate() {
+        document.addEventListener('click', (e) => {
+            // A sub-tab the user picked themselves outranks ensureSubTab.
+            if (e.target?.closest?.('.config-subtab')) markSubTabChosen();
+            const btn = e.target?.closest?.(`[${ANCHOR_ATTR}] .config-choices button`);
+            if (!btn) return;
+            const anchor = btn.closest(`[${ANCHOR_ATTR}]`)?.getAttribute(ANCHOR_ATTR);
+            if (!anchor) return;
+            // Resolve the promo from the anchor rather than from activePromoDef:
+            // saving repaints the panel, which re-runs scheduleForSection and can
+            // tear the popover down (persist: false) before this handler runs.
+            // Marking it seen here is what stops it coming straight back.
+            const promo = activePromoDef?.anchor === anchor
+                ? activePromoDef
+                : registry.find((p) => p.anchor === anchor && !hasSeen(p.id));
+            if (!promo) return;
+            markSeen(promo.id);
+            dismissActive({ persist: true });
+        }, true);
     }
 
     function teardownListeners() {
@@ -394,6 +441,11 @@
         clearTimeout(scheduleTimer);
         clearTimeout(retryTimer);
         attempts = 0;
+        // Repaints reschedule the same section; only leaving one and coming back
+        // is a fresh arrival where ensureSubTab may steer the sub-tab again.
+        // pendingSection is null on the very first schedule, which is also when a
+        // deep link has just named a sub-tab — clearing there would discard it.
+        if (pendingSection !== null && section !== pendingSection) subTabTouched = false;
         pendingSection = section;
         pendingCtx = ctx;
         scheduleTimer = setTimeout(() => {
@@ -402,6 +454,8 @@
         }, 500);
     }
 
+    bindAnchorClickDelegate();
+
     global.ConfigSettingPromo = {
         register,
         registerAll,
@@ -409,6 +463,7 @@
         dismissActive,
         hasSeen,
         markSeen,
+        markSubTabChosen,
         resetSeen,
         /** @internal tests */
         _registry: registry,
