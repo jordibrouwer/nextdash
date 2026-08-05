@@ -4060,6 +4060,22 @@ class DashboardConfig {
             `<button type="button" class="config-choice${iconSize === val ? ' is-active' : ''}" data-appearance-iconsize="${esc(val)}" aria-pressed="${iconSize === val}">${esc(label)}</button>`
         ).join('');
 
+        // These four are the only values the server accepts; it silently
+        // rewrites anything else to 'bottom'. See models.go.
+        const barPosition = ['bottom', 'bottom-left', 'bottom-right', 'side-left']
+            .includes(s.buttonBarPosition) ? s.buttonBarPosition : 'bottom';
+        // Short labels: the full ones carry "(default)" and "corner", which is
+        // more than a button in a four-up group can show.
+        const barPositions = [
+            ['bottom', this.t('config.buttonBarPositionBottomShort', 'Center-bottom')],
+            ['bottom-left', this.t('config.buttonBarPositionLeftShort', 'Bottom-left')],
+            ['bottom-right', this.t('config.buttonBarPositionRightShort', 'Bottom-right')],
+            ['side-left', this.t('config.buttonBarPositionSideLeftShort', 'Side rail')],
+        ];
+        const barChoices = barPositions.map(([val, label]) =>
+            `<button type="button" class="config-choice${barPosition === val ? ' is-active' : ''}" data-appearance-barpos="${esc(val)}" aria-pressed="${barPosition === val}">${esc(label)}</button>`
+        ).join('');
+
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutVersionTitle', 'Layout version'))}</h3>
@@ -4080,6 +4096,17 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(this.t('config.launcherIconSizeLabel', 'Icon size'))}</span>
                     <div class="config-choices" role="group">${iconSizeChoices}</div>
                     ${this.appearanceAff('launcherIconSize')}
+                </div>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.buttonBarPositionNote', 'Where the add, search, commands, and finders buttons sit on the dashboard. Center-bottom floats them above the bookmarks; the corner docks tuck them out of the way; the side rail stacks them vertically down the left edge.'))}</p>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.buttonBarPositionLabel', 'Button bar position'))}</span>
+                    <div class="config-choices" role="group">${barChoices}</div>
+                    ${this.appearanceAff('buttonBarPosition')}
+                    <p class="config-field-hint">${esc(this.t(`config.buttonBarPositionDesc.${barPosition}`, ''))}</p>
                 </div>
             </div>
             ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'layout'), 'behavior')}`;
@@ -4222,6 +4249,9 @@ class DashboardConfig {
         }
         container.querySelectorAll('[data-appearance-iconsize]').forEach((btn) => {
             btn.addEventListener('click', () => this.setLauncherIconSize(btn.getAttribute('data-appearance-iconsize')));
+        });
+        container.querySelectorAll('[data-appearance-barpos]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setButtonBarPosition(btn.getAttribute('data-appearance-barpos')));
         });
         container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
             input.addEventListener('change', () => this.setToggle(input.getAttribute('data-appearance-toggle'), input.checked));
@@ -5310,6 +5340,18 @@ class DashboardConfig {
         this.persistAppearance();
     }
 
+    /**
+     * Where the button bar sits. The position is written onto <body> as
+     * data-button-position by setupDOM and the rest is CSS, so reapplying the
+     * chrome is what moves the bar — the same path `:buttonbar` uses.
+     */
+    setButtonBarPosition(position) {
+        if (!['bottom', 'bottom-left', 'bottom-right', 'side-left'].includes(position)) return;
+        this.dash.settings.buttonBarPosition = position;
+        this.applyChromeSettings();
+        this.persistAppearance();
+    }
+
     setAppearanceSelect(name, value) {
         if (name === 'fontPreset') {
             this.dash.settings.fontPreset = value;
@@ -5706,15 +5748,8 @@ class DashboardConfig {
                     chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
                     chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
-                    // These four are the only values the server accepts; it
-                    // silently rewrites anything else to 'bottom', so inventing
-                    // names here made the control a no-op. See models.go.
-                    { field: 'buttonBarPosition', type: 'select', label: t('config.buttonBarPositionLabel', 'Button bar position'), special: 'chrome', options: [
-                        opt('bottom', t('config.buttonBarPositionBottom', 'Center-bottom (default)')),
-                        opt('bottom-left', t('config.buttonBarPositionLeft', 'Bottom-left corner')),
-                        opt('bottom-right', t('config.buttonBarPositionRight', 'Bottom-right corner')),
-                        opt('side-left', t('config.buttonBarPositionSideLeft', 'Side rail (left)')),
-                    ] },
+                    // Button bar position lives on the Layout tab, as a button
+                    // group beside the other two layout choices.
                 ],
             },
             {

@@ -349,14 +349,15 @@ test.describe('config: sections restored from the old config', () => {
             }
         });
         await loadDashboard(page);
-        await openAppearanceTab(page, 'display');
+        // A button group on the Layout tab now, beside the other layout choices.
+        await openAppearanceTab(page, 'layout');
 
-        const sel = page.locator('[data-behavior-field="buttonBarPosition"]');
-        expect(await sel.locator('option').evaluateAll((els) => els.map((e) => e.value)))
+        expect(await page.locator('[data-appearance-barpos]')
+            .evaluateAll((els) => els.map((e) => e.getAttribute('data-appearance-barpos'))))
             .toEqual(['bottom', 'bottom-left', 'bottom-right', 'side-left']);
 
         for (const value of ['bottom-left', 'bottom-right', 'side-left', 'bottom']) {
-            await sel.selectOption(value);
+            await page.locator(`[data-appearance-barpos="${value}"]`).click();
             await expect.poll(() => page.evaluate(() =>
                 document.body.getAttribute('data-button-position'))).toBe(value);
         }
@@ -364,7 +365,7 @@ test.describe('config: sections restored from the old config', () => {
 
         // The side rail is the one that restyles the whole page, so confirm it
         // is still set after a reload rather than reset to the default.
-        await sel.selectOption('side-left');
+        await page.locator('[data-appearance-barpos="side-left"]').click();
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.settings.buttonBarPosition)).toBe('side-left');
         await page.reload();
