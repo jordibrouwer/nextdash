@@ -3609,6 +3609,7 @@
         "overviewNoRelease": "Release notes are not available.",
         "overviewAboutTitle": "About the developer",
         "overviewAboutBody": "Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time, scratching my own itch: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. It is free and open-source, and it stays that way. If it saves you time too, a star on GitHub or a coffee is always appreciated — and bug reports and ideas are just as welcome.",
+        "overviewAboutBodyShort": "Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. Free and open-source, and it stays that way.",
         "overviewAboutGithub": "GitHub",
         "overviewTipsTitle": "Tips",
         "overviewMoreTips": "More tips →",

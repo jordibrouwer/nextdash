@@ -3609,6 +3609,7 @@
         "overviewNoRelease": "Versionshinweise sind nicht verfügbar.",
         "overviewAboutTitle": "Über den Entwickler",
         "overviewAboutBody": "Hallo, ich bin Jordi, Entwickler aus den Niederlanden. Ich baue nextDash in meiner Freizeit, aus eigenem Bedarf: ein Lesezeichen-Dashboard, das schnell ist, tastaturzuerst funktioniert und alles in einfachen Dateien speichert, die dir gehören. Es ist kostenlos und quelloffen — und bleibt es auch. Wenn es auch dir Zeit spart: über einen Stern auf GitHub oder einen Kaffee freue ich mich immer — über Fehlerberichte und Ideen genauso.",
+        "overviewAboutBodyShort": "Hallo, ich bin Jordi, Entwickler aus den Niederlanden. Ich baue nextDash in meiner Freizeit: ein Lesezeichen-Dashboard, das schnell ist, tastaturorientiert arbeitet und alles in einfachen Dateien speichert, die dir gehören. Kostenlos und Open Source, und das bleibt so.",
         "overviewAboutGithub": "GitHub",
         "overviewTipsTitle": "Tipps",
         "overviewMoreTips": "Mehr Tipps →",

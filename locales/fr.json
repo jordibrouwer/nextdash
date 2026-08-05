@@ -3609,6 +3609,7 @@
         "overviewNoRelease": "Les notes de version ne sont pas disponibles.",
         "overviewAboutTitle": "À propos du développeur",
         "overviewAboutBody": "Bonjour, je suis Jordi, développeur aux Pays-Bas. Je développe nextDash sur mon temps libre, pour répondre à mon propre besoin : un tableau de bord de favoris rapide, pensé pour le clavier, qui stocke tout dans de simples fichiers qui vous appartiennent. Il est gratuit et open source, et le restera. S’il vous fait gagner du temps à vous aussi, une étoile sur GitHub ou un café fait toujours plaisir — et les rapports de bugs et les idées tout autant.",
+        "overviewAboutBodyShort": "Bonjour, je suis Jordi, développeur aux Pays-Bas. Je développe nextDash sur mon temps libre : un tableau de bord de favoris rapide, pensé pour le clavier, qui stocke tout dans des fichiers simples qui vous appartiennent. Libre et open source, et ça ne changera pas.",
         "overviewAboutGithub": "GitHub",
         "overviewTipsTitle": "Astuces",
         "overviewMoreTips": "Plus d'astuces →",

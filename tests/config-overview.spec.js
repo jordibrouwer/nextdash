@@ -95,7 +95,23 @@ test.describe('config overview', () => {
         await expect(attention).toContainText('Duplicate bookmarks');
     });
 
-
+    /**
+     * Only what needs the reader is framed. Five panels with identical borders
+     * left the eye nowhere to land and made the update bar compete with its
+     * neighbours, so everything below the act zone is unframed.
+     */
+    test('only the act zone is framed', async ({ page }) => {
+        await openOverview(page);
+        const framed = await page.evaluate(() => {
+            const panel = document.getElementById('config-section-panel');
+            return [...panel.querySelectorAll('.config-panel')]
+                .filter((el) => !el.classList.contains('config-panel--plain'))
+                .map((el) => el.querySelector('.config-panel-title')?.textContent?.trim() || el.className);
+        });
+        expect(framed).toEqual(['Needs attention']);
+        // The update bar sits above it and keeps its own frame.
+        await expect(page.locator('.config-overview-act > .config-update-bar')).toHaveCount(1);
+    });
 
     test('new features carousel shows translated copy, not locale keys', async ({ page }) => {
         await openOverview(page);
@@ -122,7 +138,8 @@ test.describe('config overview', () => {
         await openOverview(page, CLEAN);
         await expect(page.locator('.config-attention-row')).toHaveCount(0);
         await expect(page.locator('.config-attention-clear')).toBeVisible();
-        // A quiet line, not a framed panel.
+        // A quiet line, not a framed panel: reporting the absence of problems
+        // used to be the largest block on a healthy install's Overview.
         await expect(page.locator('.config-panel--attention')).toHaveCount(0);
     });
 
@@ -167,7 +184,9 @@ test.describe('config overview', () => {
 
     test('tips are shown with a link to the full list', async ({ page }) => {
         await openOverview(page);
-        const tips = page.locator('.config-help-tips .config-help-tip');
+        // A footer row rather than a panel — three keyboard hints did not need
+        // a heading and a frame of their own.
+        const tips = page.locator('.config-overview-tips-row .config-help-tip');
         await expect(tips).toHaveCount(3);
         await expect(tips.first().locator('kbd')).toBeVisible();
         await page.locator('[data-overview-go=\'{"section":"help"}\']').click();
@@ -235,7 +254,8 @@ test.describe('config overview', () => {
             return {
                 about: rect('About the developer'),
                 latest: rect('Latest update'),
-                tips: rect('Tips'),
+                // Tips is a footer row now, not a panel.
+                tips: measure(document.querySelector('.config-overview-tips-row')),
                 glance: rect('At a glance'),
             };
         });

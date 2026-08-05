@@ -1056,6 +1056,15 @@
     opacity: 0.7;
 }
 
+.config-overview-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    margin-top: 22px;
+    padding-top: 22px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+}
+
 /*
  * Unframed blocks: a heading and whitespace carry the grouping instead of a
  * box. Removing five of the seven borders is what makes the update bar and
@@ -1066,15 +1075,6 @@
     border: 0;
     background: none;
     border-radius: 0;
-}
-
-.config-overview-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 26px;
-    margin-top: 22px;
-    padding-top: 22px;
-    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
 }
 
 .config-panel-empty--action {
@@ -1130,6 +1130,44 @@
     }
 }
 
+/* Tips as a footer row: label, hints, actions on one line where it fits. */
+.config-overview-tips-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+}
+
+.config-overview-tips-label {
+    flex: 0 0 auto;
+    font-weight: 600;
+    opacity: 0.75;
+}
+
+.config-overview-tips-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    flex: 1 1 320px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-overview-tips-list .config-help-tip {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.config-overview-tips-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
 
 .config-feature-spotlights {
     list-style: none;

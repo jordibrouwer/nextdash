@@ -2168,10 +2168,13 @@ class DashboardConfig {
      *            ones that are: a border here means "this wants you".
      *   know   — At a glance beside New features.
      *   read   — About and Latest update.
+     *   tips   — a single line, not a panel.
      *
      * Everything below the act zone is deliberately unframed. Seven equally
      * boxed blocks gave the eye nowhere to land, and the update bar — the one
-     * thing that must be seen — competed with six identical neighbours.
+     * thing that must be seen — competed with six identical neighbours. The
+     * status tile row is gone entirely: all six numbers were already on the
+     * page, in At a glance or in Needs attention.
      */
     renderOverview() {
         const esc = (v) => this.dash.escapeHtml(v);
@@ -2215,8 +2218,8 @@ class DashboardConfig {
         return `
             <div class="config-panel config-panel--plain config-about-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewAboutTitle', 'About the developer'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.overviewAboutBody',
-                    'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time, scratching my own itch: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. It is free and open-source, and it stays that way. If it saves you time too, a star on GitHub or a coffee is always appreciated — and bug reports and ideas are just as welcome.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.overviewAboutBodyShort',
+                    'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. Free and open-source, and it stays that way.'))}</p>
                 <div class="config-about-actions">
                     <a class="config-btn config-about-github" href="https://github.com/jordibrouwer/nextdash" target="_blank" rel="noopener noreferrer">
                         <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
@@ -2614,9 +2617,13 @@ class DashboardConfig {
     }
 
     /**
-     * A rotating handful of tips. Rotating rather than fixed so the panel is
-     * worth glancing at more than once; seeded by the day so it does not shuffle
-     * on every repaint.
+     * A rotating handful of tips. Rotating rather than fixed so the row is worth
+     * glancing at more than once; seeded by the day so it does not shuffle on
+     * every repaint.
+     *
+     * A footer row rather than a panel: three keyboard hints did not need a
+     * heading and a frame at the bottom of the page, and as a panel it read as
+     * another block competing with the two above it.
      */
     renderOverviewTips() {
         const esc = (v) => this.dash.escapeHtml(v);
@@ -2627,10 +2634,10 @@ class DashboardConfig {
         const picked = [0, 1, 2].map((i) => all[(start + i) % all.length]);
 
         return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.overviewTipsTitle', 'Tips'))}</h3>
-                <ul class="config-help-tips">${picked.map((t) => `<li class="config-help-tip">${t}</li>`).join('')}</ul>
-                <div class="config-actions">
+            <div class="config-overview-tips-row">
+                <span class="config-overview-tips-label">${esc(this.t('config.overviewTipsTitle', 'Tips'))}</span>
+                <ul class="config-overview-tips-list">${picked.map((t) => `<li class="config-help-tip">${t}</li>`).join('')}</ul>
+                <div class="config-overview-tips-actions">
                     <button type="button" class="config-btn config-btn--small"
                             data-overview-go='{"section":"help"}'>${esc(this.t('config.overviewMoreTips', 'More tips →'))}</button>
                     ${this.renderCheatSheetPdfLink()}
