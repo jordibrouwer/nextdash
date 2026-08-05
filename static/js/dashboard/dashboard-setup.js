@@ -24,7 +24,16 @@ class DashboardSetup {
             'data-show-tag-cloud-button',
             d.settings.showTagCloudButton === true ? 'true' : 'false'
         );
-        document.body.setAttribute('data-button-position', d.settings.buttonBarPosition || 'bottom');
+        const barPosition = d.settings.buttonBarPosition || 'bottom';
+        document.body.setAttribute('data-button-position', barPosition);
+        // Side-agnostic hook: layout-side-rail.css keys every rail rule off this
+        // and reads the physical side from variables, so the two rails share one
+        // set of rules instead of mirrored copies.
+        if (barPosition === 'side-left' || barPosition === 'side-right') {
+            document.body.setAttribute('data-rail', barPosition === 'side-left' ? 'left' : 'right');
+        } else {
+            document.body.removeAttribute('data-rail');
+        }
 
         d.syncTagCloudButtonPlacement();
         d.syncSideRailDiscoverability?.();
@@ -463,7 +472,7 @@ class DashboardSetup {
             hintEl.querySelectorAll('.sfh-seg-swipe').forEach((el) => el.classList.remove('hidden'));
         }
 
-        const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
+        const isSideRail = document.body.hasAttribute('data-rail');
         const storageKey = isSideRail
             ? 'nextdash:search-flow-hint-side-rail-v1'
             : 'nextdash:search-flow-hint-v2';

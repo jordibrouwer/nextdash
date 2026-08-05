@@ -212,7 +212,7 @@ class DashboardToolbar {
             tip.classList.add('is-visible');
             tip.setAttribute('aria-hidden', 'false');
             tip.dataset.for = btn.id || 'toolbar-btn';
-            const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
+            const isSideRail = document.body.hasAttribute('data-rail');
             if (isSideRail) {
                 tip.classList.add('toolbar-kbd-tooltip--side-rail');
                 tip.classList.remove('toolbar-kbd-tooltip--below');
@@ -355,7 +355,7 @@ class DashboardToolbar {
         const d = this.dash;
         const legendId = 'side-rail-legend';
         const storageKey = 'nextdash:side-rail-legend-v1';
-        const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
+        const isSideRail = document.body.hasAttribute('data-rail');
         const canShow = isSideRail
             && !d.isCoarsePointer()
             && window.MobileExperience?.isMobileLayout?.() !== true

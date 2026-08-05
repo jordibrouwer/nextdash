@@ -730,7 +730,7 @@
                 return;
             }
 
-            const isSideRail = document.body.getAttribute('data-button-position') === 'side-left';
+            const isSideRail = document.body.hasAttribute('data-rail');
             if (isSideRail) {
                 this.positionModalSideRail(rect, margin, vw, vh, maxW);
                 return;

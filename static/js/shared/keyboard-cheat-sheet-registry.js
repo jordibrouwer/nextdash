@@ -298,7 +298,7 @@
         return {
             dash: d,
             activeView: d.activeView || 'bookmarks',
-            isSideRail: d.settings?.buttonBarPosition === 'side-left',
+            isSideRail: ['side-left', 'side-right'].includes(d.settings?.buttonBarPosition),
             inboxEnabled: Boolean(d.inbox?.isEnabled?.()),
             inboxInPageTabs: d.settings?.inboxShowInPageTabs !== false,
             healthEnabled: Boolean(d.health?.isEnabled?.()),

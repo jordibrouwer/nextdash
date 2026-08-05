@@ -4073,17 +4073,18 @@ class DashboardConfig {
             `<button type="button" class="config-choice${iconSize === val ? ' is-active' : ''}" data-appearance-iconsize="${esc(val)}" aria-pressed="${iconSize === val}">${esc(label)}</button>`
         ).join('');
 
-        // These four are the only values the server accepts; it silently
+        // These five are the only values the server accepts; it silently
         // rewrites anything else to 'bottom'. See models.go.
-        const barPosition = ['bottom', 'bottom-left', 'bottom-right', 'side-left']
+        const barPosition = ['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right']
             .includes(s.buttonBarPosition) ? s.buttonBarPosition : 'bottom';
         // Short labels: the full ones carry "(default)" and "corner", which is
-        // more than a button in a four-up group can show.
+        // more than a button in a five-up group can show.
         const barPositions = [
             ['bottom', this.t('config.buttonBarPositionBottomShort', 'Center-bottom')],
             ['bottom-left', this.t('config.buttonBarPositionLeftShort', 'Bottom-left')],
             ['bottom-right', this.t('config.buttonBarPositionRightShort', 'Bottom-right')],
-            ['side-left', this.t('config.buttonBarPositionSideLeftShort', 'Side rail')],
+            ['side-left', this.t('config.buttonBarPositionSideLeftShort', 'Rail left')],
+            ['side-right', this.t('config.buttonBarPositionSideRightShort', 'Rail right')],
         ];
         const barChoices = barPositions.map(([val, label]) =>
             `<button type="button" class="config-choice${barPosition === val ? ' is-active' : ''}" data-appearance-barpos="${esc(val)}" aria-pressed="${barPosition === val}">${esc(label)}</button>`
@@ -5359,7 +5360,7 @@ class DashboardConfig {
      * chrome is what moves the bar — the same path `:buttonbar` uses.
      */
     setButtonBarPosition(position) {
-        if (!['bottom', 'bottom-left', 'bottom-right', 'side-left'].includes(position)) return;
+        if (!['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right'].includes(position)) return;
         this.dash.settings.buttonBarPosition = position;
         this.applyChromeSettings();
         this.persistAppearance();
