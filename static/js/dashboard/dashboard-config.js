@@ -3963,6 +3963,9 @@ class DashboardConfig {
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
         }
+        if (this.appearanceTab === 'branding') {
+            return shell(this.renderAppearanceBrandingBody());
+        }
 
         return shell(`
             ${tiles}
@@ -4047,10 +4050,16 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('showBackgroundDots')}
                 </div>
-            </div>
+            </div>`);
+    }
 
+    renderAppearanceBrandingBody() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.appearanceBrandingNote', 'The page title and favicon this dashboard uses in the browser tab.'))}</p>
                 <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="enableCustomTitle" ${s.enableCustomTitle ? 'checked' : ''}>
@@ -4067,7 +4076,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--small" data-appearance-action="upload-favicon">${esc(this.t('config.detailUploadIconBtn', 'Upload…'))}</button>
                     <input type="file" id="config-favicon-input" accept="image/*,.ico" hidden>
                 </div>
-            </div>`);
+            </div>`;
     }
 
     renderAppearanceLayoutBody() {
@@ -4426,6 +4435,7 @@ class DashboardConfig {
             general: ['config.appearanceTabGeneral', 'Theme'],
             layout: ['config.appearanceTabLayout', 'Layout'],
             display: ['config.appearanceTabDisplay', 'Display'],
+            branding: ['config.appearanceTabBranding', 'Branding'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -6433,7 +6443,7 @@ class DashboardConfig {
     /** Data & backups keeps its destructive actions on a separate tab. */
     static DB_TABS = ['backups', 'reset'];
 
-    static APPEARANCE_TABS = ['general', 'layout', 'display', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'layout', 'display', 'branding', 'custom-themes'];
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
 

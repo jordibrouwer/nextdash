@@ -533,7 +533,6 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-bg="gradient"]')).toBeVisible();
         await expect(page.locator('[data-appearance-range="backgroundOpacity"]')).toBeVisible();
         await expect(page.locator('[data-appearance-action="upload-font"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-action="upload-favicon"]')).toBeVisible();
         await expect(page.locator('[data-appearance-action="edit-colors"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="layout"]').click();
@@ -542,6 +541,12 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.locator('[data-appearance-tab="display"]').click();
         await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
         await expect(page.locator('[data-appearance-toggle="animationsEnabled"]')).toBeVisible();
+
+        // Branding (page title + favicon) has its own tab.
+        await page.locator('[data-appearance-tab="branding"]').click();
+        await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-text="customTitle"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-action="upload-favicon"]')).toBeVisible();
     });
 
     /**
