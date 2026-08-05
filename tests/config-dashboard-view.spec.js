@@ -166,15 +166,19 @@ test.describe('config dashboard view (scaffold)', () => {
         expect(await page.evaluate(() => window.location.hash)).toBe('#config/appearance');
     });
 
-    test('the overview section renders status tiles', async ({ page }) => {
+    /**
+     * The status tile row is gone — every count it showed was already in At a
+     * glance or in Needs attention. The headline numbers still have to be there.
+     */
+    test('the overview section leads with the headline counts', async ({ page }) => {
         await loadDashboard(page);
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView());
 
-        await expect(page.locator('.config-tiles .config-tile').first()).toBeVisible();
-        // The bookmarks tile always exists; broken/duplicate/pages/inbox join it.
-        const labels = await page.locator('.config-tile-label').allTextContents();
-        expect(labels.join(' ').toLowerCase()).toContain('bookmarks');
+        await expect(page.locator('.config-tiles--overview')).toHaveCount(0);
+        const glance = page.locator('.config-mini-list');
+        await expect(glance.first()).toBeVisible();
+        expect((await glance.first().innerText()).toLowerCase()).toContain('bookmarks');
     });
 
     test('the bookmarks section shows five summary tiles on one row', async ({ page }) => {
@@ -219,7 +223,7 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-config-section="appearance"]')).toHaveClass(/is-active/);
     });
 
-    test('a broken-links action tile hands off to the health view', async ({ page }) => {
+    test('a broken-links row hands off to the health view', async ({ page }) => {
         // Mock the health report so a broken count exists; loadOverviewData refetches
         // this endpoint, so forcing the in-memory report alone would be clobbered.
         await page.route('**/api/bookmark-health**', async (route) => {
@@ -236,9 +240,10 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView());
 
-        const brokenTile = page.locator('.config-tile[data-tile-view="health"][data-tile-filter="broken"]');
-        await expect(brokenTile).toBeVisible();
-        await brokenTile.click();
+        // Broken links is an attention row now, not a status tile.
+        const brokenRow = page.locator('.config-attention-row', { hasText: /broken/i });
+        await expect(brokenRow).toBeVisible();
+        await brokenRow.locator('[data-overview-go]').click();
 
         await expect
             .poll(() => page.evaluate(() => window.dashboardInstance.activeView))

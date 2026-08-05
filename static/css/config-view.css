@@ -1021,29 +1021,48 @@
 
 /* ── Overview ────────────────────────────────────────────────────────────── */
 
-.config-overview-tiles-zone {
+/*
+ * Overview reads top-down as: act → know → read → tips. Only the act zone is
+ * framed, so a border on this page means "this wants something from you".
+ */
+.config-overview-act {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
 }
 
-.config-overview-tiles-zone > .config-update-bar {
-    align-self: flex-end;
+/* Full width, not tucked to the right: this is the first thing to notice. */
+.config-overview-act > .config-update-bar {
+    align-self: stretch;
     max-width: 100%;
+}
+
+.config-overview-act > .config-panel {
+    margin-top: 0;
+}
+
+/* The one accented block on the page. */
+.config-panel--attention {
+    border-color: color-mix(in srgb, var(--accent-primary, #4a90d9) 45%, transparent);
+    background: color-mix(in srgb, var(--accent-primary, #4a90d9) 6%, var(--card-bg, transparent));
+}
+
+/* All-clear is a quiet line, not a panel. */
+.config-attention-clear {
+    margin: 0;
+    padding: 2px 0;
+    font-size: calc(var(--font-size-text) * 0.92);
+    opacity: 0.7;
 }
 
 .config-overview-layout {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    margin-top: 8px;
-}
-
-.config-overview-attention-zone {
-    margin-top: 8px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+    gap: 26px;
+    margin-top: 22px;
+    padding-top: 22px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
 }
 
 .config-panel-empty--action {
@@ -1077,11 +1096,11 @@
     margin-top: 0;
 }
 
-/* New features beside at-a-glance stats; stacks on a narrow window. */
+/* At a glance beside new features; stacks on a narrow window. */
 .config-overview-top {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 18px;
+    gap: 34px;
     align-items: start;
 }
 
@@ -1089,7 +1108,7 @@
 .config-overview-about-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
+    gap: 34px;
     align-items: start;
 }
 
@@ -1098,6 +1117,7 @@
         grid-template-columns: 1fr;
     }
 }
+
 
 .config-feature-spotlights {
     list-style: none;
@@ -1353,9 +1373,25 @@ body.no-animations .config-new-features-panel-star {
     justify-content: space-between;
     gap: 0.75rem;
     margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 12px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+}
+
+/*
+ * An available update is the loudest thing Overview ever says, so it gets the
+ * warn accent rather than the same neutral frame as everything else. Up to date
+ * stays quiet — it is a receipt, not news.
+ */
+.config-update-bar--warn {
+    border-color: color-mix(in srgb, var(--warn-color, #d99a4a) 55%, transparent);
+    background: color-mix(in srgb, var(--warn-color, #d99a4a) 9%, var(--card-bg, transparent));
+}
+
+.config-update-bar--ok,
+.config-update-bar--neutral {
+    opacity: 0.8;
 }
 
 .config-update-status {

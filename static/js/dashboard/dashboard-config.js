@@ -2089,74 +2089,6 @@ class DashboardConfig {
         )}</p>`;
     }
 
-    /* ── Overview tiles ────────────────────────────────────────────────────── */
-
-    /**
-     * Read-only summary drawn from state the shell already holds, so the tiles
-     * never re-derive counts the health/inbox views own.
-     */
-    overviewTiles() {
-        const d = this.dash;
-        const summary = d.health?.report?.summary || {};
-        const totalBookmarks = Number(summary.totalBookmarks)
-            || (Array.isArray(d.allBookmarks) && d.allBookmarks.length)
-            || (Array.isArray(d.bookmarks) ? d.bookmarks.length : 0);
-        const broken = Number(summary.brokenCount) || 0;
-        const duplicate = Number(summary.duplicateCount) || 0;
-        const monitored = Number(summary.monitoredCount)
-            || (Array.isArray(d.health?.report?.issues)
-                ? d.health.report.issues.filter((i) => i?.monitor).length
-                : 0);
-        const monitorDown = Number(summary.monitorDownCount) || 0;
-        const pages = Array.isArray(d.pages) ? d.pages.length : 0;
-        const inboxUnread = d.inbox?.unreadCount?.() || 0;
-
-        return [
-            {
-                key: 'bookmarks', tone: 'accent',
-                label: this.t('config.tileBookmarks', 'Bookmarks'),
-                value: totalBookmarks,
-            },
-            {
-                key: 'monitored', tone: monitorDown > 0 ? 'crit' : (monitored > 0 ? 'accent' : 'neutral'),
-                label: this.t('config.tileMonitored', 'Monitored'),
-                value: monitored,
-                action: monitored > 0 ? { view: 'health', filter: 'monitored' } : null,
-                detail: monitorDown > 0
-                    ? this.t('config.tileMonitoredDown', 'Not responding')
-                    : (monitored > 0
-                        ? this.t('config.tileMonitoredActive', 'Live uptime checks')
-                        : this.t('config.tileMonitoredNone', 'None enabled')),
-            },
-            {
-                key: 'broken', tone: broken > 0 ? 'crit' : 'good',
-                label: this.t('config.tileBroken', 'Broken links'),
-                value: broken,
-                action: broken > 0 ? { view: 'health', filter: 'broken' } : null,
-                detail: broken > 0
-                    ? this.t('config.tileBrokenReview', 'Review in health')
-                    : this.t('config.tileBrokenNone', 'All links healthy'),
-            },
-            {
-                key: 'duplicate', tone: duplicate > 0 ? 'warn' : 'good',
-                label: this.t('config.tileDuplicates', 'Duplicates'),
-                value: duplicate,
-                action: duplicate > 0 ? { view: 'health', filter: 'duplicate' } : null,
-            },
-            {
-                key: 'pages', tone: 'neutral',
-                label: this.t('config.tilePages', 'Pages'),
-                value: pages,
-            },
-            {
-                key: 'inbox', tone: inboxUnread > 0 ? 'warn' : 'neutral',
-                label: this.t('config.tileInboxUnread', 'Inbox unread'),
-                value: inboxUnread,
-                action: inboxUnread > 0 ? { view: 'inbox' } : null,
-            },
-        ];
-    }
-
     /** Headline counts — pass a subset stats object when filters are active. */
     bookmarksSummaryTiles(stats) {
         const s = stats || this.computeStats();
@@ -2225,29 +2157,34 @@ class DashboardConfig {
     }
 
     /**
-     * The landing section: a snapshot of the whole install, arranged so the
-     * things that need attention come first and everything else reads as
-     * context. Each block links on to the view that acts on it, so the overview
-     * stays a summary rather than turning into a second place to fix things.
+     * The landing section: a snapshot of the whole install. Each block links on
+     * to the view that acts on it, so the overview stays a summary rather than
+     * turning into a second place to fix things.
+     *
+     * Grouped by what the reader is meant to do with each block, not by what the
+     * data happens to be:
+     *
+     *   act    — the update bar and Needs attention, at the top.
+     *   know   — At a glance beside New features.
+     *   read   — About and Latest update.
+     *
+     * The status tile row is gone entirely: all six numbers were already on the
+     * page, in At a glance or in Needs attention.
      */
     renderOverview() {
         const esc = (v) => this.dash.escapeHtml(v);
-        const tiles = this.overviewTiles().map((t) => this.renderTile(t)).join('');
-        const intro = esc(this.t('config.overviewIntro', 'A snapshot of your setup. Tiles that need attention link straight to the view that fixes them.'));
+        const intro = esc(this.t('config.overviewIntro', 'A snapshot of your setup. Anything that needs you is at the top.'));
 
         return `
             <p class="config-view-intro">${intro}</p>
-            <div class="config-overview-tiles-zone">
+            <div class="config-overview-act">
                 ${this.renderOverviewUpdates()}
-                <div class="config-tiles config-tiles--overview" role="list">${tiles}</div>
-            </div>
-            <div class="config-overview-attention-zone">
                 ${this.renderOverviewAttention()}
             </div>
             <div class="config-overview-layout">
                 <div class="config-overview-top">
-                    ${this.renderOverviewNewFeatures()}
                     ${this.renderOverviewStats()}
+                    ${this.renderOverviewNewFeatures()}
                 </div>
                 <div class="config-overview-about-row">
                     ${this.renderOverviewAbout()}
@@ -2279,7 +2216,7 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(this.t('config.overviewAboutBody',
                     'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time, scratching my own itch: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. It is free and open-source, and it stays that way. If it saves you time too, a star on GitHub or a coffee is always appreciated — and bug reports and ideas are just as welcome.'))}</p>
                 <div class="config-about-actions">
-                    <a class="config-btn config-about-github" href="https://github.com/jordibrouwer" target="_blank" rel="noopener noreferrer">
+                    <a class="config-btn config-about-github" href="https://github.com/jordibrouwer/nextdash" target="_blank" rel="noopener noreferrer">
                         <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
                         <span>${esc(this.t('config.overviewAboutGithub', 'GitHub'))}</span>
                     </a>
@@ -2381,20 +2318,23 @@ class DashboardConfig {
             },
         ].filter((i) => i.n > 0);
 
-        const body = items.length
-            ? `<ul class="config-attention-list">${items.map((i) => `
-                <li class="config-attention-row config-attention-row--${esc(i.tone)}">
-                    <span class="config-attention-count">${esc(String(i.n))}</span>
-                    <span class="config-attention-label">${esc(i.label)}</span>
-                    <button type="button" class="config-btn config-btn--small"
-                            data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
-                </li>`).join('')}</ul>`
-            : `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
+        // Nothing wrong means no panel at all, not a panel saying so. A framed
+        // block costing ~110px to report the absence of problems was the single
+        // largest thing on a healthy install's Overview.
+        if (!items.length) {
+            return `<p class="config-attention-clear">${esc(this.t('config.overviewNothingToDo', 'Nothing needs attention — everything checks out.'))}</p>`;
+        }
 
         return `
-            <div class="config-panel">
+            <div class="config-panel config-panel--attention">
                 <h3 class="config-panel-title">${esc(this.t('config.overviewAttentionTitle', 'Needs attention'))}</h3>
-                ${body}
+                <ul class="config-attention-list">${items.map((i) => `
+                    <li class="config-attention-row config-attention-row--${esc(i.tone)}">
+                        <span class="config-attention-count">${esc(String(i.n))}</span>
+                        <span class="config-attention-label">${esc(i.label)}</span>
+                        <button type="button" class="config-btn config-btn--small"
+                                data-overview-go='${esc(JSON.stringify(i.action))}'>${esc(i.cta)}</button>
+                    </li>`).join('')}</ul>
             </div>`;
     }
 

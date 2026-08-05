@@ -23,7 +23,8 @@ async function waitForOverviewHealth(page, health) {
     const expectedBroken = Number(health.summary.brokenCount) || 0;
     const expectedMonitored = Number(health.summary.monitoredCount) || 0;
     if (expectedMonitored > 0) {
-        await expect(page.locator('.config-tile[data-tile-filter="monitored"]')).toBeVisible({ timeout: 5000 });
+        // Monitored moved from a status tile into the At a glance list.
+        await expect(page.locator('.config-mini-list')).toContainText(/Monitored/, { timeout: 5000 });
     }
     if (expectedBroken > 0) {
         await expect(page.locator('.config-attention-row').first()).toBeVisible({ timeout: 5000 });
@@ -58,7 +59,7 @@ async function openOverview(page, health = PROBLEMS) {
         });
     });
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-    await expect(page.locator('.config-tiles')).toBeVisible();
+    await expect(page.locator('.config-overview-layout')).toBeVisible();
     await waitForOverviewHealth(page, health);
     await dismissConfigSettingPromoIfPresent(page);
 }
@@ -73,20 +74,27 @@ async function loadOverview(page) {
 }
 
 test.describe('config overview', () => {
-    test('status tiles include monitored bookmarks on one row', async ({ page }) => {
+    /**
+     * The status tile row is gone: all six counts were already on the page, in
+     * At a glance or as a Needs attention row. What has to survive is that the
+     * numbers themselves are still reachable — monitored included.
+     */
+    test('the counts the tile row carried are still on the page', async ({ page }) => {
         await openOverview(page);
-        await expect(page.locator('.config-tiles--overview .config-tile')).toHaveCount(6);
-        const monitored = page.locator('.config-tile[data-tile-view="health"][data-tile-filter="monitored"]');
-        await expect(monitored).toBeVisible();
-        await expect(monitored.locator('.config-tile-value')).toHaveText('2');
-        const row = await page.evaluate(() => {
-            const tiles = [...document.querySelectorAll('.config-tiles--overview .config-tile')];
-            const ys = tiles.map((el) => Math.round(el.getBoundingClientRect().y));
-            return { count: tiles.length, sameRow: Math.max(...ys) - Math.min(...ys) < 8 };
-        });
-        expect(row.count).toBe(6);
-        expect(row.sameRow).toBe(true);
+        await expect(page.locator('.config-tiles--overview')).toHaveCount(0);
+
+        const glance = page.locator('.config-mini-list');
+        await expect(glance).toContainText('Monitored');
+        await expect(glance).toContainText('Bookmarks');
+        await expect(glance).toContainText('Pages');
+
+        // Broken links and duplicates are actionable, so they live in the
+        // attention panel rather than as a decorative zero.
+        const attention = page.locator('.config-attention-list');
+        await expect(attention).toContainText('Broken links');
+        await expect(attention).toContainText('Duplicate bookmarks');
     });
+
 
     test('new features carousel shows translated copy, not locale keys', async ({ page }) => {
         await openOverview(page);
@@ -183,7 +191,7 @@ test.describe('config overview', () => {
         await expect(panel).toBeVisible();
 
         const github = panel.locator('.config-about-github');
-        await expect(github).toHaveAttribute('href', 'https://github.com/jordibrouwer');
+        await expect(github).toHaveAttribute('href', 'https://github.com/jordibrouwer/nextdash');
         await expect(github).toHaveAttribute('rel', /noopener/);
 
         const kofi = panel.locator('.wn-kofi-btn');
@@ -215,12 +223,12 @@ test.describe('config overview', () => {
         const box = await page.evaluate(() => {
             const find = (text) => [...document.querySelectorAll('.config-overview-layout .config-panel')]
                 .find((el) => el.textContent.includes(text));
-            const rect = (text) => {
-                const el = find(text);
+            const measure = (el) => {
                 if (!el) return null;
                 const r = el.getBoundingClientRect();
                 return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width) };
             };
+            const rect = (text) => measure(find(text));
             return {
                 about: rect('About the developer'),
                 latest: rect('Latest update'),
