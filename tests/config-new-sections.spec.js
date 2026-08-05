@@ -688,7 +688,11 @@ test.describe('statistics tabs', () => {
         });
         await openSection(page, 'stats');
         const body = page.locator('#config-stats-body');
-        await expect(body.locator('.config-panel-title').first()).toContainText(/insights/i);
+        // The overview opens with the headline summary, then the insights panel.
+        // (Before the Statistics rework the insights panel came first, and this
+        // matched its title on .first().)
+        await expect(body.locator('.config-panel-title').first())
+            .toContainText(/How you use this collection/i);
         // Each insight reads a number already on the page back as a sentence,
         // with somewhere to go next.
         await expect(body).toContainText(/Most activity happens on/);
