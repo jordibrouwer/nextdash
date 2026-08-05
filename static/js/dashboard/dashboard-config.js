@@ -2440,6 +2440,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureHealthContextMenuTitle',
+                titleFallback: 'Right-click a health row',
+                whatKey: 'config.overviewNewFeatureHealthContextMenuWhat',
+                whatFallback: 'The nine actions behind a health row’s More button were reachable only by hovering the row and finding the button.',
+                howKey: 'config.overviewNewFeatureHealthContextMenuHow',
+                howFallback: 'Right-click any row in the Health view to open that same menu at the cursor, the way a bookmark on the dashboard already did. Shift and right-click still gives you the browser’s own menu.',
+                enableKey: 'config.overviewNewFeatureHealthContextMenuEnable',
+                enableFallback: 'Nothing to switch on — it is simply there. The ⋯ button and the m key keep working as before.',
+                ctaKey: 'config.overviewNewFeatureHealthContextMenuCta',
+                ctaFallback: 'Open Health →',
+                go: { view: 'health' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureMonitorEmphasisTitle',
                 titleFallback: 'Monitored bookmarks stand out',
                 whatKey: 'config.overviewNewFeatureMonitorEmphasisWhat',

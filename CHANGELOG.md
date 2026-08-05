@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.09.04 — August 2026](#v20260904--august-2026)
 - [v2026.09.03 — August 2026](#v20260903--august-2026)
 - [v2026.09.2 — August 2026](#v2026092--august-2026)
 - [v2026.08.08.6 — August 2026](#v202608086--august-2026)
@@ -150,6 +151,39 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.09.04 — August 2026
+
+**Monitored bookmarks on the dashboard, and two ways into Health** — a bookmark set to Monitor finally shows its status, with a three-way choice of how loudly; any bookmark can be opened straight at its health row; health rows answer the right mouse button; and the fold-all button stops riding along with its neighbour.
+
+### Status & health
+
+- **fix** — **A monitored bookmark renders its status badge.** Off / periodic / monitor is one three-state choice stored as two mutually exclusive flags, so a monitored bookmark has `checkStatus === false`. The row renderer tested that flag alone, so Monitor — the heavier mode — showed nothing while Periodic showed a badge. `bookmarkIsChecked` is exported from `status.js` rather than copied, since that file already answers the question nine times. The render fingerprint had the same blind spot for a different reason: switching Periodic → Monitor clears one flag and sets the other, leaving a fingerprint that read only `checkStatus` unchanged, so the incremental renderer reused the row and the new badge never appeared (`status.js`, `dashboard-bookmark-rows.js`).
+- **new** — **Monitor emphasis is a three-way choice**: `problems` (default), `always`, `never`. Rendered as large labelled choice cards rather than pills or a `<select>`, because each option needs a sentence and neither can carry one. The row records its mode in `data-check-mode` and `<body>` records the setting, so CSS decides the volume and changing it is a repaint, not a re-render — which is also why the control declares `special: 'chrome'`. An unknown value falls back server-side rather than reaching `<body>`, where no rule would match it (`dashboard-config.js`, `status.css`, `models.go`).
+
+### Health
+
+- **new** — **Show in Health** reaches a bookmark's health row from the dashboard right-click menu and from the **Config → Bookmarks** row menu. Offered for every bookmark, not only checked ones: the report has an `unchecked` filter and tile precisely because most bookmarks are unchecked, and that row is where checking gets turned on. The index comes from `findBookmarkRecord`, since the health key is `pageId:index` against the page's stored order — an index from a filtered or sorted list would point at a different bookmark, and smart-collection rows carry no page-local index at all (`dashboard-context-menu.js`, `dashboard-config.js`).
+- **new** — **Right-clicking a health row opens its More menu** at the cursor. A second door into the existing ⋯ menu, not a second menu, so the actions, Escape handling, arrow-key navigation and outside-click dismiss are untouched. Placement fights three things: selecting the row scrolls it, so the cursor is stored as an offset from the row rather than the animating wrap; the actions bar expands over 0.14s, so placement runs again on `transitionend` with a timeout guard for when no transition fires; and a pending frame could outlive the menu it was placing, writing a stale position back after Escape, so it is cancelled on close and guarded when it runs (`dashboard-health.js`, `health-view.css`).
+
+### Config
+
+- **new** — The monitor emphasis setting is announced in the overview's new-features carousel, and the **Status & health** sub-tab and its panel carry the shared twinkle used by the Ko-fi button and the New features panel. Reaching that panel needed routing that did not exist: `data-overview-go` could select a section and an appearance tab, but Behavior's sub-tab strip has no `switchAppearanceTab` equivalent, so the field is set before the section renders. A panel opts in with `highlight: true` in `behaviorSchema()`, so retiring the mark is one deleted line (`dashboard-config.js`, `config-view.css`).
+
+### Toolbar
+
+- **fix** — **The fold-all button has a toggle of its own.** Turning off "Show the cheat-sheet button" also removed the `.` button, and turning it back on brought it back. The cause was not that the cheat-sheet setting reached too far: fold-all had no setting at all. It shares `.btn-group-secondary` with Recent and Help, and one rule hid that whole group once those two were off, so fold-all was visible only for as long as a neighbour happened to be. It now has a Go field, a `<body>` attribute, its own CSS rule and a checkbox in **Appearance → Toolbar & tabs**; the group-collapse rule weighs all three buttons. It defaults to on, including for existing installs where the key is absent, since the button has always been there. It also joins the side-rail key legend (`dashboard.css`, `dashboard-setup.js`, `dashboard-toolbar.js`, `models.go`).
+
+### Tests
+
+- **improved** — The behavior schema is walked for settings that only apply after a reload, and config overflow is measured against the body edge rather than the viewport.
+- **improved** — The side rail spec no longer assumes it leads the new-features carousel; it steps to its slide, since the carousel is a catalog that newer features join at the front.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README and MANUAL for **v2026.09.04**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v170`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v229`. Docs stay out of the What's new modal, which is for user-facing change (`whats-new-stub.js`).
 
 ---
 
