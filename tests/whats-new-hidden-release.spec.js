@@ -21,7 +21,7 @@ async function loadDashboard(page) {
 
 test.describe('a release flagged hideFromModal', () => {
     test('is still the newest entry in the index when flagged', async ({ page }) => {
-        await page.route('**/static/data/whats-new/index.json', (route) => route.fulfill({
+        await page.route('**/static/data/whats-new/index.json*', (route) => route.fulfill({
             contentType: 'application/json',
             body: JSON.stringify([
                 {
@@ -50,7 +50,7 @@ test.describe('a release flagged hideFromModal', () => {
     });
 
     test('shows in Config → Overview → Latest update', async ({ page }) => {
-        await page.route('**/static/data/whats-new/index.json', (route) => route.fulfill({
+        await page.route('**/static/data/whats-new/index.json*', (route) => route.fulfill({
             contentType: 'application/json',
             body: JSON.stringify([
                 {
@@ -69,6 +69,20 @@ test.describe('a release flagged hideFromModal', () => {
             ]),
         }));
 
+        // The panel renders the release itself, not just its tag, so the file the
+        // index points at has to exist too — without this the fetch 404s and the
+        // panel falls back to "Release notes are not available".
+        await page.route('**/static/data/whats-new/v2026.09.9.json*', (route) => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify({
+                tag: 'v2026.09.9',
+                date: 'August 2026',
+                releasedAt: '2026-08-04',
+                modalLead: 'A maintenance release recorded but not announced.',
+                sections: [],
+            }),
+        }));
+
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
         await page.waitForFunction(() => typeof window.DashboardConfig === 'function', null, { timeout: 10_000 });
@@ -78,7 +92,7 @@ test.describe('a release flagged hideFromModal', () => {
     });
 
     test('does not appear in the What\'s new modal', async ({ page }) => {
-        await page.route('**/static/data/whats-new/index.json', (route) => route.fulfill({
+        await page.route('**/static/data/whats-new/index.json*', (route) => route.fulfill({
             contentType: 'application/json',
             body: JSON.stringify([
                 {
