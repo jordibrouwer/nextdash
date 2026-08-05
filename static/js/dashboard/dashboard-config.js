@@ -17,8 +17,8 @@ class DashboardConfig {
     static SECTIONS = [
         'overview',
         'bookmarks',
-        'pages-tags',
         'appearance',
+        'pages-tags',
         'behavior',
         'data-backups',
         'stats',
