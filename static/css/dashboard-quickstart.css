@@ -386,6 +386,22 @@
     margin-top: 0.8rem;
 }
 
+/* ── One-time side-rail invitation ──────────────────────────────────────
+   Same card chrome as the analytics notice; only the body differs. */
+.side-rail-notice-text {
+    margin: 0.35rem 0 0;
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.side-rail-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+}
+
 /* ── One-time push-notification invitation ──────────────────────────────
    Same card chrome as the analytics notice; the caveat line is the addition. */
 .push-notice-text {

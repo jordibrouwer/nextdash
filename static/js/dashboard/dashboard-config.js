@@ -2440,6 +2440,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureSideRailTitle',
+                titleFallback: 'Button bar position',
+                whatKey: 'config.overviewNewFeatureSideRailWhat',
+                whatFallback: 'The add, search, commands, and finders buttons can float center-bottom, dock into either bottom corner, or stand as a vertical rail down the left edge.',
+                howKey: 'config.overviewNewFeatureSideRailHow',
+                howFallback: 'Pick a position under Config → Appearance → Layout, or run :buttonbar from the command palette. The bar moves as you choose — no reload.',
+                enableKey: 'config.overviewNewFeatureSideRailEnable',
+                enableFallback: 'The side rail keeps the space under your bookmarks clear, which pays off on wide screens.',
+                ctaKey: 'config.overviewNewFeatureSideRailCta',
+                ctaFallback: 'Open Layout →',
+                go: { section: 'appearance', appearanceTab: 'layout' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureBookmarkFormTitle',
                 titleFallback: 'Shared bookmark form',
                 whatKey: 'config.overviewNewFeatureBookmarkFormWhat',
