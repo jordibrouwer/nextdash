@@ -3769,8 +3769,16 @@ body[data-show-recent-button="false"] .recent-button {
     display: none;
 }
 
-/* Collapse optional secondary toolbar when Recent and Help are both off */
-body[data-show-recent-button="false"][data-show-cheatsheet-button="false"] .btn-group-secondary {
+/* Hide fold-all button when showCollapseAllButton is false */
+body[data-show-collapse-all-button="false"] #collapse-all-button {
+    display: none;
+}
+
+/* Collapse the optional secondary toolbar only when all three of its buttons
+   are off. Fold-all used to have no setting of its own and rode along with this
+   rule, so turning off Recent and Help took it away too — and turning Help back
+   on brought it back. Each button now answers only to its own toggle. */
+body[data-show-recent-button="false"][data-show-cheatsheet-button="false"][data-show-collapse-all-button="false"] .btn-group-secondary {
     display: none !important;
 }
 

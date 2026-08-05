@@ -5591,6 +5591,7 @@ class DashboardConfig {
         // Toolbar & chrome
         showRecentButton: { def: true },
         showCheatSheetButton: { def: true },
+        showCollapseAllButton: { def: true },
         showConfigButton: { def: true },
         showHealthDashboard: { def: true },
         showAddBookmarkButton: { def: true },
@@ -5793,6 +5794,7 @@ class DashboardConfig {
                     chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
                     chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
                     chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
+                    chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
                     chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
                     chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
                     // Button bar position lives on the Layout tab, as a button

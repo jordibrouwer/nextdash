@@ -129,6 +129,7 @@ type Settings struct {
 	ConfigButtonDefaultOnMigrated bool                        `json:"configButtonDefaultOnMigrated,omitempty"` // one-time: restore config header icon after visibility fix
 	ShowSearchFlowBanner         bool                         `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton         bool                         `json:"showCheatSheetButton"`
+	ShowCollapseAllButton        bool                         `json:"showCollapseAllButton"`
 	ShowSearchButtonText         bool                         `json:"showSearchButtonText"`
 	ShowFindersButtonText        bool                         `json:"showFindersButtonText"`
 	ShowCommandsButtonText       bool                         `json:"showCommandsButtonText"`
@@ -567,6 +568,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowTagCloudButton:             true,
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           false,
+			ShowCollapseAllButton:          true,
 			ShowSearchButtonText:           true,
 			ShowFindersButtonText:          true,
 			ShowCommandsButtonText:         true,
@@ -1940,6 +1942,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowRecentButton:               true,
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           true,
+			ShowCollapseAllButton:          true,
 			ShowSearchButtonText:           true,
 			ShowFindersButtonText:          true,
 			ShowCommandsButtonText:         true,
@@ -2031,6 +2034,12 @@ func (fs *FileStore) GetSettings() Settings {
 	if err := json.Unmarshal(data, &rawSettings); err == nil {
 		if _, ok := rawSettings["showCheatSheetButton"]; !ok {
 			settings.ShowCheatSheetButton = true
+		}
+		// Absent for everyone until this setting existed, and the button it
+		// controls was visible all that time. Defaulting to false would take it
+		// away from every existing dashboard on upgrade.
+		if _, ok := rawSettings["showCollapseAllButton"]; !ok {
+			settings.ShowCollapseAllButton = true
 		}
 		if _, ok := rawSettings["colorizeStatus"]; !ok {
 			settings.ColorizeStatus = true

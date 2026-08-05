@@ -3469,6 +3469,7 @@
         "pasteDestinationLabel": "Ziel beim Einfügen",
         "showAddBookmarkButtonLabel": "Schaltfläche Lesezeichen hinzufügen zeigen",
         "showCheatSheetButtonLabel": "Schaltfläche Tastenkürzel-Übersicht zeigen",
+        "showCollapseAllButtonLabel": "Schaltfläche Alle einklappen zeigen",
         "showCommandsButtonLabel": "Schaltfläche Befehle zeigen",
         "showConfigButtonLabel": "Schaltfläche Konfiguration zeigen",
         "showDateLabel": "Datum zeigen",

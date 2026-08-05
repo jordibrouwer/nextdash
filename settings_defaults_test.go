@@ -230,3 +230,44 @@ func TestMonitorEmphasisDefaultsAndRejectsUnknownValues(t *testing.T) {
 		})
 	}
 }
+
+// The fold-all button predates its own setting: it was always in the toolbar,
+// and its visibility was a side effect of the group it sits in. An upgrade must
+// therefore leave it on, or every existing dashboard silently loses a button.
+func TestCollapseAllButtonDefaultsOnForExistingInstalls(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+
+	if got := NewStore().GetSettings().ShowCollapseAllButton; !got {
+		t.Fatalf("fresh install: showCollapseAllButton = %v, want true", got)
+	}
+
+	for _, tc := range []struct {
+		name     string
+		settings map[string]any
+		want     bool
+	}{
+		// The upgrade case: a settings file written before the key existed.
+		{"key absent", map[string]any{"currentPage": 1}, true},
+		{"explicitly off", map[string]any{"currentPage": 1, "showCollapseAllButton": false}, false},
+		{"explicitly on", map[string]any{"currentPage": 1, "showCollapseAllButton": true}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			t.Chdir(dir)
+			if err := os.MkdirAll("data", 0755); err != nil {
+				t.Fatal(err)
+			}
+			body, err := json.Marshal(tc.settings)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+				t.Fatal(err)
+			}
+			if got := NewStore().GetSettings().ShowCollapseAllButton; got != tc.want {
+				t.Fatalf("showCollapseAllButton = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}

@@ -3469,6 +3469,7 @@
         "pasteDestinationLabel": "Paste destination",
         "showAddBookmarkButtonLabel": "Show the add-bookmark button",
         "showCheatSheetButtonLabel": "Show the cheat-sheet button",
+        "showCollapseAllButtonLabel": "Show the fold-all button",
         "showCommandsButtonLabel": "Show the commands button",
         "showConfigButtonLabel": "Show the config button",
         "showDateLabel": "Show the date",
