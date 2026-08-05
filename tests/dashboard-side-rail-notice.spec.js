@@ -46,6 +46,21 @@ test.describe('side rail invitation', () => {
         await expect(card.locator('[data-sr-action="open-layout"]')).toBeVisible();
     });
 
+    test('the follow-up names the :buttonbar command, but not before', async ({ page }) => {
+        await loadWithCardPending(page);
+        await page.evaluate(() => window.DashboardSideRailNotice.render());
+
+        // The invitation stays a single ask — no command hint yet.
+        const hint = page.locator('.side-rail-notice-hint');
+        await expect(hint).toBeHidden();
+
+        await page.locator('.side-rail-notice-card [data-sr-action="try"]').click();
+
+        await expect(hint).toBeVisible();
+        await expect(hint.locator('kbd')).toHaveText(':buttonbar');
+        await expect(hint).not.toContainText('dashboard.sideRailNotice');
+    });
+
     test('the follow-up opens Appearance → Layout', async ({ page }) => {
         await loadWithCardPending(page);
         await page.evaluate(() => window.DashboardSideRailNotice.render());

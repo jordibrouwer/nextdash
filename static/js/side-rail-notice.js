@@ -120,7 +120,15 @@
         const body = el.querySelector('.side-rail-notice-text');
         if (body) {
             body.textContent = t('dashboard.sideRailNoticeAppliedBody',
-                'The buttons now sit in a rail down the left edge. Not for you? Switch back under Config → Appearance → Layout, where you can pick any of the four positions.');
+                'The buttons now sit in a rail down the left edge. Not for you? Switch back under Config → Appearance → Layout, where you can pick any of the five positions.');
+        }
+        // Whoever just tried the rail is the person most likely to move it again,
+        // so name the command that does it without opening config at all. The
+        // hint sits below the buttons: useful once, never in the way.
+        const hint = el.querySelector('.side-rail-notice-hint');
+        if (hint) {
+            hint.innerHTML = `${escape(t('dashboard.sideRailNoticeCommandHint', 'Or switch position any time with'))} <kbd>:buttonbar</kbd>`;
+            hint.hidden = false;
         }
         const actions = el.querySelector('.side-rail-notice-actions');
         if (actions) {
@@ -165,6 +173,7 @@
                     <button type="button" class="quickstart-btn quickstart-btn-primary" data-sr-action="try">${escape(t('dashboard.sideRailNoticeTry', 'Try it'))}</button>
                     <button type="button" class="quickstart-btn quickstart-btn-ghost" data-sr-action="dismiss">${escape(t('dashboard.sideRailNoticeNoThanks', 'No thanks'))}</button>
                 </div>
+                <p class="side-rail-notice-hint" hidden></p>
             </div>`;
 
         el.querySelectorAll('[data-sr-action="dismiss"]').forEach((btn) => {

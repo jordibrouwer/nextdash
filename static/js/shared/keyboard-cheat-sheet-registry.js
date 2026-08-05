@@ -85,7 +85,7 @@
             rows: [
                 { keys: 'Tab', cheatKey: 'layoutSideRailFocus', fallback: 'Toolbar is first in tab order — then page header, then bookmark grid' },
                 { keys: '← / →', cheatKey: 'layoutPageTabScroll', fallback: 'Scroll page tabs horizontally when many pages' },
-                { keys: ':buttonbar bottom', cheatKey: 'layoutSideRailButtonbar', fallback: 'Return button bar to bottom — :buttonbar bottom-left / bottom-right also work' },
+                { keys: ':buttonbar bottom', cheatKey: 'layoutSideRailButtonbar', fallback: 'Return button bar to bottom — :buttonbar bottom-left / bottom-right / side-right also work' },
             ],
         },
         {
@@ -258,7 +258,7 @@
                 { keys: ':favicons fetch', cheatKey: 'caFaviconsFetch', fallback: 'Re-download every bookmark icon across all pages (replaces existing icons)' },
                 { keys: ':preview on/off', cheatKey: 'caPreview', fallback: 'Toggle hover preview cards' },
                 { keys: ':packed on/off', cheatKey: 'caPacked', fallback: 'Toggle packed (variable-width) columns' },
-                { keys: ':buttonbar <position>', cheatKey: 'caButtonbar', fallback: 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left' },
+                { keys: ':buttonbar <position>', cheatKey: 'caButtonbar', fallback: 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left / side-right' },
                 { keys: ':sort <method>', cheatKey: 'caSort', fallback: 'Sort focused category (shows category name) — order / az / recent' },
                 { keys: ':dark / :title / :lang', cheatKey: 'caDisplayToggles', fallback: 'Toggle dark mode, dashboard title visibility, or UI language' },
                 { keys: ':animations / :status / :opacity', cheatKey: 'caDisplayMore', fallback: 'Toggle animations, status monitor, or background opacity' },
