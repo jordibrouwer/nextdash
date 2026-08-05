@@ -53,10 +53,11 @@ test.describe('custom theme editor', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-        await expect(page.locator('[data-appearance-tab]')).toHaveCount(5);
+        await expect(page.locator('[data-appearance-tab]')).toHaveCount(6);
         await expect(page.locator('[data-appearance-tab="general"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="layout"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="display"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-tab="toolbar"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="branding"]')).toBeVisible();
         await expect(page.locator('[data-appearance-tab="custom-themes"]')).toBeVisible();
     });

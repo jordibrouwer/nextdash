@@ -3919,6 +3919,9 @@ class DashboardConfig {
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
         }
+        if (this.appearanceTab === 'toolbar') {
+            return shell(this.renderAppearanceToolbarBody());
+        }
         if (this.appearanceTab === 'branding') {
             return shell(this.renderAppearanceBrandingBody());
         }
@@ -4009,6 +4012,18 @@ class DashboardConfig {
             </div>`);
     }
 
+    /**
+     * Which buttons and tabs the dashboard chrome shows. Its own tab rather than
+     * a panel under Display: twelve visibility toggles plus the button-bar
+     * position buried the three everyday row options they sat beneath.
+     */
+    renderAppearanceToolbarBody() {
+        return this.renderControlPanels(
+            this.behaviorSchema().filter((p) => p.tab === 'toolbar'),
+            'behavior'
+        );
+    }
+
     renderAppearanceBrandingBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
@@ -4076,7 +4091,7 @@ class DashboardConfig {
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live in the panels below.'))}</p>
+                <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live on their own tab.'))}</p>
                 <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="showIcons" ${s.showIcons !== false ? 'checked' : ''}>
@@ -4292,7 +4307,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
-        if (this.appearanceTab === 'layout' || this.appearanceTab === 'display') {
+        if (['layout', 'display', 'toolbar'].includes(this.appearanceTab)) {
             this.bindControlPanels(container, 'behavior');
         }
         this.bindFormKeyboard(container);
@@ -4391,6 +4406,7 @@ class DashboardConfig {
             general: ['config.appearanceTabGeneral', 'Theme'],
             layout: ['config.appearanceTabLayout', 'Layout'],
             display: ['config.appearanceTabDisplay', 'Display'],
+            toolbar: ['config.appearanceTabToolbar', 'Toolbar & tabs'],
             branding: ['config.appearanceTabBranding', 'Branding'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
         };
@@ -5671,7 +5687,7 @@ class DashboardConfig {
                 ],
             },
             {
-                tab: 'display',
+                tab: 'toolbar',
                 title: t('config.generalGroupChrome', 'Toolbar & tabs'),
                 note: t('config.generalHeaderButtonsIntro', 'Button visibility in the dashboard footer and header.'),
                 // Chrome lives on <body> as data-* attributes rather than being
@@ -6421,7 +6437,7 @@ class DashboardConfig {
     /** Data & backups keeps its destructive actions on a separate tab. */
     static DB_TABS = ['backups', 'reset'];
 
-    static APPEARANCE_TABS = ['general', 'layout', 'display', 'branding', 'custom-themes'];
+    static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'branding', 'custom-themes'];
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
 
