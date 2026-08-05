@@ -2440,6 +2440,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureMonitorEmphasisTitle',
+                titleFallback: 'Monitored bookmarks stand out',
+                whatKey: 'config.overviewNewFeatureMonitorEmphasisWhat',
+                whatFallback: 'A bookmark set to Monitor now shows its status on the dashboard, the way a Periodic one always did — and you can say how much it should stand out.',
+                howKey: 'config.overviewNewFeatureMonitorEmphasisHow',
+                howFallback: 'Right-click a bookmark and pick Show in Health to jump straight to its row, from the dashboard or from Config → Bookmarks.',
+                enableKey: 'config.overviewNewFeatureMonitorEmphasisEnable',
+                enableFallback: 'Set to draw the eye only when something is down. Choose Always or Never under Config → Behavior → Status & health.',
+                ctaKey: 'config.overviewNewFeatureMonitorEmphasisCta',
+                ctaFallback: 'Open Status & health →',
+                go: { section: 'behavior', behaviorTab: 'status' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureSideRailTitle',
                 titleFallback: 'Button bar position',
                 whatKey: 'config.overviewNewFeatureSideRailWhat',
@@ -2845,6 +2858,16 @@ class DashboardConfig {
                 }
                 void this.switchAppearanceTab(target.appearanceTab);
                 return;
+            }
+            // Behavior has no switchAppearanceTab equivalent — the tab is only
+            // changed by its own strip — so the field is set before the section
+            // renders, which is what the strip itself reads.
+            if (target.behaviorTab && target.section === 'behavior') {
+                this.behaviorTab = target.behaviorTab;
+                if (this.section === 'behavior') {
+                    this.render();
+                    return;
+                }
             }
             this.selectSection(target.section);
             if (target.bmPageFilter != null) {

@@ -106,8 +106,19 @@ test.describe('side rail invitation', () => {
 
         const spotlight = page.locator('.config-feature-spotlight');
         await expect(spotlight).toBeVisible();
-        // It leads the carousel, and reads as copy rather than locale keys.
-        await expect(spotlight.locator('.config-feature-spotlight-title')).toHaveText(/button bar|knoppenbalk|barre de boutons|schaltflächenleiste/i);
+
+        // Step to its slide rather than assuming it leads: the carousel is a
+        // catalog that newer features join at the front, so pinning this to
+        // position would break every time one is added.
+        const title = /button bar|knoppenbalk|barre de boutons|schaltflächenleiste/i;
+        const total = await page.evaluate(() =>
+            window.dashboardInstance.config.overviewNewFeatures().length);
+        for (let i = 0; i < total; i += 1) {
+            if (title.test(await spotlight.locator('.config-feature-spotlight-title').innerText())) break;
+            await page.evaluate(() => window.dashboardInstance.config.stepOverviewFeature(1));
+        }
+        await expect(spotlight.locator('.config-feature-spotlight-title')).toHaveText(title);
+        // Reads as copy rather than locale keys.
         await expect(spotlight).not.toContainText('config.overviewNewFeature');
 
         await spotlight.locator('[data-overview-go]').click();
