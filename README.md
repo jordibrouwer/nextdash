@@ -317,7 +317,7 @@ environment:
 - `:columns <n>` — set column count (1–6)
 - `@` — global search across all pages at once; each result shows the page name as context
 - `:find <text>` — hide tiles whose name or URL don't match; `:find clear` removes the filter
-- `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right` / `side-left`
+- `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right` / `side-left` / `side-right`
 - `:save` / `:saved` — save current query / show saved searches
 
 **Config view**
@@ -393,7 +393,7 @@ Dynamic bookmark groups that appear automatically:
 - Layout presets: Default, Compact, Cards, Terminal-ish, Masonry, Detailed List, **Launcher** (large favicon tiles)
 - **Show favicons** — toggle bookmark favicons in **Config → General → Bookmarks** or with `:favicons on/off` on the dashboard
 - Launcher layout preset — switch via **Config → General → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
-- Button bar position: center-bottom (default) or corner dock (bottom-left / bottom-right) via Config or `:buttonbar`
+- Button bar position: center-bottom (default), corner dock (bottom-left / bottom-right), or a vertical side rail on either edge (side-left / side-right) via Config or `:buttonbar`
 - ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **50 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density

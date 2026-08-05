@@ -235,7 +235,7 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Side rail layout (optional — **Config → Appearance → Display → Button bar position → Side rail**):
+Side rail layout (optional — **Config → Appearance → Layout → Button bar position → Rail left** or **Rail right**):
 
 ```
 ┌──┬─────────────────────────────────────────────────────────┐
@@ -265,7 +265,7 @@ Side rail layout (optional — **Config → Appearance → Display → Button ba
 
 ### 🎛️ Button bar / side rail
 
-The button bar can appear as a **floating bottom bar** (default) or as a **44 px left side rail** — set via **Config → Appearance → Display → Button bar position** or the `:buttonbar` command.
+The button bar can appear as a **floating bottom bar** (default), a **corner dock**, or a **44 px vertical side rail on either edge** — set via **Config → Appearance → Layout → Button bar position** or the `:buttonbar` command.
 
 **Bottom bar** — buttons float centred at the bottom of the viewport.
 
@@ -278,7 +278,7 @@ The button bar can appear as a **floating bottom bar** (default) or as a **44 px
 | `*` | `*` | Recent bookmarks on this page |
 | `!` | `!` / `F1` | Keyboard cheat sheet |
 
-**Side rail (left)** — 44×44 px square cells stacked vertically on the left edge; the dashboard grid shifts right by 44 px to clear the rail. On mobile (≤768 px) the rail automatically reverts to a centred bottom bar.
+**Side rail** — 44×44 px square cells stacked vertically against one edge; the dashboard grid shifts by 44 px to clear it. Available on the **left** (`side-left`) or the **right** (`side-right`); the two are mirror images, so the divider faces the content and tooltips open inward. On mobile (≤768 px) the rail automatically reverts to a centred bottom bar.
 
 | Position | Button | Key | Role |
 |----------|--------|-----|------|
@@ -656,7 +656,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:theme <name>` | Switch theme |
 | `:density comfortable\|compact\|dense` | Row density |
 | `:columns <1-6>` | Column count |
-| `:buttonbar bottom\|bottom-left\|bottom-right\|side-left` | Button bar position (`side-left` = vertical rail on the left edge) |
+| `:buttonbar bottom\|bottom-left\|bottom-right\|side-left\|side-right` | Button bar position (`side-left` / `side-right` = vertical rail on that edge) |
 | `:save` / `:saved` | Save / list saved searches |
 | `:history` / `:history clear` | Search history |
 
@@ -851,7 +851,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 ### 🧭 Header and background
 
 - Optional title, background dots, gradient/image. **Background type** defaults to **none** (**v2026.07.26**); choose gradient, image, or **auto** (theme-matched preset) under **config → appearance**. **Background opacity** fades only the backdrop layer — bookmark rows and chrome stay fully readable (**v2026.07.26**).
-- **Button bar position** — centre bottom, corner dock, or **left side rail** (`:buttonbar side-left`). The side rail places navigation buttons in a 44 px vertical strip on the left edge (`/` tag cloud directly under `*` recent); the dashboard grid shifts right to clear it. On mobile it reverts to a centred bottom bar automatically.
+- **Button bar position** — centre bottom, corner dock, or a **side rail on either edge** (`:buttonbar side-left` / `side-right`). The side rail places navigation buttons in a 44 px vertical strip against that edge (`/` tag cloud directly under `*` recent); the dashboard grid shifts to clear it. On mobile it reverts to a centred bottom bar automatically. The rail is offered once via a card on the dashboard — trying it applies it immediately and tells you where to switch it back.
 
 ### What’s new
 

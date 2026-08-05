@@ -1,0 +1,76 @@
+{
+  "tag": "v2026.09.03",
+  "date": "August 2026",
+  "releasedAt": "2026-08-05",
+  "modalLead": "The button bar can dock as a rail on either edge and is offered to you once in place, Appearance is reorganised into its own tabs, the config overview is grouped by what you came to do, and reduced-motion settings from your operating system are finally respected.",
+  "sections": [
+    {
+      "title": "Layout",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The button bar can sit on either edge</strong> — the rail was left-only, so the bottom positions offered a choice of corner and the rail did not. <strong>Config → Appearance → Layout</strong> now offers all five positions as buttons, with a line explaining what each does, and the change applies as you click rather than after a reload."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The side rail is offered once, in place</strong> — a card asks whether you want to try it, and <strong>Try it</strong> applies it immediately. It then tells you where to switch it back off and names the <code>:buttonbar</code> command. Decline it and it never returns; the answer is stored server-side, so it follows you across devices."
+        },
+        {
+          "badge": "improved",
+          "text": "<strong>The rail mirrors properly</strong> — the divider faces the content, tooltips and hints open inward instead of off the screen, and the hover nudge moves away from the edge the rail sits on."
+        }
+      ]
+    },
+    {
+      "title": "Accessibility",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Your system's reduced-motion setting is respected</strong> — animations could only be stopped from the app's own switch, and newer parts of the interface never got a matching rule at all. The tag cloud button kept pulsing on an endless loop for anyone who had asked their operating system for less motion. That preference now stops every animation on its own, including in Health, Inbox, modals and loading skeletons."
+        }
+      ]
+    },
+    {
+      "title": "Appearance",
+      "items": [
+        {
+          "badge": "improved",
+          "text": "<strong>Random theme and favicon harmonisation are buttons</strong> — both were a dropdown and a lone checkbox among the button groups they sit beside, so the same kind of choice was made in three different ways on one screen."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Branding and Toolbar &amp; tabs have their own tabs</strong> — both were buried in <strong>Display</strong>, which had grown long enough that the sections below it were easy to miss."
+        },
+        {
+          "badge": "improved",
+          "text": "<strong>Appearance sits above Pages &amp; tags</strong> in the config navigation, directly under Bookmarks."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "improved",
+          "text": "<strong>The overview is grouped by what you came to do</strong> — a row of tiles and a stack of framed blocks all competed for attention equally. The update check and the Ko-fi button stay at the top where they were; below them the panels are grouped rather than boxed, and the tips move into a single footer row."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Weather location and refresh interval apply straight away</strong> — the weather is cached against its location, source and unit, so changing any of those kept showing the old reading until a full reload. Changing how often it refreshes left the previous timer running at the old interval."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shortcut hints on toolbar icons apply straight away</strong> — the switch only took effect after a reload, though the <code>:shortcuts</code> command had always applied it immediately."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Feature popovers no longer hijack the Appearance tabs</strong> — a popover pointing at a setting could reset the tab you had just opened, leaving Branding blank, and could steal a link you had followed to a specific tab. Popovers also stayed dismissed: a repaint used to bring them straight back."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Older config links still land in the right place</strong> — a legacy address was restored but never rewritten, so the tab and the address bar disagreed."
+        }
+      ]
+    }
+  ]
+}
