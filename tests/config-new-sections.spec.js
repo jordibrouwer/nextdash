@@ -58,9 +58,30 @@ test.describe('config: sections restored from the old config', () => {
         await expect(title).toBeVisible();
         expect(await title.evaluate((el) => el.scrollWidth)).toBeGreaterThan(0);
 
-        const overflow = await page.evaluate(() =>
-            document.documentElement.scrollWidth - document.documentElement.clientWidth);
-        expect(overflow).toBeLessThanOrEqual(0);
+        // Measured against the body's own content edge, not the viewport.
+        // documentElement.scrollWidth cannot see this: `html` reserves a
+        // scrollbar gutter (dashboard.css) so the delta sits at -15 on a clean
+        // page, and `body { overflow-x: hidden }` clips real overflow back out
+        // of it — an element hanging 10px past the edge still measured -15 and
+        // passed. Walking the elements reports the true worst offender, and
+        // names it when it fails.
+        const overflow = await page.evaluate(() => {
+            const limit = document.body.clientWidth;
+            let worst = 0;
+            let culprit = '';
+            for (const el of Array.from(document.querySelectorAll('body *'))) {
+                const s = getComputedStyle(el);
+                if (s.display === 'none' || s.visibility === 'hidden') continue;
+                const r = el.getBoundingClientRect();
+                if (r.width === 0 || r.height === 0) continue;
+                if (r.right - limit > worst) {
+                    worst = r.right - limit;
+                    culprit = el.className || el.tagName;
+                }
+            }
+            return { worst: Math.round(worst), culprit: String(culprit).slice(0, 80) };
+        });
+        expect(overflow, `widest element overflows: ${overflow.culprit}`).toEqual({ worst: 0, culprit: '' });
     });
 
     test('the stats section shows counts derived from the dashboard', async ({ page }) => {
