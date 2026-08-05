@@ -67,6 +67,8 @@
     <link rel="stylesheet" href="{{asset "css/overlays-modern.css"}}">
     <link rel="stylesheet" href="{{asset "css/layout-side-rail.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-inline-edit-surface.css"}}">
+    <!-- Last: overrides the !important animation rules the sheets above declare. -->
+    <link rel="stylesheet" href="{{asset "css/reduced-motion.css"}}">
     <!-- Deliberately unversioned: fonts.css requests this exact URL from a static
          stylesheet, which is served as-is and so cannot render the asset helper.
          A hashed URL here would not match it, making the browser fetch the font

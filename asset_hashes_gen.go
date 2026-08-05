@@ -27,6 +27,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/mobile-experience.css": "e871e2bd4399",
 	"css/modal.css": "c2a62925efa6",
 	"css/overlays-modern.css": "c24dabbb1af5",
+	"css/reduced-motion.css": "793991a1cdac",
 	"css/reorder.css": "2385788b4c31",
 	"css/responsive.css": "7ec80048f2d1",
 	"css/search-commands-new.css": "71be1a343cb1",
