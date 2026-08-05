@@ -5586,7 +5586,7 @@ class DashboardConfig {
                     ] },
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
-                    bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'),
+                    { ...bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'), special: 'shortcutTooltips' },
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
                     bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
                 ],
@@ -6253,6 +6253,13 @@ class DashboardConfig {
                 break;
             case 'chrome':
                 this.applyChromeSettings();
+                break;
+            case 'shortcutTooltips':
+                // The popovers are listeners bound to the toolbar buttons, not
+                // markup read at render time — so re-run the setup, which adds
+                // or tears them down to match. This is what `:shortcuts on` in
+                // the command palette already did; only config lagged behind.
+                d.setupToolbarKbdTooltips?.();
                 break;
             case 'chromeRender':
                 // Both: the value is read at render time *and* mirrored onto

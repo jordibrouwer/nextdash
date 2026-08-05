@@ -212,6 +212,33 @@ test.describe('the switch is reachable from both places', () => {
         }
     });
 
+    /**
+     * The popovers are listeners bound to the toolbar buttons, not markup read
+     * at render time, so the config toggle's default repaint did nothing to
+     * them — the change only showed up after a full reload. `:shortcuts` in the
+     * palette already re-ran the setup; config now does too.
+     */
+    test('the config toggle applies without a reload', async ({ page }) => {
+        await loadDashboard(page);
+        await setTooltips(page, true);
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
+        await page.evaluate(() => {
+            window.dashboardInstance.config.behaviorTab = 'general';
+            window.dashboardInstance.config.render();
+        });
+        const toggle = page.locator('[data-behavior-field="showShortcutTooltips"]');
+        await expect(toggle).toBeVisible();
+
+        await toggle.uncheck();
+        await expect.poll(() => page.evaluate(() =>
+            !!document.getElementById('toolbar-kbd-tooltip')), { timeout: 5000 }).toBe(false);
+
+        await toggle.check();
+        await expect.poll(() => page.evaluate(() =>
+            !!document.getElementById('toolbar-kbd-tooltip')), { timeout: 5000 }).toBe(true);
+    });
+
     test('the command is listed in the palette', async ({ page }) => {
         await loadDashboard(page);
         const known = await page.evaluate(() => {
