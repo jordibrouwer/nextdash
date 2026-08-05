@@ -6036,8 +6036,14 @@ class DashboardConfig {
                 ? `<span class="config-applies-to" title="${esc(this.t('config.appliesToTitle', 'These settings only take effect for bookmarks set to this mode'))}">${esc(panel.appliesTo)}</span>`
                 : '';
             const note = panel.note ? `<p class="config-panel-note">${esc(panel.note)}</p>` : '';
+            // `highlight` marks a panel as this release's new setting, with the
+            // same twinkle as the overview's New features panel. Declared by the
+            // schema rather than matched on a field name here, so retiring it is
+            // deleting one line where the setting is defined.
+            const stars = panel.highlight ? this.renderNewFeaturesPanelStars() : '';
             return `
-            <div class="config-panel">
+            <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}">
+                ${stars}
                 <h3 class="config-panel-title">${esc(panel.title)}${badge}</h3>
                 ${note}
                 ${panel.controls.map(renderControl).join('')}
@@ -6279,7 +6285,13 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.BEHAVIOR_TABS.map((tab) => {
             const active = tab === this.behaviorTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-behavior-body" data-behavior-tab="${esc(tab)}">${esc(this.behaviorTabLabel(tab))}</button>`;
+            // The Status tab carries this release's new setting, so it gets the
+            // same twinkle the overview's New features panel and the Ko-fi
+            // button use — the established "look here" mark in this app. Dropped
+            // once the setting is no longer new.
+            const isNew = tab === 'status';
+            const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-behavior-body" data-behavior-tab="${esc(tab)}">${esc(this.behaviorTabLabel(tab))}${stars}</button>`;
         }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.behaviorIntro', 'How the dashboard behaves. Every change applies immediately and is saved.'))}</p>

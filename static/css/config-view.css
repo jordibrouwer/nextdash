@@ -687,6 +687,42 @@
 }
 
 
+/* ── "New in this release" twinkle ───────────────────────────────────────────
+   Reuses the star markup and keyframes from the overview's New features panel
+   (renderNewFeaturesPanelStars), so a highlighted sub-tab, that panel and the
+   Ko-fi button all read as the same "look here" mark rather than three
+   inventions. Only the anchoring differs, which is what lives here.
+
+   Both hosts need `position: relative` and visible overflow for the absolutely
+   positioned stars, and both keep their own padding — the stars sit in the
+   bleed around the element via the negative inset on .config-*-stars.
+
+   Reduced motion is handled globally in reduced-motion.css, which zeroes every
+   animation-duration, so there is deliberately no media query here. */
+
+.config-subtab--animated {
+    position: relative;
+    overflow: visible;
+    animation: config-new-features-panel-glow 3.4s ease-in-out infinite;
+}
+
+/* The strip lays tabs out at their bold width via ::before; the stars are real
+   child elements, so they do not disturb that measurement. */
+.config-subtab--animated .config-new-features-panel-stars {
+    inset: -0.3rem -0.4rem;
+}
+
+.config-panel--animated {
+    position: relative;
+    isolation: isolate;
+    overflow: visible;
+    animation: config-new-features-panel-glow 3.4s ease-in-out infinite;
+}
+
+.config-panel--animated .config-new-features-panel-stars {
+    inset: -0.5rem -0.55rem;
+}
+
 /* ── Background gradient swatches ────────────────────────────────────────── */
 
 .config-bg-swatches {
