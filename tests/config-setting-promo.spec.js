@@ -89,6 +89,56 @@ test.describe('Config setting promo', () => {
         expect(centres.below).toBe(true);
     });
 
+    /**
+     * ensureSubTab pulls the sub-tab over so the anchor is reachable, but the
+     * retry loop reschedules on every repaint — so it kept yanking the user back
+     * to Theme seconds after they opened another Appearance tab.
+     */
+    test('a sub-tab the user picks is not hijacked by ensureSubTab', async ({ page }) => {
+        await openAppearanceFresh(page);
+        await expect(page.locator('.config-setting-promo')).toBeVisible({ timeout: 8000 });
 
+        await page.locator('[data-appearance-tab="branding"]').click();
+        await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
 
+        // The reveal retries for several seconds; outlast them.
+        await page.waitForTimeout(2500);
+        expect(await page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('branding');
+        await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
+    });
+
+    /**
+     * A sub-tab named in the URL is as deliberate as clicking one. The promo's
+     * ensureSubTab used to override it on cold load, dropping a deep link into
+     * Appearance → Display on the Theme tab instead.
+     */
+    test('a deep-linked sub-tab is not hijacked by ensureSubTab', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/appearance/display');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await page.evaluate((key) => {
+            localStorage.removeItem(key);
+            window.DiscoverabilityState?.resetSettingPromoSeen?.('random-theme-v2', { persist: false });
+        }, STORAGE_KEY);
+
+        // Outlast the reveal retries.
+        await page.waitForTimeout(2500);
+        expect(await page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('display');
+        await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
+    });
+
+    /** Arriving fresh still lands on the tab that holds the anchor. */
+    test('ensureSubTab still reveals the anchor on arrival', async ({ page }) => {
+        await openAppearanceFresh(page);
+        await page.locator('[data-appearance-tab="display"]').click();
+        await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
+
+        await page.evaluate(() => window.dashboardInstance.config.selectSection('behavior'));
+        await page.evaluate(() => window.dashboardInstance.config.selectSection('appearance'));
+
+        await expect.poll(() => page.evaluate(() =>
+            window.dashboardInstance.config.appearanceTab), { timeout: 8000 }).toBe('general');
+        await expect(page.locator('.config-setting-promo')).toBeVisible({ timeout: 8000 });
+    });
 });

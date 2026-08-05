@@ -268,6 +268,9 @@ class DashboardConfig {
         const tab = DashboardConfig.subTabFromHash(hash);
         const prop = DashboardConfig.SUB_TAB_STATE[section];
         if (!tab || !prop) return false;
+        // A sub-tab named in the URL is as deliberate as clicking one, so a
+        // promo's ensureSubTab must not steer away from it.
+        window.ConfigSettingPromo?.markSubTabChosen?.();
         if (this[prop] === tab) return false;
         this[prop] = tab;
         return true;
@@ -474,6 +477,10 @@ class DashboardConfig {
         } else if (tabChanged || pageChanged) {
             this.render();
         }
+        // Rewrite to the canonical hash: the legacy `#config/behavior/layout`
+        // and `/display` links resolve to Appearance, and without this the old
+        // address stayed in the bar — so copying the URL handed on a dead link.
+        this.restoreConfigHash();
     }
 
     /* ── View lifecycle ────────────────────────────────────────────────────── */
