@@ -6088,6 +6088,13 @@ class DashboardConfig {
 
     static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'status', 'privacy'];
 
+    /**
+     * Date & weather fields that need a fresh fetch rather than a redraw: each
+     * one is part of the weather cache key (weather.js getCacheKey), so the
+     * cached reading belongs to the old value.
+     */
+    static WEATHER_FETCH_FIELDS = ['weatherLocation', 'weatherSource', 'weatherUnit', 'showWeatherWithDate'];
+
     behaviorTabLabel(tab) {
         const map = {
             general: ['config.behaviorTabGeneral', 'General'],
@@ -6234,7 +6241,15 @@ class DashboardConfig {
                 d.renderDashboard?.({ animate: false });
                 break;
             case 'datetime':
-                d.renderDateWeatherLine?.();
+                // The clock and date line render from settings, but the weather
+                // comes from a cached fetch keyed by location, source and unit —
+                // so changing any of those has to refetch. Redrawing alone kept
+                // showing the old location's reading until a full reload.
+                if (DashboardConfig.WEATHER_FETCH_FIELDS.includes(field)) {
+                    void d.refreshWeather?.(true);
+                } else {
+                    d.renderDateWeatherLine?.();
+                }
                 break;
             case 'chrome':
                 this.applyChromeSettings();
