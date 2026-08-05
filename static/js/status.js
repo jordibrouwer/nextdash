@@ -749,6 +749,12 @@ class StatusMonitor {
 
 // Export for use in other modules
 window.StatusMonitor = StatusMonitor;
+// The row renderer decides whether to draw a status badge at all, and has to
+// answer the same question this file answers nine times over. It was testing
+// `checkStatus` alone, which is false for a monitored bookmark — so Monitor,
+// the heavier of the two modes, rendered with no status while Periodic showed
+// one. Exported so there is a single answer rather than a second copy.
+window.bookmarkIsChecked = bookmarkIsChecked;
 window.normalizeStatusOfflineRetries = normalizeStatusOfflineRetries;
 window.normalizeStatusOfflineRetryDelayMs = normalizeStatusOfflineRetryDelayMs;
 window.normalizeStatusRecheckIntervalMinutes = normalizeStatusRecheckIntervalMinutes;
