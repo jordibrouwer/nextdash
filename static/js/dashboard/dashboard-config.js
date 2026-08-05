@@ -6311,6 +6311,11 @@ class DashboardConfig {
                 // showing the old location's reading until a full reload.
                 if (DashboardConfig.WEATHER_FETCH_FIELDS.includes(field)) {
                     void d.refreshWeather?.(true);
+                } else if (field === 'weatherRefreshMinutes') {
+                    // The interval is only read when the timer is armed, so
+                    // redrawing left the old setInterval running at the previous
+                    // cadence until a reload. Re-arm it at the new one.
+                    d.scheduleWeatherRefresh?.();
                 } else {
                     d.renderDateWeatherLine?.();
                 }
