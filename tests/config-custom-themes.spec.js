@@ -291,9 +291,8 @@ test.describe('custom theme editor', () => {
             await window.dashboardInstance.saveSettings?.();
         }, customId);
 
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
-        await expect(toggle).toBeChecked();
+        await page.locator('[data-appearance-toggle-icons="on"]').click();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
 
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
@@ -307,7 +306,7 @@ test.describe('custom theme editor', () => {
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
     test('favicon harmonization persists after switching to the custom themes tab', async ({ page }) => {
@@ -322,9 +321,8 @@ test.describe('custom theme editor', () => {
             await window.dashboardInstance.saveSettings?.();
         }, customId);
 
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
-        await expect(toggle).toBeChecked();
+        await page.locator('[data-appearance-toggle-icons="on"]').click();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
         await expect.poll(() => page.evaluate((id) =>
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
 
@@ -332,7 +330,7 @@ test.describe('custom theme editor', () => {
         await expect(page.locator('[data-theme-add]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="general"]').click();
-        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
         expect(await page.evaluate((id) =>
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
     });
@@ -349,9 +347,8 @@ test.describe('custom theme editor', () => {
         await expect.poll(() => page.evaluate((id) =>
             window.dashboardInstance.settings.theme === id, customId)).toBe(true);
 
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
-        await expect(toggle).toBeChecked();
+        await page.locator('[data-appearance-toggle-icons="on"]').click();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
 
         await expect.poll(() => page.evaluate((id) =>
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
@@ -380,9 +377,8 @@ test.describe('custom theme editor', () => {
         await expect.poll(() => page.evaluate((id) =>
             window.dashboardInstance.settings.theme === id, customId)).toBe(true);
 
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
-        await expect(toggle).toBeChecked();
+        await page.locator('[data-appearance-toggle-icons="on"]').click();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
         await expect.poll(() => page.evaluate((id) =>
             window.dashboardInstance.config.iconStylingEntry()?.enabled === true)).toBe(true);
 
@@ -397,6 +393,6 @@ test.describe('custom theme editor', () => {
         }), customId)).toEqual({ theme: customId, enabled: true });
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 });

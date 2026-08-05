@@ -8,7 +8,7 @@ async function openAppearance(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-    await expect(page.locator('[data-appearance-select="randomThemeMode"]')).toBeVisible();
+    await expect(page.locator('[data-appearance-randommode="off"]')).toBeVisible();
 }
 
 const shown = (page) => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
@@ -31,7 +31,11 @@ async function restoreRandomThemeDefaults(page) {
 }
 
 async function setRandomThemeMode(page, mode) {
-    await page.selectOption('[data-appearance-select="randomThemeMode"]', mode);
+    await page.locator(`[data-appearance-randommode="${mode}"]`).click();
+    // The panel repaints after the settings POST, so wait for the button that
+    // comes back marked active rather than a fixed delay.
+    await expect(page.locator(`[data-appearance-randommode="${mode}"]`))
+        .toHaveAttribute('aria-pressed', 'true');
     await page.waitForTimeout(300);
 }
 
@@ -40,9 +44,9 @@ test.describe('Random theme modes', () => {
         await restoreRandomThemeDefaults(page);
     });
 
-    test('mode select is visible in appearance', async ({ page }) => {
+    test('mode buttons are visible in appearance', async ({ page }) => {
         await openAppearance(page);
-        await expect(page.locator('[data-appearance-select="randomThemeMode"]')).toBeVisible();
+        await expect(page.locator('[data-appearance-randommode="off"]')).toBeVisible();
     });
 
     test('refresh mode keeps stored theme after reload', async ({ page }) => {

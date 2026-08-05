@@ -405,13 +405,12 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
 
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        await expect(toggle).toBeVisible();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toBeVisible();
 
         // Off hides the sub-controls; on brings back style, intensity, preview.
-        if (await toggle.isChecked()) await toggle.click();
+        await page.locator('[data-appearance-toggle-icons="off"]').click();
         await expect(page.locator('[data-appearance-iconstyle]')).toHaveCount(0);
-        await page.locator('[data-appearance-toggle-icons]').click();
+        await page.locator('[data-appearance-toggle-icons="on"]').click();
         await expect(page.locator('[data-appearance-iconstyle]')).toHaveCount(3);
         await expect(page.locator('[data-appearance-icon-intensity]')).toBeVisible();
 
@@ -435,15 +434,14 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
 
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
-        await expect(toggle).toBeChecked();
+        await page.locator('[data-appearance-toggle-icons="on"]').click();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
 
         await page.keyboard.press('Escape');
         await expect(page.locator('#dashboard-layout.config-layout')).toHaveCount(0);
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
     test('favicon harmonization applies to the dashboard without reload', async ({ page }) => {
@@ -456,8 +454,7 @@ test.describe('config dashboard view (scaffold)', () => {
 
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
 
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
+        await page.locator('[data-appearance-toggle-icons="on"]').click();
         await page.locator('[data-appearance-iconstyle="muted"]').click();
 
         await page.keyboard.press('Escape');
@@ -484,9 +481,8 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.settings.randomThemeMode)).toBe('view');
 
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
-        await expect(toggle).toBeChecked();
+        await page.locator('[data-appearance-toggle-icons="on"]').click();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
 
         // Force the pool to a different theme, as a view change during "on view
         // change" mode would — the toggle must not depend on which one shows.
@@ -495,7 +491,7 @@ test.describe('config dashboard view (scaffold)', () => {
             document.documentElement.setAttribute('data-theme', 'light');
         });
         await page.evaluate(() => window.dashboardInstance.config.render());
-        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
 
         // And it must survive a reload, which is where "not saved" was reported.
         await page.reload();
@@ -503,15 +499,14 @@ test.describe('config dashboard view (scaffold)', () => {
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-        await expect(page.locator('[data-appearance-toggle-icons]')).toBeChecked();
+        await expect(page.locator('[data-appearance-toggle-icons="on"]')).toHaveAttribute('aria-pressed', 'true');
     });
 
     test('the icon-styling preview is driven by the real theme CSS', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
 
-        const toggle = page.locator('[data-appearance-toggle-icons]');
-        if (!(await toggle.isChecked())) await toggle.click();
+        await page.locator('[data-appearance-toggle-icons="on"]').click();
         await page.locator('[data-appearance-iconstyle="muted"]').click();
 
         // theme.css turns Muted into a grayscale filter on the sample, so the

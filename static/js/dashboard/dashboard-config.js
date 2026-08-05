@@ -3992,7 +3992,7 @@ class DashboardConfig {
                 </div>
                 <div class="config-field" data-config-setting-promo-anchor="randomThemeMode">
                     <span class="config-field-label">${esc(this.t('config.randomThemeModeLabel', 'Random theme'))}</span>
-                    <select class="config-select" data-appearance-select="randomThemeMode">${this.renderRandomThemeModeOptions(s)}</select>
+                    <div class="config-choices" role="group">${this.renderRandomThemeModeChoices(s)}</div>
                     ${this.appearanceAff('randomThemeMode')}
                 </div>
                 ${this.renderIconStyling()}
@@ -4145,7 +4145,7 @@ class DashboardConfig {
         return themeId;
     }
 
-    renderRandomThemeModeOptions(settings) {
+    renderRandomThemeModeChoices(settings) {
         const esc = (v) => this.dash.escapeHtml(v);
         const current = window.ThemeUtils?.normalizeRandomThemeMode?.(settings)
             || settings?.randomThemeMode
@@ -4156,7 +4156,7 @@ class DashboardConfig {
             ['view', 'config.randomThemeModeView', 'On view change'],
         ];
         return modes.map(([value, labelKey, fallback]) =>
-            `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${esc(this.t(labelKey, fallback))}</option>`
+            `<button type="button" class="config-choice${value === current ? ' is-active' : ''}" data-appearance-randommode="${esc(value)}" aria-pressed="${value === current}">${esc(this.t(labelKey, fallback))}</button>`
         ).join('');
     }
 
@@ -4226,6 +4226,9 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-weight]').forEach((btn) => {
             btn.addEventListener('click', () => this.setFontWeight(btn.getAttribute('data-appearance-weight')));
         });
+        container.querySelectorAll('[data-appearance-randommode]').forEach((btn) => {
+            btn.addEventListener('click', () => this.setAppearanceSelect('randomThemeMode', btn.getAttribute('data-appearance-randommode')));
+        });
         container.querySelectorAll('[data-appearance-bg]').forEach((btn) => {
             btn.addEventListener('click', () => this.setBackgroundType(btn.getAttribute('data-appearance-bg')));
         });
@@ -4271,14 +4274,13 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleAppearanceAction(btn.getAttribute('data-appearance-action')));
         });
-        // Favicon harmonisation: the toggle and style repaint (they change which
-        // controls are shown); the slider updates live so it keeps the pointer.
-        const iconsToggle = container.querySelector('[data-appearance-toggle-icons]');
-        if (iconsToggle) {
-            iconsToggle.addEventListener('change', () => {
-                void this.setIconStyling({ enabled: iconsToggle.checked });
+        // Favicon harmonisation: the on/off and style buttons repaint (they change
+        // which controls are shown); the slider updates live so it keeps the pointer.
+        container.querySelectorAll('[data-appearance-toggle-icons]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.setIconStyling({ enabled: btn.getAttribute('data-appearance-toggle-icons') === 'on' });
             });
-        }
+        });
         container.querySelectorAll('[data-appearance-iconstyle]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 void this.setIconStyling({ style: btn.getAttribute('data-appearance-iconstyle') });
@@ -5110,6 +5112,12 @@ class DashboardConfig {
         const choices = styles.map(([val, label]) =>
             `<button type="button" class="config-choice${style === val ? ' is-active' : ''}" data-appearance-iconstyle="${esc(val)}" aria-pressed="${style === val}">${esc(label)}</button>`
         ).join('');
+        const enabledChoices = [
+            [false, this.t('config.iconStylingOff', 'Off')],
+            [true, this.t('config.iconStylingOn', 'On')],
+        ].map(([val, label]) =>
+            `<button type="button" class="config-choice${enabled === val ? ' is-active' : ''}" data-appearance-toggle-icons="${val ? 'on' : 'off'}" aria-pressed="${enabled === val}">${esc(label)}</button>`
+        ).join('');
         // Three sample icons styled exactly as the dashboard styles a favicon, so
         // the effect is visible without leaving the section.
         // .preview-icon inside .icon-themed is what theme.css's variant rules
@@ -5120,9 +5128,7 @@ class DashboardConfig {
         return `
             <div class="config-field">
                 <span class="config-field-label">${esc(this.t('config.iconStylingLabel', 'Favicon harmonization (per theme)'))}</span>
-                <label class="config-toggle">
-                    <input type="checkbox" data-appearance-toggle-icons ${enabled ? 'checked' : ''}>
-                </label>
+                <div class="config-choices" role="group">${enabledChoices}</div>
                 ${this.appearanceAff('themeIconStyling')}
             </div>
             <p class="config-field-hint">${esc(this.iconStylingHint())}</p>

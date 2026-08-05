@@ -1482,6 +1482,8 @@
         "iconStylingLabel": "Favicon-harmonisatie (per thema)",
         "iconStylingThemeHint": "Deze instellingen gelden voor het thema dat je nu gebruikt — “{theme}”. Andere thema’s houden hun eigen instelling.",
         "iconStylingRandomThemeHint": "Deze instellingen gelden voor alle thema’s in je willekeurige rotatie.",
+        "iconStylingOff": "Uit",
+        "iconStylingOn": "Aan",
         "iconStylingStyleLabel": "Stijl",
         "iconStylingStyleMuted": "Gedempt",
         "iconStylingStyleTinted": "Getint",

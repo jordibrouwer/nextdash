@@ -1491,6 +1491,8 @@
         "iconStylingLabel": "Favicon harmonization (per theme)",
         "iconStylingThemeHint": "These settings apply to the theme you are using now — “{theme}”. Other themes keep their own.",
         "iconStylingRandomThemeHint": "These settings apply to every theme in your random rotation.",
+        "iconStylingOff": "Off",
+        "iconStylingOn": "On",
         "iconStylingStyleLabel": "Style",
         "iconStylingStyleMuted": "Muted",
         "iconStylingStyleTinted": "Tinted",
