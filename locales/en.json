@@ -807,6 +807,7 @@
         "healthScoreIntro": "Every bookmark starts at 100. This one loses:",
         "healthScoreTotal": "Score",
         "healthOpenInDashboard": "Show on dashboard",
+        "healthOpenInHealth": "Show in Health",
         "healthMenuRepair": "Repair",
         "healthDetectRedirect": "Detect redirect",
         "healthRefreshTitle": "Refresh title",

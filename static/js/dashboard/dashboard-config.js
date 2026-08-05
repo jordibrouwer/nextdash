@@ -2937,8 +2937,15 @@ class DashboardConfig {
         });
     }
 
-    /** A tile hands off to the view that acts on it (health with a filter, inbox). */
-    openViewFromTile(view, filter) {
+    /**
+     * A tile hands off to the view that acts on it (health with a filter, inbox).
+     *
+     * `focusKey` is a health issue key (`pageId:index`) to select on arrival —
+     * used by "Show in Health" on a single bookmark. focusIssue widens the
+     * filter by itself when the row would otherwise be hidden, so it is passed
+     * instead of a filter rather than alongside one.
+     */
+    openViewFromTile(view, filter, focusKey = null) {
         const d = this.dash;
         // The overview's "something needs attention" rows. Worth separating from
         // an ordinary view:health, because it says the summary is what sent
@@ -2953,6 +2960,9 @@ class DashboardConfig {
                     if (mod.isActiveView?.()) {
                         mod.render();
                     }
+                }
+                if (focusKey && mod?.focusIssue) {
+                    mod.focusIssue(focusKey);
                 }
             })();
         }
@@ -9159,6 +9169,7 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const items = [];
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="dashboard">${esc(this.t('dashboard.healthOpenInDashboard', 'Show on dashboard'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="health">${esc(this.t('dashboard.healthOpenInHealth', 'Show in Health'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="title">${esc(this.t('dashboard.healthRefreshTitle', 'Refresh title'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="favicon">${esc(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-bm-menu-action="archive">${esc(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
@@ -9313,6 +9324,27 @@ class DashboardConfig {
             return;
         }
         void this.dash.pageNav?.requestPageNavigation?.(pageId);
+    }
+
+    /**
+     * The mirror of openBookmarkOnDashboard: open the Health view with this
+     * bookmark's row selected.
+     *
+     * The index comes from findBookmarkRecord rather than from the in-memory
+     * list, because the health key is `pageId:index` against the page's stored
+     * order — and that helper already resolves the right one of two identical
+     * URLs. An index taken from the filtered config list would point at a
+     * different bookmark whenever a filter or sort is active.
+     */
+    async revealBookmarkInHealth(key) {
+        this.closeBookmarkMenus();
+        const record = await this.findBookmarkRecord(key);
+        if (!record) {
+            this.notify(this.t('config.bookmarkNotFound', 'Could not find this bookmark.'), 'error');
+            return;
+        }
+        this._trackAction('reveal-in-health');
+        await this.openViewFromTile('health', null, `${record.pageId}:${record.index}`);
     }
 
     copyBookmarkUrl(b) {
@@ -9499,6 +9531,9 @@ class DashboardConfig {
         switch (action) {
             case 'dashboard':
                 this.openBookmarkOnDashboard(bookmark);
+                break;
+            case 'health':
+                void this.revealBookmarkInHealth(key);
                 break;
             case 'redirect':
                 void this.detectBookmarkRedirect(key);

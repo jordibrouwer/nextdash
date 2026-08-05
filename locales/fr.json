@@ -807,6 +807,7 @@
         "healthScoreIntro": "Chaque favori commence à 100. Celui-ci perd :",
         "healthScoreTotal": "Score",
         "healthOpenInDashboard": "Afficher sur le tableau de bord",
+        "healthOpenInHealth": "Afficher dans Health",
         "healthMenuRepair": "Réparer",
         "healthDetectRedirect": "Détecter la redirection",
         "healthRefreshTitle": "Actualiser le titre",
