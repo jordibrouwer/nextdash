@@ -2440,6 +2440,32 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureHealthBulkTitle',
+                titleFallback: 'Fix a whole list of broken links at once',
+                whatKey: 'config.overviewNewFeatureHealthBulkWhat',
+                whatFallback: 'Health lists exactly what a clear-out starts from — broken, duplicate, stale — and then made you repair them one row at a time.',
+                howKey: 'config.overviewNewFeatureHealthBulkHow',
+                howFallback: 'Tick the box on any row, or press x to tick the one under the cursor and move on, X for everything the filter shows. A bar appears above the list with Set checking, Re-check, Open, Copy links and Delete.',
+                enableKey: 'config.overviewNewFeatureHealthBulkEnable',
+                enableFallback: 'Nothing to switch on. Deletes go to the trash, and a row that changed since the report was built is skipped rather than deleted.',
+                ctaKey: 'config.overviewNewFeatureHealthBulkCta',
+                ctaFallback: 'Open Health →',
+                go: { view: 'health' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureBulkTagsTitle',
+                titleFallback: 'Tag several bookmarks at once',
+                whatKey: 'config.overviewNewFeatureBulkTagsWhat',
+                whatFallback: 'Tagging worked one bookmark at a time, so putting the same tag on eight rows meant eight rounds.',
+                howKey: 'config.overviewNewFeatureBulkTagsHow',
+                howFallback: 'Select some rows and press the toolbar’s Tags button. Every tag you already use is listed, with a tick when the whole selection has it and “on 2 of 3” when only some do.',
+                enableKey: 'config.overviewNewFeatureBulkTagsEnable',
+                enableFallback: 'Nothing to switch on. Clicking a tag the whole selection already has takes it off instead; setting a category lives in the Move button beside it.',
+                ctaKey: 'config.overviewNewFeatureBulkTagsCta',
+                ctaFallback: 'Try it on the dashboard →',
+                go: { closeConfig: true },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureFormCreateTitle',
                 titleFallback: 'Make a page or category while adding a bookmark',
                 whatKey: 'config.overviewNewFeatureFormCreateWhat',

@@ -551,7 +551,9 @@ Bulk actions used to live only in the tag filter, so acting on several bookmarks
 | `Esc` | Clear the selection |
 | `Delete` | Delete everything selected (one confirmation for the whole set) |
 
-A toolbar appears above the grid while a selection is open, with **Move**, **Open**, **Copy links**, **Delete** and **Clear** — the same actions the right-click menu offers, doing exactly the same thing. **Move** opens the ordinary move popover, so a bulk move picks a category or page the same way a single move does.
+A toolbar appears above the grid while a selection is open, with **Move**, **Tags**, **Open**, **Copy links**, **Delete** and **Clear** — the same actions the right-click menu offers, doing exactly the same thing. **Move** opens the ordinary move popover, so a bulk move picks a category or page the same way a single move does.
+
+**Tags** lists every tag you already use, each showing how it sits across the selection: a **✓** when every selected bookmark has it, so clicking takes it off; a **–** and *on 2 of 3* when only some do, so clicking fills in the rest; and plain when none do. The count is spelled out because *add* and *remove* mean different things for a mixed selection. Since **v2026.09.05.1**.
 
 A **plain click while a selection is open clears it** instead of opening the bookmark, so a stray click cannot act on rows you had forgotten were ticked. A bookmark that appears in a [smart collection](#13-smart-collections-and-custom-collections) as well as its own category lights up in both places, because it is one bookmark shown twice.
 
@@ -919,6 +921,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Monitored filter** | Offered as soon as there are bookmarks, not only once something is already monitored — it used to be invisible to anyone who had not already found the feature. An empty Monitored list explains what monitoring does and how to switch it on (`c` on a row) rather than reporting "no issues found" |
 | **Export** | Downloads the **current filter and search** as CSV — name, URL, status, score, page, category, last checked, and the same issue wording the score panel shows. For working through findings beside a spreadsheet, or handing someone the list. Values starting `=` `+` `-` `@` are prefixed so a spreadsheet treats them as text instead of formulas; a UTF-8 BOM keeps accented titles intact in Excel |
 | **Export history** | Appears on the **Monitored** filter. Downloads the individual up/down checks behind an uptime percentage — one row per check, with its timestamp, whether the site was up, ping time and HTTP status. The ordinary Export gives you the current state of each bookmark; this gives you the record over time, for charting an outage or seeing when a site started getting slow. Same formula guard and BOM |
+| **Bulk actions** | Tick the box on any row — or press **`x`** to tick the one under the cursor and move on, **`X`** or **`Ctrl/Cmd+A`** for everything the current filter shows; **`Ctrl`**+click and **`Shift`**+click work with the mouse. A bar appears above the list with **Set checking**, **Re-check**, **Open**, **Copy links**, **Delete** and **Clear selection** — deliberately the same bar, in the same place, that **Config → Bookmarks** has. Deletes go to the [trash](#trash-data--backups--trash) like any other, and a row that changed since the report was built is skipped and reported rather than deleted, so a list a few minutes old cannot remove the wrong bookmark. Ticks survive a filter change, so the bar names how many the current filter is hiding and offers **Select only these**. **`Esc`** clears the selection without leaving the view (**v2026.09.05.1**) |
 | **Controls panel** | Search, status pills, sort, export, and retest action in one compact block |
 | **Search** | Name, URL, category, page |
 | **Edit** | Row Edit (or `Enter`) leaves the Health view, opens the bookmark’s page, and launches the dashboard **inline editor** (falls back to Config when unavailable) |
@@ -1086,7 +1089,7 @@ Deleting a bookmark is not final. Deleted bookmarks go to the trash and stay the
 - **Delete forever** — removes one entry ahead of the 30 days.
 - **Empty trash** — clears everything at once. Both ask first.
 
-Each entry names the page it came from and when it was deleted. This covers **every** route out of the library, including a [bulk delete](#94-selecting-several-bookmarks) of twenty rows at once — all twenty are recoverable individually. The trash holds at most 500 entries; past that the oldest drop out early.
+Each entry names the page it came from and when it was deleted. This covers **every** route out of the library — the dashboard, the [health view](#health-view-health), and **Config → Bookmarks** — singly or as a [bulk delete](#94-selecting-several-bookmarks) of twenty rows at once, all twenty recoverable individually. If the page a bookmark came from has since been deleted, restoring says so and leaves it in the trash: recreate the page, then restore. The trash holds at most 500 entries; past that the oldest drop out early.
 
 ### Reset (Data & backups → Reset)
 
