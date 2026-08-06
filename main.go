@@ -38,6 +38,15 @@ func main() {
 		log.Printf("Using data directory: %s", ResolveDataDir())
 	}
 
+	// Expire trashed bookmarks past their 30 days. Retention otherwise rides
+	// along with writes, so an instance that was off for a month would keep
+	// showing items it should have dropped until the next delete.
+	if removed, err := store.PruneTrash(); err != nil {
+		log.Printf("trash: prune failed: %v", err)
+	} else if removed > 0 {
+		log.Printf("trash: pruned %d expired item(s)", removed)
+	}
+
 	// Initialize handlers
 	handlers := NewHandlers(store, embeddedFiles)
 
@@ -120,6 +129,10 @@ func main() {
 	r.HandleFunc("/api/inbox", handlers.PatchInboxItem).Methods("PATCH")
 	r.HandleFunc("/api/inbox", handlers.PutInboxItem).Methods("PUT")
 	r.HandleFunc("/api/inbox-stats", handlers.GetInboxStats).Methods("GET")
+	r.HandleFunc("/api/trash", handlers.GetTrash).Methods("GET")
+	r.HandleFunc("/api/trash", handlers.AddTrashItems).Methods("POST")
+	r.HandleFunc("/api/trash", handlers.DeleteTrashItem).Methods("DELETE")
+	r.HandleFunc("/api/trash/restore", handlers.RestoreTrashItem).Methods("POST")
 	r.HandleFunc("/api/previews/clear", handlers.ClearAllBookmarkPreviews).Methods("POST")
 	r.HandleFunc("/api/previews/refresh", handlers.RefreshAllBookmarkPreviews).Methods("POST")
 	r.HandleFunc("/api/track-open", handlers.TrackBookmarkOpen).Methods("POST")
