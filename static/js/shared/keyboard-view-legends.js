@@ -16,6 +16,7 @@
         { keys: 'R / ?', legendKey: 'healthKeyRefresh', cheatKey: 'hvRefresh', fallback: 'refresh report' },
         { keys: 'c', legendKey: 'healthKeyCheckMode', cheatKey: 'hvCheckMode', fallback: 'checking' },
         { keys: 'm', legendKey: 'healthKeyMore', cheatKey: 'hvMore', fallback: 'more actions' },
+        { keys: 'x', legendKey: 'healthKeySelect', cheatKey: 'hvSelect', fallback: 'select' },
         { keys: 'Enter / Space', legendKey: 'healthKeyOpen', cheatKey: 'hvOpen', fallback: 'open' },
         { keys: 'g / G / Home / End', legendKey: 'healthKeyFirstLast', cheatKey: 'hvFirstLast', fallback: 'first / last' },
         { keys: 'Esc', legendKey: 'healthKeyClose', cheatKey: 'hvClose', fallback: 'back to bookmarks' },

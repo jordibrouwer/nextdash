@@ -147,6 +147,30 @@
             legend: LEGEND_SOURCES.HEALTH_VIEW,
             print: true,
         },
+        // Its own section for the same reason the grid's is: these rows act on a
+        // selection, not on the focused row, and mean nothing until one is open.
+        // The keys deliberately match the grid's — x, X, Ctrl/Cmd+A, Esc — so the
+        // second place you tick rows is not a second set to learn.
+        {
+            id: 'sectionHealthMultiSelect',
+            titleKey: 'sectionHealthMultiSelect',
+            titleFallback: 'Selecting several health rows',
+            contextId: 'health',
+            when: (ctx) => ctx.healthEnabled,
+            rows: [
+                // Not printed. A heading plus two rows spilled the A4 sheet onto a
+                // third page, and the printed Health view section already carries
+                // `x` from the shared legend — enough to teach that selecting
+                // exists, with the rest a keypress away in the modal.
+                { keys: 'x', cheatKey: 'hmsToggleRow', fallback: 'Tick the focused row and move to the next — so a run of rows is x-x-x' },
+                { keys: 'X', cheatKey: 'hmsSelectAll', fallback: 'Tick every row the current filter shows' },
+                { keys: 'Ctrl/Cmd + A', cheatKey: 'hmsSelectAllKeys', fallback: 'Tick every row the current filter shows' },
+                { keys: 'Ctrl/Cmd + click', cheatKey: 'hmsCtrlClick', fallback: 'Add or remove a single row with the mouse' },
+                { keys: 'Shift + click', cheatKey: 'hmsShiftClick', fallback: 'Extend the selection to the clicked row' },
+                { keys: 'Click', cheatKey: 'hmsPlainClick', fallback: 'With a selection open, a plain click clears it' },
+                { keys: 'Esc', cheatKey: 'hmsClear', fallback: 'Clear the selection — the health view itself stays open' },
+            ],
+        },
         {
             id: 'sectionInboxView',
             titleKey: 'sectionInboxView',
