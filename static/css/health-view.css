@@ -257,6 +257,7 @@ button.health-view-tile:hover {
 /* Secondary weight: exporting is a side errand next to "Retest all", which is
    the button this toolbar exists for. */
 .health-view-export-btn,
+.health-view-history-export-btn,
 .health-view-checkoff-btn {
     padding: 0.35rem 0.7rem;
     border-radius: 0.4rem;
@@ -267,7 +268,8 @@ button.health-view-tile:hover {
     cursor: pointer;
 }
 
-.health-view-export-btn:hover {
+.health-view-export-btn:hover,
+.health-view-history-export-btn:hover {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
     color: var(--accent-primary);
 }
@@ -1363,6 +1365,7 @@ body[data-layout-version="modern"] .health-view-tile:focus-visible,
 body[data-layout-version="modern"] .health-view-filter-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-action-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-export-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-history-export-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-checkoff-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-retest-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-search-input:focus-visible,
@@ -1589,4 +1592,34 @@ body[data-layout-version="modern"] .health-view-empty {
         transition: none;
         transform: none;
     }
+}
+
+/* Export button inside the enlarged monitor panel.
+   Right-aligned and secondary-weight: the panel is for reading the chart and
+   the outage list, and taking the numbers away is the errand afterwards. */
+.health-monitor-stats-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.85rem;
+}
+
+.health-monitor-export-btn {
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-secondary);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.health-monitor-export-btn:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+.health-monitor-export-btn:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }

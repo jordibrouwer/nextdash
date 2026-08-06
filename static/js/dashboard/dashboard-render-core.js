@@ -285,6 +285,10 @@ class DashboardRenderCore {
             && options.animate !== true
             && d.renderIncremental?.tryRender?.(options)
         ) {
+            // The incremental path rebuilds rows too, so the selection needs the
+            // same repaint the full render gets below. This is the common route
+            // — most mutations never reach the full rebuild.
+            d.multiSelect?.prune();
             return;
         }
         const animate = options && options.animate === true;
@@ -417,6 +421,10 @@ class DashboardRenderCore {
         d.updateSearchComponent();
         d.syncBookmarkGridA11y();
         d.keyboardNavigation?.scheduleUpdate?.();
+        // A render replaces every row element, so the selection has to be
+        // repainted onto the new nodes and any key that no longer matches a
+        // bookmark dropped.
+        d.multiSelect?.prune();
         
         // Initialize or update status monitoring after rendering
         if (d.statusMonitor) {

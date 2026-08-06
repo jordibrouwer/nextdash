@@ -54,8 +54,15 @@
         max-width: 100%;
     }
     
+    /* No `bottom` here (or in the narrower breakpoints below): the button bar is
+       positioned by .button-container, and these buttons are flex children of
+       it. The declaration was a leftover from when each button was fixed
+       individually. It was inert on the `static` ones, but .search-button
+       [data-tooltip] sets position: relative for the tooltip anchor — so the
+       one button the JS tooltip system does not manage (fold-all, which keeps
+       its data-tooltip attribute) was lifted out of the row by exactly that
+       many pixels as soon as a breakpoint applied. */
     .search-button {
-        bottom: 1.75rem;
         padding: 0.8rem 1rem;
     }
     
@@ -169,7 +176,6 @@
     }
     
     .search-button {
-        bottom: 1.5rem;
         padding: 0.8rem 1rem;
         font-size: var(--font-size-controls);
     }
@@ -273,7 +279,6 @@
     }
     
     .search-button {
-        bottom: 1.5rem;
         padding: 0.8rem 1rem;
         font-size: var(--font-size-controls);
     }
@@ -590,7 +595,6 @@
     }
     
     .search-button {
-        bottom: 1.25rem;
         padding: 0.8rem 1rem;
         font-size: var(--font-size-text);
     }
@@ -786,7 +790,6 @@
     }
     
     .search-button {
-        bottom: 1rem;
         padding: 0.8rem 1rem;
         font-size: var(--font-size-controls);
     }

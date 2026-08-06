@@ -181,6 +181,22 @@ class KeyboardNavigation {
                 return;
             }
 
+            // Ctrl/Cmd+A — select every visible bookmark. Handled here rather
+            // than in handleKeyPress, which the modifier guard below never
+            // reaches. Only while the grid has the cursor, so it keeps its
+            // browser meaning everywhere else.
+            if (
+                (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
+                && (e.key === 'a' || e.key === 'A')
+                && this._gridNavActive()
+                && this.dashboard?.multiSelect
+            ) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.dashboard.multiSelect.selectAllVisible();
+                return;
+            }
+
             // Don't handle if modifier keys are pressed (except Shift)
             if (e.ctrlKey || e.altKey || e.metaKey) {
                 return;
@@ -716,6 +732,33 @@ class KeyboardNavigation {
             return;
         }
 
+        // Shift+↑/↓ — extend the multi-selection while moving the cursor.
+        // Left/right are page navigation above, so only the vertical pair is
+        // free to mean "extend".
+        const multi = this.dashboard?.multiSelect;
+        if (multi && e.shiftKey && (key === 'ArrowUp' || key === 'ArrowDown') && this._gridNavActive()) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            // Anchor on the row the cursor sits on, so the first Shift+Arrow
+            // grows a range from here rather than from wherever a stray earlier
+            // toggle happened to leave the anchor.
+            const startRow = this.navigableElements[this.currentIndex];
+            if (startRow && !multi.isActive()) {
+                multi.toggleRow(startRow);
+            }
+            if (key === 'ArrowDown') {
+                this.navigateDown();
+            } else {
+                this.navigateUp();
+            }
+            const endRow = this.navigableElements[this.currentIndex];
+            if (endRow) {
+                multi.selectRange(endRow);
+            }
+            return;
+        }
+
+
         // Tab / Shift+Tab: linear bookmark navigation (only when a bookmark is selected)
         if (key === 'Tab' && this.currentIndex >= 0) {
             if (this.navigableElements.length === 0) {
@@ -824,7 +867,38 @@ class KeyboardNavigation {
                 }
                 break;
 
+            // x toggles the row under the cursor; X takes the whole category.
+            case 'x':
+            case 'X':
+                if (!this._gridNavActive() || !this.dashboard?.multiSelect) {
+                    break;
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                {
+                    const row = this.navigableElements[this.currentIndex];
+                    if (!row) {
+                        break;
+                    }
+                    if (key === 'X') {
+                        this.dashboard.multiSelect.selectCategory(row);
+                    } else {
+                        this.dashboard.multiSelect.toggleRow(row);
+                        // Advance so ticking a run of rows is x-x-x rather than
+                        // x-down-x-down, matching how the inbox tick behaves.
+                        if (this.currentIndex < this.navigableElements.length - 1) {
+                            this.navigateDown();
+                        }
+                    }
+                }
+                break;
+
             case 'Delete':
+                if (this.dashboard?.multiSelect?.isActive()) {
+                    e.preventDefault();
+                    void this.dashboard.multiSelect.deleteSelected();
+                    break;
+                }
                 if (this.currentIndex >= 0) {
                     e.preventDefault();
                     this.deleteCurrentBookmark();
@@ -834,6 +908,12 @@ class KeyboardNavigation {
             case 'Escape':
                 this._clearGState();
                 e.preventDefault();
+                // Escape drops the selection before it drops the cursor, so one
+                // press does not lose both at once.
+                if (this.dashboard?.multiSelect?.isActive()) {
+                    this.dashboard.multiSelect.clear();
+                    break;
+                }
                 this.clearSelection();
                 break;
 

@@ -116,6 +116,7 @@ var importManagedRootFilenames = []string{
 	"finders.json",
 	"inbox.json",
 	"health-history.json",
+	"trash.json",
 	"favicon.ico",
 	"favicon.png",
 	"favicon.jpg",
@@ -326,7 +327,10 @@ func removeImportOrphans(dataDir string, prepared []preparedImportFile) error {
 			// written before monitoring history was included omits that too, and
 			// deleting it would throw away measurements the import cannot restore
 			// for a feature the archive simply did not know about.
-			if name == "finders.json" || name == "health-history.json" {
+			// trash.json is the same case: a ZIP written before the trash
+			// existed omits it, and removing it would permanently destroy
+			// bookmarks that were still restorable.
+			if name == "finders.json" || name == "health-history.json" || name == "trash.json" {
 				continue
 			}
 			_ = os.Remove(filepath.Join(dataDir, name))
@@ -437,6 +441,9 @@ func (h *Handlers) isValidImportFilename(filename string) bool {
 		// resets every monitored row's chart, uptime windows and outage list, and
 		// a 30-day window takes 30 days to earn back.
 		"health-history.json",
+		// Deleted bookmarks still inside their 30 days. A restore that dropped
+		// these would quietly empty the one place they still existed.
+		"trash.json",
 		"favicon.ico",
 		"favicon.png",
 		"favicon.jpg",

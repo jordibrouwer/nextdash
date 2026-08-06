@@ -2440,6 +2440,32 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureMultiSelectTitle',
+                titleFallback: 'Select several bookmarks with x and X',
+                whatKey: 'config.overviewNewFeatureMultiSelectWhat',
+                whatFallback: 'Bulk move and bulk delete used to live in the tag filter, so acting on several bookmarks meant they had to share a tag. Any rows will do now — x ticks one, X takes a whole category.',
+                howKey: 'config.overviewNewFeatureMultiSelectHow',
+                howFallback: 'Press x to tick the row under the cursor, X for the whole category, Shift+↑/↓ for a range, Ctrl/Cmd+A for everything on screen — or Ctrl+click and Shift+click with the mouse. Select is in the right-click menu too.',
+                enableKey: 'config.overviewNewFeatureMultiSelectEnable',
+                enableFallback: 'Nothing to switch on. A toolbar appears with Move, Open, Copy links and Delete; Escape clears the selection.',
+                ctaKey: 'config.overviewNewFeatureMultiSelectCta',
+                ctaFallback: 'Try it on the dashboard →',
+                go: { closeConfig: true },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureTrashTitle',
+                titleFallback: 'Deleted bookmarks are recoverable',
+                whatKey: 'config.overviewNewFeatureTrashWhat',
+                whatFallback: 'Deleting a bookmark used to be final. It now goes to a trash and stays there for 30 days before going for good.',
+                howKey: 'config.overviewNewFeatureTrashHow',
+                howFallback: 'Restore puts a bookmark back on its own page at its old position. Delete forever and Empty trash clear it early.',
+                enableKey: 'config.overviewNewFeatureTrashEnable',
+                enableFallback: 'On by default, and it covers every delete — including a bulk delete of twenty rows at once. Under Config → Data & backups → Trash.',
+                ctaKey: 'config.overviewNewFeatureTrashCta',
+                ctaFallback: 'Open the trash →',
+                go: { section: 'data-backups', dbTab: 'trash' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureHealthContextMenuTitle',
                 titleFallback: 'Right-click a health row',
                 whatKey: 'config.overviewNewFeatureHealthContextMenuWhat',
@@ -2882,6 +2908,15 @@ class DashboardConfig {
                     return;
                 }
             }
+            // Data & backups has its own strip, same as Behavior: set the field
+            // the strip reads before the section renders.
+            if (target.dbTab && target.section === 'data-backups') {
+                this.dbTab = target.dbTab;
+                if (this.section === 'data-backups') {
+                    this.render();
+                    return;
+                }
+            }
             this.selectSection(target.section);
             if (target.bmPageFilter != null) {
                 void this.onBookmarksPageFilterChange();
@@ -2891,6 +2926,12 @@ class DashboardConfig {
         if (target.openBookmarkForm) {
             this.closeConfigView();
             window.dashboardInstance?.openBookmarkFormModal?.({ mode: 'create', source: 'config-overview' });
+            return;
+        }
+        // The grid is not a view openViewFromTile can reach — it is what closing
+        // config reveals.
+        if (target.closeConfig) {
+            this.closeConfigView();
             return;
         }
         if (target.view) return this.openViewFromTile(target.view, target.filter);
@@ -3110,12 +3151,19 @@ class DashboardConfig {
 
     /** Which sub-tab of Data & backups is showing. */
     renderDbTab() {
-        return this.dbTab === 'reset' ? this.renderDataReset() : this.renderDataBackupsMain();
+        if (this.dbTab === 'reset') {
+            return this.renderDataReset();
+        }
+        if (this.dbTab === 'trash') {
+            return this.renderDataTrash();
+        }
+        return this.renderDataBackupsMain();
     }
 
     dbTabLabel(tab) {
         const map = {
             backups: ['config.dbTabBackups', 'Backups & data'],
+            trash: ['config.dbTabTrash', 'Trash'],
             reset: ['config.dbTabReset', 'Reset'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -3265,6 +3313,117 @@ class DashboardConfig {
         `;
     }
 
+    /**
+     * Deleted bookmarks, restorable until they age out.
+     *
+     * Lives beside Reset because both are about data that is on its way out;
+     * this is the one that can still be taken back.
+     */
+    renderDataTrash() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const data = this._trashData;
+
+        if (data == null) {
+            return `<p class="config-view-loading">${esc(this.t('config.trashLoading', 'Loading…'))}</p>`;
+        }
+
+        const days = Number(data.retentionDays) || 30;
+        const intro = this.t(
+            'config.trashIntro',
+            'Deleted bookmarks stay here for {days} days, then go for good.'
+        ).replace('{days}', String(days));
+
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+            return `
+                <p class="config-view-intro">${esc(intro)}</p>
+                <p class="config-panel-empty">${esc(this.t('config.trashEmpty', 'The trash is empty.'))}</p>
+            `;
+        }
+
+        const rows = items.map((item) => {
+            const name = String(item.bookmark?.name || item.bookmark?.url || '').trim();
+            const url = String(item.bookmark?.url || '').trim();
+            const origin = item.pageName
+                ? this.t('config.trashFromPage', 'from {page}').replace('{page}', item.pageName)
+                : '';
+            return `
+                <li class="config-backup-row">
+                    <div class="config-backup-meta">
+                        <span class="config-backup-name">${esc(name)}</span>
+                        <span class="config-backup-size">${esc(url)}</span>
+                        <span class="config-backup-size">${esc([this.formatRelative(new Date(Number(item.deletedAt) || 0).toISOString()), origin].filter(Boolean).join(' · '))}</span>
+                    </div>
+                    <div class="config-backup-row-actions">
+                        <button type="button" class="config-btn" data-trash-action="restore" data-trash-id="${esc(item.id)}">${esc(this.t('config.trashRestore', 'Restore'))}</button>
+                        <button type="button" class="config-btn config-btn--danger" data-trash-action="delete" data-trash-id="${esc(item.id)}">${esc(this.t('config.trashDeleteForever', 'Delete forever'))}</button>
+                    </div>
+                </li>
+            `;
+        }).join('');
+
+        return `
+            <p class="config-view-intro">${esc(intro)}</p>
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.trashTitle', 'Deleted bookmarks'))}</h3>
+                <ul class="config-backup-list">${rows}</ul>
+                <div class="config-actions">
+                    <button type="button" class="config-btn config-btn--danger" data-trash-action="empty">${esc(this.t('config.trashEmptyBtn', 'Empty trash'))}</button>
+                </div>
+            </div>
+        `;
+    }
+
+    /** Fetch the trash and repaint the tab, when it is the one showing. */
+    async loadTrash({ repaint = true } = {}) {
+        try {
+            this._trashData = await window.DashboardTrash.list();
+        } catch (_error) {
+            this._trashData = { items: [], count: 0, retentionDays: 30 };
+        }
+        if (!repaint || this.dbTab !== 'trash') {
+            return;
+        }
+        const body = document.getElementById('config-db-body');
+        if (body) {
+            body.innerHTML = this.renderDbTab();
+            this.bindDataBackupsActions(body);
+        }
+    }
+
+    async handleTrashAction(action, id) {
+        try {
+            if (action === 'restore') {
+                await window.DashboardTrash.restore(id);
+                this.notify(this.t('config.trashRestored', 'Bookmark restored.'), 'success');
+                // The bookmark is back on its page, so the grid behind config is
+                // stale until it reloads.
+                await this.dash.data?.refreshAfterBookmarkMutation?.({});
+            } else if (action === 'delete') {
+                const ok = await this.confirmAction(
+                    this.t('config.trashDeleteConfirm', 'Delete this bookmark permanently?'),
+                    { confirmLabel: this.t('config.trashDeleteForever', 'Delete forever'), danger: true }
+                );
+                if (!ok) {
+                    return;
+                }
+                await window.DashboardTrash.remove(id);
+            } else if (action === 'empty') {
+                const ok = await this.confirmAction(
+                    this.t('config.trashEmptyConfirm', 'Permanently delete everything in the trash?'),
+                    { confirmLabel: this.t('config.trashEmptyBtn', 'Empty trash'), danger: true }
+                );
+                if (!ok) {
+                    return;
+                }
+                await window.DashboardTrash.empty();
+            }
+        } catch (_error) {
+            this.notify(this.t('config.trashActionError', 'Could not complete that action.'), 'error');
+        }
+        await this.loadTrash();
+    }
+
     renderBackupList() {
         const esc = (v) => this.dash.escapeHtml(v);
         const backups = Array.isArray(this._backupData?.backups) ? this._backupData.backups : [];
@@ -3312,6 +3471,12 @@ class DashboardConfig {
     }
 
     bindDataBackupsActions(container) {
+        // A deep link straight to the trash tab renders before anything has been
+        // fetched, so the first paint would stay on "Loading…" forever without
+        // this.
+        if (this.dbTab === 'trash' && this._trashData == null) {
+            void this.loadTrash();
+        }
         this.bindSubTabStrip(container, 'data-db-tab', (tab) => {
             if (tab === this.dbTab) return;
             this.dbTab = tab;
@@ -3326,6 +3491,19 @@ class DashboardConfig {
                 this.bindDataBackupsActions(body);
             }
             this.syncSubTabStrip('data-db-tab', this.dbTab);
+            // Fetched on open rather than with the section, so the other two
+            // tabs do not pay for a list they never show.
+            if (tab === 'trash') {
+                void this.loadTrash();
+            }
+        });
+        container.querySelectorAll('[data-trash-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.handleTrashAction(
+                    btn.getAttribute('data-trash-action'),
+                    btn.getAttribute('data-trash-id')
+                );
+            });
         });
         container.querySelectorAll('[data-backup-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleBackupAction(btn.getAttribute('data-backup-action')));
@@ -6619,7 +6797,7 @@ class DashboardConfig {
     static PT_TABS = ['categories', 'tags', 'pages', 'finders', 'collections'];
 
     /** Data & backups keeps its destructive actions on a separate tab. */
-    static DB_TABS = ['backups', 'reset'];
+    static DB_TABS = ['backups', 'trash', 'reset'];
 
     static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'branding', 'custom-themes'];
 

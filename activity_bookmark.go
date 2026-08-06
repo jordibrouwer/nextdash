@@ -113,6 +113,15 @@ func logBookmarkDelete(bm Bookmark, r *http.Request) {
 	logActivity(activityCategoryMutate, "bookmark.delete", fields)
 }
 
+func logBookmarkRestore(item TrashedBookmark, r *http.Request) {
+	if !activityEnabled(activityCategoryMutate) {
+		return
+	}
+	fields := mergeActivityFields(activityFieldsFromRequest(r), bookmarkActivitySnapshot(item.Bookmark))
+	fields["pageId"] = item.PageID
+	logActivity(activityCategoryMutate, "bookmark.restore", fields)
+}
+
 func logBookmarkUpdate(bm Bookmark, changed []string, r *http.Request) {
 	if !activityEnabled(activityCategoryMutate) || len(changed) == 0 {
 		return

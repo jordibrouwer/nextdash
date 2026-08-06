@@ -518,6 +518,30 @@ class DashboardBookmarkRows {
             bookmarkIndex >= 0 ? bookmarkIndex : undefined
         );
         openLink.addEventListener('click', (e) => {
+            // Ctrl/Cmd+click ticks the row, Shift+click extends from the anchor.
+            // Both must win over opening the link — and over the browser's own
+            // "open in new tab" on Ctrl+click, which is why preventDefault comes
+            // before anything else.
+            const multi = d.multiSelect;
+            if (multi && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.shiftKey) {
+                    multi.selectRange(row);
+                } else {
+                    multi.toggleRow(row);
+                }
+                return;
+            }
+            // A plain click with a selection open clears it rather than opening,
+            // so a stray click cannot silently act on rows the user forgot were
+            // ticked.
+            if (multi?.isActive()) {
+                e.preventDefault();
+                e.stopPropagation();
+                multi.clear();
+                return;
+            }
             if (!safeHref) {
                 e.preventDefault();
                 return;

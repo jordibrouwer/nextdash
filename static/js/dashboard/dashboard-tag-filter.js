@@ -414,6 +414,13 @@ class DashboardTagFilter {
             return;
         }
 
+        // Captured before the splices, which renumber every index behind them.
+        const trashed = refs.map((ref) => ({
+            pageId: Number(ref.pageId ?? d.currentPageId),
+            index: ref.index,
+            bookmark: { ...ref.bookmark },
+        }));
+
         d.ensureBookmarkMutationSnapshot();
         const sorted = [...refs].sort((a, b) => b.index - a.index);
         sorted.forEach((ref) => {
@@ -429,6 +436,7 @@ class DashboardTagFilter {
         if (!saved) {
             return;
         }
+        await window.DashboardTrash?.record(trashed, 'tag-filter');
         d.showGroupedNotification(
             'tag-filter-delete',
             count,
@@ -524,11 +532,24 @@ class DashboardTagFilter {
     }
 
 
-    showTagFilterBulkMovePopover(anchorEl) {
+    /**
+     * The "Move to…" popover for a set of bookmarks.
+     *
+     * Options carry the set and what to do with it so the grid's multi-select
+     * toolbar can raise the same popover. Defaulting them to the tag filter
+     * keeps every existing caller unchanged — this is one popover with two
+     * sources, not a second copy that would drift on keyboard handling,
+     * positioning and the already-there guard.
+     */
+    showTagFilterBulkMovePopover(anchorEl, options = {}) {
         const d = this.dash;
         d._closeActionPopovers();
 
-        const refs = this.getTagFilterBookmarkRefs();
+        const refs = options.refs || this.getTagFilterBookmarkRefs();
+        const moveToCategory = options.onMoveToCategory
+            || ((id) => this.bulkMoveTagFilterToCategory(id));
+        const moveToPage = options.onMoveToPage
+            || ((id) => { void this.bulkMoveTagFilterToPage(id); });
         if (!refs.length || !anchorEl) {
             return;
         }
@@ -677,9 +698,9 @@ class DashboardTagFilter {
             }
             close();
             if (type === 'category') {
-                this.bulkMoveTagFilterToCategory(id);
+                moveToCategory(id);
             } else if (type === 'page') {
-                void this.bulkMoveTagFilterToPage(Number(id));
+                moveToPage(Number(id));
             }
         };
 

@@ -214,6 +214,26 @@ body {
     animation: datePopoverIn 0.13s ease forwards;
 }
 
+/* The bookmark context menu is a fixed, short action list — unlike the move,
+   tag and delete popovers, which share .move-popover and list every category,
+   page or tag you have and genuinely need to scroll.
+   The shared 20rem cap was already within one item of this menu's height, so
+   adding the two multi-select entries pushed it over: the last entries fell
+   below the fold and a scrollbar appeared on a menu that is meant to be read at
+   a glance. It sizes to its content instead, and only falls back to scrolling
+   when the viewport itself is too short to hold it. */
+.bookmark-context-menu {
+    max-height: none;
+    overflow-y: visible;
+}
+
+@media (max-height: 34rem) {
+    .bookmark-context-menu {
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+    }
+}
+
 .move-popover-header {
     font-size: calc(var(--font-size-controls) * 0.72);
     font-weight: var(--font-weight-semibold);

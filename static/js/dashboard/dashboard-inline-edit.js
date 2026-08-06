@@ -1858,6 +1858,14 @@ class DashboardInlineEdit {
         await d.saveBookmarkOrder();
         await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [deleteRef.pageId] });
 
+        // Recorded after the page save so a delete that did not persist cannot
+        // leave a phantom entry in the trash. The toast undo below is the fast
+        // path; the trash is what catches it an hour later.
+        await window.DashboardTrash?.record(
+            [{ pageId: deleteRef.pageId, index: deletedIndex, bookmark: deletedBookmark }],
+            'dashboard'
+        );
+
         const deletedLabel = String(deletedBookmark.name || deletedBookmark.url).slice(0, 40);
         d.showNotification(
             d.formatDashboardLabel('bookmarkDeleted', { name: deletedLabel }, `"${deletedLabel}" deleted`),

@@ -1,0 +1,56 @@
+{
+  "tag": "v2026.09.05",
+  "date": "August 2026",
+  "releasedAt": "2026-08-06",
+  "modalLead": "Pick several bookmarks at once with x and X — or from the right mouse button — and move, open, copy or delete them in one go. Deleted bookmarks are recoverable for 30 days, and a monitored bookmark's recorded uptime can leave as a CSV.",
+  "sections": [
+    {
+      "title": "Dashboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Select several bookmarks at once with <code>x</code> and <code>X</code></strong> — bulk move and bulk delete used to live in the tag filter, so acting on several bookmarks meant they had to share a tag. Now any rows will do: <strong><code>x</code></strong> ticks the row under the cursor and moves on, <strong><code>X</code></strong> takes the whole category, <strong>Shift+↑/↓</strong> extends a range, <strong>Ctrl/Cmd+A</strong> takes everything on screen, and <strong>Ctrl+click</strong> or <strong>Shift+click</strong> do the same with the mouse. A toolbar appears with <strong>Move</strong>, <strong>Open</strong>, <strong>Copy links</strong> and <strong>Delete</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Selecting is in the right-click menu too</strong> — the keyboard route is invisible unless you already know it is there, so the menu on any bookmark now offers <strong>Select</strong> and <strong>Select all in category</strong>. Right-click a bookmark that is part of a selection and the menu switches to the whole selection, with the count named, so it is never in doubt what an action will touch."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A plain click clears an open selection</strong> instead of opening the bookmark, so a stray click cannot act on rows you had forgotten were ticked."
+        }
+      ]
+    },
+    {
+      "title": "Trash",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Deleting a bookmark is no longer final</strong> — deleted bookmarks go to a trash for <strong>30 days</strong>, then go for good. <strong>Restore</strong> puts one back on its own page at its old position, and <strong>Delete forever</strong> or <strong>Empty trash</strong> clear it early. Under <strong>Config → Data &amp; backups → Trash</strong>. It covers every route out of the library, including a bulk delete of twenty rows at once."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Export a monitored bookmark's recorded uptime</strong> — the Health view could already export the list you were looking at, but the individual up/down samples behind an uptime percentage never left the server. The <strong>Export history</strong> button on the <strong>Monitored</strong> filter downloads them as CSV, one row per check with its timestamp, ping time and HTTP status, ready for a spreadsheet."
+        }
+      ]
+    },
+    {
+      "title": "Toolbar",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The fold-all button stays in the row</strong> — the <code>.</code> button jumped up out of the button bar as soon as the browser window got narrower, by a little more at each step down. It now shares one row with its neighbours from wide screens down to about 500px, where the bar wraps because five buttons genuinely no longer fit."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>No scrollbar in the bookmark right-click menu</strong> — the menu shared a height cap with the move and tag popovers, which list every category or tag and have to scroll. It was already within one entry of that cap, so the new selecting entries pushed the last ones below the fold. It now sizes to its content."
+        }
+      ]
+    }
+  ]
+}

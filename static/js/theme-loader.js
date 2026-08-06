@@ -388,7 +388,6 @@
                 }
                 
                 .search-button {
-                    bottom: 1.5rem !important;
                     padding: 0.8rem 1rem !important;
                 }
             }
@@ -402,7 +401,6 @@
                 }
                 
                 .search-button {
-                    bottom: 1.25rem !important;
                     padding: 0.8rem 1rem !important;
                 }
             }
@@ -416,7 +414,6 @@
                 }
                 
                 .search-button {
-                    bottom: 1rem !important;
                     padding: 0.8rem 1rem !important;
                 }
             }

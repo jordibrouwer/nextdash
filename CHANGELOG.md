@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.09.05 — August 2026](#v20260905--august-2026)
 - [v2026.09.04 — August 2026](#v20260904--august-2026)
 - [v2026.09.03 — August 2026](#v20260903--august-2026)
 - [v2026.09.2 — August 2026](#v2026092--august-2026)
@@ -151,6 +152,43 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.09.05 — August 2026
+
+**Act on many bookmarks at once, and undo a delete** — arbitrary rows can be selected from the keyboard or the right mouse button and moved, opened, copied or deleted together; deleted bookmarks stay recoverable for 30 days; and a monitored bookmark's recorded uptime samples can leave as CSV.
+
+### Dashboard
+
+- **new** — **Multi-select on the grid.** Bulk move and bulk delete existed only inside the tag filter, so acting on several bookmarks required them to share a tag — moving three arbitrary rows meant three separate `Shift+M` rounds. `x` ticks the row under the cursor and advances (so a run is `x-x-x`, matching the inbox tick), `X` takes the whole category, `Shift+ArrowUp/Down` extends a range, `Ctrl/Cmd+A` selects everything visible, and `Ctrl/Cmd+click` / `Shift+click` do the same with the mouse. A sticky toolbar carries **Move**, **Open**, **Copy links**, **Delete** and **Clear**. Selection is a `Set` of stable keys (page + URL + name) rather than DOM nodes or array indices: the grid re-renders on nearly every mutation and a full render replaces every row, so node references would go stale and indices would point at a different bookmark after a move or delete. A bookmark shown in a smart collection is rendered twice and both copies light up, because they are the same bookmark. `Ctrl/Cmd+A` had to move into the outer keydown handler — the inner one returns on any modifier, so the branch was never reached (`dashboard-multi-select.js`, `keyboard-navigation.js`, `dashboard-multi-select.css`).
+- **new** — **The right-click menu is the way in for a mouse.** The keyboard route is undiscoverable by definition, so every bookmark's menu offers **Select** and **Select all in category**, and ticking the first row reveals the toolbar. The entries sit **above** the divider: Delete opens the destructive zone that line marks, and a harmless Select below it reads as belonging to it — so the single-row list is split at the danger index rather than appended to. Right-clicking a row inside a selection switches the menu to the selection with counts named; offering both would leave *Delete* and *Delete 5 selected* side by side pointing at different sets. A row outside the selection keeps the single-row menu, as does one ticked row, which is not a bulk operation. Every entry calls the same `multiSelect` methods the keyboard and toolbar call, so all three routes share one definition of what a bulk move or delete means, including the confirmation and the trash write (`dashboard-context-menu.js`).
+- **fix** — **A plain click with a selection open clears it** rather than opening the bookmark, so a stray click cannot act on rows the user forgot were ticked. The selection is pruned on **both** render paths — `renderIncremental.tryRender()` returns before the full rebuild and is the common route, so hooking only the full render left stale keys behind (`dashboard-render-core.js`).
+
+### Trash
+
+- **new** — **Deleted bookmarks are recoverable for 30 days.** A server-side store in its own file, mirroring the inbox: age is applied before the 500-item cap, `GET` never prunes so reading stays read-only, and pruning runs at startup. **Restore** returns a bookmark to its own page at its recorded position, clamping a stale index if the page has shrunk, and **re-adds the item to the trash if the page write fails** so a failed restore cannot lose it. Under **Config → Data & backups → Trash**, alongside Backups and Reset. Recording is client-side because the dashboard's delete path never calls `DELETE /api/bookmarks` — it splices in memory and rewrites the page through `saveBookmarkOrder()`; the trash write happens *after* the page save, so a failed delete leaves no phantom entry (`trash.go`, `trash_handlers.go`, `dashboard-trash.js`, `dashboard-config.js`).
+
+### Health
+
+- **new** — **Export a monitor's recorded uptime history as CSV.** The Health view could already export the filtered list, but the raw up/down samples behind an uptime percentage never reach the client — only the derived `monitorStats` do — so this had to be server-side. `?url=` selects one bookmark and `?days=N` is clamped to the retention window rather than rejected. One row per check: name, url, page, timestamp, up, ping, HTTP status. Timestamps are RFC3339 and the keys and samples are both sorted, so the same data always produces the same file. A UTF-8 BOM is written for Excel and fields beginning `=`, `+`, `-` or `@` are prefixed so a spreadsheet treats them as text rather than formulas. The button appears on the **Monitored** filter, where the samples exist (`health_history_export.go`, `dashboard-health.js`).
+
+### Toolbar
+
+- **fix** — **The fold-all button stays in the button bar row.** The `.` button jumped up out of the row as the window narrowed, by exactly the breakpoint's amount: 28px under 1200, 24px under 992, 20px under 576, 16px under 480. Five breakpoints set `bottom` on `.search-button`, a leftover from when each button was positioned individually; they are flex children of `.button-container` now, so the declaration was inert on every `static` button. Fold-all was the exception: `.search-button[data-tooltip]` sets `position: relative` for the tooltip anchor, and the JS tooltip system strips `data-tooltip` from the buttons it manages — fold-all is not in that list, so it kept the attribute, kept `position: relative`, and was the one button a dead rule could move. The same rule was declared twice, once in `responsive.css` and again with `!important` in the CSS `theme-loader.js` injects, so removing only the first fixed it above 767px and left it broken below. Eight dead declarations removed; below ~500px the bar wraps because five buttons no longer fit, which is the container doing its job (`responsive.css`, `theme-loader.js`).
+- **fix** — **The bookmark right-click menu no longer scrolls.** It shared the `.move-popover` height cap, which exists for the move, tag and delete popovers — those list every category, page or tag and genuinely scroll. The menu was already within one item of that cap, so the two new selecting entries pushed the last ones below the fold behind a scrollbar. It now sizes to its content, with the cap reinstated only under `max-height: 34rem` where a short viewport makes scrolling the lesser evil (`dashboard.css`).
+
+### Config
+
+- **new** — Multi-select and the trash are announced in the **Config → Overview** new-features carousel, newest first, with four locale keys each in en, nl, de and fr.
+
+### Tests
+
+- **new** — 26 Go tests across the trash store, its handlers and the history export; 34 e2e tests across multi-select, its context-menu route, the trash panel and the export.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README and MANUAL for **v2026.09.05**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v171`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v230`. Docs stay out of the What's new modal, which is for user-facing change (`whats-new-stub.js`).
 
 ---
 
