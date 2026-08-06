@@ -175,6 +175,7 @@ class Dashboard {
         this.configSync = new DashboardConfigSync(this);
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
+        this.multiSelect = new DashboardMultiSelect(this);
         this.inlineEdit = typeof window.createDashboardInlineEditLoader === 'function'
             ? window.createDashboardInlineEditLoader(this)
             : new DashboardInlineEdit(this);
