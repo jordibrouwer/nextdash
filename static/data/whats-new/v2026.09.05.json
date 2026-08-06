@@ -2,14 +2,14 @@
   "tag": "v2026.09.05",
   "date": "August 2026",
   "releasedAt": "2026-08-06",
-  "modalLead": "Pick several bookmarks at once and move, open, copy or delete them in one go — from the keyboard or the right mouse button. Deleted bookmarks are recoverable for 30 days, and a monitored bookmark's recorded uptime can leave as a CSV.",
+  "modalLead": "Pick several bookmarks at once with x and X — or from the right mouse button — and move, open, copy or delete them in one go. Deleted bookmarks are recoverable for 30 days, and a monitored bookmark's recorded uptime can leave as a CSV.",
   "sections": [
     {
       "title": "Dashboard",
       "items": [
         {
           "badge": "new",
-          "text": "<strong>Select several bookmarks at once</strong> — bulk move and bulk delete used to live in the tag filter, so acting on several bookmarks meant they had to share a tag. Now any rows will do: <code>x</code> ticks the row under the cursor and moves on, <code>X</code> takes the whole category, <strong>Shift+↑/↓</strong> extends a range, <strong>Ctrl/Cmd+A</strong> takes everything on screen, and <strong>Ctrl+click</strong> or <strong>Shift+click</strong> do the same with the mouse. A toolbar appears with <strong>Move</strong>, <strong>Open</strong>, <strong>Copy links</strong> and <strong>Delete</strong>."
+          "text": "<strong>Select several bookmarks at once with <code>x</code> and <code>X</code></strong> — bulk move and bulk delete used to live in the tag filter, so acting on several bookmarks meant they had to share a tag. Now any rows will do: <strong><code>x</code></strong> ticks the row under the cursor and moves on, <strong><code>X</code></strong> takes the whole category, <strong>Shift+↑/↓</strong> extends a range, <strong>Ctrl/Cmd+A</strong> takes everything on screen, and <strong>Ctrl+click</strong> or <strong>Shift+click</strong> do the same with the mouse. A toolbar appears with <strong>Move</strong>, <strong>Open</strong>, <strong>Copy links</strong> and <strong>Delete</strong>."
         },
         {
           "badge": "new",

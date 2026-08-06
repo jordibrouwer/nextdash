@@ -2441,9 +2441,9 @@ class DashboardConfig {
         return [
             {
                 titleKey: 'config.overviewNewFeatureMultiSelectTitle',
-                titleFallback: 'Select several bookmarks',
+                titleFallback: 'Select several bookmarks with x and X',
                 whatKey: 'config.overviewNewFeatureMultiSelectWhat',
-                whatFallback: 'Bulk move and bulk delete used to live in the tag filter, so acting on several bookmarks meant they had to share a tag. Any rows will do now.',
+                whatFallback: 'Bulk move and bulk delete used to live in the tag filter, so acting on several bookmarks meant they had to share a tag. Any rows will do now — x ticks one, X takes a whole category.',
                 howKey: 'config.overviewNewFeatureMultiSelectHow',
                 howFallback: 'Press x to tick the row under the cursor, X for the whole category, Shift+↑/↓ for a range, Ctrl/Cmd+A for everything on screen — or Ctrl+click and Shift+click with the mouse. Select is in the right-click menu too.',
                 enableKey: 'config.overviewNewFeatureMultiSelectEnable',
