@@ -39,6 +39,17 @@ class DashboardHealth {
         this._visibilityHandler = null;
         this._openBrokenRunning = false;
         this._mergeRunning = false;
+        // Lazily built: the class ships in its own file and may not have loaded
+        // yet when the view is constructed.
+        this._multiSelect = null;
+    }
+
+    /** Selection across rows, for the bulk toolbar. */
+    get multiSelect() {
+        if (!this._multiSelect && typeof window.DashboardHealthMultiSelect === 'function') {
+            this._multiSelect = new window.DashboardHealthMultiSelect(this);
+        }
+        return this._multiSelect;
     }
 
     isEnabled() {
@@ -362,6 +373,22 @@ class DashboardHealth {
             if (d.isModalOpen()) return;
             if (d.searchComponent?.isActive()) return;
             if (d.isInlineEditActive()) return;
+            // An open selection takes Escape before the view does: closing Health
+            // outright would lose the list the user was working through, and
+            // clearing ticks is the smaller, more likely intent. Checked ahead of
+            // the text-field guard below, because ticking a row leaves focus on
+            // its checkbox — an INPUT, which that guard would bail out on. A real
+            // text field still wins, so Escape in the search box behaves as before.
+            const typing = document.activeElement?.tagName === 'TEXTAREA'
+                || document.activeElement?.isContentEditable
+                || (document.activeElement?.tagName === 'INPUT'
+                    && document.activeElement?.type !== 'checkbox');
+            if (!typing && this._multiSelect?.isActive()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this._multiSelect.clear();
+                return;
+            }
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) {
                 return;
@@ -516,6 +543,13 @@ class DashboardHealth {
 
     applyKeyboardSelection(rows) {
         const list = Array.isArray(rows) && rows.length ? rows : this.getVisibleRows();
+        // A render replaces every row element, so the ticks have to be painted
+        // back on from the key set — the DOM is not where the selection lives.
+        if (this._multiSelect?.isActive()) {
+            this._multiSelect.prune();
+            this._multiSelect.syncRows();
+            this._multiSelect.syncToolbar();
+        }
         list.forEach((row) => {
             const selected = row.dataset.healthKey === this.selectedKey;
             row.classList.toggle('keyboard-selected', selected);
@@ -565,6 +599,17 @@ class DashboardHealth {
         if (window.DashboardTagCloud?.modalOpen) return false;
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
+        // Checked before the modifier guard below, which exists so browser and OS
+        // chords fall through — Ctrl/Cmd+A is the one chord this view claims.
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'a' || e.key === 'A')) {
+            const target = e.target;
+            const tag = target?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.multiSelect?.selectAllVisible();
+            return true;
+        }
         if (e.ctrlKey || e.altKey || e.metaKey) return false;
 
         const target = e.target;
@@ -631,6 +676,23 @@ class DashboardHealth {
         }
         if (onRowControl) {
             return false;
+        }
+        // x ticks the row under the cursor and moves on, so a run of rows is
+        // x-x-x — the same key and the same advance as the dashboard grid.
+        if (e.key === 'x' && this.selectedKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.multiSelect?.toggle(this.selectedKey);
+            this.moveKeyboardSelection(1, rows);
+            return true;
+        }
+        // X takes everything the current filter shows — the whole broken list in
+        // one key, which is the case this view exists for.
+        if (e.key === 'X') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.multiSelect?.selectAllVisible();
+            return true;
         }
         if (e.key === 's' && this.selectedKey) {
             e.preventDefault();
@@ -993,7 +1055,13 @@ class DashboardHealth {
      * Guarded per row: the ping is slow enough that a double press would
      * otherwise fire two requests and race their results.
      */
-    async recheckIssue(issue) {
+    /**
+     * @param {object} issue
+     * @param {{silent?: boolean}} [options] `silent` suppresses the per-row toast
+     *   and the re-render, so a bulk run reports once at the end instead of
+     *   stacking one toast and one full reload per bookmark.
+     */
+    async recheckIssue(issue, { silent = false } = {}) {
         const key = this.issueKey(issue);
         if (this._busyKeys.has(key)) return;
         const url = String(issue?.url || '').trim();
@@ -1045,6 +1113,9 @@ class DashboardHealth {
             const errorDetail = String(result.errorDetail || '').trim()
                 || (status === 'online' ? '' : this.t('dashboard.healthPingFailed', 'ping failed'));
             await persist(status, errorDetail, result.ping, result.httpStatus);
+            if (silent) {
+                return;
+            }
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
             d.showNotification(
@@ -1057,6 +1128,9 @@ class DashboardHealth {
         } catch (error) {
             const failDetail = error?.message || this.t('dashboard.healthPingFailed', 'ping failed');
             await persist('offline', failDetail, 0).catch(() => { /* already failing */ });
+            if (silent) {
+                return;
+            }
             await this.loadAndRender({ refresh: true }).catch(() => { /* keep the stale view */ });
             d.showNotification(
                 this.t('dashboard.healthRecheckFailed', 'Could not re-check this bookmark'),
@@ -1503,16 +1577,24 @@ class DashboardHealth {
      * the server rejects the write (409) when the row no longer describes the
      * bookmark at that index, and the reload below picks up the real list.
      */
-    async setCheckMode(issue, mode) {
+    /**
+     * @param {object} issue
+     * @param {string} mode
+     * @param {{silent?: boolean}} [options] `silent` skips the report reload and
+     *   the grid repaint so a bulk run does both once at the end.
+     * @returns {Promise<string|undefined>} the CheckMode outcome — 'changed',
+     *   'stale', 'failed' — so a bulk caller can count what did not apply.
+     */
+    async setCheckMode(issue, mode, { silent = false } = {}) {
         const key = this.issueKey(issue);
-        if (this._busyKeys.has(key)) return;
+        if (this._busyKeys.has(key)) return undefined;
         if (!mode || mode === this.checkModeOf(issue)) {
             this.closeAllMenus();
-            return;
+            return 'unchanged';
         }
         const url = String(issue?.url || '').trim();
         const pageId = Number(issue?.pageId);
-        if (!url || !Number.isFinite(pageId)) return;
+        if (!url || !Number.isFinite(pageId)) return undefined;
 
         this.closeAllMenus();
         window.nextdashTrack?.('health:check-mode');
@@ -1532,7 +1614,7 @@ class DashboardHealth {
                 mode,
                 name: issue.name || url,
             });
-            if (outcome === 'failed') return;
+            if (outcome === 'failed') return outcome;
 
             // Push the new mode into the dashboard's own copies before the
             // report reloads. The health report and the dashboard's bookmark
@@ -1543,6 +1625,9 @@ class DashboardHealth {
                 window.CheckMode?.syncLocalCopies?.({ pageId, url, mode });
             }
 
+            if (silent) {
+                return outcome;
+            }
             await this.loadAndRender({ refresh: true });
             if (outcome === 'changed') {
                 // Repaint the rows so a status dot that depends on the mode is
@@ -1550,6 +1635,7 @@ class DashboardHealth {
                 d.renderDashboard?.({ incremental: false });
                 d.updateHealthBadge?.();
             }
+            return outcome;
         } finally {
             this._busyKeys.delete(key);
             this.syncRowBusy(key, false);
@@ -3619,6 +3705,10 @@ class DashboardHealth {
             : '🔗';
 
         row.innerHTML = `
+            <label class="health-view-select" title="${this.escape(this.t('dashboard.healthSelectRow', 'Select this bookmark'))}">
+                <input type="checkbox" class="health-view-select-box"
+                    aria-label="${this.escape(this.t('dashboard.healthSelectRow', 'Select this bookmark'))}">
+            </label>
             <div class="health-view-item-icon" aria-hidden="true">${icon}</div>
             <div class="health-view-item-body">
                 <div class="health-view-item-head">
@@ -3736,8 +3826,37 @@ class DashboardHealth {
             });
         });
 
+        const selectBox = row.querySelector('.health-view-select-box');
+        selectBox?.addEventListener('click', (e) => {
+            // The label wrapping it would otherwise re-fire this as a row click.
+            e.stopPropagation();
+        });
+        selectBox?.addEventListener('change', () => {
+            this.multiSelect?.toggle(key);
+        });
+
         row.addEventListener('click', (e) => {
             if (e.target.closest('button')) return;
+            if (e.target.closest('.health-view-select')) return;
+            // Ctrl/Cmd+click ticks one row, Shift+click extends from the anchor —
+            // the same two modifiers the dashboard grid uses.
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                this.multiSelect?.toggle(key);
+                return;
+            }
+            if (e.shiftKey && this.multiSelect?.isActive()) {
+                e.preventDefault();
+                this.multiSelect.extendTo(key);
+                return;
+            }
+            // A plain click with a selection open clears it rather than opening
+            // the row, so a stray click cannot act on rows left ticked.
+            if (this.multiSelect?.isActive()) {
+                e.preventDefault();
+                this.multiSelect.clear();
+                return;
+            }
             this.selectRowByKey(key);
         });
         row.addEventListener('dblclick', (e) => {

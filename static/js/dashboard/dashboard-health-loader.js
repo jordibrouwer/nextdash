@@ -45,6 +45,11 @@ class DashboardHealthLoader {
                 if (rel.includes('last-opened-format.js')) {
                     return typeof window.formatLastOpened === 'function';
                 }
+                // Checked before dashboard-health.js: that test uses includes(),
+                // and this filename would match it too.
+                if (rel.includes('dashboard-health-multi-select.js')) {
+                    return typeof window.DashboardHealthMultiSelect === 'function';
+                }
                 if (rel.includes('dashboard-health.js')) {
                     return typeof window.DashboardHealth === 'function';
                 }
@@ -102,6 +107,11 @@ class DashboardHealthLoader {
         }
         if (typeof window.DashboardHealth !== 'function') {
             await this._loadScript('js/dashboard/dashboard-health.js', 'dashboardHealthModule');
+        }
+        // Loaded with the view rather than on the dashboard's critical path: the
+        // bulk toolbar only exists once someone is looking at a health list.
+        if (typeof window.DashboardHealthMultiSelect !== 'function') {
+            await this._loadScript('js/dashboard/dashboard-health-multi-select.js', 'dashboardHealthMultiSelect');
         }
     }
 

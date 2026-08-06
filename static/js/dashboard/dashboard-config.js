@@ -3418,8 +3418,23 @@ class DashboardConfig {
                 }
                 await window.DashboardTrash.empty();
             }
-        } catch (_error) {
-            this.notify(this.t('config.trashActionError', 'Could not complete that action.'), 'error');
+        } catch (error) {
+            // The server answers a restore onto a deleted page with a 409 and says
+            // so in the body; the bookmark stays in the trash. Collapsing that into
+            // the generic message left the one recoverable failure unexplained —
+            // the user cannot act on "could not complete that action", but they can
+            // act on "the page is gone, make it again or move this somewhere else".
+            const missingPage = /page no longer exists/i.test(String(error?.message || ''));
+            this.notify(
+                missingPage
+                    ? this.t(
+                        'config.trashRestorePageGone',
+                        'That bookmark’s page no longer exists. It stays in the trash — recreate the page, then restore it.'
+                    )
+                    : this.t('config.trashActionError', 'Could not complete that action.'),
+                'error',
+                missingPage ? { duration: 9000 } : undefined
+            );
         }
         await this.loadTrash();
     }
@@ -11005,7 +11020,18 @@ class DashboardConfig {
                     return copy;
                 });
             const isTarget = DashboardConfig.matchesParsedKey(parsed);
-            await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => !isTarget(b)));
+            // Captured inside the mutation, where the stored list still holds the
+            // row and its real index — the trash restores to that position.
+            const trashed = [];
+            await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b, index) => {
+                if (!isTarget(b)) return true;
+                trashed.push({ pageId: Number(parsed.pageId), index, bookmark: { ...b } });
+                return false;
+            }));
+            // After the page write, so a delete that did not persist cannot leave
+            // a phantom entry. The 8s toast is the fast path; the trash catches it
+            // an hour later, same as every delete on the dashboard side.
+            await window.DashboardTrash?.record(trashed, 'config-bookmarks');
             this.bmSelected.delete(key);
             if (this.bmEditing === key) { this.bmEditing = null; this.bmDirty = false; }
             this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success', {
@@ -11303,11 +11329,21 @@ class DashboardConfig {
                 }));
         }
 
+        // Captured inside each page's mutation, where the stored list still holds
+        // the rows and their real indices — the trash restores to those positions.
+        const trashed = [];
         for (const [pageId, targets] of byPage) {
             await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
-                .filter(({ target }) => !targets.has(target))
+                .filter(({ bookmark, target }, index) => {
+                    if (!targets.has(target)) return true;
+                    trashed.push({ pageId: Number(pageId), index, bookmark: { ...bookmark } });
+                    return false;
+                })
                 .map(({ bookmark }) => bookmark));
         }
+        // After every page write, so a delete that did not persist cannot leave a
+        // phantom entry. The 8s toast is the fast path; the trash catches it later.
+        await window.DashboardTrash?.record(trashed, 'config-bookmarks-bulk');
         this.bmSelected.clear();
         this.bmEditing = null;
 

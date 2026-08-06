@@ -328,7 +328,9 @@ button.health-view-tile:hover {
    large enough to recognise the site at a glance. */
 .health-view-item {
     display: grid;
-    grid-template-columns: 3rem 1fr;
+    /* The first track is the select box. It keeps its width and only fades in,
+       so the row never reflows as the pointer crosses it. */
+    grid-template-columns: 1.1rem 3rem 1fr;
     gap: 0.85rem;
     padding: 0.75rem 0.85rem;
     border: 1px solid var(--border-primary);
@@ -1622,4 +1624,61 @@ body[data-layout-version="modern"] .health-view-empty {
 .health-monitor-export-btn:focus-visible {
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
+}
+
+/* ─── Multi-select ───────────────────────────────────────────────────────────
+   The tick box takes a third grid column, but only once a selection is open or
+   the row is hovered: an always-visible checkbox on every row turns a reading
+   list into a form, and most visits here are reading, not selecting. */
+
+/* The box keeps its width and hit area at all times and only fades out: a
+   zero-width control is unclickable, not merely invisible, so collapsing it
+   would make the first tick of a selection a game of pixel-hunting. */
+.health-view-select {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 1.1rem;
+    padding-top: 0.15rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.health-view-item:hover .health-view-select,
+.health-view-item:focus-within .health-view-select,
+.health-view-feed.has-multi-select .health-view-select,
+.health-view-item.is-multi-selected .health-view-select {
+    opacity: 1;
+}
+
+.health-view-select-box {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+}
+
+.health-view-item.is-multi-selected {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
+}
+
+/* Bulk-action bar. Deliberately the very same .config-bulk-bar the bookmarks
+   editor uses — same position above the list, same grouping, same select+Apply
+   pairs — so ticking rows works the same way in both places. Only the spacing
+   below is Health's own, because this bar sits inside the feed column. */
+.health-bulk-bar {
+    margin-bottom: 0.85rem;
+}
+
+#health-bulk-bar:empty {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .health-view-select {
+        transition: none;
+    }
 }
