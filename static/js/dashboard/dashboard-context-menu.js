@@ -129,7 +129,35 @@ class DashboardContextMenu {
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
         ];
-        const actions = bookmarkRef.scope === 'inbox' ? inboxActions : [
+        // Right-clicking a row that is part of a selection means "act on the
+        // selection" — acting on the one row under the cursor would silently
+        // ignore what the user had already ticked. The entries call the same
+        // multiSelect methods Shift+Z and the toolbar use, so all three routes
+        // share one implementation of what a bulk move or delete means.
+        const multi = bookmarkRef.scope === 'current' ? d.multiSelect : null;
+        const rowIsSelected = !!multi && multi.has(multi.keyForRow(row));
+        const selectionActions = (multi && rowIsSelected && multi.count() > 1)
+            ? [
+                { id: 'multi-move', label: this.t('dashboard.contextMenuMoveSelected', 'Move {count} selected…', { count: multi.count() }), icon: '→' },
+                { id: 'multi-open', label: this.t('dashboard.contextMenuOpenSelected', 'Open {count} selected', { count: multi.count() }), icon: '↗' },
+                { id: 'multi-copy', label: this.t('dashboard.contextMenuCopySelected', 'Copy {count} links', { count: multi.count() }), icon: '⧉' },
+                { id: 'multi-clear', label: this.t('dashboard.contextMenuClearSelection', 'Clear selection'), icon: '✕' },
+                { id: 'multi-delete', label: this.t('dashboard.contextMenuDeleteSelected', 'Delete {count} selected', { count: multi.count() }), icon: '✕', danger: true },
+            ]
+            : [];
+
+        // With no selection yet, the menu is where a mouse-only user discovers
+        // that selecting is possible at all: the keyboard route is undiscoverable
+        // by definition, and ticking the first row is the step that reveals the
+        // toolbar and every action on it.
+        const startSelectionActions = (multi && !multi.isActive())
+            ? [
+                { id: 'multi-start', label: this.t('dashboard.contextMenuSelect', 'Select'), icon: '☑' },
+                { id: 'multi-start-category', label: this.t('dashboard.contextMenuSelectCategory', 'Select all in category'), icon: '☰' },
+            ]
+            : [];
+
+        const singleActions = bookmarkRef.scope === 'inbox' ? inboxActions : [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
@@ -154,9 +182,25 @@ class DashboardContextMenu {
             { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
         ];
 
+        // A selection replaces the single-row actions entirely rather than being
+        // appended to them: a menu offering both would leave "Delete" and
+        // "Delete 5 selected" side by side, pointing at different sets.
+        // The selecting entries go before Delete, not after it: Delete opens the
+        // menu's destructive zone (it is what the divider marks), and a harmless
+        // "Select" sitting below that line reads as belonging to it.
+        const deleteAt = singleActions.findIndex((action) => action.danger);
+        const splitAt = deleteAt >= 0 ? deleteAt : singleActions.length;
+        const actions = selectionActions.length
+            ? selectionActions
+            : [
+                ...singleActions.slice(0, splitAt),
+                ...startSelectionActions,
+                ...singleActions.slice(splitAt),
+            ];
+
         const items = [];
         actions.forEach((action) => {
-            if (action.id === 'delete') {
+            if (action.danger) {
                 const divider = document.createElement('div');
                 divider.className = 'move-popover-divider';
                 pop.appendChild(divider);
@@ -740,6 +784,34 @@ class DashboardContextMenu {
                 // Confirm popover rather than deleteBookmarkInline() — a menu click is
                 // one gesture away from a destructive action, so it needs a second step.
                 d.showDeletePopover?.(row, bookmark, bookmarkIndex);
+                break;
+
+            // The multi-select entries call the same methods the keyboard and
+            // the toolbar call, so the mouse route cannot drift from them —
+            // including the delete confirmation and the trash write inside
+            // deleteSelected().
+            case 'multi-start':
+                d.multiSelect?.toggleRow(row);
+                break;
+            case 'multi-start-category':
+                d.multiSelect?.selectCategory(row);
+                break;
+            case 'multi-move':
+                // Anchored on the row that was right-clicked: the toolbar button
+                // it normally hangs off is not what opened this menu.
+                d.multiSelect?.openMovePopover(row);
+                break;
+            case 'multi-open':
+                d.multiSelect?.openSelected();
+                break;
+            case 'multi-copy':
+                d.multiSelect?.copySelectedLinks();
+                break;
+            case 'multi-clear':
+                d.multiSelect?.clear();
+                break;
+            case 'multi-delete':
+                void d.multiSelect?.deleteSelected();
                 break;
             default:
                 break;
