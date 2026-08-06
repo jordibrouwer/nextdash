@@ -2440,6 +2440,32 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureMultiSelectTitle',
+                titleFallback: 'Select several bookmarks',
+                whatKey: 'config.overviewNewFeatureMultiSelectWhat',
+                whatFallback: 'Bulk move and bulk delete used to live in the tag filter, so acting on several bookmarks meant they had to share a tag. Any rows will do now.',
+                howKey: 'config.overviewNewFeatureMultiSelectHow',
+                howFallback: 'Press x to tick the row under the cursor, X for the whole category, Shift+↑/↓ for a range, Ctrl/Cmd+A for everything on screen — or Ctrl+click and Shift+click with the mouse. Select is in the right-click menu too.',
+                enableKey: 'config.overviewNewFeatureMultiSelectEnable',
+                enableFallback: 'Nothing to switch on. A toolbar appears with Move, Open, Copy links and Delete; Escape clears the selection.',
+                ctaKey: 'config.overviewNewFeatureMultiSelectCta',
+                ctaFallback: 'Try it on the dashboard →',
+                go: { closeConfig: true },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureTrashTitle',
+                titleFallback: 'Deleted bookmarks are recoverable',
+                whatKey: 'config.overviewNewFeatureTrashWhat',
+                whatFallback: 'Deleting a bookmark used to be final. It now goes to a trash and stays there for 30 days before going for good.',
+                howKey: 'config.overviewNewFeatureTrashHow',
+                howFallback: 'Restore puts a bookmark back on its own page at its old position. Delete forever and Empty trash clear it early.',
+                enableKey: 'config.overviewNewFeatureTrashEnable',
+                enableFallback: 'On by default, and it covers every delete — including a bulk delete of twenty rows at once. Under Config → Data & backups → Trash.',
+                ctaKey: 'config.overviewNewFeatureTrashCta',
+                ctaFallback: 'Open the trash →',
+                go: { section: 'data-backups', dbTab: 'trash' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureHealthContextMenuTitle',
                 titleFallback: 'Right-click a health row',
                 whatKey: 'config.overviewNewFeatureHealthContextMenuWhat',
@@ -2882,6 +2908,15 @@ class DashboardConfig {
                     return;
                 }
             }
+            // Data & backups has its own strip, same as Behavior: set the field
+            // the strip reads before the section renders.
+            if (target.dbTab && target.section === 'data-backups') {
+                this.dbTab = target.dbTab;
+                if (this.section === 'data-backups') {
+                    this.render();
+                    return;
+                }
+            }
             this.selectSection(target.section);
             if (target.bmPageFilter != null) {
                 void this.onBookmarksPageFilterChange();
@@ -2891,6 +2926,12 @@ class DashboardConfig {
         if (target.openBookmarkForm) {
             this.closeConfigView();
             window.dashboardInstance?.openBookmarkFormModal?.({ mode: 'create', source: 'config-overview' });
+            return;
+        }
+        // The grid is not a view openViewFromTile can reach — it is what closing
+        // config reveals.
+        if (target.closeConfig) {
+            this.closeConfigView();
             return;
         }
         if (target.view) return this.openViewFromTile(target.view, target.filter);
