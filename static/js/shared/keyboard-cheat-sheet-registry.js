@@ -107,12 +107,32 @@
                 { keys: 'Ctrl + C', cheatKey: 'bmCopyUrl', fallback: 'Copy URL of focused bookmark (row flashes green)' },
                 { keys: '[', cheatKey: 'bmTogglePreview', fallback: 'Toggle hover preview card on focused bookmark' },
                 { keys: 'Enter on "+ N more"', cheatKey: 'bmShowMoreToggle', fallback: 'Expand or collapse a long category — selection returns to the last bookmark above the toggle' },
-                { keys: 'Delete', cheatKey: 'bmDelete', fallback: 'Delete focused bookmark (confirmation dialog)' },
-                { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, edit, tags, move, checking, delete (Shift + right-click for the browser menu)' },
+                { keys: 'Delete', cheatKey: 'bmDelete', fallback: 'Delete focused bookmark (confirmation dialog); with a selection open, deletes everything selected' },
+                { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, edit, tags, move, checking, select, delete (Shift + right-click for the browser menu)' },
                 { keys: 'Double-click page tab', cheatKey: 'bmRenamePageTab', fallback: 'Rename page tab — also set emoji icon and colour dot' },
                 { keys: 'Long-press category (~500 ms)', cheatKey: 'bmRenameCategory', fallback: 'Rename category header (not on sort buttons)' },
                 { keys: 'Drag left strip', cheatKey: 'bmDragReorder', fallback: 'Reorder a bookmark within or across categories' },
                 { keys: 'Drag // in category title', cheatKey: 'bmDragCategory', fallback: 'Reorder categories (grab the // prefix in the header)' },
+            ],
+        },
+        // A mode of its own rather than more bookmark actions: every row here acts
+        // on the selection, not on the focused bookmark, and the keys mean nothing
+        // until one is open.
+        {
+            id: 'sectionMultiSelect',
+            titleKey: 'sectionMultiSelect',
+            titleFallback: 'Selecting several bookmarks',
+            contextId: 'bookmarks',
+            rows: [
+                { keys: 'x', cheatKey: 'msToggleRow', fallback: 'Tick the focused bookmark and move to the next — so a run of rows is x-x-x', print: true, printFallback: 'Tick bookmark and advance' },
+                { keys: 'X', cheatKey: 'msSelectCategory', fallback: 'Tick every bookmark in the focused category', print: true, printFallback: 'Tick whole category' },
+                { keys: 'Shift + ↑ / ↓', cheatKey: 'msExtendRange', fallback: 'Extend the selection a row at a time' },
+                { keys: 'Ctrl/Cmd + A', cheatKey: 'msSelectAll', fallback: 'Tick every bookmark currently on screen' },
+                { keys: 'Ctrl/Cmd + click', cheatKey: 'msCtrlClick', fallback: 'Add or remove a single bookmark with the mouse' },
+                { keys: 'Shift + click', cheatKey: 'msShiftClick', fallback: 'Extend the selection to the clicked bookmark' },
+                { keys: 'Click', cheatKey: 'msPlainClick', fallback: 'With a selection open, a plain click clears it instead of opening the bookmark' },
+                { keys: 'Esc', cheatKey: 'msClear', fallback: 'Clear the selection' },
+                { keys: 'Delete', cheatKey: 'msDelete', fallback: 'Delete everything selected — one confirmation for the whole set; recoverable from the trash' },
             ],
         },
         // Only when the view exists, matching the Shift+H entry above: teaching row
