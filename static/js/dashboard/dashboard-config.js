@@ -2440,6 +2440,45 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureHealthBulkTitle',
+                titleFallback: 'Fix a whole list of broken links at once',
+                whatKey: 'config.overviewNewFeatureHealthBulkWhat',
+                whatFallback: 'Health lists exactly what a clear-out starts from — broken, duplicate, stale — and then made you repair them one row at a time.',
+                howKey: 'config.overviewNewFeatureHealthBulkHow',
+                howFallback: 'Tick the box on any row, or press x to tick the one under the cursor and move on, X for everything the filter shows. A bar appears above the list with Set checking, Re-check, Open, Copy links and Delete.',
+                enableKey: 'config.overviewNewFeatureHealthBulkEnable',
+                enableFallback: 'Nothing to switch on. Deletes go to the trash, and a row that changed since the report was built is skipped rather than deleted.',
+                ctaKey: 'config.overviewNewFeatureHealthBulkCta',
+                ctaFallback: 'Open Health →',
+                go: { view: 'health' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureBulkTagsTitle',
+                titleFallback: 'Tag several bookmarks at once',
+                whatKey: 'config.overviewNewFeatureBulkTagsWhat',
+                whatFallback: 'Tagging worked one bookmark at a time, so putting the same tag on eight rows meant eight rounds.',
+                howKey: 'config.overviewNewFeatureBulkTagsHow',
+                howFallback: 'Select some rows and press the toolbar’s Tags button. Every tag you already use is listed, with a tick when the whole selection has it and “on 2 of 3” when only some do.',
+                enableKey: 'config.overviewNewFeatureBulkTagsEnable',
+                enableFallback: 'Nothing to switch on. Clicking a tag the whole selection already has takes it off instead; setting a category lives in the Move button beside it.',
+                ctaKey: 'config.overviewNewFeatureBulkTagsCta',
+                ctaFallback: 'Try it on the dashboard →',
+                go: { closeConfig: true },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureFormCreateTitle',
+                titleFallback: 'Make a page or category while adding a bookmark',
+                whatKey: 'config.overviewNewFeatureFormCreateWhat',
+                whatFallback: 'Filing a bookmark somewhere that did not exist yet meant leaving the half-filled form, making the page or category in Config, and starting over.',
+                howKey: 'config.overviewNewFeatureFormCreateHow',
+                howFallback: 'Both dropdowns in the bookmark form lead with ➕ New page… and ➕ New category…. Picking one swaps the dropdown for a name box, and the new page or category is selected when you come back.',
+                enableKey: 'config.overviewNewFeatureFormCreateEnable',
+                enableFallback: 'Nothing to switch on. A category is made on whichever page the form is pointing at, including one you created moments earlier.',
+                ctaKey: 'config.overviewNewFeatureFormCreateCta',
+                ctaFallback: 'Add a bookmark →',
+                go: { openBookmarkForm: true },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureMultiSelectTitle',
                 titleFallback: 'Select several bookmarks with x and X',
                 whatKey: 'config.overviewNewFeatureMultiSelectWhat',
@@ -3418,8 +3457,23 @@ class DashboardConfig {
                 }
                 await window.DashboardTrash.empty();
             }
-        } catch (_error) {
-            this.notify(this.t('config.trashActionError', 'Could not complete that action.'), 'error');
+        } catch (error) {
+            // The server answers a restore onto a deleted page with a 409 and says
+            // so in the body; the bookmark stays in the trash. Collapsing that into
+            // the generic message left the one recoverable failure unexplained —
+            // the user cannot act on "could not complete that action", but they can
+            // act on "the page is gone, make it again or move this somewhere else".
+            const missingPage = /page no longer exists/i.test(String(error?.message || ''));
+            this.notify(
+                missingPage
+                    ? this.t(
+                        'config.trashRestorePageGone',
+                        'That bookmark’s page no longer exists. It stays in the trash — recreate the page, then restore it.'
+                    )
+                    : this.t('config.trashActionError', 'Could not complete that action.'),
+                'error',
+                missingPage ? { duration: 9000 } : undefined
+            );
         }
         await this.loadTrash();
     }
@@ -11005,7 +11059,18 @@ class DashboardConfig {
                     return copy;
                 });
             const isTarget = DashboardConfig.matchesParsedKey(parsed);
-            await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b) => !isTarget(b)));
+            // Captured inside the mutation, where the stored list still holds the
+            // row and its real index — the trash restores to that position.
+            const trashed = [];
+            await this.writePageBookmarks(parsed.pageId, (list) => list.filter((b, index) => {
+                if (!isTarget(b)) return true;
+                trashed.push({ pageId: Number(parsed.pageId), index, bookmark: { ...b } });
+                return false;
+            }));
+            // After the page write, so a delete that did not persist cannot leave
+            // a phantom entry. The 8s toast is the fast path; the trash catches it
+            // an hour later, same as every delete on the dashboard side.
+            await window.DashboardTrash?.record(trashed, 'config-bookmarks');
             this.bmSelected.delete(key);
             if (this.bmEditing === key) { this.bmEditing = null; this.bmDirty = false; }
             this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success', {
@@ -11303,11 +11368,21 @@ class DashboardConfig {
                 }));
         }
 
+        // Captured inside each page's mutation, where the stored list still holds
+        // the rows and their real indices — the trash restores to those positions.
+        const trashed = [];
         for (const [pageId, targets] of byPage) {
             await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
-                .filter(({ target }) => !targets.has(target))
+                .filter(({ bookmark, target }, index) => {
+                    if (!targets.has(target)) return true;
+                    trashed.push({ pageId: Number(pageId), index, bookmark: { ...bookmark } });
+                    return false;
+                })
                 .map(({ bookmark }) => bookmark));
         }
+        // After every page write, so a delete that did not persist cannot leave a
+        // phantom entry. The 8s toast is the fast path; the trash catches it later.
+        await window.DashboardTrash?.record(trashed, 'config-bookmarks-bulk');
         this.bmSelected.clear();
         this.bmEditing = null;
 

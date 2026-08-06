@@ -1,0 +1,51 @@
+{
+  "tag": "v2026.09.05.1",
+  "date": "August 2026",
+  "releasedAt": "2026-08-06",
+  "modalLead": "Fewer detours: make a page or category without leaving the bookmark form, act on a whole list of broken links at once, tag a dozen bookmarks in one click — and every delete, from anywhere, is now recoverable from the trash.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Create a page or category from the bookmark form</strong> — filing a new bookmark somewhere that did not exist yet meant leaving the half-filled form, going to <strong>Config</strong>, making the page or category, and starting over. Both dropdowns now lead with <strong>➕ New page…</strong> and <strong>➕ New category…</strong>. Picking one swaps the dropdown for a name box with <strong>Create</strong> and <strong>Cancel</strong> in the same spot, and the new page or category is selected when you come back — ready for the bookmark you were already adding."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A category is created on whichever page the form is pointing at</strong>, including a page you made moments earlier in the same form. Naming one that already exists says so under the box and leaves it open, so the name can be corrected without starting again."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tag several bookmarks at once</strong> — select some rows and the toolbar's new <strong>Tags</strong> button lists every tag you already use. Each one shows how it sits across the selection: a tick when every bookmark has it, so clicking takes it off; a dash and <em>on 2 of 3</em> when only some do, so clicking fills in the rest. Setting a category was already possible here, inside the <strong>Move</strong> button."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Fix a whole list of broken links at once.</strong> The Health view lists exactly what a clear-out starts from — broken, duplicate, stale, never checked — and then made you repair them one row at a time. Tick the box on any row, or press <strong><code>x</code></strong> to tick the one under the cursor and move on, <strong><code>X</code></strong> for everything the filter shows. A bar appears above the list with <strong>Set checking</strong>, <strong>Re-check</strong>, <strong>Open</strong>, <strong>Copy links</strong> and <strong>Delete</strong> — the same bar, in the same place, that <strong>Config → Bookmarks</strong> has always had."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Ticks survive a filter change</strong>, so selecting on <em>All</em> and then switching to <em>Broken</em> keeps them. Because Delete would still reach every one of them, the bar says how many the current filter is hiding and offers to drop those. A row that has changed since the report was built is skipped and reported rather than deleted, so a list a few minutes old can never remove the wrong bookmark."
+        }
+      ]
+    },
+    {
+      "title": "Trash",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Deleting from Config → Bookmarks is recoverable too.</strong> Deletes there offered an eight-second undo and nothing after — while the same bookmark deleted from the dashboard stayed in the trash for 30 days. Config is where a clear-out actually happens, so it was the delete most worth undoing and the least able to be. Single rows and bulk deletes both go to the trash now, as do deletes from the Health view."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Restoring to a page you have since deleted explains itself.</strong> The bookmark was never at risk — it stays in the trash — but the panel said only <em>Could not complete that action</em>. It now names the reason and the remedy: recreate the page, then restore."
+        }
+      ]
+    }
+  ]
+}
