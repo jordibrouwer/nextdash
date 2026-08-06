@@ -110,6 +110,7 @@ func main() {
 	r.HandleFunc("/api/health/open-broken", handlers.OpenBroken).Methods("POST")
 	r.HandleFunc("/api/health/merge-duplicates", handlers.MergeDuplicates).Methods("POST")
 	r.HandleFunc("/api/health/delete-bookmark", handlers.DeleteHealthBookmark).Methods("POST")
+	r.HandleFunc("/api/health/history-export", handlers.ExportHealthHistory).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-suggest", handlers.AutoHealSuggest).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-apply", handlers.AutoHealApply).Methods("POST")
 	r.HandleFunc("/api/bookmark-preview", handlers.GetBookmarkPreview).Methods("GET")

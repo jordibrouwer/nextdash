@@ -2003,6 +2003,22 @@ class DashboardHealth {
      * one thing bulk enabling must not be able to do, so it is left out rather than
      * shown disabled — a greyed button invites the question of how to enable it.
      */
+    /**
+     * "Export history" — every monitor's recorded samples, not the row list.
+     *
+     * Only on the Monitored filter. The toolbar's own Export already means "the
+     * filtered list as CSV", and two Export buttons side by side on a filter
+     * holding unmonitored rows would be a coin toss. On Monitored the list and
+     * the history describe the same bookmarks, so the pair reads as two views of
+     * one set: the rows, or their measurements.
+     */
+    renderHistoryExportButton() {
+        if (this.filter !== 'monitored') return '';
+        return `<button type="button" class="health-view-history-export-btn" title="${this.escape(
+            this.t('dashboard.healthHistoryExportAllHint', 'Download recorded uptime samples for every monitored bookmark')
+        )}">${this.escape(this.t('dashboard.healthHistoryExportAll', 'Export history'))}</button>`;
+    }
+
     renderBulkEnableButtons() {
         if (this.filter === 'all') return '';
         const monitorCount = this.bulkEnableTargets('monitor').length;
@@ -2320,6 +2336,7 @@ class DashboardHealth {
             <input type="search" class="health-view-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}">
             <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
             <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export'))}</button>
+            ${this.renderHistoryExportButton()}
             ${this.renderOpenBrokenButton()}
             ${this.renderMergeDuplicateButton()}
             <button type="button" class="health-view-retest-btn">${this.escape(this.t('dashboard.healthRetest', 'Retest all'))}</button>
@@ -2331,6 +2348,11 @@ class DashboardHealth {
 
         toolbar.querySelector('.health-view-export-btn')?.addEventListener('click', () => {
             this.exportFilteredCsv();
+        });
+
+        toolbar.querySelector('.health-view-history-export-btn')?.addEventListener('click', () => {
+            window.nextdashTrack?.('health:history-export-all');
+            this.downloadUrl('/api/health/history-export');
         });
 
         const openBrokenBtn = toolbar.querySelector('.health-view-open-broken-btn');
@@ -3283,7 +3305,44 @@ class DashboardHealth {
             ${heartbeat ? `<div class="health-monitor-stats-heartbeat">${heartbeat}</div>` : ''}
             ${this.renderMonitorMeta(stats)}
             <div class="health-monitor-stats-incidents">${incidents}</div>
+            <div class="health-monitor-stats-actions">
+                <button type="button" class="health-monitor-export-btn" data-monitor-export
+                        title="${this.escape(this.t('dashboard.healthHistoryExportHint', 'Download this monitor\'s recorded samples as CSV'))}">
+                    ${this.escape(this.t('dashboard.healthHistoryExport', 'Export history (CSV)'))}
+                </button>
+            </div>
         </div>`;
+    }
+
+    /**
+     * Download one monitor's recorded samples.
+     *
+     * The samples never reach the client — the report carries only derived
+     * numbers (uptime windows, heartbeat buckets, incidents) — so this cannot be
+     * built here the way the row-list export is. The server assembles the CSV and
+     * this is a plain navigation to it, which also keeps a large history off the
+     * JS heap.
+     */
+    exportMonitorHistory(issue) {
+        const url = String(issue?.url || '').trim();
+        if (!url) {
+            return;
+        }
+        window.nextdashTrack?.('health:history-export');
+        this.downloadUrl(`/api/health/history-export?url=${encodeURIComponent(url)}`);
+    }
+
+    /** Trigger a download of a server-generated file. */
+    downloadUrl(href) {
+        const a = document.createElement('a');
+        a.href = href;
+        // The filename comes from the response's Content-Disposition; an empty
+        // download attribute only marks this as a download rather than a
+        // navigation, so the health view is not replaced by the CSV.
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
     }
 
     /**
@@ -3317,6 +3376,9 @@ class DashboardHealth {
         });
         // show() is synchronous and has already written the body into #modal-text.
         this.bindMonitorChart(issue);
+        document.getElementById('modal-text')
+            ?.querySelector('[data-monitor-export]')
+            ?.addEventListener('click', () => this.exportMonitorHistory(issue));
     }
 
     /**
