@@ -322,6 +322,12 @@ class DashboardMultiSelect {
         addButton(this.t('dashboard.multiSelectMove', 'Move'), 'multi-select-move-btn', (btn) => {
             this.openMovePopover(btn);
         });
+        // Beside Move, which already carries the category choice in its popover.
+        // Tags is the one field a cleanup wants to set in bulk that had no route
+        // here at all — the row's own Shift+T popover is single-bookmark.
+        addButton(this.t('dashboard.multiSelectTags', 'Tags'), 'multi-select-tags-btn', (btn) => {
+            this.openTagsPopover(btn);
+        });
         addButton(this.t('dashboard.multiSelectOpen', 'Open'), '', () => {
             this.openSelected();
         });
@@ -335,6 +341,197 @@ class DashboardMultiSelect {
             this.clear();
             this.dash.keyboardNav?.restoreKbdSelection?.();
         });
+    }
+
+    /**
+     * Tag the whole selection from one popover.
+     *
+     * Modelled on the row's own tag popover rather than config's text field:
+     * here the tags already exist and the question is which of them apply, so a
+     * list you click beats typing names you have to spell correctly.
+     *
+     * A tag is shown in one of three states across the selection — on every
+     * bookmark, on some, on none — because "add" and "remove" mean different
+     * things for a mixed selection and the button has to say which it will do.
+     */
+    openTagsPopover(anchorEl) {
+        const d = this.dash;
+        const refs = this.resolveRefs();
+        if (!refs.length || !anchorEl) {
+            return;
+        }
+        d._closeActionPopovers?.();
+
+        const known = new Set();
+        (d.allBookmarks?.length ? d.allBookmarks : d.bookmarks || []).forEach((bm) => {
+            (bm.tags || []).forEach((raw) => {
+                const tag = String(raw || '').trim().toLowerCase();
+                if (tag) known.add(tag);
+            });
+        });
+
+        const pop = document.createElement('div');
+        pop.id = 'multi-select-tags-popover';
+        pop.className = 'move-popover tag-popover';
+        pop.setAttribute('role', 'listbox');
+        pop.setAttribute('aria-label', this.t('dashboard.multiSelectTagsTitle', 'Tag selection…'));
+
+        const header = document.createElement('div');
+        header.className = 'move-popover-header';
+        header.textContent = this.t('dashboard.multiSelectTagsTitle', 'Tag selection…');
+        pop.appendChild(header);
+
+        const close = () => {
+            pop.remove();
+            document.removeEventListener('click', onOutside, true);
+            document.removeEventListener('keydown', onKey, true);
+            if (d._multiSelectTagsCleanup === close) {
+                d._multiSelectTagsCleanup = null;
+            }
+        };
+        const onOutside = (e) => {
+            if (!pop.contains(e.target) && e.target !== anchorEl) close();
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                close();
+            }
+        };
+
+        if (!known.size) {
+            const empty = document.createElement('div');
+            empty.className = 'tag-popover-empty-hint';
+            empty.textContent = this.t(
+                'dashboard.multiSelectTagsEmpty',
+                'No tags yet — add one from a bookmark first'
+            );
+            pop.appendChild(empty);
+        }
+
+        const total = refs.length;
+        [...known].sort().forEach((tag) => {
+            const on = refs.filter((ref) => (ref.bookmark.tags || [])
+                .map((raw) => String(raw || '').trim().toLowerCase())
+                .includes(tag)).length;
+
+            // A div, not a button: every other popover item in the app is one,
+            // and .move-popover-item styles only colour and spacing — a button
+            // brings the browser's own background, border and font with it, which
+            // is why these rows stood out against the theme.
+            const item = document.createElement('div');
+            item.className = 'move-popover-item';
+            item.setAttribute('role', 'option');
+            item.setAttribute('data-tag', tag);
+            // All → removing, none → adding, some → adding to the rest. The
+            // count says which, so nobody has to guess what the click does.
+            const state = on === total ? 'all' : (on === 0 ? 'none' : 'some');
+            item.classList.toggle('is-current', state === 'all');
+            item.setAttribute('aria-selected', String(state === 'all'));
+
+            const check = document.createElement('span');
+            check.className = 'move-popover-check';
+            check.textContent = state === 'all' ? '✓' : (state === 'some' ? '–' : '');
+            item.appendChild(check);
+
+            const label = document.createElement('span');
+            label.className = 'tag-popover-item-label';
+            label.textContent = `#${tag}`;
+            item.appendChild(label);
+
+            // The reach reads as secondary metadata, the same slot the row
+            // popover uses for its "n bookmarks" count.
+            if (state === 'some') {
+                const meta = document.createElement('span');
+                meta.className = 'tag-popover-item-meta';
+                meta.textContent = this.t('dashboard.multiSelectTagsPartial', 'on {count} of {total}')
+                    .replace('{count}', String(on))
+                    .replace('{total}', String(total));
+                item.appendChild(meta);
+            }
+
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                close();
+                void this.applyTagToSelection(tag, state === 'all' ? 'remove' : 'add');
+            });
+            pop.appendChild(item);
+        });
+
+        document.body.appendChild(pop);
+        d._positionActionPopoverBeside?.(pop, anchorEl);
+        // The shared helper centres the popover on its anchor, which is right for
+        // a bookmark row but not here: the toolbar sits at the top-left, so a tall
+        // tag list centred on a short button rides up over the bar it came from.
+        // Align its top to the button and let it grow downward instead.
+        const anchorRect = anchorEl.getBoundingClientRect();
+        const pad = window.DashboardPromoPlacement?.VIEWPORT_PAD ?? 8;
+        const maxTop = window.innerHeight - pop.offsetHeight - pad;
+        pop.style.top = `${Math.round(Math.max(pad, Math.min(anchorRect.top, maxTop)))}px`;
+        window.FocusTrapUtils?.syncDashboardInert?.();
+        setTimeout(() => {
+            document.addEventListener('click', onOutside, true);
+            document.addEventListener('keydown', onKey, true);
+        }, 0);
+        d._multiSelectTagsCleanup = close;
+    }
+
+    /**
+     * Add or remove one tag across the selection in a single page write.
+     *
+     * Per-bookmark saves would be one request each and could leave the set half
+     * tagged if one failed; the grid writes a whole page at a time anyway.
+     */
+    async applyTagToSelection(tag, mode) {
+        const d = this.dash;
+        const refs = this.resolveRefs();
+        if (!refs.length || !tag) {
+            return;
+        }
+        const previous = refs.map((ref) => [...(ref.bookmark.tags || [])]);
+
+        d.ensureBookmarkMutationSnapshot?.();
+        let changed = 0;
+        refs.forEach((ref) => {
+            const tags = (ref.bookmark.tags || [])
+                .map((raw) => String(raw || '').trim().toLowerCase())
+                .filter(Boolean);
+            const has = tags.includes(tag);
+            if (mode === 'remove' && has) {
+                ref.bookmark.tags = tags.filter((t) => t !== tag);
+                changed += 1;
+            } else if (mode === 'add' && !has) {
+                ref.bookmark.tags = [...tags, tag];
+                changed += 1;
+            }
+        });
+        if (!changed) {
+            return;
+        }
+
+        d.renderDashboard?.({ incremental: false });
+        const saved = await d.saveBookmarkOrder();
+        if (!saved) {
+            // Put the old tags back: the write is what makes this real, and a
+            // grid showing tags the server rejected is worse than no change.
+            refs.forEach((ref, i) => { ref.bookmark.tags = previous[i]; });
+            d.pendingReorderSnapshot = null;
+            d.renderDashboard?.({ incremental: false });
+            return;
+        }
+        void d.data?.fetchAndStoreDataRevision?.();
+        d.showGroupedNotification?.(
+            'multi-select-tags',
+            changed,
+            (n) => (mode === 'remove'
+                ? this.t('dashboard.multiSelectTagsRemoved', 'Removed “{tag}” from {count} bookmark(s)')
+                : this.t('dashboard.multiSelectTagsAdded', 'Tagged {count} bookmark(s) “{tag}”'))
+                .replace('{count}', String(n))
+                .replace('{tag}', tag),
+            'success'
+        );
     }
 
     openMovePopover(anchorEl) {
