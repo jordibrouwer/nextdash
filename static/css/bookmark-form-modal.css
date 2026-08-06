@@ -78,6 +78,7 @@ body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-input,
 body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-select,
 body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-textarea,
 body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-action-btn,
+body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-create-btn,
 body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-icon-preview {
     background: var(--inline-edit-field-bg, var(--background-secondary));
 }

@@ -3359,6 +3359,43 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     display: none;
 }
 
+/* ─── Inline create (new page / new category from the form's dropdowns) ───────
+   The row takes the select's place inside the same field, so choosing "New …"
+   never reflows the form around it. The name input takes the leftover width and
+   the two buttons keep their intrinsic size. */
+
+.bookmark-inline-create {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.bookmark-inline-create[hidden] {
+    display: none;
+}
+
+.bookmark-inline-create .bookmark-inline-create-input {
+    flex: 1 1 8rem;
+    width: auto;
+    min-width: 0;
+}
+
+.bookmark-inline-create .bookmark-inline-create-btn {
+    flex: 0 0 auto;
+}
+
+/* The error spans the whole row rather than squeezing in beside the buttons. */
+.bookmark-inline-create .bookmark-inline-conflict {
+    flex: 1 0 100%;
+    margin-top: 0;
+}
+
+/* Sets the create entry apart from the real pages/categories below it. */
+.bookmark-inline-new-option {
+    font-weight: var(--font-weight-semibold);
+}
+
 .bookmark-inline-icon-actions {
     display: flex;
     align-items: center;
@@ -3397,7 +3434,8 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     color: var(--text-tertiary);
 }
 
-.bookmark-inline-action-btn {
+.bookmark-inline-action-btn,
+.bookmark-inline-create-btn {
     border: 1px solid var(--border-primary);
     background: var(--background-primary);
     color: var(--text-primary);
@@ -3407,8 +3445,14 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     cursor: pointer;
 }
 
-.bookmark-inline-save {
+.bookmark-inline-save,
+.bookmark-inline-create-ok {
     border-color: var(--text-secondary);
+}
+
+.bookmark-inline-create-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .bookmark-inline-delete {

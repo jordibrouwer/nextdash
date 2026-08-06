@@ -3,7 +3,7 @@ package main
 
 var precomputedAssetHashes = map[string]string{
 	"css/app-notification.css": "d14385f1984d",
-	"css/bookmark-form-modal.css": "658f94fe8b86",
+	"css/bookmark-form-modal.css": "4c6aeefc8875",
 	"css/bookmark-form-preview.css": "fa3bd5380bd2",
 	"css/check-mode-control.css": "5ed785b907e9",
 	"css/colors.css": "fa3aef53d2b4",
@@ -16,7 +16,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/dashboard-multi-select.css": "16768fd19117",
 	"css/dashboard-quickstart.css": "8e6990c59bdd",
 	"css/dashboard-tag-cloud.css": "6f78c6a1f035",
-	"css/dashboard.css": "16882019249f",
+	"css/dashboard.css": "55d4cbcb3fac",
 	"css/enhanced-features.css": "e63747be1411",
 	"css/favicon-prefetch.css": "eeef2e35d788",
 	"css/font-size.css": "da7b6a54d9d4",
@@ -71,7 +71,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/dashboard/dashboard-inbox-loader.js": "e42b57eb7aff",
 	"js/dashboard/dashboard-inbox-triage.js": "027ed3a3c780",
 	"js/dashboard/dashboard-inbox.js": "4eeaf11ae34e",
-	"js/dashboard/dashboard-inline-edit.js": "9741f18dabb4",
+	"js/dashboard/dashboard-inline-edit.js": "cd882e9d11bf",
 	"js/dashboard/dashboard-multi-select.js": "22a5ba888d73",
 	"js/dashboard/dashboard-notifications.js": "77dee815192d",
 	"js/dashboard/dashboard-page-nav.js": "540e35682c54",

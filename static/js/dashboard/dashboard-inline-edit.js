@@ -229,7 +229,7 @@ class DashboardInlineEdit {
             row.style.background = panelBg;
         }
         form.querySelectorAll(
-            '.bookmark-inline-input, .bookmark-inline-select, .bookmark-inline-textarea, .bookmark-inline-action-btn, .bookmark-inline-icon-preview'
+            '.bookmark-inline-input, .bookmark-inline-select, .bookmark-inline-textarea, .bookmark-inline-action-btn, .bookmark-inline-create-btn, .bookmark-inline-icon-preview'
         ).forEach((node) => {
             node.style.background = fieldBg;
         });
@@ -307,6 +307,113 @@ class DashboardInlineEdit {
             tags,
             pageId: Number.isFinite(pageId) ? pageId : Number(bookmarkRef.pageId || d.currentPageId),
         };
+    }
+
+
+    /**
+     * Re-baseline after the form itself changed a select (a freshly created page
+     * or category), so the new value does not read as an unsaved edit.
+     */
+    refreshInlineEditBaselineIfActive(bookmarkRef) {
+        const fields = this.dash._inlineEditContext?.fields;
+        if (fields) {
+            this.refreshInlineEditBaseline(bookmarkRef, fields);
+        }
+    }
+
+
+    /** Turn a name into a stable, unique category id (mirrors the config rules). */
+    slugCategoryId(name, taken = []) {
+        let base = String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        if (!base) {
+            base = 'category';
+        }
+        const takenSet = new Set(taken.map((id) => String(id)));
+        let id = base;
+        let n = 2;
+        while (takenSet.has(id)) {
+            id = `${base}-${n++}`;
+        }
+        return id;
+    }
+
+
+    /**
+     * Create a page from the bookmark form's page dropdown.
+     * Resolves to `{ id }` on success or `{ error }` with a message to show.
+     */
+    async createPageFromForm(name) {
+        const d = this.dash;
+        const cfg = (key, fb) => d.configLabel(key, fb);
+        try {
+            const res = await fetch('/api/pages');
+            const existing = res.ok ? await res.json() : [];
+            const list = Array.isArray(existing) ? existing : [];
+            if (list.some((p) => String(p.name || '').trim().toLowerCase() === name.toLowerCase())) {
+                return { error: cfg('pageExists', 'That page already exists.') };
+            }
+            const nextId = list.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
+            const payload = [...list, { id: nextId, name }];
+            const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/pages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!save.ok) {
+                throw new Error(save.statusText);
+            }
+            // The dashboard keeps its own page list for the nav tabs and the page
+            // select; update it here so both agree without a full reload.
+            d.pages = payload;
+            d.renderPageNavigation?.();
+            d.notifyConfig('pageCreated', 'Page created.', 'success');
+            return { id: nextId };
+        } catch (e) {
+            console.error('Inline create page failed:', e);
+            return { error: cfg('pageCreateError', 'Could not create the page.') };
+        }
+    }
+
+
+    /**
+     * Create a category on `pageId` from the bookmark form's category dropdown.
+     * Resolves to `{ id }` on success or `{ error }` with a message to show.
+     */
+    async createCategoryFromForm(pageId, name) {
+        const d = this.dash;
+        const cfg = (key, fb) => d.configLabel(key, fb);
+        try {
+            const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
+            const existing = res.ok ? await res.json() : [];
+            const list = Array.isArray(existing) ? existing : [];
+            if (list.some((c) => String(c.name || '').trim().toLowerCase() === name.toLowerCase())) {
+                return { error: cfg('categoryExists', 'That category already exists.') };
+            }
+            const id = this.slugCategoryId(name, list.map((c) => c.id));
+            const payload = [...list, { id, name, icon: '' }];
+            const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(
+                `/api/categories?page=${encodeURIComponent(pageId)}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                }
+            );
+            if (!save.ok) {
+                throw new Error(save.statusText);
+            }
+            // Only the page on screen has its categories mirrored on the dashboard;
+            // for any other page the form re-fetches the list it needs.
+            if (Number(pageId) === Number(d.currentPageId)) {
+                d.categories = payload;
+            }
+            d.data?.invalidatePageDataCache?.(Number(pageId));
+            d.notifyConfig('categoryCreated', 'Category created.', 'success');
+            return { id };
+        } catch (e) {
+            console.error('Inline create category failed:', e);
+            return { error: cfg('categoryCreateError', 'Could not create the category.') };
+        }
     }
 
 
@@ -826,34 +933,73 @@ class DashboardInlineEdit {
         const shortcutField = mkField(cfg('shortcut', 'Shortcut'), shortcutInput);
         shortcutField.appendChild(shortcutConflictHint);
 
+        // The "create" entry sits at the top of each dropdown, so adding a page or
+        // category is one click away from the field it belongs to — no trip to the
+        // config view mid-edit. Picking it swaps the select for a name input.
+        const NEW_OPTION_VALUE = '__new__';
+
+        const mkNewOption = (labelText) => {
+            const o = document.createElement('option');
+            o.value = NEW_OPTION_VALUE;
+            o.className = 'bookmark-inline-new-option';
+            o.textContent = labelText;
+            return o;
+        };
+
         const catSelect = document.createElement('select');
         catSelect.className = 'bookmark-inline-select';
-        const optEmpty = document.createElement('option');
-        optEmpty.value = '';
-        optEmpty.textContent = '—';
-        catSelect.appendChild(optEmpty);
-        (d.categories || []).forEach((cat) => {
-            const o = document.createElement('option');
-            o.value = cat.id || '';
-            o.textContent = cat.name || cat.id || '';
-            if (String(bookmark.category ?? '') === String(cat.id ?? '')) {
-                o.selected = true;
+        const fillCatSelect = (cats, selectedId) => {
+            catSelect.replaceChildren();
+            catSelect.appendChild(mkNewOption(cfg('addNewCategoryOption', '➕ New category…')));
+            const optEmpty = document.createElement('option');
+            optEmpty.value = '';
+            optEmpty.textContent = '—';
+            catSelect.appendChild(optEmpty);
+            let matched = false;
+            (cats || []).forEach((cat) => {
+                const o = document.createElement('option');
+                o.value = cat.id || '';
+                o.textContent = cat.name || cat.id || '';
+                if (String(selectedId ?? '') === String(cat.id ?? '')) {
+                    o.selected = true;
+                    matched = true;
+                }
+                catSelect.appendChild(o);
+            });
+            if (!matched) {
+                catSelect.value = '';
             }
-            catSelect.appendChild(o);
-        });
+            return matched;
+        };
+        fillCatSelect(d.categories || [], bookmark.category);
         const catField = mkField(cfg('category', 'Category'), catSelect);
 
         const pageSelect = document.createElement('select');
         pageSelect.className = 'bookmark-inline-select';
         const currentPageId = Number(d.currentPageId);
         const sourcePageId = Number(bookmarkRef.pageId || d.currentPageId);
-        (Array.isArray(d.pages) ? d.pages : []).forEach((page) => {
-            const o = document.createElement('option');
-            o.value = page.id;
-            o.textContent = page.name || String(page.id);
-            if (Number(page.id) === sourcePageId) o.selected = true;
-            pageSelect.appendChild(o);
-        });
+        const fillPageSelect = (pages, selectedId) => {
+            pageSelect.replaceChildren();
+            pageSelect.appendChild(mkNewOption(cfg('addNewPageOption', '➕ New page…')));
+            const list = Array.isArray(pages) ? pages : [];
+            let matched = false;
+            list.forEach((page) => {
+                const o = document.createElement('option');
+                o.value = page.id;
+                o.textContent = page.name || String(page.id);
+                if (Number(page.id) === Number(selectedId)) {
+                    o.selected = true;
+                    matched = true;
+                }
+                pageSelect.appendChild(o);
+            });
+            // "New page…" is the first option, so an unmatched id would leave the
+            // select showing it as the current page. Fall back to a real page.
+            if (!matched && list.length > 0) {
+                pageSelect.value = String(list[0].id);
+            }
+        };
+        fillPageSelect(d.pages, sourcePageId);
         const pageField = mkField(cfg('page', 'Page'), pageSelect);
 
         // Field order: Upload → Shortcut → flags → Page → Category → Tags → Note.
@@ -867,35 +1013,185 @@ class DashboardInlineEdit {
         form.appendChild(tagsField);
         form.appendChild(noteField);
 
-        const reloadCatSelectForPage = async (pageId) => {
-            const isCurrentPage = Number(pageId) === currentPageId;
-            const cats = isCurrentPage
+        const loadCategoriesForPage = async (pageId) => (
+            Number(pageId) === currentPageId
                 ? (d.categories || [])
-                : await fetch(`/api/categories?page=${pageId}`).then(r => r.ok ? r.json() : []).catch(() => []);
-            const prevValue = catSelect.value;
-            catSelect.innerHTML = '';
-            const empty = document.createElement('option');
-            empty.value = '';
-            empty.textContent = '—';
-            catSelect.appendChild(empty);
-            let matched = false;
-            cats.forEach(cat => {
-                const o = document.createElement('option');
-                o.value = cat.id || '';
-                o.textContent = cat.name || cat.id || '';
-                if ((cat.id || '') === prevValue) { o.selected = true; matched = true; }
-                catSelect.appendChild(o);
-            });
+                : await fetch(`/api/categories?page=${pageId}`).then(r => r.ok ? r.json() : []).catch(() => [])
+        );
+
+        const reloadCatSelectForPage = async (pageId, preferredId) => {
+            const cats = await loadCategoriesForPage(pageId);
+            const wanted = preferredId !== undefined ? preferredId : catSelect.value;
+            const matched = fillCatSelect(cats, wanted);
             // No match from previous page — default to first real category so bookmark doesn't land in Others
             if (!matched && cats.length > 0) {
-                catSelect.selectedIndex = 1;
+                catSelect.value = cats[0].id || '';
             }
             if (d._inlineEditContext?.fields?.catSelect === catSelect) {
                 this.refreshInlineEditBaseline(bookmarkRef, d._inlineEditContext.fields);
             }
         };
 
-        pageSelect.addEventListener('change', () => reloadCatSelectForPage(pageSelect.value));
+        // ─── Inline create: page / category without leaving the form ────────────
+        // Each select gets a sibling row holding a name input and confirm/cancel
+        // buttons. The row replaces the select in place, so the form's height and
+        // the field's position never move.
+        const lastSelected = { page: String(sourcePageId), category: catSelect.value };
+
+        const mkInlineCreateRow = (kind, placeholder) => {
+            const box = document.createElement('div');
+            box.className = 'bookmark-inline-create';
+            box.dataset.createKind = kind;
+            box.hidden = true;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'bookmark-inline-input bookmark-inline-create-input';
+            input.placeholder = placeholder;
+
+            // Deliberately not .bookmark-inline-action-btn: that class marks the
+            // form's own footer buttons (save / cancel / delete), and a second pair
+            // wearing it would make "the form's cancel button" ambiguous. These get
+            // their own class and borrow the styling instead.
+            const okBtn = document.createElement('button');
+            okBtn.type = 'button';
+            okBtn.className = 'bookmark-inline-create-btn bookmark-inline-create-ok';
+            okBtn.textContent = cfg('create', 'Create');
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'bookmark-inline-create-btn bookmark-inline-create-cancel';
+            cancelBtn.textContent = d.formatDashboardLabel('cancel', {}, 'Cancel');
+
+            const error = document.createElement('span');
+            error.className = 'bookmark-inline-conflict';
+            error.hidden = true;
+
+            box.append(input, okBtn, cancelBtn, error);
+            return { box, input, okBtn, cancelBtn, error };
+        };
+
+        const closeInlineCreate = (kind, ui, select) => {
+            ui.box.hidden = true;
+            ui.error.hidden = true;
+            ui.input.value = '';
+            select.hidden = false;
+            select.value = lastSelected[kind];
+            select.focus({ preventScroll: true });
+        };
+
+        const openInlineCreate = (kind, ui, select) => {
+            // Put the previous value back straight away rather than on close: a save
+            // while this row is open must not read __new__ as the target page or
+            // category. The row on screen, not the sentinel, is the pending state.
+            select.value = lastSelected[kind];
+            select.hidden = true;
+            ui.box.hidden = false;
+            ui.error.hidden = true;
+            ui.input.value = '';
+            ui.input.focus({ preventScroll: true });
+        };
+
+        const wireInlineCreate = (kind, ui, select, confirm) => {
+            const run = async () => {
+                const name = ui.input.value.trim();
+                if (!name) {
+                    ui.input.focus({ preventScroll: true });
+                    return;
+                }
+                ui.okBtn.disabled = true;
+                try {
+                    const failure = await confirm(name);
+                    if (failure) {
+                        ui.error.textContent = failure;
+                        ui.error.hidden = false;
+                        ui.input.focus({ preventScroll: true });
+                        return;
+                    }
+                    ui.box.hidden = true;
+                    ui.error.hidden = true;
+                    ui.input.value = '';
+                    select.hidden = false;
+                    select.focus({ preventScroll: true });
+                } finally {
+                    ui.okBtn.disabled = false;
+                }
+            };
+            ui.okBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); void run(); });
+            ui.cancelBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeInlineCreate(kind, ui, select);
+            });
+            // The form's Escape listener runs in the capture phase on document, so
+            // it hands the key back here through this hook rather than racing it.
+            ui.box.__closeInlineCreate = () => closeInlineCreate(kind, ui, select);
+            // Enter confirms the name; it must not fall through to the form's save.
+            ui.input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void run();
+                }
+            });
+        };
+
+        const pageCreate = mkInlineCreateRow(
+            'page',
+            cfg('newPageNamePlaceholder', 'Page name'),
+        );
+        pageField.appendChild(pageCreate.box);
+
+        const catCreate = mkInlineCreateRow(
+            'category',
+            cfg('newCategoryNamePlaceholder', 'Category name'),
+        );
+        catField.appendChild(catCreate.box);
+
+        wireInlineCreate('page', pageCreate, pageSelect, async (name) => {
+            const created = await this.createPageFromForm(name);
+            if (created.error) {
+                return created.error;
+            }
+            fillPageSelect(d.pages, created.id);
+            lastSelected.page = String(created.id);
+            // A brand-new page has no categories yet, so the category select
+            // resets to "—" rather than keeping the old page's choice.
+            await reloadCatSelectForPage(created.id, '');
+            lastSelected.category = catSelect.value;
+            this.refreshInlineEditBaselineIfActive(bookmarkRef);
+            return null;
+        });
+
+        wireInlineCreate('category', catCreate, catSelect, async (name) => {
+            const pageId = Number(pageSelect.value) || sourcePageId;
+            const created = await this.createCategoryFromForm(pageId, name);
+            if (created.error) {
+                return created.error;
+            }
+            await reloadCatSelectForPage(pageId, created.id);
+            lastSelected.category = catSelect.value;
+            this.refreshInlineEditBaselineIfActive(bookmarkRef);
+            return null;
+        });
+
+        pageSelect.addEventListener('change', () => {
+            if (pageSelect.value === NEW_OPTION_VALUE) {
+                openInlineCreate('page', pageCreate, pageSelect);
+                return;
+            }
+            lastSelected.page = pageSelect.value;
+            void reloadCatSelectForPage(pageSelect.value);
+        });
+
+        catSelect.addEventListener('change', () => {
+            if (catSelect.value === NEW_OPTION_VALUE) {
+                openInlineCreate('category', catCreate, catSelect);
+                return;
+            }
+            lastSelected.category = catSelect.value;
+        });
+
         if (bookmarkRef.scope === 'remote' && sourcePageId !== currentPageId) {
             void reloadCatSelectForPage(sourcePageId);
         }
@@ -1258,6 +1554,16 @@ class DashboardInlineEdit {
                 return;
             }
             if (d.isModalOpen() && !this._formModalShell?.classList.contains('show')) return;
+            // An open "New page/category" row owns Escape: it is the innermost thing
+            // on screen, and this listener is in the capture phase, so without the
+            // hand-off it would close the whole form before the row ever saw the key.
+            const openCreateRow = form.querySelector('.bookmark-inline-create:not([hidden])');
+            if (openCreateRow) {
+                e.preventDefault();
+                e.stopPropagation();
+                openCreateRow.__closeInlineCreate?.();
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
             if (!(await this.confirmDiscardInlineEdit())) {
