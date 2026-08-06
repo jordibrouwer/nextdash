@@ -386,7 +386,10 @@ Right-click any bookmark on the dashboard for its actions in one place:
 | **Move to…** | The move popover — another category or page (also `Shift + M`) |
 | **Checking** | Names the bookmark's current availability mode and opens the three-way choice — **Off** / **Periodic** / **Monitor** (also `Shift + C`) |
 | **Show in Health** | Opens the [health view](#15-status-monitoring-and-health) with this bookmark's row selected. Offered for **every** bookmark, including ones with checking switched off — the report covers the whole library, and that row is where checking gets turned on |
-| **Delete** | Asks for confirmation first, then deletes with undo in the toast |
+| **Select** / **Select all in category** | Starts a [multi-selection](#94-selecting-several-bookmarks) with this row, or with every row in its category. Placed above the divider: below it is the destructive zone, and selecting is not destructive |
+| **Delete** | Asks for confirmation first, then deletes with undo in the toast. The bookmark goes to the [trash](#trash-data--backups--trash) for 30 days |
+
+Right-click a bookmark that is **part of an open selection** and the menu switches to the selection as a whole — *Move 5 selected*, *Open 5 selected*, *Copy 5 links*, *Delete 5 selected*, *Clear selection* — with the count named, so it is never in doubt what an action will touch. Right-click a row **outside** the selection and you get the ordinary single-row menu, because that is the row you pointed at. One ticked row is not a bulk operation, so it keeps the single-row menu too.
 
 Apart from sharing, nothing here is exclusive to the menu — the rest is reachable from the [command palette](#93-bookmark-actions) and config, and the menu just puts it where most people look first.
 
@@ -531,7 +534,26 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `Delete` | Delete selected bookmark (confirmation dialog; `Shift+D` uses the quick-delete popover instead) |
 | `Enter` / `Space` on **+ N more** | Expand or collapse a long category; selection returns to the last bookmark above the toggle so you can keep arrowing down |
 
-### 9.4 Cheat sheet
+### 9.4 Selecting several bookmarks
+
+Bulk actions used to live only in the tag filter, so acting on several bookmarks at once required them to share a tag. Any rows will do now.
+
+| Keys | Action |
+|------|--------|
+| `x` | Tick the row under the cursor and move to the next one, so a run of rows is `x`-`x`-`x` rather than `x`-`↓`-`x`-`↓` |
+| `X` | Tick every row in the selected row's category |
+| `Shift + ↑` / `Shift + ↓` | Extend the selection a row at a time |
+| `Ctrl/Cmd + A` | Tick everything currently on screen |
+| `Ctrl/Cmd + click` | Add or remove a single row with the mouse |
+| `Shift + click` | Extend the selection to the clicked row |
+| `Esc` | Clear the selection |
+| `Delete` | Delete everything selected (one confirmation for the whole set) |
+
+A toolbar appears above the grid while a selection is open, with **Move**, **Open**, **Copy links**, **Delete** and **Clear** — the same actions the right-click menu offers, doing exactly the same thing. **Move** opens the ordinary move popover, so a bulk move picks a category or page the same way a single move does.
+
+A **plain click while a selection is open clears it** instead of opening the bookmark, so a stray click cannot act on rows you had forgotten were ticked. A bookmark that appears in a [smart collection](#13-smart-collections-and-custom-collections) as well as its own category lights up in both places, because it is one bookmark shown twice.
+
+### 9.5 Cheat sheet
 
 Press **`!`** or **`F1`** (or run **`:cheat`** / **`:help`**). Focus lands in the filter box automatically. Type to narrow the list. When the **side rail** is active, a **Layout (side rail)** section lists tab order and `:buttonbar` hints. The cheat sheet does not open while the **page overview** (`,`), **tag cloud**, or another blocking overlay is open. On first open (desktop), a one-time **Got it** balloon may appear beside the modal — dismissing it does not close the cheat sheet.
 
@@ -541,7 +563,7 @@ Every shortcut uses its **fixed default**. Custom key rebinding is not available
 
 **Occasional tips** — now and then the dashboard shows one keyboard tip as a small toast with a **Cheat sheet** button beside it. It draws from the built-in tips catalogue, appears at most once every few days, never repeats a tip you have already seen, and stays away during first-run setup, on touch, and while a dialog or the inline editor is open. Turn it off under **Config → Behavior → General**.
 
-### 9.5 Blocking overlays & focus
+### 9.6 Blocking overlays & focus
 
 While any of these are open, the bookmark grid behind them is **inert** (not clickable) and keyboard focus stays inside the overlay until you close it:
 
@@ -894,6 +916,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 | **Filters** | broken, duplicate, shortcut-conflict, stale, unchecked, unused, missing preview, healthy, **monitored** — default **broken** on first visit, and your last filter and sort come back on the next one; a `?hv_filter=` deep link still overrides what was stored |
 | **Monitored filter** | Offered as soon as there are bookmarks, not only once something is already monitored — it used to be invisible to anyone who had not already found the feature. An empty Monitored list explains what monitoring does and how to switch it on (`c` on a row) rather than reporting "no issues found" |
 | **Export** | Downloads the **current filter and search** as CSV — name, URL, status, score, page, category, last checked, and the same issue wording the score panel shows. For working through findings beside a spreadsheet, or handing someone the list. Values starting `=` `+` `-` `@` are prefixed so a spreadsheet treats them as text instead of formulas; a UTF-8 BOM keeps accented titles intact in Excel |
+| **Export history** | Appears on the **Monitored** filter. Downloads the individual up/down checks behind an uptime percentage — one row per check, with its timestamp, whether the site was up, ping time and HTTP status. The ordinary Export gives you the current state of each bookmark; this gives you the record over time, for charting an outage or seeing when a site started getting slow. Same formula guard and BOM |
 | **Controls panel** | Search, status pills, sort, export, and retest action in one compact block |
 | **Search** | Name, URL, category, page |
 | **Edit** | Row Edit (or `Enter`) leaves the Health view, opens the bookmark’s page, and launches the dashboard **inline editor** (falls back to Config when unavailable) |
@@ -1052,6 +1075,16 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 **Custom themes** is a full editor: build a palette, check its contrast, and apply it. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard in a half-edited state.
 
 Many controls carry an **ℹ** button explaining what the setting does, and a **↺** to put it back to its default.
+
+### Trash (Data & backups → Trash)
+
+Deleting a bookmark is not final. Deleted bookmarks go to the trash and stay there for **30 days**, then go for good. The toast's undo is for the moment right after; the trash is for the next morning.
+
+- **Restore** — puts the bookmark back on its own page, at the position it had. If the page has shrunk since, it lands at the end rather than failing.
+- **Delete forever** — removes one entry ahead of the 30 days.
+- **Empty trash** — clears everything at once. Both ask first.
+
+Each entry names the page it came from and when it was deleted. This covers **every** route out of the library, including a [bulk delete](#94-selecting-several-bookmarks) of twenty rows at once — all twenty are recoverable individually. The trash holds at most 500 entries; past that the oldest drop out early.
 
 ### Reset (Data & backups → Reset)
 
