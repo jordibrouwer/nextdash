@@ -2440,6 +2440,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureFormCreateTitle',
+                titleFallback: 'Make a page or category while adding a bookmark',
+                whatKey: 'config.overviewNewFeatureFormCreateWhat',
+                whatFallback: 'Filing a bookmark somewhere that did not exist yet meant leaving the half-filled form, making the page or category in Config, and starting over.',
+                howKey: 'config.overviewNewFeatureFormCreateHow',
+                howFallback: 'Both dropdowns in the bookmark form lead with ➕ New page… and ➕ New category…. Picking one swaps the dropdown for a name box, and the new page or category is selected when you come back.',
+                enableKey: 'config.overviewNewFeatureFormCreateEnable',
+                enableFallback: 'Nothing to switch on. A category is made on whichever page the form is pointing at, including one you created moments earlier.',
+                ctaKey: 'config.overviewNewFeatureFormCreateCta',
+                ctaFallback: 'Add a bookmark →',
+                go: { openBookmarkForm: true },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureMultiSelectTitle',
                 titleFallback: 'Select several bookmarks with x and X',
                 whatKey: 'config.overviewNewFeatureMultiSelectWhat',

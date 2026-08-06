@@ -168,7 +168,7 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 
 - Collapse/expand per category on the dashboard; press **`.`** to collapse or expand **all** categories at once.  
 - Drag the **`//` prefix** in a category title to reorder sections.  
-- Add a new category (or page) straight from the **new-bookmark modal** — the **Category** and **Page** dropdowns each carry a **+ New…** option that creates and saves it inline, no bookmark required.  
+- Add a new category (or page) straight from the **bookmark form** — the **Page** and **Category** dropdowns each lead with a **➕ New…** option that creates and saves it inline. See [7.2 Full modal](#72-full-modal--shiftb-or-ctrlshifta).  
 - Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. **Esc** cancels rename.
 - In **config → pages & tags → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
 
@@ -361,6 +361,8 @@ Since **v2026.08.07.1**, success toasts show translated labels again (not raw lo
 Since **v2026.08.08**, the example bookmarks on a new install are dated at the moment the install is seeded, so **Recently added** and the age columns have something to work with from the first run instead of reading as undated. A factory reset seeds them the same way. Bookmarks created before that release keep their original blank date.
 
 The modal includes page, category, preview, tags, and note.
+
+Since **v2026.09.05.1**, the **Page** and **Category** dropdowns each lead with **➕ New page…** and **➕ New category…**, so a bookmark can be filed somewhere that does not exist yet without leaving the half-filled form. Picking one hides the dropdown and puts a name box with **Create** and **Cancel** in its place; the new page or category is selected when you come back. A category is created on whichever page the **Page** dropdown is showing — including a page you created moments earlier in the same form — and a new page appears as a tab straight away. A name that already exists is refused under the box, with the box left open so you can correct it. **Enter** confirms the name and **Esc** closes just the name box, leaving the bookmark you were filling in untouched.
 
 **Availability, Shortcut and Pinned sit above the *More options* fold**. Availability is the same **Off / Periodic / Monitor** choice as the bookmark editor in Config — with the interval picker for Monitor and the same explanation behind the **(i)** — so a bookmark can be set up for monitoring at the moment you add it. Before this the modal offered only a *Status check* box, which could not express the three-way choice: Monitor is a superset of Periodic, so *monitored* was unreachable here. **Pinned** uses the same pin pill as the inline editor and Config rather than a bare checkbox.
 

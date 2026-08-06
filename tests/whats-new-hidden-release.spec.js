@@ -127,10 +127,10 @@ test.describe('a release flagged hideFromModal', () => {
         expect(tags).not.toContain('v2026.09.9');
     });
 
-    test('v2026.09.05 release constants are bumped', async ({ page }) => {
+    test('v2026.09.05.1 release constants are bumped', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.07-dashboard-release-v171'");
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v230'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.07-dashboard-release-v172'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v231'");
     });
 });

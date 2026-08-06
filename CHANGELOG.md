@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.09.05.1 — August 2026](#v202609051--august-2026)
 - [v2026.09.05 — August 2026](#v20260905--august-2026)
 - [v2026.09.04 — August 2026](#v20260904--august-2026)
 - [v2026.09.03 — August 2026](#v20260903--august-2026)
@@ -152,6 +153,31 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.09.05.1 — August 2026
+
+**Make a page or category without leaving the bookmark form** — both dropdowns in the add/edit bookmark modal can now create one on the spot, so filing a bookmark somewhere that does not exist yet no longer costs a detour through Config and a re-typed form.
+
+### Bookmarks
+
+- **new** — **Create a page or category from the form's dropdowns.** Both selects lead with a create entry; picking it hides the select and swaps in a name input with **Create** and **Cancel** in the same field, so the form's height and the field's position never move. On confirm the entry is POSTed to `/api/pages` or `/api/categories?page=…`, the dropdown is rebuilt with the new entry selected, and the page nav is re-rendered so a new page appears as a tab without a reload. Categories are scoped to whatever the page dropdown currently shows — including a page created moments earlier in the same form, which is why the category create reads `pageSelect.value` rather than the page the form opened on. A duplicate name is refused inline, under the input, with the row left open: a toast would outlive the row it belongs to and leave the form looking like it had accepted the name. The id is slugged from the name and de-duplicated the way the config editor does it, so two categories named alike cannot collide (`dashboard-inline-edit.js`, `dashboard.css`, `bookmark-form-modal.css`).
+- **fix** — **Escape closes an open create row, not the whole form.** The form's Escape handler is registered on `document` in the **capture** phase, so it ran before the create row's own input listener could ever see the key — backing out of naming a category discarded the entire half-filled bookmark. The handler now looks for an open create row first and hands the key to it, because the row is the innermost thing on screen (`dashboard-inline-edit.js`).
+- **fix** — **A save while the create row is open targets a real page.** The select kept the `__new__` sentinel as its value for as long as the row was open, so saving at that moment would have written `__new__` as the bookmark's page or category. The previous value is restored the instant the row opens; the row on screen, not the sentinel, is the pending state (`dashboard-inline-edit.js`).
+
+### Config
+
+- **new** — Creating a page or category from the form is announced in the **Config → Overview** new-features carousel, newest first, with five locale keys in en, nl, de and fr. Its CTA uses the existing `{openBookmarkForm: true}` go-shape, which closes config and opens the form.
+
+### Tests
+
+- **new** — 11 e2e tests covering the create entries, the inline row, page scoping, duplicate refusal, the Escape hand-off, the sentinel guard, and a bookmark saved into a category made from the form. Three were falsified against deliberately broken code to confirm each fails for its own reason (`bookmark-form-create-page-category.spec.js`).
+- **fix** — The create buttons carry their own `.bookmark-inline-create-btn` class rather than reusing `.bookmark-inline-action-btn`, which marks the form's footer buttons. Reusing it put a second Cancel above the real one in the DOM and broke four existing specs that locate the form's cancel with `.first()`; the ambiguity was the defect, so the markup changed rather than the tests.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, README and MANUAL for **v2026.09.05.1**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v172`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v231`. Docs stay out of the What's new modal, which is for user-facing change (`whats-new-stub.js`).
 
 ---
 

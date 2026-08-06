@@ -1,0 +1,21 @@
+{
+  "tag": "v2026.09.05.1",
+  "date": "August 2026",
+  "releasedAt": "2026-08-06",
+  "modalLead": "Adding a bookmark to a page or category that does not exist yet no longer means a detour through Config. Both dropdowns in the bookmark form can now create one on the spot.",
+  "sections": [
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Create a page or category from the bookmark form</strong> — filing a new bookmark somewhere that did not exist yet meant leaving the half-filled form, going to <strong>Config</strong>, making the page or category, and starting over. Both dropdowns now lead with <strong>➕ New page…</strong> and <strong>➕ New category…</strong>. Picking one swaps the dropdown for a name box with <strong>Create</strong> and <strong>Cancel</strong> in the same spot, and the new page or category is selected when you come back — ready for the bookmark you were already adding."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A category is created on whichever page the form is pointing at</strong>, including a page you made moments earlier in the same form. Naming one that already exists says so under the box and leaves it open, so the name can be corrected without starting again."
+        }
+      ]
+    }
+  ]
+}
