@@ -63,7 +63,7 @@ class SearchComponent {
     init() {
         this.buildShortcutsMap();
         this.setupEventListeners();
-        this.previousOverflow = null;
+        this.scrollLockToken = null;
         this.preventScrollHandler = null;
     }
 
@@ -1504,11 +1504,12 @@ class SearchComponent {
             searchElement.classList.add('show');
             this._syncDashboardInert();
             
-            // Prevent body scroll only if not already prevented
-            if (document.body.style.overflow !== 'hidden') {
-                this.previousOverflow = document.body.style.overflow;
-                document.body.style.overflow = 'hidden';
-                
+            // Prevent body scroll. The refcount handles the overlap with an open
+            // modal, which the old "only if not already hidden" guard could not:
+            // it skipped the lock entirely and then had nothing to restore.
+            if (!this.scrollLockToken) {
+                this.scrollLockToken = window.ScrollLock?.acquire('search-overlay') ?? null;
+
                 // Prevent scroll events outside the search modal
                 this.preventScrollHandler = (e) => {
                     const searchElement = document.getElementById('shortcut-search');
@@ -1553,9 +1554,9 @@ class SearchComponent {
 
         
         // Restore body scroll only if this component changed it
-        if (this.previousOverflow !== null) {
-            document.body.style.overflow = this.previousOverflow;
-            this.previousOverflow = null;
+        if (this.scrollLockToken) {
+            window.ScrollLock?.release(this.scrollLockToken);
+            this.scrollLockToken = null;
         }
         
         // Remove scroll prevention

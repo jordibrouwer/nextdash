@@ -58,6 +58,7 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-tag-cloud.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-inbox.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-multi-select.css"}}">
+    <link rel="stylesheet" href="{{asset "css/view-explainers.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-setting-promo.css"}}">
@@ -322,6 +323,8 @@
 
     <script src="{{asset "js/dashboard-feature-flags.js"}}" defer></script>
     <script src="{{asset "js/theme-icon-styling.js"}}" defer></script>
+    <!-- Before modal.js and every other overlay: they all take scroll locks. -->
+    <script src="{{asset "js/scroll-lock.js"}}" defer></script>
     <script src="{{asset "js/modal.js"}}" defer></script>
     <script src="{{asset "js/focus-trap-utils.js"}}" defer></script>
     <script src="{{asset "js/whats-new-stub.js"}}" defer></script>

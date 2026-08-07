@@ -431,10 +431,13 @@ HTML export from Chrome/Firefox/Edge (see [Import, export, and backup](#17-impor
 
 1. Open **Inbox** — header tab, **`Shift+I`**, **`0`**, or **`:inbox`**.  
 2. **Add** — paste `Ctrl+V` on the dashboard and choose *Save to Inbox*, use the extension **Save to Inbox**, or rely on *Always save to Inbox* in General settings. Fresh items show a preview placeholder until the server fills it in.  
-3. **Browse** — filter *All* / *Unread* / *Snoozed*, search, and scroll date groups. The active filter appears under the **Inbox** title as a breadcrumb (e.g. `inbox › unread`), same placement as Health and Config (**v2026.08.08.4**). Unread items show a badge on the Inbox tab.  
+3. **Browse** — filter *All* / *Unread* / *Snoozed* / *With note*, search, filter by site, and scroll date groups. Each filter pill carries its own count, and a sentence under the toolbar says what the active filter selects (**v2026.09.06.2**). The active filter appears under the **Inbox** title as a breadcrumb (e.g. `inbox › unread`), same placement as Health and Config (**v2026.08.08.4**). Unread items show a badge on the Inbox tab. Long lists load further rows as you scroll rather than a page per click (**v2026.09.06.2**).  
 4. **Act on a row** — *Open* in a new tab, *Promote* to open the new-bookmark form pre-filled — with every page and category available in its dropdowns, so the bookmark can be filed anywhere (status-checked bookmarks are health-checked right away), *Mark read*, *Snooze* (`z`: 3h / tomorrow / weekend / next week), add a *Note* (`n`), **Share** or copy from the right-click menu (**v2026.08.08.4**), or *Delete* (undo in the toast). Use the toolbar to **Mark all read** or **Clear read**.  
 5. **Keyboard** — `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `d` delete (legend under the list).  
 6. **Triage** — click **Triage** or run **`:inbox triage`** to walk unread items one by one: `J`/`K` move, `O` open, `P` promote, `R` keep (mark read), `D` delete, `Esc` close.
+7. **How it works** — the **`ℹ`** at the end of the toolbar explains what the inbox is for, what read and unread track, what snoozing hides, what promoting leaves behind, and the two ways through a backlog (**v2026.09.06.2**).
+
+**Snoozed links are counted as hidden.** The tiles, the header badge and the Inbox tab all count what you can act on now, so a snoozed link is left out of every one of them until it wakes — including *This week* — and **Clear read** leaves snoozed links alone (**v2026.09.06.2**). Your filter, sort and chosen site are remembered for the next visit; a site filter is dropped once its last link leaves the inbox, rather than filtering the list down to nothing.
 
 The first visit may show a short intro modal. Replay it from **Config → Behavior → General**.
 

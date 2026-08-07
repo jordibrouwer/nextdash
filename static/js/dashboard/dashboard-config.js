@@ -1709,6 +1709,7 @@ class DashboardConfig {
         { tab: 'search', titleKey: 'config.helpKeyboardTitle', fallback: 'Keyboard' },
         { tab: 'health', titleKey: 'config.helpHealthTitle', fallback: 'Availability & health' },
         { tab: 'health', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
+        { tab: 'health', titleKey: 'config.helpInboxWorkTitle', fallback: 'Working through the inbox' },
         { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
         { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
         { tab: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
@@ -2439,6 +2440,19 @@ class DashboardConfig {
     /** Catalog of feature spotlights shown on the overview. */
     overviewNewFeatures() {
         return [
+            {
+                titleKey: 'config.overviewNewFeatureInboxExplainTitle',
+                titleFallback: 'The inbox explains itself, and its numbers add up',
+                whatKey: 'config.overviewNewFeatureInboxExplainWhat',
+                whatFallback: 'A snoozed link is hidden from the list but was still counted above it, so a tile reading 12 could open a list of 9 with nothing explaining the gap.',
+                howKey: 'config.overviewNewFeatureInboxExplainHow',
+                howFallback: 'Every count now means what you can act on right now, every pill carries its own, and a sentence under the toolbar says what the active filter selects. The ℹ beside Triage covers snoozing, promoting and the rest.',
+                enableKey: 'config.overviewNewFeatureInboxExplainEnable',
+                enableFallback: 'Nothing to switch on. An empty list now says which kind of empty it is, and long inboxes load as you scroll rather than a page per click.',
+                ctaKey: 'config.overviewNewFeatureInboxExplainCta',
+                ctaFallback: 'Open the inbox →',
+                go: { view: 'inbox' },
+            },
             {
                 titleKey: 'config.overviewNewFeatureHealthStatsTitle',
                 titleFallback: 'See how the whole collection is doing',
@@ -13834,9 +13848,13 @@ class DashboardConfig {
 
     /**
      * Split into panels rather than one long body: availability modes, the list
-     * itself, the monitoring numbers, and the inbox are four things people arrive
+     * itself, the monitoring numbers, and the inbox are things people arrive
      * looking for, and a single wall of prose made the last of them unreachable
      * without scrolling past the other three.
+     *
+     * The inbox takes two panels of its own for the same reason — capturing links
+     * and working through the backlog are separate questions, and snoozing has
+     * enough consequences for the counts to be worth stating plainly.
      */
     renderHelpHealth() {
         return this.helpPanel('config.helpHealthTitle', 'Availability & health',
@@ -13846,7 +13864,9 @@ class DashboardConfig {
             + this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
                 'config.helpHealthStatsBody', '')
             + this.helpPanel('config.helpInboxTitle', 'Inbox',
-                'config.helpInboxBody', '');
+                'config.helpInboxBody', '')
+            + this.helpPanel('config.helpInboxWorkTitle', 'Working through the inbox',
+                'config.helpInboxWorkBody', '');
     }
 
     renderHelpData() {

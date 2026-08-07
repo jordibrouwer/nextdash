@@ -1,0 +1,93 @@
+/* ─── Explaining a view ──────────────────────────────────────────────────────
+
+   The health and inbox views both explain themselves the same way: a sentence
+   under the toolbar saying what the active filter selects, and an ℹ button that
+   opens the longer "how this works" modal. Both were written for health first;
+   this is that styling with the view prefix taken off, so the second view does
+   not carry a near-verbatim copy that drifts from the first.
+
+   View-specific stylesheets keep their own `.health-view-*` / `.inbox-*` aliases
+   pointing at these rules, so existing markup and tests keep working.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* One sentence about the active filter, under the toolbar. Quiet enough to be
+   skipped once it is known, present enough to be read the first time. */
+.view-filter-note {
+    margin: -0.2rem 0 0.7rem;
+    padding: 0 0.35rem;
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    max-width: 70ch;
+}
+
+/* The ℹ in the toolbar. Pushed to the far end so it never sits between two
+   actions and gets hit by accident. */
+.view-help-btn {
+    margin-left: auto;
+    flex: 0 0 auto;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-primary);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.view-help-btn:hover,
+.view-help-btn:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+/* The explainer modal.
+
+   Without a max-height of its own the panel grows to whatever its sections need
+   — health's six were measured at 786px in an 800px viewport, so it touched the
+   bottom edge and left 14px at the top. Capping it and letting the body scroll
+   keeps a clear margin above and below at any window height, and the caps are
+   expressed against both vh and a fixed inset so a short window still gets its
+   gap. */
+.modal.view-explain-modal {
+    max-height: min(78vh, calc(100vh - 6rem));
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal.view-explain-modal .modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Config renders its own overlay above this one, where the viewport is already
+   framed by the config chrome; the tighter cap keeps the same visual margin. */
+body:has(#config-main) #app-modal.modal-overlay:has(.view-explain-modal) .modal {
+    max-height: min(70vh, calc(100vh - 4rem));
+}
+
+/* Tighter than the 0.9rem gap the check-mode explainer uses: six sections at
+   that spacing is what made health's too tall to fit. */
+.view-explain-row + .view-explain-row {
+    margin-top: 0.65rem;
+}
+
+.view-explain-row h4 {
+    margin: 0 0 0.1rem;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+}
+
+.view-explain-row p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}

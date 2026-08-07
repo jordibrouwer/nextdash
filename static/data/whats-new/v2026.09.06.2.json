@@ -1,0 +1,45 @@
+{
+    "tag": "v2026.09.06.2",
+    "date": "August 2026",
+    "releasedAt": "2026-08-08",
+    "modalLead": "The <strong>Inbox</strong> now tells you what it is doing, the way the <strong>Health</strong> view already did. The counts above the list match the list, snoozed links stay properly out of the way until you want them back, and every filter says what it is showing you.",
+    "sections": [
+        {
+            "title": "Inbox",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>The counts above the list now match the list.</strong> Links you had snoozed were still being counted by <strong>Total</strong>, <strong>This week</strong> and the badge in the header, so a tile could say <strong>12</strong> and open a list of <strong>9</strong>. Everything above the list now counts one thing: what is waiting for you right now."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Clear read no longer removes snoozed links.</strong> Links you had deliberately set aside for later were deleted along with the rest, without ever appearing in the number you were asked to confirm."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Each filter now says what it is showing.</strong> A line under the toolbar explains the filter you are on — where your snoozed links went, what <em>keep</em> does that opening a link does not, and why the snoozed list runs in wake-up order. It stays on screen when a filter finds nothing, so you can see what was being looked for."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>An <code>ℹ</code> button at the end of the toolbar explains the Inbox.</strong> What it is for, what read and unread keep track of, how long snoozing hides something, what happens to a link when you promote it, and the two ways to work through a backlog."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Every filter shows how many links are under it.</strong> <strong>All</strong> and <strong>Unread</strong> had no number, so you had to open them to find out how much was waiting."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>An empty list now tells you why it is empty.</strong> Reading the last unread link used to say <em>No matching links</em>, as though a search had failed, just as you finished the job. It now says <strong>No unread links · You're all caught up</strong>, and each filter has a message of its own. A search that really does match nothing still says so."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Long lists keep loading as you scroll.</strong> Getting to the bottom of a full Inbox meant clicking <em>Show 50 more</em> for every page; links now appear as you reach them, as they already did in <strong>Health</strong>."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The site you filter by is remembered.</strong> Picking a site was forgotten by your next visit. And once the last link from that site left the Inbox, the filter stayed stuck on it — leaving you with an empty list while the box above it read <em>All sites</em>."
+                }
+            ]
+        }
+    ]
+}

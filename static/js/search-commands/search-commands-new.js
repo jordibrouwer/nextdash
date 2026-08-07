@@ -1175,7 +1175,8 @@ class SearchCommandNew {
     showModal(options = {}) {
         if (!this.modal) return;
         this.modal.classList.add('show');
-        document.body.style.overflow = 'hidden';
+        this.scrollLockToken = window.ScrollLock?.acquire(this.scrollLockToken || 'bookmark-form-modal')
+            ?? null;
 
         const urlInput = document.getElementById('new-bookmark-url');
         const nameInput = document.getElementById('new-bookmark-name');
@@ -1232,7 +1233,10 @@ class SearchCommandNew {
         if (tagsInput && typeof TagAutocomplete !== 'undefined') TagAutocomplete.detach(tagsInput);
 
         this.modal.classList.remove('show');
-        document.body.style.overflow = '';
+        if (this.scrollLockToken) {
+            window.ScrollLock?.release(this.scrollLockToken);
+            this.scrollLockToken = null;
+        }
 
         if (this.keyboardBlockHandler) document.removeEventListener('keydown', this.keyboardBlockHandler, true);
         if (this._boundHandleKeyDown) {

@@ -2081,7 +2081,8 @@ class DashboardHealth {
         const text = this.filterExplanation();
         if (!text) return null;
         const note = document.createElement('p');
-        note.className = 'health-view-filter-note';
+        // Shared class styles it; the view-specific one stays as this view's hook.
+        note.className = 'view-filter-note health-view-filter-note';
         note.textContent = text;
         return note;
     }
@@ -2100,7 +2101,7 @@ class DashboardHealth {
         window.nextdashTrack?.('health:explainer');
 
         const esc = (v) => this.escape(v);
-        const section = (title, body) => `<div class="health-explain-row">
+        const section = (title, body) => `<div class="view-explain-row health-explain-row">
             <h4>${esc(title)}</h4><p>${esc(body)}</p>
         </div>`;
 
@@ -2138,7 +2139,7 @@ class DashboardHealth {
             // Informational only: a Cancel button would suggest the explanation
             // could be declined.
             showCancel: false,
-            modalClass: 'health-explain-modal',
+            modalClass: 'view-explain-modal health-explain-modal',
             // One column of prose: 34rem keeps lines inside the range the eye
             // tracks comfortably, where 38rem ran them long.
             modalMaxWidth: 'min(34rem, calc(100vw - 2.5rem))',
@@ -2889,7 +2890,7 @@ class DashboardHealth {
                 ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
                 : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
             ${this.renderBulkEnableButtons()}
-            <button type="button" class="health-view-help-btn" data-health-help
+            <button type="button" class="view-help-btn health-view-help-btn" data-health-help
                     aria-haspopup="dialog"
                     title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"
                     aria-label="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}">ℹ</button>
