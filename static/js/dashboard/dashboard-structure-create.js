@@ -167,6 +167,11 @@ class DashboardStructureCreate {
                 removedIndex,
                 'category-delete'
             );
+            // Here rather than in the menu, so every caller of this method keeps
+            // an open trash tab in step. Guarded on `instance`: the config loader
+            // proxy answers unknown properties by fetching the whole config
+            // bundle, which a grid delete must not trigger.
+            await d.config?.instance?.refreshTrashIfVisible?.();
             d.data?.invalidatePageDataCache?.(Number(pageId));
             return { ok: true, before: list };
         } catch (e) {
@@ -198,6 +203,7 @@ class DashboardStructureCreate {
             if (Number(pageId) === Number(d.currentPageId)) {
                 d.categories = rows;
             }
+            await d.config?.instance?.refreshTrashIfVisible?.();
             d.data?.invalidatePageDataCache?.(Number(pageId));
             return { ok: true };
         } catch (e) {

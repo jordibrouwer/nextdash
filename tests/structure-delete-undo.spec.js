@@ -239,7 +239,7 @@ test.describe('Category delete is recoverable', () => {
     });
 });
 
-test.describe('The trash holds whole pages', () => {
+test.describe('The trash tab stays in step', () => {
     /** Open Config → Data & backups on the trash tab, already loaded. */
     async function openTrashTab(page) {
         await page.evaluate(async () => {
@@ -252,6 +252,26 @@ test.describe('The trash holds whole pages', () => {
     }
 
     const trashRows = (page) => page.locator('[data-trash-action="restore"]');
+
+    test('a delete made while the tab is open shows up without reopening it', async ({ page }) => {
+        await loadDashboard(page);
+        await openTrashTab(page);
+        const before = await trashRows(page).count();
+
+        // The list is fetched when the tab opens, so a delete from elsewhere used
+        // to leave it showing a stale count — and switching away and back does
+        // not help, since the sub-tab handler returns early on the same tab.
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const pageId = Number(d.currentPageId) || 1;
+            await d.structureCreate.createCategoryFromForm(pageId, 'Live Sync Cat');
+            const cats = await (await fetch(`/api/categories?page=${pageId}`)).json();
+            const target = cats.find((c) => c.name === 'Live Sync Cat');
+            await d.structureCreate.deleteCategory(pageId, target.id);
+        });
+
+        await expect(trashRows(page)).toHaveCount(before + 1);
+    });
 
     test('a deleted page appears as one restorable entry, not one per bookmark', async ({ page }) => {
         await loadDashboard(page);

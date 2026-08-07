@@ -276,6 +276,7 @@ class DashboardCategoryMenu {
                         // straight through the trash module, which config does
                         // not need to be loaded for.
                         await this._dropCategoryTrashEntry(pageId, category.id);
+                        await d.config?.instance?.refreshTrashIfVisible?.();
                         d.showNotification?.(
                             this.t('categoryDeleteUndone', 'Category restored.'),
                             'success',

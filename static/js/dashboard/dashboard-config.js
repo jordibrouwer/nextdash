@@ -3395,9 +3395,24 @@ class DashboardConfig {
         }
 
         const rows = items.map((item) => {
-            const name = String(item.bookmark?.name || item.bookmark?.url || '').trim();
-            const url = String(item.bookmark?.url || '').trim();
-            const origin = item.pageName
+            // A trash entry is a bookmark, a whole page, or a category. Older
+            // entries predate the kind field and are always bookmarks.
+            const kind = item.kind || 'bookmark';
+            let name = String(item.bookmark?.name || item.bookmark?.url || '').trim();
+            let url = String(item.bookmark?.url || '').trim();
+            if (kind === 'page') {
+                const count = Number(item.trashedPage?.bookmarks?.length) || 0;
+                name = String(item.trashedPage?.page?.name || item.pageName || '').trim();
+                // Say what comes back with it: restoring a page is not the same
+                // size of action as restoring one bookmark.
+                url = this.t('config.trashPageContents', 'Page · {n} bookmarks')
+                    .replace('{n}', String(count));
+            } else if (kind === 'category') {
+                name = String(item.trashedCategory?.category?.name
+                    || item.trashedCategory?.category?.id || '').trim();
+                url = this.t('config.trashCategoryLabel', 'Category');
+            }
+            const origin = item.pageName && kind !== 'page'
                 ? this.t('config.trashFromPage', 'from {page}').replace('{page}', item.pageName)
                 : '';
             return `
@@ -3418,7 +3433,7 @@ class DashboardConfig {
         return `
             <p class="config-view-intro">${esc(intro)}</p>
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.trashTitle', 'Deleted bookmarks'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.trashTitle', 'Deleted items'))}</h3>
                 <ul class="config-backup-list">${rows}</ul>
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--danger" data-trash-action="empty">${esc(this.t('config.trashEmptyBtn', 'Empty trash'))}</button>
@@ -3444,13 +3459,69 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * Refresh the trash after something was deleted or restored elsewhere.
+     *
+     * The list is fetched when the tab is opened, so a delete made while it was
+     * already on screen used to leave it showing a stale count — and switching
+     * away and back does not help either, since the sub-tab handler returns
+     * early when the tab has not changed.
+     *
+     * Cheap because it does nothing unless the trash is the visible tab: the
+     * cache is dropped so the next open refetches, and only a visible list pays
+     * for a request now.
+     */
+    refreshTrashIfVisible() {
+        this._trashData = null;
+        if (this.section !== 'data-backups' || this.dbTab !== 'trash') {
+            return Promise.resolve();
+        }
+        return this.loadTrash();
+    }
+
+    /**
+     * Drop the trash entry an undo has just made redundant.
+     *
+     * Undo restores through the normal write endpoints rather than the trash, so
+     * without this the item comes back on the page *and* stays in the trash —
+     * where restoring it a second time would then fail on an id that is taken.
+     *
+     * Best-effort: a stale entry is untidy, a blocked undo is not.
+     */
+    async dropTrashEntry(match) {
+        try {
+            const data = await window.DashboardTrash.list();
+            const hit = (data?.items || []).find(match);
+            if (hit) {
+                await window.DashboardTrash.remove(hit.id);
+            }
+        } catch (_error) {
+            /* leave the entry; the undo itself already succeeded */
+        }
+    }
+
     async handleTrashAction(action, id) {
         try {
             if (action === 'restore') {
-                await window.DashboardTrash.restore(id);
-                this.notify(this.t('config.trashRestored', 'Bookmark restored.'), 'success');
-                // The bookmark is back on its page, so the grid behind config is
-                // stale until it reloads.
+                // The response says what came back: a page restore also has to
+                // rebuild the page list and the tabs, which a bookmark does not.
+                const result = await window.DashboardTrash.restore(id);
+                const kind = result?.kind || 'bookmark';
+                if (kind === 'page') {
+                    const pagesRes = await fetch('/api/pages');
+                    if (pagesRes.ok) {
+                        this.dash.pages = await pagesRes.json();
+                        this.dash.pageNav?.renderPageNavigation?.();
+                    }
+                    this.notify(this.t('config.trashPageRestored', 'Page restored.'), 'success');
+                } else if (kind === 'category') {
+                    this.invalidateBookmarkCategoriesCache(result?.pageId);
+                    this.notify(this.t('config.trashCategoryRestored', 'Category restored.'), 'success');
+                } else {
+                    this.notify(this.t('config.trashRestored', 'Bookmark restored.'), 'success');
+                }
+                // Whatever came back is back on a page, so the grid behind config
+                // is stale until it reloads.
                 await this.dash.data?.refreshAfterBookmarkMutation?.({});
             } else if (action === 'delete') {
                 const ok = await this.confirmAction(
@@ -3477,16 +3548,26 @@ class DashboardConfig {
             // the generic message left the one recoverable failure unexplained —
             // the user cannot act on "could not complete that action", but they can
             // act on "the page is gone, make it again or move this somewhere else".
-            const missingPage = /page no longer exists/i.test(String(error?.message || ''));
+            const message = String(error?.message || '');
+            const missingPage = /page no longer exists/i.test(message);
+            // A page whose id was handed to a new page cannot come back without
+            // overwriting that one, so the restore is refused rather than
+            // destructive. Say which case it is.
+            const idTaken = /already exists/i.test(message);
             this.notify(
                 missingPage
                     ? this.t(
                         'config.trashRestorePageGone',
                         'That bookmark’s page no longer exists. It stays in the trash — recreate the page, then restore it.'
                     )
-                    : this.t('config.trashActionError', 'Could not complete that action.'),
+                    : idTaken
+                        ? this.t(
+                            'config.trashRestorePageIdTaken',
+                            'A different page now uses that page’s slot, so it cannot be restored without replacing it.'
+                        )
+                        : this.t('config.trashActionError', 'Could not complete that action.'),
                 'error',
-                missingPage ? { duration: 9000 } : undefined
+                (missingPage || idTaken) ? { duration: 9000 } : undefined
             );
         }
         await this.loadTrash();
@@ -7992,7 +8073,12 @@ class DashboardConfig {
                     this.invalidateBookmarkCategoriesCache(id);
                     await this.refreshBookmarksAfterWrite();
                     this.repaintPtBody();
-                            this.notify(this.t('config.pageDeleteUndone', 'Page restored.'), 'success');
+                    // The page is back through the write endpoints, so its trash
+                    // entry is now a duplicate of a live page.
+                    await this.dropTrashEntry((item) => item.kind === 'page'
+                        && Number(item.pageId) === Number(id));
+                    await this.refreshTrashIfVisible();
+                    this.notify(this.t('config.pageDeleteUndone', 'Page restored.'), 'success');
                 } catch {
                     this.notify(
                         this.t('config.pageDeleteUndoFailed', 'Could not restore the page.'),
@@ -8006,6 +8092,9 @@ class DashboardConfig {
                 duration: 8000,
             });
             this.repaintPtBody();
+            // The server put the page in the trash; show that without waiting
+            // for the tab to be reopened.
+            await this.refreshTrashIfVisible();
         } catch {
             this.notify(this.t('config.pagesSaveError', 'Could not delete the page.'), 'error');
         }
@@ -8160,7 +8249,8 @@ class DashboardConfig {
                 // After the save, so a delete that did not persist cannot leave
                 // a phantom entry in the trash.
                 await window.DashboardTrash?.recordCategory?.(removed, pageId, i, 'config-category-delete');
-                    this.notify(this.t('config.categoryDeleted', 'Category deleted.'), 'success', {
+                await this.refreshTrashIfVisible();
+                this.notify(this.t('config.categoryDeleted', 'Category deleted.'), 'success', {
                     duration: 8000,
                     undoCallback: async () => {
                         try {
@@ -8176,7 +8266,11 @@ class DashboardConfig {
                             }
                             this.invalidateBookmarkCategoriesCache(pageId);
                             this.dash.renderDashboard?.({ animate: false });
-                                            this.notify(this.t('config.categoryDeleteUndone', 'Category restored.'), 'success');
+                            await this.dropTrashEntry((item) => item.kind === 'category'
+                                && Number(item.pageId) === Number(pageId)
+                                && String(item.trashedCategory?.category?.id || '') === String(removed.id));
+                            await this.refreshTrashIfVisible();
+                            this.notify(this.t('config.categoryDeleteUndone', 'Category restored.'), 'success');
                         } catch {
                             this.notify(
                                 this.t('config.categoryDeleteUndoFailed', 'Could not restore the category.'),
@@ -11169,6 +11263,7 @@ class DashboardConfig {
             // a phantom entry. The 8s toast is the fast path; the trash catches it
             // an hour later, same as every delete on the dashboard side.
             await window.DashboardTrash?.record(trashed, 'config-bookmarks');
+            await this.refreshTrashIfVisible();
             this.bmSelected.delete(key);
             if (this.bmEditing === key) { this.bmEditing = null; this.bmDirty = false; }
             this.notify(this.t('config.bookmarkDeleted', 'Bookmark deleted.'), 'success', {
@@ -11481,6 +11576,7 @@ class DashboardConfig {
         // After every page write, so a delete that did not persist cannot leave a
         // phantom entry. The 8s toast is the fast path; the trash catches it later.
         await window.DashboardTrash?.record(trashed, 'config-bookmarks-bulk');
+        await this.refreshTrashIfVisible();
         this.bmSelected.clear();
         this.bmEditing = null;
 
