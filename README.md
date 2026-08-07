@@ -375,6 +375,15 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - Collapsible categories with optional always-collapsed default
 - Tags on bookmarks with autocomplete; filter by tag in search and collections
 
+### Inbox
+
+- **Inbox** (`/#inbox`, `Shift + I`, or `:inbox`) — a holding area for links worth keeping before you know where they belong. Paste a URL on the dashboard and it lands here, becomes a bookmark, or asks you which, depending on **Config → Behavior → Search & inbox**; the browser extension saves here too, and a URL already in the inbox is turned away rather than duplicated. Items live in `data/inbox.json`
+- Filter **All** / **Unread** / **Snoozed** / **With note**, filter by site, search, and sort newest, oldest, title or site — oldest-first is how a backlog actually clears, since the links you have been avoiding are at the bottom. Every filter carries its own count, and a sentence under the toolbar says what the active filter selects; the **ℹ** beside **Triage** explains what read and unread track, what snoozing hides, and what promoting leaves behind. Filter, sort, search and site all appear in the address bar, so any view can be bookmarked or shared
+- **Snooze** a link (`z`: 3 hours, tomorrow, the weekend, next week, or a date of your own) and it is hidden until it wakes — left out of every count, tile and filter except **Snoozed**, so the numbers above the list always describe what is actually waiting for you. **Wake now** brings one back early
+- **Promote** (`p`) opens the full bookmark form pre-filled, with every page and category available; the inbox entry goes once the bookmark is saved. **Triage** (`t`, or `:inbox triage`) walks the list one link at a time without the mouse: `j`/`k` move, `o` open, `p` promote, `r` keep, `d` delete, `Esc` close
+- Tick rows to mark read, snooze or delete just those; **Mark all read** and **Clear read** act on the whole list, and **Clear read** leaves snoozed links alone. Export the filtered list as CSV or JSON. Long lists load further rows as you scroll
+- Toggle under **Config → Behavior → Search & inbox → Enable Inbox**; unread items show a badge on the Inbox tab
+
 ### Smart collections
 
 Dynamic bookmark groups that appear automatically:

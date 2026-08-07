@@ -22,12 +22,12 @@ async function openHealthHelp(page) {
 }
 
 test.describe('config help — health', () => {
-    test('splits into four panels, each with real prose', async ({ page }) => {
+    test('splits into five panels, each with real prose', async ({ page }) => {
         await openHealthHelp(page);
 
         const body = page.locator('#config-help-body');
-        // Availability, the list, the numbers, and the inbox.
-        await expect(body.locator('.config-panel')).toHaveCount(4);
+        // Availability, the list, the numbers, the inbox, and working through it.
+        await expect(body.locator('.config-panel')).toHaveCount(5);
 
         // A missing key renders as the key itself; nothing here may look like one.
         await expect(body).not.toContainText('config.help');
@@ -69,8 +69,10 @@ test.describe('config help — health', () => {
 
         // The English titles, so a language that silently failed to load — and
         // therefore still shows English — is caught rather than passing.
+        // "Inbox" is deliberately absent: it is the same word in English and
+        // Dutch, so asserting it is gone would fail on a correct nl translation.
         const english = ['Availability & health', 'Working through the list',
-            'Uptime, trends & statistics', 'Inbox'];
+            'Uptime, trends & statistics', 'Working through the inbox'];
 
         for (const lang of ['nl', 'de', 'fr']) {
             await page.evaluate(async (code) => {
@@ -83,11 +85,17 @@ test.describe('config help — health', () => {
             await page.waitForSelector('#config-help-body .config-panel', { timeout: 15_000 });
 
             const body = page.locator('#config-help-body');
-            await expect(body.locator('.config-panel'), `${lang} panel count`).toHaveCount(4);
+            await expect(body.locator('.config-panel'), `${lang} panel count`).toHaveCount(5);
             await expect(body, `${lang} has no untranslated keys`).not.toContainText('config.help');
 
-            const titles = await body.locator('.config-panel-title').allTextContents();
-            expect(titles.map((t) => t.trim()), `${lang} titles are translated`).not.toEqual(english);
+            const titles = (await body.locator('.config-panel-title').allTextContents())
+                .map((t) => t.trim());
+            expect(titles, `${lang} titles are translated`).not.toEqual(english);
+            // Every English title must be gone, not just the list as a whole
+            // differing — one title left in English would otherwise pass.
+            for (const title of english) {
+                expect(titles, `${lang} still shows the English "${title}"`).not.toContain(title);
+            }
 
             // Each body carries real prose, not an empty string falling back to
             // the (deliberately blank) English default.

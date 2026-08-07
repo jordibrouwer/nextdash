@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.09.06.2 — August 2026](#v202609062--august-2026)
 - [v2026.09.06.1 — August 2026](#v202609061--august-2026)
 - [v2026.09.06 — August 2026](#v20260906--august-2026)
 - [v2026.09.05.1 — August 2026](#v202609051--august-2026)
@@ -155,6 +156,42 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.09.06.2 — August 2026
+
+**The inbox catches up with the health view** — it now explains itself in place, and the numbers above the list mean what the list means. Snoozing is a promise that a link is out of the way; every count now keeps that promise instead of quietly working against it.
+
+### Inbox
+
+- **fix** — **The tiles, the header badge and the feed now count the same set.** *Total* and the count badge used `items.length` while the `all` filter excludes anything snoozed, so a tile reading **12** opened a list of **9** — the tile lying about where it leads. *This week* was worse: it filtered on `addedAt` alone, so a link snoozed a minute ago stayed in it while the three tiles beside it let it go. All of them now count through one definition of *in the inbox right now* (`activeItems()`, `filterCount()`), used by both the full render and the incremental refresh so a mark-read cannot restate the numbers under a different rule.
+- **fix** — **Clear read no longer deletes snoozed links.** It targeted every read item, including ones deliberately set aside for later, and those items never appeared in the count its confirmation asked you to approve. Once the button's appearance was tied to awake rows, the button and its action disagreed outright — so the action follows the button (`clearReadItems()`).
+- **new** — **A sentence under the toolbar saying what the active filter selects.** The inbox pills read more plainly than the health ones — nobody needs *Unread* defined — so each note carries what the label cannot: where the snoozed links went, what *keep* does that opening does not, and why the snoozed list is ordered by wake time. A note that only restated its pill would be the noise it looks like.
+- **new** — **An `ℹ` in the toolbar opening the longer explanation**: what the holding area is for, what read and unread track, what snoozing hides and for how long, what promoting leaves behind, and the two ways through a backlog. Five sections, wording matched to the health explainer rather than reinvented.
+- **new** — **Counts on every filter pill.** *All* and *Unread* rendered without one. The row is now built from a list rather than four near-identical lines of inline HTML, which is what let the first two go without a count in the first place, and the counts are refreshed on the incremental path too.
+- **fix** — **Empty states are worded for the filter that came up empty.** One generic *No matching links* covered every case, including the one where you had just cleared the last unread link — reporting a failed search at the moment of finishing the job. Each filter now has its own, and the generic wording is kept for the one case it fits: a search or site filter that genuinely matched nothing, where the query is the reason and not the state of the inbox (`renderEmptyState()`).
+- **fix** — **Rows load on scroll instead of behind a button.** The *Show 50 more* button is now the fallback for browsers without `IntersectionObserver`; everywhere else the sentinel pattern from the health view applies, with teardown on re-render and on leaving the view so a detached sentinel cannot keep an observer alive.
+- **fix** — **The site filter is persisted, and pruned when it goes stale.** It was mirrored into the address bar but never stored, so it survived a reload and nothing else; the select's own change handler was also the one control that never called `persistViewState()`. Separately, deleting the last link from the selected site removed its `<option>` while the filter still held the host — the control fell back to displaying *All sites* over an empty feed with nothing admitting why. Pruning is guarded on the items having actually loaded, since an empty list before the first fetch means *not known yet*, not *no such site*.
+
+### Health
+
+- **fix** — The filter note, the `ℹ` button and the explainer modal move to `view-explainers.css`, shared with the inbox. Elements carry the shared class alongside their existing `.health-view-*` hook, so the markup and its tests are untouched and the rules are stated once — 85 lines that would otherwise have been copied almost verbatim into a second view and drifted from the first.
+
+### Tests
+
+- **new** — 4 e2e tests on the counts, snoozing through the row's real hover → button → menu path rather than writing `snoozedUntil` by hand. Each fix falsified separately: *This week* reads 2 where it should read 1, the *Total* tile claims 3 over a list of 2, the site select empties after navigation, and the feed drops to zero rows with a surviving link in it.
+- **new** — 9 e2e tests on the explainers, pill counts, empty states and scroll loading, each falsified by reverting the feature it covers.
+- **fix** — One of my own fixes broke another and the tests caught it: pruning the site filter ran during the loading render, when no items have arrived, and wiped the filter that had just been restored from storage. Guarded on `loading`/`_itemsLoaded`.
+- **fix** — A persistence test passed with the fix reverted, because `page.reload()` kept `ib_domain` in the address bar and the URL restored what storage was supposed to. Switched to a bare `page.goto('/')`, after which it fails correctly without the fix.
+
+### Docs
+
+- **new** — **Config → Help** gains a second inbox panel, *Working through the inbox*, and the existing one is rewritten. The old prose predated snoozing, notes and the site filter — it still said the filters were "All or Unread" — so it was replaced rather than appended to, leaving the panel contradicting itself. Capturing links and clearing a backlog are separate questions, and snoozing has enough consequences for the counts to be worth stating plainly. Fully translated in en, nl, de and fr (`dashboard-config.js`).
+- **new** — **README** gains an *Inbox* section under Features. The inbox had keyboard entries and analytics mentions but no description of what it is or does, which is the one place a reader looks first.
+- **fix** — German help and overview strings said *Eingang* where the rest of the config says *Posteingang*; aligned to the dominant term.
+- **fix** — The help panel test asserted **four** panels and pinned the English titles for the language check — one of which (*Inbox*) is identical in English and Dutch, so a Dutch translation that failed to load would still have passed. Swapped for a title that differs in every language.
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, MANUAL and README for **v2026.09.06.2**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v175`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v234`. Docs stay out of the What's new modal, which is for user-facing change (`whats-new-stub.js`).
 
 ---
 

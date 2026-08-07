@@ -227,6 +227,91 @@ class DashboardInbox {
         return labels[filter] || String(filter || '');
     }
 
+    /* ── Explaining the view ───────────────────────────────────────────── */
+
+    /**
+     * One sentence saying what the active filter selects.
+     *
+     * The inbox pills read more plainly than health's did — nobody has to be told
+     * what "Unread" means — so these notes carry the part the label cannot: what
+     * happens to a row afterwards, and why the list is ordered the way it is. A
+     * note that only restated its pill would be the noise it looks like.
+     */
+    filterExplanation(filter = this.filter) {
+        const notes = {
+            all: this.t('dashboard.inboxNoteAll', 'Everything waiting for a decision. Snoozed links are not here — they come back on their own when their time is up.'),
+            unread: this.t('dashboard.inboxNoteUnread', 'Links you have not opened or kept yet. Opening one marks it read; keeping it with r marks it read without opening.'),
+            snoozed: this.t('dashboard.inboxNoteSnoozed', 'Set aside until a time you picked, soonest first. These are hidden from the other filters until they wake, and Wake now brings one back early.'),
+            noted: this.t('dashboard.inboxNoteNoted', 'Links you left a note on — the reason you saved it, for when the title alone no longer says.'),
+        };
+        return notes[filter] || '';
+    }
+
+    /** The explanation line under the toolbar. */
+    renderFilterNote() {
+        const text = this.filterExplanation();
+        if (!text) return null;
+        const note = document.createElement('p');
+        // Shared class styles it; the view-specific one stays as this view's hook.
+        note.className = 'view-filter-note inbox-filter-note';
+        note.textContent = text;
+        return note;
+    }
+
+    /**
+     * "How this works", behind the ℹ in the toolbar.
+     *
+     * Covers what the inbox is for and what each action does to a row, rather
+     * than which key presses it — the legend under the list already owns the
+     * keyboard. Paste routing is described in terms of the setting that decides
+     * it rather than repeating the setting's own wording, which lives in config.
+     */
+    showInboxExplainer() {
+        if (typeof window.AppModal?.show !== 'function') return;
+        window.nextdashTrack?.('inbox:explainer');
+
+        const esc = (v) => this.escape(v);
+        const section = (title, body) => `<div class="view-explain-row inbox-explain-row">
+            <h4>${esc(title)}</h4><p>${esc(body)}</p>
+        </div>`;
+
+        const html = `<div class="inbox-explain">
+            ${section(
+                this.t('dashboard.inboxExplainWhatTitle', 'What the inbox is for'),
+                this.t('dashboard.inboxExplainWhat', 'A holding area for links worth keeping before you know where they belong. Paste a URL onto the dashboard and it lands here, becomes a bookmark, or asks you which — whichever you chose under Behavior. The browser extension can save here too, and a URL already in the inbox is turned away rather than duplicated.')
+            )}
+            ${section(
+                this.t('dashboard.inboxExplainReadTitle', 'Read and unread'),
+                this.t('dashboard.inboxExplainRead', 'A new link stays unread until you open it or keep it with r. Read links stay in the list — being read is not a reason to remove something — and Clear read deletes them in one go when you are done with them. The tab badge counts only what is unread and awake.')
+            )}
+            ${section(
+                this.t('dashboard.inboxExplainSnoozeTitle', 'Snoozing'),
+                this.t('dashboard.inboxExplainSnooze', 'Snoozing hides a link until a time you pick, so the list stays down to what you can act on now. Sleeping links are left out of every count and filter except Snoozed, and reappear on their own once the time passes.')
+            )}
+            ${section(
+                this.t('dashboard.inboxExplainPromoteTitle', 'Promoting to a bookmark'),
+                this.t('dashboard.inboxExplainPromote', 'Promote turns a link into a real bookmark, opening the full form with the page and category left for you to choose. The inbox entry goes once the bookmark is saved, so nothing ends up filed in two places.')
+            )}
+            ${section(
+                this.t('dashboard.inboxExplainTriageTitle', 'Working through the backlog'),
+                this.t('dashboard.inboxExplainTriage', 'Triage walks the list one link at a time without the mouse. Sorting oldest first is the other way through it: an inbox is cleared from the bottom, where the links you have been avoiding are. Filter, sort and search all appear in the address bar, so any view can be bookmarked or shared.')
+            )}
+        </div>`;
+
+        window.AppModal.show({
+            title: this.t('dashboard.inboxExplainTitle', 'How the inbox works'),
+            htmlMessage: html,
+            confirmText: this.t('dashboard.inboxExplainClose', 'Got it'),
+            // Informational only: a Cancel button would suggest the explanation
+            // could be declined.
+            showCancel: false,
+            modalClass: 'view-explain-modal inbox-explain-modal',
+            // One column of prose: 34rem keeps lines inside the range the eye
+            // tracks comfortably, matching the health explainer.
+            modalMaxWidth: 'min(34rem, calc(100vw - 2.5rem))',
+        });
+    }
+
     /** Breadcrumb trail for the panel head — `inbox › filter` or `inbox › domain`. */
     headerBreadcrumb() {
         const root = this.t('dashboard.inboxPageTitle', 'Inbox').toLowerCase();
@@ -286,15 +371,27 @@ class DashboardInbox {
             const stored = JSON.parse(localStorage.getItem(DashboardInbox.STATE_KEY) || '{}');
             if (DashboardInbox.FILTERS.has(stored.filter)) this.filter = stored.filter;
             if (DashboardInbox.SORTS.has(stored.sort)) this.sort = stored.sort;
+            // A stored site can name a host that has since left the inbox;
+            // pruneDomainFilter() drops it on the next render rather than
+            // filtering the feed down to nothing.
+            const domain = String(stored.domain || '').trim().toLowerCase();
+            if (domain) this.domainFilter = domain;
         } catch { /* unreadable storage falls back to the defaults */ }
     }
 
-    /** Remember filter and sort for the next visit. Best-effort by design. */
+    /**
+     * Remember filter, sort and site for the next visit. Best-effort by design.
+     *
+     * The site filter is stored for the same reason the other two are: it is an
+     * explicit choice made in a visible control that keeps saying what it is doing.
+     * Search is still left out — a stored query hides most of the inbox behind a
+     * small input that is easy to miss.
+     */
     persistViewState() {
         try {
             localStorage.setItem(
                 DashboardInbox.STATE_KEY,
-                JSON.stringify({ filter: this.filter, sort: this.sort })
+                JSON.stringify({ filter: this.filter, sort: this.sort, domain: this.domainFilter || '' })
             );
         } catch { /* private mode / full quota: the view still works */ }
     }
@@ -415,6 +512,41 @@ class DashboardInbox {
         // A snoozed link is deliberately out of sight, so it must not drive the
         // unread badge — it would nag for something the user chose to defer.
         return (this.items || []).filter((item) => !item.readAt && !this.isSnoozed(item)).length;
+    }
+
+    /**
+     * The items the "all" filter would show: everything awake.
+     *
+     * Snoozing is a promise that a link is out of the way until its wake time, and
+     * every visible number has to keep that promise or they contradict each other.
+     * This is the one definition of "in the inbox right now" that the tiles, the
+     * header badge and the feed all count from.
+     */
+    activeItems() {
+        return (this.items || []).filter((item) => !this.isSnoozed(item));
+    }
+
+    /**
+     * How many rows a filter pill or tile would actually show.
+     *
+     * The tiles double as filters, so a tile reading 12 that opens a list of 9 is
+     * the tile lying about where it leads. Deliberately ignores the search box and
+     * the site select: those narrow the list the counts describe, and folding them
+     * in would leave every tile reading 0 or 1 mid-search with no way to see what
+     * is being hidden. Health counts its pills the same way.
+     */
+    filterCount(filter) {
+        if (filter === 'snoozed') {
+            return this.snoozedCount();
+        }
+        const active = this.activeItems();
+        if (filter === 'unread') {
+            return active.filter((item) => !item.readAt).length;
+        }
+        if (filter === 'noted') {
+            return active.filter((item) => String(item.note || '').trim()).length;
+        }
+        return active.length;
     }
 
     /**
@@ -770,6 +902,7 @@ class DashboardInbox {
 
     async leaveInboxView(pageId) {
         const d = this.dash;
+        this._teardownLoadMoreObserver();
         this.clearKeyboardSelection();
         d.setActiveView('bookmarks');
         return d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
@@ -781,6 +914,7 @@ class DashboardInbox {
         if (d.activeView !== DashboardInbox.VIEW) {
             return false;
         }
+        this._teardownLoadMoreObserver();
         this.clearKeyboardSelection();
         const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
         if (restored) {
@@ -1084,9 +1218,11 @@ class DashboardInbox {
             return;
         }
 
-        const count = this.items.length;
+        // Same definitions render() uses, or a mark-read would quietly restate the
+        // counts under a different rule than the ones drawn a moment ago.
+        const count = this.filterCount('all');
         const unread = this.unreadCount();
-        const readCount = this.items.filter((entry) => entry.readAt).length;
+        const readCount = this.activeItems().filter((entry) => entry.readAt).length;
         const snoozedCount = this.snoozedCount();
         const weekCount = this.weekAddedCount();
 
@@ -1133,6 +1269,14 @@ class DashboardInbox {
         if (!toolbar) {
             return;
         }
+
+        // The pills carry counts too, and this path skips the toolbar rebuild.
+        toolbar.querySelectorAll('[data-inbox-filter]').forEach((btn) => {
+            const countEl = btn.querySelector('.inbox-filter-count');
+            if (countEl) {
+                countEl.textContent = String(this.filterCount(btn.getAttribute('data-inbox-filter')));
+            }
+        });
 
         let markAllBtn = toolbar.querySelector('[data-inbox-bulk="read"]');
         if (unread > 0) {
@@ -1517,9 +1661,14 @@ class DashboardInbox {
     /**
      * Delete every read item. Snapshots them first so a single Undo can restore the
      * whole batch — a destructive bulk action needs an escape hatch.
+     *
+     * Snoozed rows are spared. They are invisible here, they are not counted by the
+     * button that starts this, and deleting something the user deferred to a later
+     * date — without it ever appearing in the confirm count — is the kind of
+     * surprise an Undo should not have to be the answer to.
      */
     async clearReadItems() {
-        const targets = this.items.filter((item) => item.readAt);
+        const targets = this.activeItems().filter((item) => item.readAt);
         if (!targets.length) {
             return;
         }
@@ -1699,10 +1848,16 @@ class DashboardInbox {
         return `/data/icons/${encodeURIComponent(value)}`;
     }
 
-    /** Items added in the last 7 days — the "this week" summary tile. */
+    /**
+     * Items added in the last 7 days — the "this week" summary tile.
+     *
+     * Snoozed items are left out even though nothing filters to this tile: it sits
+     * in a row with three that do, and counting a link the other three have agreed
+     * to hide made one tile in four answer a different question.
+     */
     weekAddedCount() {
         const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        return (this.items || []).filter((item) => Number(item.addedAt || 0) >= cutoff).length;
+        return this.activeItems().filter((item) => Number(item.addedAt || 0) >= cutoff).length;
     }
 
     /**
@@ -1769,6 +1924,35 @@ class DashboardInbox {
             }
         });
         return [...hosts].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    }
+
+    /**
+     * Drop a site filter that no longer matches anything.
+     *
+     * The select is built from the hosts present right now, so deleting or
+     * snoozing the last item from the selected site removes its <option> while
+     * `domainFilter` still holds the host. The control then falls back to
+     * displaying "All sites" while the filter is very much still applied: an empty
+     * list, and nothing on screen admitting why. Clearing it keeps the control and
+     * the filter describing the same thing.
+     */
+    pruneDomainFilter() {
+        const want = String(this.domainFilter || '').trim().toLowerCase();
+        if (!want) {
+            return false;
+        }
+        // An empty list before the first fetch is "not known yet", not "no such
+        // site": pruning against it would throw away a filter restored from
+        // storage or a shared link during the loading render, before the items
+        // that justify it have arrived.
+        if (this.loading || !this._itemsLoaded) {
+            return false;
+        }
+        if (this.uniqueDomains().includes(want)) {
+            return false;
+        }
+        this.domainFilter = '';
+        return true;
     }
 
     /**
@@ -2024,6 +2208,48 @@ class DashboardInbox {
      * bottom; hidden from assistive tech since the actions it describes are the row
      * buttons a screen reader already reaches.
      */
+    /**
+     * The "nothing here" panel, worded for the filter that came up empty.
+     *
+     * An empty Unread list is the goal, not a dead end, and "No matching links"
+     * reads like a failed search in the one case where the user has just finished
+     * the job. A live search or site filter is the exception: there the reason the
+     * list is empty is the query, not the state of the inbox, so it says so.
+     */
+    renderEmptyState() {
+        const messages = {
+            all: [
+                this.t('dashboard.inboxEmptyAll', 'Inbox zero'),
+                this.t('dashboard.inboxEmptyAllHint', 'Nothing is waiting. Paste a URL onto the dashboard to save one for later.'),
+            ],
+            unread: [
+                this.t('dashboard.inboxEmptyUnread', 'No unread links'),
+                this.t('dashboard.inboxEmptyUnreadHint', "You're all caught up. Read links stay in All until you clear them."),
+            ],
+            snoozed: [
+                this.t('dashboard.inboxEmptySnoozed', 'Nothing is snoozed'),
+                this.t('dashboard.inboxEmptySnoozedHint', 'Snooze a link with z to set it aside until a time you pick. It comes back on its own.'),
+            ],
+            noted: [
+                this.t('dashboard.inboxEmptyNoted', 'No links with a note'),
+                this.t('dashboard.inboxEmptyNotedHint', 'Press n on a link to record why you saved it, for when the title alone no longer says.'),
+            ],
+        };
+        const [title, hint] = messages[this.filter] || messages.all;
+        // A query or a site filter is a narrowing the user just applied, so the
+        // empty result is about that and not about the inbox being clear.
+        const narrowed = String(this.searchQuery || '').trim().length > 0
+            || String(this.domainFilter || '').trim().length > 0;
+
+        const empty = document.createElement('div');
+        empty.className = 'inbox-empty-state';
+        empty.innerHTML = `
+            <p class="inbox-empty-title">${this.escape(narrowed ? this.t('dashboard.inboxNoMatches', 'No matching links') : title)}</p>
+            <p class="inbox-empty-hint">${this.escape(narrowed ? this.t('dashboard.inboxNoMatchesHint', 'Try another filter or search term') : hint)}</p>
+        `;
+        return empty;
+    }
+
     renderLegend() {
         const legend = document.createElement('p');
         legend.className = 'inbox-legend';
@@ -2043,6 +2269,51 @@ class DashboardInbox {
         return legend;
     }
 
+    _teardownLoadMoreObserver() {
+        this._loadMoreObserver?.disconnect?.();
+        this._loadMoreObserver = null;
+    }
+
+    /**
+     * Loads the next page of rows when the sentinel nears the viewport, matching
+     * the health view. Uses the document scroll — no nested feed scrollbar.
+     */
+    _bindLoadMoreObserver(sentinel, filteredLength) {
+        this._teardownLoadMoreObserver();
+        if (!sentinel || this.visibleLimit >= filteredLength) return;
+
+        if (typeof IntersectionObserver !== 'function') {
+            return;
+        }
+
+        this._loadMoreObserver = new IntersectionObserver((entries) => {
+            if (!this.isActiveView()) return;
+            if (!entries.some((entry) => entry.isIntersecting)) return;
+            const total = this.getFilteredItems().length;
+            if (this.visibleLimit >= total) {
+                this._teardownLoadMoreObserver();
+                return;
+            }
+            this.visibleLimit = Math.min(total, this.visibleLimit + 50);
+            this.render();
+        }, { root: null, rootMargin: '320px 0px' });
+        this._loadMoreObserver.observe(sentinel);
+    }
+
+    _appendLoadMoreFallback(container, filteredLength) {
+        if (this.visibleLimit >= filteredLength) return;
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'inbox-load-more-btn';
+        const remaining = filteredLength - this.visibleLimit;
+        more.textContent = this.t('dashboard.inboxLoadMore', 'Show {count} more', { count: remaining });
+        more.addEventListener('click', () => {
+            this.visibleLimit = Math.min(filteredLength, this.visibleLimit + 50);
+            this.render();
+        });
+        container.appendChild(more);
+    }
+
     scheduleSearchRender() {
         if (this._searchRenderTimer) {
             clearTimeout(this._searchRenderTimer);
@@ -2052,8 +2323,8 @@ class DashboardInbox {
             // Ticks from a previous query would act on rows the user can no longer
             // see, so a search change starts the selection over (same as filter).
             this.checkedIds.clear();
-            // Ticks from a previous query would act on rows the user can no longer
-            // see, so a search change starts the selection over (same as filter).
+            // The deep-link target is spent once its row has been shown; keeping it
+            // would drag focus back to that row on every later keystroke.
             this.focusItemId = null;
             // Debounced with the render: syncing on every keystroke would rewrite
             // the address bar a dozen times per word.
@@ -2104,6 +2375,18 @@ class DashboardInbox {
             : null;
         this._searchFocusPending = false;
 
+        // The sentinel from the previous render is about to be thrown away with
+        // the container's contents; an observer still watching it would keep the
+        // detached node alive and never fire again.
+        this._teardownLoadMoreObserver();
+
+        // Before anything reads the filter state: a site filter left pointing at a
+        // host that is no longer here would silently empty the feed, and the
+        // breadcrumb below would still name the vanished site.
+        if (this.pruneDomainFilter()) {
+            this.syncUrlState();
+        }
+
         container.innerHTML = '';
         container.className = 'inbox-layout';
         container.removeAttribute('aria-colcount');
@@ -2119,7 +2402,9 @@ class DashboardInbox {
         const subtitle = this.t('dashboard.inboxPageSubtitle', 'Links saved to read or review later');
         const trail = this.headerBreadcrumb();
         const showTrail = trail.includes(' › ');
-        const count = this.items.length;
+        // What the "all" filter shows, which is what the badge and Total tile lead
+        // to — the raw item count includes snoozed rows the feed will not render.
+        const count = this.filterCount('all');
         const unread = this.unreadCount();
         const filtered = this.getFilteredItems();
 
@@ -2138,7 +2423,9 @@ class DashboardInbox {
         `;
         container.appendChild(header);
 
-        const readCount = this.items.filter((entry) => entry.readAt).length;
+        // "Clear read" only ever removes awake rows, so a snoozed read item must
+        // not be what makes the button appear.
+        const readCount = this.activeItems().filter((entry) => entry.readAt).length;
         const snoozedCount = this.snoozedCount();
 
         // Summary tiles, mirroring the health view. The first three double as
@@ -2181,9 +2468,7 @@ class DashboardInbox {
         // The Snoozed pill only appears when something is asleep (or is the active
         // filter, so it does not vanish under the user when the last item wakes).
         const showSnoozePill = snoozedCount > 0 || this.filter === 'snoozed';
-        const notedCount = (this.items || []).filter(
-            (item) => !this.isSnoozed(item) && String(item.note || '').trim()
-        ).length;
+        const notedCount = this.filterCount('noted');
         const showNotedPill = notedCount > 0 || this.filter === 'noted';
         const domains = this.uniqueDomains();
         const showDomainSelect = domains.length > 0;
@@ -2204,13 +2489,22 @@ class DashboardInbox {
             ),
         ].join('');
 
+        // Every pill carries its own count, so the row says how much work is under
+        // each one without having to click through them. Built from a list rather
+        // than four near-identical lines of inline HTML, which is what let the
+        // first two go without a count in the first place.
+        const pills = [
+            ['all', this.t('dashboard.inboxFilterAll', 'All'), true],
+            ['unread', this.t('dashboard.inboxFilterUnread', 'Unread'), true],
+            ['snoozed', this.t('dashboard.inboxFilterSnoozed', 'Snoozed'), showSnoozePill],
+            ['noted', this.t('dashboard.inboxFilterNoted', 'With note'), showNotedPill],
+        ].filter(([, , show]) => show).map(([key, label]) => {
+            const active = this.filter === key;
+            return `<button type="button" class="inbox-filter-btn${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-inbox-filter="${key}">${this.escape(label)}<span class="inbox-filter-count">${this.filterCount(key)}</span></button>`;
+        }).join('');
+
         toolbar.innerHTML = `
-            <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">
-                <button type="button" class="inbox-filter-btn${this.filter === 'all' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'all'}" tabindex="${this.filter === 'all' ? 0 : -1}" data-inbox-filter="all">${this.escape(this.t('dashboard.inboxFilterAll', 'All'))}</button>
-                <button type="button" class="inbox-filter-btn${this.filter === 'unread' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'unread'}" tabindex="${this.filter === 'unread' ? 0 : -1}" data-inbox-filter="unread">${this.escape(this.t('dashboard.inboxFilterUnread', 'Unread'))}</button>
-                ${showSnoozePill ? `<button type="button" class="inbox-filter-btn${this.filter === 'snoozed' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'snoozed'}" tabindex="${this.filter === 'snoozed' ? 0 : -1}" data-inbox-filter="snoozed">${this.escape(this.t('dashboard.inboxFilterSnoozed', 'Snoozed'))}<span class="inbox-filter-count">${snoozedCount}</span></button>` : ''}
-                ${showNotedPill ? `<button type="button" class="inbox-filter-btn${this.filter === 'noted' ? ' is-active' : ''}" role="tab" aria-selected="${this.filter === 'noted'}" tabindex="${this.filter === 'noted' ? 0 : -1}" data-inbox-filter="noted">${this.escape(this.t('dashboard.inboxFilterNoted', 'With note'))}<span class="inbox-filter-count">${notedCount}</span></button>` : ''}
-            </div>
+            <div class="inbox-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.inboxFilterLabel', 'Filter inbox'))}">${pills}</div>
             ${showDomainSelect ? `<select class="inbox-domain-select" aria-label="${this.escape(this.t('dashboard.inboxDomainFilterLabel', 'Filter by site'))}">${domainOptions}</select>` : ''}
             <input type="search" class="inbox-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.inboxSearchPlaceholder', 'Search inbox…'))}">
             ${this.filter === 'snoozed' ? '' : `<select class="inbox-sort-select" aria-label="${this.escape(this.t('dashboard.inboxSortLabel', 'Sort inbox'))}">${sortOptions}</select>`}
@@ -2219,6 +2513,10 @@ class DashboardInbox {
             <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
             <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
+            <button type="button" class="view-help-btn inbox-help-btn" data-inbox-help
+                    aria-haspopup="dialog"
+                    title="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}"
+                    aria-label="${this.escape(this.t('dashboard.inboxHelpHint', 'How the inbox works'))}">ℹ</button>
         `;
         const filterBtns = [...toolbar.querySelectorAll('[data-inbox-filter]')];
         const applyFilter = (key, via) => {
@@ -2281,6 +2579,7 @@ class DashboardInbox {
             this.visibleLimit = 50;
             this.checkedIds.clear();
             this.focusItemId = null;
+            this.persistViewState();
             this.syncUrlState();
             this.render();
             this.dash.pageNav?.updatePageTitle?.();
@@ -2313,6 +2612,9 @@ class DashboardInbox {
         toolbar.querySelector('.inbox-triage-btn')?.addEventListener('click', () => {
             void this.startTriage();
         });
+        toolbar.querySelector('[data-inbox-help]')?.addEventListener('click', () => {
+            this.showInboxExplainer();
+        });
         toolbar.querySelector('[data-inbox-export="csv"]')?.addEventListener('click', () => {
             this.exportFilteredCsv();
         });
@@ -2320,6 +2622,13 @@ class DashboardInbox {
             this.exportFilteredJson();
         });
         container.appendChild(toolbar);
+
+        // What the active filter selects, in a sentence. Rendered before the
+        // loading and empty branches below so the explanation is there while the
+        // list is still arriving, and on a filter that turned up nothing — where
+        // "what was being looked for" is the only useful thing left to say.
+        const note = this.renderFilterNote();
+        if (note) container.appendChild(note);
 
         if (this.loading) {
             const loading = document.createElement('p');
@@ -2343,13 +2652,7 @@ class DashboardInbox {
         }
 
         if (!filtered.length) {
-            const empty = document.createElement('div');
-            empty.className = 'inbox-empty-state';
-            empty.innerHTML = `
-                <p class="inbox-empty-title">${this.escape(this.t('dashboard.inboxNoMatches', 'No matching links'))}</p>
-                <p class="inbox-empty-hint">${this.escape(this.t('dashboard.inboxNoMatchesHint', 'Try another filter or search term'))}</p>
-            `;
-            container.appendChild(empty);
+            container.appendChild(this.renderEmptyState());
             this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
@@ -2377,16 +2680,15 @@ class DashboardInbox {
         container.appendChild(list);
 
         if (filtered.length > this.visibleLimit) {
-            const more = document.createElement('button');
-            more.type = 'button';
-            more.className = 'inbox-load-more-btn';
-            const remaining = filtered.length - this.visibleLimit;
-            more.textContent = this.t('dashboard.inboxLoadMore', 'Show {count} more', { count: remaining });
-            more.addEventListener('click', () => {
-                this.visibleLimit += 50;
-                this.render();
-            });
-            container.appendChild(more);
+            const sentinel = document.createElement('div');
+            sentinel.className = 'inbox-load-sentinel';
+            sentinel.setAttribute('aria-hidden', 'true');
+            container.appendChild(sentinel);
+            this._bindLoadMoreObserver(sentinel, filtered.length);
+            // No IntersectionObserver: the button is the way to reach the rest.
+            if (!this._loadMoreObserver) {
+                this._appendLoadMoreFallback(container, filtered.length);
+            }
         }
 
         container.appendChild(this.renderLegend());

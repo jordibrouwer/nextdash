@@ -776,6 +776,14 @@ body.no-animations .inbox-item-actions {
     margin-top: 0.35rem;
 }
 
+/* Watched by the load-more observer: rows load as this nears the viewport, so
+   the button above is only rendered where IntersectionObserver is missing. */
+.inbox-load-sentinel {
+    height: 1px;
+    width: 100%;
+    pointer-events: none;
+}
+
 /* Bulk actions are secondary next to Triage: neutral chrome, not the accent fill. */
 .inbox-bulk-btn {
     padding: 0.35rem 0.7rem;
