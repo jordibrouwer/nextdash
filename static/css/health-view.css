@@ -19,9 +19,175 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
+    /* Wraps so the trend chart drops onto its own line under the title and meta
+       rather than squeezing between them. */
+    flex-wrap: wrap;
     gap: 1rem;
     padding: 0.25rem 0.35rem 0.5rem;
     border-bottom: 1px solid var(--border-primary);
+}
+
+/* ─── Collection trend ──────────────────────────────────────────────────── */
+
+/* Full-width row of its own: the chart is a wide, short shape and pairing it
+   beside the meta would compress both. */
+.health-view-trend {
+    flex-basis: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.1rem;
+}
+
+.health-view-trend-chart {
+    color: var(--accent-success);
+    opacity: 0.85;
+    max-width: 100%;
+    height: auto;
+}
+
+.health-view-trend-caption {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
+/* Direction of travel beside the healthy badge. Green for up, red for down —
+   more healthy bookmarks is unambiguously the good direction here. */
+.health-view-trend-delta {
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.health-view-trend-delta.is-up { color: var(--accent-success); }
+.health-view-trend-delta.is-down { color: var(--accent-error); }
+.health-view-trend-delta.is-flat { color: var(--text-secondary); opacity: 0.8; }
+
+/* ─── Collection-wide monitoring ────────────────────────────────────────── */
+
+.health-fleet {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    padding: 0.85rem 0.9rem 0.7rem;
+    margin-bottom: 0.9rem;
+    background: var(--background-secondary, transparent);
+}
+
+.health-fleet-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.7rem;
+}
+
+.health-fleet-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-semibold);
+}
+
+.health-fleet-headline {
+    font-size: 0.75rem;
+    color: var(--accent-success);
+}
+
+.health-fleet-headline.is-down {
+    color: var(--accent-error);
+    font-weight: 600;
+}
+
+.health-fleet-avg {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+}
+
+.health-fleet-block {
+    margin-top: 0.75rem;
+}
+
+.health-fleet-heading {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.health-fleet-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+/* The outage list is the one that can run long, so it scrolls inside the panel
+   rather than pushing the row list off screen. */
+.health-fleet-list--incidents {
+    max-height: 14rem;
+    overflow-y: auto;
+}
+
+.health-fleet-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    padding: 0.15rem 0;
+}
+
+.health-fleet-row-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.health-fleet-row-value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    flex: 0 0 auto;
+}
+
+.health-fleet-row-value.is-worse {
+    color: var(--accent-warning);
+}
+
+.health-fleet-row-when,
+.health-fleet-row-ping {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    flex: 0 0 auto;
+}
+
+.health-fleet-row-tag {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    padding: 0 0.25rem;
+    flex: 0 0 auto;
+}
+
+.health-fleet-row.is-down .health-fleet-row-value,
+.health-fleet-row.is-down .health-fleet-row-tag {
+    color: var(--accent-error);
+    border-color: color-mix(in srgb, var(--accent-error) 40%, transparent);
+}
+
+.health-fleet-more {
+    margin: 0.35rem 0 0;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
 }
 
 .health-view-title {
@@ -75,6 +241,15 @@
 .health-view-issue-count {
     font-size: 0.72rem;
     color: var(--text-secondary);
+}
+
+/* The report's age. Quieter than the broken count beside it: it qualifies the
+   numbers rather than being one of them. */
+.health-view-report-age {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0.75;
+    white-space: nowrap;
 }
 
 /* Score bands. Thresholds mirror scoreClass() in health.js: >=90 good,
@@ -593,6 +768,53 @@ button.health-view-tile:hover {
     color: var(--accent-primary);
 }
 
+/* Interval picker inside the check-mode popover. A divider above it separates
+   "what kind of checking" from "how often", which are two different questions. */
+.health-check-interval {
+    display: block;
+    padding: 0.5rem 0.6rem 0.15rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 0.3rem;
+}
+
+.health-check-interval-label {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.health-check-interval-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.health-check-interval-btn {
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.health-check-interval-btn:hover,
+.health-check-interval-btn:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+}
+
+.health-check-interval-btn.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-primary));
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
 .health-view-check-note {
     margin: 0.5rem 0 0;
     color: var(--text-secondary);
@@ -659,6 +881,15 @@ button.health-view-tile:hover {
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     color: var(--text-primary);
+}
+
+/* The sample count behind the percentage. Deliberately quiet: it qualifies the
+   number next to it rather than competing with it. */
+.health-monitor-uptime-samples {
+    font-weight: 400;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    opacity: 0.8;
 }
 
 .health-sparkline {
@@ -1275,6 +1506,89 @@ body[data-layout-version="modern"] .health-view-menu-item:focus-visible {
 }
 
 /* Keyboard shortcut hints below the list so a long scroll never hides them. */
+/* ─── Explaining the view ───────────────────────────────────────────────── */
+
+/* One sentence about the active filter, under the toolbar. Quiet enough to be
+   skipped once it is known, present enough to be read the first time. */
+.health-view-filter-note {
+    margin: -0.2rem 0 0.7rem;
+    padding: 0 0.35rem;
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    max-width: 70ch;
+}
+
+/* The ℹ in the toolbar. Pushed to the far end so it never sits between two
+   actions and gets hit by accident. */
+.health-view-help-btn {
+    margin-left: auto;
+    flex: 0 0 auto;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-primary);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.health-view-help-btn:hover,
+.health-view-help-btn:focus-visible {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+/* The explainer modal.
+
+   Without a max-height of its own the panel grows to whatever its six sections
+   need — measured at 786px in an 800px viewport, so it touched the bottom edge
+   and left 14px at the top. Capping it and letting the body scroll keeps a clear
+   margin above and below at any window height, and the caps are expressed
+   against both vh and a fixed inset so a short window still gets its gap. */
+.modal.health-explain-modal {
+    max-height: min(78vh, calc(100vh - 6rem));
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal.health-explain-modal .modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Config renders its own overlay above this one, where the viewport is already
+   framed by the config chrome; the tighter cap keeps the same visual margin. */
+body:has(#config-main) #app-modal.modal-overlay:has(.health-explain-modal) .modal {
+    max-height: min(70vh, calc(100vh - 4rem));
+}
+
+/* Tighter than the 0.9rem gap the check-mode explainer uses: six sections at
+   that spacing is what made this too tall to fit. */
+.health-explain-row + .health-explain-row {
+    margin-top: 0.65rem;
+}
+
+.health-explain-row h4 {
+    margin: 0 0 0.1rem;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+}
+
+.health-explain-row p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
 .health-view-legend {
     display: flex;
     flex-wrap: wrap;

@@ -2440,6 +2440,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureHealthStatsTitle',
+                titleFallback: 'See how the whole collection is doing',
+                whatKey: 'config.overviewNewFeatureHealthStatsWhat',
+                whatFallback: 'The health view could describe one bookmark in detail and the whole set barely at all: twenty monitors meant twenty heartbeats and no answer to how the week went.',
+                howKey: 'config.overviewNewFeatureHealthStatsHow',
+                howFallback: 'The Monitored filter now opens with pooled uptime across every monitor, the least available ones, anything slower than last week, and every outage. The header draws the share of healthy bookmarks over the last 90 days.',
+                enableKey: 'config.overviewNewFeatureHealthStatsEnable',
+                enableFallback: 'Nothing to switch on, though the panel needs something monitored to describe. The trend line starts once you have opened the health view on two separate days.',
+                ctaKey: 'config.overviewNewFeatureHealthStatsCta',
+                ctaFallback: 'Open Health →',
+                go: { view: 'health', filter: 'monitored' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureSpacingTitle',
                 titleFallback: 'Decide how much room the grid gives away',
                 whatKey: 'config.overviewNewFeatureSpacingWhat',
@@ -9497,8 +9510,11 @@ class DashboardConfig {
                 + `<label for="${id}" class="bookmark-detail-checkmode-option">${esc(o.label)}</label>`;
         }).join('');
         const interval = window.CheckMode?.intervalOf?.(b) || 15;
-        const intervalOpts = [5, 15, 30, 60, 360, 1440].map((m) => {
-            const label = m < 60 ? `${m}m` : (m === 1440 ? '24h' : `${m / 60}h`);
+        // The choices come from CheckMode so this editor and the health view's
+        // interval picker cannot end up offering different cadences.
+        const intervalOpts = (window.CheckMode?.INTERVAL_CHOICES || [5, 15, 30, 60, 360, 1440]).map((m) => {
+            const label = window.CheckMode?.intervalLabel?.(m)
+                || (m < 60 ? `${m}m` : (m === 1440 ? '24h' : `${m / 60}h`));
             return `<option value="${m}" ${m === interval ? 'selected' : ''}>${esc(label)}</option>`;
         }).join('');
 
@@ -13816,9 +13832,19 @@ class DashboardConfig {
                 'config.helpConfigKeyboardBody', '');
     }
 
+    /**
+     * Split into panels rather than one long body: availability modes, the list
+     * itself, the monitoring numbers, and the inbox are four things people arrive
+     * looking for, and a single wall of prose made the last of them unreachable
+     * without scrolling past the other three.
+     */
     renderHelpHealth() {
         return this.helpPanel('config.helpHealthTitle', 'Availability & health',
             'config.helpHealthBody', '')
+            + this.helpPanel('config.helpHealthViewTitle', 'Working through the list',
+                'config.helpHealthViewBody', '')
+            + this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
+                'config.helpHealthStatsBody', '')
             + this.helpPanel('config.helpInboxTitle', 'Inbox',
                 'config.helpInboxBody', '');
     }

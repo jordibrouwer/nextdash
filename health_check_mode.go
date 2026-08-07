@@ -64,6 +64,9 @@ func (h *Handlers) SetAllCheckModes(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Mode    string            `json:"mode"`
 		Targets []checkModeTarget `json:"targets"`
+		// Optional, and only meaningful with mode=monitor: the cadence to give
+		// every named target. Zero leaves each bookmark's existing interval alone.
+		MonitorIntervalMinutes int `json:"monitorIntervalMinutes"`
 	}
 	if r.Body != nil {
 		_ = json.NewDecoder(r.Body).Decode(&req)
@@ -75,7 +78,7 @@ func (h *Handlers) SetAllCheckModes(w http.ResponseWriter, r *http.Request) {
 	// enabling checks collection-wide is exactly what the per-bookmark opt-in
 	// exists to prevent.
 	if len(req.Targets) > 0 {
-		h.setCheckModeForTargets(w, req.Mode, req.Targets)
+		h.setCheckModeForTargets(w, req.Mode, req.Targets, req.MonitorIntervalMinutes)
 		return
 	}
 	if mode := strings.TrimSpace(strings.ToLower(req.Mode)); mode != "" && mode != "off" {

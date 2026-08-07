@@ -402,32 +402,32 @@ class DashboardHealth {
 
     /* ── Filtering ─────────────────────────────────────────────────────── */
 
+    /**
+     * Does this issue belong under `filter`?
+     *
+     * Matched against issue.flags — every condition that holds — rather than
+     * issue.status, which carries only the worst one. The tiles count the same
+     * way the server does, so matching on status made them disagree: a bookmark
+     * that was both a duplicate and never opened was counted by the Unused tile
+     * but hidden by the Unused filter, leaving the tile a dead end that opened an
+     * empty list.
+     *
+     * `monitored` is not a health condition and stays on its own field. `all`
+     * matches everything.
+     */
     matchesFilter(issue, filter) {
-        switch (filter) {
-            case 'all':
-                return true;
-            case 'broken':
-                return issue.status === 'broken';
-            case 'duplicate':
-                return (Number(issue.duplicateCount) || 0) > 1;
-            case 'unchecked':
-                return !issue.lastChecked;
-            case 'monitored':
-                return issue.monitor === true;
-            // stale / unused / missing-preview / shortcut-conflict / healthy reach
-            // this view through deep links and filter pills. Each maps to a single
-            // issue.status, so match on that rather than falling through
-            // to `return true`, which showed every issue under a filter that lit no
-            // pill.
-            case 'stale':
-            case 'unused':
-            case 'missing-preview':
-            case 'shortcut-conflict':
-            case 'healthy':
-                return issue.status === filter;
-            default:
-                return true;
-        }
+        if (filter === 'all') return true;
+        if (filter === 'monitored') return issue.monitor === true;
+
+        const flags = Array.isArray(issue?.flags) ? issue.flags : null;
+        if (flags) return flags.includes(filter);
+
+        // Fallback for a report cached before flags existed. Only the worst
+        // condition is known there, which is the old behaviour — better than
+        // matching nothing at all.
+        if (filter === 'duplicate') return (Number(issue.duplicateCount) || 0) > 1;
+        if (filter === 'unchecked') return !issue.lastChecked;
+        return issue.status === filter;
     }
 
     matchesQuery(issue, query) {
@@ -1642,6 +1642,58 @@ class DashboardHealth {
         }
     }
 
+    /**
+     * Change how often a monitored bookmark is checked.
+     *
+     * Reuses the check-mode write with the mode the row is already in, so this is
+     * a cadence change rather than a re-enable: the server keeps the monitor on
+     * and only rewrites the interval. Picking the current value is a no-op — the
+     * menu closes without a request, matching what choosing the active mode does.
+     */
+    async setMonitorInterval(issue, minutes) {
+        const interval = Number(minutes);
+        if (!Number.isFinite(interval) || interval <= 0) return undefined;
+        if (!issue?.monitor) return undefined;
+        if (window.CheckMode?.intervalOf?.(issue) === interval) {
+            this.closeAllMenus();
+            return 'unchanged';
+        }
+
+        const key = this.issueKey(issue);
+        if (this._busyKeys.has(key)) return undefined;
+        const url = String(issue?.url || '').trim();
+        const pageId = Number(issue?.pageId);
+        if (!url || !Number.isFinite(pageId)) return undefined;
+
+        this.closeAllMenus();
+        window.nextdashTrack?.('health:monitor-interval');
+        this._busyKeys.add(key);
+        this.syncRowBusy(key, true);
+
+        try {
+            const outcome = await window.CheckMode?.apply({
+                pageId,
+                index: issue.index,
+                url,
+                mode: window.CheckMode.MONITOR,
+                name: issue.name || url,
+                intervalMinutes: interval,
+            });
+            if (outcome === 'failed') return outcome;
+            if (outcome === 'changed') {
+                window.CheckMode?.syncLocalCopies?.({ pageId, url, mode: window.CheckMode.MONITOR, intervalMinutes: interval });
+            }
+            // The heartbeat is bucketed from the interval, so the strip is drawn
+            // against a different time axis after this — the report has to be
+            // re-read rather than the row repainted from what is already loaded.
+            await this.loadAndRender({ refresh: true });
+            return outcome;
+        } finally {
+            this._busyKeys.delete(key);
+            this.syncRowBusy(key, false);
+        }
+    }
+
     /** AppModal.confirm when it exists, window.confirm as the fallback. */
     async confirm(title, message, { danger = false, confirmText = null } = {}) {
         if (typeof window.AppModal?.confirm === 'function') {
@@ -1902,6 +1954,17 @@ class DashboardHealth {
         }
         container.appendChild(this.renderToolbar());
 
+        // What the active filter selects, in a sentence. Above the fleet panel so
+        // the reading order stays "what am I looking at" before "how is it doing".
+        const note = this.renderFilterNote();
+        if (note) container.appendChild(note);
+
+        // The collection-wide panel sits under the toolbar on Monitored: that
+        // filter is the one place where "how is everything doing" is the question
+        // being asked, and on Broken it would push the actual work off screen.
+        const fleet = this.renderFleetPanel();
+        if (fleet) container.appendChild(fleet);
+
         if (!filtered.length) {
             container.appendChild(this.renderEmptyState());
             this.finishRenderFocus(container, preserveSearch, searchCaret);
@@ -1962,6 +2025,369 @@ class DashboardHealth {
         return label ? `${root} › ${label}` : root;
     }
 
+    /**
+     * How old the report is.
+     *
+     * Every number in this view is a snapshot, and the report is cached for
+     * minutes: "12 broken" reads as live until you learn it is not. Under a
+     * minute is shown as "just now" rather than "0m", which looks like a stuck
+     * clock. Hidden entirely when the report carries no timestamp.
+     */
+    renderReportAge() {
+        const generated = Number(this.report?.generatedAt) || 0;
+        if (!generated) return '';
+        const age = Date.now() - generated;
+        // A clock that disagrees with the server can make the report look like it
+        // came from the future; treat that as fresh rather than printing a
+        // negative age.
+        const label = age < 60_000
+            ? this.t('dashboard.healthReportJustNow', 'updated just now')
+            : this.t('dashboard.healthReportAge', 'updated {age} ago', { age: this.formatDuration(age) });
+        return `<span class="health-view-report-age" title="${this.escape(
+            this.t('dashboard.healthReportAgeTitle', 'When this report was generated. Use Retest all to refresh it.')
+        )}">${this.escape(label)}</span>`;
+    }
+
+    /* ── Explaining the view ───────────────────────────────────────────── */
+
+    /**
+     * One sentence saying what the active filter selects.
+     *
+     * The pills are one or two words by necessity — a row of them has no space
+     * for more — and several of them ("Stale", "Unused", "Never checked") sound
+     * like each other until you know the rule behind them. The tiles carry this
+     * as a tooltip, which is useless on a touch screen and invisible to anyone
+     * who did not think to hover; this puts the same fact on screen for whichever
+     * filter is actually in use.
+     */
+    filterExplanation(filter = this.filter) {
+        const notes = {
+            broken: this.t('dashboard.healthNoteBroken', 'These did not respond when they were last checked. Re-check one to test it again now, or open it to see for yourself.'),
+            duplicate: this.t('dashboard.healthNoteDuplicate', 'Two or more bookmarks point at the same address. Merging keeps one row and folds the other\'s tags and notes into it.'),
+            unchecked: this.t('dashboard.healthNoteUnchecked', 'Checking is switched on for these, but no check has run recently — so their status is unknown rather than bad.'),
+            monitored: this.t('dashboard.healthNoteMonitored', 'These are checked by the server on their own interval, which is what builds the uptime history and the panel below.'),
+            stale: this.t('dashboard.healthNoteStale', 'You have opened these before, but not in the last 30 days. Nothing is wrong with them — they are candidates for tidying up.'),
+            unused: this.t('dashboard.healthNoteUnused', 'These have never been opened since they were added. Often worth keeping, sometimes worth deleting, but always worth a look.'),
+            'shortcut-conflict': this.t('dashboard.healthNoteShortcutConflict', 'More than one bookmark claims the same keyboard shortcut, so pressing it is a coin toss between them.'),
+            'missing-preview': this.t('dashboard.healthNoteMissingPreview', 'No title, description or image has been fetched yet, so these rows have little to show beyond their address.'),
+            healthy: this.t('dashboard.healthNoteHealthy', 'Nothing is wrong with these: reachable if they are checked, opened recently enough, and not clashing with anything.'),
+            all: this.t('dashboard.healthNoteAll', 'Every bookmark, whatever its state. Sort by score to bring the ones needing attention to the top.'),
+        };
+        return notes[filter] || '';
+    }
+
+    /** The explanation line under the toolbar. */
+    renderFilterNote() {
+        const text = this.filterExplanation();
+        if (!text) return null;
+        const note = document.createElement('p');
+        note.className = 'health-view-filter-note';
+        note.textContent = text;
+        return note;
+    }
+
+    /**
+     * "How this works", behind the ℹ in the toolbar.
+     *
+     * Covers what the numbers mean rather than which key does what — the legend
+     * under the list already handles the keyboard. The availability modes are
+     * deliberately not repeated here: CheckMode.showExplainer already owns that
+     * wording for the config panel and the add-bookmark form, so this links to it
+     * instead of growing a third copy that could drift.
+     */
+    showHealthExplainer() {
+        if (typeof window.AppModal?.show !== 'function') return;
+        window.nextdashTrack?.('health:explainer');
+
+        const esc = (v) => this.escape(v);
+        const section = (title, body) => `<div class="health-explain-row">
+            <h4>${esc(title)}</h4><p>${esc(body)}</p>
+        </div>`;
+
+        const html = `<div class="health-explain">
+            ${section(
+                this.t('dashboard.healthExplainScoreTitle', 'The score'),
+                this.t('dashboard.healthExplainScore', 'Every bookmark starts at 100 and loses points for each thing wrong with it — unreachable, never opened, a duplicate address, a clashing shortcut. Click the badge on a row, or press s, to see exactly what it was charged for.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainTilesTitle', 'Tiles and filters'),
+                this.t('dashboard.healthExplainTiles', 'A bookmark can be several things at once, so one that is both a duplicate and never opened is counted by both tiles and appears under either filter. The row itself shows only its worst problem, which is what decides its colour and its place in the list.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainFreshTitle', 'How current these numbers are'),
+                this.t('dashboard.healthExplainFresh', 'The report is built on the server and cached for a few minutes, so the header says how old it is. Retest all rebuilds it and re-tests everything that opted in to checking.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainUptimeTitle', 'Uptime and response times'),
+                this.t('dashboard.healthExplainUptime', 'Only monitored bookmarks keep history. A percentage is followed by the number of checks behind it, because 100% from three checks is a much weaker claim than 100% from three hundred. A window with no checks at all reads "no data" rather than 0%.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainFleetTitle', 'All monitors together'),
+                this.t('dashboard.healthExplainFleet', 'On the Monitored filter, the panel above the list pools every monitor. Its uptime counts individual checks rather than averaging each monitor\'s percentage, so a monitor with three recorded checks cannot outweigh one with three thousand.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainTrendTitle', 'The trend line'),
+                this.t('dashboard.healthExplainTrend', 'One point is recorded per day that you open this view, kept for 90 days. The line is drawn on a fixed 0–100 scale so a collection sitting between 91% and 93% looks as flat as it is, and days you did not visit leave a gap rather than a straight line through them.')
+            )}
+        </div>`;
+
+        window.AppModal.show({
+            title: this.t('dashboard.healthExplainTitle', 'How the health view works'),
+            htmlMessage: html,
+            confirmText: this.t('dashboard.healthExplainClose', 'Got it'),
+            // Informational only: a Cancel button would suggest the explanation
+            // could be declined.
+            showCancel: false,
+            modalClass: 'health-explain-modal',
+            // One column of prose: 34rem keeps lines inside the range the eye
+            // tracks comfortably, where 38rem ran them long.
+            modalMaxWidth: 'min(34rem, calc(100vw - 2.5rem))',
+        });
+    }
+
+    /* ── Collection-wide monitoring ────────────────────────────────────── */
+
+    /**
+     * Pooled uptime, the worst monitors, outages and response shifts.
+     *
+     * Only on the Monitored filter: everywhere else the list is about bookmarks
+     * to fix, and a panel about uptime would push that work below the fold. Also
+     * only once the server sends stats, which it does not until something is both
+     * monitored and has samples.
+     */
+    renderFleetPanel() {
+        if (this.filter !== 'monitored') return null;
+        const fleet = this.report?.fleet;
+        if (!fleet || !Number(fleet.monitors)) return null;
+
+        const panel = document.createElement('section');
+        panel.className = 'health-fleet';
+        panel.setAttribute('aria-label', this.t('dashboard.healthFleetLabel', 'All monitors'));
+
+        const windows = [
+            [this.t('dashboard.healthStatsUptime24h', '24 hours'), fleet.uptime24h],
+            [this.t('dashboard.healthStatsUptime7d', '7 days'), fleet.uptime7d],
+            [this.t('dashboard.healthStatsUptime30d', '30 days'), fleet.uptime30d],
+        ];
+        const noData = this.t('dashboard.healthStatsNoData', 'no data');
+        const tiles = windows.map(([label, win]) => {
+            const value = this.formatUptime(win);
+            const samples = Number(win?.samples) || 0;
+            return `<div class="health-monitor-stat${value ? '' : ' health-monitor-stat--empty'}">
+                <span class="health-monitor-stat-label">${this.escape(label)}</span>
+                <span class="health-monitor-stat-value">${this.escape(value || noData)}</span>
+                ${samples ? `<span class="health-monitor-stat-sub">${this.escape(
+                    this.t('dashboard.healthStatsChecks', '{count} checks', { count: samples })
+                )}</span>` : ''}
+            </div>`;
+        }).join('');
+
+        const down = Number(fleet.downNow) || 0;
+        const headline = down > 0
+            ? this.t('dashboard.healthFleetDown', '{down} of {count} not responding', { down, count: fleet.monitors })
+            : this.t('dashboard.healthFleetUp', 'All {count} responding', { count: fleet.monitors });
+        const avg = Number(fleet.avgResponseMs) || 0;
+
+        panel.innerHTML = `
+            <div class="health-fleet-head">
+                <h3 class="health-fleet-title">${this.escape(this.t('dashboard.healthFleetTitle', 'All monitors'))}</h3>
+                <span class="health-fleet-headline${down > 0 ? ' is-down' : ''}">${this.escape(headline)}</span>
+                ${avg ? `<span class="health-fleet-avg">${this.escape(
+                    this.t('dashboard.healthFleetAvgResponse', '{ms}ms average', { ms: avg })
+                )}</span>` : ''}
+            </div>
+            <div class="health-monitor-stat-grid">${tiles}</div>
+            ${this.renderFleetWorst(fleet)}
+            ${this.renderFleetSlower(fleet)}
+            ${this.renderFleetIncidents(fleet)}
+        `;
+        return panel;
+    }
+
+    /** The least-available monitors. Absent when every monitor is at 100%. */
+    renderFleetWorst(fleet) {
+        const rows = Array.isArray(fleet?.worst) ? fleet.worst : [];
+        if (!rows.length) return '';
+        const items = rows.map((m) => {
+            const pct = this.formatUptime({ ratio: m.ratio, samples: m.samples }) || '—';
+            const ping = Number(m.avgMs) > 0 ? `<span class="health-fleet-row-ping">${this.escape(`${m.avgMs}ms`)}</span>` : '';
+            return `<li class="health-fleet-row${m.down ? ' is-down' : ''}">
+                <span class="health-fleet-row-name" title="${this.escape(m.url || '')}">${this.escape(m.name || this.formatUrlDisplay(m.url))}</span>
+                <span class="health-fleet-row-value">${this.escape(pct)}</span>
+                ${ping}
+                ${m.down ? `<span class="health-fleet-row-tag">${this.escape(this.t('dashboard.healthFleetDownNow', 'down'))}</span>` : ''}
+            </li>`;
+        }).join('');
+        return `<div class="health-fleet-block">
+            <p class="health-fleet-heading">${this.escape(this.t('dashboard.healthFleetWorst', 'Least available (7 days)'))}</p>
+            <ul class="health-fleet-list">${items}</ul>
+        </div>`;
+    }
+
+    /** Monitors measurably slower than the week before. */
+    renderFleetSlower(fleet) {
+        const rows = Array.isArray(fleet?.slower) ? fleet.slower : [];
+        if (!rows.length) return '';
+        const items = rows.map((m) => `<li class="health-fleet-row">
+            <span class="health-fleet-row-name" title="${this.escape(m.url || '')}">${this.escape(m.name || this.formatUrlDisplay(m.url))}</span>
+            <span class="health-fleet-row-value is-worse">${this.escape(
+                this.t('dashboard.healthFleetSlowerBy', '+{pct}%', { pct: m.changePct })
+            )}</span>
+            <span class="health-fleet-row-ping">${this.escape(
+                this.t('dashboard.healthFleetSlowerDetail', '{recent}ms vs {baseline}ms', { recent: m.recentMs, baseline: m.baselineMs })
+            )}</span>
+        </li>`).join('');
+        return `<div class="health-fleet-block">
+            <p class="health-fleet-heading">${this.escape(this.t('dashboard.healthFleetSlower', 'Slower than last week'))}</p>
+            <ul class="health-fleet-list">${items}</ul>
+        </div>`;
+    }
+
+    /** Every recorded outage across the collection, newest first. */
+    renderFleetIncidents(fleet) {
+        const rows = Array.isArray(fleet?.incidents) ? fleet.incidents : [];
+        if (!rows.length) {
+            return `<div class="health-fleet-block">
+                <p class="health-fleet-heading">${this.escape(this.t('dashboard.healthFleetIncidents', 'Outages'))}</p>
+                <p class="health-view-score-intro">${this.escape(this.t('dashboard.healthStatsNoIncidents', 'No outages recorded.'))}</p>
+            </div>`;
+        }
+        const items = rows.map((inc) => {
+            const when = inc.start ? new Date(inc.start).toLocaleString() : '';
+            const duration = inc.ongoing
+                ? this.t('dashboard.healthFleetOngoing', 'ongoing')
+                : this.formatDuration(inc.durationMs);
+            return `<li class="health-fleet-row${inc.ongoing ? ' is-down' : ''}">
+                <span class="health-fleet-row-name" title="${this.escape(inc.url || '')}">${this.escape(inc.name || this.formatUrlDisplay(inc.url))}</span>
+                <span class="health-fleet-row-when">${this.escape(when)}</span>
+                <span class="health-fleet-row-value">${this.escape(duration)}</span>
+                ${inc.reason ? `<span class="health-fleet-row-tag">${this.escape(inc.reason)}</span>` : ''}
+            </li>`;
+        }).join('');
+
+        // Say when the list is capped, so 25 outages is not read as the month's total.
+        const total = Number(fleet.totalIncidents) || rows.length;
+        const more = total > rows.length
+            ? `<p class="health-fleet-more">${this.escape(
+                this.t('dashboard.healthFleetIncidentsMore', 'Showing {shown} of {total}', { shown: rows.length, total })
+            )}</p>`
+            : '';
+
+        return `<div class="health-fleet-block">
+            <p class="health-fleet-heading">${this.escape(this.t('dashboard.healthFleetIncidents', 'Outages'))}</p>
+            <ul class="health-fleet-list health-fleet-list--incidents">${items}</ul>
+            ${more}
+        </div>`;
+    }
+
+    /* ── Collection trend ──────────────────────────────────────────────── */
+
+    /** Recorded days, oldest first. Empty until the first report was recorded. */
+    trendPoints() {
+        return Array.isArray(this.report?.trend) ? this.report.trend : [];
+    }
+
+    /** A day's healthy share as a percentage, or null for a day with nothing in it. */
+    trendPercent(point) {
+        const total = Number(point?.n) || 0;
+        if (!total) return null;
+        return Math.round(((Number(point?.h) || 0) / total) * 100);
+    }
+
+    /**
+     * Change against the oldest recorded day, shown beside the healthy badge.
+     *
+     * Compared against the start of the window rather than yesterday: a one-day
+     * delta on a collection that is checked daily is mostly noise, while "up 12
+     * points this month" is the thing worth knowing. Hidden entirely with fewer
+     * than two days recorded — a trend needs something to trend from.
+     */
+    renderTrendDelta() {
+        const points = this.trendPoints();
+        if (points.length < 2) return '';
+        const first = this.trendPercent(points[0]);
+        const last = this.trendPercent(points[points.length - 1]);
+        if (first === null || last === null) return '';
+
+        const delta = last - first;
+        const days = points.length;
+        // Zero is worth saying: "unchanged over 30 days" is a real answer, and
+        // hiding it would make the badge appear only when something moved.
+        const dir = delta > 0 ? 'up' : (delta < 0 ? 'down' : 'flat');
+        const arrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '–');
+        const label = delta === 0
+            ? this.t('dashboard.healthTrendFlat', 'unchanged over {days} days', { days })
+            : (delta > 0
+                ? this.t('dashboard.healthTrendUp', 'up {points} points over {days} days', { points: delta, days })
+                : this.t('dashboard.healthTrendDown', 'down {points} points over {days} days', { points: Math.abs(delta), days }));
+
+        return `<span class="health-view-trend-delta is-${dir}" title="${this.escape(label)}" aria-label="${this.escape(label)}">`
+            + `<span aria-hidden="true">${arrow}${delta === 0 ? '' : Math.abs(delta)}</span></span>`;
+    }
+
+    /**
+     * The collection's healthy share over time, as a sparkline under the header.
+     *
+     * Reuses nothing from renderSparkline: that one plots response times from
+     * heartbeat buckets on a fixed axis, where this is a percentage on a 0–100
+     * axis with gaps for days the app was not opened. Sharing them would mean a
+     * function with two unrelated modes.
+     */
+    renderTrendChart() {
+        const points = this.trendPoints();
+        if (points.length < 3) return '';
+
+        const values = points.map((p) => this.trendPercent(p));
+        if (values.filter((v) => v !== null).length < 3) return '';
+
+        const w = 240;
+        const h = 34;
+        const padY = 3;
+        const plotH = h - padY * 2;
+        const step = w / Math.max(1, values.length - 1);
+
+        // Fixed 0–100 axis rather than min/max scaling: a collection that moved
+        // between 91% and 93% should look flat, not like a cliff.
+        const yFor = (v) => (h - padY - (v / 100) * plotH).toFixed(1);
+
+        // Days with no recorded point break the line instead of interpolating,
+        // matching how the response sparkline treats missing buckets.
+        const segments = [];
+        let current = [];
+        values.forEach((v, i) => {
+            if (v === null) {
+                if (current.length > 1) segments.push(current);
+                current = [];
+                return;
+            }
+            current.push(`${(i * step).toFixed(1)},${yFor(v)}`);
+        });
+        if (current.length > 1) segments.push(current);
+        if (!segments.length) return '';
+
+        const paths = segments.map((pts) =>
+            `<polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`
+        ).join('');
+
+        const first = values.find((v) => v !== null);
+        const last = [...values].reverse().find((v) => v !== null);
+        const label = this.t('dashboard.healthTrendChartLabel',
+            'Healthy bookmarks over the last {days} days, from {first}% to {last}%',
+            { days: points.length, first, last });
+
+        return `<div class="health-view-trend">
+            <svg class="health-view-trend-chart" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"
+                 role="img" aria-label="${this.escape(label)}">
+                <line class="health-view-trend-base" x1="0" y1="${yFor(100)}" x2="${w}" y2="${yFor(100)}"
+                      stroke="currentColor" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.25"/>
+                ${paths}
+            </svg>
+            <span class="health-view-trend-caption">${this.escape(
+                this.t('dashboard.healthTrendCaption', '{days} days', { days: points.length })
+            )}</span>
+        </div>`;
+    }
+
     renderHeader() {
         const pct = this.healthyPercent();
         const broken = this.brokenCount();
@@ -1985,6 +2411,7 @@ class DashboardHealth {
             </div>
             <div class="health-view-header-meta">
                 <span class="health-view-score-badge ${this.bandClass(pct)}" title="${this.escape(detail)}" aria-label="${this.escape(pctLabel)}">${pct}%</span>
+                ${this.renderTrendDelta()}
                 ${broken > 0
                     ? `<span class="health-view-issue-count">${this.escape(
                         broken === 1
@@ -1992,7 +2419,9 @@ class DashboardHealth {
                             : this.t('dashboard.healthBrokenCount', '{count} broken', { count: broken })
                     )}</span>`
                     : ''}
+                ${this.renderReportAge()}
             </div>
+            ${this.renderTrendChart()}
         `;
         return header;
     }
@@ -2035,10 +2464,37 @@ class DashboardHealth {
                         : this.t('dashboard.healthTileMonitoredUp', 'All {count} responding', { count: monitored }))
                     : '',
             },
-            { key: 'broken', label: this.t('dashboard.healthTileBroken', 'Broken'), value: Number(summary.brokenCount) || 0, tone: 'bad' },
-            { key: 'unchecked', label: this.t('dashboard.healthTileUnchecked', 'Unchecked'), value: Number(summary.uncheckedCount) || 0, tone: 'warn' },
-            { key: 'stale', label: this.t('dashboard.healthTileStale', 'Stale'), value: Number(summary.staleCount) || 0, tone: 'warn' },
-            { key: 'unused', label: this.t('dashboard.healthTileUnused', 'Unused'), value: Number(summary.unusedCount) || 0, tone: 'warn' },
+            // Each tile says what its number means. The labels are one word by
+            // necessity — seven of them share a row — and "Stale" next to "Unused"
+            // does not tell you which is about opening and which is about checking.
+            {
+                key: 'broken',
+                label: this.t('dashboard.healthTileBroken', 'Broken'),
+                value: Number(summary.brokenCount) || 0,
+                tone: 'bad',
+                title: this.t('dashboard.healthTileBrokenHint', 'Did not respond when last checked'),
+            },
+            {
+                key: 'unchecked',
+                label: this.t('dashboard.healthTileUnchecked', 'Unchecked'),
+                value: Number(summary.uncheckedCount) || 0,
+                tone: 'warn',
+                title: this.t('dashboard.healthTileUncheckedHint', 'Checking is on, but no check has run recently'),
+            },
+            {
+                key: 'stale',
+                label: this.t('dashboard.healthTileStale', 'Stale'),
+                value: Number(summary.staleCount) || 0,
+                tone: 'warn',
+                title: this.t('dashboard.healthTileStaleHint', 'Not opened in over 30 days'),
+            },
+            {
+                key: 'unused',
+                label: this.t('dashboard.healthTileUnused', 'Unused'),
+                value: Number(summary.unusedCount) || 0,
+                tone: 'warn',
+                title: this.t('dashboard.healthTileUnusedHint', 'Never opened since it was added'),
+            },
         ];
 
         const wrap = document.createElement('div');
@@ -2433,10 +2889,18 @@ class DashboardHealth {
                 ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
                 : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
             ${this.renderBulkEnableButtons()}
+            <button type="button" class="health-view-help-btn" data-health-help
+                    aria-haspopup="dialog"
+                    title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"
+                    aria-label="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}">ℹ</button>
         `;
 
         toolbar.querySelector('.health-view-export-btn')?.addEventListener('click', () => {
             this.exportFilteredCsv();
+        });
+
+        toolbar.querySelector('[data-health-help]')?.addEventListener('click', () => {
+            this.showHealthExplainer();
         });
 
         toolbar.querySelector('.health-view-history-export-btn')?.addEventListener('click', () => {
@@ -3123,6 +3587,12 @@ class DashboardHealth {
             return;
         }
 
+        // Monitoring columns are appended only when the exported list actually
+        // holds a monitored row. On an ordinary Broken export they would be five
+        // empty columns on every line, and the file is meant to be opened next to
+        // a spreadsheet rather than explained.
+        const withMonitors = issues.some((issue) => issue.monitor);
+
         const header = [
             this.t('dashboard.healthExportColName', 'Name'),
             this.t('dashboard.healthExportColUrl', 'URL'),
@@ -3133,19 +3603,50 @@ class DashboardHealth {
             this.t('dashboard.healthExportColChecked', 'Last checked'),
             this.t('dashboard.healthExportColIssues', 'Issues'),
         ];
+        if (withMonitors) {
+            header.push(
+                this.t('dashboard.healthExportColInterval', 'Monitor interval (min)'),
+                this.t('dashboard.healthExportColUptime24h', 'Uptime 24h'),
+                this.t('dashboard.healthExportColUptime7d', 'Uptime 7d'),
+                this.t('dashboard.healthExportColUptime30d', 'Uptime 30d'),
+                this.t('dashboard.healthExportColPing', 'Last response (ms)'),
+                this.t('dashboard.healthExportColChecks', 'Checks recorded'),
+            );
+        }
 
-        const rows = issues.map((issue) => [
-            issue.name || issue.previewTitle || '',
-            issue.url || '',
-            issue.status || '',
-            Number(issue.score ?? ''),
-            issue.pageName || '',
-            issue.category || '',
-            issue.lastChecked ? new Date(issue.lastChecked).toISOString() : '',
-            // The same wording the score panel shows, so the file and the screen
-            // cannot disagree about why a row is listed.
-            this.reasonEntries(issue).map((e) => e.label).join('; '),
-        ]);
+        // Uptime as a bare number, not the on-screen "99.9%": a spreadsheet has to
+        // be able to average this column. An empty cell means no samples in that
+        // window, which is not the same as 0% and must not be written as one.
+        const uptimeCell = (window) => (window?.samples ? Number((window.ratio * 100).toFixed(3)) : '');
+
+        const rows = issues.map((issue) => {
+            const row = [
+                issue.name || issue.previewTitle || '',
+                issue.url || '',
+                issue.status || '',
+                Number(issue.score ?? ''),
+                issue.pageName || '',
+                issue.category || '',
+                issue.lastChecked ? new Date(issue.lastChecked).toISOString() : '',
+                // The same wording the score panel shows, so the file and the screen
+                // cannot disagree about why a row is listed.
+                this.reasonEntries(issue).map((e) => e.label).join('; '),
+            ];
+            if (withMonitors) {
+                // An unmonitored row in a mixed export leaves these blank rather
+                // than writing zeroes, which would read as "0% uptime".
+                const stats = issue.monitor ? issue.monitorStats : null;
+                row.push(
+                    stats?.intervalMinutes || '',
+                    uptimeCell(stats?.uptime24h),
+                    uptimeCell(stats?.uptime7d),
+                    uptimeCell(stats?.uptime30d),
+                    Number(stats?.lastPingMs) > 0 ? stats.lastPingMs : '',
+                    stats?.totalChecks || '',
+                );
+            }
+            return row;
+        });
 
         // BOM so Excel reads UTF-8: without it, accented titles arrive mojibake.
         const csv = '﻿' + [header, ...rows]
@@ -3246,12 +3747,34 @@ class DashboardHealth {
             </button>`;
         }).join('');
 
+        // How often a monitor runs, changeable from the row rather than only from
+        // the bookmark editor: this is the screen where you see the heartbeat and
+        // decide the cadence is wrong. Shown only for a row already monitoring —
+        // on an off/periodic row there is no interval to change, and picking one
+        // would be a second way of enabling monitoring.
+        const intervalRow = active === window.CheckMode.MONITOR
+            ? `<span class="health-check-interval" role="group"
+                    aria-label="${this.escape(this.t('dashboard.healthIntervalLabel', 'Check interval'))}">
+                <span class="health-check-interval-label">${this.escape(this.t('dashboard.healthIntervalLabel', 'Check interval'))}</span>
+                <span class="health-check-interval-options">${
+                    window.CheckMode.INTERVAL_CHOICES.map((mins) => {
+                        const current = window.CheckMode.intervalOf(issue) === mins;
+                        return `<button type="button"
+                            class="health-check-interval-btn${current ? ' is-active' : ''}"
+                            role="menuitemradio" aria-checked="${current ? 'true' : 'false'}"
+                            data-check-interval="${mins}"
+                        >${this.escape(window.CheckMode.intervalLabel(mins))}</button>`;
+                    }).join('')
+                }</span>
+            </span>`
+            : '';
+
         // A span, not a div: this popover lives inside the row's <p> meta line, and
         // a block-level child there would make the parser close the paragraph
         // early, stranding the menu outside the row it belongs to.
         return `<span class="health-view-menu health-check-menu" role="menu" hidden
             data-menu-for="${this.escape(key)}" data-menu-owner="check"
-            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}</span>`;
+            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}${intervalRow}</span>`;
     }
 
     /** The monitor strip under the row meta: heartbeat, uptime, sparkline. */
@@ -3267,8 +3790,19 @@ class DashboardHealth {
         }
 
         const uptime = this.formatUptime(stats.uptime24h);
+        // How many checks the percentage rests on, shown rather than hidden in the
+        // tooltip: "100%" from three samples and "100%" from three hundred look
+        // identical otherwise, and the first is barely evidence. Marked
+        // aria-hidden — the accessible name on the percentage already says it, so
+        // a screen reader would otherwise read the number twice.
+        const samples = Number(stats.uptime24h?.samples) || 0;
+        const uptimeTitle = samples
+            ? this.t('dashboard.healthUptime24hTitleChecks', 'Uptime over the last 24 hours, from {count} checks', { count: samples })
+            : this.t('dashboard.healthUptime24hTitle', 'Uptime over the last 24 hours');
         const uptimeLabel = uptime
-            ? `<span class="health-monitor-uptime" title="${this.escape(this.t('dashboard.healthUptime24hTitle', 'Uptime over the last 24 hours'))}">${this.escape(uptime)}</span>`
+            ? `<span class="health-monitor-uptime" title="${this.escape(uptimeTitle)}" aria-label="${this.escape(`${uptime} — ${uptimeTitle}`)}">${this.escape(uptime)}${
+                samples ? `<span class="health-monitor-uptime-samples" aria-hidden="true">${this.escape(this.t('dashboard.healthUptimeSamplesShort', '/{count}', { count: samples }))}</span>` : ''
+            }</span>`
             : '';
         const down = stats.downSince
             ? `<span class="health-monitor-down">${this.escape(this.t('dashboard.healthDownSince', 'Down for {duration}', { duration: this.formatDuration(Date.now() - stats.downSince) }))}</span>`
@@ -3806,6 +4340,12 @@ class DashboardHealth {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
                 void this.setCheckMode(issue, item.getAttribute('data-check-mode'));
+            });
+        });
+        row.querySelectorAll('[data-check-interval]').forEach((item) => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                void this.setMonitorInterval(issue, Number(item.getAttribute('data-check-interval')));
             });
         });
 

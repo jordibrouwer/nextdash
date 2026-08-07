@@ -27,6 +27,10 @@ func healthHistoryFilePath() string {
 	return filepath.Join(ResolveDataDir(), "health-history.json")
 }
 
+func healthTrendFilePath() string {
+	return filepath.Join(ResolveDataDir(), "health-trend.json")
+}
+
 func pushSubscriptionsFilePath() string {
 	return filepath.Join(ResolveDataDir(), "push-subscriptions.json")
 }

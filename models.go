@@ -2817,7 +2817,16 @@ type HealthIssue struct {
 	PreviewDesc    string         `json:"previewDesc,omitempty"`
 	PreviewImage   string         `json:"previewImage,omitempty"`
 	Icon           string         `json:"icon,omitempty"`
-	Status         string         `json:"status"`
+	// Status is the single worst thing about this bookmark, picked by priority.
+	// It drives how the row is presented — colour band, sort rank, headline
+	// reason — so it stays one value.
+	Status string `json:"status"`
+	// Flags is every condition that holds, not just the worst one. The summary
+	// counters are tallied the same way, so a bookmark that is both a duplicate
+	// and never opened is counted under Unused *and* appears when that filter is
+	// picked. Matching filters on Status instead made the two disagree: the tile
+	// counted it, the filter did not list it, and the tile became a dead end.
+	Flags          []string       `json:"flags,omitempty"`
 	Score          int            `json:"score"`
 	Reasons        []string       `json:"reasons"`
 	ReasonDetails  []HealthReason `json:"reasonDetails,omitempty"`
@@ -2834,6 +2843,15 @@ type BookmarkHealthReport struct {
 	Summary         HealthSummary    `json:"summary"`
 	Issues          []HealthIssue    `json:"issues"`
 	DuplicateGroups []DuplicateGroup `json:"duplicateGroups"`
+	// Fleet is the collection-wide monitoring view — pooled uptime, the worst
+	// monitors, every outage, and response times that moved. Nil when nothing is
+	// monitored, so a report for an install that never enabled monitoring is the
+	// same size it always was.
+	Fleet *FleetStats `json:"fleet,omitempty"`
+	// Trend is one point per day of collection health, oldest first. Read from
+	// its own file rather than derived, since it is the only thing here that
+	// describes a day other than today.
+	Trend []HealthTrendPoint `json:"trend,omitempty"`
 }
 
 type DuplicateWarning struct {
@@ -2904,6 +2922,40 @@ type HealthHistoryFile struct {
 	GeneratedAt int64 `json:"generatedAt"`
 	// Samples maps canonical URL to samples in ascending time order.
 	Samples map[string][]HealthSample `json:"samples"`
+}
+
+// HealthTrendPoint is one day's summary of the whole collection.
+//
+// Keys are terse for the same reason HealthSample's are, though this file grows
+// per day rather than per check, so it stays tiny either way: one point is a
+// handful of integers and 90 of them are a few KB.
+type HealthTrendPoint struct {
+	T         int64 `json:"t"`           // Unix ms, the start of the day this describes
+	Total     int   `json:"n"`           // Bookmarks in the collection
+	Healthy   int   `json:"h"`           // Nothing wrong with them
+	Broken    int   `json:"b,omitempty"` // Unreachable, excluding monitors
+	MonDown   int   `json:"d,omitempty"` // Monitors unreachable right now
+	Monitored int   `json:"m,omitempty"`
+	Unchecked int   `json:"u,omitempty"`
+	Stale     int   `json:"s,omitempty"`
+	Unused    int   `json:"x,omitempty"`
+	Duplicate int   `json:"p,omitempty"`
+	// Score is the average health score across the collection, 0..100. Stored
+	// alongside the counts because the header badge shows a percentage healthy
+	// while the rows carry scores, and a trend of one cannot be derived from the
+	// other.
+	Score int `json:"c,omitempty"`
+}
+
+// HealthTrendFile is the collection's health over time: one point per day.
+//
+// Kept apart from the report cache because that is a disposable snapshot of
+// right now, rebuilt every few minutes, while this is the only record of what
+// yesterday looked like — losing it cannot be undone by rebuilding.
+type HealthTrendFile struct {
+	GeneratedAt int64 `json:"generatedAt"`
+	// Points in ascending time order, at most one per day.
+	Points []HealthTrendPoint `json:"points"`
 }
 
 // Undo/Redo history

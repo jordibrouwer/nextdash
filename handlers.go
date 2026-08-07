@@ -35,6 +35,7 @@ type Handlers struct {
 	previewCacheDirty bool
 	healthCacheMu     sync.RWMutex
 	healthHistoryMu   sync.Mutex
+	healthTrendMu     sync.Mutex
 	healthReportMu        sync.RWMutex
 	healthReport          BookmarkHealthReport
 	healthReportAt        time.Time
@@ -319,6 +320,11 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	h.healthReportBuildCond.Broadcast()
 	h.healthReportBuildMu.Unlock()
 
+	// After the waiters are released, not before: recording touches the disk and
+	// holding the build flag across it would make every concurrent reader wait on
+	// a write none of them need.
+	h.recordHealthTrend(report)
+
 	return report
 }
 
@@ -401,6 +407,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// One read serves every monitored row; buildMonitorStats derives the rest.
 	monitorHistory := h.readAllHealthHistory()
 	monitorNow := time.Now()
+	// Gathered while walking the bookmarks so the collection-wide view is built
+	// from the same samples, in the same pass.
+	var fleetInputs []fleetMonitorInput
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -490,12 +499,18 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			isShortcutConflict := shortcutKey != "" && shortcutCounts[shortcutKey] > 1
 
 			status := "healthy"
+			// Every condition that holds, in the same priority order as status.
+			// status keeps only the first; flags keep them all, and the summary
+			// counters below are incremented from the same conditions — so the
+			// tiles and the filters can never disagree about a bookmark.
+			flags := make([]string, 0, 4)
 			reasons := make([]string, 0, 4)
 			reasonDetails := make([]HealthReason, 0, 4)
 			score := 100
 
 			if isBroken {
 				status = "broken"
+				flags = append(flags, "broken")
 				if detail := strings.TrimSpace(bm.LastError); detail != "" {
 					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "last_error", Detail: detail, Penalty: healthPenaltyBroken})
 				} else {
@@ -507,6 +522,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "duplicate"
 				}
+				flags = append(flags, "duplicate")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{
 					Code:    "duplicate_url",
 					Params:  map[string]string{"count": strconv.Itoa(duplicateCount)},
@@ -518,6 +534,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "shortcut-conflict"
 				}
+				flags = append(flags, "shortcut-conflict")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{
 					Code:    "shortcut_conflict",
 					Params:  map[string]string{"count": strconv.Itoa(shortcutCounts[shortcutKey])},
@@ -525,16 +542,21 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				})
 				score -= healthPenaltyShortcutConflict
 			}
+			// Never run and overdue are two ways of being "unchecked" and share the
+			// status, so they share the flag too — matching UncheckedCount, which
+			// is incremented for either.
 			if isUnchecked {
 				if status == "healthy" {
 					status = "unchecked"
 				}
+				flags = append(flags, "unchecked")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_never_run", Penalty: healthPenaltyNeverChecked})
 				score -= healthPenaltyNeverChecked
 			} else if isStaleCheck {
 				if status == "healthy" {
 					status = "unchecked"
 				}
+				flags = append(flags, "unchecked")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_stale", Penalty: healthPenaltyStaleCheck})
 				score -= healthPenaltyStaleCheck
 			}
@@ -542,6 +564,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "stale"
 				}
+				flags = append(flags, "stale")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days", Penalty: healthPenaltyNotOpened30Days})
 				score -= healthPenaltyNotOpened30Days
 			}
@@ -549,6 +572,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "unused"
 				}
+				flags = append(flags, "unused")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "never_opened", Penalty: healthPenaltyNeverOpened})
 				score -= healthPenaltyNeverOpened
 			}
@@ -556,6 +580,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "missing-preview"
 				}
+				flags = append(flags, "missing-preview")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "no_preview", Penalty: healthPenaltyNoPreview})
 				score -= healthPenaltyNoPreview
 			}
@@ -601,12 +626,24 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 			if status == "healthy" {
 				report.Summary.HealthyCount++
+				// Healthy is the absence of every flag above, not a condition of
+				// its own, so it is only added when nothing else was.
+				flags = append(flags, "healthy")
 			}
 
 			var monitorStats *MonitorStats
 			if bm.Monitor {
 				if key := canonicalBookmarkURLKey(bm.URL); key != "" {
-					monitorStats = buildMonitorStats(monitorHistory[key], bm.MonitorIntervalMinutes, monitorNow)
+					samples := monitorHistory[key]
+					monitorStats = buildMonitorStats(samples, bm.MonitorIntervalMinutes, monitorNow)
+					// Collected here rather than re-read later: this loop already
+					// resolved the canonical key and the samples are in hand, so
+					// the collection-wide view costs no extra history read.
+					fleetInputs = append(fleetInputs, fleetMonitorInput{
+						name:    bm.Name,
+						url:     bm.URL,
+						samples: samples,
+					})
 				}
 			}
 
@@ -629,6 +666,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				PreviewImage:   bm.PreviewImage,
 				Icon:           bm.Icon,
 				Status:         status,
+				Flags:          flags,
 				Score:          score,
 				Reasons:        reasons,
 				ReasonDetails:  reasonDetails,
@@ -671,6 +709,13 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 		}
 		return report.Issues[i].Score < report.Issues[j].Score
 	})
+
+	report.Fleet = buildFleetStats(fleetInputs, monitorNow)
+	// Read rather than recorded here: recording happens after the build so it
+	// cannot make a report wait on a disk write, which means today's point is one
+	// build behind. That is the right trade — the trend describes days, and the
+	// current day is already on screen as the live numbers.
+	report.Trend = h.readHealthTrend()
 
 	return report
 }
