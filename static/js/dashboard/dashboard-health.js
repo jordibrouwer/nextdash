@@ -1954,6 +1954,11 @@ class DashboardHealth {
         }
         container.appendChild(this.renderToolbar());
 
+        // What the active filter selects, in a sentence. Above the fleet panel so
+        // the reading order stays "what am I looking at" before "how is it doing".
+        const note = this.renderFilterNote();
+        if (note) container.appendChild(note);
+
         // The collection-wide panel sits under the toolbar on Monitored: that
         // filter is the one place where "how is everything doing" is the question
         // being asked, and on Broken it would push the actual work off screen.
@@ -2041,6 +2046,103 @@ class DashboardHealth {
         return `<span class="health-view-report-age" title="${this.escape(
             this.t('dashboard.healthReportAgeTitle', 'When this report was generated. Use Retest all to refresh it.')
         )}">${this.escape(label)}</span>`;
+    }
+
+    /* ── Explaining the view ───────────────────────────────────────────── */
+
+    /**
+     * One sentence saying what the active filter selects.
+     *
+     * The pills are one or two words by necessity — a row of them has no space
+     * for more — and several of them ("Stale", "Unused", "Never checked") sound
+     * like each other until you know the rule behind them. The tiles carry this
+     * as a tooltip, which is useless on a touch screen and invisible to anyone
+     * who did not think to hover; this puts the same fact on screen for whichever
+     * filter is actually in use.
+     */
+    filterExplanation(filter = this.filter) {
+        const notes = {
+            broken: this.t('dashboard.healthNoteBroken', 'These did not respond when they were last checked. Re-check one to test it again now, or open it to see for yourself.'),
+            duplicate: this.t('dashboard.healthNoteDuplicate', 'Two or more bookmarks point at the same address. Merging keeps one row and folds the other\'s tags and notes into it.'),
+            unchecked: this.t('dashboard.healthNoteUnchecked', 'Checking is switched on for these, but no check has run recently — so their status is unknown rather than bad.'),
+            monitored: this.t('dashboard.healthNoteMonitored', 'These are checked by the server on their own interval, which is what builds the uptime history and the panel below.'),
+            stale: this.t('dashboard.healthNoteStale', 'You have opened these before, but not in the last 30 days. Nothing is wrong with them — they are candidates for tidying up.'),
+            unused: this.t('dashboard.healthNoteUnused', 'These have never been opened since they were added. Often worth keeping, sometimes worth deleting, but always worth a look.'),
+            'shortcut-conflict': this.t('dashboard.healthNoteShortcutConflict', 'More than one bookmark claims the same keyboard shortcut, so pressing it is a coin toss between them.'),
+            'missing-preview': this.t('dashboard.healthNoteMissingPreview', 'No title, description or image has been fetched yet, so these rows have little to show beyond their address.'),
+            healthy: this.t('dashboard.healthNoteHealthy', 'Nothing is wrong with these: reachable if they are checked, opened recently enough, and not clashing with anything.'),
+            all: this.t('dashboard.healthNoteAll', 'Every bookmark, whatever its state. Sort by score to bring the ones needing attention to the top.'),
+        };
+        return notes[filter] || '';
+    }
+
+    /** The explanation line under the toolbar. */
+    renderFilterNote() {
+        const text = this.filterExplanation();
+        if (!text) return null;
+        const note = document.createElement('p');
+        note.className = 'health-view-filter-note';
+        note.textContent = text;
+        return note;
+    }
+
+    /**
+     * "How this works", behind the ℹ in the toolbar.
+     *
+     * Covers what the numbers mean rather than which key does what — the legend
+     * under the list already handles the keyboard. The availability modes are
+     * deliberately not repeated here: CheckMode.showExplainer already owns that
+     * wording for the config panel and the add-bookmark form, so this links to it
+     * instead of growing a third copy that could drift.
+     */
+    showHealthExplainer() {
+        if (typeof window.AppModal?.show !== 'function') return;
+        window.nextdashTrack?.('health:explainer');
+
+        const esc = (v) => this.escape(v);
+        const section = (title, body) => `<div class="health-explain-row">
+            <h4>${esc(title)}</h4><p>${esc(body)}</p>
+        </div>`;
+
+        const html = `<div class="health-explain">
+            ${section(
+                this.t('dashboard.healthExplainScoreTitle', 'The score'),
+                this.t('dashboard.healthExplainScore', 'Every bookmark starts at 100 and loses points for each thing wrong with it — unreachable, never opened, a duplicate address, a clashing shortcut. Click the badge on a row, or press s, to see exactly what it was charged for.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainTilesTitle', 'Tiles and filters'),
+                this.t('dashboard.healthExplainTiles', 'A bookmark can be several things at once, so one that is both a duplicate and never opened is counted by both tiles and appears under either filter. The row itself shows only its worst problem, which is what decides its colour and its place in the list.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainFreshTitle', 'How current these numbers are'),
+                this.t('dashboard.healthExplainFresh', 'The report is built on the server and cached for a few minutes, so the header says how old it is. Retest all rebuilds it and re-tests everything that opted in to checking.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainUptimeTitle', 'Uptime and response times'),
+                this.t('dashboard.healthExplainUptime', 'Only monitored bookmarks keep history. A percentage is followed by the number of checks behind it, because 100% from three checks is a much weaker claim than 100% from three hundred. A window with no checks at all reads "no data" rather than 0%.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainFleetTitle', 'All monitors together'),
+                this.t('dashboard.healthExplainFleet', 'On the Monitored filter, the panel above the list pools every monitor. Its uptime counts individual checks rather than averaging each monitor\'s percentage, so a monitor with three recorded checks cannot outweigh one with three thousand.')
+            )}
+            ${section(
+                this.t('dashboard.healthExplainTrendTitle', 'The trend line'),
+                this.t('dashboard.healthExplainTrend', 'One point is recorded per day that you open this view, kept for 90 days. The line is drawn on a fixed 0–100 scale so a collection sitting between 91% and 93% looks as flat as it is, and days you did not visit leave a gap rather than a straight line through them.')
+            )}
+        </div>`;
+
+        window.AppModal.show({
+            title: this.t('dashboard.healthExplainTitle', 'How the health view works'),
+            htmlMessage: html,
+            confirmText: this.t('dashboard.healthExplainClose', 'Got it'),
+            // Informational only: a Cancel button would suggest the explanation
+            // could be declined.
+            showCancel: false,
+            modalClass: 'health-explain-modal',
+            // One column of prose: 34rem keeps lines inside the range the eye
+            // tracks comfortably, where 38rem ran them long.
+            modalMaxWidth: 'min(34rem, calc(100vw - 2.5rem))',
+        });
     }
 
     /* ── Collection-wide monitoring ────────────────────────────────────── */
@@ -2787,10 +2889,18 @@ class DashboardHealth {
                 ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
                 : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
             ${this.renderBulkEnableButtons()}
+            <button type="button" class="health-view-help-btn" data-health-help
+                    aria-haspopup="dialog"
+                    title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"
+                    aria-label="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}">ℹ</button>
         `;
 
         toolbar.querySelector('.health-view-export-btn')?.addEventListener('click', () => {
             this.exportFilteredCsv();
+        });
+
+        toolbar.querySelector('[data-health-help]')?.addEventListener('click', () => {
+            this.showHealthExplainer();
         });
 
         toolbar.querySelector('.health-view-history-export-btn')?.addEventListener('click', () => {
