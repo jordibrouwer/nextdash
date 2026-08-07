@@ -6,6 +6,8 @@ class Modal {
         this.previouslyFocusedElement = null;
         this.activeModalClasses = [];
         this.previousModalStyles = null;
+        this.scrollLockToken = null;
+        this.preventScrollHandler = null;
         this.createModalHTML();
         this.setupEventListeners();
     }
@@ -264,17 +266,21 @@ class Modal {
         // Store the element that triggered the modal so we can return focus
         this.previouslyFocusedElement = document.activeElement;
         
-        // Prevent body scroll
-        this.previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        
+        // Prevent body scroll. Reusing the existing token when the overlay is
+        // already open matters: show() over an open modal shares this one
+        // overlay, so it will only ever be matched by a single hide().
+        this.scrollLockToken = window.ScrollLock?.acquire(this.scrollLockToken || 'app-modal')
+            ?? null;
+
         // Prevent scroll events
-        this.preventScrollHandler = (e) => {
-            if (e.target.closest('.modal')) return;
-            e.preventDefault();
-        };
-        document.body.addEventListener('touchmove', this.preventScrollHandler, { passive: false });
-        document.body.addEventListener('wheel', this.preventScrollHandler, { passive: false });
+        if (!this.preventScrollHandler) {
+            this.preventScrollHandler = (e) => {
+                if (e.target.closest('.modal')) return;
+                e.preventDefault();
+            };
+            document.body.addEventListener('touchmove', this.preventScrollHandler, { passive: false });
+            document.body.addEventListener('wheel', this.preventScrollHandler, { passive: false });
+        }
         
         // Focus initial element or confirm button for keyboard navigation.
         // Defer past the current frame so the modal is laid out and focusable
@@ -360,12 +366,16 @@ class Modal {
             }
         }
         // Restore body scroll
-        document.body.style.overflow = this.previousOverflow || '';
-        
+        if (this.scrollLockToken) {
+            window.ScrollLock?.release(this.scrollLockToken);
+            this.scrollLockToken = null;
+        }
+
         // Remove scroll prevention
         if (this.preventScrollHandler) {
             document.body.removeEventListener('touchmove', this.preventScrollHandler);
             document.body.removeEventListener('wheel', this.preventScrollHandler);
+            this.preventScrollHandler = null;
         }
         
         // Return focus to the element that triggered the modal. When focus was

@@ -34,7 +34,13 @@ body {
     min-height: 100vh;
     transition: background-color 0.3s ease, color 0.3s ease;
     font-size: var(--font-size-text);
-    overflow-x: hidden; /* Prevent horizontal scroll */
+    /* clip, not hidden: `overflow-x: hidden` promotes the other axis from
+       visible to auto, which made body its own scroll container (computed
+       "hidden auto") instead of letting the viewport scroll the page. That is
+       why an overlay's body-level scroll lock could strand the page and why the
+       scrollbar visibly belonged to body. clip suppresses horizontal overflow
+       without creating a scroll container. layout-modern.css already uses it. */
+    overflow-x: clip;
     width: 100%;
 }
 

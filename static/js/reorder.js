@@ -356,15 +356,18 @@ class DragReorder {
     }
 
     disablePageScroll() {
-        document.body.style.overflow = 'hidden';
-        document.body.style.touchAction = 'none';
-        document.body.style.userSelect = 'none';
+        // Was an unconditional write plus a hardcoded reset to '', which threw
+        // away any lock another component was holding. freezeInteraction keeps
+        // the touch-action/user-select pinning a drag needs.
+        this.scrollLockToken = window.ScrollLock?.acquire('reorder-drag', { freezeInteraction: true })
+            ?? null;
     }
 
     enablePageScroll() {
-        document.body.style.overflow = '';
-        document.body.style.touchAction = '';
-        document.body.style.userSelect = '';
+        if (this.scrollLockToken) {
+            window.ScrollLock?.release(this.scrollLockToken);
+            this.scrollLockToken = null;
+        }
     }
 
     getAllItems() {
