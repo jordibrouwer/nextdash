@@ -422,10 +422,10 @@ class DashboardContextMenu {
             });
             if (outcome === 'failed') return;
 
-            // Apply the new mode to every in-memory copy before reloading, and
-            // drop the page cache loadBookmarks() reads through. Without it the
-            // menu reopened on the pre-change mode even though the write had
-            // succeeded. Shared with the health view, which needs the same sync.
+            // Apply the new mode to every in-memory copy, and drop the page cache
+            // a later read would be served from. Without it the menu reopened on
+            // the pre-change mode even though the write had succeeded. Shared with
+            // the health view, which needs the same sync.
             window.CheckMode.assign(bookmark, mode);
             window.CheckMode.syncLocalCopies({
                 pageId,
@@ -433,7 +433,8 @@ class DashboardContextMenu {
                 mode,
                 bookmarkRef,
             });
-            await d.loadBookmarks?.().catch?.(() => {});
+            // syncLocalCopies has already patched d.bookmarks, so rendering from
+            // memory is correct here — no re-fetch needed.
             d.renderDashboard?.({ incremental: false });
             d.updateHealthBadge?.();
         };
