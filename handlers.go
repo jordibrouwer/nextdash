@@ -35,6 +35,7 @@ type Handlers struct {
 	previewCacheDirty bool
 	healthCacheMu     sync.RWMutex
 	healthHistoryMu   sync.Mutex
+	healthTrendMu     sync.Mutex
 	healthReportMu        sync.RWMutex
 	healthReport          BookmarkHealthReport
 	healthReportAt        time.Time
@@ -319,6 +320,11 @@ func (h *Handlers) loadBookmarkHealthReport(forceRefresh bool) BookmarkHealthRep
 	h.healthReportBuildCond.Broadcast()
 	h.healthReportBuildMu.Unlock()
 
+	// After the waiters are released, not before: recording touches the disk and
+	// holding the build flag across it would make every concurrent reader wait on
+	// a write none of them need.
+	h.recordHealthTrend(report)
+
 	return report
 }
 
@@ -401,6 +407,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// One read serves every monitored row; buildMonitorStats derives the rest.
 	monitorHistory := h.readAllHealthHistory()
 	monitorNow := time.Now()
+	// Gathered while walking the bookmarks so the collection-wide view is built
+	// from the same samples, in the same pass.
+	var fleetInputs []fleetMonitorInput
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -625,7 +634,16 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			var monitorStats *MonitorStats
 			if bm.Monitor {
 				if key := canonicalBookmarkURLKey(bm.URL); key != "" {
-					monitorStats = buildMonitorStats(monitorHistory[key], bm.MonitorIntervalMinutes, monitorNow)
+					samples := monitorHistory[key]
+					monitorStats = buildMonitorStats(samples, bm.MonitorIntervalMinutes, monitorNow)
+					// Collected here rather than re-read later: this loop already
+					// resolved the canonical key and the samples are in hand, so
+					// the collection-wide view costs no extra history read.
+					fleetInputs = append(fleetInputs, fleetMonitorInput{
+						name:    bm.Name,
+						url:     bm.URL,
+						samples: samples,
+					})
 				}
 			}
 
@@ -691,6 +709,13 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 		}
 		return report.Issues[i].Score < report.Issues[j].Score
 	})
+
+	report.Fleet = buildFleetStats(fleetInputs, monitorNow)
+	// Read rather than recorded here: recording happens after the build so it
+	// cannot make a report wait on a disk write, which means today's point is one
+	// build behind. That is the right trade — the trend describes days, and the
+	// current day is already on screen as the live numbers.
+	report.Trend = h.readHealthTrend()
 
 	return report
 }

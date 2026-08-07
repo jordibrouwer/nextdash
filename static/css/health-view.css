@@ -19,9 +19,175 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
+    /* Wraps so the trend chart drops onto its own line under the title and meta
+       rather than squeezing between them. */
+    flex-wrap: wrap;
     gap: 1rem;
     padding: 0.25rem 0.35rem 0.5rem;
     border-bottom: 1px solid var(--border-primary);
+}
+
+/* ─── Collection trend ──────────────────────────────────────────────────── */
+
+/* Full-width row of its own: the chart is a wide, short shape and pairing it
+   beside the meta would compress both. */
+.health-view-trend {
+    flex-basis: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.1rem;
+}
+
+.health-view-trend-chart {
+    color: var(--accent-success);
+    opacity: 0.85;
+    max-width: 100%;
+    height: auto;
+}
+
+.health-view-trend-caption {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
+/* Direction of travel beside the healthy badge. Green for up, red for down —
+   more healthy bookmarks is unambiguously the good direction here. */
+.health-view-trend-delta {
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.health-view-trend-delta.is-up { color: var(--accent-success); }
+.health-view-trend-delta.is-down { color: var(--accent-error); }
+.health-view-trend-delta.is-flat { color: var(--text-secondary); opacity: 0.8; }
+
+/* ─── Collection-wide monitoring ────────────────────────────────────────── */
+
+.health-fleet {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    padding: 0.85rem 0.9rem 0.7rem;
+    margin-bottom: 0.9rem;
+    background: var(--background-secondary, transparent);
+}
+
+.health-fleet-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.7rem;
+}
+
+.health-fleet-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-semibold);
+}
+
+.health-fleet-headline {
+    font-size: 0.75rem;
+    color: var(--accent-success);
+}
+
+.health-fleet-headline.is-down {
+    color: var(--accent-error);
+    font-weight: 600;
+}
+
+.health-fleet-avg {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+}
+
+.health-fleet-block {
+    margin-top: 0.75rem;
+}
+
+.health-fleet-heading {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.health-fleet-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+/* The outage list is the one that can run long, so it scrolls inside the panel
+   rather than pushing the row list off screen. */
+.health-fleet-list--incidents {
+    max-height: 14rem;
+    overflow-y: auto;
+}
+
+.health-fleet-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    padding: 0.15rem 0;
+}
+
+.health-fleet-row-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.health-fleet-row-value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    flex: 0 0 auto;
+}
+
+.health-fleet-row-value.is-worse {
+    color: var(--accent-warning);
+}
+
+.health-fleet-row-when,
+.health-fleet-row-ping {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    flex: 0 0 auto;
+}
+
+.health-fleet-row-tag {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    padding: 0 0.25rem;
+    flex: 0 0 auto;
+}
+
+.health-fleet-row.is-down .health-fleet-row-value,
+.health-fleet-row.is-down .health-fleet-row-tag {
+    color: var(--accent-error);
+    border-color: color-mix(in srgb, var(--accent-error) 40%, transparent);
+}
+
+.health-fleet-more {
+    margin: 0.35rem 0 0;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
 }
 
 .health-view-title {

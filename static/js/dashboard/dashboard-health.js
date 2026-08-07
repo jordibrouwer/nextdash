@@ -1954,6 +1954,12 @@ class DashboardHealth {
         }
         container.appendChild(this.renderToolbar());
 
+        // The collection-wide panel sits under the toolbar on Monitored: that
+        // filter is the one place where "how is everything doing" is the question
+        // being asked, and on Broken it would push the actual work off screen.
+        const fleet = this.renderFleetPanel();
+        if (fleet) container.appendChild(fleet);
+
         if (!filtered.length) {
             container.appendChild(this.renderEmptyState());
             this.finishRenderFocus(container, preserveSearch, searchCaret);
@@ -2037,6 +2043,249 @@ class DashboardHealth {
         )}">${this.escape(label)}</span>`;
     }
 
+    /* ── Collection-wide monitoring ────────────────────────────────────── */
+
+    /**
+     * Pooled uptime, the worst monitors, outages and response shifts.
+     *
+     * Only on the Monitored filter: everywhere else the list is about bookmarks
+     * to fix, and a panel about uptime would push that work below the fold. Also
+     * only once the server sends stats, which it does not until something is both
+     * monitored and has samples.
+     */
+    renderFleetPanel() {
+        if (this.filter !== 'monitored') return null;
+        const fleet = this.report?.fleet;
+        if (!fleet || !Number(fleet.monitors)) return null;
+
+        const panel = document.createElement('section');
+        panel.className = 'health-fleet';
+        panel.setAttribute('aria-label', this.t('dashboard.healthFleetLabel', 'All monitors'));
+
+        const windows = [
+            [this.t('dashboard.healthStatsUptime24h', '24 hours'), fleet.uptime24h],
+            [this.t('dashboard.healthStatsUptime7d', '7 days'), fleet.uptime7d],
+            [this.t('dashboard.healthStatsUptime30d', '30 days'), fleet.uptime30d],
+        ];
+        const noData = this.t('dashboard.healthStatsNoData', 'no data');
+        const tiles = windows.map(([label, win]) => {
+            const value = this.formatUptime(win);
+            const samples = Number(win?.samples) || 0;
+            return `<div class="health-monitor-stat${value ? '' : ' health-monitor-stat--empty'}">
+                <span class="health-monitor-stat-label">${this.escape(label)}</span>
+                <span class="health-monitor-stat-value">${this.escape(value || noData)}</span>
+                ${samples ? `<span class="health-monitor-stat-sub">${this.escape(
+                    this.t('dashboard.healthStatsChecks', '{count} checks', { count: samples })
+                )}</span>` : ''}
+            </div>`;
+        }).join('');
+
+        const down = Number(fleet.downNow) || 0;
+        const headline = down > 0
+            ? this.t('dashboard.healthFleetDown', '{down} of {count} not responding', { down, count: fleet.monitors })
+            : this.t('dashboard.healthFleetUp', 'All {count} responding', { count: fleet.monitors });
+        const avg = Number(fleet.avgResponseMs) || 0;
+
+        panel.innerHTML = `
+            <div class="health-fleet-head">
+                <h3 class="health-fleet-title">${this.escape(this.t('dashboard.healthFleetTitle', 'All monitors'))}</h3>
+                <span class="health-fleet-headline${down > 0 ? ' is-down' : ''}">${this.escape(headline)}</span>
+                ${avg ? `<span class="health-fleet-avg">${this.escape(
+                    this.t('dashboard.healthFleetAvgResponse', '{ms}ms average', { ms: avg })
+                )}</span>` : ''}
+            </div>
+            <div class="health-monitor-stat-grid">${tiles}</div>
+            ${this.renderFleetWorst(fleet)}
+            ${this.renderFleetSlower(fleet)}
+            ${this.renderFleetIncidents(fleet)}
+        `;
+        return panel;
+    }
+
+    /** The least-available monitors. Absent when every monitor is at 100%. */
+    renderFleetWorst(fleet) {
+        const rows = Array.isArray(fleet?.worst) ? fleet.worst : [];
+        if (!rows.length) return '';
+        const items = rows.map((m) => {
+            const pct = this.formatUptime({ ratio: m.ratio, samples: m.samples }) || '—';
+            const ping = Number(m.avgMs) > 0 ? `<span class="health-fleet-row-ping">${this.escape(`${m.avgMs}ms`)}</span>` : '';
+            return `<li class="health-fleet-row${m.down ? ' is-down' : ''}">
+                <span class="health-fleet-row-name" title="${this.escape(m.url || '')}">${this.escape(m.name || this.formatUrlDisplay(m.url))}</span>
+                <span class="health-fleet-row-value">${this.escape(pct)}</span>
+                ${ping}
+                ${m.down ? `<span class="health-fleet-row-tag">${this.escape(this.t('dashboard.healthFleetDownNow', 'down'))}</span>` : ''}
+            </li>`;
+        }).join('');
+        return `<div class="health-fleet-block">
+            <p class="health-fleet-heading">${this.escape(this.t('dashboard.healthFleetWorst', 'Least available (7 days)'))}</p>
+            <ul class="health-fleet-list">${items}</ul>
+        </div>`;
+    }
+
+    /** Monitors measurably slower than the week before. */
+    renderFleetSlower(fleet) {
+        const rows = Array.isArray(fleet?.slower) ? fleet.slower : [];
+        if (!rows.length) return '';
+        const items = rows.map((m) => `<li class="health-fleet-row">
+            <span class="health-fleet-row-name" title="${this.escape(m.url || '')}">${this.escape(m.name || this.formatUrlDisplay(m.url))}</span>
+            <span class="health-fleet-row-value is-worse">${this.escape(
+                this.t('dashboard.healthFleetSlowerBy', '+{pct}%', { pct: m.changePct })
+            )}</span>
+            <span class="health-fleet-row-ping">${this.escape(
+                this.t('dashboard.healthFleetSlowerDetail', '{recent}ms vs {baseline}ms', { recent: m.recentMs, baseline: m.baselineMs })
+            )}</span>
+        </li>`).join('');
+        return `<div class="health-fleet-block">
+            <p class="health-fleet-heading">${this.escape(this.t('dashboard.healthFleetSlower', 'Slower than last week'))}</p>
+            <ul class="health-fleet-list">${items}</ul>
+        </div>`;
+    }
+
+    /** Every recorded outage across the collection, newest first. */
+    renderFleetIncidents(fleet) {
+        const rows = Array.isArray(fleet?.incidents) ? fleet.incidents : [];
+        if (!rows.length) {
+            return `<div class="health-fleet-block">
+                <p class="health-fleet-heading">${this.escape(this.t('dashboard.healthFleetIncidents', 'Outages'))}</p>
+                <p class="health-view-score-intro">${this.escape(this.t('dashboard.healthStatsNoIncidents', 'No outages recorded.'))}</p>
+            </div>`;
+        }
+        const items = rows.map((inc) => {
+            const when = inc.start ? new Date(inc.start).toLocaleString() : '';
+            const duration = inc.ongoing
+                ? this.t('dashboard.healthFleetOngoing', 'ongoing')
+                : this.formatDuration(inc.durationMs);
+            return `<li class="health-fleet-row${inc.ongoing ? ' is-down' : ''}">
+                <span class="health-fleet-row-name" title="${this.escape(inc.url || '')}">${this.escape(inc.name || this.formatUrlDisplay(inc.url))}</span>
+                <span class="health-fleet-row-when">${this.escape(when)}</span>
+                <span class="health-fleet-row-value">${this.escape(duration)}</span>
+                ${inc.reason ? `<span class="health-fleet-row-tag">${this.escape(inc.reason)}</span>` : ''}
+            </li>`;
+        }).join('');
+
+        // Say when the list is capped, so 25 outages is not read as the month's total.
+        const total = Number(fleet.totalIncidents) || rows.length;
+        const more = total > rows.length
+            ? `<p class="health-fleet-more">${this.escape(
+                this.t('dashboard.healthFleetIncidentsMore', 'Showing {shown} of {total}', { shown: rows.length, total })
+            )}</p>`
+            : '';
+
+        return `<div class="health-fleet-block">
+            <p class="health-fleet-heading">${this.escape(this.t('dashboard.healthFleetIncidents', 'Outages'))}</p>
+            <ul class="health-fleet-list health-fleet-list--incidents">${items}</ul>
+            ${more}
+        </div>`;
+    }
+
+    /* ── Collection trend ──────────────────────────────────────────────── */
+
+    /** Recorded days, oldest first. Empty until the first report was recorded. */
+    trendPoints() {
+        return Array.isArray(this.report?.trend) ? this.report.trend : [];
+    }
+
+    /** A day's healthy share as a percentage, or null for a day with nothing in it. */
+    trendPercent(point) {
+        const total = Number(point?.n) || 0;
+        if (!total) return null;
+        return Math.round(((Number(point?.h) || 0) / total) * 100);
+    }
+
+    /**
+     * Change against the oldest recorded day, shown beside the healthy badge.
+     *
+     * Compared against the start of the window rather than yesterday: a one-day
+     * delta on a collection that is checked daily is mostly noise, while "up 12
+     * points this month" is the thing worth knowing. Hidden entirely with fewer
+     * than two days recorded — a trend needs something to trend from.
+     */
+    renderTrendDelta() {
+        const points = this.trendPoints();
+        if (points.length < 2) return '';
+        const first = this.trendPercent(points[0]);
+        const last = this.trendPercent(points[points.length - 1]);
+        if (first === null || last === null) return '';
+
+        const delta = last - first;
+        const days = points.length;
+        // Zero is worth saying: "unchanged over 30 days" is a real answer, and
+        // hiding it would make the badge appear only when something moved.
+        const dir = delta > 0 ? 'up' : (delta < 0 ? 'down' : 'flat');
+        const arrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '–');
+        const label = delta === 0
+            ? this.t('dashboard.healthTrendFlat', 'unchanged over {days} days', { days })
+            : (delta > 0
+                ? this.t('dashboard.healthTrendUp', 'up {points} points over {days} days', { points: delta, days })
+                : this.t('dashboard.healthTrendDown', 'down {points} points over {days} days', { points: Math.abs(delta), days }));
+
+        return `<span class="health-view-trend-delta is-${dir}" title="${this.escape(label)}" aria-label="${this.escape(label)}">`
+            + `<span aria-hidden="true">${arrow}${delta === 0 ? '' : Math.abs(delta)}</span></span>`;
+    }
+
+    /**
+     * The collection's healthy share over time, as a sparkline under the header.
+     *
+     * Reuses nothing from renderSparkline: that one plots response times from
+     * heartbeat buckets on a fixed axis, where this is a percentage on a 0–100
+     * axis with gaps for days the app was not opened. Sharing them would mean a
+     * function with two unrelated modes.
+     */
+    renderTrendChart() {
+        const points = this.trendPoints();
+        if (points.length < 3) return '';
+
+        const values = points.map((p) => this.trendPercent(p));
+        if (values.filter((v) => v !== null).length < 3) return '';
+
+        const w = 240;
+        const h = 34;
+        const padY = 3;
+        const plotH = h - padY * 2;
+        const step = w / Math.max(1, values.length - 1);
+
+        // Fixed 0–100 axis rather than min/max scaling: a collection that moved
+        // between 91% and 93% should look flat, not like a cliff.
+        const yFor = (v) => (h - padY - (v / 100) * plotH).toFixed(1);
+
+        // Days with no recorded point break the line instead of interpolating,
+        // matching how the response sparkline treats missing buckets.
+        const segments = [];
+        let current = [];
+        values.forEach((v, i) => {
+            if (v === null) {
+                if (current.length > 1) segments.push(current);
+                current = [];
+                return;
+            }
+            current.push(`${(i * step).toFixed(1)},${yFor(v)}`);
+        });
+        if (current.length > 1) segments.push(current);
+        if (!segments.length) return '';
+
+        const paths = segments.map((pts) =>
+            `<polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`
+        ).join('');
+
+        const first = values.find((v) => v !== null);
+        const last = [...values].reverse().find((v) => v !== null);
+        const label = this.t('dashboard.healthTrendChartLabel',
+            'Healthy bookmarks over the last {days} days, from {first}% to {last}%',
+            { days: points.length, first, last });
+
+        return `<div class="health-view-trend">
+            <svg class="health-view-trend-chart" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"
+                 role="img" aria-label="${this.escape(label)}">
+                <line class="health-view-trend-base" x1="0" y1="${yFor(100)}" x2="${w}" y2="${yFor(100)}"
+                      stroke="currentColor" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.25"/>
+                ${paths}
+            </svg>
+            <span class="health-view-trend-caption">${this.escape(
+                this.t('dashboard.healthTrendCaption', '{days} days', { days: points.length })
+            )}</span>
+        </div>`;
+    }
+
     renderHeader() {
         const pct = this.healthyPercent();
         const broken = this.brokenCount();
@@ -2060,6 +2309,7 @@ class DashboardHealth {
             </div>
             <div class="health-view-header-meta">
                 <span class="health-view-score-badge ${this.bandClass(pct)}" title="${this.escape(detail)}" aria-label="${this.escape(pctLabel)}">${pct}%</span>
+                ${this.renderTrendDelta()}
                 ${broken > 0
                     ? `<span class="health-view-issue-count">${this.escape(
                         broken === 1
@@ -2069,6 +2319,7 @@ class DashboardHealth {
                     : ''}
                 ${this.renderReportAge()}
             </div>
+            ${this.renderTrendChart()}
         `;
         return header;
     }
