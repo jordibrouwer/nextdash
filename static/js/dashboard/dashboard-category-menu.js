@@ -188,6 +188,26 @@ class DashboardCategoryMenu {
         pop.style.top = `${Math.max(margin, top)}px`;
     }
 
+    /**
+     * Drop the trash entry for a category the undo has just put back, so it does
+     * not sit in the trash shadowing a live category.
+     *
+     * Best-effort: a stale entry is untidy, a failed undo is not.
+     */
+    async _dropCategoryTrashEntry(pageId, categoryId) {
+        try {
+            const data = await window.DashboardTrash?.list?.();
+            const hit = (data?.items || []).find((item) => item.kind === 'category'
+                && Number(item.pageId) === Number(pageId)
+                && String(item.trashedCategory?.category?.id || '') === String(categoryId));
+            if (hit) {
+                await window.DashboardTrash.remove(hit.id);
+            }
+        } catch (_error) {
+            /* leave it; the restore itself already succeeded */
+        }
+    }
+
     async runAction(action, titleEl, category) {
         const d = this.dash;
         window.nextdashTrack?.('category:context-menu', { action });
@@ -251,6 +271,11 @@ class DashboardCategoryMenu {
                             return;
                         }
                         await d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
+                        // Restored through the categories endpoint, so its trash
+                        // entry now shadows a live category. Dropping it goes
+                        // straight through the trash module, which config does
+                        // not need to be loaded for.
+                        await this._dropCategoryTrashEntry(pageId, category.id);
                         d.showNotification?.(
                             this.t('categoryDeleteUndone', 'Category restored.'),
                             'success',

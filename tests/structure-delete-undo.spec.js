@@ -4,6 +4,7 @@ const {
     markWhatsNewSeen,
     dismissOnboardingIfPresent,
     dismissBlockingOverlays,
+    WRITE_TOKEN,
 } = require('./e2e-helpers');
 
 /**
@@ -15,10 +16,11 @@ const {
  * from the dashboard made both far easier to reach, so the delete side needed to
  * stop being one-way.
  *
- * The 8-second toast is the fast net here: it catches the "no, wrong one" that
- * follows a misclick by seconds.
+ * Two nets, deliberately: the 8-second toast for the immediate "no, wrong one",
+ * and the trash for the delete noticed a day later.
  */
 
+const writeHeaders = { 'X-NextDash-Token': WRITE_TOKEN };
 const undoButton = (page) => page.locator('.app-notification-action:visible').first();
 
 /**
@@ -108,6 +110,30 @@ async function bookmarkNamesOn(page, pageId) {
 }
 
 test.describe('Page delete is recoverable', () => {
+    test('the deleted page lands in the trash whole', async ({ page, request }) => {
+        await loadDashboard(page);
+        const pageId = await seedPage(page, 'Trash Probe', ['Alpha', 'Beta']);
+
+        const before = await request.get('/api/trash');
+        const beforeCount = (await before.json()).count;
+
+        const res = await request.delete(`/api/pages/${pageId}`, { headers: writeHeaders });
+        expect(res.ok()).toBeTruthy();
+
+        const after = await request.get('/api/trash');
+        const trash = await after.json();
+        // One entry for the page, not one per bookmark: restoring 40 loose rows
+        // onto a page that no longer exists would be no restore at all.
+        expect(trash.count).toBe(beforeCount + 1);
+
+        const mine = trash.items.filter((i) => i.pageId === pageId);
+        expect(mine).toHaveLength(1);
+        expect(mine[0].kind).toBe('page');
+        expect(mine[0].trashedPage.bookmarks.map((b) => b.name).sort()).toEqual(['Alpha', 'Beta']);
+        // Captured at delete time — the page no longer exists to be looked up.
+        expect(mine[0].pageName).toBe('Trash Probe');
+    });
+
     test('Undo puts the page and its bookmarks back', async ({ page }) => {
         await loadDashboard(page);
         const pageId = await seedPage(page, 'Undo Probe', ['Gamma', 'Delta']);
@@ -213,3 +239,63 @@ test.describe('Category delete is recoverable', () => {
     });
 });
 
+test.describe('The trash holds whole pages', () => {
+    /** Open Config → Data & backups on the trash tab, already loaded. */
+    async function openTrashTab(page) {
+        await page.evaluate(async () => {
+            const cfg = window.dashboardInstance.config;
+            await cfg.openConfigView('data-backups');
+            cfg.dbTab = 'trash';
+            cfg.render();
+            await cfg.loadTrash();
+        });
+    }
+
+    const trashRows = (page) => page.locator('[data-trash-action="restore"]');
+
+    test('a deleted page appears as one restorable entry, not one per bookmark', async ({ page }) => {
+        await loadDashboard(page);
+        const pageId = await seedPage(page, 'Trash Row Probe', ['One', 'Two', 'Three']);
+        await openTrashTab(page);
+        const before = await trashRows(page).count();
+
+        await openPagesTags(page, 'pages');
+        const deleting = page.evaluate((id) => window.dashboardInstance.config.deletePage(id), pageId);
+        await confirmModal(page);
+        await deleting;
+
+        await openTrashTab(page);
+        // Three bookmarks, one entry: restoring is a single action.
+        await expect(trashRows(page)).toHaveCount(before + 1);
+
+        const entry = await page.evaluate(async () => {
+            const data = await (await fetch('/api/trash')).json();
+            const hit = (data.items || []).find((i) => i.kind === 'page');
+            return { kind: hit?.kind, bookmarks: hit?.trashedPage?.bookmarks?.length };
+        });
+        expect(entry.kind).toBe('page');
+        expect(entry.bookmarks).toBe(3);
+    });
+
+    test('restoring a page from the trash brings its bookmarks back', async ({ page }) => {
+        await loadDashboard(page);
+        const pageId = await seedPage(page, 'Full Restore', ['Alpha', 'Beta']);
+
+        await openPagesTags(page, 'pages');
+        const deleting = page.evaluate((id) => window.dashboardInstance.config.deletePage(id), pageId);
+        await confirmModal(page);
+        await deleting;
+        expect(await pageIds(page)).not.toContain(pageId);
+
+        await openTrashTab(page);
+        await page.evaluate(async () => {
+            const data = await (await fetch('/api/trash')).json();
+            const hit = (data.items || []).find((i) => i.kind === 'page');
+            await window.DashboardTrash.restore(hit.id);
+        });
+
+        // Back at its original id, which is what every bookmark's pageId refers to.
+        expect(await pageIds(page)).toContain(pageId);
+        expect((await bookmarkNamesOn(page, pageId)).sort()).toEqual(['Alpha', 'Beta']);
+    });
+});

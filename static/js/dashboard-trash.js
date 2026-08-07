@@ -58,6 +58,43 @@
         return record([{ pageId, index, bookmark }], source);
     }
 
+    /**
+     * Record a deleted category.
+     *
+     * Its bookmarks stay on the page, so only the definition is stored. Pages go
+     * through the server instead: DELETE /api/pages removes the file, so the
+     * handler captures that snapshot itself rather than trusting the client to
+     * send back a page it is about to lose.
+     *
+     * Best-effort like record(): a failed write costs the trash entry, not the
+     * delete.
+     */
+    async function recordCategory(category, pageId, index, source = '') {
+        if (!category || !category.id) {
+            return false;
+        }
+        try {
+            const res = await fetch(ENDPOINT, {
+                method: 'POST',
+                headers: writeHeaders(),
+                body: JSON.stringify({
+                    source,
+                    items: [{
+                        kind: 'category',
+                        pageId: Number(pageId) || 0,
+                        trashedCategory: {
+                            category,
+                            index: Number.isFinite(index) && index >= 0 ? index : 0,
+                        },
+                    }],
+                }),
+            });
+            return res.ok;
+        } catch (_error) {
+            return false;
+        }
+    }
+
     async function list() {
         const res = await fetch(ENDPOINT);
         if (!res.ok) {
@@ -103,5 +140,5 @@
         return res.json();
     }
 
-    global.DashboardTrash = { record, recordOne, list, restore, remove, empty };
+    global.DashboardTrash = { record, recordOne, recordCategory, list, restore, remove, empty };
 }(typeof window !== 'undefined' ? window : globalThis));

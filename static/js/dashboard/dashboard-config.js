@@ -8153,9 +8153,13 @@ class DashboardConfig {
                 // categories is a replace-the-list write.
                 const before = (this._categories || []).map((c) => ({ ...c }));
                 const pageId = this._catPageId;
+                const removed = { ...cat };
                 this._categories.splice(i, 1);
                 this.repaintPtBody();
                 await this.saveCategories();
+                // After the save, so a delete that did not persist cannot leave
+                // a phantom entry in the trash.
+                await window.DashboardTrash?.recordCategory?.(removed, pageId, i, 'config-category-delete');
                     this.notify(this.t('config.categoryDeleted', 'Category deleted.'), 'success', {
                     duration: 8000,
                     undoCallback: async () => {

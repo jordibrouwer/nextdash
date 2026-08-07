@@ -158,6 +158,15 @@ class DashboardStructureCreate {
                 && String(d.pinnedEmptyCategoryId) === String(categoryId)) {
                 d.pinnedEmptyCategoryId = null;
             }
+            // After the save, so a delete that did not persist cannot leave a
+            // phantom entry. The 8s toast is the fast path; this is the 30-day one.
+            const removedIndex = list.findIndex((c) => String(c.id) === String(categoryId));
+            await window.DashboardTrash?.recordCategory?.(
+                list[removedIndex],
+                pageId,
+                removedIndex,
+                'category-delete'
+            );
             d.data?.invalidatePageDataCache?.(Number(pageId));
             return { ok: true, before: list };
         } catch (e) {

@@ -446,8 +446,9 @@ type Store interface {
 	RecordInboxEvent(evt InboxEvent)
 	GetInboxStats() InboxStats
 
-	// Trash (deleted bookmarks, restorable for 30 days)
+	// Trash (deleted bookmarks, pages and categories, restorable for 30 days)
 	GetTrashItems() []TrashedBookmark
+	RestorePage(snapshot TrashedPage) error
 	AddTrashedBookmarks(entries []TrashedBookmark) error
 	TakeTrashItem(id string) (TrashedBookmark, error)
 	DeleteTrashItem(id string) error
@@ -1898,6 +1899,65 @@ func (fs *FileStore) DeletePage(pageID int) error {
 	// Delete bookmarks-{pageID}.json (file may not exist if the page had no bookmarks)
 	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
 	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	fs.noteDataMutation()
+	return nil
+}
+
+// ErrPageExists is returned when restoring a page whose id is taken again.
+var ErrPageExists = errors.New("page already exists")
+
+// RestorePage writes bookmarks-N.json back from a trash snapshot, at the page's
+// original id.
+//
+// Deliberately not SavePage: that one preserves whatever is already on disk and
+// substitutes default categories for an empty list, both of which would corrupt
+// a restore. This writes the snapshot verbatim.
+//
+// A page file that exists again is refused rather than overwritten — the id has
+// been reused, and clobbering it would delete a live page to undo an old one.
+func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, snapshot.Page.ID)
+	if _, err := os.Stat(filePath); err == nil {
+		return ErrPageExists
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	restored := PageWithBookmarks{
+		Page:       snapshot.Page,
+		Categories: snapshot.Categories,
+		Bookmarks:  snapshot.Bookmarks,
+	}
+	if restored.Bookmarks == nil {
+		restored.Bookmarks = []Bookmark{}
+	}
+	if err := fs.writeStoreJSONFile(filePath, restored); err != nil {
+		return err
+	}
+
+	// Put the tab back where it was rather than at the end.
+	order := fs.getPageOrder()
+	for _, id := range order {
+		if id == snapshot.Page.ID {
+			fs.noteDataMutation()
+			return nil
+		}
+	}
+	at := snapshot.OrderIndex
+	if at < 0 || at > len(order) {
+		at = len(order)
+	}
+	next := make([]int, 0, len(order)+1)
+	next = append(next, order[:at]...)
+	next = append(next, snapshot.Page.ID)
+	next = append(next, order[at:]...)
+	if err := fs.savePageOrder(next); err != nil {
 		return err
 	}
 	fs.noteDataMutation()
