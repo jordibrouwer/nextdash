@@ -3396,6 +3396,54 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     font-weight: var(--font-weight-semibold);
 }
 
+/* ─── "+ category" — the grid's own add affordance ───────────────────────────
+   Sits after the last column rather than inside one: it is not a category, and
+   the drag-reorder instances would treat it as one if it were. Dashed and muted
+   so it reads as an invitation next to real category headers, not as content.
+   `c` does the same thing without it, which is why it may be hidden entirely on
+   touch. */
+
+.category-add-placeholder {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: flex-start;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.category-add-placeholder-btn {
+    border: 1px dashed var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
+    color: var(--text-tertiary);
+    font: inherit;
+    font-size: var(--font-size-category);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.05em;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.category-add-placeholder-btn:hover,
+.category-add-placeholder-btn:focus-visible {
+    opacity: 1;
+    color: var(--text-secondary);
+    border-color: var(--text-tertiary);
+    outline: none;
+}
+
+.category-add-placeholder-btn[hidden] {
+    display: none;
+}
+
+/* The name row appears where the tile's button was. */
+.bookmark-inline-create.category-add-create {
+    flex: 1 1 auto;
+    max-width: 22rem;
+}
+
 .bookmark-inline-icon-actions {
     display: flex;
     align-items: center;

@@ -355,7 +355,11 @@
             "hmsShiftClick": "Auswahl bis zur angeklickten Zeile erweitern",
             "hmsPlainClick": "Bei offener Auswahl hebt ein einfacher Klick sie auf",
             "hmsClear": "Auswahl aufheben — die Health-Ansicht bleibt geöffnet",
-            "hvSelect": "Fokussierte Zeile für eine Massenaktion markieren"
+            "hvSelect": "Fokussierte Zeile für eine Massenaktion markieren",
+            "navPageOverviewNewPage": "Neue Seite aus der Seitenübersicht erstellen",
+            "navAddCategory": "Kategorie zur aktuellen Seite hinzufügen (c antippen zum Suchen)",
+            "cnPageNew": "Seite erstellen und dorthin wechseln (n in der Seitenübersicht macht dasselbe)",
+            "cbCategoryNew": "Kategorie auf der aktuellen Seite erstellen (c halten macht dasselbe)"
         },
         "firstBookmarkGuide": "Fügen Sie Ihr erstes Lesezeichen mit + oder Shift+B hinzu (& für Schnellzeile), oder richten Sie Seiten unter config → Seiten ein.",
         "emptyStateAddTouch": "Tippen Sie unten auf + Lesezeichen in der Leiste",
@@ -962,7 +966,10 @@
         "contextMenuOpenSelected": "{count} ausgewählte öffnen",
         "contextMenuCopySelected": "{count} Links kopieren",
         "contextMenuClearSelection": "Auswahl aufheben",
-        "contextMenuDeleteSelected": "{count} ausgewählte löschen"
+        "contextMenuDeleteSelected": "{count} ausgewählte löschen",
+        "pageOverviewNewPage": "Neue Seite",
+        "addCategoryPlaceholder": "+ Kategorie",
+        "addCategoryGroupAria": "Kategorie hinzufügen"
     },
     "health": {
         "pageTitle": "health beta",
@@ -4287,7 +4294,14 @@
         "groupBookmarks": "Lesezeichen",
         "groupNavigateSearch": "Suche & Navigation",
         "groupLookAndFeel": "Darstellung & Layout",
-        "groupSettingsTools": "Einstellungen & Tools"
+        "groupSettingsTools": "Einstellungen & Tools",
+        "pageNewOption": "Neue Seite…",
+        "pageNewHint": "Gib einen Namen für die neue Seite ein",
+        "pageNewLabel": "Seite „{name}“ erstellen",
+        "categoryNewOption": "Neue Kategorie…",
+        "categoryNewHint": "Gib einen Namen für die neue Kategorie ein",
+        "categoryNewLabel": "Kategorie „{name}“ erstellen",
+        "categoryNewFirst": "Noch keine Kategorien — erstelle die erste"
     },
     "quickstart": {
         "title": "Schnellstart",

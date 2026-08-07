@@ -400,7 +400,86 @@ class DashboardUiHelpers {
                 </li>
             `;
         }).join('');
-        return `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>`;
+
+        // The overlay is where pages are chosen, so it is also where a new one is
+        // made. The row wears the item shape but is marked as an action, and it
+        // sits outside the listbox: it is not a page you can navigate to.
+        const newLabel = this.formatDashboardLabel('pageOverviewNewPage', {}, 'New page');
+        const newRow = `
+            <div class="page-overview-modal-actions">
+                <button type="button" class="page-overview-modal-link page-overview-modal-new" id="page-overview-new-page">
+                    <span class="page-overview-modal-lead">
+                        <span class="page-overview-modal-num page-overview-modal-plus" aria-hidden="true">+</span>
+                    </span>
+                    <span class="page-overview-modal-body">
+                        <span class="page-overview-modal-name">${d.escapeHtml(newLabel)}</span>
+                    </span>
+                    <span class="page-overview-modal-count page-overview-modal-hintkey" aria-hidden="true">n</span>
+                </button>
+            </div>
+        `;
+
+        return `<ul class="page-overview-modal-list" role="listbox" aria-label="${d.escapeHtml(listLabel)}">${items}</ul>${newRow}`;
+    }
+
+
+    /**
+     * Swap the overlay's "New page" button for the name row, create on confirm,
+     * then go to the new page — an empty page you are not looking at is not what
+     * anyone means by "new page".
+     */
+    _setupPageOverviewCreate() {
+        const d = this.dash;
+        const host = document.querySelector('#app-modal .page-overview-modal-actions');
+        const trigger = document.getElementById('page-overview-new-page');
+        if (!host || !trigger || !window.InlineCreateRow) {
+            return null;
+        }
+
+        const ui = window.InlineCreateRow.create({
+            kind: 'page',
+            placeholder: d.configLabel('newPageNamePlaceholder', 'Page name'),
+            labels: {
+                create: d.configLabel('create', 'Create'),
+                cancel: this.formatDashboardLabel('cancel', {}, 'Cancel'),
+                group: this.formatDashboardLabel('pageOverviewNewPage', {}, 'New page'),
+            },
+        });
+        host.appendChild(ui.box);
+
+        const close = () => {
+            ui.box.hidden = true;
+            ui.error.hidden = true;
+            ui.input.value = '';
+            trigger.hidden = false;
+            trigger.focus({ preventScroll: true });
+        };
+
+        const open = () => {
+            trigger.hidden = true;
+            ui.box.hidden = false;
+            ui.error.hidden = true;
+            ui.input.value = '';
+            ui.input.focus({ preventScroll: true });
+        };
+
+        window.InlineCreateRow.wire(ui, {
+            submit: async (name) => {
+                const created = await d.structureCreate.createPageFromForm(name);
+                if (created.error) {
+                    return created.error;
+                }
+                // Leave before the list behind us is rebuilt: the overlay is
+                // showing counts for pages we are navigating away from.
+                window.AppModal?.hide?.();
+                await d.requestPageNavigation(created.id);
+                return null;
+            },
+            onCancel: close,
+        });
+
+        trigger.addEventListener('click', open);
+        return { open, close, isOpen: () => ui.box.hidden === false };
     }
 
 
@@ -411,24 +490,38 @@ class DashboardUiHelpers {
             return;
         }
 
+        const create = this._setupPageOverviewCreate();
+
         let focusedIndex = pages.findIndex((p) => d.samePageId(p.id, d.currentPageId));
         if (focusedIndex < 0) focusedIndex = 0;
 
         const items = () => Array.from(listRoot.querySelectorAll('.page-overview-modal-item'));
 
+        // "New page" is one stop past the last page, so ↓ off the bottom of the
+        // list reaches it and ↓ again wraps to the first page. Its index is
+        // pages.length, which is why the ring below is one longer than the list.
+        const newPageIndex = create ? pages.length : -1;
+        const ringSize = create ? pages.length + 1 : pages.length;
+
         const setFocus = (idx) => {
             if (pages.length === 0) {
                 return;
             }
-            focusedIndex = ((idx % pages.length) + pages.length) % pages.length;
+            focusedIndex = ((idx % ringSize) + ringSize) % ringSize;
+            const onNewPage = focusedIndex === newPageIndex;
             items().forEach((el, i) => {
-                el.classList.toggle('is-focused', i === focusedIndex);
-                if (i === focusedIndex) {
+                el.classList.toggle('is-focused', !onNewPage && i === focusedIndex);
+                if (!onNewPage && i === focusedIndex) {
                     const btn = el.querySelector('.page-overview-modal-link');
                     btn?.focus({ preventScroll: true });
                     el.scrollIntoView({ block: 'nearest' });
                 }
             });
+            if (onNewPage) {
+                const trigger = document.getElementById('page-overview-new-page');
+                trigger?.focus({ preventScroll: true });
+                trigger?.scrollIntoView({ block: 'nearest' });
+            }
         };
 
         const navigateTo = async (page) => {
@@ -452,10 +545,22 @@ class DashboardUiHelpers {
                 this._cleanupPageOverviewKeyHandler();
                 return;
             }
+            // While the name row is open it owns the keyboard: every key below is
+            // a character someone may be typing into it. The row handles its own
+            // Enter and Escape.
+            if (create?.isOpen()) {
+                return;
+            }
             if (e.key === ',') {
                 e.preventDefault();
                 e.stopPropagation();
                 window.AppModal?.hide?.();
+                return;
+            }
+            if (e.key === 'n' || e.key === 'N') {
+                e.preventDefault();
+                e.stopPropagation();
+                create?.open();
                 return;
             }
             if (e.key === 'ArrowDown') {
@@ -467,7 +572,11 @@ class DashboardUiHelpers {
             } else if (e.key === 'Enter' || e.key === ' ') {
                 if (e.target?.classList?.contains('page-overview-modal-link')) {
                     e.preventDefault();
-                    void navigateTo(pages[focusedIndex]);
+                    if (focusedIndex === newPageIndex) {
+                        create?.open();
+                    } else {
+                        void navigateTo(pages[focusedIndex]);
+                    }
                 }
             } else if (e.key >= '1' && e.key <= '9') {
                 const idx = parseInt(e.key, 10) - 1;

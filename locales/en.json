@@ -376,7 +376,11 @@
             "hmsShiftClick": "Extend the selection to the clicked row",
             "hmsPlainClick": "With a selection open, a plain click clears it",
             "hmsClear": "Clear the selection — the health view itself stays open",
-            "hvSelect": "Tick the focused row for a bulk action"
+            "hvSelect": "Tick the focused row for a bulk action",
+            "navPageOverviewNewPage": "Create a new page from the page overview",
+            "navAddCategory": "Add a category to the current page (tap c to search instead)",
+            "cnPageNew": "Create a page and go to it (n in the page overview does the same)",
+            "cbCategoryNew": "Create a category on the current page (hold c does the same)"
         },
         "searchPrefix": ">",
         "searchModeSearch": "SEARCH",
@@ -962,7 +966,10 @@
         "contextMenuOpenSelected": "Open {count} selected",
         "contextMenuCopySelected": "Copy {count} links",
         "contextMenuClearSelection": "Clear selection",
-        "contextMenuDeleteSelected": "Delete {count} selected"
+        "contextMenuDeleteSelected": "Delete {count} selected",
+        "pageOverviewNewPage": "New page",
+        "addCategoryPlaceholder": "+ category",
+        "addCategoryGroupAria": "Add a category"
     },
     "health": {
         "pageTitle": "health beta",
@@ -4287,7 +4294,14 @@
         "filterApply": "Filter by #{tag}",
         "exportLabel": "Download backup (.zip)",
         "exportDone": "Backup downloaded",
-        "exportFailed": "Backup download failed"
+        "exportFailed": "Backup download failed",
+        "pageNewOption": "New page…",
+        "pageNewHint": "Type a name for the new page",
+        "pageNewLabel": "Create page \"{name}\"",
+        "categoryNewOption": "New category…",
+        "categoryNewHint": "Type a name for the new category",
+        "categoryNewLabel": "Create category \"{name}\"",
+        "categoryNewFirst": "No categories yet — create the first"
     },
     "quickstart": {
         "title": "Quick start",

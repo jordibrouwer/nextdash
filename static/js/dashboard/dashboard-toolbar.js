@@ -99,6 +99,10 @@ class DashboardToolbar {
                 e.stopPropagation();
                 d.toggleAllCategoriesCollapsed();
             }
+
+            // c lives in keyboard-navigation.js, not here: it only acts on a hold
+            // (so a tap still types into the shortcut search), and that timer sits
+            // with the g chord's.
         });
     }
 

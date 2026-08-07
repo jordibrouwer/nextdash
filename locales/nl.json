@@ -376,7 +376,11 @@
             "hmsShiftClick": "Selectie uitbreiden tot de aangeklikte rij",
             "hmsPlainClick": "Met een open selectie wist een gewone klik die",
             "hmsClear": "Selectie wissen — de health-weergave zelf blijft open",
-            "hvSelect": "Gerichte rij aanvinken voor een bulkactie"
+            "hvSelect": "Gerichte rij aanvinken voor een bulkactie",
+            "navPageOverviewNewPage": "Maak een nieuwe pagina vanuit het pagina-overzicht",
+            "navAddCategory": "Voeg een categorie toe aan de huidige pagina (tik c om te zoeken)",
+            "cnPageNew": "Maak een pagina en ga erheen (n in het pagina-overzicht doet hetzelfde)",
+            "cbCategoryNew": "Maak een categorie op de huidige pagina (c ingedrukt houden doet hetzelfde)"
         },
         "searchPrefix": ">",
         "searchModeSearch": "SEARCH",
@@ -962,7 +966,10 @@
         "contextMenuOpenSelected": "{count} geselecteerde openen",
         "contextMenuCopySelected": "{count} links kopiëren",
         "contextMenuClearSelection": "Selectie wissen",
-        "contextMenuDeleteSelected": "{count} geselecteerde verwijderen"
+        "contextMenuDeleteSelected": "{count} geselecteerde verwijderen",
+        "pageOverviewNewPage": "Nieuwe pagina",
+        "addCategoryPlaceholder": "+ categorie",
+        "addCategoryGroupAria": "Categorie toevoegen"
     },
     "health": {
         "pageTitle": "health beta",
@@ -4287,7 +4294,14 @@
         "groupBookmarks": "Bladwijzers",
         "groupNavigateSearch": "Zoeken & navigeren",
         "groupLookAndFeel": "Weergave & layout",
-        "groupSettingsTools": "Instellingen & tools"
+        "groupSettingsTools": "Instellingen & tools",
+        "pageNewOption": "Nieuwe pagina…",
+        "pageNewHint": "Typ een naam voor de nieuwe pagina",
+        "pageNewLabel": "Pagina \"{name}\" aanmaken",
+        "categoryNewOption": "Nieuwe categorie…",
+        "categoryNewHint": "Typ een naam voor de nieuwe categorie",
+        "categoryNewLabel": "Categorie \"{name}\" aanmaken",
+        "categoryNewFirst": "Nog geen categorieën — maak de eerste"
     },
     "quickstart": {
         "title": "Snel starten",

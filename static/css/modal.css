@@ -815,6 +815,10 @@ body.no-animations .wn-kofi-star {
     min-height: 0;
     overflow-y: auto;
     padding-right: 0.2rem;
+    /* The last child ends flush with this scroll box, and overflow clipping eats
+       the final pixel row — the name input's bottom border went missing. A pixel
+       of padding gives that border somewhere to land. */
+    padding-bottom: 1px;
     margin-top: 0.55rem;
     margin-bottom: 0.25rem;
 }
@@ -899,6 +903,68 @@ body.no-animations .wn-kofi-star {
     color: var(--text-tertiary);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+/* ─── "New page" — the overlay's one action ──────────────────────────────────
+   It borrows .page-overview-modal-link for its shape so it lines up with the
+   pages above, and is set apart by the rule above it and a muted, dashed
+   border: a thing to do, not a page to go to. */
+
+.page-overview-modal-actions {
+    margin-top: 0.55rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+.page-overview-modal-new {
+    border-style: dashed;
+    color: var(--text-secondary);
+}
+
+.page-overview-modal-new[hidden] {
+    display: none;
+}
+
+.page-overview-modal-plus {
+    font-size: 1em;
+    color: var(--text-secondary);
+}
+
+/* The shortcut hint sits where a page shows its bookmark count. */
+.page-overview-modal-hintkey {
+    opacity: 0.75;
+}
+
+/* The name row takes the button's place inside the same action block, so
+   opening it does not change the modal's height. */
+.page-overview-modal-actions .bookmark-inline-create {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.page-overview-modal-actions .bookmark-inline-create[hidden] {
+    display: none;
+}
+
+.page-overview-modal-actions .bookmark-inline-create-input {
+    flex: 1 1 8rem;
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+}
+
+/* Colour and size come from .bookmark-inline-conflict in dashboard.css; only
+   the full-width placement in this flex row belongs here. */
+.page-overview-modal-actions .bookmark-inline-conflict {
+    flex: 1 0 100%;
+    margin-top: 0;
 }
 
 /* Fix hidden attribute override */

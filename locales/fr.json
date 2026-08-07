@@ -355,7 +355,11 @@
             "hmsShiftClick": "Étendre la sélection jusqu’à la ligne cliquée",
             "hmsPlainClick": "Avec une sélection ouverte, un simple clic l’efface",
             "hmsClear": "Effacer la sélection — la vue santé reste ouverte",
-            "hvSelect": "Cocher la ligne ciblée pour une action groupée"
+            "hvSelect": "Cocher la ligne ciblée pour une action groupée",
+            "navPageOverviewNewPage": "Créer une nouvelle page depuis l’aperçu des pages",
+            "navAddCategory": "Ajouter une catégorie à la page actuelle (appuyez brièvement sur c pour rechercher)",
+            "cnPageNew": "Créer une page et s’y rendre (n dans l’aperçu des pages fait de même)",
+            "cbCategoryNew": "Créer une catégorie sur la page actuelle (maintenir c fait de même)"
         },
         "firstBookmarkGuide": "Ajoutez votre premier favori avec + ou Shift+B (& pour ajout rapide), ou configurez les pages dans config → pages.",
         "emptyStateAddTouch": "Touchez + favori dans la barre ci-dessous",
@@ -962,7 +966,10 @@
         "contextMenuOpenSelected": "Ouvrir {count} sélectionné(s)",
         "contextMenuCopySelected": "Copier {count} liens",
         "contextMenuClearSelection": "Effacer la sélection",
-        "contextMenuDeleteSelected": "Supprimer {count} sélectionné(s)"
+        "contextMenuDeleteSelected": "Supprimer {count} sélectionné(s)",
+        "pageOverviewNewPage": "Nouvelle page",
+        "addCategoryPlaceholder": "+ catégorie",
+        "addCategoryGroupAria": "Ajouter une catégorie"
     },
     "health": {
         "pageTitle": "health beta",
@@ -4287,7 +4294,14 @@
         "groupBookmarks": "Favoris",
         "groupNavigateSearch": "Recherche & navigation",
         "groupLookAndFeel": "Apparence & mise en page",
-        "groupSettingsTools": "Réglages & outils"
+        "groupSettingsTools": "Réglages & outils",
+        "pageNewOption": "Nouvelle page…",
+        "pageNewHint": "Saisis un nom pour la nouvelle page",
+        "pageNewLabel": "Créer la page « {name} »",
+        "categoryNewOption": "Nouvelle catégorie…",
+        "categoryNewHint": "Saisis un nom pour la nouvelle catégorie",
+        "categoryNewLabel": "Créer la catégorie « {name} »",
+        "categoryNewFirst": "Aucune catégorie — crée la première"
     },
     "quickstart": {
         "title": "Démarrage rapide",

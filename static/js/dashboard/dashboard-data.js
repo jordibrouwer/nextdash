@@ -719,6 +719,13 @@ class DashboardData {
             || (d.activeView === 'health' && d.health?.isEnabled?.())
             || (d.activeView === 'config' && d.config?.isEnabled?.());
 
+        // A freshly created empty category is held on screen against the
+        // "hide empty categories" setting; that only applies to the page it was
+        // made on, so leaving the page drops the pin.
+        if (Number.isFinite(previousPageId) && previousPageId !== targetPageId) {
+            d.pinnedEmptyCategoryId = null;
+        }
+
         d.bookmarks = bookmarks;
         d.categories = this.clonePageCategories(categories);
         d.currentPageId = targetPageId;

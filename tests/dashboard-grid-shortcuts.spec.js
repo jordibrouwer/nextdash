@@ -84,6 +84,15 @@ test.describe('dashboard grid shortcuts', () => {
         ))).toBe(true);
     });
 
+    // Plain c waits for a hold before adding a category; Shift+C deliberately
+    // does not, so a quick press must still open the check-mode menu.
+    test('Shift+C opens the check mode menu on a quick press', async ({ page }) => {
+        await page.keyboard.press('Shift+C');
+        await expect(page.locator('#bookmark-check-mode-menu')).toBeVisible({ timeout: 3000 });
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+        await expect(page.locator('.bookmark-inline-create.category-add-create')).toHaveCount(0);
+    });
+
     test('tag popover marks current bookmark tags with is-current', async ({ page }) => {
         const tagName = `pw-tag-${Date.now()}`;
         await page.evaluate(async (tag) => {

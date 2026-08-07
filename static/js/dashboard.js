@@ -29,6 +29,10 @@ class Dashboard {
         this.collapsedCategories = {};
         this.pages = [];
         this.currentPageId = 'default';
+        // Id of a just-created category that must stay on screen even though it
+        // is empty and "hide empty categories" is on. Cleared when the page
+        // changes; see buildCategoryColumnBlocks.
+        this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
             theme: 'moss-stone-dark',
@@ -177,6 +181,7 @@ class Dashboard {
         this.tagFilter = new DashboardTagFilter(this);
         this.multiSelect = new DashboardMultiSelect(this);
         this.structureCreate = new DashboardStructureCreate(this);
+        this.categoryAdd = new DashboardCategoryAdd(this);
         this.inlineEdit = typeof window.createDashboardInlineEditLoader === 'function'
             ? window.createDashboardInlineEditLoader(this)
             : new DashboardInlineEdit(this);
