@@ -4103,7 +4103,12 @@
         "trashActionError": "Diese Aktion konnte nicht abgeschlossen werden.",
         "categoryDeleted": "Kategorie gelöscht.",
         "categoryDeleteUndone": "Kategorie wiederhergestellt.",
-        "categoryDeleteUndoFailed": "Kategorie konnte nicht wiederhergestellt werden."
+        "categoryDeleteUndoFailed": "Kategorie konnte nicht wiederhergestellt werden.",
+        "overviewNewFeatureHealthStatsTitle": "Sehen, wie die ganze Sammlung dasteht",
+        "overviewNewFeatureHealthStatsWhat": "Die Gesundheitsansicht konnte ein Lesezeichen im Detail beschreiben und das Ganze kaum: zwanzig Monitore hießen zwanzig Heartbeats und keine Antwort darauf, wie die Woche lief.",
+        "overviewNewFeatureHealthStatsHow": "Der Filter Überwacht öffnet jetzt mit gebündelter Uptime über alle Monitore, den am wenigsten verfügbaren, allem Langsameren als letzte Woche und jedem Ausfall. Die Kopfzeile zeichnet den Anteil gesunder Lesezeichen der letzten 90 Tage.",
+        "overviewNewFeatureHealthStatsEnable": "Nichts einzuschalten, wobei das Panel etwas Überwachtes braucht, das es beschreiben kann. Die Trendlinie beginnt, sobald Sie die Ansicht an zwei verschiedenen Tagen geöffnet haben.",
+        "overviewNewFeatureHealthStatsCta": "Health öffnen →"
     },
     "colors": {
         "title": "themenanpassung",

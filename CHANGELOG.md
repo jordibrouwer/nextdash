@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.09.06.1 — August 2026](#v202609061--august-2026)
 - [v2026.09.06 — August 2026](#v20260906--august-2026)
 - [v2026.09.05.1 — August 2026](#v202609051--august-2026)
 - [v2026.09.05 — August 2026](#v20260905--august-2026)
@@ -154,6 +155,47 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.09.06.1 — August 2026
+
+**The collection, not the row** — the health view could describe one bookmark in detail and the whole set barely at all. It now shows how the collection has moved over the last month, how every monitor is doing together, and — wherever a figure could be read the wrong way — what that figure actually rests on.
+
+### Health
+
+- **fix** — **A KPI tile and its filter now describe the same set.** `HealthIssue.Status` carries only the *worst* thing about a bookmark, picked by priority, while the summary counters were tallied from every condition that held. So two copies of one URL that had never been opened counted **2** under *Unused*, and clicking that tile listed nothing — a dead end that also hit *Stale*, *Never checked* and *Missing preview*, the four whose status is most often overruled. The report now carries `Flags`: every condition that holds, appended beside the counter it belongs to so the two cannot drift. `Status` is unchanged and still single-valued, because it drives presentation — colour band, sort rank, headline reason — where one answer is the right answer. Proven with a throwaway probe before the fix (`tile=2 filter=0`) and pinned by tests after (`handlers.go`, `models.go`, `dashboard-health.js`).
+- **new** — **A daily trend of collection health**, stored in `health-trend.json` on the pattern `health_history.go` established: one point per day, 90 days of retention, and a corrupt file restarts the record rather than blocking a report. A day is recorded **once** — the report is rebuilt many times a day, so it is an upsert keyed on the UTC day, and earlier days are never rewritten. The header draws it on a **fixed 0–100 axis**, because a collection moving between 91% and 93% should look flat rather than dramatic, and days the dashboard was not opened leave a **gap** instead of a straight line through them. Nothing renders until there are two days to compare (`health_trend.go`, `data_dir.go`).
+- **new** — **A sentence under the toolbar saying what the active filter selects.** The rule behind each pill was reachable only as a tooltip on the matching tile — invisible on a touch screen and to anyone who did not think to hover. Each note states its own rule rather than restating its label, and it renders on an empty filter too, where *what was being looked for* is the only useful thing left to say.
+- **new** — **An `ℹ` in the toolbar opening the longer explanation**: how the score is charged, why one bookmark can be counted by several tiles, how current the cached numbers are, why a percentage carries its check count, why fleet uptime pools checks, and how the trend treats days you were away. The availability modes are deliberately absent — `CheckMode.showExplainer` owns that wording for two other surfaces and a third copy is how wording drifts.
+- **fix** — **The modal needed a height cap of its own.** The `90vh` rule in `modal.css` is scoped to `.whats-new-modal`, so this one grew to fit its content: measured at **786px in an 800px viewport**, touching the bottom edge with 14px above. It now caps against both `vh` and a fixed inset so a short window still gets a margin, and the body scrolls rather than the panel growing. Narrowed to 34rem as well, since one column of prose at 38rem ran its lines long (`health-view.css`).
+- **fix** — **The header says how old the report is.** It is built server-side and cached for a few minutes, so a headline count read as live when it was not. Under a minute reads *just now* rather than *0m*, which looks like a stopped clock.
+- **fix** — **The tiles explain themselves on hover**, which matters most for the pair that sound alike: *Stale* is not opened in over 30 days, *Unused* is never opened at all.
+
+### Monitoring
+
+- **new** — **Collection-wide statistics on the Monitored filter**: pooled uptime over 24 hours, 7 days and 30 days, how many monitors are responding right now, and the average response time across all of them. Uptime **pools individual checks** rather than averaging per-monitor percentages — otherwise a monitor with three recorded checks cancels out one with three thousand. Falsified by switching to the averaging form, which reported 0.50 where pooling gives 0.99 (`health_fleet.go`).
+- **new** — **Three lists under the panel.** *Least available (7 days)* names the worst records with anything failing right now placed first, and **excludes monitors at a clean 100%** so a short list means little is wrong rather than that only five were examined. *Slower than last week* compares the last day against the seven days before it; the two windows **never overlap**, since letting them share samples dragged the baseline from 100ms to 147ms and halved the slowdown it reported. *Outages* is every recorded failure across the collection, newest first, each naming its bookmark, and reports its true total when capped.
+- **new** — **The monitor interval is settable from the row.** The check-mode endpoint carried no cadence, so it takes one now: an explicit value wins, an omitted one leaves the bookmark's own interval alone — a caller changing only the mode must not silently reset it — and out-of-range values are clamped rather than rejected, since the bounds are the server's business. *Periodic* and *off* never store one, or the next enable would inherit a stale number. The picker appears only on a row already monitoring; offering it elsewhere would be a second, hidden way to turn monitoring on (`health_check_mode_single.go`, `health_check_mode.go`, `check-mode.js`).
+- **fix** — **An uptime percentage shows the number of checks behind it.** *100%* from three checks and *100%* from three hundred rendered identically; the count now sits beside the figure, with the full sentence in the accessible name so it is not read twice.
+- **new** — **The CSV export carries the monitoring data** — interval, the three uptime windows, last response and total checks — but only when the exported list actually holds a monitored row, since otherwise they are six empty columns on every line. Uptime goes out as a bare number so a spreadsheet can average it, and a window with no samples stays blank rather than becoming a `0` that reads as total downtime.
+- **fix** — Interval choices lived in two places already (the config editor and the add-bookmark form); they move to `CheckMode.INTERVAL_CHOICES` so a third copy cannot drift from the server's bounds.
+
+### Config
+
+- **new** — **Config → Help** splits *Availability & health* into **four panels** — the modes, working through the list, the statistics, and the inbox. It was one run of prose, so the inbox sat below three screens of text about something else. The statistics panel is new and documents *why* the numbers are computed as they are, not just what they show: pooled uptime, the non-overlapping comparison windows, the fixed trend axis, and the check count behind a percentage. Fully translated in en, nl, de and fr (`dashboard-config.js`).
+- **fix** — The **Overview** new-features carousel test asserted the monitor spotlight *leads* the list. True when written, but the carousel is newest-first and four releases have landed since, so it now sits eleventh and the assertion failed on a feature that works. It finds its own slide by `titleKey` instead, which survives the next release too.
+
+### Tests
+
+- **new** — 4 Go tests tying the summary counters to the flags, and 3 e2e tests clicking through every non-zero tile. Each falsified by removing one flag at a time; one falsification exposed a real gap in my own test — appending `healthy` to every issue left the exclusivity test green, because it only inspected a bookmark that *was* healthy. Widened, then caught (`health_flags_test.go`, `health-tile-filter-agreement.spec.js`).
+- **new** — 16 Go tests across the trend store and the fleet statistics, each rule falsified separately: pooled-versus-averaged uptime, perfect monitors in the worst list, the overlapping baseline window, and one-point-per-day (`health_trend_test.go`, `health_fleet_test.go`).
+- **new** — 11 e2e tests on the trend chart and fleet panel, 8 on the explainers, 8 on the quick wins, and 3 on the help tab — the last asserting each language renders its own prose rather than falling through to English, which is the failure mode a missing key produces here.
+- **fix** — Two of my own tests were worthless until corrected. The language test called a `setLanguage()` that does not exist, so all three "languages" were English; a probe showed the title unchanged across all three. And a modal assertion used a `.modal-cancel` selector that matches nothing, so it passed regardless — the cancel button is `.modal-button`.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG and MANUAL for **v2026.09.06.1**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v174`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v233`. Docs stay out of the What's new modal, which is for user-facing change (`whats-new-stub.js`).
 
 ---
 

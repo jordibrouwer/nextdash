@@ -1,0 +1,67 @@
+{
+    "tag": "v2026.09.06.1",
+    "date": "August 2026",
+    "releasedAt": "2026-08-07",
+    "modalLead": "The health view now answers questions about the whole collection rather than one bookmark at a time: how it has moved over the last month, how every monitor is doing together, and — where a number could be read the wrong way — what it actually rests on.",
+    "sections": [
+        {
+            "title": "Health",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>A tile you click now lists what it counted.</strong> A bookmark can be several things at once, but a row shows only its worst problem — so two copies of one URL that were never opened counted <strong>2</strong> under <strong>Unused</strong>, and clicking that tile showed nothing at all. The same dead end hit <strong>Stale</strong>, <strong>Never checked</strong> and <strong>Missing preview</strong>. Tiles and filters now agree, and a bookmark appears under every filter it genuinely belongs to."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>A line of health over time.</strong> Once you have opened the health view on more than one day, the header draws the share of healthy bookmarks as a chart, with an arrow beside the percentage saying how far it has moved — <em>up 12 points over 30 days</em>. It is drawn on a fixed 0–100 scale, so a collection sitting between 91% and 93% looks as flat as it is. One point is kept per day for 90 days, and days you did not visit leave a gap rather than a straight line through them."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Every tile and filter says what it selects.</strong> The pills are one or two words out of necessity, and <strong>Stale</strong>, <strong>Unused</strong> and <strong>Never checked</strong> are indistinguishable until you know the rule behind them. A sentence under the toolbar now states the rule for whichever filter is active — including when it finds nothing, which is exactly when <em>what was looked for</em> is the only useful thing left to say."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>An <code>ℹ</code> in the toolbar explains the numbers.</strong> How the score is charged, why one bookmark can be counted by several tiles, how current the cached figures are, and what the uptime and trend figures rest on."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The header says how old the report is.</strong> It is built on the server and cached for a few minutes, so <em>12 broken</em> read as a live number when it was not. <strong>Retest all</strong> refreshes it."
+                }
+            ]
+        },
+        {
+            "title": "Monitoring",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>All your monitors in one panel.</strong> The <strong>Monitored</strong> filter now opens with the collection-wide picture: pooled uptime over 24 hours, 7 days and 30 days, how many monitors are responding right now, and the average response time across all of them. Uptime counts individual checks rather than averaging each monitor's percentage — otherwise a monitor with three recorded checks would weigh as heavily as one with three thousand."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Least available, slower than last week, and every outage.</strong> Three lists under the panel. The first names the monitors with the worst 7-day record, anything failing right now placed first — monitors at a clean 100% are left out, so a short list means little is wrong rather than that only five were examined. The second compares the last day's response times against the seven days before it and names only meaningful slowdowns. The third is every recorded outage across the collection, newest first, each naming its bookmark."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Change how often a monitor runs, from its row.</strong> Open the mode popover on a monitored row and a <strong>Check interval</strong> row sits under the three modes: 5m, 15m, 30m, 1h, 6h, 24h. This was the one screen where you look at a heartbeat, conclude the cadence is wrong, and previously had to go to the bookmark editor to change it."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>An uptime percentage now shows what it rests on.</strong> <em>100%</em> from three checks and <em>100%</em> from three hundred looked identical; the count now sits beside the figure."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Exports carry the monitoring data.</strong> When the exported list holds monitored bookmarks, the CSV also carries their interval, the three uptime windows, last response time and total checks. Uptime is written as a plain number so a spreadsheet can average the column, and a window with no samples stays blank rather than becoming a <code>0</code> that reads as total downtime."
+                }
+            ]
+        },
+        {
+            "title": "Help",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Config → Help</strong> splits <em>Availability &amp; health</em> into four panels — the modes, working through the list, the statistics, and the inbox — so the last of them is no longer three screens below the first. The statistics panel documents why the numbers are computed the way they are, not just what they show."
+                }
+            ]
+        }
+    ]
+}

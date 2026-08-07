@@ -4103,7 +4103,12 @@
         "trashActionError": "Could not complete that action.",
         "categoryDeleted": "Category deleted.",
         "categoryDeleteUndone": "Category restored.",
-        "categoryDeleteUndoFailed": "Could not restore the category."
+        "categoryDeleteUndoFailed": "Could not restore the category.",
+        "overviewNewFeatureHealthStatsTitle": "See how the whole collection is doing",
+        "overviewNewFeatureHealthStatsWhat": "The health view could describe one bookmark in detail and the whole set barely at all: twenty monitors meant twenty heartbeats and no answer to how the week went.",
+        "overviewNewFeatureHealthStatsHow": "The Monitored filter now opens with pooled uptime across every monitor, the least available ones, anything slower than last week, and every outage. The header draws the share of healthy bookmarks over the last 90 days.",
+        "overviewNewFeatureHealthStatsEnable": "Nothing to switch on, though the panel needs something monitored to describe. The trend line starts once you have opened the health view on two separate days.",
+        "overviewNewFeatureHealthStatsCta": "Open Health →"
     },
     "colors": {
         "title": "theme customization",

@@ -2440,6 +2440,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureHealthStatsTitle',
+                titleFallback: 'See how the whole collection is doing',
+                whatKey: 'config.overviewNewFeatureHealthStatsWhat',
+                whatFallback: 'The health view could describe one bookmark in detail and the whole set barely at all: twenty monitors meant twenty heartbeats and no answer to how the week went.',
+                howKey: 'config.overviewNewFeatureHealthStatsHow',
+                howFallback: 'The Monitored filter now opens with pooled uptime across every monitor, the least available ones, anything slower than last week, and every outage. The header draws the share of healthy bookmarks over the last 90 days.',
+                enableKey: 'config.overviewNewFeatureHealthStatsEnable',
+                enableFallback: 'Nothing to switch on, though the panel needs something monitored to describe. The trend line starts once you have opened the health view on two separate days.',
+                ctaKey: 'config.overviewNewFeatureHealthStatsCta',
+                ctaFallback: 'Open Health →',
+                go: { view: 'health', filter: 'monitored' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureSpacingTitle',
                 titleFallback: 'Decide how much room the grid gives away',
                 whatKey: 'config.overviewNewFeatureSpacingWhat',

@@ -4103,7 +4103,12 @@
         "trashActionError": "Impossible d'effectuer cette action.",
         "categoryDeleted": "Catégorie supprimée.",
         "categoryDeleteUndone": "Catégorie restaurée.",
-        "categoryDeleteUndoFailed": "Impossible de restaurer la catégorie."
+        "categoryDeleteUndoFailed": "Impossible de restaurer la catégorie.",
+        "overviewNewFeatureHealthStatsTitle": "Voir l'état de toute la collection",
+        "overviewNewFeatureHealthStatsWhat": "La vue santé décrivait un favori en détail et l'ensemble à peine : vingt moniteurs, c'était vingt battements et aucune réponse sur la semaine écoulée.",
+        "overviewNewFeatureHealthStatsHow": "Le filtre Surveillés ouvre désormais sur la disponibilité cumulée de tous les moniteurs, les moins disponibles, ce qui a ralenti depuis la semaine dernière, et chaque panne. L'en-tête trace la part de favoris sains sur les 90 derniers jours.",
+        "overviewNewFeatureHealthStatsEnable": "Rien à activer, même si le panneau a besoin de quelque chose de surveillé à décrire. La courbe démarre dès que vous avez ouvert la vue santé deux jours différents.",
+        "overviewNewFeatureHealthStatsCta": "Ouvrir Health →"
     },
     "colors": {
         "title": "personnalisation du thème",

@@ -4103,7 +4103,12 @@
         "trashActionError": "Kon die actie niet voltooien.",
         "categoryDeleted": "Categorie verwijderd.",
         "categoryDeleteUndone": "Categorie hersteld.",
-        "categoryDeleteUndoFailed": "Kon de categorie niet herstellen."
+        "categoryDeleteUndoFailed": "Kon de categorie niet herstellen.",
+        "overviewNewFeatureHealthStatsTitle": "Zie hoe de hele collectie ervoor staat",
+        "overviewNewFeatureHealthStatsWhat": "Het gezondheidsoverzicht kon één bladwijzer tot in detail beschrijven en het geheel nauwelijks: twintig monitors betekende twintig heartbeats en geen antwoord op hoe de week ging.",
+        "overviewNewFeatureHealthStatsHow": "Het filter Gemonitord opent nu met gebundelde uptime over alle monitors, de minst beschikbare, wat trager is dan vorige week, en elke storing. De kop tekent het aandeel gezonde bladwijzers over de afgelopen 90 dagen.",
+        "overviewNewFeatureHealthStatsEnable": "Niets aan te zetten, al heeft het paneel wel iets gemonitords nodig om te beschrijven. De trendlijn begint zodra je het overzicht op twee verschillende dagen hebt geopend.",
+        "overviewNewFeatureHealthStatsCta": "Health openen →"
     },
     "colors": {
         "title": "thema-aanpassing",
