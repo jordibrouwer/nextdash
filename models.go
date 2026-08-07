@@ -175,6 +175,8 @@ type Settings struct {
 	LayoutPreset                  string                       `json:"layoutPreset"`                 // Dashboard layout preset
 	LayoutVersion                 string                       `json:"layoutVersion"`                // Dashboard layout version: classic, modern
 	DensityMode                   string                       `json:"densityMode"`                  // Dashboard density mode: comfortable, compact, dense
+	CategorySpacing               string                       `json:"categorySpacing"`              // Vertical space between category rows: snug, balanced, airy
+	SideMargin                    string                       `json:"sideMargin"`                   // Left/right page margin on the dashboard: snug, balanced, airy
 	PackedColumns                 bool                         `json:"packedColumns"`                // Stack categories in vertical columns (round-robin) to reduce empty space
 	LauncherIconSize              string                       `json:"launcherIconSize"`             // Launcher tile icon size: small, normal, large
 	CalendarUrl                   string                       `json:"calendarUrl"`                  // URL for calendar link in date popover (empty = hidden)
@@ -2075,6 +2077,8 @@ func (fs *FileStore) GetSettings() Settings {
 			LayoutPreset:                   "default",
 			LayoutVersion:                  "classic",
 			DensityMode:                    "compact",
+			CategorySpacing:                "balanced",
+			SideMargin:                     "balanced",
 			PackedColumns:                  true,
 			BackgroundType:                 "none",
 			BackgroundGradient:             "",
@@ -2309,6 +2313,17 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["densityMode"]; !ok || (settings.DensityMode != "comfortable" && settings.DensityMode != "compact" && settings.DensityMode != "dense" && settings.DensityMode != "auto") {
 			settings.DensityMode = "compact"
+		}
+		// Distinct from densityMode, which sizes bookmark rows: this is the gap
+		// between category rows. "balanced" is a deliberate reduction from the
+		// old fixed 3rem, which left a visible band of nothing on wide pages.
+		if _, ok := rawSettings["categorySpacing"]; !ok || (settings.CategorySpacing != "snug" && settings.CategorySpacing != "balanced" && settings.CategorySpacing != "airy") {
+			settings.CategorySpacing = "balanced"
+		}
+		// The left/right band beside the grid. "balanced" is the margin the
+		// dashboard has always had, so an existing install sees no change.
+		if _, ok := rawSettings["sideMargin"]; !ok || (settings.SideMargin != "snug" && settings.SideMargin != "balanced" && settings.SideMargin != "airy") {
+			settings.SideMargin = "balanced"
 		}
 		if _, ok := rawSettings["monitorEmphasis"]; !ok || (settings.MonitorEmphasis != "problems" && settings.MonitorEmphasis != "always" && settings.MonitorEmphasis != "never") {
 			settings.MonitorEmphasis = "problems"

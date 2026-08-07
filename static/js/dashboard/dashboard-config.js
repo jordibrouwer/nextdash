@@ -2458,7 +2458,7 @@ class DashboardConfig {
                 whatKey: 'config.overviewNewFeatureCategoryGridWhat',
                 whatFallback: 'Making a category meant going into Config or through the bookmark form — both things you did on the way to something else.',
                 howKey: 'config.overviewNewFeatureCategoryGridHow',
-                howFallback: 'A + sits beside the A–Z / Rec chips in a category header, and holding c does the same from the keyboard. Both act on the page on screen, so neither asks which page you meant.',
+                howFallback: 'A dashed “+ category” tile sits after the last column, and holding c does the same from the keyboard. Both act on the page on screen, so neither asks which page you meant.',
                 enableKey: 'config.overviewNewFeatureCategoryGridEnable',
                 enableFallback: 'Nothing to switch on. Right-click a category header to rename or delete it, and a category you just made stays visible even with “hide empty categories” on.',
                 ctaKey: 'config.overviewNewFeatureCategoryGridCta',
@@ -4525,6 +4525,8 @@ class DashboardConfig {
                 </div>
             </div>
 
+            ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'layout'), 'behavior')}
+
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.buttonBarPositionNote', 'Where the add, search, commands, and finders buttons sit on the dashboard. Center-bottom floats them above the bookmarks; the corner docks tuck them out of the way; the side rail stacks them vertically down the left edge.'))}</p>
@@ -4534,8 +4536,7 @@ class DashboardConfig {
                     ${this.appearanceAff('buttonBarPosition')}
                     <p class="config-field-hint">${esc(this.t(`config.buttonBarPositionDesc.${barPosition}`, ''))}</p>
                 </div>
-            </div>
-            ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'layout'), 'behavior')}`;
+            </div>`;
     }
 
     renderAppearanceDisplayBody() {
@@ -5924,6 +5925,8 @@ class DashboardConfig {
         // Layout
         columnsPerRow: { info: ['columnsInfoTitle', 'columnsInfoMessage'] },
         densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'compact' },
+        categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'balanced' },
+        sideMargin: { info: ['sideMarginInfoTitle', 'sideMarginInfoMessage'], def: 'balanced' },
         packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
         interleaveMode: { info: ['interleaveModeInfoTitle', 'interleaveModeInfoMessage'], def: false },
         hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'] },
@@ -6127,6 +6130,23 @@ class DashboardConfig {
                     { field: 'densityMode', type: 'select', label: t('config.densityLabel', 'Density'), special: 'render', options: [
                         opt('comfortable', t('config.densityComfortable', 'Comfortable')), opt('compact', t('config.densityCompact', 'Compact')),
                         opt('dense', t('config.densityDense', 'Dense')), opt('auto', t('config.densityAuto', 'Auto')),
+                    ] },
+                    // chromeRender, not render: both of these are written to a
+                    // body attribute the CSS keys off, and without the chrome
+                    // pass they only take effect after a reload.
+                    //
+                    // Cards rather than a select: three options whose difference
+                    // is spatial, so seeing all three at once — and the sentence
+                    // under each — beats hiding two of them behind a click.
+                    { field: 'categorySpacing', type: 'cards', label: t('config.categorySpacingLabel', 'Space between categories'), special: 'chromeRender', options: [
+                        { value: 'snug', label: t('config.categorySpacingSnug', 'Snug'), body: t('config.categorySpacingSnugBody', 'Rows sit close together.') },
+                        { value: 'balanced', label: t('config.categorySpacingBalanced', 'Balanced'), body: t('config.categorySpacingBalancedBody', 'The default.') },
+                        { value: 'airy', label: t('config.categorySpacingAiry', 'Airy'), body: t('config.categorySpacingAiryBody', 'Extra room between rows.') },
+                    ] },
+                    { field: 'sideMargin', type: 'cards', label: t('config.sideMarginLabel', 'Page margins'), special: 'chromeRender', options: [
+                        { value: 'snug', label: t('config.sideMarginSnug', 'Snug'), body: t('config.sideMarginSnugBody', 'Narrow edges — more room for columns.') },
+                        { value: 'balanced', label: t('config.sideMarginBalanced', 'Balanced'), body: t('config.sideMarginBalancedBody', 'The default.') },
+                        { value: 'airy', label: t('config.sideMarginAiry', 'Airy'), body: t('config.sideMarginAiryBody', 'Wide edges — columns pulled together.') },
                     ] },
                     { field: 'categoryItemLimit', type: 'select', label: t('config.categoryItemLimitLabelShort', 'Items per category'), special: 'render', options: [
                         opt(10, '10'), opt(15, '15'), opt(20, '20'), opt(25, '25'), opt(30, '30'), opt(50, '50'),

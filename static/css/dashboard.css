@@ -62,13 +62,33 @@ body {
     /* Fixed clamp() side margin (not a percentage) so the whitespace shrinks
        toward the floor as the window narrows, giving the columns the reclaimed
        space before they have to get narrower. Roomy margins keep the columns
-       closer together on wide screens. */
+       closer together on wide screens.
+
+       The clamp is the "balanced" value of the side-margin setting, so a
+       dashboard that never touches the setting looks exactly as it always has;
+       the fallback here repeats it for the case where no body attribute is set
+       at all (a view rendered before setupDOM runs). */
     max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 clamp(2rem, 6vw, 8rem);
+    padding: 0 var(--dashboard-side-margin, clamp(2rem, 6vw, 8rem));
 }
 
+/* Left/right band beside the grid.
+ *
+ * Each keeps a clamp so the margin still collapses on a narrow window rather
+ * than squeezing the columns — only the ceiling differs. "snug" hands roughly
+ * 100px per side back to the grid on a wide screen; "airy" is for people who
+ * want the columns pulled together. */
+body[data-side-margin="snug"] {
+    --dashboard-side-margin: clamp(1rem, 2.5vw, 3rem);
+}
+body[data-side-margin="balanced"] {
+    --dashboard-side-margin: clamp(2rem, 6vw, 8rem);
+}
+body[data-side-margin="airy"] {
+    --dashboard-side-margin: clamp(3rem, 9vw, 12rem);
+}
 
 /* Header Top - Contains date, tabs, and config button */
 .header-top {
@@ -1342,7 +1362,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
        columns shrink gracefully toward --dashboard-column-min. */
     --dashboard-column-max: 360px;
     display: grid;
-    row-gap: 3rem;
+    row-gap: var(--category-row-gap, 2rem);
     column-gap: 1.5rem;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     width: 100%;
@@ -1460,7 +1480,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 
 /* Layout presets */
 .dashboard-grid.layout-default {
-    row-gap: 3rem;
+    row-gap: var(--category-row-gap, 2rem);
     column-gap: 1.5rem;
 }
 
@@ -2093,6 +2113,25 @@ body[data-density-mode="dense"] .dashboard-grid {
 }
 /* 'auto' leaves variables to layout + responsive CSS to decide */
 
+/* Vertical space between category rows.
+ *
+ * Distinct from density above, which sizes the bookmark rows inside a category:
+ * this is the gap between the rows of categories themselves, which is what
+ * makes a wide page feel empty. The old fixed 3rem is still available as
+ * "airy"; the default drops to 2rem, because on a five-column layout 3rem left
+ * a visible band of nothing between every row.
+ *
+ * The variable is read by .dashboard-grid.layout-default and the auto-fit grid;
+ * the packed and compact presets keep their own tighter gaps. */
+body[data-category-spacing="snug"] {
+    --category-row-gap: 1.25rem;
+}
+body[data-category-spacing="balanced"] {
+    --category-row-gap: 2rem;
+}
+body[data-category-spacing="airy"] {
+    --category-row-gap: 3rem;
+}
 
 
 /* Keep terminal rows single-line in dense layouts (e.g. 6 columns). */

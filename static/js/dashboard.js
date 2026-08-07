@@ -76,6 +76,8 @@ class Dashboard {
             layoutPreset: 'default',
             layoutVersion: 'classic',
             densityMode: 'compact',
+            categorySpacing: 'balanced',
+            sideMargin: 'balanced',
             packedColumns: true,
             backgroundType: 'none',
             backgroundOpacity: 1,
