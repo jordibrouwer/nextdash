@@ -4089,6 +4089,16 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
     transition: transform 0.15s ease-in, opacity 0.15s ease-in;
 }
 
+/* What's new is narrower than the two it shares the shell with: it is a single
+   column of prose, and 52rem ran its lines to ~84 characters. Split out rather
+   than folded into the rule above, because the recent-bookmarks list and the
+   cheat sheet's two-column key table both still want the width. This selector
+   has to repeat the full :has() chain — the shorter .modal.whats-new-modal in
+   modal.css loses to it on specificity. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    width: min(40rem, calc(100vw - 2.5rem));
+}
+
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.keyboard-cheat-sheet-modal) .modal,
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.whats-new-modal) .modal {
