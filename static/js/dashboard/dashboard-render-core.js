@@ -410,9 +410,9 @@ class DashboardRenderCore {
 
         const gridLayout = this.syncDashboardGridLayout();
         this._distributeDashboardColumnBlocks(container, columnBlocks, { animate, gridLayout });
-        // After the columns, never inside one: the tile is not a category, and a
-        // column that holds it would reorder and pack around it as though it were.
-        d.categoryAdd?.appendPlaceholder(container);
+        // After layout: the "+" goes in whichever header ends the grid, and that
+        // depends on how the columns packed, not on the order of the blocks.
+        d.categoryAdd?.placeTrigger(container);
 
         if (animate) {
             requestAnimationFrame(() => {

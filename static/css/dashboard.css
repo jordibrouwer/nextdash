@@ -69,6 +69,7 @@ body {
     padding: 0 clamp(2rem, 6vw, 8rem);
 }
 
+
 /* Header Top - Contains date, tabs, and config button */
 .header-top {
     display: flex;
@@ -2093,6 +2094,7 @@ body[data-density-mode="dense"] .dashboard-grid {
 /* 'auto' leaves variables to layout + responsive CSS to decide */
 
 
+
 /* Keep terminal rows single-line in dense layouts (e.g. 6 columns). */
 .dashboard-grid.layout-terminal .status-text {
     display: none !important;
@@ -3403,45 +3405,47 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
    `c` does the same thing without it, which is why it may be hidden entirely on
    touch. */
 
-.category-add-placeholder {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: flex-start;
-    padding: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.category-add-placeholder-btn {
-    border: 1px dashed var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: transparent;
-    color: var(--text-tertiary);
+/* Sized and coloured to match .category-sort-btn beside it: this is one more
+   control in the same trailing group, not a separate affordance. Squarer than
+   the A–Z/Rec chips because it holds a single glyph. */
+.category-add-inline-btn {
     font: inherit;
-    font-size: var(--font-size-category);
-    font-weight: var(--font-weight-bold);
-    letter-spacing: 0.05em;
-    padding: 0.4rem 0.75rem;
+    font-size: 0.68em;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.2;
+    min-height: 1.45em;
+    min-width: 1.45em;
+    padding: 0.15em 0.3em;
+    margin-left: 0.25em;
+    border: 1px solid color-mix(in srgb, var(--text-tertiary) 28%, transparent);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--background-secondary, transparent) 55%, transparent);
+    color: var(--text-tertiary);
     cursor: pointer;
-    opacity: 0.65;
+    opacity: 0.75;
     transition: opacity 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
-.category-add-placeholder-btn:hover,
-.category-add-placeholder-btn:focus-visible {
+.category-add-inline-btn:hover,
+.category-add-inline-btn:focus-visible {
     opacity: 1;
     color: var(--text-secondary);
-    border-color: var(--text-tertiary);
+    border-color: color-mix(in srgb, var(--text-secondary) 35%, transparent);
     outline: none;
 }
 
-.category-add-placeholder-btn[hidden] {
+.category-add-inline-btn[hidden] {
     display: none;
 }
 
-/* The name row appears where the tile's button was. */
+/* The name row is hosted by the grid rather than the header the "+" sits in: a
+   text input inside a one-line header would overflow the column. It spans the
+   grid so it is never squeezed into a single column's width, and only exists
+   while naming, so the row it adds is not permanent. */
 .bookmark-inline-create.category-add-create {
-    flex: 1 1 auto;
+    grid-column: 1 / -1;
     max-width: 22rem;
+    margin-top: 0.75rem;
 }
 
 .bookmark-inline-icon-actions {

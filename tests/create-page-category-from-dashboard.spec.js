@@ -219,19 +219,48 @@ test.describe('pages overlay — creating a page', () => {
 });
 
 test.describe('dashboard grid — adding a category', () => {
-    test('the grid shows a + category placeholder', async ({ page }) => {
+    test('the grid shows a + in a category header', async ({ page }) => {
         await loadDashboard(page);
         await expect(page.locator('#category-add-placeholder-btn')).toBeVisible();
     });
 
-    test('the placeholder is not a category, so it cannot be drag-reordered', async ({ page }) => {
+    test('exactly one +, and it sits in the header that ends the grid', async ({ page }) => {
         await loadDashboard(page);
-        const tile = page.locator('.category-add-placeholder');
-        await expect(tile).toHaveCount(1);
-        // The reorder instances select `.category`; a placeholder matching that
-        // would be draggable and droppable between real categories.
-        await expect(page.locator('.category-add-placeholder.category')).toHaveCount(0);
-        await expect(page.locator('.category-add-placeholder.category-reorder-item')).toHaveCount(0);
+        // One button, not one per category: eight identical buttons doing the
+        // same thing is the clutter the old full-width tile was replaced to fix.
+        await expect(page.locator('.category-add-inline-btn')).toHaveCount(1);
+
+        // "Ends the grid" is a layout fact, not a list-order one: with packed
+        // columns the last block routinely renders in the middle of the screen.
+        const ok = await page.evaluate(() => {
+            const btn = document.querySelector('.category-add-inline-btn');
+            const host = btn?.closest('.category');
+            if (!host) return { ok: false, why: 'no host' };
+            const hosts = [...document.querySelectorAll('.category')]
+                .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
+            const hr = host.getBoundingClientRect();
+            const lower = hosts.filter((el) => Math.round(el.getBoundingClientRect().bottom) > Math.round(hr.bottom));
+            return { ok: lower.length === 0, why: `${lower.length} categories end lower` };
+        });
+        expect(ok.why).toBe('0 categories end lower');
+        expect(ok.ok).toBe(true);
+    });
+
+    test('the + costs no row of its own', async ({ page }) => {
+        await loadDashboard(page);
+        // The old placeholder was `grid-column: 1 / -1`, so it took a full empty
+        // row — measured at 110px on a five-column layout. Living in a header it
+        // must not add height at all.
+        const delta = await page.evaluate(() => {
+            const grid = document.querySelector('.dashboard-grid');
+            const before = grid.getBoundingClientRect().height;
+            const btn = document.querySelector('.category-add-inline-btn');
+            btn.style.display = 'none';
+            const after = grid.getBoundingClientRect().height;
+            btn.style.display = '';
+            return Math.round(before - after);
+        });
+        expect(delta).toBe(0);
     });
 
     test('holding c opens the name row without a bookmark focused', async ({ page }) => {
