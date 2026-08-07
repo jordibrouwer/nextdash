@@ -2440,6 +2440,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureSpacingTitle',
+                titleFallback: 'Decide how much room the grid gives away',
+                whatKey: 'config.overviewNewFeatureSpacingWhat',
+                whatFallback: 'The gap between category rows and the empty band down both edges were both fixed, and on a wide screen they added up to a lot of nothing.',
+                howKey: 'config.overviewNewFeatureSpacingHow',
+                howFallback: 'Config → Appearance → Layout now has Category spacing and Page margins, each with Snug, Balanced and Airy.',
+                enableKey: 'config.overviewNewFeatureSpacingEnable',
+                enableFallback: 'Page margins start exactly where they always were. Category spacing is a little tighter than before — pick Airy for the old gap.',
+                ctaKey: 'config.overviewNewFeatureSpacingCta',
+                ctaFallback: 'Open Layout →',
+                go: { section: 'appearance', appearanceTab: 'layout' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureStructureTrashTitle',
                 titleFallback: 'Deleted pages and categories come back',
                 whatKey: 'config.overviewNewFeatureStructureTrashWhat',
@@ -2458,7 +2471,7 @@ class DashboardConfig {
                 whatKey: 'config.overviewNewFeatureCategoryGridWhat',
                 whatFallback: 'Making a category meant going into Config or through the bookmark form — both things you did on the way to something else.',
                 howKey: 'config.overviewNewFeatureCategoryGridHow',
-                howFallback: 'A dashed “+ category” tile sits after the last column, and holding c does the same from the keyboard. Both act on the page on screen, so neither asks which page you meant.',
+                howFallback: 'A + sits beside the A–Z / Rec chips in a category header, and holding c does the same from the keyboard. Both act on the page on screen, so neither asks which page you meant.',
                 enableKey: 'config.overviewNewFeatureCategoryGridEnable',
                 enableFallback: 'Nothing to switch on. Right-click a category header to rename or delete it, and a category you just made stays visible even with “hide empty categories” on.',
                 ctaKey: 'config.overviewNewFeatureCategoryGridCta',

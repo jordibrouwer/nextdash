@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.09.06 — August 2026](#v20260906--august-2026)
 - [v2026.09.05.1 — August 2026](#v202609051--august-2026)
 - [v2026.09.05 — August 2026](#v20260905--august-2026)
 - [v2026.09.04 — August 2026](#v20260904--august-2026)
@@ -153,6 +154,64 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.09.06 — August 2026
+
+**Structure where it lives** — make a page from the overview and a category from the grid, rename and delete one from its own header, and find that deleting either is no longer the one thing you cannot take back: both go to the trash, and a page comes back whole.
+
+### Pages
+
+- **new** — **A New page row in the overview (`,`).** Reached by click, by `n`, or by arrowing one stop past the last page. It sits **outside** the listbox, because it is an action rather than a page to navigate to, and the roving-tabindex walk treats it as one extra stop. Creating navigates to the new page and closes the overlay: two pages in a row is rare, and landing on the empty page is where a first category gets added. The header's pages button is deliberately unchanged — navigating is the daily action and creating the rare one (`dashboard-page-overview.js`, `modal.css`).
+
+### Categories
+
+- **new** — **A `+` in a category header, and holding `c`.** Two ways in, one flow behind them, both acting on the page on screen so neither has to ask which page. `c` fires on a **hold (~300 ms)** rather than a tap, matching the existing `g` chord — it is a letter people type into shortcut search constantly, so a tap still goes there. The `+` sits beside the sort chips and is sized to match them, so it reads as one more control in the same trailing group (`dashboard-category-add.js`, `keyboard-navigation.js`).
+- **fix** — **The `+` costs no row of its own.** It began as a dashed full-width tile below the grid, at `grid-column: 1 / -1` — measured at **110px of empty row** on a five-column layout, of which ~143px was the button and the rest was nothing, on screen permanently for a gesture used rarely. Which header carries it is resolved **after** layout rather than from the block list: with packed columns the last block routinely renders in the middle of the screen, so "last in the list" put the button two columns from where the eye ends. It goes to the bottom-most header, right-most on a tie (`dashboard-category-add.js`, `dashboard-render-core.js`, `dashboard.css`).
+- **new** — **Rename, add and delete from a category header's right-click menu.** Renaming was only reachable through a 500 ms long-press nothing advertises; deleting meant a trip to Config. Rename delegates to the existing long-press editor rather than adding a second rename surface, so both routes commit through the same code. The menu is its own module rather than an entry in the bookmark context menu, which sits behind the lazy bundle carrying the whole bookmark editor — renaming a header should not fetch it. Smart collections, tag-filter chunks and virtual categories are skipped: they are views over bookmarks, not stored categories (`dashboard-category-menu.js`).
+- **new** — **Deleting a category says what it will do, with the count.** The bookmarks are kept but lose their category and reappear under *unknown category*, which is invisible from the grid — so the prompt spells it out: "Its {n} bookmarks are kept but lose their category."
+- **fix** — **A newly created empty category stays on screen.** With *hide empty categories* on, one just created vanished the instant it appeared. `pinnedEmptyCategoryId` holds it against the setting until you leave the page, which is where the pin is dropped (`dashboard-render-core.js`, `dashboard-data.js`).
+
+### Layout
+
+- **new** — **`categorySpacing` — the vertical gap between category rows.** *Snug* (1.25rem), *Balanced* (2rem, the new default) or *Airy* (3rem, what the gap always was). Deliberately separate from `densityMode`, which sizes the bookmark rows *inside* a category: this is the gap between the rows of categories themselves, which is what makes a wide page feel empty. Driven by `--category-row-gap` off a `data-category-spacing` body attribute, read by `.dashboard-grid.layout-default` and the auto-fit grid; the packed and compact presets keep their own tighter gaps (`models.go`, `dashboard.css`, `dashboard-setup.js`).
+- **new** — **`sideMargin` — the empty band down the left and right of the dashboard.** Same three choices. *Balanced* is `clamp(2rem, 6vw, 8rem)`, byte-for-byte the margin `.container` has always carried, so an existing dashboard does not move until the setting is touched; *Snug* hands roughly 110px per side back to the grid on a wide screen. Each option keeps a `clamp()` so the margin still collapses first on a narrow window rather than squeezing the columns. Worth knowing: the reclaimed space only becomes *wider columns* with **Pack columns tightly** on (the default) — with packing off the columns are a fixed width and the space stays empty (`models.go`, `dashboard.css`).
+- **new** — Both are **three labelled buttons**, not a dropdown: the difference between them is spatial, so seeing all three at once with a sentence under each beats hiding two behind a click. They reuse the existing `cards` control type rather than a new one. Both are `chromeRender`, not `render` — the value is mirrored onto `<body>` and `render` alone redraws the grid without rewriting the attribute, so the change would only land after a reload (`dashboard-config.js`).
+- **fix** — **Bookmarks layout** moved in **Config → Appearance → Layout** to sit between *Layout version* and *Button bar*. Grid structure belongs with the layout version that frames it; the button bar is chrome around the grid rather than part of it. The panels bind by attribute across the container, so the move costs no wiring — pinned by a test all the same (`dashboard-config.js`).
+
+### Trash
+
+- **new** — **Pages and categories join bookmarks in the trash.** `DeletePage` `os.Remove`s `bookmarks-N.json` outright, so deleting a page with 40 bookmarks destroyed all 40 with nothing written anywhere first — while deleting one of them by hand stayed recoverable for 30 days. The asymmetry ran exactly the wrong way: the more one click destroyed, the less came back. Verified against a running server before the fix — the page's bookmarks were gone from disk and the trash still reported `count: 0` (`handlers.go`, `trash.go`).
+- **new** — **A page is one entry, not one per bookmark.** It carries the page, its categories, its bookmarks and its index in the page order, and restores in a single action. Restoring 40 loose rows onto a page that no longer exists would be no restore at all. The row reads *Page · {n} bookmarks* so the size of the restore is visible before clicking.
+- **new** — **Restore writes the page back at its original id.** Every bookmark's `pageId` refers to that number, as does the page order, so recreating "the same page" under a fresh id would produce something that looks right and is referenced by nothing. `RestorePage` exists for this rather than `SavePage`, which preserves what is on disk and substitutes default categories for an empty list — both would corrupt a restore (`models.go`).
+- **new** — **An eight-second Undo toast on both deletes.** The page snapshot is taken from a **fresh fetch** rather than `dash.allBookmarks`: that mirror can lag a write from another view, and restoring a stale copy would be data loss dressed up as a rescue. A snapshot that could not be taken means no undo is offered rather than a partial one. Undo also drops the trash entry it has made redundant, since it restores through the normal write endpoints — otherwise the item came back on the page *and* stayed in the trash, where restoring it again would fail on an id that is now taken (`dashboard-config.js`, `dashboard-category-menu.js`).
+- **new** — **Two conflicts are refused rather than resolved destructively**, both putting the entry back so a failed restore is never a second deletion: a page id handed to a different page since (409 — overwriting would delete a live page to undo an old one), and a category whose page is gone (409 — a category restore must not resurrect a page as a side effect) (`trash_handlers.go`).
+- **fix** — **The trash tab keeps up with what is deleted while it is open.** Reported and reproduced before anything was touched: the server held one item and the open tab still showed zero rows. `_trashData` was fetched when the tab opened and cached for the life of the config view, and switching away and back did not help either — the sub-tab handler returns early when the tab has not changed. `refreshTrashIfVisible()` drops the cache and refetches only when the trash is the tab on screen, and now runs after every delete that writes to it. It sits in `structureCreate.deleteCategory` rather than the menu that calls it, so every caller keeps an open tab in step. Guarded on `d.config?.instance?` rather than `d.config?.`: the config loader is a Proxy that answers any unknown property with a call that fetches the whole config bundle first, so the plain form would pull that bundle in on every grid delete (`dashboard-config.js`, `dashboard-structure-create.js`).
+- **fix** — **`kind` is a new optional field whose empty value still means "bookmark".** Entries written before this have no `kind` at all and must keep restoring as bookmarks. The empty-bookmark guard in `AddTrashedBookmarks` now applies only to bookmark entries — it would otherwise have dropped every page and category entry without a word. Pages are captured server-side in `DeletePage`, and `POST /api/trash` refuses a page entry so a client cannot write an arbitrary page into the trash and then restore it into being.
+
+### Bookmarks
+
+- **fix** — **Four calls to a `loadBookmarks()` that never existed.** `d.loadBookmarks?.()` appeared in four places, always after an `invalidatePageDataCache()` that only makes sense as a prelude to a re-read; the method is defined nowhere, so the optional call swallowed it and the reload never happened. Mostly invisible because `CheckMode.syncLocalCopies` patches the in-memory arrays by hand — except the duplicate merge, which has no such sync and left merged-away copies on the grid until a page switch. Three now call `loadPageBookmarks()`; the fourth is dropped, since `syncLocalCopies` has already run there and a fetch would be waste (`dashboard-config.js`, `check-mode.js`).
+- **fix** — **Smart-collection rows are matched by URL during an incremental patch.** Smart collections render the objects from `d.allBookmarks`, which are different instances than the ones in `d.bookmarks` even for the same bookmark, so `indexOf` returned `-1` and the patch landed on the wrong row or none. Diagnosed by instrumenting the handler rather than guessing — the pre-keypress state was byte-identical across ten repeats, which ruled out the state and pointed at the lookup (`dashboard-render-incremental.js`).
+
+### Config
+
+- **new** — Making a page from the overview, making a category from the grid, and the page/category trash are announced in the **Config → Overview** new-features carousel, newest first, with five locale keys each in en, nl, de and fr. The two dashboard entries use the existing `{closeConfig: true}` go-shape; the trash entry uses `{section: 'data-backups'}`.
+- **fix** — The trash panel's title and intro said *Deleted bookmarks*, which is no longer what the list holds, and restoring reads the kind back from the response so a page restore also rebuilds the page list and the tab strip.
+
+### Tests
+
+- **new** — 8 Go tests on the page trash: the one-entry shape, the payload contents, restore at the original id, the id-taken conflict, the missing-page conflict, an empty page still being recorded, and a `kind`-less entry still restoring as a bookmark. The core assertion was falsified by stripping the handler change (`page_delete_trash_test.go`).
+- **new** — 8 e2e tests on the undo toasts, the trash rows and the live refresh, **each falsified individually** — every fix was reverted in turn to confirm only its own test fails. One early falsification was invalid (a bad edit broke the module and failed all five tests, which is a parse error rather than evidence) and was redone precisely (`structure-delete-undo.spec.js`).
+- **new** — 31 e2e tests across the pages overlay, the grid category add, the header menu and the `c` hold (`create-page-category-from-dashboard.spec.js`).
+- **fix** — A test that silently skipped: *the pinned category goes back to hidden* carried `test.skip(pageCount < 2)` and the e2e profile has one page, so it never ran. It now creates its own second page — and then properly failed without the fix.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG and MANUAL for **v2026.09.06**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v173`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v232`. Docs stay out of the What's new modal, which is for user-facing change (`whats-new-stub.js`).
+- **fix** — The release notes, the Overview spotlight and **Config → Help** all described the `+ category` work as a dashed full-width tile, which it stopped being before the release shipped. Corrected in place at the same version — v2026.09.06 is not published, so nothing needed a new tag. The now-unused `addCategoryPlaceholder` label was dropped from all four locales along with it.
+- **fix** — **Config → Help** under *Backups, import & export* said the trash catches "deleted bookmarks" and that a restore onto a deleted page is fixed by recreating the page. Both were overtaken by this release: the list holds pages and categories too, and the page itself is now restorable.
 
 ---
 

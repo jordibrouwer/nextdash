@@ -504,6 +504,8 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `←` / `→` / `Home` / `End` | Move focus between page tabs when a tab is focused; `Enter` / `Space` activates the tab |
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; `Enter` or `Space` switches page; focus stays trapped inside the panel; closing restores focus to the trigger |
+| `n` | In the page overview: open the **New page** row. Arrowing one stop past the last page reaches it too (**v2026.09.06**) |
+| Hold `c` | Add a category to the page on screen (**v2026.09.06**). A **hold** of about 300 ms, not a tap — a quick `c` is a shortcut-search keystroke and still goes there |
 | `<` | Open **config** (`<` is `Shift+,`). In config, `<` returns to the dashboard — asking to confirm first if there are unsaved changes |
 | `.` | Collapse or expand **all** categories at once (smart toggle — any open → all collapse; state remembered per page) |
 
@@ -713,6 +715,18 @@ Temporarily hides bookmark tiles that do not match. Clear with `:find clear` (or
 
 ## 11. 🗂️ Organising pages and categories
 
+### Create pages and categories
+
+Neither has to start in config (**v2026.09.06**). Both gestures live where the things themselves live.
+
+- **A page** — open the pages overview with **`,`** and use the **New page** row under the list: by click, by **`n`**, or by arrowing one stop past the last page. Naming it takes you straight to the new page, which is where its first category gets added anyway. The pages button in the header is unchanged — switching pages is the daily action, creating one is the rare one.
+- **A category** — a **`+`** sits beside the **A–Z** / **Rec** chips in a category header, and **holding `c`** (about 300 ms) does the same from the keyboard. Both act on the page on screen, so neither asks which page you meant. It is a hold rather than a tap because `c` is a letter you type into shortcut search constantly; a tap still goes there. The `+` appears in whichever header ends the grid, and costs no space of its own.
+- **From the bookmark form** — the **Page** and **Category** dropdowns each lead with **➕ New page…** and **➕ New category…**, so a bookmark can be filed somewhere that does not exist yet without leaving the half-filled form.
+
+**Right-click a category header** for **rename**, **add category** and **delete** in one menu. Renaming was previously only reachable through a long press, and deleting meant a trip to config. Deleting tells you what it will do first, with the count — the bookmarks are **kept** but lose their category and reappear under *unknown category* — and the delete goes to the [trash](#trash-data--backups--trash). Smart collections and tag-filter groups have no menu: they are views over bookmarks rather than stored categories.
+
+A category you have just created **stays visible** even with *hide empty categories* on, until you leave the page — otherwise it would vanish in the moment between creating it and putting something in it.
+
 ### Reorder bookmarks
 
 - Drag a bookmark from **anywhere on its row** to reorder within a category or drop it on another category. A single **click** still opens the bookmark, and a stationary **long-press** still opens the inline editor — only a drag gesture reorders.
@@ -858,6 +872,22 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 | **Default** | Classic multi-column grid |
 | **Compact / Cards / Masonry / List** | Density and visual style |
 | **Launcher** | Large favicon tiles; enable via **Config → Behavior → Layout** or `:layout launcher` in search |
+
+### Spacing (v2026.09.06)
+
+Two settings under **Config → Appearance → Layout → Bookmarks layout**, each a row of three buttons rather than a dropdown.
+
+| | Snug | Balanced | Airy |
+|---|---|---|---|
+| **Category spacing** — the gap between rows of categories | Rows sit close together | **Default** — a little tighter than pre-v2026.09.06 | The gap the dashboard used to have |
+| **Page margins** — the empty band down the left and right | Narrow edges, more room for columns | **Default** — exactly the margin the dashboard always had | Wide edges, columns pulled together |
+
+This is not the same as **Density**, which sizes the bookmark rows *inside* a category; spacing is the room *between* the rows those categories sit in.
+
+Two things worth knowing:
+
+- **Page margins never move on their own.** *Balanced* is byte-for-byte the margin `.container` has always carried, so an existing dashboard looks identical until you pick something else.
+- **Every option still narrows the margin on a small window**, so the columns are never squeezed before the whitespace is. And the space *Snug* hands back only becomes **wider columns** when **Pack columns tightly** is on (the default) — with packing off the columns are a fixed width and the reclaimed space stays empty.
 
 ### Themes
 
@@ -1083,13 +1113,22 @@ Many controls carry an **ℹ** button explaining what the setting does, and a **
 
 ### Trash (Data & backups → Trash)
 
-Deleting a bookmark is not final. Deleted bookmarks go to the trash and stay there for **30 days**, then go for good. The toast's undo is for the moment right after; the trash is for the next morning.
+Deleting is not final. Deleted **bookmarks, pages and categories** go to the trash and stay there for **30 days**, then go for good. The toast's undo is for the moment right after; the trash is for the next morning.
 
 - **Restore** — puts the bookmark back on its own page, at the position it had. If the page has shrunk since, it lands at the end rather than failing.
 - **Delete forever** — removes one entry ahead of the 30 days.
 - **Empty trash** — clears everything at once. Both ask first.
 
-Each entry names the page it came from and when it was deleted. This covers **every** route out of the library — the dashboard, the [health view](#health-view-health), and **Config → Bookmarks** — singly or as a [bulk delete](#94-selecting-several-bookmarks) of twenty rows at once, all twenty recoverable individually. If the page a bookmark came from has since been deleted, restoring says so and leaves it in the trash: recreate the page, then restore. The trash holds at most 500 entries; past that the oldest drop out early.
+Each entry names the page it came from and when it was deleted. This covers **every** route out of the library — the dashboard, the [health view](#health-view-health), and **Config → Bookmarks** — singly or as a [bulk delete](#94-selecting-several-bookmarks) of twenty rows at once, all twenty recoverable individually. The trash holds at most 500 entries; past that the oldest drop out early.
+
+**A deleted page is kept as one entry**, not one per bookmark (**v2026.09.06**). It is listed as *Page · 12 bookmarks*, so the size of the restore is visible before you click, and restoring brings the page, its categories and its bookmarks back together in a single action — at its original place in the tab strip. That matters because a page's identity is what its bookmarks point at: a page restored as a fresh copy would look right and be referenced by nothing. Deleting a **category** is recorded the same way; its bookmarks were never removed, so restoring only puts the category definition back at the position it held.
+
+Both deletes also offer **Undo** in the toast for eight seconds — the net for the misclick, where the trash is the net for the delete you notice the next morning.
+
+A restore that cannot go ahead is **refused rather than forced**, and the item stays in the trash so a failed restore is never a second deletion:
+
+- **The page is gone** (restoring a bookmark or a category) — recreate the page, or restore it from the trash if it is still there, then restore the item.
+- **The page's old slot has been taken** by a different page since — it cannot be restored without replacing that live page, so nextDash refuses and says so.
 
 ### Reset (Data & backups → Reset)
 

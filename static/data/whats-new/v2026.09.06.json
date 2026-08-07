@@ -1,0 +1,89 @@
+{
+  "tag": "v2026.09.06",
+  "date": "August 2026",
+  "releasedAt": "2026-08-07",
+  "modalLead": "Pages and categories are now made and managed where they live — on the dashboard itself — deleting one is no longer the one thing you cannot take back, and how much space the grid gives away is finally yours to set.",
+  "sections": [
+    {
+      "title": "Pages",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Make a page from the overview.</strong> Press <strong><code>,</code></strong> for the pages overview and there is now a <strong>New page</strong> row under the list — by click, by <strong><code>n</code></strong>, or by arrowing one stop past the last page. Naming it takes you straight there, which is where the first category gets added anyway. The pages button in the header is unchanged: switching pages is the daily action, making one is the rare one."
+        }
+      ]
+    },
+    {
+      "title": "Categories",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Add a category on the page you are looking at.</strong> A <strong>+</strong> sits beside the <strong>A–Z</strong> / <strong>Rec</strong> chips in a category header, and holding <strong><code>c</code></strong> does the same from the keyboard. Both act on the page on screen, so neither has to ask which one you meant. It is a hold rather than a tap because <code>c</code> is a letter you type into shortcut search all the time — a tap still goes there."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Rename, add and delete from the category header.</strong> Right-clicking a category header opens all three in one menu. Renaming was only reachable through a long press nothing advertises, and deleting meant a trip to Config. Deleting says what it will do first, with the count: the bookmarks are kept but lose their category, and reappear under <em>unknown category</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A brand-new category stays visible while you fill it.</strong> If you hide empty categories, one you just made would have vanished the moment it appeared. It now stays pinned until you leave the page."
+        }
+      ]
+    },
+    {
+      "title": "Layout",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Choose how much space sits between categories.</strong> <strong>Config → Appearance → Layout</strong> gains <strong>Category spacing</strong> — <em>Snug</em>, <em>Balanced</em> or <em>Airy</em>. The default is a little tighter than before: the old fixed gap left a visible band of nothing between every row on a wide page. <em>Airy</em> is the old spacing if you preferred it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>And how wide the page margins are.</strong> <strong>Page margins</strong> sets the empty band down the left and right of the dashboard, with the same three choices. <em>Balanced</em> is exactly the margin the dashboard has always had, so nothing moves until you pick something else; <em>Snug</em> hands that space back to your columns. Every option still narrows the margin on a small window, so the columns are never squeezed first."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Adding a category no longer costs a row of the grid.</strong> The <strong>+ category</strong> tile spanned the full width below the last column — a permanently empty row for a button used rarely. It is now a <strong>+</strong> in a category header, which costs no layout at all."
+        }
+      ]
+    },
+    {
+      "title": "Trash",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Deleted pages and categories are recoverable for 30 days.</strong> Deleting a bookmark has had a trash for a while; deleting a page took its bookmarks with it and nothing was kept anywhere. That put it exactly the wrong way round — the more one click destroyed, the less you could get back. Both now go to the trash alongside bookmarks."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A page comes back whole, in one action.</strong> It is stored as a single entry — the page, its categories, its bookmarks and its place in the tab strip — and listed as <em>Page · 12 bookmarks</em> so you can see the size of what you are restoring. It returns to its original slot, which is what its bookmarks point at, rather than as a copy nothing refers to."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>An eight-second undo for the misclick.</strong> Deleting a page or a category now offers <strong>Undo</strong> in the toast, for the moment you realise it was the wrong one. The trash is the net for the delete you notice the next morning; this is the one for the delete you notice immediately."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The trash list keeps up with what you delete.</strong> With <strong>Config → Data &amp; backups → Trash</strong> open, deleting something elsewhere left the list showing a stale count — and switching tabs and back did not refresh it either. It now updates as things are deleted and restored."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Restoring explains itself when it cannot go ahead.</strong> If a page's old slot has since been taken by a different page, the restore is refused rather than quietly overwriting the live one, and says so. In every refused case the item stays in the trash, so a failed restore is never a second deletion."
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Merged-away duplicates no longer linger on the grid.</strong> After merging duplicates the page kept showing the copies that had just been merged until you switched pages and back. Two bulk actions in the health view had the same gap, both across pages."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Editing a bookmark inside a smart collection updates the right row.</strong> Toggling one from a smart collection could patch the wrong bookmark, or none at all, when two rows shared a name."
+        }
+      ]
+    }
+  ]
+}
