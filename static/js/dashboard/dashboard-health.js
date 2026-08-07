@@ -402,32 +402,32 @@ class DashboardHealth {
 
     /* ── Filtering ─────────────────────────────────────────────────────── */
 
+    /**
+     * Does this issue belong under `filter`?
+     *
+     * Matched against issue.flags — every condition that holds — rather than
+     * issue.status, which carries only the worst one. The tiles count the same
+     * way the server does, so matching on status made them disagree: a bookmark
+     * that was both a duplicate and never opened was counted by the Unused tile
+     * but hidden by the Unused filter, leaving the tile a dead end that opened an
+     * empty list.
+     *
+     * `monitored` is not a health condition and stays on its own field. `all`
+     * matches everything.
+     */
     matchesFilter(issue, filter) {
-        switch (filter) {
-            case 'all':
-                return true;
-            case 'broken':
-                return issue.status === 'broken';
-            case 'duplicate':
-                return (Number(issue.duplicateCount) || 0) > 1;
-            case 'unchecked':
-                return !issue.lastChecked;
-            case 'monitored':
-                return issue.monitor === true;
-            // stale / unused / missing-preview / shortcut-conflict / healthy reach
-            // this view through deep links and filter pills. Each maps to a single
-            // issue.status, so match on that rather than falling through
-            // to `return true`, which showed every issue under a filter that lit no
-            // pill.
-            case 'stale':
-            case 'unused':
-            case 'missing-preview':
-            case 'shortcut-conflict':
-            case 'healthy':
-                return issue.status === filter;
-            default:
-                return true;
-        }
+        if (filter === 'all') return true;
+        if (filter === 'monitored') return issue.monitor === true;
+
+        const flags = Array.isArray(issue?.flags) ? issue.flags : null;
+        if (flags) return flags.includes(filter);
+
+        // Fallback for a report cached before flags existed. Only the worst
+        // condition is known there, which is the old behaviour — better than
+        // matching nothing at all.
+        if (filter === 'duplicate') return (Number(issue.duplicateCount) || 0) > 1;
+        if (filter === 'unchecked') return !issue.lastChecked;
+        return issue.status === filter;
     }
 
     matchesQuery(issue, query) {

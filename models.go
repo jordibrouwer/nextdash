@@ -2817,7 +2817,16 @@ type HealthIssue struct {
 	PreviewDesc    string         `json:"previewDesc,omitempty"`
 	PreviewImage   string         `json:"previewImage,omitempty"`
 	Icon           string         `json:"icon,omitempty"`
-	Status         string         `json:"status"`
+	// Status is the single worst thing about this bookmark, picked by priority.
+	// It drives how the row is presented — colour band, sort rank, headline
+	// reason — so it stays one value.
+	Status string `json:"status"`
+	// Flags is every condition that holds, not just the worst one. The summary
+	// counters are tallied the same way, so a bookmark that is both a duplicate
+	// and never opened is counted under Unused *and* appears when that filter is
+	// picked. Matching filters on Status instead made the two disagree: the tile
+	// counted it, the filter did not list it, and the tile became a dead end.
+	Flags          []string       `json:"flags,omitempty"`
 	Score          int            `json:"score"`
 	Reasons        []string       `json:"reasons"`
 	ReasonDetails  []HealthReason `json:"reasonDetails,omitempty"`

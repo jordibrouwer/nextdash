@@ -490,12 +490,18 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			isShortcutConflict := shortcutKey != "" && shortcutCounts[shortcutKey] > 1
 
 			status := "healthy"
+			// Every condition that holds, in the same priority order as status.
+			// status keeps only the first; flags keep them all, and the summary
+			// counters below are incremented from the same conditions — so the
+			// tiles and the filters can never disagree about a bookmark.
+			flags := make([]string, 0, 4)
 			reasons := make([]string, 0, 4)
 			reasonDetails := make([]HealthReason, 0, 4)
 			score := 100
 
 			if isBroken {
 				status = "broken"
+				flags = append(flags, "broken")
 				if detail := strings.TrimSpace(bm.LastError); detail != "" {
 					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "last_error", Detail: detail, Penalty: healthPenaltyBroken})
 				} else {
@@ -507,6 +513,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "duplicate"
 				}
+				flags = append(flags, "duplicate")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{
 					Code:    "duplicate_url",
 					Params:  map[string]string{"count": strconv.Itoa(duplicateCount)},
@@ -518,6 +525,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "shortcut-conflict"
 				}
+				flags = append(flags, "shortcut-conflict")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{
 					Code:    "shortcut_conflict",
 					Params:  map[string]string{"count": strconv.Itoa(shortcutCounts[shortcutKey])},
@@ -525,16 +533,21 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				})
 				score -= healthPenaltyShortcutConflict
 			}
+			// Never run and overdue are two ways of being "unchecked" and share the
+			// status, so they share the flag too — matching UncheckedCount, which
+			// is incremented for either.
 			if isUnchecked {
 				if status == "healthy" {
 					status = "unchecked"
 				}
+				flags = append(flags, "unchecked")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_never_run", Penalty: healthPenaltyNeverChecked})
 				score -= healthPenaltyNeverChecked
 			} else if isStaleCheck {
 				if status == "healthy" {
 					status = "unchecked"
 				}
+				flags = append(flags, "unchecked")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_stale", Penalty: healthPenaltyStaleCheck})
 				score -= healthPenaltyStaleCheck
 			}
@@ -542,6 +555,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "stale"
 				}
+				flags = append(flags, "stale")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days", Penalty: healthPenaltyNotOpened30Days})
 				score -= healthPenaltyNotOpened30Days
 			}
@@ -549,6 +563,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "unused"
 				}
+				flags = append(flags, "unused")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "never_opened", Penalty: healthPenaltyNeverOpened})
 				score -= healthPenaltyNeverOpened
 			}
@@ -556,6 +571,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				if status == "healthy" {
 					status = "missing-preview"
 				}
+				flags = append(flags, "missing-preview")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "no_preview", Penalty: healthPenaltyNoPreview})
 				score -= healthPenaltyNoPreview
 			}
@@ -601,6 +617,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 			if status == "healthy" {
 				report.Summary.HealthyCount++
+				// Healthy is the absence of every flag above, not a condition of
+				// its own, so it is only added when nothing else was.
+				flags = append(flags, "healthy")
 			}
 
 			var monitorStats *MonitorStats
@@ -629,6 +648,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				PreviewImage:   bm.PreviewImage,
 				Icon:           bm.Icon,
 				Status:         status,
+				Flags:          flags,
 				Score:          score,
 				Reasons:        reasons,
 				ReasonDetails:  reasonDetails,
