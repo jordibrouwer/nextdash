@@ -359,7 +359,8 @@
             "navPageOverviewNewPage": "Créer une nouvelle page depuis l’aperçu des pages",
             "navAddCategory": "Ajouter une catégorie à la page actuelle (appuyez brièvement sur c pour rechercher)",
             "cnPageNew": "Créer une page et s’y rendre (n dans l’aperçu des pages fait de même)",
-            "cbCategoryNew": "Créer une catégorie sur la page actuelle (maintenir c fait de même)"
+            "cbCategoryNew": "Créer une catégorie sur la page actuelle (maintenir c fait de même)",
+            "bmCategoryMenu": "Clic droit sur un en-tête de catégorie pour renommer, ajouter ou supprimer"
         },
         "firstBookmarkGuide": "Ajoutez votre premier favori avec + ou Shift+B (& pour ajout rapide), ou configurez les pages dans config → pages.",
         "emptyStateAddTouch": "Touchez + favori dans la barre ci-dessous",
@@ -969,7 +970,11 @@
         "contextMenuDeleteSelected": "Supprimer {count} sélectionné(s)",
         "pageOverviewNewPage": "Nouvelle page",
         "addCategoryPlaceholder": "+ catégorie",
-        "addCategoryGroupAria": "Ajouter une catégorie"
+        "addCategoryGroupAria": "Ajouter une catégorie",
+        "categoryMenuTitle": "Actions de catégorie",
+        "categoryMenuRename": "Renommer",
+        "categoryMenuAdd": "Ajouter une catégorie",
+        "categoryMenuDelete": "Supprimer"
     },
     "health": {
         "pageTitle": "health beta",
@@ -3984,7 +3989,8 @@
         "trashRestorePageGone": "La page de ce favori n’existe plus. Il reste dans la corbeille — recréez la page, puis restaurez-le.",
         "trashDeleteConfirm": "Supprimer définitivement ce favori ?",
         "trashEmptyConfirm": "Supprimer définitivement tout le contenu de la corbeille ?",
-        "trashActionError": "Impossible d'effectuer cette action."
+        "trashActionError": "Impossible d'effectuer cette action.",
+        "categoryDeleted": "Catégorie supprimée."
     },
     "colors": {
         "title": "personnalisation du thème",

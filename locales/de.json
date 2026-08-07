@@ -359,7 +359,8 @@
             "navPageOverviewNewPage": "Neue Seite aus der Seitenübersicht erstellen",
             "navAddCategory": "Kategorie zur aktuellen Seite hinzufügen (c antippen zum Suchen)",
             "cnPageNew": "Seite erstellen und dorthin wechseln (n in der Seitenübersicht macht dasselbe)",
-            "cbCategoryNew": "Kategorie auf der aktuellen Seite erstellen (c halten macht dasselbe)"
+            "cbCategoryNew": "Kategorie auf der aktuellen Seite erstellen (c halten macht dasselbe)",
+            "bmCategoryMenu": "Rechtsklick auf eine Kategorieüberschrift zum Umbenennen, Hinzufügen oder Löschen"
         },
         "firstBookmarkGuide": "Fügen Sie Ihr erstes Lesezeichen mit + oder Shift+B hinzu (& für Schnellzeile), oder richten Sie Seiten unter config → Seiten ein.",
         "emptyStateAddTouch": "Tippen Sie unten auf + Lesezeichen in der Leiste",
@@ -969,7 +970,11 @@
         "contextMenuDeleteSelected": "{count} ausgewählte löschen",
         "pageOverviewNewPage": "Neue Seite",
         "addCategoryPlaceholder": "+ Kategorie",
-        "addCategoryGroupAria": "Kategorie hinzufügen"
+        "addCategoryGroupAria": "Kategorie hinzufügen",
+        "categoryMenuTitle": "Kategorie-Aktionen",
+        "categoryMenuRename": "Umbenennen",
+        "categoryMenuAdd": "Kategorie hinzufügen",
+        "categoryMenuDelete": "Löschen"
     },
     "health": {
         "pageTitle": "health beta",
@@ -3984,7 +3989,8 @@
         "trashRestorePageGone": "Die Seite dieses Lesezeichens existiert nicht mehr. Es bleibt im Papierkorb — legen Sie die Seite neu an und stellen Sie es dann wieder her.",
         "trashDeleteConfirm": "Dieses Lesezeichen endgültig löschen?",
         "trashEmptyConfirm": "Alles im Papierkorb endgültig löschen?",
-        "trashActionError": "Diese Aktion konnte nicht abgeschlossen werden."
+        "trashActionError": "Diese Aktion konnte nicht abgeschlossen werden.",
+        "categoryDeleted": "Kategorie gelöscht."
     },
     "colors": {
         "title": "themenanpassung",

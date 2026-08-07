@@ -1619,6 +1619,7 @@ class DashboardRenderCore {
         categoryBody.className = 'category-body';
         categoryBody.appendChild(bookmarksList);
         categoryDiv.appendChild(categoryBody);
+        d.categoryMenu?.bindCategory(categoryDiv, category);
         return categoryDiv;
     }
 

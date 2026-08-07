@@ -380,7 +380,8 @@
             "navPageOverviewNewPage": "Create a new page from the page overview",
             "navAddCategory": "Add a category to the current page (tap c to search instead)",
             "cnPageNew": "Create a page and go to it (n in the page overview does the same)",
-            "cbCategoryNew": "Create a category on the current page (hold c does the same)"
+            "cbCategoryNew": "Create a category on the current page (hold c does the same)",
+            "bmCategoryMenu": "Right-click a category header to rename, add, or delete it"
         },
         "searchPrefix": ">",
         "searchModeSearch": "SEARCH",
@@ -969,7 +970,11 @@
         "contextMenuDeleteSelected": "Delete {count} selected",
         "pageOverviewNewPage": "New page",
         "addCategoryPlaceholder": "+ category",
-        "addCategoryGroupAria": "Add a category"
+        "addCategoryGroupAria": "Add a category",
+        "categoryMenuTitle": "Category actions",
+        "categoryMenuRename": "Rename",
+        "categoryMenuAdd": "Add category",
+        "categoryMenuDelete": "Delete"
     },
     "health": {
         "pageTitle": "health beta",
@@ -3984,7 +3989,8 @@
         "trashRestorePageGone": "That bookmark’s page no longer exists. It stays in the trash — recreate the page, then restore it.",
         "trashDeleteConfirm": "Delete this bookmark permanently?",
         "trashEmptyConfirm": "Permanently delete everything in the trash?",
-        "trashActionError": "Could not complete that action."
+        "trashActionError": "Could not complete that action.",
+        "categoryDeleted": "Category deleted."
     },
     "colors": {
         "title": "theme customization",

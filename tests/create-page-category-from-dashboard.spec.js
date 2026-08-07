@@ -401,6 +401,79 @@ test.describe('dashboard grid — adding a category', () => {
     });
 });
 
+test.describe('category header — right-click menu', () => {
+    const menu = (page) => page.locator('#category-context-menu');
+
+    async function openCategoryMenu(page) {
+        const title = page.locator('.category:not([data-smart-collection="true"]) .category-title').first();
+        await title.click({ button: 'right' });
+        await expect(menu(page)).toBeVisible();
+        return title;
+    }
+
+    test('right-clicking a category header opens rename / add / delete', async ({ page }) => {
+        await loadDashboard(page);
+        await openCategoryMenu(page);
+
+        await expect(menu(page).locator('[data-action="rename"]')).toBeVisible();
+        await expect(menu(page).locator('[data-action="add"]')).toBeVisible();
+        await expect(menu(page).locator('[data-action="delete"]')).toBeVisible();
+    });
+
+    test('smart collections get no menu — there is nothing to rename', async ({ page }) => {
+        await loadDashboard(page);
+        const smart = page.locator('.category[data-smart-collection="true"] .category-title').first();
+        test.skip(await smart.count() === 0, 'no smart collection on this page');
+
+        await smart.click({ button: 'right' });
+        await expect(menu(page)).toHaveCount(0);
+    });
+
+    test('Escape closes the menu', async ({ page }) => {
+        await loadDashboard(page);
+        await openCategoryMenu(page);
+        await page.keyboard.press('Escape');
+        await expect(menu(page)).toHaveCount(0);
+    });
+
+    test('rename opens the inline editor on the header', async ({ page }) => {
+        await loadDashboard(page);
+        const title = await openCategoryMenu(page);
+        await menu(page).locator('[data-action="rename"]').click();
+
+        await expect(title.locator('.category-rename-input')).toBeVisible();
+    });
+
+    test('delete warns that the bookmarks keep existing without a category', async ({ page }) => {
+        await loadDashboard(page);
+        const name = `E2E delcat ${Date.now()}`;
+        const pageId = await page.evaluate(() => Number(window.dashboardInstance.currentPageId));
+
+        // Made through the real add flow rather than the API: that is what pins a
+        // new empty category on screen, and without the pin "hide empty
+        // categories" would swallow it before it could be right-clicked.
+        await page.locator('#category-add-placeholder-btn').click();
+        await gridRow(page).locator('.bookmark-inline-create-input').fill(name);
+        await gridRow(page).locator('.bookmark-inline-create-ok').click();
+        const title = page.locator('.category-title', { hasText: name }).first();
+        await expect(title).toBeVisible({ timeout: 10_000 });
+
+        await title.click({ button: 'right' });
+        await menu(page).locator('[data-action="delete"]').click();
+        await expect(page.locator('#app-modal.show')).toBeVisible();
+
+        // Confirm is the first button in the actions row; cancel follows it.
+        await page.locator('#app-modal #modal-actions .modal-button').first().click();
+        await expect(page.locator('.category-title', { hasText: name })).toHaveCount(0, { timeout: 10_000 });
+
+        const stored = await page.evaluate(async (pid) => {
+            const res = await fetch(`/api/categories?page=${pid}`);
+            return res.ok ? await res.json() : [];
+        }, pageId);
+        expect(stored.some((c) => c.name === name)).toBe(false);
+    });
+});
+
 test.describe('commands — :page new and :category new', () => {
     async function runCommand(page, command) {
         return page.evaluate(async (cmd) => {

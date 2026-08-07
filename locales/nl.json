@@ -380,7 +380,8 @@
             "navPageOverviewNewPage": "Maak een nieuwe pagina vanuit het pagina-overzicht",
             "navAddCategory": "Voeg een categorie toe aan de huidige pagina (tik c om te zoeken)",
             "cnPageNew": "Maak een pagina en ga erheen (n in het pagina-overzicht doet hetzelfde)",
-            "cbCategoryNew": "Maak een categorie op de huidige pagina (c ingedrukt houden doet hetzelfde)"
+            "cbCategoryNew": "Maak een categorie op de huidige pagina (c ingedrukt houden doet hetzelfde)",
+            "bmCategoryMenu": "Rechtsklik op een categoriekop om te hernoemen, toe te voegen of te verwijderen"
         },
         "searchPrefix": ">",
         "searchModeSearch": "SEARCH",
@@ -969,7 +970,11 @@
         "contextMenuDeleteSelected": "{count} geselecteerde verwijderen",
         "pageOverviewNewPage": "Nieuwe pagina",
         "addCategoryPlaceholder": "+ categorie",
-        "addCategoryGroupAria": "Categorie toevoegen"
+        "addCategoryGroupAria": "Categorie toevoegen",
+        "categoryMenuTitle": "Categorie-acties",
+        "categoryMenuRename": "Hernoemen",
+        "categoryMenuAdd": "Categorie toevoegen",
+        "categoryMenuDelete": "Verwijderen"
     },
     "health": {
         "pageTitle": "health beta",
@@ -3984,7 +3989,8 @@
         "trashRestorePageGone": "De pagina van deze bladwijzer bestaat niet meer. Hij blijft in de prullenbak — maak de pagina opnieuw en herstel hem daarna.",
         "trashDeleteConfirm": "Deze bladwijzer definitief verwijderen?",
         "trashEmptyConfirm": "Alles in de prullenbak definitief verwijderen?",
-        "trashActionError": "Kon die actie niet voltooien."
+        "trashActionError": "Kon die actie niet voltooien.",
+        "categoryDeleted": "Categorie verwijderd."
     },
     "colors": {
         "title": "thema-aanpassing",

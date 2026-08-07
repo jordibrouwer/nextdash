@@ -182,6 +182,7 @@ class Dashboard {
         this.multiSelect = new DashboardMultiSelect(this);
         this.structureCreate = new DashboardStructureCreate(this);
         this.categoryAdd = new DashboardCategoryAdd(this);
+        this.categoryMenu = new DashboardCategoryMenu(this);
         this.inlineEdit = typeof window.createDashboardInlineEditLoader === 'function'
             ? window.createDashboardInlineEditLoader(this)
             : new DashboardInlineEdit(this);

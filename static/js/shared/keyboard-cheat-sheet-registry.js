@@ -116,6 +116,7 @@
                 { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, edit, tags, move, checking, select, delete (Shift + right-click for the browser menu)' },
                 { keys: 'Double-click page tab', cheatKey: 'bmRenamePageTab', fallback: 'Rename page tab — also set emoji icon and colour dot' },
                 { keys: 'Long-press category (~500 ms)', cheatKey: 'bmRenameCategory', fallback: 'Rename category header (not on sort buttons)' },
+                { keys: 'Right-click category', cheatKey: 'bmCategoryMenu', fallback: 'Right-click a category header to rename, add, or delete it' },
                 { keys: 'Drag left strip', cheatKey: 'bmDragReorder', fallback: 'Reorder a bookmark within or across categories' },
                 { keys: 'Drag // in category title', cheatKey: 'bmDragCategory', fallback: 'Reorder categories (grab the // prefix in the header)' },
             ],
