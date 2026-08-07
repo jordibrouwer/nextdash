@@ -65,6 +65,17 @@ func (h *Handlers) AddTrashItems(w http.ResponseWriter, r *http.Request) {
 		if item.Source == "" {
 			item.Source = source
 		}
+		// Pages are captured server-side in DeletePage, where the data still
+		// exists. Accepting one here would let a client write an arbitrary page
+		// into the trash and then "restore" it into being.
+		if trashKindOf(item) == TrashKindPage {
+			http.Error(w, "Pages are recorded by the delete endpoint", http.StatusBadRequest)
+			return
+		}
+		if trashKindOf(item) == TrashKindCategory && item.TrashedCategory == nil {
+			http.Error(w, "Category entry is missing its category data", http.StatusBadRequest)
+			return
+		}
 		entries = append(entries, item)
 	}
 
@@ -116,6 +127,15 @@ func (h *Handlers) RestoreTrashItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	switch trashKindOf(item) {
+	case TrashKindPage:
+		h.restoreTrashedPage(w, r, item)
+		return
+	case TrashKindCategory:
+		h.restoreTrashedCategory(w, r, item)
+		return
+	}
+
 	restoreErr := h.store.MutateBookmarksOnPage(item.PageID, func(bookmarks []Bookmark) ([]Bookmark, error) {
 		// The stored index is a hint from delete time; clamp it rather than
 		// trusting it, since the page has been writable in between.
@@ -149,6 +169,119 @@ func (h *Handlers) RestoreTrashItem(w http.ResponseWriter, r *http.Request) {
 		"status":   "success",
 		"bookmark": item.Bookmark,
 		"pageId":   item.PageID,
+	})
+}
+
+// restoreTrashedPage recreates a deleted page at its original id, with the
+// categories and bookmarks it had.
+//
+// The id matters: every bookmark's pageId points at it, and the page order and
+// per-page settings key off it too. Restoring under a fresh id would produce a
+// page that looks right and is referenced by nothing.
+//
+// The item has already been taken out of the trash by the caller, so every
+// failure path puts it back.
+func (h *Handlers) restoreTrashedPage(w http.ResponseWriter, r *http.Request, item TrashedBookmark) {
+	snapshot := item.TrashedPage
+	if snapshot == nil {
+		// A page entry with no payload cannot be restored and would otherwise be
+		// silently consumed. Put it back and say so.
+		_ = h.store.AddTrashedBookmarks([]TrashedBookmark{item})
+		http.Error(w, "Trash entry is missing its page data", http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err := h.store.RestorePage(*snapshot); err != nil {
+		_ = h.store.AddTrashedBookmarks([]TrashedBookmark{item})
+		if errors.Is(err, ErrPageExists) {
+			http.Error(w, "A page with that id already exists", http.StatusConflict)
+			return
+		}
+		if !respondStorePersistError(w, err) {
+			return
+		}
+		return
+	}
+
+	logPageRestore(item, r)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":    "success",
+		"kind":      TrashKindPage,
+		"pageId":    snapshot.Page.ID,
+		"page":      snapshot.Page,
+		"bookmarks": len(snapshot.Bookmarks),
+	})
+}
+
+// restoreTrashedCategory puts a category definition back on its page.
+//
+// Its bookmarks were never removed — deleting a category leaves them on the
+// page under "unknown category" — so this only writes the definition back, at
+// the position it held.
+func (h *Handlers) restoreTrashedCategory(w http.ResponseWriter, r *http.Request, item TrashedBookmark) {
+	snapshot := item.TrashedCategory
+	if snapshot == nil {
+		_ = h.store.AddTrashedBookmarks([]TrashedBookmark{item})
+		http.Error(w, "Trash entry is missing its category data", http.StatusUnprocessableEntity)
+		return
+	}
+
+	// A page that is gone cannot hold the category. Refuse rather than recreate
+	// the page as a side effect of a category restore.
+	pageExists := false
+	for _, page := range h.store.GetPages() {
+		if page.ID == item.PageID {
+			pageExists = true
+			break
+		}
+	}
+	if !pageExists {
+		_ = h.store.AddTrashedBookmarks([]TrashedBookmark{item})
+		http.Error(w, "Original page no longer exists", http.StatusConflict)
+		return
+	}
+
+	existing := h.store.GetCategoriesByPage(item.PageID)
+	for _, category := range existing {
+		if category.ID == snapshot.Category.ID {
+			// Already back — most likely the 8s undo won the race. Consuming the
+			// entry is correct: the category is present, which is what was asked.
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]any{
+				"status":   "success",
+				"kind":     TrashKindCategory,
+				"pageId":   item.PageID,
+				"category": snapshot.Category,
+			})
+			return
+		}
+	}
+
+	at := snapshot.Index
+	if at < 0 || at > len(existing) {
+		at = len(existing)
+	}
+	restored := make([]Category, 0, len(existing)+1)
+	restored = append(restored, existing[:at]...)
+	restored = append(restored, snapshot.Category)
+	restored = append(restored, existing[at:]...)
+
+	if err := h.store.SaveCategoriesByPage(item.PageID, restored); err != nil {
+		_ = h.store.AddTrashedBookmarks([]TrashedBookmark{item})
+		if !respondStorePersistError(w, err) {
+			return
+		}
+		return
+	}
+
+	logCategoryRestore(item, r)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":   "success",
+		"kind":     TrashKindCategory,
+		"pageId":   item.PageID,
+		"category": snapshot.Category,
 	})
 }
 

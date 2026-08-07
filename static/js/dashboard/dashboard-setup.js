@@ -59,6 +59,11 @@ class DashboardSetup {
             document.body.setAttribute('data-layout-version', layoutVersion);
         }
         document.body.setAttribute('data-density-mode', d.settings.densityMode || 'compact');
+        // Vertical gap between category rows. Separate from density, which sizes
+        // the bookmark rows themselves — see dashboard.css.
+        document.body.setAttribute('data-category-spacing', d.settings.categorySpacing || 'balanced');
+        // The left/right band beside the grid.
+        document.body.setAttribute('data-side-margin', d.settings.sideMargin || 'balanced');
         // How loudly a monitored bookmark announces itself. CSS keys off this,
         // so the rows carry their monitor state either way and only the styling
         // changes — see status.css.

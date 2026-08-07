@@ -188,7 +188,12 @@ class DashboardRenderCore {
         d.categories.forEach((category) => {
             const id = String(category.id);
             const categoryBookmarks = this.sortBookmarks(groupedBookmarks[id] || [], category);
-            if (d.settings.hideEmptyCategories && categoryBookmarks.length === 0) {
+            // A category the user just made is empty by definition, so "hide empty
+            // categories" would swallow it and the create would read as a no-op.
+            // It stays visible until something is filed in it or the page is left.
+            const justCreated = d.pinnedEmptyCategoryId != null
+                && String(d.pinnedEmptyCategoryId) === id;
+            if (d.settings.hideEmptyCategories && categoryBookmarks.length === 0 && !justCreated) {
                 return;
             }
             columnBlocks.push({ category, bookmarks: categoryBookmarks });
@@ -405,6 +410,9 @@ class DashboardRenderCore {
 
         const gridLayout = this.syncDashboardGridLayout();
         this._distributeDashboardColumnBlocks(container, columnBlocks, { animate, gridLayout });
+        // After layout: the "+" goes in whichever header ends the grid, and that
+        // depends on how the columns packed, not on the order of the blocks.
+        d.categoryAdd?.placeTrigger(container);
 
         if (animate) {
             requestAnimationFrame(() => {
@@ -1611,6 +1619,7 @@ class DashboardRenderCore {
         categoryBody.className = 'category-body';
         categoryBody.appendChild(bookmarksList);
         categoryDiv.appendChild(categoryBody);
+        d.categoryMenu?.bindCategory(categoryDiv, category);
         return categoryDiv;
     }
 

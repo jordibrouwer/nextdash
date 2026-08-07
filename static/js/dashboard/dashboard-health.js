@@ -1549,8 +1549,8 @@ class DashboardHealth {
             // it to a page reload. The health view deletes through its own
             // endpoint and never touched the dashboard's in-memory arrays, so the
             // bookmark lingered on the grid — and in smart collections — until the
-            // page was reloaded. Match on page + URL, drop the page cache
-            // loadBookmarks() reads through, and re-render.
+            // page was reloaded. Match on page + URL, drop the page cache a later
+            // read would be served from, and re-render.
             d.removeBookmarkByUrl?.(issue.pageId, issue.url);
             d.data?.invalidatePageDataCache?.(Number(issue.pageId));
             void d.data?.fetchAndStoreDataRevision?.();
@@ -2327,9 +2327,12 @@ class DashboardHealth {
             }
             const body = await res.json().catch(() => ({}));
             d.data?.invalidatePageDataCache?.();
-            await d.loadBookmarks?.().catch?.(() => {});
+            // Re-read the page rather than rendering from memory: a merge deletes
+            // rows, and nothing has patched d.bookmarks. Rendering without this
+            // left the merged-away duplicates on the dashboard until a page
+            // switch. loadPageBookmarks re-renders, so no separate render call.
+            await d.loadPageBookmarks(d.currentPageId, { skipInlineEditConfirm: true });
             await this.loadAndRender({ refresh: true });
-            d.renderDashboard?.({ incremental: false });
             d.updateHealthBadge?.();
             d.showNotification(
                 this.t('dashboard.mergedDuplicates', 'Merged {count} duplicates', {
@@ -2615,10 +2618,10 @@ class DashboardHealth {
             });
             if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
             const body = await res.json().catch(() => ({}));
-            // Drop the page cache first: loadBookmarks() is served from it, so
+            // Drop the page cache first: the re-read below is served from it, so
             // without this the dashboard keeps showing the pre-write flags.
             d.data?.invalidatePageDataCache?.();
-            await d.loadBookmarks?.().catch?.(() => {});
+            await d.loadPageBookmarks(d.currentPageId, { skipInlineEditConfirm: true });
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
 
@@ -2677,10 +2680,10 @@ class DashboardHealth {
             if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
             const body = await res.json().catch(() => ({}));
             // The dashboard's own copy would otherwise still show the old flags,
-            // and loadBookmarks() reads through the page cache, so that has to go
-            // first or the reload just returns the stale values again.
+            // and the re-read below is served from the page cache, so that has to
+            // go first or it just returns the stale values again.
             d.data?.invalidatePageDataCache?.();
-            await d.loadBookmarks?.().catch?.(() => {});
+            await d.loadPageBookmarks(d.currentPageId, { skipInlineEditConfirm: true });
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
             d.showNotification(

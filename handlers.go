@@ -1309,6 +1309,48 @@ func (h *Handlers) DeletePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Trash the whole page before the file goes: DeletePage os.Removes
+	// bookmarks-N.json outright, so without this everything on it is
+	// unrecoverable the moment the request lands.
+	//
+	// One entry for the page, not one per bookmark. Restoring is then a single
+	// action that brings the page, its categories and its bookmarks back
+	// together — restoring 40 separate rows onto a page that no longer exists
+	// would be no restore at all.
+	//
+	// This runs first on purpose: if the trash write fails the page survives and
+	// the user can retry. The reverse order would trade the page for a failed
+	// backup.
+	deleted := Page{ID: pageID}
+	orderIndex := 0
+	for _, page := range h.store.GetPages() {
+		if page.ID == pageID {
+			deleted = page
+			break
+		}
+	}
+	for i, id := range h.store.GetPageOrder() {
+		if id == pageID {
+			orderIndex = i
+			break
+		}
+	}
+	if err := h.store.AddTrashedBookmarks([]TrashedBookmark{{
+		Kind:     TrashKindPage,
+		PageID:   pageID,
+		PageName: deleted.Name,
+		Source:   "page-delete",
+		TrashedPage: &TrashedPage{
+			Page:       deleted,
+			Categories: h.store.GetCategoriesByPage(pageID),
+			Bookmarks:  h.store.GetBookmarksByPage(pageID),
+			OrderIndex: orderIndex,
+		},
+	}}); err != nil {
+		respondStorePersistError(w, err)
+		return
+	}
+
 	// Delete the page file
 	if err := h.store.DeletePage(pageID); err != nil {
 		http.Error(w, "Error deleting page", http.StatusInternalServerError)

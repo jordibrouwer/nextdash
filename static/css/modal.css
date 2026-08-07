@@ -40,10 +40,15 @@
     opacity: 1;
 }
 
+/* 40rem, not the 52rem the cheat sheet uses: this modal is one column of prose,
+   and at 52rem its lines ran to ~84 characters — well past the 45–75 where the
+   eye still finds the next line reliably. Narrowing is the readability fix, not
+   just a size fix. The cheat sheet keeps 52rem because it is a two-column key
+   table that needs the width. */
 .modal.whats-new-modal {
     max-height: 90vh;
-    max-width: min(52rem, calc(100vw - 2.5rem));
-    width: min(52rem, calc(100vw - 2.5rem));
+    max-width: min(40rem, calc(100vw - 2.5rem));
+    width: min(40rem, calc(100vw - 2.5rem));
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -67,7 +72,7 @@ body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) {
 }
 
 body:has(#config-main) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
-    width: min(52rem, calc(100vw - 2.5rem));
+    width: min(40rem, calc(100vw - 2.5rem));
     max-width: 100%;
     margin: 0;
     max-height: min(70vh, calc(100vh - 4rem));
@@ -147,12 +152,16 @@ body.no-animations .wn-skeleton-line {
 /* ── What's New intro block ─────────────────────────────────────── */
 /* One column at every width: the release summary reads as a paragraph, and
    side by side with the Ko-fi block it was squeezed into a narrow column while
-   the shorter block left dead space beside it. */
+   the shorter block left dead space beside it.
+
+   The two blocks are fixed overhead on every open, sitting in the most valuable
+   space in the modal, so the spacing around them is kept tight — 1rem + 1.5rem
+   pushed the first actual release item below the fold. */
 .wn-top-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
     align-items: stretch;
 }
 
@@ -174,7 +183,7 @@ body.no-animations .wn-skeleton-line {
 }
 
 .wn-feature-lead {
-    padding: 0.85rem 1rem;
+    padding: 0.7rem 0.85rem;
     margin-bottom: 0;
     border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, var(--border-primary));
     border-radius: var(--layout-radius-sm, 8px);
@@ -186,15 +195,15 @@ body.no-animations .wn-skeleton-line {
     margin: 0;
     font-size: var(--font-size-controls);
     color: var(--text-primary);
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
 .wn-intro {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.8rem 1rem;
+    gap: 0.6rem;
+    padding: 0.7rem 0.85rem;
     margin-bottom: 0;
     border: 1px solid var(--border-primary);
     border-radius: var(--layout-radius-sm, 8px);
@@ -209,7 +218,7 @@ body.no-animations .wn-skeleton-line {
     margin: 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
-    line-height: 1.55;
+    line-height: 1.5;
 }
 
 .modal.whats-new-modal .modal-header {
@@ -517,7 +526,10 @@ body.no-animations .wn-kofi-star {
     white-space: nowrap;
 }
 
-.wn-section { margin-bottom: 0.9rem; }
+/* Sections get more air than items do, so the four groups read as groups while
+   scrolling. The extra height that costs is more than paid back by the narrower
+   column: shorter lines mean fewer wrapped rows per item. */
+.wn-section { margin-bottom: 1.1rem; }
 .wn-section:last-child { margin-bottom: 0; }
 
 .wn-section-title {
@@ -533,13 +545,15 @@ body.no-animations .wn-kofi-star {
     padding: 0;
     margin: 0;
     display: grid;
-    gap: 0.45rem;
+    gap: 0.55rem;
 }
 .wn-item {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
-    line-height: 1.55;
+    /* 1.5 rather than 1.55: at ~63 characters a line needs less leading than it
+       did at ~84 to stay trackable. */
+    line-height: 1.5;
 }
 .wn-item-text {
     flex: 1;
@@ -815,6 +829,10 @@ body.no-animations .wn-kofi-star {
     min-height: 0;
     overflow-y: auto;
     padding-right: 0.2rem;
+    /* The last child ends flush with this scroll box, and overflow clipping eats
+       the final pixel row — the name input's bottom border went missing. A pixel
+       of padding gives that border somewhere to land. */
+    padding-bottom: 1px;
     margin-top: 0.55rem;
     margin-bottom: 0.25rem;
 }
@@ -899,6 +917,68 @@ body.no-animations .wn-kofi-star {
     color: var(--text-tertiary);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+/* ─── "New page" — the overlay's one action ──────────────────────────────────
+   It borrows .page-overview-modal-link for its shape so it lines up with the
+   pages above, and is set apart by the rule above it and a muted, dashed
+   border: a thing to do, not a page to go to. */
+
+.page-overview-modal-actions {
+    margin-top: 0.55rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+.page-overview-modal-new {
+    border-style: dashed;
+    color: var(--text-secondary);
+}
+
+.page-overview-modal-new[hidden] {
+    display: none;
+}
+
+.page-overview-modal-plus {
+    font-size: 1em;
+    color: var(--text-secondary);
+}
+
+/* The shortcut hint sits where a page shows its bookmark count. */
+.page-overview-modal-hintkey {
+    opacity: 0.75;
+}
+
+/* The name row takes the button's place inside the same action block, so
+   opening it does not change the modal's height. */
+.page-overview-modal-actions .bookmark-inline-create {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.page-overview-modal-actions .bookmark-inline-create[hidden] {
+    display: none;
+}
+
+.page-overview-modal-actions .bookmark-inline-create-input {
+    flex: 1 1 8rem;
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--font-size-controls);
+}
+
+/* Colour and size come from .bookmark-inline-conflict in dashboard.css; only
+   the full-width placement in this flex row belongs here. */
+.page-overview-modal-actions .bookmark-inline-conflict {
+    flex: 1 0 100%;
+    margin-top: 0;
 }
 
 /* Fix hidden attribute override */

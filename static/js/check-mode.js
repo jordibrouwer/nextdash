@@ -130,8 +130,8 @@ const CheckMode = {
      *
      * A bookmark lives in more than one array: `bookmarks` for the current page
      * and `allBookmarks` for every page, with smart-collection rows resolving
-     * through the latter. `loadBookmarks()` refreshes only the first and reads
-     * through the page data cache, so without this a successful write is
+     * through the latter. `loadPageBookmarks()` refreshes only the first and
+     * reads through the page data cache, so without this a successful write is
      * invisible until a hard reload — the dashboard keeps showing, and acting
      * on, the mode from before the change.
      *

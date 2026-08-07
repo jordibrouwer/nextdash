@@ -836,8 +836,37 @@ class SearchCommandsComponent {
         }
 
         const query = args.join(' ').trim();
+
+        // `:page new <name>` creates instead of switching. It is offered as a
+        // completion when the list is bare so the palette teaches the form.
+        const newPage = this._parseCreateSubcommand(query);
+        if (newPage.matched) {
+            if (!newPage.name) {
+                return [{
+                    name: this._t('commands.pageNewHint', 'Type a name for the new page'),
+                    shortcut: ':PAGE',
+                    type: 'command',
+                    action: () => ({ refresh: false }),
+                }];
+            }
+            return [{
+                name: this._t('commands.pageNewLabel', 'Create page "{name}"').replace('{name}', newPage.name),
+                shortcut: ':PAGE',
+                type: 'command',
+                action: async () => {
+                    const created = await dash.structureCreate.createPageFromForm(newPage.name);
+                    if (created.error) {
+                        return { refresh: false };
+                    }
+                    this._closeCommandPalette();
+                    await dash.requestPageNavigation(created.id);
+                    return { refresh: false };
+                },
+            }];
+        }
+
         if (!query) {
-            return dash.pages.map((page, index) => {
+            const rows = dash.pages.map((page, index) => {
                 const label = page.name || `Page ${index + 1}`;
                 const isCurrent = dash.samePageId(page.id, dash.currentPageId);
                 return {
@@ -849,6 +878,13 @@ class SearchCommandsComponent {
                     action: () => this._switchPage(dash, page.id),
                 };
             });
+            rows.push({
+                name: this._t('commands.pageNewOption', 'New page…'),
+                shortcut: ':PAGE',
+                completion: ':page new ',
+                type: 'command-completion',
+            });
+            return rows;
         }
 
         const parsed = parseInt(query, 10);
@@ -884,6 +920,22 @@ class SearchCommandsComponent {
             };
         });
     }
+
+    /**
+     * Read a leading `new` off `:page` / `:category` arguments.
+     *
+     * `matched` is true for the bare word too, so `:page new` can prompt for a
+     * name rather than silently searching for a page called "new". Anything
+     * after it is the name, taken verbatim — names contain spaces.
+     */
+    _parseCreateSubcommand(query) {
+        const trimmed = String(query || '').trim();
+        if (!/^new(\s|$)/i.test(trimmed)) {
+            return { matched: false, name: '' };
+        }
+        return { matched: true, name: trimmed.slice(3).trim() };
+    }
+
 
     async _switchPage(dashboard, pageId) {
         if (dashboard.samePageId(pageId, dashboard.currentPageId)) {
@@ -1389,23 +1441,60 @@ class SearchCommandsComponent {
         const query = args.join(' ').trim();
         const categories = this._getVisiblePageCategories();
 
-        if (categories.length === 0) {
+        // Before the empty check: a page with no categories is exactly when
+        // `:category new <name>` is most useful.
+        const newCategory = this._parseCreateSubcommand(query);
+        if (newCategory.matched) {
+            if (!newCategory.name) {
+                return [{
+                    name: this._t('commands.categoryNewHint', 'Type a name for the new category'),
+                    shortcut: ':CATEGORY',
+                    type: 'command',
+                    action: () => ({ refresh: false }),
+                }];
+            }
             return [{
-                name: this._t('commands.categoryEmpty', 'No categories on this page'),
+                name: this._t('commands.categoryNewLabel', 'Create category "{name}"').replace('{name}', newCategory.name),
                 shortcut: ':CATEGORY',
                 type: 'command',
-                action: () => ({ refresh: false }),
+                action: async () => {
+                    const pageId = dashboard.currentPageId;
+                    const created = await dashboard.structureCreate.createCategoryFromForm(pageId, newCategory.name);
+                    if (created.error) {
+                        return { refresh: false };
+                    }
+                    this._closeCommandPalette();
+                    await dashboard.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
+                    return { refresh: false };
+                },
+            }];
+        }
+
+        // No categories yet — the only useful thing to offer is making the first.
+        if (categories.length === 0) {
+            return [{
+                name: this._t('commands.categoryNewFirst', 'No categories yet — create the first'),
+                shortcut: ':CATEGORY',
+                completion: ':category new ',
+                type: 'command-completion',
             }];
         }
 
         if (!query) {
-            return categories.map((category) => ({
+            const rows = categories.map((category) => ({
                 name: category.name,
                 shortcut: ':CATEGORY',
                 meta: String(category.index),
                 completion: `:category ${category.name} `,
                 type: 'command-completion',
             }));
+            rows.push({
+                name: this._t('commands.categoryNewOption', 'New category…'),
+                shortcut: ':CATEGORY',
+                completion: ':category new ',
+                type: 'command-completion',
+            });
+            return rows;
         }
 
         const parsed = parseInt(query, 10);

@@ -62,11 +62,32 @@ body {
     /* Fixed clamp() side margin (not a percentage) so the whitespace shrinks
        toward the floor as the window narrows, giving the columns the reclaimed
        space before they have to get narrower. Roomy margins keep the columns
-       closer together on wide screens. */
+       closer together on wide screens.
+
+       The clamp is the "balanced" value of the side-margin setting, so a
+       dashboard that never touches the setting looks exactly as it always has;
+       the fallback here repeats it for the case where no body attribute is set
+       at all (a view rendered before setupDOM runs). */
     max-width: 1600px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 clamp(2rem, 6vw, 8rem);
+    padding: 0 var(--dashboard-side-margin, clamp(2rem, 6vw, 8rem));
+}
+
+/* Left/right band beside the grid.
+ *
+ * Each keeps a clamp so the margin still collapses on a narrow window rather
+ * than squeezing the columns — only the ceiling differs. "snug" hands roughly
+ * 100px per side back to the grid on a wide screen; "airy" is for people who
+ * want the columns pulled together. */
+body[data-side-margin="snug"] {
+    --dashboard-side-margin: clamp(1rem, 2.5vw, 3rem);
+}
+body[data-side-margin="balanced"] {
+    --dashboard-side-margin: clamp(2rem, 6vw, 8rem);
+}
+body[data-side-margin="airy"] {
+    --dashboard-side-margin: clamp(3rem, 9vw, 12rem);
 }
 
 /* Header Top - Contains date, tabs, and config button */
@@ -1341,7 +1362,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
        columns shrink gracefully toward --dashboard-column-min. */
     --dashboard-column-max: 360px;
     display: grid;
-    row-gap: 3rem;
+    row-gap: var(--category-row-gap, 2rem);
     column-gap: 1.5rem;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     width: 100%;
@@ -1459,7 +1480,7 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 
 /* Layout presets */
 .dashboard-grid.layout-default {
-    row-gap: 3rem;
+    row-gap: var(--category-row-gap, 2rem);
     column-gap: 1.5rem;
 }
 
@@ -2091,6 +2112,26 @@ body[data-density-mode="dense"] .dashboard-grid {
     --cards-pad-block: 0.3rem;
 }
 /* 'auto' leaves variables to layout + responsive CSS to decide */
+
+/* Vertical space between category rows.
+ *
+ * Distinct from density above, which sizes the bookmark rows inside a category:
+ * this is the gap between the rows of categories themselves, which is what
+ * makes a wide page feel empty. The old fixed 3rem is still available as
+ * "airy"; the default drops to 2rem, because on a five-column layout 3rem left
+ * a visible band of nothing between every row.
+ *
+ * The variable is read by .dashboard-grid.layout-default and the auto-fit grid;
+ * the packed and compact presets keep their own tighter gaps. */
+body[data-category-spacing="snug"] {
+    --category-row-gap: 1.25rem;
+}
+body[data-category-spacing="balanced"] {
+    --category-row-gap: 2rem;
+}
+body[data-category-spacing="airy"] {
+    --category-row-gap: 3rem;
+}
 
 
 /* Keep terminal rows single-line in dense layouts (e.g. 6 columns). */
@@ -3396,6 +3437,56 @@ body.bookmark-inline-edit-active #app-modal.modal-overlay.show {
     font-weight: var(--font-weight-semibold);
 }
 
+/* ─── "+ category" — the grid's own add affordance ───────────────────────────
+   Sits after the last column rather than inside one: it is not a category, and
+   the drag-reorder instances would treat it as one if it were. Dashed and muted
+   so it reads as an invitation next to real category headers, not as content.
+   `c` does the same thing without it, which is why it may be hidden entirely on
+   touch. */
+
+/* Sized and coloured to match .category-sort-btn beside it: this is one more
+   control in the same trailing group, not a separate affordance. Squarer than
+   the A–Z/Rec chips because it holds a single glyph. */
+.category-add-inline-btn {
+    font: inherit;
+    font-size: 0.68em;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.2;
+    min-height: 1.45em;
+    min-width: 1.45em;
+    padding: 0.15em 0.3em;
+    margin-left: 0.25em;
+    border: 1px solid color-mix(in srgb, var(--text-tertiary) 28%, transparent);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--background-secondary, transparent) 55%, transparent);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.category-add-inline-btn:hover,
+.category-add-inline-btn:focus-visible {
+    opacity: 1;
+    color: var(--text-secondary);
+    border-color: color-mix(in srgb, var(--text-secondary) 35%, transparent);
+    outline: none;
+}
+
+.category-add-inline-btn[hidden] {
+    display: none;
+}
+
+/* The name row is hosted by the grid rather than the header the "+" sits in: a
+   text input inside a one-line header would overflow the column. It spans the
+   grid so it is never squeezed into a single column's width, and only exists
+   while naming, so the row it adds is not permanent. */
+.bookmark-inline-create.category-add-create {
+    grid-column: 1 / -1;
+    max-width: 22rem;
+    margin-top: 0.75rem;
+}
+
 .bookmark-inline-icon-actions {
     display: flex;
     align-items: center;
@@ -4039,6 +4130,16 @@ body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .moda
     max-height: min(70vh, calc(100vh - var(--dashboard-toolbar-stack, 5.75rem) - 2.5rem));
     transform: translateY(10px) scale(0.98);
     transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+/* What's new is narrower than the two it shares the shell with: it is a single
+   column of prose, and 52rem ran its lines to ~84 characters. Split out rather
+   than folded into the rule above, because the recent-bookmarks list and the
+   cheat sheet's two-column key table both still want the width. This selector
+   has to repeat the full :has() chain — the shorter .modal.whats-new-modal in
+   modal.css loses to it on specificity. */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.whats-new-modal) .modal {
+    width: min(40rem, calc(100vw - 2.5rem));
 }
 
 body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.recent-bookmarks-modal) .modal,

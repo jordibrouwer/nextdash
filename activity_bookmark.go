@@ -122,6 +122,30 @@ func logBookmarkRestore(item TrashedBookmark, r *http.Request) {
 	logActivity(activityCategoryMutate, "bookmark.restore", fields)
 }
 
+func logPageRestore(item TrashedBookmark, r *http.Request) {
+	if !activityEnabled(activityCategoryMutate) {
+		return
+	}
+	fields := activityFieldsFromRequest(r)
+	fields["pageId"] = item.PageID
+	if item.TrashedPage != nil {
+		fields["count"] = len(item.TrashedPage.Bookmarks)
+	}
+	logActivity(activityCategoryMutate, "page.restore", fields)
+}
+
+func logCategoryRestore(item TrashedBookmark, r *http.Request) {
+	if !activityEnabled(activityCategoryMutate) {
+		return
+	}
+	fields := activityFieldsFromRequest(r)
+	fields["pageId"] = item.PageID
+	if item.TrashedCategory != nil {
+		fields["categoryId"] = item.TrashedCategory.Category.ID
+	}
+	logActivity(activityCategoryMutate, "category.restore", fields)
+}
+
 func logBookmarkUpdate(bm Bookmark, changed []string, r *http.Request) {
 	if !activityEnabled(activityCategoryMutate) || len(changed) == 0 {
 		return

@@ -26,8 +26,55 @@ const trashRetention = 30 * 24 * time.Hour
 // mistake would leave the trash larger than the bookmarks it shadows.
 const trashMaxItems = 500
 
-// TrashedBookmark is a deleted bookmark plus everything needed to put it back
-// where it was.
+// Trash entry kinds. The zero value is the bookmark kind on purpose: entries
+// written before pages and categories could be trashed have no `kind` field at
+// all, and they must keep reading back as bookmarks.
+const (
+	TrashKindBookmark = "bookmark"
+	TrashKindPage     = "page"
+	TrashKindCategory = "category"
+)
+
+// trashKindOf normalises a possibly-empty kind to one of the constants above.
+func trashKindOf(item TrashedBookmark) string {
+	switch item.Kind {
+	case TrashKindPage:
+		return TrashKindPage
+	case TrashKindCategory:
+		return TrashKindCategory
+	default:
+		return TrashKindBookmark
+	}
+}
+
+// TrashedPage is a deleted page with everything it owned.
+//
+// Restoring means writing bookmarks-N.json back at the *original* ID: the page
+// id is what every bookmark's pageId refers to, so recreating "the same page"
+// under a fresh id would restore the rows onto a page nothing points at.
+type TrashedPage struct {
+	Page       Page       `json:"page"`
+	Categories []Category `json:"categories,omitempty"`
+	Bookmarks  []Bookmark `json:"bookmarks,omitempty"`
+	// OrderIndex is where the page sat in the page order, so a restore puts the
+	// tab back in place instead of appending it. Clamped on restore.
+	OrderIndex int `json:"orderIndex"`
+}
+
+// TrashedCategory is a deleted category. Its bookmarks are not stored: deleting
+// a category deliberately leaves them on the page, so a restore only has to put
+// the category definition back.
+type TrashedCategory struct {
+	Category Category `json:"category"`
+	// Index is the position in the page's category list at delete time.
+	Index int `json:"index"`
+}
+
+// TrashedBookmark is one trash entry.
+//
+// It is named for the only thing it could hold originally. Pages and categories
+// were added to the same list rather than a parallel one so retention, the cap,
+// the API and the UI stay single-path; `Kind` says which payload is set.
 //
 // Index is the position the bookmark held on its page at delete time. It is a
 // hint, not a guarantee: bookmarks around it may have moved or been deleted
@@ -41,6 +88,14 @@ type TrashedBookmark struct {
 	PageID    int      `json:"pageId"`
 	Index     int      `json:"index"`
 	Bookmark  Bookmark `json:"bookmark"`
+	// Kind is "" or "bookmark" for a bookmark entry, "page" or "category" for a
+	// structure entry. Empty is not normalised away on read: old files have no
+	// kind, and rewriting them all on first load would be a migration this does
+	// not need.
+	Kind string `json:"kind,omitempty"`
+	// Exactly one of these is set, matched to Kind. Both nil for a bookmark.
+	TrashedPage     *TrashedPage     `json:"trashedPage,omitempty"`
+	TrashedCategory *TrashedCategory `json:"trashedCategory,omitempty"`
 	// PageName is captured at delete time so the trash list can name the origin
 	// page even after it is renamed or deleted. Restoring to a page that no
 	// longer exists is refused, and this is what lets the UI say which page that
@@ -155,7 +210,11 @@ func (fs *FileStore) AddTrashedBookmarks(entries []TrashedBookmark) error {
 	trash := fs.readTrashDataLocked()
 	now := time.Now()
 	for _, entry := range entries {
-		if strings.TrimSpace(entry.Bookmark.URL) == "" && strings.TrimSpace(entry.Bookmark.Name) == "" {
+		// The empty-bookmark guard only applies to bookmark entries. A page or
+		// category entry carries no Bookmark at all, and would otherwise be
+		// dropped here without a word.
+		if trashKindOf(entry) == TrashKindBookmark &&
+			strings.TrimSpace(entry.Bookmark.URL) == "" && strings.TrimSpace(entry.Bookmark.Name) == "" {
 			continue
 		}
 		if entry.ID == "" {

@@ -322,98 +322,24 @@ class DashboardInlineEdit {
     }
 
 
+    // Creating pages and categories lives in DashboardStructureCreate — the pages
+    // overlay and the grid's category placeholder create the same things without
+    // a bookmark involved, and must not drag this module in to do it. These stay
+    // as the names the form calls them by.
+
     /** Turn a name into a stable, unique category id (mirrors the config rules). */
     slugCategoryId(name, taken = []) {
-        let base = String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        if (!base) {
-            base = 'category';
-        }
-        const takenSet = new Set(taken.map((id) => String(id)));
-        let id = base;
-        let n = 2;
-        while (takenSet.has(id)) {
-            id = `${base}-${n++}`;
-        }
-        return id;
+        return this.dash.structureCreate.slugCategoryId(name, taken);
     }
 
 
-    /**
-     * Create a page from the bookmark form's page dropdown.
-     * Resolves to `{ id }` on success or `{ error }` with a message to show.
-     */
     async createPageFromForm(name) {
-        const d = this.dash;
-        const cfg = (key, fb) => d.configLabel(key, fb);
-        try {
-            const res = await fetch('/api/pages');
-            const existing = res.ok ? await res.json() : [];
-            const list = Array.isArray(existing) ? existing : [];
-            if (list.some((p) => String(p.name || '').trim().toLowerCase() === name.toLowerCase())) {
-                return { error: cfg('pageExists', 'That page already exists.') };
-            }
-            const nextId = list.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
-            const payload = [...list, { id: nextId, name }];
-            const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/pages', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            if (!save.ok) {
-                throw new Error(save.statusText);
-            }
-            // The dashboard keeps its own page list for the nav tabs and the page
-            // select; update it here so both agree without a full reload.
-            d.pages = payload;
-            d.renderPageNavigation?.();
-            d.notifyConfig('pageCreated', 'Page created.', 'success');
-            return { id: nextId };
-        } catch (e) {
-            console.error('Inline create page failed:', e);
-            return { error: cfg('pageCreateError', 'Could not create the page.') };
-        }
+        return this.dash.structureCreate.createPageFromForm(name);
     }
 
 
-    /**
-     * Create a category on `pageId` from the bookmark form's category dropdown.
-     * Resolves to `{ id }` on success or `{ error }` with a message to show.
-     */
     async createCategoryFromForm(pageId, name) {
-        const d = this.dash;
-        const cfg = (key, fb) => d.configLabel(key, fb);
-        try {
-            const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
-            const existing = res.ok ? await res.json() : [];
-            const list = Array.isArray(existing) ? existing : [];
-            if (list.some((c) => String(c.name || '').trim().toLowerCase() === name.toLowerCase())) {
-                return { error: cfg('categoryExists', 'That category already exists.') };
-            }
-            const id = this.slugCategoryId(name, list.map((c) => c.id));
-            const payload = [...list, { id, name, icon: '' }];
-            const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(
-                `/api/categories?page=${encodeURIComponent(pageId)}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                }
-            );
-            if (!save.ok) {
-                throw new Error(save.statusText);
-            }
-            // Only the page on screen has its categories mirrored on the dashboard;
-            // for any other page the form re-fetches the list it needs.
-            if (Number(pageId) === Number(d.currentPageId)) {
-                d.categories = payload;
-            }
-            d.data?.invalidatePageDataCache?.(Number(pageId));
-            d.notifyConfig('categoryCreated', 'Category created.', 'success');
-            return { id };
-        } catch (e) {
-            console.error('Inline create category failed:', e);
-            return { error: cfg('categoryCreateError', 'Could not create the category.') };
-        }
+        return this.dash.structureCreate.createCategoryFromForm(pageId, name);
     }
 
 
@@ -1038,38 +964,14 @@ class DashboardInlineEdit {
         // the field's position never move.
         const lastSelected = { page: String(sourcePageId), category: catSelect.value };
 
-        const mkInlineCreateRow = (kind, placeholder) => {
-            const box = document.createElement('div');
-            box.className = 'bookmark-inline-create';
-            box.dataset.createKind = kind;
-            box.hidden = true;
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'bookmark-inline-input bookmark-inline-create-input';
-            input.placeholder = placeholder;
-
-            // Deliberately not .bookmark-inline-action-btn: that class marks the
-            // form's own footer buttons (save / cancel / delete), and a second pair
-            // wearing it would make "the form's cancel button" ambiguous. These get
-            // their own class and borrow the styling instead.
-            const okBtn = document.createElement('button');
-            okBtn.type = 'button';
-            okBtn.className = 'bookmark-inline-create-btn bookmark-inline-create-ok';
-            okBtn.textContent = cfg('create', 'Create');
-
-            const cancelBtn = document.createElement('button');
-            cancelBtn.type = 'button';
-            cancelBtn.className = 'bookmark-inline-create-btn bookmark-inline-create-cancel';
-            cancelBtn.textContent = d.formatDashboardLabel('cancel', {}, 'Cancel');
-
-            const error = document.createElement('span');
-            error.className = 'bookmark-inline-conflict';
-            error.hidden = true;
-
-            box.append(input, okBtn, cancelBtn, error);
-            return { box, input, okBtn, cancelBtn, error };
-        };
+        const mkInlineCreateRow = (kind, placeholder) => window.InlineCreateRow.create({
+            kind,
+            placeholder,
+            labels: {
+                create: cfg('create', 'Create'),
+                cancel: d.formatDashboardLabel('cancel', {}, 'Cancel'),
+            },
+        });
 
         const closeInlineCreate = (kind, ui, select) => {
             ui.box.hidden = true;
@@ -1093,47 +995,26 @@ class DashboardInlineEdit {
         };
 
         const wireInlineCreate = (kind, ui, select, confirm) => {
-            const run = async () => {
-                const name = ui.input.value.trim();
-                if (!name) {
-                    ui.input.focus({ preventScroll: true });
-                    return;
-                }
-                ui.okBtn.disabled = true;
-                try {
+            window.InlineCreateRow.wire(ui, {
+                submit: async (name) => {
                     const failure = await confirm(name);
                     if (failure) {
-                        ui.error.textContent = failure;
-                        ui.error.hidden = false;
-                        ui.input.focus({ preventScroll: true });
-                        return;
+                        return failure;
                     }
+                    // Success puts the select back in the row's place; the caller's
+                    // `confirm` has already refilled it with the new page/category.
                     ui.box.hidden = true;
                     ui.error.hidden = true;
                     ui.input.value = '';
                     select.hidden = false;
                     select.focus({ preventScroll: true });
-                } finally {
-                    ui.okBtn.disabled = false;
-                }
-            };
-            ui.okBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); void run(); });
-            ui.cancelBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                closeInlineCreate(kind, ui, select);
+                    return null;
+                },
+                onCancel: () => closeInlineCreate(kind, ui, select),
             });
             // The form's Escape listener runs in the capture phase on document, so
             // it hands the key back here through this hook rather than racing it.
             ui.box.__closeInlineCreate = () => closeInlineCreate(kind, ui, select);
-            // Enter confirms the name; it must not fall through to the form's save.
-            ui.input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    void run();
-                }
-            });
         };
 
         const pageCreate = mkInlineCreateRow(

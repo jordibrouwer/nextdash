@@ -63,8 +63,13 @@
                 },
                 { keys: 'Shift + ← / →', cheatKey: 'navPrevNextPage', fallback: 'Previous / next page', print: true },
                 { keys: ',', cheatKey: 'navPageOverview', fallback: 'Page overview with bookmark counts', print: true, printFallback: 'Page overview' },
+                { keys: 'n', cheatKey: 'navPageOverviewNewPage', fallback: 'Create a new page from the page overview' },
                 { keys: '<', cheatKey: 'navOpenConfig', fallback: 'Open config (< is Shift+,; in config < returns here)' },
                 { keys: '.', cheatKey: 'navCollapseAll', fallback: 'Collapse or expand all categories' },
+                // Hold, not tap: a quick c is a search keystroke. The gesture is in
+                // the key label because a bare "c" would teach the wrong one. Reads
+                // as plain text like the other press-and-hold rows.
+                { keys: 'Hold c (~300 ms)', cheatKey: 'navAddCategory', fallback: 'Add a category to the current page (tap c to search instead)' },
                 { keys: '↑ / ↓', cheatKey: 'navFocusUpDown', fallback: 'Move focus up / down through bookmarks', print: true, printKeys: '↑ ↓ ← →', printFallback: 'Move focus' },
                 { keys: '← / →', cheatKey: 'navFocusLeftRight', fallback: 'Move focus left / right in grid' },
                 { keys: 'Home / End', cheatKey: 'navCategoryHomeEnd', fallback: 'First / last bookmark in the focused category' },
@@ -111,6 +116,7 @@
                 { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, edit, tags, move, checking, select, delete (Shift + right-click for the browser menu)' },
                 { keys: 'Double-click page tab', cheatKey: 'bmRenamePageTab', fallback: 'Rename page tab — also set emoji icon and colour dot' },
                 { keys: 'Long-press category (~500 ms)', cheatKey: 'bmRenameCategory', fallback: 'Rename category header (not on sort buttons)' },
+                { keys: 'Right-click category', cheatKey: 'bmCategoryMenu', fallback: 'Right-click a category header to rename, add, or delete it' },
                 { keys: 'Drag left strip', cheatKey: 'bmDragReorder', fallback: 'Reorder a bookmark within or across categories' },
                 { keys: 'Drag // in category title', cheatKey: 'bmDragCategory', fallback: 'Reorder categories (grab the // prefix in the header)' },
             ],
@@ -255,6 +261,7 @@
                 { keys: ':tag <name>', cheatKey: 'cbTagBrowse', fallback: 'Browse bookmarks by tag in the palette — :tag work or :tag:work' },
                 { keys: ':tag +name / :tag -name', cheatKey: 'cbTagMutate', fallback: 'Add or remove a tag on the focused bookmark — :tag +name / :tag -name' },
                 { keys: ':category / :cat', cheatKey: 'cbCategory', fallback: 'Jump to a category or smart collection by number or name' },
+                { keys: ':category new <name>', cheatKey: 'cbCategoryNew', fallback: 'Create a category on the current page (hold c does the same)' },
                 { keys: ':filter <tag> / :filter clear', cheatKey: 'cbFilter', fallback: 'Apply or clear dashboard tag filter (OR logic, same as tag cloud)' },
                 { keys: ':remove', cheatKey: 'cbRemove', fallback: 'Delete the focused bookmark' },
                 { keys: ':find <text> / :find clear', cheatKey: 'cbFind', fallback: 'Filter bookmark tiles on the current page — :find clear removes the filter' },
@@ -277,6 +284,7 @@
             titleFallback: 'Commands — navigation',
             rows: [
                 { keys: ':page', cheatKey: 'cnPage', fallback: 'Switch page by name or number — palette stays open, ✓ on current page' },
+                { keys: ':page new <name>', cheatKey: 'cnPageNew', fallback: 'Create a page and go to it (n in the page overview does the same)' },
                 { keys: ':inbox', cheatKey: 'cnInbox', fallback: 'Open Inbox (Shift + I)', print: true },
                 { keys: ':inbox triage', cheatKey: 'cnInboxTriage', fallback: 'Triage inbox items one by one' },
                 { keys: ':recent', cheatKey: 'cnRecent', fallback: 'Open recent bookmarks modal (same as *)' },

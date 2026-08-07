@@ -1,5 +1,10 @@
 // Keyboard Navigation Component for Dashboard
 const G_CHORD_HOLD_MS = 300;
+// c is a letter people type into the shortcut search all the time, so it must
+// not act on a plain tap. It waits out the same hold as the g chord: a tap
+// releases the letter into search, holding adds a category. Shift+C is a
+// separate shortcut and still fires immediately.
+const C_HOLD_MS = G_CHORD_HOLD_MS;
 
 class KeyboardNavigation {
     constructor(dashboard) {
@@ -12,6 +17,10 @@ class KeyboardNavigation {
         this._gAwaitingRelease = false;
         this._gHoldTimer = null;
         this._gTimeout = null;
+        // Held-c state: set on keydown, cleared by whichever comes first — the
+        // hold firing or the key being released.
+        this._cAwaitingRelease = false;
+        this._cHoldTimer = null;
         this._keydownHandler = null;
         this._keyupHandler = null;
         this._focusInHandler = null;
@@ -166,6 +175,23 @@ class KeyboardNavigation {
                 }
             }
 
+            // Plain c — add a category. Acts only on a hold, so a quick tap still
+            // types the letter into the shortcut search. Shift+C above is
+            // unaffected: it fires immediately, as it always has.
+            if (e.code === 'KeyC' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                if (e.repeat) {
+                    return;
+                }
+                if (!this._cAwaitingRelease) {
+                    this._cAwaitingRelease = true;
+                    this._cHoldTimer = setTimeout(() => this._fireCHoldAction(), C_HOLD_MS);
+                }
+                return;
+            }
+
             // WAI-ARIA grid: Ctrl/Cmd+Home / Ctrl/Cmd+End — first / last bookmark
             if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'Home' || e.key === 'End')) {
                 if (this.navigableElements.length === 0) {
@@ -251,6 +277,17 @@ class KeyboardNavigation {
             }
 
             if (this.dashboard.searchComponent && this.dashboard.searchComponent.isActive()) {
+                return;
+            }
+
+            // Released before the hold elapsed — the letter was a keystroke, not a
+            // command, so it goes to the shortcut search like any other letter.
+            // Once the hold fires it clears _cAwaitingRelease itself, so reaching
+            // here always means the tap was short.
+            if (e.code === 'KeyC' && this._cAwaitingRelease) {
+                this._cancelCHoldTimer();
+                this._cAwaitingRelease = false;
+                this.dashboard?.searchComponent?.addShortcutLetter?.('C');
                 return;
             }
 
@@ -939,6 +976,36 @@ class KeyboardNavigation {
             clearTimeout(this._gHoldTimer);
             this._gHoldTimer = null;
         }
+    }
+
+    _cancelCHoldTimer() {
+        if (this._cHoldTimer) {
+            clearTimeout(this._cHoldTimer);
+            this._cHoldTimer = null;
+        }
+    }
+
+    /**
+     * The c key was held past the threshold — open the category name row.
+     */
+    _fireCHoldAction() {
+        this._cancelCHoldTimer();
+        // Cleared here rather than on keyup: opening the row moves focus into its
+        // input, and the keyup handler bails on INPUT targets before it reaches
+        // the c branch. Left set, every later hold would be skipped as "already
+        // awaiting release" — the shortcut would work exactly once per page load.
+        this._cAwaitingRelease = false;
+        const dash = this.dashboard;
+        if (!dash || dash.isBookmarksView?.() === false || dash.isInlineEditActive?.()) {
+            return;
+        }
+        // Re-checked here, not just on keydown: the hold spans 300ms, and search
+        // or a modal may have opened in between. Firing into those would put the
+        // name row behind whatever is now on top.
+        if (dash.searchComponent?.isActive?.() || dash.isModalOpen?.()) {
+            return;
+        }
+        dash.categoryAdd?.open();
     }
 
     _armGChordTimeout(ms) {
