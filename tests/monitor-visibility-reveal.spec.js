@@ -193,12 +193,28 @@ test.describe('monitor emphasis setting', () => {
 });
 
 test.describe('the overview announces the feature', () => {
-    test('it leads the New features carousel and its CTA opens Status & health', async ({ page }) => {
+    test('it is in the New features carousel and its CTA opens Status & health', async ({ page }) => {
         await load(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
 
         const spotlight = page.locator('.config-feature-spotlight');
         await expect(spotlight).toBeVisible();
+
+        // The carousel is newest-first, so this feature stops leading it the moment
+        // a later release adds one. Step to its own slide rather than asserting a
+        // position: what matters is that the entry is still there and still points
+        // at the right setting, not that it happens to be first this month.
+        const index = await page.evaluate(() => window.dashboardInstance.config
+            .overviewNewFeatures()
+            .findIndex((f) => f.titleKey === 'config.overviewNewFeatureMonitorEmphasisTitle'));
+        expect(index, 'the monitor spotlight is still in the catalog').toBeGreaterThanOrEqual(0);
+
+        await page.evaluate((target) => {
+            const config = window.dashboardInstance.config;
+            config.overviewFeatureIndex = target;
+            config.repaintOverviewNewFeatures();
+        }, index);
+
         await expect(spotlight.locator('.config-feature-spotlight-title'))
             .toHaveText(/monitored|gemonitorde|überwachte|surveillés/i);
         // Real copy in every locale, not a bare key.
