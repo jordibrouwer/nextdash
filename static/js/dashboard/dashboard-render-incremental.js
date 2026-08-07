@@ -228,7 +228,13 @@ class DashboardRenderIncremental {
         };
 
         bookmarks.forEach((bookmark) => {
-            const pageIndex = Array.isArray(d.bookmarks) ? d.bookmarks.indexOf(bookmark) : -1;
+            // resolveBookmarkIndex, not indexOf: smart collections render the
+            // objects from d.allBookmarks, which are different instances than the
+            // ones in d.bookmarks even for the same bookmark. Identity matching
+            // dropped the attribute from every smart-collection row, and the
+            // Shift+M / Shift+D / Shift+T handlers then bailed silently because
+            // getSelectedBookmark() could not resolve the row.
+            const pageIndex = d.bookmarkRows.resolveBookmarkIndex(bookmark);
             const urlKey = this.normalizeUrl(bookmark?.url);
             let row = null;
             if (urlKey) {

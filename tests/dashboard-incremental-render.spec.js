@@ -169,4 +169,50 @@ test.describe('dashboard incremental DOM', () => {
         expect(result.uniqueNodes).toBe(2);
         expect(result.hasUpdatedName).toBe(true);
     });
+
+    test('patch keeps data-bookmark-index on smart-collection rows', async ({ page }) => {
+        await page.goto(`/?_=${Date.now()}`);
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+
+        const result = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const smartRows = () => [...document.querySelectorAll(
+                '#dashboard-layout .category[data-smart-collection="true"] .bookmark-link[data-bookmark-url]'
+            )];
+            if (smartRows().length === 0) {
+                return { ok: false, reason: 'no-smart-rows' };
+            }
+
+            // Smart collections are built from d.allBookmarks, whose objects are
+            // different instances than the ones in d.bookmarks. Identity matching
+            // in the patch stripped data-bookmark-index from every such row, and
+            // the Shift+M / Shift+D / Shift+T handlers then bailed out silently
+            // because the row could not be resolved back to a bookmark.
+            const distinctInstances = smartRows().every((row) => {
+                const url = row.getAttribute('data-bookmark-url');
+                const inPage = (d.bookmarks || []).find((b) => b.url === url);
+                const inAll = (d.allBookmarks || []).find((b) => b.url === url);
+                return !inPage || !inAll || inPage !== inAll;
+            });
+
+            const patched = d.renderIncremental.tryRender({});
+            const after = smartRows();
+            return {
+                ok: true,
+                patched,
+                distinctInstances,
+                total: after.length,
+                missingIndex: after.filter((row) => !row.hasAttribute('data-bookmark-index')).length,
+            };
+        });
+
+        test.skip(result.ok === false, `smart collections unavailable: ${result.reason}`);
+        expect(result.patched).toBe(true);
+        expect(result.total).toBeGreaterThan(0);
+        // Precondition: the two arrays really do hold separate instances, so this
+        // test would still catch a return to identity matching.
+        expect(result.distinctInstances).toBe(true);
+        // The whole point: every smart-collection row still resolves to a bookmark.
+        expect(result.missingIndex).toBe(0);
+    });
 });
