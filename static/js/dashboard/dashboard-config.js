@@ -9497,8 +9497,11 @@ class DashboardConfig {
                 + `<label for="${id}" class="bookmark-detail-checkmode-option">${esc(o.label)}</label>`;
         }).join('');
         const interval = window.CheckMode?.intervalOf?.(b) || 15;
-        const intervalOpts = [5, 15, 30, 60, 360, 1440].map((m) => {
-            const label = m < 60 ? `${m}m` : (m === 1440 ? '24h' : `${m / 60}h`);
+        // The choices come from CheckMode so this editor and the health view's
+        // interval picker cannot end up offering different cadences.
+        const intervalOpts = (window.CheckMode?.INTERVAL_CHOICES || [5, 15, 30, 60, 360, 1440]).map((m) => {
+            const label = window.CheckMode?.intervalLabel?.(m)
+                || (m < 60 ? `${m}m` : (m === 1440 ? '24h' : `${m / 60}h`));
             return `<option value="${m}" ${m === interval ? 'selected' : ''}>${esc(label)}</option>`;
         }).join('');
 

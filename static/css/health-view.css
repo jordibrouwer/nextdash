@@ -77,6 +77,15 @@
     color: var(--text-secondary);
 }
 
+/* The report's age. Quieter than the broken count beside it: it qualifies the
+   numbers rather than being one of them. */
+.health-view-report-age {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
 /* Score bands. Thresholds mirror scoreClass() in health.js: >=90 good,
    >=70 warn, else bad. Set as a variable so badge, row accent and the
    breakdown total all tint from one place. */
@@ -593,6 +602,53 @@ button.health-view-tile:hover {
     color: var(--accent-primary);
 }
 
+/* Interval picker inside the check-mode popover. A divider above it separates
+   "what kind of checking" from "how often", which are two different questions. */
+.health-check-interval {
+    display: block;
+    padding: 0.5rem 0.6rem 0.15rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 0.3rem;
+}
+
+.health-check-interval-label {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.health-check-interval-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.health-check-interval-btn {
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.health-check-interval-btn:hover,
+.health-check-interval-btn:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+}
+
+.health-check-interval-btn.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-primary));
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
 .health-view-check-note {
     margin: 0.5rem 0 0;
     color: var(--text-secondary);
@@ -659,6 +715,15 @@ button.health-view-tile:hover {
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     color: var(--text-primary);
+}
+
+/* The sample count behind the percentage. Deliberately quiet: it qualifies the
+   number next to it rather than competing with it. */
+.health-monitor-uptime-samples {
+    font-weight: 400;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    opacity: 0.8;
 }
 
 .health-sparkline {

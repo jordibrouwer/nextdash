@@ -23,7 +23,14 @@ const (
 // A bookmark switched to monitor without an interval gets the default written
 // out explicitly, matching the inline editor: a stored bookmark should state its
 // own cadence rather than silently inheriting one.
-func applyCheckMode(bm *Bookmark, mode string) {
+//
+// intervalMinutes is the caller's requested cadence; zero means "leave it alone",
+// which keeps an existing monitor's interval when only the mode was named. It is
+// clamped rather than rejected, since the bounds are the server's business and a
+// caller asking for a 1-minute check should get the 5-minute floor, not an error.
+// It is honoured only for monitor: the other two modes have no cadence, and
+// storing one would leave a stale number behind for the next enable to inherit.
+func applyCheckMode(bm *Bookmark, mode string, intervalMinutes int) {
 	switch mode {
 	case checkModePeriodic:
 		bm.CheckStatus = true
@@ -32,7 +39,9 @@ func applyCheckMode(bm *Bookmark, mode string) {
 	case checkModeMonitor:
 		bm.CheckStatus = false
 		bm.Monitor = true
-		if bm.MonitorIntervalMinutes == 0 {
+		if intervalMinutes > 0 {
+			bm.MonitorIntervalMinutes = clampMonitorIntervalMinutes(intervalMinutes)
+		} else if bm.MonitorIntervalMinutes == 0 {
 			bm.MonitorIntervalMinutes = defaultMonitorIntervalMinutes
 		}
 	default: // off
@@ -86,7 +95,7 @@ type checkModeTarget struct {
 // the whole batch: with a list of dozens, one bookmark having moved should not
 // discard the other changes. The response reports both counts so the caller can
 // say what actually happened.
-func (h *Handlers) setCheckModeForTargets(w http.ResponseWriter, rawMode string, targets []checkModeTarget) {
+func (h *Handlers) setCheckModeForTargets(w http.ResponseWriter, rawMode string, targets []checkModeTarget, intervalMinutes int) {
 	mode, ok := normalizeCheckMode(rawMode)
 	if !ok {
 		http.Error(w, "mode must be off, periodic or monitor", http.StatusBadRequest)
@@ -115,7 +124,7 @@ func (h *Handlers) setCheckModeForTargets(w http.ResponseWriter, rawMode string,
 					skipped++
 					continue
 				}
-				applyCheckMode(&current[t.Index], mode)
+				applyCheckMode(&current[t.Index], mode, intervalMinutes)
 				changed++
 			}
 			return current, nil
@@ -162,6 +171,10 @@ func (h *Handlers) SetBookmarkCheckMode(w http.ResponseWriter, r *http.Request) 
 		Index  int    `json:"index"`
 		URL    string `json:"url"`
 		Mode   string `json:"mode"`
+		// Optional. Omitted (or zero) keeps whatever cadence the bookmark already
+		// has, so a caller that only wants to change the mode does not have to
+		// know the current interval to avoid resetting it.
+		MonitorIntervalMinutes int `json:"monitorIntervalMinutes"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -202,7 +215,7 @@ func (h *Handlers) SetBookmarkCheckMode(w http.ResponseWriter, r *http.Request) 
 		if canonicalBookmarkURLKey(current[req.Index].URL) != wantURL {
 			return nil, errCheckModeGone
 		}
-		applyCheckMode(&current[req.Index], mode)
+		applyCheckMode(&current[req.Index], mode, req.MonitorIntervalMinutes)
 		applied = current[req.Index]
 		return current, nil
 	})

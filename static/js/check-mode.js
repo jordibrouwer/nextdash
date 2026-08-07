@@ -23,9 +23,26 @@ const CheckMode = {
      */
     DEFAULT_INTERVAL_MINUTES: 15,
 
+    /**
+     * The cadences offered wherever a monitor interval can be picked.
+     *
+     * Bounded by minMonitorIntervalMinutes (5) and maxMonitorIntervalMinutes
+     * (1440) in health_monitor.go — the server clamps anything outside, so
+     * offering a value it would silently rewrite is how a menu starts lying.
+     */
+    INTERVAL_CHOICES: [5, 15, 30, 60, 360, 1440],
+
     /** The stored interval, or the default when a bookmark carries none. */
     intervalOf(bookmark) {
         return Number(bookmark?.monitorIntervalMinutes) || CheckMode.DEFAULT_INTERVAL_MINUTES;
+    },
+
+    /** "5m" / "6h" / "24h" — the compact label used in the interval pickers. */
+    intervalLabel(minutes) {
+        const m = Number(minutes) || 0;
+        if (m < 60) return CheckMode.t('healthIntervalMinutes', '{count}m', { count: m });
+        if (m % 60 !== 0) return CheckMode.t('healthIntervalMinutes', '{count}m', { count: m });
+        return CheckMode.t('healthIntervalHours', '{count}h', { count: m / 60 });
     },
 
     /**
@@ -104,12 +121,18 @@ const CheckMode = {
      * the local copy and the persisted record cannot disagree about what a mode
      * means — a freshly chosen monitor gets an explicit interval here too.
      */
-    assign(bookmark, mode) {
+    assign(bookmark, mode, intervalMinutes) {
         if (!bookmark) return bookmark;
         if (mode === CheckMode.MONITOR) {
             bookmark.monitor = true;
             bookmark.checkStatus = false;
-            if (!bookmark.monitorIntervalMinutes) {
+            // An explicit cadence wins; otherwise keep what the bookmark already
+            // had, and fall back to the default only when it had none. Mirrors
+            // applyCheckMode in health_check_mode_single.go.
+            const chosen = Number(intervalMinutes);
+            if (Number.isFinite(chosen) && chosen > 0) {
+                bookmark.monitorIntervalMinutes = chosen;
+            } else if (!bookmark.monitorIntervalMinutes) {
                 bookmark.monitorIntervalMinutes = CheckMode.DEFAULT_INTERVAL_MINUTES;
             }
         } else if (mode === CheckMode.PERIODIC) {
@@ -139,7 +162,7 @@ const CheckMode = {
      * right-click menu. It is idempotent, so calling it before a reload that
      * happens to bring the same values back is harmless.
      */
-    syncLocalCopies({ pageId, url, mode, bookmarkRef } = {}) {
+    syncLocalCopies({ pageId, url, mode, bookmarkRef, intervalMinutes } = {}) {
         const d = window.dashboardInstance;
         if (!d) return;
         const key = String(url || '').trim();
@@ -147,12 +170,12 @@ const CheckMode = {
 
         const matches = (candidate) => String(candidate?.url || '').trim() === key;
         (d.bookmarks || []).forEach((candidate) => {
-            if (matches(candidate)) CheckMode.assign(candidate, mode);
+            if (matches(candidate)) CheckMode.assign(candidate, mode, intervalMinutes);
         });
         // allBookmarks needs its own pass: syncEditedBookmarkAcrossCollections
         // matches on page id and entries here carry none, so it skips them.
         (d.allBookmarks || []).forEach((candidate) => {
-            if (matches(candidate)) CheckMode.assign(candidate, mode);
+            if (matches(candidate)) CheckMode.assign(candidate, mode, intervalMinutes);
         });
         if (bookmarkRef) d.syncEditedBookmarkAcrossCollections?.(bookmarkRef, key);
 
@@ -192,19 +215,29 @@ const CheckMode = {
      * Returns 'changed', 'stale' or 'failed' so each surface can refresh itself
      * the way it needs to; the notification is raised here, since the wording is
      * the part that must stay identical.
+     *
+     * `intervalMinutes` is optional and only meaningful for monitor. Omitting it
+     * keeps the bookmark's current cadence, so changing the mode alone never
+     * silently resets an interval someone chose.
      */
-    async apply({ pageId, index, url, mode, name }) {
+    async apply({ pageId, index, url, mode, name, intervalMinutes }) {
         const d = window.dashboardInstance;
         const target = String(url || '').trim();
         const page = Number(pageId);
         if (!target || !Number.isFinite(page) || !mode) return 'failed';
+
+        const body = { pageId: page, index, url: target, mode };
+        const interval = Number(intervalMinutes);
+        if (mode === CheckMode.MONITOR && Number.isFinite(interval) && interval > 0) {
+            body.monitorIntervalMinutes = interval;
+        }
 
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         try {
             const res = await fetcher('/api/health/check-mode', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId: page, index, url: target, mode }),
+                body: JSON.stringify(body),
             });
             if (res.status === 409) {
                 d?.showNotification?.(
@@ -216,15 +249,27 @@ const CheckMode = {
             }
             if (!res.ok) throw new Error(`check-mode HTTP ${res.status}`);
 
+            // The server clamps the cadence to its own bounds, so the confirmation
+            // quotes what was stored rather than what was asked for — otherwise a
+            // request for 1 minute would be confirmed as 1 and run at 5.
+            let appliedInterval = 0;
+            try {
+                appliedInterval = Number((await res.clone().json())?.monitorIntervalMinutes) || 0;
+            } catch {
+                // A body that is not JSON changes nothing about the write; fall
+                // back to the mode-only wording below.
+            }
+
             const label = CheckMode.meta(mode).label;
             const shown = String(name || target);
-            d?.showNotification?.(
-                mode === CheckMode.OFF
-                    ? CheckMode.t('healthCheckModeOffDone', 'Checking turned off for "{name}"', { name: shown })
-                    : CheckMode.t('healthCheckModeSet', '"{name}" is now set to {mode}', { name: shown, mode: label }),
-                'success',
-                { duration: 3000 }
-            );
+            const message = mode === CheckMode.OFF
+                ? CheckMode.t('healthCheckModeOffDone', 'Checking turned off for "{name}"', { name: shown })
+                : (mode === CheckMode.MONITOR && appliedInterval > 0
+                    // Still names the mode: the cadence is extra detail, not a
+                    // replacement for saying what the bookmark was switched to.
+                    ? CheckMode.t('healthCheckModeSetInterval', '"{name}" is now set to {mode}, every {mins} min', { name: shown, mode: label, mins: appliedInterval })
+                    : CheckMode.t('healthCheckModeSet', '"{name}" is now set to {mode}', { name: shown, mode: label }));
+            d?.showNotification?.(message, 'success', { duration: 3000 });
             return 'changed';
         } catch (err) {
             console.error('Failed to change check mode:', err);
