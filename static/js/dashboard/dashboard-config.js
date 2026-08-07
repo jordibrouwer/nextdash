@@ -13819,9 +13819,19 @@ class DashboardConfig {
                 'config.helpConfigKeyboardBody', '');
     }
 
+    /**
+     * Split into panels rather than one long body: availability modes, the list
+     * itself, the monitoring numbers, and the inbox are four things people arrive
+     * looking for, and a single wall of prose made the last of them unreachable
+     * without scrolling past the other three.
+     */
     renderHelpHealth() {
         return this.helpPanel('config.helpHealthTitle', 'Availability & health',
             'config.helpHealthBody', '')
+            + this.helpPanel('config.helpHealthViewTitle', 'Working through the list',
+                'config.helpHealthViewBody', '')
+            + this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
+                'config.helpHealthStatsBody', '')
             + this.helpPanel('config.helpInboxTitle', 'Inbox',
                 'config.helpInboxBody', '');
     }
