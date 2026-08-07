@@ -236,6 +236,28 @@ class DashboardCategoryMenu {
                 return;
             }
             await d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
+
+            // Deleting from a right-click menu is one slip away from a misclick,
+            // so the confirm is not the only safety net.
+            d.showNotification?.(
+                this.t('categoryDeleted', 'Category deleted.'),
+                'success',
+                {
+                    duration: 8000,
+                    undoCallback: async () => {
+                        const undone = await d.structureCreate.restoreCategories(pageId, result.before);
+                        if (undone.error) {
+                            d.showErrorNotification?.(undone.error);
+                            return;
+                        }
+                        await d.loadPageBookmarks(pageId, { skipInlineEditConfirm: true });
+                        d.showNotification?.(
+                            this.t('categoryDeleteUndone', 'Category restored.'),
+                            'success',
+                        );
+                    },
+                },
+            );
         }
     }
 }

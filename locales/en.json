@@ -2119,6 +2119,8 @@
         "unsavedColorChangesLeaveConfirm": "You have unsaved color changes. Leave this page?",
         "unsavedColorChangesSavePrompt": "Save color changes before leaving this page?",
         "pageDeleted": "Page deleted successfully",
+        "pageDeleteUndone": "Page restored.",
+        "pageDeleteUndoFailed": "Could not restore the page.",
         "configSaved": "Configuration saved successfully!",
         "configSavedReturnDashboard": "Settings saved — return to the dashboard to see changes.",
         "configSavedReturnDashboardDuplicates": "Settings saved. Duplicate bookmark URLs detected — return to the dashboard to review.",
@@ -3990,7 +3992,9 @@
         "trashDeleteConfirm": "Delete this bookmark permanently?",
         "trashEmptyConfirm": "Permanently delete everything in the trash?",
         "trashActionError": "Could not complete that action.",
-        "categoryDeleted": "Category deleted."
+        "categoryDeleted": "Category deleted.",
+        "categoryDeleteUndone": "Category restored.",
+        "categoryDeleteUndoFailed": "Could not restore the category."
     },
     "colors": {
         "title": "theme customization",

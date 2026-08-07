@@ -2110,6 +2110,8 @@
         "unsavedColorChangesLeaveConfirm": "Je hebt niet-opgeslagen kleurwijzigingen. Deze pagina verlaten?",
         "unsavedColorChangesSavePrompt": "Kleurwijzigingen opslaan voordat je deze pagina verlaat?",
         "pageDeleted": "Pagina succesvol verwijderd",
+        "pageDeleteUndone": "Pagina hersteld.",
+        "pageDeleteUndoFailed": "Kon de pagina niet herstellen.",
         "configSaved": "Configuratie succesvol opgeslagen!",
         "configSavedReturnDashboard": "Instellingen opgeslagen — ga terug naar het dashboard om de wijzigingen te zien.",
         "configSavedReturnDashboardDuplicates": "Instellingen opgeslagen. Dubbele bladwijzer-URL's gedetecteerd — ga terug naar het dashboard om te controleren.",
@@ -3990,7 +3992,9 @@
         "trashDeleteConfirm": "Deze bladwijzer definitief verwijderen?",
         "trashEmptyConfirm": "Alles in de prullenbak definitief verwijderen?",
         "trashActionError": "Kon die actie niet voltooien.",
-        "categoryDeleted": "Categorie verwijderd."
+        "categoryDeleted": "Categorie verwijderd.",
+        "categoryDeleteUndone": "Categorie hersteld.",
+        "categoryDeleteUndoFailed": "Kon de categorie niet herstellen."
     },
     "colors": {
         "title": "thema-aanpassing",

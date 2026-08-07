@@ -2100,6 +2100,8 @@
         "unsavedColorChangesLeaveConfirm": "Vous avez des modifications de couleur non enregistrées. Quitter cette page ?",
         "unsavedColorChangesSavePrompt": "Enregistrer les couleurs avant de quitter ?",
         "pageDeleted": "Page supprimée avec succès",
+        "pageDeleteUndone": "Page restaurée.",
+        "pageDeleteUndoFailed": "Impossible de restaurer la page.",
         "configSaved": "Configuration enregistrée avec succès !",
         "configSavedReturnDashboard": "Paramètres enregistrés — retournez au tableau de bord pour voir les changements.",
         "configSavedReturnDashboardDuplicates": "Paramètres enregistrés. URL de favoris en double détectées — retournez au tableau de bord pour vérifier.",
@@ -3990,7 +3992,9 @@
         "trashDeleteConfirm": "Supprimer définitivement ce favori ?",
         "trashEmptyConfirm": "Supprimer définitivement tout le contenu de la corbeille ?",
         "trashActionError": "Impossible d'effectuer cette action.",
-        "categoryDeleted": "Catégorie supprimée."
+        "categoryDeleted": "Catégorie supprimée.",
+        "categoryDeleteUndone": "Catégorie restaurée.",
+        "categoryDeleteUndoFailed": "Impossible de restaurer la catégorie."
     },
     "colors": {
         "title": "personnalisation du thème",

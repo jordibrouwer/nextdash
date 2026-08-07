@@ -2100,6 +2100,8 @@
         "unsavedColorChangesLeaveConfirm": "Ungespeicherte Farbänderungen vorhanden. Seite verlassen?",
         "unsavedColorChangesSavePrompt": "Farbänderungen vor dem Verlassen speichern?",
         "pageDeleted": "Seite erfolgreich gelöscht",
+        "pageDeleteUndone": "Seite wiederhergestellt.",
+        "pageDeleteUndoFailed": "Seite konnte nicht wiederhergestellt werden.",
         "configSaved": "Konfiguration erfolgreich gespeichert!",
         "configSavedReturnDashboard": "Einstellungen gespeichert — kehren Sie zum Dashboard zurück, um die Änderungen zu sehen.",
         "configSavedReturnDashboardDuplicates": "Einstellungen gespeichert. Doppelte Lesezeichen-URLs erkannt — kehren Sie zum Dashboard zurück, um sie zu prüfen.",
@@ -3990,7 +3992,9 @@
         "trashDeleteConfirm": "Dieses Lesezeichen endgültig löschen?",
         "trashEmptyConfirm": "Alles im Papierkorb endgültig löschen?",
         "trashActionError": "Diese Aktion konnte nicht abgeschlossen werden.",
-        "categoryDeleted": "Kategorie gelöscht."
+        "categoryDeleted": "Kategorie gelöscht.",
+        "categoryDeleteUndone": "Kategorie wiederhergestellt.",
+        "categoryDeleteUndoFailed": "Kategorie konnte nicht wiederhergestellt werden."
     },
     "colors": {
         "title": "themenanpassung",

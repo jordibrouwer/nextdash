@@ -3100,6 +3100,20 @@ class DashboardConfig {
         return fetcher(url, options);
     }
 
+    /**
+     * Re-POST a whole list to restore it. Both page and category deletes are
+     * "replace the list" writes, so the list as it was before the delete is the
+     * entire undo payload.
+     */
+    async restoreList(url, rows) {
+        const res = await this.writeFetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(rows),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    }
+
     formatBytes(bytes) {
         const n = Number(bytes) || 0;
         if (n < 1024) return `${n} B`;
@@ -7934,12 +7948,63 @@ class DashboardConfig {
     async deletePage(id) {
         if (Number(id) === 1) return;
         if (!await this.confirmAction(this.t('config.pageDeleteConfirm', 'Delete this page and its bookmarks?'))) return;
+
+        // Snapshot everything the page owns *now*, not from this.dash.allBookmarks:
+        // that mirror can lag behind a write from another view, and restoring a
+        // stale copy would silently drop whatever was added since. A snapshot we
+        // could not take is left null, and then no undo is offered rather than a
+        // partial one.
+        const pagesBefore = [...(this.dash.pages || [])];
+        let bookmarksBefore = null;
+        let categoriesBefore = null;
+        try {
+            const [bmRes, catRes] = await Promise.all([
+                fetch(`/api/bookmarks?page=${encodeURIComponent(id)}`),
+                fetch(`/api/categories?page=${encodeURIComponent(id)}`),
+            ]);
+            if (bmRes.ok) bookmarksBefore = await bmRes.json();
+            if (catRes.ok) categoriesBefore = await catRes.json();
+        } catch { /* offer the delete without an undo rather than blocking it */ }
+
         try {
             const res = await this.writeFetch(`/api/pages/${encodeURIComponent(id)}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.dash.pages = (this.dash.pages || []).filter((p) => Number(p.id) !== Number(id));
             this.dash.pageNav?.renderPageNavigation?.();
-            this.notify(this.t('config.pageDeleted', 'Page deleted.'), 'success');
+
+            // The server also drops the page's bookmarks into the trash, so this
+            // toast is the fast path and the trash is the long one.
+            const undoCallback = bookmarksBefore ? async () => {
+                try {
+                    await this.restoreList('/api/pages', pagesBefore);
+                    await this.restoreList(
+                        `/api/bookmarks?page=${encodeURIComponent(id)}`,
+                        bookmarksBefore
+                    );
+                    if (categoriesBefore) {
+                        await this.restoreList(
+                            `/api/categories?page=${encodeURIComponent(id)}`,
+                            categoriesBefore
+                        );
+                    }
+                    this.dash.pages = pagesBefore;
+                    this.dash.pageNav?.renderPageNavigation?.();
+                    this.invalidateBookmarkCategoriesCache(id);
+                    await this.refreshBookmarksAfterWrite();
+                    this.repaintPtBody();
+                            this.notify(this.t('config.pageDeleteUndone', 'Page restored.'), 'success');
+                } catch {
+                    this.notify(
+                        this.t('config.pageDeleteUndoFailed', 'Could not restore the page.'),
+                        'error'
+                    );
+                }
+            } : null;
+
+            this.notify(this.t('config.pageDeleted', 'Page deleted.'), 'success', {
+                undoCallback,
+                duration: 8000,
+            });
             this.repaintPtBody();
         } catch {
             this.notify(this.t('config.pagesSaveError', 'Could not delete the page.'), 'error');
@@ -8084,9 +8149,38 @@ class DashboardConfig {
                     : this.t('config.categoryDeleteConfirm', 'Delete “{name}”?')
                         .replace('{name}', String(cat.name || cat.id || ''));
                 if (!await this.confirmAction(message)) return;
+                // The list before the splice is the whole undo payload — saving
+                // categories is a replace-the-list write.
+                const before = (this._categories || []).map((c) => ({ ...c }));
+                const pageId = this._catPageId;
                 this._categories.splice(i, 1);
                 this.repaintPtBody();
-                void this.saveCategories();
+                await this.saveCategories();
+                    this.notify(this.t('config.categoryDeleted', 'Category deleted.'), 'success', {
+                    duration: 8000,
+                    undoCallback: async () => {
+                        try {
+                            await this.restoreList(
+                                `/api/categories?page=${encodeURIComponent(pageId)}`,
+                                before
+                            );
+                            // Only repaint the editor if it is still showing the
+                            // page this delete belonged to.
+                            if (Number(pageId) === Number(this._catPageId)) {
+                                this._categories = before;
+                                this.repaintPtBody();
+                            }
+                            this.invalidateBookmarkCategoriesCache(pageId);
+                            this.dash.renderDashboard?.({ animate: false });
+                                            this.notify(this.t('config.categoryDeleteUndone', 'Category restored.'), 'success');
+                        } catch {
+                            this.notify(
+                                this.t('config.categoryDeleteUndoFailed', 'Could not restore the category.'),
+                                'error'
+                            );
+                        }
+                    },
+                });
             });
         });
         container.querySelectorAll('[data-cat-move]').forEach((btn) => {

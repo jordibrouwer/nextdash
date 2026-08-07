@@ -116,12 +116,16 @@ class DashboardStructureCreate {
 
 
     /**
-     * Delete a category from `pageId`. Resolves to `{ ok }` or `{ error }`.
+     * Delete a category from `pageId`. Resolves to `{ ok, before }` or `{ error }`.
      *
      * The bookmarks in it are deliberately left alone — that matches config, and
      * it is the non-destructive half of the choice. They keep pointing at an id
      * nothing defines any more and surface under "unknown category", which is
      * why the caller must warn about the count before getting here.
+     *
+     * `before` is the category list as it was, which is all an undo needs: this
+     * is a replace-the-list write. It comes from the fetch below rather than a
+     * second one, so it cannot drift from what was actually deleted.
      */
     async deleteCategory(pageId, categoryId) {
         const d = this.dash;
@@ -155,10 +159,40 @@ class DashboardStructureCreate {
                 d.pinnedEmptyCategoryId = null;
             }
             d.data?.invalidatePageDataCache?.(Number(pageId));
-            d.notifyConfig('categoryDeleted', 'Category deleted.', 'success');
-            return { ok: true };
+            return { ok: true, before: list };
         } catch (e) {
             console.error('Delete category failed:', e);
+            return { error: cfg('categoriesSaveError', 'Could not save categories.') };
+        }
+    }
+
+
+    /**
+     * Put a category list back exactly as `deleteCategory` found it.
+     * Resolves to `{ ok }` or `{ error }`.
+     */
+    async restoreCategories(pageId, rows) {
+        const d = this.dash;
+        const cfg = (key, fb) => d.configLabel(key, fb);
+        try {
+            const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(
+                `/api/categories?page=${encodeURIComponent(pageId)}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(rows),
+                }
+            );
+            if (!save.ok) {
+                throw new Error(save.statusText);
+            }
+            if (Number(pageId) === Number(d.currentPageId)) {
+                d.categories = rows;
+            }
+            d.data?.invalidatePageDataCache?.(Number(pageId));
+            return { ok: true };
+        } catch (e) {
+            console.error('Restore categories failed:', e);
             return { error: cfg('categoriesSaveError', 'Could not save categories.') };
         }
     }
