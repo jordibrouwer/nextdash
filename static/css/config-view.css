@@ -569,11 +569,34 @@
 
 /* ── Appearance controls (fields, choices, toggles) ─────────────────────── */
 
+/*
+ * Label, control, affordances — three columns, so every control in a panel
+ * starts at the same x position.
+ *
+ * This was a flex row with `min-width: 84px` on the label, which let each row
+ * place its control wherever its own label happened to end: three selects under
+ * one another began at three different offsets. A grid gives the column one
+ * width for the whole panel instead of one per row.
+ *
+ * The label column is a range rather than a fixed width: short labels do not
+ * strand the control halfway across the panel, and a long one is still allowed
+ * 200px before it wraps.
+ *
+ * The control column is `max-content`, not `1fr`, and that matters: `1fr` takes
+ * the whole remaining width, which stretched a pill group across 500px and
+ * pushed the ℹ/↺ pair to the far edge of the panel, a screen away from the
+ * control they belong to. `max-content` sizes the column to the widest control
+ * in the panel, so the affordances sit just past it and every row still shares
+ * one column. It is capped below so a long pill group cannot overflow.
+ *
+ * Rows carrying more than the three columns — a hint paragraph, a slider's
+ * readout — opt out below by spanning the full width.
+ */
 .config-field {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto;
     align-items: center;
     gap: 14px;
-    flex-wrap: wrap;
     margin-bottom: 14px;
 }
 
@@ -581,10 +604,62 @@
     margin-bottom: 0;
 }
 
+/*
+ * A hint or a warning belongs under the control it explains, not beside it, so
+ * it takes a row of its own across all three columns. Same for the swatch grid
+ * and the choice pills, which are wider than a control column and read better
+ * on their own line once they wrap.
+ */
+.config-field > .config-field-hint,
+.config-field > .config-field-warning {
+    grid-column: 1 / -1;
+    margin-top: -4px;
+}
+
+/*
+ * The slider's percentage readout is a fourth child, so the row needs a column
+ * for it. Declared here rather than as a modifier class because the readout's
+ * presence is what identifies the row.
+ */
+.config-field:has(> .config-range-value) {
+    grid-template-columns: minmax(140px, 200px) minmax(0, max-content) auto auto;
+}
+
 .config-field-label {
     font-size: calc(var(--font-size-text) * 0.971);
     color: var(--text-muted, #888);
-    min-width: 84px;
+}
+
+/*
+ * On a narrow panel the label moves above its control rather than taking a
+ * third of the width from it.
+ *
+ * Two columns rather than one: a single column gives every child its own row,
+ * which pushed the ℹ/↺ pair onto a line of its own under each control and made
+ * a tab of eight settings noticeably longer to scroll. The label spans both and
+ * the affordances stay beside the control they belong to.
+ */
+@media (max-width: 560px) {
+    .config-field,
+    .config-field:has(> .config-range-value) {
+        grid-template-columns: minmax(0, max-content) auto;
+        gap: 6px 10px;
+    }
+
+    .config-field > .config-field-label {
+        grid-column: 1 / -1;
+    }
+
+    .config-field > .config-field-affordances {
+        justify-self: start;
+    }
+
+    /* Slider, readout and affordances are three children for two columns, so
+       the slider takes a row of its own and the other two share the next. */
+    .config-field > .config-range {
+        grid-column: 1 / -1;
+        max-width: none;
+    }
 }
 
 .config-choices {
@@ -632,7 +707,15 @@
    `auto-fit` with a min width rather than a fixed column count: three cards sit
    side by side on a wide panel and stack on a narrow one without a query. */
 
+/*
+ * A cards row is a heading for the card grid below it, not a control row: it
+ * holds only the label and its affordances. The three-column grid would strand
+ * the ℹ/↺ pair against the far edge, so the two sit together at the start.
+ */
 .config-field--cards {
+    grid-template-columns: auto auto;
+    justify-content: start;
+    gap: 8px;
     margin-bottom: 8px;
 }
 
@@ -776,9 +859,12 @@
     cursor: pointer;
 }
 
-/* Checkbox-only toggles aligned in the config-field label/control grid. */
+/* Checkbox-only toggles aligned in the config-field label/control grid. The
+ * checkbox is 16px wide, so without this it stretches across the whole control
+ * column and its click target reaches to the affordances. */
 .config-field > .config-toggle {
     margin-top: 0;
+    justify-self: start;
 }
 
 .config-toggle input {
@@ -827,6 +913,20 @@
 .config-text:focus-visible {
     outline: 2px solid var(--accent-color, #4a90d9);
     outline-offset: 1px;
+}
+
+/*
+ * Controls sit in a `1fr` grid column, so left alone they stretch the full
+ * width of the panel — a Density select five hundred pixels wide. They keep
+ * their natural size and start at the column edge instead.
+ *
+ * Scoped to `.config-field` because both classes are used outside the grid too
+ * (the bookmark editor, the theme editor), where the full width is wanted.
+ */
+.config-field > .config-select,
+.config-field > .config-text {
+    justify-self: start;
+    max-width: 100%;
 }
 
 .config-range {
