@@ -1099,7 +1099,7 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 | **Pages & tags** | Categories · Tags · Pages · Finders · Collections |
 | **Appearance** | Theme · Layout · Display · Toolbar & tabs · Branding · Custom themes |
 | **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
-| **Data & backups** | Backups & data · Icons & previews · Trash · Reset |
+| **Data & backups** | Backups & data · Icons & previews · Server log · Trash · Reset |
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
 | **Help** | Getting started · Configuring · Pages & bookmarks · Search & keyboard · Health & inbox · Data & hosting · About |
 
@@ -1132,6 +1132,21 @@ Config can tell you how far the install has drifted from a stock one, which is t
 - **Overview → At a glance** carries a line — *N settings differ from the default* — naming the sections involved and linking to the tab that holds the most of them. On an untouched install the line is absent rather than reading zero.
 - **Only changed**, above each tab of settings, hides everything still on its default and says how many differ before you press it. It is not remembered between visits.
 - **Reset panel**, beside a panel's title, puts that whole group back at once instead of one **↺** at a time. It appears only when something in the group has been changed, and asks first.
+
+### Server log (Data & backups → Server log)
+
+What the server has been doing, without shell access to the container. Every line the server writes — background jobs, imports, health checks, and one line per API request — is captured as it is written and shown here. Nothing changes about the container log: the same lines still go to stderr, so `docker logs` is unaffected.
+
+- **Refresh** — **Off** by default, or every **2 / 5 / 15 / 30 seconds**. Off means no polling at all; a poll only asks for the lines that arrived since the last one, so leaving it on 2s is cheap. The interval stops the moment you leave the tab or close Config.
+- **Keep entries for** — **1, 2, 4, 12 or 24 hours**, **7** or **30 days**, or **Until cleared**. Older lines are dropped automatically, on top of the fixed caps below. The newest lines are always kept, whatever the limit.
+- **Show** — everything, warnings and errors, or errors only. **Search** filters on the message and on the subsystem name. Both are applied by the server, so they search the whole buffer rather than what is on screen.
+- **Scroll to newest lines** — follows the tail, and stops following while you are scrolled up reading something.
+- **Copy**, **Download** — the current lines to the clipboard, or the whole buffer as a `.log` file.
+- **Clear log** — empties the buffer **and** deletes `server.log` and its rotated copies from the data directory. It asks first, and cannot be undone.
+
+Severity is inferred rather than declared: a request line takes its level from the HTTP status (5xx is an error, 4xx a warning), and other lines from their wording. The most recent **2000 lines** are held in memory and mirrored to `server.log` in the data directory, capped at **2MB** with two rotated copies, so the history survives a restart.
+
+> Anyone who can open Config can read this log, including full webhook URLs where those were logged. If your instance is reachable by people who should not see that, clear the log or keep retention short.
 
 ### Trash (Data & backups → Trash)
 

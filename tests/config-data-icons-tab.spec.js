@@ -21,11 +21,11 @@ async function openData(page) {
 }
 
 test.describe('Data & backups → Icons & previews', () => {
-    test('sits between Backups & data and Trash', async ({ page }) => {
+    test('follows Backups & data in the tab strip', async ({ page }) => {
         await openData(page);
         await expect.poll(() => page.evaluate(() =>
             [...document.querySelectorAll('[data-db-tab]')].map((b) => b.getAttribute('data-db-tab'))
-        )).toEqual(['backups', 'icons', 'trash', 'reset']);
+        )).toEqual(['backups', 'icons', 'logs', 'trash', 'reset']);
         await expect(page.locator('[data-db-tab="icons"]')).toHaveText('Icons & previews');
     });
 

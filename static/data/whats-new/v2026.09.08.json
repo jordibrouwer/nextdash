@@ -1,0 +1,42 @@
+{
+    "tag": "v2026.09.08",
+    "date": "August 2026",
+    "releasedAt": "2026-08-10",
+    "modalLead": "You can now read the <strong>server log</strong> from inside nextDash, so working out what went wrong no longer means going looking for the container. <strong>Data &amp; backups</strong> also gained a home for icon upkeep.",
+    "sections": [
+        {
+            "title": "Server log",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Data &amp; backups › Server log</strong> shows what the server has been doing. Background jobs, imports, link checks and every request are listed as they happen. Until now the only way to see any of this was to reach the machine nextDash runs on."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>It can keep itself up to date.</strong> Choose <strong>every 2, 5, 15 or 30 seconds</strong> and the list follows along while you watch. It stays <strong>Off</strong> unless you ask, and stops the moment you leave the tab."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Warnings and errors stand out.</strong> Tiles above the list count them, the lines themselves are coloured, and <strong>Show</strong> narrows the list to warnings and errors, or errors only. <strong>Search</strong> looks through everything kept, not just what is on screen."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Decide how long to keep it.</strong> <strong>Keep entries for</strong> offers 1, 2, 4, 12 or 24 hours, 7 or 30 days, or until you clear it yourself. Anything older drops away on its own."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Clear log</strong> throws away everything kept, on screen and on disk. There is also <strong>Copy</strong> and <strong>Download</strong> for when you want to send a stretch of it to someone."
+                }
+            ]
+        },
+        {
+            "title": "Data & backups",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Icons &amp; previews has its own tab.</strong> Refreshing every icon and rebuilding every link preview used to sit at the very bottom of <strong>Backups &amp; data</strong>, under the export buttons — a long way from anything to do with backing up, and easy to set off while scrolling past."
+                }
+            ]
+        }
+    ]
+}

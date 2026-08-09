@@ -100,6 +100,19 @@ class DashboardConfig {
         this.statsTab = 'overview';
         // Data & backups sub-tab.
         this.dbTab = 'backups';
+        // Server log viewer. Refresh is off by default: an idle config page
+        // should not poll, and the tab is usually opened to read one thing.
+        this.logRefreshSeconds = 0;
+        this.logLevelFilter = '';
+        this.logQuery = '';
+        this.logFollow = true;
+        this._logLines = [];
+        this._logStats = null;
+        this._logDropped = 0;
+        this._logLoading = false;
+        // Highest sequence seen, so a poll asks only for what is new.
+        this._logSince = -1;
+        this._logTimer = null;
         // Inbox stats load on demand; undefined means "not fetched yet".
         this._statsInboxItems = undefined;
         this._statsInboxAgg = undefined;
@@ -552,6 +565,9 @@ class DashboardConfig {
         // down; otherwise a "Saved" would linger over the dashboard.
         clearTimeout(this._saveStateTimer);
         document.getElementById('config-save-state')?.remove();
+        // The log viewer is the only polling view in config; closing the view
+        // has to stop it or it keeps fetching over the dashboard.
+        this.stopServerLogTimer();
         const finishRestore = () => {
             const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
             if (restored) {
@@ -2777,6 +2793,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureServerLogTitle',
+                titleFallback: 'Read the server log without leaving nextDash',
+                whatKey: 'config.overviewNewFeatureServerLogWhat',
+                whatFallback: 'When something went wrong there was nothing to look at. Finding out why an import failed or a link check never ran meant reaching the machine nextDash runs on.',
+                howKey: 'config.overviewNewFeatureServerLogHow',
+                howFallback: 'Data & backups › Server log lists what the server has been doing, keeps itself up to date every few seconds if you want, and colours warnings and errors so they are easy to spot. Search looks through everything kept.',
+                enableKey: 'config.overviewNewFeatureServerLogEnable',
+                enableFallback: 'Nothing to switch on. Choose how long to keep entries, and clear the whole lot whenever you like.',
+                ctaKey: 'config.overviewNewFeatureServerLogCta',
+                ctaFallback: 'Open Server log →',
+                go: { section: 'data-backups', dbTab: 'logs' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureSettingsSearchTitle',
                 titleFallback: 'Search finds every setting, not just the ones you have seen',
                 whatKey: 'config.overviewNewFeatureSettingsSearchWhat',
@@ -3474,6 +3503,9 @@ class DashboardConfig {
         }
         this.clearListKeyboardSelection();
         this.clearBookmarkKeyboardSelection();
+        // Navigating away from Data & backups leaves the log tab behind, so its
+        // poll has to stop with it.
+        this.stopServerLogTimer();
         this.section = section;
         this._trackAction('section', { section, via });
         this.render();
@@ -3703,6 +3735,9 @@ class DashboardConfig {
         if (this.dbTab === 'icons') {
             return this.renderDataIcons();
         }
+        if (this.dbTab === 'logs') {
+            return this.renderDataLogs();
+        }
         return this.renderDataBackupsMain();
     }
 
@@ -3710,6 +3745,7 @@ class DashboardConfig {
         const map = {
             backups: ['config.dbTabBackups', 'Backups & data'],
             icons: ['config.dbTabIcons', 'Icons & previews'],
+            logs: ['config.dbTabLogs', 'Server log'],
             trash: ['config.dbTabTrash', 'Trash'],
             reset: ['config.dbTabReset', 'Reset'],
         };
@@ -3842,6 +3878,365 @@ class DashboardConfig {
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * What the server is doing, without shell access to the container.
+     *
+     * Only the shell renders here; the lines themselves are painted by
+     * repaintServerLog() so a refresh does not rebuild the controls under the
+     * user's cursor (and does not lose focus in the search box).
+     */
+    renderDataLogs() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+
+        const intervalOptions = [
+            [0, this.t('config.logIntervalOff', 'Off')],
+            [2, this.t('config.logInterval2s', 'Every 2 seconds')],
+            [5, this.t('config.logInterval5s', 'Every 5 seconds')],
+            [15, this.t('config.logInterval15s', 'Every 15 seconds')],
+            [30, this.t('config.logInterval30s', 'Every 30 seconds')],
+        ].map(([v, label]) => `<option value="${v}" ${v === this.logRefreshSeconds ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
+        const retention = Number(s.serverLogRetentionHours) || 0;
+        const retentionOptions = [
+            [1, this.t('config.logRetention1h', '1 hour')],
+            [2, this.t('config.logRetention2h', '2 hours')],
+            [4, this.t('config.logRetention4h', '4 hours')],
+            [12, this.t('config.logRetention12h', '12 hours')],
+            [24, this.t('config.logRetention24h', '24 hours')],
+            [168, this.t('config.logRetention7d', '7 days')],
+            [720, this.t('config.logRetention30d', '30 days')],
+            [0, this.t('config.logRetentionForever', 'Until cleared')],
+        ].map(([v, label]) => `<option value="${v}" ${v === retention ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
+        const levelOptions = [
+            ['', this.t('config.logLevelAll', 'Everything')],
+            ['warn', this.t('config.logLevelWarn', 'Warnings & errors')],
+            ['error', this.t('config.logLevelError', 'Errors only')],
+        ].map(([v, label]) => `<option value="${esc(v)}" ${v === this.logLevelFilter ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
+        return `
+            <p class="config-view-intro">${esc(this.t('config.logsIntro', 'What the server has been doing. Lines are kept in memory and in a rotating file, and mirrored to the container log as before.'))}</p>
+
+            <div class="config-tiles" role="list" id="config-log-tiles">${this.renderServerLogTiles()}</div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h3>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
+                    <select class="config-select" data-log-select="interval">${intervalOptions}</select>
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.logRetentionLabel', 'Keep entries for'))}</span>
+                    <select class="config-select" data-log-select="retention">${retentionOptions}</select>
+                </div>
+                <p class="config-panel-note">${esc(this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
+            </div>
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.logsPanelTitle', 'Server log'))}</h3>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.logLevelLabel', 'Show'))}</span>
+                    <select class="config-select" data-log-select="level">${levelOptions}</select>
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.logSearchLabel', 'Search'))}</span>
+                    <input type="search" class="config-text" data-log-search
+                        placeholder="${esc(this.t('config.logSearchPlaceholder', 'Filter lines…'))}"
+                        value="${esc(this.logQuery || '')}">
+                </div>
+                <label class="config-toggle">
+                    <input type="checkbox" data-log-toggle="follow" ${this.logFollow ? 'checked' : ''}>
+                    <span>${esc(this.t('config.logFollowLabel', 'Scroll to newest lines'))}</span>
+                </label>
+
+                <div class="config-log-view" data-log-output>${this.renderServerLogLines()}</div>
+
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-log-action="refresh">${esc(this.t('config.logRefreshNow', 'Refresh now'))}</button>
+                    <button type="button" class="config-btn" data-log-action="copy">${esc(this.t('config.logCopy', 'Copy'))}</button>
+                    <button type="button" class="config-btn" data-log-action="download">${esc(this.t('config.logDownload', 'Download'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-log-action="clear">${esc(this.t('config.logClear', 'Clear log'))}</button>
+                </div>
+            </div>
+        `;
+    }
+
+    /** Summary tiles above the log, in the same shape the other tabs use. */
+    renderServerLogTiles() {
+        const stats = this._logStats || { total: 0, warn: 0, error: 0 };
+        const dropped = this._logDropped || 0;
+        const retention = Number(this.dash.settings?.serverLogRetentionHours) || 0;
+
+        return [
+            {
+                label: this.t('config.logTileLines', 'Lines'),
+                value: stats.total,
+                tone: 'accent',
+                detail: dropped > 0
+                    ? this.t('config.logTileDropped', '{n} older lines dropped').replace('{n}', String(dropped))
+                    : this.t('config.logTileRetention', 'Kept for {span}').replace('{span}', this.logRetentionLabel(retention)),
+            },
+            {
+                label: this.t('config.logTileWarnings', 'Warnings'),
+                value: stats.warn,
+                tone: stats.warn > 0 ? 'warn' : 'neutral',
+            },
+            {
+                label: this.t('config.logTileErrors', 'Errors'),
+                value: stats.error,
+                tone: stats.error > 0 ? 'crit' : 'good',
+            },
+        ].map((t) => this.renderTile(t)).join('');
+    }
+
+    /** Human span for the retention tile. */
+    logRetentionLabel(hours) {
+        if (!hours) return this.t('config.logRetentionForever', 'Until cleared');
+        if (hours % 24 === 0) {
+            const days = hours / 24;
+            return days === 1
+                ? this.t('config.logRetention24h', '24 hours')
+                : this.t('config.logRetentionDays', '{n} days').replace('{n}', String(days));
+        }
+        return hours === 1
+            ? this.t('config.logRetention1h', '1 hour')
+            : this.t('config.logRetentionHours', '{n} hours').replace('{n}', String(hours));
+    }
+
+    /** The log lines themselves. */
+    renderServerLogLines() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const lines = this._logLines || [];
+
+        if (this._logLoading && lines.length === 0) {
+            return `<p class="config-view-loading">${esc(this.t('config.logLoading', 'Loading…'))}</p>`;
+        }
+        if (lines.length === 0) {
+            return `<p class="config-panel-empty">${esc(this.t('config.logEmpty', 'Nothing logged yet.'))}</p>`;
+        }
+
+        return lines.map((line) => {
+            const time = line.time ? this.formatLogTime(line.time) : '';
+            const source = line.source
+                ? `<span class="config-log-source">${esc(line.source)}</span>`
+                : '';
+            return `<div class="config-log-line config-log-line--${esc(line.level || 'info')}">`
+                + `<span class="config-log-time">${esc(time)}</span>`
+                + source
+                + `<span class="config-log-message">${esc(line.message)}</span>`
+                + `</div>`;
+        }).join('');
+    }
+
+    /** Clock time for a log line, in the browser's locale like the other dates. */
+    formatLogTime(iso) {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        return d.toLocaleTimeString(undefined, {
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+        });
+    }
+
+    /**
+     * Fetch log lines.
+     *
+     * `reset` asks for the whole window again — needed whenever the filter
+     * changes, since lines already skipped by the server would otherwise never
+     * be requested. A plain poll passes the highest sequence seen instead, so
+     * a 2s interval costs one small empty response when nothing happens.
+     */
+    async loadServerLog({ reset = false } = {}) {
+        if (reset) {
+            this._logSince = -1;
+            this._logLines = [];
+        }
+        this._logLoading = true;
+
+        const params = new URLSearchParams();
+        if (this._logSince >= 0) params.set('since', String(this._logSince));
+        if (this.logLevelFilter) params.set('level', this.logLevelFilter);
+        if (this.logQuery) params.set('q', this.logQuery);
+
+        try {
+            const res = await fetch(`/api/logs?${params.toString()}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            const incoming = Array.isArray(data.entries) ? data.entries : [];
+            this._logLines = this._logLines.concat(incoming);
+            // The buffer is capped server-side; keeping the same cap here stops
+            // a long-running tab from growing without bound.
+            const cap = Number(data.capacity) || 2000;
+            if (this._logLines.length > cap) {
+                this._logLines = this._logLines.slice(-cap);
+            }
+            // A clear from another tab restarts the server's numbering below
+            // where we were, which would leave this view polling for sequences
+            // that will never come. Detect the rewind and drop what we hold, so
+            // the next poll asks for the whole window again.
+            const nextSeq = Number.isFinite(data.nextSeq) ? data.nextSeq : null;
+            if (nextSeq !== null && nextSeq - 1 < this._logSince) {
+                this._logSince = -1;
+                this._logLines = [];
+            } else if (nextSeq !== null) {
+                this._logSince = nextSeq - 1;
+            }
+            this._logStats = data.stats || null;
+            this._logDropped = Number(data.dropped) || 0;
+        } catch (err) {
+            this.notify(this.t('config.logLoadFailed', 'Could not read the server log.'), 'error');
+        } finally {
+            this._logLoading = false;
+        }
+        this.repaintServerLog();
+    }
+
+    /**
+     * Repaint the lines and tiles only.
+     *
+     * Deliberately not a full re-render: the controls must keep their state,
+     * and re-creating the search box on every poll would drop focus mid-typing.
+     */
+    repaintServerLog() {
+        if (this.section !== 'data-backups' || this.dbTab !== 'logs') return;
+
+        const tiles = document.getElementById('config-log-tiles');
+        if (tiles) tiles.innerHTML = this.renderServerLogTiles();
+
+        const out = document.querySelector('[data-log-output]');
+        if (!out) return;
+        // Whether the view was already at the bottom decides if follow applies,
+        // so a user who scrolled up to read something is not yanked away.
+        const atBottom = out.scrollHeight - out.scrollTop - out.clientHeight < 40;
+        out.innerHTML = this.renderServerLogLines();
+        if (this.logFollow && atBottom) {
+            out.scrollTop = out.scrollHeight;
+        }
+    }
+
+    /** Arm or disarm the refresh interval to match logRefreshSeconds. */
+    updateServerLogTimer() {
+        this.stopServerLogTimer();
+        if (!this.logRefreshSeconds) return;
+        this._logTimer = setInterval(() => {
+            // Belt and braces: if a repaint ever loses the teardown, the timer
+            // stops itself rather than polling behind a closed config view.
+            if (this.section !== 'data-backups' || this.dbTab !== 'logs') {
+                this.stopServerLogTimer();
+                return;
+            }
+            void this.loadServerLog();
+        }, this.logRefreshSeconds * 1000);
+    }
+
+    stopServerLogTimer() {
+        if (this._logTimer) {
+            clearInterval(this._logTimer);
+            this._logTimer = null;
+        }
+    }
+
+    /** Wire the log tab's controls. Called with the freshly rendered body. */
+    bindServerLogControls(container) {
+        const selects = container.querySelectorAll('[data-log-select]');
+        selects.forEach((sel) => {
+            sel.addEventListener('change', () => {
+                const kind = sel.getAttribute('data-log-select');
+                const value = sel.value;
+                if (kind === 'interval') {
+                    this.logRefreshSeconds = Number(value) || 0;
+                    this.updateServerLogTimer();
+                    return;
+                }
+                if (kind === 'retention') {
+                    this.dash.settings.serverLogRetentionHours = Number(value) || 0;
+                    void this.saveSettingsWithFeedback();
+                    // The server prunes on save, so pull a fresh window rather
+                    // than leaving expired lines on screen.
+                    void this.loadServerLog({ reset: true });
+                    return;
+                }
+                if (kind === 'level') {
+                    this.logLevelFilter = value;
+                    void this.loadServerLog({ reset: true });
+                }
+            });
+        });
+
+        const search = container.querySelector('[data-log-search]');
+        if (search) {
+            let debounce = null;
+            search.addEventListener('input', () => {
+                clearTimeout(debounce);
+                debounce = setTimeout(() => {
+                    this.logQuery = search.value.trim();
+                    void this.loadServerLog({ reset: true });
+                }, 250);
+            });
+        }
+
+        const follow = container.querySelector('[data-log-toggle="follow"]');
+        if (follow) {
+            follow.addEventListener('change', () => {
+                this.logFollow = follow.checked;
+                if (this.logFollow) {
+                    const out = document.querySelector('[data-log-output]');
+                    if (out) out.scrollTop = out.scrollHeight;
+                }
+            });
+        }
+
+        container.querySelectorAll('[data-log-action]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.handleServerLogAction(btn.getAttribute('data-log-action'));
+            });
+        });
+    }
+
+    async handleServerLogAction(action) {
+        switch (action) {
+            case 'refresh':
+                await this.loadServerLog({ reset: true });
+                break;
+            case 'copy': {
+                const text = (this._logLines || [])
+                    .map((l) => [l.time, l.level, l.source, l.message].filter(Boolean).join(' '))
+                    .join('\n');
+                try {
+                    await navigator.clipboard.writeText(text);
+                    this.notify(this.t('config.logCopied', 'Log copied.'), 'success');
+                } catch {
+                    this.notify(this.t('config.logCopyFailed', 'Could not copy the log.'), 'error');
+                }
+                break;
+            }
+            case 'download':
+                window.location.href = '/api/logs/download';
+                break;
+            case 'clear': {
+                const ok = await this.confirmAction(
+                    this.t('config.logClearConfirm', 'Delete every stored log line? The file on disk goes too, and this cannot be undone.'),
+                    { confirmLabel: this.t('config.logClearOk', 'Clear log') }
+                );
+                if (!ok) break;
+                try {
+                    const res = await this.writeFetch('/api/logs', { method: 'DELETE' });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    this.notify(this.t('config.logCleared', 'Log cleared.'), 'success');
+                } catch {
+                    this.notify(this.t('config.logClearFailed', 'Could not clear the log.'), 'error');
+                }
+                // Either way, resync: the sequence numbers restart from the
+                // server's side of the clear.
+                await this.loadServerLog({ reset: true });
+                break;
+            }
+            default:
+                break;
+        }
     }
 
     /**
@@ -4134,8 +4529,16 @@ class DashboardConfig {
         if (this.dbTab === 'trash' && this._trashData == null) {
             void this.loadTrash();
         }
+        if (this.dbTab === 'logs') {
+            this.bindServerLogControls(container);
+            void this.loadServerLog({ reset: true });
+            this.updateServerLogTimer();
+        }
         this.bindSubTabStrip(container, 'data-db-tab', (tab) => {
             if (tab === this.dbTab) return;
+            // Leaving the log tab must take its timer with it, or it keeps
+            // polling from behind whatever the user opened next.
+            if (this.dbTab === 'logs') this.stopServerLogTimer();
             this.dbTab = tab;
             this.restoreConfigHash();
             // Only the body is repainted; rebuilding the strip would replace
@@ -8050,7 +8453,7 @@ class DashboardConfig {
      * Data & backups keeps its destructive actions on a separate tab, and icon
      * upkeep on another: neither belongs beside the export buttons.
      */
-    static DB_TABS = ['backups', 'icons', 'trash', 'reset'];
+    static DB_TABS = ['backups', 'icons', 'logs', 'trash', 'reset'];
 
     static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'branding', 'custom-themes'];
 
