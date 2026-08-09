@@ -4,7 +4,9 @@
     display: none;
     align-items: center;
     justify-content: center;
-    padding: 24px 16px;
+    /* Breathing room on a tall window, less of it on a short one, where those
+       pixels are the difference between the form fitting and scrolling. */
+    padding: clamp(8px, 3vh, 24px) 16px;
     overflow-y: auto;
     z-index: 10050;
 }
@@ -13,9 +15,25 @@
     display: flex;
 }
 
+/*
+ * The cap is what the overlay actually leaves, not a flat 90vh.
+ *
+ * The overlay already holds 24px of padding top and bottom, so a 90vh dialog
+ * asked for 90% of the height inside a box that had 48px taken off it — the
+ * form fits in 735px, and on an 800px-tall window the cap came out at 720 and
+ * put a scrollbar on a form with 15px to spare. Common laptop heights (800,
+ * 810) landed just under the line, so the modal scrolled for no visible reason
+ * while the same form sat still on a taller screen.
+ *
+ * 100dvh minus that padding lets the dialog use the room the overlay is really
+ * offering, and dvh rather than vh so a mobile browser's collapsing toolbar
+ * does not reintroduce the same few missing pixels. The subtraction mirrors the
+ * overlay's clamped padding above — the two have to agree, or the cap starts
+ * describing space the overlay is not giving.
+ */
 .bookmark-form-modal-dialog {
     width: min(520px, 100%);
-    max-height: min(90vh, 920px);
+    max-height: min(calc(100dvh - (2 * clamp(8px, 3vh, 24px))), 920px);
     overflow: hidden;
     display: flex;
     flex-direction: column;

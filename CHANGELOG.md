@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.09.08 — August 2026](#v20260908--august-2026)
 - [v2026.09.07 — August 2026](#v20260907--august-2026)
 - [v2026.09.06.2 — August 2026](#v202609062--august-2026)
 - [v2026.09.06.1 — August 2026](#v202609061--august-2026)
@@ -157,6 +158,33 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.09.08 — August 2026
+
+**See what the server is doing** — the server log is readable from inside Config, with its own refresh interval, retention and clear. Icon and preview upkeep moves out of the backup tab it had been sitting at the bottom of.
+
+### Server log viewer
+
+- **new** — **Config → Data & backups → Server log** shows what the server has been doing, without shell access to the container. Every line the server writes is captured as it is written: background jobs, imports, health checks, and one line per API request. `log.SetOutput` now writes to both stderr and a ring buffer, so `docker logs` is unchanged (`log_buffer.go`, `log_handlers.go`, `main.go`).
+- **new** — **Refresh interval** of off / 2 / 5 / 15 / 30 seconds. Off is the default, and a poll asks only for lines newer than the highest sequence it has seen, so a 2s interval costs one small empty response when nothing is happening. The timer is taken down when the tab is left, the section changes, or Config closes — it is the only polling view in Config, so nothing existing did that already (`dashboard-config.js`).
+- **new** — **Keep entries for** 1, 2, 4, 12 or 24 hours, 7 or 30 days, or until cleared. Stored as `serverLogRetentionHours` and applied on save rather than at the next restart; expired lines are dropped on read as well as on write, so a buffer that went quiet still ages out (`models.go`, `handlers.go`).
+- **new** — **Clear log** empties the buffer and deletes `server.log` and its rotated copies. **Copy** and **Download** take the current lines to the clipboard or a `.log` file. **Level filter** and **search** run server-side, so they cover the whole buffer rather than the rendered rows.
+- **new** — Severity is inferred, since the call sites are plain `log.Printf` with no level of their own: request lines take theirs from the HTTP status, other lines from their wording. The `foo:` subsystem prefix most call sites already use becomes a filterable tag — a capitalised prefix does not, so startup banners like `Dashboard: http://…` are not mistaken for one.
+- **new** — The last 2000 lines are held in memory and mirrored to `server.log` in the data directory (2MB, two rotated copies), seeded back into the buffer at boot so the history survives a restart. `activityRotatingFile` gained per-instance size and backup limits instead of package constants, so the two logs can be capped differently (`activity_log.go`).
+
+> Anyone who can open Config can read this log, including full webhook URLs where those were logged. Clear it or keep retention short on an instance other people can reach.
+
+### Data & backups
+
+- **new** — **Icons & previews is its own sub-tab**, between Backups & data and Server log. It was the last panel of Backups & data, below the export buttons: nothing in it is about backing up or moving data, and two of its three buttons walk every bookmark, so it was within reach of anyone scrolling to the CSV export. The settings-search entry for the favicon policy moved with it — left on `backups` it would have opened the tab the control had just left (`dashboard-config.js`).
+
+### Docs
+
+- **new** — `MANUAL.md` gains a **Server log** section covering the refresh interval, retention, filtering, clear and the caps, plus a note that the log is readable by anyone who can open Config. The sub-tab table for **Data & backups** was two releases out of date — it listed only *Backups & data · Reset* — and now names all five tabs.
+- **new** — Release plumbing for **v2026.09.08**: `static/data/whats-new/v2026.09.08.json`, the index entry, both `whats-new-stub.js` tokens (`…-v177`, `whats-new-v236`), the constants test, and an **overviewNewFeatures()** spotlight for the log viewer with its five locale keys in en, nl, de and fr.
+- **new** — 47 locale keys for the log viewer and 5 for the spotlight, across all four locales.
 
 ---
 

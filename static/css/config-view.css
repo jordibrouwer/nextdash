@@ -438,6 +438,23 @@
     font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Rows and panels the Appearance "Only changed" filter has hidden.
+ *
+ * Not the `hidden` attribute: .config-field and .config-field-row set their own
+ * `display`, and a class selector outranks the user-agent rule behind `hidden`,
+ * so a row marked hidden stayed on screen. Keyed on the attribute instead, with
+ * !important so it holds regardless of which display rule the element carries —
+ * the alternative is repeating this for every panel and row variant, and
+ * missing the next one that gets added.
+ *
+ * The schema-driven panels do not need this: renderControlPanels leaves the
+ * filtered controls out of the markup entirely rather than hiding them.
+ */
+[data-appearance-filtered] {
+    display: none !important;
+}
+
 .config-btn.is-active {
     border-color: var(--accent-color, #4a90d9);
     color: var(--accent-color, #4a90d9);
@@ -2766,6 +2783,24 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-tertiary);
 }
 
+/* "View only — the saved order is unchanged", above a Pages & tags list that is
+   sorted or filtered. Carries a left rule so it reads as a state the list is
+   in, not as more intro prose: for categories and pages the row order is the
+   dashboard's order, so this has to be hard to miss. */
+.config-pt-view-only {
+    margin: 0 0 10px;
+    padding-left: 0.6rem;
+    border-left: 2px solid var(--border-secondary);
+    font-size: 0.78rem;
+}
+
+/* "8 of 14 shown" — only rendered when a filter actually hides something. */
+.config-pt-count {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+}
+
 .config-bm-keyboard-legend kbd,
 .config-form-keyboard-legend kbd,
 .config-list-keyboard-legend kbd {
@@ -4251,5 +4286,90 @@ body[data-layout-version="modern"] .config-backup-row {
     body[data-layout-version="modern"] .config-btn {
         transition: none;
         transform: none;
+    }
+}
+
+/* ── Server log viewer ───────────────────────────────────────────────────── */
+
+/*
+ * A scrolling tail inside the panel rather than a growing page: the log can be
+ * two thousand lines, and the buttons under it have to stay reachable.
+ */
+.config-log-view {
+    max-height: 420px;
+    overflow-y: auto;
+    margin: 12px 0;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 8px;
+    background: var(--card-bg, rgba(128, 128, 128, 0.04));
+    font-family: var(--font-family-mono, monospace);
+    font-size: calc(var(--font-size-text) * 0.86);
+    line-height: 1.55;
+    /* Long URLs in a log line must not push the panel sideways. */
+    overflow-wrap: anywhere;
+}
+
+.config-log-line {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 0 8px;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.config-log-line + .config-log-line {
+    margin-top: 1px;
+}
+
+.config-log-time {
+    color: var(--text-muted, #888);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* The subsystem prefix, so one component can be picked out at a glance. */
+.config-log-source {
+    padding: 0 5px;
+    border-radius: 4px;
+    background: var(--accent-soft, rgba(128, 128, 128, 0.16));
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+}
+
+.config-log-message {
+    white-space: pre-wrap;
+}
+
+/*
+ * Severity reuses the tile tones rather than introducing new colours, and
+ * carries a tinted background so a run of errors is visible while scrolling
+ * past at speed.
+ */
+.config-log-line--warn {
+    background: rgba(207, 144, 20, 0.12);
+}
+
+.config-log-line--warn .config-log-message {
+    color: #cf9014;
+}
+
+.config-log-line--error {
+    background: rgba(209, 73, 63, 0.12);
+}
+
+.config-log-line--error .config-log-message {
+    color: #d1493f;
+}
+
+@media (max-width: 640px) {
+    /* Stacked: three columns of monospace do not fit a phone. */
+    .config-log-line {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .config-log-source {
+        justify-self: start;
     }
 }

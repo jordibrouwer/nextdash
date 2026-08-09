@@ -569,6 +569,16 @@ class DashboardSmartCollections {
         if (d.inlineEditingBookmarkIndex !== null) {
             return;
         }
+        // Smart collections are sections of the bookmarks grid, so refreshing
+        // them from another view repaints something nobody is looking at — and
+        // the repaint goes through renderDashboard, which re-renders whichever
+        // view *is* active. Opening a bookmark from Config → Bookmarks that way
+        // rebuilt the whole panel and re-ran its filters, so the row you had
+        // just opened vanished out from under you when the list was filtered to
+        // never-opened. The grid is rebuilt on the way back to it regardless.
+        if (d.isBookmarksView && !d.isBookmarksView()) {
+            return;
+        }
         this.refreshSmartCollectionSections();
     }
 

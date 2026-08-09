@@ -139,10 +139,30 @@ func writeActivityLogLine(line []byte) {
 	_ = activityFile.write(line)
 }
 
+// A size-capped append-only file that keeps a few numbered older copies.
+//
+// maxBytes and backups are fields rather than constants so the server log can
+// reuse this with its own limits; zero means the activity-log defaults.
 type activityRotatingFile struct {
-	mu   sync.Mutex
-	path string
-	size int64
+	mu       sync.Mutex
+	path     string
+	size     int64
+	maxBytes int64
+	backups  int
+}
+
+func (f *activityRotatingFile) limit() int64 {
+	if f.maxBytes > 0 {
+		return f.maxBytes
+	}
+	return activityLogMaxBytes
+}
+
+func (f *activityRotatingFile) backupCount() int {
+	if f.backups > 0 {
+		return f.backups
+	}
+	return activityLogBackupCount
 }
 
 func (f *activityRotatingFile) write(line []byte) error {
@@ -159,7 +179,7 @@ func (f *activityRotatingFile) write(line []byte) error {
 		return err
 	}
 
-	if f.size+int64(len(line)) > activityLogMaxBytes {
+	if f.size+int64(len(line)) > f.limit() {
 		if err := f.rotate(); err != nil {
 			return err
 		}
@@ -180,8 +200,9 @@ func (f *activityRotatingFile) write(line []byte) error {
 }
 
 func (f *activityRotatingFile) rotate() error {
-	_ = os.Remove(f.path + "." + strconv.Itoa(activityLogBackupCount))
-	for i := activityLogBackupCount - 1; i >= 1; i-- {
+	count := f.backupCount()
+	_ = os.Remove(f.path + "." + strconv.Itoa(count))
+	for i := count - 1; i >= 1; i-- {
 		src := f.path
 		if i > 1 {
 			src = f.path + "." + strconv.Itoa(i-1)

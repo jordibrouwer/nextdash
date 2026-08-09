@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"io"
 	"io/fs"
 	"log"
 	"mime"
@@ -33,7 +34,17 @@ func main() {
 	if err := validateDataDirAtStartup(); err != nil {
 		log.Fatalf("%v", err)
 	}
+	// Mirror the log to a ring buffer (and a rotating file) for the in-app log
+	// viewer. Installed right after the data dir is known and before anything
+	// interesting is logged; stderr still receives every line, so `docker logs`
+	// is unaffected.
+	InitServerLog()
+	log.SetOutput(io.MultiWriter(os.Stderr, serverLog))
+
 	store := NewStore()
+	// Retention lives in settings, which needs the store — so the seeded buffer
+	// is pruned to the configured age here rather than in InitServerLog.
+	serverLog.SetRetentionHours(store.GetSettings().ServerLogRetentionHours)
 	if strings.TrimSpace(os.Getenv("NEXTDASH_DATA_DIR")) != "" {
 		log.Printf("Using data directory: %s", ResolveDataDir())
 	}
@@ -103,6 +114,9 @@ func main() {
 	r.HandleFunc("/api/auto-backups", handlers.DeleteAutoBackup).Methods("DELETE")
 	r.HandleFunc("/api/auto-backups/run", handlers.RunAutoBackup).Methods("POST")
 	r.HandleFunc("/api/auto-backups/restore", handlers.RestoreAutoBackup).Methods("POST")
+	r.HandleFunc("/api/logs", handlers.GetServerLog).Methods("GET")
+	r.HandleFunc("/api/logs", handlers.ClearServerLog).Methods("DELETE")
+	r.HandleFunc("/api/logs/download", handlers.DownloadServerLog).Methods("GET")
 	r.HandleFunc("/api/import", handlers.Import).Methods("POST")
 	r.HandleFunc("/api/ping", handlers.PingURL).Methods("GET")
 
