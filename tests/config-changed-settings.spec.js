@@ -44,27 +44,45 @@ async function restore(page, fields) {
 
 test.describe('the changed-settings count', () => {
     /**
-     * The count is only worth showing if it is right, and the reason the
-     * defaults were reconciled first: on an untouched install it must be zero,
-     * so the line does not appear at all.
+     * With every setting at its default the count is zero and the line is not
+     * rendered at all.
+     *
+     * Everything is reset first rather than assuming the install is untouched:
+     * settings persist server-side between specs, and config-auto-dark leaves
+     * the theme and autoDarkMode changed on purpose. That the defaults really
+     * do add up to zero on a fresh install is pinned in
+     * config-field-defaults.spec.js, which runs before anything can dirty it.
      */
-    test('a stock install reports nothing changed and shows no line', async ({ page }) => {
+    test('with everything at its default there is no count and no line', async ({ page }) => {
         await openConfig(page, 'overview');
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            for (const e of c.changedSettings()) {
+                const def = c.fieldMeta(e.field)?.def;
+                if (def !== undefined) await c.setBehavior(e.field, def, '');
+            }
+            c.repaintOverview();
+        });
 
         const changed = await page.evaluate(() =>
             window.dashboardInstance.config.changedSettings().map((e) => e.field));
-        expect(changed, `a stock install claims these differ:\n${changed.join('\n')}`).toEqual([]);
+        expect(changed, `these still differ after a reset:\n${changed.join('\n')}`).toEqual([]);
         await expect(page.locator('[data-overview-changed]')).toHaveCount(0);
     });
 
     test('changing settings puts a count on the overview', async ({ page }) => {
         await openConfig(page, 'overview');
+        // Relative to whatever a previous spec left behind, so this does not
+        // depend on the install being pristine.
+        const before = await page.evaluate(() =>
+            window.dashboardInstance.config.changedSettings().length);
+
         await change(page, [['openInNewTab', false], ['globalShortcuts', false]]);
         await page.evaluate(() => window.dashboardInstance.config.repaintOverview());
 
         const line = page.locator('[data-overview-changed]');
         await expect(line).toBeVisible();
-        await expect(line).toHaveText(/\b2\b/);
+        await expect(line).toHaveText(new RegExp(`\\b${before + 2}\\b`));
 
         await restore(page, ['openInNewTab', 'globalShortcuts']);
     });

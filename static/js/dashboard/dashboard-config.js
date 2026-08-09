@@ -4734,10 +4734,10 @@ class DashboardConfig {
                         <button type="button" class="config-choice${theme === 'dark' ? ' is-active' : ''}" data-appearance-theme="dark" aria-pressed="${theme === 'dark'}">${esc(this.t('config.themeDark', 'Dark'))}</button>
                     </div>
                 </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
+                <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="autoDarkMode" ${s.autoDarkMode ? 'checked' : ''}>
+                        <span>${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
                     </label>
                     ${this.appearanceAff('autoDarkMode')}
                 </div>

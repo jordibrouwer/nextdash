@@ -107,6 +107,21 @@ test.describe('the declared defaults match the server', () => {
     test('an untouched install reports nothing as changed', async ({ page }) => {
         await openConfig(page);
 
+        // Settings persist between specs, so put everything back to its
+        // declared default first. What this asserts is that the declared
+        // defaults are self-consistent — reset a field and it must then read as
+        // unchanged — which is exactly what was broken for six of them.
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            const s = window.dashboardInstance.settings || {};
+            for (const e of c.settingsJumpFieldEntries()) {
+                const m = c.fieldMeta(e.field);
+                if (m && m.def !== undefined && !c.isFieldDefault(e.field, s[e.field])) {
+                    await c.setBehavior(e.field, m.def, '');
+                }
+            }
+        });
+
         const changed = await page.evaluate(() => {
             const c = window.dashboardInstance.config;
             const s = window.dashboardInstance.settings || {};

@@ -1281,6 +1281,17 @@
 
 /* ── Info (ℹ) and reset-to-default (↺) affordances ──────────────────────── */
 
+/*
+ * The row for a checkbox, as opposed to `.config-field` for a labelled control.
+ *
+ * Which of the two a setting uses is not a style choice. A checkbox carries its
+ * own label inside the <label>, so the text is part of the click target; a
+ * select or a text input has its label beside it in the grid's first column.
+ * Putting a checkbox in a `.config-field` detaches the two — the text sits in
+ * the label column and the <label> wraps only the box — and clicking the words
+ * then does nothing. That is exactly what "Follow system dark mode" did until
+ * it was moved here.
+ */
 .config-field-row {
     display: flex;
     align-items: center;
