@@ -7,6 +7,14 @@ async function openConfig(page, section = 'overview') {
     await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // #dashboard-layout exists before the dashboard has finished wiring up, and
+    // config is a lazy-loading stub until it has. Waiting on the element alone
+    // made the first test of a run fail on an undefined dashboardInstance.
+    await page.waitForFunction(
+        () => typeof window.dashboardInstance?.config?.openConfigView === 'function',
+        null,
+        { timeout: 15_000 }
+    );
     await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
 }
 

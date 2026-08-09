@@ -392,11 +392,30 @@ async function dismissOnboardingIfPresent(page) {
     });
 }
 
+/**
+ * Wait until the config view can actually be driven from a test.
+ *
+ * `#dashboard-layout` is in the document well before the dashboard has finished
+ * wiring itself up, and `dashboardInstance.config` is a lazy-loading stub until
+ * it has — so a spec that waits on the element and then calls
+ * `config.openConfigView()` reads `config` off an undefined instance. It only
+ * bit the first test of a run, which is what made it look like a random flake
+ * rather than a missing wait.
+ */
+async function waitForConfigReady(page) {
+    await page.waitForFunction(
+        () => typeof window.dashboardInstance?.config?.openConfigView === 'function',
+        null,
+        { timeout: 15_000 }
+    );
+}
+
 module.exports = {
     WRITE_TOKEN,
     DASHBOARD_WHATS_NEW_RELEASE,
     DEFAULT_DISCOVERABILITY_KEYS,
     E2E_WEB_SERVER_ENV,
+    waitForConfigReady,
     markWhatsNewSeen,
     dismissWhatsNewIfPresent,
     dismissAppNotificationIfPresent,

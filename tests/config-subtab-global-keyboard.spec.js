@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
 
 /**
  * Sub-tab strips already honour arrow keys when focused; these shortcuts work
@@ -12,6 +12,7 @@ async function openSection(page, section) {
     await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    await waitForConfigReady(page);
     await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
 }
 
