@@ -159,13 +159,13 @@ test.describe('activating an entry reaches the control', () => {
         const landed = await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
             const hit = c.getSettingsJumpEntries()
-                .find((e) => e.field === 'healthRecheckIntervalMinutes');
+                .find((e) => e.field === 'healthAutoRecheckIntervalHours');
             await c.activateSettingsJumpEntry(hit);
             await new Promise((r) => setTimeout(r, 400));
             return document.activeElement?.getAttribute('data-behavior-field');
         });
 
-        expect(landed).toBe('healthRecheckIntervalMinutes');
+        expect(landed).toBe('healthAutoRecheckIntervalHours');
     });
 
     /** The hand-written Appearance controls bind their own attributes. */
