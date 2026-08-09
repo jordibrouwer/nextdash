@@ -1578,11 +1578,48 @@ class DashboardConfig {
         return (this.dash.allBookmarks || []).find((b) => this.bookmarkKey(b) === key) || null;
     }
 
+    /**
+     * Open the bookmark, and record that it happened.
+     *
+     * The recording is the point. Without it a bookmark opened from this list
+     * kept the open count and "last opened" it was rendered with, so the usage
+     * line went on saying "Jul 6 2×" for a link you had just used — and the
+     * Never-opened filter, the sort and the Statistics panel, which read exactly
+     * those two fields, went on believing it. Health and Inbox already record
+     * their opens; this is the same act through a different door.
+     *
+     * recordBookmarkOpened is the dashboard's own helper: it resolves the page
+     * and index the API wants, bumps the counters, and spreads them over every
+     * copy of the bookmark the other views hold. Only the repaint is ours,
+     * because only this list paints the usage line.
+     */
     openBookmarkByKey(key) {
         const bookmark = this.findBookmarkByKey(key);
         if (!bookmark?.url) return;
         const href = this.dash.safeBookmarkOpenHref?.(bookmark.url) || bookmark.url;
         window.open(href, '_blank', 'noopener,noreferrer');
+        this.dash.recordBookmarkOpened?.(bookmark, undefined, 'config');
+        this.refreshBookmarkUsageLine(key, bookmark);
+    }
+
+    /**
+     * Repaint just the usage line, not the row.
+     *
+     * A full repaint would rebuild every row: it drops focus, closes an open
+     * action menu, and — because the list can be sorted by last opened or
+     * filtered to never-opened — could move or remove the row you just clicked,
+     * the list shifting under your hands mid-task. The timestamp is a fact and
+     * updates now; re-sorting waits for the next render, which is a deliberate
+     * action rather than a side effect of a click. Same reasoning as Health's
+     * refreshLastOpenedLabel.
+     */
+    refreshBookmarkUsageLine(key, bookmark) {
+        if (!key || !bookmark) return;
+        const row = document.querySelector(`#config-bm-list .config-bm-row[data-bm-key="${CSS.escape(key)}"]`);
+        const col = row?.querySelector('.config-bm-usage-col');
+        if (!col) return;
+        col.innerHTML = this.renderBookmarkUsageLine(bookmark);
+        col.setAttribute('title', this.bookmarkUsageTooltip(bookmark));
     }
 
     async closeBookmarkEditorFromKeyboard() {
