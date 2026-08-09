@@ -4483,10 +4483,7 @@ class DashboardConfig {
      * position buried the three everyday row options they sat beneath.
      */
     renderAppearanceToolbarBody() {
-        return this.renderControlPanels(
-            this.behaviorSchema().filter((p) => p.tab === 'toolbar'),
-            'behavior'
-        );
+        return this.renderControlPanels(this.panelsFor('appearance', 'toolbar'), 'behavior');
     }
 
     renderAppearanceBrandingBody() {
@@ -4565,7 +4562,7 @@ class DashboardConfig {
                 </div>
             </div>
 
-            ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'layout'), 'behavior')}
+            ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
@@ -4608,7 +4605,7 @@ class DashboardConfig {
                     ${this.appearanceAff('animationsEnabled')}
                 </div>
             </div>
-            ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'display'), 'behavior')}`;
+            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
     }
 
     /** Friendly name for a theme id, matching the old config's labels. */
@@ -6088,10 +6085,24 @@ class DashboardConfig {
     /* ── Behavior ──────────────────────────────────────────────────────────── */
 
     /**
-     * Declarative schema for the behaviour settings, grouped into panels. Each
-     * control names the settings field it binds, its type, and (for selects) its
-     * options. A generic renderer/binder drives them so the whole set stays in
-     * one place — this mirrors the old config's general/keyboard/language tabs.
+     * Declarative schema for the settings panels. Each control names the
+     * settings field it binds, its type, and (for selects) its options. A
+     * generic renderer/binder drives them so the whole set stays in one place —
+     * this mirrors the old config's general/keyboard/language tabs.
+     *
+     * Every panel declares the `section` it lands in as well as its `tab`,
+     * because the two sections that draw from this schema have four tab names
+     * in common — general, layout, display and toolbar all exist under both
+     * Behavior and Appearance. Filtering on the tab alone happened to work only
+     * because Appearance's `general` tab is hand-written and never asks the
+     * schema for anything; the day it does, Behavior's General panels would
+     * appear under Appearance. Use `panelsFor(section, tab)` rather than
+     * filtering this list by hand.
+     *
+     * Despite the name this is no longer only the Behavior section's schema.
+     * Renaming the method touches every call site and the tests that pin them,
+     * so that is left for the Appearance migration that will fold the
+     * hand-written `data-appearance-*` controls in here.
      */
     behaviorSchema() {
         const t = (k, f) => this.t(k, f);
@@ -6105,6 +6116,7 @@ class DashboardConfig {
             || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
         return [
             {
+                section: 'behavior',
                 tab: 'general',
                 title: t('config.generalGroupGeneral', 'General'),
                 note: t('config.generalGroupGeneralNote', 'Language, link behaviour, and dashboard-wide options.'),
@@ -6123,6 +6135,7 @@ class DashboardConfig {
                 // The old config kept the tips toggle beside the quick-start and
                 // what's-new actions, which is where people look for it. Split
                 // across two sections it read as a stray General option.
+                section: 'behavior',
                 tab: 'general',
                 title: t('config.generalGroupOnboarding', 'Onboarding'),
                 note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, and the release summary.'),
@@ -6131,6 +6144,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'datetime',
                 title: t('config.generalGroupDateTime', 'Date, time & weather'),
                 note: t('config.generalGroupDateTimeNote', 'The clock, date line, and weather shown above the bookmarks.'),
@@ -6157,6 +6171,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'appearance',
                 tab: 'layout',
                 title: t('config.generalGroupLayout', 'Bookmarks layout'),
                 note: t('config.generalLayoutIntro', 'Grid structure, column count, layout preset, and density.'),
@@ -6199,6 +6214,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'appearance',
                 tab: 'display',
                 title: t('config.generalGroupBookmarkDisplay', 'Bookmark display'),
                 note: t('config.generalBookmarksDisplayIntro', 'Favicons, shortcuts, badges, link preview, sorting, and navigation.'),
@@ -6253,6 +6269,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'search',
                 title: t('config.generalGroupQuickAdd', 'Quick add & inbox'),
                 note: t('config.generalGroupQuickAddNote', 'What happens when you paste a URL onto the dashboard — add it straight away, or collect it in the inbox to sort later.'),
@@ -6266,6 +6283,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.statusBrowserChecksTitle', 'Checks in this browser'),
                 note: t('config.statusBrowserChecksNote', 'How the dashboard tests the bookmarks on screen while you have it open. Applies to bookmarks set to Periodic or Monitor; a bookmark set to Off is never tested.'),
@@ -6281,6 +6299,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
                 note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
@@ -6315,6 +6334,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
                 note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. Off by default because it makes outbound requests.'),
@@ -6327,6 +6347,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
                 note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
@@ -6339,6 +6360,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.pushNotifyTitle', 'Browser notifications'),
                 note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
@@ -6351,6 +6373,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'general',
                 title: t('config.generalGroupSync', 'Sync & feedback'),
                 note: t('config.generalGroupSyncNote', 'Settings normally follow you to every browser. Keep them on this device to give this one its own appearance and layout.'),
@@ -6360,6 +6383,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'privacy',
                 title: t('config.generalGroupPrivacy', 'Privacy'),
                 controls: [
@@ -6368,6 +6392,19 @@ class DashboardConfig {
                 ],
             },
         ];
+    }
+
+    /**
+     * The schema panels belonging to one section's tab.
+     *
+     * The single place that filters the schema, so a tab name shared by two
+     * sections cannot pull the other section's panels in. A panel with no
+     * `section` is treated as Behavior's, matching the old bare-tab behaviour.
+     */
+    panelsFor(section, tab) {
+        return this.behaviorSchema().filter((p) => (
+            (p.section || 'behavior') === section && (p.tab || 'general') === tab
+        ));
     }
 
     /** ℹ + ↺ affordances shown after a control, based on the field's metadata. */
@@ -6742,7 +6779,7 @@ class DashboardConfig {
     }
 
     renderBehaviorBody() {
-        const panels = this.behaviorSchema().filter((p) => (p.tab || 'general') === this.behaviorTab);
+        const panels = this.panelsFor('behavior', this.behaviorTab);
         const lead = this.behaviorTab === 'status' ? this.renderStatusModesLead() : '';
         // The two onboarding actions are buttons rather than settings, so they
         // cannot come from the schema; they are appended to the General tab so
