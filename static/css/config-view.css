@@ -438,6 +438,23 @@
     font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Rows and panels the Appearance "Only changed" filter has hidden.
+ *
+ * Not the `hidden` attribute: .config-field and .config-field-row set their own
+ * `display`, and a class selector outranks the user-agent rule behind `hidden`,
+ * so a row marked hidden stayed on screen. Keyed on the attribute instead, with
+ * !important so it holds regardless of which display rule the element carries —
+ * the alternative is repeating this for every panel and row variant, and
+ * missing the next one that gets added.
+ *
+ * The schema-driven panels do not need this: renderControlPanels leaves the
+ * filtered controls out of the markup entirely rather than hiding them.
+ */
+[data-appearance-filtered] {
+    display: none !important;
+}
+
 .config-btn.is-active {
     border-color: var(--accent-color, #4a90d9);
     color: var(--accent-color, #4a90d9);

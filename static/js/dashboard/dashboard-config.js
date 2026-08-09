@@ -4803,6 +4803,7 @@ class DashboardConfig {
         }
 
         return shell(`
+            ${this.renderChangedFilterBar('appearance', 'general')}
             ${tiles}
 
             <div class="config-panel">
@@ -4894,13 +4895,15 @@ class DashboardConfig {
      * position buried the three everyday row options they sat beneath.
      */
     renderAppearanceToolbarBody() {
-        return this.renderControlPanels(this.panelsFor('appearance', 'toolbar'), 'behavior');
+        return this.renderChangedFilterBar('appearance', 'toolbar')
+            + this.renderControlPanels(this.panelsFor('appearance', 'toolbar'), 'behavior');
     }
 
     renderAppearanceBrandingBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         return `
+            ${this.renderChangedFilterBar('appearance', 'branding')}
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceBrandingNote', 'The page title and favicon this dashboard uses in the browser tab.'))}</p>
@@ -4950,6 +4953,7 @@ class DashboardConfig {
         // version switch is a one-off that mostly wants to be found rather than
         // stepped over on the way down the tab.
         return `
+            ${this.renderChangedFilterBar('appearance', 'layout')}
             ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
 
             <div class="config-panel">
@@ -4985,6 +4989,7 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         return `
+            ${this.renderChangedFilterBar('appearance', 'display')}
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceDisplayQuickTitle', 'Quick display options'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceDisplayQuickNote', 'Everyday bookmark row options. Toolbar and tab visibility live on their own tab.'))}</p>
@@ -5205,7 +5210,21 @@ class DashboardConfig {
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
         if (['layout', 'display', 'toolbar'].includes(this.appearanceTab)) {
             this.bindControlPanels(container, 'behavior');
+        } else {
+            // bindControlPanels brings the toggle with it; the tabs without
+            // schema panels never call it, so they bind it here.
+            this.bindChangedFilter(container);
         }
+        // After the binders, so it runs on the markup they just wired rather
+        // than on whatever the previous render left behind. The container is
+        // the appearance body itself on a repaint and an ancestor of it on a
+        // full render, so accept either — querySelector alone finds nothing
+        // when the body *is* the container, and the filter would silently stop
+        // running on exactly the path that repaints it.
+        const body = container.id === 'config-appearance-body'
+            ? container
+            : container.querySelector('#config-appearance-body');
+        this.applyAppearanceChangedFilter(body);
         this.bindFormKeyboard(container);
     }
 
@@ -5916,10 +5935,20 @@ class DashboardConfig {
         }
     }
 
-    /** Render the ℹ/↺ affordances for an Appearance-section field. */
+    /**
+     * Render the ℹ/↺ affordances for an Appearance-section field.
+     *
+     * Also stamps the field name on the enclosing row, which is what lets the
+     * "Only changed" filter hide the hand-written controls: unlike the schema
+     * panels, there is no declaration to render them from, so the filter works
+     * on the DOM and needs each row to say which setting it binds. Emitted even
+     * when the field has no affordances to show, so the marker never depends on
+     * whether the setting happens to carry an ℹ or a ↺.
+     */
     appearanceAff(field) {
+        const esc = (v) => this.dash.escapeHtml(v);
         const aff = this.renderFieldAffordances(field, this.dash.settings?.[field]);
-        return aff ? `<span class="config-field-affordances">${aff}</span>` : '';
+        return `<span class="config-field-affordances" data-appearance-aff="${esc(field)}">${aff}</span>`;
     }
 
     /**
@@ -6508,6 +6537,22 @@ class DashboardConfig {
             out.push(entry);
         });
         return out;
+    }
+
+    /**
+     * The hand-written fields on one tab that have a default to compare against.
+     *
+     * MANUAL_JUMP_FIELDS exists for the settings jump, but it is the only
+     * declaration the hand-written Appearance controls have, so the changed
+     * filter reads it too. Fields with no declared default are dropped: they
+     * always look unchanged, and counting them would inflate the denominator
+     * with settings the filter can never report on.
+     */
+    manualFieldsFor(section, tab) {
+        return DashboardConfig.MANUAL_JUMP_FIELDS
+            .filter((e) => e.section === section && e.subTab === tab)
+            .map((e) => e.field)
+            .filter((f) => this.fieldMeta(f)?.def !== undefined);
     }
 
     /** Fields in one schema panel that differ from their default. */
@@ -7211,6 +7256,68 @@ class DashboardConfig {
         this.selectSection(section, 'overview-changed');
     }
 
+    /**
+     * Apply "Only changed" to the hand-written Appearance controls.
+     *
+     * The schema panels filter themselves at render time, from the declaration.
+     * These have no declaration to filter, so the pass runs over the rendered
+     * DOM instead: every row `appearanceAff` stamped is hidden unless its field
+     * differs from its default, and a panel left with no visible row goes with
+     * them rather than standing as an empty heading.
+     *
+     * Rows without a stamp — upload buttons, the theme editor link, the tiles —
+     * are not settings and have no default to compare against, so they are
+     * dropped wholesale while the filter is on: keeping them would show actions
+     * under a heading that promises only changed settings.
+     */
+    applyAppearanceChangedFilter(root) {
+        const host = root || document.getElementById('config-appearance-body');
+        if (!host) return;
+        host.querySelectorAll('[data-appearance-filtered]').forEach((el) => {
+            el.removeAttribute('data-appearance-filtered');
+        });
+        host.querySelectorAll('[data-appearance-filtered-empty]').forEach((el) => el.remove());
+        if (!this.changedOnly) return;
+
+        const s = this.dash.settings || {};
+        // The attribute carries the hiding, not the `hidden` property: rows and
+        // panels here set `display: grid`/`flex` on their own class, which
+        // outranks the user-agent rule behind `hidden` and would leave a
+        // "hidden" row on screen. A CSS rule keyed on this attribute wins
+        // because it is written to be more specific.
+        const hide = (el) => el.setAttribute('data-appearance-filtered', '');
+
+        host.querySelectorAll('.config-panel').forEach((panel) => {
+            // Schema panels are already filtered by renderControlPanels; a row
+            // in one carries data-behavior-field, never an appearance stamp.
+            if (panel.querySelector('[data-behavior-field]')) return;
+            let kept = 0;
+            panel.querySelectorAll('.config-field, .config-field-row').forEach((row) => {
+                const aff = row.querySelector('[data-appearance-aff]');
+                const field = aff?.getAttribute('data-appearance-aff');
+                if (field && !this.isFieldDefault(field, s[field])) { kept += 1; return; }
+                hide(row);
+            });
+            if (!kept) hide(panel);
+        });
+        // The tiles are navigation, not settings.
+        host.querySelectorAll('.config-tiles').forEach(hide);
+
+        // The toggle is disabled when a tab has nothing changed, so this is
+        // reachable only by arriving with the filter already on — from the
+        // Overview's count, which can land on any tab. Say so rather than
+        // showing a tab that looks empty because it failed to render.
+        const visible = [...host.querySelectorAll('.config-panel')]
+            .some((p) => !p.hasAttribute('data-appearance-filtered'));
+        if (!visible && !host.querySelector('.config-panel-empty')) {
+            const note = document.createElement('p');
+            note.className = 'config-panel-empty';
+            note.setAttribute('data-appearance-filtered-empty', '');
+            note.textContent = this.t('config.changedNoneOnTab', 'Nothing on this tab differs from its default.');
+            host.appendChild(note);
+        }
+    }
+
     /** The "Only changed" toggle above a tab of settings. */
     bindChangedFilter(container) {
         container.querySelectorAll('[data-config-action="toggle-changed"]').forEach((btn) => {
@@ -7545,16 +7652,20 @@ class DashboardConfig {
      * against the documentation is actually asking. The toggle then hides the
      * panels that have nothing to show.
      *
-     * Rendered for the schema-driven tabs only. The hand-written Appearance
-     * controls are not panels the filter can reason about, so offering it there
-     * would hide nothing and say so incorrectly.
+     * Counts both rendering paths. The schema describes the panels it owns, and
+     * MANUAL_JUMP_FIELDS declares the hand-written Appearance controls beside
+     * them — a tab that mixes the two (Layout, Display) would otherwise report
+     * on half of itself and call the other half stock.
      */
     renderChangedFilterBar(section, tab) {
         const esc = (v) => this.dash.escapeHtml(v);
         const panels = this.panelsFor(section, tab);
-        const changed = panels.reduce((n, p) => n + this.panelChangedFields(p).length, 0);
+        const manual = this.manualFieldsFor(section, tab);
+        const changed = panels.reduce((n, p) => n + this.panelChangedFields(p).length, 0)
+            + manual.filter((f) => !this.isFieldDefault(f, this.dash.settings?.[f])).length;
         const total = panels.reduce((n, p) => n + (p.controls || [])
-            .filter((c) => c.field && this.fieldMeta(c.field)?.def !== undefined).length, 0);
+            .filter((c) => c.field && this.fieldMeta(c.field)?.def !== undefined).length, 0)
+            + manual.length;
         if (!total) return '';
 
         const label = changed
@@ -7883,7 +7994,12 @@ class DashboardConfig {
                 toolbar: () => this.renderAppearanceToolbarBody(),
                 layout: () => this.renderAppearanceLayoutBody(),
                 display: () => this.renderAppearanceDisplayBody(),
+                branding: () => this.renderAppearanceBrandingBody(),
             }[this.appearanceTab];
+            // General is rebuilt through render(): its body is one block from
+            // renderAppearance, tiles and all, with no renderer of its own to
+            // call here.
+            if (this.appearanceTab === 'general') { this.render(); return; }
             if (body && render) {
                 body.innerHTML = render();
                 // Scoped to the body that was just replaced, not the whole
@@ -7892,10 +8008,12 @@ class DashboardConfig {
                 // rebinding it here would stack a second click handler and
                 // switch tabs twice per click.
                 //
-                // Both binders run: the schema panels bind by
-                // data-behavior-field, and the hand-written controls on
-                // layout/display bind their own data-appearance-* attributes.
-                this.bindControlPanels(body, 'behavior');
+                // One binder, not two: bindAppearanceControls already calls
+                // bindControlPanels for the tabs that have schema panels.
+                // Calling it here as well bound every schema control twice, and
+                // on the "Only changed" toggle that is not merely wasteful —
+                // two handlers flip the flag twice per click, so the button
+                // did nothing at all.
                 this.bindAppearanceControls(body);
             }
             return;
