@@ -164,18 +164,24 @@ test.describe('page margins', () => {
 });
 
 test.describe('Appearance → Layout panel order', () => {
-    test('Bookmarks layout sits between Layout version and Button bar', async ({ page }) => {
+    test('Bookmarks layout leads, with Layout version last', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             await window.dashboardInstance.config.openConfigView('appearance');
         });
         await page.locator('[data-appearance-tab="layout"]').click();
 
-        // Grid structure belongs with the layout version that frames it, above
-        // the button bar — which is chrome around the grid rather than part of it.
+        // Ordered by how often a panel is touched: the grid and the button bar
+        // are what people come here to change, while the version switch is a
+        // one-off that wants to be findable rather than stepped over. This used
+        // to open on Layout version.
+        // First text node only: the heading also carries a "Reset panel" button
+        // once something in that panel differs from its default, and whether it
+        // is there depends on state left by other tests.
         await expect.poll(() => page.evaluate(() =>
-            [...document.querySelectorAll('.config-panel-title')].map((h) => h.textContent.trim())
-        )).toEqual(['Layout version', 'Bookmarks layout', 'Button bar']);
+            [...document.querySelectorAll('.config-panel-title')]
+                .map((h) => (h.firstChild?.textContent || '').trim())
+        )).toEqual(['Bookmarks layout', 'Button bar', 'Layout version']);
     });
 
     test('the moved controls are still bound', async ({ page }) => {

@@ -162,7 +162,9 @@ test('every special in the schema is one setBehavior actually handles', async ({
         }
         return [...specials];
     });
-    const handled = ['language', 'datetime', 'chrome', 'chromeRender', 'render', 'shortcutTooltips'];
+    // `visual` runs applyVisualSettings, for fields written onto <body> that
+    // neither the render nor the chrome pass touches — launcherIconSize.
+    const handled = ['language', 'datetime', 'chrome', 'chromeRender', 'render', 'shortcutTooltips', 'visual'];
     expect(used.length).toBeGreaterThan(3);
     expect(used.filter((s) => !handled.includes(s))).toEqual([]);
 });
