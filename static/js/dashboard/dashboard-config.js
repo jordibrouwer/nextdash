@@ -644,6 +644,33 @@ class DashboardConfig {
         if (panel) {
             panel.setAttribute('aria-labelledby', `config-section-${active}`);
         }
+        this.scrollActiveNavIntoView();
+    }
+
+    /**
+     * Keep the current section visible in the mobile nav strip.
+     *
+     * The rail scrolls horizontally below 720px (see config-view.css), so a
+     * section reached by keyboard, by hash, or by restoring the last visit can
+     * sit outside the strip's visible run — Help is the eighth of eight. On a
+     * wide screen the rail is a column that does not scroll and this is a
+     * no-op, so it is not worth a width check of its own.
+     *
+     * `nearest` rather than `center`: it only scrolls when the button is
+     * actually out of view, which leaves the strip alone in the common case.
+     */
+    scrollActiveNavIntoView() {
+        const nav = document.querySelector('.config-nav');
+        const btn = nav?.querySelector('.config-nav-item.is-active');
+        if (!nav || !btn) return;
+        // Nothing to scroll on the desktop column, and calling this there would
+        // scroll the panel behind it instead.
+        if (nav.scrollWidth <= nav.clientWidth) return;
+        btn.scrollIntoView({
+            block: 'nearest',
+            inline: 'nearest',
+            behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
+        });
     }
 
     moveSectionKeyboard(delta) {

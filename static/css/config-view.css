@@ -80,15 +80,49 @@
     gap: 2px;
 }
 
+/*
+ * On a narrow screen the rail becomes a horizontally scrolling strip rather
+ * than a wrapping block of buttons.
+ *
+ * Wrapped, the eight sections took three or four lines above the panel, and
+ * they sat there for every section — on a phone in portrait that is most of
+ * what is visible before the first setting. One line that scrolls is also the
+ * pattern a tab strip already teaches, and the active section is scrolled into
+ * view by scrollActiveNavIntoView().
+ *
+ * The scroll lives on .config-nav itself, never on the body: a page that
+ * scrolls sideways is the bug this is meant to avoid.
+ */
 @media (max-width: 720px) {
     .config-nav-column {
         position: static;
+        /* The strip is edge-to-edge, so its scrollbar and the fade below can
+           reach past the panel's padding without the column clipping them. */
+        min-width: 0;
     }
 
     .config-nav {
         flex-direction: row;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 6px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        /* Room for the focus ring, which would otherwise be clipped by the
+           scroll container on the first and last button. */
+        padding: 3px;
+        margin: -3px;
+        scrollbar-width: none;
+    }
+
+    .config-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .config-nav .config-nav-item {
+        flex: none;
+        scroll-snap-align: start;
+        white-space: nowrap;
     }
 }
 
