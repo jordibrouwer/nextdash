@@ -9049,9 +9049,18 @@ class DashboardConfig {
         container.querySelectorAll('[data-scope-field]').forEach((box) => {
             box.addEventListener('change', () => {
                 const field = box.getAttribute('data-scope-field');
-                const pageId = box.getAttribute('data-scope-page');
+                // Numbers, not the strings the DOM hands back. These fields are
+                // []int on the server, so an array of strings fails to
+                // unmarshal and the whole settings POST comes back 400 —
+                // ticking any page in any collection reported "Failed to save
+                // settings" and nothing at all was written. The reader side
+                // already expects numbers (_isSmartCollectionPageAllowed maps
+                // over Number), so a stored string would not have matched a
+                // page even if it had saved.
+                const pageId = Number(box.getAttribute('data-scope-page'));
+                if (!Number.isFinite(pageId)) return;
                 const current = Array.isArray(this.dash.settings[field])
-                    ? this.dash.settings[field].map(String)
+                    ? this.dash.settings[field].map(Number).filter(Number.isFinite)
                     : [];
                 const next = box.checked
                     ? [...new Set([...current, pageId])]
