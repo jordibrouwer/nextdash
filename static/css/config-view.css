@@ -396,6 +396,30 @@
     max-width: 60ch;
 }
 
+/*
+ * Show all / Hide all for a panel of visibility toggles, with the count of
+ * what is currently on.
+ *
+ * Separated from the checkboxes by a rule rather than by space alone: it acts
+ * on every row beneath it, so it needs to read as a header for the group and
+ * not as another setting in the list.
+ */
+.config-panel-bulk {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+}
+
+.config-panel-bulk-count {
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.914);
+    font-variant-numeric: tabular-nums;
+}
+
 /* The one conclusion the tiles above add up to. It sits in an ordinary
    .config-panel, which supplies the border, radius and background, so this only
    sets the sentence itself. */

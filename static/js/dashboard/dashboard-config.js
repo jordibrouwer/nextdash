@@ -6258,32 +6258,69 @@ class DashboardConfig {
                     bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
                 ],
             },
+            /*
+             * The thirteen chrome toggles, split the way the dashboard itself
+             * is built rather than listed in one run.
+             *
+             * As a single panel this was thirteen identical "Show the X button"
+             * checkboxes with nothing to navigate by, and no way to tell which
+             * of them referred to the strip at the top and which to the bar at
+             * the bottom. The three groups below are the header, and the two
+             * `.btn-group`s the button bar is actually made of (see
+             * templates/dashboard.html) — so the panel a setting sits in tells
+             * you where on screen to look for it.
+             *
+             * Each panel carries `bulk: 'chrome'`, which draws the Show all /
+             * Hide all pair; see renderPanelBulkActions().
+             *
+             * Chrome lives on <body> as data-* attributes rather than being
+             * read at render time, so these need applyChromeSettings to show
+             * up without a reload — see setBehavior's 'chrome' case.
+             */
             {
+                section: 'appearance',
                 tab: 'toolbar',
-                title: t('config.generalGroupChrome', 'Toolbar & tabs'),
-                note: t('config.generalHeaderButtonsIntro', 'Button visibility in the dashboard footer and header.'),
-                // Chrome lives on <body> as data-* attributes rather than being
-                // read at render time, so these need applyChromeSettings to show
-                // up without a reload — see setBehavior's 'chrome' case.
+                title: t('config.chromeGroupHeader', 'Header'),
+                note: t('config.chromeGroupHeaderNote', 'The strip along the top of the dashboard: the page tabs, the title, and the two icons on the right.'),
+                bulk: 'chrome',
                 controls: [
                     chrome('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
                     chrome('showPageNamesInTabs', 'config.showPageNamesInTabsLabel', 'Show page names in tabs'),
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
+                    chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
+                    chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
+                ],
+            },
+            {
+                section: 'appearance',
+                tab: 'toolbar',
+                title: t('config.chromeGroupPrimary', 'Button bar — main buttons'),
+                note: t('config.chromeGroupPrimaryNote', 'The four everyday actions. Hiding one leaves its keyboard shortcut working.'),
+                bulk: 'chrome',
+                controls: [
                     chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
                     chrome('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
-                    chrome('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
                     chrome('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
-                    chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
+                    chrome('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
+                ],
+            },
+            {
+                section: 'appearance',
+                tab: 'toolbar',
+                title: t('config.chromeGroupSecondary', 'Button bar — extras'),
+                note: t('config.chromeGroupSecondaryNote', 'The second group, beside the main buttons. With all of these off the group disappears entirely.'),
+                bulk: 'chrome',
+                controls: [
                     chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
                     chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
                     chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
-                    chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
-                    chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
+                    chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
                     // Button bar position lives on the Layout tab, as a button
                     // group beside the other two layout choices.
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'search',
                 title: t('config.generalGroupSearch', 'Search'),
                 note: t('config.generalSearchInputIntro', 'Search overlay behavior and suggestions.'),
@@ -6546,15 +6583,63 @@ class DashboardConfig {
             // schema rather than matched on a field name here, so retiring it is
             // deleting one line where the setting is defined.
             const stars = panel.highlight ? this.renderNewFeaturesPanelStars() : '';
+            const bulk = panel.bulk ? this.renderPanelBulkActions(panel, prefix) : '';
             return `
             <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}">
                 ${stars}
                 <h3 class="config-panel-title">${esc(panel.title)}${badge}</h3>
                 ${note}
+                ${bulk}
                 ${panel.controls.map(renderControl).join('')}
             </div>
         `;
         }).join('');
+    }
+
+    /**
+     * Show all / Hide all for a panel of checkboxes.
+     *
+     * A panel of visibility toggles is the one place where the same answer is
+     * usually wanted for every row — "give me a bare dashboard", "put it all
+     * back" — and doing that a checkbox at a time is four to five clicks and as
+     * many saves. Offered only where the schema asks for it (`bulk: 'chrome'`),
+     * because it makes no sense on a panel whose toggles are unrelated to each
+     * other.
+     *
+     * The count beside them is what makes the pair readable: it says what the
+     * panel's current state is without reading five checkboxes, and it is the
+     * thing that tells you a click landed.
+     */
+    renderPanelBulkActions(panel, prefix) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const fields = (panel.controls || [])
+            .filter((c) => c.type === 'checkbox' && c.field)
+            .map((c) => c.field);
+        if (fields.length < 2) return '';
+
+        const shown = fields.filter((f) => s[f] !== false).length;
+        const label = this.t('config.chromeBulkCount', '{shown} of {total} shown')
+            .replace('{shown}', String(shown))
+            .replace('{total}', String(fields.length));
+        // The group is identified by its fields rather than by an index, so a
+        // panel that moves or is reordered keeps working.
+        const key = fields.join(',');
+
+        return `
+            <div class="config-panel-bulk">
+                <button type="button" class="config-btn config-btn--small"
+                        data-${prefix}-bulk="show" data-${prefix}-bulk-fields="${esc(key)}"
+                        ${shown === fields.length ? 'disabled' : ''}>
+                    ${esc(this.t('config.chromeBulkShowAll', 'Show all'))}
+                </button>
+                <button type="button" class="config-btn config-btn--small"
+                        data-${prefix}-bulk="hide" data-${prefix}-bulk-fields="${esc(key)}"
+                        ${shown === 0 ? 'disabled' : ''}>
+                    ${esc(this.t('config.chromeBulkHideAll', 'Hide all'))}
+                </button>
+                <span class="config-panel-bulk-count" data-${prefix}-bulk-count>${esc(label)}</span>
+            </div>`;
     }
 
     /** Bind a rendered schema's controls (and ℹ/↺ affordances) back to setBehavior. */
@@ -6587,11 +6672,57 @@ class DashboardConfig {
                 el.addEventListener('change', () => this.setBehavior(field, el.value, special));
             }
         });
+        this.bindPanelBulkActions(container, prefix);
         this.bindPushDeviceControls(container);
         this.bindAffordances(container, (field) => {
             const el = container.querySelector(`[data-${prefix}-field="${CSS.escape(field)}"]`);
             const special = el?.getAttribute(`data-${prefix}-special`) || '';
             return special;
+        });
+    }
+
+    /**
+     * Wire a panel's Show all / Hide all pair.
+     *
+     * Deliberately not a loop over setBehavior: that method saves and repaints
+     * per call, so five toggles would be five PUTs, five chrome reapplications
+     * and five repaints for one click — and a failure halfway would leave the
+     * panel half applied. The fields are written together, the chrome is
+     * reapplied once, and one save covers the lot.
+     */
+    bindPanelBulkActions(container, prefix) {
+        container.querySelectorAll(`[data-${prefix}-bulk]`).forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const mode = btn.getAttribute(`data-${prefix}-bulk`);
+                const fields = (btn.getAttribute(`data-${prefix}-bulk-fields`) || '')
+                    .split(',')
+                    .filter(Boolean);
+                if (!fields.length) return;
+                const value = mode === 'show';
+
+                const d = this.dash;
+                fields.forEach((field) => { d.settings[field] = value; });
+                // One event for the group rather than one per field: the fields
+                // are a fixed enum, so the panel is the low-cardinality thing
+                // worth reporting.
+                this._trackAction('setting-bulk', { fields: fields.length, value: value ? 'on' : 'off' });
+
+                // Reflect it in the checkboxes straight away — nothing else
+                // redraws this panel, and the click should not feel deferred
+                // until the save comes back.
+                fields.forEach((field) => {
+                    const box = container.querySelector(
+                        `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="checkbox"]`
+                    );
+                    if (box instanceof HTMLInputElement) box.checked = value;
+                });
+
+                this.applyChromeSettings();
+                await this.saveSettingsWithFeedback();
+                // Repaints the count, the ↺ affordances and the disabled state
+                // of the pair itself.
+                this.repaintActiveControlPanels();
+            });
         });
     }
 
@@ -7090,7 +7221,17 @@ class DashboardConfig {
         }
     }
 
-    /** Re-render whichever schema-driven panel body is currently showing. */
+    /**
+     * Re-render whichever schema-driven panel body is currently showing.
+     *
+     * Appearance is in here as well as Behavior: three of its tabs (layout,
+     * display, toolbar) draw their panels from the same schema, so without
+     * this the ↺ reset button on those tabs put the value back and saved it
+     * but left the control showing the old one until the tab was reopened.
+     * Its body is rebuilt from the tab's own renderer rather than through
+     * repaintAppearanceBody(), which falls back to a full render() for
+     * anything but the custom-themes tab.
+     */
     repaintActiveControlPanels() {
         if (!this.isActiveView()) return;
         const container = document.getElementById('dashboard-layout');
@@ -7098,7 +7239,32 @@ class DashboardConfig {
         if (this.section === 'behavior') {
             const body = document.getElementById('config-behavior-body');
             if (body) { body.innerHTML = this.renderBehaviorBody(); this.bindControlPanels(container, 'behavior'); }
-        } else if (this.section === 'pages-tags' && this.ptTab === 'collections') {
+            return;
+        }
+        if (this.section === 'appearance') {
+            const body = document.getElementById('config-appearance-body');
+            const render = {
+                toolbar: () => this.renderAppearanceToolbarBody(),
+                layout: () => this.renderAppearanceLayoutBody(),
+                display: () => this.renderAppearanceDisplayBody(),
+            }[this.appearanceTab];
+            if (body && render) {
+                body.innerHTML = render();
+                // Scoped to the body that was just replaced, not the whole
+                // container: bindAppearanceControls also binds the sub-tab
+                // strip, which lives outside it and survives the repaint —
+                // rebinding it here would stack a second click handler and
+                // switch tabs twice per click.
+                //
+                // Both binders run: the schema panels bind by
+                // data-behavior-field, and the hand-written controls on
+                // layout/display bind their own data-appearance-* attributes.
+                this.bindControlPanels(body, 'behavior');
+                this.bindAppearanceControls(body);
+            }
+            return;
+        }
+        if (this.section === 'pages-tags' && this.ptTab === 'collections') {
             const body = document.getElementById('config-pt-body');
             if (body) { body.innerHTML = this.renderCollections(); this.bindCollections(container); }
         }
