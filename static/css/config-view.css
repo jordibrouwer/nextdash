@@ -389,6 +389,97 @@
     font-weight: 600;
 }
 
+/*
+ * "Reset panel", beside the panel's own heading. Quiet until hovered: it is
+ * destructive, so it should be findable when wanted rather than inviting a
+ * click on the way past. It only renders when something in the panel differs
+ * from its default, so it is never a dead control.
+ */
+.config-panel-reset {
+    float: right;
+    margin-left: 12px;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted, #888);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.829);
+    font-weight: 400;
+    cursor: pointer;
+    transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.config-panel-reset:hover {
+    color: var(--accent-error, #d1493f);
+    border-color: color-mix(in srgb, var(--accent-error, #d1493f) 45%, transparent);
+}
+
+.config-panel-reset:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 1px;
+}
+
+/*
+ * The "Only changed" toggle and its count, above a tab of settings. A row of
+ * its own rather than part of the first panel: it acts on every panel below it.
+ */
+.config-changed-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0 0 16px;
+}
+
+.config-changed-count {
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.914);
+    font-variant-numeric: tabular-nums;
+}
+
+.config-btn.is-active {
+    border-color: var(--accent-color, #4a90d9);
+    color: var(--accent-color, #4a90d9);
+}
+
+/* The overview's "N settings differ from the default" line. */
+.config-overview-changed {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0 0;
+}
+
+.config-overview-changed .config-field-hint {
+    margin: 0;
+}
+
+/* A count that is also a link — it reads as prose, so it is not a button. */
+.config-link-button {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent-color, #4a90d9);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.914);
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.config-link-button:hover {
+    text-decoration-thickness: 2px;
+}
+
+.config-link-button:focus-visible {
+    outline: 2px solid var(--accent-color, #4a90d9);
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
 .config-panel-note {
     margin: 0 0 12px;
     color: var(--text-muted, #888);

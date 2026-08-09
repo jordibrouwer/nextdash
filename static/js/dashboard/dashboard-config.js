@@ -50,6 +50,13 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab.
         this.behaviorTab = 'general';
+        /**
+         * Whether a settings tab is filtered to what differs from the default.
+         * Not persisted: it is a way of looking at the page for a minute, not a
+         * preference, and coming back to a half-empty tab you did not ask for
+         * would read as settings having gone missing.
+         */
+        this.changedOnly = false;
         // Help sub-tab.
         this.helpTab = 'start';
         // Bookmarks section: search, filters, sort, the row being edited, the
@@ -3044,11 +3051,43 @@ class DashboardConfig {
                     ${row(this.t('config.statsTaggedBookmarks', 'Tagged'), `${s.tagged} (${pct}%)`)}
                     ${row(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
                 </ul>
+                ${this.renderOverviewChangedSettings()}
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--small"
                             data-overview-go='{"section":"stats"}'>${esc(this.t('config.overviewMoreStats', 'All statistics →'))}</button>
                 </div>
             </div>`;
+    }
+
+    /**
+     * How much of this install is not stock, with a way to go and look.
+     *
+     * This is the answer to "why does my dashboard behave differently from the
+     * documentation", which otherwise means opening every tab and reading for
+     * a ↺. The number was already computable — isFieldDefault decides whether
+     * each ↺ shows — it had just never been added up anywhere.
+     *
+     * Silent on a stock install rather than reporting a zero: "0 settings
+     * changed" is a line that never earns its place, and the panel it sits in
+     * is a summary, not a checklist.
+     */
+    renderOverviewChangedSettings() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const changed = this.changedSettings();
+        if (!changed.length) return '';
+
+        // Where they are, so the line says something the count alone does not.
+        const sections = [...new Set(changed.map((e) => e.section))]
+            .map((s) => this.sectionLabel(s));
+        const label = this.t('config.overviewChangedSettings', '{n} settings differ from the default')
+            .replace('{n}', String(changed.length));
+
+        return `
+            <p class="config-overview-changed">
+                <button type="button" class="config-link-button"
+                        data-overview-changed>${esc(label)}</button>
+                <span class="config-field-hint">${esc(sections.join(' · '))}</span>
+            </p>`;
     }
 
     /** The most recent release, summarised, with the full notes a click away. */
@@ -3239,6 +3278,10 @@ class DashboardConfig {
             if (this.section !== 'overview') return;
             if (e.target.closest('[data-overview-feature="prev"]')) {
                 this.stepOverviewFeature(-1);
+                return;
+            }
+            if (e.target.closest('[data-overview-changed]')) {
+                this.openChangedSettings();
                 return;
             }
             if (e.target.closest('[data-overview-feature="next"]')) {
@@ -6360,6 +6403,47 @@ class DashboardConfig {
         return String(value ?? '') === String(d);
     }
 
+    /**
+     * Which settings differ from their installation default.
+     *
+     * isFieldDefault() already answered this one field at a time — it is what
+     * shows the ↺ button — but nothing ever added it up, so "why does my
+     * dashboard look different from the screenshots" had no answer short of
+     * reading every tab.
+     *
+     * Counted over the declared index rather than the rendered DOM, so the
+     * answer does not depend on which tabs have been opened. A field with no
+     * known default is not counted: isFieldDefault reports those as unchanged
+     * whatever they hold, so including them would understate nothing but
+     * pretend to a precision the data does not have.
+     */
+    changedSettings() {
+        const s = this.dash.settings || {};
+        const seen = new Set();
+        const out = [];
+        this.settingsJumpFieldEntries().forEach((entry) => {
+            if (seen.has(entry.field)) return;
+            seen.add(entry.field);
+            const meta = this.fieldMeta(entry.field);
+            if (!meta || meta.def === undefined) return;
+            if (this.isFieldDefault(entry.field, s[entry.field])) return;
+            out.push(entry);
+        });
+        return out;
+    }
+
+    /** Fields in one schema panel that differ from their default. */
+    panelChangedFields(panel) {
+        const s = this.dash.settings || {};
+        return (panel.controls || [])
+            .filter((c) => c.field && c.type !== 'note' && c.type !== 'pushDevice')
+            .filter((c) => {
+                const meta = this.fieldMeta(c.field);
+                return meta && meta.def !== undefined && !this.isFieldDefault(c.field, s[c.field]);
+            })
+            .map((c) => c.field);
+    }
+
     /** Open the shared info modal for a setting field. */
     openFieldInfo(field) {
         const meta = this.fieldMeta(field);
@@ -6856,7 +6940,16 @@ class DashboardConfig {
         // `note` explains the panel; `appliesTo` names the availability modes the
         // panel's settings actually affect, because several of them are inert
         // unless a bookmark is set to Periodic or Monitor.
-        return schema.map((panel) => {
+        const rendered = schema.map((panel) => {
+            const changedFields = this.panelChangedFields(panel);
+            // With the filter on, a panel with nothing changed is dropped and
+            // the rest show only the controls that differ. The note and the
+            // applies-to badge stay: they explain the controls that remain.
+            if (this.changedOnly && !changedFields.length) return '';
+            const controls = this.changedOnly
+                ? panel.controls.filter((c) => changedFields.includes(c.field))
+                : panel.controls;
+
             const badge = panel.appliesTo
                 ? `<span class="config-applies-to" title="${esc(this.t('config.appliesToTitle', 'These settings only take effect for bookmarks set to this mode'))}">${esc(panel.appliesTo)}</span>`
                 : '';
@@ -6866,17 +6959,43 @@ class DashboardConfig {
             // schema rather than matched on a field name here, so retiring it is
             // deleting one line where the setting is defined.
             const stars = panel.highlight ? this.renderNewFeaturesPanelStars() : '';
-            const bulk = panel.bulk ? this.renderPanelBulkActions(panel, prefix) : '';
+            const bulk = (panel.bulk && !this.changedOnly) ? this.renderPanelBulkActions(panel, prefix) : '';
+            const reset = this.renderPanelResetAction(panel, changedFields);
             return `
             <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}">
                 ${stars}
-                <h3 class="config-panel-title">${esc(panel.title)}${badge}</h3>
+                <h3 class="config-panel-title">${esc(panel.title)}${badge}${reset}</h3>
                 ${note}
                 ${bulk}
-                ${panel.controls.map(renderControl).join('')}
+                ${controls.map(renderControl).join('')}
             </div>
         `;
         }).join('');
+
+        if (this.changedOnly && !rendered.trim()) {
+            return `<p class="config-panel-empty">${esc(this.t('config.changedNoneOnTab',
+                'Nothing on this tab differs from its default.'))}</p>`;
+        }
+        return rendered;
+    }
+
+    /**
+     * "Reset panel" beside a panel's title, shown only once something in it
+     * differs from its default.
+     *
+     * The per-field ↺ is the right tool for one setting you regret; a panel of
+     * eight is eight clicks and eight saves. Hidden rather than disabled when
+     * there is nothing to reset, since a permanently dead control next to every
+     * heading is worse than no control.
+     */
+    renderPanelResetAction(panel, changedFields) {
+        if (!changedFields.length) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.panelResetAll', 'Reset panel');
+        const title = this.t('config.panelResetAllTitle', 'Put every setting in this panel back to its default');
+        return `<button type="button" class="config-panel-reset"
+                        data-panel-reset="${esc(changedFields.join(','))}"
+                        title="${esc(title)}">${esc(label)}</button>`;
     }
 
     /**
@@ -6956,6 +7075,8 @@ class DashboardConfig {
             }
         });
         this.bindPanelBulkActions(container, prefix);
+        this.bindChangedFilter(container);
+        this.bindPanelResetActions(container);
         this.bindPushDeviceControls(container);
         this.bindAffordances(container, (field) => {
             const el = container.querySelector(`[data-${prefix}-field="${CSS.escape(field)}"]`);
@@ -6973,6 +7094,90 @@ class DashboardConfig {
      * panel half applied. The fields are written together, the chrome is
      * reapplied once, and one save covers the lot.
      */
+    /**
+     * Open the filtered view from the Overview's count.
+     *
+     * The changed settings are spread over several tabs and the filter works a
+     * tab at a time, so this lands on the one carrying the most of them rather
+     * than on a fixed tab — arriving at Behavior › General to be shown one of
+     * four would read as the count being wrong. The line under the count names
+     * the sections, so the rest are not a surprise.
+     */
+    openChangedSettings() {
+        const changed = this.changedSettings();
+        if (!changed.length) return;
+
+        const tally = new Map();
+        changed.forEach((e) => {
+            const key = `${e.section}|${e.subTab || ''}`;
+            tally.set(key, (tally.get(key) || 0) + 1);
+        });
+        const [best] = [...tally.entries()].sort((a, b) => b[1] - a[1]);
+        const [section, subTab] = best[0].split('|');
+
+        this.changedOnly = true;
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        if (prop && subTab) this[prop] = subTab;
+        this.selectSection(section, 'overview-changed');
+    }
+
+    /** The "Only changed" toggle above a tab of settings. */
+    bindChangedFilter(container) {
+        container.querySelectorAll('[data-config-action="toggle-changed"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.changedOnly = !this.changedOnly;
+                this._trackAction('changed-filter', { value: this.changedOnly ? 'on' : 'off' });
+                this.repaintActiveControlPanels();
+            });
+        });
+    }
+
+    /**
+     * "Reset panel" — put every changed field in one panel back to its default.
+     *
+     * Like the bulk visibility actions, this deliberately does not loop over
+     * setBehavior: that saves and repaints per call. The values are written
+     * together and saved once, so a panel of eight is one write rather than
+     * eight. Confirmed first, because unlike a visibility toggle this can throw
+     * away a webhook URL or a weather location that cannot be typed back from
+     * memory.
+     */
+    bindPanelResetActions(container) {
+        container.querySelectorAll('[data-panel-reset]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const fields = (btn.getAttribute('data-panel-reset') || '').split(',').filter(Boolean);
+                if (!fields.length) return;
+
+                const ok = await window.AppModal?.confirm?.({
+                    title: this.t('config.panelResetConfirmTitle', 'Reset this panel?'),
+                    message: this.t('config.panelResetConfirmBody',
+                        '{n} settings go back to their default. This cannot be undone.')
+                        .replace('{n}', String(fields.length)),
+                    confirmText: this.t('config.panelResetConfirmYes', 'Reset'),
+                });
+                if (ok === false) return;
+
+                const d = this.dash;
+                let special = '';
+                fields.forEach((field) => {
+                    const meta = this.fieldMeta(field);
+                    if (!meta || meta.def === undefined) return;
+                    d.settings[field] = meta.def;
+                    // Any field needing chrome reapplied makes the whole batch
+                    // need it; the pass is idempotent, so once is enough.
+                    const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
+                    if (el?.getAttribute('data-behavior-special')) special = 'chromeRender';
+                });
+                this._trackAction('panel-reset', { fields: fields.length });
+
+                if (special) this.applyChromeSettings();
+                d.renderDashboard?.({ animate: false });
+                await this.saveSettingsWithFeedback();
+                this.repaintActiveControlPanels();
+            });
+        });
+    }
+
     bindPanelBulkActions(container, prefix) {
         container.querySelectorAll(`[data-${prefix}-bulk]`).forEach((btn) => {
             btn.addEventListener('click', async () => {
@@ -7221,12 +7426,56 @@ class DashboardConfig {
 
     renderBehaviorBody() {
         const panels = this.panelsFor('behavior', this.behaviorTab);
-        const lead = this.behaviorTab === 'status' ? this.renderStatusModesLead() : '';
+        // The lead and the onboarding buttons are not settings, so they go with
+        // the full view and are dropped when only changed settings are wanted.
+        const lead = (this.behaviorTab === 'status' && !this.changedOnly) ? this.renderStatusModesLead() : '';
         // The two onboarding actions are buttons rather than settings, so they
         // cannot come from the schema; they are appended to the General tab so
         // the whole of onboarding sits together as it did in the old config.
-        const trailing = this.behaviorTab === 'general' ? this.renderOnboardingActions() : '';
-        return lead + this.renderControlPanels(panels, 'behavior') + trailing;
+        const trailing = (this.behaviorTab === 'general' && !this.changedOnly) ? this.renderOnboardingActions() : '';
+        return this.renderChangedFilterBar('behavior', this.behaviorTab)
+            + lead
+            + this.renderControlPanels(panels, 'behavior')
+            + trailing;
+    }
+
+    /**
+     * "Only changed" for a tab of settings, with the count that makes it worth
+     * offering.
+     *
+     * The count is the point: it answers "is anything on this tab not stock"
+     * without reading it, which is the question someone comparing their install
+     * against the documentation is actually asking. The toggle then hides the
+     * panels that have nothing to show.
+     *
+     * Rendered for the schema-driven tabs only. The hand-written Appearance
+     * controls are not panels the filter can reason about, so offering it there
+     * would hide nothing and say so incorrectly.
+     */
+    renderChangedFilterBar(section, tab) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const panels = this.panelsFor(section, tab);
+        const changed = panels.reduce((n, p) => n + this.panelChangedFields(p).length, 0);
+        const total = panels.reduce((n, p) => n + (p.controls || [])
+            .filter((c) => c.field && this.fieldMeta(c.field)?.def !== undefined).length, 0);
+        if (!total) return '';
+
+        const label = changed
+            ? this.t('config.changedOnCount', '{n} of {total} differ from the default')
+                .replace('{n}', String(changed)).replace('{total}', String(total))
+            : this.t('config.changedNone', 'Everything on this tab is at its default');
+
+        return `
+            <div class="config-changed-bar">
+                <button type="button"
+                        class="config-btn config-btn--small${this.changedOnly ? ' is-active' : ''}"
+                        data-config-action="toggle-changed"
+                        aria-pressed="${this.changedOnly ? 'true' : 'false'}"
+                        ${changed ? '' : 'disabled'}>
+                    ${esc(this.t('config.changedOnlyToggle', 'Only changed'))}
+                </button>
+                <span class="config-changed-count">${esc(label)}</span>
+            </div>`;
     }
 
     renderOnboardingActions() {
