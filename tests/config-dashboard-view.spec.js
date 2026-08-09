@@ -541,7 +541,9 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-action="edit-colors"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="layout"]').click();
-        await expect(page.locator('[data-appearance-iconsize="large"]')).toBeVisible();
+        // Icon size moved out of the Layout version panel and into Bookmarks
+        // layout, so it is a schema select now rather than a button group.
+        await expect(page.locator('[data-behavior-field="launcherIconSize"]')).toBeVisible();
 
         await page.locator('[data-appearance-tab="display"]').click();
         await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();

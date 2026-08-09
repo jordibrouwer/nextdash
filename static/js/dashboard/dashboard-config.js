@@ -1842,7 +1842,6 @@ class DashboardConfig {
         { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
         { field: 'showBackgroundDots', labelKey: 'showBackgroundDots', fallback: 'Show background dots', section: 'appearance', subTab: 'general' },
         { field: 'layoutVersion', labelKey: 'appearanceLayoutVersion', fallback: 'Layout', section: 'appearance', subTab: 'layout' },
-        { field: 'launcherIconSize', labelKey: 'launcherIconSizeLabel', fallback: 'Icon size', section: 'appearance', subTab: 'layout' },
         { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'layout' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
@@ -2238,7 +2237,6 @@ class DashboardConfig {
         const groups = {
             layoutVersion: '[data-appearance-layout]',
             buttonBarPosition: '[data-appearance-barpos]',
-            launcherIconSize: '[data-appearance-iconsize]',
             fontWeight: '[data-appearance-weight]',
             backgroundType: '[data-appearance-bg]',
             randomThemeMode: '[data-appearance-randommode]',
@@ -4929,11 +4927,6 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         const layout = s.layoutVersion === 'modern' ? 'modern' : 'classic';
-        const iconSize = s.launcherIconSize || 'normal';
-        const iconSizes = [['small', this.t('config.launcherIconSizeSmall', 'Small')], ['normal', this.t('config.launcherIconSizeNormal', 'Normal')], ['large', this.t('config.launcherIconSizeLarge', 'Large')]];
-        const iconSizeChoices = iconSizes.map(([val, label]) =>
-            `<button type="button" class="config-choice${iconSize === val ? ' is-active' : ''}" data-appearance-iconsize="${esc(val)}" aria-pressed="${iconSize === val}">${esc(label)}</button>`
-        ).join('');
 
         // These five are the only values the server accepts; it silently
         // rewrites anything else to 'bottom'. See models.go.
@@ -4952,7 +4945,24 @@ class DashboardConfig {
             `<button type="button" class="config-choice${barPosition === val ? ' is-active' : ''}" data-appearance-barpos="${esc(val)}" aria-pressed="${barPosition === val}">${esc(label)}</button>`
         ).join('');
 
+        // Bookmarks layout first, then the button bar, and the layout version
+        // last: the first two are what people come here to change, while the
+        // version switch is a one-off that mostly wants to be found rather than
+        // stepped over on the way down the tab.
         return `
+            ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
+
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.buttonBarPositionNote', 'Where the add, search, commands, and finders buttons sit on the dashboard. Center-bottom floats them above the bookmarks; the corner docks tuck them out of the way; the side rail stacks them vertically down the left edge.'))}</p>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.buttonBarPositionLabel', 'Button bar position'))}</span>
+                    <div class="config-choices" role="group">${barChoices}</div>
+                    ${this.appearanceAff('buttonBarPosition')}
+                    <p class="config-field-hint">${esc(this.t(`config.buttonBarPositionDesc.${barPosition}`, ''))}</p>
+                </div>
+            </div>
+
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutVersionTitle', 'Layout version'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.layoutVersionDescIntro', 'Choose a layout style. Classic is recommended; Modern is still in early beta.'))}</p>
@@ -4967,24 +4977,6 @@ class DashboardConfig {
                         ? `<p class="config-field-warning">${esc(this.t('config.layoutVersionBetaNotice', 'Modern is still in early beta and not finished yet. Classic is recommended for the best experience.'))}</p>`
                         : ''}
                     <p class="config-field-hint">${esc(this.t(`config.layoutVersionDesc.${layout}`, ''))}</p>
-                </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.launcherIconSizeLabel', 'Icon size'))}</span>
-                    <div class="config-choices" role="group">${iconSizeChoices}</div>
-                    ${this.appearanceAff('launcherIconSize')}
-                </div>
-            </div>
-
-            ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.buttonBarPositionNote', 'Where the add, search, commands, and finders buttons sit on the dashboard. Center-bottom floats them above the bookmarks; the corner docks tuck them out of the way; the side rail stacks them vertically down the left edge.'))}</p>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.buttonBarPositionLabel', 'Button bar position'))}</span>
-                    <div class="config-choices" role="group">${barChoices}</div>
-                    ${this.appearanceAff('buttonBarPosition')}
-                    <p class="config-field-hint">${esc(this.t(`config.buttonBarPositionDesc.${barPosition}`, ''))}</p>
                 </div>
             </div>`;
     }
@@ -5124,9 +5116,6 @@ class DashboardConfig {
         if (bgUrl) {
             bgUrl.addEventListener('change', () => this.setBackgroundImageUrl(bgUrl.value));
         }
-        container.querySelectorAll('[data-appearance-iconsize]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setLauncherIconSize(btn.getAttribute('data-appearance-iconsize')));
-        });
         container.querySelectorAll('[data-appearance-barpos]').forEach((btn) => {
             btn.addEventListener('click', () => this.setButtonBarPosition(btn.getAttribute('data-appearance-barpos')));
         });
@@ -6673,6 +6662,18 @@ class DashboardConfig {
                     bool('packedColumns', 'config.packedColumnsLabel', 'Pack columns tightly'),
                     bool('interleaveMode', 'config.interleaveModeLabel', 'Interleave categories across columns'),
                     bool('hideEmptyCategories', 'config.hideEmptyCategoriesLabel', 'Hide empty categories'),
+                    // Only bites in the Launcher preset, which is chosen two
+                    // controls up — so it belongs beside that preset rather than
+                    // in the Layout version panel it used to sit in.
+                    //
+                    // `visual` rather than `render`: the size is written onto
+                    // <body> as data-launcher-icon-size by applyVisualSettings,
+                    // and neither a re-render nor the chrome pass touches it.
+                    { field: 'launcherIconSize', type: 'select', label: t('config.launcherIconSizeLabel', 'Icon size'), special: 'visual', options: [
+                        opt('small', t('config.launcherIconSizeSmall', 'Small')),
+                        opt('normal', t('config.launcherIconSizeNormal', 'Normal')),
+                        opt('large', t('config.launcherIconSizeLarge', 'Large')),
+                    ] },
                     bool('alwaysCollapseCategories', 'config.alwaysCollapseCategoriesLabel', 'Start with categories collapsed'),
                 ],
             },
@@ -7248,17 +7249,24 @@ class DashboardConfig {
 
                 const d = this.dash;
                 let special = '';
+                let visual = false;
                 fields.forEach((field) => {
                     const meta = this.fieldMeta(field);
                     if (!meta || meta.def === undefined) return;
                     d.settings[field] = meta.def;
                     // Any field needing chrome reapplied makes the whole batch
-                    // need it; the pass is idempotent, so once is enough.
+                    // need it; the pass is idempotent, so once is enough. The
+                    // visual pass is tracked separately because chrome does not
+                    // cover it — a `visual` field reset through this button
+                    // would otherwise save but not show until a reload.
                     const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
-                    if (el?.getAttribute('data-behavior-special')) special = 'chromeRender';
+                    const fieldSpecial = el?.getAttribute('data-behavior-special');
+                    if (fieldSpecial === 'visual') visual = true;
+                    else if (fieldSpecial) special = 'chromeRender';
                 });
                 this._trackAction('panel-reset', { fields: fields.length });
 
+                if (visual) d.visual?.applyVisualSettings?.();
                 if (special) this.applyChromeSettings();
                 d.renderDashboard?.({ animate: false });
                 await this.saveSettingsWithFeedback();
@@ -7710,6 +7718,13 @@ class DashboardConfig {
                 d.renderDashboard?.({ animate: false });
                 break;
             case 'render':
+                d.renderDashboard?.({ animate: false });
+                break;
+            case 'visual':
+                // Written onto <body> by applyVisualSettings, which neither the
+                // render nor the chrome pass runs — without this the setting
+                // only shows up after a reload.
+                d.visual?.applyVisualSettings?.();
                 d.renderDashboard?.({ animate: false });
                 break;
             default:
