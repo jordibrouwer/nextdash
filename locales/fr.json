@@ -4128,6 +4128,7 @@
         "listKeyFirstLast": "premier / dernier",
         "listKeyFilterTags": "filtrer les tags",
         "listKeyClear": "effacer",
+        "dbTabIcons": "Icônes & aperçus",
         "dbTabTrash": "Corbeille",
         "trashLoading": "Chargement…",
         "trashIntro": "Les favoris, pages et catégories supprimés restent ici {days} jours, puis disparaissent définitivement.",

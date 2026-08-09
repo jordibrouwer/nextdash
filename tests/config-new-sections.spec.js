@@ -413,6 +413,8 @@ test.describe('config: sections restored from the old config', () => {
     test('data & backups gained favicon policy and preview maintenance', async ({ page }) => {
         await loadDashboard(page);
         await openSection(page, 'data-backups');
+        // Both moved to the Icons & previews sub-tab — see config-data-icons-tab.spec.js.
+        await page.locator('[data-db-tab="icons"]').click();
         await expect(page.locator('[data-backup-select="faviconRefreshPolicy"]')).toBeVisible();
         await expect(page.locator('[data-backup-action="refresh-favicons"]')).toBeVisible();
         await expect(page.locator('[data-backup-action="clear-previews"]')).toBeVisible();

@@ -1099,7 +1099,7 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 | **Pages & tags** | Categories · Tags · Pages · Finders · Collections |
 | **Appearance** | Theme · Layout · Display · Toolbar & tabs · Branding · Custom themes |
 | **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
-| **Data & backups** | Backups & data · Reset |
+| **Data & backups** | Backups & data · Icons & previews · Trash · Reset |
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
 | **Help** | Getting started · Configuring · Pages & bookmarks · Search & keyboard · Health & inbox · Data & hosting · About |
 

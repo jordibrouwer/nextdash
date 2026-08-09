@@ -4128,6 +4128,7 @@
         "listKeyFirstLast": "erste / letzte",
         "listKeyFilterTags": "Tags filtern",
         "listKeyClear": "löschen",
+        "dbTabIcons": "Symbole & Vorschauen",
         "dbTabTrash": "Papierkorb",
         "trashLoading": "Wird geladen…",
         "trashIntro": "Gelöschte Lesezeichen, Seiten und Kategorien bleiben {days} Tage hier und verschwinden dann endgültig.",

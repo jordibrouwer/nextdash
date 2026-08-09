@@ -1849,7 +1849,7 @@ class DashboardConfig {
         { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'branding' },
         { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'branding' },
         { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'branding' },
-        { field: 'faviconRefreshPolicy', labelKey: 'faviconRefreshPolicyLabel', fallback: 'Refresh favicons', section: 'data-backups', subTab: 'backups' },
+        { field: 'faviconRefreshPolicy', labelKey: 'faviconRefreshPolicyLabel', fallback: 'Refresh favicons', section: 'data-backups', subTab: 'icons' },
         { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
     ];
 
@@ -3700,12 +3700,16 @@ class DashboardConfig {
         if (this.dbTab === 'trash') {
             return this.renderDataTrash();
         }
+        if (this.dbTab === 'icons') {
+            return this.renderDataIcons();
+        }
         return this.renderDataBackupsMain();
     }
 
     dbTabLabel(tab) {
         const map = {
             backups: ['config.dbTabBackups', 'Backups & data'],
+            icons: ['config.dbTabIcons', 'Icons & previews'],
             trash: ['config.dbTabTrash', 'Trash'],
             reset: ['config.dbTabReset', 'Reset'],
         };
@@ -3735,14 +3739,6 @@ class DashboardConfig {
         }).join('');
         const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
             || (() => { try { return localStorage.getItem('deviceSpecificSettings') === 'true'; } catch { return false; } })();
-
-        const faviconPolicy = s.faviconRefreshPolicy || 'monthly';
-        const faviconPolicyOptions = [
-            ['never', this.t('config.faviconPolicyNever', 'Never')],
-            ['monthly', this.t('config.faviconPolicyMonthly', 'Monthly')],
-            ['weekly', this.t('config.faviconPolicyWeekly', 'Weekly')],
-            ['always', this.t('config.faviconPolicyAlways', 'Every load')],
-        ].map(([v, label]) => `<option value="${esc(v)}" ${v === faviconPolicy ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
         return `
             ${tiles}
@@ -3808,6 +3804,29 @@ class DashboardConfig {
                 </div>
             </div>
 
+        `;
+    }
+
+    /**
+     * Favicon and link-preview upkeep.
+     *
+     * Its own tab rather than the tail of Backups & data: none of it is about
+     * backing up or moving data, and the two bulk refreshes walk every bookmark,
+     * so they are better off out of reach of someone scrolling to the export
+     * buttons.
+     */
+    renderDataIcons() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const faviconPolicy = s.faviconRefreshPolicy || 'monthly';
+        const faviconPolicyOptions = [
+            ['never', this.t('config.faviconPolicyNever', 'Never')],
+            ['monthly', this.t('config.faviconPolicyMonthly', 'Monthly')],
+            ['weekly', this.t('config.faviconPolicyWeekly', 'Weekly')],
+            ['always', this.t('config.faviconPolicyAlways', 'Every load')],
+        ].map(([v, label]) => `<option value="${esc(v)}" ${v === faviconPolicy ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
+        return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.iconsSectionTitle', 'Icons & previews'))}</h3>
                 <div class="config-field">
@@ -3822,7 +3841,6 @@ class DashboardConfig {
                     <button type="button" class="config-btn config-btn--danger" data-backup-action="clear-previews">${esc(this.t('config.clearAllPreviewsBtn', 'Clear all link previews'))}</button>
                 </div>
             </div>
-
         `;
     }
 
@@ -8028,8 +8046,11 @@ class DashboardConfig {
 
     static PT_TABS = ['categories', 'tags', 'pages', 'finders', 'collections'];
 
-    /** Data & backups keeps its destructive actions on a separate tab. */
-    static DB_TABS = ['backups', 'trash', 'reset'];
+    /**
+     * Data & backups keeps its destructive actions on a separate tab, and icon
+     * upkeep on another: neither belongs beside the export buttons.
+     */
+    static DB_TABS = ['backups', 'icons', 'trash', 'reset'];
 
     static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'branding', 'custom-themes'];
 
