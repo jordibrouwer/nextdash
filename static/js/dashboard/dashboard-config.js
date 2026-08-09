@@ -1760,6 +1760,153 @@ class DashboardConfig {
         return parts.join(' › ');
     }
 
+    /**
+     * The settings that are not in `behaviorSchema()`, so the jump index can
+     * still name them.
+     *
+     * Appearance draws most of its controls by hand with data-appearance-*
+     * attributes rather than from the schema, and two more live on the backups
+     * tab. There is no declaration to read them from, so they are listed here:
+     * field, the label key it renders with, and where it sits.
+     *
+     * This list is the cost of the second rendering path, not a design. When
+     * the Appearance controls move into the schema, every entry here should
+     * disappear with them — `settingsJumpFieldCoverage()` is what tells you a
+     * field has been left in both places or in neither.
+     */
+    static MANUAL_JUMP_FIELDS = [
+        { field: 'theme', labelKey: 'themeLabel', fallback: 'Theme', section: 'appearance', subTab: 'general' },
+        { field: 'autoDarkMode', labelKey: 'appearanceAutoDark', fallback: 'Follow system dark mode', section: 'appearance', subTab: 'general' },
+        { field: 'randomThemeMode', labelKey: 'randomThemeModeLabel', fallback: 'Random theme', section: 'appearance', subTab: 'general' },
+        { field: 'fontPreset', labelKey: 'fontPresetLabel', fallback: 'Font', section: 'appearance', subTab: 'general' },
+        { field: 'fontWeight', labelKey: 'fontWeightLabel', fallback: 'Weight', section: 'appearance', subTab: 'general' },
+        { field: 'fontSize', labelKey: 'appearanceFontSize', fallback: 'Font size', section: 'appearance', subTab: 'general' },
+        { field: 'backgroundType', labelKey: 'backgroundLabel', fallback: 'Background', section: 'appearance', subTab: 'general' },
+        { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
+        { field: 'showBackgroundDots', labelKey: 'showBackgroundDots', fallback: 'Show background dots', section: 'appearance', subTab: 'general' },
+        { field: 'layoutVersion', labelKey: 'appearanceLayoutVersion', fallback: 'Layout', section: 'appearance', subTab: 'layout' },
+        { field: 'launcherIconSize', labelKey: 'launcherIconSizeLabel', fallback: 'Icon size', section: 'appearance', subTab: 'layout' },
+        { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'layout' },
+        { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
+        { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
+        { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'display' },
+        { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'branding' },
+        { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'branding' },
+        { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'branding' },
+        { field: 'faviconRefreshPolicy', labelKey: 'faviconRefreshPolicyLabel', fallback: 'Refresh favicons', section: 'data-backups', subTab: 'backups' },
+        { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
+    ];
+
+    /**
+     * Extra words a setting should be findable by, beyond its visible label.
+     *
+     * The filter matches title and subtitle, so a setting can only be found by
+     * the words it happens to be labelled with — "Alert webhook URL" is not
+     * reachable by "notify", and nothing about the status settings is reachable
+     * by "uptime" or "ping". Keys are field names; the words are matched but
+     * never displayed, so they can include the English term in a non-English
+     * install, where the label is translated but the concept people search for
+     * often is not.
+     */
+    static FIELD_KEYWORDS = {
+        monitorNotifyUrl: ['webhook', 'alert', 'notify', 'notification', 'discord', 'slack'],
+        monitorNotifyRetries: ['webhook', 'alert', 'notify', 'retries'],
+        pushNotifyEnabled: ['push', 'notification', 'alert', 'browser'],
+        pushNotifyMonitor: ['push', 'notification', 'downtime', 'uptime'],
+        pushNotifyBackup: ['push', 'notification', 'backup'],
+        pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
+        healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
+        healthRecheckIntervalMinutes: ['uptime', 'monitor', 'health', 'interval'],
+        statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
+        statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
+        statusOfflineRetryDelayMs: ['offline', 'retry', 'delay', 'status'],
+        skipFastPing: ['ping', 'status', 'check'],
+        monitorEmphasis: ['monitor', 'highlight', 'emphasis', 'accent'],
+        analyticsOptIn: ['telemetry', 'privacy', 'tracking', 'umami'],
+        updateCheckEnabled: ['update', 'github', 'release', 'version'],
+        language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
+        deviceSpecificSettings: ['device', 'sync', 'local'],
+        showSyncToasts: ['sync', 'toast', 'notification'],
+        inboxEnabled: ['inbox', 'triage', 'later'],
+        pasteDestination: ['paste', 'clipboard', 'inbox'],
+        pasteUrlQuickAdd: ['paste', 'clipboard', 'quick add'],
+        columnsPerRow: ['columns', 'grid', 'layout'],
+        densityMode: ['density', 'spacing', 'compact'],
+        categorySpacing: ['spacing', 'gap', 'density'],
+        sideMargin: ['margin', 'padding', 'width'],
+        layoutPreset: ['preset', 'layout', 'theme'],
+        categoryItemLimit: ['limit', 'items', 'truncate'],
+        theme: ['theme', 'colour', 'color', 'dark', 'light', 'palette'],
+        autoDarkMode: ['dark', 'light', 'system', 'theme'],
+        randomThemeMode: ['random', 'shuffle', 'rotate', 'theme'],
+        fontPreset: ['font', 'typeface', 'type'],
+        fontWeight: ['font', 'bold', 'weight'],
+        fontSize: ['font', 'size', 'text', 'zoom'],
+        backgroundType: ['background', 'wallpaper', 'gradient', 'image'],
+        backgroundOpacity: ['background', 'opacity', 'transparency', 'fade'],
+        layoutVersion: ['layout', 'modern', 'classic', 'beta'],
+        buttonBarPosition: ['button', 'bar', 'rail', 'dock', 'position'],
+        showIcons: ['favicon', 'icon', 'image'],
+        faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
+        autoBackupEnabled: ['backup', 'automatic', 'snapshot'],
+        weatherLocation: ['weather', 'location', 'city'],
+        weatherSource: ['weather', 'source', 'ip'],
+        weatherUnit: ['weather', 'celsius', 'fahrenheit', 'temperature'],
+        calendarUrl: ['calendar', 'ical', 'ics', 'agenda'],
+        openInNewTab: ['tab', 'window', 'target'],
+        globalShortcuts: ['keyboard', 'shortcut', 'hotkey'],
+        enableFuzzySuggestions: ['fuzzy', 'search', 'suggestion'],
+        hyprMode: ['hypr', 'hyprland', 'wayland', 'linux'],
+        allowLocalBookmarks: ['local', 'localhost', 'intranet', 'http'],
+        enableCustomTitle: ['title', 'branding', 'name'],
+        customTitle: ['title', 'branding', 'name'],
+        enableCustomFavicon: ['favicon', 'branding', 'icon'],
+    };
+
+    /**
+     * Every settings field the jump index can name, from the schema plus the
+     * hand-written list — without rendering anything.
+     *
+     * The index used to be scraped from the DOM by cacheSettingsJumpFields(),
+     * which meant a field only became findable once you had opened the tab it
+     * lives on. On a fresh install that left four entries, all from the
+     * Overview: searching "webhook" — the case this feature exists for — found
+     * nothing at all.
+     */
+    settingsJumpFieldEntries() {
+        const entries = [];
+        const push = (field, title, section, subTab) => {
+            if (!title) return;
+            entries.push({
+                id: `field:${section}:${subTab || 'root'}:${field}`,
+                kind: 'field',
+                field,
+                title,
+                subtitle: this.settingsJumpSubtitle(section, subTab),
+                keywords: (DashboardConfig.FIELD_KEYWORDS[field] || []).join(' '),
+                section,
+                subTab,
+                // Resolved when the entry is activated: the control does not
+                // exist until its tab has been rendered.
+                focusSelector: null,
+            });
+        };
+
+        this.behaviorSchema().forEach((panel) => {
+            const section = panel.section || 'behavior';
+            (panel.controls || []).forEach((c) => {
+                if (!c.field || c.type === 'note' || c.type === 'pushDevice') return;
+                push(c.field, c.label, section, panel.tab || 'general');
+            });
+        });
+
+        DashboardConfig.MANUAL_JUMP_FIELDS.forEach((f) => {
+            push(f.field, this.t(`config.${f.labelKey}`, f.fallback), f.section, f.subTab);
+        });
+
+        return entries;
+    }
+
     buildSettingsJumpNavEntries() {
         const entries = [];
         DashboardConfig.SECTIONS.forEach((section) => {
@@ -1833,10 +1980,38 @@ class DashboardConfig {
         });
     }
 
+    /**
+     * Sections, sub-tabs and help panels, then every settings field, then
+     * whatever the DOM scrape has refined.
+     *
+     * The scraped entries are still worth having: they carry a real
+     * `focusSelector` for the tab on screen, and they pick up controls the
+     * schema does not describe. They are merged by title and location rather
+     * than appended, so a field that is both declared and rendered appears
+     * once — with the scrape's selector, since that one can be focused now.
+     */
     getSettingsJumpEntries() {
         const byId = new Map();
         this.buildSettingsJumpNavEntries().forEach((e) => byId.set(e.id, e));
-        this._settingsJumpCache.forEach((e, id) => byId.set(id, e));
+
+        const fieldEntries = this.settingsJumpFieldEntries();
+        fieldEntries.forEach((e) => byId.set(e.id, e));
+
+        // Same field, same place: keep the declared entry's keywords but take
+        // the scrape's selector.
+        const declaredByKey = new Map();
+        fieldEntries.forEach((e) => {
+            declaredByKey.set(`${e.section}|${e.subTab || ''}|${e.title.replace(/:$/, '').toLowerCase()}`, e);
+        });
+        this._settingsJumpCache.forEach((e, id) => {
+            const key = `${e.section}|${e.subTab || ''}|${String(e.title).replace(/:$/, '').toLowerCase()}`;
+            const declared = declaredByKey.get(key);
+            if (declared) {
+                byId.set(declared.id, { ...declared, focusSelector: e.focusSelector });
+                return;
+            }
+            byId.set(id, e);
+        });
         return [...byId.values()];
     }
 
@@ -1844,7 +2019,9 @@ class DashboardConfig {
         const q = String(query || '').trim().toLowerCase();
         const all = this.getSettingsJumpEntries();
         if (!q) return all;
-        return all.filter((e) => `${e.title} ${e.subtitle}`.toLowerCase().includes(q));
+        // Keywords are matched but never shown, so a setting is reachable by
+        // the word people look for as well as the one it is labelled with.
+        return all.filter((e) => `${e.title} ${e.subtitle} ${e.keywords || ''}`.toLowerCase().includes(q));
     }
 
     isSettingsJumpOpen() {
@@ -1980,6 +2157,72 @@ class DashboardConfig {
         this.setupSettingsJumpKeyboard(entries);
     }
 
+    /**
+     * A selector for the control bound to `field` on the tab now on screen.
+     *
+     * Has to cover both rendering paths: the schema binds every control with
+     * `data-behavior-field`, while Appearance and the backups tab bind one
+     * data attribute per control type. Returns null when the field is not on
+     * this tab, so the caller can fall back to matching the label.
+     */
+    settingsJumpControlSelector(field) {
+        const escaped = CSS.escape(field);
+        const candidates = [
+            `[data-behavior-field="${escaped}"]`,
+            `[data-appearance-toggle="${escaped}"]`,
+            `[data-appearance-select="${escaped}"]`,
+            `[data-appearance-text="${escaped}"]`,
+            `[data-appearance-range="${escaped}"]`,
+            `[data-backup-select="${escaped}"]`,
+            `[data-backup-toggle="${escaped}"]`,
+        ];
+        // Controls rendered as a group of buttons carry the value, not the
+        // field, so they are addressed by the attribute that names the group.
+        const groups = {
+            layoutVersion: '[data-appearance-layout]',
+            buttonBarPosition: '[data-appearance-barpos]',
+            launcherIconSize: '[data-appearance-iconsize]',
+            fontWeight: '[data-appearance-weight]',
+            backgroundType: '[data-appearance-bg]',
+            randomThemeMode: '[data-appearance-randommode]',
+            fontSize: '[data-appearance-font]',
+            theme: '[data-appearance-select="theme"]',
+        };
+        if (groups[field]) candidates.push(groups[field]);
+
+        const panel = document.getElementById('config-section-panel');
+        if (!panel) return null;
+        for (const sel of candidates) {
+            if (panel.querySelector(sel)) return `#config-section-panel ${sel}`;
+        }
+        return null;
+    }
+
+    /**
+     * Which declared fields the jump index cannot point at, and which rendered
+     * controls it does not know about.
+     *
+     * Exposed for the tests rather than used at runtime: the index is built
+     * from two lists that have to be kept in step with a view that renders its
+     * controls two different ways, and this is what makes a field falling
+     * through the gap visible instead of silently unsearchable.
+     */
+    settingsJumpFieldCoverage() {
+        const declared = this.settingsJumpFieldEntries();
+        const panel = document.getElementById('config-section-panel');
+        const rendered = new Set();
+        if (panel) {
+            panel.querySelectorAll('[data-behavior-field]').forEach((el) => {
+                rendered.add(el.getAttribute('data-behavior-field'));
+            });
+        }
+        const declaredFields = new Set(declared.map((e) => e.field));
+        return {
+            declared: declared.length,
+            missingFromIndex: [...rendered].filter((f) => !declaredFields.has(f)),
+        };
+    }
+
     async activateSettingsJumpEntry(entry) {
         if (!entry) return;
         window.AppModal.hide();
@@ -2005,13 +2248,24 @@ class DashboardConfig {
         this.cacheSettingsJumpFields();
         let focusSelector = entry.focusSelector;
         if (entry.kind === 'field') {
-            const refreshed = [...this._settingsJumpCache.values()].find((e) => (
-                e.kind === 'field'
-                && e.title === entry.title
-                && e.section === entry.section
-                && e.subTab === entry.subTab
-            ));
-            if (refreshed) focusSelector = refreshed.focusSelector;
+            // A declared entry knows the settings field it stands for, which is
+            // a firmer handle than its label: the tab has just been rendered,
+            // so the control can be addressed directly. Falls back to matching
+            // the label for entries that came from the DOM scrape and have no
+            // field name.
+            if (entry.field) {
+                const bound = this.settingsJumpControlSelector(entry.field);
+                if (bound) focusSelector = bound;
+            }
+            if (!focusSelector) {
+                const refreshed = [...this._settingsJumpCache.values()].find((e) => (
+                    e.kind === 'field'
+                    && e.title === entry.title
+                    && e.section === entry.section
+                    && e.subTab === entry.subTab
+                ));
+                if (refreshed) focusSelector = refreshed.focusSelector;
+            }
         }
         if (entry.helpTitle && entry.section === 'help') {
             const titles = [...document.querySelectorAll('#config-help-body .config-panel-title')];
