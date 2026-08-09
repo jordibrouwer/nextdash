@@ -1067,7 +1067,7 @@ Pick a section from the rail on the left, or link straight to one with `/#config
 
 While config, health, or inbox is open, the **large dashboard title** shows only the view name (for example **Health** or **Config**). The active sub-context — `config › bookmarks`, `health › broken`, or `inbox › unread` — appears as a breadcrumb **under the section title inside the panel**, matching Config subpages (**v2026.08.08.4**).
 
-Below **Help**, separated by a gap, **Find settings** opens the settings-jump overlay (`Ctrl/Cmd+Shift+K`) — the same search that jumps to any section, sub-tab, help topic, or field label you have visited.
+Below **Help**, separated by a gap, **Find settings** opens the settings-jump overlay (`Ctrl/Cmd+Shift+K`) — the same search that jumps to any section, sub-tab, help topic, or setting. Since **v2026.09.07** every setting is searchable from the moment config opens, whether or not you have been to its tab, and settings also answer to related words that do not appear in their label: *uptime*, *wallpaper*, *telemetry* and *hotkey* each find the right one.
 
 ### The eight sections
 
@@ -1097,7 +1097,7 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 | Section | Sub-tabs |
 |---------|----------|
 | **Pages & tags** | Categories · Tags · Pages · Finders · Collections |
-| **Appearance** | Theme · Layout · Display · Custom themes |
+| **Appearance** | Theme · Layout · Display · Toolbar & tabs · Branding · Custom themes |
 | **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
 | **Data & backups** | Backups & data · Reset |
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
@@ -1115,11 +1115,23 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 
 **Layout** holds layout version (Classic / Modern), launcher icon size, column count, layout preset, and density.
 
-**Display** holds bookmark-row toggles (icons, status colour, animations), toolbar and tab visibility, tag cloud, and the button-bar position.
+**Display** holds bookmark-row toggles — icons, status colour, animations, shortcut letters, ping times, link preview cards.
+
+**Toolbar & tabs** holds the visibility of everything in the dashboard chrome. Since **v2026.09.07** it is three groups matching how the dashboard is built — **Header** (page tabs, page names, title, and the health and config icons), **Button bar — main buttons** (add, search, commands, finders) and **Button bar — extras** (recent, cheat sheet, fold-all, tag cloud) — so the group a setting sits in tells you where on screen to look. Each group has **Show all** / **Hide all** with a count of what is currently showing. Hiding a button leaves its keyboard shortcut working.
+
+**Branding** holds the custom page title and favicon.
 
 **Custom themes** is a full editor: build a palette, check its contrast, and apply it. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard in a half-edited state.
 
 Many controls carry an **ℹ** button explaining what the setting does, and a **↺** to put it back to its default.
+
+### What you have changed (v2026.09.07)
+
+Config can tell you how far the install has drifted from a stock one, which is the quickest answer to *why does my dashboard behave differently from this manual*:
+
+- **Overview → At a glance** carries a line — *N settings differ from the default* — naming the sections involved and linking to the tab that holds the most of them. On an untouched install the line is absent rather than reading zero.
+- **Only changed**, above each tab of settings, hides everything still on its default and says how many differ before you press it. It is not remembered between visits.
+- **Reset panel**, beside a panel's title, puts that whole group back at once instead of one **↺** at a time. It appears only when something in the group has been changed, and asks first.
 
 ### Trash (Data & backups → Trash)
 
@@ -1174,7 +1186,7 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 | `/` (Bookmarks) | Focus the bookmark search field |
 | `←` / `→` (choice row) | Move between options; `Space` selects |
 | `Home` / `End` (slider) | Jump to min or max on a focused slider |
-| `Ctrl/Cmd + Shift + K` | Find a setting, section, or help topic (settings jump) — or click **Find settings** below Help in the left nav |
+| `Ctrl/Cmd + Shift + K` | Find a setting, section, or help topic (settings jump) — every setting is indexed, not only the tabs you have opened — or click **Find settings** below Help in the left nav |
 | `Escape` | Close bookmark modal → clear list selection → exit config |
 
 Inline hints at the bottom of form sections and under list tabs summarise the keys for that panel — press **`Shift+K`** in a legend to open settings jump. Since **v2026.08.09.1** these read the same way as the legends under **Inbox**, **Health** and **Config → Bookmarks**: each key is a chip beside the action it performs, rather than one sentence with the keys buried in it. **Help → Search & keyboard → Config navigation** repeats this in prose. The first config open on desktop may show a one-time intro toast pointing at **`!`** for the full cheat sheet (**v2026.08.01**).

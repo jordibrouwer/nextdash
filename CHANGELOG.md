@@ -9,6 +9,7 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [v2026.09.07 — August 2026](#v20260907--august-2026)
 - [v2026.09.06.2 — August 2026](#v202609062--august-2026)
 - [v2026.09.06.1 — August 2026](#v202609061--august-2026)
 - [v2026.09.06 — August 2026](#v20260906--august-2026)
@@ -156,6 +157,62 @@ For install and security, see the [README](README.md). For how to use features, 
 ## Unreleased
 
 Nothing yet.
+
+---
+
+## v2026.09.07 — August 2026
+
+**Config says what it is doing** — the settings search finds a setting whether or not you have been to its tab, the overview says how far the install has drifted from stock, and a handful of controls that reported *Saved* while changing nothing have been put right.
+
+### Settings search
+
+- **fix** — **The jump index is declared rather than scraped.** `cacheSettingsJumpFields()` read `.config-field-label` out of the rendered DOM, so a field entered the index only once its tab had been visited. Measured on a fresh open: **4** field entries, all from the Overview, and `Ctrl/Cmd+Shift+K` → *webhook* matched nothing. `settingsJumpFieldEntries()` builds from `behaviorSchema()` (72 fields) plus `MANUAL_JUMP_FIELDS` (the 20 hand-written Appearance and backup controls), giving **96** entries before anything is rendered. The DOM scrape stays — it carries a real `focusSelector` for the visible tab — and the two are merged by section, sub-tab and label so a field declared *and* rendered appears once, with the selector that can be focused now (`dashboard-config.js`).
+- **new** — **`FIELD_KEYWORDS`**: words a setting matches but never displays, so *uptime*, *wallpaper*, *telemetry*, *discord* and *hotkey* reach settings whose labels contain none of them. Undisplayed by design, which also lets them carry the English term in a translated install where the label is localised and the search word is not.
+- **fix** — Activation resolves the control through `settingsJumpControlSelector(field)`, covering both binding conventions (`data-behavior-field` and the per-type `data-appearance-*`). A declared entry has no selector until its tab exists, and label matching cannot address the hand-written controls at all.
+- **new** — `settingsJumpFieldCoverage()` reports rendered controls missing from the index, so the two-list arrangement fails loudly instead of leaving a field quietly unsearchable. It should empty out when Appearance moves into the schema.
+
+### Settings defaults
+
+- **fix** — **Six `FIELD_META.def` values were not what the server writes.** `statusOfflineRetries` (1 vs 3), `statusOfflineRetryDelayMs` (1500 vs 450), `showRecentButton` and `showCheatSheetButton` (true vs false), `linkPreviewHoverDelayMs` (400 vs 150), `faviconRefreshPolicy` (`monthly` vs `on-save`). Verified against an untouched install: each held exactly the value the server gave it and still reported itself changed, so `↺` was offered on six settings nobody had touched — and it wrote a value that was not the default (`dashboard-config.js`, `models.go`).
+- **fix** — **Thirty-two fields had no `def` at all**, including `columnsPerRow`, `theme`, `monitorEmphasis`, `pasteDestination` and `fontSize`. `isFieldDefault()` returns `true` when there is no declared default, so those could never be reset or counted whatever they held. Filled in from `models.go`.
+- **fix** — **`healthRecheckIntervalMinutes` is not a server field.** *Behavior → Status & health → Background re-check interval* wrote it, the save returned 200, and the value was discarded; confirmed against `/api/settings`, where the key is absent from the response. It binds `healthAutoRecheckIntervalHours` now — the field *Data & backups* was already using correctly — with options inside the server's 1–168 hour clamp (`health_recheck.go`).
+- **fix** — **Number inputs offered values the server rewrites.** `statusOfflineRetries` accepted 0–10 against a server clamp of 1–10, and `statusOfflineRetryDelayMs` 0–60000 against 100–3000, so a typed 5000 reported *Saved* and came back as 450.
+- **fix** — **`backgroundType` was served as `""` on a fresh install.** The `defaultSettings := Settings{…}` block omitted it while both other `Settings` constructions set `"none"`, leaving a field permanently unequal to its own documented default (`models.go`).
+
+### Config → changed settings
+
+- **new** — **`changedSettings()` aggregates `isFieldDefault()`**, which decided each `↺` but was never summed. *At a glance* gains a line naming the count and the sections involved, silent at zero. Counted over the declared index rather than the DOM, so it sees tabs that have never been opened; fields with no known default are excluded rather than counted as unchanged.
+- **new** — **Only changed** per settings tab, with a count of what differs. Not persisted: `changedOnly` is a view of the page, and returning to a half-empty tab would read as settings having gone missing.
+- **new** — **Reset panel** beside a panel title, rendered only when `panelChangedFields()` is non-empty. Writes the fields together and saves once rather than looping `setBehavior()` (which saves and repaints per call), and confirms first — unlike a visibility toggle it can discard a webhook URL or weather location.
+- **fix** — The overview count lands on the tab holding the most changed settings rather than a fixed one; the filter works a tab at a time, so arriving at *Behavior → General* to be shown one of four read as the count being wrong.
+
+### Appearance & layout
+
+- **new** — **Toolbar & tabs is three panels** — header, and the two `.btn-group`s the button bar is built from (`templates/dashboard.html`) — instead of thirteen near-identical toggles in one run. Each carries `bulk: 'chrome'`, rendering **Show all** / **Hide all** with a count via `renderPanelBulkActions()`. The bulk handler writes the fields together, reapplies chrome once and saves once; a naive loop was measured at 6 writes for one click.
+- **fix** — **`repaintActiveControlPanels()` only knew about Behavior**, but three Appearance tabs draw from the same schema — so `↺` there wrote the default and saved it while the control kept showing the old value until the tab was reopened. The Appearance body is rebuilt from its own tab renderer, and rebinding is scoped to that body: rebinding the container stacked a second handler on the sub-tab strip outside it, firing one click **12×** after three repaints.
+- **fix** — **`.config-field` is a three-column grid** (label, control, affordances) instead of a flex row with a `min-width` label, which let each row place its control wherever its own label ended — three selects in one panel started 41px apart. The control column is `max-content`, not `1fr`: `1fr` aligns them but strands the `ℹ`/`↺` pair ~400px away at the panel edge (`config-view.css`).
+- **fix** — **Checkboxes use one row shape.** *Follow system dark mode* sat in a `.config-field`, which put its text in the label column and left the `<label>` wrapping only the box — so clicking the words did nothing, and the box was indented 214px from the checkboxes beside it. It is the only one that got this wrong; the other nine already used `.config-field-row`.
+- **new** — Schema panels declare `section` alongside `tab`, and `panelsFor(section, tab)` is the single filter. Behavior and Appearance share four tab names — `general`, `layout`, `display`, `toolbar` — and filtering on the tab alone worked only because Appearance's General is hand-written and never asks the schema for anything.
+
+### Mobile
+
+- **fix** — **The section rail scrolls horizontally below 720px** instead of wrapping eight sections onto three or four rows above every panel. `scrollActiveNavIntoView()` hangs off `syncSectionNav()`, the single point where the active section is marked, so a section reached by keyboard, hash or a restored visit is brought into view however it was chosen. The scroll lives on `.config-nav`; the body never scrolls sideways.
+- **fix** — On a narrow panel `.config-field` becomes two columns with the label spanning both, rather than one column giving every child its own row — which put the `ℹ` on a line of its own under each control.
+
+### Tests
+
+- **new** — 5 spec files, 46 tests: the field grid and mobile nav, the toolbar groups and bulk actions, the declared settings index and keywords, the defaults reconciliation, the changed-settings surfaces, and the checkbox rows. Each falsified against the change it guards — grid → flex restores the 41px spread, `max-content` → `1fr` puts the affordances 394px away, a `setBehavior` loop shows 6 writes instead of 1, rebinding the container fires the sub-tab switch 12×.
+- **fix** — Four assertions passed under falsification and were rewritten rather than kept: the double-bind test asserted the resulting tab (correct even with a doubled handler) and now counts activations; a select test asserted a width relationship flex also satisfied; a checkbox alignment test read a panel with a single box, where the spread is zero however it renders; and a dedupe test counted a label that happened not to collide.
+- **fix** — **`waitForConfigReady()` in `e2e-helpers.js`.** Three specs failed intermittently — `config-settings-jump` about five runs in six — always on the first test of a file with *Cannot read properties of undefined*. Measured: in **12 of 12** loads `window.dashboardInstance` is still undefined when `#dashboard-layout` appears. The specs waited on the element and then called `config.openConfigView()`, passing only because the onboarding dismissals happened to take long enough. Applied to eight specs, including five carrying the same latent race.
+- **fix** — Eight stale expectations caught up with the code: five looked for the toolbar toggles on the Display tab (`561c8cbd` gave them their own tab), one expected three `appliesTo` badges where the monitor-emphasis panel makes four, one knew four button-bar positions where the server accepts five, and two read `.config-tile` on the Overview whose tile row was dropped when that section was regrouped.
+- **fix** — Two changed-settings tests assumed a pristine install; settings persist server-side between specs and `config-auto-dark` alters the theme on purpose, so they reset first and measure a delta. The absolute claim is pinned in `config-field-defaults.spec.js` against `models.go`, which does not depend on run order.
+
+### Docs
+
+- **fix** — What's new modal, **Config → Overview → Latest update**, CHANGELOG, MANUAL and README for **v2026.09.07**; `DASHBOARD_RELEASE` → `2026.07-dashboard-release-v176`, `NEXTDASH_WHATS_NEW_DATA_VERSION` → `whats-new-v235`. Docs stay out of the What's new modal, which is for user-facing change (`whats-new-stub.js`).
+- **new** — Three **Config → Overview** spotlights, newest first: the settings search, the changed-settings surfaces, and the toolbar grouping. Fifteen locale keys each in en, nl, de and fr (`dashboard-config.js`).
+- **fix** — **Five README paths pointed at a config layout that no longer exists.** *Show favicons*, the launcher preset, hover preview cards, background rechecks and the downtime webhook were all documented under **Config → General**, a section removed when config was regrouped; verified against the live index rather than guessed, they are Appearance → Display, Appearance → Layout and Behavior → Status & health.
+- **new** — **README** gains a *Config* section under Features. Config had no description of its own — the settings search, the changed-settings surfaces and the mobile section list had nowhere to be documented — and MANUAL gains the same three plus a corrected **Appearance** sub-tab list, which still named four tabs where there are six.
 
 ---
 

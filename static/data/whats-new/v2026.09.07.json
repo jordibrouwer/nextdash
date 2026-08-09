@@ -1,0 +1,85 @@
+{
+    "tag": "v2026.09.07",
+    "date": "August 2026",
+    "releasedAt": "2026-08-09",
+    "modalLead": "<strong>Config</strong> is easier to find your way around. Searching for a setting now finds it wherever it lives, the <strong>Overview</strong> tells you how much of your setup is no longer standard, and a handful of settings that quietly did nothing have been put right.",
+    "sections": [
+        {
+            "title": "Finding a setting",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Search now finds every setting, not only the ones you had already looked at.</strong> Pressing <code>Ctrl/Cmd + Shift + K</code> and typing <em>webhook</em> found nothing at all unless you happened to have opened that tab first. Every setting is searchable from the moment you open Config."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Settings answer to more than their exact label.</strong> Searching <em>uptime</em>, <em>wallpaper</em>, <em>telemetry</em> or <em>hotkey</em> now finds the right setting even when those words appear nowhere on screen."
+                }
+            ]
+        },
+        {
+            "title": "What you have changed",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>The Overview says how many settings differ from the standard.</strong> The answer to “why does my dashboard behave differently from the guide” used to mean opening every tab and looking for a ↺. The line names the areas involved and takes you straight to them; on an untouched setup it stays out of the way."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Only changed</strong> above each tab of settings hides everything still on its standard value, and says how many differ before you press it."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Reset panel</strong> puts a whole group back to standard at once, instead of one <code>↺</code> at a time. It appears only when something in that group has been changed, and asks first."
+                }
+            ]
+        },
+        {
+            "title": "Settings that did not do what they said",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Background re-check interval now takes effect.</strong> Under <strong>Behavior › Status &amp; health</strong> you could pick how often nextDash re-tests your links in the background, it confirmed <em>Saved</em>, and nothing changed — the checks carried on at their old pace. It now matches the same setting under <strong>Data &amp; backups</strong>."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Six settings offered to reset themselves on a brand-new install.</strong> The <code>↺</code> appeared beside settings nobody had touched, and pressing it moved them <em>away</em> from the standard rather than back to it. Among them <strong>Retries before offline</strong>, <strong>Delay between retries</strong> and <strong>Refresh favicons</strong>."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Retries before offline</strong> and <strong>Delay between retries</strong> accepted numbers that were then thrown away. Typing a delay of 5000 reported <em>Saved</em> and left you with 450. The boxes now only offer what actually works."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Clicking “Follow system dark mode” now works.</strong> The words beside the tick box did nothing — you had to hit the small box itself, unlike every other tick box in Config."
+                }
+            ]
+        },
+        {
+            "title": "Appearance & layout",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Toolbar &amp; tabs is split into three groups</strong> — the header, and the two halves of the button bar — so the group a setting sits in tells you where on screen to look for it. It was one run of thirteen near-identical tick boxes."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Show all</strong> and <strong>Hide all</strong> for each of those groups, with a count of what is currently showing."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Settings line up.</strong> Dropdowns and boxes started at a different place on every row depending on how long its label happened to be, and the <code>ℹ</code> and <code>↺</code> buttons sat marooned at the far edge of the panel instead of beside the setting they belong to."
+                }
+            ]
+        },
+        {
+            "title": "On a phone",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>The list of Config sections is one line you can swipe.</strong> It used to wrap onto three or four rows above every page, which on a phone was most of the screen before the first setting. Whichever section you open is scrolled into view."
+                }
+            ]
+        }
+    ]
+}
