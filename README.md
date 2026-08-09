@@ -536,7 +536,7 @@ Do **not** merge `dev` into `main` manually on GitHub — the compare banner aft
 
 ## Links
 - **Personal website:** [jordibrw.nl](https://jordibrw.nl)
-- - **Nextdash website:** [nextdash.cc](https://nextdash.cc)
+- **Nextdash website:** [nextdash.cc](https://nextdash.cc)
 
 ---
 
