@@ -50,6 +50,13 @@ class DashboardConfig {
         this._finders = null;
         // Behavior sub-tab.
         this.behaviorTab = 'general';
+        /**
+         * Whether a settings tab is filtered to what differs from the default.
+         * Not persisted: it is a way of looking at the page for a minute, not a
+         * preference, and coming back to a half-empty tab you did not ask for
+         * would read as settings having gone missing.
+         */
+        this.changedOnly = false;
         // Help sub-tab.
         this.helpTab = 'start';
         // Bookmarks section: search, filters, sort, the row being edited, the
@@ -644,6 +651,33 @@ class DashboardConfig {
         if (panel) {
             panel.setAttribute('aria-labelledby', `config-section-${active}`);
         }
+        this.scrollActiveNavIntoView();
+    }
+
+    /**
+     * Keep the current section visible in the mobile nav strip.
+     *
+     * The rail scrolls horizontally below 720px (see config-view.css), so a
+     * section reached by keyboard, by hash, or by restoring the last visit can
+     * sit outside the strip's visible run — Help is the eighth of eight. On a
+     * wide screen the rail is a column that does not scroll and this is a
+     * no-op, so it is not worth a width check of its own.
+     *
+     * `nearest` rather than `center`: it only scrolls when the button is
+     * actually out of view, which leaves the strip alone in the common case.
+     */
+    scrollActiveNavIntoView() {
+        const nav = document.querySelector('.config-nav');
+        const btn = nav?.querySelector('.config-nav-item.is-active');
+        if (!nav || !btn) return;
+        // Nothing to scroll on the desktop column, and calling this there would
+        // scroll the panel behind it instead.
+        if (nav.scrollWidth <= nav.clientWidth) return;
+        btn.scrollIntoView({
+            block: 'nearest',
+            inline: 'nearest',
+            behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
+        });
     }
 
     moveSectionKeyboard(delta) {
@@ -1733,6 +1767,153 @@ class DashboardConfig {
         return parts.join(' › ');
     }
 
+    /**
+     * The settings that are not in `behaviorSchema()`, so the jump index can
+     * still name them.
+     *
+     * Appearance draws most of its controls by hand with data-appearance-*
+     * attributes rather than from the schema, and two more live on the backups
+     * tab. There is no declaration to read them from, so they are listed here:
+     * field, the label key it renders with, and where it sits.
+     *
+     * This list is the cost of the second rendering path, not a design. When
+     * the Appearance controls move into the schema, every entry here should
+     * disappear with them — `settingsJumpFieldCoverage()` is what tells you a
+     * field has been left in both places or in neither.
+     */
+    static MANUAL_JUMP_FIELDS = [
+        { field: 'theme', labelKey: 'themeLabel', fallback: 'Theme', section: 'appearance', subTab: 'general' },
+        { field: 'autoDarkMode', labelKey: 'appearanceAutoDark', fallback: 'Follow system dark mode', section: 'appearance', subTab: 'general' },
+        { field: 'randomThemeMode', labelKey: 'randomThemeModeLabel', fallback: 'Random theme', section: 'appearance', subTab: 'general' },
+        { field: 'fontPreset', labelKey: 'fontPresetLabel', fallback: 'Font', section: 'appearance', subTab: 'general' },
+        { field: 'fontWeight', labelKey: 'fontWeightLabel', fallback: 'Weight', section: 'appearance', subTab: 'general' },
+        { field: 'fontSize', labelKey: 'appearanceFontSize', fallback: 'Font size', section: 'appearance', subTab: 'general' },
+        { field: 'backgroundType', labelKey: 'backgroundLabel', fallback: 'Background', section: 'appearance', subTab: 'general' },
+        { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
+        { field: 'showBackgroundDots', labelKey: 'showBackgroundDots', fallback: 'Show background dots', section: 'appearance', subTab: 'general' },
+        { field: 'layoutVersion', labelKey: 'appearanceLayoutVersion', fallback: 'Layout', section: 'appearance', subTab: 'layout' },
+        { field: 'launcherIconSize', labelKey: 'launcherIconSizeLabel', fallback: 'Icon size', section: 'appearance', subTab: 'layout' },
+        { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'layout' },
+        { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
+        { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
+        { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'display' },
+        { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'branding' },
+        { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'branding' },
+        { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'branding' },
+        { field: 'faviconRefreshPolicy', labelKey: 'faviconRefreshPolicyLabel', fallback: 'Refresh favicons', section: 'data-backups', subTab: 'backups' },
+        { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
+    ];
+
+    /**
+     * Extra words a setting should be findable by, beyond its visible label.
+     *
+     * The filter matches title and subtitle, so a setting can only be found by
+     * the words it happens to be labelled with — "Alert webhook URL" is not
+     * reachable by "notify", and nothing about the status settings is reachable
+     * by "uptime" or "ping". Keys are field names; the words are matched but
+     * never displayed, so they can include the English term in a non-English
+     * install, where the label is translated but the concept people search for
+     * often is not.
+     */
+    static FIELD_KEYWORDS = {
+        monitorNotifyUrl: ['webhook', 'alert', 'notify', 'notification', 'discord', 'slack'],
+        monitorNotifyRetries: ['webhook', 'alert', 'notify', 'retries'],
+        pushNotifyEnabled: ['push', 'notification', 'alert', 'browser'],
+        pushNotifyMonitor: ['push', 'notification', 'downtime', 'uptime'],
+        pushNotifyBackup: ['push', 'notification', 'backup'],
+        pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
+        healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
+        healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
+        statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
+        statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
+        statusOfflineRetryDelayMs: ['offline', 'retry', 'delay', 'status'],
+        skipFastPing: ['ping', 'status', 'check'],
+        monitorEmphasis: ['monitor', 'highlight', 'emphasis', 'accent'],
+        analyticsOptIn: ['telemetry', 'privacy', 'tracking', 'umami'],
+        updateCheckEnabled: ['update', 'github', 'release', 'version'],
+        language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
+        deviceSpecificSettings: ['device', 'sync', 'local'],
+        showSyncToasts: ['sync', 'toast', 'notification'],
+        inboxEnabled: ['inbox', 'triage', 'later'],
+        pasteDestination: ['paste', 'clipboard', 'inbox'],
+        pasteUrlQuickAdd: ['paste', 'clipboard', 'quick add'],
+        columnsPerRow: ['columns', 'grid', 'layout'],
+        densityMode: ['density', 'spacing', 'compact'],
+        categorySpacing: ['spacing', 'gap', 'density'],
+        sideMargin: ['margin', 'padding', 'width'],
+        layoutPreset: ['preset', 'layout', 'theme'],
+        categoryItemLimit: ['limit', 'items', 'truncate'],
+        theme: ['theme', 'colour', 'color', 'dark', 'light', 'palette'],
+        autoDarkMode: ['dark', 'light', 'system', 'theme'],
+        randomThemeMode: ['random', 'shuffle', 'rotate', 'theme'],
+        fontPreset: ['font', 'typeface', 'type'],
+        fontWeight: ['font', 'bold', 'weight'],
+        fontSize: ['font', 'size', 'text', 'zoom'],
+        backgroundType: ['background', 'wallpaper', 'gradient', 'image'],
+        backgroundOpacity: ['background', 'opacity', 'transparency', 'fade'],
+        layoutVersion: ['layout', 'modern', 'classic', 'beta'],
+        buttonBarPosition: ['button', 'bar', 'rail', 'dock', 'position'],
+        showIcons: ['favicon', 'icon', 'image'],
+        faviconRefreshPolicy: ['favicon', 'icon', 'refresh', 'cache'],
+        autoBackupEnabled: ['backup', 'automatic', 'snapshot'],
+        weatherLocation: ['weather', 'location', 'city'],
+        weatherSource: ['weather', 'source', 'ip'],
+        weatherUnit: ['weather', 'celsius', 'fahrenheit', 'temperature'],
+        calendarUrl: ['calendar', 'ical', 'ics', 'agenda'],
+        openInNewTab: ['tab', 'window', 'target'],
+        globalShortcuts: ['keyboard', 'shortcut', 'hotkey'],
+        enableFuzzySuggestions: ['fuzzy', 'search', 'suggestion'],
+        hyprMode: ['hypr', 'hyprland', 'wayland', 'linux'],
+        allowLocalBookmarks: ['local', 'localhost', 'intranet', 'http'],
+        enableCustomTitle: ['title', 'branding', 'name'],
+        customTitle: ['title', 'branding', 'name'],
+        enableCustomFavicon: ['favicon', 'branding', 'icon'],
+    };
+
+    /**
+     * Every settings field the jump index can name, from the schema plus the
+     * hand-written list — without rendering anything.
+     *
+     * The index used to be scraped from the DOM by cacheSettingsJumpFields(),
+     * which meant a field only became findable once you had opened the tab it
+     * lives on. On a fresh install that left four entries, all from the
+     * Overview: searching "webhook" — the case this feature exists for — found
+     * nothing at all.
+     */
+    settingsJumpFieldEntries() {
+        const entries = [];
+        const push = (field, title, section, subTab) => {
+            if (!title) return;
+            entries.push({
+                id: `field:${section}:${subTab || 'root'}:${field}`,
+                kind: 'field',
+                field,
+                title,
+                subtitle: this.settingsJumpSubtitle(section, subTab),
+                keywords: (DashboardConfig.FIELD_KEYWORDS[field] || []).join(' '),
+                section,
+                subTab,
+                // Resolved when the entry is activated: the control does not
+                // exist until its tab has been rendered.
+                focusSelector: null,
+            });
+        };
+
+        this.behaviorSchema().forEach((panel) => {
+            const section = panel.section || 'behavior';
+            (panel.controls || []).forEach((c) => {
+                if (!c.field || c.type === 'note' || c.type === 'pushDevice') return;
+                push(c.field, c.label, section, panel.tab || 'general');
+            });
+        });
+
+        DashboardConfig.MANUAL_JUMP_FIELDS.forEach((f) => {
+            push(f.field, this.t(`config.${f.labelKey}`, f.fallback), f.section, f.subTab);
+        });
+
+        return entries;
+    }
+
     buildSettingsJumpNavEntries() {
         const entries = [];
         DashboardConfig.SECTIONS.forEach((section) => {
@@ -1806,10 +1987,38 @@ class DashboardConfig {
         });
     }
 
+    /**
+     * Sections, sub-tabs and help panels, then every settings field, then
+     * whatever the DOM scrape has refined.
+     *
+     * The scraped entries are still worth having: they carry a real
+     * `focusSelector` for the tab on screen, and they pick up controls the
+     * schema does not describe. They are merged by title and location rather
+     * than appended, so a field that is both declared and rendered appears
+     * once — with the scrape's selector, since that one can be focused now.
+     */
     getSettingsJumpEntries() {
         const byId = new Map();
         this.buildSettingsJumpNavEntries().forEach((e) => byId.set(e.id, e));
-        this._settingsJumpCache.forEach((e, id) => byId.set(id, e));
+
+        const fieldEntries = this.settingsJumpFieldEntries();
+        fieldEntries.forEach((e) => byId.set(e.id, e));
+
+        // Same field, same place: keep the declared entry's keywords but take
+        // the scrape's selector.
+        const declaredByKey = new Map();
+        fieldEntries.forEach((e) => {
+            declaredByKey.set(`${e.section}|${e.subTab || ''}|${e.title.replace(/:$/, '').toLowerCase()}`, e);
+        });
+        this._settingsJumpCache.forEach((e, id) => {
+            const key = `${e.section}|${e.subTab || ''}|${String(e.title).replace(/:$/, '').toLowerCase()}`;
+            const declared = declaredByKey.get(key);
+            if (declared) {
+                byId.set(declared.id, { ...declared, focusSelector: e.focusSelector });
+                return;
+            }
+            byId.set(id, e);
+        });
         return [...byId.values()];
     }
 
@@ -1817,7 +2026,9 @@ class DashboardConfig {
         const q = String(query || '').trim().toLowerCase();
         const all = this.getSettingsJumpEntries();
         if (!q) return all;
-        return all.filter((e) => `${e.title} ${e.subtitle}`.toLowerCase().includes(q));
+        // Keywords are matched but never shown, so a setting is reachable by
+        // the word people look for as well as the one it is labelled with.
+        return all.filter((e) => `${e.title} ${e.subtitle} ${e.keywords || ''}`.toLowerCase().includes(q));
     }
 
     isSettingsJumpOpen() {
@@ -1953,6 +2164,72 @@ class DashboardConfig {
         this.setupSettingsJumpKeyboard(entries);
     }
 
+    /**
+     * A selector for the control bound to `field` on the tab now on screen.
+     *
+     * Has to cover both rendering paths: the schema binds every control with
+     * `data-behavior-field`, while Appearance and the backups tab bind one
+     * data attribute per control type. Returns null when the field is not on
+     * this tab, so the caller can fall back to matching the label.
+     */
+    settingsJumpControlSelector(field) {
+        const escaped = CSS.escape(field);
+        const candidates = [
+            `[data-behavior-field="${escaped}"]`,
+            `[data-appearance-toggle="${escaped}"]`,
+            `[data-appearance-select="${escaped}"]`,
+            `[data-appearance-text="${escaped}"]`,
+            `[data-appearance-range="${escaped}"]`,
+            `[data-backup-select="${escaped}"]`,
+            `[data-backup-toggle="${escaped}"]`,
+        ];
+        // Controls rendered as a group of buttons carry the value, not the
+        // field, so they are addressed by the attribute that names the group.
+        const groups = {
+            layoutVersion: '[data-appearance-layout]',
+            buttonBarPosition: '[data-appearance-barpos]',
+            launcherIconSize: '[data-appearance-iconsize]',
+            fontWeight: '[data-appearance-weight]',
+            backgroundType: '[data-appearance-bg]',
+            randomThemeMode: '[data-appearance-randommode]',
+            fontSize: '[data-appearance-font]',
+            theme: '[data-appearance-select="theme"]',
+        };
+        if (groups[field]) candidates.push(groups[field]);
+
+        const panel = document.getElementById('config-section-panel');
+        if (!panel) return null;
+        for (const sel of candidates) {
+            if (panel.querySelector(sel)) return `#config-section-panel ${sel}`;
+        }
+        return null;
+    }
+
+    /**
+     * Which declared fields the jump index cannot point at, and which rendered
+     * controls it does not know about.
+     *
+     * Exposed for the tests rather than used at runtime: the index is built
+     * from two lists that have to be kept in step with a view that renders its
+     * controls two different ways, and this is what makes a field falling
+     * through the gap visible instead of silently unsearchable.
+     */
+    settingsJumpFieldCoverage() {
+        const declared = this.settingsJumpFieldEntries();
+        const panel = document.getElementById('config-section-panel');
+        const rendered = new Set();
+        if (panel) {
+            panel.querySelectorAll('[data-behavior-field]').forEach((el) => {
+                rendered.add(el.getAttribute('data-behavior-field'));
+            });
+        }
+        const declaredFields = new Set(declared.map((e) => e.field));
+        return {
+            declared: declared.length,
+            missingFromIndex: [...rendered].filter((f) => !declaredFields.has(f)),
+        };
+    }
+
     async activateSettingsJumpEntry(entry) {
         if (!entry) return;
         window.AppModal.hide();
@@ -1978,13 +2255,24 @@ class DashboardConfig {
         this.cacheSettingsJumpFields();
         let focusSelector = entry.focusSelector;
         if (entry.kind === 'field') {
-            const refreshed = [...this._settingsJumpCache.values()].find((e) => (
-                e.kind === 'field'
-                && e.title === entry.title
-                && e.section === entry.section
-                && e.subTab === entry.subTab
-            ));
-            if (refreshed) focusSelector = refreshed.focusSelector;
+            // A declared entry knows the settings field it stands for, which is
+            // a firmer handle than its label: the tab has just been rendered,
+            // so the control can be addressed directly. Falls back to matching
+            // the label for entries that came from the DOM scrape and have no
+            // field name.
+            if (entry.field) {
+                const bound = this.settingsJumpControlSelector(entry.field);
+                if (bound) focusSelector = bound;
+            }
+            if (!focusSelector) {
+                const refreshed = [...this._settingsJumpCache.values()].find((e) => (
+                    e.kind === 'field'
+                    && e.title === entry.title
+                    && e.section === entry.section
+                    && e.subTab === entry.subTab
+                ));
+                if (refreshed) focusSelector = refreshed.focusSelector;
+            }
         }
         if (entry.helpTitle && entry.section === 'help') {
             const titles = [...document.querySelectorAll('#config-help-body .config-panel-title')];
@@ -2441,6 +2729,45 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureSettingsSearchTitle',
+                titleFallback: 'Search finds every setting, not just the ones you have seen',
+                whatKey: 'config.overviewNewFeatureSettingsSearchWhat',
+                whatFallback: 'Looking for “webhook” found nothing at all unless you happened to have opened that tab before, which is the opposite of what a search is for.',
+                howKey: 'config.overviewNewFeatureSettingsSearchHow',
+                howFallback: 'Every setting is searchable the moment you open Config, and settings answer to more than their exact label — “uptime”, “wallpaper” and “hotkey” each find the right one even though those words are nowhere on screen.',
+                enableKey: 'config.overviewNewFeatureSettingsSearchEnable',
+                enableFallback: 'Nothing to switch on. Press Ctrl/Cmd + Shift + K anywhere in Config, or use Find settings under the section list.',
+                ctaKey: 'config.overviewNewFeatureSettingsSearchCta',
+                ctaFallback: 'Find a setting →',
+                go: { section: 'help', helpTab: 'config' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureChangedSettingsTitle',
+                titleFallback: 'See what you have changed from the standard',
+                whatKey: 'config.overviewNewFeatureChangedSettingsWhat',
+                whatFallback: 'Working out why your dashboard behaves differently from the guide meant opening every tab and looking for a ↺ beside each setting.',
+                howKey: 'config.overviewNewFeatureChangedSettingsHow',
+                howFallback: 'At a glance now says how many settings differ from the standard and takes you to them. Each tab of settings gained Only changed, and each group a Reset panel that puts the whole lot back at once.',
+                enableKey: 'config.overviewNewFeatureChangedSettingsEnable',
+                enableFallback: 'Nothing to switch on. The line stays out of the way while everything is still standard.',
+                ctaKey: 'config.overviewNewFeatureChangedSettingsCta',
+                ctaFallback: 'Open Behavior →',
+                go: { section: 'behavior', behaviorTab: 'general' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureToolbarGroupsTitle',
+                titleFallback: 'Toolbar & tabs is three groups, not one long list',
+                whatKey: 'config.overviewNewFeatureToolbarGroupsWhat',
+                whatFallback: 'Thirteen near-identical “Show the … button” tick boxes in a row, with no way to tell which meant the strip at the top and which the bar at the bottom.',
+                howKey: 'config.overviewNewFeatureToolbarGroupsHow',
+                howFallback: 'They are split into the header and the two halves of the button bar, so the group a setting sits in tells you where to look for it on screen. Each group has Show all and Hide all with a count of what is showing.',
+                enableKey: 'config.overviewNewFeatureToolbarGroupsEnable',
+                enableFallback: 'Nothing to switch on — the settings themselves are unchanged, only how they are arranged.',
+                ctaKey: 'config.overviewNewFeatureToolbarGroupsCta',
+                ctaFallback: 'Open Toolbar & tabs →',
+                go: { section: 'appearance', appearanceTab: 'toolbar' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureInboxExplainTitle',
                 titleFallback: 'The inbox explains itself, and its numbers add up',
                 whatKey: 'config.overviewNewFeatureInboxExplainWhat',
@@ -2763,11 +3090,43 @@ class DashboardConfig {
                     ${row(this.t('config.statsTaggedBookmarks', 'Tagged'), `${s.tagged} (${pct}%)`)}
                     ${row(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
                 </ul>
+                ${this.renderOverviewChangedSettings()}
                 <div class="config-actions">
                     <button type="button" class="config-btn config-btn--small"
                             data-overview-go='{"section":"stats"}'>${esc(this.t('config.overviewMoreStats', 'All statistics →'))}</button>
                 </div>
             </div>`;
+    }
+
+    /**
+     * How much of this install is not stock, with a way to go and look.
+     *
+     * This is the answer to "why does my dashboard behave differently from the
+     * documentation", which otherwise means opening every tab and reading for
+     * a ↺. The number was already computable — isFieldDefault decides whether
+     * each ↺ shows — it had just never been added up anywhere.
+     *
+     * Silent on a stock install rather than reporting a zero: "0 settings
+     * changed" is a line that never earns its place, and the panel it sits in
+     * is a summary, not a checklist.
+     */
+    renderOverviewChangedSettings() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const changed = this.changedSettings();
+        if (!changed.length) return '';
+
+        // Where they are, so the line says something the count alone does not.
+        const sections = [...new Set(changed.map((e) => e.section))]
+            .map((s) => this.sectionLabel(s));
+        const label = this.t('config.overviewChangedSettings', '{n} settings differ from the default')
+            .replace('{n}', String(changed.length));
+
+        return `
+            <p class="config-overview-changed">
+                <button type="button" class="config-link-button"
+                        data-overview-changed>${esc(label)}</button>
+                <span class="config-field-hint">${esc(sections.join(' · '))}</span>
+            </p>`;
     }
 
     /** The most recent release, summarised, with the full notes a click away. */
@@ -2958,6 +3317,10 @@ class DashboardConfig {
             if (this.section !== 'overview') return;
             if (e.target.closest('[data-overview-feature="prev"]')) {
                 this.stepOverviewFeature(-1);
+                return;
+            }
+            if (e.target.closest('[data-overview-changed]')) {
+                this.openChangedSettings();
                 return;
             }
             if (e.target.closest('[data-overview-feature="next"]')) {
@@ -4410,10 +4773,10 @@ class DashboardConfig {
                         <button type="button" class="config-choice${theme === 'dark' ? ' is-active' : ''}" data-appearance-theme="dark" aria-pressed="${theme === 'dark'}">${esc(this.t('config.themeDark', 'Dark'))}</button>
                     </div>
                 </div>
-                <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
+                <div class="config-field-row">
                     <label class="config-toggle">
                         <input type="checkbox" data-appearance-toggle="autoDarkMode" ${s.autoDarkMode ? 'checked' : ''}>
+                        <span>${esc(this.t('config.appearanceAutoDark', 'Follow system dark mode'))}</span>
                     </label>
                     ${this.appearanceAff('autoDarkMode')}
                 </div>
@@ -4483,10 +4846,7 @@ class DashboardConfig {
      * position buried the three everyday row options they sat beneath.
      */
     renderAppearanceToolbarBody() {
-        return this.renderControlPanels(
-            this.behaviorSchema().filter((p) => p.tab === 'toolbar'),
-            'behavior'
-        );
+        return this.renderControlPanels(this.panelsFor('appearance', 'toolbar'), 'behavior');
     }
 
     renderAppearanceBrandingBody() {
@@ -4565,7 +4925,7 @@ class DashboardConfig {
                 </div>
             </div>
 
-            ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'layout'), 'behavior')}
+            ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
@@ -4608,7 +4968,7 @@ class DashboardConfig {
                     ${this.appearanceAff('animationsEnabled')}
                 </div>
             </div>
-            ${this.renderControlPanels(this.behaviorSchema().filter((p) => p.tab === 'display'), 'behavior')}`;
+            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
     }
 
     /** Friendly name for a theme id, matching the old config's labels. */
@@ -5947,10 +6307,10 @@ class DashboardConfig {
     static FIELD_META = {
         // General
         language: { info: ['languageInfoTitle', 'languageInfoMessage'], def: 'en' },
-        openInNewTab: { info: ['openLinksInNewTabInfoTitle', 'openLinksInNewTabInfoMessage'] },
-        globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'] },
+        openInNewTab: { info: ['openLinksInNewTabInfoTitle', 'openLinksInNewTabInfoMessage'], def: true },
+        globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'], def: true },
         showShortcutTooltips: { info: ['shortcutTooltipsInfoTitle', 'shortcutTooltipsInfoMessage'], def: true },
-        allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'] },
+        allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
         // Date, time & weather
@@ -5961,58 +6321,67 @@ class DashboardConfig {
         showWeatherWithDate: { info: ['showWeatherWithDateInfoTitle', 'showWeatherWithDateInfoMessage'], def: false },
         weatherSource: { info: ['weatherSourceInfoTitle', 'weatherSourceInfoMessage'], def: 'manual' },
         weatherUnit: { info: ['weatherUnitInfoTitle', 'weatherUnitInfoMessage'], def: 'celsius' },
-        weatherLocation: { info: ['weatherLocationInfoTitle', 'weatherLocationInfoMessage'] },
+        weatherLocation: { info: ['weatherLocationInfoTitle', 'weatherLocationInfoMessage'], def: '' },
         // Layout
-        columnsPerRow: { info: ['columnsInfoTitle', 'columnsInfoMessage'] },
+        columnsPerRow: { info: ['columnsInfoTitle', 'columnsInfoMessage'], def: 3 },
         densityMode: { info: ['densityModeInfoTitle', 'densityModeInfoMessage'], def: 'compact' },
         categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'balanced' },
         sideMargin: { info: ['sideMarginInfoTitle', 'sideMarginInfoMessage'], def: 'balanced' },
         packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
         interleaveMode: { info: ['interleaveModeInfoTitle', 'interleaveModeInfoMessage'], def: false },
-        hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'] },
-        alwaysCollapseCategories: { info: ['alwaysCollapseCategoriesInfoTitle', 'alwaysCollapseCategoriesInfoMessage'] },
+        hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'], def: true },
+        alwaysCollapseCategories: { info: ['alwaysCollapseCategoriesInfoTitle', 'alwaysCollapseCategoriesInfoMessage'], def: false },
         layoutVersion: { info: ['layoutVersionInfoTitle', 'layoutVersionInfoMessage'], def: 'classic' },
         layoutPreset: { info: ['layoutPresetInfoTitle', 'layoutPresetInfoMessage'], def: 'default' },
         categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], def: 15 },
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
-        showShortcuts: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'] },
+        showShortcuts: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: true },
         showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
         showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: false },
         colorizeStatus: { info: ['colorizeStatusInfoTitle', 'colorizeStatusInfoMessage'], def: true },
-        showIcons: { info: ['showIconsInfoTitle', 'showIconsInfoMessage'] },
+        showIcons: { info: ['showIconsInfoTitle', 'showIconsInfoMessage'], def: true },
         // Toolbar & tabs
         showPageTabs: { info: ['showPageTabsInfoTitle', 'showPageTabsInfoMessage'], def: true },
-        showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'] },
-        showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'] },
-        showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'] },
+        showPageNamesInTabs: { info: ['showPageNamesInTabsInfoTitle', 'showPageNamesInTabsInfoMessage'], def: false },
+        showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
+        showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
         // Search
-        includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'] },
-        enableFuzzySuggestions: { info: ['fuzzySuggestionsInfoTitle', 'fuzzySuggestionsInfoMessage'] },
-        fuzzySuggestionsStartWith: { info: ['fuzzySuggestionsStartWithInfoTitle', 'fuzzySuggestionsStartWithInfoMessage'] },
-        keepSearchOpenWhenEmpty: { info: ['keepSearchOpenWhenEmptyInfoTitle', 'keepSearchOpenWhenEmptyInfoMessage'] },
+        includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: false },
+        enableFuzzySuggestions: { info: ['fuzzySuggestionsInfoTitle', 'fuzzySuggestionsInfoMessage'], def: false },
+        fuzzySuggestionsStartWith: { info: ['fuzzySuggestionsStartWithInfoTitle', 'fuzzySuggestionsStartWithInfoMessage'], def: false },
+        keepSearchOpenWhenEmpty: { info: ['keepSearchOpenWhenEmptyInfoTitle', 'keepSearchOpenWhenEmptyInfoMessage'], def: false },
         showSearchFlowBanner: { info: ['showSearchFlowBannerInfoTitle', 'showSearchFlowBannerInfoMessage'], def: true },
         // Quick add & inbox
         pasteUrlQuickAdd: { info: ['pasteUrlQuickAddInfoTitle', 'pasteUrlQuickAddInfoMessage'], def: true },
         inboxEnabled: { info: ['inboxEnabledInfoTitle', 'inboxEnabledInfoMessage'], def: true },
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
-        healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'] },
-        healthRecheckIntervalMinutes: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 60 },
-        skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'] },
-        statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 1 },
-        statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 1500 },
-        showStatusLoading: { info: ['showStatusLoadingInfoTitle', 'showStatusLoadingInfoMessage'] },
-        monitorNotifyUrl: { info: ['monitorNotifyUrlInfoTitle', 'monitorNotifyUrlInfoMessage'] },
+        healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
+        healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
+        skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
+        statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
+        statusOfflineRetryDelayMs: { info: ['statusOfflineRetryDelayInfoTitle', 'statusOfflineRetryDelayInfoMessage'], def: 450 },
+        showStatusLoading: { info: ['showStatusLoadingInfoTitle', 'showStatusLoadingInfoMessage'], def: false },
+        monitorNotifyUrl: { info: ['monitorNotifyUrlInfoTitle', 'monitorNotifyUrlInfoMessage'], def: '' },
+        // Settings with a server default but no ℹ text of their own. They are
+        // listed so the ↺ button and the changed-settings count can see them;
+        // a field with no `def` silently reports itself as unchanged whatever
+        // it holds. Values come from models.go — see config-field-defaults.spec.js.
+        pasteDestination: { def: 'ask' },
+        monitorEmphasis: { def: 'problems' },
+        theme: { def: 'moss-stone-dark' },
+        fontSize: { def: 'm' },
+        customTitle: { def: '' },
         monitorNotifyRetries: { info: ['monitorNotifyRetriesInfoTitle', 'monitorNotifyRetriesInfoMessage'], def: 3 },
         pushNotifyEnabled: { info: ['pushNotifyInfoTitle', 'pushNotifyInfoMessage'], def: false },
         pushNotifyMonitor: { def: false },
         pushNotifyBackup: { def: false },
         pushNotifySubject: { def: '' },
         // Toolbar & chrome
-        showRecentButton: { def: true },
-        showCheatSheetButton: { def: true },
+        showRecentButton: { def: false },
+        showCheatSheetButton: { def: false },
         showCollapseAllButton: { def: true },
         showConfigButton: { def: true },
         showHealthDashboard: { def: true },
@@ -6021,30 +6390,30 @@ class DashboardConfig {
         showFindersButton: { def: true },
         showCommandsButton: { def: true },
         buttonBarPosition: { info: ['buttonBarPositionInfoTitle', 'buttonBarPositionInfoMessage'], def: 'bottom' },
-        showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'] },
+        showPageInTitle: { info: ['showPageInTitleInfoTitle', 'showPageInTitleInfoMessage'], def: false },
         // Weather & calendar
         weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },
         calendarUrl: { info: ['calendarUrlInfoTitle', 'calendarUrlInfoMessage'] },
         // Link previews
-        linkPreviewHoverDelayMs: { info: ['linkPreviewHoverDelayInfoTitle', 'linkPreviewHoverDelayInfoMessage'], def: 400 },
+        linkPreviewHoverDelayMs: { info: ['linkPreviewHoverDelayInfoTitle', 'linkPreviewHoverDelayInfoMessage'], def: 150 },
         // Sync
         showSyncToasts: { info: ['showSyncToastsInfoTitle', 'showSyncToastsInfoMessage'] },
-        faviconRefreshPolicy: { info: ['faviconRefreshPolicyInfoTitle', 'faviconRefreshPolicyInfoMessage'], def: 'monthly' },
+        faviconRefreshPolicy: { info: ['faviconRefreshPolicyInfoTitle', 'faviconRefreshPolicyInfoMessage'], def: 'on-save' },
         // Privacy
-        analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint' },
+        analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint', def: false },
         updateCheckEnabled: { info: ['updateCheckInfoTitle', 'updateCheckInfoMessage'], hint: 'updateCheckHint', def: true },
         // Appearance
-        autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'] },
+        autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'], def: true },
         randomThemeMode: { info: ['randomThemeModeInfoTitle', 'randomThemeModeInfoMessage'], def: 'off' },
-        showBackgroundDots: { info: ['showBackgroundDotsInfoTitle', 'showBackgroundDotsInfoMessage'] },
+        showBackgroundDots: { info: ['showBackgroundDotsInfoTitle', 'showBackgroundDotsInfoMessage'], def: true },
         themeIconStyling: { info: ['iconStylingInfoTitle', 'iconStylingInfoMessage'] },
-        animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'] },
+        animationsEnabled: { info: ['enableAnimationsInfoTitle', 'enableAnimationsInfoMessage'], def: true },
         fontPreset: { info: ['fontPresetInfoTitle', 'fontPresetInfoMessage'], def: 'source-code-pro' },
         fontWeight: { info: ['fontWeightInfoTitle', 'fontWeightInfoMessage'], def: 'normal' },
         backgroundType: { info: ['backgroundPickerInfoTitle', 'backgroundPickerInfoMessage'], def: 'none' },
         backgroundOpacity: { info: ['backgroundOpacityInfoTitle', 'backgroundOpacityInfoMessage'], def: 1 },
-        enableCustomTitle: { info: ['enableCustomTitleInfoTitle', 'enableCustomTitleInfoMessage'] },
-        enableCustomFavicon: { info: ['enableCustomFaviconInfoTitle', 'enableCustomFaviconInfoMessage'] },
+        enableCustomTitle: { info: ['enableCustomTitleInfoTitle', 'enableCustomTitleInfoMessage'], def: false },
+        enableCustomFavicon: { info: ['enableCustomFaviconInfoTitle', 'enableCustomFaviconInfoMessage'], def: false },
         // Collections
         showSmartTodayCollection: { def: true },
         showSmartRecentCollection: { def: false },
@@ -6056,7 +6425,7 @@ class DashboardConfig {
         smartMostUsedLimit: { info: ['smartMostUsedLimitInfoTitle', 'smartMostUsedLimitInfoMessage'], def: 25 },
         // Data
         deviceSpecificSettings: { info: ['deviceSpecificSettingsInfoTitle', 'deviceSpecificSettingsInfoMessage'] },
-        autoBackupEnabled: { info: ['autoBackupInfoTitle', 'autoBackupInfoMessage'] },
+        autoBackupEnabled: { info: ['autoBackupInfoTitle', 'autoBackupInfoMessage'], def: true },
     };
 
     fieldMeta(field) {
@@ -6071,6 +6440,47 @@ class DashboardConfig {
         if (typeof d === 'boolean') return Boolean(value) === d;
         if (typeof d === 'number') return Number(value) === d;
         return String(value ?? '') === String(d);
+    }
+
+    /**
+     * Which settings differ from their installation default.
+     *
+     * isFieldDefault() already answered this one field at a time — it is what
+     * shows the ↺ button — but nothing ever added it up, so "why does my
+     * dashboard look different from the screenshots" had no answer short of
+     * reading every tab.
+     *
+     * Counted over the declared index rather than the rendered DOM, so the
+     * answer does not depend on which tabs have been opened. A field with no
+     * known default is not counted: isFieldDefault reports those as unchanged
+     * whatever they hold, so including them would understate nothing but
+     * pretend to a precision the data does not have.
+     */
+    changedSettings() {
+        const s = this.dash.settings || {};
+        const seen = new Set();
+        const out = [];
+        this.settingsJumpFieldEntries().forEach((entry) => {
+            if (seen.has(entry.field)) return;
+            seen.add(entry.field);
+            const meta = this.fieldMeta(entry.field);
+            if (!meta || meta.def === undefined) return;
+            if (this.isFieldDefault(entry.field, s[entry.field])) return;
+            out.push(entry);
+        });
+        return out;
+    }
+
+    /** Fields in one schema panel that differ from their default. */
+    panelChangedFields(panel) {
+        const s = this.dash.settings || {};
+        return (panel.controls || [])
+            .filter((c) => c.field && c.type !== 'note' && c.type !== 'pushDevice')
+            .filter((c) => {
+                const meta = this.fieldMeta(c.field);
+                return meta && meta.def !== undefined && !this.isFieldDefault(c.field, s[c.field]);
+            })
+            .map((c) => c.field);
     }
 
     /** Open the shared info modal for a setting field. */
@@ -6088,10 +6498,24 @@ class DashboardConfig {
     /* ── Behavior ──────────────────────────────────────────────────────────── */
 
     /**
-     * Declarative schema for the behaviour settings, grouped into panels. Each
-     * control names the settings field it binds, its type, and (for selects) its
-     * options. A generic renderer/binder drives them so the whole set stays in
-     * one place — this mirrors the old config's general/keyboard/language tabs.
+     * Declarative schema for the settings panels. Each control names the
+     * settings field it binds, its type, and (for selects) its options. A
+     * generic renderer/binder drives them so the whole set stays in one place —
+     * this mirrors the old config's general/keyboard/language tabs.
+     *
+     * Every panel declares the `section` it lands in as well as its `tab`,
+     * because the two sections that draw from this schema have four tab names
+     * in common — general, layout, display and toolbar all exist under both
+     * Behavior and Appearance. Filtering on the tab alone happened to work only
+     * because Appearance's `general` tab is hand-written and never asks the
+     * schema for anything; the day it does, Behavior's General panels would
+     * appear under Appearance. Use `panelsFor(section, tab)` rather than
+     * filtering this list by hand.
+     *
+     * Despite the name this is no longer only the Behavior section's schema.
+     * Renaming the method touches every call site and the tests that pin them,
+     * so that is left for the Appearance migration that will fold the
+     * hand-written `data-appearance-*` controls in here.
      */
     behaviorSchema() {
         const t = (k, f) => this.t(k, f);
@@ -6105,6 +6529,7 @@ class DashboardConfig {
             || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
         return [
             {
+                section: 'behavior',
                 tab: 'general',
                 title: t('config.generalGroupGeneral', 'General'),
                 note: t('config.generalGroupGeneralNote', 'Language, link behaviour, and dashboard-wide options.'),
@@ -6123,6 +6548,7 @@ class DashboardConfig {
                 // The old config kept the tips toggle beside the quick-start and
                 // what's-new actions, which is where people look for it. Split
                 // across two sections it read as a stray General option.
+                section: 'behavior',
                 tab: 'general',
                 title: t('config.generalGroupOnboarding', 'Onboarding'),
                 note: t('config.generalGroupOnboardingNote', 'The quick-start card, the occasional keyboard tip, and the release summary.'),
@@ -6131,6 +6557,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'datetime',
                 title: t('config.generalGroupDateTime', 'Date, time & weather'),
                 note: t('config.generalGroupDateTimeNote', 'The clock, date line, and weather shown above the bookmarks.'),
@@ -6157,6 +6584,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'appearance',
                 tab: 'layout',
                 title: t('config.generalGroupLayout', 'Bookmarks layout'),
                 note: t('config.generalLayoutIntro', 'Grid structure, column count, layout preset, and density.'),
@@ -6199,6 +6627,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'appearance',
                 tab: 'display',
                 title: t('config.generalGroupBookmarkDisplay', 'Bookmark display'),
                 note: t('config.generalBookmarksDisplayIntro', 'Favicons, shortcuts, badges, link preview, sorting, and navigation.'),
@@ -6215,32 +6644,69 @@ class DashboardConfig {
                     bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
                 ],
             },
+            /*
+             * The thirteen chrome toggles, split the way the dashboard itself
+             * is built rather than listed in one run.
+             *
+             * As a single panel this was thirteen identical "Show the X button"
+             * checkboxes with nothing to navigate by, and no way to tell which
+             * of them referred to the strip at the top and which to the bar at
+             * the bottom. The three groups below are the header, and the two
+             * `.btn-group`s the button bar is actually made of (see
+             * templates/dashboard.html) — so the panel a setting sits in tells
+             * you where on screen to look for it.
+             *
+             * Each panel carries `bulk: 'chrome'`, which draws the Show all /
+             * Hide all pair; see renderPanelBulkActions().
+             *
+             * Chrome lives on <body> as data-* attributes rather than being
+             * read at render time, so these need applyChromeSettings to show
+             * up without a reload — see setBehavior's 'chrome' case.
+             */
             {
+                section: 'appearance',
                 tab: 'toolbar',
-                title: t('config.generalGroupChrome', 'Toolbar & tabs'),
-                note: t('config.generalHeaderButtonsIntro', 'Button visibility in the dashboard footer and header.'),
-                // Chrome lives on <body> as data-* attributes rather than being
-                // read at render time, so these need applyChromeSettings to show
-                // up without a reload — see setBehavior's 'chrome' case.
+                title: t('config.chromeGroupHeader', 'Header'),
+                note: t('config.chromeGroupHeaderNote', 'The strip along the top of the dashboard: the page tabs, the title, and the two icons on the right.'),
+                bulk: 'chrome',
                 controls: [
                     chrome('showPageTabs', 'config.showPageTabsLabel', 'Show page tabs'),
                     chrome('showPageNamesInTabs', 'config.showPageNamesInTabsLabel', 'Show page names in tabs'),
                     chrome('showTitle', 'config.showTitleLabel', 'Show the dashboard title'),
+                    chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
+                    chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
+                ],
+            },
+            {
+                section: 'appearance',
+                tab: 'toolbar',
+                title: t('config.chromeGroupPrimary', 'Button bar — main buttons'),
+                note: t('config.chromeGroupPrimaryNote', 'The four everyday actions. Hiding one leaves its keyboard shortcut working.'),
+                bulk: 'chrome',
+                controls: [
                     chrome('showAddBookmarkButton', 'config.showAddBookmarkButtonLabel', 'Show the add-bookmark button'),
                     chrome('showSearchButton', 'config.showSearchButtonLabel', 'Show the search button'),
-                    chrome('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
                     chrome('showCommandsButton', 'config.showCommandsButtonLabel', 'Show the commands button'),
-                    chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
+                    chrome('showFindersButton', 'config.showFindersButtonLabel', 'Show the finders button'),
+                ],
+            },
+            {
+                section: 'appearance',
+                tab: 'toolbar',
+                title: t('config.chromeGroupSecondary', 'Button bar — extras'),
+                note: t('config.chromeGroupSecondaryNote', 'The second group, beside the main buttons. With all of these off the group disappears entirely.'),
+                bulk: 'chrome',
+                controls: [
                     chrome('showRecentButton', 'config.showRecentButtonLabel', 'Show the recent button'),
                     chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
                     chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
-                    chrome('showConfigButton', 'config.showConfigButtonLabel', 'Show the config button'),
-                    chrome('showHealthDashboard', 'config.showHealthDashboardLabel', 'Show the health icon'),
+                    chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
                     // Button bar position lives on the Layout tab, as a button
                     // group beside the other two layout choices.
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'search',
                 title: t('config.generalGroupSearch', 'Search'),
                 note: t('config.generalSearchInputIntro', 'Search overlay behavior and suggestions.'),
@@ -6253,6 +6719,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'search',
                 title: t('config.generalGroupQuickAdd', 'Quick add & inbox'),
                 note: t('config.generalGroupQuickAddNote', 'What happens when you paste a URL onto the dashboard — add it straight away, or collect it in the inbox to sort later.'),
@@ -6266,6 +6733,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.statusBrowserChecksTitle', 'Checks in this browser'),
                 note: t('config.statusBrowserChecksNote', 'How the dashboard tests the bookmarks on screen while you have it open. Applies to bookmarks set to Periodic or Monitor; a bookmark set to Off is never tested.'),
@@ -6276,11 +6744,16 @@ class DashboardConfig {
                         opt(60, '1 h'), opt(360, '6 h'), opt(1440, '24 h'),
                     ] },
                     bool('skipFastPing', 'config.skipFastPingLabel', 'Skip the fast ping pre-check'),
-                    { field: 'statusOfflineRetries', type: 'number', label: t('config.statusOfflineRetriesLabel', 'Retries before offline'), min: 0, max: 10 },
-                    { field: 'statusOfflineRetryDelayMs', type: 'number', label: t('config.statusOfflineRetryDelayLabel', 'Delay between retries (ms)'), min: 0, max: 60000 },
+                    // Bounds match the server's validation (models.go): it
+                    // silently rewrites anything outside them, so a wider input
+                    // here accepted a value, said "Saved", and handed back the
+                    // default.
+                    { field: 'statusOfflineRetries', type: 'number', label: t('config.statusOfflineRetriesLabel', 'Retries before offline'), min: 1, max: 10 },
+                    { field: 'statusOfflineRetryDelayMs', type: 'number', label: t('config.statusOfflineRetryDelayLabel', 'Delay between retries (ms)'), min: 100, max: 3000 },
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
                 note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
@@ -6315,18 +6788,36 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.statusServerChecksTitle', 'Checks on the server'),
                 note: t('config.statusServerChecksNote', 'Re-tests bookmarks on the server, so the Health view stays current without anyone having the dashboard open. Off by default because it makes outbound requests.'),
                 appliesTo: t('config.appliesToPeriodicMonitor', 'Periodic + Monitor'),
                 controls: [
                     bool('healthAutoRecheckEnabled', 'config.healthRecheckLabel', 'Re-check in the background'),
-                    { field: 'healthRecheckIntervalMinutes', type: 'select', label: t('config.healthRecheckIntervalLabel', 'Background re-check interval'), options: [
-                        opt(15, '15 min'), opt(30, '30 min'), opt(60, '1 h'), opt(360, '6 h'), opt(1440, '24 h'),
+                    // Bound to healthAutoRecheckIntervalHours, in hours.
+                    //
+                    // This used to write `healthRecheckIntervalMinutes`, which
+                    // is not a field the server has: the save succeeded, the
+                    // value was dropped on the floor, and the background checks
+                    // carried on at whatever the real setting said. The same
+                    // interval is also on Data & backups, which was bound
+                    // correctly all along — so the two controls now agree
+                    // instead of one of them being decorative.
+                    //
+                    // Options match that tab's and stay inside the server's
+                    // 1–168 hour clamp (health_recheck.go).
+                    { field: 'healthAutoRecheckIntervalHours', type: 'select', label: t('config.healthRecheckIntervalLabel', 'Background re-check interval'), options: [
+                        opt(6, t('config.recheckEveryHours', 'Every {n}h').replace('{n}', '6')),
+                        opt(12, t('config.recheckEveryHours', 'Every {n}h').replace('{n}', '12')),
+                        opt(24, t('config.recheckDaily', 'Daily')),
+                        opt(48, t('config.recheckEveryDays', 'Every {n} days').replace('{n}', '2')),
+                        opt(168, t('config.recheckWeekly', 'Weekly')),
                     ] },
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
                 note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
@@ -6339,6 +6830,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'status',
                 title: t('config.pushNotifyTitle', 'Browser notifications'),
                 note: t('config.pushNotifyNote', 'Sends notifications to this browser, even when nextDash is closed. Requires HTTPS (or localhost) and permission per device.'),
@@ -6351,6 +6843,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'general',
                 title: t('config.generalGroupSync', 'Sync & feedback'),
                 note: t('config.generalGroupSyncNote', 'Settings normally follow you to every browser. Keep them on this device to give this one its own appearance and layout.'),
@@ -6360,6 +6853,7 @@ class DashboardConfig {
                 ],
             },
             {
+                section: 'behavior',
                 tab: 'privacy',
                 title: t('config.generalGroupPrivacy', 'Privacy'),
                 controls: [
@@ -6368,6 +6862,19 @@ class DashboardConfig {
                 ],
             },
         ];
+    }
+
+    /**
+     * The schema panels belonging to one section's tab.
+     *
+     * The single place that filters the schema, so a tab name shared by two
+     * sections cannot pull the other section's panels in. A panel with no
+     * `section` is treated as Behavior's, matching the old bare-tab behaviour.
+     */
+    panelsFor(section, tab) {
+        return this.behaviorSchema().filter((p) => (
+            (p.section || 'behavior') === section && (p.tab || 'general') === tab
+        ));
     }
 
     /** ℹ + ↺ affordances shown after a control, based on the field's metadata. */
@@ -6472,7 +6979,16 @@ class DashboardConfig {
         // `note` explains the panel; `appliesTo` names the availability modes the
         // panel's settings actually affect, because several of them are inert
         // unless a bookmark is set to Periodic or Monitor.
-        return schema.map((panel) => {
+        const rendered = schema.map((panel) => {
+            const changedFields = this.panelChangedFields(panel);
+            // With the filter on, a panel with nothing changed is dropped and
+            // the rest show only the controls that differ. The note and the
+            // applies-to badge stay: they explain the controls that remain.
+            if (this.changedOnly && !changedFields.length) return '';
+            const controls = this.changedOnly
+                ? panel.controls.filter((c) => changedFields.includes(c.field))
+                : panel.controls;
+
             const badge = panel.appliesTo
                 ? `<span class="config-applies-to" title="${esc(this.t('config.appliesToTitle', 'These settings only take effect for bookmarks set to this mode'))}">${esc(panel.appliesTo)}</span>`
                 : '';
@@ -6482,15 +6998,89 @@ class DashboardConfig {
             // schema rather than matched on a field name here, so retiring it is
             // deleting one line where the setting is defined.
             const stars = panel.highlight ? this.renderNewFeaturesPanelStars() : '';
+            const bulk = (panel.bulk && !this.changedOnly) ? this.renderPanelBulkActions(panel, prefix) : '';
+            const reset = this.renderPanelResetAction(panel, changedFields);
             return `
             <div class="config-panel${panel.highlight ? ' config-panel--animated' : ''}">
                 ${stars}
-                <h3 class="config-panel-title">${esc(panel.title)}${badge}</h3>
+                <h3 class="config-panel-title">${esc(panel.title)}${badge}${reset}</h3>
                 ${note}
-                ${panel.controls.map(renderControl).join('')}
+                ${bulk}
+                ${controls.map(renderControl).join('')}
             </div>
         `;
         }).join('');
+
+        if (this.changedOnly && !rendered.trim()) {
+            return `<p class="config-panel-empty">${esc(this.t('config.changedNoneOnTab',
+                'Nothing on this tab differs from its default.'))}</p>`;
+        }
+        return rendered;
+    }
+
+    /**
+     * "Reset panel" beside a panel's title, shown only once something in it
+     * differs from its default.
+     *
+     * The per-field ↺ is the right tool for one setting you regret; a panel of
+     * eight is eight clicks and eight saves. Hidden rather than disabled when
+     * there is nothing to reset, since a permanently dead control next to every
+     * heading is worse than no control.
+     */
+    renderPanelResetAction(panel, changedFields) {
+        if (!changedFields.length) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.panelResetAll', 'Reset panel');
+        const title = this.t('config.panelResetAllTitle', 'Put every setting in this panel back to its default');
+        return `<button type="button" class="config-panel-reset"
+                        data-panel-reset="${esc(changedFields.join(','))}"
+                        title="${esc(title)}">${esc(label)}</button>`;
+    }
+
+    /**
+     * Show all / Hide all for a panel of checkboxes.
+     *
+     * A panel of visibility toggles is the one place where the same answer is
+     * usually wanted for every row — "give me a bare dashboard", "put it all
+     * back" — and doing that a checkbox at a time is four to five clicks and as
+     * many saves. Offered only where the schema asks for it (`bulk: 'chrome'`),
+     * because it makes no sense on a panel whose toggles are unrelated to each
+     * other.
+     *
+     * The count beside them is what makes the pair readable: it says what the
+     * panel's current state is without reading five checkboxes, and it is the
+     * thing that tells you a click landed.
+     */
+    renderPanelBulkActions(panel, prefix) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const fields = (panel.controls || [])
+            .filter((c) => c.type === 'checkbox' && c.field)
+            .map((c) => c.field);
+        if (fields.length < 2) return '';
+
+        const shown = fields.filter((f) => s[f] !== false).length;
+        const label = this.t('config.chromeBulkCount', '{shown} of {total} shown')
+            .replace('{shown}', String(shown))
+            .replace('{total}', String(fields.length));
+        // The group is identified by its fields rather than by an index, so a
+        // panel that moves or is reordered keeps working.
+        const key = fields.join(',');
+
+        return `
+            <div class="config-panel-bulk">
+                <button type="button" class="config-btn config-btn--small"
+                        data-${prefix}-bulk="show" data-${prefix}-bulk-fields="${esc(key)}"
+                        ${shown === fields.length ? 'disabled' : ''}>
+                    ${esc(this.t('config.chromeBulkShowAll', 'Show all'))}
+                </button>
+                <button type="button" class="config-btn config-btn--small"
+                        data-${prefix}-bulk="hide" data-${prefix}-bulk-fields="${esc(key)}"
+                        ${shown === 0 ? 'disabled' : ''}>
+                    ${esc(this.t('config.chromeBulkHideAll', 'Hide all'))}
+                </button>
+                <span class="config-panel-bulk-count" data-${prefix}-bulk-count>${esc(label)}</span>
+            </div>`;
     }
 
     /** Bind a rendered schema's controls (and ℹ/↺ affordances) back to setBehavior. */
@@ -6523,11 +7113,143 @@ class DashboardConfig {
                 el.addEventListener('change', () => this.setBehavior(field, el.value, special));
             }
         });
+        this.bindPanelBulkActions(container, prefix);
+        this.bindChangedFilter(container);
+        this.bindPanelResetActions(container);
         this.bindPushDeviceControls(container);
         this.bindAffordances(container, (field) => {
             const el = container.querySelector(`[data-${prefix}-field="${CSS.escape(field)}"]`);
             const special = el?.getAttribute(`data-${prefix}-special`) || '';
             return special;
+        });
+    }
+
+    /**
+     * Wire a panel's Show all / Hide all pair.
+     *
+     * Deliberately not a loop over setBehavior: that method saves and repaints
+     * per call, so five toggles would be five PUTs, five chrome reapplications
+     * and five repaints for one click — and a failure halfway would leave the
+     * panel half applied. The fields are written together, the chrome is
+     * reapplied once, and one save covers the lot.
+     */
+    /**
+     * Open the filtered view from the Overview's count.
+     *
+     * The changed settings are spread over several tabs and the filter works a
+     * tab at a time, so this lands on the one carrying the most of them rather
+     * than on a fixed tab — arriving at Behavior › General to be shown one of
+     * four would read as the count being wrong. The line under the count names
+     * the sections, so the rest are not a surprise.
+     */
+    openChangedSettings() {
+        const changed = this.changedSettings();
+        if (!changed.length) return;
+
+        const tally = new Map();
+        changed.forEach((e) => {
+            const key = `${e.section}|${e.subTab || ''}`;
+            tally.set(key, (tally.get(key) || 0) + 1);
+        });
+        const [best] = [...tally.entries()].sort((a, b) => b[1] - a[1]);
+        const [section, subTab] = best[0].split('|');
+
+        this.changedOnly = true;
+        const prop = DashboardConfig.SUB_TAB_STATE[section];
+        if (prop && subTab) this[prop] = subTab;
+        this.selectSection(section, 'overview-changed');
+    }
+
+    /** The "Only changed" toggle above a tab of settings. */
+    bindChangedFilter(container) {
+        container.querySelectorAll('[data-config-action="toggle-changed"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.changedOnly = !this.changedOnly;
+                this._trackAction('changed-filter', { value: this.changedOnly ? 'on' : 'off' });
+                this.repaintActiveControlPanels();
+            });
+        });
+    }
+
+    /**
+     * "Reset panel" — put every changed field in one panel back to its default.
+     *
+     * Like the bulk visibility actions, this deliberately does not loop over
+     * setBehavior: that saves and repaints per call. The values are written
+     * together and saved once, so a panel of eight is one write rather than
+     * eight. Confirmed first, because unlike a visibility toggle this can throw
+     * away a webhook URL or a weather location that cannot be typed back from
+     * memory.
+     */
+    bindPanelResetActions(container) {
+        container.querySelectorAll('[data-panel-reset]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const fields = (btn.getAttribute('data-panel-reset') || '').split(',').filter(Boolean);
+                if (!fields.length) return;
+
+                const ok = await window.AppModal?.confirm?.({
+                    title: this.t('config.panelResetConfirmTitle', 'Reset this panel?'),
+                    message: this.t('config.panelResetConfirmBody',
+                        '{n} settings go back to their default. This cannot be undone.')
+                        .replace('{n}', String(fields.length)),
+                    confirmText: this.t('config.panelResetConfirmYes', 'Reset'),
+                });
+                if (ok === false) return;
+
+                const d = this.dash;
+                let special = '';
+                fields.forEach((field) => {
+                    const meta = this.fieldMeta(field);
+                    if (!meta || meta.def === undefined) return;
+                    d.settings[field] = meta.def;
+                    // Any field needing chrome reapplied makes the whole batch
+                    // need it; the pass is idempotent, so once is enough.
+                    const el = container.querySelector(`[data-behavior-field="${CSS.escape(field)}"]`);
+                    if (el?.getAttribute('data-behavior-special')) special = 'chromeRender';
+                });
+                this._trackAction('panel-reset', { fields: fields.length });
+
+                if (special) this.applyChromeSettings();
+                d.renderDashboard?.({ animate: false });
+                await this.saveSettingsWithFeedback();
+                this.repaintActiveControlPanels();
+            });
+        });
+    }
+
+    bindPanelBulkActions(container, prefix) {
+        container.querySelectorAll(`[data-${prefix}-bulk]`).forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const mode = btn.getAttribute(`data-${prefix}-bulk`);
+                const fields = (btn.getAttribute(`data-${prefix}-bulk-fields`) || '')
+                    .split(',')
+                    .filter(Boolean);
+                if (!fields.length) return;
+                const value = mode === 'show';
+
+                const d = this.dash;
+                fields.forEach((field) => { d.settings[field] = value; });
+                // One event for the group rather than one per field: the fields
+                // are a fixed enum, so the panel is the low-cardinality thing
+                // worth reporting.
+                this._trackAction('setting-bulk', { fields: fields.length, value: value ? 'on' : 'off' });
+
+                // Reflect it in the checkboxes straight away — nothing else
+                // redraws this panel, and the click should not feel deferred
+                // until the save comes back.
+                fields.forEach((field) => {
+                    const box = container.querySelector(
+                        `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="checkbox"]`
+                    );
+                    if (box instanceof HTMLInputElement) box.checked = value;
+                });
+
+                this.applyChromeSettings();
+                await this.saveSettingsWithFeedback();
+                // Repaints the count, the ↺ affordances and the disabled state
+                // of the pair itself.
+                this.repaintActiveControlPanels();
+            });
         });
     }
 
@@ -6742,13 +7464,57 @@ class DashboardConfig {
     }
 
     renderBehaviorBody() {
-        const panels = this.behaviorSchema().filter((p) => (p.tab || 'general') === this.behaviorTab);
-        const lead = this.behaviorTab === 'status' ? this.renderStatusModesLead() : '';
+        const panels = this.panelsFor('behavior', this.behaviorTab);
+        // The lead and the onboarding buttons are not settings, so they go with
+        // the full view and are dropped when only changed settings are wanted.
+        const lead = (this.behaviorTab === 'status' && !this.changedOnly) ? this.renderStatusModesLead() : '';
         // The two onboarding actions are buttons rather than settings, so they
         // cannot come from the schema; they are appended to the General tab so
         // the whole of onboarding sits together as it did in the old config.
-        const trailing = this.behaviorTab === 'general' ? this.renderOnboardingActions() : '';
-        return lead + this.renderControlPanels(panels, 'behavior') + trailing;
+        const trailing = (this.behaviorTab === 'general' && !this.changedOnly) ? this.renderOnboardingActions() : '';
+        return this.renderChangedFilterBar('behavior', this.behaviorTab)
+            + lead
+            + this.renderControlPanels(panels, 'behavior')
+            + trailing;
+    }
+
+    /**
+     * "Only changed" for a tab of settings, with the count that makes it worth
+     * offering.
+     *
+     * The count is the point: it answers "is anything on this tab not stock"
+     * without reading it, which is the question someone comparing their install
+     * against the documentation is actually asking. The toggle then hides the
+     * panels that have nothing to show.
+     *
+     * Rendered for the schema-driven tabs only. The hand-written Appearance
+     * controls are not panels the filter can reason about, so offering it there
+     * would hide nothing and say so incorrectly.
+     */
+    renderChangedFilterBar(section, tab) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const panels = this.panelsFor(section, tab);
+        const changed = panels.reduce((n, p) => n + this.panelChangedFields(p).length, 0);
+        const total = panels.reduce((n, p) => n + (p.controls || [])
+            .filter((c) => c.field && this.fieldMeta(c.field)?.def !== undefined).length, 0);
+        if (!total) return '';
+
+        const label = changed
+            ? this.t('config.changedOnCount', '{n} of {total} differ from the default')
+                .replace('{n}', String(changed)).replace('{total}', String(total))
+            : this.t('config.changedNone', 'Everything on this tab is at its default');
+
+        return `
+            <div class="config-changed-bar">
+                <button type="button"
+                        class="config-btn config-btn--small${this.changedOnly ? ' is-active' : ''}"
+                        data-config-action="toggle-changed"
+                        aria-pressed="${this.changedOnly ? 'true' : 'false'}"
+                        ${changed ? '' : 'disabled'}>
+                    ${esc(this.t('config.changedOnlyToggle', 'Only changed'))}
+                </button>
+                <span class="config-changed-count">${esc(label)}</span>
+            </div>`;
     }
 
     renderOnboardingActions() {
@@ -7026,7 +7792,17 @@ class DashboardConfig {
         }
     }
 
-    /** Re-render whichever schema-driven panel body is currently showing. */
+    /**
+     * Re-render whichever schema-driven panel body is currently showing.
+     *
+     * Appearance is in here as well as Behavior: three of its tabs (layout,
+     * display, toolbar) draw their panels from the same schema, so without
+     * this the ↺ reset button on those tabs put the value back and saved it
+     * but left the control showing the old one until the tab was reopened.
+     * Its body is rebuilt from the tab's own renderer rather than through
+     * repaintAppearanceBody(), which falls back to a full render() for
+     * anything but the custom-themes tab.
+     */
     repaintActiveControlPanels() {
         if (!this.isActiveView()) return;
         const container = document.getElementById('dashboard-layout');
@@ -7034,7 +7810,32 @@ class DashboardConfig {
         if (this.section === 'behavior') {
             const body = document.getElementById('config-behavior-body');
             if (body) { body.innerHTML = this.renderBehaviorBody(); this.bindControlPanels(container, 'behavior'); }
-        } else if (this.section === 'pages-tags' && this.ptTab === 'collections') {
+            return;
+        }
+        if (this.section === 'appearance') {
+            const body = document.getElementById('config-appearance-body');
+            const render = {
+                toolbar: () => this.renderAppearanceToolbarBody(),
+                layout: () => this.renderAppearanceLayoutBody(),
+                display: () => this.renderAppearanceDisplayBody(),
+            }[this.appearanceTab];
+            if (body && render) {
+                body.innerHTML = render();
+                // Scoped to the body that was just replaced, not the whole
+                // container: bindAppearanceControls also binds the sub-tab
+                // strip, which lives outside it and survives the repaint —
+                // rebinding it here would stack a second click handler and
+                // switch tabs twice per click.
+                //
+                // Both binders run: the schema panels bind by
+                // data-behavior-field, and the hand-written controls on
+                // layout/display bind their own data-appearance-* attributes.
+                this.bindControlPanels(body, 'behavior');
+                this.bindAppearanceControls(body);
+            }
+            return;
+        }
+        if (this.section === 'pages-tags' && this.ptTab === 'collections') {
             const body = document.getElementById('config-pt-body');
             if (body) { body.innerHTML = this.renderCollections(); this.bindCollections(container); }
         }
