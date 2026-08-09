@@ -71,8 +71,15 @@ async function bothLayouts(page, selector, props) {
 }
 
 test.describe('modern layout — config view', () => {
+    /**
+     * Tiles are read on Bookmarks, not Overview: the overview's status tile row
+     * was dropped when that section was regrouped by intent (all six numbers
+     * were already in At a glance or Needs attention), so opening it here found
+     * no .config-tile at all. Bookmarks keeps a summary row above its list.
+     */
     test('restyles status tiles', async ({ page }) => {
-        await openConfig(page);
+        await openConfig(page, 'bookmarks');
+        await expect(page.locator('.config-tile').first()).toBeVisible();
         const { classic, modern } = await bothLayouts(
             page,
             '.config-tile',
@@ -88,7 +95,8 @@ test.describe('modern layout — config view', () => {
     });
 
     test('insets the tile severity stripe so it follows the corner', async ({ page }) => {
-        await openConfig(page);
+        await openConfig(page, 'bookmarks');
+        await expect(page.locator('.config-tile').first()).toBeVisible();
 
         // Classic pins ::before to inset:0, which a rounded tile clips into a
         // wedge. Modern insets it vertically and rounds its outer end.

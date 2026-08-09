@@ -189,10 +189,14 @@ test.describe('config: sections restored from the old config', () => {
         await expect(page.locator('[data-behavior-field="monitorNotifyUrl"]')).toBeVisible();
     });
 
-    test('toolbar button toggles restored to the display tab', async ({ page }) => {
+    /**
+     * These live on Appearance → Toolbar & tabs, which they were given in
+     * 561c8cbd; the tab is itself split into three panels (header, and the two
+     * button-bar groups) so thirteen identical toggles are not one flat run.
+     */
+    test('toolbar button toggles live on the toolbar tab', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'appearance');
-        await page.locator('[data-appearance-tab="display"]').click();
+        await openAppearanceTab(page, 'toolbar');
         for (const f of ['showRecentButton', 'showCheatSheetButton', 'showConfigButton', 'showHealthDashboard']) {
             await expect(page.locator(`[data-behavior-field="${f}"]`)).toBeVisible();
         }
@@ -318,7 +322,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('toolbar toggles apply immediately, without a reload', async ({ page }) => {
         await loadDashboard(page);
-        await openAppearanceTab(page, 'display');
+        await openAppearanceTab(page, 'toolbar');
 
         const pairs = [
             ['showAddBookmarkButton', 'data-show-add-bookmark-button'],
@@ -342,7 +346,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('hiding page tabs takes effect at once and can be undone', async ({ page }) => {
         await loadDashboard(page);
-        await openAppearanceTab(page, 'display');
+        await openAppearanceTab(page, 'toolbar');
 
         const display = () => page.evaluate(() =>
             getComputedStyle(document.getElementById('page-navigation')).display);
@@ -356,11 +360,12 @@ test.describe('config: sections restored from the old config', () => {
     });
 
     /**
-     * The server accepts exactly bottom / bottom-left / bottom-right / side-left
-     * and silently rewrites anything else to 'bottom'. The view once offered
-     * invented names (center/left/right), so the control looked fine, reported
-     * "Saved", and changed nothing. Assert the values themselves, and that each
-     * survives the round trip rather than only reaching the DOM.
+     * The server accepts exactly bottom / bottom-left / bottom-right /
+     * side-left / side-right and silently rewrites anything else to 'bottom'
+     * (models.go). The view once offered invented names (center/left/right), so
+     * the control looked fine, reported "Saved", and changed nothing. Assert the
+     * values themselves, and that each survives the round trip rather than only
+     * reaching the DOM.
      */
     test('every button bar position applies live and is accepted by the server', async ({ page }) => {
         const rejected = [];
@@ -375,9 +380,9 @@ test.describe('config: sections restored from the old config', () => {
 
         expect(await page.locator('[data-appearance-barpos]')
             .evaluateAll((els) => els.map((e) => e.getAttribute('data-appearance-barpos'))))
-            .toEqual(['bottom', 'bottom-left', 'bottom-right', 'side-left']);
+            .toEqual(['bottom', 'bottom-left', 'bottom-right', 'side-left', 'side-right']);
 
-        for (const value of ['bottom-left', 'bottom-right', 'side-left', 'bottom']) {
+        for (const value of ['bottom-left', 'bottom-right', 'side-left', 'side-right', 'bottom']) {
             await page.locator(`[data-appearance-barpos="${value}"]`).click();
             await expect.poll(() => page.evaluate(() =>
                 document.body.getAttribute('data-button-position'))).toBe(value);
@@ -396,7 +401,7 @@ test.describe('config: sections restored from the old config', () => {
 
     test('page names in tabs relabels the tabs at once', async ({ page }) => {
         await loadDashboard(page);
-        await openAppearanceTab(page, 'display');
+        await openAppearanceTab(page, 'toolbar');
 
         const label = () => page.evaluate(() =>
             document.querySelector('.page-nav-btn .page-tab-label')?.textContent);
@@ -451,14 +456,28 @@ test.describe('config: status & health explains the modes', () => {
         }
     });
 
+    /**
+     * Four badges, not three: monitor emphasis was added to this tab after this
+     * test was written, and it is Monitor-only like the webhook panel. Asserted
+     * from the schema rather than as a bare number, so adding a panel that says
+     * which modes it applies to does not fail the test that checks it says so.
+     */
     test('every settings panel says which modes it applies to', async ({ page }) => {
         await openStatus(page);
+
+        const expected = await page.evaluate(() => window.dashboardInstance.config
+            .panelsFor('behavior', 'status')
+            .filter((p) => p.appliesTo)
+            .map((p) => p.appliesTo));
+
         const badges = page.locator('.config-applies-to');
-        await expect(badges).toHaveCount(3);
-        // The webhook panel is the one that is Monitor-only.
+        await expect(badges).toHaveCount(expected.length);
         const texts = await badges.allTextContents();
+        expect(texts.map((t) => t.trim())).toEqual(expected);
+        // Both kinds are represented: the Monitor-only panels and the ones that
+        // Periodic also honours.
         expect(texts.some((t) => /monitor only/i.test(t))).toBe(true);
-        expect(texts.filter((t) => /periodic/i.test(t)).length).toBe(2);
+        expect(texts.some((t) => /periodic/i.test(t))).toBe(true);
     });
 
     test('the alerts panel spells out that Periodic never notifies', async ({ page }) => {
