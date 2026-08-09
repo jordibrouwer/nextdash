@@ -23,6 +23,19 @@ async function openPagesTags(page, finders = []) {
     await expect(page.locator('[data-finder-index="0"]')).toBeVisible({ timeout: 10_000 });
 }
 
+/**
+ * Put keyboard focus in the list panel without selecting a row.
+ *
+ * Clicking the panel's centre used to do this, but only because the centre
+ * happened to fall on empty space; once the panel gained a toolbar the same
+ * click landed on the first row and selected it, so the arrow keys started one
+ * row further down. Focusing the element states the intent instead of
+ * depending on where the middle of the panel happens to be.
+ */
+async function focusListPanel(page) {
+    await page.locator('#config-pt-body').focus();
+}
+
 test.describe('config list keyboard navigation', () => {
     test('arrow keys move between finder rows and highlight the selection', async ({ page }) => {
         await openPagesTags(page, [
@@ -30,7 +43,7 @@ test.describe('config list keyboard navigation', () => {
             { id: '2', name: 'Beta', searchUrl: 'https://b.com/?q=%s', shortcut: 'b' },
         ]);
 
-        await page.locator('#config-pt-body').click();
+        await focusListPanel(page);
         await page.keyboard.press('ArrowDown');
         await expect(page.locator('[data-finder-index="0"]')).toHaveClass(/keyboard-selected/);
 
@@ -48,7 +61,7 @@ test.describe('config list keyboard navigation', () => {
             { id: '1', name: 'Alpha', searchUrl: 'https://a.com/?q=%s', shortcut: 'a' },
         ]);
 
-        await page.locator('#config-pt-body').click();
+        await focusListPanel(page);
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('Enter');
         await expect(page.locator('[data-finder-index="0"] [data-finder="name"]')).toBeFocused();
@@ -61,7 +74,7 @@ test.describe('config list keyboard navigation', () => {
             { id: '3', name: 'Gamma', searchUrl: 'https://c.com/?q=%s', shortcut: 'c' },
         ]);
 
-        await page.locator('#config-pt-body').click();
+        await focusListPanel(page);
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('Shift+G');
         await expect(page.locator('[data-finder-index="2"]')).toHaveClass(/keyboard-selected/);
@@ -75,7 +88,7 @@ test.describe('config list keyboard navigation', () => {
             { id: '1', name: 'Alpha', searchUrl: 'https://a.com/?q=%s', shortcut: 'a' },
         ]);
 
-        await page.locator('#config-pt-body').click();
+        await focusListPanel(page);
         await page.keyboard.press('ArrowDown');
         await expect(page.locator('[data-finder-index="0"]')).toHaveClass(/keyboard-selected/);
 
@@ -112,7 +125,7 @@ test.describe('config list keyboard navigation', () => {
         await page.locator('[data-pt-tab="tags"]').click();
         await expect(page.locator('#config-tag-filter')).toBeVisible();
 
-        await page.locator('#config-pt-body').click();
+        await focusListPanel(page);
         await page.keyboard.press('/');
         await expect(page.locator('#config-tag-filter')).toBeFocused();
     });

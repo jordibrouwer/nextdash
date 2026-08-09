@@ -4174,7 +4174,21 @@
         "overviewNewFeatureHealthStatsWhat": "Het gezondheidsoverzicht kon één bladwijzer tot in detail beschrijven en het geheel nauwelijks: twintig monitors betekende twintig heartbeats en geen antwoord op hoe de week ging.",
         "overviewNewFeatureHealthStatsHow": "Het filter Gemonitord opent nu met gebundelde uptime over alle monitors, de minst beschikbare, wat trager is dan vorige week, en elke storing. De kop tekent het aandeel gezonde bladwijzers over de afgelopen 90 dagen.",
         "overviewNewFeatureHealthStatsEnable": "Niets aan te zetten, al heeft het paneel wel iets gemonitords nodig om te beschrijven. De trendlijn begint zodra je het overzicht op twee verschillende dagen hebt geopend.",
-        "overviewNewFeatureHealthStatsCta": "Health openen →"
+        "overviewNewFeatureHealthStatsCta": "Health openen →",
+        "ptCountFiltered": "{shown} van {total} getoond",
+        "ptViewOnlySorted": "Alleen weergave — de opgeslagen volgorde blijft ongewijzigd. Wis de sortering om rijen weer te verplaatsen.",
+        "ptViewOnlyFiltered": "Alleen weergave — wis het zoekveld om rijen weer te verplaatsen.",
+        "sortByNameDesc": "Naam (Z–A)",
+        "sortByMostUsed": "Meest gebruikt",
+        "sortByManualCategories": "Paginavolgorde",
+        "sortByManualPages": "Tabvolgorde",
+        "sortByManualFinders": "Opgeslagen volgorde",
+        "categoriesSearchPlaceholder": "Categorieën zoeken…",
+        "categoriesNoMatch": "Geen categorieën komen overeen met je zoekopdracht.",
+        "pagesSearchPlaceholder": "Pagina's zoeken…",
+        "pagesNoMatch": "Geen pagina's komen overeen met je zoekopdracht.",
+        "findersSearchPlaceholder": "Finders zoeken…",
+        "findersNoMatch": "Geen finders komen overeen met je zoekopdracht."
     },
     "colors": {
         "title": "thema-aanpassing",

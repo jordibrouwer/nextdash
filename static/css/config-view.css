@@ -2766,6 +2766,24 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-tertiary);
 }
 
+/* "View only — the saved order is unchanged", above a Pages & tags list that is
+   sorted or filtered. Carries a left rule so it reads as a state the list is
+   in, not as more intro prose: for categories and pages the row order is the
+   dashboard's order, so this has to be hard to miss. */
+.config-pt-view-only {
+    margin: 0 0 10px;
+    padding-left: 0.6rem;
+    border-left: 2px solid var(--border-secondary);
+    font-size: 0.78rem;
+}
+
+/* "8 of 14 shown" — only rendered when a filter actually hides something. */
+.config-pt-count {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+}
+
 .config-bm-keyboard-legend kbd,
 .config-form-keyboard-legend kbd,
 .config-list-keyboard-legend kbd {

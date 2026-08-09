@@ -4174,7 +4174,21 @@
         "overviewNewFeatureHealthStatsWhat": "La vue santé décrivait un favori en détail et l'ensemble à peine : vingt moniteurs, c'était vingt battements et aucune réponse sur la semaine écoulée.",
         "overviewNewFeatureHealthStatsHow": "Le filtre Surveillés ouvre désormais sur la disponibilité cumulée de tous les moniteurs, les moins disponibles, ce qui a ralenti depuis la semaine dernière, et chaque panne. L'en-tête trace la part de favoris sains sur les 90 derniers jours.",
         "overviewNewFeatureHealthStatsEnable": "Rien à activer, même si le panneau a besoin de quelque chose de surveillé à décrire. La courbe démarre dès que vous avez ouvert la vue santé deux jours différents.",
-        "overviewNewFeatureHealthStatsCta": "Ouvrir Health →"
+        "overviewNewFeatureHealthStatsCta": "Ouvrir Health →",
+        "ptCountFiltered": "{shown} sur {total} affichés",
+        "ptViewOnlySorted": "Affichage seulement — l'ordre enregistré est inchangé. Effacez le tri pour déplacer à nouveau les lignes.",
+        "ptViewOnlyFiltered": "Affichage seulement — effacez la recherche pour déplacer à nouveau les lignes.",
+        "sortByNameDesc": "Nom (Z–A)",
+        "sortByMostUsed": "Les plus utilisés",
+        "sortByManualCategories": "Ordre des pages",
+        "sortByManualPages": "Ordre des onglets",
+        "sortByManualFinders": "Ordre enregistré",
+        "categoriesSearchPlaceholder": "Rechercher des catégories…",
+        "categoriesNoMatch": "Aucune catégorie ne correspond à votre recherche.",
+        "pagesSearchPlaceholder": "Rechercher des pages…",
+        "pagesNoMatch": "Aucune page ne correspond à votre recherche.",
+        "findersSearchPlaceholder": "Rechercher des finders…",
+        "findersNoMatch": "Aucun finder ne correspond à votre recherche."
     },
     "colors": {
         "title": "personnalisation du thème",

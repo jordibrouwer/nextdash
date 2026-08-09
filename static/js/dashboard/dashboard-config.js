@@ -45,6 +45,19 @@ class DashboardConfig {
         this._loadPromise = null;
         // Pages & tags sub-tab (finders/tags/collections native; pages/categories embedded).
         this.ptTab = 'categories';
+        /**
+         * Search and sort for the Pages & tags lists, one entry per tab.
+         *
+         * Kept per tab rather than shared: the tabs hold different things, and a
+         * query typed against tags that survived a switch to pages would filter
+         * a list you never filtered. 'manual' is each list's stored order — the
+         * one the ↑ ↓ buttons write — and stays the default so the tabs open
+         * looking the way they always have.
+         */
+        this.ptQuery = { categories: '', tags: '', pages: '', finders: '' };
+        // Tags default to 'name': they are derived from bookmarks and have no
+        // stored order of their own, so there is no "manual" to fall back to.
+        this.ptSort = { categories: 'manual', tags: 'name', pages: 'manual', finders: 'manual' };
         // Appearance sub-tab.
         this.appearanceTab = 'general';
         this._finders = null;
@@ -7954,7 +7967,154 @@ class DashboardConfig {
         else if (this.ptTab === 'collections') { this.bindCollections(container); }
         else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
         else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
+        this.bindPtToolbar(container);
         this.bindListKeyboard(container);
+    }
+
+    /* ── Shared list toolbar (Pages & tags) ────────────────────────────────── */
+
+    /**
+     * The search / sort / Add strip above a Pages & tags list.
+     *
+     * One helper for all four tabs so they cannot drift apart, and built from
+     * the same .config-crud-toolbar the Bookmarks list uses, so the two sections
+     * read as the same design rather than two takes on it. The Add button lives
+     * here rather than under the list: at the foot it sat below the keyboard
+     * legend, which put the primary action of the panel behind a paragraph of
+     * chrome, and moved further down every time the list grew.
+     *
+     * @param {object} o
+     * @param {string} o.tab          Which ptQuery/ptSort entry this drives.
+     * @param {string} o.placeholder  Search field placeholder.
+     * @param {Array}  o.sorts        [value, label] pairs; 'manual' comes first.
+     * @param {string} o.addAttr      Data attribute for the Add button.
+     * @param {string} o.addLabel     Add button text.
+     * @param {string} [o.extra]      Markup placed before Add (the page picker).
+     */
+    renderPtToolbar(o) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const query = this.ptQuery[o.tab] || '';
+        const sortOptions = o.sorts.map(([v, label]) =>
+            `<option value="${esc(v)}"${this.ptSort[o.tab] === v ? ' selected' : ''}>${esc(label)}</option>`
+        ).join('');
+        return `
+            <div class="config-crud-toolbar">
+                <input type="search" class="config-text" data-pt-search="${esc(o.tab)}"
+                       placeholder="${esc(o.placeholder)}" value="${esc(query)}">
+                <select class="config-select" data-pt-sort="${esc(o.tab)}"
+                        aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${sortOptions}</select>
+                ${o.extra || ''}
+                <button type="button" class="config-btn config-btn--small" ${o.addAttr}>${esc(o.addLabel)}</button>
+            </div>`;
+    }
+
+    /**
+     * The sort options every list shares: its own stored order, then A–Z both
+     * ways. The manual label differs per tab ("Page order", "Tab order") because
+     * "manual" says nothing about what the order actually means.
+     */
+    ptNameSorts(manualLabel) {
+        return [
+            ['manual', manualLabel],
+            ['name', this.t('config.sortByName', 'Name (A–Z)')],
+            ['nameDesc', this.t('config.sortByNameDesc', 'Name (Z–A)')],
+        ];
+    }
+
+    /**
+     * "8 of 14 shown" above a filtered list, matching the count the Bookmarks
+     * list carries. Silent when nothing is filtered out: a count that always
+     * equals the total is noise.
+     */
+    renderPtCountLabel(tab, shown, total) {
+        if (shown === total) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const label = this.t('config.ptCountFiltered', '{shown} of {total} shown')
+            .replace('{shown}', String(shown))
+            .replace('{total}', String(total));
+        return `<p class="config-pt-count">${esc(label)}</p>`;
+    }
+
+    /**
+     * True when the list on screen is not in its stored order, or is showing
+     * only part of itself.
+     *
+     * For categories and pages that order is not a display preference — it is
+     * the order they appear in on the dashboard, and the ↑ ↓ buttons are how
+     * you set it. So sorting here is a way of looking at the list, never a way
+     * of changing it: nothing is written, and the move buttons come off the
+     * rows entirely while it is on. Hidden rather than disabled, because a
+     * greyed-out arrow beside a row still says "this row is here, in this
+     * position", which is exactly the claim a sorted view cannot make.
+     */
+    ptListReordered(tab) {
+        return (this.ptSort[tab] || 'manual') !== 'manual' || Boolean(String(this.ptQuery[tab] || '').trim());
+    }
+
+    /**
+     * Says outright that the list is only being looked at differently, so a
+     * sorted view is never mistaken for a saved reordering.
+     */
+    renderPtReorderNote(tab) {
+        if (!this.ptListReordered(tab)) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const sorted = (this.ptSort[tab] || 'manual') !== 'manual';
+        const text = sorted
+            ? this.t('config.ptViewOnlySorted', 'View only — the saved order is unchanged. Clear the sort to move rows again.')
+            : this.t('config.ptViewOnlyFiltered', 'View only — clear the search to move rows again.');
+        return `<p class="config-panel-note config-pt-view-only">${esc(text)}</p>`;
+    }
+
+    /**
+     * Filter by name, then sort, without disturbing the stored list.
+     *
+     * Rows carry their stored index so the row handlers keep addressing the
+     * right entry: everything that edits, deletes or moves a row reads that
+     * index into the underlying array, which sorting the display must not
+     * change.
+     */
+    ptVisibleRows(tab, items, nameOf) {
+        const withIndex = items.map((item, index) => ({ item, index }));
+        const q = String(this.ptQuery[tab] || '').trim().toLowerCase();
+        const filtered = q
+            ? withIndex.filter(({ item }) => String(nameOf(item) || '').toLowerCase().includes(q))
+            : withIndex;
+        const sort = this.ptSort[tab] || 'manual';
+        if (sort === 'manual') return filtered;
+        const by = (fn) => [...filtered].sort(fn);
+        if (sort === 'name') {
+            return by((a, b) => String(nameOf(a.item) || '').localeCompare(String(nameOf(b.item) || '')));
+        }
+        if (sort === 'nameDesc') {
+            return by((a, b) => String(nameOf(b.item) || '').localeCompare(String(nameOf(a.item) || '')));
+        }
+        return filtered;
+    }
+
+    /** Search and sort handlers, rebound after every Pages & tags repaint. */
+    bindPtToolbar(container) {
+        container.querySelectorAll('[data-pt-search]').forEach((input) => {
+            const tab = input.getAttribute('data-pt-search');
+            input.addEventListener('input', () => {
+                this.ptQuery[tab] = input.value;
+                this.repaintPtBody();
+                // The repaint replaces the field, so focus and caret have to be
+                // put back or every keystroke would be the last one typed.
+                const next = document.querySelector(`[data-pt-search="${CSS.escape(tab)}"]`);
+                if (next) {
+                    next.focus();
+                    const end = next.value.length;
+                    next.setSelectionRange(end, end);
+                }
+            });
+        });
+        container.querySelectorAll('[data-pt-sort]').forEach((select) => {
+            const tab = select.getAttribute('data-pt-sort');
+            select.addEventListener('change', () => {
+                this.ptSort[tab] = select.value;
+                this.repaintPtBody();
+            });
+        });
     }
 
     /* ── Finders (native) ──────────────────────────────────────────────────── */
@@ -7966,7 +8126,8 @@ class DashboardConfig {
         if (this._finders == null) {
             return `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
         }
-        const rows = this._finders.map((f, i) => {
+        const visible = this.ptVisibleRows('finders', this._finders, (f) => f.name);
+        const rows = visible.map(({ item: f, index: i }) => {
             // search.js does searchUrl.replace('%s', query), which is a no-op
             // when the placeholder is absent: the finder then opens the bare URL
             // and silently drops what you typed. The old config warned about
@@ -7988,12 +8149,22 @@ class DashboardConfig {
             </li>
         `;
         }).join('');
+        // No ↑ ↓ here, so sorting the display cannot desync a move button and
+        // the reorder note has nothing to warn about.
+        const empty = this._finders.length === 0
+            ? this.t('config.findersEmpty', 'No finders yet.')
+            : this.t('config.findersNoMatch', 'No finders match your search.');
         return `
             <p class="config-panel-note">${esc(this.t('config.findersIntro', 'Finders are search shortcuts. Use %s in the URL where the query goes.'))}</p>
-            <ul class="config-crud-list">${rows || `<li class="config-panel-empty">${esc(this.t('config.findersEmpty', 'No finders yet.'))}</li>`}</ul>
-            <div class="config-actions">
-                <button type="button" class="config-btn" data-finder-add>${esc(this.t('config.finderAdd', 'Add finder'))}</button>
-            </div>
+            ${this.renderPtToolbar({
+                tab: 'finders',
+                placeholder: this.t('config.findersSearchPlaceholder', 'Search finders…'),
+                sorts: this.ptNameSorts(this.t('config.sortByManualFinders', 'Saved order')),
+                addAttr: 'data-finder-add',
+                addLabel: this.t('config.finderAdd', 'Add finder'),
+            })}
+            ${this.renderPtCountLabel('finders', visible.length, this._finders.length)}
+            <ul class="config-crud-list">${rows || `<li class="config-panel-empty">${esc(empty)}</li>`}</ul>
         `;
     }
 
@@ -8227,11 +8398,21 @@ class DashboardConfig {
         return ((h % 9) - 4) * 0.55;
     }
 
-    /** Tags passing the filter box, in the stored order (most used first). */
+    /**
+     * Tags matching the filter, in the chosen order.
+     *
+     * Unlike the other lists there is no stored order to preserve — tags are
+     * derived from the bookmarks that carry them and arrive sorted A–Z — so the
+     * sort here is a plain reordering with no move buttons to desync.
+     */
     visibleTags() {
         const q = String(this._tagQuery || '').trim().toLowerCase();
         const list = this._tagList || [];
-        return q ? list.filter((t) => t.tag.toLowerCase().includes(q)) : list;
+        const filtered = q ? list.filter((t) => t.tag.toLowerCase().includes(q)) : list;
+        const sort = this.ptSort.tags || 'name';
+        if (sort === 'nameDesc') return [...filtered].sort((a, b) => b.tag.localeCompare(a.tag));
+        if (sort === 'count') return [...filtered].sort((a, b) => b.count - a.count);
+        return [...filtered].sort((a, b) => a.tag.localeCompare(b.tag));
     }
 
     /**
@@ -8299,8 +8480,19 @@ class DashboardConfig {
                 <input type="search" class="config-text" id="config-tag-filter"
                        placeholder="${esc(this.t('config.tagsFilterPlaceholder', 'Filter tags…'))}"
                        value="${esc(this._tagQuery || '')}">
+                <select class="config-select" data-pt-sort="tags"
+                        aria-label="${esc(this.t('config.sortLabel', 'Sort'))}">${
+                    [
+                        ['name', this.t('config.sortByName', 'Name (A–Z)')],
+                        ['nameDesc', this.t('config.sortByNameDesc', 'Name (Z–A)')],
+                        ['count', this.t('config.sortByMostUsed', 'Most used')],
+                    ].map(([v, label]) =>
+                        `<option value="${esc(v)}"${(this.ptSort.tags || 'name') === v ? ' selected' : ''}>${esc(label)}</option>`
+                    ).join('')
+                }</select>
                 ${this._tagQuery ? `<button type="button" class="config-btn config-btn--small" data-tag-filter-clear>${esc(this.t('config.statsFilterClear', 'Clear'))}</button>` : ''}
             </div>
+            ${this.renderPtCountLabel('tags', visible.length, this._tagList.length)}
             ${rows
                 ? `<ul class="config-crud-list">${rows}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.tagsNoMatch', 'No tags match your filter.'))}</p>`}
@@ -8877,7 +9069,9 @@ class DashboardConfig {
         const counts = this.pageBookmarkCounts();
         const pageCounts = pages.map((p) => counts.get(String(p.id)) || 0);
         const scales = DashboardConfig.statScales(pageCounts);
-        const rows = pages.map((p, i) => {
+        const locked = this.ptListReordered('pages');
+        const visible = this.ptVisibleRows('pages', pages, (p) => p.name);
+        const rows = visible.map(({ item: p, index: i }) => {
             const isFirst = Number(p.id) === 1;
             return `
             <li class="config-crud-row" data-page-row="${esc(p.id)}">
@@ -8888,22 +9082,31 @@ class DashboardConfig {
                     ${this.renderStatMeta(pageCounts[i], scales[i], 'config.pageBookmarkCount', '{count} bookmarks')}
                 </div>
                 <div class="config-crud-row-actions">
+                    ${locked ? '' : `
                     <button type="button" class="config-btn config-btn--small" data-page-move="up" data-id="${esc(p.id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
-                    <button type="button" class="config-btn config-btn--small" data-page-move="down" data-id="${esc(p.id)}" ${i === pages.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
+                    <button type="button" class="config-btn config-btn--small" data-page-move="down" data-id="${esc(p.id)}" ${i === pages.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
                     <button type="button" class="config-btn config-btn--small config-btn--danger" data-page-delete="${esc(p.id)}" ${isFirst ? 'disabled title="' + esc(this.t('config.pageDeleteFirstBlocked', 'The first page cannot be deleted')) + '"' : ''}>${esc(this.t('config.backupDelete', 'Delete'))}</button>
                 </div>
             </li>`;
         }).join('');
         return `
             <p class="config-panel-note">${esc(this.t('config.pagesIntroView', 'Rename, recolour, reorder (↑ ↓), add, or remove dashboard pages. The first page cannot be removed.'))}</p>
+            ${this.renderPtToolbar({
+                tab: 'pages',
+                placeholder: this.t('config.pagesSearchPlaceholder', 'Search pages…'),
+                sorts: this.ptNameSorts(this.t('config.sortByManualPages', 'Tab order')),
+                addAttr: 'data-page-add',
+                addLabel: this.t('config.pageAdd', 'Add page'),
+            })}
+            ${this.renderPtReorderNote('pages')}
             ${this.renderStatSummary([
                 [pages.length, this.t('config.pagesStatTotal', 'pages')],
                 [pageCounts.reduce((sum, n) => sum + n, 0), this.t('config.pagesStatBookmarks', 'bookmarks')],
             ])}
-            <ul class="config-crud-list">${rows}</ul>
-            <div class="config-actions">
-                <button type="button" class="config-btn" data-page-add>${esc(this.t('config.pageAdd', 'Add page'))}</button>
-            </div>
+            ${this.renderPtCountLabel('pages', visible.length, pages.length)}
+            ${rows
+                ? `<ul class="config-crud-list">${rows}</ul>`
+                : `<p class="config-panel-empty">${esc(this.t('config.pagesNoMatch', 'No pages match your search.'))}</p>`}
         `;
     }
 
@@ -9038,6 +9241,10 @@ class DashboardConfig {
     }
 
     movePage(id, dir) {
+        // Same guard as the category move: the arrows are absent under a sort
+        // or search, and reordering there would act on a position the list on
+        // screen is not actually showing.
+        if (this.ptListReordered('pages')) return;
         const pages = this.dash.pages || [];
         const idx = pages.findIndex((p) => Number(p.id) === Number(id));
         if (idx < 0) return;
@@ -9057,6 +9264,7 @@ class DashboardConfig {
         const pageOptions = pages.map((p) =>
             `<option value="${esc(p.id)}" ${Number(p.id) === Number(pageId) ? 'selected' : ''}>${esc(p.name || p.id)}</option>`
         ).join('');
+        const locked = this.ptListReordered('categories');
         let body;
         if (this._categories == null) {
             body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
@@ -9066,15 +9274,18 @@ class DashboardConfig {
             const counts = this.categoryBookmarkCounts(pageId);
             const catCounts = this._categories.map((c) => DashboardConfig.categoryCountFor(counts, c));
             const scales = DashboardConfig.statScales(catCounts);
-            const rows = this._categories.map((c, i) => `
+            const visible = this.ptVisibleRows('categories', this._categories, (c) => c.name);
+            const last = this._categories.length - 1;
+            const rows = visible.map(({ item: c, index: i }) => `
                 <li class="config-crud-row" data-cat-row="${i}">
                     <div class="config-crud-fields">
                         <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
                         ${this.renderStatMeta(catCounts[i], scales[i], 'config.categoryBookmarkCount', '{count} bookmarks')}
                     </div>
                     <div class="config-crud-row-actions">
+                        ${locked ? '' : `
                         <button type="button" class="config-btn config-btn--small" data-cat-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
-                        <button type="button" class="config-btn config-btn--small" data-cat-move="down" data-index="${i}" ${i === this._categories.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
+                        <button type="button" class="config-btn config-btn--small" data-cat-move="down" data-index="${i}" ${i === last ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
                         <button type="button" class="config-btn config-btn--small config-btn--danger" data-cat-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
                     </div>
                 </li>`).join('');
@@ -9082,18 +9293,24 @@ class DashboardConfig {
                 [this._categories.length, this.t('config.categoriesStatTotal', 'categories')],
                 [catCounts.reduce((sum, n) => sum + n, 0), this.t('config.categoriesStatBookmarks', 'bookmarks on this page')],
             ]);
-            body = `${summary}<ul class="config-crud-list">${rows}</ul>`;
+            body = `${summary}${this.renderPtCountLabel('categories', visible.length, this._categories.length)}${rows
+                ? `<ul class="config-crud-list">${rows}</ul>`
+                : `<p class="config-panel-empty">${esc(this.t('config.categoriesNoMatch', 'No categories match your search.'))}</p>`}`;
         }
+        const pagePicker = `
+            <select class="config-select" data-cat-page aria-label="${esc(this.t('config.categoriesPageLabel', 'Page'))}">${pageOptions}</select>`;
         return `
             <p class="config-panel-note">${esc(this.t('config.categoriesIntroView', 'Categories group bookmarks within a page. Pick a page, then rename, reorder (↑ ↓), add, or remove its categories.'))}</p>
-            <div class="config-field">
-                <span class="config-field-label">${esc(this.t('config.categoriesPageLabel', 'Page'))}</span>
-                <select class="config-select" data-cat-page>${pageOptions}</select>
-            </div>
+            ${this.renderPtToolbar({
+                tab: 'categories',
+                placeholder: this.t('config.categoriesSearchPlaceholder', 'Search categories…'),
+                sorts: this.ptNameSorts(this.t('config.sortByManualCategories', 'Page order')),
+                extra: pagePicker,
+                addAttr: 'data-cat-add',
+                addLabel: this.t('config.categoryAdd', 'Add category'),
+            })}
+            ${this.renderPtReorderNote('categories')}
             ${body}
-            <div class="config-actions">
-                <button type="button" class="config-btn" data-cat-add>${esc(this.t('config.categoryAdd', 'Add category'))}</button>
-            </div>
         `;
     }
 
@@ -9220,6 +9437,11 @@ class DashboardConfig {
         });
         container.querySelectorAll('[data-cat-move]').forEach((btn) => {
             btn.addEventListener('click', () => {
+                // The buttons are not rendered under a sort or search, so this
+                // only fires when the list is in its stored order. Checked here
+                // too: a swap by stored index against a reordered display would
+                // move a row the user never pointed at.
+                if (this.ptListReordered('categories')) return;
                 const i = Number(btn.getAttribute('data-index'));
                 const dir = btn.getAttribute('data-cat-move');
                 const swap = dir === 'up' ? i - 1 : i + 1;

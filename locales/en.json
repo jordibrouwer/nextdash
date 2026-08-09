@@ -4174,7 +4174,21 @@
         "overviewNewFeatureHealthStatsWhat": "The health view could describe one bookmark in detail and the whole set barely at all: twenty monitors meant twenty heartbeats and no answer to how the week went.",
         "overviewNewFeatureHealthStatsHow": "The Monitored filter now opens with pooled uptime across every monitor, the least available ones, anything slower than last week, and every outage. The header draws the share of healthy bookmarks over the last 90 days.",
         "overviewNewFeatureHealthStatsEnable": "Nothing to switch on, though the panel needs something monitored to describe. The trend line starts once you have opened the health view on two separate days.",
-        "overviewNewFeatureHealthStatsCta": "Open Health →"
+        "overviewNewFeatureHealthStatsCta": "Open Health →",
+        "ptCountFiltered": "{shown} of {total} shown",
+        "ptViewOnlySorted": "View only — the saved order is unchanged. Clear the sort to move rows again.",
+        "ptViewOnlyFiltered": "View only — clear the search to move rows again.",
+        "sortByNameDesc": "Name (Z–A)",
+        "sortByMostUsed": "Most used",
+        "sortByManualCategories": "Page order",
+        "sortByManualPages": "Tab order",
+        "sortByManualFinders": "Saved order",
+        "categoriesSearchPlaceholder": "Search categories…",
+        "categoriesNoMatch": "No categories match your search.",
+        "pagesSearchPlaceholder": "Search pages…",
+        "pagesNoMatch": "No pages match your search.",
+        "findersSearchPlaceholder": "Search finders…",
+        "findersNoMatch": "No finders match your search."
     },
     "colors": {
         "title": "theme customization",

@@ -4174,7 +4174,21 @@
         "overviewNewFeatureHealthStatsWhat": "Die Gesundheitsansicht konnte ein Lesezeichen im Detail beschreiben und das Ganze kaum: zwanzig Monitore hießen zwanzig Heartbeats und keine Antwort darauf, wie die Woche lief.",
         "overviewNewFeatureHealthStatsHow": "Der Filter Überwacht öffnet jetzt mit gebündelter Uptime über alle Monitore, den am wenigsten verfügbaren, allem Langsameren als letzte Woche und jedem Ausfall. Die Kopfzeile zeichnet den Anteil gesunder Lesezeichen der letzten 90 Tage.",
         "overviewNewFeatureHealthStatsEnable": "Nichts einzuschalten, wobei das Panel etwas Überwachtes braucht, das es beschreiben kann. Die Trendlinie beginnt, sobald Sie die Ansicht an zwei verschiedenen Tagen geöffnet haben.",
-        "overviewNewFeatureHealthStatsCta": "Health öffnen →"
+        "overviewNewFeatureHealthStatsCta": "Health öffnen →",
+        "ptCountFiltered": "{shown} von {total} angezeigt",
+        "ptViewOnlySorted": "Nur Ansicht — die gespeicherte Reihenfolge bleibt unverändert. Sortierung aufheben, um Zeilen wieder zu verschieben.",
+        "ptViewOnlyFiltered": "Nur Ansicht — Suche leeren, um Zeilen wieder zu verschieben.",
+        "sortByNameDesc": "Name (Z–A)",
+        "sortByMostUsed": "Am häufigsten genutzt",
+        "sortByManualCategories": "Seitenreihenfolge",
+        "sortByManualPages": "Tab-Reihenfolge",
+        "sortByManualFinders": "Gespeicherte Reihenfolge",
+        "categoriesSearchPlaceholder": "Kategorien suchen…",
+        "categoriesNoMatch": "Keine Kategorien entsprechen deiner Suche.",
+        "pagesSearchPlaceholder": "Seiten suchen…",
+        "pagesNoMatch": "Keine Seiten entsprechen deiner Suche.",
+        "findersSearchPlaceholder": "Finder suchen…",
+        "findersNoMatch": "Keine Finder entsprechen deiner Suche."
     },
     "colors": {
         "title": "themenanpassung",
