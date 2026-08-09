@@ -646,6 +646,13 @@ func (fs *FileStore) initializeDefaultFiles() {
 			OnboardingCompleted:            false,
 			ThemeIconStyling:               defaultThemeIconStyling(),
 			PackedColumns:                  true,
+			// Was omitted here while both other Settings constructions set it,
+			// so a fresh install was served "" for a field whose documented
+			// default is "none". Harmless to the rendering, which treats an
+			// empty value as none, but it made the setting permanently unequal
+			// to its own default — so config offered a reset for it on an
+			// install nobody had touched.
+			BackgroundType:                 "none",
 			LauncherIconSize:               "normal",
 			ButtonBarPosition:              "bottom",
 			ShowDockLayoutSelector:         true,

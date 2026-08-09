@@ -97,15 +97,12 @@ test.describe('the declared defaults match the server', () => {
      * The reason the drift mattered: isFieldDefault is what shows the ↺ button
      * and what a "differs from default" count would be built on.
      *
-     * One field is excused: models.go defaults backgroundType to "none" but a
-     * fresh install is served "", so the value never equals its own declared
-     * default. That is the server disagreeing with itself, not the client copy
-     * being wrong.
-     *
-     * Listed rather than filtered out silently, so fixing it makes this test
-     * fail and say so.
+     * Nothing is excused any more. backgroundType used to be: models.go
+     * documented "none" but omitted it from the block that runs on a fresh
+     * install, so the value was served as "" and could never equal its own
+     * default. Fixed at the source rather than papered over here.
      */
-    const SERVER_SIDE_BUGS = ['backgroundType'];
+    const SERVER_SIDE_BUGS = [];
 
     test('an untouched install reports nothing as changed', async ({ page }) => {
         await openConfig(page);
@@ -124,8 +121,7 @@ test.describe('the declared defaults match the server', () => {
         const unexpected = changed.filter((f) => !SERVER_SIDE_BUGS.includes(f));
         expect(unexpected, `a fresh install claims these differ from their default:\n${unexpected.join('\n')}`).toEqual([]);
 
-        // And the known one must still be broken — if it starts behaving,
-        // take it off the list rather than leaving it excused.
+        // If an exception is ever added back, it has to still be needed.
         const stillBroken = SERVER_SIDE_BUGS.filter((f) => changed.includes(f));
         expect(stillBroken.sort(),
             'a known server-side default bug is fixed; remove it from SERVER_SIDE_BUGS')
