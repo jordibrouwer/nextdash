@@ -448,16 +448,18 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 		switch status {
 		case "broken":
 			return 0
-		case "duplicate":
+		case "content":
 			return 1
-		case "shortcut-conflict":
+		case "duplicate":
 			return 2
-		case "unchecked":
+		case "shortcut-conflict":
 			return 3
-		case "stale":
+		case "unchecked":
 			return 4
-		case "unused":
+		case "stale":
 			return 5
+		case "unused":
+			return 6
 		case "missing-preview":
 			return 6
 		default:
@@ -509,12 +511,22 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			score := 100
 
 			if isBroken {
-				status = "broken"
-				flags = append(flags, "broken")
-				if detail := strings.TrimSpace(bm.LastError); detail != "" {
-					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "last_error", Detail: detail, Penalty: healthPenaltyBroken})
+				detail := strings.TrimSpace(bm.LastError)
+				// A host that answered with the wrong content is a different
+				// problem from one that did not answer, and showing both as
+				// "broken" hides which of the two you are looking at.
+				if isContentFailure(detail) {
+					status = "content"
+					flags = append(flags, "content")
+					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "content_mismatch", Detail: detail, Penalty: healthPenaltyBroken})
 				} else {
-					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "unreachable", Penalty: healthPenaltyBroken})
+					status = "broken"
+					flags = append(flags, "broken")
+					if detail != "" {
+						appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "last_error", Detail: detail, Penalty: healthPenaltyBroken})
+					} else {
+						appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "unreachable", Penalty: healthPenaltyBroken})
+					}
 				}
 				score -= healthPenaltyBroken
 			}
@@ -599,10 +611,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			if isBroken {
 				// A monitored bookmark that is down counts as a live outage, not
 				// an ordinary broken link — kept out of BrokenCount so the two can
-				// be told apart in the header and never double-counted.
-				if bm.Monitor {
+				// be told apart in the header and never double-counted. A content
+				// failure is a third case: the host answered, so it is neither.
+				switch {
+				case isContentFailure(strings.TrimSpace(bm.LastError)):
+					report.Summary.ContentCount++
+				case bm.Monitor:
 					report.Summary.MonitorDownCount++
-				} else {
+				default:
 					report.Summary.BrokenCount++
 				}
 			}

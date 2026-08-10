@@ -100,3 +100,27 @@ func TestExpectationIsZeroAndWantsBody(t *testing.T) {
 		t.Error("a status expectation must not trigger a body read")
 	}
 }
+
+// A host that answered with the wrong content is a different problem from one
+// that did not answer. Reading it off the stored error keeps it from being a
+// second source of truth that can drift from the message on screen.
+func TestContentFailureIsDistinguishedFromUnreachable(t *testing.T) {
+	for _, tc := range []struct {
+		detail string
+		want   bool
+	}{
+		{`Page is missing "Add to cart"`, true},
+		{`Page contains "Service unavailable"`, true},
+		{"HTTP 404, expected 200", true},
+		// A bare status failure is the host answering badly, not the content
+		// being wrong — that stays an ordinary broken link.
+		{"HTTP 503", false},
+		{"Unreachable", false},
+		{"Connection refused", false},
+		{"", false},
+	} {
+		if got := isContentFailure(tc.detail); got != tc.want {
+			t.Errorf("isContentFailure(%q) = %v, want %v", tc.detail, got, tc.want)
+		}
+	}
+}

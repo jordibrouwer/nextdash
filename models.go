@@ -2925,7 +2925,12 @@ type HealthSummary struct {
 	// counted apart from BrokenCount so the header can flag a live outage
 	// distinctly from an ordinary dead link. A down monitor is not also in
 	// BrokenCount — it is one or the other, never both, so totals stay honest.
-	MonitorDownCount      int `json:"monitorDownCount"`
+	MonitorDownCount int `json:"monitorDownCount"`
+	// ContentCount is bookmarks whose host answered but whose own expectation —
+	// a required string, an expected status code — was not met. Counted apart
+	// from BrokenCount and MonitorDownCount for the same reason those two are
+	// kept apart: a bookmark is in exactly one of the three, so the tiles add up.
+	ContentCount          int `json:"contentCount"`
 	MonitoredCount        int `json:"monitoredCount"`
 	DuplicateCount        int `json:"duplicateCount"`
 	UncheckedCount        int `json:"uncheckedCount"`

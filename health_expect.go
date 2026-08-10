@@ -130,6 +130,29 @@ func bodyContainsExpectation(resp *http.Response, want string) bool {
 	)
 }
 
+// isContentFailure reports whether an error means "the host answered, but not
+// the way this bookmark expects" rather than "the host did not answer".
+//
+// The distinction matters on screen: a server that is down and a page whose
+// checkout button vanished are different problems, and showing both as offline
+// hides which one you have.
+//
+// Derived from the message instead of a new stored field: the error is already
+// persisted on the bookmark and mirrored into the cache, so a parallel boolean
+// would be a second source of the same truth — and the two would drift the first
+// time one was written without the other.
+func isContentFailure(detail string) bool {
+	detail = strings.TrimSpace(detail)
+	if detail == "" {
+		return false
+	}
+	if strings.HasPrefix(detail, "Page is missing ") || strings.HasPrefix(detail, "Page contains ") {
+		return true
+	}
+	// "HTTP 404, expected 200" is a content failure; a bare "HTTP 503" is not.
+	return strings.HasPrefix(detail, "HTTP ") && strings.Contains(detail, ", expected ")
+}
+
 // expectation is what one bookmark asks of its check, passed to the pinger so it
 // knows whether to read a body and which codes count.
 type expectation struct {
