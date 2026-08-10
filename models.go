@@ -3006,8 +3006,15 @@ type HealthIssue struct {
 	// Monitor reflects the uptime-monitor tier. MonitorStats is populated only for
 	// monitored bookmarks that have history, keeping the report payload unchanged
 	// for everyone who never turns monitoring on.
-	Monitor      bool          `json:"monitor,omitempty"`
-	MonitorStats *MonitorStats `json:"monitorStats,omitempty"`
+	Monitor bool `json:"monitor,omitempty"`
+	// MonitorIntervalMinutes is the configured cadence, set whenever Monitor is
+	// true regardless of whether any samples exist yet. Deliberately separate
+	// from MonitorStats: that struct is derived from sample history and is nil
+	// until the first check completes, but the interval is a setting, not a
+	// measurement — a freshly-monitored or just-changed row must show the right
+	// value immediately, not only once a check has run at the new cadence.
+	MonitorIntervalMinutes int           `json:"monitorIntervalMinutes,omitempty"`
+	MonitorStats           *MonitorStats `json:"monitorStats,omitempty"`
 	// What this bookmark expects of a good response, so the row can show and
 	// edit it. Omitted when unset, which is virtually every bookmark.
 	ExpectText       string `json:"expectText,omitempty"`

@@ -51,6 +51,20 @@ func clampMonitorIntervalMinutes(minutes int) int {
 	return minutes
 }
 
+// monitorIntervalMinutesFor is the configured cadence for a health report row.
+//
+// 0 for anything not monitored, so the field is omitted from the JSON rather
+// than showing a meaningless default. For a monitored bookmark this is always
+// clamped and present — unlike MonitorStats, which needs sample history that
+// does not exist yet for a bookmark just switched on or just given a new
+// interval, and must not be the only place this value lives.
+func monitorIntervalMinutesFor(bm Bookmark) int {
+	if !bm.Monitor {
+		return 0
+	}
+	return clampMonitorIntervalMinutes(bm.MonitorIntervalMinutes)
+}
+
 // monitorTarget is one bookmark due for a check, resolved to its canonical key.
 type monitorTarget struct {
 	key      string

@@ -35,22 +35,16 @@ const CheckMode = {
     /**
      * The stored interval, or the default when a bookmark carries none.
      *
-     * Reads two shapes: a raw Bookmark has `monitorIntervalMinutes` as a flat
-     * field, but a health-report issue does not — its HealthIssue struct never
-     * gained that field, only `monitorStats.intervalMinutes`. Without the
-     * fallback, calling this on an issue silently read `undefined` every time
-     * and fell through to the default, so the health view's interval picker
-     * could show 15m as active right after saving a different value — right
-     * whenever that happened to already be the default, and simply "stuck on
-     * the old choice" otherwise, because it was never reading the real value
-     * in the first place.
+     * One flat field, `monitorIntervalMinutes`, present on both shapes this is
+     * called with: a raw Bookmark, and a health-report issue (HealthIssue sets
+     * it directly from the bookmark, independent of MonitorStats — which is
+     * derived from sample history and stays nil until the first check
+     * completes, so it cannot be this field's only source without the picker
+     * defaulting to 15m for any row with no samples yet, e.g. right after
+     * switching monitoring on or changing the interval).
      */
     intervalOf(bookmark) {
-        const flat = Number(bookmark?.monitorIntervalMinutes);
-        if (flat > 0) return flat;
-        const nested = Number(bookmark?.monitorStats?.intervalMinutes);
-        if (nested > 0) return nested;
-        return CheckMode.DEFAULT_INTERVAL_MINUTES;
+        return Number(bookmark?.monitorIntervalMinutes) || CheckMode.DEFAULT_INTERVAL_MINUTES;
     },
 
     /** "5m" / "6h" / "24h" — the compact label used in the interval pickers. */
