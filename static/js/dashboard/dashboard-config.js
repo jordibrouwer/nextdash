@@ -16020,7 +16020,7 @@ class DashboardConfig {
 
     /* ── Help (native) ─────────────────────────────────────────────────────── */
 
-    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'stats', 'data', 'about'];
+    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'inbox', 'stats', 'data', 'about'];
 
     helpTabLabel(tab) {
         const map = {
@@ -16028,7 +16028,8 @@ class DashboardConfig {
             config: ['config.helpTabConfig', 'Configuring'],
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
-            health: ['config.helpTabHealth', 'Health & inbox'],
+            health: ['config.helpTabHealth', 'Health'],
+            inbox: ['config.helpTabInbox', 'Inbox'],
             stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
             about: ['config.helpTabAbout', 'About'],
@@ -16127,6 +16128,7 @@ class DashboardConfig {
             case 'organizing': return this.renderHelpOrganizing();
             case 'search': return this.renderHelpSearch();
             case 'health': return this.renderHelpHealth();
+            case 'inbox': return this.renderHelpInbox();
             case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
             case 'about': return this.renderHelpAbout();
@@ -16227,13 +16229,9 @@ class DashboardConfig {
 
     /**
      * Split into panels rather than one long body: availability modes, the list
-     * itself, the monitoring numbers, and the inbox are things people arrive
+     * itself, the monitoring numbers, and setup are things people arrive
      * looking for, and a single wall of prose made the last of them unreachable
      * without scrolling past the other three.
-     *
-     * The inbox takes two panels of its own for the same reason — capturing links
-     * and working through the backlog are separate questions, and snoozing has
-     * enough consequences for the counts to be worth stating plainly.
      */
     renderHelpHealth() {
         return this.helpPanel('config.helpHealthTitle', 'Availability & health',
@@ -16253,11 +16251,25 @@ class DashboardConfig {
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '')
             + this.helpPanel('config.helpHealthWalkthroughTitle', 'Setting up one monitored bookmark, start to finish',
-                'config.helpHealthWalkthroughBody', '')
-            + this.helpPanel('config.helpInboxTitle', 'Inbox',
-                'config.helpInboxBody', '')
+                'config.helpHealthWalkthroughBody', '');
+    }
+
+    /**
+     * Four panels rather than two: capture (where links come from and what
+     * settings shape that), working the backlog (filters, sort, snoozing),
+     * triage mode (a distinct, keyboard-only workflow worth documenting on its
+     * own), and the config-only settings that have no UI control but still
+     * change behaviour — those are easy to forget exist at all.
+     */
+    renderHelpInbox() {
+        return this.helpPanel('config.helpInboxTitle', 'Inbox',
+            'config.helpInboxBody', '')
             + this.helpPanel('config.helpInboxWorkTitle', 'Working through the inbox',
-                'config.helpInboxWorkBody', '');
+                'config.helpInboxWorkBody', '')
+            + this.helpPanel('config.helpInboxTriageTitle', 'Triage mode',
+                'config.helpInboxTriageBody', '')
+            + this.helpPanel('config.helpInboxSettingsTitle', 'Settings behind the scenes',
+                'config.helpInboxSettingsBody', '');
     }
 
     renderHelpData() {
