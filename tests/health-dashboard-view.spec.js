@@ -342,6 +342,15 @@ test.describe('health dashboard view', () => {
         await expect(page.locator('.health-view-legend')).toContainText('Enter / Space');
     });
 
+    test('the Escape row in the legend names both of its effects', async ({ page }) => {
+        // Escape clears an open multi-select before it closes the view — the
+        // legend used to only mention the second half of that behaviour.
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+
+        await expect(page.locator('.health-view-legend--bottom')).toContainText(/clear selection.*back to bookmarks/i);
+    });
+
     test('m opens the row menu, arrows walk it, Escape closes it without leaving', async ({ page }) => {
         await openHealthView(page);
 
@@ -1157,6 +1166,25 @@ test.describe('health view — monitored tile', () => {
         await expect(tile).toHaveClass(/health-view-tile--bad/);
         await expect(tile).not.toHaveClass(/health-view-tile--good/);
         await expect(tile).toHaveAttribute('title', /not responding/i);
+    });
+
+    test('prints "not responding" as visible text, not just a hover title', async ({ page }) => {
+        // The down count used to be hover-only, which never reaches a touch user.
+        // It has to be readable on the tile face itself.
+        await withMonitorState(page, { down: true });
+
+        const tile = page.locator('.health-view-tile--monitored');
+        await expect(tile.locator('.health-view-tile-sub')).toHaveText(/not responding/i);
+        // Screen readers must get the same fact, since aria-label replaces title
+        // rather than supplementing it.
+        await expect(tile).toHaveAttribute('aria-label', /not responding/i);
+    });
+
+    test('an all-green monitored tile has no sub line at all', async ({ page }) => {
+        await withMonitorState(page, { down: false });
+
+        const tile = page.locator('.health-view-tile--monitored');
+        await expect(tile.locator('.health-view-tile-sub')).toHaveCount(0);
     });
 
     test('clicking it goes straight to the monitored list, and is remembered', async ({ page }) => {
