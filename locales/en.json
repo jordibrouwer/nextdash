@@ -3391,6 +3391,7 @@
         "tipMaintHealth": "The health page finds broken links, duplicates and bookmarks you have not touched in a long time.",
         "tipMaintMerge": "Duplicates can be merged from the health page in one bulk action.",
         "tipMaintMonitorStats": "Press <code>i</code> on a monitored bookmark in the health view to open its full statistics — uptime over 24 hours, 7 days and 30 days, a large response-time chart and every outage.",
+        "tipMaintTrash": "Deleted something you wanted? Deleted bookmarks, pages and categories wait 30 days in config → data & backups → trash, long after the undo toast has gone.",
         "tipMaintBackup": "Back up everything — pages, bookmarks and settings — under config → data & backups. Restoring replaces what you have, so back up first.",
         "tipMaintNote": "<code>:note</code> edits a bookmark's note without leaving the dashboard.",
         "tipTuneInfo": "Every setting in config has an <code>ℹ</code> button explaining what it does.",

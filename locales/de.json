@@ -3391,6 +3391,7 @@
         "tipMaintHealth": "Die Health-Seite findet tote Links, Duplikate und lange ungenutzte Lesezeichen.",
         "tipMaintMerge": "Duplikate lassen sich auf der Health-Seite in einer Sammelaktion zusammenführen.",
         "tipMaintMonitorStats": "Drücken Sie <code>i</code> auf einem überwachten Lesezeichen in der Health-Ansicht, um die vollständige Statistik zu öffnen — Verfügbarkeit über 24 Stunden, 7 Tage und 30 Tage, ein großes Antwortzeit-Diagramm und sämtliche Ausfälle.",
+        "tipMaintTrash": "Versehentlich etwas gelöscht? Gelöschte Lesezeichen, Seiten und Kategorien warten 30 Tage in config → Daten & Backups → Papierkorb, lange nachdem die Rückgängig-Meldung verschwunden ist.",
         "tipMaintBackup": "Sichere alles — Seiten, Lesezeichen, Einstellungen — unter config → Daten & Backups. Wiederherstellen ersetzt deine Daten, also vorher sichern.",
         "tipMaintNote": "<code>:note</code> bearbeitet die Notiz eines Lesezeichens, ohne das Dashboard zu verlassen.",
         "tipTuneInfo": "Jede Einstellung in config hat eine <code>ℹ</code>-Schaltfläche mit Erklärung.",

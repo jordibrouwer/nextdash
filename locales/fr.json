@@ -3391,6 +3391,7 @@
         "tipMaintHealth": "La page health repère les liens morts, les doublons et les favoris oubliés depuis longtemps.",
         "tipMaintMerge": "Les doublons se fusionnent depuis la page health en une seule action groupée.",
         "tipMaintMonitorStats": "Appuyez sur <code>i</code> sur un favori surveillé dans la vue santé pour ouvrir ses statistiques complètes — disponibilité sur 24 heures, 7 jours et 30 jours, un grand graphique des temps de réponse et toutes les pannes.",
+        "tipMaintTrash": "Supprimé quelque chose par erreur ? Les favoris, pages et catégories supprimés patientent 30 jours dans config → données & sauvegardes → corbeille, bien après la disparition du message d'annulation.",
         "tipMaintBackup": "Sauvegardez tout — pages, favoris et réglages — via config → données & sauvegardes. La restauration remplace vos données : sauvegardez d'abord.",
         "tipMaintNote": "<code>:note</code> modifie la note d'un favori sans quitter le tableau de bord.",
         "tipTuneInfo": "Chaque réglage dans config a un bouton <code>ℹ</code> qui explique son rôle.",

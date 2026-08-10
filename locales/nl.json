@@ -3391,6 +3391,7 @@
         "tipMaintHealth": "De health-pagina vindt kapotte links, dubbelen en bookmarks die je lang niet gebruikt hebt.",
         "tipMaintMerge": "Dubbelen kun je vanaf de health-pagina in één bulkactie samenvoegen.",
         "tipMaintMonitorStats": "Druk op <code>i</code> bij een gemonitorde bladwijzer in de health-weergave voor de volledige statistieken — uptime over 24 uur, 7 dagen en 30 dagen, een grote responstijdgrafiek en alle storingen.",
+        "tipMaintTrash": "Toch iets verwijderd wat je wilde houden? Verwijderde bookmarks, pagina's en categorieën wachten 30 dagen in config → gegevens & back-ups → prullenbak, lang nadat de undo-melding weg is.",
         "tipMaintBackup": "Back-up alles — pagina's, bookmarks en instellingen — via config → gegevens & back-ups. Terugzetten vervangt je huidige data, dus maak eerst een back-up.",
         "tipMaintNote": "<code>:note</code> bewerkt de notitie van een bookmark zonder het dashboard te verlaten.",
         "tipTuneInfo": "Elke instelling in config heeft een <code>ℹ</code>-knop die uitlegt wat hij doet.",

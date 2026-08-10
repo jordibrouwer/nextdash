@@ -129,7 +129,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/bookmark-feed-row.js": "1b78e1aa8c64",
 	"js/shared/config-custom-themes.js": "4bc13be50343",
 	"js/shared/config-favicon-prefetch.js": "5729ff2fd4a4",
-	"js/shared/config-help-tips.js": "968095509843",
+	"js/shared/config-help-tips.js": "5f55ca7784e8",
 	"js/shared/config-language.js": "5681e90ba4ac",
 	"js/shared/config-setting-promo.js": "640cf8caccd6",
 	"js/shared/config-setting-promos.js": "962afbb5378e",
