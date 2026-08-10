@@ -28,74 +28,17 @@ class DashboardInboxLoader {
         return this._module;
     }
 
-    _assetURL(rel) {
-        return (window.NEXTDASH_ASSETS && window.NEXTDASH_ASSETS[rel])
-            || `/static/${rel}`;
-    }
-
-    _loadScript(rel, datasetKey) {
-        const src = this._assetURL(rel);
-        return new Promise((resolve, reject) => {
-            const selector = `script[data-${datasetKey}]`;
-            const existing = document.querySelector(selector);
-            const ready = () => {
-                if (rel.includes('dashboard-inbox-triage.js')) {
-                    return typeof DashboardInboxTriage === 'function';
-                }
-                if (rel.includes('dashboard-inbox.js')) {
-                    return typeof DashboardInbox === 'function';
-                }
-                return false;
-            };
-            const waitForReady = () => {
-                if (ready()) {
-                    resolve();
-                    return;
-                }
-                let attempts = 0;
-                const tick = () => {
-                    if (ready()) {
-                        resolve();
-                        return;
-                    }
-                    if (attempts >= 40) {
-                        reject(new Error(`${rel} loaded without registering exports`));
-                        return;
-                    }
-                    attempts += 1;
-                    requestAnimationFrame(tick);
-                };
-                tick();
-            };
-            if (ready()) {
-                resolve();
-                return;
-            }
-            if (existing) {
-                if (ready()) {
-                    resolve();
-                    return;
-                }
-                existing.addEventListener('load', () => waitForReady(), { once: true });
-                existing.addEventListener('error', () => reject(new Error(`${rel} failed to load`)), { once: true });
-                return;
-            }
-            const script = document.createElement('script');
-            script.src = src;
-            script.async = true;
-            script.dataset[datasetKey] = 'true';
-            script.onload = () => waitForReady();
-            script.onerror = () => reject(new Error(`${rel} failed to load`));
-            document.head.appendChild(script);
-        });
-    }
-
     async _loadDependencies() {
+        const load = window.LazyScript.loadScriptOnce;
+        // Tested as bare globals rather than window properties, which is how
+        // these two classes are declared.
         if (typeof DashboardInboxTriage === 'undefined') {
-            await this._loadScript('js/dashboard/dashboard-inbox-triage.js', 'dashboardInboxTriage');
+            await load('js/dashboard/dashboard-inbox-triage.js', 'dashboardInboxTriage',
+                () => typeof DashboardInboxTriage === 'function');
         }
         if (typeof DashboardInbox === 'undefined') {
-            await this._loadScript('js/dashboard/dashboard-inbox.js', 'dashboardInboxModule');
+            await load('js/dashboard/dashboard-inbox.js', 'dashboardInboxModule',
+                () => typeof DashboardInbox === 'function');
         }
     }
 
@@ -187,22 +130,11 @@ class DashboardInboxLoader {
     }
 
     setupEscapeShortcut() {
-        this._teardownEscapeShortcut();
-        this._escapeHandler = (e) => {
-            if (e.key !== 'Escape') return;
-            if (!this.isActiveView()) return;
-            if (!this._module) return;
-            this._module.setupEscapeShortcut?.();
-            this._teardownEscapeShortcut();
-        };
-        document.addEventListener('keydown', this._escapeHandler, true);
+        window.LazyScript.bindStubEscape(this);
     }
 
     _teardownEscapeShortcut() {
-        if (this._escapeHandler) {
-            document.removeEventListener('keydown', this._escapeHandler, true);
-            this._escapeHandler = null;
-        }
+        window.LazyScript.unbindStubEscape(this);
     }
 }
 

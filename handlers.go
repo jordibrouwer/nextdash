@@ -1564,13 +1564,20 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	settings.Collections = sanitized
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
+	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
+	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return
 	}
-	// Apply straight away, so shortening retention takes effect on the next
-	// poll rather than at the next restart.
-	serverLog.SetRetentionHours(settings.ServerLogRetentionHours)
+	// Apply straight away, so starting or stopping capture and changing the cap
+	// take effect on the next poll rather than at the next restart.
+	serverLog.SetRetention(
+		settings.ServerLogRetentionMode,
+		settings.ServerLogRetentionHours,
+		settings.ServerLogMaxEntries,
+	)
+	serverLog.SetPaused(!settings.ServerLogEnabled)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }

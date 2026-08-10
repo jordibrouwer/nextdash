@@ -8,7 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [v2026.09.08.1 — August 2026](#v202609081--august-2026)
 - [v2026.09.08 — August 2026](#v20260908--august-2026)
 - [v2026.09.07 — August 2026](#v20260907--august-2026)
 - [v2026.09.06.2 — August 2026](#v202609062--august-2026)
@@ -155,9 +155,35 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## Unreleased
+## v2026.09.08.1 — August 2026
 
-Nothing yet.
+**Capture is off until you ask for it, and costs nothing while it is** — the log viewer's own overhead turned out to dwarf the logging it replaced, so it was measured and cut. The log can now also be limited by how many entries it keeps rather than only by how old they are.
+
+### Server log
+
+- **new** — **Collect server log** starts and stops capture, and is **off by default**. While it is off the sink returns before taking a lock or touching the disk, so an install that never opens the viewer pays nothing for it. Stopping keeps what is already held and releases the file handle; the empty state says why the list is empty rather than reading as a fault. Stored as `serverLogEnabled`, applied on save and at startup (`log_buffer.go`, `models.go`, `handlers.go`, `main.go`).
+- **fix** — **The capture path was ~20,000× more expensive than the logging it replaced**, all of it on the request goroutine inside `requestLogging`. Benchmarked at **21.8µs** per line cold and **105µs** once the ring filled with retention on, against **5.5ns** for the plain stderr writer. Three causes, each fixed:
+  - `activityRotatingFile.write` did a `stat` + `open` + `write` + `close` for every line — 19.5µs of the 21.8µs. It now holds the handle open (`keepOpen`, opt-in so the activity log is unchanged), closing it across rotation and clear so writes cannot land in a rotated or unlinked file. **24.4µs → 1.7µs.**
+  - The ring re-sliced a plain slice on every append past capacity, copying ~197KB per line. It is now a real fixed-size ring with a head index. **26.7µs → 239ns, 196KB → 128B.**
+  - Retention walked all 2000 entries and allocated a fresh slice on every append. Expiry is a prefix of an oldest-first ring, so it now advances the head and stops at the first surviving line — and no longer runs on the write path at all. **105µs → 238ns, 802KB → 128B.**
+  - Net on the shipping path: **21.8µs → 3.9µs per line**, and zero when collecting is off.
+- **new** — **Limit the log by age or by number of entries**, one or the other. **By number of entries** offers 100 / 500 / 1000 / 2500 / 5000 and keeps only the newest that many; **by age** keeps the existing 1h–30d choices. The two are mutually exclusive by construction, not just by convention: in count mode `pruneExpiredLocked` returns immediately so age is never consulted, and in time mode the ring stays its default size so the entry cap cannot bite. The inactive control is disabled in the UI rather than hidden, and the hint under it changes with the mode. Changing the size resizes the ring in place, keeping the newest lines (`log_buffer.go`, `models.go`, `dashboard-config.js`).
+- **fix** — **A log switched off came back populated after a restart.** `seedFromDisk()` ran unconditionally in `InitServerLog()`, before settings were readable, so the previous run's lines were replayed into the buffer under a switch that said off. Startup now begins paused and `ConfigureServerLog()` applies the setting once the store exists, seeding only when collecting is on. Verified against a real restart: 4 lines on disk, 0 in the buffer with the switch off, and the history back when it is on (`log_buffer.go`, `main.go`).
+- **fix** — A poll asking for new lines skipped straight to the first unseen sequence instead of walking all 2000 to reject them.
+- **fix** — **Limiting by number kept 100 lines while the panel said 1000.** `clampServerLogMaxEntries` snapped 0 to the smallest offered size, and 0 is what every install upgrading to count mode has — the field is absent from every `settings.json` written before the mode existed, so unset was the normal state rather than a hand-edit. Zero and below now mean "never chosen" and land on `serverLogDefaultMaxEntries`; both `Settings` constructions also set the mode and the size outright, so a fresh file records what it is using instead of a zero the clamp reinterprets on read (`log_buffer.go`, `models.go`).
+- **fix** — **The Lines tile permanently warned that older lines had been dropped while limiting by count.** `dropped` exists to flag that the ring overflowed and lines were lost unexpectedly — which is why ageing out is not counted either — but in count mode overflowing is the cap the user chose. It also displaced the detail naming the chosen size, so `config.logTileMaxEntries` never rendered at all (`log_buffer.go`).
+- **new** — `SetRetentionHours` and `RetentionHours` are gone: the first had no callers left outside tests, the second none at all, and it returned the unclamped field its neighbour clamped. `Retention()` now also reports the capacity it implies, from the same helper `pushLocked` sizes the ring by, so `log_handlers.go` no longer recomputes that rule beside it.
+- **new** — `log_buffer_bench_test.go` records the before-and-after, so a future change that puts a syscall back on the per-line path shows up as a number.
+
+### Config
+
+- **fix** — **Config sometimes stopped opening for the rest of the session.** Its lazy loader attached `load`/`error` listeners to an existing `<script data-dashboard-config>` and waited. A tag that had already finished before those listeners went on fires neither event again, so the promise never settled — and `load()` caches that promise, so every later attempt waited on the same dead one. No error, no retry. The inbox and health loaders already guarded this by re-checking readiness and polling per frame; rather than add the missing guards to a third copy, the logic moved to `static/js/lazy-script.js` and all three now use it (`dashboard-config-loader.js`).
+- **new** — Readiness is asked of the caller instead of inferred from the filename. The old copies matched on substrings, which is why the health loader carried a comment warning that `dashboard-health-multi-select.js` also matches the test for `dashboard-health.js` and had to be checked first; an explicit predicate has no such ordering trap. The stub Escape handler was duplicated the same way — byte-identical in inbox and config, differing in health only in what happens before the module exists — and becomes `bindStubEscape` with that branch as a callback. **+106 / −209 lines across the loaders**, for 149 lines of shared module.
+
+### Docs
+
+- **new** — `MANUAL.md`'s **Server log** section covers **Limit the log** and its two modes, and the line about how much is held in memory now names both the 2000-line default and the chosen size.
+- **new** — Release plumbing for **v2026.09.08.1**: `static/data/whats-new/v2026.09.08.1.json`, the index entry, both `whats-new-stub.js` tokens (`…-v178`, `whats-new-v237`), the constants test, and the log viewer's **overviewNewFeatures()** spotlight reworded for the second limit in en, nl, de and fr.
 
 ---
 

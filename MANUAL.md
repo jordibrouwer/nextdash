@@ -1137,14 +1137,17 @@ Config can tell you how far the install has drifted from a stock one, which is t
 
 What the server has been doing, without shell access to the container. Every line the server writes — background jobs, imports, health checks, and one line per API request — is captured as it is written and shown here. Nothing changes about the container log: the same lines still go to stderr, so `docker logs` is unaffected.
 
+- **Collect server log** — **off by default**, and the switch that starts and stops collecting. While it is off nothing is captured, no file is written, and the log costs the server nothing at all; turning it off keeps whatever has already been collected rather than clearing it. Switch it on when you want to watch something, off again when you are done.
 - **Refresh** — **Off** by default, or every **2 / 5 / 15 / 30 seconds**. Off means no polling at all; a poll only asks for the lines that arrived since the last one, so leaving it on 2s is cheap. The interval stops the moment you leave the tab or close Config.
-- **Keep entries for** — **1, 2, 4, 12 or 24 hours**, **7** or **30 days**, or **Until cleared**. Older lines are dropped automatically, on top of the fixed caps below. The newest lines are always kept, whatever the limit.
+- **Limit the log** — by **age** or by **number of entries**, never both. Whichever you pick, the other control is greyed out, because a log capped two ways drops lines for a reason neither setting explains on its own.
+  - **By age** → **Keep entries for** 1, 2, 4, 12 or 24 hours, 7 or 30 days, or **Until cleared**. Older lines drop away on their own; how many there are does not matter.
+  - **By number of entries** → **Keep at most** 100, 500, 1000, 2500 or 5000. Only the newest that many are kept and older ones fall off as new lines arrive; how old they are does not matter.
 - **Show** — everything, warnings and errors, or errors only. **Search** filters on the message and on the subsystem name. Both are applied by the server, so they search the whole buffer rather than what is on screen.
 - **Scroll to newest lines** — follows the tail, and stops following while you are scrolled up reading something.
 - **Copy**, **Download** — the current lines to the clipboard, or the whole buffer as a `.log` file.
 - **Clear log** — empties the buffer **and** deletes `server.log` and its rotated copies from the data directory. It asks first, and cannot be undone.
 
-Severity is inferred rather than declared: a request line takes its level from the HTTP status (5xx is an error, 4xx a warning), and other lines from their wording. The most recent **2000 lines** are held in memory and mirrored to `server.log` in the data directory, capped at **2MB** with two rotated copies, so the history survives a restart.
+Severity is inferred rather than declared: a request line takes its level from the HTTP status (5xx is an error, 4xx a warning), and other lines from their wording. Lines are held in memory — the most recent **2000** when limiting by age, or however many you chose when limiting by count — and mirrored to `server.log` in the data directory, capped at **2MB** with two rotated copies, so the history survives a restart.
 
 > Anyone who can open Config can read this log, including full webhook URLs where those were logged. If your instance is reachable by people who should not see that, clear the log or keep retention short.
 

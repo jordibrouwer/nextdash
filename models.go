@@ -247,9 +247,20 @@ type Settings struct {
 	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`              // Automatically create a weekly local backup (keeps the latest 3)
 	HealthAutoRecheckEnabled       bool                             `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int                              `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
-	ServerLogRetentionHours        int                              `json:"serverLogRetentionHours"`        // Hours of server log to keep (0 = until cleared, max 90 days)
-	MonitorNotifyURL               string                           `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
-	MonitorNotifyRetries           int                              `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
+	ServerLogRetentionHours        int                              `json:"serverLogRetentionHours"`        // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
+	// Which cap applies: "time" uses ServerLogRetentionHours and ignores the
+	// entry count, "count" uses ServerLogMaxEntries and ignores the age. The
+	// two are deliberately exclusive — a log capped both ways silently drops
+	// lines for a reason the chosen setting does not explain.
+	ServerLogRetentionMode string `json:"serverLogRetentionMode"` // "time" (default) or "count"
+	ServerLogMaxEntries    int    `json:"serverLogMaxEntries"`    // Lines to keep in "count" mode (100…5000)
+	// Off by default, so an install that never opens the log viewer pays
+	// nothing for it: while this is false the sink returns before taking a lock
+	// or touching the disk. No "omitempty" — with it a false value drops out of
+	// the JSON entirely and the switch reads back as undefined in the config UI.
+	ServerLogEnabled     bool   `json:"serverLogEnabled"`               // Capture server log lines for the in-app viewer (default off)
+	MonitorNotifyURL     string `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
+	MonitorNotifyRetries int    `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
 	// The push booleans deliberately omit "omitempty": with it, a false value is
 	// dropped from the JSON entirely and the config checkbox reads `undefined`
 	// instead of unchecked, so turning a toggle off would not survive a reload.
@@ -551,102 +562,102 @@ func (fs *FileStore) initializeDefaultFiles() {
 	// Initialize settings if file doesn't exist
 	if _, err := os.Stat(fs.settingsFile); os.IsNotExist(err) {
 		defaultSettings := Settings{
-			CurrentPage:                    1,
-			Theme:                          defaultThemeID,
-			OpenInNewTab:                   true,
-			AnalyticsOptIn:                 false,
-			EnableSessionTips:              true,
-			ShowShortcutTooltips:           true,
-			ColumnsPerRow:                  3,
-			FontSize:                       "m",
-			ShowBackgroundDots:             true,
-			ShowTitle:                      true,
-			ShowDate:                       true,
-			ShowTime:                       true,
-			TimeFormat:                     "24h",
-			DateFormat:                     "short-slash",
-			ShowWeatherWithDate:            false,
-			WeatherSource:                  "manual",
-			WeatherLocation:                "",
-			WeatherUnit:                    "celsius",
-			WeatherRefreshMinutes:          30,
-			ShowConfigButton:               true,
-			ShowHealthDashboard:            true,
-			ShowSearchButton:               true,
-			ShowAddBookmarkButton:          true,
-			ShowFindersButton:              true,
-			ShowCommandsButton:             true,
-			ShowRecentButton:               false,
-			ShowTagCloudButton:             true,
-			ShowSearchFlowBanner:           true,
-			ShowCheatSheetButton:           false,
-			ShowCollapseAllButton:          true,
-			ShowSearchButtonText:           true,
-			ShowFindersButtonText:          true,
-			ShowCommandsButtonText:         true,
-			ShowStatus:                     true,
-			ColorizeStatus:                 true,
-			MonitorEmphasis:                "problems",
-			ShowPing:                       true,
-			ShowStatusLoading:              false,
-			SkipFastPing:                   false,
-			StatusOfflineRetries:           3,
-			StatusOfflineRetryDelayMs:      450,
-			StatusRecheckIntervalMinutes:   5,
-			GlobalShortcuts:                true,
-			HyprMode:                       false,
-			AnimationsEnabled:              true,
-			EnableCustomTitle:              false,
-			CustomTitle:                    "",
-			ShowPageInTitle:                false,
-			ShowPageNamesInTabs:            false,
-			EnableCustomFavicon:            false,
-			CustomFaviconPath:              "",
-			EnableCustomFont:               false,
-			CustomFontPath:                 "",
-			Language:                       "en",
-			InterleaveMode:                 false,
-			ShowPageTabs:                   true,
-			AlwaysCollapseCategories:       false,
-			HideEmptyCategories:            true,
-			EnableFuzzySuggestions:         false,
-			FuzzySuggestionsStartWith:      false,
-			KeepSearchOpenWhenEmpty:        false,
-			ShowIcons:                      true,
-			ShowLinkPreviewCards:           false,
-			LinkPreviewHoverDelayMs:        150,
-			ShowShortcuts:                  true,
-			ShowPinIcon:                    false,
-			ShowNoteIcon:                   true,
-			IncludeFindersInSearch:         false,
-			SortMethod:                     "order",
-			LayoutPreset:                   "default",
-			LayoutVersion:                  "classic",
-			BackgroundOpacity:              1,
-			FontWeight:                     "normal",
-			FontPreset:                     "source-code-pro",
-			AutoDarkMode:                   true,
-			ShowSmartRecentCollection:      false,
-			ShowSmartTodayCollection:       true,
-			ShowSmartStaleCollection:       false,
-			ShowSmartMostUsedCollection:    false,
-			SmartTodayLimit:                8,
-			SmartRecentLimit:               50,
-			SmartMostUsedLimit:             25,
-			CategoryItemLimit:              15,
-			QuickStart:                     QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
-			SmartTodayWorkKeywords:         "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
-			SmartTodayEveningKeywords:      "youtube,spotify,netflix,reddit",
-			SmartTodayWeekendKeywords:      "news,weather,maps",
-			SmartTodayPageIds:              []int{},
-			SmartRecentPageIds:             []int{},
-			SmartStalePageIds:              []int{},
-			SmartMostUsedPageIds:           []int{},
-			ArchivedPageIds:                []int{},
-			FaviconRefreshPolicy:           "on-save",
-			OnboardingCompleted:            false,
-			ThemeIconStyling:               defaultThemeIconStyling(),
-			PackedColumns:                  true,
+			CurrentPage:                  1,
+			Theme:                        defaultThemeID,
+			OpenInNewTab:                 true,
+			AnalyticsOptIn:               false,
+			EnableSessionTips:            true,
+			ShowShortcutTooltips:         true,
+			ColumnsPerRow:                3,
+			FontSize:                     "m",
+			ShowBackgroundDots:           true,
+			ShowTitle:                    true,
+			ShowDate:                     true,
+			ShowTime:                     true,
+			TimeFormat:                   "24h",
+			DateFormat:                   "short-slash",
+			ShowWeatherWithDate:          false,
+			WeatherSource:                "manual",
+			WeatherLocation:              "",
+			WeatherUnit:                  "celsius",
+			WeatherRefreshMinutes:        30,
+			ShowConfigButton:             true,
+			ShowHealthDashboard:          true,
+			ShowSearchButton:             true,
+			ShowAddBookmarkButton:        true,
+			ShowFindersButton:            true,
+			ShowCommandsButton:           true,
+			ShowRecentButton:             false,
+			ShowTagCloudButton:           true,
+			ShowSearchFlowBanner:         true,
+			ShowCheatSheetButton:         false,
+			ShowCollapseAllButton:        true,
+			ShowSearchButtonText:         true,
+			ShowFindersButtonText:        true,
+			ShowCommandsButtonText:       true,
+			ShowStatus:                   true,
+			ColorizeStatus:               true,
+			MonitorEmphasis:              "problems",
+			ShowPing:                     true,
+			ShowStatusLoading:            false,
+			SkipFastPing:                 false,
+			StatusOfflineRetries:         3,
+			StatusOfflineRetryDelayMs:    450,
+			StatusRecheckIntervalMinutes: 5,
+			GlobalShortcuts:              true,
+			HyprMode:                     false,
+			AnimationsEnabled:            true,
+			EnableCustomTitle:            false,
+			CustomTitle:                  "",
+			ShowPageInTitle:              false,
+			ShowPageNamesInTabs:          false,
+			EnableCustomFavicon:          false,
+			CustomFaviconPath:            "",
+			EnableCustomFont:             false,
+			CustomFontPath:               "",
+			Language:                     "en",
+			InterleaveMode:               false,
+			ShowPageTabs:                 true,
+			AlwaysCollapseCategories:     false,
+			HideEmptyCategories:          true,
+			EnableFuzzySuggestions:       false,
+			FuzzySuggestionsStartWith:    false,
+			KeepSearchOpenWhenEmpty:      false,
+			ShowIcons:                    true,
+			ShowLinkPreviewCards:         false,
+			LinkPreviewHoverDelayMs:      150,
+			ShowShortcuts:                true,
+			ShowPinIcon:                  false,
+			ShowNoteIcon:                 true,
+			IncludeFindersInSearch:       false,
+			SortMethod:                   "order",
+			LayoutPreset:                 "default",
+			LayoutVersion:                "classic",
+			BackgroundOpacity:            1,
+			FontWeight:                   "normal",
+			FontPreset:                   "source-code-pro",
+			AutoDarkMode:                 true,
+			ShowSmartRecentCollection:    false,
+			ShowSmartTodayCollection:     true,
+			ShowSmartStaleCollection:     false,
+			ShowSmartMostUsedCollection:  false,
+			SmartTodayLimit:              8,
+			SmartRecentLimit:             50,
+			SmartMostUsedLimit:           25,
+			CategoryItemLimit:            15,
+			QuickStart:                   QuickStartState{BaselineBookmarks: -1, BaselineTagged: -1},
+			SmartTodayWorkKeywords:       "calendar,mail,gmail,outlook,notion,docs,drive,github,gitlab,jira,slack,teams",
+			SmartTodayEveningKeywords:    "youtube,spotify,netflix,reddit",
+			SmartTodayWeekendKeywords:    "news,weather,maps",
+			SmartTodayPageIds:            []int{},
+			SmartRecentPageIds:           []int{},
+			SmartStalePageIds:            []int{},
+			SmartMostUsedPageIds:         []int{},
+			ArchivedPageIds:              []int{},
+			FaviconRefreshPolicy:         "on-save",
+			OnboardingCompleted:          false,
+			ThemeIconStyling:             defaultThemeIconStyling(),
+			PackedColumns:                true,
 			// Was omitted here while both other Settings constructions set it,
 			// so a fresh install was served "" for a field whose documented
 			// default is "none". Harmless to the rendering, which treats an
@@ -668,7 +679,12 @@ func (fs *FileStore) initializeDefaultFiles() {
 			AutoBackupEnabled:              true,
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
-			UpdateCheckEnabled:             true,
+			// Set explicitly rather than left to the clamp, which would normalise
+			// them on read anyway: a stored 0 / "" reads as a setting nobody
+			// chose, and config compares against the documented default.
+			ServerLogRetentionMode: serverLogModeTime,
+			ServerLogMaxEntries:    serverLogDefaultMaxEntries,
+			UpdateCheckEnabled:     true,
 		}
 		data, _ := json.MarshalIndent(defaultSettings, "", "  ")
 		writeFileAtomic(fs.settingsFile, data, 0644)
@@ -2103,7 +2119,12 @@ func (fs *FileStore) GetSettings() Settings {
 			AutoBackupEnabled:              true,
 			HealthAutoRecheckEnabled:       false,
 			HealthAutoRecheckIntervalHours: defaultHealthAutoRecheckIntervalHours,
-			UpdateCheckEnabled:             true,
+			// Set explicitly rather than left to the clamp, which would normalise
+			// them on read anyway: a stored 0 / "" reads as a setting nobody
+			// chose, and config compares against the documented default.
+			ServerLogRetentionMode: serverLogModeTime,
+			ServerLogMaxEntries:    serverLogDefaultMaxEntries,
+			UpdateCheckEnabled:     true,
 		}
 		fs.readCache.settings = settings
 		fs.readCache.settingsOK = true
@@ -2434,6 +2455,8 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 	settings.HealthAutoRecheckIntervalHours = clampHealthAutoRecheckIntervalHours(settings.HealthAutoRecheckIntervalHours)
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
+	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
+	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 	settings.MonitorNotifyRetries = clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 
@@ -2809,23 +2832,23 @@ type HealthReason struct {
 }
 
 type HealthIssue struct {
-	Name           string         `json:"name"`
-	URL            string         `json:"url"`
-	Shortcut       string         `json:"shortcut,omitempty"`
-	Category       string         `json:"category,omitempty"`
-	PageID         int            `json:"pageId"`
-	PageName       string         `json:"pageName,omitempty"`
-	Index          int            `json:"index"`
-	Pinned         bool           `json:"pinned"`
-	CheckStatus    bool           `json:"checkStatus"`
-	OpenCount      int            `json:"openCount"`
-	LastOpened     int64          `json:"lastOpened,omitempty"`
-	LastChecked    int64          `json:"lastChecked,omitempty"`
-	LastError      string         `json:"lastError,omitempty"`
-	PreviewTitle   string         `json:"previewTitle,omitempty"`
-	PreviewDesc    string         `json:"previewDesc,omitempty"`
-	PreviewImage   string         `json:"previewImage,omitempty"`
-	Icon           string         `json:"icon,omitempty"`
+	Name         string `json:"name"`
+	URL          string `json:"url"`
+	Shortcut     string `json:"shortcut,omitempty"`
+	Category     string `json:"category,omitempty"`
+	PageID       int    `json:"pageId"`
+	PageName     string `json:"pageName,omitempty"`
+	Index        int    `json:"index"`
+	Pinned       bool   `json:"pinned"`
+	CheckStatus  bool   `json:"checkStatus"`
+	OpenCount    int    `json:"openCount"`
+	LastOpened   int64  `json:"lastOpened,omitempty"`
+	LastChecked  int64  `json:"lastChecked,omitempty"`
+	LastError    string `json:"lastError,omitempty"`
+	PreviewTitle string `json:"previewTitle,omitempty"`
+	PreviewDesc  string `json:"previewDesc,omitempty"`
+	PreviewImage string `json:"previewImage,omitempty"`
+	Icon         string `json:"icon,omitempty"`
 	// Status is the single worst thing about this bookmark, picked by priority.
 	// It drives how the row is presented — colour band, sort rank, headline
 	// reason — so it stays one value.

@@ -1,0 +1,38 @@
+{
+    "tag": "v2026.09.08.1",
+    "date": "August 2026",
+    "releasedAt": "2026-08-10",
+    "modalLead": "The <strong>server log</strong> can now be limited by how many entries it keeps, not only by how old they are. Opening <strong>Config</strong> also stopped failing on the occasions it used to.",
+    "sections": [
+        {
+            "title": "Server log",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Limit the log by number of entries.</strong> Under <strong>Data &amp; backups › Server log</strong>, <strong>Limit the log</strong> now offers <strong>By number of entries</strong> alongside <strong>By age</strong>. Choose to keep the newest 100, 500, 1000, 2500 or 5000 and older ones fall away as new lines arrive, however recent they are."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>One limit at a time.</strong> Whichever you pick, the other is greyed out rather than hidden, so it is clear the choice is there and equally clear which one is in force."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Keeping by number kept far fewer lines than it said.</strong> Switching to <strong>By number of entries</strong> without choosing a size kept only the newest 100 while the panel showed 1000. It now keeps the number on screen."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The log claimed lines had been dropped when nothing was wrong.</strong> While limiting by number, the tile permanently warned that older lines had been thrown away — which is simply the limit doing its job. It now tells you how many entries are being kept."
+                }
+            ]
+        },
+        {
+            "title": "Config",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Config sometimes refused to open.</strong> On occasion the button stopped responding altogether, with no message and no way back other than reloading the page. It opens reliably now."
+                }
+            ]
+        }
+    ]
+}

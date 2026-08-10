@@ -153,28 +153,11 @@ class DashboardConfigLoader {
         if (this._module) return Promise.resolve(this._module);
         if (this._loadPromise) return this._loadPromise;
 
-        const src = (window.NEXTDASH_ASSETS && window.NEXTDASH_ASSETS['js/dashboard/dashboard-config.js'])
-            || '/static/js/dashboard/dashboard-config.js';
-
-        this._loadPromise = new Promise((resolve, reject) => {
-            if (typeof window.DashboardConfig === 'function') {
-                resolve();
-                return;
-            }
-            const existing = document.querySelector('script[data-dashboard-config]');
-            if (existing) {
-                existing.addEventListener('load', () => resolve(), { once: true });
-                existing.addEventListener('error', () => reject(new Error('config module failed to load')), { once: true });
-                return;
-            }
-            const script = document.createElement('script');
-            script.src = src;
-            script.async = true;
-            script.dataset.dashboardConfig = 'true';
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error('config module failed to load'));
-            document.head.appendChild(script);
-        }).then(() => {
+        this._loadPromise = window.LazyScript.loadScriptOnce(
+            'js/dashboard/dashboard-config.js',
+            'dashboardConfig',
+            () => typeof window.DashboardConfig === 'function'
+        ).then(() => {
             if (typeof window.DashboardConfig !== 'function') {
                 throw new Error('config module loaded without defining DashboardConfig');
             }
@@ -251,24 +234,11 @@ class DashboardConfigLoader {
      * cheap and self-contained rather than pulling in 400KB to bind a key.
      */
     setupEscapeShortcut() {
-        this._teardownEscapeShortcut();
-        this._escapeHandler = (e) => {
-            if (e.key !== 'Escape') return;
-            if (!this.isActiveView()) return;
-            if (!this._module) return;
-            // Once loaded, the module installs its own handler with the full set
-            // of guards; this one steps aside.
-            this._module.setupEscapeShortcut?.();
-            this._teardownEscapeShortcut();
-        };
-        document.addEventListener('keydown', this._escapeHandler, true);
+        window.LazyScript.bindStubEscape(this);
     }
 
     _teardownEscapeShortcut() {
-        if (this._escapeHandler) {
-            document.removeEventListener('keydown', this._escapeHandler, true);
-            this._escapeHandler = null;
-        }
+        window.LazyScript.unbindStubEscape(this);
     }
 }
 

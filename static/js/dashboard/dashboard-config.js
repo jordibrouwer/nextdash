@@ -10,6 +10,15 @@ class DashboardConfig {
     static VIEW = 'config';
 
     /**
+     * Fallback for the count-mode log cap when settings have not been read yet.
+     *
+     * Must stay equal to serverLogDefaultMaxEntries in log_buffer.go: this is
+     * the number the panel and the tile show, and a value the server would not
+     * apply makes the log look like it keeps more than it does.
+     */
+    static SERVER_LOG_DEFAULT_MAX_ENTRIES = 1000;
+
+    /**
      * The regrouped sections that replace the old config tabs. `overview` is the
      * landing section (a summary of tiles from every other section); the rest map
      * to the reorganised areas agreed for the view.
@@ -2800,7 +2809,7 @@ class DashboardConfig {
                 howKey: 'config.overviewNewFeatureServerLogHow',
                 howFallback: 'Data & backups › Server log lists what the server has been doing, keeps itself up to date every few seconds if you want, and colours warnings and errors so they are easy to spot. Search looks through everything kept.',
                 enableKey: 'config.overviewNewFeatureServerLogEnable',
-                enableFallback: 'Nothing to switch on. Choose how long to keep entries, and clear the whole lot whenever you like.',
+                enableFallback: 'Nothing to switch on. Limit it by age or by number of entries, and clear the whole lot whenever you like.',
                 ctaKey: 'config.overviewNewFeatureServerLogCta',
                 ctaFallback: 'Open Server log →',
                 go: { section: 'data-backups', dbTab: 'logs' },
@@ -3899,6 +3908,10 @@ class DashboardConfig {
             [30, this.t('config.logInterval30s', 'Every 30 seconds')],
         ].map(([v, label]) => `<option value="${v}" ${v === this.logRefreshSeconds ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
+        // Exactly one cap applies. The other control stays visible but disabled,
+        // so it is clear the choice exists and equally clear it is not in force.
+        const byCount = s.serverLogRetentionMode === 'count';
+
         const retention = Number(s.serverLogRetentionHours) || 0;
         const retentionOptions = [
             [1, this.t('config.logRetention1h', '1 hour')],
@@ -3910,6 +3923,17 @@ class DashboardConfig {
             [720, this.t('config.logRetention30d', '30 days')],
             [0, this.t('config.logRetentionForever', 'Until cleared')],
         ].map(([v, label]) => `<option value="${v}" ${v === retention ? 'selected' : ''}>${esc(label)}</option>`).join('');
+
+        const maxEntries = Number(s.serverLogMaxEntries) || DashboardConfig.SERVER_LOG_DEFAULT_MAX_ENTRIES;
+        const entryOptions = [100, 500, 1000, 2500, 5000]
+            .map((v) => `<option value="${v}" ${v === maxEntries ? 'selected' : ''}>`
+                + `${esc(this.t('config.logMaxEntriesValue', '{n} entries').replace('{n}', v.toLocaleString()))}</option>`)
+            .join('');
+
+        const modeOptions = [
+            ['time', this.t('config.logRetentionModeTime', 'By age')],
+            ['count', this.t('config.logRetentionModeCount', 'By number of entries')],
+        ].map(([v, label]) => `<option value="${esc(v)}" ${(v === 'count') === byCount ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
         const levelOptions = [
             ['', this.t('config.logLevelAll', 'Everything')],
@@ -3924,15 +3948,30 @@ class DashboardConfig {
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h3>
+                <label class="config-toggle">
+                    <input type="checkbox" data-log-toggle="capture" ${s.serverLogEnabled ? 'checked' : ''}>
+                    <span>${esc(this.t('config.logCaptureLabel', 'Collect server log'))}</span>
+                </label>
+                <p class="config-panel-note">${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
                     <select class="config-select" data-log-select="interval">${intervalOptions}</select>
                 </div>
                 <div class="config-field">
-                    <span class="config-field-label">${esc(this.t('config.logRetentionLabel', 'Keep entries for'))}</span>
-                    <select class="config-select" data-log-select="retention">${retentionOptions}</select>
+                    <span class="config-field-label">${esc(this.t('config.logRetentionModeLabel', 'Limit the log'))}</span>
+                    <select class="config-select" data-log-select="mode">${modeOptions}</select>
                 </div>
-                <p class="config-panel-note">${esc(this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.logRetentionLabel', 'Keep entries for'))}</span>
+                    <select class="config-select" data-log-select="retention" ${byCount ? 'disabled' : ''}>${retentionOptions}</select>
+                </div>
+                <div class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.logMaxEntriesLabel', 'Keep at most'))}</span>
+                    <select class="config-select" data-log-select="maxEntries" ${byCount ? '' : 'disabled'}>${entryOptions}</select>
+                </div>
+                <p class="config-panel-note">${esc(byCount
+                    ? this.t('config.logRetentionHintCount', 'Only the newest entries are kept; older ones drop off as new lines arrive. Age is not considered in this mode.')
+                    : this.t('config.logRetentionHint', 'Older lines are dropped automatically. The newest lines are always kept, whatever the age limit.'))}</p>
             </div>
 
             <div class="config-panel">
@@ -3977,7 +4016,11 @@ class DashboardConfig {
                 tone: 'accent',
                 detail: dropped > 0
                     ? this.t('config.logTileDropped', '{n} older lines dropped').replace('{n}', String(dropped))
-                    : this.t('config.logTileRetention', 'Kept for {span}').replace('{span}', this.logRetentionLabel(retention)),
+                    : (this.dash.settings?.serverLogRetentionMode === 'count'
+                        ? this.t('config.logTileMaxEntries', 'Newest {n} kept')
+                            .replace('{n}', Number(this.dash.settings?.serverLogMaxEntries
+                                || DashboardConfig.SERVER_LOG_DEFAULT_MAX_ENTRIES).toLocaleString())
+                        : this.t('config.logTileRetention', 'Kept for {span}').replace('{span}', this.logRetentionLabel(retention))),
             },
             {
                 label: this.t('config.logTileWarnings', 'Warnings'),
@@ -4015,7 +4058,12 @@ class DashboardConfig {
             return `<p class="config-view-loading">${esc(this.t('config.logLoading', 'Loading…'))}</p>`;
         }
         if (lines.length === 0) {
-            return `<p class="config-panel-empty">${esc(this.t('config.logEmpty', 'Nothing logged yet.'))}</p>`;
+            // "Nothing logged yet" would read as a fault when the reason is
+            // simply that collecting is switched off.
+            const empty = this.dash.settings?.serverLogEnabled === false
+                ? this.t('config.logEmptyStopped', 'Not collecting. Switch on Collect server log above to start.')
+                : this.t('config.logEmpty', 'Nothing logged yet.');
+            return `<p class="config-panel-empty">${esc(empty)}</p>`;
         }
 
         return lines.map((line) => {
@@ -4117,6 +4165,19 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * Rebuild the Data & backups body in place, keeping the tab strip.
+     *
+     * Same shape as the tab-switch repaint: only the body is replaced, because
+     * rebuilding the strip would drop the button that was just clicked.
+     */
+    repaintDbTabBody() {
+        const body = document.getElementById('config-db-body');
+        if (!body) return;
+        body.innerHTML = this.renderDbTab();
+        this.bindDataBackupsActions(body);
+    }
+
     /** Arm or disarm the refresh interval to match logRefreshSeconds. */
     updateServerLogTimer() {
         this.stopServerLogTimer();
@@ -4159,6 +4220,23 @@ class DashboardConfig {
                     void this.loadServerLog({ reset: true });
                     return;
                 }
+                if (kind === 'maxEntries') {
+                    this.dash.settings.serverLogMaxEntries = Number(value)
+                        || DashboardConfig.SERVER_LOG_DEFAULT_MAX_ENTRIES;
+                    void this.saveSettingsWithFeedback();
+                    void this.loadServerLog({ reset: true });
+                    return;
+                }
+                if (kind === 'mode') {
+                    this.dash.settings.serverLogRetentionMode = value === 'count' ? 'count' : 'time';
+                    void this.saveSettingsWithFeedback();
+                    // Which control is live, and the hint under them, both follow
+                    // the mode — so the panel is rebuilt rather than left showing
+                    // the other mode's state. The rebuild re-binds, which reloads
+                    // the lines and re-arms the interval on its own.
+                    this.repaintDbTabBody();
+                    return;
+                }
                 if (kind === 'level') {
                     this.logLevelFilter = value;
                     void this.loadServerLog({ reset: true });
@@ -4185,6 +4263,32 @@ class DashboardConfig {
                 if (this.logFollow) {
                     const out = document.querySelector('[data-log-output]');
                     if (out) out.scrollTop = out.scrollHeight;
+                }
+            });
+        }
+
+        const capture = container.querySelector('[data-log-toggle="capture"]');
+        if (capture) {
+            capture.addEventListener('change', () => {
+                this.dash.settings.serverLogEnabled = capture.checked;
+                void this.saveSettingsWithFeedback();
+                this.notify(capture.checked
+                    ? this.t('config.logCaptureStarted', 'Collecting the server log.')
+                    : this.t('config.logCaptureStopped', 'Stopped collecting the server log.'), 'success');
+                // Turning it on should show something without waiting for the
+                // interval; turning it off should stop the polling that would
+                // now return nothing new.
+                if (capture.checked) {
+                    void this.loadServerLog({ reset: true });
+                } else {
+                    this.stopServerLogTimer();
+                    const sel = container.querySelector('[data-log-select="interval"]');
+                    if (sel) sel.value = '0';
+                    this.logRefreshSeconds = 0;
+                    // The empty state reads differently when collecting is off,
+                    // and it is chosen at paint time — so repaint now rather
+                    // than leaving the wrong message until the tab is reopened.
+                    this.repaintServerLog();
                 }
             });
         }
