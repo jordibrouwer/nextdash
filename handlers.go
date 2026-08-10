@@ -25,17 +25,17 @@ import (
 )
 
 type Handlers struct {
-	store             Store
-	files             embed.FS
-	pageTemplates     map[string]*template.Template
-	pageTemplatesMu   sync.RWMutex
-	previewCacheMu    sync.RWMutex
-	previewCache      PreviewCacheFile
-	previewLoaded     bool
-	previewCacheDirty bool
-	healthCacheMu     sync.RWMutex
-	healthHistoryMu   sync.Mutex
-	healthTrendMu     sync.Mutex
+	store                 Store
+	files                 embed.FS
+	pageTemplates         map[string]*template.Template
+	pageTemplatesMu       sync.RWMutex
+	previewCacheMu        sync.RWMutex
+	previewCache          PreviewCacheFile
+	previewLoaded         bool
+	previewCacheDirty     bool
+	healthCacheMu         sync.RWMutex
+	healthHistoryMu       sync.Mutex
+	healthTrendMu         sync.Mutex
 	healthReportMu        sync.RWMutex
 	healthReport          BookmarkHealthReport
 	healthReportAt        time.Time
@@ -43,12 +43,12 @@ type Handlers struct {
 	healthReportBuildMu   sync.Mutex
 	healthReportBuildCond *sync.Cond
 	healthReportBuilding  bool
-	prefetchMu        sync.Mutex
-	autoBackupMu      sync.Mutex
-	ssrfAPILimiter    *slidingWindowLimiter
-	statusPingLimiter *slidingWindowLimiter
-	updateCheckMu     sync.RWMutex
-	updateCheckCache  updateCheckCacheEntry
+	prefetchMu            sync.Mutex
+	autoBackupMu          sync.Mutex
+	ssrfAPILimiter        *slidingWindowLimiter
+	statusPingLimiter     *slidingWindowLimiter
+	updateCheckMu         sync.RWMutex
+	updateCheckCache      updateCheckCacheEntry
 }
 
 const healthReportCacheTTL = 3 * time.Minute
@@ -716,6 +716,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// build behind. That is the right trade — the trend describes days, and the
 	// current day is already on screen as the live numbers.
 	report.Trend = h.readHealthTrend()
+	// Only the ones worth showing. A certificate with three months left is true
+	// but not news, and sending every host would grow the report by an entry per
+	// domain for something the UI would immediately filter out again.
+	report.Certificates = expiringCertificates(h.hostCertificates(), monitorNow)
 
 	return report
 }
@@ -781,11 +785,11 @@ func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {
 
 type htmlPageData struct {
 	Settings
-	ThemePoolCSV       string `json:"-"`
-	CustomThemeIDsCSV  string `json:"-"`
-	ThemeColorMeta     string `json:"-"`
-	WriteToken   string `json:"-"`
-	AppVersion string
+	ThemePoolCSV      string `json:"-"`
+	CustomThemeIDsCSV string `json:"-"`
+	ThemeColorMeta    string `json:"-"`
+	WriteToken        string `json:"-"`
+	AppVersion        string
 	// ReleaseTag is the published version ("v2026.07.23.6"), reported with the
 	// analytics settings snapshot so adoption can be read per release. Empty
 	// when the What's new index cannot be read.
@@ -815,17 +819,17 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	colors := h.store.GetColors()
 	themeID := normalizeLegacyThemeID(settings.Theme)
 	return htmlPageData{
-		Settings:           settings,
-		ThemePoolCSV:       themePoolCSV(colors),
-		CustomThemeIDsCSV:  customThemeIDsCSV(colors),
-		ThemeColorMeta:     themeBackgroundPrimary(themeID, colors),
-		WriteToken:         writeAccessToken(),
-		AppVersion:         appVersionToken(),
-		ReleaseTag:         releaseTag(),
-		AnalyticsWebsiteID: analyticsWebsiteID,
-		AnalyticsScriptSrc: analyticsScriptSrc,
-		AnalyticsEnabled:   analyticsEnabled(settings),
-		TelemetryLockedOff: telemetryDisabledByEnv(),
+		Settings:             settings,
+		ThemePoolCSV:         themePoolCSV(colors),
+		CustomThemeIDsCSV:    customThemeIDsCSV(colors),
+		ThemeColorMeta:       themeBackgroundPrimary(themeID, colors),
+		WriteToken:           writeAccessToken(),
+		AppVersion:           appVersionToken(),
+		ReleaseTag:           releaseTag(),
+		AnalyticsWebsiteID:   analyticsWebsiteID,
+		AnalyticsScriptSrc:   analyticsScriptSrc,
+		AnalyticsEnabled:     analyticsEnabled(settings),
+		TelemetryLockedOff:   telemetryDisabledByEnv(),
 		UpdateCheckLockedOff: updateCheckDisabledByEnv(),
 	}
 }

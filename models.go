@@ -2976,6 +2976,11 @@ type BookmarkHealthReport struct {
 	// its own file rather than derived, since it is the only thing here that
 	// describes a day other than today.
 	Trend []HealthTrendPoint `json:"trend,omitempty"`
+	// Certificates are the TLS expiries seen while checking, keyed by host and
+	// carrying only those close enough to matter. Sent per host rather than per
+	// issue because that is what a certificate belongs to — the rows look
+	// themselves up by hostname.
+	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
 }
 
 type DuplicateWarning struct {
@@ -3012,6 +3017,21 @@ type HealthScanCache struct {
 	Error       string `json:"error,omitempty"`
 }
 
+// HostCertificate is the certificate expiry last seen for one host.
+//
+// Kept per host rather than per bookmark because that is what a certificate
+// belongs to: ten bookmarks on one domain share one certificate, and storing it
+// per bookmark would warn ten times about a single renewal.
+type HostCertificate struct {
+	Host      string `json:"host"`
+	ExpiresAt int64  `json:"expiresAt"` // Unix ms; 0 means never seen over TLS
+	SeenAt    int64  `json:"seenAt"`    // When this was last observed
+	// NotifiedDays records the expiry thresholds already alerted on, so a
+	// warning fires once per threshold per certificate rather than on every
+	// check for days on end. Reset when the expiry moves — a renewal.
+	NotifiedDays []int `json:"notifiedDays,omitempty"`
+}
+
 type HealthScanCacheFile struct {
 	GeneratedAt int64 `json:"generatedAt"`
 	// LastAutoRecheck is when the background recheck scheduler last completed a run
@@ -3019,6 +3039,10 @@ type HealthScanCacheFile struct {
 	// auto-backup compares the newest backup's age rather than an in-process timer.
 	LastAutoRecheck int64                      `json:"lastAutoRecheck,omitempty"`
 	Cache           map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
+	// Certificates seen while checking, keyed by host. Lives here rather than in
+	// its own file because it is written by the same pass that writes the cache
+	// and is worthless without it.
+	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
 }
 
 // HealthSample is one recorded reachability check for a monitored bookmark.

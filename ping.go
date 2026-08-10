@@ -17,6 +17,15 @@ type PingResult struct {
 	PingMs      int
 	ErrorDetail string
 	HTTPStatus  int
+	// CertExpiry is when the served leaf certificate stops being valid, in Unix
+	// milliseconds; 0 for plain HTTP, or when the handshake never completed.
+	// Read from the connection the check already made rather than opened for,
+	// so watching expiry costs nothing on top of the reachability check.
+	CertExpiry int64
+	// CertHost is the host the certificate was served for. Expiry is a property
+	// of the host, not of the bookmark: ten bookmarks on one domain share one
+	// certificate and must not warn ten times.
+	CertHost string
 }
 
 func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResult {
@@ -62,19 +71,48 @@ func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResul
 	if err == nil && resp != nil {
 		defer drainAndCloseResponse(resp)
 		code := resp.StatusCode
+		certExpiry, certHost := leafCertExpiry(resp)
 		if httpStatusReachable(code) {
-			return PingResult{Status: "online", PingMs: elapsed, HTTPStatus: code}
+			return PingResult{
+				Status: "online", PingMs: elapsed, HTTPStatus: code,
+				CertExpiry: certExpiry, CertHost: certHost,
+			}
 		}
 		return PingResult{
 			Status:      "offline",
 			PingMs:      elapsed,
 			ErrorDetail: fmt.Sprintf("HTTP %d", code),
 			HTTPStatus:  code,
+			CertExpiry:  certExpiry,
+			CertHost:    certHost,
 		}
 	}
 
 	detail := classifyPingError(err, resp)
 	return PingResult{Status: "offline", PingMs: elapsed, ErrorDetail: detail, HTTPStatus: httpStatusFromResponse(resp)}
+}
+
+// leafCertExpiry reads the served certificate's expiry from a completed
+// response, in Unix milliseconds, plus the host it was served for.
+//
+// Returns zeroes for plain HTTP and for any response whose TLS state is missing
+// — an absent expiry means "nothing to say", never "expires at the epoch", so
+// callers can treat 0 as unknown without a second flag.
+func leafCertExpiry(resp *http.Response) (int64, string) {
+	if resp == nil || resp.TLS == nil || len(resp.TLS.PeerCertificates) == 0 {
+		return 0, ""
+	}
+	// PeerCertificates[0] is the leaf by definition of the TLS handshake; the
+	// rest of the chain expires later or the handshake would have failed.
+	leaf := resp.TLS.PeerCertificates[0]
+	if leaf == nil || leaf.NotAfter.IsZero() {
+		return 0, ""
+	}
+	host := ""
+	if resp.Request != nil && resp.Request.URL != nil {
+		host = resp.Request.URL.Hostname()
+	}
+	return leaf.NotAfter.UnixMilli(), host
 }
 
 // httpStatusReachable reports whether an HTTP status means the host answered.

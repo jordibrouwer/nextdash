@@ -226,6 +226,14 @@ func (h *Handlers) runDueMonitors() {
 	if err := h.mergeHealthCacheUpdates(cacheUpdates); err != nil {
 		log.Printf("health-monitor: failed to persist health cache: %v", err)
 	}
+	certResults := make([]PingResult, 0, len(outcomes))
+	for _, out := range outcomes {
+		certResults = append(certResults, out.result)
+	}
+	// Expiry warnings ride the same sinks as outages: the webhook someone set up
+	// for downtime is where they want to hear that a certificate is about to
+	// cause some.
+	pending = append(pending, certExpiryNotifications(h.recordMonitorCertificates(certResults), time.Now())...)
 	h.mirrorMonitorResultsToBookmarks(cacheUpdates)
 	h.invalidateHealthReportCache()
 

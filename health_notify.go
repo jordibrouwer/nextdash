@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -46,15 +47,45 @@ type monitorTransition struct {
 // monitorNotification is a transition that cleared the alerting rules and should
 // actually be sent.
 type monitorNotification struct {
-	Event  string `json:"event"` // "down" | "up"
+	Event  string `json:"event"` // "down" | "up" | "cert-expiring"
 	Name   string `json:"name"`
 	URL    string `json:"url"`
-	Status string `json:"status"` // "offline" | "online"
+	Status string `json:"status"` // "offline" | "online" | "warning"
 	Error  string `json:"error,omitempty"`
 	At     int64  `json:"at"`
 	// Failures is how many consecutive failed checks preceded a "down" event,
 	// including the current one.
 	Failures int `json:"failures,omitempty"`
+	// DaysLeft is set on "cert-expiring" only: whole days until the certificate
+	// for this host stops being valid.
+	DaysLeft int `json:"daysLeft,omitempty"`
+}
+
+// certExpiryNotifications turns crossed thresholds into notifications, reusing
+// the monitor's sinks rather than adding a parallel delivery path — a webhook
+// already configured for outages is the same place someone wants to hear that a
+// certificate is about to take those sites down.
+func certExpiryNotifications(certs []HostCertificate, now time.Time) []monitorNotification {
+	out := make([]monitorNotification, 0, len(certs))
+	for _, cert := range certs {
+		days := certDaysLeft(cert.ExpiresAt, now)
+		reason := fmt.Sprintf("TLS certificate expires in %d days", days)
+		if days < 0 {
+			reason = "TLS certificate has expired"
+		} else if days == 0 {
+			reason = "TLS certificate expires today"
+		}
+		out = append(out, monitorNotification{
+			Event:    "cert-expiring",
+			Name:     cert.Host,
+			URL:      "https://" + cert.Host,
+			Status:   "warning",
+			Error:    reason,
+			At:       now.UnixMilli(),
+			DaysLeft: days,
+		})
+	}
+	return out
 }
 
 // trailingFailures counts consecutive failed samples at the end of the history.
