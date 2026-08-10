@@ -1227,3 +1227,66 @@ test.describe('health view — monitored tile', () => {
         expect(await tile.getAttribute('title')).toBeNull();
     });
 });
+
+test.describe('status grouping in the feed', () => {
+    // The fixture's issues carry: broken, duplicate, unchecked, healthy (x2),
+    // stale, unused — six distinct groups once sorted by status, matching
+    // STATUS_RANK's order (broken, content, duplicate, shortcut-conflict,
+    // unchecked, stale, unused, missing-preview, healthy).
+
+    test('groups appear, in STATUS_RANK order, only on All + Status sort', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+
+        const titles = await page.locator('.health-view-status-group-title')
+            .evaluateAll((els) => els.map((e) => e.textContent.trim()));
+        expect(titles.map((t) => t.replace(/\d+$/, '').trim())).toEqual([
+            'Broken', 'Duplicates', 'Never checked', 'Stale', 'Unused', 'Healthy',
+        ]);
+
+        // Counts render alongside the label, and the two "healthy" rows fold
+        // into one Healthy section rather than each getting their own.
+        const healthyGroup = page.locator('.health-view-status-group', { has: page.locator('.health-view-status-group-title', { hasText: 'Healthy' }) });
+        await expect(healthyGroup.locator('.health-view-item')).toHaveCount(2);
+    });
+
+    test('no groups on any other sort, even on All', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+        await page.selectOption('.health-view-sort-select', 'score');
+        await page.waitForTimeout(150);
+
+        await expect(page.locator('.health-view-status-group-title')).toHaveCount(0);
+        // All seven rows still render, just without section headings.
+        await expect(page.locator('.health-view-feed .health-view-item')).toHaveCount(7);
+    });
+
+    test('no groups on a single-status filter, even under Status sort', async ({ page }) => {
+        await openHealthView(page);
+        // openHealthView already lands on Broken, the default filter.
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+
+        await expect(page.locator('.health-view-status-group-title')).toHaveCount(0);
+        await expect(page.locator('.health-view-feed .health-view-item')).toHaveCount(1);
+    });
+
+    test('keyboard row order matches the grouped visual order', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+
+        // getVisibleRows() walks `.health-view-feed .health-view-item` regardless
+        // of the intermediate <section> nesting the groups introduced.
+        const names = await page.evaluate(() =>
+            window.dashboardInstance.health.getVisibleRows()
+                .map((row) => row.querySelector('.health-view-item-title')?.textContent?.trim()));
+        expect(names).toEqual([
+            'Broken one', 'Dup A', 'Never checked one', 'Stale one', 'Unused one',
+            'Monitored one', 'Monitored pending',
+        ]);
+    });
+});

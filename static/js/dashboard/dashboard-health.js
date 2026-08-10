@@ -484,6 +484,36 @@ class DashboardHealth {
         );
     }
 
+    /**
+     * Splits an already-filtered-and-sorted page of issues into status
+     * sections, mirroring how DashboardInbox groups by date.
+     *
+     * Only on the All filter under the Status sort: every other filter is
+     * already one status (or a small related set), where a heading would add
+     * nothing, and any other sort (score, name, last-checked) has its own
+     * ordering that a status heading would visually chop into pieces — the
+     * same reason Inbox's isGroupedSort() guard exists.
+     *
+     * Call this on the page already sliced to visibleLimit, not on the full
+     * filtered array: grouping is a presentation step over what is about to
+     * render, so paging math (_bindLoadMoreObserver, prepareIssueFocus) keeps
+     * working on the flat array exactly as before.
+     */
+    groupFilteredIssues(issues) {
+        if (this.filter !== 'all' || this.sort !== 'status') {
+            return issues.length ? [{ key: 'flat', label: '', items: issues }] : [];
+        }
+        const order = Object.keys(DashboardHealth.STATUS_RANK);
+        const buckets = new Map(order.map((key) => [key, []]));
+        issues.forEach((issue) => {
+            const key = order.includes(issue?.status) ? issue.status : 'healthy';
+            buckets.get(key)?.push(issue);
+        });
+        return order
+            .map((key) => ({ key, label: this.filterLabel(key) || key, items: buckets.get(key) || [] }))
+            .filter((group) => group.items.length > 0);
+    }
+
     filterCount(filter) {
         const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
         return issues.filter((issue) => this.matchesFilter(issue, filter)).length;
@@ -2048,7 +2078,21 @@ class DashboardHealth {
         feed.className = 'health-view-feed';
         feed.setAttribute('role', 'feed');
         feed.setAttribute('aria-label', this.t('dashboard.healthPageTitle', 'Health'));
-        visible.forEach((issue) => feed.appendChild(this.createIssueElement(issue)));
+        const groups = this.groupFilteredIssues(visible);
+        groups.forEach((group) => {
+            const section = document.createElement('section');
+            section.className = 'health-view-status-group';
+            // A flat run (the common case) has no heading; an empty <h3> would
+            // leave its margin behind as a gap above the first row.
+            section.innerHTML = group.label
+                ? `<h3 class="health-view-status-group-title">${this.escape(group.label)}<span class="health-view-status-group-count">${group.items.length}</span></h3>`
+                : '';
+            const list = document.createElement('div');
+            list.className = 'health-view-status-group-items';
+            group.items.forEach((issue) => list.appendChild(this.createIssueElement(issue)));
+            section.appendChild(list);
+            feed.appendChild(section);
+        });
         container.appendChild(feed);
         this.bindOutsideMenuDismiss();
 
@@ -2074,6 +2118,7 @@ class DashboardHealth {
     filterLabel(filter = this.filter) {
         const labels = {
             broken: this.t('dashboard.healthFilterBroken', 'Broken'),
+            content: this.t('dashboard.healthFilterContent', 'Content'),
             duplicate: this.t('dashboard.healthFilterDuplicates', 'Duplicates'),
             unchecked: this.t('dashboard.healthFilterUnchecked', 'Never checked'),
             monitored: this.t('dashboard.healthFilterMonitored', 'Monitored'),

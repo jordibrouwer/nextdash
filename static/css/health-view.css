@@ -552,6 +552,38 @@ button.health-view-tile:hover {
     gap: 0.65rem;
 }
 
+/* Status sections on the All filter under the Status sort — mirrors Inbox's
+   date groups (.inbox-date-group). Every other filter/sort combination
+   renders a single unlabelled group, so this costs nothing when unused. */
+.health-view-status-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.health-view-status-group-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin: 0.35rem 0 0;
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.health-view-status-group-count {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+}
+
+.health-view-status-group-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
 .health-view-load-sentinel {
     height: 1px;
     width: 100%;
