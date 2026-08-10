@@ -50,6 +50,12 @@ class DashboardHealthLoader {
             await load('js/dashboard/dashboard-health-multi-select.js', 'dashboardHealthMultiSelect',
                 () => typeof window.DashboardHealthMultiSelect === 'function');
         }
+        // The one-time tutorial is only ever read from openHealthView(), so it
+        // has no reason to cost anything on a session that never opens Health.
+        if (typeof window.HealthTutorial === 'undefined') {
+            await load('js/health-tutorial.js', 'healthTutorialModule',
+                () => typeof window.HealthTutorial !== 'undefined');
+        }
     }
 
     load() {

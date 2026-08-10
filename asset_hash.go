@@ -154,6 +154,7 @@ var lazyLoadedAssets = []string{
 	"js/dashboard/dashboard-config.js",
 	"js/health-reason-utils.js",
 	"js/shared/last-opened-format.js",
+	"js/health-tutorial.js",
 	"js/dashboard/dashboard-health.js",
 	"js/dashboard/dashboard-inbox-triage.js",
 	"js/dashboard/dashboard-inbox.js",

@@ -348,6 +348,7 @@ class DashboardHealth {
         this.restoreHealthHash();
         this.syncUrlState();
         this.startLiveRefresh();
+        window.HealthTutorial?.maybeShow?.();
         return true;
     }
 
