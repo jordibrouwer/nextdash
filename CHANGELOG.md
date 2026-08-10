@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v2026.09.08.2 — August 2026](#v202609082--august-2026)
 - [v2026.09.08.1 — August 2026](#v202609081--august-2026)
 - [v2026.09.08 — August 2026](#v20260908--august-2026)
 - [v2026.09.07 — August 2026](#v20260907--august-2026)
@@ -152,6 +153,24 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v2026.09.08.2 — August 2026
+
+**Try a theme before you keep it** — moving through the theme list previews each one on the dashboard behind the config view, and nothing is stored until you choose. With 23 new themes to move through.
+
+### Appearance
+
+- **new** — **The theme list previews as you move through it.** Arrowing or hovering applies that theme to the dashboard behind Config; Enter or a click stores it, and Escape, a click elsewhere or focus leaving the picker puts the previous one back. Preview reuses the theme editor's variables block, scoped to the attribute the document actually carries, and the block is dropped before the choice is stored — it outranks `/api/theme.css`, so leaving it behind would keep the dashboard on colours from a stylesheet nothing owns (`dashboard-config.js`).
+- **new** — **The theme control is a listbox rather than a `<select>`.** It had to be: while a native select's popup is open the browser owns the keyboard, fires no `change` or `input`, and leaves `value` on the old option until the popup closes, so there is no moment at which to run a preview — verified directly rather than assumed. The button keeps the `data-appearance-select="theme"` hook so settings search and the changed-filter still find it, and the generic select binder is narrowed to `select[…]` so it no longer waits for an event that cannot arrive (`dashboard-config.js`, `config-view.css`).
+- **fix** — Config's Escape handler runs on `document` in the capture phase, so it reached the key before the picker and closed the whole view while the list stayed open. It now yields to an open picker, in the same shape as the existing guards for modals and inline edit.
+- **new** — **23 new theme pairs**, 46 entries: Blueprint, Oxblood Leather, Ultraviolet, Foundry Iron, Peacock, Bone China, Chartreuse Static, Tidal Slate, Marigold Dusk, Cold Cathode, Saffron Robe, Static Noise, Absinthe, Tyrian, Harbour Fog, Ember Ash, Iris Meadow, Salt Flat, Signal Flare, Olive Drab, Porcelain Blue, Tarnished Brass and Storm Petrel. Picked for gaps rather than for another shade of what was there — Static Noise carries no hue at all including its accents, Blueprint inverts figure and ground, Signal Flare holds everything neutral but one magenta. Each ships as a `-dark`/`-light` pair, because auto dark mode filters on that suffix and an unpaired theme disappears in one of the two states. `THEME_BACKGROUND_MAP` gains all 46 ids as well: an unmapped theme falls through to no gradient, which is a setting quietly doing nothing rather than an error (`models.go`, `visual-settings.js`).
+
+### Docs
+
+- **new** — Release plumbing for **v2026.09.08.2**: `static/data/whats-new/v2026.09.08.2.json`, the index entry, both `whats-new-stub.js` tokens (`…-v179`, `whats-new-v238`), the constants test, and an **overviewNewFeatures()** spotlight for the theme preview with its five locale keys in en, nl, de and fr.
+- **new** — `tests/config-theme-picker.spec.js` pins preview-on-move, store-only-on-choose, revert on every other exit, and that the list is wide enough for its longest name. Each was falsified by breaking the code first. The two specs that drove the old `<select>` move to the listbox with their assertions unchanged.
 
 ---
 
