@@ -146,6 +146,7 @@ func main() {
 	r.HandleFunc("/api/health/history-export", handlers.ExportHealthHistory).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-suggest", handlers.AutoHealSuggest).Methods("GET")
 	r.HandleFunc("/api/health/auto-heal-apply", handlers.AutoHealApply).Methods("POST")
+	r.HandleFunc("/api/health/test-notification", handlers.TestMonitorNotification).Methods("POST")
 	r.HandleFunc("/api/bookmark-preview", handlers.GetBookmarkPreview).Methods("GET")
 	r.HandleFunc("/api/inbox", handlers.GetInbox).Methods("GET")
 	r.HandleFunc("/api/inbox", handlers.AddInboxItem).Methods("POST")

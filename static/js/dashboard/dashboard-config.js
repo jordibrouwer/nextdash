@@ -1985,7 +1985,7 @@ class DashboardConfig {
             });
         };
 
-        this.behaviorSchema().forEach((panel) => {
+        this.behaviorSchema({ forIndex: true }).forEach((panel) => {
             const section = panel.section || 'behavior';
             (panel.controls || []).forEach((c) => {
                 if (!c.field || c.type === 'note' || c.type === 'pushDevice'
@@ -7384,7 +7384,67 @@ class DashboardConfig {
      * so that is left for the Appearance migration that will fold the
      * hand-written `data-appearance-*` controls in here.
      */
-    behaviorSchema() {
+    /**
+     * The Downtime alerts panel's controls, shaped by which service is picked.
+     *
+     * Split out of behaviorSchema() because — unlike every other panel there —
+     * this one's field list actually changes with a setting's value rather
+     * than staying fixed: Pushover has no user-chosen URL and needs two
+     * credential fields instead, Telegram needs one extra field alongside its
+     * URL, everything else (including the default raw-JSON webhook) needs
+     * just the URL. setBehavior() repaints this panel on monitorNotifyPreset
+     * changes (see the `field === 'monitorNotifyPreset'` branch) so picking a
+     * different service immediately shows the right fields.
+     */
+    monitorNotifyControls(t, opt, { forIndex = false } = {}) {
+        const preset = this.dash.settings?.monitorNotifyPreset || '';
+        const controls = [
+            { field: 'monitorNotifyPreset', type: 'select', label: t('config.monitorNotifyPresetLabel', 'Service'), options: [
+                opt('', t('config.monitorNotifyPresetRaw', 'Raw JSON (custom receiver)')),
+                opt('slack', 'Slack'),
+                opt('discord', 'Discord'),
+                opt('telegram', 'Telegram'),
+                opt('gotify', 'Gotify'),
+                opt('ntfy', 'ntfy'),
+                opt('pushover', 'Pushover'),
+            ] },
+        ];
+        // forIndex: the settings jump has to find monitorNotifyTelegramChatId
+        // and the two Pushover fields even when nobody has ever picked those
+        // presets — "a setting is only findable once you have opened the tab
+        // it lives on" is exactly the bug settingsJumpFieldEntries() exists to
+        // avoid, and a value-dependent field list is no exception to that.
+        // Rendering, by contrast, must show only what the current preset
+        // actually uses — showing all four credential fields at once would be
+        // confusing busywork for whichever service is not picked.
+        //
+        // Pushover has no user-chosen URL at all — the endpoint is fixed and
+        // delivery is keyed on the two credentials below — so the URL field
+        // would be not just unused but actively misleading here.
+        if (forIndex || preset !== 'pushover') {
+            const urlLabelByPreset = {
+                telegram: t('config.monitorNotifyUrlLabelTelegram', 'Bot API URL (https://api.telegram.org/bot<token>/sendMessage)'),
+            };
+            controls.push({
+                field: 'monitorNotifyUrl', type: 'text',
+                label: urlLabelByPreset[preset] || t('config.monitorNotifyUrlLabel', 'Alert webhook URL'),
+            });
+        }
+        if (forIndex || preset === 'telegram') {
+            controls.push({ field: 'monitorNotifyTelegramChatId', type: 'text', label: t('config.monitorNotifyTelegramChatIdLabel', 'Chat ID') });
+        }
+        if (forIndex || preset === 'pushover') {
+            controls.push({ field: 'monitorNotifyPushoverToken', type: 'text', label: t('config.monitorNotifyPushoverTokenLabel', 'Application token') });
+            controls.push({ field: 'monitorNotifyPushoverUserKey', type: 'text', label: t('config.monitorNotifyPushoverUserKeyLabel', 'User key') });
+        }
+        controls.push({ field: 'monitorNotifyRetries', type: 'select', label: t('config.monitorNotifyRetriesLabel', 'Alert after this many failures'), options: [
+            opt(1, '1'), opt(2, '2'), opt(3, '3'), opt(5, '5'), opt(10, '10'),
+        ] });
+        controls.push({ type: 'monitorNotifyTest' });
+        return controls;
+    }
+
+    behaviorSchema({ forIndex = false } = {}) {
         const t = (k, f) => this.t(k, f);
         const bool = (field, label, fallback) => ({ field, type: 'checkbox', label: t(label, fallback) });
         // A toggle whose effect lives in the page chrome rather than the bookmark
@@ -7701,12 +7761,7 @@ class DashboardConfig {
                 title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
                 note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
                 appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
-                controls: [
-                    { field: 'monitorNotifyUrl', type: 'text', label: t('config.monitorNotifyUrlLabel', 'Alert webhook URL') },
-                    { field: 'monitorNotifyRetries', type: 'select', label: t('config.monitorNotifyRetriesLabel', 'Alert after this many failures'), options: [
-                        opt(1, '1'), opt(2, '2'), opt(3, '3'), opt(5, '5'), opt(10, '10'),
-                    ] },
-                ],
+                controls: this.monitorNotifyControls(t, opt, { forIndex }),
             },
             {
                 section: 'behavior',
@@ -7808,6 +7863,18 @@ class DashboardConfig {
             }
             if (c.type === 'maintenanceWindows') {
                 return this.renderMaintenanceWindows();
+            }
+            // A malformed Discord embed or a wrong Telegram chat ID fails
+            // silently today — the server only logs a non-2xx response, the
+            // operator never sees it. This surfaces that at setup time rather
+            // than at 3am during a real outage, mirroring the push "Send test
+            // notification" button above.
+            if (c.type === 'monitorNotifyTest') {
+                return `
+                    <div class="config-field-row">
+                        <button type="button" class="config-btn" data-monitor-notify-test>${esc(this.t('config.monitorNotifyTestButton', 'Send test alert'))}</button>
+                        <span class="config-field-hint" data-monitor-notify-test-status></span>
+                    </div>`;
             }
             const val = s[c.field];
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
@@ -8010,6 +8077,7 @@ class DashboardConfig {
         this.bindPanelResetActions(container);
         this.bindPushDeviceControls(container);
         this.bindMaintenanceWindows(container);
+        this.bindMonitorNotifyTest(container);
         this.bindAffordances(container, (field) => {
             const el = container.querySelector(`[data-${prefix}-field="${CSS.escape(field)}"]`);
             const special = el?.getAttribute(`data-${prefix}-special`) || '';
@@ -8394,6 +8462,40 @@ class DashboardConfig {
         });
     }
 
+    /**
+     * "Send test alert" — posts one synthetic down notification through
+     * whatever is currently saved for Downtime alerts, so a malformed Discord
+     * embed or a wrong Telegram chat ID is caught at setup time. Every field
+     * in this panel saves on change (setBehavior), so by the time this button
+     * is clicked the server already has whatever was just typed — no need to
+     * gather values from the DOM here.
+     */
+    bindMonitorNotifyTest(container) {
+        const btn = container.querySelector('[data-monitor-notify-test]');
+        if (!btn) return;
+        const status = container.querySelector('[data-monitor-notify-test-status]');
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            if (status) status.textContent = this.t('config.monitorNotifyTestSending', 'Sending…');
+            try {
+                const res = await fetch('/api/health/test-notification', { method: 'POST' });
+                if (!res.ok) {
+                    const detail = (await res.text().catch(() => '')).trim();
+                    throw new Error(detail || `HTTP ${res.status}`);
+                }
+                if (status) status.textContent = this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.');
+                window.AppNotification?.show?.(this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.'));
+            } catch (err) {
+                const message = err?.message || String(err);
+                if (status) status.textContent = message;
+                window.AppNotification?.show?.(message);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    }
+
     bindPushDeviceControls(container) {
         const toggle = container.querySelector('[data-push-toggle]');
         if (!toggle) return;
@@ -8759,6 +8861,15 @@ class DashboardConfig {
             if (this.section === 'overview') {
                 this.repaintOverview();
             }
+        }
+        // Which fields the Downtime alerts panel shows depends on the picked
+        // service: Pushover hides the URL field and shows its two credential
+        // fields instead, Telegram shows a chat-ID field, everything else shows
+        // just the URL. Repainting is the same mechanism the reset button on
+        // this tab already relies on (see repaintActiveControlPanels) rather
+        // than a bespoke show/hide toggle for this one field.
+        if (field === 'monitorNotifyPreset') {
+            this.repaintActiveControlPanels();
         }
         switch (special) {
             case 'language':

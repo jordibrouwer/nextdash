@@ -304,6 +304,18 @@ type Settings struct {
 	ServerLogEnabled     bool   `json:"serverLogEnabled"`               // Capture server log lines for the in-app viewer (default off)
 	MonitorNotifyURL     string `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
 	MonitorNotifyRetries int    `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
+	// MonitorNotifyPreset shapes the webhook body for a specific service instead
+	// of nextDash's own raw JSON. Empty keeps today's exact behaviour, so an
+	// existing webhook receiver built against the raw shape needs no migration.
+	MonitorNotifyPreset string `json:"monitorNotifyPreset,omitempty"` // "", "slack", "discord", "telegram", "gotify", "ntfy", "pushover"
+	// MonitorNotifyTelegramChatID is only read when MonitorNotifyPreset is
+	// "telegram" — the bot API needs a chat to post into, separate from the
+	// bot-token URL, and getting it wrong is otherwise a silent failure.
+	MonitorNotifyTelegramChatID string `json:"monitorNotifyTelegramChatId,omitempty"`
+	// Pushover has no user-chosen URL at all: the endpoint is fixed
+	// (api.pushover.net) and delivery is keyed on these two values instead.
+	MonitorNotifyPushoverToken   string `json:"monitorNotifyPushoverToken,omitempty"`
+	MonitorNotifyPushoverUserKey string `json:"monitorNotifyPushoverUserKey,omitempty"`
 	// MaintenanceWindows are recurring periods when downtime is expected. Checks
 	// still run and samples are still recorded — the heartbeat stays honest — but
 	// failures inside a window raise no alert and do not count against uptime.
@@ -2505,6 +2517,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 	settings.MonitorNotifyRetries = clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
+	settings.MonitorNotifyPreset = normalizeMonitorNotifyPreset(settings.MonitorNotifyPreset)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 

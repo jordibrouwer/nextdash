@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -273,5 +274,107 @@ func TestMonitorNotificationTitle(t *testing.T) {
 		if c.in.Event == "cert-expiring" && strings.Contains(monitorNotificationTitle(c.in), "offline") {
 			t.Errorf("cert-expiring title must never say offline: %q", monitorNotificationTitle(c.in))
 		}
+	}
+}
+
+func postTestNotification(t *testing.T, h *Handlers) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/api/health/test-notification", nil)
+	rec := httptest.NewRecorder()
+	h.TestMonitorNotification(rec, req)
+	return rec
+}
+
+func TestTestMonitorNotificationSendsThroughThePickedPreset(t *testing.T) {
+	var (
+		mu      sync.Mutex
+		bodies  []string
+		headers []http.Header
+	)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		mu.Lock()
+		bodies = append(bodies, string(body))
+		headers = append(headers, r.Header.Clone())
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	h, _ := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"`+srv.URL+`","monitorNotifyPreset":"slack","allowLocalBookmarks":true}`)
+
+	rec := postTestNotification(t, h)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(bodies) != 1 {
+		t.Fatalf("expected 1 request to the webhook, got %d", len(bodies))
+	}
+	var decoded slackWebhookPayload
+	if err := json.Unmarshal([]byte(bodies[0]), &decoded); err != nil {
+		t.Fatalf("body is not a Slack payload: %v\nbody: %s", err, bodies[0])
+	}
+	if decoded.Text == "" {
+		t.Error("expected a non-empty Slack text field")
+	}
+	if headers[0].Get("Content-Type") != "application/json" {
+		t.Errorf("content-type = %q, want application/json", headers[0].Get("Content-Type"))
+	}
+}
+
+func TestTestMonitorNotificationWithoutConfigIs400(t *testing.T) {
+	h, _ := healthRecheckTestHandlers(t, `{}`)
+
+	rec := postTestNotification(t, h)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400 when nothing is configured", rec.Code)
+	}
+}
+
+// Pushover has no user-chosen URL: it needs both credentials before the
+// handler will consider it configured at all, rather than silently falling
+// back to some other target. (monitorNotifyTarget's own unit test — see
+// health_notify_presets_test.go — separately proves monitorNotifyUrl is
+// ignored for this preset once credentials are set; that assertion does not
+// need a live network call, so it is not repeated here.)
+func TestTestMonitorNotificationPushoverRequiresBothCredentials(t *testing.T) {
+	var called bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	h, _ := healthRecheckTestHandlers(t, `{
+		"monitorNotifyUrl":"`+srv.URL+`",
+		"monitorNotifyPreset":"pushover",
+		"allowLocalBookmarks":true
+	}`)
+
+	rec := postTestNotification(t, h)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400 with no Pushover credentials set", rec.Code)
+	}
+	if called {
+		t.Error("nothing should be contacted when Pushover has no credentials configured")
+	}
+}
+
+// A malformed configuration must not be silently dropped — the whole point of
+// the test-send button is to surface a delivery failure at setup time.
+func TestTestMonitorNotificationSurfacesUpstreamRejection(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	h, _ := healthRecheckTestHandlers(t, `{"monitorNotifyUrl":"`+srv.URL+`","allowLocalBookmarks":true}`)
+
+	rec := postTestNotification(t, h)
+	if rec.Code != http.StatusBadGateway {
+		t.Fatalf("status = %d, want 502 when the upstream service rejects the test alert", rec.Code)
 	}
 }
