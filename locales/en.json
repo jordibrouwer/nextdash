@@ -4213,7 +4213,7 @@
         "overviewNewFeatureServerLogTitle": "Read the server log without leaving nextDash",
         "overviewNewFeatureServerLogWhat": "When something went wrong there was nothing to look at. Finding out why an import failed or a link check never ran meant reaching the machine nextDash runs on.",
         "overviewNewFeatureServerLogHow": "Data & backups › Server log lists what the server has been doing, keeps itself up to date every few seconds if you want, and colours warnings and errors so they are easy to spot. Search looks through everything kept.",
-        "overviewNewFeatureServerLogEnable": "Nothing to switch on. Choose how long to keep entries, and clear the whole lot whenever you like.",
+        "overviewNewFeatureServerLogEnable": "Nothing to switch on. Limit it by age or by number of entries, and clear the whole lot whenever you like.",
         "overviewNewFeatureServerLogCta": "Open Server log →",
         "overviewNewFeatureSettingsSearchTitle": "Search finds every setting, not just the ones you have seen",
         "overviewNewFeatureSettingsSearchWhat": "Looking for “webhook” found nothing at all unless you happened to have opened that tab before, which is the opposite of what a search is for.",

@@ -4213,7 +4213,7 @@
         "overviewNewFeatureServerLogTitle": "Das Serverprotokoll lesen, ohne nextDash zu verlassen",
         "overviewNewFeatureServerLogWhat": "Wenn etwas schiefging, gab es nichts zu sehen. Um herauszufinden, warum ein Import fehlschlug oder eine Linkprüfung nie lief, musste man an den Rechner, auf dem nextDash läuft.",
         "overviewNewFeatureServerLogHow": "Daten & Backups › Serverprotokoll zeigt, was der Server getan hat, aktualisiert sich auf Wunsch alle paar Sekunden und hebt Warnungen und Fehler farblich hervor. Die Suche durchsucht alles Gespeicherte.",
-        "overviewNewFeatureServerLogEnable": "Nichts einzuschalten. Wählen Sie, wie lange Einträge bleiben, und löschen Sie alles, wann immer Sie möchten.",
+        "overviewNewFeatureServerLogEnable": "Nichts einzuschalten. Begrenzen Sie ihn nach Alter oder nach Anzahl der Einträge, und löschen Sie alles, wann immer Sie möchten.",
         "overviewNewFeatureServerLogCta": "Serverprotokoll öffnen →",
         "overviewNewFeatureSettingsSearchTitle": "Die Suche findet jede Einstellung, nicht nur die schon geöffneten",
         "overviewNewFeatureSettingsSearchWhat": "Die Suche nach „Webhook“ fand gar nichts, sofern man diesen Tab nicht zufällig vorher geöffnet hatte — das Gegenteil dessen, wofür eine Suche da ist.",

@@ -4213,7 +4213,7 @@
         "overviewNewFeatureServerLogTitle": "Consultez le journal du serveur sans quitter nextDash",
         "overviewNewFeatureServerLogWhat": "Quand quelque chose échouait, il n'y avait rien à consulter. Comprendre pourquoi un import avait échoué demandait d'accéder à la machine qui exécute nextDash.",
         "overviewNewFeatureServerLogHow": "Données et sauvegardes › Journal du serveur montre ce que le serveur a fait, se met à jour toutes les quelques secondes si vous le souhaitez, et colore avertissements et erreurs. La recherche parcourt tout ce qui est conservé.",
-        "overviewNewFeatureServerLogEnable": "Rien à activer. Choisissez la durée de conservation et effacez le tout quand vous voulez.",
+        "overviewNewFeatureServerLogEnable": "Rien à activer. Limitez-le par ancienneté ou par nombre d'entrées, et effacez le tout quand vous voulez.",
         "overviewNewFeatureServerLogCta": "Ouvrir le journal du serveur →",
         "overviewNewFeatureSettingsSearchTitle": "La recherche trouve chaque réglage, pas seulement ceux déjà consultés",
         "overviewNewFeatureSettingsSearchWhat": "Chercher « webhook » ne donnait rien du tout, sauf si vous aviez ouvert cet onglet auparavant — l'inverse de ce à quoi sert une recherche.",

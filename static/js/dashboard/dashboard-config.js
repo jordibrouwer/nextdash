@@ -2809,7 +2809,7 @@ class DashboardConfig {
                 howKey: 'config.overviewNewFeatureServerLogHow',
                 howFallback: 'Data & backups › Server log lists what the server has been doing, keeps itself up to date every few seconds if you want, and colours warnings and errors so they are easy to spot. Search looks through everything kept.',
                 enableKey: 'config.overviewNewFeatureServerLogEnable',
-                enableFallback: 'Nothing to switch on. Choose how long to keep entries, and clear the whole lot whenever you like.',
+                enableFallback: 'Nothing to switch on. Limit it by age or by number of entries, and clear the whole lot whenever you like.',
                 ctaKey: 'config.overviewNewFeatureServerLogCta',
                 ctaFallback: 'Open Server log →',
                 go: { section: 'data-backups', dbTab: 'logs' },

@@ -4213,7 +4213,7 @@
         "overviewNewFeatureServerLogTitle": "Lees het serverlog zonder nextDash te verlaten",
         "overviewNewFeatureServerLogWhat": "Als er iets misging was er niets om naar te kijken. Uitzoeken waarom een import mislukte of een linkcontrole nooit liep, betekende bij de machine komen waarop nextDash draait.",
         "overviewNewFeatureServerLogHow": "Gegevens & back-ups › Serverlog laat zien wat de server heeft gedaan, ververst zichzelf desgewenst elke paar seconden en kleurt waarschuwingen en fouten zodat je ze meteen ziet. Zoeken doorzoekt alles wat bewaard is.",
-        "overviewNewFeatureServerLogEnable": "Niets aan te zetten. Kies hoe lang regels bewaard blijven en wis alles wanneer je wilt.",
+        "overviewNewFeatureServerLogEnable": "Niets aan te zetten. Beperk op ouderdom of op aantal regels en wis alles wanneer je wilt.",
         "overviewNewFeatureServerLogCta": "Serverlog openen →",
         "overviewNewFeatureSettingsSearchTitle": "Zoeken vindt elke instelling, niet alleen die je al bekeken hebt",
         "overviewNewFeatureSettingsSearchWhat": "Zoeken op “webhook” leverde niets op tenzij je dat tabblad toevallig al eens had geopend — precies het tegenovergestelde van waar zoeken voor is.",
