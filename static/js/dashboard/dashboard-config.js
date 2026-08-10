@@ -2813,6 +2813,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureThemePreviewTitle',
+                titleFallback: 'Try a theme on before you keep it',
+                whatKey: 'config.overviewNewFeatureThemePreviewWhat',
+                whatFallback: 'Finding out what a theme looked like meant switching to it, then switching back if you did not like it — and doing that again for the next one.',
+                howKey: 'config.overviewNewFeatureThemePreviewHow',
+                howFallback: 'Open the Theme list under Appearance and move through it: the dashboard behind takes on each theme as you go. Press Esc or click away and you are back where you started. There are 23 new themes to look through as well.',
+                enableKey: 'config.overviewNewFeatureThemePreviewEnable',
+                enableFallback: 'Nothing to switch on. Your choice is only saved once you pick one.',
+                ctaKey: 'config.overviewNewFeatureThemePreviewCta',
+                ctaFallback: 'Open Appearance →',
+                go: { section: 'appearance', appearanceTab: 'general' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureServerLogTitle',
                 titleFallback: 'Read the server log without leaving nextDash',
                 whatKey: 'config.overviewNewFeatureServerLogWhat',
