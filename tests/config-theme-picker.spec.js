@@ -30,6 +30,23 @@ const paintedBg = (page) => page.evaluate(() =>
 const stored = (page) => page.evaluate(() => window.dashboardInstance.settings.theme);
 
 test.describe('Appearance → theme picker', () => {
+    // These tests commit a theme, and the server is shared across the run. Put
+    // the stored theme back so a later spec does not inherit whichever family
+    // this file happened to land on — config-random-theme.spec.js clicks Quick
+    // mode and expects the theme to change, which a leftover can make a no-op.
+    let original = null;
+    test.beforeEach(async ({ page }) => {
+        if (original === null) {
+            const res = await page.request.get('/api/settings');
+            original = res.ok() ? (await res.json()).theme ?? 'dark' : 'dark';
+        }
+    });
+    test.afterEach(async ({ page }) => {
+        if (original !== null) {
+            await page.request.post('/api/settings', { data: { theme: original } });
+        }
+    });
+
     test('moving through the list previews without storing anything', async ({ page }) => {
         await openPicker(page);
         const before = { bg: await paintedBg(page), theme: await stored(page) };
@@ -104,6 +121,35 @@ test.describe('Appearance → theme picker', () => {
         // The preview block outranks /api/theme.css, so leaving it behind would
         // keep the dashboard on preview colours from a stylesheet nobody owns.
         expect(await page.evaluate(() => !document.getElementById('config-theme-preview'))).toBe(true);
+    });
+
+    test('Quick mode switches halves without losing the chosen theme', async ({ page }) => {
+        await openPicker(page);
+
+        await page.locator('[data-theme-picker-button]').click();
+        const option = page.locator('[data-theme-option]').nth(5);
+        const picked = await option.getAttribute('data-theme-option');
+        await option.click();
+        await expect.poll(() => stored(page)).toBe(picked);
+
+        const family = String(picked).replace(/-(dark|light)$/, '');
+        const other = `${family}-${picked.endsWith('-dark') ? 'light' : 'dark'}`;
+
+        // Quick mode used to set the bare ids `light`/`dark`, which are a
+        // specific legacy pair rather than a mode — so this threw the choice
+        // away and left the picker reading "Old Default".
+        await page.locator(`[data-appearance-theme="${other.endsWith('-dark') ? 'dark' : 'light'}"]`).click();
+        await expect.poll(() => stored(page)).toBe(other);
+        // The picker follows: same family, other half — not "Old Default".
+        await expect.poll(async () => (await page.locator('[data-theme-picker-label]').textContent() || '').trim())
+            .toBe(await page.evaluate((id) => window.dashboardInstance.config.themeDisplayName(
+                id, window.dashboardInstance.config._themeList?.[id] || ''), other));
+
+        // And the button for the half now showing is the one marked active.
+        const activeButtons = await page.evaluate(() => [...document.querySelectorAll('[data-appearance-theme]')]
+            .filter((b) => b.classList.contains('is-active'))
+            .map((b) => b.getAttribute('data-appearance-theme')));
+        expect(activeButtons).toEqual([other.endsWith('-dark') ? 'dark' : 'light']);
     });
 
     test('the list is wide enough for the longest theme name', async ({ page }) => {

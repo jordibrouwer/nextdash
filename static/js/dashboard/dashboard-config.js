@@ -5259,7 +5259,11 @@ class DashboardConfig {
     renderAppearance() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const theme = s.theme === 'light' ? 'light' : 'dark';
+        // Which half of the current family is showing, so Quick mode marks the
+        // right button whatever theme is picked. Reading s.theme directly only
+        // ever matched the two legacy ids, leaving both buttons unlit on every
+        // other theme.
+        const theme = String(s.theme || 'dark').endsWith('-light') || s.theme === 'light' ? 'light' : 'dark';
         const tiles = `<div class="config-tiles config-tiles--text" role="list">${this.appearanceTiles().map((t) => this.renderTile(t)).join('')}</div>`;
 
         const fontOptions = DashboardConfig.FONT_SIZES.map((size) => {
@@ -5837,7 +5841,7 @@ class DashboardConfig {
         });
         this.bindCustomThemes(container);
         container.querySelectorAll('[data-appearance-theme]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setTheme(btn.getAttribute('data-appearance-theme')));
+            btn.addEventListener('click', () => this.setQuickMode(btn.getAttribute('data-appearance-theme')));
         });
         container.querySelectorAll('[data-appearance-font]').forEach((btn) => {
             btn.addEventListener('click', () => this.setFontSize(btn.getAttribute('data-appearance-font')));
@@ -6833,6 +6837,37 @@ class DashboardConfig {
 
     setTheme(theme) {
         void this.applyThemeChoice(theme);
+    }
+
+    /**
+     * Quick mode: switch the current theme to its light or dark half.
+     *
+     * These two buttons used to set the bare ids `light` and `dark`, which are
+     * not a mode at all — they are a specific legacy pair the picker lists as
+     * "Old Default". So picking Bio Abyss and then clicking Dark threw the
+     * choice away and left the picker reading "Old Default [dark]", which looks
+     * exactly like the setting failing to stick.
+     *
+     * Every built-in ships as `<family>-dark` / `<family>-light`, so the
+     * intended half is derivable: getPairedThemeVariant swaps the suffix and
+     * leaves anything without one — the legacy pair, a user's single-palette
+     * custom theme — alone.
+     */
+    setQuickMode(mode) {
+        const wantsDark = mode === 'dark';
+        const current = this.dash.settings?.theme || 'dark';
+        // A user's single-palette custom theme has no other half to switch to,
+        // so getPairedThemeVariant hands it straight back. Falling back to the
+        // bare mode id keeps the buttons working there — it is the one case
+        // where "Light"/"Dark" genuinely means the legacy pair, because there
+        // is no family to stay within.
+        const swapped = window.ThemeUtils?.getPairedThemeVariant?.(current, wantsDark);
+        const paired = !swapped || swapped === current ? mode : swapped;
+        // Deliberately not short-circuited when paired === current: with random
+        // theme on, the stored pick is not what is on screen, so re-applying it
+        // is a real action — it is what raises the "random is still rotating"
+        // toast. Swallowing the click here made that notice disappear.
+        void this.applyThemeChoice(paired);
     }
 
     async applyThemeChoice(theme) {
