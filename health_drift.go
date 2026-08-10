@@ -123,20 +123,35 @@ exact bytes would fire on every one of them.
 // it. Matched case-insensitively against the title, where these appear almost
 // exclusively — a body can mention "domain for sale" while being a perfectly
 // good article about domains.
+// Short, generic entries ("parked", "coming soon", "this domain") were dropped:
+// they are ordinary words that show up in perfectly innocent titles too ("Where
+// I Parked My Car", "Coming Soon: Our New Release"), and a word-boundary match
+// does not fix that since they are legitimate whole words in both cases. What
+// is left is long and specific enough that an unrelated title would not
+// plausibly contain it verbatim.
 var driftParkedPhrases = []string{
 	"domain for sale",
 	"buy this domain",
 	"domain is for sale",
-	"this domain",
-	"parked",
 	"account suspended",
 	"site suspended",
-	"coming soon",
 	"under construction",
 	"page not found",
 	"error 404",
 	"index of /",
 }
+
+// driftParkedPhrasePattern matches driftParkedPhrases as whole words, not
+// substrings. Plain strings.Contains false-positived on ordinary titles that
+// happen to contain one of these short, generic phrases — "Where I Parked My
+// Car" or "Coming Soon: Our New Release" are not a dead domain.
+var driftParkedPhrasePattern = func() *regexp.Regexp {
+	escaped := make([]string, len(driftParkedPhrases))
+	for i, phrase := range driftParkedPhrases {
+		escaped[i] = regexp.QuoteMeta(phrase)
+	}
+	return regexp.MustCompile(`\b(?:` + strings.Join(escaped, "|") + `)\b`)
+}()
 
 // titleDriftKind compares a stored title with a freshly read one.
 //
@@ -154,13 +169,12 @@ func titleDriftKind(stored, current string) string {
 		return ""
 	}
 	lowerCurrent := strings.ToLower(current)
-	for _, phrase := range driftParkedPhrases {
-		if strings.Contains(lowerCurrent, phrase) {
-			// Only when the stored title did not already say it: a bookmark
-			// deliberately saved on a "coming soon" page has not drifted.
-			if !strings.Contains(strings.ToLower(stored), phrase) {
-				return "parked"
-			}
+	lowerStored := strings.ToLower(stored)
+	for _, match := range driftParkedPhrasePattern.FindAllString(lowerCurrent, -1) {
+		// Only when the stored title did not already say it: a bookmark
+		// deliberately saved on a "coming soon" page has not drifted.
+		if !driftParkedPhrasePattern.MatchString(lowerStored) || !strings.Contains(lowerStored, match) {
+			return "parked"
 		}
 	}
 	// Titles routinely gain or lose a site-name suffix — "Intro" against

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"sort"
 	"strings"
 	"time"
@@ -134,6 +135,27 @@ func pruneHostCertificates(stored map[string]HostCertificate, liveHosts map[stri
 		if _, ok := liveHosts[host]; !ok {
 			delete(stored, host)
 		}
+	}
+}
+
+// pruneCertificates drops stored certificates for hosts nothing monitored
+// points at any more, so a removed or un-monitored bookmark's certificate does
+// not linger indefinitely, ageing toward "expired" for a host nobody watches.
+func (h *Handlers) pruneCertificates(liveHosts map[string]struct{}) {
+	h.healthCacheMu.Lock()
+	defer h.healthCacheMu.Unlock()
+
+	cache := readHealthCacheFile()
+	if len(cache.Certificates) == 0 {
+		return
+	}
+	before := len(cache.Certificates)
+	pruneHostCertificates(cache.Certificates, liveHosts)
+	if len(cache.Certificates) == before {
+		return
+	}
+	if err := writeHealthCacheFile(cache); err != nil {
+		log.Printf("health-monitor: failed to persist pruned certificates: %v", err)
 	}
 }
 

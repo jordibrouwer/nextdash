@@ -51,6 +51,12 @@ func TestTitleDriftSeparatesParkedFromRetitled(t *testing.T) {
 		// Saved on a placeholder page in the first place: not drift.
 		{"was already a placeholder", "Coming soon", "Coming soon — Acme", ""},
 		{"retitled", "Acme Docs — Intro", "Widget Handbook — Chapter 2", "changed"},
+		// Ordinary titles that happen to contain a parked phrase as a substring,
+		// not as the word itself, must not false-positive as "parked" — they are
+		// a "changed" title at most, like any other retitle.
+		{"parked as substring in unrelated title", "Road Trip Stories", "Where I Parked My Car", "changed"},
+		{"coming soon as substring in unrelated title", "Release Notes", "Coming Soon: Our New Release", "changed"},
+		{"this domain as substring in unrelated title", "DNS Basics", "Understanding This Domain's DNS Setup", "changed"},
 	} {
 		if got := titleDriftKind(tc.stored, tc.current); got != tc.want {
 			t.Errorf("%s: got %q, want %q", tc.name, got, tc.want)

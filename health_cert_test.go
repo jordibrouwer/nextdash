@@ -54,6 +54,23 @@ func TestCertRenewalRearmsAlerts(t *testing.T) {
 	}
 }
 
+// pruneHostCertificates must drop only hosts nothing live points at, keeping
+// a certificate for a host still in use even if another one was removed.
+func TestPruneHostCertificatesDropsDeadHostsOnly(t *testing.T) {
+	stored := map[string]HostCertificate{
+		"kept.example":    {Host: "kept.example"},
+		"removed.example": {Host: "removed.example"},
+	}
+	pruneHostCertificates(stored, map[string]struct{}{"kept.example": {}})
+
+	if _, ok := stored["removed.example"]; ok {
+		t.Error("removed.example should have been pruned — nothing live points at it")
+	}
+	if _, ok := stored["kept.example"]; !ok {
+		t.Error("kept.example should survive — a live host still points at it")
+	}
+}
+
 func TestCertSeverityAndReporting(t *testing.T) {
 	now := time.Now()
 	at := func(days int) int64 { return now.Add(time.Duration(days) * 24 * time.Hour).UnixMilli() }
