@@ -58,6 +58,10 @@ type monitorTarget struct {
 	name     string
 	pageID   int
 	interval time.Duration
+	// expect carries the bookmark's own definition of healthy — an expected
+	// status code, an expected string in the page — resolved here so the check
+	// goroutine does not have to reach back into the store.
+	expect expectation
 }
 
 // StartHealthMonitorScheduler runs the uptime-monitor loop until stop is closed.
@@ -121,6 +125,7 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 				name:     bm.Name,
 				pageID:   page.ID,
 				interval: interval,
+				expect:   expectationFor(bm),
 			})
 		}
 	}
@@ -168,13 +173,17 @@ func (h *Handlers) runDueMonitors() {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			result := h.pingURLDetailed(ctx, t.url)
+			result := h.pingURLExpecting(ctx, t.url, t.expect)
 			mu.Lock()
 			outcomes = append(outcomes, outcome{target: t, result: result, at: time.Now().UnixMilli()})
 			mu.Unlock()
 		}(target)
 	}
 	wg.Wait()
+
+	// One decision for the whole round: a window that opens mid-sweep should not
+	// split it into alerting and non-alerting halves.
+	inMaintenance := inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, now)
 
 	cacheUpdates := make(map[string]HealthScanCache, len(outcomes))
 	historyUpdates := make(map[string][]HealthSample, len(outcomes))
@@ -202,6 +211,7 @@ func (h *Handlers) runDueMonitors() {
 			Up:     up,
 			PingMs: out.result.PingMs,
 			Code:   out.result.HTTPStatus,
+			Maint:  inMaintenance,
 		}}
 		transitions = append(transitions, monitorTransition{
 			key:    out.target.key,
@@ -215,7 +225,13 @@ func (h *Handlers) runDueMonitors() {
 
 	// Notifications read the pre-append history to count consecutive failures, so
 	// evaluate before writing this round's samples.
-	pending := h.pendingMonitorNotifications(transitions)
+	// Inside a window the checks still ran and the samples are still recorded;
+	// only the alerting is held back. Suppressing the checks instead would hide a
+	// real outage that happened to start during maintenance.
+	var pending []monitorNotification
+	if !inMaintenance {
+		pending = h.pendingMonitorNotifications(transitions)
+	}
 
 	if err := h.appendHealthSamples(historyUpdates); err != nil {
 		log.Printf("health-monitor: failed to append history: %v", err)

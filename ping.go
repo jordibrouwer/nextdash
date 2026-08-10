@@ -28,7 +28,16 @@ type PingResult struct {
 	CertHost string
 }
 
+// pingURLDetailed checks a URL under the default rule: any status under 500 is
+// reachable and the body is never read.
 func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResult {
+	return h.pingURLExpecting(ctx, urlStr, expectation{})
+}
+
+// pingURLExpecting is the same check with a bookmark's own expectations applied.
+// A zero expectation behaves exactly like pingURLDetailed, so the common path is
+// unchanged — same request, no body read.
+func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect expectation) PingResult {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -72,20 +81,44 @@ func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResul
 		defer drainAndCloseResponse(resp)
 		code := resp.StatusCode
 		certExpiry, certHost := leafCertExpiry(resp)
-		if httpStatusReachable(code) {
-			return PingResult{
-				Status: "online", PingMs: elapsed, HTTPStatus: code,
-				CertExpiry: certExpiry, CertHost: certHost,
+		base := PingResult{
+			PingMs: elapsed, HTTPStatus: code,
+			CertExpiry: certExpiry, CertHost: certHost,
+		}
+		down := func(detail string) PingResult {
+			r := base
+			r.Status = "offline"
+			r.ErrorDetail = detail
+			return r
+		}
+
+		// An explicit list replaces the default rule; an unusable one (all typos)
+		// falls back to it rather than failing a healthy site.
+		codeOK := httpStatusReachable(code)
+		if matched, usable := statusMatchesExpectation(code, expect.Status); usable {
+			codeOK = matched
+			if !codeOK {
+				return down(fmt.Sprintf("HTTP %d, expected %s", code, expect.Status))
 			}
 		}
-		return PingResult{
-			Status:      "offline",
-			PingMs:      elapsed,
-			ErrorDetail: fmt.Sprintf("HTTP %d", code),
-			HTTPStatus:  code,
-			CertExpiry:  certExpiry,
-			CertHost:    certHost,
+		if !codeOK {
+			return down(fmt.Sprintf("HTTP %d", code))
 		}
+
+		// Only now, and only when asked: reading the body is the one part of a
+		// check that costs real bandwidth.
+		if expect.wantsBody() {
+			found := bodyContainsExpectation(resp, expect.Text)
+			if found == expect.TextAbsent {
+				if expect.TextAbsent {
+					return down(fmt.Sprintf("Page contains %q", expect.Text))
+				}
+				return down(fmt.Sprintf("Page is missing %q", expect.Text))
+			}
+		}
+
+		base.Status = "online"
+		return base
 	}
 
 	detail := classifyPingError(err, resp)

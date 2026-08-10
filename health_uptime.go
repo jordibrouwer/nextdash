@@ -71,6 +71,12 @@ func uptimeRatio(samples []HealthSample, window time.Duration, now time.Time) Up
 		if s.T < cutoff {
 			continue
 		}
+		// Maintenance samples are recorded but not counted: expected downtime is
+		// not an availability failure, and a nightly backup window would otherwise
+		// cap a perfectly healthy host's monthly uptime at around 99.3%.
+		if s.Maint {
+			continue
+		}
 		total++
 		if s.Up {
 			up++

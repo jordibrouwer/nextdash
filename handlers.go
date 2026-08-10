@@ -1570,6 +1570,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
+	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return

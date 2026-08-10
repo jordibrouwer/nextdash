@@ -48,6 +48,23 @@ type Bookmark struct {
 	// it for everything would bloat the history file for no benefit.
 	Monitor                bool `json:"monitor,omitempty"`
 	MonitorIntervalMinutes int  `json:"monitorIntervalMinutes,omitempty"` // 5..1440, 0 = use default
+	// ExpectText is a string the page must contain to count as healthy. A page
+	// that answers 200 while showing "database connection failed" is up by every
+	// other measure, and this is the only way to say otherwise.
+	//
+	// Empty means no content check, which is the default and costs nothing: the
+	// body is only read when this is set, so bookmarks without it never pay for
+	// the feature.
+	ExpectText string `json:"expectText,omitempty"`
+	// ExpectTextAbsent inverts the test — healthy when the string is *missing*,
+	// for catching an error banner rather than confirming a good page.
+	ExpectTextAbsent bool `json:"expectTextAbsent,omitempty"`
+	// ExpectStatus narrows what counts as reachable, as a comma-separated list of
+	// codes and ranges ("200", "200-299", "200,301,401"). Empty keeps the default
+	// rule in httpStatusReachable, which treats anything under 500 as up — right
+	// for bookmarks generally, but unable to tell an endpoint that *should* return
+	// 401 from one that just started to.
+	ExpectStatus string `json:"expectStatus,omitempty"`
 }
 
 type Finder struct {
@@ -261,6 +278,10 @@ type Settings struct {
 	ServerLogEnabled     bool   `json:"serverLogEnabled"`               // Capture server log lines for the in-app viewer (default off)
 	MonitorNotifyURL     string `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
 	MonitorNotifyRetries int    `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
+	// MaintenanceWindows are recurring periods when downtime is expected. Checks
+	// still run and samples are still recorded — the heartbeat stays honest — but
+	// failures inside a window raise no alert and do not count against uptime.
+	MaintenanceWindows []MaintenanceWindow `json:"maintenanceWindows,omitempty"`
 	// The push booleans deliberately omit "omitempty": with it, a false value is
 	// dropped from the JSON entirely and the config checkbox reads `undefined`
 	// instead of unchecked, so turning a toggle off would not survive a reload.
@@ -2458,6 +2479,7 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 	settings.MonitorNotifyRetries = clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
+	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 
 	fs.readCache.settings = settings
@@ -3061,6 +3083,11 @@ type HealthSample struct {
 	// also append to. Set on at most one sample per outage, so it stays absent
 	// from virtually every sample written.
 	Alerted bool `json:"a,omitempty"`
+	// Maint marks a sample taken inside a maintenance window. The check still
+	// ran and the result is still recorded — the heartbeat should show what
+	// actually happened — but uptime ratios skip it, so a nightly backup does not
+	// read as a nightly outage.
+	Maint bool `json:"m,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept
