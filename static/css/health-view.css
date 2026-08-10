@@ -1460,16 +1460,35 @@ button.health-view-tile:hover {
     color: var(--text-primary);
     font-family: var(--font-family-main);
     box-shadow: 0 4px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
+    /* Capped and scrollable, matching .move-popover: the check-mode menu now
+       carries mode + interval + expectations + drift, tall enough on a
+       monitored row to flip above the trigger (.health-view-menu--up) and
+       sprawl over unrelated panels several rows away. Safari has a documented
+       hit-test bug on this exact shape of floating panel — see the
+       backdrop-filter removal below — and an unbounded height made it flip
+       and stray far more often than a capped one would. */
+    max-height: min(70vh, 24rem);
+    overflow-y: auto;
 }
 
-/* The modern layout gives .move-popover softer corners and a blurred edge; the
-   health menu follows so both context menus stay indistinguishable. */
+/* The modern layout gives .move-popover softer corners; the health menu
+   follows so both context menus stay indistinguishable.
+   Deliberately no backdrop-filter here, unlike an earlier version of this
+   rule: .health-view-menu's background is the opaque --background-secondary,
+   so a blur has nothing translucent to show through and was pure cosmetic
+   weight. In Safari, backdrop-filter promotes the element to its own
+   compositing layer regardless of visible effect, and WebKit has a known bug
+   (see health-edit-safari-hittest-bug in project memory, same root cause on
+   the bookmark inline-edit form) where clicks over a composited layer that
+   overlaps unrelated content can hit-test the wrong element. The check-mode
+   menu is exactly that shape once it flips above a row near the top of the
+   list: its own comment above once claimed .move-popover uses "a blurred
+   edge" too, which is false — .move-popover has never had a backdrop-filter,
+   so removing this does not break the parity it was trying to keep. */
 body[data-layout-version="modern"] .health-view-menu {
     border-radius: var(--layout-radius-md);
     border-color: var(--layout-surface-border, var(--border-primary));
     box-shadow: var(--layout-shadow-md);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
 }
 
 /* The display above beats the browser's default [hidden] rule, so a closed menu
