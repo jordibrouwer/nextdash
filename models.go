@@ -248,6 +248,11 @@ type Settings struct {
 	HealthAutoRecheckEnabled       bool                             `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int                              `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
 	ServerLogRetentionHours        int                              `json:"serverLogRetentionHours"`        // Hours of server log to keep (0 = until cleared, max 90 days)
+	// Off by default, so an install that never opens the log viewer pays
+	// nothing for it: while this is false the sink returns before taking a lock
+	// or touching the disk. No "omitempty" — with it a false value drops out of
+	// the JSON entirely and the switch reads back as undefined in the config UI.
+	ServerLogEnabled bool `json:"serverLogEnabled"` // Capture server log lines for the in-app viewer (default off)
 	MonitorNotifyURL               string                           `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
 	MonitorNotifyRetries           int                              `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
 	// The push booleans deliberately omit "omitempty": with it, a false value is

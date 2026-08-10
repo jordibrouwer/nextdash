@@ -157,7 +157,17 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Unreleased
 
-Nothing yet.
+### Server log
+
+- **new** — **Collect server log** starts and stops capture, and is **off by default**. While it is off the sink returns before taking a lock or touching the disk, so an install that never opens the viewer pays nothing for it. Stopping keeps what is already held and releases the file handle; the empty state says why the list is empty rather than reading as a fault. Stored as `serverLogEnabled`, applied on save and at startup (`log_buffer.go`, `models.go`, `handlers.go`, `main.go`).
+- **fix** — **The capture path was ~20,000× more expensive than the logging it replaced**, all of it on the request goroutine inside `requestLogging`. Benchmarked at **21.8µs** per line cold and **105µs** once the ring filled with retention on, against **5.5ns** for the plain stderr writer. Three causes, each fixed:
+  - `activityRotatingFile.write` did a `stat` + `open` + `write` + `close` for every line — 19.5µs of the 21.8µs. It now holds the handle open (`keepOpen`, opt-in so the activity log is unchanged), closing it across rotation and clear so writes cannot land in a rotated or unlinked file. **24.4µs → 1.7µs.**
+  - The ring re-sliced a plain slice on every append past capacity, copying ~197KB per line. It is now a real fixed-size ring with a head index. **26.7µs → 239ns, 196KB → 128B.**
+  - Retention walked all 2000 entries and allocated a fresh slice on every append. Expiry is a prefix of an oldest-first ring, so it now advances the head and stops at the first surviving line — and no longer runs on the write path at all. **105µs → 238ns, 802KB → 128B.**
+  - Net on the shipping path: **21.8µs → 3.9µs per line**, and zero when collecting is off.
+- **fix** — **A log switched off came back populated after a restart.** `seedFromDisk()` ran unconditionally in `InitServerLog()`, before settings were readable, so the previous run's lines were replayed into the buffer under a switch that said off. Startup now begins paused and `ConfigureServerLog()` applies the setting once the store exists, seeding only when collecting is on. Verified against a real restart: 4 lines on disk, 0 in the buffer with the switch off, and the history back when it is on (`log_buffer.go`, `main.go`).
+- **fix** — A poll asking for new lines skipped straight to the first unseen sequence instead of walking all 2000 to reject them.
+- **new** — `log_buffer_bench_test.go` records the before-and-after, so a future change that puts a syscall back on the per-line path shows up as a number.
 
 ---
 

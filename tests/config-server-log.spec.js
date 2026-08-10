@@ -10,7 +10,17 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } 
  * real lines, that clearing empties it, and that the refresh interval — the
  * only polling timer in config — is taken down when you leave.
  */
-async function openLogs(page) {
+/**
+ * Open the tab, optionally with collecting switched on.
+ *
+ * Capture is off on a fresh install, so a test that wants lines has to turn it
+ * on the way a user would.
+ */
+async function openLogs(page, { capture = true, clear = false } = {}) {
+    // One server is shared across the file, so the previous test's choice is
+    // still persisted. Set the switch before the page loads, so the tab paints
+    // from the state this test wants rather than the last one's.
+    await page.request.post('/api/settings', { data: { serverLogEnabled: capture } });
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
@@ -20,6 +30,30 @@ async function openLogs(page) {
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
     await page.locator('[data-db-tab="logs"]').click();
     await expect(page.locator('[data-log-output]')).toBeVisible();
+
+    const toggle = page.locator('[data-log-toggle="capture"]');
+    if (capture !== await toggle.isChecked()) {
+        await toggle.click();
+        await expect.poll(() => page.evaluate(async () =>
+            (await (await fetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(capture);
+    }
+    // One server is shared across the file, so a previous test's lines are
+    // still in the buffer. Tests that assert on what is *not* there start clean.
+    if (clear) {
+        await page.evaluate(async () => {
+            await fetch('/api/logs', { method: 'DELETE' });
+            // Awaited rather than clicking Refresh: the click returns before
+            // the fetch behind it lands, and the next assertion would race it.
+            await window.dashboardInstance.config.loadServerLog({ reset: true });
+        });
+    }
+    if (capture) {
+        // Give the server something to have logged, then pull it in.
+        await page.evaluate(async () => {
+            await fetch('/api/pages');
+            await window.dashboardInstance.config.loadServerLog({ reset: true });
+        });
+    }
 }
 
 test.describe('Data & backups → Server log', () => {
@@ -41,12 +75,12 @@ test.describe('Data & backups → Server log', () => {
     });
 
     test('the level filter narrows what is listed', async ({ page }) => {
-        await openLogs(page);
+        await openLogs(page, { clear: true });
         await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(0);
 
-        // A freshly started test server logs no errors, so this empties the
+        // Nothing since the clear has failed, so asking for errors empties the
         // list — which also proves the filter reaches the server rather than
-        // just hiding rows.
+        // just hiding rows that were already fetched.
         await page.locator('[data-log-select="level"]').selectOption('error');
         await expect.poll(() => page.locator('.config-log-line--info').count()).toBe(0);
 
@@ -68,6 +102,38 @@ test.describe('Data & backups → Server log', () => {
             return (await res.json()).stats.total;
         }), { timeout: 10_000 }).toBeLessThan(5);
         await expect.poll(() => page.locator('.config-log-line').count()).toBeLessThan(5);
+    });
+
+    test('collecting is off until switched on, and stopping keeps what is held', async ({ page }) => {
+        await openLogs(page, { capture: false, clear: true });
+
+        // Off by default, so an install nobody debugs pays nothing for it.
+        await expect(page.locator('[data-log-toggle="capture"]')).not.toBeChecked();
+        // The empty state says why the list is empty. Asserted on the rendered
+        // string rather than the DOM node: these tests share one server, so
+        // whether any lines survive the clear depends on what ran before.
+        expect(await page.evaluate(() => {
+            window.dashboardInstance.config._logLines = [];
+            return window.dashboardInstance.config.renderServerLogLines();
+        })).toContain('Not collecting');
+
+        await page.locator('[data-log-toggle="capture"]').click();
+        await expect.poll(() => page.evaluate(async () =>
+            (await (await fetch('/api/settings')).json()).serverLogEnabled), { timeout: 10_000 }).toBe(true);
+        await page.evaluate(() => fetch('/api/pages'));
+        await page.locator('[data-log-action="refresh"]').click();
+        await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(0);
+
+        // Stopping halts capture without discarding what is already there.
+        await page.locator('[data-log-toggle="capture"]').click();
+        await expect.poll(() => page.evaluate(async () =>
+            (await (await fetch('/api/logs')).json()).capturing), { timeout: 10_000 }).toBe(false);
+
+        const total = () => page.evaluate(async () => (await (await fetch('/api/logs')).json()).stats.total);
+        const before = await total();
+        expect(before).toBeGreaterThan(0);
+        for (let i = 0; i < 5; i++) await page.evaluate(() => fetch('/api/pages'));
+        expect(await total()).toBe(before);
     });
 
     test('the refresh timer stops when the tab is left', async ({ page }) => {

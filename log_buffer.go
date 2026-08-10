@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -78,9 +79,13 @@ type serverLogEntry struct {
 
 type serverLogSink struct {
 	mu sync.Mutex
-	// Ring of at most serverLogBufferLines entries, oldest first once wrapped.
-	entries []serverLogEntry
-	next    int64
+	// A real fixed-size ring: buf is allocated once at serverLogBufferLines and
+	// start/count walk it. The previous version re-sliced a plain slice on every
+	// append past capacity, copying ~197KB per line once full.
+	buf   []serverLogEntry
+	start int
+	count int
+	next  int64
 	// Lines pushed out of the ring since the last clear, so the viewer can say
 	// it is not showing everything.
 	dropped int64
@@ -94,6 +99,10 @@ type serverLogSink struct {
 	// user clears it. Held here so pruning does not read settings on every
 	// captured line.
 	retentionHours int
+	// Whether capture is running. Read on every logged line, so it is an
+	// atomic rather than something that needs the mutex: paused means Write
+	// returns before touching the lock at all.
+	paused atomic.Bool
 }
 
 var serverLog = &serverLogSink{}
@@ -103,23 +112,53 @@ func ServerLogPath() string {
 	return filepath.Join(ResolveDataDir(), "server.log")
 }
 
-// InitServerLog wires the sink to disk and seeds the ring from the previous
-// run. Call before log.SetOutput so nothing is captured half-configured.
+// InitServerLog wires the sink to disk.
+//
+// Starts paused: settings are not readable yet at this point in startup, and
+// capturing until they are would mean the first seconds of every boot are
+// collected whatever the user chose. ConfigureServerLog applies the setting
+// and seeds from disk once the store exists.
 func InitServerLog() {
+	serverLog.paused.Store(true)
 	serverLog.mu.Lock()
 	serverLog.file = &activityRotatingFile{
 		path:     ServerLogPath(),
 		maxBytes: serverLogMaxBytes,
 		backups:  serverLogBackupCount,
+		// Every request writes a line here, so the handle stays open rather
+		// than paying stat+open+close each time.
+		keepOpen: true,
 	}
 	serverLog.mu.Unlock()
+}
+
+// ConfigureServerLog applies the stored settings and, when collecting is on,
+// fills the ring from the previous run. With it off nothing is seeded: a log
+// the user switched off should be empty, not repopulated from disk on restart.
+func ConfigureServerLog(enabled bool, retentionHours int) {
+	serverLog.SetRetentionHours(retentionHours)
+	if !enabled {
+		serverLog.SetPaused(true)
+		return
+	}
 	serverLog.seedFromDisk()
+	// Re-apply after seeding: the file is capped by size, not age, so it can
+	// hold lines older than the window (seedFromDisk prunes too, but only what
+	// the retention set before it knew about).
+	serverLog.SetRetentionHours(retentionHours)
+	serverLog.SetPaused(false)
 }
 
 // Write implements io.Writer. The logger hands over one whole line per call in
 // practice, but a writer may not assume that, so partial lines are buffered.
 func (s *serverLogSink) Write(p []byte) (int, error) {
 	n := len(p)
+	// Paused: report the write as accepted and do nothing. Returning a short
+	// count would make the logger treat it as a failed write, and stderr —
+	// the other half of the MultiWriter — has already had the line.
+	if s.paused.Load() {
+		return n, nil
+	}
 	s.mu.Lock()
 	s.pending = append(s.pending, p...)
 	var lines [][]byte
@@ -155,13 +194,10 @@ func (s *serverLogSink) appendLine(raw string) {
 	s.mu.Lock()
 	entry.Seq = s.next
 	s.next++
-	s.entries = append(s.entries, entry)
-	s.pruneExpiredLocked()
-	if len(s.entries) > serverLogBufferLines {
-		drop := len(s.entries) - serverLogBufferLines
-		s.entries = append([]serverLogEntry(nil), s.entries[drop:]...)
-		s.dropped += int64(drop)
-	}
+	s.pushLocked(entry)
+	// Deliberately no prune here. Walking 2000 entries on every line cost more
+	// than everything else put together (~105µs/line once full); the readers
+	// prune instead, which is where a stale line would actually be seen.
 	file := s.file
 	replaying := s.replaying
 	s.mu.Unlock()
@@ -169,6 +205,38 @@ func (s *serverLogSink) appendLine(raw string) {
 	if file != nil && !replaying {
 		_ = file.write([]byte(raw + "\n"))
 	}
+}
+
+// Add one entry, overwriting the oldest once full. Caller holds the mutex.
+func (s *serverLogSink) pushLocked(entry serverLogEntry) {
+	if s.buf == nil {
+		s.buf = make([]serverLogEntry, serverLogBufferLines)
+		s.start, s.count = 0, 0
+	}
+	if s.count < len(s.buf) {
+		s.buf[(s.start+s.count)%len(s.buf)] = entry
+		s.count++
+		return
+	}
+	// Full: the slot the oldest occupies becomes the newest.
+	s.buf[s.start] = entry
+	s.start = (s.start + 1) % len(s.buf)
+	s.dropped++
+}
+
+// The ring flattened oldest-first. Caller holds the mutex.
+func (s *serverLogSink) snapshotLocked() []serverLogEntry {
+	out := make([]serverLogEntry, 0, s.count)
+	for i := 0; i < s.count; i++ {
+		out = append(out, s.buf[(s.start+i)%len(s.buf)])
+	}
+	return out
+}
+
+// Drop everything the ring holds. Caller holds the mutex.
+func (s *serverLogSink) resetLocked() {
+	s.buf = nil
+	s.start, s.count = 0, 0
 }
 
 /*
@@ -295,6 +363,32 @@ func (s *serverLogSink) SetRetentionHours(hours int) {
 	s.mu.Unlock()
 }
 
+// SetPaused starts or stops capture. Stopping keeps whatever is already held —
+// it is a pause, not a clear — and releases the file handle so a stopped log
+// holds nothing open.
+func (s *serverLogSink) SetPaused(paused bool) {
+	if s.paused.Swap(paused) == paused {
+		return
+	}
+	if !paused {
+		return
+	}
+	s.mu.Lock()
+	file := s.file
+	// Any half-line from mid-write is meaningless once capture stops.
+	s.pending = nil
+	s.mu.Unlock()
+	if file != nil {
+		file.mu.Lock()
+		file.closeHandleLocked()
+		file.mu.Unlock()
+	}
+}
+
+func (s *serverLogSink) Paused() bool {
+	return s.paused.Load()
+}
+
 func (s *serverLogSink) RetentionHours() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -307,19 +401,26 @@ func (s *serverLogSink) RetentionHours() int {
 // the ring overflowed and lines were lost unexpectedly, whereas ageing out is
 // exactly what the user asked for.
 func (s *serverLogSink) pruneExpiredLocked() {
-	if s.retentionHours <= 0 || len(s.entries) == 0 {
+	if s.retentionHours <= 0 || s.count == 0 {
 		return
 	}
 	cutoff := time.Now().Add(-time.Duration(s.retentionHours) * time.Hour)
-	keep := s.entries[:0:0]
-	for _, e := range s.entries {
-		// A line whose stamp did not parse has no age to judge, so it stays.
-		if !e.at.IsZero() && e.at.Before(cutoff) {
-			continue
+
+	// Entries go in oldest-first and never move, so expiry is a prefix: advance
+	// start past the expired head and stop at the first line that survives.
+	// No allocation, and nothing to do at all in the common case where the
+	// oldest line is still inside the window.
+	for s.count > 0 {
+		e := s.buf[s.start]
+		// A line whose stamp did not parse has no age to judge, so it stays —
+		// and stops the scan, since anything behind it is newer still.
+		if e.at.IsZero() || !e.at.Before(cutoff) {
+			return
 		}
-		keep = append(keep, e)
+		s.buf[s.start] = serverLogEntry{}
+		s.start = (s.start + 1) % len(s.buf)
+		s.count--
 	}
-	s.entries = keep
 }
 
 // Entries newer than since (pass -1 for everything), optionally filtered.
@@ -333,8 +434,25 @@ func (s *serverLogSink) Entries(since int64, level, query string, limit int) ([]
 	s.pruneExpiredLocked()
 
 	query = strings.ToLower(strings.TrimSpace(query))
-	out := make([]serverLogEntry, 0, len(s.entries))
-	for _, e := range s.entries {
+
+	// Sequences only increase, so everything at or below `since` is a prefix of
+	// the ring. A poll asking for "what is new" therefore skips straight to the
+	// first unseen entry instead of walking all 2000 to reject them.
+	first := 0
+	if since >= 0 && s.count > 0 {
+		oldest := s.buf[s.start].Seq
+		if since >= oldest {
+			if skip := int(since - oldest + 1); skip < s.count {
+				first = skip
+			} else {
+				first = s.count
+			}
+		}
+	}
+
+	out := make([]serverLogEntry, 0, s.count-first)
+	for i := first; i < s.count; i++ {
+		e := s.buf[(s.start+i)%len(s.buf)]
 		if e.Seq <= since {
 			continue
 		}
@@ -372,15 +490,15 @@ func (s *serverLogSink) Stats() (total, warn, errCount int, dropped int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.pruneExpiredLocked()
-	for _, e := range s.entries {
-		switch e.Level {
+	for i := 0; i < s.count; i++ {
+		switch s.buf[(s.start+i)%len(s.buf)].Level {
 		case logLevelError:
 			errCount++
 		case logLevelWarn:
 			warn++
 		}
 	}
-	return len(s.entries), warn, errCount, s.dropped
+	return s.count, warn, errCount, s.dropped
 }
 
 // Everything currently held, oldest first — used for the download.
@@ -388,14 +506,14 @@ func (s *serverLogSink) All() []serverLogEntry {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.pruneExpiredLocked()
-	return append([]serverLogEntry(nil), s.entries...)
+	return s.snapshotLocked()
 }
 
 // Clear empties the ring and truncates the on-disk copy, including its
 // rotated backups: a user asking to clear the log means all of it.
 func (s *serverLogSink) Clear() {
 	s.mu.Lock()
-	s.entries = nil
+	s.resetLocked()
 	s.dropped = 0
 	s.pending = nil
 	file := s.file
@@ -406,6 +524,10 @@ func (s *serverLogSink) Clear() {
 	}
 	file.mu.Lock()
 	defer file.mu.Unlock()
+	// Drop the cached handle first: on Unix the file would otherwise keep
+	// existing unlinked, and writes would go on landing in a file nobody can
+	// see while the size counter says it is empty.
+	file.closeHandleLocked()
 	_ = os.Remove(file.path)
 	for i := 1; i <= file.backupCount(); i++ {
 		_ = os.Remove(file.path + "." + strconv.Itoa(i))

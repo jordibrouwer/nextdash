@@ -171,7 +171,7 @@ func TestServerLogRetentionDropsOldLines(t *testing.T) {
 	now := time.Now()
 
 	// Three hours back, then one just now: a 2h window must keep only the new one.
-	s.appendLine(now.Add(-3 * time.Hour).Format("2006/01/02 15:04:05") + " import: ancient")
+	s.appendLine(now.Add(-3*time.Hour).Format("2006/01/02 15:04:05") + " import: ancient")
 	s.appendLine(now.Format("2006/01/02 15:04:05") + " import: recent")
 
 	all, _, _ := s.Entries(-1, "", "", 0)
@@ -192,7 +192,7 @@ func TestServerLogRetentionDropsOldLines(t *testing.T) {
 	// 0 means keep everything; it must not retroactively resurrect anything,
 	// but it must stop pruning.
 	s.SetRetentionHours(0)
-	s.appendLine(now.Add(-48 * time.Hour).Format("2006/01/02 15:04:05") + " import: old but kept")
+	s.appendLine(now.Add(-48*time.Hour).Format("2006/01/02 15:04:05") + " import: old but kept")
 	after, _, _ := s.Entries(-1, "", "", 0)
 	if len(after) != 2 {
 		t.Fatalf("with retention off: %d entries, want 2", len(after))
@@ -210,6 +210,94 @@ func TestClampServerLogRetentionHours(t *testing.T) {
 		if got := clampServerLogRetentionHours(tc.in); got != tc.want {
 			t.Errorf("clamp(%d) = %d, want %d", tc.in, got, tc.want)
 		}
+	}
+}
+
+// Capture is off until switched on, and stopping keeps what is already held.
+func TestServerLogPauseStopsCapture(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "server.log")
+	s := &serverLogSink{file: &activityRotatingFile{path: path, maxBytes: serverLogMaxBytes, backups: 2, keepOpen: true}}
+
+	// Write goes through the io.Writer, which is where the pause is checked —
+	// appendLine is below it and would bypass the switch.
+	if _, err := s.Write([]byte("2026/08/10 00:11:43 import: while running\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	s.SetPaused(true)
+	if !s.Paused() {
+		t.Fatal("SetPaused(true) did not take")
+	}
+	if _, err := s.Write([]byte("2026/08/10 00:11:44 import: while stopped\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	entries, _, _ := s.Entries(-1, "", "", 0)
+	if len(entries) != 1 || entries[0].Message != "while running" {
+		t.Fatalf("paused sink holds %d entries, want only the one from before the stop", len(entries))
+	}
+	// Stopping is a pause, not a clear.
+	if entries[0].Message != "while running" {
+		t.Error("pausing threw away what was already captured")
+	}
+	data, _ := os.ReadFile(path)
+	if strings.Contains(string(data), "while stopped") {
+		t.Error("a line written while stopped still reached disk")
+	}
+
+	// And starting again resumes into the same buffer.
+	s.SetPaused(false)
+	if _, err := s.Write([]byte("2026/08/10 00:11:45 import: after restart\n")); err != nil {
+		t.Fatal(err)
+	}
+	entries, _, _ = s.Entries(-1, "", "", 0)
+	if len(entries) != 2 || entries[1].Message != "after restart" {
+		t.Fatalf("after resuming: %d entries, want the original plus the new one", len(entries))
+	}
+}
+
+// A log the user switched off must come back empty, not repopulated from the
+// previous run's file. Seeding used to run unconditionally at startup, so a
+// restart put the history back under a switch that said off.
+func TestConfigureServerLogSkipsSeedWhenOff(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dir)
+	if err := os.WriteFile(ServerLogPath(),
+		[]byte("2026/08/10 00:11:43 import: from the previous run\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Fresh sink per case, since ConfigureServerLog drives the package global.
+	reset := func() {
+		serverLog = &serverLogSink{}
+		InitServerLog()
+	}
+	t.Cleanup(func() { serverLog = &serverLogSink{} })
+
+	reset()
+	ConfigureServerLog(false, 0)
+	if entries, _, _ := serverLog.Entries(-1, "", "", 0); len(entries) != 0 {
+		t.Errorf("collecting off: %d entries seeded from disk, want 0", len(entries))
+	}
+	if !serverLog.Paused() {
+		t.Error("collecting off: sink is not paused")
+	}
+	// Nothing logged while off, either.
+	_, _ = serverLog.Write([]byte("2026/08/10 00:11:44 import: while off\n"))
+	if entries, _, _ := serverLog.Entries(-1, "", "", 0); len(entries) != 0 {
+		t.Errorf("collecting off: captured %d lines, want 0", len(entries))
+	}
+
+	// With it on, the history is worth having back.
+	reset()
+	ConfigureServerLog(true, 0)
+	entries, _, _ := serverLog.Entries(-1, "", "", 0)
+	if len(entries) != 1 || entries[0].Message != "from the previous run" {
+		t.Fatalf("collecting on: %d entries, want the previous run's line", len(entries))
+	}
+	if serverLog.Paused() {
+		t.Error("collecting on: sink is still paused")
 	}
 }
 
@@ -238,6 +326,61 @@ func TestServerLogClearRemovesBufferAndFiles(t *testing.T) {
 	}
 	if _, err := os.Stat(path + ".1"); !os.IsNotExist(err) {
 		t.Error("rotated backup survived the clear")
+	}
+}
+
+// A held-open handle points at an inode, not a name, so rotation has to close
+// it — otherwise every line after the first rotation lands in the rotated copy
+// and the live file stays empty.
+func TestRotatingFileKeepOpenSurvivesRotation(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "keep.log")
+	// Small enough that a handful of lines forces several rotations.
+	f := &activityRotatingFile{path: path, maxBytes: 200, backups: 2, keepOpen: true}
+
+	for i := 0; i < 40; i++ {
+		if err := f.write([]byte("0123456789 line of text here\n")); err != nil {
+			t.Fatalf("write %d: %v", i, err)
+		}
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("live file missing after rotation: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatal("live file is empty; writes went to a rotated copy")
+	}
+	if int64(len(data)) > f.limit() {
+		t.Errorf("live file is %d bytes, over the %d cap", len(data), f.limit())
+	}
+	// The cap must actually be enforced, not merely tracked.
+	if _, err := os.Stat(path + ".1"); err != nil {
+		t.Errorf("expected a rotated backup: %v", err)
+	}
+}
+
+// Clear removes the file while the handle is open. On Unix the unlinked inode
+// would live on invisibly, so the next write has to land in a fresh file.
+func TestRotatingFileKeepOpenAfterClear(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("NEXTDASH_DATA_DIR", dir)
+	path := filepath.Join(dir, "server.log")
+	s := &serverLogSink{file: &activityRotatingFile{path: path, maxBytes: serverLogMaxBytes, backups: 2, keepOpen: true}}
+
+	s.appendLine("2026/08/10 00:11:43 import: before the clear")
+	s.Clear()
+	s.appendLine("2026/08/10 00:11:44 import: after the clear")
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("no file after clear + write: %v", err)
+	}
+	if strings.Contains(string(data), "before the clear") {
+		t.Error("cleared line came back")
+	}
+	if !strings.Contains(string(data), "after the clear") {
+		t.Error("post-clear line did not reach disk; the handle was still pointing at the removed file")
 	}
 }
 

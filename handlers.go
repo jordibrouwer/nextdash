@@ -1568,9 +1568,10 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return
 	}
-	// Apply straight away, so shortening retention takes effect on the next
-	// poll rather than at the next restart.
+	// Apply straight away, so starting or stopping capture and shortening
+	// retention take effect on the next poll rather than at the next restart.
 	serverLog.SetRetentionHours(settings.ServerLogRetentionHours)
+	serverLog.SetPaused(!settings.ServerLogEnabled)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }

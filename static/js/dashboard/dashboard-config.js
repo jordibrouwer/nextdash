@@ -3924,6 +3924,11 @@ class DashboardConfig {
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.logsSettingsTitle', 'Log settings'))}</h3>
+                <label class="config-toggle">
+                    <input type="checkbox" data-log-toggle="capture" ${s.serverLogEnabled ? 'checked' : ''}>
+                    <span>${esc(this.t('config.logCaptureLabel', 'Collect server log'))}</span>
+                </label>
+                <p class="config-panel-note">${esc(this.t('config.logCaptureHint', 'Off by default. While this is off nothing is collected and the log costs nothing; what has already been collected is kept.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.logRefreshLabel', 'Refresh'))}</span>
                     <select class="config-select" data-log-select="interval">${intervalOptions}</select>
@@ -4015,7 +4020,12 @@ class DashboardConfig {
             return `<p class="config-view-loading">${esc(this.t('config.logLoading', 'Loading…'))}</p>`;
         }
         if (lines.length === 0) {
-            return `<p class="config-panel-empty">${esc(this.t('config.logEmpty', 'Nothing logged yet.'))}</p>`;
+            // "Nothing logged yet" would read as a fault when the reason is
+            // simply that collecting is switched off.
+            const empty = this.dash.settings?.serverLogEnabled === false
+                ? this.t('config.logEmptyStopped', 'Not collecting. Switch on Collect server log above to start.')
+                : this.t('config.logEmpty', 'Nothing logged yet.');
+            return `<p class="config-panel-empty">${esc(empty)}</p>`;
         }
 
         return lines.map((line) => {
@@ -4185,6 +4195,32 @@ class DashboardConfig {
                 if (this.logFollow) {
                     const out = document.querySelector('[data-log-output]');
                     if (out) out.scrollTop = out.scrollHeight;
+                }
+            });
+        }
+
+        const capture = container.querySelector('[data-log-toggle="capture"]');
+        if (capture) {
+            capture.addEventListener('change', () => {
+                this.dash.settings.serverLogEnabled = capture.checked;
+                void this.saveSettingsWithFeedback();
+                this.notify(capture.checked
+                    ? this.t('config.logCaptureStarted', 'Collecting the server log.')
+                    : this.t('config.logCaptureStopped', 'Stopped collecting the server log.'), 'success');
+                // Turning it on should show something without waiting for the
+                // interval; turning it off should stop the polling that would
+                // now return nothing new.
+                if (capture.checked) {
+                    void this.loadServerLog({ reset: true });
+                } else {
+                    this.stopServerLogTimer();
+                    const sel = container.querySelector('[data-log-select="interval"]');
+                    if (sel) sel.value = '0';
+                    this.logRefreshSeconds = 0;
+                    // The empty state reads differently when collecting is off,
+                    // and it is chosen at paint time — so repaint now rather
+                    // than leaving the wrong message until the tab is reopened.
+                    this.repaintServerLog();
                 }
             });
         }

@@ -37,14 +37,17 @@ func main() {
 	// Mirror the log to a ring buffer (and a rotating file) for the in-app log
 	// viewer. Installed right after the data dir is known and before anything
 	// interesting is logged; stderr still receives every line, so `docker logs`
-	// is unaffected.
+	// is unaffected. It starts paused — settings are not readable until the
+	// store exists a few lines down.
 	InitServerLog()
 	log.SetOutput(io.MultiWriter(os.Stderr, serverLog))
 
 	store := NewStore()
-	// Retention lives in settings, which needs the store — so the seeded buffer
-	// is pruned to the configured age here rather than in InitServerLog.
-	serverLog.SetRetentionHours(store.GetSettings().ServerLogRetentionHours)
+	// Now that settings are readable, start collecting if the user asked for
+	// it. Off by default, so a dashboard nobody debugs pays nothing for the
+	// viewer and its log stays genuinely empty.
+	startupSettings := store.GetSettings()
+	ConfigureServerLog(startupSettings.ServerLogEnabled, startupSettings.ServerLogRetentionHours)
 	if strings.TrimSpace(os.Getenv("NEXTDASH_DATA_DIR")) != "" {
 		log.Printf("Using data directory: %s", ResolveDataDir())
 	}

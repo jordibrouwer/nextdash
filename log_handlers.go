@@ -52,6 +52,7 @@ func (h *Handlers) GetServerLog(w http.ResponseWriter, r *http.Request) {
 		},
 		"capacity":       serverLogBufferLines,
 		"retentionHours": serverLog.RetentionHours(),
+		"capturing":      !serverLog.Paused(),
 	})
 }
 

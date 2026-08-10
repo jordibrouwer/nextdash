@@ -1137,6 +1137,7 @@ Config can tell you how far the install has drifted from a stock one, which is t
 
 What the server has been doing, without shell access to the container. Every line the server writes — background jobs, imports, health checks, and one line per API request — is captured as it is written and shown here. Nothing changes about the container log: the same lines still go to stderr, so `docker logs` is unaffected.
 
+- **Collect server log** — **off by default**, and the switch that starts and stops collecting. While it is off nothing is captured, no file is written, and the log costs the server nothing at all; turning it off keeps whatever has already been collected rather than clearing it. Switch it on when you want to watch something, off again when you are done.
 - **Refresh** — **Off** by default, or every **2 / 5 / 15 / 30 seconds**. Off means no polling at all; a poll only asks for the lines that arrived since the last one, so leaving it on 2s is cheap. The interval stops the moment you leave the tab or close Config.
 - **Keep entries for** — **1, 2, 4, 12 or 24 hours**, **7** or **30 days**, or **Until cleared**. Older lines are dropped automatically, on top of the fixed caps below. The newest lines are always kept, whatever the limit.
 - **Show** — everything, warnings and errors, or errors only. **Search** filters on the message and on the subsystem name. Both are applied by the server, so they search the whole buffer rather than what is on screen.
