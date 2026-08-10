@@ -28,90 +28,27 @@ class DashboardHealthLoader {
         return this._module;
     }
 
-    _assetURL(rel) {
-        return (window.NEXTDASH_ASSETS && window.NEXTDASH_ASSETS[rel])
-            || `/static/${rel}`;
-    }
-
-    _loadScript(rel, datasetKey) {
-        const src = this._assetURL(rel);
-        return new Promise((resolve, reject) => {
-            const selector = `script[data-${datasetKey}]`;
-            const existing = document.querySelector(selector);
-            const ready = () => {
-                if (rel.includes('health-reason-utils.js')) {
-                    return typeof window.HealthReasonUtils !== 'undefined';
-                }
-                if (rel.includes('last-opened-format.js')) {
-                    return typeof window.formatLastOpened === 'function';
-                }
-                // Checked before dashboard-health.js: that test uses includes(),
-                // and this filename would match it too.
-                if (rel.includes('dashboard-health-multi-select.js')) {
-                    return typeof window.DashboardHealthMultiSelect === 'function';
-                }
-                if (rel.includes('dashboard-health.js')) {
-                    return typeof window.DashboardHealth === 'function';
-                }
-                return false;
-            };
-            const waitForReady = () => {
-                if (ready()) {
-                    resolve();
-                    return;
-                }
-                let attempts = 0;
-                const tick = () => {
-                    if (ready()) {
-                        resolve();
-                        return;
-                    }
-                    if (attempts >= 40) {
-                        reject(new Error(`${rel} loaded without registering exports`));
-                        return;
-                    }
-                    attempts += 1;
-                    requestAnimationFrame(tick);
-                };
-                tick();
-            };
-            if (ready()) {
-                resolve();
-                return;
-            }
-            if (existing) {
-                if (ready()) {
-                    resolve();
-                    return;
-                }
-                existing.addEventListener('load', () => waitForReady(), { once: true });
-                existing.addEventListener('error', () => reject(new Error(`${rel} failed to load`)), { once: true });
-                return;
-            }
-            const script = document.createElement('script');
-            script.src = src;
-            script.async = true;
-            script.dataset[datasetKey] = 'true';
-            script.onload = () => waitForReady();
-            script.onerror = () => reject(new Error(`${rel} failed to load`));
-            document.head.appendChild(script);
-        });
-    }
-
     async _loadDependencies() {
+        const load = window.LazyScript.loadScriptOnce;
+        // Each dependency states its own readiness test, so the order of these
+        // calls no longer has to work around filenames matching each other.
         if (typeof window.HealthReasonUtils === 'undefined') {
-            await this._loadScript('js/health-reason-utils.js', 'dashboardHealthReason');
+            await load('js/health-reason-utils.js', 'dashboardHealthReason',
+                () => typeof window.HealthReasonUtils !== 'undefined');
         }
         if (typeof window.formatLastOpened !== 'function') {
-            await this._loadScript('js/shared/last-opened-format.js', 'dashboardLastOpened');
+            await load('js/shared/last-opened-format.js', 'dashboardLastOpened',
+                () => typeof window.formatLastOpened === 'function');
         }
         if (typeof window.DashboardHealth !== 'function') {
-            await this._loadScript('js/dashboard/dashboard-health.js', 'dashboardHealthModule');
+            await load('js/dashboard/dashboard-health.js', 'dashboardHealthModule',
+                () => typeof window.DashboardHealth === 'function');
         }
         // Loaded with the view rather than on the dashboard's critical path: the
         // bulk toolbar only exists once someone is looking at a health list.
         if (typeof window.DashboardHealthMultiSelect !== 'function') {
-            await this._loadScript('js/dashboard/dashboard-health-multi-select.js', 'dashboardHealthMultiSelect');
+            await load('js/dashboard/dashboard-health-multi-select.js', 'dashboardHealthMultiSelect',
+                () => typeof window.DashboardHealthMultiSelect === 'function');
         }
     }
 
@@ -189,27 +126,17 @@ class DashboardHealthLoader {
     }
 
     setupEscapeShortcut() {
-        this._teardownEscapeShortcut();
-        this._escapeHandler = (e) => {
-            if (e.key !== 'Escape') return;
-            if (!this.isActiveView()) return;
-            if (!this._module) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this.closeHealthViewWhileLoading();
-                return;
-            }
-            this._module.setupEscapeShortcut?.();
-            this._teardownEscapeShortcut();
-        };
-        document.addEventListener('keydown', this._escapeHandler, true);
+        // Unlike the other two stubs, Escape during loading closes the half-open
+        // view rather than falling through — the view is already on screen.
+        window.LazyScript.bindStubEscape(this, (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.closeHealthViewWhileLoading();
+        });
     }
 
     _teardownEscapeShortcut() {
-        if (this._escapeHandler) {
-            document.removeEventListener('keydown', this._escapeHandler, true);
-            this._escapeHandler = null;
-        }
+        window.LazyScript.unbindStubEscape(this);
     }
 }
 
