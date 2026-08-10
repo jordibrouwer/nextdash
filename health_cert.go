@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -37,13 +38,17 @@ var certNotifyThresholds = []int{certWarnDays, certUrgentDays, certCriticalDays}
 
 // certDaysLeft is whole days from now until expiry. Negative once expired.
 //
-// Truncating rather than rounding means "0 days" covers the final 24 hours,
-// which is the honest reading of a certificate that expires this afternoon.
+// Flooring rather than truncating means "0 days" covers the final 24 hours
+// before expiry, and "-1 days" starts immediately at the moment of expiry —
+// int()-truncating a negative Hours()/24 would instead round a certificate
+// that expired ten minutes ago up to 0, reading as "urgent" rather than
+// "expired" for almost a full day.
 func certDaysLeft(expiresAt int64, now time.Time) int {
 	if expiresAt <= 0 {
 		return 0
 	}
-	return int(time.UnixMilli(expiresAt).Sub(now).Hours() / 24)
+	hours := time.UnixMilli(expiresAt).Sub(now).Hours()
+	return int(math.Floor(hours / 24))
 }
 
 // certSeverity classifies a certificate for the UI: "" when there is nothing to

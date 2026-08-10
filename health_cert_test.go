@@ -101,3 +101,35 @@ func TestCertSeverityAndReporting(t *testing.T) {
 		t.Error("a certificate with 10 days left should be reported")
 	}
 }
+
+// A certificate that expired minutes ago must read as "expired" immediately,
+// not "urgent" for the next 24 hours. int()-truncating a negative
+// Hours()/24 rounds toward zero rather than toward negative infinity, so a
+// naive implementation reports "0 days left" for the better part of a day
+// after expiry.
+func TestCertDaysLeftFloorsTowardNegativeInfinity(t *testing.T) {
+	now := time.Now()
+
+	expiredMinutesAgo := now.Add(-10 * time.Minute).UnixMilli()
+	if days := certDaysLeft(expiredMinutesAgo, now); days >= 0 {
+		t.Errorf("certDaysLeft 10 minutes after expiry = %d, want negative", days)
+	}
+	if got := certSeverity(expiredMinutesAgo, now); got != "expired" {
+		t.Errorf("severity 10 minutes after expiry = %q, want %q", got, "expired")
+	}
+
+	expiredHoursAgo := now.Add(-12 * time.Hour).UnixMilli()
+	if days := certDaysLeft(expiredHoursAgo, now); days >= 0 {
+		t.Errorf("certDaysLeft 12 hours after expiry = %d, want negative", days)
+	}
+	if got := certSeverity(expiredHoursAgo, now); got != "expired" {
+		t.Errorf("severity 12 hours after expiry = %q, want %q", got, "expired")
+	}
+
+	// Symmetry check: the final 24 hours before expiry still reads as "0
+	// days left", which is the honest reading of "expires this afternoon".
+	expiresInHours := now.Add(12 * time.Hour).UnixMilli()
+	if days := certDaysLeft(expiresInHours, now); days != 0 {
+		t.Errorf("certDaysLeft 12 hours before expiry = %d, want 0", days)
+	}
+}
