@@ -621,12 +621,13 @@ test.describe('config dashboard view (scaffold)', () => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
 
-        const select = page.locator('[data-appearance-select="theme"]');
-        await expect(select).toBeVisible();
+        const picker = page.locator('[data-theme-picker-button]');
+        await expect(picker).toBeVisible();
+        await picker.click();
         // The built-in themes from the endpoint appear as options.
-        await expect(select.locator('option[value="ocean-dark"]')).toHaveCount(1);
+        await expect(page.locator('[data-theme-option="ocean-dark"]')).toHaveCount(1);
 
-        await select.selectOption('ocean-dark');
+        await page.locator('[data-theme-option="ocean-dark"]').click();
 
         // Assert the stored choice, not the rendered one: with "follow system
         // dark mode" on, ThemeLoader.resolveDisplayTheme pairs the stored theme

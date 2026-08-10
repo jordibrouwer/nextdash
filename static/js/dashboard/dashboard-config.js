@@ -644,6 +644,17 @@ class DashboardConfig {
                 this.clearListKeyboardSelection();
                 return;
             }
+            // An open theme picker takes Escape first, to cancel the preview and
+            // close the list. This handler is on document in the capture phase,
+            // so it runs before the picker's own listener — without this guard
+            // Escape closed the whole config view and the picker never saw it.
+            const openPicker = document.querySelector('[data-theme-picker-list]:not([hidden])');
+            if (openPicker && this.closeThemePickerFromKeyboard) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.closeThemePickerFromKeyboard();
+                return;
+            }
             e.preventDefault();
             // Stop here rather than letting the event bubble on. The tag-filter
             // shortcut listens on document too and registers first, so without
@@ -5336,7 +5347,7 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(this.t('config.appearanceThemeNote', 'Pick a built-in theme or follow your system. Edit the colours of any theme, or build your own, in the theme editor.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.themeLabel', 'Theme'))}</span>
-                    <select class="config-select" data-appearance-select="theme">${this.renderThemeOptions()}</select>
+                    ${this.renderThemePicker()}
                     ${this.appearanceAff('theme')}
                 </div>
                 ${randomShowingHint}
@@ -5577,11 +5588,200 @@ class DashboardConfig {
         // Make sure the saved theme is selectable even before the list loads.
         if (!themes[current]) entries.unshift([current, '']);
         return entries.map(([id, name]) =>
-            `<option value="${esc(id)}" ${id === current ? 'selected' : ''}>${esc(this.themeDisplayName(id, name))}</option>`
+            `<li role="option" class="config-theme-picker-option" data-theme-option="${esc(id)}"
+                 id="config-theme-opt-${esc(id)}" aria-selected="${id === current}"
+                 ${id === current ? 'data-theme-current' : ''}>${esc(this.themeDisplayName(id, name))}</li>`
         ).join('');
     }
 
-    /** Load the built-in + custom theme list, then repaint the theme select. */
+    /**
+     * The theme picker: a listbox rather than a <select>.
+     *
+     * Moving through the list previews each theme on the real dashboard, and
+     * that is only possible outside a native select — while the browser's own
+     * popup is open it owns the keyboard, fires no change or input event, and
+     * leaves `value` on the old option until the popup closes. There is nothing
+     * to hang a preview on, so the list is built here instead.
+     *
+     * Closed, it is a button showing the current theme; open, a listbox
+     * underneath it. The button carries the same data-appearance-select hook the
+     * settings search and the "only changed" filter already look for.
+     */
+    renderThemePicker() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = this.dash.settings?.theme || 'dark';
+        const label = this.themeDisplayName(current, this._themeList?.[current] || '');
+        return `
+            <div class="config-theme-picker" data-theme-picker>
+                <button type="button" class="config-select config-theme-picker-button"
+                        data-appearance-select="theme" data-theme-picker-button
+                        aria-haspopup="listbox" aria-expanded="false"
+                        value="${esc(current)}">
+                    <span data-theme-picker-label>${esc(label)}</span>
+                </button>
+                <ul class="config-theme-picker-list" role="listbox" hidden tabindex="-1"
+                    data-theme-picker-list
+                    aria-label="${esc(this.t('config.themeLabel', 'Theme'))}">${this.renderThemeOptions()}</ul>
+            </div>`;
+    }
+
+    /**
+     * Wire the theme picker: open, move, preview, commit or cancel.
+     *
+     * Moving the highlight previews that theme on the dashboard behind the
+     * config view; nothing is stored until the choice is taken. Leaving without
+     * choosing — Escape, a click elsewhere, blur — puts the previous theme back,
+     * so browsing the list can never change what you had.
+     */
+    bindThemePicker(container) {
+        const root = container.querySelector('[data-theme-picker]');
+        if (!root) return;
+        const button = root.querySelector('[data-theme-picker-button]');
+        const list = root.querySelector('[data-theme-picker-list]');
+        if (!button || !list) return;
+
+        const options = () => Array.from(list.querySelectorAll('[data-theme-option]'));
+        const isOpen = () => !list.hidden;
+
+        const highlight = (option, { preview = true } = {}) => {
+            if (!option) return;
+            options().forEach((o) => o.classList.toggle('is-active', o === option));
+            list.setAttribute('aria-activedescendant', option.id);
+            // Keeps the highlight in view when moving by keyboard, and does
+            // nothing when the option is already visible.
+            option.scrollIntoView({ block: 'nearest' });
+            if (preview) this.previewThemeChoice(option.getAttribute('data-theme-option'));
+        };
+
+        const open = () => {
+            if (isOpen()) return;
+            // What to restore if the list is left without choosing.
+            this._themePickerPrevious = this.dash.settings?.theme || 'dark';
+            list.hidden = false;
+            button.setAttribute('aria-expanded', 'true');
+            const current = list.querySelector('[data-theme-current]') || options()[0];
+            // No preview on open: this is the theme already applied.
+            highlight(current, { preview: false });
+            list.focus();
+        };
+
+        const close = ({ restore }) => {
+            if (!isOpen()) return;
+            list.hidden = true;
+            button.setAttribute('aria-expanded', 'false');
+            list.removeAttribute('aria-activedescendant');
+            if (restore) this.revertThemePreview();
+            button.focus();
+        };
+        // Config's Escape handler is on document in the capture phase, so it
+        // reaches the key first and has to be able to cancel the picker itself.
+        this.closeThemePickerFromKeyboard = () => close({ restore: true });
+
+        const commit = (option) => {
+            if (!option) return;
+            const id = option.getAttribute('data-theme-option');
+            // Drop the preview stylesheet before storing: applyThemeChoice
+            // reloads the real theme CSS, and a leftover preview would sit on
+            // top of it showing the same colours from the wrong source.
+            this.clearThemePreview();
+            list.hidden = true;
+            button.setAttribute('aria-expanded', 'false');
+            button.setAttribute('value', id);
+            const labelEl = button.querySelector('[data-theme-picker-label]');
+            if (labelEl) labelEl.textContent = option.textContent;
+            options().forEach((o) => {
+                o.setAttribute('aria-selected', String(o === option));
+                o.toggleAttribute('data-theme-current', o === option);
+            });
+            this._themePickerPrevious = null;
+            button.focus();
+            this.setAppearanceSelect('theme', id);
+        };
+
+        button.addEventListener('click', () => (isOpen() ? close({ restore: true }) : open()));
+
+        list.addEventListener('mousemove', (e) => {
+            const option = e.target.closest('[data-theme-option]');
+            if (option) highlight(option);
+        });
+        list.addEventListener('click', (e) => {
+            const option = e.target.closest('[data-theme-option]');
+            if (option) commit(option);
+        });
+
+        list.addEventListener('keydown', (e) => {
+            const all = options();
+            const at = all.findIndex((o) => o.classList.contains('is-active'));
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const next = e.key === 'ArrowDown'
+                    ? Math.min(at + 1, all.length - 1)
+                    : Math.max(at - 1, 0);
+                highlight(all[next]);
+                return;
+            }
+            if (e.key === 'Home' || e.key === 'End') {
+                e.preventDefault();
+                highlight(e.key === 'Home' ? all[0] : all[all.length - 1]);
+                return;
+            }
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                commit(all[at]);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                // Stop here: config's own Escape handler would otherwise read
+                // this as "close the config view" on the same key press.
+                e.stopPropagation();
+                close({ restore: true });
+            }
+        });
+
+        // Leaving the picker entirely counts as cancelling. focusout fires
+        // before the new focus lands, so the check is deferred a tick.
+        list.addEventListener('focusout', () => {
+            setTimeout(() => {
+                if (isOpen() && !root.contains(document.activeElement)) close({ restore: true });
+            }, 0);
+        });
+        document.addEventListener('pointerdown', (e) => {
+            if (isOpen() && !root.contains(e.target)) close({ restore: true });
+        });
+    }
+
+    /**
+     * Show a theme on the dashboard without storing it.
+     *
+     * Reuses the editor's preview: a variables block scoped to the attribute the
+     * document actually carries, which outranks /api/theme.css. Whether the id
+     * resolves to a palette decides the approach — a built-in the browser
+     * already has CSS for only needs the attribute swapped.
+     */
+    previewThemeChoice(id) {
+        if (!id) return;
+        const palette = this.themeById(id);
+        if (palette) {
+            this.previewThemeColors(id);
+            return;
+        }
+        this.clearThemePreview();
+        document.documentElement.setAttribute('data-theme', id);
+    }
+
+    /** Put back whatever was applied before the picker was opened. */
+    revertThemePreview() {
+        this.clearThemePreview();
+        const previous = this._themePickerPrevious;
+        this._themePickerPrevious = null;
+        if (!previous) return;
+        // applyThemeLive re-resolves through auto dark mode, so this restores
+        // what was on screen rather than the raw stored id.
+        this.applyThemeLive();
+    }
+
+    /** Load the built-in + custom theme list, then repaint the theme picker. */
     async loadThemeList() {
         if (this._themeList) return;
         try {
@@ -5590,9 +5790,12 @@ class DashboardConfig {
         } catch {
             this._themeList = {};
         }
-        const select = document.querySelector('[data-appearance-select="theme"]');
-        if (select && this.isActiveView() && this.section === 'appearance') {
-            select.innerHTML = this.renderThemeOptions();
+        const list = document.querySelector('[data-theme-picker-list]');
+        if (list && this.isActiveView() && this.section === 'appearance') {
+            list.innerHTML = this.renderThemeOptions();
+            const current = this.dash.settings?.theme || 'dark';
+            const label = list.parentElement?.querySelector('[data-theme-picker-label]');
+            if (label) label.textContent = this.themeDisplayName(current, this._themeList?.[current] || '');
         }
     }
 
@@ -5652,9 +5855,13 @@ class DashboardConfig {
         container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
             input.addEventListener('change', () => this.setToggle(input.getAttribute('data-appearance-toggle'), input.checked));
         });
-        container.querySelectorAll('[data-appearance-select]').forEach((select) => {
+        // `select` only: the theme picker shares the data-appearance-select hook
+        // so search and the changed-filter still find it, but it is a button with
+        // its own listbox and no change event to listen for.
+        container.querySelectorAll('select[data-appearance-select]').forEach((select) => {
             select.addEventListener('change', () => this.setAppearanceSelect(select.getAttribute('data-appearance-select'), select.value));
         });
+        this.bindThemePicker(container);
         // Range and text update live without a full repaint so the control keeps focus.
         const range = container.querySelector('[data-appearance-range="backgroundOpacity"]');
         if (range) {
