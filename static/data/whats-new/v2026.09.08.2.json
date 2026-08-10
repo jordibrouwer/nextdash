@@ -1,0 +1,25 @@
+{
+    "tag": "v2026.09.08.2",
+    "date": "August 2026",
+    "releasedAt": "2026-08-10",
+    "modalLead": "Trying on a theme no longer means committing to it: move through the theme list and the dashboard changes with you. There are also <strong>23 new themes</strong> to move through.",
+    "sections": [
+        {
+            "title": "Appearance",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>See a theme before you pick it.</strong> Open the <strong>Theme</strong> list under <strong>Appearance</strong> and move up and down it — the dashboard behind takes on each theme as you go. Nothing is saved until you choose one."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Change your mind freely.</strong> Press <strong>Esc</strong> or click away and the theme you started with comes straight back, so browsing the list can never leave you somewhere you did not want."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>23 new themes.</strong> Among them <strong>Blueprint</strong>, white rule on process blue; <strong>Static Noise</strong>, grey from end to end with no colour anywhere; <strong>Signal Flare</strong>, everything muted but one hot magenta; and <strong>Bone China</strong>, warm porcelain with a cool blue hairline. Each comes in a light and a dark version."
+                }
+            ]
+        }
+    ]
+}
