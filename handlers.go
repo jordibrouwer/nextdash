@@ -518,6 +518,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			isMissingPreview := missingPreview(bm)
 			shortcutKey := normalizeShortcut(bm.Shortcut)
 			isShortcutConflict := shortcutKey != "" && shortcutCounts[shortcutKey] > 1
+			isDrifting := bm.Monitor && bm.WatchDrift && strings.TrimSpace(bm.DriftNoticed) != ""
 
 			status := "healthy"
 			// Every condition that holds, in the same priority order as status.
@@ -615,6 +616,13 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "no_preview", Penalty: healthPenaltyNoPreview})
 				score -= healthPenaltyNoPreview
 			}
+			// Drift is a rot signal, not a hard failure: the bookmark still answers,
+			// so it keeps whatever status it already has and pays no score penalty.
+			// It only adds a flag, the same way "unused" layers onto "broken" — a
+			// bookmark that is both must be findable under either filter.
+			if isDrifting {
+				flags = append(flags, "drift")
+			}
 
 			if score < 0 {
 				score = 0
@@ -658,6 +666,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 			if isUnused {
 				report.Summary.UnusedCount++
+			}
+			if isDrifting {
+				report.Summary.DriftCount++
 			}
 			if status == "healthy" {
 				report.Summary.HealthyCount++

@@ -2573,6 +2573,21 @@ class DashboardHealth {
             },
         ];
 
+        // Drift only ever holds bookmarks that opted into watching for it, so a
+        // zero here is the normal state for most installs — shown only when
+        // there is something to say, the same rule the certificates tile below
+        // follows.
+        const driftCount = Number(summary.driftCount) || 0;
+        if (driftCount > 0) {
+            tiles.push({
+                key: 'drift',
+                label: this.t('dashboard.healthTileDrift', 'Drift'),
+                value: driftCount,
+                tone: 'warn',
+                title: this.t('dashboard.healthTileDriftHint', 'The page no longer looks like what was saved — redirect, title, or content changed'),
+            });
+        }
+
         // Certificates count hosts, not bookmarks, so this one cannot become a
         // filter the way the others do: there is no per-issue flag to filter on,
         // and clicking it would appear to do nothing. Shown only when there is
@@ -2921,6 +2936,7 @@ class DashboardHealth {
         const secondary = [
             ['stale', this.t('dashboard.healthFilterStale', 'Stale')],
             ['unused', this.t('dashboard.healthFilterUnused', 'Unused')],
+            ['drift', this.t('dashboard.healthFilterDrift', 'Drift')],
             ['shortcut-conflict', this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts')],
             ['missing-preview', this.t('dashboard.healthFilterMissingPreview', 'Missing preview')],
             ['healthy', this.t('dashboard.healthFilterHealthy', 'Healthy')],

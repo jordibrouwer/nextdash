@@ -2965,6 +2965,11 @@ type HealthSummary struct {
 	UnusedCount           int `json:"unusedCount"`
 	ShortcutConflictCount int `json:"shortcutConflictCount"`
 	PinnedCount           int `json:"pinnedCount"`
+	// DriftCount is bookmarks currently flagged by rot detection — a redirect,
+	// title, or content change since the watched baseline. Layered on top of
+	// whatever other status a bookmark has, so it is not one of the three
+	// mutually exclusive broken/content/monitorDown counts above.
+	DriftCount int `json:"driftCount"`
 }
 
 type HealthReason struct {
