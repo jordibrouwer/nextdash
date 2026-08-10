@@ -79,8 +79,9 @@ class DashboardConfig {
          * would read as settings having gone missing.
          */
         this.changedOnly = false;
-        // Help sub-tab.
+        // Help sub-tab, and the free-text search that cuts across all of them.
         this.helpTab = 'start';
+        this.helpQuery = '';
         // Bookmarks section: search, filters, sort, the row being edited, the
         // ticked rows for bulk actions, and whether the open editor has unsaved
         // changes (so Save can be offered rather than saving on every keystroke).
@@ -15720,7 +15721,7 @@ class DashboardConfig {
 
     /* ── Help (native) ─────────────────────────────────────────────────────── */
 
-    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'data', 'about'];
+    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'stats', 'data', 'about'];
 
     helpTabLabel(tab) {
         const map = {
@@ -15729,6 +15730,7 @@ class DashboardConfig {
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
             health: ['config.helpTabHealth', 'Health & inbox'],
+            stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
             about: ['config.helpTabAbout', 'About'],
         };
@@ -15745,11 +15747,71 @@ class DashboardConfig {
         return `
             <div class="config-help-header">
                 <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
-                ${this.renderCheatSheetPdfLink()}
+                <div class="config-help-header-aside">
+                    ${this.renderCheatSheetPdfLink()}
+                    <input type="search" class="config-text config-help-search" id="config-help-search"
+                           placeholder="${esc(this.t('config.helpFilterPlaceholder', 'Search help…'))}"
+                           aria-label="${esc(this.t('config.helpFilterLabel', 'Search help'))}"
+                           value="${esc(this.helpQuery || '')}">
+                </div>
             </div>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-help-body" role="tabpanel" tabindex="0">${this.renderHelpBody()}</div>
         `;
+    }
+
+    /**
+     * Search across every help tab at once.
+     *
+     * The tabs exist to keep each topic readable, but they also hide it: someone
+     * looking for "webhook" has no way to know it lives under Health. A query
+     * therefore drops the tab structure entirely and lists every matching panel
+     * with the tab it came from, rather than filtering the tab you happen to be
+     * on — which would answer "not here" for most searches.
+     */
+    renderHelpSearchResults() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const query = String(this.helpQuery || '').trim().toLowerCase();
+        if (!query) return '';
+
+        // Panels are rendered markup, so match on their text rather than the
+        // source: that is what the reader sees, and it keeps the index honest
+        // when a body changes.
+        const parse = new DOMParser();
+        const hits = [];
+        for (const tab of DashboardConfig.HELP_TABS) {
+            const doc = parse.parseFromString(this.renderHelpBodyFor(tab), 'text/html');
+            for (const panel of doc.querySelectorAll('.config-panel')) {
+                const title = panel.querySelector('.config-panel-title')?.textContent?.trim() || '';
+                const text = panel.textContent.replace(/\s+/g, ' ').trim();
+                if (!text.toLowerCase().includes(query)) continue;
+                hits.push({ tab, title, panel: panel.outerHTML });
+            }
+        }
+
+        if (!hits.length) {
+            return `<div class="config-panel"><p class="config-panel-empty">${
+                esc(this.t('config.helpFilterNoResults', 'Nothing in help matches that.'))}</p></div>`;
+        }
+
+        return hits.map((hit) => `
+            <div class="config-help-result">
+                <button type="button" class="config-help-result-tab" data-help-tab-jump="${esc(hit.tab)}">
+                    ${esc(this.helpTabLabel(hit.tab))}
+                </button>
+                ${hit.panel}
+            </div>`).join('');
+    }
+
+    /** The body for a given tab, so search can read them all without switching. */
+    renderHelpBodyFor(tab) {
+        const previous = this.helpTab;
+        this.helpTab = tab;
+        try {
+            return this.renderHelpBody();
+        } finally {
+            this.helpTab = previous;
+        }
     }
 
     /**
@@ -15766,6 +15828,7 @@ class DashboardConfig {
             case 'organizing': return this.renderHelpOrganizing();
             case 'search': return this.renderHelpSearch();
             case 'health': return this.renderHelpHealth();
+            case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
             case 'about': return this.renderHelpAbout();
             default: return this.renderHelpStart();
@@ -15787,18 +15850,48 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const tips = this.helpTips().map((tip) => `<li class="config-help-tip">${tip}</li>`).join('');
         return this.helpPanel('config.helpStartTitle', 'Getting started',
-            'config.helpStartBody', '')
+            'config.helpStartBody', '',
+            `<div class="config-actions">
+                <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
+                ${this.renderCheatSheetPdfLink()}
+            </div>`)
+            + this.helpPanel('config.helpFirstHourTitle', 'Your first hour',
+                'config.helpFirstHourBody', '')
+            + this.helpPanel('config.helpStartDailyTitle', 'A day with nextDash',
+                'config.helpStartDailyBody', '')
             + `<div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.helpTipsTitle', 'Everyday keys'))}</h3>
                 <ul class="config-help-tips">${tips}</ul>
             </div>`;
     }
 
+    /**
+     * Statistics gets its own tab rather than a panel under Health.
+     *
+     * The two read as one subject but answer different questions: Health is
+     * about what is broken now, Statistics about what you actually use and how
+     * that has moved. Filed under Health, the counting half went unread — and
+     * the privacy question people arrive with (does any of this leave the
+     * machine?) had nowhere to be answered plainly.
+     */
+    renderHelpStats() {
+        return this.helpPanel('config.helpStatsTitle', 'What Statistics shows',
+            'config.helpStatsBody', '')
+            + this.helpPanel('config.helpStatsReadingTitle', 'Reading the numbers',
+                'config.helpStatsReadingBody', '')
+            + this.helpPanel('config.helpStatsUsageTitle', 'Where the counts come from',
+                'config.helpStatsUsageBody', '')
+            + this.helpPanel('config.helpStatsPrivacyTitle', 'Privacy & analytics',
+                'config.helpStatsPrivacyBody', '');
+    }
+
     renderHelpConfig() {
         return this.helpPanel('config.helpConfigTitle', 'Finding your way around config',
             'config.helpConfigBody', '')
             + this.helpPanel('config.helpAppearanceTitle', 'Appearance & themes',
-                'config.helpAppearanceBody', '');
+                'config.helpAppearanceBody', '')
+            + this.helpPanel('config.helpThemesTitle', 'Themes',
+                'config.helpThemesBody', '');
     }
 
     renderHelpOrganizing() {
@@ -15848,6 +15941,8 @@ class DashboardConfig {
                 'config.helpHealthViewBody', '')
             + this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
                 'config.helpHealthStatsBody', '')
+            + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
+                'config.helpNotificationsBody', '')
             + this.helpPanel('config.helpInboxTitle', 'Inbox',
                 'config.helpInboxBody', '')
             + this.helpPanel('config.helpInboxWorkTitle', 'Working through the inbox',
@@ -15857,6 +15952,8 @@ class DashboardConfig {
     renderHelpData() {
         return this.helpPanel('config.helpDataTitle', 'Backups, import & export',
             'config.helpDataBody', '')
+            + this.helpPanel('config.helpServerLogTitle', 'Server log',
+                'config.helpServerLogBody', '')
             + this.helpPanel('config.helpSelfHostingTitle', 'Self-hosting',
                 'config.helpSelfHostingBody', '');
     }
@@ -15932,6 +16029,12 @@ class DashboardConfig {
             {
                 if (tab === this.helpTab) return;
                 this.helpTab = tab;
+                // Switching tabs by hand means the reader has stopped searching;
+                // leaving the query on would show results instead of the tab
+                // they just clicked.
+                this.helpQuery = '';
+                const field = document.getElementById('config-help-search');
+                if (field) field.value = '';
                 this.restoreConfigHash();
                 const body = document.getElementById('config-help-body');
                 if (!body) { this.render(); return; }
@@ -15941,7 +16044,61 @@ class DashboardConfig {
                 this.bindHelpActions(body);
             }
         });
+        this.bindHelpSearch(container);
         this.bindHelpActions(container);
+    }
+
+    /** The help search field, and the tab buttons on each result. */
+    bindHelpSearch(container) {
+        const field = container.querySelector('#config-help-search');
+        if (!field) return;
+
+        const repaint = () => {
+            const body = document.getElementById('config-help-body');
+            if (!body) return;
+            const query = String(this.helpQuery || '').trim();
+            body.innerHTML = query ? this.renderHelpSearchResults() : this.renderHelpBody();
+            // Results carry panels lifted from every tab, so their buttons need
+            // binding just as a freshly switched tab body does.
+            this.bindHelpActions(body);
+            this.bindHelpResultJumps(body);
+            // The tab strip means nothing while results are showing; dim it
+            // rather than remove it, so the way back is still where it was.
+            container.querySelector('.config-subtabs')?.classList.toggle('is-muted', !!query);
+        };
+
+        let debounce = null;
+        field.addEventListener('input', () => {
+            clearTimeout(debounce);
+            debounce = setTimeout(() => {
+                this.helpQuery = field.value;
+                repaint();
+            }, 200);
+        });
+        // Escape clears the query rather than closing config, matching the other
+        // search fields — but only while there is something to clear.
+        field.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || !String(this.helpQuery || '').trim()) return;
+            e.preventDefault();
+            e.stopPropagation();
+            this.helpQuery = '';
+            field.value = '';
+            repaint();
+        });
+    }
+
+    /** "Open this tab" on a search result. */
+    bindHelpResultJumps(body) {
+        body.querySelectorAll('[data-help-tab-jump]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.helpTab = btn.getAttribute('data-help-tab-jump');
+                this.helpQuery = '';
+                const field = document.getElementById('config-help-search');
+                if (field) field.value = '';
+                this.restoreConfigHash();
+                this.render();
+            });
+        });
     }
 
     bindHelpActions(container) {

@@ -3608,6 +3608,71 @@ body.no-animations .config-new-features-panel-star {
     line-height: 1.6;
 }
 
+/* ── Help search ─────────────────────────────────────────────────────────── */
+
+/* The right-hand column of the help header: the Shortcuts PDF button with the
+   search field directly under it, both the same width so they read as one
+   block rather than two loose controls. */
+.config-help-header-aside {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.config-help-header-aside .config-cheatsheet-pdf {
+    justify-content: center;
+}
+
+/* Narrow on purpose: full width made it read as the page's main control rather
+   than a filter sitting beside the intro. */
+.config-help-search {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+}
+
+/* Under the header's wrap point the aside spans the row, so cap it there or the
+   field stretches edge to edge on a narrow window. */
+@media (max-width: 620px) {
+    .config-help-header-aside {
+        flex: 1 1 100%;
+        max-width: 22rem;
+    }
+}
+
+/* A query drops the tab structure and lists matches from every tab, so the
+   strip no longer describes what is on screen. Dimmed rather than hidden: it
+   is still the way back, and removing it would make the page jump. */
+.config-subtabs.is-muted {
+    opacity: 0.45;
+}
+
+.config-help-result {
+    position: relative;
+}
+
+/* Names the tab a result came from, and goes there. */
+.config-help-result-tab {
+    display: inline-block;
+    margin: 0 0 -4px 2px;
+    padding: 2px 8px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary, inherit);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.83);
+    cursor: pointer;
+}
+
+.config-help-result-tab:hover,
+.config-help-result-tab:focus-visible {
+    color: var(--text-primary, inherit);
+    border-color: var(--accent-color, #4a90d9);
+}
+
 /* ── Help prose ──────────────────────────────────────────────────────────── */
 
 /* Translator-supplied HTML: paragraphs, lists, <strong>, <em>, <code>. Styled
