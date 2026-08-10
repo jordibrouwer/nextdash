@@ -772,6 +772,8 @@
         "healthFilterShortcutConflict": "Conflits de raccourci",
         "healthFilterMissingPreview": "Aperçu manquant",
         "healthFilterHealthy": "Sains",
+        "healthGroupDown": "En panne",
+        "healthGroupCert": "Alerte certificat",
         "healthHeartbeatLabel": "Historique de disponibilité",
         "healthHeartbeatNoData": "Aucune donnée",
         "healthSparklineLabel": "Temps de réponse {min}–{max} ms",

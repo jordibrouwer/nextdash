@@ -772,6 +772,8 @@
         "healthFilterShortcutConflict": "Kürzel-Konflikte",
         "healthFilterMissingPreview": "Keine Vorschau",
         "healthFilterHealthy": "Gesund",
+        "healthGroupDown": "Ausgefallen",
+        "healthGroupCert": "Zertifikatswarnung",
         "healthHeartbeatLabel": "Uptime-Verlauf",
         "healthHeartbeatNoData": "Keine Daten",
         "healthSparklineLabel": "Antwortzeit {min}–{max} ms",

@@ -772,6 +772,8 @@
         "healthFilterShortcutConflict": "Shortcut conflicts",
         "healthFilterMissingPreview": "Missing preview",
         "healthFilterHealthy": "Healthy",
+        "healthGroupDown": "Down",
+        "healthGroupCert": "Certificate warning",
         "healthHeartbeatLabel": "Uptime history",
         "healthHeartbeatNoData": "No data",
         "healthSparklineLabel": "Response time {min}–{max}ms",

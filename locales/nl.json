@@ -772,6 +772,8 @@
         "healthFilterShortcutConflict": "Sneltoetsconflicten",
         "healthFilterMissingPreview": "Geen preview",
         "healthFilterHealthy": "Gezond",
+        "healthGroupDown": "Uitgevallen",
+        "healthGroupCert": "Certificaatwaarschuwing",
         "healthHeartbeatLabel": "Uptime-geschiedenis",
         "healthHeartbeatNoData": "Geen gegevens",
         "healthSparklineLabel": "Reactietijd {min}–{max} ms",

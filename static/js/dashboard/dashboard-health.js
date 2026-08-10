@@ -20,6 +20,15 @@ class DashboardHealth {
         healthy: 8,
     };
 
+    /**
+     * Worst first, for grouping the Monitored filter under the Status sort.
+     * Unlike STATUS_RANK this is about live monitor health, not the report's
+     * link-hygiene status: a monitored bookmark that is down right now matters
+     * more than one that merely drifted, which in turn matters more than a
+     * certificate quietly approaching expiry.
+     */
+    static MONITOR_GROUP_RANK = { down: 0, drift: 1, cert: 2, healthy: 3 };
+
     constructor(dashboard) {
         this.dash = dashboard;
         this.report = null;
@@ -485,14 +494,22 @@ class DashboardHealth {
     }
 
     /**
-     * Splits an already-filtered-and-sorted page of issues into status
-     * sections, mirroring how DashboardInbox groups by date.
+     * Splits an already-filtered-and-sorted page of issues into sections,
+     * mirroring how DashboardInbox groups by date.
      *
-     * Only on the All filter under the Status sort: every other filter is
-     * already one status (or a small related set), where a heading would add
-     * nothing, and any other sort (score, name, last-checked) has its own
-     * ordering that a status heading would visually chop into pieces — the
-     * same reason Inbox's isGroupedSort() guard exists.
+     * Two groupings, both only under the Status sort — every other sort
+     * (score, name, last-checked) has its own ordering that a heading would
+     * visually chop into pieces, the same reason Inbox's isGroupedSort()
+     * guard exists:
+     *
+     * - The All filter groups by link-hygiene status (broken, duplicate, …).
+     *   Every other filter is already one status or a small related set,
+     *   where a heading would add nothing.
+     * - The Monitored filter groups by live monitor health (down, drift,
+     *   cert warning, healthy) instead — link-hygiene status barely applies
+     *   to a monitored row (it is almost always "healthy" in that sense even
+     *   while its monitor is down), so reusing STATUS_RANK there would put
+     *   nearly everything in one bucket.
      *
      * Call this on the page already sliced to visibleLimit, not on the full
      * filtered array: grouping is a presentation step over what is about to
@@ -500,14 +517,18 @@ class DashboardHealth {
      * working on the flat array exactly as before.
      */
     groupFilteredIssues(issues) {
-        if (this.filter !== 'all' || this.sort !== 'status') {
+        if (this.sort !== 'status' || (this.filter !== 'all' && this.filter !== 'monitored')) {
             return issues.length ? [{ key: 'flat', label: '', items: issues }] : [];
         }
-        const order = Object.keys(DashboardHealth.STATUS_RANK);
+        const order = this.filter === 'monitored'
+            ? Object.keys(DashboardHealth.MONITOR_GROUP_RANK)
+            : Object.keys(DashboardHealth.STATUS_RANK);
+        const classify = this.filter === 'monitored'
+            ? (issue) => this.monitorGroupFor(issue)
+            : (issue) => (order.includes(issue?.status) ? issue.status : 'healthy');
         const buckets = new Map(order.map((key) => [key, []]));
         issues.forEach((issue) => {
-            const key = order.includes(issue?.status) ? issue.status : 'healthy';
-            buckets.get(key)?.push(issue);
+            buckets.get(classify(issue))?.push(issue);
         });
         return order
             .map((key) => ({ key, label: this.filterLabel(key) || key, items: buckets.get(key) || [] }))
@@ -2128,6 +2149,13 @@ class DashboardHealth {
             'missing-preview': this.t('dashboard.healthFilterMissingPreview', 'Missing preview'),
             healthy: this.t('dashboard.healthFilterHealthy', 'Healthy'),
             all: this.t('dashboard.healthFilterAll', 'All'),
+            // Monitor-group headings, distinct from the link-hygiene labels
+            // above: "down" here means the monitor is failing right now, not
+            // the report's "broken" status. Drift reuses healthFilterDrift —
+            // same concept, no need for a second translated string.
+            down: this.t('dashboard.healthGroupDown', 'Down'),
+            drift: this.t('dashboard.healthFilterDrift', 'Drift'),
+            cert: this.t('dashboard.healthGroupCert', 'Certificate warning'),
         };
         return labels[filter] || String(filter || '');
     }
@@ -4147,6 +4175,22 @@ class DashboardHealth {
     certWarningCount() {
         const certs = this.report?.certificates;
         return certs ? Object.keys(certs).length : 0;
+    }
+
+    /**
+     * Which live-monitor bucket a row belongs in: down beats drift beats a
+     * certificate warning beats healthy, matching the priority order the row
+     * badges already use (a down monitor's badge would eclipse a drift badge
+     * anyway, so grouping by anything else would disagree with the row itself).
+     *
+     * Only meaningful for monitored rows — callers on the Monitored filter can
+     * assume every issue passed in has `monitor === true`.
+     */
+    monitorGroupFor(issue) {
+        if (Number(issue?.monitorStats?.downSince) > 0) return 'down';
+        if (issue?.watchDrift && issue?.driftNoticed) return 'drift';
+        if (this.certFor(issue)) return 'cert';
+        return 'healthy';
     }
 
     /** The monitor strip under the row meta: heartbeat, uptime, sparkline. */

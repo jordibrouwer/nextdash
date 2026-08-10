@@ -1290,3 +1290,122 @@ test.describe('status grouping in the feed', () => {
         ]);
     });
 });
+
+test.describe('status grouping on the Monitored filter', () => {
+    // Link-hygiene status barely applies to a monitored row — it is almost
+    // always "healthy" in that sense even while its monitor is down — so the
+    // Monitored filter groups by live monitor health instead: down, drift, a
+    // certificate warning, then healthy. Down beats drift beats cert, matching
+    // the priority the row badges already use.
+    function monitoredReport() {
+        const r = report();
+        r.issues = [
+            {
+                pageId: 1, index: 8, pageName: 'dev', name: 'Down monitor',
+                url: 'https://example.com/down', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                reasons: [], reasonDetails: [],
+                monitor: true, checkStatus: true,
+                monitorStats: { ...monitorStats(), downSince: Date.now() - 600_000 },
+            },
+            {
+                pageId: 1, index: 9, pageName: 'dev', name: 'Drifted monitor',
+                url: 'https://example.com/drifted', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                reasons: [], reasonDetails: [],
+                monitor: true, checkStatus: true, watchDrift: true,
+                driftNoticed: 'redirect', driftReason: 'Now redirects to shop.example',
+                monitorStats: monitorStats(),
+            },
+            {
+                pageId: 1, index: 10, pageName: 'dev', name: 'Cert warning monitor',
+                url: 'https://cert-warn.example/', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                reasons: [], reasonDetails: [],
+                monitor: true, checkStatus: true, certHost: 'cert-warn.example',
+                monitorStats: monitorStats(),
+            },
+            {
+                pageId: 1, index: 11, pageName: 'dev', name: 'Healthy monitor',
+                url: 'https://example.com/all-good', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                reasons: [], reasonDetails: [],
+                monitor: true, checkStatus: true,
+                monitorStats: monitorStats(),
+            },
+        ];
+        r.certificates = {
+            'cert-warn.example': { host: 'cert-warn.example', expiresAt: Date.now() + 5 * 86400000 },
+        };
+        return r;
+    }
+
+    async function openMonitoredGrouped(page) {
+        await page.route('**/api/bookmark-health**', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(monitoredReport()) });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+        await page.click('[data-health-filter="monitored"]');
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+    }
+
+    test('groups by down, drift, cert warning, healthy — not link-hygiene status', async ({ page }) => {
+        await openMonitoredGrouped(page);
+
+        const titles = await page.locator('.health-view-status-group-title')
+            .evaluateAll((els) => els.map((e) => e.textContent.trim()));
+        expect(titles.map((t) => t.replace(/\d+$/, '').trim())).toEqual([
+            'Down', 'Drift', 'Certificate warning', 'Healthy',
+        ]);
+
+        for (const [label, name] of [
+            ['Down', 'Down monitor'],
+            ['Drift', 'Drifted monitor'],
+            ['Certificate warning', 'Cert warning monitor'],
+            ['Healthy', 'Healthy monitor'],
+        ]) {
+            const group = page.locator('.health-view-status-group', {
+                has: page.locator('.health-view-status-group-title', { hasText: label }),
+            });
+            await expect(group.locator('.health-view-item-title', { hasText: name })).toBeVisible();
+        }
+    });
+
+    test('a monitor that is both down and drifted counts once, under Down', async ({ page }) => {
+        await page.route('**/api/bookmark-health**', async (route) => {
+            const r = monitoredReport();
+            r.issues[1].monitorStats = { ...monitorStats(), downSince: Date.now() - 600_000 };
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(r) });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+        await page.click('[data-health-filter="monitored"]');
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+
+        await expect(page.locator('.health-view-item-title', { hasText: 'Drifted monitor' })).toHaveCount(1);
+        const downGroup = page.locator('.health-view-status-group', {
+            has: page.locator('.health-view-status-group-title', { hasText: 'Down' }),
+        });
+        await expect(downGroup.locator('.health-view-item-title', { hasText: 'Drifted monitor' })).toBeVisible();
+    });
+
+    test('no groups on Monitored under any sort but Status', async ({ page }) => {
+        await openMonitoredGrouped(page);
+        await page.selectOption('.health-view-sort-select', 'score');
+        await page.waitForTimeout(150);
+
+        await expect(page.locator('.health-view-status-group-title')).toHaveCount(0);
+        await expect(page.locator('.health-view-feed .health-view-item')).toHaveCount(4);
+    });
+});
