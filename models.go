@@ -2518,6 +2518,9 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 	settings.MonitorNotifyRetries = clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
 	settings.MonitorNotifyPreset = normalizeMonitorNotifyPreset(settings.MonitorNotifyPreset)
+	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
+	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
+	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
 	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 

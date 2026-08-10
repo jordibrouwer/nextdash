@@ -47,6 +47,29 @@ func normalizeMonitorNotifyPreset(preset string) string {
 	return ""
 }
 
+// monitorNotifyCredentialMaxLen bounds the preset credential fields (Telegram
+// chat ID, Pushover token and user key). Real values are short and fixed-width
+// — a Pushover token or user key is 30 characters, a Telegram chat ID a
+// handful of digits — but this is deliberately far more generous than that,
+// the same way expectTextMaxLen is round rather than exact: it exists only to
+// keep a hand-edited settings file from turning the field into storage for
+// something else, not to validate the service's own format.
+const monitorNotifyCredentialMaxLen = 200
+
+// normalizeMonitorNotifyCredential trims a preset credential field and caps
+// its length. Unlike normalizeMonitorNotifyPreset there is no fixed set to
+// validate against — every service's token format is its own business — so
+// this only guards against unbounded values reaching the settings file, the
+// same trim-and-cap treatment every other user-editable Health field already
+// gets (see ExpectText / expectTextMaxLen).
+func normalizeMonitorNotifyCredential(value string) string {
+	value = strings.TrimSpace(value)
+	if len(value) > monitorNotifyCredentialMaxLen {
+		value = value[:monitorNotifyCredentialMaxLen]
+	}
+	return value
+}
+
 // pushoverEndpoint is fixed: Pushover has no user-chosen webhook URL, unlike
 // every other preset here. Delivery is keyed on the app token and user key
 // instead, both entered as their own settings.

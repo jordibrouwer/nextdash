@@ -26,6 +26,62 @@ func TestNormalizeMonitorNotifyPreset(t *testing.T) {
 	}
 }
 
+func TestNormalizeMonitorNotifyCredential(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"empty stays empty", "", ""},
+		{"trims whitespace", "  123456789  ", "123456789"},
+		{"a real-looking value is untouched", strings.Repeat("a", 30), strings.Repeat("a", 30)},
+		{"caps at the max length", strings.Repeat("x", 500), strings.Repeat("x", monitorNotifyCredentialMaxLen)},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := normalizeMonitorNotifyCredential(c.in)
+			if got != c.want {
+				t.Errorf("normalizeMonitorNotifyCredential(%d chars) = %d chars, want %d chars",
+					len(c.in), len(got), len(c.want))
+			}
+			if len(got) > monitorNotifyCredentialMaxLen {
+				t.Errorf("result is %d chars, want at most %d", len(got), monitorNotifyCredentialMaxLen)
+			}
+		})
+	}
+}
+
+// The credential cap has to survive a real save/load round trip, not just the
+// pure function: normalizeMonitorNotifyCredential is wired into both
+// FileStore.GetSettings (the read path, matching how MonitorNotifyPreset was
+// already normalized) and the /api/settings handler (the write path) — a
+// hand-edited settings file or a malformed request could otherwise store an
+// arbitrarily large value with nothing to catch it before it reaches disk.
+func TestMonitorNotifyCredentialsAreCappedOnSaveAndLoad(t *testing.T) {
+	t.Setenv("NEXTDASH_DATA_DIR", t.TempDir())
+	store := NewStore()
+
+	settings := store.GetSettings()
+	settings.MonitorNotifyTelegramChatID = "  " + strings.Repeat("1", 500) + "  "
+	settings.MonitorNotifyPushoverToken = strings.Repeat("a", 500)
+	settings.MonitorNotifyPushoverUserKey = strings.Repeat("b", 500)
+	if err := store.SaveSettings(settings); err != nil {
+		t.Fatalf("SaveSettings: %v", err)
+	}
+
+	got := store.GetSettings()
+	for name, value := range map[string]string{
+		"MonitorNotifyTelegramChatID":  got.MonitorNotifyTelegramChatID,
+		"MonitorNotifyPushoverToken":   got.MonitorNotifyPushoverToken,
+		"MonitorNotifyPushoverUserKey": got.MonitorNotifyPushoverUserKey,
+	} {
+		if len(value) != monitorNotifyCredentialMaxLen {
+			t.Errorf("%s round-tripped as %d chars, want exactly %d (capped, no surrounding whitespace)",
+				name, len(value), monitorNotifyCredentialMaxLen)
+		}
+	}
+}
+
 func TestFormatRawJSONNotificationMatchesStructTags(t *testing.T) {
 	n := monitorNotification{Event: "down", Name: "Example", URL: "https://example.com", Status: "offline", Error: "HTTP 500", At: 1000, Failures: 3}
 	payload, err := formatMonitorNotification("", n, "", "", "")
