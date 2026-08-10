@@ -47,7 +47,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/bookmark-form/bookmark-form-preview.js": "d163ec20c169",
 	"js/bookmark-form/bookmark-preview-service.js": "349a0d81c0a3",
 	"js/bookmark-form/bookmark-url-utils.js": "fca1103a0bf8",
-	"js/check-mode.js": "5bd804456e78",
+	"js/check-mode.js": "68d53577a126",
 	"js/color-value-utils.js": "088f362c1e20",
 	"js/dashboard-deep-link.js": "b64829d39b4e",
 	"js/dashboard-feature-flags.js": "469c41a2d699",

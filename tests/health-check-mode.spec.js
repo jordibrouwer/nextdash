@@ -279,4 +279,42 @@ test.describe('health view check mode', () => {
 
         await expect(page.locator('.app-notification')).toContainText(/refreshed/i, { timeout: 5000 });
     });
+
+    /**
+     * CheckMode.intervalOf() reads a flat `monitorIntervalMinutes` field, which
+     * a raw Bookmark has but a health-report issue does not — HealthIssue only
+     * carries the interval nested under monitorStats.intervalMinutes. Without a
+     * fallback for that shape, the picker silently read undefined on every
+     * report-driven row and always highlighted the 15m default, regardless of
+     * what was actually stored — indistinguishable from "changed it, but the
+     * accent didn't move" whenever the real value differed from 15m.
+     */
+    test('the interval accent reflects monitorStats, not the 15m default', async ({ page }) => {
+        await page.route('**/api/bookmark-health**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json',
+            body: JSON.stringify({
+                generatedAt: Date.now(),
+                summary: { totalBookmarks: 1, healthyCount: 1, brokenCount: 0, duplicateCount: 0, uncheckedCount: 0 },
+                issues: [issue({
+                    index: 0, name: 'Interval accent', url: 'https://example.com/interval-accent', monitor: true,
+                    monitorStats: { intervalMinutes: 30, uptime24h: {}, uptime7d: {}, uptime30d: {}, totalChecks: 10 },
+                })],
+                duplicateGroups: [],
+            }),
+        }));
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
+        await page.waitForFunction(() => {
+            const h = window.dashboardInstance?.healthView || window.dashboardInstance?.health;
+            return h?.report?.issues?.length === 1;
+        }, null, { timeout: 15_000 });
+        await page.click('[data-health-filter="all"]');
+        await page.waitForSelector('.health-view-item', { timeout: 15_000 });
+
+        await page.click('.health-check-mode');
+        await expect(page.locator('.health-check-interval-btn.is-active')).toHaveText('30m');
+    });
 });
