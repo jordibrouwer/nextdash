@@ -1080,7 +1080,12 @@
         "healthExpectSave": "Opslaan",
         "healthExpectSaved": "Verwachtingen opgeslagen.",
         "healthExpectCleared": "Verwachtingen gewist.",
-        "healthExpectFailed": "Kon niet opslaan wat er verwacht wordt."
+        "healthExpectFailed": "Kon niet opslaan wat er verwacht wordt.",
+        "healthWatchDrift": "Waarschuwen bij redirects, hertitels en herschrijvingen",
+        "healthDriftRetitled": "Hertiteld",
+        "healthDriftChanged": "Veranderd",
+        "healthDriftMoved": "Verplaatst",
+        "healthDriftGeneric": "Deze pagina lijkt niet meer op wat er is opgeslagen."
     },
     "health": {
         "pageTitle": "health beta",

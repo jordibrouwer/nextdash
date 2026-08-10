@@ -250,7 +250,11 @@ func (h *Handlers) runDueMonitors() {
 	// for downtime is where they want to hear that a certificate is about to
 	// cause some.
 	pending = append(pending, certExpiryNotifications(h.recordMonitorCertificates(certResults), time.Now())...)
-	h.mirrorMonitorResultsToBookmarks(cacheUpdates)
+	driftResults := make(map[string]PingResult, len(outcomes))
+	for _, out := range outcomes {
+		driftResults[out.target.key] = out.result
+	}
+	h.mirrorMonitorResultsToBookmarks(cacheUpdates, driftResults)
 	h.invalidateHealthReportCache()
 
 	h.dispatchMonitorNotifications(ctx, pending)
@@ -259,7 +263,7 @@ func (h *Handlers) runDueMonitors() {
 // mirrorMonitorResultsToBookmarks copies each result onto the matching bookmarks
 // so the row and the report score agree with the monitor, matching what
 // runHealthRetest and CheckBookmarkHealthURL already do.
-func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScanCache) {
+func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScanCache, drift map[string]PingResult) {
 	if len(updates) == 0 {
 		return
 	}
@@ -282,6 +286,7 @@ func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScan
 				}
 				current[i].LastChecked = update.LastScanned
 				current[i].LastError = update.Error
+				applyDriftResult(&current[i], drift[canonicalBookmarkURLKey(current[i].URL)], update.LastScanned)
 			}
 			return current, nil
 		})

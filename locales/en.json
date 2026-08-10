@@ -1080,7 +1080,12 @@
         "healthExpectSave": "Save",
         "healthExpectSaved": "Expectations saved.",
         "healthExpectCleared": "Expectations cleared.",
-        "healthExpectFailed": "Could not save what to expect."
+        "healthExpectFailed": "Could not save what to expect.",
+        "healthWatchDrift": "Watch for redirects, retitling and rewrites",
+        "healthDriftRetitled": "Retitled",
+        "healthDriftChanged": "Changed",
+        "healthDriftMoved": "Moved",
+        "healthDriftGeneric": "This page no longer looks like what was saved."
     },
     "health": {
         "pageTitle": "health beta",

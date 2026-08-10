@@ -26,6 +26,16 @@ type PingResult struct {
 	// of the host, not of the bookmark: ten bookmarks on one domain share one
 	// certificate and must not warn ten times.
 	CertHost string
+	// FinalURL is where the request ended up after redirects. The check follows
+	// them already, so this costs nothing — and a bookmark that quietly started
+	// redirecting to a domain root or another host is dead in every way that
+	// matters while still answering 200.
+	FinalURL string
+	// Title and Fingerprint describe the page as it is now, for drift detection.
+	// Only filled when the bookmark asked to watch for drift, since both need
+	// the body read.
+	Title       string
+	Fingerprint string
 }
 
 // pingURLDetailed checks a URL under the default rule: any status under 500 is
@@ -84,6 +94,7 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 		base := PingResult{
 			PingMs: elapsed, HTTPStatus: code,
 			CertExpiry: certExpiry, CertHost: certHost,
+			FinalURL: finalRequestURL(resp),
 		}
 		down := func(detail string) PingResult {
 			r := base
@@ -106,14 +117,23 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 		}
 
 		// Only now, and only when asked: reading the body is the one part of a
-		// check that costs real bandwidth.
+		// check that costs real bandwidth. Read once and used by both the
+		// keyword test and the drift baseline, so a bookmark using both does
+		// not pay twice.
 		if expect.wantsBody() {
-			found := bodyContainsExpectation(resp, expect.Text)
-			if found == expect.TextAbsent {
-				if expect.TextAbsent {
-					return down(fmt.Sprintf("Page contains %q", expect.Text))
+			body := readBoundedBody(resp)
+			if expect.WatchDrift {
+				base.Title = extractHTMLTitle(body)
+				base.Fingerprint = contentFingerprint(body)
+			}
+			if text := strings.TrimSpace(expect.Text); text != "" {
+				found := strings.Contains(strings.ToLower(body), strings.ToLower(text))
+				if found == expect.TextAbsent {
+					if expect.TextAbsent {
+						return down(fmt.Sprintf("Page contains %q", expect.Text))
+					}
+					return down(fmt.Sprintf("Page is missing %q", expect.Text))
 				}
-				return down(fmt.Sprintf("Page is missing %q", expect.Text))
 			}
 		}
 
@@ -146,6 +166,15 @@ func leafCertExpiry(resp *http.Response) (int64, string) {
 		host = resp.Request.URL.Hostname()
 	}
 	return leaf.NotAfter.UnixMilli(), host
+}
+
+// finalRequestURL is where a completed response actually came from, after any
+// redirects the client followed.
+func finalRequestURL(resp *http.Response) string {
+	if resp == nil || resp.Request == nil || resp.Request.URL == nil {
+		return ""
+	}
+	return resp.Request.URL.String()
 }
 
 // httpStatusReachable reports whether an HTTP status means the host answered.

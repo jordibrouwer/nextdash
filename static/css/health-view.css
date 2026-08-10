@@ -855,6 +855,21 @@ button.health-view-tile:hover {
     color: var(--accent-error, #be123c);
 }
 
+/* Rot drift on a row: the page no longer resembles what was saved. One colour
+   regardless of kind — "moved" and "retitled" carry the same weight, and the
+   reason on hover is where the distinction lives. */
+.health-drift-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.05rem 0.35rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    white-space: nowrap;
+    opacity: 0.9;
+    color: var(--accent-warning, #b45309);
+}
+
 /* A tile reporting something the list cannot be filtered by. Matches the others
    so the row reads as one strip, without the affordances of a button. */
 .health-view-tile--static {

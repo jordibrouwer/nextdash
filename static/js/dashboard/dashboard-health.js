@@ -1701,10 +1701,11 @@ class DashboardHealth {
     /**
      * Store what this bookmark expects of a good response.
      *
-     * Sent as all three fields at once, so clearing one is an empty box rather
-     * than a separate action. The report is re-read afterwards because the
-     * server clears a content failure when the last expectation goes — the row's
-     * status changes, not just its settings.
+     * Sent as all fields at once, so clearing one is an empty box rather than a
+     * separate action. The report is re-read afterwards because the server
+     * clears a content failure when the last expectation goes, and turning
+     * drift watching off clears its baseline too — the row's status changes,
+     * not just its settings.
      */
     async saveExpectations(issue, wrap) {
         if (!issue || !wrap) return undefined;
@@ -1718,6 +1719,7 @@ class DashboardHealth {
         const text = String(wrap.querySelector('[data-expect-text]')?.value || '').trim();
         const absent = Boolean(wrap.querySelector('[data-expect-absent]')?.checked);
         const status = String(wrap.querySelector('[data-expect-status]')?.value || '').trim();
+        const watchDrift = Boolean(wrap.querySelector('[data-watch-drift]')?.checked);
 
         this.closeAllMenus();
         window.nextdashTrack?.('health:expectations');
@@ -1732,6 +1734,7 @@ class DashboardHealth {
                 body: JSON.stringify({
                     pageId, index: issue.index, url,
                     expectText: text, expectTextAbsent: absent, expectStatus: status,
+                    watchDrift,
                 }),
             });
             if (res.status === 409) {
@@ -1745,7 +1748,7 @@ class DashboardHealth {
             // Quote what was stored rather than what was typed: the server drops
             // status codes it cannot parse, so "999" comes back as an empty field
             // and the message should not claim otherwise.
-            this.dash.showNotification?.(saved.expectText || saved.expectStatus
+            this.dash.showNotification?.(saved.expectText || saved.expectStatus || saved.watchDrift
                 ? this.t('dashboard.healthExpectSaved', 'Expectations saved.')
                 : this.t('dashboard.healthExpectCleared', 'Expectations cleared.'), 'success');
             await this.loadAndRender({ refresh: true });
@@ -3887,6 +3890,10 @@ class DashboardHealth {
                     placeholder="${this.escape(this.t('dashboard.healthExpectStatusPlaceholder', 'Status codes, e.g. 200,301'))}"
                     aria-label="${this.escape(this.t('dashboard.healthExpectStatusLabel', 'Status codes that count as healthy'))}"
                     value="${this.escape(issue.expectStatus || '')}">
+                <label class="health-check-expect-invert">
+                    <input type="checkbox" data-watch-drift ${issue.watchDrift ? 'checked' : ''}>
+                    <span>${this.escape(this.t('dashboard.healthWatchDrift', 'Watch for redirects, retitling and rewrites'))}</span>
+                </label>
                 <button type="button" class="health-check-expect-save" data-expect-save>${this.escape(this.t('dashboard.healthExpectSave', 'Save'))}</button>
             </span>`
             : '';
@@ -3919,6 +3926,25 @@ class DashboardHealth {
             : this.t('dashboard.healthCertExpiringHint', 'The TLS certificate for {host} expires in {days} days', { host: cert.host, days });
         const tone = days < 0 ? 'expired' : (days <= 3 ? 'urgent' : 'warn');
         return `<span class="health-cert-badge is-${tone}" title="${this.escape(title)}">${this.escape(label)}</span>`;
+    }
+
+    /**
+     * A rot finding for this row, when watching turned one up.
+     *
+     * The reason is what the row shows — it already names the redirect target
+     * or the new title, so the badge itself stays short and the detail is one
+     * hover away.
+     */
+    renderDriftBadge(issue) {
+        if (!issue?.watchDrift || !issue?.driftNoticed) return '';
+        const label = String(issue.driftNoticed).startsWith('title')
+            ? this.t('dashboard.healthDriftRetitled', 'Retitled')
+            : (issue.driftNoticed === 'content'
+                ? this.t('dashboard.healthDriftChanged', 'Changed')
+                : this.t('dashboard.healthDriftMoved', 'Moved'));
+        const title = issue.driftReason
+            || this.t('dashboard.healthDriftGeneric', 'This page no longer looks like what was saved.');
+        return `<span class="health-drift-badge" title="${this.escape(title)}">${this.escape(label)}</span>`;
     }
 
     /** The stored certificate for an issue's host, or null. */
@@ -4428,6 +4454,7 @@ class DashboardHealth {
                     <span class="health-view-item-meta-primary">
                         <span>${this.escape(domain)}</span>
                         ${this.renderCertBadge(issue)}
+                        ${this.renderDriftBadge(issue)}
                         <span class="health-check-mode-wrap">
                             ${this.renderCheckModeBadge(issue, key)}
                             ${this.renderCheckModeMenu(issue, key)}

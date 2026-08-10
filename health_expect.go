@@ -116,23 +116,45 @@ func normalizeExpectStatus(spec string) string {
 	return strings.Join(kept, ",")
 }
 
-// bodyContainsExpectation reads a bounded prefix of the response and reports
-// whether the expected text is present.
+// readBoundedBody reads at most expectBodyLimit of the response.
 //
-// The comparison is case-insensitive: people type the phrase they remember
-// seeing, not the exact casing the page renders it in.
-func bodyContainsExpectation(resp *http.Response, want string) bool {
-	if resp == nil || resp.Body == nil || want == "" {
-		return false
+// One read serves every body-based check, so a bookmark that both looks for a
+// keyword and watches for drift fetches the page once. A partial read is
+// returned rather than discarded: the prefix is where titles and error banners
+// live, which is exactly what these checks are looking at.
+func readBoundedBody(resp *http.Response) string {
+	if resp == nil || resp.Body == nil {
+		return ""
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, expectBodyLimit))
 	if err != nil && len(body) == 0 {
-		return false
+		return ""
 	}
-	return strings.Contains(
-		strings.ToLower(string(body)),
-		strings.ToLower(strings.TrimSpace(want)),
-	)
+	return string(body)
+}
+
+// extractHTMLTitle pulls the <title> out of a page, whitespace collapsed.
+//
+// Deliberately not the preview pipeline's extractor: that one is a method on
+// Handlers and reaches for more of the document than this needs. A title is the
+// one tag simple enough that a second small reader beats threading a dependency
+// into the check path.
+func extractHTMLTitle(body string) string {
+	lower := strings.ToLower(body)
+	open := strings.Index(lower, "<title")
+	if open < 0 {
+		return ""
+	}
+	rel := strings.Index(lower[open:], ">")
+	if rel < 0 {
+		return ""
+	}
+	start := open + rel + 1
+	end := strings.Index(lower[start:], "</title>")
+	if end < 0 {
+		return ""
+	}
+	return strings.Join(strings.Fields(body[start:start+end]), " ")
 }
 
 // isContentFailure reports whether an error means "the host answered, but not
@@ -164,16 +186,20 @@ type expectation struct {
 	Text       string
 	TextAbsent bool
 	Status     string
+	// WatchDrift asks the check to keep the page body long enough to compare
+	// title and wording against the stored baseline. Shares the single bounded
+	// read with the keyword check, so a bookmark using both pays for one.
+	WatchDrift bool
 }
 
 // wantsBody reports whether this check needs the response body read.
 func (e expectation) wantsBody() bool {
-	return strings.TrimSpace(e.Text) != ""
+	return strings.TrimSpace(e.Text) != "" || e.WatchDrift
 }
 
 // isZero reports whether a bookmark asked for nothing beyond the default rule.
 func (e expectation) isZero() bool {
-	return strings.TrimSpace(e.Text) == "" && strings.TrimSpace(e.Status) == ""
+	return strings.TrimSpace(e.Text) == "" && strings.TrimSpace(e.Status) == "" && !e.WatchDrift
 }
 
 // expectFieldsFor is expectationFor limited to monitored bookmarks, for the
@@ -192,5 +218,6 @@ func expectationFor(b Bookmark) expectation {
 		Text:       strings.TrimSpace(b.ExpectText),
 		TextAbsent: b.ExpectTextAbsent,
 		Status:     normalizeExpectStatus(b.ExpectStatus),
+		WatchDrift: b.WatchDrift,
 	}
 }

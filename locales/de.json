@@ -1080,7 +1080,12 @@
         "healthExpectSave": "Speichern",
         "healthExpectSaved": "Erwartungen gespeichert.",
         "healthExpectCleared": "Erwartungen gelöscht.",
-        "healthExpectFailed": "Konnte nicht speichern, was erwartet wird."
+        "healthExpectFailed": "Konnte nicht speichern, was erwartet wird.",
+        "healthWatchDrift": "Auf Weiterleitungen, Umbenennungen und Umschreibungen achten",
+        "healthDriftRetitled": "Umbenannt",
+        "healthDriftChanged": "Verändert",
+        "healthDriftMoved": "Verschoben",
+        "healthDriftGeneric": "Diese Seite sieht nicht mehr wie das Gespeicherte aus."
     },
     "health": {
         "pageTitle": "health beta",

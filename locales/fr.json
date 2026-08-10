@@ -1080,7 +1080,12 @@
         "healthExpectSave": "Enregistrer",
         "healthExpectSaved": "Attentes enregistrées.",
         "healthExpectCleared": "Attentes effacées.",
-        "healthExpectFailed": "Impossible d’enregistrer ce qui est attendu."
+        "healthExpectFailed": "Impossible d’enregistrer ce qui est attendu.",
+        "healthWatchDrift": "Surveiller les redirections, renommages et réécritures",
+        "healthDriftRetitled": "Renommée",
+        "healthDriftChanged": "Modifiée",
+        "healthDriftMoved": "Déplacée",
+        "healthDriftGeneric": "Cette page ne ressemble plus à ce qui a été enregistré."
     },
     "health": {
         "pageTitle": "health beta",

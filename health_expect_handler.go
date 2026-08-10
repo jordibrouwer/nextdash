@@ -7,7 +7,9 @@ import (
 )
 
 // SetBookmarkExpectations changes one bookmark's definition of healthy — the
-// string its page must contain, and which status codes count as reachable.
+// string its page must contain, which status codes count as reachable, and
+// whether it watches for rot (a redirect elsewhere, a changed title, a body
+// that no longer resembles what was saved).
 //
 // Separate from SetBookmarkCheckMode rather than folded into it: that endpoint
 // answers "how often, if at all, is this checked", and this one "what does a
@@ -31,11 +33,15 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		PageID int    `json:"pageId"`
 		Index  int    `json:"index"`
 		URL    string `json:"url"`
-		// All three are sent together and replace what is stored, so clearing a
-		// field is an empty string rather than a separate call.
+		// All fields are sent together and replace what is stored, so clearing
+		// one is an empty string rather than a separate call.
 		ExpectText       string `json:"expectText"`
 		ExpectTextAbsent bool   `json:"expectTextAbsent"`
 		ExpectStatus     string `json:"expectStatus"`
+		// WatchDrift is the fourth "what counts as a good answer" question this
+		// endpoint already answers, not a new subsystem: where the check lands,
+		// what the page is titled, roughly what it says.
+		WatchDrift bool `json:"watchDrift"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -91,6 +97,20 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		if text == "" && status == "" && isContentFailure(bm.LastError) {
 			bm.LastError = ""
 		}
+		wasWatching := bm.WatchDrift
+		bm.WatchDrift = req.WatchDrift
+		// Turning it off clears the baseline and any finding along with it. On,
+		// it stays off until the next check establishes a fresh baseline — there
+		// is nothing yet to compare, and turning it back on must not resurrect a
+		// stale finding from before it was switched off.
+		if !bm.WatchDrift || (bm.WatchDrift && !wasWatching) {
+			bm.DriftURL = ""
+			bm.DriftTitle = ""
+			bm.DriftFingerprint = ""
+			bm.DriftNoticed = ""
+			bm.DriftReason = ""
+			bm.DriftSince = 0
+		}
 		applied = *bm
 		return current, nil
 	})
@@ -111,5 +131,6 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		"expectText":       applied.ExpectText,
 		"expectTextAbsent": applied.ExpectTextAbsent,
 		"expectStatus":     applied.ExpectStatus,
+		"watchDrift":       applied.WatchDrift,
 	})
 }

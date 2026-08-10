@@ -65,6 +65,27 @@ type Bookmark struct {
 	// for bookmarks generally, but unable to tell an endpoint that *should* return
 	// 401 from one that just started to.
 	ExpectStatus string `json:"expectStatus,omitempty"`
+	// WatchDrift opts a monitored bookmark into rot detection: where the check
+	// lands after redirects, what the page is titled, and roughly what it says.
+	// Off by default and separate from the expectations above, because it reads
+	// the page body — the one part of a check that costs real bandwidth.
+	WatchDrift bool `json:"watchDrift,omitempty"`
+	// The baseline the drift checks compare against, recorded on the first check
+	// after WatchDrift is switched on. Empty means "no baseline yet", which reads
+	// as unknown rather than as drift.
+	DriftURL         string `json:"driftUrl,omitempty"`
+	DriftTitle       string `json:"driftTitle,omitempty"`
+	DriftFingerprint string `json:"driftFingerprint,omitempty"`
+	// DriftNoticed is what the last check found, as one of the kinds in
+	// health_drift.go ("host", "root", "path", "title-parked", "title-changed",
+	// "content"). Empty while the page is still recognisably itself.
+	DriftNoticed string `json:"driftNoticed,omitempty"`
+	DriftSince   int64  `json:"driftSince,omitempty"`
+	// DriftReason is the sentence shown on the row — "Now redirects to
+	// example.org", "Page title now reads …". Stored rather than re-derived,
+	// because the baseline it was computed against is deliberately not updated
+	// once drift is found.
+	DriftReason string `json:"driftReason,omitempty"`
 }
 
 type Finder struct {
@@ -2992,6 +3013,13 @@ type HealthIssue struct {
 	ExpectText       string `json:"expectText,omitempty"`
 	ExpectTextAbsent bool   `json:"expectTextAbsent,omitempty"`
 	ExpectStatus     string `json:"expectStatus,omitempty"`
+	// Rot signals: where the check lands after redirects, what the page is
+	// titled, and roughly what it says, versus the baseline recorded when
+	// watching began. Empty DriftNoticed means the page still looks like itself.
+	WatchDrift   bool   `json:"watchDrift,omitempty"`
+	DriftNoticed string `json:"driftNoticed,omitempty"`
+	DriftReason  string `json:"driftReason,omitempty"`
+	DriftSince   int64  `json:"driftSince,omitempty"`
 }
 
 type BookmarkHealthReport struct {

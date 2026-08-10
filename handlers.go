@@ -695,6 +695,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				ExpectText:       expectFieldsFor(bm).Text,
 				ExpectTextAbsent: bm.Monitor && bm.ExpectTextAbsent,
 				ExpectStatus:     expectFieldsFor(bm).Status,
+				WatchDrift:       bm.Monitor && bm.WatchDrift,
+				DriftNoticed:     driftFieldsFor(bm).noticed,
+				DriftReason:      driftFieldsFor(bm).reason,
+				DriftSince:       driftFieldsFor(bm).since,
 			})
 		}
 	}
