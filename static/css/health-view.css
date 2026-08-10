@@ -450,6 +450,44 @@ button.health-view-tile:hover {
     opacity: 0.7;
 }
 
+/* The overflow trigger sits inside the same tablist strip as the pills, sized
+   to match .health-view-filter-btn so the row reads as one continuous group
+   rather than a button bolted onto the end of it. */
+.health-view-filter-more-wrap {
+    display: inline-flex;
+}
+
+.health-view-filter-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+.health-view-filter-more-btn:hover,
+.health-view-filter-more-btn[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-primary);
+}
+
+.health-view-filter-more-caret {
+    font-size: 0.65rem;
+    opacity: 0.7;
+}
+
+/* Reuses .health-view-menu's look exactly; only the layout differs from a
+   right-click row menu (a vertical list of filters rather than actions), and
+   even that is the same markup .health-view-menu-item already provides. */
+.health-view-filter-overflow-menu {
+    min-width: 10rem;
+}
+
 .health-view-search-input {
     flex: 1 1 12rem;
     min-width: 8rem;

@@ -844,6 +844,7 @@
         "monitorCmdOn": "on — die {count} nie geprüften Lesezeichen in der Health-Ansicht ansehen",
         "monitorCmdOnNone": "on — jedes Lesezeichen wurde mindestens einmal geprüft",
         "healthFilterAll": "Alle",
+        "healthFilterMore": "Mehr",
         "healthSortScore": "Punktzahl",
         "healthSortStatus": "Status",
         "healthSortCheckedAsc": "zuletzt geprüft ↑",

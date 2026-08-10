@@ -991,13 +991,30 @@ test.describe('health view — export, persistence and monitor discoverability',
         expect(retestHits).toBe(0);
     });
 
-    test('secondary filter pills appear when they have rows', async ({ page }) => {
+    test('secondary filters reach through the More overflow menu', async ({ page }) => {
         await openHealthView(page);
-        await expect(page.locator('[data-health-filter="stale"]')).toBeVisible();
-        await expect(page.locator('[data-health-filter="unused"]')).toBeVisible();
-        await page.click('[data-health-filter="stale"]');
+        // Not pills of their own — the row wrapped onto a second line once
+        // Stale, Unused, Missing preview and Healthy were all pills alongside
+        // the core set, so they live behind "More" instead.
+        await expect(page.locator('.health-view-filter-group > [data-health-filter="stale"]')).toHaveCount(0);
+        await expect(page.locator('.health-view-filter-group > [data-health-filter="unused"]')).toHaveCount(0);
+
+        const moreBtn = page.locator('.health-view-filter-more-btn');
+        await expect(moreBtn).toBeVisible();
+        await moreBtn.click();
+        const overflowMenu = page.locator('.health-view-filter-overflow-menu');
+        await expect(overflowMenu).toBeVisible();
+        await expect(overflowMenu.locator('[data-health-filter="stale"]')).toBeVisible();
+        await expect(overflowMenu.locator('[data-health-filter="unused"]')).toBeVisible();
+
+        await overflowMenu.locator('[data-health-filter="stale"]').click();
         expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('stale');
         await expect(page).toHaveURL(/hv_filter=stale/);
+        // The menu closes on selection (a render rebuilds it hidden), and the
+        // now-active filter gets its own pill outside the menu rather than
+        // staying reachable only behind "More".
+        await expect(page.locator('.health-view-filter-overflow-menu')).toBeHidden();
+        await expect(page.locator('.health-view-filter-group > [data-health-filter="stale"].is-active')).toBeVisible();
     });
 
     test('Home and End jump to the first and last visible row', async ({ page }) => {

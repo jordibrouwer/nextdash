@@ -844,6 +844,7 @@
         "monitorCmdOn": "on — examiner les {count} favoris jamais vérifiés dans la vue Health",
         "monitorCmdOnNone": "on — chaque favori a été vérifié au moins une fois",
         "healthFilterAll": "Tous",
+        "healthFilterMore": "Plus",
         "healthSortScore": "score",
         "healthSortStatus": "statut",
         "healthSortCheckedAsc": "dernière vérification ↑",

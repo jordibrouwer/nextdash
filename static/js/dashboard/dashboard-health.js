@@ -3103,7 +3103,14 @@ class DashboardHealth {
     }
 
     /** Secondary filters appear once they have rows, or stay visible while active. */
-    appendSecondaryFilterPills(filters) {
+    /**
+     * The less-common filters, shown in the overflow menu rather than as their
+     * own pills — with up to ten pills otherwise competing for one row, most
+     * wrapped onto a second line no matter the screen width. Same
+     * count-gating as before: a filter with nothing in it, and not the one
+     * currently active, does not appear at all.
+     */
+    secondaryFilterEntries() {
         const secondary = [
             ['stale', this.t('dashboard.healthFilterStale', 'Stale')],
             ['unused', this.t('dashboard.healthFilterUnused', 'Unused')],
@@ -3112,12 +3119,7 @@ class DashboardHealth {
             ['missing-preview', this.t('dashboard.healthFilterMissingPreview', 'Missing preview')],
             ['healthy', this.t('dashboard.healthFilterHealthy', 'Healthy')],
         ];
-        for (const [key, label] of secondary) {
-            const count = this.filterCount(key);
-            if (count > 0 || this.filter === key) {
-                filters.push([key, label]);
-            }
-        }
+        return secondary.filter(([key]) => this.filterCount(key) > 0 || this.filter === key);
     }
 
     renderToolbar() {
@@ -3138,18 +3140,44 @@ class DashboardHealth {
         if (monitoredCount > 0 || hasBookmarks || this.filter === 'monitored') {
             filters.push(['monitored', this.t('dashboard.healthFilterMonitored', 'Monitored')]);
         }
-        this.appendSecondaryFilterPills(filters);
         filters.push(['all', this.t('dashboard.healthFilterAll', 'All')]);
 
-        const toolbar = document.createElement('div');
-        toolbar.className = 'health-view-toolbar';
-        const pills = filters.map(([key, label]) => {
+        // The less-common filters live in an overflow menu rather than as pills
+        // of their own — with the core set above plus all six of these, the row
+        // wrapped onto a second line on anything but a very wide window. A
+        // secondary filter that is currently active stays out of the menu and
+        // gets its own pill instead, so the active state is never hidden behind
+        // a click.
+        const overflow = this.secondaryFilterEntries();
+        const activeOverflow = overflow.find(([key]) => key === this.filter);
+        const menuOverflow = activeOverflow ? overflow.filter(([key]) => key !== this.filter) : overflow;
+        if (activeOverflow) {
+            filters.push(activeOverflow);
+        }
+
+        const renderPill = ([key, label]) => {
             const count = this.filterCount(key);
             const active = this.filter === key;
             return `<button type="button" class="health-view-filter-btn${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-health-filter="${key}">
                 ${this.escape(label)}<span class="health-view-filter-count">${count}</span>
             </button>`;
-        }).join('');
+        };
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'health-view-toolbar';
+        const pills = filters.map(renderPill).join('');
+        const moreMenu = menuOverflow.length ? `
+            <span class="health-view-menu-wrap health-view-filter-more-wrap">
+                <button type="button" class="health-view-filter-more-btn" aria-haspopup="menu" aria-expanded="false" data-menu-toggle="filter-overflow" data-menu-kind="filter-overflow">
+                    ${this.escape(this.t('dashboard.healthFilterMore', 'More'))} <span class="health-view-filter-more-caret" aria-hidden="true">▾</span>
+                </button>
+                <div class="health-view-menu health-view-filter-overflow-menu" role="menu" data-menu-for="filter-overflow" data-menu-owner="filter-overflow" hidden>
+                    ${menuOverflow.map(([key, label]) => {
+                        const count = this.filterCount(key);
+                        return `<button type="button" class="health-view-menu-item" role="menuitem" data-health-filter="${key}">${this.escape(label)}<span class="health-view-filter-count">${count}</span></button>`;
+                    }).join('')}
+                </div>
+            </span>` : '';
 
         const sortOptions = [
             ['score', this.t('dashboard.healthSortScore', 'score')],
@@ -3162,7 +3190,7 @@ class DashboardHealth {
         ).join('');
 
         toolbar.innerHTML = `
-            <div class="health-view-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.healthFilterLabel', 'Filter health issues'))}">${pills}</div>
+            <div class="health-view-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.healthFilterLabel', 'Filter health issues'))}">${pills}${moreMenu}</div>
             <div class="health-view-toolbar-search-row">
                 <input type="search" class="health-view-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}">
                 <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
@@ -3222,7 +3250,6 @@ class DashboardHealth {
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
-        const filterBtns = [...toolbar.querySelectorAll('[data-health-filter]')];
         const applyFilter = (key, via) => {
             this.filter = key || 'broken';
             this.focusIssueKey = null;
@@ -3234,6 +3261,12 @@ class DashboardHealth {
             this.dash.pageNav?.updatePageTitle?.();
             this.dash.pageNav?.updateDocumentTitle?.();
         };
+
+        // Scoped to the tablist's direct pills, not the overflow menu inside
+        // it: those buttons also carry [data-health-filter] but are hidden
+        // until "More" opens them, and the arrow-key cycle below must only
+        // step through what is actually visible and part of the tablist.
+        const filterBtns = [...toolbar.querySelectorAll('.health-view-filter-group > [data-health-filter]')];
         filterBtns.forEach((btn, i) => {
             btn.addEventListener('click', () => applyFilter(btn.getAttribute('data-health-filter'), 'pill'));
             // The group announces itself as a tablist, so the keys that role
@@ -3257,6 +3290,24 @@ class DashboardHealth {
                 if (!target.isConnected) {
                     document.querySelector(`[data-health-filter="${CSS.escape(key)}"]`)?.focus();
                 }
+            });
+        });
+
+        const moreBtn = toolbar.querySelector('.health-view-filter-more-btn');
+        const overflowMenu = toolbar.querySelector('.health-view-filter-overflow-menu');
+        moreBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const opening = overflowMenu.hidden;
+            this.closeAllMenus();
+            if (opening) {
+                overflowMenu.hidden = false;
+                moreBtn.setAttribute('aria-expanded', 'true');
+                overflowMenu.querySelector('.health-view-menu-item')?.focus({ preventScroll: true });
+            }
+        });
+        overflowMenu?.querySelectorAll('[data-health-filter]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                applyFilter(btn.getAttribute('data-health-filter'), 'overflow-menu');
             });
         });
 

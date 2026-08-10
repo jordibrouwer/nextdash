@@ -844,6 +844,7 @@
         "monitorCmdOn": "on — review the {count} never-checked bookmarks in the health view",
         "monitorCmdOnNone": "on — every bookmark has been checked at least once",
         "healthFilterAll": "All",
+        "healthFilterMore": "More",
         "healthSortScore": "score",
         "healthSortStatus": "status",
         "healthSortCheckedAsc": "last checked ↑",

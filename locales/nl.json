@@ -844,6 +844,7 @@
         "monitorCmdOn": "on — bekijk de {count} nooit gecontroleerde bookmarks in de health-weergave",
         "monitorCmdOnNone": "on — elke bookmark is minstens één keer gecontroleerd",
         "healthFilterAll": "Alles",
+        "healthFilterMore": "Meer",
         "healthSortScore": "score",
         "healthSortStatus": "status",
         "healthSortCheckedAsc": "laatst gecontroleerd ↑",
