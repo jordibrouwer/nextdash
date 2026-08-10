@@ -1061,6 +1061,89 @@
     outline-offset: 1px;
 }
 
+/*
+ * Theme picker — a listbox standing in for a <select>.
+ *
+ * A native select cannot do what this control is for: while its popup is open
+ * the browser owns the keyboard, fires no change or input event, and leaves
+ * `value` on the old option, so there is no moment at which to preview the
+ * theme the user is currently on. This is that control rebuilt in the page.
+ */
+.config-theme-picker {
+    position: relative;
+    display: inline-block;
+}
+
+/* Matches the arrow and text alignment of the real selects beside it. */
+.config-theme-picker-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 12rem;
+    text-align: left;
+}
+
+.config-theme-picker-button::after {
+    content: "";
+    margin-left: auto;
+    border: 4px solid transparent;
+    border-top-color: currentColor;
+    transform: translateY(2px);
+    opacity: 0.7;
+}
+
+.config-theme-picker-list {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 4px);
+    left: 0;
+    /* Sized by its own content, not stretched between the button's edges:
+       theme names are long ("Chartreuse Static [light]") and pinning both
+       sides squeezed the list to the button's width. min-width keeps it at
+       least as wide as the button; max-width stops a long custom name from
+       running off the panel. */
+    min-width: 100%;
+    max-width: min(22rem, 60vw);
+    width: max-content;
+    /* Tall enough to scroll through, short enough to leave the dashboard
+       visible behind the panel — the preview is the point of the control. */
+    max-height: 15rem;
+    overflow-y: auto;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 8px;
+    background: var(--background-modal, var(--card-bg, rgba(20, 20, 20, 0.95)));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.config-theme-picker-list[hidden] {
+    display: none;
+}
+
+.config-theme-picker-option {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: calc(var(--font-size-text) * 0.971);
+    cursor: pointer;
+    /* nowrap so the list sizes to the longest name rather than wrapping every
+       row; the max-width above is what stops it growing without bound. */
+    white-space: nowrap;
+}
+
+/* One highlight, driven by script: :hover would fight the keyboard cursor
+   whenever the pointer happens to rest over a different row. */
+.config-theme-picker-option.is-active {
+    background: var(--accent-color, #4a90d9);
+    color: #fff;
+}
+
+.config-theme-picker-option[data-theme-current]::after {
+    content: " ✓";
+    opacity: 0.8;
+}
+
 .config-text {
     padding: 7px 10px;
     border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));

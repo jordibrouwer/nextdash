@@ -156,7 +156,7 @@ test.describe('custom theme editor', () => {
         // The picker is built from a cached custom-themes response, so the
         // cache has to be dropped when a theme is added or renamed.
         await page.locator('[data-appearance-tab="general"]').click();
-        await expect.poll(async () => (await page.locator('[data-appearance-select="theme"] option')
+        await expect.poll(async () => (await page.locator('[data-theme-picker-list] [data-theme-option]')
             .allTextContents()).some((t) => t.includes('Midnight Blue')), { timeout: 10_000 }).toBe(true);
     });
 
