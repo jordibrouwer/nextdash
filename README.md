@@ -6,6 +6,8 @@
 
 **A keyboard-first, self-hosted bookmark dashboard. No accounts, no cloud, no noise.**
 
+My bookmark bar had become a graveyard, so I built a self-hosted dashboard that tells me which links are already dead.
+
 Self-host on any machine or container. Open it in your browser, organise bookmarks across multiple pages, and navigate everything from your keyboard. Based on [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard) by MatiasDesuu.
 
 📖 **[Full user manual (MANUAL.md)](MANUAL.md)** — step-by-step guide for new users: concepts, keyboard workflow, config, import/backup, health, extension, and efficient daily use.
@@ -16,11 +18,49 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 ---
 
-## Screenshots
+### News & Integrations
 
-| ![1](screenshots/nextdash-1.png) | ![2](screenshots/nextdash-2.png) |
-| ![3](screenshots/nextdash-3.png) | ![4](screenshots/nextdash-4.png) |
-| ![5](screenshots/nextdash-5.png) |
+- 🌐 **Official Website:** [nextdash.cc](https://nextdash.cc)
+- 📰 **Developer Blog & Updates:** [jordibrw.cc](https://jordibrw.cc)
+- 🍏 **macOS Dropzone 5 Integration:** Send URLs straight to your dashboard or Inbox from any app or browser using the [Dropzone 5 script for nextDash](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
+
+---
+
+## Screenshots
+<table border="0" width="100%">
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-1.png" alt="Dashboard" width="100%" />
+      <br />
+      <sub><b>Dashboard</b> — Your new home.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-2.png" alt="Inbox view" width="100%" />
+      <br />
+      <sub><b>Inbox</b> — The inbox holding area for links you want to keep without deciding where they go yet.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-3.png" alt="Health view" width="100%" />
+      <br />
+      <sub><b>Health</b> — The health view collects everything needing attention across all pages.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-4.png" alt="Health monitoring" width="100%" />
+      <br />
+      <sub><b>Health Monitor</b> — Monitored bookmarks keep a history.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="screenshots/nextdash-5.png" alt="Statistics" width="100%" />
+      <br />
+      <sub><b>Inbox</b> — See trends of your bookmarks usage.</sub>
+    </td>
+    <td width="50%"></td>
+  </tr>
+</table>
 
 
 ---
@@ -531,14 +571,6 @@ Do **not** merge `dev` into `main` manually on GitHub — the compare banner aft
 
 **Clone for development:** `git clone` then `git checkout dev`.  
 **Clone for Docker / stable use:** stay on the default **`main`** branch.
-
----
-
-## Links
-- **Personal website:** [jordibrw.nl](https://jordibrw.nl)
-- **Nextdash website:** [nextdash.cc](https://nextdash.cc)
-
----
 
 ## License
 
