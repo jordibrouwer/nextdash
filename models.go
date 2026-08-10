@@ -86,6 +86,11 @@ type Bookmark struct {
 	// because the baseline it was computed against is deliberately not updated
 	// once drift is found.
 	DriftReason string `json:"driftReason,omitempty"`
+	// CertHost is the hostname a check's TLS handshake was actually served for,
+	// which after a redirect can differ from this bookmark's own URL. Certificates
+	// are stored per host, not per bookmark (health_cert.go), so the report needs
+	// this to look one up under the right key instead of guessing from URL.
+	CertHost string `json:"certHost,omitempty"`
 }
 
 type Finder struct {
@@ -3027,6 +3032,10 @@ type HealthIssue struct {
 	DriftNoticed string `json:"driftNoticed,omitempty"`
 	DriftReason  string `json:"driftReason,omitempty"`
 	DriftSince   int64  `json:"driftSince,omitempty"`
+	// CertHost is the hostname to look up in the report's certificates map — the
+	// post-redirect host a check actually saw, which can differ from this
+	// bookmark's own URL. Empty until a check has recorded one.
+	CertHost string `json:"certHost,omitempty"`
 }
 
 type BookmarkHealthReport struct {

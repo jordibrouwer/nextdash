@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -260,10 +261,17 @@ func TestMonitorNotificationTitle(t *testing.T) {
 		{monitorNotification{Event: "up", Name: "Grafana"}, "Grafana is back online"},
 		// Nameless bookmarks fall back to the URL so the alert is still actionable.
 		{monitorNotification{Event: "down", URL: "https://a.example"}, "https://a.example is offline"},
+		// A certificate warning is not an outage: the host is answering fine, so
+		// "is offline" would be actively wrong here.
+		{monitorNotification{Event: "cert-expiring", Name: "example.com", Error: "TLS certificate expires in 7 days"}, "example.com: TLS certificate expires in 7 days"},
+		{monitorNotification{Event: "cert-expiring", Name: "example.com"}, "example.com: TLS certificate expiring soon"},
 	}
 	for _, c := range cases {
 		if got := monitorNotificationTitle(c.in); got != c.want {
 			t.Errorf("monitorNotificationTitle(%#v) = %q, want %q", c.in, got, c.want)
+		}
+		if c.in.Event == "cert-expiring" && strings.Contains(monitorNotificationTitle(c.in), "offline") {
+			t.Errorf("cert-expiring title must never say offline: %q", monitorNotificationTitle(c.in))
 		}
 	}
 }

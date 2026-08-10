@@ -94,3 +94,76 @@ func TestUptimeSkipsMaintenanceSamples(t *testing.T) {
 		t.Errorf("unflagged: %.2f over %d, want 0.50 over 4", got.Ratio, got.Samples)
 	}
 }
+
+// The fleet-wide pool must exclude maintenance samples the same way the
+// per-row ratio does — otherwise a nightly window drags down the collection
+// uptime even though every row individually ignores it.
+func TestPooledUptimeSkipsMaintenanceSamples(t *testing.T) {
+	now := time.Now()
+	ago := func(min int) int64 { return now.Add(-time.Duration(min) * time.Minute).UnixMilli() }
+
+	inputs := []fleetMonitorInput{{
+		name: "a", url: "https://a.example",
+		samples: []HealthSample{
+			{T: ago(50), Up: true},
+			{T: ago(40), Up: false, Maint: true},
+			{T: ago(30), Up: false, Maint: true},
+			{T: ago(10), Up: true},
+		},
+	}}
+	got := pooledUptime(inputs, time.Hour, now)
+	if got.Ratio != 1 || got.Samples != 2 {
+		t.Errorf("pooled uptime = %.2f over %d samples, want 1.00 over 2 — maintenance failures must not count",
+			got.Ratio, got.Samples)
+	}
+}
+
+// A maintenance-window failure must not open, extend, or close an incident:
+// otherwise a nightly backup shows up as a recurring outage in the per-row and
+// fleet incident lists even though it is excluded from the uptime percentage.
+func TestDeriveIncidentsSkipsMaintenanceSamples(t *testing.T) {
+	now := time.Now()
+	ago := func(min int) int64 { return now.Add(-time.Duration(min) * time.Minute).UnixMilli() }
+
+	samples := []HealthSample{
+		{T: ago(50), Up: true},
+		{T: ago(40), Up: false, Maint: true},
+		{T: ago(30), Up: false, Maint: true},
+		{T: ago(10), Up: true},
+	}
+	incidents := deriveIncidents(samples, now)
+	if len(incidents) != 0 {
+		t.Errorf("incidents = %d, want 0 — a maintenance window must not appear as an outage", len(incidents))
+	}
+
+	// A real outage overlapping a maintenance flag on other samples must still
+	// be reported: the exclusion is per-sample, not "any Maint sample present".
+	mixed := []HealthSample{
+		{T: ago(50), Up: true},
+		{T: ago(40), Up: false, Maint: true},
+		{T: ago(30), Up: false},
+		{T: ago(10), Up: true},
+	}
+	incidents = deriveIncidents(mixed, now)
+	if len(incidents) != 1 {
+		t.Fatalf("incidents = %d, want 1 real outage alongside the ignored maintenance sample", len(incidents))
+	}
+}
+
+// The heartbeat bar must not paint a bucket down/degraded from an expected
+// maintenance-window failure — it should read as "no data" for that slice
+// instead of a red segment on an otherwise healthy night.
+func TestHeartbeatBucketsSkipMaintenanceSamples(t *testing.T) {
+	now := time.Now()
+	ago := func(min int) int64 { return now.Add(-time.Duration(min) * time.Minute).UnixMilli() }
+
+	samples := []HealthSample{
+		{T: ago(30), Up: false, Maint: true},
+	}
+	buckets := heartbeatBuckets(samples, time.Hour, 2, now)
+	for i, b := range buckets {
+		if b.State != heartbeatUnknown {
+			t.Errorf("bucket %d state = %q, want %q — a maintenance sample must not mark it down", i, b.State, heartbeatUnknown)
+		}
+	}
+}

@@ -128,6 +128,25 @@ func canonicalBookmarkURLKey(raw string) string {
 	return scheme + "://" + host + path
 }
 
+// findBookmarkByURL returns the first bookmark matching url's canonical key, so
+// a one-off check (manual re-check, promote-from-inbox) can honor that
+// bookmark's own expectations instead of always falling back to the default
+// reachability rule. Zero value when the URL is not bookmarked yet.
+func (h *Handlers) findBookmarkByURL(url string) (Bookmark, bool) {
+	key := canonicalBookmarkURLKey(url)
+	if key == "" {
+		return Bookmark{}, false
+	}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			if canonicalBookmarkURLKey(bm.URL) == key {
+				return bm, true
+			}
+		}
+	}
+	return Bookmark{}, false
+}
+
 func findDuplicateShortcutInList(bookmarks []Bookmark) string {
 	seen := make(map[string]struct{})
 	for _, bookmark := range bookmarks {
@@ -700,6 +719,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				DriftNoticed:     driftFieldsFor(bm).noticed,
 				DriftReason:      driftFieldsFor(bm).reason,
 				DriftSince:       driftFieldsFor(bm).since,
+				CertHost:         bm.CertHost,
 			})
 		}
 	}
@@ -2426,6 +2446,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	var res healthRetestResult
 	healthUpdates := make(map[string]HealthScanCache)
 	historyUpdates := make(map[string][]HealthSample)
+	driftResults := make(map[string]PingResult)
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -2450,7 +2471,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				continue
 			}
 
-			result := h.pingURLDetailed(ctx, bm.URL)
+			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm))
 			res.Tested++
 			if result.Status == "online" {
 				res.OnlineCount++
@@ -2472,6 +2493,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 					lastError:   errMsg,
 					lastChecked: lastChecked,
 				}
+				driftResults[key] = result
 				healthUpdates[key] = HealthScanCache{
 					URL:         key,
 					Status:      result.Status,
@@ -2520,6 +2542,11 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				}
 				current[i].LastChecked = update.lastChecked
 				current[i].LastError = update.lastError
+				result := driftResults[key]
+				if result.CertHost != "" {
+					current[i].CertHost = result.CertHost
+				}
+				applyDriftResult(&current[i], result, update.lastChecked)
 			}
 			return current, nil
 		})
@@ -2884,7 +2911,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	// outside MutateBookmarkAt because that holds the store write lock.
 	verified := PingResult{}
 	if updatedURL != "" && updatedURL != strings.TrimSpace(sourceBookmark.URL) {
-		verified = h.pingURLDetailed(r.Context(), updatedURL)
+		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark))
 	}
 
 	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
@@ -2915,6 +2942,18 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 				}
 				bookmark.LastError = detail
 			}
+			// The URL just changed under this bookmark: whatever drift baseline was
+			// recorded belonged to the old page, so it must not be judged against it.
+			bookmark.DriftURL = ""
+			bookmark.DriftTitle = ""
+			bookmark.DriftFingerprint = ""
+			bookmark.DriftNoticed = ""
+			bookmark.DriftSince = 0
+			bookmark.DriftReason = ""
+			if verified.CertHost != "" {
+				bookmark.CertHost = verified.CertHost
+			}
+			applyDriftResult(bookmark, verified, bookmark.LastChecked)
 		}
 
 		result = *bookmark

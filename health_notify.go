@@ -299,8 +299,16 @@ func monitorNotificationTitle(n monitorNotification) string {
 	if name == "" {
 		name = n.URL
 	}
-	if n.Event == "up" {
+	switch n.Event {
+	case "up":
 		return name + " is back online"
+	case "cert-expiring":
+		// Not an outage: saying "offline" here would be actively wrong, since the
+		// host is answering fine — only its certificate is running out.
+		if n.Error != "" {
+			return name + ": " + n.Error
+		}
+		return name + ": TLS certificate expiring soon"
 	}
 	if n.Error != "" {
 		return name + " is offline (" + n.Error + ")"

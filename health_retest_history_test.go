@@ -47,6 +47,48 @@ func TestRetestAllRecordsMonitorSamples(t *testing.T) {
 	}
 }
 
+// "Retest all" must judge a bookmark by its own expectText, not the bare
+// reachability rule — otherwise a monitored bookmark with a keyword check can
+// look healthy again on the next retest even though the page still fails its
+// own content check, until the monitor scheduler's own tick catches up.
+func TestRetestAllHonoursExpectText(t *testing.T) {
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("<html><body>Something else entirely</body></html>"))
+	}))
+	defer target.Close()
+
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"Watched","url":"` + target.URL + `","monitor":true,"expectText":"Expected Phrase"}
+	]}`
+	h, _ := healthTestStore(t, pageJSON)
+
+	rec := httptest.NewRecorder()
+	h.RetestAll(rec, httptest.NewRequest(http.MethodPost, "/api/health/retest-all", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("retest = %d, body = %s", rec.Code, rec.Body.String())
+	}
+
+	report := healthReportVia(t, h)
+	var issue *HealthIssue
+	for i := range report.Issues {
+		if report.Issues[i].Name == "Watched" {
+			issue = &report.Issues[i]
+		}
+	}
+	if issue == nil {
+		t.Fatal("bookmark missing from report")
+	}
+	if !isContentFailure(issue.LastError) {
+		t.Errorf("lastError = %q, want a content-mismatch reason — expectText was ignored by the retest path", issue.LastError)
+	}
+
+	samples := h.healthHistoryFor(canonicalBookmarkURLKey(target.URL))
+	if len(samples) != 1 || samples[0].Up {
+		t.Errorf("samples = %+v, want one sample recorded as down for the failed content check", samples)
+	}
+}
+
 func TestRetestAllRecordsOfflineMonitorSamples(t *testing.T) {
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -3950,7 +3950,14 @@ class DashboardHealth {
     /** The stored certificate for an issue's host, or null. */
     certFor(issue) {
         const certs = this.report?.certificates;
-        if (!certs || !issue?.url) return null;
+        if (!certs || !issue) return null;
+        // certHost is the host a check actually saw over TLS, which after a
+        // redirect can differ from the bookmark's own URL — certificates are
+        // stored per host, so this is the key that actually matches. Falls back
+        // to the bookmark's own hostname only when no check has recorded one yet.
+        const certHost = String(issue.certHost || '').toLowerCase();
+        if (certHost) return certs[certHost] || null;
+        if (!issue.url) return null;
         let host = '';
         try {
             host = new URL(String(issue.url)).hostname.toLowerCase();

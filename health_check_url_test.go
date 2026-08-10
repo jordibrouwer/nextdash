@@ -88,6 +88,49 @@ func TestCheckBookmarkHealthURLPersistsAndClearsError(t *testing.T) {
 	t.Fatalf("seeded bookmark not found after check")
 }
 
+// CheckBookmarkHealthURL (the promote-from-inbox check) must judge a bookmark
+// by its own expectText, not the bare reachability rule — otherwise a bookmark
+// with a keyword check placed through this path ignores the very thing it
+// was configured to watch for.
+func TestCheckBookmarkHealthURLHonoursExpectText(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("<html><body>Something else entirely</body></html>"))
+	}))
+	defer server.Close()
+
+	h, dir := checkURLTestHandlers(t, `{"allowLocalBookmarks":true}`)
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[{"name":"Watched","url":"` + server.URL + `","monitor":true,"expectText":"Expected Phrase"}]}`
+	if err := os.WriteFile(filepath.Join(dir, "bookmarks-1.json"), []byte(pageJSON), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+
+	rr := postCheckURL(t, h, server.URL)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d (%s)", rr.Code, rr.Body.String())
+	}
+
+	var resp struct {
+		Status string `json:"status"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if resp.Status != "offline" {
+		t.Fatalf("expected offline (content mismatch), got %q — expectText was ignored", resp.Status)
+	}
+
+	key := canonicalBookmarkURLKey(server.URL)
+	cache := readHealthCacheFile()
+	entry, ok := cache.Cache[key]
+	if !ok {
+		t.Fatalf("expected a health cache entry for %q", key)
+	}
+	if !isContentFailure(entry.Error) {
+		t.Fatalf("cache error = %q, want a content-mismatch reason", entry.Error)
+	}
+}
+
 func TestCheckBookmarkHealthURLRejectsEmpty(t *testing.T) {
 	h, _ := checkURLTestHandlers(t, `{}`)
 	rr := postCheckURL(t, h, "")
