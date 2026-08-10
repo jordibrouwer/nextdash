@@ -15888,6 +15888,8 @@ class DashboardConfig {
     renderHelpConfig() {
         return this.helpPanel('config.helpConfigTitle', 'Finding your way around config',
             'config.helpConfigBody', '')
+            + this.helpPanel('config.helpBehaviorTitle', 'Behavior',
+                'config.helpBehaviorBody', '')
             + this.helpPanel('config.helpAppearanceTitle', 'Appearance & themes',
                 'config.helpAppearanceBody', '')
             + this.helpPanel('config.helpThemesTitle', 'Themes',
