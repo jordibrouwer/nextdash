@@ -777,6 +777,90 @@ button.health-view-tile:hover {
     margin-top: 0.3rem;
 }
 
+.health-check-expect {
+    display: block;
+    padding: 0.5rem 0.6rem 0.55rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 0.3rem;
+}
+
+.health-check-expect-label {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.health-check-expect-text,
+.health-check-expect-status {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.3rem 0.4rem;
+    margin-bottom: 0.35rem;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.72rem;
+}
+
+.health-check-expect-invert {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.health-check-expect-save {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+
+.health-check-expect-save:hover,
+.health-check-expect-save:focus-visible {
+    border-color: var(--accent-color, #4a90d9);
+}
+
+/* Certificate expiry on a row. Per host, so several rows on one domain carry
+   the same badge — that is the honest reading, since one renewal fixes them
+   all at once. */
+.health-cert-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.05rem 0.35rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    white-space: nowrap;
+    opacity: 0.9;
+}
+
+.health-cert-badge.is-warn {
+    color: var(--accent-warning, #b45309);
+}
+
+.health-cert-badge.is-urgent,
+.health-cert-badge.is-expired {
+    color: var(--accent-error, #be123c);
+}
+
+/* A tile reporting something the list cannot be filtered by. Matches the others
+   so the row reads as one strip, without the affordances of a button. */
+.health-view-tile--static {
+    cursor: default;
+}
+
 .health-check-interval-label {
     display: block;
     font-size: 0.68rem;

@@ -2987,6 +2987,11 @@ type HealthIssue struct {
 	// for everyone who never turns monitoring on.
 	Monitor      bool          `json:"monitor,omitempty"`
 	MonitorStats *MonitorStats `json:"monitorStats,omitempty"`
+	// What this bookmark expects of a good response, so the row can show and
+	// edit it. Omitted when unset, which is virtually every bookmark.
+	ExpectText       string `json:"expectText,omitempty"`
+	ExpectTextAbsent bool   `json:"expectTextAbsent,omitempty"`
+	ExpectStatus     string `json:"expectStatus,omitempty"`
 }
 
 type BookmarkHealthReport struct {

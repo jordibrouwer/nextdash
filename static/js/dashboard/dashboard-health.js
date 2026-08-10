@@ -7,13 +7,17 @@ class DashboardHealth {
     /** Worst first. Mirrors statusRank in health.js so both surfaces agree. */
     static STATUS_RANK = {
         broken: 0,
-        duplicate: 1,
-        'shortcut-conflict': 2,
-        unchecked: 3,
-        stale: 4,
-        unused: 5,
-        'missing-preview': 6,
-        healthy: 7,
+        // The host answered but not the way this bookmark expects — less urgent
+        // than unreachable, still a live failure. Mirrors issueRank in
+        // handlers.go so the list and the report agree on the order.
+        content: 1,
+        duplicate: 2,
+        'shortcut-conflict': 3,
+        unchecked: 4,
+        stale: 5,
+        unused: 6,
+        'missing-preview': 7,
+        healthy: 8,
     };
 
     constructor(dashboard) {
@@ -1694,6 +1698,67 @@ class DashboardHealth {
         }
     }
 
+    /**
+     * Store what this bookmark expects of a good response.
+     *
+     * Sent as all three fields at once, so clearing one is an empty box rather
+     * than a separate action. The report is re-read afterwards because the
+     * server clears a content failure when the last expectation goes — the row's
+     * status changes, not just its settings.
+     */
+    async saveExpectations(issue, wrap) {
+        if (!issue || !wrap) return undefined;
+        const key = this.issueKey(issue);
+        if (this._busyKeys.has(key)) return undefined;
+
+        const url = String(issue?.url || '').trim();
+        const pageId = Number(issue?.pageId);
+        if (!url || !Number.isFinite(pageId)) return undefined;
+
+        const text = String(wrap.querySelector('[data-expect-text]')?.value || '').trim();
+        const absent = Boolean(wrap.querySelector('[data-expect-absent]')?.checked);
+        const status = String(wrap.querySelector('[data-expect-status]')?.value || '').trim();
+
+        this.closeAllMenus();
+        window.nextdashTrack?.('health:expectations');
+        this._busyKeys.add(key);
+        this.syncRowBusy(key, true);
+
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await fetcher('/api/health/expectations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pageId, index: issue.index, url,
+                    expectText: text, expectTextAbsent: absent, expectStatus: status,
+                }),
+            });
+            if (res.status === 409) {
+                this.dash.showNotification?.(this.t('dashboard.healthCheckModeStale',
+                    'This bookmark changed — the list has been refreshed. Try again.'), 'warning');
+                await this.loadAndRender({ refresh: true });
+                return 'stale';
+            }
+            if (!res.ok) throw new Error(`expectations HTTP ${res.status}`);
+            const saved = await res.json();
+            // Quote what was stored rather than what was typed: the server drops
+            // status codes it cannot parse, so "999" comes back as an empty field
+            // and the message should not claim otherwise.
+            this.dash.showNotification?.(saved.expectText || saved.expectStatus
+                ? this.t('dashboard.healthExpectSaved', 'Expectations saved.')
+                : this.t('dashboard.healthExpectCleared', 'Expectations cleared.'), 'success');
+            await this.loadAndRender({ refresh: true });
+            return 'changed';
+        } catch {
+            this.dash.showNotification?.(this.t('dashboard.healthExpectFailed', 'Could not save what to expect.'), 'error');
+            return 'failed';
+        } finally {
+            this._busyKeys.delete(key);
+            this.syncRowBusy(key, false);
+        }
+    }
+
     /** AppModal.confirm when it exists, window.confirm as the fallback. */
     async confirm(title, message, { danger = false, confirmText = null } = {}) {
         if (typeof window.AppModal?.confirm === 'function') {
@@ -2476,6 +2541,13 @@ class DashboardHealth {
                 title: this.t('dashboard.healthTileBrokenHint', 'Did not respond when last checked'),
             },
             {
+                key: 'content',
+                label: this.t('dashboard.healthTileContent', 'Content'),
+                value: Number(summary.contentCount) || 0,
+                tone: 'bad',
+                title: this.t('dashboard.healthTileContentHint', 'The site answered, but not the way this bookmark expects'),
+            },
+            {
                 key: 'unchecked',
                 label: this.t('dashboard.healthTileUnchecked', 'Unchecked'),
                 value: Number(summary.uncheckedCount) || 0,
@@ -2498,6 +2570,21 @@ class DashboardHealth {
             },
         ];
 
+        // Certificates count hosts, not bookmarks, so this one cannot become a
+        // filter the way the others do: there is no per-issue flag to filter on,
+        // and clicking it would appear to do nothing. Shown only when there is
+        // something to say, since a zero here is the normal state.
+        const certCount = this.certWarningCount();
+        if (certCount > 0) {
+            tiles.push({
+                key: '',
+                label: this.t('dashboard.healthTileCerts', 'Certificates'),
+                value: certCount,
+                tone: 'warn',
+                title: this.t('dashboard.healthTileCertsHint', 'Hosts whose TLS certificate expires soon — the affected rows are badged'),
+            });
+        }
+
         const wrap = document.createElement('div');
         wrap.className = 'health-view-tiles';
         wrap.innerHTML = tiles.map((tile) => {
@@ -2510,10 +2597,16 @@ class DashboardHealth {
             const named = tile.key === 'monitored' ? ' health-view-tile--monitored' : '';
             const cls = `health-view-tile health-view-tile--${tile.tone}${zero}${named}${active}`;
             const title = tile.title ? ` title="${this.escape(tile.title)}"` : '';
-            return `<button type="button" class="${cls}" data-health-tile="${tile.key}" tabindex="-1"${title} aria-label="${this.escape(tile.label)}: ${this.escape(tile.value)}">
-                <span class="health-view-tile-label">${this.escape(tile.label)}</span>
-                <span class="health-view-tile-value">${this.escape(tile.value)}</span>
-            </button>`;
+            const body = `<span class="health-view-tile-label">${this.escape(tile.label)}</span>`
+                + `<span class="health-view-tile-value">${this.escape(tile.value)}</span>`;
+            // Keyless tiles report something the list cannot be filtered by, so
+            // they render as plain text rather than a button that would look
+            // clickable and then do nothing.
+            if (!tile.key) {
+                return `<span class="${cls} health-view-tile--static"${title} role="listitem"
+                    aria-label="${this.escape(tile.label)}: ${this.escape(tile.value)}">${body}</span>`;
+            }
+            return `<button type="button" class="${cls}" data-health-tile="${tile.key}" tabindex="-1"${title} aria-label="${this.escape(tile.label)}: ${this.escape(tile.value)}">${body}</button>`;
         }).join('');
 
         wrap.querySelectorAll('[data-health-tile]').forEach((btn) => {
@@ -2841,6 +2934,7 @@ class DashboardHealth {
         const checkedCount = this.checkedCount();
         const filters = [
             ['broken', this.t('dashboard.healthFilterBroken', 'Broken')],
+            ['content', this.t('dashboard.healthFilterContent', 'Content')],
             ['duplicate', this.t('dashboard.healthFilterDuplicates', 'Duplicates')],
             ['unchecked', this.t('dashboard.healthFilterUnchecked', 'Never checked')],
         ];
@@ -3458,7 +3552,7 @@ class DashboardHealth {
 
     static STATE_KEY = 'nextdash:health-view-state';
     static PERSISTED_FILTERS = new Set([
-        'all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked',
+        'all', 'broken', 'content', 'duplicate', 'shortcut-conflict', 'unchecked',
         'stale', 'unused', 'missing-preview', 'healthy', 'monitored',
     ]);
     static PERSISTED_SORTS = new Set(['score', 'status', 'last-checked', 'last-checked-desc', 'name']);
@@ -3770,12 +3864,87 @@ class DashboardHealth {
             </span>`
             : '';
 
+        // What counts as healthy for this one bookmark. Shown alongside the
+        // interval and for the same reason: this is the screen where you see a
+        // row reporting "up" for a page that is plainly broken, and the fix
+        // belongs where the symptom is. Only for a monitored row — the checks
+        // that read these fields are the monitor's.
+        const expectRow = active === window.CheckMode.MONITOR
+            ? `<span class="health-check-expect" role="group"
+                    aria-label="${this.escape(this.t('dashboard.healthExpectLabel', 'Expected response'))}">
+                <span class="health-check-expect-label">${this.escape(this.t('dashboard.healthExpectLabel', 'Expected response'))}</span>
+                <input type="text" class="health-check-expect-text" data-expect-text
+                    maxlength="200"
+                    placeholder="${this.escape(this.t('dashboard.healthExpectTextPlaceholder', 'Page must contain…'))}"
+                    aria-label="${this.escape(this.t('dashboard.healthExpectTextLabel', 'Text the page must contain'))}"
+                    value="${this.escape(issue.expectText || '')}">
+                <label class="health-check-expect-invert">
+                    <input type="checkbox" data-expect-absent ${issue.expectTextAbsent ? 'checked' : ''}>
+                    <span>${this.escape(this.t('dashboard.healthExpectAbsent', 'Fail if present instead'))}</span>
+                </label>
+                <input type="text" class="health-check-expect-status" data-expect-status
+                    maxlength="40"
+                    placeholder="${this.escape(this.t('dashboard.healthExpectStatusPlaceholder', 'Status codes, e.g. 200,301'))}"
+                    aria-label="${this.escape(this.t('dashboard.healthExpectStatusLabel', 'Status codes that count as healthy'))}"
+                    value="${this.escape(issue.expectStatus || '')}">
+                <button type="button" class="health-check-expect-save" data-expect-save>${this.escape(this.t('dashboard.healthExpectSave', 'Save'))}</button>
+            </span>`
+            : '';
+
         // A span, not a div: this popover lives inside the row's <p> meta line, and
         // a block-level child there would make the parser close the paragraph
         // early, stranding the menu outside the row it belongs to.
         return `<span class="health-view-menu health-check-menu" role="menu" hidden
             data-menu-for="${this.escape(key)}" data-menu-owner="check"
-            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}${intervalRow}</span>`;
+            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}${intervalRow}${expectRow}</span>`;
+    }
+
+    /**
+     * The certificate for this row's host, when it is close enough to matter.
+     *
+     * Looked up by hostname rather than carried on the issue: a certificate
+     * belongs to a host, and ten bookmarks on one domain share one. The report
+     * only sends the ones already near expiry, so anything found here is worth
+     * showing.
+     */
+    renderCertBadge(issue) {
+        const cert = this.certFor(issue);
+        if (!cert) return '';
+        const days = this.certDaysLeft(cert);
+        const label = days < 0
+            ? this.t('dashboard.healthCertExpired', 'Certificate expired')
+            : this.t('dashboard.healthCertExpiring', 'Certificate: {days}d', { days });
+        const title = days < 0
+            ? this.t('dashboard.healthCertExpiredHint', 'The TLS certificate for {host} has expired', { host: cert.host })
+            : this.t('dashboard.healthCertExpiringHint', 'The TLS certificate for {host} expires in {days} days', { host: cert.host, days });
+        const tone = days < 0 ? 'expired' : (days <= 3 ? 'urgent' : 'warn');
+        return `<span class="health-cert-badge is-${tone}" title="${this.escape(title)}">${this.escape(label)}</span>`;
+    }
+
+    /** The stored certificate for an issue's host, or null. */
+    certFor(issue) {
+        const certs = this.report?.certificates;
+        if (!certs || !issue?.url) return null;
+        let host = '';
+        try {
+            host = new URL(String(issue.url)).hostname.toLowerCase();
+        } catch {
+            return null;
+        }
+        return certs[host] || null;
+    }
+
+    /** Whole days until a certificate expires; negative once past. */
+    certDaysLeft(cert) {
+        const expires = Number(cert?.expiresAt) || 0;
+        if (!expires) return 0;
+        return Math.floor((expires - Date.now()) / 86400000);
+    }
+
+    /** Hosts whose certificate is near expiry, for the tile. */
+    certWarningCount() {
+        const certs = this.report?.certificates;
+        return certs ? Object.keys(certs).length : 0;
     }
 
     /** The monitor strip under the row meta: heartbeat, uptime, sparkline. */
@@ -4258,6 +4427,7 @@ class DashboardHealth {
                 <p class="health-view-item-meta">
                     <span class="health-view-item-meta-primary">
                         <span>${this.escape(domain)}</span>
+                        ${this.renderCertBadge(issue)}
                         <span class="health-check-mode-wrap">
                             ${this.renderCheckModeBadge(issue, key)}
                             ${this.renderCheckModeMenu(issue, key)}
@@ -4349,6 +4519,25 @@ class DashboardHealth {
                 void this.setMonitorInterval(issue, Number(item.getAttribute('data-check-interval')));
             });
         });
+
+        // The expectation fields are inputs inside a menu that closes on any
+        // click within it, so every event here has to stop travelling — without
+        // this, focusing the box shuts the menu the box lives in.
+        const expectWrap = row.querySelector('.health-check-expect');
+        if (expectWrap) {
+            expectWrap.addEventListener('click', (e) => e.stopPropagation());
+            expectWrap.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    void this.saveExpectations(issue, expectWrap);
+                }
+            });
+            expectWrap.querySelector('[data-expect-save]')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                void this.saveExpectations(issue, expectWrap);
+            });
+        }
 
         const menuActions = {
             dashboard: () => this.openIssueInDashboard(issue),

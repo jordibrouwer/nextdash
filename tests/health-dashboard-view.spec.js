@@ -245,8 +245,10 @@ test.describe('health dashboard view', () => {
         await openHealthView(page);
 
         const tiles = page.locator('.health-view-tile');
-        // Total, Healthy, Monitored, Broken, Unchecked, Stale, Unused.
-        await expect(tiles).toHaveCount(7);
+        // Total, Healthy, Monitored, Broken, Content, Unchecked, Stale, Unused.
+        // The certificates tile is not here: it only appears when a certificate
+        // is actually near expiry.
+        await expect(tiles).toHaveCount(8);
         await expect(page.locator('[data-health-tile="broken"]')).toContainText('1');
         // Broken is the default filter, so its tile starts marked.
         await expect(page.locator('[data-health-tile="broken"]')).toHaveClass(/is-active/);
@@ -1132,8 +1134,10 @@ test.describe('health view — monitored tile', () => {
         // Monitored answers the same question as Healthy — is anything wrong
         // now — where Broken/Unchecked are backlogs to work through.
         const labels = await page.locator('.health-view-tile-label').allTextContents();
+        // Content sits beside Broken: both are live failures, and it answers the
+        // narrower "the host replied, but wrongly".
         expect(labels.map((t) => t.trim())).toEqual(
-            ['Total', 'Healthy', 'Monitored', 'Broken', 'Unchecked', 'Stale', 'Unused']
+            ['Total', 'Healthy', 'Monitored', 'Broken', 'Content', 'Unchecked', 'Stale', 'Unused']
         );
     });
 

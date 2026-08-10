@@ -36,6 +36,11 @@ it always did.
 // silently passing.
 const expectBodyLimit = 512 << 10 // 512KB
 
+// expectTextMaxLen bounds the phrase a bookmark can look for. Long enough for a
+// sentence from the page, short enough that the field cannot be used to store
+// something else in the bookmarks file.
+const expectTextMaxLen = 200
+
 // statusMatchesExpectation reports whether code satisfies spec.
 //
 // An empty or unparseable spec returns false, so callers can fall back to the
@@ -169,6 +174,16 @@ func (e expectation) wantsBody() bool {
 // isZero reports whether a bookmark asked for nothing beyond the default rule.
 func (e expectation) isZero() bool {
 	return strings.TrimSpace(e.Text) == "" && strings.TrimSpace(e.Status) == ""
+}
+
+// expectFieldsFor is expectationFor limited to monitored bookmarks, for the
+// report: an unmonitored bookmark's stored expectation is never acted on, so
+// sending it would show a setting that does nothing.
+func expectFieldsFor(b Bookmark) expectation {
+	if !b.Monitor {
+		return expectation{}
+	}
+	return expectationFor(b)
 }
 
 // expectationFor reads a bookmark's expectations, normalised.

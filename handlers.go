@@ -689,6 +689,12 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				DuplicateCount: duplicateCount,
 				Monitor:        bm.Monitor,
 				MonitorStats:   monitorStats,
+				// Only for monitored rows: the checks that read these belong to
+				// the monitor, and sending them for every bookmark would grow the
+				// report for fields nothing would render.
+				ExpectText:       expectFieldsFor(bm).Text,
+				ExpectTextAbsent: bm.Monitor && bm.ExpectTextAbsent,
+				ExpectStatus:     expectFieldsFor(bm).Status,
 			})
 		}
 	}
