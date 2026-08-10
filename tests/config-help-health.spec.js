@@ -22,12 +22,14 @@ async function openHealthHelp(page) {
 }
 
 test.describe('config help — health', () => {
-    test('splits into five panels, each with real prose', async ({ page }) => {
+    test('splits into eleven panels, each with real prose', async ({ page }) => {
         await openHealthHelp(page);
 
         const body = page.locator('#config-help-body');
-        // Availability, the list, the numbers, the inbox, and working through it.
-        await expect(body.locator('.config-panel')).toHaveCount(5);
+        // Availability, the list, the numbers, expectations, certificates,
+        // drift, maintenance windows, notifications, the walkthrough, the
+        // inbox, and working through it.
+        await expect(body.locator('.config-panel')).toHaveCount(11);
 
         // A missing key renders as the key itself; nothing here may look like one.
         await expect(body).not.toContainText('config.help');
@@ -62,6 +64,66 @@ test.describe('config help — health', () => {
         await expect(body).toContainText(/Unused/i);
     });
 
+    test('covers drift detection: all three kinds, and how a baseline is set', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Watch for redirects, retitling and rewrites/i);
+        await expect(body).toContainText(/baseline/i);
+        await expect(body).toContainText(/Redirect drift/i);
+        await expect(body).toContainText(/Title drift/i);
+        await expect(body).toContainText(/Content drift/i);
+        // The row badges the prose says to expect.
+        await expect(body).toContainText(/Moved/);
+        await expect(body).toContainText(/Retitled/);
+        await expect(body).toContainText(/Changed/);
+    });
+
+    test('covers maintenance windows: what they exclude and what they do not', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Maintenance windows/i);
+        await expect(body).toContainText(/past midnight/i);
+        // The nuance that matters: checks still run, only the alerting is held back.
+        await expect(body).toContainText(/heartbeat still records/i);
+    });
+
+    test('covers every notification preset and the test-send button', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        for (const service of ['Slack', 'Discord', 'Telegram', 'Pushover', 'ntfy', 'Raw JSON']) {
+            await expect(body, `mentions ${service}`).toContainText(service);
+        }
+        await expect(body).toContainText(/Chat ID/i);
+        await expect(body).toContainText(/application token/i);
+        await expect(body).toContainText(/user key/i);
+        await expect(body).toContainText(/Send test alert/i);
+    });
+
+    test('the walkthrough ties every setting to one worked example', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        const walkthrough = body.locator('.config-panel', {
+            has: page.locator('.config-panel-title', { hasText: 'Setting up one monitored bookmark' }),
+        });
+        await expect(walkthrough).toBeVisible();
+        const text = (await walkthrough.textContent()) || '';
+        // Every setting introduced earlier in the tab shows up again here, tied
+        // to a concrete reason rather than repeated in the abstract.
+        expect(text).toMatch(/Monitor/);
+        expect(text).toMatch(/interval/i);
+        expect(text).toMatch(/Status codes/i);
+        expect(text).toMatch(/must contain/i);
+        expect(text).toMatch(/drift/i);
+        expect(text).toMatch(/[Mm]aintenance/);
+        expect(text).toMatch(/[Aa]lert after/);
+        expect(text).toMatch(/[Tt]est alert/);
+        expect(text.trim().length).toBeGreaterThan(1500);
+    });
+
     test('every language renders translated prose rather than keys', async ({ page }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -85,7 +147,7 @@ test.describe('config help — health', () => {
             await page.waitForSelector('#config-help-body .config-panel', { timeout: 15_000 });
 
             const body = page.locator('#config-help-body');
-            await expect(body.locator('.config-panel'), `${lang} panel count`).toHaveCount(5);
+            await expect(body.locator('.config-panel'), `${lang} panel count`).toHaveCount(11);
             await expect(body, `${lang} has no untranslated keys`).not.toContainText('config.help');
 
             const titles = (await body.locator('.config-panel-title').allTextContents())

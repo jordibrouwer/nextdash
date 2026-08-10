@@ -16246,8 +16246,14 @@ class DashboardConfig {
                 'config.helpHealthExpectBody', '')
             + this.helpPanel('config.helpHealthCertTitle', 'Certificate expiry',
                 'config.helpHealthCertBody', '')
+            + this.helpPanel('config.helpHealthDriftTitle', 'Redirect, title & content drift',
+                'config.helpHealthDriftBody', '')
+            + this.helpPanel('config.helpHealthMaintenanceTitle', 'Maintenance windows',
+                'config.helpHealthMaintenanceBody', '')
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '')
+            + this.helpPanel('config.helpHealthWalkthroughTitle', 'Setting up one monitored bookmark, start to finish',
+                'config.helpHealthWalkthroughBody', '')
             + this.helpPanel('config.helpInboxTitle', 'Inbox',
                 'config.helpInboxBody', '')
             + this.helpPanel('config.helpInboxWorkTitle', 'Working through the inbox',
