@@ -76,3 +76,50 @@ func TestApplyCheckModeIgnoresIntervalForModesWithoutCadence(t *testing.T) {
 		})
 	}
 }
+
+// Turning Monitor off must clear the drift baseline the same way
+// SetBookmarkExpectations does when WatchDrift itself is switched off:
+// otherwise a manual re-check on a bookmark that looks "off" in the UI (drift
+// is hidden from the report while Monitor is false) can still silently evolve
+// the stored baseline, since expectationFor used to be reached regardless of
+// Monitor. Switching Monitor back on later would then compare against that
+// stale, invisibly-mutated baseline instead of establishing a fresh one.
+func TestApplyCheckModeClearsDriftWhenMonitorTurnsOff(t *testing.T) {
+	for _, mode := range []string{checkModePeriodic, checkModeOff} {
+		t.Run(mode, func(t *testing.T) {
+			bm := Bookmark{
+				Monitor: true, WatchDrift: true,
+				DriftURL: "https://example.com/", DriftTitle: "Example",
+				DriftFingerprint: "abc123", DriftNoticed: "redirect",
+				DriftReason: "Now redirects elsewhere", DriftSince: 1700000000000,
+			}
+			applyCheckMode(&bm, mode, 0)
+			if bm.DriftURL != "" || bm.DriftTitle != "" || bm.DriftFingerprint != "" ||
+				bm.DriftNoticed != "" || bm.DriftReason != "" || bm.DriftSince != 0 {
+				t.Errorf("drift state survived switching to %s: %+v", mode, bm)
+			}
+		})
+	}
+}
+
+// The opposite direction: switching from periodic/off to monitor must not
+// touch drift fields that were not there to begin with, and must not clear
+// WatchDrift itself — applyCheckMode only ever changes drift state on the
+// off-transition, the same boundary SetBookmarkExpectations uses.
+func TestApplyCheckModeKeepsDriftWhenMonitorStaysOnOrTurnsOn(t *testing.T) {
+	bm := Bookmark{
+		WatchDrift: true, DriftNoticed: "title", DriftReason: "Retitled",
+	}
+	applyCheckMode(&bm, checkModeMonitor, 0)
+	if !bm.WatchDrift || bm.DriftNoticed != "title" || bm.DriftReason != "Retitled" {
+		t.Errorf("drift state was cleared on off->monitor transition: %+v", bm)
+	}
+
+	bm2 := Bookmark{
+		Monitor: true, WatchDrift: true, DriftNoticed: "content", DriftReason: "Body changed",
+	}
+	applyCheckMode(&bm2, checkModeMonitor, 15)
+	if !bm2.WatchDrift || bm2.DriftNoticed != "content" || bm2.DriftReason != "Body changed" {
+		t.Errorf("drift state was cleared on monitor->monitor transition: %+v", bm2)
+	}
+}

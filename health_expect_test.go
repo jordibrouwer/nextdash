@@ -86,6 +86,32 @@ func TestContentExpectationDecidesHealth(t *testing.T) {
 	}
 }
 
+// expectationFor must gate on Monitor, not just read the stored fields
+// verbatim: manual re-check paths (PingURL, CheckBookmarkHealthURL, "Retest
+// all") call it unconditionally on any bookmark, monitored or not. Without
+// the gate, a bookmark that once was a monitor but had it turned off would
+// still have its keyword/status rules enforced and its drift baseline
+// silently re-evaluated on every manual check, even though the health report
+// and the UI both treat it as if expectations do nothing while unmonitored.
+func TestExpectationForIgnoresStoredFieldsWhenNotMonitored(t *testing.T) {
+	bm := Bookmark{
+		Monitor:      false,
+		ExpectText:   "must contain this",
+		ExpectStatus: "200,401",
+		WatchDrift:   true,
+	}
+	got := expectationFor(bm)
+	if !got.isZero() {
+		t.Errorf("expectationFor on an unmonitored bookmark = %+v, want zero", got)
+	}
+
+	bm.Monitor = true
+	got = expectationFor(bm)
+	if got.isZero() || got.Text != "must contain this" || got.Status != "200,401" || !got.WatchDrift {
+		t.Errorf("expectationFor on a monitored bookmark = %+v, want the stored fields", got)
+	}
+}
+
 func TestExpectationIsZeroAndWantsBody(t *testing.T) {
 	if !(expectation{}).isZero() {
 		t.Error("an empty expectation should be zero")

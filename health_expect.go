@@ -202,18 +202,31 @@ func (e expectation) isZero() bool {
 	return strings.TrimSpace(e.Text) == "" && strings.TrimSpace(e.Status) == "" && !e.WatchDrift
 }
 
-// expectFieldsFor is expectationFor limited to monitored bookmarks, for the
-// report: an unmonitored bookmark's stored expectation is never acted on, so
-// sending it would show a setting that does nothing.
+// expectFieldsFor is expectationFor, kept as a separate name at call sites that
+// are specifically building the report: an unmonitored bookmark's stored
+// expectation is never acted on, so sending it would show a setting that does
+// nothing.
 func expectFieldsFor(b Bookmark) expectation {
-	if !b.Monitor {
-		return expectation{}
-	}
 	return expectationFor(b)
 }
 
 // expectationFor reads a bookmark's expectations, normalised.
+//
+// Gated on Monitor for every field, drift included: expectation checks (the
+// keyword/status rules, and drift's baseline comparison) are monitor
+// features, and a bookmark that is not monitored keeps its stored settings
+// but they must not act — otherwise a manual re-check (PingURL,
+// CheckBookmarkHealthURL) or "Retest all" on a bookmark that once was a
+// monitor would silently keep evaluating drift against a stored baseline
+// nobody is meant to be watching anymore, evolving it further with each
+// check. Monitor's own dueMonitorTargets already filters to bm.Monitor
+// bookmarks before it ever reaches here, so this changes nothing for the
+// scheduled path — only the unconditional call sites that previously skipped
+// the check.
 func expectationFor(b Bookmark) expectation {
+	if !b.Monitor {
+		return expectation{}
+	}
 	return expectation{
 		Text:       strings.TrimSpace(b.ExpectText),
 		TextAbsent: b.ExpectTextAbsent,
