@@ -16131,6 +16131,10 @@ class DashboardConfig {
                 'config.helpHealthViewBody', '')
             + this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
                 'config.helpHealthStatsBody', '')
+            + this.helpPanel('config.helpHealthExpectTitle', 'When "up" is not good enough',
+                'config.helpHealthExpectBody', '')
+            + this.helpPanel('config.helpHealthCertTitle', 'Certificate expiry',
+                'config.helpHealthCertBody', '')
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '')
             + this.helpPanel('config.helpInboxTitle', 'Inbox',
