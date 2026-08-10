@@ -103,7 +103,7 @@ func BenchmarkSinkAtCapacity(b *testing.B) {
 // The same, with an age cap set, so pruneExpiredLocked walks the ring too.
 func BenchmarkSinkAtCapacityWithRetention(b *testing.B) {
 	s := &serverLogSink{}
-	s.SetRetentionHours(24)
+	s.SetRetention(serverLogModeTime, 24, serverLogDefaultMaxEntries)
 	for i := 0; i < serverLogBufferLines; i++ {
 		s.appendLine(benchLine())
 	}

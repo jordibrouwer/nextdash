@@ -26,9 +26,13 @@ it did before.
 */
 
 const (
-	// Lines kept in memory. At a few hundred bytes each this is a couple of MB
-	// worst case, and it is the whole window the viewer can ever show.
+	// Lines kept in memory in time mode, and the ceiling on what the viewer can
+	// ever show. At a few hundred bytes each this is a couple of MB worst case.
+	// Count mode replaces it with the chosen size, up to serverLogMaxEntries.
 	serverLogBufferLines = 2000
+	// The largest count mode offers, and so the largest the ring can grow to —
+	// about 5MB of lines, which is still a sane amount to hold for a dashboard.
+	serverLogMaxEntries = 5000
 	// The on-disk copy is capped well below the activity log's 5MB: it is a
 	// debugging convenience, not an audit trail.
 	serverLogMaxBytes    = 2 << 20
@@ -38,7 +42,49 @@ const (
 	// whatever fits until the user clears it.
 	serverLogRetentionKeepAll  = 0
 	serverLogMaxRetentionHours = 90 * 24
+
+	// The two ways to cap the log, one at a time. Capping by both would drop
+	// lines for a reason whichever control you were looking at cannot explain.
+	serverLogModeTime  = "time"
+	serverLogModeCount = "count"
 )
+
+// The entry counts offered in count mode. serverLogBufferLines is the ceiling
+// in time mode, so the largest choice matches it rather than exceeding it.
+var serverLogEntryChoices = []int{100, 500, 1000, 2500, 5000}
+
+// What an install that never picked a size gets. Every settings.json written
+// before count mode existed omits the field, so unset is the common case, not
+// an edge one — and the config UI shows this same number as the default.
+const serverLogDefaultMaxEntries = 1000
+
+// clampServerLogRetentionMode falls back to the age cap, which is what every
+// install had before the choice existed.
+func clampServerLogRetentionMode(mode string) string {
+	if mode == serverLogModeCount {
+		return serverLogModeCount
+	}
+	return serverLogModeTime
+}
+
+// clampServerLogMaxEntries snaps to one of the offered sizes. A hand-edited
+// value lands on the nearest one at or above it rather than being rejected.
+//
+// Zero and below mean "never chosen" rather than "as small as possible": the
+// field is absent from every settings.json predating count mode, and snapping
+// those to the smallest size would silently cap the log at 100 lines while the
+// UI, which defaults the same field to serverLogDefaultMaxEntries, showed 1000.
+func clampServerLogMaxEntries(n int) int {
+	if n <= 0 {
+		return serverLogDefaultMaxEntries
+	}
+	for _, choice := range serverLogEntryChoices {
+		if n <= choice {
+			return choice
+		}
+	}
+	return serverLogEntryChoices[len(serverLogEntryChoices)-1]
+}
 
 // clampServerLogRetentionHours keeps a stored retention inside a sane range.
 // Anything negative is treated as "keep until cleared" rather than rejected,
@@ -97,8 +143,13 @@ type serverLogSink struct {
 	replaying bool
 	// Age cap in hours, mirrored from settings; 0 keeps everything until the
 	// user clears it. Held here so pruning does not read settings on every
-	// captured line.
+	// captured line. Only consulted in time mode.
 	retentionHours int
+	// Which cap is in force, and the size behind the count one. Exactly one
+	// applies: in count mode the ring is sized to maxEntries and nothing ages
+	// out; in time mode the ring is the default size and age decides.
+	retentionMode string
+	maxEntries    int
 	// Whether capture is running. Read on every logged line, so it is an
 	// atomic rather than something that needs the mutex: paused means Write
 	// returns before touching the lock at all.
@@ -135,8 +186,8 @@ func InitServerLog() {
 // ConfigureServerLog applies the stored settings and, when collecting is on,
 // fills the ring from the previous run. With it off nothing is seeded: a log
 // the user switched off should be empty, not repopulated from disk on restart.
-func ConfigureServerLog(enabled bool, retentionHours int) {
-	serverLog.SetRetentionHours(retentionHours)
+func ConfigureServerLog(enabled bool, mode string, retentionHours, maxEntries int) {
+	serverLog.SetRetention(mode, retentionHours, maxEntries)
 	if !enabled {
 		serverLog.SetPaused(true)
 		return
@@ -145,7 +196,7 @@ func ConfigureServerLog(enabled bool, retentionHours int) {
 	// Re-apply after seeding: the file is capped by size, not age, so it can
 	// hold lines older than the window (seedFromDisk prunes too, but only what
 	// the retention set before it knew about).
-	serverLog.SetRetentionHours(retentionHours)
+	serverLog.SetRetention(mode, retentionHours, maxEntries)
 	serverLog.SetPaused(false)
 }
 
@@ -210,7 +261,7 @@ func (s *serverLogSink) appendLine(raw string) {
 // Add one entry, overwriting the oldest once full. Caller holds the mutex.
 func (s *serverLogSink) pushLocked(entry serverLogEntry) {
 	if s.buf == nil {
-		s.buf = make([]serverLogEntry, serverLogBufferLines)
+		s.buf = make([]serverLogEntry, s.capacityLocked())
 		s.start, s.count = 0, 0
 	}
 	if s.count < len(s.buf) {
@@ -221,7 +272,14 @@ func (s *serverLogSink) pushLocked(entry serverLogEntry) {
 	// Full: the slot the oldest occupies becomes the newest.
 	s.buf[s.start] = entry
 	s.start = (s.start + 1) % len(s.buf)
-	s.dropped++
+	// "Dropped" warns that the ring overflowed and lines were lost unexpectedly,
+	// which is why ageing out is not counted either. In count mode overflowing
+	// is the cap the user chose, so counting it would put a permanent "N older
+	// lines dropped" warning on a log behaving exactly as asked — and that
+	// detail line displaces the one naming the chosen size.
+	if clampServerLogRetentionMode(s.retentionMode) != serverLogModeCount {
+		s.dropped++
+	}
 }
 
 // The ring flattened oldest-first. Caller holds the mutex.
@@ -353,14 +411,63 @@ func levelFromText(text string) string {
 	return logLevelInfo
 }
 
-// SetRetentionHours applies a new age cap and drops anything already past it.
-// Called when the setting is saved and once at startup.
-func (s *serverLogSink) SetRetentionHours(hours int) {
+// SetRetention applies both caps at once and re-caps what is already held.
+//
+// One call rather than two setters because the caps are exclusive: setting them
+// separately would briefly leave the sink with neither or both in force, and
+// the resize has to see the final mode to pick a capacity.
+func (s *serverLogSink) SetRetention(mode string, hours, maxEntries int) {
+	mode = clampServerLogRetentionMode(mode)
 	hours = clampServerLogRetentionHours(hours)
+	maxEntries = clampServerLogMaxEntries(maxEntries)
+
 	s.mu.Lock()
+	s.retentionMode = mode
 	s.retentionHours = hours
+	s.maxEntries = maxEntries
+	s.resizeLocked()
 	s.pruneExpiredLocked()
 	s.mu.Unlock()
+}
+
+// Retention reports the active cap and the capacity it implies, for the
+// viewer's controls. The capacity comes from here rather than being recomputed
+// by the caller: it is the same rule pushLocked sizes the ring by, and two
+// copies of it would drift the moment the modes change.
+func (s *serverLogSink) Retention() (mode string, hours, maxEntries, capacity int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return clampServerLogRetentionMode(s.retentionMode),
+		s.retentionHours,
+		clampServerLogMaxEntries(s.maxEntries),
+		s.capacityLocked()
+}
+
+// How many lines the ring holds under the current mode. Caller holds the mutex.
+func (s *serverLogSink) capacityLocked() int {
+	if clampServerLogRetentionMode(s.retentionMode) == serverLogModeCount {
+		return clampServerLogMaxEntries(s.maxEntries)
+	}
+	return serverLogBufferLines
+}
+
+// Grow or shrink the ring to the current capacity, keeping the newest lines.
+// Caller holds the mutex.
+func (s *serverLogSink) resizeLocked() {
+	want := s.capacityLocked()
+	if s.buf == nil || len(s.buf) == want {
+		return
+	}
+	kept := s.snapshotLocked()
+	// Shrinking discards the oldest, exactly as the ring would have done had it
+	// always been this size, so this is not counted as lines being dropped.
+	if len(kept) > want {
+		kept = kept[len(kept)-want:]
+	}
+	s.buf = make([]serverLogEntry, want)
+	copy(s.buf, kept)
+	s.start = 0
+	s.count = len(kept)
 }
 
 // SetPaused starts or stops capture. Stopping keeps whatever is already held —
@@ -389,18 +496,17 @@ func (s *serverLogSink) Paused() bool {
 	return s.paused.Load()
 }
 
-func (s *serverLogSink) RetentionHours() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.retentionHours
-}
-
 // Drop entries older than the age cap. Caller holds the mutex.
 //
 // Expired lines are not counted as "dropped": that number exists to warn that
 // the ring overflowed and lines were lost unexpectedly, whereas ageing out is
 // exactly what the user asked for.
 func (s *serverLogSink) pruneExpiredLocked() {
+	// Count mode caps by how many lines are held, not how old they are, so age
+	// is not consulted at all — a line stays until the ring pushes it out.
+	if clampServerLogRetentionMode(s.retentionMode) == serverLogModeCount {
+		return
+	}
 	if s.retentionHours <= 0 || s.count == 0 {
 		return
 	}
@@ -545,13 +651,18 @@ func (s *serverLogSink) seedFromDisk() {
 	}
 	defer f.Close()
 
-	// Only the tail can survive in the ring, so keep just that many lines.
-	tail := make([]string, 0, serverLogBufferLines)
+	// Only the tail can survive in the ring, so keep just that many lines —
+	// read under the current mode's capacity, which count mode can raise above
+	// the default.
+	s.mu.Lock()
+	capacity := s.capacityLocked()
+	s.mu.Unlock()
+	tail := make([]string, 0, capacity)
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 0, 64<<10), 1<<20)
 	for scanner.Scan() {
 		tail = append(tail, scanner.Text())
-		if len(tail) > serverLogBufferLines {
+		if len(tail) > capacity {
 			tail = tail[1:]
 		}
 	}

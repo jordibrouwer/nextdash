@@ -47,7 +47,12 @@ func main() {
 	// it. Off by default, so a dashboard nobody debugs pays nothing for the
 	// viewer and its log stays genuinely empty.
 	startupSettings := store.GetSettings()
-	ConfigureServerLog(startupSettings.ServerLogEnabled, startupSettings.ServerLogRetentionHours)
+	ConfigureServerLog(
+		startupSettings.ServerLogEnabled,
+		startupSettings.ServerLogRetentionMode,
+		startupSettings.ServerLogRetentionHours,
+		startupSettings.ServerLogMaxEntries,
+	)
 	if strings.TrimSpace(os.Getenv("NEXTDASH_DATA_DIR")) != "" {
 		log.Printf("Using data directory: %s", ResolveDataDir())
 	}

@@ -271,3 +271,46 @@ func TestCollapseAllButtonDefaultsOnForExistingInstalls(t *testing.T) {
 		})
 	}
 }
+
+// The count-mode cap must survive the upgrade path. Every settings.json written
+// before the mode existed omits the key, and a zero there once snapped to the
+// smallest offered size — capping the log at 100 lines while the config UI,
+// which defaults the same field to 1000, said otherwise.
+func TestServerLogMaxEntriesDefault(t *testing.T) {
+	t.Run("fresh install records the default", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		if got := NewStore().GetSettings().ServerLogMaxEntries; got != serverLogDefaultMaxEntries {
+			t.Fatalf("fresh install: serverLogMaxEntries = %d, want %d", got, serverLogDefaultMaxEntries)
+		}
+	})
+
+	for _, tc := range []struct {
+		name     string
+		settings map[string]any
+		want     int
+	}{
+		// The upgrade case: a settings file written before the key existed.
+		{"key absent", map[string]any{"currentPage": 1}, serverLogDefaultMaxEntries},
+		{"explicit zero", map[string]any{"currentPage": 1, "serverLogMaxEntries": 0}, serverLogDefaultMaxEntries},
+		{"explicit choice kept", map[string]any{"currentPage": 1, "serverLogMaxEntries": 2500}, 2500},
+		{"odd value snaps up", map[string]any{"currentPage": 1, "serverLogMaxEntries": 101}, 500},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			t.Chdir(dir)
+			if err := os.MkdirAll("data", 0755); err != nil {
+				t.Fatal(err)
+			}
+			body, err := json.Marshal(tc.settings)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile("data/settings.json", body, 0644); err != nil {
+				t.Fatal(err)
+			}
+			if got := NewStore().GetSettings().ServerLogMaxEntries; got != tc.want {
+				t.Fatalf("serverLogMaxEntries = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}

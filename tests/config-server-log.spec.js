@@ -16,11 +16,19 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } 
  * Capture is off on a fresh install, so a test that wants lines has to turn it
  * on the way a user would.
  */
-async function openLogs(page, { capture = true, clear = false } = {}) {
+async function openLogs(page, { capture = true, clear = false, maxEntries = 0 } = {}) {
     // One server is shared across the file, so the previous test's choice is
     // still persisted. Set the switch before the page loads, so the tab paints
-    // from the state this test wants rather than the last one's.
-    await page.request.post('/api/settings', { data: { serverLogEnabled: capture } });
+    // from the state this test wants rather than the last one's. The entry cap
+    // goes back too — 0 means "never chosen", which the server normalises to
+    // the default, so a test that cares about the size starts from a clean slate.
+    await page.request.post('/api/settings', {
+        data: {
+            serverLogEnabled: capture,
+            serverLogRetentionMode: 'time',
+            serverLogMaxEntries: maxEntries,
+        },
+    });
     await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
@@ -134,6 +142,41 @@ test.describe('Data & backups → Server log', () => {
         expect(before).toBeGreaterThan(0);
         for (let i = 0; i < 5; i++) await page.evaluate(() => fetch('/api/pages'));
         expect(await total()).toBe(before);
+    });
+
+    test('the two caps are exclusive: only one control is live at a time', async ({ page }) => {
+        await openLogs(page);
+
+        const age = page.locator('[data-log-select="retention"]');
+        const count = page.locator('[data-log-select="maxEntries"]');
+
+        // Age is the default, so the entry count is inert.
+        await expect(page.locator('[data-log-select="mode"]')).toHaveValue('time');
+        await expect(age).toBeEnabled();
+        await expect(count).toBeDisabled();
+
+        await page.locator('[data-log-select="mode"]').selectOption('count');
+        await expect(count).toBeEnabled();
+        await expect(age).toBeDisabled();
+        expect(await page.evaluate(() =>
+            [...document.querySelectorAll('[data-log-select="maxEntries"] option')].map((o) => Number(o.value))
+        )).toEqual([100, 500, 1000, 2500, 5000]);
+
+        // The ring is resized to the choice, which is what makes the cap real
+        // rather than a number the server merely stores.
+        await page.locator('[data-log-select="maxEntries"]').selectOption('500');
+        await expect.poll(() => page.evaluate(async () =>
+            (await (await fetch('/api/logs')).json()).capacity), { timeout: 10_000 }).toBe(500);
+        expect(await page.evaluate(async () => {
+            const s = await (await fetch('/api/settings')).json();
+            return [s.serverLogRetentionMode, s.serverLogMaxEntries];
+        })).toEqual(['count', 500]);
+
+        // Back to age, and the entry cap stops applying.
+        await page.locator('[data-log-select="mode"]').selectOption('time');
+        await expect.poll(() => page.evaluate(async () =>
+            (await (await fetch('/api/logs')).json()).capacity), { timeout: 10_000 }).toBe(2000);
+        await expect(page.locator('[data-log-select="maxEntries"]')).toBeDisabled();
     });
 
     test('the refresh timer stops when the tab is left', async ({ page }) => {

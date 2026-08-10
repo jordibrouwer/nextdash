@@ -179,7 +179,7 @@ func TestServerLogRetentionDropsOldLines(t *testing.T) {
 		t.Fatalf("before retention: %d entries, want 2", len(all))
 	}
 
-	s.SetRetentionHours(2)
+	s.SetRetention(serverLogModeTime, 2, serverLogDefaultMaxEntries)
 	kept, _, dropped := s.Entries(-1, "", "", 0)
 	if len(kept) != 1 || kept[0].Message != "recent" {
 		t.Fatalf("after a 2h retention: %d entries, want just the recent one", len(kept))
@@ -191,7 +191,7 @@ func TestServerLogRetentionDropsOldLines(t *testing.T) {
 
 	// 0 means keep everything; it must not retroactively resurrect anything,
 	// but it must stop pruning.
-	s.SetRetentionHours(0)
+	s.SetRetention(serverLogModeTime, 0, serverLogDefaultMaxEntries)
 	s.appendLine(now.Add(-48*time.Hour).Format("2006/01/02 15:04:05") + " import: old but kept")
 	after, _, _ := s.Entries(-1, "", "", 0)
 	if len(after) != 2 {
@@ -209,6 +209,121 @@ func TestClampServerLogRetentionHours(t *testing.T) {
 	} {
 		if got := clampServerLogRetentionHours(tc.in); got != tc.want {
 			t.Errorf("clamp(%d) = %d, want %d", tc.in, got, tc.want)
+		}
+	}
+}
+
+// The two caps are exclusive: whichever mode is chosen, the other is inert.
+func TestServerLogRetentionModesAreExclusive(t *testing.T) {
+	old := time.Now().Add(-72 * time.Hour).Format("2006/01/02 15:04:05")
+
+	t.Run("count mode ignores the age cap", func(t *testing.T) {
+		s := &serverLogSink{}
+		// An age cap that would expire everything, with count mode in force.
+		s.SetRetention(serverLogModeCount, 1, 500)
+		for i := 0; i < 10; i++ {
+			s.appendLine(old + " import: ancient but counted")
+		}
+		entries, _, _ := s.Entries(-1, "", "", 0)
+		if len(entries) != 10 {
+			t.Fatalf("count mode kept %d entries, want all 10 — age must not apply", len(entries))
+		}
+	})
+
+	t.Run("count mode caps at the chosen size", func(t *testing.T) {
+		s := &serverLogSink{}
+		s.SetRetention(serverLogModeCount, 0, 100)
+		for i := 0; i < 150; i++ {
+			s.appendLine("2026/08/10 00:11:43 import: line")
+		}
+		entries, _, dropped := s.Entries(-1, "", "", 0)
+		if len(entries) != 100 {
+			t.Fatalf("held %d entries, want the chosen 100", len(entries))
+		}
+		// Rolling over is the cap the user picked, not an unexpected loss, so it
+		// must not raise the "dropped" warning — which would otherwise sit on the
+		// tile permanently and hide the line naming the chosen size.
+		if dropped != 0 {
+			t.Errorf("dropped = %d, want 0: count-mode rollover is not a loss", dropped)
+		}
+	})
+
+	t.Run("time mode still reports an overflowing ring as dropped", func(t *testing.T) {
+		s := &serverLogSink{}
+		s.SetRetention(serverLogModeTime, 0, 100)
+		for i := 0; i < serverLogBufferLines+25; i++ {
+			s.appendLine("2026/08/10 00:11:43 import: line")
+		}
+		if _, _, dropped := s.Entries(-1, "", "", 0); dropped != 25 {
+			t.Errorf("dropped = %d, want 25", dropped)
+		}
+	})
+
+	t.Run("time mode ignores the entry cap", func(t *testing.T) {
+		s := &serverLogSink{}
+		// A tiny entry cap that must not bite while time mode is in force.
+		s.SetRetention(serverLogModeTime, 0, 100)
+		for i := 0; i < 150; i++ {
+			s.appendLine("2026/08/10 00:11:43 import: line")
+		}
+		entries, _, _ := s.Entries(-1, "", "", 0)
+		if len(entries) != 150 {
+			t.Fatalf("time mode kept %d entries, want all 150 — the count must not apply", len(entries))
+		}
+	})
+
+	t.Run("switching to a smaller count trims to it, keeping the newest", func(t *testing.T) {
+		s := &serverLogSink{}
+		s.SetRetention(serverLogModeCount, 0, 500)
+		for i := 0; i < 300; i++ {
+			s.appendLine("2026/08/10 00:11:43 import: line")
+		}
+		s.SetRetention(serverLogModeCount, 0, 100)
+		entries, _, _ := s.Entries(-1, "", "", 0)
+		if len(entries) != 100 {
+			t.Fatalf("after shrinking: %d entries, want 100", len(entries))
+		}
+		// Seq 299 was the last one in, so the newest must have survived.
+		if entries[len(entries)-1].Seq != 299 {
+			t.Errorf("newest kept seq = %d, want 299", entries[len(entries)-1].Seq)
+		}
+	})
+
+	t.Run("switching to time mode makes age apply again", func(t *testing.T) {
+		s := &serverLogSink{}
+		s.SetRetention(serverLogModeCount, 0, 500)
+		s.appendLine(old + " import: ancient")
+		s.appendLine(time.Now().Format("2006/01/02 15:04:05") + " import: recent")
+
+		s.SetRetention(serverLogModeTime, 2, 500)
+		entries, _, _ := s.Entries(-1, "", "", 0)
+		if len(entries) != 1 || entries[0].Message != "recent" {
+			t.Fatalf("after switching to time mode: %d entries, want just the recent one", len(entries))
+		}
+	})
+}
+
+func TestClampServerLogRetentionModeAndEntries(t *testing.T) {
+	for _, tc := range []struct{ in, want string }{
+		{"count", serverLogModeCount},
+		{"time", serverLogModeTime},
+		{"", serverLogModeTime},
+		{"nonsense", serverLogModeTime},
+	} {
+		if got := clampServerLogRetentionMode(tc.in); got != tc.want {
+			t.Errorf("mode(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+	// A hand-edited size snaps up to the nearest offered one — but zero means
+	// "never chosen", which every settings.json predating count mode is, and
+	// must land on the default the config UI shows rather than the smallest size.
+	for _, tc := range []struct{ in, want int }{
+		{0, serverLogDefaultMaxEntries}, {-1, serverLogDefaultMaxEntries},
+		{1, 100}, {100, 100}, {101, 500}, {2500, 2500},
+		{5000, 5000}, {99999, serverLogMaxEntries},
+	} {
+		if got := clampServerLogMaxEntries(tc.in); got != tc.want {
+			t.Errorf("maxEntries(%d) = %d, want %d", tc.in, got, tc.want)
 		}
 	}
 }
@@ -276,7 +391,7 @@ func TestConfigureServerLogSkipsSeedWhenOff(t *testing.T) {
 	t.Cleanup(func() { serverLog = &serverLogSink{} })
 
 	reset()
-	ConfigureServerLog(false, 0)
+	ConfigureServerLog(false, serverLogModeTime, 0, 0)
 	if entries, _, _ := serverLog.Entries(-1, "", "", 0); len(entries) != 0 {
 		t.Errorf("collecting off: %d entries seeded from disk, want 0", len(entries))
 	}
@@ -291,7 +406,7 @@ func TestConfigureServerLogSkipsSeedWhenOff(t *testing.T) {
 
 	// With it on, the history is worth having back.
 	reset()
-	ConfigureServerLog(true, 0)
+	ConfigureServerLog(true, serverLogModeTime, 0, 0)
 	entries, _, _ := serverLog.Entries(-1, "", "", 0)
 	if len(entries) != 1 || entries[0].Message != "from the previous run" {
 		t.Fatalf("collecting on: %d entries, want the previous run's line", len(entries))

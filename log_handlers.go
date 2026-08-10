@@ -35,6 +35,9 @@ func (h *Handlers) GetServerLog(w http.ResponseWriter, r *http.Request) {
 
 	entries, nextSeq, dropped := serverLog.Entries(since, strings.TrimSpace(q.Get("level")), q.Get("q"), limit)
 	total, warn, errCount, _ := serverLog.Stats()
+	// Capacity is what the ring actually holds under the active cap, so the
+	// client can trim its own copy to the same size.
+	mode, retentionHours, maxEntries, capacity := serverLog.Retention()
 
 	if entries == nil {
 		entries = []serverLogEntry{}
@@ -50,8 +53,10 @@ func (h *Handlers) GetServerLog(w http.ResponseWriter, r *http.Request) {
 			"warn":  warn,
 			"error": errCount,
 		},
-		"capacity":       serverLogBufferLines,
-		"retentionHours": serverLog.RetentionHours(),
+		"capacity":       capacity,
+		"retentionMode":  mode,
+		"retentionHours": retentionHours,
+		"maxEntries":     maxEntries,
 		"capturing":      !serverLog.Paused(),
 	})
 }
