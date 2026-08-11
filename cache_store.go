@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -106,6 +107,19 @@ func (h *Handlers) replacePreviewCache(cache PreviewCacheFile) error {
 }
 
 func normalizeHealthCacheFile(cache HealthScanCacheFile) HealthScanCacheFile {
+	// Certificates are optional and absent from every file written before they
+	// existed, so normalise them before the early return below — otherwise a
+	// cache with no entries yet would hand back a nil map for callers to write
+	// into. Done here rather than at each use so there is one place that
+	// guarantees the map exists.
+	if cache.Certificates == nil {
+		cache.Certificates = map[string]HostCertificate{}
+	}
+	for host, cert := range cache.Certificates {
+		if strings.TrimSpace(host) == "" || cert.ExpiresAt <= 0 {
+			delete(cache.Certificates, host)
+		}
+	}
 	if len(cache.Cache) == 0 {
 		cache.Cache = map[string]HealthScanCache{}
 		return cache

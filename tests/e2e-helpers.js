@@ -99,6 +99,20 @@ async function dismissWhatsNewIfPresent(page) {
 }
 
 /**
+ * Mark the one-time Health tutorial as seen so opening the Health view in a
+ * test does not pop the modal mid-flow. Written straight into
+ * DiscoverabilityState rather than relying on a later save: the tutorial
+ * checks hasSeenTip() synchronously the instant openHealthView() finishes
+ * rendering, before any test would have a chance to dismiss it first.
+ * @param {import('@playwright/test').Page} page
+ */
+async function markHealthTutorialSeen(page) {
+    await page.evaluate(() => {
+        window.DiscoverabilityState?.markTipSeen?.('healthTutorialV1', { persist: false });
+    });
+}
+
+/**
  * Dismiss What's new, search promo, and grid keyboard promo when they block interaction.
  * @param {import('@playwright/test').Page} page
  */
@@ -106,6 +120,7 @@ async function dismissBlockingOverlays(page) {
     await dismissWhatsNewIfPresent(page);
     await dismissAppNotificationIfPresent(page);
     await suppressStatusEmptyHint(page);
+    await markHealthTutorialSeen(page);
     const searchPromo = page.locator('.dashboard-search-promo');
     if (await searchPromo.count()) {
         await searchPromo.locator('button').first().click();
@@ -420,6 +435,7 @@ module.exports = {
     dismissWhatsNewIfPresent,
     dismissAppNotificationIfPresent,
     suppressStatusEmptyHint,
+    markHealthTutorialSeen,
     dismissBlockingOverlays,
     prepareDashboardInteraction,
     dismissOnboardingIfPresent,

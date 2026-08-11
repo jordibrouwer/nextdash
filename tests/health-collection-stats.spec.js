@@ -128,6 +128,21 @@ test.describe('collection-wide monitoring', () => {
         await expect(panel.locator('.health-monitor-stat')).toHaveCount(3);
     });
 
+    test('fleet row names wrap on a narrow screen instead of relying on a hover-only title', async ({ page }) => {
+        // Below 520px the ellipsis is most likely to bite, and the title
+        // tooltip that would otherwise reveal the truncated name never fires
+        // on touch — so the name must wrap instead of hiding text.
+        await page.setViewportSize({ width: 480, height: 900 });
+        await open(page, report({
+            fleetStats: fleet({
+                worst: [{ name: 'A very long monitor name that would normally be clipped by ellipsis', url: 'https://long-name.test', ratio: 0.5, samples: 100 }],
+            }),
+        }));
+
+        const name = page.locator('.health-fleet-row-name').first();
+        await expect(name).toHaveCSS('white-space', 'normal');
+    });
+
     test('a live outage is called out rather than folded into the average', async ({ page }) => {
         await open(page, report({
             fleetStats: fleet({
@@ -188,5 +203,52 @@ test.describe('collection-wide monitoring', () => {
         await open(page, report({ fleetStats: { monitors: 0 } }));
 
         await expect(page.locator('.health-fleet')).toHaveCount(0);
+    });
+});
+
+test.describe('collapsing the fleet panel', () => {
+    test('hiding details leaves just the three uptime tiles', async ({ page }) => {
+        await open(page);
+
+        await expect(page.locator('.health-fleet-details')).toBeVisible();
+        await expect(page.locator('.health-monitor-stat')).toHaveCount(3);
+
+        const toggle = page.locator('.health-fleet-collapse-btn');
+        await expect(toggle).toHaveText(/hide details/i);
+        await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        await toggle.click();
+
+        await expect(page.locator('.health-fleet-details')).toBeHidden();
+        // The tiles stay, exactly as asked: collapsing must not touch them.
+        await expect(page.locator('.health-monitor-stat')).toHaveCount(3);
+        await expect(toggle).toHaveText(/show details/i);
+        await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+        await toggle.click();
+        await expect(page.locator('.health-fleet-details')).toBeVisible();
+    });
+
+    test('the collapsed state survives a reload', async ({ page }) => {
+        await open(page);
+
+        await page.locator('.health-fleet-collapse-btn').click();
+        await expect(page.locator('.health-fleet-details')).toBeHidden();
+
+        await page.reload();
+        await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
+
+        await expect(page.locator('.health-fleet-details')).toBeHidden();
+        await expect(page.locator('.health-fleet-collapse-btn')).toHaveText(/show details/i);
+    });
+
+    test('a fleet with no worst/slower monitors still gets a toggle, since the incidents block always renders', async ({ page }) => {
+        // Outages renders "No outages recorded." even with an empty list, so
+        // there is always at least one detail block to collapse whenever the
+        // fleet panel itself is shown.
+        await open(page, report({ fleetStats: fleet({ worst: [], slower: [], incidents: [] }) }));
+
+        await expect(page.locator('.health-fleet')).toBeVisible();
+        await expect(page.locator('.health-fleet-collapse-btn')).toHaveCount(1);
+        await expect(page.locator('.health-fleet-details')).toContainText(/no outages recorded/i);
     });
 });

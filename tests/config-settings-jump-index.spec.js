@@ -63,6 +63,31 @@ test.describe('the settings index does not depend on what you have visited', () 
         }
     });
 
+    /**
+     * The Downtime alerts panel is the one place in behaviorSchema() whose
+     * control list actually depends on a setting's current value: Pushover's
+     * two credential fields and Telegram's chat-ID field only render while
+     * that service is picked. Without a dedicated index mode, monitorNotifyPushoverToken
+     * and monitorNotifyTelegramChatId would only ever be findable after
+     * switching to that exact preset once — precisely the bug this whole
+     * describe block exists to prevent for every other setting.
+     */
+    test('preset-only alert fields are findable without ever picking that preset', async ({ page }) => {
+        await openConfig(page, 'overview');
+
+        const presetOnDisk = await page.evaluate(() => window.dashboardInstance.settings?.monitorNotifyPreset || '');
+        expect(presetOnDisk, 'fixture assumption: default install has no preset picked').toBe('');
+
+        for (const [query, field] of [
+            ['token', 'monitorNotifyPushoverToken'],
+            ['user key', 'monitorNotifyPushoverUserKey'],
+            ['chat', 'monitorNotifyTelegramChatId'],
+        ]) {
+            const hits = await search(page, query);
+            expect(hits.map((h) => h.field), `"${query}" did not find ${field}`).toContain(field);
+        }
+    });
+
     test('every rendered control is in the index', async ({ page }) => {
         await openConfig(page, 'behavior');
 

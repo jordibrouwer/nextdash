@@ -71,6 +71,12 @@ func uptimeRatio(samples []HealthSample, window time.Duration, now time.Time) Up
 		if s.T < cutoff {
 			continue
 		}
+		// Maintenance samples are recorded but not counted: expected downtime is
+		// not an availability failure, and a nightly backup window would otherwise
+		// cap a perfectly healthy host's monthly uptime at around 99.3%.
+		if s.Maint {
+			continue
+		}
 		total++
 		if s.Up {
 			up++
@@ -93,6 +99,11 @@ func deriveIncidents(samples []HealthSample, now time.Time) []HealthIncident {
 	var current *HealthIncident
 
 	for _, s := range samples {
+		// A maintenance-window sample is expected downtime, not an outage: it must
+		// not open, extend, or close an incident. Mirrors uptimeRatio's exclusion.
+		if s.Maint {
+			continue
+		}
 		if !s.Up {
 			if current == nil {
 				incidents = append(incidents, HealthIncident{Start: s.T})
@@ -167,6 +178,12 @@ func heartbeatBuckets(samples []HealthSample, window time.Duration, count int, n
 		if s.T < start || s.T > end {
 			continue
 		}
+		// A maintenance sample is expected downtime: it must not paint the bucket
+		// down or degraded. Skipping it can leave a bucket at heartbeatUnknown,
+		// which is the honest answer for "nothing outside maintenance ran here".
+		if s.Maint {
+			continue
+		}
 		idx := int((s.T - start) / width)
 		if idx < 0 {
 			idx = 0
@@ -212,6 +229,14 @@ func buildMonitorStats(samples []HealthSample, intervalMinutes int, now time.Tim
 
 	// Span the heartbeat over enough time to show roughly one bar per check, so a
 	// 5-minute monitor shows the last few hours and a daily one shows weeks.
+	//
+	// "Roughly one bar per check" only holds below the cap. History does not
+	// outlive healthHistoryRetention, so a slow enough interval (12h+) has its
+	// window capped there instead of at 40x its own interval, and each bucket
+	// then spans less than one interval — a daily monitor ends up with a bit
+	// under one and a half checks per bar rather than exactly one. Still the
+	// right trade: this bounds the query to data that actually exists instead
+	// of drawing empty buckets past the retention edge.
 	window := time.Duration(interval) * time.Minute * time.Duration(defaultHeartbeatBuckets)
 	if window > healthHistoryRetention {
 		window = healthHistoryRetention

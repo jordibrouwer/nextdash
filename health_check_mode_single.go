@@ -31,6 +31,7 @@ const (
 // It is honoured only for monitor: the other two modes have no cadence, and
 // storing one would leave a stale number behind for the next enable to inherit.
 func applyCheckMode(bm *Bookmark, mode string, intervalMinutes int) {
+	wasMonitor := bm.Monitor
 	switch mode {
 	case checkModePeriodic:
 		bm.CheckStatus = true
@@ -48,6 +49,22 @@ func applyCheckMode(bm *Bookmark, mode string, intervalMinutes int) {
 		bm.CheckStatus = false
 		bm.Monitor = false
 		bm.MonitorIntervalMinutes = 0
+	}
+	// Turning Monitor off must clear the drift baseline the same way switching
+	// WatchDrift off does in SetBookmarkExpectations: the report already hides
+	// a stale finding while Monitor is off (isDrifting requires bm.Monitor),
+	// but the manual re-check endpoints gate only on WatchDrift, not Monitor —
+	// without this, a re-check while "disabled" would keep silently evolving
+	// the stored baseline against a page nobody is watching, and switching
+	// Monitor back on later would compare against that stale baseline instead
+	// of establishing a fresh one.
+	if wasMonitor && !bm.Monitor {
+		bm.DriftURL = ""
+		bm.DriftTitle = ""
+		bm.DriftFingerprint = ""
+		bm.DriftNoticed = ""
+		bm.DriftReason = ""
+		bm.DriftSince = 0
 	}
 }
 

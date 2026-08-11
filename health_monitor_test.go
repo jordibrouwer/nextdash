@@ -3,8 +3,10 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -20,7 +22,7 @@ func TestDueMonitorTargetsOnlyMonitoredBookmarks(t *testing.T) {
 		t.Fatalf("write bookmarks: %v", err)
 	}
 
-	targets, known := h.dueMonitorTargets(time.Now())
+	targets, known, _ := h.dueMonitorTargets(time.Now())
 	if len(targets) != 1 {
 		t.Fatalf("expected only the monitored bookmark, got %#v", targets)
 	}
@@ -54,7 +56,7 @@ func TestDueMonitorTargetsRespectsInterval(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("append: %v", err)
 	}
-	if targets, _ := h.dueMonitorTargets(now); len(targets) != 0 {
+	if targets, _, _ := h.dueMonitorTargets(now); len(targets) != 0 {
 		t.Fatalf("expected not due within the interval, got %#v", targets)
 	}
 
@@ -65,7 +67,7 @@ func TestDueMonitorTargetsRespectsInterval(t *testing.T) {
 		t.Fatalf("append: %v", err)
 	}
 	// The newest sample is still the 2-minute-old one, so still not due.
-	if targets, _ := h.dueMonitorTargets(now); len(targets) != 0 {
+	if targets, _, _ := h.dueMonitorTargets(now); len(targets) != 0 {
 		t.Fatalf("due must be decided by the newest sample, got %#v", targets)
 	}
 }
@@ -90,7 +92,7 @@ func TestDueMonitorTargetsDoesNotDriftByATick(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("append: %v", err)
 	}
-	if targets, _ := h.dueMonitorTargets(now); len(targets) != 1 {
+	if targets, _, _ := h.dueMonitorTargets(now); len(targets) != 1 {
 		t.Fatalf("expected due despite sub-tick lateness, got %#v", targets)
 	}
 
@@ -101,7 +103,7 @@ func TestDueMonitorTargetsDoesNotDriftByATick(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("append: %v", err)
 	}
-	if targets, _ := h.dueMonitorTargets(now); len(targets) != 0 {
+	if targets, _, _ := h.dueMonitorTargets(now); len(targets) != 0 {
 		t.Fatalf("a check from one tick ago must not be due, got %#v", targets)
 	}
 }
@@ -115,7 +117,7 @@ func TestDueMonitorTargetsNewMonitorIsImmediatelyDue(t *testing.T) {
 		t.Fatalf("write bookmarks: %v", err)
 	}
 
-	targets, _ := h.dueMonitorTargets(time.Now())
+	targets, _, _ := h.dueMonitorTargets(time.Now())
 	if len(targets) != 1 {
 		t.Fatalf("a monitor with no history should be due immediately, got %#v", targets)
 	}
@@ -217,4 +219,58 @@ func TestRunDueMonitorsLeavesUnmonitoredAlone(t *testing.T) {
 	if got := h.healthHistoryFor(canonicalBookmarkURLKey(server.URL)); len(got) != 0 {
 		t.Fatalf("unmonitored bookmark should have no history, got %#v", got)
 	}
+}
+
+// A certificate must not outlive the last bookmark that made it interesting:
+// once a monitored bookmark is turned off (or removed), the next sweep prunes
+// its host's stored certificate rather than leaving it to age toward
+// "expired" for a host nothing watches any more.
+func TestRunDueMonitorsPrunesCertificatesForUnmonitoredHosts(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	h, dir := healthRecheckTestHandlers(t, `{"allowLocalBookmarks":true}`)
+	bookmarksPath := filepath.Join(dir, "bookmarks-1.json")
+	pageJSON := `{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"Watched","url":"` + server.URL + `","monitor":true,"monitorIntervalMinutes":5}
+	]}`
+	if err := os.WriteFile(bookmarksPath, []byte(pageJSON), 0o644); err != nil {
+		t.Fatalf("write bookmarks: %v", err)
+	}
+
+	// Seed a certificate for this bookmark's host directly, since the test
+	// server is plain HTTP and never produces a real one.
+	host := hostnameOnly(t, server.URL)
+	cache := readHealthCacheFile()
+	cache.Certificates = map[string]HostCertificate{
+		host: {Host: host, ExpiresAt: time.Now().Add(400 * 24 * time.Hour).UnixMilli()},
+	}
+	if err := writeHealthCacheFile(cache); err != nil {
+		t.Fatalf("seed certificate: %v", err)
+	}
+
+	// Turn monitoring off — nothing live points at this host any more.
+	if err := os.WriteFile(bookmarksPath, []byte(`{"id":1,"name":"Page 1","bookmarks":[
+		{"name":"Watched","url":"`+server.URL+`"}
+	]}`), 0o644); err != nil {
+		t.Fatalf("rewrite bookmarks: %v", err)
+	}
+
+	h.runDueMonitors()
+
+	after := readHealthCacheFile()
+	if _, ok := after.Certificates[host]; ok {
+		t.Error("certificate for an un-monitored host should have been pruned")
+	}
+}
+
+func hostnameOnly(t *testing.T, rawURL string) string {
+	t.Helper()
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		t.Fatalf("parse %q: %v", rawURL, err)
+	}
+	return strings.ToLower(u.Hostname())
 }

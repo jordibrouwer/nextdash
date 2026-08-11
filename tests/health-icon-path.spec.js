@@ -105,4 +105,21 @@ test.describe('health view icons', () => {
         await expect(slot.locator('img')).toHaveCount(0);
         await expect(slot).toContainText('🔗');
     });
+
+    test('stays visible on a narrow screen, matching Inbox', async ({ page }) => {
+        // Both feeds share the same 3rem icon column so they read as one system;
+        // Health used to drop the column and hide the icon outright below 520px,
+        // leaving rows with no at-a-glance site recognition on a phone.
+        await page.route('**/data/icons/**', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'image/png', body: PNG_1x1 });
+        });
+        await page.setViewportSize({ width: 480, height: 900 });
+
+        await openHealthView(page, 'icon-8cf59ef5c5c8d226.jpg');
+
+        const slot = page.locator('.health-view-item-icon').first();
+        await expect(slot).toBeVisible();
+        const box = await slot.boundingBox();
+        expect(box?.width).toBeGreaterThan(0);
+    });
 });

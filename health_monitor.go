@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
@@ -51,6 +53,20 @@ func clampMonitorIntervalMinutes(minutes int) int {
 	return minutes
 }
 
+// monitorIntervalMinutesFor is the configured cadence for a health report row.
+//
+// 0 for anything not monitored, so the field is omitted from the JSON rather
+// than showing a meaningless default. For a monitored bookmark this is always
+// clamped and present — unlike MonitorStats, which needs sample history that
+// does not exist yet for a bookmark just switched on or just given a new
+// interval, and must not be the only place this value lives.
+func monitorIntervalMinutesFor(bm Bookmark) int {
+	if !bm.Monitor {
+		return 0
+	}
+	return clampMonitorIntervalMinutes(bm.MonitorIntervalMinutes)
+}
+
 // monitorTarget is one bookmark due for a check, resolved to its canonical key.
 type monitorTarget struct {
 	key      string
@@ -58,6 +74,14 @@ type monitorTarget struct {
 	name     string
 	pageID   int
 	interval time.Duration
+	// expect carries the bookmark's own definition of healthy — an expected
+	// status code, an expected string in the page — resolved here so the check
+	// goroutine does not have to reach back into the store.
+	expect expectation
+	// muted silences this bookmark's outbound alerts. Resolved with the rest of
+	// the bookmark's settings so the notification pass never has to reach back
+	// into the store for a bookmark that may since have moved.
+	muted bool
 }
 
 // StartHealthMonitorScheduler runs the uptime-monitor loop until stop is closed.
@@ -86,9 +110,16 @@ func (h *Handlers) StartHealthMonitorScheduler(stop <-chan struct{}) {
 // dueMonitorTargets collects monitored bookmarks whose last recorded sample is
 // older than their interval. Bookmarks with no history yet are always due, so a
 // freshly-marked monitor produces its first heartbeat on the next tick.
-func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, known map[string]bool) {
+//
+// liveHosts carries every hostname a currently monitored bookmark could account
+// for — its own URL plus whatever CertHost its last check recorded, since a
+// redirecting bookmark's certificate lives under the post-redirect host, not
+// its own. Used to prune certificates for hosts nothing monitored points at
+// any more, without dropping one still in use just because of a redirect.
+func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, known map[string]bool, liveHosts map[string]struct{}) {
 	history := h.readAllHealthHistory()
 	known = map[string]bool{}
+	liveHosts = map[string]struct{}{}
 	seen := map[string]bool{}
 
 	for _, page := range h.store.GetPages() {
@@ -101,6 +132,12 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 				continue
 			}
 			known[key] = true
+			if host := strings.ToLower(strings.TrimSpace(bm.CertHost)); host != "" {
+				liveHosts[host] = struct{}{}
+			}
+			if parsed, err := url.Parse(strings.TrimSpace(bm.URL)); err == nil && parsed.Hostname() != "" {
+				liveHosts[strings.ToLower(parsed.Hostname())] = struct{}{}
+			}
 			// The same URL can be bookmarked on several pages; check it once.
 			if seen[key] {
 				continue
@@ -121,10 +158,12 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 				name:     bm.Name,
 				pageID:   page.ID,
 				interval: interval,
+				expect:   expectationFor(bm),
+				muted:    bm.NotifyMuted,
 			})
 		}
 	}
-	return targets, known
+	return targets, known, liveHosts
 }
 
 // runDueMonitors pings every due monitor once and records the results.
@@ -134,7 +173,7 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 // something to derive from.
 func (h *Handlers) runDueMonitors() {
 	now := time.Now()
-	targets, known := h.dueMonitorTargets(now)
+	targets, known, liveHosts := h.dueMonitorTargets(now)
 
 	// Sweep even when nothing is due, so un-monitoring or deleting a bookmark
 	// reclaims its history without needing a due check to trigger it.
@@ -142,6 +181,7 @@ func (h *Handlers) runDueMonitors() {
 		if err := h.sweepHealthHistory(known); err != nil {
 			log.Printf("health-monitor: history sweep failed: %v", err)
 		}
+		h.pruneCertificates(liveHosts)
 		return
 	}
 
@@ -168,13 +208,17 @@ func (h *Handlers) runDueMonitors() {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			result := h.pingURLDetailed(ctx, t.url)
+			result := h.pingURLExpecting(ctx, t.url, t.expect)
 			mu.Lock()
 			outcomes = append(outcomes, outcome{target: t, result: result, at: time.Now().UnixMilli()})
 			mu.Unlock()
 		}(target)
 	}
 	wg.Wait()
+
+	// One decision for the whole round: a window that opens mid-sweep should not
+	// split it into alerting and non-alerting halves.
+	inMaintenance := inMaintenanceWindow(h.store.GetSettings().MaintenanceWindows, now)
 
 	cacheUpdates := make(map[string]HealthScanCache, len(outcomes))
 	historyUpdates := make(map[string][]HealthSample, len(outcomes))
@@ -202,6 +246,7 @@ func (h *Handlers) runDueMonitors() {
 			Up:     up,
 			PingMs: out.result.PingMs,
 			Code:   out.result.HTTPStatus,
+			Maint:  inMaintenance,
 		}}
 		transitions = append(transitions, monitorTransition{
 			key:    out.target.key,
@@ -210,12 +255,19 @@ func (h *Handlers) runDueMonitors() {
 			up:     up,
 			reason: errMsg,
 			at:     out.at,
+			muted:  out.target.muted,
 		})
 	}
 
 	// Notifications read the pre-append history to count consecutive failures, so
 	// evaluate before writing this round's samples.
-	pending := h.pendingMonitorNotifications(transitions)
+	// Inside a window the checks still ran and the samples are still recorded;
+	// only the alerting is held back. Suppressing the checks instead would hide a
+	// real outage that happened to start during maintenance.
+	var pending []monitorNotification
+	if !inMaintenance {
+		pending = h.pendingMonitorNotifications(transitions)
+	}
 
 	if err := h.appendHealthSamples(historyUpdates); err != nil {
 		log.Printf("health-monitor: failed to append history: %v", err)
@@ -226,7 +278,28 @@ func (h *Handlers) runDueMonitors() {
 	if err := h.mergeHealthCacheUpdates(cacheUpdates); err != nil {
 		log.Printf("health-monitor: failed to persist health cache: %v", err)
 	}
-	h.mirrorMonitorResultsToBookmarks(cacheUpdates)
+	certResults := make([]PingResult, 0, len(outcomes))
+	for _, out := range outcomes {
+		certResults = append(certResults, out.result)
+	}
+	// Expiry warnings ride the same sinks as outages: the webhook someone set up
+	// for downtime is where they want to hear that a certificate is about to
+	// cause some.
+	pending = append(pending, certExpiryNotifications(h.recordMonitorCertificates(certResults), time.Now())...)
+	// This round's own CertHost observations belong in the live set too, so a
+	// bookmark whose first-ever check just discovered a redirect does not have
+	// its brand new certificate entry pruned again immediately below.
+	for _, result := range certResults {
+		if host := strings.ToLower(strings.TrimSpace(result.CertHost)); host != "" {
+			liveHosts[host] = struct{}{}
+		}
+	}
+	h.pruneCertificates(liveHosts)
+	driftResults := make(map[string]PingResult, len(outcomes))
+	for _, out := range outcomes {
+		driftResults[out.target.key] = out.result
+	}
+	h.mirrorMonitorResultsToBookmarks(cacheUpdates, driftResults)
 	h.invalidateHealthReportCache()
 
 	h.dispatchMonitorNotifications(ctx, pending)
@@ -235,7 +308,7 @@ func (h *Handlers) runDueMonitors() {
 // mirrorMonitorResultsToBookmarks copies each result onto the matching bookmarks
 // so the row and the report score agree with the monitor, matching what
 // runHealthRetest and CheckBookmarkHealthURL already do.
-func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScanCache) {
+func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScanCache, drift map[string]PingResult) {
 	if len(updates) == 0 {
 		return
 	}
@@ -258,6 +331,11 @@ func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScan
 				}
 				current[i].LastChecked = update.LastScanned
 				current[i].LastError = update.Error
+				result := drift[canonicalBookmarkURLKey(current[i].URL)]
+				if result.CertHost != "" {
+					current[i].CertHost = result.CertHost
+				}
+				applyDriftResult(&current[i], result, update.LastScanned)
 			}
 			return current, nil
 		})

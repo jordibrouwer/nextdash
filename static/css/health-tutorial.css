@@ -1,0 +1,164 @@
+/**
+ * The one-time Health tutorial modal.
+ *
+ * Reuses the app's modal chrome (title, confirm/cancel buttons) entirely —
+ * only the body content between them is custom, sized narrow like the
+ * whats-new modal (a single reading column, not a wide two-pane surface).
+ */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-tutorial-modal) .modal {
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.health-tutorial-modal) .modal {
+    transform: translateY(0) scale(1);
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-tutorial-modal) .modal {
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
+.health-tutorial-progress {
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin: 0 0 0.4rem;
+}
+
+.health-tutorial-step-title {
+    margin: 0 0 0.7rem;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.health-tutorial-step-body p {
+    margin: 0 0 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.health-tutorial-step-body p:last-child {
+    margin-bottom: 0;
+}
+
+.health-tutorial-closing {
+    color: var(--text-primary) !important;
+    font-style: italic;
+}
+
+/* The small "here is the actual control" preview above each step's prose. */
+.health-tutorial-visual {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
+    margin: 0 0 0.9rem;
+    border: 1px dashed var(--border-secondary);
+    border-radius: 0.5rem;
+    background: var(--background-secondary);
+}
+
+.health-tutorial-visual-url {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.health-tutorial-visual-modes {
+    display: inline-flex;
+    gap: 0.3rem;
+    flex: 0 0 auto;
+}
+
+.health-tutorial-visual code {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 0.35rem;
+    background: var(--background-primary);
+    border: 1px solid var(--border-secondary);
+    color: var(--text-primary);
+}
+
+.health-tutorial-visual-hint {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+}
+
+.health-tutorial-visual--window {
+    justify-content: space-between;
+}
+
+.health-tutorial-visual--services {
+    gap: 0.35rem;
+}
+
+.health-tutorial-visual-chip {
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-secondary);
+    color: var(--text-secondary);
+    background: var(--background-primary);
+}
+
+/* Mirrors .health-drift-badge / .health-cert-badge exactly, so a reader who
+   later sees the real badge on a row recognises it. */
+.health-tutorial-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.05rem 0.4rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    opacity: 0.9;
+    color: var(--accent-warning, #b45309);
+}
+
+.health-tutorial-badge--moved,
+.health-tutorial-badge--retitled,
+.health-tutorial-badge--changed {
+    color: var(--accent-warning, #b45309);
+}
+
+.health-tutorial-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 1.2rem;
+}
+
+.health-tutorial-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--border-secondary);
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.health-tutorial-dot.is-active {
+    background: var(--accent-primary);
+    transform: scale(1.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body:has(#dashboard-layout) #app-modal.modal-overlay:has(.health-tutorial-modal) .modal,
+    body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.health-tutorial-modal) .modal {
+        transform: none !important;
+        transition: opacity 0.15s ease !important;
+    }
+
+    .health-tutorial-dot {
+        transition: none;
+    }
+}

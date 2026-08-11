@@ -7,14 +7,27 @@ class DashboardHealth {
     /** Worst first. Mirrors statusRank in health.js so both surfaces agree. */
     static STATUS_RANK = {
         broken: 0,
-        duplicate: 1,
-        'shortcut-conflict': 2,
-        unchecked: 3,
-        stale: 4,
-        unused: 5,
-        'missing-preview': 6,
-        healthy: 7,
+        // The host answered but not the way this bookmark expects — less urgent
+        // than unreachable, still a live failure. Mirrors issueRank in
+        // handlers.go so the list and the report agree on the order.
+        content: 1,
+        duplicate: 2,
+        'shortcut-conflict': 3,
+        unchecked: 4,
+        stale: 5,
+        unused: 6,
+        'missing-preview': 7,
+        healthy: 8,
     };
+
+    /**
+     * Worst first, for grouping the Monitored filter under the Status sort.
+     * Unlike STATUS_RANK this is about live monitor health, not the report's
+     * link-hygiene status: a monitored bookmark that is down right now matters
+     * more than one that merely drifted, which in turn matters more than a
+     * certificate quietly approaching expiry.
+     */
+    static MONITOR_GROUP_RANK = { down: 0, drift: 1, cert: 2, healthy: 3 };
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -28,6 +41,10 @@ class DashboardHealth {
         /** Deep-link target from `?hv_id=` — applied after the feed renders. */
         this.focusIssueKey = null;
         this.expandedScores = new Set();
+        /** Collapses the fleet panel's worst/slower/incidents lists, leaving just
+         *  the three uptime tiles — a long "All monitors" block otherwise pushes
+         *  the row list off screen on a collection with a lot of history. */
+        this.fleetDetailsCollapsed = false;
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
         this._loadPromise = null;
@@ -42,6 +59,7 @@ class DashboardHealth {
         // Lazily built: the class ships in its own file and may not have loaded
         // yet when the view is constructed.
         this._multiSelect = null;
+        this._focus = null;
     }
 
     /** Selection across rows, for the bulk toolbar. */
@@ -50,6 +68,14 @@ class DashboardHealth {
             this._multiSelect = new window.DashboardHealthMultiSelect(this);
         }
         return this._multiSelect;
+    }
+
+    /** One-at-a-time overlay for working through the filtered list. */
+    get focus() {
+        if (!this._focus && typeof window.DashboardHealthFocus === 'function') {
+            this._focus = new window.DashboardHealthFocus(this);
+        }
+        return this._focus;
     }
 
     isEnabled() {
@@ -331,6 +357,7 @@ class DashboardHealth {
         this.restoreHealthHash();
         this.syncUrlState();
         this.startLiveRefresh();
+        window.HealthTutorial?.maybeShow?.();
         return true;
     }
 
@@ -359,6 +386,18 @@ class DashboardHealth {
         this._escapeHandler = (e) => {
             if (e.key !== 'Escape') return;
             if (d.activeView !== DashboardHealth.VIEW) return;
+            // Focus mode takes Escape before anything else, for the same reason
+            // an open menu does below: it is the innermost thing on screen, and
+            // closing the whole view instead would throw away the queue the
+            // user was working through. This handler is registered when the
+            // view loads, ahead of focus mode's own capture listener, so
+            // without this the overlay would never see the key at all.
+            if (this._focus?.isActive()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this._focus.close();
+                return;
+            }
             // An open menu takes Escape first: closing the whole view when the user
             // only meant to dismiss a menu loses their place in the list.
             const openMenu = document.querySelector('.health-view-menu:not([hidden])');
@@ -474,6 +513,48 @@ class DashboardHealth {
                 .filter((issue) => this.matchesFilter(issue, this.filter))
                 .filter((issue) => this.matchesQuery(issue, query))
         );
+    }
+
+    /**
+     * Splits an already-filtered-and-sorted page of issues into sections,
+     * mirroring how DashboardInbox groups by date.
+     *
+     * Two groupings, both only under the Status sort — every other sort
+     * (score, name, last-checked) has its own ordering that a heading would
+     * visually chop into pieces, the same reason Inbox's isGroupedSort()
+     * guard exists:
+     *
+     * - The All filter groups by link-hygiene status (broken, duplicate, …).
+     *   Every other filter is already one status or a small related set,
+     *   where a heading would add nothing.
+     * - The Monitored filter groups by live monitor health (down, drift,
+     *   cert warning, healthy) instead — link-hygiene status barely applies
+     *   to a monitored row (it is almost always "healthy" in that sense even
+     *   while its monitor is down), so reusing STATUS_RANK there would put
+     *   nearly everything in one bucket.
+     *
+     * Call this on the page already sliced to visibleLimit, not on the full
+     * filtered array: grouping is a presentation step over what is about to
+     * render, so paging math (_bindLoadMoreObserver, prepareIssueFocus) keeps
+     * working on the flat array exactly as before.
+     */
+    groupFilteredIssues(issues) {
+        if (this.sort !== 'status' || (this.filter !== 'all' && this.filter !== 'monitored')) {
+            return issues.length ? [{ key: 'flat', label: '', items: issues }] : [];
+        }
+        const order = this.filter === 'monitored'
+            ? Object.keys(DashboardHealth.MONITOR_GROUP_RANK)
+            : Object.keys(DashboardHealth.STATUS_RANK);
+        const classify = this.filter === 'monitored'
+            ? (issue) => this.monitorGroupFor(issue)
+            : (issue) => (order.includes(issue?.status) ? issue.status : 'healthy');
+        const buckets = new Map(order.map((key) => [key, []]));
+        issues.forEach((issue) => {
+            buckets.get(classify(issue))?.push(issue);
+        });
+        return order
+            .map((key) => ({ key, label: this.filterLabel(key) || key, items: buckets.get(key) || [] }))
+            .filter((group) => group.items.length > 0);
     }
 
     filterCount(filter) {
@@ -596,6 +677,10 @@ class DashboardHealth {
     handleKeyboardNavigation(e) {
         const d = this.dash;
         if (!this.isActiveView() || !this.isEnabled()) return false;
+        // Focus mode captures its own keys at the document, ahead of this
+        // handler. Bailing out here as well keeps the list from acting on the
+        // same press if that capture is ever bypassed.
+        if (this._focus?.isActive()) return false;
         if (window.DashboardTagCloud?.modalOpen) return false;
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
@@ -698,6 +783,15 @@ class DashboardHealth {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.toggleScorePanel(this.selectedKey);
+            return true;
+        }
+        // f opens focus mode on the row under the cursor. Deliberately not
+        // gated on selectedKey: opening it from a cold list should start at the
+        // top rather than do nothing.
+        if (e.key === 'f') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.focus?.open();
             return true;
         }
         if (e.key === 'm' && this.selectedKey) {
@@ -1694,6 +1788,71 @@ class DashboardHealth {
         }
     }
 
+    /**
+     * Store what this bookmark expects of a good response.
+     *
+     * Sent as all fields at once, so clearing one is an empty box rather than a
+     * separate action. The report is re-read afterwards because the server
+     * clears a content failure when the last expectation goes, and turning
+     * drift watching off clears its baseline too — the row's status changes,
+     * not just its settings.
+     */
+    async saveExpectations(issue, wrap) {
+        if (!issue || !wrap) return undefined;
+        const key = this.issueKey(issue);
+        if (this._busyKeys.has(key)) return undefined;
+
+        const url = String(issue?.url || '').trim();
+        const pageId = Number(issue?.pageId);
+        if (!url || !Number.isFinite(pageId)) return undefined;
+
+        const text = String(wrap.querySelector('[data-expect-text]')?.value || '').trim();
+        const absent = Boolean(wrap.querySelector('[data-expect-absent]')?.checked);
+        const status = String(wrap.querySelector('[data-expect-status]')?.value || '').trim();
+        const watchDrift = Boolean(wrap.querySelector('[data-watch-drift]')?.checked);
+        const notifyMuted = Boolean(wrap.querySelector('[data-notify-muted]')?.checked);
+
+        this.closeAllMenus();
+        window.nextdashTrack?.('health:expectations');
+        this._busyKeys.add(key);
+        this.syncRowBusy(key, true);
+
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await fetcher('/api/health/expectations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pageId, index: issue.index, url,
+                    expectText: text, expectTextAbsent: absent, expectStatus: status,
+                    watchDrift, notifyMuted,
+                }),
+            });
+            if (res.status === 409) {
+                this.dash.showNotification?.(this.t('dashboard.healthCheckModeStale',
+                    'This bookmark changed — the list has been refreshed. Try again.'), 'warning');
+                await this.loadAndRender({ refresh: true });
+                return 'stale';
+            }
+            if (!res.ok) throw new Error(`expectations HTTP ${res.status}`);
+            const saved = await res.json();
+            // Quote what was stored rather than what was typed: the server drops
+            // status codes it cannot parse, so "999" comes back as an empty field
+            // and the message should not claim otherwise.
+            this.dash.showNotification?.(saved.expectText || saved.expectStatus || saved.watchDrift
+                ? this.t('dashboard.healthExpectSaved', 'Expectations saved.')
+                : this.t('dashboard.healthExpectCleared', 'Expectations cleared.'), 'success');
+            await this.loadAndRender({ refresh: true });
+            return 'changed';
+        } catch {
+            this.dash.showNotification?.(this.t('dashboard.healthExpectFailed', 'Could not save what to expect.'), 'error');
+            return 'failed';
+        } finally {
+            this._busyKeys.delete(key);
+            this.syncRowBusy(key, false);
+        }
+    }
+
     /** AppModal.confirm when it exists, window.confirm as the fallback. */
     async confirm(title, message, { danger = false, confirmText = null } = {}) {
         if (typeof window.AppModal?.confirm === 'function') {
@@ -1976,7 +2135,21 @@ class DashboardHealth {
         feed.className = 'health-view-feed';
         feed.setAttribute('role', 'feed');
         feed.setAttribute('aria-label', this.t('dashboard.healthPageTitle', 'Health'));
-        visible.forEach((issue) => feed.appendChild(this.createIssueElement(issue)));
+        const groups = this.groupFilteredIssues(visible);
+        groups.forEach((group) => {
+            const section = document.createElement('section');
+            section.className = 'health-view-status-group';
+            // A flat run (the common case) has no heading; an empty <h3> would
+            // leave its margin behind as a gap above the first row.
+            section.innerHTML = group.label
+                ? `<h3 class="health-view-status-group-title">${this.escape(group.label)}<span class="health-view-status-group-count">${group.items.length}</span></h3>`
+                : '';
+            const list = document.createElement('div');
+            list.className = 'health-view-status-group-items';
+            group.items.forEach((issue) => list.appendChild(this.createIssueElement(issue)));
+            section.appendChild(list);
+            feed.appendChild(section);
+        });
         container.appendChild(feed);
         this.bindOutsideMenuDismiss();
 
@@ -2002,6 +2175,7 @@ class DashboardHealth {
     filterLabel(filter = this.filter) {
         const labels = {
             broken: this.t('dashboard.healthFilterBroken', 'Broken'),
+            content: this.t('dashboard.healthFilterContent', 'Content'),
             duplicate: this.t('dashboard.healthFilterDuplicates', 'Duplicates'),
             unchecked: this.t('dashboard.healthFilterUnchecked', 'Never checked'),
             monitored: this.t('dashboard.healthFilterMonitored', 'Monitored'),
@@ -2011,6 +2185,13 @@ class DashboardHealth {
             'missing-preview': this.t('dashboard.healthFilterMissingPreview', 'Missing preview'),
             healthy: this.t('dashboard.healthFilterHealthy', 'Healthy'),
             all: this.t('dashboard.healthFilterAll', 'All'),
+            // Monitor-group headings, distinct from the link-hygiene labels
+            // above: "down" here means the monitor is failing right now, not
+            // the report's "broken" status. Drift reuses healthFilterDrift —
+            // same concept, no need for a second translated string.
+            down: this.t('dashboard.healthGroupDown', 'Down'),
+            drift: this.t('dashboard.healthFilterDrift', 'Drift'),
+            cert: this.t('dashboard.healthGroupCert', 'Certificate warning'),
         };
         return labels[filter] || String(filter || '');
     }
@@ -2043,9 +2224,7 @@ class DashboardHealth {
         const label = age < 60_000
             ? this.t('dashboard.healthReportJustNow', 'updated just now')
             : this.t('dashboard.healthReportAge', 'updated {age} ago', { age: this.formatDuration(age) });
-        return `<span class="health-view-report-age" title="${this.escape(
-            this.t('dashboard.healthReportAgeTitle', 'When this report was generated. Use Retest all to refresh it.')
-        )}">${this.escape(label)}</span>`;
+        return `<span class="health-view-report-age">${this.escape(label)}</span>`;
     }
 
     /* ── Explaining the view ───────────────────────────────────────────── */
@@ -2189,6 +2368,12 @@ class DashboardHealth {
             : this.t('dashboard.healthFleetUp', 'All {count} responding', { count: fleet.monitors });
         const avg = Number(fleet.avgResponseMs) || 0;
 
+        const collapsed = this.fleetDetailsCollapsed;
+        const details = [this.renderFleetWorst(fleet), this.renderFleetSlower(fleet), this.renderFleetIncidents(fleet)].join('');
+        // No detail sections at all (a young collection with no incidents yet) —
+        // nothing to collapse, so the toggle would open onto an empty panel.
+        const hasDetails = details.trim() !== '';
+
         panel.innerHTML = `
             <div class="health-fleet-head">
                 <h3 class="health-fleet-title">${this.escape(this.t('dashboard.healthFleetTitle', 'All monitors'))}</h3>
@@ -2196,12 +2381,33 @@ class DashboardHealth {
                 ${avg ? `<span class="health-fleet-avg">${this.escape(
                     this.t('dashboard.healthFleetAvgResponse', '{ms}ms average', { ms: avg })
                 )}</span>` : ''}
+                ${hasDetails ? `<button type="button" class="health-fleet-collapse-btn" aria-expanded="${collapsed ? 'false' : 'true'}" aria-controls="health-fleet-details" title="${this.escape(
+                    collapsed
+                        ? this.t('dashboard.healthFleetExpand', 'Show least-available monitors and outages')
+                        : this.t('dashboard.healthFleetCollapse', 'Hide least-available monitors and outages, keep just the uptime tiles')
+                )}">${this.escape(collapsed
+                    ? this.t('dashboard.healthFleetShowDetails', 'Show details')
+                    : this.t('dashboard.healthFleetHideDetails', 'Hide details'))}</button>` : ''}
             </div>
             <div class="health-monitor-stat-grid">${tiles}</div>
-            ${this.renderFleetWorst(fleet)}
-            ${this.renderFleetSlower(fleet)}
-            ${this.renderFleetIncidents(fleet)}
+            ${hasDetails ? `<div id="health-fleet-details" class="health-fleet-details"${collapsed ? ' hidden' : ''}>${details}</div>` : ''}
         `;
+        panel.querySelector('.health-fleet-collapse-btn')?.addEventListener('click', () => {
+            this.fleetDetailsCollapsed = !this.fleetDetailsCollapsed;
+            this.persistViewState();
+            const btn = panel.querySelector('.health-fleet-collapse-btn');
+            const detailsEl = panel.querySelector('.health-fleet-details');
+            if (detailsEl) detailsEl.hidden = this.fleetDetailsCollapsed;
+            if (btn) {
+                btn.setAttribute('aria-expanded', this.fleetDetailsCollapsed ? 'false' : 'true');
+                btn.title = this.fleetDetailsCollapsed
+                    ? this.t('dashboard.healthFleetExpand', 'Show least-available monitors and outages')
+                    : this.t('dashboard.healthFleetCollapse', 'Hide least-available monitors and outages, keep just the uptime tiles');
+                btn.textContent = this.fleetDetailsCollapsed
+                    ? this.t('dashboard.healthFleetShowDetails', 'Show details')
+                    : this.t('dashboard.healthFleetHideDetails', 'Hide details');
+            }
+        });
         return panel;
     }
 
@@ -2303,7 +2509,9 @@ class DashboardHealth {
      * points this month" is the thing worth knowing. Hidden entirely with fewer
      * than two days recorded — a trend needs something to trend from.
      */
-    renderTrendDelta() {
+    /** The trend arrow's plain-language label, shared by the badge's aria-label
+     *  and the header meta block's popover, so the wording never drifts. */
+    trendDeltaLabel() {
         const points = this.trendPoints();
         if (points.length < 2) return '';
         const first = this.trendPercent(points[0]);
@@ -2314,15 +2522,26 @@ class DashboardHealth {
         const days = points.length;
         // Zero is worth saying: "unchanged over 30 days" is a real answer, and
         // hiding it would make the badge appear only when something moved.
-        const dir = delta > 0 ? 'up' : (delta < 0 ? 'down' : 'flat');
-        const arrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '–');
-        const label = delta === 0
+        return delta === 0
             ? this.t('dashboard.healthTrendFlat', 'unchanged over {days} days', { days })
             : (delta > 0
                 ? this.t('dashboard.healthTrendUp', 'up {points} points over {days} days', { points: delta, days })
                 : this.t('dashboard.healthTrendDown', 'down {points} points over {days} days', { points: Math.abs(delta), days }));
+    }
 
-        return `<span class="health-view-trend-delta is-${dir}" title="${this.escape(label)}" aria-label="${this.escape(label)}">`
+    renderTrendDelta() {
+        const points = this.trendPoints();
+        if (points.length < 2) return '';
+        const first = this.trendPercent(points[0]);
+        const last = this.trendPercent(points[points.length - 1]);
+        if (first === null || last === null) return '';
+
+        const delta = last - first;
+        const dir = delta > 0 ? 'up' : (delta < 0 ? 'down' : 'flat');
+        const arrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '–');
+        const label = this.trendDeltaLabel();
+
+        return `<span class="health-view-trend-delta is-${dir}" aria-label="${this.escape(label)}">`
             + `<span aria-hidden="true">${arrow}${delta === 0 ? '' : Math.abs(delta)}</span></span>`;
     }
 
@@ -2389,29 +2608,68 @@ class DashboardHealth {
         </div>`;
     }
 
+    /** Plain-language explanation for the title block's hover popover. */
+    headerTitleHint() {
+        return this.t(
+            'dashboard.healthHeaderTitleHint',
+            'This view lists bookmarks that need attention: broken links, content that no longer matches what was expected, and monitors that are down. The path above shows the active filter.'
+        );
+    }
+
+    /**
+     * Plain-language explanation for the stats block's hover popover, folding
+     * together what used to be four separate native title tooltips (percentage,
+     * trend arrow, broken count, report age) into one sentence — hovering
+     * anywhere over the block now explains the whole thing at once instead of
+     * requiring four separate, precisely-aimed hovers.
+     */
+    headerMetaHint() {
+        const summary = this.report?.summary || {};
+        const healthy = Number(summary.healthyCount) || 0;
+        const total = Number(summary.totalBookmarks) || 0;
+        const pct = this.healthyPercent();
+        const broken = this.brokenCount();
+
+        const parts = [
+            total
+                ? this.t('dashboard.healthHeaderHealthyDetail', '{count} of {total} healthy', { count: healthy, total })
+                : this.t('dashboard.healthHeaderHealthyPct', '{pct}% healthy', { pct }),
+        ];
+
+        const trendLabel = this.trendDeltaLabel();
+        if (trendLabel) parts.push(trendLabel);
+
+        if (broken > 0) {
+            parts.push(broken === 1
+                ? this.t('dashboard.healthBrokenOne', '1 broken')
+                : this.t('dashboard.healthBrokenCount', '{count} broken', { count: broken }));
+        }
+
+        parts.push(this.t(
+            'dashboard.healthReportAgeTitle',
+            'When this report was generated. Use Retest all to refresh it.'
+        ));
+
+        return parts.join(' — ');
+    }
+
     renderHeader() {
         const pct = this.healthyPercent();
         const broken = this.brokenCount();
         const pctLabel = this.t('dashboard.healthHeaderHealthyPct', '{pct}% healthy', { pct });
-        const summary = this.report?.summary || {};
-        const healthy = Number(summary.healthyCount) || 0;
-        const total = Number(summary.totalBookmarks) || 0;
-        const detail = total
-            ? this.t('dashboard.healthHeaderHealthyDetail', '{count} of {total} healthy', { count: healthy, total })
-            : pctLabel;
         const trail = this.headerBreadcrumb();
         const showTrail = trail.includes(' › ');
 
         const header = document.createElement('div');
         header.className = 'health-view-header';
         header.innerHTML = `
-            <div class="health-view-header-text">
+            <div class="health-view-header-text" tabindex="0" role="group" aria-label="${this.escape(this.headerTitleHint())}">
                 <h2 class="health-view-title">${this.escape(this.t('dashboard.healthPageTitle', 'Health'))}</h2>
                 <p class="health-view-head-breadcrumb"${showTrail ? '' : ' hidden'}>${this.escape(trail)}</p>
                 <p class="health-view-subtitle">${this.escape(this.t('dashboard.healthPageSubtitle', 'Bookmarks that need attention'))}</p>
             </div>
-            <div class="health-view-header-meta">
-                <span class="health-view-score-badge ${this.bandClass(pct)}" title="${this.escape(detail)}" aria-label="${this.escape(pctLabel)}">${pct}%</span>
+            <div class="health-view-header-meta" tabindex="0" role="group" aria-label="${this.escape(this.headerMetaHint())}">
+                <span class="health-view-score-badge ${this.bandClass(pct)}" aria-label="${this.escape(pctLabel)}">${pct}%</span>
                 ${this.renderTrendDelta()}
                 ${broken > 0
                     ? `<span class="health-view-issue-count">${this.escape(
@@ -2424,6 +2682,8 @@ class DashboardHealth {
             </div>
             ${this.renderTrendChart()}
         `;
+        window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-text'), this.headerTitleHint());
+        window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-meta'), this.headerMetaHint());
         return header;
     }
 
@@ -2464,6 +2724,13 @@ class DashboardHealth {
                         ? this.t('dashboard.healthTileMonitoredDown', '{count} of {total} not responding', { count: monitorsDown, total: monitored })
                         : this.t('dashboard.healthTileMonitoredUp', 'All {count} responding', { count: monitored }))
                     : '',
+                // Only when something is actually down: this is the one tile whose
+                // hover-only title hides a fact worth acting on, not just detail —
+                // the same sentence the fleet panel's headline already prints in
+                // plain text, so a mouse is not required to see it here too.
+                sub: monitorsDown > 0
+                    ? this.t('dashboard.healthTileMonitoredDown', '{count} of {total} not responding', { count: monitorsDown, total: monitored })
+                    : '',
             },
             // Each tile says what its number means. The labels are one word by
             // necessity — seven of them share a row — and "Stale" next to "Unused"
@@ -2474,6 +2741,13 @@ class DashboardHealth {
                 value: Number(summary.brokenCount) || 0,
                 tone: 'bad',
                 title: this.t('dashboard.healthTileBrokenHint', 'Did not respond when last checked'),
+            },
+            {
+                key: 'content',
+                label: this.t('dashboard.healthTileContent', 'Content'),
+                value: Number(summary.contentCount) || 0,
+                tone: 'bad',
+                title: this.t('dashboard.healthTileContentHint', 'The site answered, but not the way this bookmark expects'),
             },
             {
                 key: 'unchecked',
@@ -2498,6 +2772,36 @@ class DashboardHealth {
             },
         ];
 
+        // Drift only ever holds bookmarks that opted into watching for it, so a
+        // zero here is the normal state for most installs — shown only when
+        // there is something to say, the same rule the certificates tile below
+        // follows.
+        const driftCount = Number(summary.driftCount) || 0;
+        if (driftCount > 0) {
+            tiles.push({
+                key: 'drift',
+                label: this.t('dashboard.healthTileDrift', 'Drift'),
+                value: driftCount,
+                tone: 'warn',
+                title: this.t('dashboard.healthTileDriftHint', 'The page no longer looks like what was saved — redirect, title, or content changed'),
+            });
+        }
+
+        // Certificates count hosts, not bookmarks, so this one cannot become a
+        // filter the way the others do: there is no per-issue flag to filter on,
+        // and clicking it would appear to do nothing. Shown only when there is
+        // something to say, since a zero here is the normal state.
+        const certCount = this.certWarningCount();
+        if (certCount > 0) {
+            tiles.push({
+                key: '',
+                label: this.t('dashboard.healthTileCerts', 'Certificates'),
+                value: certCount,
+                tone: 'warn',
+                title: this.t('dashboard.healthTileCertsHint', 'Hosts whose TLS certificate expires soon — the affected rows are badged'),
+            });
+        }
+
         const wrap = document.createElement('div');
         wrap.className = 'health-view-tiles';
         wrap.innerHTML = tiles.map((tile) => {
@@ -2510,10 +2814,23 @@ class DashboardHealth {
             const named = tile.key === 'monitored' ? ' health-view-tile--monitored' : '';
             const cls = `health-view-tile health-view-tile--${tile.tone}${zero}${named}${active}`;
             const title = tile.title ? ` title="${this.escape(tile.title)}"` : '';
-            return `<button type="button" class="${cls}" data-health-tile="${tile.key}" tabindex="-1"${title} aria-label="${this.escape(tile.label)}: ${this.escape(tile.value)}">
-                <span class="health-view-tile-label">${this.escape(tile.label)}</span>
-                <span class="health-view-tile-value">${this.escape(tile.value)}</span>
-            </button>`;
+            const body = `<span class="health-view-tile-label">${this.escape(tile.label)}</span>`
+                + `<span class="health-view-tile-value">${this.escape(tile.value)}</span>`
+                + (tile.sub ? `<span class="health-view-tile-sub">${this.escape(tile.sub)}</span>` : '');
+            // aria-label replaces title for assistive tech rather than supplementing
+            // it, so the sub line's fact has to be folded in here too or a
+            // screen-reader user would miss exactly what a sighted user now sees.
+            const ariaLabel = tile.sub
+                ? `${tile.label}: ${tile.value} — ${tile.sub}`
+                : `${tile.label}: ${tile.value}`;
+            // Keyless tiles report something the list cannot be filtered by, so
+            // they render as plain text rather than a button that would look
+            // clickable and then do nothing.
+            if (!tile.key) {
+                return `<span class="${cls} health-view-tile--static"${title} role="listitem"
+                    aria-label="${this.escape(ariaLabel)}">${body}</span>`;
+            }
+            return `<button type="button" class="${cls}" data-health-tile="${tile.key}" tabindex="-1"${title} aria-label="${this.escape(ariaLabel)}">${body}</button>`;
         }).join('');
 
         wrap.querySelectorAll('[data-health-tile]').forEach((btn) => {
@@ -2821,26 +3138,30 @@ class DashboardHealth {
     }
 
     /** Secondary filters appear once they have rows, or stay visible while active. */
-    appendSecondaryFilterPills(filters) {
+    /**
+     * The less-common filters, shown in the overflow menu rather than as their
+     * own pills — with up to ten pills otherwise competing for one row, most
+     * wrapped onto a second line no matter the screen width. Same
+     * count-gating as before: a filter with nothing in it, and not the one
+     * currently active, does not appear at all.
+     */
+    secondaryFilterEntries() {
         const secondary = [
             ['stale', this.t('dashboard.healthFilterStale', 'Stale')],
             ['unused', this.t('dashboard.healthFilterUnused', 'Unused')],
+            ['drift', this.t('dashboard.healthFilterDrift', 'Drift')],
             ['shortcut-conflict', this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts')],
             ['missing-preview', this.t('dashboard.healthFilterMissingPreview', 'Missing preview')],
             ['healthy', this.t('dashboard.healthFilterHealthy', 'Healthy')],
         ];
-        for (const [key, label] of secondary) {
-            const count = this.filterCount(key);
-            if (count > 0 || this.filter === key) {
-                filters.push([key, label]);
-            }
-        }
+        return secondary.filter(([key]) => this.filterCount(key) > 0 || this.filter === key);
     }
 
     renderToolbar() {
         const checkedCount = this.checkedCount();
         const filters = [
             ['broken', this.t('dashboard.healthFilterBroken', 'Broken')],
+            ['content', this.t('dashboard.healthFilterContent', 'Content')],
             ['duplicate', this.t('dashboard.healthFilterDuplicates', 'Duplicates')],
             ['unchecked', this.t('dashboard.healthFilterUnchecked', 'Never checked')],
         ];
@@ -2854,18 +3175,44 @@ class DashboardHealth {
         if (monitoredCount > 0 || hasBookmarks || this.filter === 'monitored') {
             filters.push(['monitored', this.t('dashboard.healthFilterMonitored', 'Monitored')]);
         }
-        this.appendSecondaryFilterPills(filters);
         filters.push(['all', this.t('dashboard.healthFilterAll', 'All')]);
 
-        const toolbar = document.createElement('div');
-        toolbar.className = 'health-view-toolbar';
-        const pills = filters.map(([key, label]) => {
+        // The less-common filters live in an overflow menu rather than as pills
+        // of their own — with the core set above plus all six of these, the row
+        // wrapped onto a second line on anything but a very wide window. A
+        // secondary filter that is currently active stays out of the menu and
+        // gets its own pill instead, so the active state is never hidden behind
+        // a click.
+        const overflow = this.secondaryFilterEntries();
+        const activeOverflow = overflow.find(([key]) => key === this.filter);
+        const menuOverflow = activeOverflow ? overflow.filter(([key]) => key !== this.filter) : overflow;
+        if (activeOverflow) {
+            filters.push(activeOverflow);
+        }
+
+        const renderPill = ([key, label]) => {
             const count = this.filterCount(key);
             const active = this.filter === key;
             return `<button type="button" class="health-view-filter-btn${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-health-filter="${key}">
                 ${this.escape(label)}<span class="health-view-filter-count">${count}</span>
             </button>`;
-        }).join('');
+        };
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'health-view-toolbar';
+        const pills = filters.map(renderPill).join('');
+        const moreMenu = menuOverflow.length ? `
+            <span class="health-view-menu-wrap health-view-filter-more-wrap">
+                <button type="button" class="health-view-filter-more-btn" aria-haspopup="menu" aria-expanded="false" data-menu-toggle="filter-overflow" data-menu-kind="filter-overflow">
+                    ${this.escape(this.t('dashboard.healthFilterMore', 'More'))} <span class="health-view-filter-more-caret" aria-hidden="true">▾</span>
+                </button>
+                <div class="health-view-menu health-view-filter-overflow-menu" role="menu" data-menu-for="filter-overflow" data-menu-owner="filter-overflow" hidden>
+                    ${menuOverflow.map(([key, label]) => {
+                        const count = this.filterCount(key);
+                        return `<button type="button" class="health-view-menu-item" role="menuitem" data-health-filter="${key}">${this.escape(label)}<span class="health-view-filter-count">${count}</span></button>`;
+                    }).join('')}
+                </div>
+            </span>` : '';
 
         const sortOptions = [
             ['score', this.t('dashboard.healthSortScore', 'score')],
@@ -2878,23 +3225,32 @@ class DashboardHealth {
         ).join('');
 
         toolbar.innerHTML = `
-            <div class="health-view-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.healthFilterLabel', 'Filter health issues'))}">${pills}</div>
-            <input type="search" class="health-view-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}">
-            <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
-            <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export'))}</button>
-            ${this.renderHistoryExportButton()}
-            ${this.renderOpenBrokenButton()}
-            ${this.renderMergeDuplicateButton()}
-            <button type="button" class="health-view-retest-btn">${this.escape(this.t('dashboard.healthRetest', 'Retest all'))}</button>
-            <button type="button" class="health-view-checkoff-btn"${checkedCount ? '' : ' disabled'} title="${this.escape(checkedCount
-                ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
-                : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
-            ${this.renderBulkEnableButtons()}
-            <button type="button" class="view-help-btn health-view-help-btn" data-health-help
-                    aria-haspopup="dialog"
-                    title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"
-                    aria-label="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}">ℹ</button>
+            <div class="health-view-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.healthFilterLabel', 'Filter health issues'))}">${pills}${moreMenu}</div>
+            <div class="health-view-toolbar-search-row">
+                <input type="search" class="health-view-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}">
+                <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
+            </div>
+            <div class="health-view-toolbar-actions">
+                <button type="button" class="health-view-focus-btn" title="${this.escape(this.t('dashboard.healthFocusHint', 'Work through this list one bookmark at a time'))}">${this.escape(this.t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>
+                <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export rows'))}</button>
+                ${this.renderHistoryExportButton()}
+                ${this.renderOpenBrokenButton()}
+                ${this.renderMergeDuplicateButton()}
+                <button type="button" class="health-view-retest-btn">${this.escape(this.t('dashboard.healthRetest', 'Retest all'))}</button>
+                <button type="button" class="health-view-checkoff-btn"${checkedCount ? '' : ' disabled'} title="${this.escape(checkedCount
+                    ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
+                    : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
+                ${this.renderBulkEnableButtons()}
+                <button type="button" class="view-help-btn health-view-help-btn" data-health-help
+                        aria-haspopup="dialog"
+                        title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"
+                        aria-label="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}">ℹ</button>
+            </div>
         `;
+
+        toolbar.querySelector('.health-view-focus-btn')?.addEventListener('click', () => {
+            this.focus?.open();
+        });
 
         toolbar.querySelector('.health-view-export-btn')?.addEventListener('click', () => {
             this.exportFilteredCsv();
@@ -2934,7 +3290,6 @@ class DashboardHealth {
             document.getElementById('dashboard-layout')?.focus({ preventScroll: true });
         });
 
-        const filterBtns = [...toolbar.querySelectorAll('[data-health-filter]')];
         const applyFilter = (key, via) => {
             this.filter = key || 'broken';
             this.focusIssueKey = null;
@@ -2946,6 +3301,12 @@ class DashboardHealth {
             this.dash.pageNav?.updatePageTitle?.();
             this.dash.pageNav?.updateDocumentTitle?.();
         };
+
+        // Scoped to the tablist's direct pills, not the overflow menu inside
+        // it: those buttons also carry [data-health-filter] but are hidden
+        // until "More" opens them, and the arrow-key cycle below must only
+        // step through what is actually visible and part of the tablist.
+        const filterBtns = [...toolbar.querySelectorAll('.health-view-filter-group > [data-health-filter]')];
         filterBtns.forEach((btn, i) => {
             btn.addEventListener('click', () => applyFilter(btn.getAttribute('data-health-filter'), 'pill'));
             // The group announces itself as a tablist, so the keys that role
@@ -2969,6 +3330,24 @@ class DashboardHealth {
                 if (!target.isConnected) {
                     document.querySelector(`[data-health-filter="${CSS.escape(key)}"]`)?.focus();
                 }
+            });
+        });
+
+        const moreBtn = toolbar.querySelector('.health-view-filter-more-btn');
+        const overflowMenu = toolbar.querySelector('.health-view-filter-overflow-menu');
+        moreBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const opening = overflowMenu.hidden;
+            this.closeAllMenus();
+            if (opening) {
+                overflowMenu.hidden = false;
+                moreBtn.setAttribute('aria-expanded', 'true');
+                overflowMenu.querySelector('.health-view-menu-item')?.focus({ preventScroll: true });
+            }
+        });
+        overflowMenu?.querySelectorAll('[data-health-filter]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                applyFilter(btn.getAttribute('data-health-filter'), 'overflow-menu');
             });
         });
 
@@ -3458,7 +3837,7 @@ class DashboardHealth {
 
     static STATE_KEY = 'nextdash:health-view-state';
     static PERSISTED_FILTERS = new Set([
-        'all', 'broken', 'duplicate', 'shortcut-conflict', 'unchecked',
+        'all', 'broken', 'content', 'duplicate', 'shortcut-conflict', 'unchecked',
         'stale', 'unused', 'missing-preview', 'healthy', 'monitored',
     ]);
     static PERSISTED_SORTS = new Set(['score', 'status', 'last-checked', 'last-checked-desc', 'name']);
@@ -3509,6 +3888,13 @@ class DashboardHealth {
                 if (DashboardHealth.PERSISTED_SORTS.has(stored.sort)) this.sort = stored.sort;
             } catch { /* unreadable storage falls back to the defaults */ }
         }
+        // Independent of the URL/filter branch above: collapsing the fleet
+        // panel is a display preference, not something a shared link should
+        // override.
+        try {
+            const stored = JSON.parse(localStorage.getItem(DashboardHealth.STATE_KEY) || '{}');
+            this.fleetDetailsCollapsed = stored.fleetDetailsCollapsed === true;
+        } catch { /* unreadable storage falls back to expanded */ }
         return { refresh };
     }
 
@@ -3517,7 +3903,7 @@ class DashboardHealth {
         try {
             localStorage.setItem(
                 DashboardHealth.STATE_KEY,
-                JSON.stringify({ filter: this.filter, sort: this.sort })
+                JSON.stringify({ filter: this.filter, sort: this.sort, fleetDetailsCollapsed: this.fleetDetailsCollapsed })
             );
         } catch { /* private mode / full quota: the view still works */ }
     }
@@ -3770,12 +4156,153 @@ class DashboardHealth {
             </span>`
             : '';
 
+        // What counts as healthy for this one bookmark. Shown alongside the
+        // interval and for the same reason: this is the screen where you see a
+        // row reporting "up" for a page that is plainly broken, and the fix
+        // belongs where the symptom is. Only for a monitored row — the checks
+        // that read these fields are the monitor's.
+        const expectRow = active === window.CheckMode.MONITOR
+            ? `<span class="health-check-expect" role="group"
+                    aria-label="${this.escape(this.t('dashboard.healthExpectLabel', 'Expected response'))}">
+                <span class="health-check-expect-label">${this.escape(this.t('dashboard.healthExpectLabel', 'Expected response'))}</span>
+                <input type="text" class="health-check-expect-text" data-expect-text
+                    maxlength="200"
+                    placeholder="${this.escape(this.t('dashboard.healthExpectTextPlaceholder', 'Page must contain…'))}"
+                    aria-label="${this.escape(this.t('dashboard.healthExpectTextLabel', 'Text the page must contain'))}"
+                    value="${this.escape(issue.expectText || '')}">
+                <label class="health-check-expect-invert">
+                    <input type="checkbox" data-expect-absent ${issue.expectTextAbsent ? 'checked' : ''}>
+                    <span>${this.escape(this.t('dashboard.healthExpectAbsent', 'Fail if present instead'))}</span>
+                </label>
+                <input type="text" class="health-check-expect-status" data-expect-status
+                    maxlength="40"
+                    placeholder="${this.escape(this.t('dashboard.healthExpectStatusPlaceholder', 'Status codes, e.g. 200,301'))}"
+                    aria-label="${this.escape(this.t('dashboard.healthExpectStatusLabel', 'Status codes that count as healthy'))}"
+                    value="${this.escape(issue.expectStatus || '')}">
+                <label class="health-check-expect-invert">
+                    <input type="checkbox" data-watch-drift ${issue.watchDrift ? 'checked' : ''}>
+                    <span>${this.escape(this.t('dashboard.healthWatchDrift', 'Watch for redirects, retitling and rewrites'))}</span>
+                </label>
+                <label class="health-check-expect-invert">
+                    <input type="checkbox" data-notify-muted ${issue.notifyMuted ? 'checked' : ''}>
+                    <span>${this.escape(this.t('dashboard.healthNotifyMuted', 'Do not alert me about this bookmark'))}</span>
+                </label>
+                <button type="button" class="health-check-expect-save" data-expect-save>${this.escape(this.t('dashboard.healthExpectSave', 'Save'))}</button>
+            </span>`
+            : '';
+
         // A span, not a div: this popover lives inside the row's <p> meta line, and
         // a block-level child there would make the parser close the paragraph
         // early, stranding the menu outside the row it belongs to.
         return `<span class="health-view-menu health-check-menu" role="menu" hidden
             data-menu-for="${this.escape(key)}" data-menu-owner="check"
-            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}${intervalRow}</span>`;
+            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}${intervalRow}${expectRow}</span>`;
+    }
+
+    /**
+     * The certificate for this row's host, when it is close enough to matter.
+     *
+     * Looked up by hostname rather than carried on the issue: a certificate
+     * belongs to a host, and ten bookmarks on one domain share one. The report
+     * only sends the ones already near expiry, so anything found here is worth
+     * showing.
+     */
+    renderCertBadge(issue) {
+        const cert = this.certFor(issue);
+        if (!cert) return '';
+        const days = this.certDaysLeft(cert);
+        const label = days < 0
+            ? this.t('dashboard.healthCertExpired', 'Certificate expired')
+            : this.t('dashboard.healthCertExpiring', 'Certificate: {days}d', { days });
+        const title = days < 0
+            ? this.t('dashboard.healthCertExpiredHint', 'The TLS certificate for {host} has expired', { host: cert.host })
+            : this.t('dashboard.healthCertExpiringHint', 'The TLS certificate for {host} expires in {days} days', { host: cert.host, days });
+        const tone = days < 0 ? 'expired' : (days <= 3 ? 'urgent' : 'warn');
+        return `<span class="health-cert-badge is-${tone}" title="${this.escape(title)}">${this.escape(label)}</span>`;
+    }
+
+    /**
+     * A rot finding for this row, when watching turned one up.
+     *
+     * The reason is what the row shows — it already names the redirect target
+     * or the new title, so the badge itself stays short and the detail is one
+     * hover away.
+     */
+    /**
+     * Says that this row's alerts are silenced.
+     *
+     * Worth a badge rather than living only inside the check menu: a muted
+     * bookmark still shows as down, so without this the row reads exactly like
+     * one that should have paged you and did not. The badge is the difference
+     * between "the alerting is broken" and "you turned this one off".
+     */
+    renderMutedBadge(issue) {
+        if (!issue?.notifyMuted) return '';
+        return `<span class="health-muted-badge" title="${this.escape(this.t(
+            'dashboard.healthNotifyMutedHint',
+            'Alerts are off for this bookmark. It is still checked, and still shown here.'
+        ))}">${this.escape(this.t('dashboard.healthNotifyMutedBadge', 'Muted'))}</span>`;
+    }
+
+    renderDriftBadge(issue) {
+        if (!issue?.watchDrift || !issue?.driftNoticed) return '';
+        const label = String(issue.driftNoticed).startsWith('title')
+            ? this.t('dashboard.healthDriftRetitled', 'Retitled')
+            : (issue.driftNoticed === 'content'
+                ? this.t('dashboard.healthDriftChanged', 'Changed')
+                : this.t('dashboard.healthDriftMoved', 'Moved'));
+        const title = issue.driftReason
+            || this.t('dashboard.healthDriftGeneric', 'This page no longer looks like what was saved.');
+        return `<span class="health-drift-badge" title="${this.escape(title)}">${this.escape(label)}</span>`;
+    }
+
+    /** The stored certificate for an issue's host, or null. */
+    certFor(issue) {
+        const certs = this.report?.certificates;
+        if (!certs || !issue) return null;
+        // certHost is the host a check actually saw over TLS, which after a
+        // redirect can differ from the bookmark's own URL — certificates are
+        // stored per host, so this is the key that actually matches. Falls back
+        // to the bookmark's own hostname only when no check has recorded one yet.
+        const certHost = String(issue.certHost || '').toLowerCase();
+        if (certHost) return certs[certHost] || null;
+        if (!issue.url) return null;
+        let host = '';
+        try {
+            host = new URL(String(issue.url)).hostname.toLowerCase();
+        } catch {
+            return null;
+        }
+        return certs[host] || null;
+    }
+
+    /** Whole days until a certificate expires; negative once past. */
+    certDaysLeft(cert) {
+        const expires = Number(cert?.expiresAt) || 0;
+        if (!expires) return 0;
+        return Math.floor((expires - Date.now()) / 86400000);
+    }
+
+    /** Hosts whose certificate is near expiry, for the tile. */
+    certWarningCount() {
+        const certs = this.report?.certificates;
+        return certs ? Object.keys(certs).length : 0;
+    }
+
+    /**
+     * Which live-monitor bucket a row belongs in: down beats drift beats a
+     * certificate warning beats healthy, matching the priority order the row
+     * badges already use (a down monitor's badge would eclipse a drift badge
+     * anyway, so grouping by anything else would disagree with the row itself).
+     *
+     * Only meaningful for monitored rows — callers on the Monitored filter can
+     * assume every issue passed in has `monitor === true`.
+     */
+    monitorGroupFor(issue) {
+        if (Number(issue?.monitorStats?.downSince) > 0) return 'down';
+        if (issue?.watchDrift && issue?.driftNoticed) return 'drift';
+        if (this.certFor(issue)) return 'cert';
+        return 'healthy';
     }
 
     /** The monitor strip under the row meta: heartbeat, uptime, sparkline. */
@@ -4258,6 +4785,9 @@ class DashboardHealth {
                 <p class="health-view-item-meta">
                     <span class="health-view-item-meta-primary">
                         <span>${this.escape(domain)}</span>
+                        ${this.renderCertBadge(issue)}
+                        ${this.renderDriftBadge(issue)}
+                        ${this.renderMutedBadge(issue)}
                         <span class="health-check-mode-wrap">
                             ${this.renderCheckModeBadge(issue, key)}
                             ${this.renderCheckModeMenu(issue, key)}
@@ -4349,6 +4879,25 @@ class DashboardHealth {
                 void this.setMonitorInterval(issue, Number(item.getAttribute('data-check-interval')));
             });
         });
+
+        // The expectation fields are inputs inside a menu that closes on any
+        // click within it, so every event here has to stop travelling — without
+        // this, focusing the box shuts the menu the box lives in.
+        const expectWrap = row.querySelector('.health-check-expect');
+        if (expectWrap) {
+            expectWrap.addEventListener('click', (e) => e.stopPropagation());
+            expectWrap.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    void this.saveExpectations(issue, expectWrap);
+                }
+            });
+            expectWrap.querySelector('[data-expect-save]')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                void this.saveExpectations(issue, expectWrap);
+            });
+        }
 
         const menuActions = {
             dashboard: () => this.openIssueInDashboard(issue),

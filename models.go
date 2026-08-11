@@ -48,6 +48,59 @@ type Bookmark struct {
 	// it for everything would bloat the history file for no benefit.
 	Monitor                bool `json:"monitor,omitempty"`
 	MonitorIntervalMinutes int  `json:"monitorIntervalMinutes,omitempty"` // 5..1440, 0 = use default
+	// ExpectText is a string the page must contain to count as healthy. A page
+	// that answers 200 while showing "database connection failed" is up by every
+	// other measure, and this is the only way to say otherwise.
+	//
+	// Empty means no content check, which is the default and costs nothing: the
+	// body is only read when this is set, so bookmarks without it never pay for
+	// the feature.
+	ExpectText string `json:"expectText,omitempty"`
+	// ExpectTextAbsent inverts the test — healthy when the string is *missing*,
+	// for catching an error banner rather than confirming a good page.
+	ExpectTextAbsent bool `json:"expectTextAbsent,omitempty"`
+	// ExpectStatus narrows what counts as reachable, as a comma-separated list of
+	// codes and ranges ("200", "200-299", "200,301,401"). Empty keeps the default
+	// rule in httpStatusReachable, which treats anything under 500 as up — right
+	// for bookmarks generally, but unable to tell an endpoint that *should* return
+	// 401 from one that just started to.
+	ExpectStatus string `json:"expectStatus,omitempty"`
+	// WatchDrift opts a monitored bookmark into rot detection: where the check
+	// lands after redirects, what the page is titled, and roughly what it says.
+	// Off by default and separate from the expectations above, because it reads
+	// the page body — the one part of a check that costs real bandwidth.
+	WatchDrift bool `json:"watchDrift,omitempty"`
+	// The baseline the drift checks compare against, recorded on the first check
+	// after WatchDrift is switched on. Empty means "no baseline yet", which reads
+	// as unknown rather than as drift.
+	DriftURL         string `json:"driftUrl,omitempty"`
+	DriftTitle       string `json:"driftTitle,omitempty"`
+	DriftFingerprint string `json:"driftFingerprint,omitempty"`
+	// DriftNoticed is what the last check found, as one of the kinds in
+	// health_drift.go ("host", "root", "path", "title-parked", "title-changed",
+	// "content"). Empty while the page is still recognisably itself.
+	DriftNoticed string `json:"driftNoticed,omitempty"`
+	DriftSince   int64  `json:"driftSince,omitempty"`
+	// DriftReason is the sentence shown on the row — "Now redirects to
+	// example.org", "Page title now reads …". Stored rather than re-derived,
+	// because the baseline it was computed against is deliberately not updated
+	// once drift is found.
+	DriftReason string `json:"driftReason,omitempty"`
+	// NotifyMuted silences outbound alerts for this one bookmark: it is still
+	// checked, still recorded, and still shown as down in the view — only the
+	// webhook and browser push are held back.
+	//
+	// Deliberately phrased as "muted" rather than "notify enabled". The notifying
+	// default is on, and a bool with omitempty drops its false value from the
+	// JSON entirely — so an "enabled" field would read back as false for every
+	// bookmark saved before this existed and silently mute the whole collection.
+	// Muted-by-absence is the migration-free direction.
+	NotifyMuted bool `json:"notifyMuted,omitempty"`
+	// CertHost is the hostname a check's TLS handshake was actually served for,
+	// which after a redirect can differ from this bookmark's own URL. Certificates
+	// are stored per host, not per bookmark (health_cert.go), so the report needs
+	// this to look one up under the right key instead of guessing from URL.
+	CertHost string `json:"certHost,omitempty"`
 }
 
 type Finder struct {
@@ -261,6 +314,22 @@ type Settings struct {
 	ServerLogEnabled     bool   `json:"serverLogEnabled"`               // Capture server log lines for the in-app viewer (default off)
 	MonitorNotifyURL     string `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
 	MonitorNotifyRetries int    `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
+	// MonitorNotifyPreset shapes the webhook body for a specific service instead
+	// of nextDash's own raw JSON. Empty keeps today's exact behaviour, so an
+	// existing webhook receiver built against the raw shape needs no migration.
+	MonitorNotifyPreset string `json:"monitorNotifyPreset,omitempty"` // "", "slack", "discord", "telegram", "gotify", "ntfy", "pushover"
+	// MonitorNotifyTelegramChatID is only read when MonitorNotifyPreset is
+	// "telegram" — the bot API needs a chat to post into, separate from the
+	// bot-token URL, and getting it wrong is otherwise a silent failure.
+	MonitorNotifyTelegramChatID string `json:"monitorNotifyTelegramChatId,omitempty"`
+	// Pushover has no user-chosen URL at all: the endpoint is fixed
+	// (api.pushover.net) and delivery is keyed on these two values instead.
+	MonitorNotifyPushoverToken   string `json:"monitorNotifyPushoverToken,omitempty"`
+	MonitorNotifyPushoverUserKey string `json:"monitorNotifyPushoverUserKey,omitempty"`
+	// MaintenanceWindows are recurring periods when downtime is expected. Checks
+	// still run and samples are still recorded — the heartbeat stays honest — but
+	// failures inside a window raise no alert and do not count against uptime.
+	MaintenanceWindows []MaintenanceWindow `json:"maintenanceWindows,omitempty"`
 	// The push booleans deliberately omit "omitempty": with it, a false value is
 	// dropped from the JSON entirely and the config checkbox reads `undefined`
 	// instead of unchecked, so turning a toggle off would not survive a reload.
@@ -2458,6 +2527,11 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 	settings.MonitorNotifyRetries = clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
+	settings.MonitorNotifyPreset = normalizeMonitorNotifyPreset(settings.MonitorNotifyPreset)
+	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
+	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
+	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
+	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 
 	fs.readCache.settings = settings
@@ -2684,6 +2758,98 @@ func getDefaultBuiltInThemes() map[string]ThemeColors {
 		// ── Midnight Firefly: deep navy garden with lime firefly glow ──────────
 		"midnight-firefly-dark":  {Name: "Midnight Firefly [dark]", TextPrimary: "#C8D8C0", TextSecondary: "#A8C898", TextTertiary: "#88A878", BackgroundPrimary: "#060810", BackgroundSecondary: "#0C1018", BackgroundDots: "#101820", BackgroundModal: "rgba(6, 8, 16, 0.88)", BorderPrimary: "#3A5838", BorderSecondary: "#284028", AccentSuccess: "#C8FF40", AccentWarning: "#FBBF24", AccentError: "#FB7185"},
 		"midnight-firefly-light": {Name: "Midnight Firefly [light]", TextPrimary: "#1A2818", TextSecondary: "#3A5838", TextTertiary: "#587858", BackgroundPrimary: "#F5F8F0", BackgroundSecondary: "#EAF0E0", BackgroundDots: "#E8F0D8", BackgroundModal: "rgba(245, 248, 240, 0.92)", BorderPrimary: "#A8C898", BorderSecondary: "#88B078", AccentSuccess: "#65A30D", AccentWarning: "#B45309", AccentError: "#BE123C"},
+
+		// ── Blueprint: draughtsman's cyanotype, white rule on process blue ─────
+		"blueprint-dark":  {Name: "Blueprint [dark]", TextPrimary: "#EAF2FF", TextSecondary: "#A8C4E8", TextTertiary: "#7A9CC8", BackgroundPrimary: "#0A1A38", BackgroundSecondary: "#0F2450", BackgroundDots: "#1A3A70", BackgroundModal: "rgba(10, 26, 56, 0.9)", BorderPrimary: "#4A7ABF", BorderSecondary: "#2A4E80", AccentSuccess: "#5EEAD4", AccentWarning: "#FDE047", AccentError: "#FF8FA3"},
+		"blueprint-light": {Name: "Blueprint [light]", TextPrimary: "#0F2450", TextSecondary: "#1E4585", TextTertiary: "#3A6AAF", BackgroundPrimary: "#EEF4FC", BackgroundSecondary: "#DEE9F8", BackgroundDots: "#C4D8F0", BackgroundModal: "rgba(238, 244, 252, 0.93)", BorderPrimary: "#9EBEE4", BorderSecondary: "#6E9AD0", AccentSuccess: "#0F766E", AccentWarning: "#A16207", AccentError: "#BE123C"},
+
+		// ── Oxblood Leather: club chair burgundy over tobacco ──────────────────
+		"oxblood-leather-dark":  {Name: "Oxblood Leather [dark]", TextPrimary: "#F0DCD4", TextSecondary: "#D0A898", TextTertiary: "#A87868", BackgroundPrimary: "#1A0C0A", BackgroundSecondary: "#281410", BackgroundDots: "#3A1E18", BackgroundModal: "rgba(26, 12, 10, 0.9)", BorderPrimary: "#6B2820", BorderSecondary: "#4A1C16", AccentSuccess: "#94BC7E", AccentWarning: "#D9A441", AccentError: "#E86A5C"},
+		"oxblood-leather-light": {Name: "Oxblood Leather [light]", TextPrimary: "#3A1410", TextSecondary: "#6B2820", TextTertiary: "#8E4436", BackgroundPrimary: "#FDF6F2", BackgroundSecondary: "#F6E8E0", BackgroundDots: "#EBD4C8", BackgroundModal: "rgba(253, 246, 242, 0.93)", BorderPrimary: "#DDB8A6", BorderSecondary: "#C89680", AccentSuccess: "#4D7C0F", AccentWarning: "#A16207", AccentError: "#9F1239"},
+
+		// ── Ultraviolet: blacklight poster, near-black with violet bloom ───────
+		"ultraviolet-dark":  {Name: "Ultraviolet [dark]", TextPrimary: "#EDE4FF", TextSecondary: "#C4A8FF", TextTertiary: "#9070E0", BackgroundPrimary: "#08040F", BackgroundSecondary: "#120A20", BackgroundDots: "#241040", BackgroundModal: "rgba(8, 4, 15, 0.92)", BorderPrimary: "#7B2FF7", BorderSecondary: "#4B1C99", AccentSuccess: "#3DFFC0", AccentWarning: "#FFD24A", AccentError: "#FF4D8D"},
+		"ultraviolet-light": {Name: "Ultraviolet [light]", TextPrimary: "#2A0F52", TextSecondary: "#4B1C99", TextTertiary: "#7B3FD0", BackgroundPrimary: "#FAF6FF", BackgroundSecondary: "#F2EAFF", BackgroundDots: "#E4D4FF", BackgroundModal: "rgba(250, 246, 255, 0.93)", BorderPrimary: "#D0B8F8", BorderSecondary: "#B090EE", AccentSuccess: "#0D9488", AccentWarning: "#B45309", AccentError: "#BE123C"},
+
+		// ── Foundry Iron: hot steel on cold cast iron, industrial ──────────────
+		"foundry-iron-dark":  {Name: "Foundry Iron [dark]", TextPrimary: "#E8E4E0", TextSecondary: "#B0A8A0", TextTertiary: "#807870", BackgroundPrimary: "#0E0E0D", BackgroundSecondary: "#191817", BackgroundDots: "#282624", BackgroundModal: "rgba(14, 14, 13, 0.9)", BorderPrimary: "#4A4440", BorderSecondary: "#332F2C", AccentSuccess: "#8FBF6F", AccentWarning: "#FF8C1A", AccentError: "#E04030"},
+		"foundry-iron-light": {Name: "Foundry Iron [light]", TextPrimary: "#22201E", TextSecondary: "#4A4440", TextTertiary: "#6E6862", BackgroundPrimary: "#F7F6F4", BackgroundSecondary: "#EDEAE6", BackgroundDots: "#DDD8D2", BackgroundModal: "rgba(247, 246, 244, 0.93)", BorderPrimary: "#C8C2BA", BorderSecondary: "#A69E96", AccentSuccess: "#4D7C0F", AccentWarning: "#C2410C", AccentError: "#B91C1C"},
+
+		// ── Peacock: iridescent teal-to-indigo with gold eye ───────────────────
+		"peacock-dark":  {Name: "Peacock [dark]", TextPrimary: "#DFF6F4", TextSecondary: "#7FD8D0", TextTertiary: "#4FA8B8", BackgroundPrimary: "#04141A", BackgroundSecondary: "#08242E", BackgroundDots: "#0C3848", BackgroundModal: "rgba(4, 20, 26, 0.9)", BorderPrimary: "#127C8E", BorderSecondary: "#0B4E5C", AccentSuccess: "#2DD4BF", AccentWarning: "#E8B33C", AccentError: "#F0607A"},
+		"peacock-light": {Name: "Peacock [light]", TextPrimary: "#06343E", TextSecondary: "#0B5A6C", TextTertiary: "#128298", BackgroundPrimary: "#F2FBFC", BackgroundSecondary: "#E2F5F6", BackgroundDots: "#C8EAEC", BackgroundModal: "rgba(242, 251, 252, 0.93)", BorderPrimary: "#A2DCE2", BorderSecondary: "#6EC2CC", AccentSuccess: "#0F766E", AccentWarning: "#A16207", AccentError: "#BE123C"},
+
+		// ── Bone China: warm off-white porcelain with cobalt hairline ──────────
+		"bone-china-dark":  {Name: "Bone China [dark]", TextPrimary: "#F2EEE6", TextSecondary: "#CFC8BC", TextTertiary: "#9E968A", BackgroundPrimary: "#161512", BackgroundSecondary: "#201E1A", BackgroundDots: "#2C2924", BackgroundModal: "rgba(22, 21, 18, 0.9)", BorderPrimary: "#4E5A80", BorderSecondary: "#38404F", AccentSuccess: "#7FB88A", AccentWarning: "#DCA84E", AccentError: "#D9707A"},
+		"bone-china-light": {Name: "Bone China [light]", TextPrimary: "#2A2620", TextSecondary: "#565046", TextTertiary: "#807868", BackgroundPrimary: "#FDFBF5", BackgroundSecondary: "#F6F2E8", BackgroundDots: "#E8E2D4", BackgroundModal: "rgba(253, 251, 245, 0.94)", BorderPrimary: "#8FA0C8", BorderSecondary: "#B8AE9C", AccentSuccess: "#15803D", AccentWarning: "#A16207", AccentError: "#B91C1C"},
+
+		// ── Chartreuse Static: acid yellow-green on tuned-out grey ─────────────
+		"chartreuse-static-dark":  {Name: "Chartreuse Static [dark]", TextPrimary: "#E8FFC0", TextSecondary: "#C4F060", TextTertiary: "#8CB040", BackgroundPrimary: "#101208", BackgroundSecondary: "#1A1E0E", BackgroundDots: "#283014", BackgroundModal: "rgba(16, 18, 8, 0.9)", BorderPrimary: "#5E7420", BorderSecondary: "#3E4C16", AccentSuccess: "#B4FF2E", AccentWarning: "#FFC400", AccentError: "#FF5C4D"},
+		"chartreuse-static-light": {Name: "Chartreuse Static [light]", TextPrimary: "#242A0C", TextSecondary: "#48541A", TextTertiary: "#6E7E28", BackgroundPrimary: "#FAFCEE", BackgroundSecondary: "#F2F6DC", BackgroundDots: "#E2ECBC", BackgroundModal: "rgba(250, 252, 238, 0.93)", BorderPrimary: "#C4D480", BorderSecondary: "#A2B858", AccentSuccess: "#4D7C0F", AccentWarning: "#A16207", AccentError: "#B91C1C"},
+
+		// ── Tidal Slate: wet stone and sea foam on a grey shore ────────────────
+		"tidal-slate-dark":  {Name: "Tidal Slate [dark]", TextPrimary: "#DCE8E8", TextSecondary: "#A4BCBC", TextTertiary: "#748C8C", BackgroundPrimary: "#0D1414", BackgroundSecondary: "#16201F", BackgroundDots: "#20302E", BackgroundModal: "rgba(13, 20, 20, 0.9)", BorderPrimary: "#3E5654", BorderSecondary: "#2A3C3A", AccentSuccess: "#6ED8B0", AccentWarning: "#D8AC5C", AccentError: "#E0707E"},
+		"tidal-slate-light": {Name: "Tidal Slate [light]", TextPrimary: "#1C2A2A", TextSecondary: "#3E5654", TextTertiary: "#5E7A78", BackgroundPrimary: "#F4F8F8", BackgroundSecondary: "#E8F0EF", BackgroundDots: "#D4E2E0", BackgroundModal: "rgba(244, 248, 248, 0.93)", BorderPrimary: "#B4C8C6", BorderSecondary: "#90A8A6", AccentSuccess: "#0F766E", AccentWarning: "#A16207", AccentError: "#BE123C"},
+
+		// ── Marigold Dusk: hot marigold against deepening indigo ───────────────
+		"marigold-dusk-dark":  {Name: "Marigold Dusk [dark]", TextPrimary: "#FFE8C8", TextSecondary: "#FFC46A", TextTertiary: "#C08A54", BackgroundPrimary: "#0E0C1A", BackgroundSecondary: "#181428", BackgroundDots: "#241C3C", BackgroundModal: "rgba(14, 12, 26, 0.9)", BorderPrimary: "#6E4A28", BorderSecondary: "#3C3050", AccentSuccess: "#5ED8A0", AccentWarning: "#FFA824", AccentError: "#FF6A6A"},
+		"marigold-dusk-light": {Name: "Marigold Dusk [light]", TextPrimary: "#2C2440", TextSecondary: "#8A5A1E", TextTertiary: "#A87A38", BackgroundPrimary: "#FFFAF0", BackgroundSecondary: "#FDF0DC", BackgroundDots: "#F4DEBC", BackgroundModal: "rgba(255, 250, 240, 0.93)", BorderPrimary: "#E8C68E", BorderSecondary: "#CCA46A", AccentSuccess: "#15803D", AccentWarning: "#C2410C", AccentError: "#B91C1C"},
+
+		// ── Cold Cathode: pale mercury-vapour white on blue-black ──────────────
+		"cold-cathode-dark":  {Name: "Cold Cathode [dark]", TextPrimary: "#F0FBFF", TextSecondary: "#B8DCEC", TextTertiary: "#7CA8BC", BackgroundPrimary: "#05090E", BackgroundSecondary: "#0B131C", BackgroundDots: "#12202C", BackgroundModal: "rgba(5, 9, 14, 0.92)", BorderPrimary: "#3C6478", BorderSecondary: "#24404E", AccentSuccess: "#7CFFE8", AccentWarning: "#FFE08A", AccentError: "#FF8A9E"},
+		"cold-cathode-light": {Name: "Cold Cathode [light]", TextPrimary: "#0E1E28", TextSecondary: "#2E5266", TextTertiary: "#527A90", BackgroundPrimary: "#F6FCFF", BackgroundSecondary: "#E8F4FA", BackgroundDots: "#D2E6F0", BackgroundModal: "rgba(246, 252, 255, 0.93)", BorderPrimary: "#AECEDE", BorderSecondary: "#84AEC2", AccentSuccess: "#0F766E", AccentWarning: "#B45309", AccentError: "#BE123C"},
+
+		// ── Saffron Robe: monastic saffron and madder on undyed cloth ──────────
+		"saffron-robe-dark":  {Name: "Saffron Robe [dark]", TextPrimary: "#FFEDD0", TextSecondary: "#F0B860", TextTertiary: "#B88440", BackgroundPrimary: "#160E06", BackgroundSecondary: "#22180C", BackgroundDots: "#342414", BackgroundModal: "rgba(22, 14, 6, 0.9)", BorderPrimary: "#8A4A1C", BorderSecondary: "#5A3212", AccentSuccess: "#9ECC70", AccentWarning: "#F59E0B", AccentError: "#E05A40"},
+		"saffron-robe-light": {Name: "Saffron Robe [light]", TextPrimary: "#3A2008", TextSecondary: "#8A4A1C", TextTertiary: "#AE6C2E", BackgroundPrimary: "#FFF9EE", BackgroundSecondary: "#FCEED6", BackgroundDots: "#F2DCB4", BackgroundModal: "rgba(255, 249, 238, 0.93)", BorderPrimary: "#E4BC84", BorderSecondary: "#CC9A58", AccentSuccess: "#4D7C0F", AccentWarning: "#C2410C", AccentError: "#B91C1C"},
+
+		// ── Static Noise: pure greyscale, no hue anywhere ──────────────────────
+		"static-noise-dark":  {Name: "Static Noise [dark]", TextPrimary: "#FFFFFF", TextSecondary: "#B4B4B4", TextTertiary: "#787878", BackgroundPrimary: "#000000", BackgroundSecondary: "#0E0E0E", BackgroundDots: "#1E1E1E", BackgroundModal: "rgba(0, 0, 0, 0.92)", BorderPrimary: "#5A5A5A", BorderSecondary: "#323232", AccentSuccess: "#DCDCDC", AccentWarning: "#A0A0A0", AccentError: "#F0F0F0"},
+		"static-noise-light": {Name: "Static Noise [light]", TextPrimary: "#000000", TextSecondary: "#4A4A4A", TextTertiary: "#7A7A7A", BackgroundPrimary: "#FFFFFF", BackgroundSecondary: "#F2F2F2", BackgroundDots: "#DCDCDC", BackgroundModal: "rgba(255, 255, 255, 0.94)", BorderPrimary: "#B4B4B4", BorderSecondary: "#8C8C8C", AccentSuccess: "#2A2A2A", AccentWarning: "#6A6A6A", AccentError: "#0A0A0A"},
+
+		// ── Absinthe: cloudy anise green over smoked glass ─────────────────────
+		"absinthe-dark":  {Name: "Absinthe [dark]", TextPrimary: "#E4F4D8", TextSecondary: "#B0D890", TextTertiary: "#7CA060", BackgroundPrimary: "#0C1008", BackgroundSecondary: "#141C10", BackgroundDots: "#1E2C18", BackgroundModal: "rgba(12, 16, 8, 0.9)", BorderPrimary: "#48682C", BorderSecondary: "#2E441C", AccentSuccess: "#96E04C", AccentWarning: "#E0C040", AccentError: "#E0705C"},
+		"absinthe-light": {Name: "Absinthe [light]", TextPrimary: "#1E2C10", TextSecondary: "#3E5A20", TextTertiary: "#62803C", BackgroundPrimary: "#F8FCF0", BackgroundSecondary: "#EEF6E0", BackgroundDots: "#DCEAC4", BackgroundModal: "rgba(248, 252, 240, 0.93)", BorderPrimary: "#BCD498", BorderSecondary: "#9CBA70", AccentSuccess: "#4D7C0F", AccentWarning: "#A16207", AccentError: "#B91C1C"},
+
+		// ── Tyrian: imperial purple with true gold, high ceremony ──────────────
+		"tyrian-dark":  {Name: "Tyrian [dark]", TextPrimary: "#F6E8F2", TextSecondary: "#D8A8CC", TextTertiary: "#A87098", BackgroundPrimary: "#12060F", BackgroundSecondary: "#1E0C1A", BackgroundDots: "#2E1428", BackgroundModal: "rgba(18, 6, 15, 0.9)", BorderPrimary: "#7A1E5E", BorderSecondary: "#4E1240", AccentSuccess: "#5ECCA0", AccentWarning: "#E0B040", AccentError: "#F05A7E"},
+		"tyrian-light": {Name: "Tyrian [light]", TextPrimary: "#380A2C", TextSecondary: "#661A50", TextTertiary: "#903274", BackgroundPrimary: "#FDF6FB", BackgroundSecondary: "#F8E8F4", BackgroundDots: "#EED2E6", BackgroundModal: "rgba(253, 246, 251, 0.93)", BorderPrimary: "#DCAECE", BorderSecondary: "#C286AE", AccentSuccess: "#0F766E", AccentWarning: "#A16207", AccentError: "#9F1239"},
+
+		// ── Harbour Fog: muted grey-blue with a buoy-orange marker ─────────────
+		"harbour-fog-dark":  {Name: "Harbour Fog [dark]", TextPrimary: "#DEE6EC", TextSecondary: "#A8B8C4", TextTertiary: "#788894", BackgroundPrimary: "#101418", BackgroundSecondary: "#1A2026", BackgroundDots: "#242E36", BackgroundModal: "rgba(16, 20, 24, 0.9)", BorderPrimary: "#3E4E5A", BorderSecondary: "#2A3640", AccentSuccess: "#68C0A0", AccentWarning: "#FF8C42", AccentError: "#E4606E"},
+		"harbour-fog-light": {Name: "Harbour Fog [light]", TextPrimary: "#1C242C", TextSecondary: "#3E4E5A", TextTertiary: "#647482", BackgroundPrimary: "#F5F7F9", BackgroundSecondary: "#E9EEF2", BackgroundDots: "#D6DEE6", BackgroundModal: "rgba(245, 247, 249, 0.93)", BorderPrimary: "#BCC8D2", BorderSecondary: "#98A8B6", AccentSuccess: "#0F766E", AccentWarning: "#C2410C", AccentError: "#BE123C"},
+
+		// ── Ember Ash: cooling charcoal shot through with live embers ──────────
+		"ember-ash-dark":  {Name: "Ember Ash [dark]", TextPrimary: "#F0E0D8", TextSecondary: "#C89888", TextTertiary: "#8E6458", BackgroundPrimary: "#0A0808", BackgroundSecondary: "#161010", BackgroundDots: "#281818", BackgroundModal: "rgba(10, 8, 8, 0.92)", BorderPrimary: "#7A2E1A", BorderSecondary: "#441A10", AccentSuccess: "#88C070", AccentWarning: "#FF7A18", AccentError: "#FF4530"},
+		"ember-ash-light": {Name: "Ember Ash [light]", TextPrimary: "#2A1A16", TextSecondary: "#5A3228", TextTertiary: "#845444", BackgroundPrimary: "#FCF6F4", BackgroundSecondary: "#F4E8E2", BackgroundDots: "#E6D0C8", BackgroundModal: "rgba(252, 246, 244, 0.93)", BorderPrimary: "#D8B0A0", BorderSecondary: "#BE8C78", AccentSuccess: "#4D7C0F", AccentWarning: "#C2410C", AccentError: "#B91C1C"},
+
+		// ── Iris Meadow: soft blue-violet petals over damp green ───────────────
+		"iris-meadow-dark":  {Name: "Iris Meadow [dark]", TextPrimary: "#E8E4FA", TextSecondary: "#B4AEE8", TextTertiary: "#8A86B0", BackgroundPrimary: "#0C0E16", BackgroundSecondary: "#161A26", BackgroundDots: "#222840", BackgroundModal: "rgba(12, 14, 22, 0.9)", BorderPrimary: "#4A4E86", BorderSecondary: "#32365E", AccentSuccess: "#72C88E", AccentWarning: "#E4B84E", AccentError: "#E8708E"},
+		"iris-meadow-light": {Name: "Iris Meadow [light]", TextPrimary: "#1E2038", TextSecondary: "#43467E", TextTertiary: "#6A6EA6", BackgroundPrimary: "#F8F8FE", BackgroundSecondary: "#EEEEFA", BackgroundDots: "#DCDCF2", BackgroundModal: "rgba(248, 248, 254, 0.93)", BorderPrimary: "#C0C0E8", BorderSecondary: "#9E9ED2", AccentSuccess: "#15803D", AccentWarning: "#A16207", AccentError: "#BE123C"},
+
+		// ── Salt Flat: bleached white expanse with mineral pink ────────────────
+		"salt-flat-dark":  {Name: "Salt Flat [dark]", TextPrimary: "#F4F0EE", TextSecondary: "#CCC0BC", TextTertiary: "#968884", BackgroundPrimary: "#14100E", BackgroundSecondary: "#1E1A18", BackgroundDots: "#2C2624", BackgroundModal: "rgba(20, 16, 14, 0.9)", BorderPrimary: "#6A5652", BorderSecondary: "#463A36", AccentSuccess: "#8CC8A8", AccentWarning: "#E0B478", AccentError: "#E88A94"},
+		"salt-flat-light": {Name: "Salt Flat [light]", TextPrimary: "#2A2422", TextSecondary: "#564A46", TextTertiary: "#82726E", BackgroundPrimary: "#FEFCFB", BackgroundSecondary: "#F6F0EE", BackgroundDots: "#E8DCD8", BackgroundModal: "rgba(254, 252, 251, 0.94)", BorderPrimary: "#DCC8C4", BorderSecondary: "#C0A8A4", AccentSuccess: "#15803D", AccentWarning: "#A16207", AccentError: "#BE123C"},
+
+		// ── Signal Flare: near-black with a single hot magenta signal ──────────
+		"signal-flare-dark":  {Name: "Signal Flare [dark]", TextPrimary: "#F4E8F0", TextSecondary: "#C898B8", TextTertiary: "#8E6480", BackgroundPrimary: "#08070A", BackgroundSecondary: "#121016", BackgroundDots: "#201A26", BackgroundModal: "rgba(8, 7, 10, 0.92)", BorderPrimary: "#B4128C", BorderSecondary: "#6A0A54", AccentSuccess: "#3EE0B0", AccentWarning: "#FFB020", AccentError: "#FF2D8E"},
+		"signal-flare-light": {Name: "Signal Flare [light]", TextPrimary: "#22101C", TextSecondary: "#6A0A54", TextTertiary: "#9E2A80", BackgroundPrimary: "#FEF7FC", BackgroundSecondary: "#F8EAF4", BackgroundDots: "#EED2E4", BackgroundModal: "rgba(254, 247, 252, 0.93)", BorderPrimary: "#E2A8CE", BorderSecondary: "#C87AAC", AccentSuccess: "#0F766E", AccentWarning: "#B45309", AccentError: "#C2185B"},
+
+		// ── Olive Drab: field-jacket olive with khaki webbing ──────────────────
+		"olive-drab-dark":  {Name: "Olive Drab [dark]", TextPrimary: "#E4E4D0", TextSecondary: "#B4B490", TextTertiary: "#848464", BackgroundPrimary: "#0E100A", BackgroundSecondary: "#181A12", BackgroundDots: "#24281A", BackgroundModal: "rgba(14, 16, 10, 0.9)", BorderPrimary: "#4A5030", BorderSecondary: "#323620", AccentSuccess: "#9CBC5C", AccentWarning: "#D4A032", AccentError: "#D46A50"},
+		"olive-drab-light": {Name: "Olive Drab [light]", TextPrimary: "#242814", TextSecondary: "#4A5030", TextTertiary: "#70784C", BackgroundPrimary: "#FAFAF2", BackgroundSecondary: "#F0F0E2", BackgroundDots: "#DEDEC6", BackgroundModal: "rgba(250, 250, 242, 0.93)", BorderPrimary: "#C4C49C", BorderSecondary: "#A4A478", AccentSuccess: "#4D7C0F", AccentWarning: "#A16207", AccentError: "#B91C1C"},
+
+		// ── Porcelain Blue: delft cobalt on glazed white, few midtones ─────────
+		"porcelain-blue-dark":  {Name: "Porcelain Blue [dark]", TextPrimary: "#E8EEF8", TextSecondary: "#A8BEDC", TextTertiary: "#7088A8", BackgroundPrimary: "#0A0E16", BackgroundSecondary: "#141A26", BackgroundDots: "#1E2A3E", BackgroundModal: "rgba(10, 14, 22, 0.9)", BorderPrimary: "#2E5A96", BorderSecondary: "#1E3A62", AccentSuccess: "#6EC8C0", AccentWarning: "#D8B058", AccentError: "#DE6A82"},
+		"porcelain-blue-light": {Name: "Porcelain Blue [light]", TextPrimary: "#12243E", TextSecondary: "#2E5A96", TextTertiary: "#5480B4", BackgroundPrimary: "#FCFDFF", BackgroundSecondary: "#EFF4FC", BackgroundDots: "#D8E4F4", BackgroundModal: "rgba(252, 253, 255, 0.94)", BorderPrimary: "#B4CCE8", BorderSecondary: "#8AAEDA", AccentSuccess: "#0F766E", AccentWarning: "#A16207", AccentError: "#BE123C"},
+
+		// ── Tarnished Brass: green-black patina under dull brass ───────────────
+		"tarnished-brass-dark":  {Name: "Tarnished Brass [dark]", TextPrimary: "#EFE6C8", TextSecondary: "#C4B078", TextTertiary: "#8E8050", BackgroundPrimary: "#0E1210", BackgroundSecondary: "#161C18", BackgroundDots: "#202A24", BackgroundModal: "rgba(14, 18, 16, 0.9)", BorderPrimary: "#6A6234", BorderSecondary: "#3E4432", AccentSuccess: "#7EC49A", AccentWarning: "#C8A034", AccentError: "#D4685E"},
+		"tarnished-brass-light": {Name: "Tarnished Brass [light]", TextPrimary: "#242A1E", TextSecondary: "#5A5432", TextTertiary: "#847A4C", BackgroundPrimary: "#FBFAF2", BackgroundSecondary: "#F2F0E0", BackgroundDots: "#E0DCC2", BackgroundModal: "rgba(251, 250, 242, 0.93)", BorderPrimary: "#CCC28E", BorderSecondary: "#AEA46C", AccentSuccess: "#15803D", AccentWarning: "#A16207", AccentError: "#B91C1C"},
+
+		// ── Storm Petrel: seabird white and slate over deep ocean grey ─────────
+		"storm-petrel-dark":  {Name: "Storm Petrel [dark]", TextPrimary: "#EAEEF0", TextSecondary: "#AEBAC0", TextTertiary: "#7A868C", BackgroundPrimary: "#0B0E10", BackgroundSecondary: "#141A1E", BackgroundDots: "#1E262C", BackgroundModal: "rgba(11, 14, 16, 0.9)", BorderPrimary: "#42525A", BorderSecondary: "#2A363C", AccentSuccess: "#64C4B4", AccentWarning: "#D8A44C", AccentError: "#DC6C7C"},
+		"storm-petrel-light": {Name: "Storm Petrel [light]", TextPrimary: "#181E22", TextSecondary: "#42525A", TextTertiary: "#6A7A82", BackgroundPrimary: "#F7F9FA", BackgroundSecondary: "#EBEFF2", BackgroundDots: "#D8E0E4", BackgroundModal: "rgba(247, 249, 250, 0.93)", BorderPrimary: "#BECAD0", BorderSecondary: "#9AAAB2", AccentSuccess: "#0F766E", AccentWarning: "#A16207", AccentError: "#BE123C"},
 	}
 }
 
@@ -2811,7 +2977,12 @@ type HealthSummary struct {
 	// counted apart from BrokenCount so the header can flag a live outage
 	// distinctly from an ordinary dead link. A down monitor is not also in
 	// BrokenCount — it is one or the other, never both, so totals stay honest.
-	MonitorDownCount      int `json:"monitorDownCount"`
+	MonitorDownCount int `json:"monitorDownCount"`
+	// ContentCount is bookmarks whose host answered but whose own expectation —
+	// a required string, an expected status code — was not met. Counted apart
+	// from BrokenCount and MonitorDownCount for the same reason those two are
+	// kept apart: a bookmark is in exactly one of the three, so the tiles add up.
+	ContentCount          int `json:"contentCount"`
 	MonitoredCount        int `json:"monitoredCount"`
 	DuplicateCount        int `json:"duplicateCount"`
 	UncheckedCount        int `json:"uncheckedCount"`
@@ -2820,6 +2991,11 @@ type HealthSummary struct {
 	UnusedCount           int `json:"unusedCount"`
 	ShortcutConflictCount int `json:"shortcutConflictCount"`
 	PinnedCount           int `json:"pinnedCount"`
+	// DriftCount is bookmarks currently flagged by rot detection — a redirect,
+	// title, or content change since the watched baseline. Layered on top of
+	// whatever other status a bookmark has, so it is not one of the three
+	// mutually exclusive broken/content/monitorDown counts above.
+	DriftCount int `json:"driftCount"`
 }
 
 type HealthReason struct {
@@ -2866,8 +3042,35 @@ type HealthIssue struct {
 	// Monitor reflects the uptime-monitor tier. MonitorStats is populated only for
 	// monitored bookmarks that have history, keeping the report payload unchanged
 	// for everyone who never turns monitoring on.
-	Monitor      bool          `json:"monitor,omitempty"`
-	MonitorStats *MonitorStats `json:"monitorStats,omitempty"`
+	Monitor bool `json:"monitor,omitempty"`
+	// MonitorIntervalMinutes is the configured cadence, set whenever Monitor is
+	// true regardless of whether any samples exist yet. Deliberately separate
+	// from MonitorStats: that struct is derived from sample history and is nil
+	// until the first check completes, but the interval is a setting, not a
+	// measurement — a freshly-monitored or just-changed row must show the right
+	// value immediately, not only once a check has run at the new cadence.
+	MonitorIntervalMinutes int           `json:"monitorIntervalMinutes,omitempty"`
+	MonitorStats           *MonitorStats `json:"monitorStats,omitempty"`
+	// What this bookmark expects of a good response, so the row can show and
+	// edit it. Omitted when unset, which is virtually every bookmark.
+	ExpectText       string `json:"expectText,omitempty"`
+	ExpectTextAbsent bool   `json:"expectTextAbsent,omitempty"`
+	ExpectStatus     string `json:"expectStatus,omitempty"`
+	// Rot signals: where the check lands after redirects, what the page is
+	// titled, and roughly what it says, versus the baseline recorded when
+	// watching began. Empty DriftNoticed means the page still looks like itself.
+	WatchDrift   bool   `json:"watchDrift,omitempty"`
+	DriftNoticed string `json:"driftNoticed,omitempty"`
+	DriftReason  string `json:"driftReason,omitempty"`
+	DriftSince   int64  `json:"driftSince,omitempty"`
+	// NotifyMuted reports that this bookmark's alerts are silenced. The row
+	// still shows its real status — muting withholds the message, not the
+	// finding — so the view needs this to say so on the row.
+	NotifyMuted bool `json:"notifyMuted,omitempty"`
+	// CertHost is the hostname to look up in the report's certificates map — the
+	// post-redirect host a check actually saw, which can differ from this
+	// bookmark's own URL. Empty until a check has recorded one.
+	CertHost string `json:"certHost,omitempty"`
 }
 
 type BookmarkHealthReport struct {
@@ -2884,6 +3087,11 @@ type BookmarkHealthReport struct {
 	// its own file rather than derived, since it is the only thing here that
 	// describes a day other than today.
 	Trend []HealthTrendPoint `json:"trend,omitempty"`
+	// Certificates are the TLS expiries seen while checking, keyed by host and
+	// carrying only those close enough to matter. Sent per host rather than per
+	// issue because that is what a certificate belongs to — the rows look
+	// themselves up by hostname.
+	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
 }
 
 type DuplicateWarning struct {
@@ -2920,6 +3128,21 @@ type HealthScanCache struct {
 	Error       string `json:"error,omitempty"`
 }
 
+// HostCertificate is the certificate expiry last seen for one host.
+//
+// Kept per host rather than per bookmark because that is what a certificate
+// belongs to: ten bookmarks on one domain share one certificate, and storing it
+// per bookmark would warn ten times about a single renewal.
+type HostCertificate struct {
+	Host      string `json:"host"`
+	ExpiresAt int64  `json:"expiresAt"` // Unix ms; 0 means never seen over TLS
+	SeenAt    int64  `json:"seenAt"`    // When this was last observed
+	// NotifiedDays records the expiry thresholds already alerted on, so a
+	// warning fires once per threshold per certificate rather than on every
+	// check for days on end. Reset when the expiry moves — a renewal.
+	NotifiedDays []int `json:"notifiedDays,omitempty"`
+}
+
 type HealthScanCacheFile struct {
 	GeneratedAt int64 `json:"generatedAt"`
 	// LastAutoRecheck is when the background recheck scheduler last completed a run
@@ -2927,6 +3150,10 @@ type HealthScanCacheFile struct {
 	// auto-backup compares the newest backup's age rather than an in-process timer.
 	LastAutoRecheck int64                      `json:"lastAutoRecheck,omitempty"`
 	Cache           map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
+	// Certificates seen while checking, keyed by host. Lives here rather than in
+	// its own file because it is written by the same pass that writes the cache
+	// and is worthless without it.
+	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
 }
 
 // HealthSample is one recorded reachability check for a monitored bookmark.
@@ -2945,6 +3172,11 @@ type HealthSample struct {
 	// also append to. Set on at most one sample per outage, so it stays absent
 	// from virtually every sample written.
 	Alerted bool `json:"a,omitempty"`
+	// Maint marks a sample taken inside a maintenance window. The check still
+	// ran and the result is still recorded — the heartbeat should show what
+	// actually happened — but uptime ratios skip it, so a nightly backup does not
+	// read as a nightly outage.
+	Maint bool `json:"m,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept

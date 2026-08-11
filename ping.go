@@ -17,9 +17,37 @@ type PingResult struct {
 	PingMs      int
 	ErrorDetail string
 	HTTPStatus  int
+	// CertExpiry is when the served leaf certificate stops being valid, in Unix
+	// milliseconds; 0 for plain HTTP, or when the handshake never completed.
+	// Read from the connection the check already made rather than opened for,
+	// so watching expiry costs nothing on top of the reachability check.
+	CertExpiry int64
+	// CertHost is the host the certificate was served for. Expiry is a property
+	// of the host, not of the bookmark: ten bookmarks on one domain share one
+	// certificate and must not warn ten times.
+	CertHost string
+	// FinalURL is where the request ended up after redirects. The check follows
+	// them already, so this costs nothing — and a bookmark that quietly started
+	// redirecting to a domain root or another host is dead in every way that
+	// matters while still answering 200.
+	FinalURL string
+	// Title and Fingerprint describe the page as it is now, for drift detection.
+	// Only filled when the bookmark asked to watch for drift, since both need
+	// the body read.
+	Title       string
+	Fingerprint string
 }
 
+// pingURLDetailed checks a URL under the default rule: any status under 500 is
+// reachable and the body is never read.
 func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResult {
+	return h.pingURLExpecting(ctx, urlStr, expectation{})
+}
+
+// pingURLExpecting is the same check with a bookmark's own expectations applied.
+// A zero expectation behaves exactly like pingURLDetailed, so the common path is
+// unchanged — same request, no body read.
+func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect expectation) PingResult {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -62,19 +90,91 @@ func (h *Handlers) pingURLDetailed(ctx context.Context, urlStr string) PingResul
 	if err == nil && resp != nil {
 		defer drainAndCloseResponse(resp)
 		code := resp.StatusCode
-		if httpStatusReachable(code) {
-			return PingResult{Status: "online", PingMs: elapsed, HTTPStatus: code}
+		certExpiry, certHost := leafCertExpiry(resp)
+		base := PingResult{
+			PingMs: elapsed, HTTPStatus: code,
+			CertExpiry: certExpiry, CertHost: certHost,
+			FinalURL: finalRequestURL(resp),
 		}
-		return PingResult{
-			Status:      "offline",
-			PingMs:      elapsed,
-			ErrorDetail: fmt.Sprintf("HTTP %d", code),
-			HTTPStatus:  code,
+		down := func(detail string) PingResult {
+			r := base
+			r.Status = "offline"
+			r.ErrorDetail = detail
+			return r
 		}
+
+		// An explicit list replaces the default rule; an unusable one (all typos)
+		// falls back to it rather than failing a healthy site.
+		codeOK := httpStatusReachable(code)
+		if matched, usable := statusMatchesExpectation(code, expect.Status); usable {
+			codeOK = matched
+			if !codeOK {
+				return down(fmt.Sprintf("HTTP %d, expected %s", code, expect.Status))
+			}
+		}
+		if !codeOK {
+			return down(fmt.Sprintf("HTTP %d", code))
+		}
+
+		// Only now, and only when asked: reading the body is the one part of a
+		// check that costs real bandwidth. Read once and used by both the
+		// keyword test and the drift baseline, so a bookmark using both does
+		// not pay twice.
+		if expect.wantsBody() {
+			body := readBoundedBody(resp)
+			if expect.WatchDrift {
+				base.Title = extractHTMLTitle(body)
+				base.Fingerprint = contentFingerprint(body)
+			}
+			if text := strings.TrimSpace(expect.Text); text != "" {
+				found := strings.Contains(strings.ToLower(body), strings.ToLower(text))
+				if found == expect.TextAbsent {
+					if expect.TextAbsent {
+						return down(fmt.Sprintf("Page contains %q", expect.Text))
+					}
+					return down(fmt.Sprintf("Page is missing %q", expect.Text))
+				}
+			}
+		}
+
+		base.Status = "online"
+		return base
 	}
 
 	detail := classifyPingError(err, resp)
 	return PingResult{Status: "offline", PingMs: elapsed, ErrorDetail: detail, HTTPStatus: httpStatusFromResponse(resp)}
+}
+
+// leafCertExpiry reads the served certificate's expiry from a completed
+// response, in Unix milliseconds, plus the host it was served for.
+//
+// Returns zeroes for plain HTTP and for any response whose TLS state is missing
+// — an absent expiry means "nothing to say", never "expires at the epoch", so
+// callers can treat 0 as unknown without a second flag.
+func leafCertExpiry(resp *http.Response) (int64, string) {
+	if resp == nil || resp.TLS == nil || len(resp.TLS.PeerCertificates) == 0 {
+		return 0, ""
+	}
+	// PeerCertificates[0] is the leaf by definition of the TLS handshake; the
+	// rest of the chain expires later or the handshake would have failed.
+	leaf := resp.TLS.PeerCertificates[0]
+	if leaf == nil || leaf.NotAfter.IsZero() {
+		return 0, ""
+	}
+	host := ""
+	if resp.Request != nil && resp.Request.URL != nil {
+		host = resp.Request.URL.Hostname()
+	}
+	return leaf.NotAfter.UnixMilli(), host
+}
+
+// finalRequestURL is where a completed response actually came from, after any
+// redirects the client followed.
+func finalRequestURL(resp *http.Response) string {
+	if resp == nil || resp.Request == nil || resp.Request.URL == nil {
+		return ""
+	}
+	return resp.Request.URL.String()
 }
 
 // httpStatusReachable reports whether an HTTP status means the host answered.

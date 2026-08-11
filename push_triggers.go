@@ -41,11 +41,18 @@ func (h *Handlers) pushMonitorNotifications(ctx context.Context, notifications [
 			At:       n.At,
 			Renotify: true,
 		}
-		if n.Event == "up" {
+		switch {
+		case n.Event == "up":
 			msg.Body = name + " is reachable again."
-		} else if n.Failures > 0 {
+		case n.Event == "cert-expiring":
+			if n.Error != "" {
+				msg.Body = n.Error + "."
+			} else {
+				msg.Body = "TLS certificate is expiring soon."
+			}
+		case n.Failures > 0:
 			msg.Body = fmt.Sprintf("%s failed %d checks in a row.", name, n.Failures)
-		} else {
+		default:
 			msg.Body = name + " is not responding."
 		}
 

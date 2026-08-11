@@ -298,8 +298,13 @@ class DashboardInboxTriage {
             window.open(url, '_blank', 'noopener,noreferrer');
         }
         if (!item.readAt) {
-            await this.inbox.markRead(item.id);
-            item.readAt = Date.now();
+            // Only record it locally once the write landed. Opening is the
+            // point of this action and the tab is already open, so a failed
+            // read mark advances anyway rather than trapping the user on a row
+            // they have dealt with — it reports and moves on.
+            if (await this.inbox.markReadReporting(item.id)) {
+                item.readAt = Date.now();
+            }
         }
         await this.afterAction(false, { readId: item.id });
     }
@@ -322,7 +327,12 @@ class DashboardInboxTriage {
             return;
         }
         if (!item.readAt) {
-            await this.inbox.markRead(item.id);
+            // Unlike Open, the read mark *is* this action. Advancing past a
+            // failure would move the card on from an item that is still unread,
+            // so a failed keep reports and stays put for another try.
+            if (!(await this.inbox.markReadReporting(item.id))) {
+                return;
+            }
             item.readAt = Date.now();
         }
         await this.afterAction(false, { readId: item.id });

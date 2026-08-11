@@ -245,8 +245,10 @@ test.describe('health dashboard view', () => {
         await openHealthView(page);
 
         const tiles = page.locator('.health-view-tile');
-        // Total, Healthy, Monitored, Broken, Unchecked, Stale, Unused.
-        await expect(tiles).toHaveCount(7);
+        // Total, Healthy, Monitored, Broken, Content, Unchecked, Stale, Unused.
+        // The certificates tile is not here: it only appears when a certificate
+        // is actually near expiry.
+        await expect(tiles).toHaveCount(8);
         await expect(page.locator('[data-health-tile="broken"]')).toContainText('1');
         // Broken is the default filter, so its tile starts marked.
         await expect(page.locator('[data-health-tile="broken"]')).toHaveClass(/is-active/);
@@ -338,6 +340,33 @@ test.describe('health dashboard view', () => {
         // Decorative copy for sighted users — row buttons are the AT path.
         await expect(page.locator('.health-view-legend--bottom')).toHaveAttribute('aria-hidden', 'true');
         await expect(page.locator('.health-view-legend')).toContainText('Enter / Space');
+    });
+
+    // The legend and the cheat sheet both read from KeyboardViewLegends, so a
+    // key bound in the view but never added there is invisible in both places
+    // at once — which is exactly how f shipped before this.
+    test('the legend lists every key the view actually binds', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+
+        // Read from the <kbd> elements rather than the legend's whole text: a
+        // single letter is a substring of half the labels ("f" is inside
+        // "refresh" and "first / last"), so a containText check on the strip
+        // can never fail and would prove nothing.
+        const keys = await page.locator('.health-view-legend kbd').allTextContents();
+        const trimmed = keys.map((k) => k.trim());
+        for (const key of ['j / k', 's', 'i', 'p', 'f', 'R / ?', 'c', 'm', 'x', 'Enter / Space', 'Esc']) {
+            expect(trimmed, `legend lists ${key}`).toContain(key);
+        }
+    });
+
+    test('the Escape row in the legend names both of its effects', async ({ page }) => {
+        // Escape clears an open multi-select before it closes the view — the
+        // legend used to only mention the second half of that behaviour.
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+
+        await expect(page.locator('.health-view-legend--bottom')).toContainText(/clear selection.*back to bookmarks/i);
     });
 
     test('m opens the row menu, arrows walk it, Escape closes it without leaving', async ({ page }) => {
@@ -980,13 +1009,30 @@ test.describe('health view — export, persistence and monitor discoverability',
         expect(retestHits).toBe(0);
     });
 
-    test('secondary filter pills appear when they have rows', async ({ page }) => {
+    test('secondary filters reach through the More overflow menu', async ({ page }) => {
         await openHealthView(page);
-        await expect(page.locator('[data-health-filter="stale"]')).toBeVisible();
-        await expect(page.locator('[data-health-filter="unused"]')).toBeVisible();
-        await page.click('[data-health-filter="stale"]');
+        // Not pills of their own — the row wrapped onto a second line once
+        // Stale, Unused, Missing preview and Healthy were all pills alongside
+        // the core set, so they live behind "More" instead.
+        await expect(page.locator('.health-view-filter-group > [data-health-filter="stale"]')).toHaveCount(0);
+        await expect(page.locator('.health-view-filter-group > [data-health-filter="unused"]')).toHaveCount(0);
+
+        const moreBtn = page.locator('.health-view-filter-more-btn');
+        await expect(moreBtn).toBeVisible();
+        await moreBtn.click();
+        const overflowMenu = page.locator('.health-view-filter-overflow-menu');
+        await expect(overflowMenu).toBeVisible();
+        await expect(overflowMenu.locator('[data-health-filter="stale"]')).toBeVisible();
+        await expect(overflowMenu.locator('[data-health-filter="unused"]')).toBeVisible();
+
+        await overflowMenu.locator('[data-health-filter="stale"]').click();
         expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('stale');
         await expect(page).toHaveURL(/hv_filter=stale/);
+        // The menu closes on selection (a render rebuilds it hidden), and the
+        // now-active filter gets its own pill outside the menu rather than
+        // staying reachable only behind "More".
+        await expect(page.locator('.health-view-filter-overflow-menu')).toBeHidden();
+        await expect(page.locator('.health-view-filter-group > [data-health-filter="stale"].is-active')).toBeVisible();
     });
 
     test('Home and End jump to the first and last visible row', async ({ page }) => {
@@ -1132,8 +1178,10 @@ test.describe('health view — monitored tile', () => {
         // Monitored answers the same question as Healthy — is anything wrong
         // now — where Broken/Unchecked are backlogs to work through.
         const labels = await page.locator('.health-view-tile-label').allTextContents();
+        // Content sits beside Broken: both are live failures, and it answers the
+        // narrower "the host replied, but wrongly".
         expect(labels.map((t) => t.trim())).toEqual(
-            ['Total', 'Healthy', 'Monitored', 'Broken', 'Unchecked', 'Stale', 'Unused']
+            ['Total', 'Healthy', 'Monitored', 'Broken', 'Content', 'Unchecked', 'Stale', 'Unused']
         );
     });
 
@@ -1153,6 +1201,25 @@ test.describe('health view — monitored tile', () => {
         await expect(tile).toHaveClass(/health-view-tile--bad/);
         await expect(tile).not.toHaveClass(/health-view-tile--good/);
         await expect(tile).toHaveAttribute('title', /not responding/i);
+    });
+
+    test('prints "not responding" as visible text, not just a hover title', async ({ page }) => {
+        // The down count used to be hover-only, which never reaches a touch user.
+        // It has to be readable on the tile face itself.
+        await withMonitorState(page, { down: true });
+
+        const tile = page.locator('.health-view-tile--monitored');
+        await expect(tile.locator('.health-view-tile-sub')).toHaveText(/not responding/i);
+        // Screen readers must get the same fact, since aria-label replaces title
+        // rather than supplementing it.
+        await expect(tile).toHaveAttribute('aria-label', /not responding/i);
+    });
+
+    test('an all-green monitored tile has no sub line at all', async ({ page }) => {
+        await withMonitorState(page, { down: false });
+
+        const tile = page.locator('.health-view-tile--monitored');
+        await expect(tile.locator('.health-view-tile-sub')).toHaveCount(0);
     });
 
     test('clicking it goes straight to the monitored list, and is remembered', async ({ page }) => {
@@ -1193,5 +1260,187 @@ test.describe('health view — monitored tile', () => {
         // No tooltip either: there is nothing to report on zero monitors. The
         // attribute is omitted entirely rather than set to an empty string.
         expect(await tile.getAttribute('title')).toBeNull();
+    });
+});
+
+test.describe('status grouping in the feed', () => {
+    // The fixture's issues carry: broken, duplicate, unchecked, healthy (x2),
+    // stale, unused — six distinct groups once sorted by status, matching
+    // STATUS_RANK's order (broken, content, duplicate, shortcut-conflict,
+    // unchecked, stale, unused, missing-preview, healthy).
+
+    test('groups appear, in STATUS_RANK order, only on All + Status sort', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+
+        const titles = await page.locator('.health-view-status-group-title')
+            .evaluateAll((els) => els.map((e) => e.textContent.trim()));
+        expect(titles.map((t) => t.replace(/\d+$/, '').trim())).toEqual([
+            'Broken', 'Duplicates', 'Never checked', 'Stale', 'Unused', 'Healthy',
+        ]);
+
+        // Counts render alongside the label, and the two "healthy" rows fold
+        // into one Healthy section rather than each getting their own.
+        const healthyGroup = page.locator('.health-view-status-group', { has: page.locator('.health-view-status-group-title', { hasText: 'Healthy' }) });
+        await expect(healthyGroup.locator('.health-view-item')).toHaveCount(2);
+    });
+
+    test('no groups on any other sort, even on All', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+        await page.selectOption('.health-view-sort-select', 'score');
+        await page.waitForTimeout(150);
+
+        await expect(page.locator('.health-view-status-group-title')).toHaveCount(0);
+        // All seven rows still render, just without section headings.
+        await expect(page.locator('.health-view-feed .health-view-item')).toHaveCount(7);
+    });
+
+    test('no groups on a single-status filter, even under Status sort', async ({ page }) => {
+        await openHealthView(page);
+        // openHealthView already lands on Broken, the default filter.
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+
+        await expect(page.locator('.health-view-status-group-title')).toHaveCount(0);
+        await expect(page.locator('.health-view-feed .health-view-item')).toHaveCount(1);
+    });
+
+    test('keyboard row order matches the grouped visual order', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+
+        // getVisibleRows() walks `.health-view-feed .health-view-item` regardless
+        // of the intermediate <section> nesting the groups introduced.
+        const names = await page.evaluate(() =>
+            window.dashboardInstance.health.getVisibleRows()
+                .map((row) => row.querySelector('.health-view-item-title')?.textContent?.trim()));
+        expect(names).toEqual([
+            'Broken one', 'Dup A', 'Never checked one', 'Stale one', 'Unused one',
+            'Monitored one', 'Monitored pending',
+        ]);
+    });
+});
+
+test.describe('status grouping on the Monitored filter', () => {
+    // Link-hygiene status barely applies to a monitored row — it is almost
+    // always "healthy" in that sense even while its monitor is down — so the
+    // Monitored filter groups by live monitor health instead: down, drift, a
+    // certificate warning, then healthy. Down beats drift beats cert, matching
+    // the priority the row badges already use.
+    function monitoredReport() {
+        const r = report();
+        r.issues = [
+            {
+                pageId: 1, index: 8, pageName: 'dev', name: 'Down monitor',
+                url: 'https://example.com/down', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                reasons: [], reasonDetails: [],
+                monitor: true, checkStatus: true,
+                monitorStats: { ...monitorStats(), downSince: Date.now() - 600_000 },
+            },
+            {
+                pageId: 1, index: 9, pageName: 'dev', name: 'Drifted monitor',
+                url: 'https://example.com/drifted', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                reasons: [], reasonDetails: [],
+                monitor: true, checkStatus: true, watchDrift: true,
+                driftNoticed: 'redirect', driftReason: 'Now redirects to shop.example',
+                monitorStats: monitorStats(),
+            },
+            {
+                pageId: 1, index: 10, pageName: 'dev', name: 'Cert warning monitor',
+                url: 'https://cert-warn.example/', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                reasons: [], reasonDetails: [],
+                monitor: true, checkStatus: true, certHost: 'cert-warn.example',
+                monitorStats: monitorStats(),
+            },
+            {
+                pageId: 1, index: 11, pageName: 'dev', name: 'Healthy monitor',
+                url: 'https://example.com/all-good', category: 'tools',
+                status: 'healthy', score: 100, duplicateCount: 0,
+                reasons: [], reasonDetails: [],
+                monitor: true, checkStatus: true,
+                monitorStats: monitorStats(),
+            },
+        ];
+        r.certificates = {
+            'cert-warn.example': { host: 'cert-warn.example', expiresAt: Date.now() + 5 * 86400000 },
+        };
+        return r;
+    }
+
+    async function openMonitoredGrouped(page) {
+        await page.route('**/api/bookmark-health**', async (route) => {
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(monitoredReport()) });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+        await page.click('[data-health-filter="monitored"]');
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+    }
+
+    test('groups by down, drift, cert warning, healthy — not link-hygiene status', async ({ page }) => {
+        await openMonitoredGrouped(page);
+
+        const titles = await page.locator('.health-view-status-group-title')
+            .evaluateAll((els) => els.map((e) => e.textContent.trim()));
+        expect(titles.map((t) => t.replace(/\d+$/, '').trim())).toEqual([
+            'Down', 'Drift', 'Certificate warning', 'Healthy',
+        ]);
+
+        for (const [label, name] of [
+            ['Down', 'Down monitor'],
+            ['Drift', 'Drifted monitor'],
+            ['Certificate warning', 'Cert warning monitor'],
+            ['Healthy', 'Healthy monitor'],
+        ]) {
+            const group = page.locator('.health-view-status-group', {
+                has: page.locator('.health-view-status-group-title', { hasText: label }),
+            });
+            await expect(group.locator('.health-view-item-title', { hasText: name })).toBeVisible();
+        }
+    });
+
+    test('a monitor that is both down and drifted counts once, under Down', async ({ page }) => {
+        await page.route('**/api/bookmark-health**', async (route) => {
+            const r = monitoredReport();
+            r.issues[1].monitorStats = { ...monitorStats(), downSince: Date.now() - 600_000 };
+            await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(r) });
+        });
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.evaluate(() => localStorage.removeItem('nextdash:health-view-state'));
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('.health-view-tiles', { timeout: 15_000 });
+        await page.click('[data-health-filter="monitored"]');
+        await page.selectOption('.health-view-sort-select', 'status');
+        await page.waitForTimeout(150);
+
+        await expect(page.locator('.health-view-item-title', { hasText: 'Drifted monitor' })).toHaveCount(1);
+        const downGroup = page.locator('.health-view-status-group', {
+            has: page.locator('.health-view-status-group-title', { hasText: 'Down' }),
+        });
+        await expect(downGroup.locator('.health-view-item-title', { hasText: 'Drifted monitor' })).toBeVisible();
+    });
+
+    test('no groups on Monitored under any sort but Status', async ({ page }) => {
+        await openMonitoredGrouped(page);
+        await page.selectOption('.health-view-sort-select', 'score');
+        await page.waitForTimeout(150);
+
+        await expect(page.locator('.health-view-status-group-title')).toHaveCount(0);
+        await expect(page.locator('.health-view-feed .health-view-item')).toHaveCount(4);
     });
 });

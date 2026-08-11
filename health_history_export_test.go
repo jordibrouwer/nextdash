@@ -84,7 +84,7 @@ func TestExportHealthHistoryWritesSamples(t *testing.T) {
 	if len(records) != 3 {
 		t.Fatalf("rows = %d, want 3: %v", len(records), records)
 	}
-	wantHeader := []string{"name", "url", "page", "timestamp", "up", "pingMs", "httpStatus"}
+	wantHeader := []string{"name", "url", "page", "timestamp", "up", "pingMs", "httpStatus", "maint"}
 	for i, col := range wantHeader {
 		if records[0][i] != col {
 			t.Fatalf("header[%d] = %q, want %q", i, records[0][i], col)
@@ -112,6 +112,31 @@ func TestExportHealthHistoryWritesSamples(t *testing.T) {
 
 	if got := rec.Header().Get("X-NextDash-Rows"); got != "2" {
 		t.Fatalf("X-NextDash-Rows = %q, want 2", got)
+	}
+}
+
+// The maint column lets an external analysis exclude expected downtime from
+// real outages — without it, a nightly maintenance window is indistinguishable
+// from an actual failure once the data leaves the app.
+func TestExportHealthHistoryIncludesMaintColumn(t *testing.T) {
+	now := time.Now().UnixMilli()
+	history := `{"samples":{
+		"https://alpha.example":[
+			{"t":` + strconv.FormatInt(now-60000, 10) + `,"u":false,"p":0,"c":0,"m":true},
+			{"t":` + strconv.FormatInt(now, 10) + `,"u":true,"p":10,"c":200}
+		]
+	}}`
+	h := newExportFixture(t, exportPageJSON, history)
+
+	_, records := exportCSV(t, h, "")
+	if len(records) != 3 {
+		t.Fatalf("rows = %d, want 3: %v", len(records), records)
+	}
+	if records[1][7] != "true" {
+		t.Fatalf("maint column for the maintenance sample = %q, want true", records[1][7])
+	}
+	if records[2][7] != "false" {
+		t.Fatalf("maint column for the ordinary sample = %q, want false", records[2][7])
 	}
 }
 

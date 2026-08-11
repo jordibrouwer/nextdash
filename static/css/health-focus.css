@@ -1,0 +1,204 @@
+/*
+ * Focus mode: one health issue at a time, over the list it came from.
+ *
+ * Styled as an overlay rather than a separate page on purpose — the list stays
+ * visible behind it, so working through a queue never feels like leaving the
+ * view. The card is deliberately narrow: the whole point is that one decision
+ * is on screen and nothing else is competing for the click.
+ */
+
+.health-focus-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: var(--background-modal, rgba(0, 0, 0, 0.6));
+    animation: health-focus-fade 0.14s ease-out;
+}
+
+.health-focus-card {
+    width: min(34rem, 100%);
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.75rem;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+    animation: health-focus-rise 0.16s ease-out;
+}
+
+/* While an action is in flight the card stays put and stops taking clicks,
+   rather than swapping in a spinner that would move everything underneath the
+   pointer mid-decision. */
+.health-focus-overlay.is-busy .health-focus-card {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.health-focus-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.health-focus-progress {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.health-focus-close {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.4rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+    cursor: pointer;
+    border-radius: 0.3rem;
+}
+
+.health-focus-close:hover {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.health-focus-title {
+    margin: 0 0 0.25rem;
+    font-size: 1.15rem;
+    line-height: 1.3;
+    /* Long bookmark names break rather than widening the card past the
+       measure the rest of the layout is built on. */
+    overflow-wrap: anywhere;
+}
+
+.health-focus-url {
+    margin: 0 0 0.75rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.health-focus-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Collapses to nothing when the row has no badges, so the gap above the
+   reasons does not depend on whether any were rendered. */
+.health-focus-badges:empty {
+    display: none;
+    margin-bottom: 0;
+}
+
+.health-focus-reasons {
+    margin: 0 0 1.1rem;
+    padding-left: 1.1rem;
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.health-focus-reasons li + li {
+    margin-top: 0.2rem;
+}
+
+.health-focus-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.9rem;
+}
+
+/* The key hint rides inside its button, the same pairing the row actions use,
+   so the shortcut is learned from the control rather than from a legend. */
+.health-focus-actions kbd {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.3rem;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    font-family: inherit;
+    font-size: 0.68rem;
+    opacity: 0.8;
+}
+
+.health-focus-legend {
+    margin: 0;
+    font-size: 0.74rem;
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
+@keyframes health-focus-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes health-focus-rise {
+    from { opacity: 0; transform: translateY(8px) scale(0.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .health-focus-overlay,
+    .health-focus-card {
+        animation: none;
+    }
+}
+
+/* On a phone the card is the screen: full width, and the actions stack so no
+   button ends up too narrow to hit. */
+@media (max-width: 30rem) {
+    .health-focus-overlay {
+        padding: 0.75rem;
+    }
+
+    .health-focus-card {
+        width: 100%;
+        padding: 1.1rem;
+    }
+
+    .health-focus-actions .config-btn {
+        flex: 1 1 100%;
+    }
+}
+
+/* The toolbar entry point. Sized and coloured like the other toolbar buttons;
+   only the key hint is extra. */
+.health-view-focus-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.4rem;
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.health-view-focus-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-secondary, var(--border-primary));
+}
+
+.health-view-focus-btn kbd {
+    margin-left: 0.3rem;
+    padding: 0.02rem 0.28rem;
+    border: 1px solid var(--border-secondary, var(--border-primary));
+    border-radius: 0.25rem;
+    font-family: inherit;
+    font-size: 0.66rem;
+    opacity: 0.75;
+}

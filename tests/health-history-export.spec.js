@@ -67,7 +67,7 @@ test.describe('uptime history export', () => {
         expect(res.headers()['content-disposition']).toMatch(/nextdash-uptime-\d{4}-\d{2}-\d{2}\.csv/);
 
         const rows = parseCsv(await res.text());
-        expect(rows[0]).toEqual(['name', 'url', 'page', 'timestamp', 'up', 'pingMs', 'httpStatus']);
+        expect(rows[0]).toEqual(['name', 'url', 'page', 'timestamp', 'up', 'pingMs', 'httpStatus', 'maint']);
     });
 
     test('the body starts with a UTF-8 BOM so Excel reads it correctly', async ({ page }) => {
@@ -114,6 +114,16 @@ test.describe('uptime history export', () => {
 
         await openHealthFiltered(page, 'monitored');
         await expect(page.locator('.health-view-history-export-btn')).toHaveCount(1);
+    });
+
+    test('the two export buttons are labelled distinctly, not both just "Export"', async ({ page }) => {
+        // Side by side on the Monitored filter, "Export" and "Export history" read
+        // as the same action until you hover one — the row list export needs its
+        // own word so the pair is not a coin toss.
+        await openHealthFiltered(page, 'monitored');
+
+        await expect(page.locator('.health-view-export-btn')).toHaveText(/export rows/i);
+        await expect(page.locator('.health-view-history-export-btn')).toHaveText(/export history/i);
     });
 
     test('the toolbar button downloads the CSV', async ({ page }) => {

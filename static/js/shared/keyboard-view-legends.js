@@ -13,6 +13,7 @@
         { keys: 's', legendKey: 'healthKeyScore', cheatKey: 'hvScore', fallback: 'score' },
         { keys: 'i', legendKey: 'healthKeyStats', cheatKey: 'hvStats', fallback: 'statistics' },
         { keys: 'p', legendKey: 'healthKeyRecheck', cheatKey: 'hvRecheck', fallback: 're-check' },
+        { keys: 'f', legendKey: 'healthKeyFocus', cheatKey: 'hvFocus', fallback: 'work through' },
         { keys: 'R / ?', legendKey: 'healthKeyRefresh', cheatKey: 'hvRefresh', fallback: 'refresh report' },
         { keys: 'c', legendKey: 'healthKeyCheckMode', cheatKey: 'hvCheckMode', fallback: 'checking' },
         { keys: 'm', legendKey: 'healthKeyMore', cheatKey: 'hvMore', fallback: 'more actions' },

@@ -279,4 +279,64 @@ test.describe('health view check mode', () => {
 
         await expect(page.locator('.app-notification')).toContainText(/refreshed/i, { timeout: 5000 });
     });
+
+    /**
+     * CheckMode.intervalOf() reads a flat `monitorIntervalMinutes` field. A raw
+     * Bookmark has it; a health-report issue used not to — HealthIssue only
+     * carried the interval nested under monitorStats, which itself does not
+     * exist until the bookmark has at least one sample (buildMonitorStats
+     * returns nil for an empty history). So a first fix that only taught
+     * intervalOf to fall back to monitorStats.intervalMinutes still defaulted
+     * to 15m for exactly the row someone would test this on: one just switched
+     * to Monitor, or whose interval was just changed, with no check having run
+     * yet. HealthIssue now carries monitorIntervalMinutes directly, set from
+     * the bookmark regardless of sample history, which is what these two cases
+     * cover.
+     */
+    test('the interval accent is correct with an established history', async ({ page }) => {
+        await mockHealthWithInterval(page, {
+            monitor: true, monitorIntervalMinutes: 30,
+            monitorStats: { intervalMinutes: 30, uptime24h: {}, uptime7d: {}, uptime30d: {}, totalChecks: 10 },
+        });
+        await openInterval(page);
+        await expect(page.locator('.health-check-interval-btn.is-active')).toHaveText('30m');
+    });
+
+    test('the interval accent is correct with no samples yet', async ({ page }) => {
+        // The exact shape buildMonitorStats produces for an empty history: the
+        // field is absent from the JSON entirely (nil in Go, omitempty).
+        await mockHealthWithInterval(page, { monitor: true, monitorIntervalMinutes: 60 });
+        await openInterval(page);
+        await expect(page.locator('.health-check-interval-btn.is-active')).toHaveText('1h');
+    });
+
+    async function mockHealthWithInterval(page, issueOverrides) {
+        await page.route('**/api/bookmark-health**', (route) => route.fulfill({
+            status: 200, contentType: 'application/json',
+            body: JSON.stringify({
+                generatedAt: Date.now(),
+                summary: { totalBookmarks: 1, healthyCount: 1, brokenCount: 0, duplicateCount: 0, uncheckedCount: 0 },
+                issues: [issue({
+                    index: 0, name: 'Interval accent', url: 'https://example.com/interval-accent',
+                    ...issueOverrides,
+                })],
+                duplicateGroups: [],
+            }),
+        }));
+    }
+
+    async function openInterval(page) {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await page.click('.health-link a.health-link-anchor');
+        await page.waitForSelector('#dashboard-layout.health-layout', { timeout: 15_000 });
+        await page.waitForFunction(() => {
+            const h = window.dashboardInstance?.healthView || window.dashboardInstance?.health;
+            return h?.report?.issues?.length === 1;
+        }, null, { timeout: 15_000 });
+        await page.click('[data-health-filter="all"]');
+        await page.waitForSelector('.health-view-item', { timeout: 15_000 });
+        await page.click('.health-check-mode');
+    }
 });

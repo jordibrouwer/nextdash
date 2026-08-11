@@ -1654,7 +1654,24 @@ class SearchCommandNew {
                 this.notify(conflictMessage, 'error');
                 window.nextdashTrack?.('bookmark-created', { result: 'conflict' });
             } else {
-                this.notify(this.t('config.errorCreatingBookmark', 'Error creating bookmark'), 'error');
+                let detail = '';
+                try {
+                    const raw = await response.text();
+                    if (raw) {
+                        try {
+                            const errorBody = JSON.parse(raw);
+                            detail = errorBody?.message || errorBody?.error || '';
+                        } catch {
+                            detail = raw.trim();
+                        }
+                    }
+                } catch (readError) {
+                    console.warn('Error reading bookmark-save error body:', readError);
+                }
+                const message = detail
+                    ? `${this.t('config.errorCreatingBookmark', 'Error creating bookmark')}: ${detail}`
+                    : this.t('config.errorCreatingBookmark', 'Error creating bookmark');
+                this.notify(message, 'error');
                 window.nextdashTrack?.('bookmark-created', { result: 'error' });
             }
         } catch (error) {

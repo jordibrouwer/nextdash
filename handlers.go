@@ -25,17 +25,17 @@ import (
 )
 
 type Handlers struct {
-	store             Store
-	files             embed.FS
-	pageTemplates     map[string]*template.Template
-	pageTemplatesMu   sync.RWMutex
-	previewCacheMu    sync.RWMutex
-	previewCache      PreviewCacheFile
-	previewLoaded     bool
-	previewCacheDirty bool
-	healthCacheMu     sync.RWMutex
-	healthHistoryMu   sync.Mutex
-	healthTrendMu     sync.Mutex
+	store                 Store
+	files                 embed.FS
+	pageTemplates         map[string]*template.Template
+	pageTemplatesMu       sync.RWMutex
+	previewCacheMu        sync.RWMutex
+	previewCache          PreviewCacheFile
+	previewLoaded         bool
+	previewCacheDirty     bool
+	healthCacheMu         sync.RWMutex
+	healthHistoryMu       sync.Mutex
+	healthTrendMu         sync.Mutex
 	healthReportMu        sync.RWMutex
 	healthReport          BookmarkHealthReport
 	healthReportAt        time.Time
@@ -43,12 +43,12 @@ type Handlers struct {
 	healthReportBuildMu   sync.Mutex
 	healthReportBuildCond *sync.Cond
 	healthReportBuilding  bool
-	prefetchMu        sync.Mutex
-	autoBackupMu      sync.Mutex
-	ssrfAPILimiter    *slidingWindowLimiter
-	statusPingLimiter *slidingWindowLimiter
-	updateCheckMu     sync.RWMutex
-	updateCheckCache  updateCheckCacheEntry
+	prefetchMu            sync.Mutex
+	autoBackupMu          sync.Mutex
+	ssrfAPILimiter        *slidingWindowLimiter
+	statusPingLimiter     *slidingWindowLimiter
+	updateCheckMu         sync.RWMutex
+	updateCheckCache      updateCheckCacheEntry
 }
 
 const healthReportCacheTTL = 3 * time.Minute
@@ -126,6 +126,25 @@ func canonicalBookmarkURLKey(raw string) string {
 		return scheme + "://" + host + path + "?" + u.RawQuery
 	}
 	return scheme + "://" + host + path
+}
+
+// findBookmarkByURL returns the first bookmark matching url's canonical key, so
+// a one-off check (manual re-check, promote-from-inbox) can honor that
+// bookmark's own expectations instead of always falling back to the default
+// reachability rule. Zero value when the URL is not bookmarked yet.
+func (h *Handlers) findBookmarkByURL(url string) (Bookmark, bool) {
+	key := canonicalBookmarkURLKey(url)
+	if key == "" {
+		return Bookmark{}, false
+	}
+	for _, page := range h.store.GetPages() {
+		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			if canonicalBookmarkURLKey(bm.URL) == key {
+				return bm, true
+			}
+		}
+	}
+	return Bookmark{}, false
 }
 
 func findDuplicateShortcutInList(bookmarks []Bookmark) string {
@@ -448,16 +467,18 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 		switch status {
 		case "broken":
 			return 0
-		case "duplicate":
+		case "content":
 			return 1
-		case "shortcut-conflict":
+		case "duplicate":
 			return 2
-		case "unchecked":
+		case "shortcut-conflict":
 			return 3
-		case "stale":
+		case "unchecked":
 			return 4
-		case "unused":
+		case "stale":
 			return 5
+		case "unused":
+			return 6
 		case "missing-preview":
 			return 6
 		default:
@@ -497,6 +518,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			isMissingPreview := missingPreview(bm)
 			shortcutKey := normalizeShortcut(bm.Shortcut)
 			isShortcutConflict := shortcutKey != "" && shortcutCounts[shortcutKey] > 1
+			isDrifting := bm.Monitor && bm.WatchDrift && strings.TrimSpace(bm.DriftNoticed) != ""
 
 			status := "healthy"
 			// Every condition that holds, in the same priority order as status.
@@ -509,12 +531,22 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			score := 100
 
 			if isBroken {
-				status = "broken"
-				flags = append(flags, "broken")
-				if detail := strings.TrimSpace(bm.LastError); detail != "" {
-					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "last_error", Detail: detail, Penalty: healthPenaltyBroken})
+				detail := strings.TrimSpace(bm.LastError)
+				// A host that answered with the wrong content is a different
+				// problem from one that did not answer, and showing both as
+				// "broken" hides which of the two you are looking at.
+				if isContentFailure(detail) {
+					status = "content"
+					flags = append(flags, "content")
+					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "content_mismatch", Detail: detail, Penalty: healthPenaltyBroken})
 				} else {
-					appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "unreachable", Penalty: healthPenaltyBroken})
+					status = "broken"
+					flags = append(flags, "broken")
+					if detail != "" {
+						appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "last_error", Detail: detail, Penalty: healthPenaltyBroken})
+					} else {
+						appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "unreachable", Penalty: healthPenaltyBroken})
+					}
 				}
 				score -= healthPenaltyBroken
 			}
@@ -584,6 +616,13 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "no_preview", Penalty: healthPenaltyNoPreview})
 				score -= healthPenaltyNoPreview
 			}
+			// Drift is a rot signal, not a hard failure: the bookmark still answers,
+			// so it keeps whatever status it already has and pays no score penalty.
+			// It only adds a flag, the same way "unused" layers onto "broken" — a
+			// bookmark that is both must be findable under either filter.
+			if isDrifting {
+				flags = append(flags, "drift")
+			}
 
 			if score < 0 {
 				score = 0
@@ -599,10 +638,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			if isBroken {
 				// A monitored bookmark that is down counts as a live outage, not
 				// an ordinary broken link — kept out of BrokenCount so the two can
-				// be told apart in the header and never double-counted.
-				if bm.Monitor {
+				// be told apart in the header and never double-counted. A content
+				// failure is a third case: the host answered, so it is neither.
+				switch {
+				case isContentFailure(strings.TrimSpace(bm.LastError)):
+					report.Summary.ContentCount++
+				case bm.Monitor:
 					report.Summary.MonitorDownCount++
-				} else {
+				default:
 					report.Summary.BrokenCount++
 				}
 			}
@@ -623,6 +666,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 			if isUnused {
 				report.Summary.UnusedCount++
+			}
+			if isDrifting {
+				report.Summary.DriftCount++
 			}
 			if status == "healthy" {
 				report.Summary.HealthyCount++
@@ -648,31 +694,47 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 
 			report.Issues = append(report.Issues, HealthIssue{
-				Name:           bm.Name,
-				URL:            bm.URL,
-				Shortcut:       bm.Shortcut,
-				Category:       bm.Category,
-				PageID:         page.ID,
-				PageName:       pageNames[page.ID],
-				Index:          entry.index,
-				Pinned:         bm.Pinned,
-				CheckStatus:    bm.CheckStatus,
-				OpenCount:      bm.OpenCount,
-				LastOpened:     bm.LastOpened,
-				LastChecked:    bm.LastChecked,
-				LastError:      bm.LastError,
-				PreviewTitle:   bm.PreviewTitle,
-				PreviewDesc:    bm.PreviewDesc,
-				PreviewImage:   bm.PreviewImage,
-				Icon:           bm.Icon,
-				Status:         status,
-				Flags:          flags,
-				Score:          score,
-				Reasons:        reasons,
-				ReasonDetails:  reasonDetails,
-				DuplicateCount: duplicateCount,
-				Monitor:        bm.Monitor,
-				MonitorStats:   monitorStats,
+				Name:                   bm.Name,
+				URL:                    bm.URL,
+				Shortcut:               bm.Shortcut,
+				Category:               bm.Category,
+				PageID:                 page.ID,
+				PageName:               pageNames[page.ID],
+				Index:                  entry.index,
+				Pinned:                 bm.Pinned,
+				CheckStatus:            bm.CheckStatus,
+				OpenCount:              bm.OpenCount,
+				LastOpened:             bm.LastOpened,
+				LastChecked:            bm.LastChecked,
+				LastError:              bm.LastError,
+				PreviewTitle:           bm.PreviewTitle,
+				PreviewDesc:            bm.PreviewDesc,
+				PreviewImage:           bm.PreviewImage,
+				Icon:                   bm.Icon,
+				Status:                 status,
+				Flags:                  flags,
+				Score:                  score,
+				Reasons:                reasons,
+				ReasonDetails:          reasonDetails,
+				DuplicateCount:         duplicateCount,
+				Monitor:                bm.Monitor,
+				MonitorIntervalMinutes: monitorIntervalMinutesFor(bm),
+				MonitorStats:           monitorStats,
+				// Only for monitored rows: the checks that read these belong to
+				// the monitor, and sending them for every bookmark would grow the
+				// report for fields nothing would render.
+				ExpectText:       expectFieldsFor(bm).Text,
+				ExpectTextAbsent: bm.Monitor && bm.ExpectTextAbsent,
+				ExpectStatus:     expectFieldsFor(bm).Status,
+				WatchDrift:       bm.Monitor && bm.WatchDrift,
+				DriftNoticed:     driftFieldsFor(bm).noticed,
+				DriftReason:      driftFieldsFor(bm).reason,
+				DriftSince:       driftFieldsFor(bm).since,
+				// Gated on Monitor like the fields above it: only monitored
+				// bookmarks ever raise an alert, so a mute on any other row
+				// would render a control that governs nothing.
+				NotifyMuted: bm.Monitor && bm.NotifyMuted,
+				CertHost:    bm.CertHost,
 			})
 		}
 	}
@@ -716,6 +778,10 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// build behind. That is the right trade — the trend describes days, and the
 	// current day is already on screen as the live numbers.
 	report.Trend = h.readHealthTrend()
+	// Only the ones worth showing. A certificate with three months left is true
+	// but not news, and sending every host would grow the report by an entry per
+	// domain for something the UI would immediately filter out again.
+	report.Certificates = expiringCertificates(h.hostCertificates(), monitorNow)
 
 	return report
 }
@@ -781,11 +847,11 @@ func (h *Handlers) setCORSHeaders(w http.ResponseWriter, r *http.Request) {
 
 type htmlPageData struct {
 	Settings
-	ThemePoolCSV       string `json:"-"`
-	CustomThemeIDsCSV  string `json:"-"`
-	ThemeColorMeta     string `json:"-"`
-	WriteToken   string `json:"-"`
-	AppVersion string
+	ThemePoolCSV      string `json:"-"`
+	CustomThemeIDsCSV string `json:"-"`
+	ThemeColorMeta    string `json:"-"`
+	WriteToken        string `json:"-"`
+	AppVersion        string
 	// ReleaseTag is the published version ("v2026.07.23.6"), reported with the
 	// analytics settings snapshot so adoption can be read per release. Empty
 	// when the What's new index cannot be read.
@@ -815,17 +881,17 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 	colors := h.store.GetColors()
 	themeID := normalizeLegacyThemeID(settings.Theme)
 	return htmlPageData{
-		Settings:           settings,
-		ThemePoolCSV:       themePoolCSV(colors),
-		CustomThemeIDsCSV:  customThemeIDsCSV(colors),
-		ThemeColorMeta:     themeBackgroundPrimary(themeID, colors),
-		WriteToken:         writeAccessToken(),
-		AppVersion:         appVersionToken(),
-		ReleaseTag:         releaseTag(),
-		AnalyticsWebsiteID: analyticsWebsiteID,
-		AnalyticsScriptSrc: analyticsScriptSrc,
-		AnalyticsEnabled:   analyticsEnabled(settings),
-		TelemetryLockedOff: telemetryDisabledByEnv(),
+		Settings:             settings,
+		ThemePoolCSV:         themePoolCSV(colors),
+		CustomThemeIDsCSV:    customThemeIDsCSV(colors),
+		ThemeColorMeta:       themeBackgroundPrimary(themeID, colors),
+		WriteToken:           writeAccessToken(),
+		AppVersion:           appVersionToken(),
+		ReleaseTag:           releaseTag(),
+		AnalyticsWebsiteID:   analyticsWebsiteID,
+		AnalyticsScriptSrc:   analyticsScriptSrc,
+		AnalyticsEnabled:     analyticsEnabled(settings),
+		TelemetryLockedOff:   telemetryDisabledByEnv(),
 		UpdateCheckLockedOff: updateCheckDisabledByEnv(),
 	}
 }
@@ -1566,6 +1632,10 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
+	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
+	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
+	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
+	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
 
 	if !respondStorePersistError(w, h.store.SaveSettings(settings)) {
 		return
@@ -2394,6 +2464,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	var res healthRetestResult
 	healthUpdates := make(map[string]HealthScanCache)
 	historyUpdates := make(map[string][]HealthSample)
+	driftResults := make(map[string]PingResult)
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
@@ -2418,7 +2489,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				continue
 			}
 
-			result := h.pingURLDetailed(ctx, bm.URL)
+			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm))
 			res.Tested++
 			if result.Status == "online" {
 				res.OnlineCount++
@@ -2440,6 +2511,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 					lastError:   errMsg,
 					lastChecked: lastChecked,
 				}
+				driftResults[key] = result
 				healthUpdates[key] = HealthScanCache{
 					URL:         key,
 					Status:      result.Status,
@@ -2488,6 +2560,11 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				}
 				current[i].LastChecked = update.lastChecked
 				current[i].LastError = update.lastError
+				result := driftResults[key]
+				if result.CertHost != "" {
+					current[i].CertHost = result.CertHost
+				}
+				applyDriftResult(&current[i], result, update.lastChecked)
 			}
 			return current, nil
 		})
@@ -2852,7 +2929,7 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	// outside MutateBookmarkAt because that holds the store write lock.
 	verified := PingResult{}
 	if updatedURL != "" && updatedURL != strings.TrimSpace(sourceBookmark.URL) {
-		verified = h.pingURLDetailed(r.Context(), updatedURL)
+		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark))
 	}
 
 	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
@@ -2883,6 +2960,18 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 				}
 				bookmark.LastError = detail
 			}
+			// The URL just changed under this bookmark: whatever drift baseline was
+			// recorded belonged to the old page, so it must not be judged against it.
+			bookmark.DriftURL = ""
+			bookmark.DriftTitle = ""
+			bookmark.DriftFingerprint = ""
+			bookmark.DriftNoticed = ""
+			bookmark.DriftSince = 0
+			bookmark.DriftReason = ""
+			if verified.CertHost != "" {
+				bookmark.CertHost = verified.CertHost
+			}
+			applyDriftResult(bookmark, verified, bookmark.LastChecked)
 		}
 
 		result = *bookmark

@@ -122,6 +122,11 @@ func pooledUptime(inputs []fleetMonitorInput, window time.Duration, now time.Tim
 			if s.T < cutoff {
 				continue
 			}
+			// Mirrors uptimeRatio: expected downtime during a maintenance window is
+			// not an availability failure.
+			if s.Maint {
+				continue
+			}
 			total++
 			if s.Up {
 				up++

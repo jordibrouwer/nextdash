@@ -39,6 +39,11 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		Title  string `json:"title"`
 		Source string `json:"source"`
 		Note   string `json:"note"`
+		// Tags were silently dropped before this: InboxLink carries them and
+		// AddInboxLink normalises them, but the request struct had no field, so
+		// anything posting tags — the extension, a script — lost them on the
+		// way in with no error to notice.
+		Tags []string `json:"tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -63,6 +68,7 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		Title:  strings.TrimSpace(request.Title),
 		Source: strings.TrimSpace(request.Source),
 		Note:   strings.TrimSpace(request.Note),
+		Tags:   request.Tags,
 	}
 
 	created, err := h.store.AddInboxLink(link, dedupe, maxItems)
@@ -70,6 +76,9 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, ErrInboxDuplicateURL) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusConflict)
+			// `created` is the item already holding this URL, not a zero value:
+			// AddInboxLink's dedupe branch returns the existing entry alongside
+			// the error, which is what lets the client jump to it.
 			json.NewEncoder(w).Encode(map[string]any{
 				"error":   "duplicate_url",
 				"message": "URL already in inbox",
@@ -99,6 +108,24 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 	h.enrichInboxPreviewAsync(created.ID, url)
 }
 
+// inboxItemNeedsIconFetch reports whether the startup backfill should try to
+// fetch a favicon for this item.
+//
+// Extracted from the loop rather than written inline so the rule can be tested
+// without a network fetch: the loop itself downloads from the item's own host,
+// which a test cannot drive. Keeping the decision here means the test binds to
+// the code that actually runs instead of a copy of it.
+//
+// IconFetchedAt is the part worth stating. It records that an attempt happened,
+// not that one succeeded — plenty of sites simply have no favicon, and without
+// this the same doomed fetches re-ran on every restart for the life of the item.
+func inboxItemNeedsIconFetch(item InboxLink) bool {
+	if strings.TrimSpace(item.Icon) != "" || strings.TrimSpace(item.URL) == "" {
+		return false
+	}
+	return item.IconFetchedAt == 0
+}
+
 // backfillInboxIconsAsync fetches favicons for existing inbox items that predate
 // icon storage (added before Icon was a field, or whose enrichment ran without it).
 // Runs once at startup, off the request path, and mirrors the bookmark icon
@@ -112,7 +139,7 @@ func (h *Handlers) backfillInboxIconsAsync() {
 		allowLocal := h.allowLocalBookmarks()
 		applied := 0
 		for _, item := range items {
-			if strings.TrimSpace(item.Icon) != "" || strings.TrimSpace(item.URL) == "" {
+			if !inboxItemNeedsIconFetch(item) {
 				continue
 			}
 			iconFile := ""
@@ -121,18 +148,21 @@ func (h *Handlers) backfillInboxIconsAsync() {
 					iconFile = name
 				}
 			}
-			if iconFile == "" {
-				continue
-			}
 			id := item.ID
 			file := iconFile
+			attemptedAt := time.Now().UnixMilli()
+			// Stamped whether or not the fetch produced a file: the stamp records
+			// that the attempt happened, which is exactly what a failure needs to
+			// leave behind. A success stamps it too, so the field always means
+			// "last attempted" rather than "last failed".
 			if _, err := h.store.UpdateInboxLink(id, func(link *InboxLink) error {
 				// Re-check under the store lock: another path may have set it since.
-				if strings.TrimSpace(link.Icon) == "" {
+				if file != "" && strings.TrimSpace(link.Icon) == "" {
 					link.Icon = file
 				}
+				link.IconFetchedAt = attemptedAt
 				return nil
-			}); err == nil {
+			}); err == nil && file != "" {
 				applied++
 			}
 		}
@@ -170,7 +200,15 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 			}
 		}
 
+		// Even when nothing was found, the icon attempt is recorded below so the
+		// startup backfill does not retry this item forever. Returning early
+		// here would leave IconFetchedAt unset and hand the retry loop straight
+		// back to the backfill.
 		if strings.TrimSpace(preview.Title) == "" && strings.TrimSpace(preview.Image) == "" && iconFile == "" {
+			_, _ = h.store.UpdateInboxLink(itemID, func(item *InboxLink) error {
+				item.IconFetchedAt = time.Now().UnixMilli()
+				return nil
+			})
 			return
 		}
 		_, _ = h.store.UpdateInboxLink(itemID, func(item *InboxLink) error {
@@ -192,6 +230,7 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 			if iconFile != "" {
 				item.Icon = iconFile
 			}
+			item.IconFetchedAt = time.Now().UnixMilli()
 			return nil
 		})
 	}()
@@ -222,6 +261,19 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 
 	restored, err := h.store.RestoreInboxLink(request.Item, maxItems)
 	if err != nil {
+		// A full inbox is not a server fault: nothing broke, there is simply no
+		// room. Answered as 409 so the client can tell the user why undo did
+		// nothing instead of showing a generic failure — or worse, the silent
+		// success this used to report.
+		if errors.Is(err, ErrInboxAtCapacity) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]any{
+				"error":   "at_capacity",
+				"message": "Inbox is full",
+			})
+			return
+		}
 		if !respondStorePersistError(w, err) {
 			return
 		}
@@ -336,12 +388,32 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// An empty string is indistinguishable from "field not sent" on a JSON
+	// struct, so each clearable text field gets an explicit opt-in, matching the
+	// clearNote=1 convention this endpoint already used for notes. Without them
+	// a field can be set but never emptied again.
+	clearing := func(param string) bool {
+		return r.URL.Query().Get(param) == "1"
+	}
+	clearTitle := clearing("clearTitle")
+	clearNote := clearing("clearNote")
+	clearPreview := clearing("clearPreview")
+
 	markedRead := false
 	updated, err := h.store.UpdateInboxLink(id, func(item *InboxLink) error {
-		if request.Title != "" {
+		if request.Title != "" || clearTitle {
 			item.Title = strings.TrimSpace(request.Title)
+			// A title is never left blank on a stored item: the list would show
+			// an empty row. Falls back the same way AddInboxLink does.
+			if item.Title == "" {
+				if item.Domain != "" {
+					item.Title = item.Domain
+				} else {
+					item.Title = item.URL
+				}
+			}
 		}
-		if request.Note != "" || r.URL.Query().Get("clearNote") == "1" {
+		if request.Note != "" || clearNote {
 			item.Note = strings.TrimSpace(request.Note)
 		}
 		if request.ReadAt != nil {
@@ -362,13 +434,16 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 				item.SnoozedUntil = 0
 			}
 		}
-		if request.PreviewTitle != "" {
+		// The three preview fields share one flag: they are enrichment output
+		// written together, and clearing one while keeping the others would
+		// leave a card describing a page it no longer matches.
+		if request.PreviewTitle != "" || clearPreview {
 			item.PreviewTitle = strings.TrimSpace(request.PreviewTitle)
 		}
-		if request.PreviewDesc != "" {
+		if request.PreviewDesc != "" || clearPreview {
 			item.PreviewDesc = strings.TrimSpace(request.PreviewDesc)
 		}
-		if request.PreviewImage != "" {
+		if request.PreviewImage != "" || clearPreview {
 			item.PreviewImage = strings.TrimSpace(request.PreviewImage)
 		}
 		return nil

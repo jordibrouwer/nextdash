@@ -11,23 +11,32 @@ const { prepareDashboardInteraction } = require('./e2e-helpers');
  * asserted here rather than trusted.
  */
 
-async function openHealthHelp(page) {
+async function openHelpTab(page, tab) {
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
-    await page.waitForSelector('[data-help-tab="health"]', { timeout: 15_000 });
-    await page.locator('[data-help-tab="health"]').click();
+    await page.waitForSelector(`[data-help-tab="${tab}"]`, { timeout: 15_000 });
+    await page.locator(`[data-help-tab="${tab}"]`).click();
     await page.waitForSelector('#config-help-body .config-panel', { timeout: 15_000 });
 }
 
+async function openHealthHelp(page) {
+    await openHelpTab(page, 'health');
+}
+
+async function openInboxHelp(page) {
+    await openHelpTab(page, 'inbox');
+}
+
 test.describe('config help — health', () => {
-    test('splits into five panels, each with real prose', async ({ page }) => {
+    test('splits into nine panels, each with real prose', async ({ page }) => {
         await openHealthHelp(page);
 
         const body = page.locator('#config-help-body');
-        // Availability, the list, the numbers, the inbox, and working through it.
-        await expect(body.locator('.config-panel')).toHaveCount(5);
+        // Availability, the list, the numbers, expectations, certificates,
+        // drift, maintenance windows, notifications, and the walkthrough.
+        await expect(body.locator('.config-panel')).toHaveCount(9);
 
         // A missing key renders as the key itself; nothing here may look like one.
         await expect(body).not.toContainText('config.help');
@@ -62,6 +71,174 @@ test.describe('config help — health', () => {
         await expect(body).toContainText(/Unused/i);
     });
 
+    test('covers drift detection: all three kinds, and how a baseline is set', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Watch for redirects, retitling and rewrites/i);
+        await expect(body).toContainText(/baseline/i);
+        await expect(body).toContainText(/Redirect drift/i);
+        await expect(body).toContainText(/Title drift/i);
+        await expect(body).toContainText(/Content drift/i);
+        // The row badges the prose says to expect.
+        await expect(body).toContainText(/Moved/);
+        await expect(body).toContainText(/Retitled/);
+        await expect(body).toContainText(/Changed/);
+    });
+
+    test('covers focus mode, including the key and where it starts', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Work through/);
+        // The key is the part someone comes back to the help for.
+        await expect(body.locator('code', { hasText: /^f$/ }).first()).toBeVisible();
+        // The two behaviours that are not guessable from the button.
+        await expect(body).toContainText(/starts at the row your cursor is on/i);
+        await expect(body).toContainText(/rather than quietly wrapping/i);
+    });
+
+    test('covers accepting drift: what it clears and what it asserts', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Accept drift/);
+        // Clearing the baseline as well as the finding is the whole mechanism.
+        await expect(body).toContainText(/drops the baseline/i);
+        // And the consequence a user has to understand before clicking it.
+        await expect(body).toContainText(/would be marked healthy/i);
+    });
+
+    test('covers per-bookmark muting and the burst digest', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Do not alert me about this bookmark/);
+        await expect(body).toContainText(/Muted/);
+        // Muting withholds the message, not the check — the distinction the
+        // badge exists for.
+        await expect(body).toContainText(/still checked/i);
+        // And that un-muting mid-outage is not silently swallowed.
+        await expect(body).toContainText(/Un-muting during an outage still alerts/i);
+
+        // The digest, and the reason it exists rather than just its behaviour.
+        await expect(body).toContainText(/collapsed into one message/i);
+        await expect(body).toContainText(/rate-limit/i);
+    });
+
+    test('covers maintenance windows: what they exclude and what they do not', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Maintenance windows/i);
+        await expect(body).toContainText(/past midnight/i);
+        // The nuance that matters: checks still run, only the alerting is held back.
+        await expect(body).toContainText(/heartbeat still records/i);
+    });
+
+    test('covers every notification preset and the test-send button', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        for (const service of ['Slack', 'Discord', 'Telegram', 'Pushover', 'ntfy', 'Raw JSON']) {
+            await expect(body, `mentions ${service}`).toContainText(service);
+        }
+        await expect(body).toContainText(/Chat ID/i);
+        await expect(body).toContainText(/application token/i);
+        await expect(body).toContainText(/user key/i);
+        await expect(body).toContainText(/Send test alert/i);
+    });
+
+    test('the walkthrough ties every setting to one worked example', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        const walkthrough = body.locator('.config-panel', {
+            has: page.locator('.config-panel-title', { hasText: 'Setting up one monitored bookmark' }),
+        });
+        await expect(walkthrough).toBeVisible();
+        const text = (await walkthrough.textContent()) || '';
+        // Every setting introduced earlier in the tab shows up again here, tied
+        // to a concrete reason rather than repeated in the abstract.
+        expect(text).toMatch(/Monitor/);
+        expect(text).toMatch(/interval/i);
+        expect(text).toMatch(/Status codes/i);
+        expect(text).toMatch(/must contain/i);
+        expect(text).toMatch(/drift/i);
+        expect(text).toMatch(/[Mm]aintenance/);
+        expect(text).toMatch(/[Aa]lert after/);
+        expect(text).toMatch(/[Tt]est alert/);
+        expect(text.trim().length).toBeGreaterThan(1500);
+    });
+});
+
+test.describe('config help — inbox', () => {
+    test('splits into four panels, each with real prose', async ({ page }) => {
+        await openInboxHelp(page);
+
+        const body = page.locator('#config-help-body');
+        // Capture, working the backlog, triage mode, and the settings with no UI.
+        await expect(body.locator('.config-panel')).toHaveCount(4);
+
+        await expect(body).not.toContainText('config.help');
+
+        for (const prose of await body.locator('.config-help-prose').all()) {
+            await expect(prose.locator('p').first()).toBeVisible();
+            expect((await prose.textContent())?.trim().length).toBeGreaterThan(200);
+            await expect(prose).not.toContainText('<p>');
+        }
+    });
+
+    test('covers capture: paste, the extension, dedup, and the unread badge', async ({ page }) => {
+        await openInboxHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Already in Inbox/);
+        await expect(body).toContainText(/Save to Inbox/i);
+        await expect(body).toContainText(/extension/i);
+        await expect(body).toContainText(/pulses/i);
+        await expect(body).toContainText(/plain text, not markdown/i);
+    });
+
+    test('covers triage mode as its own keyboard-only workflow', async ({ page }) => {
+        await openInboxHelp(page);
+        const body = page.locator('#config-help-body');
+
+        const triage = body.locator('.config-panel', {
+            has: page.locator('.config-panel-title', { hasText: 'Triage mode' }),
+        });
+        await expect(triage).toBeVisible();
+        const text = (await triage.textContent()) || '';
+        expect(text).toMatch(/:inbox triage/);
+        for (const key of ['j', 'k', 'o', 'Enter', 'p', 'r', 'd', 'Escape']) {
+            expect(text, `mentions key ${key}`).toContain(key);
+        }
+    });
+
+    test('covers the config-only settings with no UI control', async ({ page }) => {
+        await openInboxHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Enable the inbox/i);
+        await expect(body).toContainText(/500/);
+        await expect(body).toContainText(/silently dropped/i);
+        await expect(body).toContainText(/[Dd]eduplicat/);
+    });
+
+    // The cap and undo interact in a way that is not guessable: a restored link
+    // carries its original timestamp, which is exactly what the cap trims by.
+    test('explains that undo still works at the cap', async ({ page }) => {
+        await openInboxHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/undo still works/i);
+        await expect(body).toContainText(/oldest of the others makes way/i);
+        // And that a genuine refusal is reported rather than faked.
+        await expect(body).toContainText(/says the inbox is full/i);
+    });
+});
+
+test.describe('config help — translations', () => {
     test('every language renders translated prose rather than keys', async ({ page }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
@@ -71,37 +248,51 @@ test.describe('config help — health', () => {
         // therefore still shows English — is caught rather than passing.
         // "Inbox" is deliberately absent: it is the same word in English and
         // Dutch, so asserting it is gone would fail on a correct nl translation.
-        const english = ['Availability & health', 'Working through the list',
-            'Uptime, trends & statistics', 'Working through the inbox'];
+        const tabs = {
+            health: {
+                count: 9,
+                english: ['Availability & health', 'Working through the list', 'Uptime, trends & statistics'],
+            },
+            inbox: {
+                count: 4,
+                english: ['Working through the inbox', 'Triage mode', 'Settings behind the scenes'],
+            },
+        };
 
         for (const lang of ['nl', 'de', 'fr']) {
             await page.evaluate(async (code) => {
                 const d = window.dashboardInstance;
                 await d.language.loadTranslations(code);
                 d.config.openConfigView('help');
-                d.config.helpTab = 'health';
-                d.config.render?.();
             }, lang);
-            await page.waitForSelector('#config-help-body .config-panel', { timeout: 15_000 });
 
-            const body = page.locator('#config-help-body');
-            await expect(body.locator('.config-panel'), `${lang} panel count`).toHaveCount(5);
-            await expect(body, `${lang} has no untranslated keys`).not.toContainText('config.help');
+            for (const [tab, { count, english }] of Object.entries(tabs)) {
+                await page.evaluate((t) => {
+                    const d = window.dashboardInstance;
+                    d.config.helpTab = t;
+                    d.config.render?.();
+                }, tab);
+                await page.waitForSelector('#config-help-body .config-panel', { timeout: 15_000 });
 
-            const titles = (await body.locator('.config-panel-title').allTextContents())
-                .map((t) => t.trim());
-            expect(titles, `${lang} titles are translated`).not.toEqual(english);
-            // Every English title must be gone, not just the list as a whole
-            // differing — one title left in English would otherwise pass.
-            for (const title of english) {
-                expect(titles, `${lang} still shows the English "${title}"`).not.toContain(title);
-            }
+                const body = page.locator('#config-help-body');
+                await expect(body.locator('.config-panel'), `${lang}/${tab} panel count`).toHaveCount(count);
+                await expect(body, `${lang}/${tab} has no untranslated keys`).not.toContainText('config.help');
 
-            // Each body carries real prose, not an empty string falling back to
-            // the (deliberately blank) English default.
-            for (const prose of await body.locator('.config-help-prose').all()) {
-                expect((await prose.textContent())?.trim().length,
-                    `${lang} prose length`).toBeGreaterThan(200);
+                const titles = (await body.locator('.config-panel-title').allTextContents())
+                    .map((t2) => t2.trim());
+                expect(titles, `${lang}/${tab} titles are translated`).not.toEqual(english);
+                // Every English title must be gone, not just the list as a whole
+                // differing — one title left in English would otherwise pass.
+                for (const title of english) {
+                    expect(titles, `${lang}/${tab} still shows the English "${title}"`).not.toContain(title);
+                }
+
+                // Each body carries real prose, not an empty string falling back to
+                // the (deliberately blank) English default.
+                for (const prose of await body.locator('.config-help-prose').all()) {
+                    expect((await prose.textContent())?.trim().length,
+                        `${lang}/${tab} prose length`).toBeGreaterThan(200);
+                }
             }
         }
     });
