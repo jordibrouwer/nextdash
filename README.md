@@ -18,14 +18,6 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 ---
 
-### News & Integrations
-
-- 🌐 **Official Website:** [nextdash.cc](https://nextdash.cc)
-- 📰 **Developer Blog & Updates:** [jordibrw.cc](https://jordibrw.cc)
-- 🍏 **macOS Dropzone 5 Integration:** Send URLs straight to your dashboard or Inbox from any app or browser using the [Dropzone 5 script for nextDash](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
-
----
-
 ## Screenshots
 <table border="0" width="100%">
   <tr>
@@ -508,6 +500,14 @@ Full UI translations available for English, Dutch, German, and French.
 | Hover over a bookmark | Show preview card when enabled (Config → Appearance → Display) |
 | Long press a category header (~500 ms) | Rename the category (not on sort buttons; double-click still works) |
 | Double-click a page tab | Rename the page |
+
+---
+
+### News & Integrations
+
+- 🌐 **Official Website:** [nextdash.cc](https://nextdash.cc)
+- 📰 **Developer Blog & Updates:** [jordibrw.cc](https://jordibrw.cc)
+- 🍏 **macOS Dropzone 5 Integration:** Send URLs straight to your dashboard or Inbox from any app or browser using the [Dropzone 5 script for nextDash](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
 
 ---
 
