@@ -111,9 +111,17 @@ publish_github_release() {
 
   local notes_file
   notes_file="$(mktemp)"
-  if extract_changelog_notes "$tag" > "$notes_file" 2>/dev/null; then
+  if extract_changelog_notes "$tag" > "$notes_file" 2>/dev/null && [[ -s "$notes_file" ]]; then
     :
   else
+    # Said out loud rather than swallowed. A silent fallback here is how three
+    # releases went out with a one-line body: the changelog had been dropped by
+    # the merge above, extract_changelog_notes returned 1, and nothing on
+    # screen distinguished that from a release that genuinely had no notes.
+    echo "Warning: no CHANGELOG.md section for ${tag} — publishing a bare release body." >&2
+    if [[ ! -f CHANGELOG.md ]]; then
+      echo "         CHANGELOG.md is missing on this branch entirely." >&2
+    fi
     echo "Release ${tag}" > "$notes_file"
   fi
 
@@ -136,8 +144,30 @@ if ! git merge dev --no-edit; then
   echo "Resolving modify/delete conflicts for dev-only paths on main..."
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
+    # Paths that belong on main and must survive a modify/delete conflict.
+    #
+    # The catch-all below deletes anything not listed here, on the assumption
+    # that a file main does not have is a dev-only file. That held while the
+    # list covered only code and translations, but it silently took three
+    # things with it that main needs:
+    #
+    #   CHANGELOG.md          — and with it the release notes, because
+    #                           extract_changelog_notes runs on main and
+    #                           returns 1 when the file is absent, which is
+    #                           why published releases kept reading
+    #                           "Release <tag>" with an empty body
+    #   static/data/*         — the What's new manifest lives here; without
+    #                           index.json the modal and the version shown in
+    #                           Config → Overview have nothing to read, even
+    #                           though all 131 release files ship
+    #   asset_hashes_gen.go   — generated, but committed, and main has no
+    #                           scripts/ to regenerate it, so without it main
+    #                           does not compile at all
+    #
+    # None of these were in PRUNE_DIRS or the explicit git rm list, so they
+    # were never deliberately dropped — they just fell through this case.
     case "$path" in
-      static/js/*|static/css/*|templates/*|locales/*)
+      static/js/*|static/css/*|static/data/*|templates/*|locales/*|CHANGELOG.md|asset_hashes_gen.go)
         git checkout --theirs -- "$path" 2>/dev/null || true
         git add -- "$path" 2>/dev/null || true
         ;;
