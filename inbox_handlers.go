@@ -108,6 +108,24 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 	h.enrichInboxPreviewAsync(created.ID, url)
 }
 
+// inboxItemNeedsIconFetch reports whether the startup backfill should try to
+// fetch a favicon for this item.
+//
+// Extracted from the loop rather than written inline so the rule can be tested
+// without a network fetch: the loop itself downloads from the item's own host,
+// which a test cannot drive. Keeping the decision here means the test binds to
+// the code that actually runs instead of a copy of it.
+//
+// IconFetchedAt is the part worth stating. It records that an attempt happened,
+// not that one succeeded — plenty of sites simply have no favicon, and without
+// this the same doomed fetches re-ran on every restart for the life of the item.
+func inboxItemNeedsIconFetch(item InboxLink) bool {
+	if strings.TrimSpace(item.Icon) != "" || strings.TrimSpace(item.URL) == "" {
+		return false
+	}
+	return item.IconFetchedAt == 0
+}
+
 // backfillInboxIconsAsync fetches favicons for existing inbox items that predate
 // icon storage (added before Icon was a field, or whose enrichment ran without it).
 // Runs once at startup, off the request path, and mirrors the bookmark icon
@@ -121,7 +139,7 @@ func (h *Handlers) backfillInboxIconsAsync() {
 		allowLocal := h.allowLocalBookmarks()
 		applied := 0
 		for _, item := range items {
-			if strings.TrimSpace(item.Icon) != "" || strings.TrimSpace(item.URL) == "" {
+			if !inboxItemNeedsIconFetch(item) {
 				continue
 			}
 			iconFile := ""
@@ -130,18 +148,21 @@ func (h *Handlers) backfillInboxIconsAsync() {
 					iconFile = name
 				}
 			}
-			if iconFile == "" {
-				continue
-			}
 			id := item.ID
 			file := iconFile
+			attemptedAt := time.Now().UnixMilli()
+			// Stamped whether or not the fetch produced a file: the stamp records
+			// that the attempt happened, which is exactly what a failure needs to
+			// leave behind. A success stamps it too, so the field always means
+			// "last attempted" rather than "last failed".
 			if _, err := h.store.UpdateInboxLink(id, func(link *InboxLink) error {
 				// Re-check under the store lock: another path may have set it since.
-				if strings.TrimSpace(link.Icon) == "" {
+				if file != "" && strings.TrimSpace(link.Icon) == "" {
 					link.Icon = file
 				}
+				link.IconFetchedAt = attemptedAt
 				return nil
-			}); err == nil {
+			}); err == nil && file != "" {
 				applied++
 			}
 		}
@@ -179,7 +200,15 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 			}
 		}
 
+		// Even when nothing was found, the icon attempt is recorded below so the
+		// startup backfill does not retry this item forever. Returning early
+		// here would leave IconFetchedAt unset and hand the retry loop straight
+		// back to the backfill.
 		if strings.TrimSpace(preview.Title) == "" && strings.TrimSpace(preview.Image) == "" && iconFile == "" {
+			_, _ = h.store.UpdateInboxLink(itemID, func(item *InboxLink) error {
+				item.IconFetchedAt = time.Now().UnixMilli()
+				return nil
+			})
 			return
 		}
 		_, _ = h.store.UpdateInboxLink(itemID, func(item *InboxLink) error {
@@ -201,6 +230,7 @@ func (h *Handlers) enrichInboxPreviewAsync(itemID, url string) {
 			if iconFile != "" {
 				item.Icon = iconFile
 			}
+			item.IconFetchedAt = time.Now().UnixMilli()
 			return nil
 		})
 	}()

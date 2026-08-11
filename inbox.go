@@ -36,6 +36,12 @@ type InboxLink struct {
 	Tags   []string `json:"tags,omitempty"`
 	Domain string   `json:"domain,omitempty"`
 	ReadAt int64    `json:"readAt,omitempty"`
+	// IconFetchedAt records when a favicon fetch was last attempted for this
+	// item, successful or not (Unix ms). Without it the startup backfill has no
+	// way to tell "never tried" from "tried and the site has no favicon", so
+	// every item whose fetch legitimately fails — a 404, a dead domain — is
+	// retried on every single restart, forever.
+	IconFetchedAt int64 `json:"iconFetchedAt,omitempty"`
 	// SnoozedUntil hides the item from the main list until this time (Unix ms).
 	// 0 means not snoozed. No server-side timer is needed — the client re-surfaces
 	// the item once now passes this value.
