@@ -1031,6 +1031,8 @@
         "healthTrendDown": "down {points} points over {days} days",
         "healthTrendFlat": "unchanged over {days} days",
         "healthTrendCaption": "{days} days",
+        "healthSettingsLink": "settings",
+        "healthSettingsLinkHint": "Check interval, alert threshold, maintenance windows and downtime alerts",
         "healthTrendChartLabel": "Healthy bookmarks over the last {days} days, from {first}% to {last}%",
         "healthFleetLabel": "All monitors",
         "healthFleetTitle": "All monitors",

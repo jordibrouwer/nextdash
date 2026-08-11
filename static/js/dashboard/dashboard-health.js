@@ -1132,6 +1132,36 @@ class DashboardHealth {
         window.location.href = '/config#bookmarks';
     }
 
+    /**
+     * Open Config → Behavior → Status & health.
+     *
+     * The subtab is set before the section opens, because Behavior's tab strip
+     * has no switch-to method of its own — it reads `behaviorTab` as it
+     * renders, which is the same order handleOverviewGo uses to reach this
+     * exact tab. Setting it afterwards would render General first and then
+     * jump, or not move at all when Config was already open.
+     *
+     * Falls back to a plain navigation when the config module has not loaded
+     * yet, so the link works on a cold view rather than doing nothing.
+     */
+    async openStatusHealthSettings() {
+        window.nextdashTrack?.('health:open-settings');
+        const config = this.dash.config;
+        if (typeof config?.openConfigView !== 'function') {
+            window.location.href = '/config#behavior';
+            return;
+        }
+        const opened = await config.openConfigView('behavior');
+        if (!opened) return;
+        // The loader proxies openConfigView, so the real module — and its
+        // behaviorTab field — may only exist once that call has resolved.
+        const mod = config.instance || config;
+        if (mod && mod.behaviorTab !== 'status') {
+            mod.behaviorTab = 'status';
+            mod.render?.();
+        }
+    }
+
     canonicalUrl(url) {
         const raw = String(url || '').trim();
         if (!raw) return '';
@@ -2608,6 +2638,28 @@ class DashboardHealth {
         </div>`;
     }
 
+    /**
+     * The way from a symptom to the setting behind it.
+     *
+     * This is the screen where you conclude that checks run too rarely, that the
+     * alert threshold is wrong, or that a nightly backup needs a maintenance
+     * window — and every one of those lives in Config → Behavior → Status &
+     * health, which the view otherwise only ever named in prose. Rendered
+     * beside the header rather than inside the trend row, because the trend
+     * only draws once there are three days of history and a link to the
+     * settings has no business appearing and disappearing with it.
+     */
+    renderSettingsLink() {
+        const label = this.t('dashboard.healthSettingsLink', 'settings');
+        const hint = this.t(
+            'dashboard.healthSettingsLinkHint',
+            'Check interval, alert threshold, maintenance windows and downtime alerts'
+        );
+        return `<button type="button" class="health-view-settings-link"
+            title="${this.escape(hint)}"
+            aria-label="${this.escape(hint)}">${this.escape(label)}</button>`;
+    }
+
     /** Plain-language explanation for the title block's hover popover. */
     headerTitleHint() {
         return this.t(
@@ -2681,9 +2733,14 @@ class DashboardHealth {
                 ${this.renderReportAge()}
             </div>
             ${this.renderTrendChart()}
+            ${this.renderSettingsLink()}
         `;
         window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-text'), this.headerTitleHint());
         window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-meta'), this.headerMetaHint());
+        header.querySelector('.health-view-settings-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.openStatusHealthSettings();
+        });
         return header;
     }
 

@@ -1031,6 +1031,8 @@
         "healthTrendDown": "{points} punten omlaag in {days} dagen",
         "healthTrendFlat": "onveranderd in {days} dagen",
         "healthTrendCaption": "{days} dagen",
+        "healthSettingsLink": "instellingen",
+        "healthSettingsLinkHint": "Controle-interval, meldingsdrempel, onderhoudsvensters en storingsmeldingen",
         "healthTrendChartLabel": "Gezonde bladwijzers over de afgelopen {days} dagen, van {first}% naar {last}%",
         "healthFleetLabel": "Alle monitors",
         "healthFleetTitle": "Alle monitors",

@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { prepareDashboardInteraction } = require('./e2e-helpers');
+const { prepareDashboardInteraction, dismissWhatsNewIfPresent } = require('./e2e-helpers');
 
 /**
  * Health as a dashboard view (the inbox-shaped one).
@@ -345,6 +345,55 @@ test.describe('health dashboard view', () => {
     // The legend and the cheat sheet both read from KeyboardViewLegends, so a
     // key bound in the view but never added there is invisible in both places
     // at once — which is exactly how f shipped before this.
+    // The view is where you conclude a setting is wrong; the setting lives in
+    // Config. The link is in the header rather than the trend row because the
+    // trend only draws after three days of history, and a way to the settings
+    // has no business appearing and disappearing with it.
+    test('the settings link opens Behavior → Status & health', async ({ page }) => {
+        await openHealthView(page);
+
+        // The what's-new modal can land after the view settles and would
+        // swallow the click; the shared helper marks the release seen so it
+        // cannot simply reopen a second later.
+        await dismissWhatsNewIfPresent(page);
+
+        const link = page.locator('.health-view-settings-link');
+        await expect(link).toBeVisible();
+
+        // Right-hand end of the header, which is where it was asked for.
+        const linkBox = await link.boundingBox();
+        const headerBox = await page.locator('.health-view-header').boundingBox();
+        expect(linkBox.x + linkBox.width).toBeGreaterThan(headerBox.x + headerBox.width * 0.75);
+
+        await link.click();
+
+        // openConfigView is async and lazily loads the config module, so the
+        // view swaps a tick or two after the click rather than during it.
+        await page.waitForFunction(
+            () => window.dashboardInstance.activeView === 'config', null, { timeout: 10_000 },
+        );
+        // Both the section and the subtab: landing on Behavior → General would
+        // leave the user one click short of what the link promised.
+        await expect.poll(async () => page.evaluate(() => {
+            const cfg = window.dashboardInstance.config.instance || window.dashboardInstance.config;
+            return { section: cfg.section, tab: cfg.behaviorTab };
+        })).toEqual({ section: 'behavior', tab: 'status' });
+    });
+
+    // Present with no trend chart at all, which is the state a new install is
+    // in — the link used to live inside the chart's row and would have been
+    // missing for the first three days.
+    test('the settings link is there before any trend has been drawn', async ({ page }) => {
+        await openHealthView(page);
+        await page.evaluate(() => {
+            window.dashboardInstance.health.trendPoints = () => [];
+            window.dashboardInstance.health.render();
+        });
+
+        await expect(page.locator('.health-view-trend')).toHaveCount(0);
+        await expect(page.locator('.health-view-settings-link')).toBeVisible();
+    });
+
     test('the legend lists every key the view actually binds', async ({ page }) => {
         await openHealthView(page);
         await page.click('[data-health-filter="all"]');

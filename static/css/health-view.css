@@ -27,6 +27,34 @@
     border-bottom: 1px solid var(--border-primary);
 }
 
+/* The way from a symptom on this screen to the setting behind it. Sits at the
+   right-hand end of the header's last row — beside the trend chart when there
+   is one, and on a line of its own before there are three days of history, so
+   it does not appear and disappear with the chart.
+
+   Deliberately quiet: it is a signpost, not an action. Styled as a text link
+   rather than a button so it does not compete with the toolbar below it. */
+.health-view-settings-link {
+    margin-left: auto;
+    align-self: center;
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.68rem;
+    opacity: 0.75;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+}
+
+.health-view-settings-link:hover,
+.health-view-settings-link:focus-visible {
+    color: var(--accent-primary);
+    opacity: 1;
+}
+
 /* ─── Collection trend ──────────────────────────────────────────────────── */
 
 /* Full-width row of its own: the chart is a wide, short shape and pairing it

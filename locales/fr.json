@@ -1031,6 +1031,8 @@
         "healthTrendDown": "{points} points de moins en {days} jours",
         "healthTrendFlat": "inchangé sur {days} jours",
         "healthTrendCaption": "{days} jours",
+        "healthSettingsLink": "paramètres",
+        "healthSettingsLinkHint": "Intervalle de vérification, seuil d’alerte, fenêtres de maintenance et alertes de panne",
         "healthTrendChartLabel": "Favoris sains sur les {days} derniers jours, de {first}% à {last}%",
         "healthFleetLabel": "Tous les moniteurs",
         "healthFleetTitle": "Tous les moniteurs",
