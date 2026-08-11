@@ -244,12 +244,32 @@ class DashboardHealthMultiSelect {
             </span>`;
     }
 
+    /**
+     * Ticked rows that currently carry a drift finding.
+     *
+     * The Accept button is offered against this count rather than the whole
+     * selection, because accepting is only meaningful for rows that have
+     * something to accept — and the count is what the confirmation quotes.
+     */
+    driftingSelected() {
+        return this.selectedIssues().filter((issue) => issue?.watchDrift && issue?.driftNoticed);
+    }
+
     renderToolbar() {
         const esc = (v) => this.health.escape(v);
         const n = this.selected.size;
         const modeOpts = (window.CheckMode?.options?.() || [])
             .map((o) => `<option value="${esc(o.mode)}">${esc(o.label)}</option>`)
             .join('');
+        // Only when the selection actually contains findings. A permanently
+        // visible button that usually does nothing trains people to ignore it,
+        // and this one discards evidence when it does fire.
+        const driftCount = this.driftingSelected().length;
+        const acceptDriftBtn = driftCount
+            ? `<button type="button" class="config-btn config-btn--small" data-bulk="accept-drift">${esc(
+                this.t('dashboard.healthBulkAcceptDrift', 'Accept drift ({count})', { count: driftCount })
+            )}</button>`
+            : '';
         return `
             <div class="config-bulk-bar health-bulk-bar" role="group"
                 aria-label="${esc(this.t('dashboard.healthBulkActions', 'Bulk actions'))}">
@@ -266,6 +286,7 @@ class DashboardHealthMultiSelect {
                     <button type="button" class="config-btn config-btn--small" data-bulk="recheck">${esc(
                         this.t('dashboard.healthBulkRecheck', 'Re-check')
                     )}</button>
+                    ${acceptDriftBtn}
                 </div>
                 <div class="config-bulk-group">
                     <button type="button" class="config-btn config-btn--small" data-bulk="open">${esc(
@@ -293,6 +314,7 @@ class DashboardHealthMultiSelect {
                 if (mode) void this.bulkSetCheckMode(mode);
             },
             recheck: () => void this.bulkRecheck(),
+            'accept-drift': () => void this.bulkAcceptDrift(),
             open: () => this.bulkOpen(),
             copy: () => void this.bulkCopy(),
             delete: () => void this.bulkDelete(),
@@ -325,6 +347,81 @@ class DashboardHealthMultiSelect {
             this.t('dashboard.healthBulkRecheckDone', 'Re-checked {count} bookmark(s)', { count: issues.length }),
             'success'
         );
+    }
+
+    /**
+     * Accept the drift findings on every ticked row at once.
+     *
+     * The situation this exists for is never one row: a rebrand, a docs move,
+     * a migration to a new domain trips everything pointing at that site in the
+     * same sweep. Clearing them individually is the tedium the bulk bar exists
+     * to remove.
+     *
+     * Confirmed first, and deliberately not styled as a danger action — it
+     * discards findings rather than data, and the next check re-establishes a
+     * baseline either way. What the confirmation has to make clear is the part
+     * that is not obvious: this says the new page is correct, so a page that
+     * actually rotted would be marked healthy.
+     */
+    async bulkAcceptDrift() {
+        const issues = this.driftingSelected();
+        if (!issues.length) return;
+        const count = issues.length;
+        const confirmed = await this.health.confirm(
+            this.t('dashboard.healthBulkAcceptDriftTitle', 'Accept drift on {count} bookmarks?', { count }),
+            this.t(
+                'dashboard.healthBulkAcceptDriftConfirm',
+                'This tells nextDash the pages are correct as they are now. The findings are cleared and the next check records a fresh baseline.',
+                { count }
+            )
+        );
+        if (!confirmed) return;
+
+        window.nextdashTrack?.('health:bulk-accept-drift', { count });
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/health/accept-drift', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    targets: issues.map((issue) => ({
+                        pageId: Number(issue.pageId),
+                        index: Number(issue.index),
+                        // The server refuses any row whose stored URL disagrees,
+                        // the same guard every other health write uses.
+                        url: issue.url,
+                    })),
+                }),
+            });
+            if (!res.ok) throw new Error(`accept drift HTTP ${res.status}`);
+            const body = await res.json().catch(() => ({}));
+            const accepted = Number(body.accepted) || 0;
+            const skipped = Number(body.skipped) || 0;
+
+            await this.health.loadAndRender({ refresh: true });
+            this.dash.updateHealthBadge?.();
+
+            if (skipped > 0) {
+                this.dash.showNotification(
+                    this.t(
+                        'dashboard.healthBulkAcceptDriftPartial',
+                        'Accepted {count}; {skipped} had changed — reload the report',
+                        { count: accepted, skipped }
+                    ),
+                    'warning'
+                );
+                return;
+            }
+            this.dash.showNotification(
+                this.t('dashboard.healthBulkAcceptDriftDone', 'Accepted drift on {count} bookmark(s)', { count: accepted }),
+                'success'
+            );
+        } catch {
+            this.dash.showNotification(
+                this.t('dashboard.healthBulkAcceptDriftFailed', 'Could not accept the drift findings'),
+                'error'
+            );
+        }
     }
 
     bulkOpen() {

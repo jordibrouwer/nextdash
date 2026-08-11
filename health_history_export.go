@@ -92,7 +92,7 @@ func (h *Handlers) ExportHealthHistory(w http.ResponseWriter, r *http.Request) {
 	buf.WriteString("\ufeff")
 	writer := csv.NewWriter(&buf)
 	_ = writer.Write([]string{
-		"name", "url", "page", "timestamp", "up", "pingMs", "httpStatus",
+		"name", "url", "page", "timestamp", "up", "pingMs", "httpStatus", "maint",
 	})
 
 	rows := 0
@@ -113,6 +113,9 @@ func (h *Handlers) ExportHealthHistory(w http.ResponseWriter, r *http.Request) {
 				strconv.FormatBool(s.Up),
 				strconv.Itoa(s.PingMs),
 				strconv.Itoa(s.Code),
+				// Lets an external analysis exclude expected downtime instead of
+				// counting a maintenance window as a real outage.
+				strconv.FormatBool(s.Maint),
 			})
 			rows++
 		}

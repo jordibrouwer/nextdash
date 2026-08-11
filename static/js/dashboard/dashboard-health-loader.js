@@ -50,6 +50,19 @@ class DashboardHealthLoader {
             await load('js/dashboard/dashboard-health-multi-select.js', 'dashboardHealthMultiSelect',
                 () => typeof window.DashboardHealthMultiSelect === 'function');
         }
+        // Focus mode rides along with the view for the same reason as the bulk
+        // toolbar: it is an overlay on a health list, so it cannot be wanted
+        // before one exists.
+        if (typeof window.DashboardHealthFocus !== 'function') {
+            await load('js/dashboard/dashboard-health-focus.js', 'dashboardHealthFocus',
+                () => typeof window.DashboardHealthFocus === 'function');
+        }
+        // The one-time tutorial is only ever read from openHealthView(), so it
+        // has no reason to cost anything on a session that never opens Health.
+        if (typeof window.HealthTutorial === 'undefined') {
+            await load('js/health-tutorial.js', 'healthTutorialModule',
+                () => typeof window.HealthTutorial !== 'undefined');
+        }
     }
 
     load() {

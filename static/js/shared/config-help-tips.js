@@ -51,7 +51,17 @@
         {
             titleKey: 'tipsGroupMaintenance',
             titleFallback: 'Keeping it healthy',
-            tips: ['tipMaintHealth', 'tipMaintMerge', 'tipMaintMonitorStats', 'tipMaintBackup', 'tipMaintNote'],
+            tips: [
+                'tipMaintHealth',
+                'tipMaintMerge',
+                'tipMaintMonitorStats',
+                'tipMaintCert',
+                'tipMaintExpectText',
+                'tipMaintMaintenanceWindow',
+                'tipMaintTrash',
+                'tipMaintBackup',
+                'tipMaintNote',
+            ],
         },
         {
             titleKey: 'tipsGroupTuning',

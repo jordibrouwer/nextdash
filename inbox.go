@@ -36,6 +36,12 @@ type InboxLink struct {
 	Tags   []string `json:"tags,omitempty"`
 	Domain string   `json:"domain,omitempty"`
 	ReadAt int64    `json:"readAt,omitempty"`
+	// IconFetchedAt records when a favicon fetch was last attempted for this
+	// item, successful or not (Unix ms). Without it the startup backfill has no
+	// way to tell "never tried" from "tried and the site has no favicon", so
+	// every item whose fetch legitimately fails — a 404, a dead domain — is
+	// retried on every single restart, forever.
+	IconFetchedAt int64 `json:"iconFetchedAt,omitempty"`
 	// SnoozedUntil hides the item from the main list until this time (Unix ms).
 	// 0 means not snoozed. No server-side timer is needed — the client re-surfaces
 	// the item once now passes this value.
@@ -120,6 +126,47 @@ func trimInboxItems(items []InboxLink, maxItems int) []InboxLink {
 	return items[:maxItems]
 }
 
+// trimInboxItemsKeeping trims to maxItems while guaranteeing that keepID
+// survives, dropping the oldest of the *other* items to make room.
+//
+// Plain trimInboxItems cannot be used for a restore. It cuts by age, and a
+// restored item is old by definition — the undo of a link saved last week
+// carries last week's AddedAt. At capacity that means the same call which
+// "restores" the item also discards it, while the handler goes on to report
+// success. Undo then looks like it worked until the next reload.
+//
+// Age is still the rule for everything else: the item being restored is the one
+// exception, because the user just asked for it explicitly.
+func trimInboxItemsKeeping(items []InboxLink, maxItems int, keepID string) []InboxLink {
+	keepID = strings.TrimSpace(keepID)
+	if maxItems <= 0 || len(items) <= maxItems || keepID == "" {
+		return trimInboxItems(items, maxItems)
+	}
+
+	sortInboxItemsNewestFirst(items)
+
+	kept := make([]InboxLink, 0, maxItems)
+	var protected *InboxLink
+	for i := range items {
+		if items[i].ID == keepID && protected == nil {
+			protected = &items[i]
+			continue
+		}
+		kept = append(kept, items[i])
+	}
+	if protected == nil {
+		// Not present after all; nothing to protect.
+		return trimInboxItems(items, maxItems)
+	}
+	// One slot goes to the protected item, so the rest compete for maxItems-1.
+	if len(kept) > maxItems-1 {
+		kept = kept[:maxItems-1]
+	}
+	kept = append(kept, *protected)
+	sortInboxItemsNewestFirst(kept)
+	return kept
+}
+
 func (fs *FileStore) GetInboxItems() []InboxLink {
 	fs.mutex.RLock()
 	defer fs.mutex.RUnlock()
@@ -174,6 +221,11 @@ func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (In
 }
 
 var ErrInboxDuplicateURL = errors.New("inbox duplicate url")
+
+// ErrInboxAtCapacity reports that a restore could not be honoured because the
+// inbox is full. Distinct from a persist failure: nothing went wrong, there is
+// simply no room, and the caller has to say so rather than claim success.
+var ErrInboxAtCapacity = errors.New("inbox at capacity")
 
 func (fs *FileStore) DeleteInboxLink(id string) error {
 	fs.mutex.Lock()
@@ -279,7 +331,27 @@ func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, 
 	link.Tags = normalizeTags(link.Tags)
 
 	inbox.Items = append([]InboxLink{link}, inbox.Items...)
-	inbox.Items = trimInboxItems(inbox.Items, maxItems)
+	// Trimmed with the restored item protected: it is old by definition, so an
+	// age-ordered cut at capacity would drop the very item being restored and
+	// still report success.
+	inbox.Items = trimInboxItemsKeeping(inbox.Items, maxItems, link.ID)
+
+	// The protection above is what makes this hold, so the check is belt and
+	// braces — but it is the difference between a caller that can trust the
+	// return value and one that cannot. Reporting success for an item that is
+	// not in the list is the failure mode this whole function had: the client
+	// re-adds it locally and the user only finds out on the next reload.
+	survived := false
+	for i := range inbox.Items {
+		if inbox.Items[i].ID == link.ID {
+			survived = true
+			break
+		}
+	}
+	if !survived {
+		return InboxLink{}, ErrInboxAtCapacity
+	}
+
 	if err := fs.saveInboxDataLocked(inbox); err != nil {
 		return InboxLink{}, err
 	}

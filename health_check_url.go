@@ -44,7 +44,11 @@ func (h *Handlers) CheckBookmarkHealthURL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	result := h.pingURLDetailed(r.Context(), url)
+	expect := expectation{}
+	if bm, ok := h.findBookmarkByURL(url); ok {
+		expect = expectationFor(bm)
+	}
+	result := h.pingURLExpecting(r.Context(), url, expect)
 	errMsg := ""
 	if result.Status != "online" {
 		errMsg = result.ErrorDetail
@@ -90,6 +94,10 @@ func (h *Handlers) CheckBookmarkHealthURL(w http.ResponseWriter, r *http.Request
 				}
 				current[i].LastChecked = lastChecked
 				current[i].LastError = errMsg
+				if result.CertHost != "" {
+					current[i].CertHost = result.CertHost
+				}
+				applyDriftResult(&current[i], result, lastChecked)
 			}
 			return current, nil
 		})

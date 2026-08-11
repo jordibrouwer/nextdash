@@ -32,7 +32,17 @@ const CheckMode = {
      */
     INTERVAL_CHOICES: [5, 15, 30, 60, 360, 1440],
 
-    /** The stored interval, or the default when a bookmark carries none. */
+    /**
+     * The stored interval, or the default when a bookmark carries none.
+     *
+     * One flat field, `monitorIntervalMinutes`, present on both shapes this is
+     * called with: a raw Bookmark, and a health-report issue (HealthIssue sets
+     * it directly from the bookmark, independent of MonitorStats — which is
+     * derived from sample history and stays nil until the first check
+     * completes, so it cannot be this field's only source without the picker
+     * defaulting to 15m for any row with no samples yet, e.g. right after
+     * switching monitoring on or changing the interval).
+     */
     intervalOf(bookmark) {
         return Number(bookmark?.monitorIntervalMinutes) || CheckMode.DEFAULT_INTERVAL_MINUTES;
     },

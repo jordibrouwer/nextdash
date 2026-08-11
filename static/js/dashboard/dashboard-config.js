@@ -79,8 +79,9 @@ class DashboardConfig {
          * would read as settings having gone missing.
          */
         this.changedOnly = false;
-        // Help sub-tab.
+        // Help sub-tab, and the free-text search that cuts across all of them.
         this.helpTab = 'start';
+        this.helpQuery = '';
         // Bookmarks section: search, filters, sort, the row being edited, the
         // ticked rows for bulk actions, and whether the open editor has unsaved
         // changes (so Save can be offered rather than saving on every keystroke).
@@ -1984,10 +1985,11 @@ class DashboardConfig {
             });
         };
 
-        this.behaviorSchema().forEach((panel) => {
+        this.behaviorSchema({ forIndex: true }).forEach((panel) => {
             const section = panel.section || 'behavior';
             (panel.controls || []).forEach((c) => {
-                if (!c.field || c.type === 'note' || c.type === 'pushDevice') return;
+                if (!c.field || c.type === 'note' || c.type === 'pushDevice'
+                    || c.type === 'maintenanceWindows') return;
                 push(c.field, c.label, section, panel.tab || 'general');
             });
         });
@@ -2812,6 +2814,32 @@ class DashboardConfig {
     /** Catalog of feature spotlights shown on the overview. */
     overviewNewFeatures() {
         return [
+            {
+                titleKey: 'config.overviewNewFeatureMonitoringTitle',
+                titleFallback: 'Watch a bookmark, not just check it',
+                whatKey: 'config.overviewNewFeatureMonitoringWhat',
+                whatFallback: 'A status check told you a link was broken the next time you happened to look. It could not tell you a site had been down all night, how often it goes down, or that its certificate expires on Friday.',
+                howKey: 'config.overviewNewFeatureMonitoringHow',
+                howFallback: 'Press c on a row in Health and choose Monitor. The server then checks it on its own interval, whether or not you have the dashboard open, and the row grows a heartbeat, an uptime percentage and an outage history. Say what "up" means for that page with a keyword or specific status codes, watch for it quietly turning into a different page, and get an alert on Slack, Telegram, Pushover and others when it goes down.',
+                enableKey: 'config.overviewNewFeatureMonitoringEnable',
+                enableFallback: 'Per bookmark, from the Health view. Alerts, check cadence and maintenance windows live on this tab.',
+                ctaKey: 'config.overviewNewFeatureMonitoringCta',
+                ctaFallback: 'Open Status & health →',
+                go: { section: 'behavior', behaviorTab: 'status' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureWorkThroughTitle',
+                titleFallback: 'Clear the Health list one bookmark at a time',
+                whatKey: 'config.overviewNewFeatureWorkThroughWhat',
+                whatFallback: 'Filtering to Broken tells you what is wrong and then leaves every fix costing the same three moves: find the row again after the list redraws, aim at its action, decide.',
+                howKey: 'config.overviewNewFeatureWorkThroughHow',
+                howFallback: 'Open Health and press f, or use the Work through button. One bookmark fills the screen with its actions large — re-check, open, delete, skip — and j and k move between them. Esc leaves you on the row you had reached, so dipping in for three fixes and back out is not a mode switch.',
+                enableKey: 'config.overviewNewFeatureWorkThroughEnable',
+                enableFallback: 'Nothing to switch on. It works on whatever the current filter shows.',
+                ctaKey: 'config.overviewNewFeatureWorkThroughCta',
+                ctaFallback: 'Open Health →',
+                go: { view: 'health' },
+            },
             {
                 titleKey: 'config.overviewNewFeatureThemePreviewTitle',
                 titleFallback: 'Try a theme on before you keep it',
@@ -5259,7 +5287,11 @@ class DashboardConfig {
     renderAppearance() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const theme = s.theme === 'light' ? 'light' : 'dark';
+        // Which half of the current family is showing, so Quick mode marks the
+        // right button whatever theme is picked. Reading s.theme directly only
+        // ever matched the two legacy ids, leaving both buttons unlit on every
+        // other theme.
+        const theme = String(s.theme || 'dark').endsWith('-light') || s.theme === 'light' ? 'light' : 'dark';
         const tiles = `<div class="config-tiles config-tiles--text" role="list">${this.appearanceTiles().map((t) => this.renderTile(t)).join('')}</div>`;
 
         const fontOptions = DashboardConfig.FONT_SIZES.map((size) => {
@@ -5837,7 +5869,7 @@ class DashboardConfig {
         });
         this.bindCustomThemes(container);
         container.querySelectorAll('[data-appearance-theme]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setTheme(btn.getAttribute('data-appearance-theme')));
+            btn.addEventListener('click', () => this.setQuickMode(btn.getAttribute('data-appearance-theme')));
         });
         container.querySelectorAll('[data-appearance-font]').forEach((btn) => {
             btn.addEventListener('click', () => this.setFontSize(btn.getAttribute('data-appearance-font')));
@@ -6835,6 +6867,37 @@ class DashboardConfig {
         void this.applyThemeChoice(theme);
     }
 
+    /**
+     * Quick mode: switch the current theme to its light or dark half.
+     *
+     * These two buttons used to set the bare ids `light` and `dark`, which are
+     * not a mode at all — they are a specific legacy pair the picker lists as
+     * "Old Default". So picking Bio Abyss and then clicking Dark threw the
+     * choice away and left the picker reading "Old Default [dark]", which looks
+     * exactly like the setting failing to stick.
+     *
+     * Every built-in ships as `<family>-dark` / `<family>-light`, so the
+     * intended half is derivable: getPairedThemeVariant swaps the suffix and
+     * leaves anything without one — the legacy pair, a user's single-palette
+     * custom theme — alone.
+     */
+    setQuickMode(mode) {
+        const wantsDark = mode === 'dark';
+        const current = this.dash.settings?.theme || 'dark';
+        // A user's single-palette custom theme has no other half to switch to,
+        // so getPairedThemeVariant hands it straight back. Falling back to the
+        // bare mode id keeps the buttons working there — it is the one case
+        // where "Light"/"Dark" genuinely means the legacy pair, because there
+        // is no family to stay within.
+        const swapped = window.ThemeUtils?.getPairedThemeVariant?.(current, wantsDark);
+        const paired = !swapped || swapped === current ? mode : swapped;
+        // Deliberately not short-circuited when paired === current: with random
+        // theme on, the stored pick is not what is on screen, so re-applying it
+        // is a real action — it is what raises the "random is still rotating"
+        // toast. Swallowing the click here made that notice disappear.
+        void this.applyThemeChoice(paired);
+    }
+
     async applyThemeChoice(theme) {
         if (!theme) return;
         if (window.ThemeUtils?.isUserCustomThemeId?.(theme)) {
@@ -7304,7 +7367,8 @@ class DashboardConfig {
     panelChangedFields(panel) {
         const s = this.dash.settings || {};
         return (panel.controls || [])
-            .filter((c) => c.field && c.type !== 'note' && c.type !== 'pushDevice')
+            .filter((c) => c.field && c.type !== 'note' && c.type !== 'pushDevice'
+                && c.type !== 'maintenanceWindows')
             .filter((c) => {
                 const meta = this.fieldMeta(c.field);
                 return meta && meta.def !== undefined && !this.isFieldDefault(c.field, s[c.field]);
@@ -7346,7 +7410,67 @@ class DashboardConfig {
      * so that is left for the Appearance migration that will fold the
      * hand-written `data-appearance-*` controls in here.
      */
-    behaviorSchema() {
+    /**
+     * The Downtime alerts panel's controls, shaped by which service is picked.
+     *
+     * Split out of behaviorSchema() because — unlike every other panel there —
+     * this one's field list actually changes with a setting's value rather
+     * than staying fixed: Pushover has no user-chosen URL and needs two
+     * credential fields instead, Telegram needs one extra field alongside its
+     * URL, everything else (including the default raw-JSON webhook) needs
+     * just the URL. setBehavior() repaints this panel on monitorNotifyPreset
+     * changes (see the `field === 'monitorNotifyPreset'` branch) so picking a
+     * different service immediately shows the right fields.
+     */
+    monitorNotifyControls(t, opt, { forIndex = false } = {}) {
+        const preset = this.dash.settings?.monitorNotifyPreset || '';
+        const controls = [
+            { field: 'monitorNotifyPreset', type: 'select', label: t('config.monitorNotifyPresetLabel', 'Service'), options: [
+                opt('', t('config.monitorNotifyPresetRaw', 'Raw JSON (custom receiver)')),
+                opt('slack', 'Slack'),
+                opt('discord', 'Discord'),
+                opt('telegram', 'Telegram'),
+                opt('gotify', 'Gotify'),
+                opt('ntfy', 'ntfy'),
+                opt('pushover', 'Pushover'),
+            ] },
+        ];
+        // forIndex: the settings jump has to find monitorNotifyTelegramChatId
+        // and the two Pushover fields even when nobody has ever picked those
+        // presets — "a setting is only findable once you have opened the tab
+        // it lives on" is exactly the bug settingsJumpFieldEntries() exists to
+        // avoid, and a value-dependent field list is no exception to that.
+        // Rendering, by contrast, must show only what the current preset
+        // actually uses — showing all four credential fields at once would be
+        // confusing busywork for whichever service is not picked.
+        //
+        // Pushover has no user-chosen URL at all — the endpoint is fixed and
+        // delivery is keyed on the two credentials below — so the URL field
+        // would be not just unused but actively misleading here.
+        if (forIndex || preset !== 'pushover') {
+            const urlLabelByPreset = {
+                telegram: t('config.monitorNotifyUrlLabelTelegram', 'Bot API URL (https://api.telegram.org/bot<token>/sendMessage)'),
+            };
+            controls.push({
+                field: 'monitorNotifyUrl', type: 'text',
+                label: urlLabelByPreset[preset] || t('config.monitorNotifyUrlLabel', 'Alert webhook URL'),
+            });
+        }
+        if (forIndex || preset === 'telegram') {
+            controls.push({ field: 'monitorNotifyTelegramChatId', type: 'text', label: t('config.monitorNotifyTelegramChatIdLabel', 'Chat ID') });
+        }
+        if (forIndex || preset === 'pushover') {
+            controls.push({ field: 'monitorNotifyPushoverToken', type: 'text', label: t('config.monitorNotifyPushoverTokenLabel', 'Application token') });
+            controls.push({ field: 'monitorNotifyPushoverUserKey', type: 'text', label: t('config.monitorNotifyPushoverUserKeyLabel', 'User key') });
+        }
+        controls.push({ field: 'monitorNotifyRetries', type: 'select', label: t('config.monitorNotifyRetriesLabel', 'Alert after this many failures'), options: [
+            opt(1, '1'), opt(2, '2'), opt(3, '3'), opt(5, '5'), opt(10, '10'),
+        ] });
+        controls.push({ type: 'monitorNotifyTest' });
+        return controls;
+    }
+
+    behaviorSchema({ forIndex = false } = {}) {
         const t = (k, f) => this.t(k, f);
         const bool = (field, label, fallback) => ({ field, type: 'checkbox', label: t(label, fallback) });
         // A toggle whose effect lives in the page chrome rather than the bookmark
@@ -7663,11 +7787,16 @@ class DashboardConfig {
                 title: t('config.generalGroupMonitorNotify', 'Downtime alerts'),
                 note: t('config.statusAlertsNote', 'Posts to a webhook when a monitored bookmark goes down and again when it recovers. Only monitored bookmarks raise alerts — Periodic flags a broken link in the Health view but never notifies.'),
                 appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
+                controls: this.monitorNotifyControls(t, opt, { forIndex }),
+            },
+            {
+                section: 'behavior',
+                tab: 'status',
+                title: t('config.maintenanceTitle', 'Maintenance windows'),
+                note: t('config.maintenanceNote', 'Times when downtime is expected — a nightly backup, a weekly reboot. Checks still run and the heartbeat still records what happened, but failures inside a window raise no alert and do not count against uptime.'),
+                appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
                 controls: [
-                    { field: 'monitorNotifyUrl', type: 'text', label: t('config.monitorNotifyUrlLabel', 'Alert webhook URL') },
-                    { field: 'monitorNotifyRetries', type: 'select', label: t('config.monitorNotifyRetriesLabel', 'Alert after this many failures'), options: [
-                        opt(1, '1'), opt(2, '2'), opt(3, '3'), opt(5, '5'), opt(10, '10'),
-                    ] },
+                    { type: 'maintenanceWindows' },
                 ],
             },
             {
@@ -7756,6 +7885,21 @@ class DashboardConfig {
                         <button type="button" class="config-btn" data-push-toggle disabled>${esc(this.t('config.pushNotifyEnableDevice', 'Enable on this device'))}</button>
                         <button type="button" class="config-btn" data-push-test hidden>${esc(this.t('config.pushNotifyTestButton', 'Send test notification'))}</button>
                         <button type="button" class="config-btn" data-push-reask hidden>${esc(this.t('config.pushNotifyAskAgain', 'Show the invitation again'))}</button>
+                    </div>`;
+            }
+            if (c.type === 'maintenanceWindows') {
+                return this.renderMaintenanceWindows();
+            }
+            // A malformed Discord embed or a wrong Telegram chat ID fails
+            // silently today — the server only logs a non-2xx response, the
+            // operator never sees it. This surfaces that at setup time rather
+            // than at 3am during a real outage, mirroring the push "Send test
+            // notification" button above.
+            if (c.type === 'monitorNotifyTest') {
+                return `
+                    <div class="config-field-row">
+                        <button type="button" class="config-btn" data-monitor-notify-test>${esc(this.t('config.monitorNotifyTestButton', 'Send test alert'))}</button>
+                        <span class="config-field-hint" data-monitor-notify-test-status></span>
                     </div>`;
             }
             const val = s[c.field];
@@ -7958,6 +8102,8 @@ class DashboardConfig {
         this.bindChangedFilter(container);
         this.bindPanelResetActions(container);
         this.bindPushDeviceControls(container);
+        this.bindMaintenanceWindows(container);
+        this.bindMonitorNotifyTest(container);
         this.bindAffordances(container, (field) => {
             const el = container.querySelector(`[data-${prefix}-field="${CSS.escape(field)}"]`);
             const special = el?.getAttribute(`data-${prefix}-special`) || '';
@@ -8170,6 +8316,212 @@ class DashboardConfig {
      * is a property of the browser, not of the dashboard's settings, so it is
      * always read live rather than from this.dash.settings.
      */
+    /**
+     * The maintenance-window list.
+     *
+     * A repeating structure rather than a single value, so it cannot be one of
+     * the schema's declarative controls: each row is three inputs and a delete,
+     * and the list itself grows and shrinks. Rendered whole and re-rendered on
+     * every change, since the list is short enough that diffing it would cost
+     * more than it saves.
+     */
+    renderMaintenanceWindows() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const windows = Array.isArray(this.dash.settings?.maintenanceWindows)
+            ? this.dash.settings.maintenanceWindows
+            : [];
+
+        const dayNames = this.maintenanceDayNames();
+        const rows = windows.map((w, i) => {
+            const days = Array.isArray(w.days) ? w.days : [];
+            const dayToggles = dayNames.map((name, day) => {
+                // No days listed means every day, which is how the server reads
+                // it — so an empty row shows every button as on rather than none.
+                const on = days.length === 0 || days.includes(day);
+                return `<button type="button" class="config-maint-day${on ? ' is-on' : ''}"
+                    data-maint-day="${day}" data-maint-index="${i}"
+                    aria-pressed="${on ? 'true' : 'false'}"
+                    title="${esc(name.full)}">${esc(name.short)}</button>`;
+            }).join('');
+
+            return `<div class="config-maint-row" data-maint-row="${i}">
+                <div class="config-maint-days" role="group" aria-label="${esc(this.t('config.maintenanceDaysLabel', 'Days'))}">${dayToggles}</div>
+                <div class="config-maint-times">
+                    <input type="time" class="config-text config-maint-time" data-maint-start data-maint-index="${i}"
+                        value="${esc(w.start || '')}" aria-label="${esc(this.t('config.maintenanceStart', 'Start'))}">
+                    <span class="config-maint-dash" aria-hidden="true">–</span>
+                    <input type="time" class="config-text config-maint-time" data-maint-end data-maint-index="${i}"
+                        value="${esc(w.end || '')}" aria-label="${esc(this.t('config.maintenanceEnd', 'End'))}">
+                    <input type="text" class="config-text config-maint-label" data-maint-label data-maint-index="${i}"
+                        value="${esc(w.label || '')}" maxlength="60"
+                        placeholder="${esc(this.t('config.maintenanceLabelPlaceholder', 'What runs then (optional)'))}"
+                        aria-label="${esc(this.t('config.maintenanceLabelLabel', 'Label'))}">
+                    <button type="button" class="config-btn config-btn--small config-maint-remove"
+                        data-maint-remove="${i}"
+                        aria-label="${esc(this.t('config.maintenanceRemove', 'Remove this window'))}">✕</button>
+                </div>
+                ${this.maintenanceRowHint(w)}
+            </div>`;
+        }).join('');
+
+        const empty = windows.length === 0
+            ? `<p class="config-panel-empty">${esc(this.t('config.maintenanceEmpty', 'No windows. Alerts fire whenever a monitored bookmark goes down.'))}</p>`
+            : '';
+
+        return `<div class="config-maint" data-maint-list>
+            ${empty}${rows}
+            <div class="config-actions">
+                <button type="button" class="config-btn config-btn--small" data-maint-add>${esc(this.t('config.maintenanceAdd', 'Add window'))}</button>
+            </div>
+        </div>`;
+    }
+
+    /** Weekday names in the user's locale, Sunday first to match Go's time.Weekday. */
+    maintenanceDayNames() {
+        const locale = this.dash.settings?.language || undefined;
+        const shortFmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+        const longFmt = new Intl.DateTimeFormat(locale, { weekday: 'long' });
+        // 2023-01-01 was a Sunday, so this walks Sunday..Saturday in the order
+        // the stored day numbers use.
+        return Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(Date.UTC(2023, 0, 1 + i));
+            return { short: shortFmt.format(d), full: longFmt.format(d) };
+        });
+    }
+
+    /** Says what a row will do, including the case people get wrong. */
+    maintenanceRowHint(w) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const start = String(w?.start || '');
+        const end = String(w?.end || '');
+        if (!start || !end) {
+            return `<p class="config-field-hint config-maint-hint">${
+                esc(this.t('config.maintenanceIncomplete', 'Set a start and end time — an incomplete window is ignored.'))}</p>`;
+        }
+        if (start === end) {
+            return `<p class="config-field-hint config-maint-hint">${
+                esc(this.t('config.maintenanceSameTime', 'Start and end are the same, so this window covers nothing and is ignored.'))}</p>`;
+        }
+        // A window whose end is before its start runs past midnight. Worth
+        // saying outright: it looks like a mistake until you know it is allowed.
+        if (end < start) {
+            return `<p class="config-field-hint config-maint-hint">${
+                esc(this.t('config.maintenanceWraps', 'Runs past midnight into the next day.'))}</p>`;
+        }
+        return '';
+    }
+
+    /** Read the list back off the DOM, so one repaint reflects every edit. */
+    collectMaintenanceWindows(container) {
+        const rows = Array.from(container.querySelectorAll('[data-maint-row]'));
+        return rows.map((row) => {
+            const days = Array.from(row.querySelectorAll('[data-maint-day]'))
+                .filter((b) => b.classList.contains('is-on'))
+                .map((b) => Number(b.getAttribute('data-maint-day')));
+            return {
+                // Every day on is the same as none. normalizeMaintenanceWindows
+                // collapses it server-side too, so this is belt and braces —
+                // kept so the value posted matches what comes back, rather than
+                // the UI briefly showing a seven-day list the server rewrote.
+                days: days.length === 7 ? [] : days,
+                start: row.querySelector('[data-maint-start]')?.value || '',
+                end: row.querySelector('[data-maint-end]')?.value || '',
+                label: (row.querySelector('[data-maint-label]')?.value || '').trim(),
+            };
+        });
+    }
+
+    bindMaintenanceWindows(container) {
+        const list = container.querySelector('[data-maint-list]');
+        if (!list) return;
+
+        const commit = ({ repaint = true } = {}) => {
+            this.dash.settings.maintenanceWindows = this.collectMaintenanceWindows(list);
+            void this.saveSettingsWithFeedback();
+            // The hint under a row depends on the times just typed, and adding
+            // or removing changes every index below it, so the block is redrawn
+            // rather than patched.
+            if (repaint) this.repaintActiveControlPanels();
+        };
+
+        list.querySelector('[data-maint-add]')?.addEventListener('click', () => {
+            const windows = Array.isArray(this.dash.settings.maintenanceWindows)
+                ? [...this.dash.settings.maintenanceWindows]
+                : [];
+            // A sensible default rather than an empty row: the overwhelmingly
+            // common window is small hours, every day.
+            windows.push({ days: [], start: '02:00', end: '03:00', label: '' });
+            this.dash.settings.maintenanceWindows = windows;
+            void this.saveSettingsWithFeedback();
+            this.repaintActiveControlPanels();
+        });
+
+        list.querySelectorAll('[data-maint-remove]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const index = Number(btn.getAttribute('data-maint-remove'));
+                const windows = Array.isArray(this.dash.settings.maintenanceWindows)
+                    ? [...this.dash.settings.maintenanceWindows]
+                    : [];
+                if (!Number.isFinite(index) || index < 0 || index >= windows.length) return;
+                windows.splice(index, 1);
+                this.dash.settings.maintenanceWindows = windows;
+                void this.saveSettingsWithFeedback();
+                this.repaintActiveControlPanels();
+            });
+        });
+
+        list.querySelectorAll('[data-maint-day]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('is-on');
+                btn.setAttribute('aria-pressed', btn.classList.contains('is-on') ? 'true' : 'false');
+                commit();
+            });
+        });
+
+        // Times and the label save on change rather than on every keystroke, so
+        // typing "02:00" does not write four half-finished windows.
+        list.querySelectorAll('[data-maint-start], [data-maint-end]').forEach((input) => {
+            input.addEventListener('change', () => commit());
+        });
+        list.querySelectorAll('[data-maint-label]').forEach((input) => {
+            input.addEventListener('change', () => commit({ repaint: false }));
+        });
+    }
+
+    /**
+     * "Send test alert" — posts one synthetic down notification through
+     * whatever is currently saved for Downtime alerts, so a malformed Discord
+     * embed or a wrong Telegram chat ID is caught at setup time. Every field
+     * in this panel saves on change (setBehavior), so by the time this button
+     * is clicked the server already has whatever was just typed — no need to
+     * gather values from the DOM here.
+     */
+    bindMonitorNotifyTest(container) {
+        const btn = container.querySelector('[data-monitor-notify-test]');
+        if (!btn) return;
+        const status = container.querySelector('[data-monitor-notify-test-status]');
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            if (status) status.textContent = this.t('config.monitorNotifyTestSending', 'Sending…');
+            try {
+                const res = await fetch('/api/health/test-notification', { method: 'POST' });
+                if (!res.ok) {
+                    const detail = (await res.text().catch(() => '')).trim();
+                    throw new Error(detail || `HTTP ${res.status}`);
+                }
+                if (status) status.textContent = this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.');
+                window.AppNotification?.show?.(this.t('config.monitorNotifyTestSent', 'Sent — check your alert service.'));
+            } catch (err) {
+                const message = err?.message || String(err);
+                if (status) status.textContent = message;
+                window.AppNotification?.show?.(message);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    }
+
     bindPushDeviceControls(container) {
         const toggle = container.querySelector('[data-push-toggle]');
         if (!toggle) return;
@@ -8535,6 +8887,15 @@ class DashboardConfig {
             if (this.section === 'overview') {
                 this.repaintOverview();
             }
+        }
+        // Which fields the Downtime alerts panel shows depends on the picked
+        // service: Pushover hides the URL field and shows its two credential
+        // fields instead, Telegram shows a chat-ID field, everything else shows
+        // just the URL. Repainting is the same mechanism the reset button on
+        // this tab already relies on (see repaintActiveControlPanels) rather
+        // than a bespoke show/hide toggle for this one field.
+        if (field === 'monitorNotifyPreset') {
+            this.repaintActiveControlPanels();
         }
         switch (special) {
             case 'language':
@@ -15685,7 +16046,7 @@ class DashboardConfig {
 
     /* ── Help (native) ─────────────────────────────────────────────────────── */
 
-    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'data', 'about'];
+    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'inbox', 'stats', 'data', 'about'];
 
     helpTabLabel(tab) {
         const map = {
@@ -15693,7 +16054,9 @@ class DashboardConfig {
             config: ['config.helpTabConfig', 'Configuring'],
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
-            health: ['config.helpTabHealth', 'Health & inbox'],
+            health: ['config.helpTabHealth', 'Health'],
+            inbox: ['config.helpTabInbox', 'Inbox'],
+            stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
             about: ['config.helpTabAbout', 'About'],
         };
@@ -15710,11 +16073,71 @@ class DashboardConfig {
         return `
             <div class="config-help-header">
                 <p class="config-view-intro">${esc(this.t('config.helpIntro', 'How nextDash works, what each part of config does, and where to go next.'))}</p>
-                ${this.renderCheatSheetPdfLink()}
+                <div class="config-help-header-aside">
+                    ${this.renderCheatSheetPdfLink()}
+                    <input type="search" class="config-text config-help-search" id="config-help-search"
+                           placeholder="${esc(this.t('config.helpFilterPlaceholder', 'Search help…'))}"
+                           aria-label="${esc(this.t('config.helpFilterLabel', 'Search help'))}"
+                           value="${esc(this.helpQuery || '')}">
+                </div>
             </div>
             <div class="config-subtabs" role="tablist">${tabs}</div>
             <div id="config-help-body" role="tabpanel" tabindex="0">${this.renderHelpBody()}</div>
         `;
+    }
+
+    /**
+     * Search across every help tab at once.
+     *
+     * The tabs exist to keep each topic readable, but they also hide it: someone
+     * looking for "webhook" has no way to know it lives under Health. A query
+     * therefore drops the tab structure entirely and lists every matching panel
+     * with the tab it came from, rather than filtering the tab you happen to be
+     * on — which would answer "not here" for most searches.
+     */
+    renderHelpSearchResults() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const query = String(this.helpQuery || '').trim().toLowerCase();
+        if (!query) return '';
+
+        // Panels are rendered markup, so match on their text rather than the
+        // source: that is what the reader sees, and it keeps the index honest
+        // when a body changes.
+        const parse = new DOMParser();
+        const hits = [];
+        for (const tab of DashboardConfig.HELP_TABS) {
+            const doc = parse.parseFromString(this.renderHelpBodyFor(tab), 'text/html');
+            for (const panel of doc.querySelectorAll('.config-panel')) {
+                const title = panel.querySelector('.config-panel-title')?.textContent?.trim() || '';
+                const text = panel.textContent.replace(/\s+/g, ' ').trim();
+                if (!text.toLowerCase().includes(query)) continue;
+                hits.push({ tab, title, panel: panel.outerHTML });
+            }
+        }
+
+        if (!hits.length) {
+            return `<div class="config-panel"><p class="config-panel-empty">${
+                esc(this.t('config.helpFilterNoResults', 'Nothing in help matches that.'))}</p></div>`;
+        }
+
+        return hits.map((hit) => `
+            <div class="config-help-result">
+                <button type="button" class="config-help-result-tab" data-help-tab-jump="${esc(hit.tab)}">
+                    ${esc(this.helpTabLabel(hit.tab))}
+                </button>
+                ${hit.panel}
+            </div>`).join('');
+    }
+
+    /** The body for a given tab, so search can read them all without switching. */
+    renderHelpBodyFor(tab) {
+        const previous = this.helpTab;
+        this.helpTab = tab;
+        try {
+            return this.renderHelpBody();
+        } finally {
+            this.helpTab = previous;
+        }
     }
 
     /**
@@ -15731,6 +16154,8 @@ class DashboardConfig {
             case 'organizing': return this.renderHelpOrganizing();
             case 'search': return this.renderHelpSearch();
             case 'health': return this.renderHelpHealth();
+            case 'inbox': return this.renderHelpInbox();
+            case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
             case 'about': return this.renderHelpAbout();
             default: return this.renderHelpStart();
@@ -15752,18 +16177,50 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const tips = this.helpTips().map((tip) => `<li class="config-help-tip">${tip}</li>`).join('');
         return this.helpPanel('config.helpStartTitle', 'Getting started',
-            'config.helpStartBody', '')
+            'config.helpStartBody', '',
+            `<div class="config-actions">
+                <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>
+                ${this.renderCheatSheetPdfLink()}
+            </div>`)
+            + this.helpPanel('config.helpFirstHourTitle', 'Your first hour',
+                'config.helpFirstHourBody', '')
+            + this.helpPanel('config.helpStartDailyTitle', 'A day with nextDash',
+                'config.helpStartDailyBody', '')
             + `<div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.helpTipsTitle', 'Everyday keys'))}</h3>
                 <ul class="config-help-tips">${tips}</ul>
             </div>`;
     }
 
+    /**
+     * Statistics gets its own tab rather than a panel under Health.
+     *
+     * The two read as one subject but answer different questions: Health is
+     * about what is broken now, Statistics about what you actually use and how
+     * that has moved. Filed under Health, the counting half went unread — and
+     * the privacy question people arrive with (does any of this leave the
+     * machine?) had nowhere to be answered plainly.
+     */
+    renderHelpStats() {
+        return this.helpPanel('config.helpStatsTitle', 'What Statistics shows',
+            'config.helpStatsBody', '')
+            + this.helpPanel('config.helpStatsReadingTitle', 'Reading the numbers',
+                'config.helpStatsReadingBody', '')
+            + this.helpPanel('config.helpStatsUsageTitle', 'Where the counts come from',
+                'config.helpStatsUsageBody', '')
+            + this.helpPanel('config.helpStatsPrivacyTitle', 'Privacy & analytics',
+                'config.helpStatsPrivacyBody', '');
+    }
+
     renderHelpConfig() {
         return this.helpPanel('config.helpConfigTitle', 'Finding your way around config',
             'config.helpConfigBody', '')
+            + this.helpPanel('config.helpBehaviorTitle', 'Behavior',
+                'config.helpBehaviorBody', '')
             + this.helpPanel('config.helpAppearanceTitle', 'Appearance & themes',
-                'config.helpAppearanceBody', '');
+                'config.helpAppearanceBody', '')
+            + this.helpPanel('config.helpThemesTitle', 'Themes',
+                'config.helpThemesBody', '');
     }
 
     renderHelpOrganizing() {
@@ -15798,13 +16255,9 @@ class DashboardConfig {
 
     /**
      * Split into panels rather than one long body: availability modes, the list
-     * itself, the monitoring numbers, and the inbox are things people arrive
+     * itself, the monitoring numbers, and setup are things people arrive
      * looking for, and a single wall of prose made the last of them unreachable
      * without scrolling past the other three.
-     *
-     * The inbox takes two panels of its own for the same reason — capturing links
-     * and working through the backlog are separate questions, and snoozing has
-     * enough consequences for the counts to be worth stating plainly.
      */
     renderHelpHealth() {
         return this.helpPanel('config.helpHealthTitle', 'Availability & health',
@@ -15813,15 +16266,43 @@ class DashboardConfig {
                 'config.helpHealthViewBody', '')
             + this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
                 'config.helpHealthStatsBody', '')
-            + this.helpPanel('config.helpInboxTitle', 'Inbox',
-                'config.helpInboxBody', '')
+            + this.helpPanel('config.helpHealthExpectTitle', 'When "up" is not good enough',
+                'config.helpHealthExpectBody', '')
+            + this.helpPanel('config.helpHealthCertTitle', 'Certificate expiry',
+                'config.helpHealthCertBody', '')
+            + this.helpPanel('config.helpHealthDriftTitle', 'Redirect, title & content drift',
+                'config.helpHealthDriftBody', '')
+            + this.helpPanel('config.helpHealthMaintenanceTitle', 'Maintenance windows',
+                'config.helpHealthMaintenanceBody', '')
+            + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
+                'config.helpNotificationsBody', '')
+            + this.helpPanel('config.helpHealthWalkthroughTitle', 'Setting up one monitored bookmark, start to finish',
+                'config.helpHealthWalkthroughBody', '');
+    }
+
+    /**
+     * Four panels rather than two: capture (where links come from and what
+     * settings shape that), working the backlog (filters, sort, snoozing),
+     * triage mode (a distinct, keyboard-only workflow worth documenting on its
+     * own), and the config-only settings that have no UI control but still
+     * change behaviour — those are easy to forget exist at all.
+     */
+    renderHelpInbox() {
+        return this.helpPanel('config.helpInboxTitle', 'Inbox',
+            'config.helpInboxBody', '')
             + this.helpPanel('config.helpInboxWorkTitle', 'Working through the inbox',
-                'config.helpInboxWorkBody', '');
+                'config.helpInboxWorkBody', '')
+            + this.helpPanel('config.helpInboxTriageTitle', 'Triage mode',
+                'config.helpInboxTriageBody', '')
+            + this.helpPanel('config.helpInboxSettingsTitle', 'Settings behind the scenes',
+                'config.helpInboxSettingsBody', '');
     }
 
     renderHelpData() {
         return this.helpPanel('config.helpDataTitle', 'Backups, import & export',
             'config.helpDataBody', '')
+            + this.helpPanel('config.helpServerLogTitle', 'Server log',
+                'config.helpServerLogBody', '')
             + this.helpPanel('config.helpSelfHostingTitle', 'Self-hosting',
                 'config.helpSelfHostingBody', '');
     }
@@ -15897,6 +16378,12 @@ class DashboardConfig {
             {
                 if (tab === this.helpTab) return;
                 this.helpTab = tab;
+                // Switching tabs by hand means the reader has stopped searching;
+                // leaving the query on would show results instead of the tab
+                // they just clicked.
+                this.helpQuery = '';
+                const field = document.getElementById('config-help-search');
+                if (field) field.value = '';
                 this.restoreConfigHash();
                 const body = document.getElementById('config-help-body');
                 if (!body) { this.render(); return; }
@@ -15906,7 +16393,61 @@ class DashboardConfig {
                 this.bindHelpActions(body);
             }
         });
+        this.bindHelpSearch(container);
         this.bindHelpActions(container);
+    }
+
+    /** The help search field, and the tab buttons on each result. */
+    bindHelpSearch(container) {
+        const field = container.querySelector('#config-help-search');
+        if (!field) return;
+
+        const repaint = () => {
+            const body = document.getElementById('config-help-body');
+            if (!body) return;
+            const query = String(this.helpQuery || '').trim();
+            body.innerHTML = query ? this.renderHelpSearchResults() : this.renderHelpBody();
+            // Results carry panels lifted from every tab, so their buttons need
+            // binding just as a freshly switched tab body does.
+            this.bindHelpActions(body);
+            this.bindHelpResultJumps(body);
+            // The tab strip means nothing while results are showing; dim it
+            // rather than remove it, so the way back is still where it was.
+            container.querySelector('.config-subtabs')?.classList.toggle('is-muted', !!query);
+        };
+
+        let debounce = null;
+        field.addEventListener('input', () => {
+            clearTimeout(debounce);
+            debounce = setTimeout(() => {
+                this.helpQuery = field.value;
+                repaint();
+            }, 200);
+        });
+        // Escape clears the query rather than closing config, matching the other
+        // search fields — but only while there is something to clear.
+        field.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || !String(this.helpQuery || '').trim()) return;
+            e.preventDefault();
+            e.stopPropagation();
+            this.helpQuery = '';
+            field.value = '';
+            repaint();
+        });
+    }
+
+    /** "Open this tab" on a search result. */
+    bindHelpResultJumps(body) {
+        body.querySelectorAll('[data-help-tab-jump]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.helpTab = btn.getAttribute('data-help-tab-jump');
+                this.helpQuery = '';
+                const field = document.getElementById('config-help-search');
+                if (field) field.value = '';
+                this.restoreConfigHash();
+                this.render();
+            });
+        });
     }
 
     bindHelpActions(container) {

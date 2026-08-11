@@ -3608,6 +3608,71 @@ body.no-animations .config-new-features-panel-star {
     line-height: 1.6;
 }
 
+/* ── Help search ─────────────────────────────────────────────────────────── */
+
+/* The right-hand column of the help header: the Shortcuts PDF button with the
+   search field directly under it, both the same width so they read as one
+   block rather than two loose controls. */
+.config-help-header-aside {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.config-help-header-aside .config-cheatsheet-pdf {
+    justify-content: center;
+}
+
+/* Narrow on purpose: full width made it read as the page's main control rather
+   than a filter sitting beside the intro. */
+.config-help-search {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+}
+
+/* Under the header's wrap point the aside spans the row, so cap it there or the
+   field stretches edge to edge on a narrow window. */
+@media (max-width: 620px) {
+    .config-help-header-aside {
+        flex: 1 1 100%;
+        max-width: 22rem;
+    }
+}
+
+/* A query drops the tab structure and lists matches from every tab, so the
+   strip no longer describes what is on screen. Dimmed rather than hidden: it
+   is still the way back, and removing it would make the page jump. */
+.config-subtabs.is-muted {
+    opacity: 0.45;
+}
+
+.config-help-result {
+    position: relative;
+}
+
+/* Names the tab a result came from, and goes there. */
+.config-help-result-tab {
+    display: inline-block;
+    margin: 0 0 -4px 2px;
+    padding: 2px 8px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.3));
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary, inherit);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.83);
+    cursor: pointer;
+}
+
+.config-help-result-tab:hover,
+.config-help-result-tab:focus-visible {
+    color: var(--text-primary, inherit);
+    border-color: var(--accent-color, #4a90d9);
+}
+
 /* ── Help prose ──────────────────────────────────────────────────────────── */
 
 /* Translator-supplied HTML: paragraphs, lists, <strong>, <em>, <code>. Styled
@@ -4455,4 +4520,73 @@ body[data-layout-version="modern"] .config-backup-row {
     .config-log-source {
         justify-self: start;
     }
+}
+
+/* ── Maintenance windows ─────────────────────────────────────────────────── */
+
+/* A repeating row rather than a single control, so it carries its own layout
+   instead of borrowing .config-field's label/value grid. */
+.config-maint-row {
+    padding: 8px 0;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+}
+
+.config-maint-row:first-of-type {
+    border-top: none;
+}
+
+.config-maint-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.config-maint-day {
+    min-width: 2.4rem;
+    padding: 3px 6px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary, inherit);
+    font: inherit;
+    font-size: calc(var(--font-size-text) * 0.83);
+    cursor: pointer;
+}
+
+.config-maint-day.is-on {
+    border-color: var(--accent-color, #4a90d9);
+    color: var(--text-primary, inherit);
+    background: color-mix(in srgb, var(--accent-color, #4a90d9) 14%, transparent);
+}
+
+.config-maint-times {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.config-maint-time {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+/* Takes the room left over, so a long label does not push the delete button
+   off the row on a narrow window. */
+.config-maint-label {
+    flex: 1 1 8rem;
+    min-width: 0;
+}
+
+.config-maint-dash {
+    color: var(--text-secondary, inherit);
+}
+
+.config-maint-remove {
+    flex: 0 0 auto;
+}
+
+.config-maint-hint {
+    margin-top: 4px;
 }

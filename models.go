@@ -48,6 +48,59 @@ type Bookmark struct {
 	// it for everything would bloat the history file for no benefit.
 	Monitor                bool `json:"monitor,omitempty"`
 	MonitorIntervalMinutes int  `json:"monitorIntervalMinutes,omitempty"` // 5..1440, 0 = use default
+	// ExpectText is a string the page must contain to count as healthy. A page
+	// that answers 200 while showing "database connection failed" is up by every
+	// other measure, and this is the only way to say otherwise.
+	//
+	// Empty means no content check, which is the default and costs nothing: the
+	// body is only read when this is set, so bookmarks without it never pay for
+	// the feature.
+	ExpectText string `json:"expectText,omitempty"`
+	// ExpectTextAbsent inverts the test — healthy when the string is *missing*,
+	// for catching an error banner rather than confirming a good page.
+	ExpectTextAbsent bool `json:"expectTextAbsent,omitempty"`
+	// ExpectStatus narrows what counts as reachable, as a comma-separated list of
+	// codes and ranges ("200", "200-299", "200,301,401"). Empty keeps the default
+	// rule in httpStatusReachable, which treats anything under 500 as up — right
+	// for bookmarks generally, but unable to tell an endpoint that *should* return
+	// 401 from one that just started to.
+	ExpectStatus string `json:"expectStatus,omitempty"`
+	// WatchDrift opts a monitored bookmark into rot detection: where the check
+	// lands after redirects, what the page is titled, and roughly what it says.
+	// Off by default and separate from the expectations above, because it reads
+	// the page body — the one part of a check that costs real bandwidth.
+	WatchDrift bool `json:"watchDrift,omitempty"`
+	// The baseline the drift checks compare against, recorded on the first check
+	// after WatchDrift is switched on. Empty means "no baseline yet", which reads
+	// as unknown rather than as drift.
+	DriftURL         string `json:"driftUrl,omitempty"`
+	DriftTitle       string `json:"driftTitle,omitempty"`
+	DriftFingerprint string `json:"driftFingerprint,omitempty"`
+	// DriftNoticed is what the last check found, as one of the kinds in
+	// health_drift.go ("host", "root", "path", "title-parked", "title-changed",
+	// "content"). Empty while the page is still recognisably itself.
+	DriftNoticed string `json:"driftNoticed,omitempty"`
+	DriftSince   int64  `json:"driftSince,omitempty"`
+	// DriftReason is the sentence shown on the row — "Now redirects to
+	// example.org", "Page title now reads …". Stored rather than re-derived,
+	// because the baseline it was computed against is deliberately not updated
+	// once drift is found.
+	DriftReason string `json:"driftReason,omitempty"`
+	// NotifyMuted silences outbound alerts for this one bookmark: it is still
+	// checked, still recorded, and still shown as down in the view — only the
+	// webhook and browser push are held back.
+	//
+	// Deliberately phrased as "muted" rather than "notify enabled". The notifying
+	// default is on, and a bool with omitempty drops its false value from the
+	// JSON entirely — so an "enabled" field would read back as false for every
+	// bookmark saved before this existed and silently mute the whole collection.
+	// Muted-by-absence is the migration-free direction.
+	NotifyMuted bool `json:"notifyMuted,omitempty"`
+	// CertHost is the hostname a check's TLS handshake was actually served for,
+	// which after a redirect can differ from this bookmark's own URL. Certificates
+	// are stored per host, not per bookmark (health_cert.go), so the report needs
+	// this to look one up under the right key instead of guessing from URL.
+	CertHost string `json:"certHost,omitempty"`
 }
 
 type Finder struct {
@@ -261,6 +314,22 @@ type Settings struct {
 	ServerLogEnabled     bool   `json:"serverLogEnabled"`               // Capture server log lines for the in-app viewer (default off)
 	MonitorNotifyURL     string `json:"monitorNotifyUrl,omitempty"`     // Webhook posted when a monitored bookmark goes down/recovers (empty = off)
 	MonitorNotifyRetries int    `json:"monitorNotifyRetries,omitempty"` // Consecutive failures before alerting (min 1, default 3)
+	// MonitorNotifyPreset shapes the webhook body for a specific service instead
+	// of nextDash's own raw JSON. Empty keeps today's exact behaviour, so an
+	// existing webhook receiver built against the raw shape needs no migration.
+	MonitorNotifyPreset string `json:"monitorNotifyPreset,omitempty"` // "", "slack", "discord", "telegram", "gotify", "ntfy", "pushover"
+	// MonitorNotifyTelegramChatID is only read when MonitorNotifyPreset is
+	// "telegram" — the bot API needs a chat to post into, separate from the
+	// bot-token URL, and getting it wrong is otherwise a silent failure.
+	MonitorNotifyTelegramChatID string `json:"monitorNotifyTelegramChatId,omitempty"`
+	// Pushover has no user-chosen URL at all: the endpoint is fixed
+	// (api.pushover.net) and delivery is keyed on these two values instead.
+	MonitorNotifyPushoverToken   string `json:"monitorNotifyPushoverToken,omitempty"`
+	MonitorNotifyPushoverUserKey string `json:"monitorNotifyPushoverUserKey,omitempty"`
+	// MaintenanceWindows are recurring periods when downtime is expected. Checks
+	// still run and samples are still recorded — the heartbeat stays honest — but
+	// failures inside a window raise no alert and do not count against uptime.
+	MaintenanceWindows []MaintenanceWindow `json:"maintenanceWindows,omitempty"`
 	// The push booleans deliberately omit "omitempty": with it, a false value is
 	// dropped from the JSON entirely and the config checkbox reads `undefined`
 	// instead of unchecked, so turning a toggle off would not survive a reload.
@@ -2458,6 +2527,11 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
 	settings.MonitorNotifyRetries = clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
+	settings.MonitorNotifyPreset = normalizeMonitorNotifyPreset(settings.MonitorNotifyPreset)
+	settings.MonitorNotifyTelegramChatID = normalizeMonitorNotifyCredential(settings.MonitorNotifyTelegramChatID)
+	settings.MonitorNotifyPushoverToken = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverToken)
+	settings.MonitorNotifyPushoverUserKey = normalizeMonitorNotifyCredential(settings.MonitorNotifyPushoverUserKey)
+	settings.MaintenanceWindows = normalizeMaintenanceWindows(settings.MaintenanceWindows)
 	settings.PushNotifySubject = normalizeVAPIDSubject(settings.PushNotifySubject)
 
 	fs.readCache.settings = settings
@@ -2903,7 +2977,12 @@ type HealthSummary struct {
 	// counted apart from BrokenCount so the header can flag a live outage
 	// distinctly from an ordinary dead link. A down monitor is not also in
 	// BrokenCount — it is one or the other, never both, so totals stay honest.
-	MonitorDownCount      int `json:"monitorDownCount"`
+	MonitorDownCount int `json:"monitorDownCount"`
+	// ContentCount is bookmarks whose host answered but whose own expectation —
+	// a required string, an expected status code — was not met. Counted apart
+	// from BrokenCount and MonitorDownCount for the same reason those two are
+	// kept apart: a bookmark is in exactly one of the three, so the tiles add up.
+	ContentCount          int `json:"contentCount"`
 	MonitoredCount        int `json:"monitoredCount"`
 	DuplicateCount        int `json:"duplicateCount"`
 	UncheckedCount        int `json:"uncheckedCount"`
@@ -2912,6 +2991,11 @@ type HealthSummary struct {
 	UnusedCount           int `json:"unusedCount"`
 	ShortcutConflictCount int `json:"shortcutConflictCount"`
 	PinnedCount           int `json:"pinnedCount"`
+	// DriftCount is bookmarks currently flagged by rot detection — a redirect,
+	// title, or content change since the watched baseline. Layered on top of
+	// whatever other status a bookmark has, so it is not one of the three
+	// mutually exclusive broken/content/monitorDown counts above.
+	DriftCount int `json:"driftCount"`
 }
 
 type HealthReason struct {
@@ -2958,8 +3042,35 @@ type HealthIssue struct {
 	// Monitor reflects the uptime-monitor tier. MonitorStats is populated only for
 	// monitored bookmarks that have history, keeping the report payload unchanged
 	// for everyone who never turns monitoring on.
-	Monitor      bool          `json:"monitor,omitempty"`
-	MonitorStats *MonitorStats `json:"monitorStats,omitempty"`
+	Monitor bool `json:"monitor,omitempty"`
+	// MonitorIntervalMinutes is the configured cadence, set whenever Monitor is
+	// true regardless of whether any samples exist yet. Deliberately separate
+	// from MonitorStats: that struct is derived from sample history and is nil
+	// until the first check completes, but the interval is a setting, not a
+	// measurement — a freshly-monitored or just-changed row must show the right
+	// value immediately, not only once a check has run at the new cadence.
+	MonitorIntervalMinutes int           `json:"monitorIntervalMinutes,omitempty"`
+	MonitorStats           *MonitorStats `json:"monitorStats,omitempty"`
+	// What this bookmark expects of a good response, so the row can show and
+	// edit it. Omitted when unset, which is virtually every bookmark.
+	ExpectText       string `json:"expectText,omitempty"`
+	ExpectTextAbsent bool   `json:"expectTextAbsent,omitempty"`
+	ExpectStatus     string `json:"expectStatus,omitempty"`
+	// Rot signals: where the check lands after redirects, what the page is
+	// titled, and roughly what it says, versus the baseline recorded when
+	// watching began. Empty DriftNoticed means the page still looks like itself.
+	WatchDrift   bool   `json:"watchDrift,omitempty"`
+	DriftNoticed string `json:"driftNoticed,omitempty"`
+	DriftReason  string `json:"driftReason,omitempty"`
+	DriftSince   int64  `json:"driftSince,omitempty"`
+	// NotifyMuted reports that this bookmark's alerts are silenced. The row
+	// still shows its real status — muting withholds the message, not the
+	// finding — so the view needs this to say so on the row.
+	NotifyMuted bool `json:"notifyMuted,omitempty"`
+	// CertHost is the hostname to look up in the report's certificates map — the
+	// post-redirect host a check actually saw, which can differ from this
+	// bookmark's own URL. Empty until a check has recorded one.
+	CertHost string `json:"certHost,omitempty"`
 }
 
 type BookmarkHealthReport struct {
@@ -2976,6 +3087,11 @@ type BookmarkHealthReport struct {
 	// its own file rather than derived, since it is the only thing here that
 	// describes a day other than today.
 	Trend []HealthTrendPoint `json:"trend,omitempty"`
+	// Certificates are the TLS expiries seen while checking, keyed by host and
+	// carrying only those close enough to matter. Sent per host rather than per
+	// issue because that is what a certificate belongs to — the rows look
+	// themselves up by hostname.
+	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
 }
 
 type DuplicateWarning struct {
@@ -3012,6 +3128,21 @@ type HealthScanCache struct {
 	Error       string `json:"error,omitempty"`
 }
 
+// HostCertificate is the certificate expiry last seen for one host.
+//
+// Kept per host rather than per bookmark because that is what a certificate
+// belongs to: ten bookmarks on one domain share one certificate, and storing it
+// per bookmark would warn ten times about a single renewal.
+type HostCertificate struct {
+	Host      string `json:"host"`
+	ExpiresAt int64  `json:"expiresAt"` // Unix ms; 0 means never seen over TLS
+	SeenAt    int64  `json:"seenAt"`    // When this was last observed
+	// NotifiedDays records the expiry thresholds already alerted on, so a
+	// warning fires once per threshold per certificate rather than on every
+	// check for days on end. Reset when the expiry moves — a renewal.
+	NotifiedDays []int `json:"notifiedDays,omitempty"`
+}
+
 type HealthScanCacheFile struct {
 	GeneratedAt int64 `json:"generatedAt"`
 	// LastAutoRecheck is when the background recheck scheduler last completed a run
@@ -3019,6 +3150,10 @@ type HealthScanCacheFile struct {
 	// auto-backup compares the newest backup's age rather than an in-process timer.
 	LastAutoRecheck int64                      `json:"lastAutoRecheck,omitempty"`
 	Cache           map[string]HealthScanCache `json:"cache"` // Keyed by canonical URL
+	// Certificates seen while checking, keyed by host. Lives here rather than in
+	// its own file because it is written by the same pass that writes the cache
+	// and is worthless without it.
+	Certificates map[string]HostCertificate `json:"certificates,omitempty"`
 }
 
 // HealthSample is one recorded reachability check for a monitored bookmark.
@@ -3037,6 +3172,11 @@ type HealthSample struct {
 	// also append to. Set on at most one sample per outage, so it stays absent
 	// from virtually every sample written.
 	Alerted bool `json:"a,omitempty"`
+	// Maint marks a sample taken inside a maintenance window. The check still
+	// ran and the result is still recorded — the heartbeat should show what
+	// actually happened — but uptime ratios skip it, so a nightly backup does not
+	// read as a nightly outage.
+	Maint bool `json:"m,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept

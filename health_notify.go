@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -41,20 +41,54 @@ type monitorTransition struct {
 	up     bool
 	reason string
 	at     int64
+	// muted suppresses this bookmark's alerts without suppressing its check:
+	// the sample is still recorded and the row still reads as down, only the
+	// outbound message is held back.
+	muted bool
 }
 
 // monitorNotification is a transition that cleared the alerting rules and should
 // actually be sent.
 type monitorNotification struct {
-	Event  string `json:"event"` // "down" | "up"
+	Event  string `json:"event"` // "down" | "up" | "cert-expiring"
 	Name   string `json:"name"`
 	URL    string `json:"url"`
-	Status string `json:"status"` // "offline" | "online"
+	Status string `json:"status"` // "offline" | "online" | "warning"
 	Error  string `json:"error,omitempty"`
 	At     int64  `json:"at"`
 	// Failures is how many consecutive failed checks preceded a "down" event,
 	// including the current one.
 	Failures int `json:"failures,omitempty"`
+	// DaysLeft is set on "cert-expiring" only: whole days until the certificate
+	// for this host stops being valid.
+	DaysLeft int `json:"daysLeft,omitempty"`
+}
+
+// certExpiryNotifications turns crossed thresholds into notifications, reusing
+// the monitor's sinks rather than adding a parallel delivery path — a webhook
+// already configured for outages is the same place someone wants to hear that a
+// certificate is about to take those sites down.
+func certExpiryNotifications(certs []HostCertificate, now time.Time) []monitorNotification {
+	out := make([]monitorNotification, 0, len(certs))
+	for _, cert := range certs {
+		days := certDaysLeft(cert.ExpiresAt, now)
+		reason := fmt.Sprintf("TLS certificate expires in %d days", days)
+		if days < 0 {
+			reason = "TLS certificate has expired"
+		} else if days == 0 {
+			reason = "TLS certificate expires today"
+		}
+		out = append(out, monitorNotification{
+			Event:    "cert-expiring",
+			Name:     cert.Host,
+			URL:      "https://" + cert.Host,
+			Status:   "warning",
+			Error:    reason,
+			At:       now.UnixMilli(),
+			DaysLeft: days,
+		})
+	}
+	return out
 }
 
 // trailingFailures counts consecutive failed samples at the end of the history.
@@ -119,6 +153,15 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 	alerted := map[string]bool{}
 
 	for _, t := range transitions {
+		// A muted bookmark is checked and recorded like any other; only the
+		// message is withheld. Skipped before the alert bookkeeping below rather
+		// than filtered out of the result, so a muted outage never stamps its
+		// sample as alerted — otherwise un-muting mid-outage would find the
+		// outage already "handled" and stay silent until the next one.
+		if t.muted {
+			continue
+		}
+
 		prior := history[t.key]
 		priorFailures := trailingFailures(prior)
 		prevUp, hadState := lastSampleUp(prior)
@@ -201,6 +244,23 @@ func (h *Handlers) markOutagesAlerted(keys map[string]bool) {
 	}
 }
 
+// monitorNotifyTarget resolves where a notification actually gets posted.
+//
+// Every preset except Pushover sends to the operator's own configured URL —
+// that is what makes it a webhook. Pushover has no such URL: delivery is keyed
+// on the app token and user key instead, so its target is always the fixed
+// Pushover endpoint, and "is anything configured" means "are both of those
+// set" rather than "is a URL set".
+func monitorNotifyTarget(settings Settings) (target string, configured bool) {
+	if settings.MonitorNotifyPreset == "pushover" {
+		token := strings.TrimSpace(settings.MonitorNotifyPushoverToken)
+		userKey := strings.TrimSpace(settings.MonitorNotifyPushoverUserKey)
+		return pushoverEndpoint, token != "" && userKey != ""
+	}
+	target = strings.TrimSpace(settings.MonitorNotifyURL)
+	return target, target != ""
+}
+
 // dispatchMonitorNotifications posts each notification to the configured webhook.
 //
 // Best-effort by design: a failing webhook must never break a monitor run, so
@@ -210,48 +270,78 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 		return
 	}
 
+	// One upstream failing takes every bookmark behind it down in the same
+	// sweep. Collapsed here, at the single point both sinks pass through, so the
+	// webhook and the browser both get the summary rather than one of them
+	// getting the burst.
+	notifications = collapseMonitorNotifications(notifications)
+
 	// Browser push and the webhook are independent sinks for the same decision:
 	// either can be configured without the other, so this runs before the webhook
 	// target check rather than inside it.
 	h.pushMonitorNotifications(ctx, notifications)
 
-	target := strings.TrimSpace(h.store.GetSettings().MonitorNotifyURL)
-	if target == "" {
+	settings := h.store.GetSettings()
+	target, configured := monitorNotifyTarget(settings)
+	if !configured {
 		return
 	}
-	// The webhook URL is user input, so it goes through exactly the same SSRF
-	// rules as a bookmark ping: local targets are reachable only when the operator
-	// has already allowed local bookmarks.
-	allowLocal := h.allowLocalBookmarks()
-	if err := validateHTTPURL(target, allowLocal); err != nil {
-		log.Printf("health-notify: webhook URL rejected: %v", err)
-		return
+	// The target is user input for every preset but Pushover (a fixed,
+	// nextDash-chosen endpoint, not something the operator typed in), so it
+	// goes through the same SSRF rules as a bookmark ping: local targets are
+	// reachable only when the operator has already allowed local bookmarks.
+	if settings.MonitorNotifyPreset != "pushover" {
+		allowLocal := h.allowLocalBookmarks()
+		if err := validateHTTPURL(target, allowLocal); err != nil {
+			log.Printf("health-notify: webhook URL rejected: %v", err)
+			return
+		}
 	}
 
 	client := h.outboundHTTPClient(monitorNotifyTimeout, 3)
 	for _, n := range notifications {
-		h.postMonitorNotification(ctx, client, target, n)
+		h.postMonitorNotification(ctx, client, target, settings, n)
 	}
 }
 
-func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Client, target string, n monitorNotification) {
-	body, err := json.Marshal(n)
+// buildMonitorNotificationRequest formats n for settings' preset and builds
+// the request that would deliver it. Shared by the fire-and-forget dispatch
+// path and the synchronous test-send path, so the two can never drift apart
+// on headers or content type.
+func buildMonitorNotificationRequest(ctx context.Context, target string, settings Settings, n monitorNotification) (*http.Request, error) {
+	payload, err := formatMonitorNotification(
+		settings.MonitorNotifyPreset, n,
+		settings.MonitorNotifyTelegramChatID,
+		settings.MonitorNotifyPushoverToken, settings.MonitorNotifyPushoverUserKey,
+	)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target, bytes.NewReader(payload.body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", payload.contentType)
+	req.Header.Set("User-Agent", "nextDash-Monitor/1.0")
+	for k, v := range payload.headers {
+		req.Header.Set(k, v)
+	}
+	// ntfy and the raw-JSON default render/accept these; the other presets
+	// ignore unrecognised headers, so setting them unconditionally costs
+	// nothing and keeps this one line simple rather than preset-gated.
+	if settings.MonitorNotifyPreset == "" || settings.MonitorNotifyPreset == "ntfy" {
+		req.Header.Set("Title", monitorNotificationTitle(n))
+		req.Header.Set("X-Title", monitorNotificationTitle(n))
+	}
+	return req, nil
+}
+
+func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Client, target string, settings Settings, n monitorNotification) {
+	req, err := buildMonitorNotificationRequest(ctx, target, settings, n)
 	if err != nil {
 		log.Printf("health-notify: failed to encode notification: %v", err)
 		return
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target, bytes.NewReader(body))
-	if err != nil {
-		log.Printf("health-notify: failed to build request: %v", err)
-		return
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "nextDash-Monitor/1.0")
-	// ntfy and similar plain-text services render the title/body headers; sending
-	// them alongside the JSON payload keeps one webhook field useful for both.
-	req.Header.Set("Title", monitorNotificationTitle(n))
-	req.Header.Set("X-Title", monitorNotificationTitle(n))
-
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("health-notify: post failed for %s: %v", n.URL, err)
@@ -263,16 +353,179 @@ func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Cli
 	}
 }
 
+// monitorDigestThreshold is how many notifications one round may carry before
+// they are collapsed into a single summary.
+//
+// Set at four because the burst this guards against has a characteristic shape:
+// one upstream failing — a host, a reverse proxy, the local network — takes
+// every bookmark behind it down in the same sweep. Alerting per bookmark then
+// posts a dozen near-identical messages within a second, which is precisely the
+// pattern Slack and Telegram rate-limit, so the alerts that matter get dropped
+// by the service rather than delivered.
+//
+// Below the threshold the individual messages are strictly better: they name
+// the bookmark and its error. The digest is the fallback for the case where
+// per-bookmark detail is unreadable anyway.
+const monitorDigestThreshold = 4
+
+// collapseMonitorNotifications reduces a round's notifications to what should
+// actually be posted.
+//
+// Under the threshold, or when the round is a mix of event kinds, the list is
+// returned unchanged: a digest that says "3 events" while one was a recovery
+// and one a certificate warning is less informative than the three messages it
+// replaced. Only a run of same-event alerts — the burst shape — is collapsed.
+//
+// Pure so the threshold logic can be tested without a webhook.
+func collapseMonitorNotifications(notifications []monitorNotification) []monitorNotification {
+	// The threshold check below already implies a non-empty slice, but the
+	// indexing that follows should not depend on a tuning constant staying
+	// above zero to be memory-safe.
+	if len(notifications) == 0 || len(notifications) < monitorDigestThreshold {
+		return notifications
+	}
+	event := notifications[0].Event
+	for _, n := range notifications[1:] {
+		if n.Event != event {
+			return notifications
+		}
+	}
+	// Certificate warnings are already deduplicated per host and arrive on a
+	// threshold crossing, not on a sweep, so a run of them is not the burst this
+	// exists to flatten.
+	if event == "cert-expiring" {
+		return notifications
+	}
+
+	names := make([]string, 0, len(notifications))
+	for _, n := range notifications {
+		name := strings.TrimSpace(n.Name)
+		if name == "" {
+			name = n.URL
+		}
+		names = append(names, name)
+	}
+	// The first few by name, then a count: enough to recognise which corner of
+	// the collection went down without a message that scrolls. Clamped rather
+	// than assumed to be in range, so lowering monitorDigestThreshold cannot
+	// turn a tuning change into a slice-bounds panic.
+	shown := 3
+	if shown > len(names) {
+		shown = len(names)
+	}
+	summary := strings.Join(names[:shown], ", ")
+	if rest := len(names) - shown; rest > 0 {
+		summary += fmt.Sprintf(" and %d more", rest)
+	}
+
+	digest := monitorNotification{
+		Event:  event,
+		Name:   fmt.Sprintf("%d bookmarks", len(notifications)),
+		URL:    notifications[0].URL,
+		Status: notifications[0].Status,
+		Error:  summary,
+		At:     notifications[0].At,
+	}
+	// Failures is deliberately left zero: one bookmark's consecutive-failure
+	// count presented as the group's would be a number nobody can act on.
+	return []monitorNotification{digest}
+}
+
 func monitorNotificationTitle(n monitorNotification) string {
 	name := strings.TrimSpace(n.Name)
 	if name == "" {
 		name = n.URL
 	}
-	if n.Event == "up" {
+	switch n.Event {
+	case "up":
 		return name + " is back online"
+	case "cert-expiring":
+		// Not an outage: saying "offline" here would be actively wrong, since the
+		// host is answering fine — only its certificate is running out.
+		if n.Error != "" {
+			return name + ": " + n.Error
+		}
+		return name + ": TLS certificate expiring soon"
 	}
 	if n.Error != "" {
 		return name + " is offline (" + n.Error + ")"
 	}
 	return name + " is offline"
+}
+
+// TestMonitorNotification sends one synthetic "down" notification through the
+// currently saved alert settings — the same formatter and the same target
+// dispatchMonitorNotifications would use for a real outage.
+//
+// This exists because delivery failures are otherwise silent: a malformed
+// Discord embed or a wrong Telegram chat ID only ever produces a server log
+// line the operator never sees (postMonitorNotification only logs non-2xx
+// responses). For a feature whose entire job is "tell me when something
+// breaks," a webhook that itself fails quietly is the worst failure mode —
+// this surfaces that at setup time instead of during a real outage.
+func (h *Handlers) TestMonitorNotification(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+	if !h.requireSSRFAPIRateLimit(w, r) {
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	settings := h.store.GetSettings()
+	target, configured := monitorNotifyTarget(settings)
+	if !configured {
+		http.Error(w, "No alert service is configured yet", http.StatusBadRequest)
+		return
+	}
+	if settings.MonitorNotifyPreset != "pushover" {
+		allowLocal := h.allowLocalBookmarks()
+		if err := validateHTTPURL(target, allowLocal); err != nil {
+			http.Error(w, "Webhook URL rejected: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	n := monitorNotification{
+		Event:  "down",
+		Name:   "Test alert",
+		URL:    "https://example.com",
+		Status: "offline",
+		Error:  "This is a test alert from nextDash",
+		At:     time.Now().UnixMilli(),
+	}
+
+	client := h.outboundHTTPClient(monitorNotifyTimeout, 3)
+	code, err := h.sendTestMonitorNotification(r.Context(), client, target, settings, n)
+	if err != nil {
+		http.Error(w, "Failed to send test alert: "+err.Error(), http.StatusBadGateway)
+		return
+	}
+	if code >= 400 {
+		http.Error(w, fmt.Sprintf("The service rejected the test alert (HTTP %d)", code), http.StatusBadGateway)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, `{"status":"sent"}`)
+}
+
+// sendTestMonitorNotification mirrors postMonitorNotification but returns the
+// response status instead of only logging it, since a synchronous test needs
+// to report success or failure back to the person who clicked the button.
+func (h *Handlers) sendTestMonitorNotification(ctx context.Context, client *http.Client, target string, settings Settings, n monitorNotification) (int, error) {
+	req, err := buildMonitorNotificationRequest(ctx, target, settings, n)
+	if err != nil {
+		return 0, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer drainAndCloseResponse(resp)
+	return resp.StatusCode, nil
 }
