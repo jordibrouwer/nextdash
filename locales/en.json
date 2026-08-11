@@ -199,6 +199,7 @@
         "inboxDeletedToast": "Removed from Inbox",
         "inboxUndoRestored": "Restored to Inbox",
         "inboxUndoFailed": "Could not restore",
+        "inboxUndoFullInbox": "Inbox is full — could not restore",
         "emptyPage": "This page is empty",
         "emptyFresh": "No bookmarks yet",
         "emptyStateCommandNew": "Add via command",

@@ -174,6 +174,7 @@
         "inboxDeletedToast": "Retiré de l'Inbox",
         "inboxUndoRestored": "Restauré dans l'Inbox",
         "inboxUndoFailed": "Impossible de restaurer",
+        "inboxUndoFullInbox": "La boîte est pleine — restauration impossible",
         "pagesOverview": "pages",
         "pagesOverviewAria": "Choisir une page",
         "closePageOverview": "Fermer la liste des pages",

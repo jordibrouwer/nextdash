@@ -199,6 +199,7 @@
         "inboxDeletedToast": "Verwijderd uit Inbox",
         "inboxUndoRestored": "Teruggezet in Inbox",
         "inboxUndoFailed": "Kon niet terugzetten",
+        "inboxUndoFullInbox": "Inbox is vol — kon niet terugzetten",
         "emptyPage": "Deze pagina is leeg",
         "emptyFresh": "Nog geen bladwijzers",
         "emptyStateCommandNew": "Toevoegen via commando",

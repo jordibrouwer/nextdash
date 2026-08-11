@@ -222,6 +222,19 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 
 	restored, err := h.store.RestoreInboxLink(request.Item, maxItems)
 	if err != nil {
+		// A full inbox is not a server fault: nothing broke, there is simply no
+		// room. Answered as 409 so the client can tell the user why undo did
+		// nothing instead of showing a generic failure — or worse, the silent
+		// success this used to report.
+		if errors.Is(err, ErrInboxAtCapacity) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]any{
+				"error":   "at_capacity",
+				"message": "Inbox is full",
+			})
+			return
+		}
 		if !respondStorePersistError(w, err) {
 			return
 		}

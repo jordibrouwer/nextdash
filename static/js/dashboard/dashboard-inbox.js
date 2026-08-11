@@ -176,18 +176,22 @@ class DashboardInbox {
                 undoCallback: async () => {
                     const restores = await Promise.allSettled(snapshots.map((snap) => this.restoreItem(snap)));
                     const back = restores.filter((r) => r.status === 'fulfilled' && r.value).length;
+                    // A full inbox is the one failure worth naming: it explains
+                    // why undo did nothing and what to do about it, where the
+                    // generic message leaves the user guessing.
+                    const full = restores.some((r) => r.status === 'rejected' && r.reason?.atCapacity);
                     if (this.isActiveView()) {
                         await this.loadAndRender();
                     } else {
                         await this.refreshBadge();
                     }
-                    d.showNotification(
-                        back
-                            ? this.t('dashboard.inboxSelectionDeleteRestored', 'Restored {count} links', { count: back })
-                            : this.t('dashboard.inboxUndoFailed', 'Could not restore'),
-                        back ? 'success' : 'error',
-                        { duration: 3000 }
-                    );
+                    let message = this.t('dashboard.inboxUndoFailed', 'Could not restore');
+                    if (back) {
+                        message = this.t('dashboard.inboxSelectionDeleteRestored', 'Restored {count} links', { count: back });
+                    } else if (full) {
+                        message = this.t('dashboard.inboxUndoFullInbox', 'Inbox is full — could not restore');
+                    }
+                    d.showNotification(message, back ? 'success' : 'error', { duration: 3000 });
                 },
             }
         );
@@ -750,6 +754,16 @@ class DashboardInbox {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ item: snapshot }),
         });
+        if (res.status === 409) {
+            // The inbox filled up while the undo toast was on screen, so there
+            // is no room to put the item back. Flagged rather than thrown as a
+            // generic failure: the caller has to tell the user why undo did
+            // nothing, and "inbox is full" is actionable where "could not
+            // restore" is not.
+            const err = new Error('inbox at capacity');
+            err.atCapacity = true;
+            throw err;
+        }
         if (!res.ok) {
             throw new Error(`inbox restore HTTP ${res.status}`);
         }
@@ -800,9 +814,11 @@ class DashboardInbox {
                                 'success',
                                 { duration: 3000 }
                             );
-                        } catch {
+                        } catch (err) {
                             d.showNotification(
-                                this.t('dashboard.inboxUndoFailed', 'Could not restore'),
+                                err?.atCapacity
+                                    ? this.t('dashboard.inboxUndoFullInbox', 'Inbox is full — could not restore')
+                                    : this.t('dashboard.inboxUndoFailed', 'Could not restore'),
                                 'error'
                             );
                         }
