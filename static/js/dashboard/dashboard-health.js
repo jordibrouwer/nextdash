@@ -59,6 +59,7 @@ class DashboardHealth {
         // Lazily built: the class ships in its own file and may not have loaded
         // yet when the view is constructed.
         this._multiSelect = null;
+        this._focus = null;
     }
 
     /** Selection across rows, for the bulk toolbar. */
@@ -67,6 +68,14 @@ class DashboardHealth {
             this._multiSelect = new window.DashboardHealthMultiSelect(this);
         }
         return this._multiSelect;
+    }
+
+    /** One-at-a-time overlay for working through the filtered list. */
+    get focus() {
+        if (!this._focus && typeof window.DashboardHealthFocus === 'function') {
+            this._focus = new window.DashboardHealthFocus(this);
+        }
+        return this._focus;
     }
 
     isEnabled() {
@@ -377,6 +386,18 @@ class DashboardHealth {
         this._escapeHandler = (e) => {
             if (e.key !== 'Escape') return;
             if (d.activeView !== DashboardHealth.VIEW) return;
+            // Focus mode takes Escape before anything else, for the same reason
+            // an open menu does below: it is the innermost thing on screen, and
+            // closing the whole view instead would throw away the queue the
+            // user was working through. This handler is registered when the
+            // view loads, ahead of focus mode's own capture listener, so
+            // without this the overlay would never see the key at all.
+            if (this._focus?.isActive()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this._focus.close();
+                return;
+            }
             // An open menu takes Escape first: closing the whole view when the user
             // only meant to dismiss a menu loses their place in the list.
             const openMenu = document.querySelector('.health-view-menu:not([hidden])');
@@ -656,6 +677,10 @@ class DashboardHealth {
     handleKeyboardNavigation(e) {
         const d = this.dash;
         if (!this.isActiveView() || !this.isEnabled()) return false;
+        // Focus mode captures its own keys at the document, ahead of this
+        // handler. Bailing out here as well keeps the list from acting on the
+        // same press if that capture is ever bypassed.
+        if (this._focus?.isActive()) return false;
         if (window.DashboardTagCloud?.modalOpen) return false;
         if (d.searchComponent?.isActive?.()) return false;
         if (d.isInlineEditActive?.()) return false;
@@ -758,6 +783,15 @@ class DashboardHealth {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.toggleScorePanel(this.selectedKey);
+            return true;
+        }
+        // f opens focus mode on the row under the cursor. Deliberately not
+        // gated on selectedKey: opening it from a cold list should start at the
+        // top rather than do nothing.
+        if (e.key === 'f') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.focus?.open();
             return true;
         }
         if (e.key === 'm' && this.selectedKey) {
@@ -3197,6 +3231,7 @@ class DashboardHealth {
                 <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
             </div>
             <div class="health-view-toolbar-actions">
+                <button type="button" class="health-view-focus-btn" title="${this.escape(this.t('dashboard.healthFocusHint', 'Work through this list one bookmark at a time'))}">${this.escape(this.t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>
                 <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export rows'))}</button>
                 ${this.renderHistoryExportButton()}
                 ${this.renderOpenBrokenButton()}
@@ -3212,6 +3247,10 @@ class DashboardHealth {
                         aria-label="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}">ℹ</button>
             </div>
         `;
+
+        toolbar.querySelector('.health-view-focus-btn')?.addEventListener('click', () => {
+            this.focus?.open();
+        });
 
         toolbar.querySelector('.health-view-export-btn')?.addEventListener('click', () => {
             this.exportFilteredCsv();
