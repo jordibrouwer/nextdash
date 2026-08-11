@@ -97,6 +97,14 @@ By default, data is stored in `./data`. Override with `NEXTDASH_DATA_DIR` (absol
 
 ---
 
+### News & Integrations
+
+- 🌐 **Official Website:** [nextdash.cc](https://nextdash.cc)
+- 📰 **Developer Blog & Updates:** [jordibrw.cc](https://jordibrw.cc)
+- 🍏 **macOS Dropzone 5 Integration:** Send URLs straight to your dashboard or Inbox from any app or browser using the [Dropzone 5 script for nextDash](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
+
+---
+
 ## Security
 
 nextDash is built for **personal or small-team use on a trusted network**. There are no user accounts — anyone who can reach the URL can read and change data unless you add protection.
@@ -506,14 +514,6 @@ Full UI translations available for English, Dutch, German, and French.
 | Hover over a bookmark | Show preview card when enabled (Config → Appearance → Display) |
 | Long press a category header (~500 ms) | Rename the category (not on sort buttons; double-click still works) |
 | Double-click a page tab | Rename the page |
-
----
-
-### News & Integrations
-
-- 🌐 **Official Website:** [nextdash.cc](https://nextdash.cc)
-- 📰 **Developer Blog & Updates:** [jordibrw.cc](https://jordibrw.cc)
-- 🍏 **macOS Dropzone 5 Integration:** Send URLs straight to your dashboard or Inbox from any app or browser using the [Dropzone 5 script for nextDash](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
 
 ---
 
