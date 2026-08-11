@@ -1,0 +1,18 @@
+{
+    "tag": "v2026.09.09.1",
+    "date": "August 2026",
+    "releasedAt": "2026-08-11",
+    "hideFromModal": true,
+    "modalLead": "Hotfix on top of v2026.09.09. Recorded here but not announced: v2026.09.09 is the release worth reading, and this does not displace it.",
+    "sections": [
+        {
+            "title": "Health",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>The check-mode popover had become a form.</strong> Three releases added to it, and on a monitored row five of its fifteen controls — Save among them — sat below a scrollbar. The menu picks a mode again; <strong>expectations, drift watching and muting</strong> open in the row's own panel, where the fields get the row's full width and every control is on screen."
+                }
+            ]
+        }
+    ]
+}

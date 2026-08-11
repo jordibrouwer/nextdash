@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v2026.09.09.2 — August 2026](#v202609092--august-2026)
 - [v2026.09.09.1 — August 2026](#v202609091--august-2026)
 - [v2026.09.09 — August 2026](#v20260909--august-2026)
 - [v2026.09.08.2 — August 2026](#v202609082--august-2026)
@@ -155,6 +156,27 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v2026.09.09.2 — August 2026
+
+Small fixes on top of v2026.09.09. Recorded in the index but flagged `hideFromModal`, along with v2026.09.09.1: the What's new modal keeps showing v2026.09.09, which is the release worth reading, while **Config → Overview** reports the version you are actually running.
+
+### Dashboard
+
+- **fix** — **Page tabs are big enough to tap.** Measured on a tablet — a touch device wide enough that the desktop layout stays, so the tabs are on screen and get tapped — they were 28×33 and 34×33, under the 44px iOS and Android ask for. Given a minimum size only under a coarse pointer and outside the phone layout: with a mouse these are a dense row and padding them out would push later pages off the strip, and the phone layout hides the strip outright and has its own 44px rules. On an actual phone neither finding applies, which is why the gap survived thirty-odd dashboard specs that all ran on a mouse (`dashboard.css`).
+- **fix** — **A page tab names itself to a screen reader.** With page names switched off the label is the position — "1" — which was the whole accessible name and all a tooltip would have said. Tabs now carry the page's own name regardless of what the label shows, set in `_renderPageTabContent` so a rename keeps it right (`dashboard-page-nav.js`).
+
+### Health
+
+- **fix** — **The bulk enable buttons say which rows they act on.** *Monitor these 3* sat directly above the selection bar's *2 selected* whenever a selection survived a filter change, with nothing on screen saying which set each one meant — they are genuinely different, one acting on the filtered list and the other on the ticked rows. The behaviour was already right and the confirmation always said "in the current list"; the labels now do too, reading *Monitor all 3 shown* with a tooltip adding "not the ticked rows".
+
+### Docs
+
+- **new** — `tests/dashboard-touch-targets.spec.js` pins the three states apart that had run together: a tablet keeps the page strip and must meet 44px, a phone drops the strip entirely, and the accessible name survives the numbered label. No dashboard spec had run on a touch viewport before, which is how both findings survived.
+- **new** — MANUAL and README pick up the v2026.09.09.1 menu split, which they still described with the expectations inside the popover.
+- **new** — Release plumbing for **v2026.09.09.2** and **v2026.09.09.1**: both carry an index entry and a What's new file flagged `hideFromModal`, so the release tag and Config → Overview move forward while the modal stays on v2026.09.09. No `whats-new-stub.js` token bump for the same reason — raising it would reopen the modal for everyone who had already read it.
 
 ---
 
