@@ -630,6 +630,8 @@
         "refreshGlobalShortcutsFailed": "Failed to refresh global shortcuts.",
         "staleSectionNotVisible": "Stale section not visible (disabled in settings, wrong page filter, or no stale rows).",
         "pageTabsAria": "Dashboard pages",
+        "pageTabAria": "{name} — page {number}",
+        "pageTabAriaNumbered": "Page {number}",
         "pageOverviewItemAria": "{name}, {count} bookmarks",
         "pageOverviewFallbackName": "Page {index}",
         "saveSettingsFailed": "Failed to save settings.",

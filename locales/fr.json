@@ -627,6 +627,8 @@
         "refreshGlobalShortcutsFailed": "Impossible d'actualiser les raccourcis globaux.",
         "staleSectionNotVisible": "Section inactifs non visible (désactivée dans les réglages, mauvais filtre de page ou aucune entrée inactifs).",
         "pageTabsAria": "Pages du tableau de bord",
+        "pageTabAria": "{name} — page {number}",
+        "pageTabAriaNumbered": "Page {number}",
         "pageOverviewItemAria": "{name}, {count} favoris",
         "pageOverviewFallbackName": "Page {index}",
         "saveSettingsFailed": "Échec de l'enregistrement des réglages.",

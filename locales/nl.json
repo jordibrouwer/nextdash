@@ -630,6 +630,8 @@
         "refreshGlobalShortcutsFailed": "Globale sneltoetsen vernieuwen mislukt.",
         "staleSectionNotVisible": "Verouderde sectie niet zichtbaar (uitgeschakeld in instellingen, verkeerd paginafilter of geen verouderde rijen).",
         "pageTabsAria": "Dashboardpagina's",
+        "pageTabAria": "{name} — pagina {number}",
+        "pageTabAriaNumbered": "Pagina {number}",
         "pageOverviewItemAria": "{name}, {count} bladwijzers",
         "pageOverviewFallbackName": "Pagina {index}",
         "saveSettingsFailed": "Instellingen opslaan mislukt.",

@@ -627,6 +627,8 @@
         "refreshGlobalShortcutsFailed": "Globale Kürzel konnten nicht aktualisiert werden.",
         "staleSectionNotVisible": "Bereich „Veraltet“ nicht sichtbar (in Einstellungen deaktiviert, falscher Seitenfilter oder keine veralteten Einträge).",
         "pageTabsAria": "Dashboard-Seiten",
+        "pageTabAria": "{name} — Seite {number}",
+        "pageTabAriaNumbered": "Seite {number}",
         "pageOverviewItemAria": "{name}, {count} Lesezeichen",
         "pageOverviewFallbackName": "Seite {index}",
         "saveSettingsFailed": "Einstellungen speichern fehlgeschlagen.",

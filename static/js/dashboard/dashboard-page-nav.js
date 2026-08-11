@@ -520,6 +520,20 @@ class DashboardPageNav {
         label.className = 'page-tab-label';
         label.textContent = d.settings.showPageNamesInTabs ? page.name : (index + 1).toString();
         btn.appendChild(label);
+
+        // With names switched off the tab reads as a bare "1", which is what a
+        // screen reader announces and what a tooltip would have said too. The
+        // page's own name is the useful part, so it is carried here regardless
+        // of whether the label shows it. Set on every render, including after a
+        // rename, because this method is what redraws the tab then.
+        const pageName = String(page.name || '').trim();
+        const accessible = pageName
+            ? d.formatDashboardLabel('pageTabAria', { name: pageName, number: index + 1 },
+                `${pageName} — page ${index + 1}`)
+            : d.formatDashboardLabel('pageTabAriaNumbered', { number: index + 1 },
+                `Page ${index + 1}`);
+        btn.setAttribute('aria-label', accessible);
+        btn.title = accessible;
     }
 
     /**
