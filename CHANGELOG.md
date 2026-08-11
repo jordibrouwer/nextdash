@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v2026.09.09.1 — August 2026](#v202609091--august-2026)
 - [v2026.09.09 — August 2026](#v20260909--august-2026)
 - [v2026.09.08.2 — August 2026](#v202609082--august-2026)
 - [v2026.09.08.1 — August 2026](#v202609081--august-2026)
@@ -154,6 +155,23 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v2026.09.09.1 — August 2026
+
+Hotfix on top of v2026.09.09. Changelog only: no What's new entry and no version bump in the app, so v2026.09.09 stays the release the modal and the overview point at.
+
+### Health
+
+- **fix** — **The check-mode popover had become a form.** Three releases added to it — monitoring, drift watching, per-bookmark muting — and on a monitored row it measured 531px of content in a 382px window: five of its fifteen controls sat below a scrollbar, Save among them, so the fields could be filled in with no visible way to store them. At 192px wide every option's sentence broke across three lines and the popover covered the toolbar and tiles behind it.
+- **fix** — The menu picks a mode and closes again, which is what a menu does: three modes, the interval strip on a monitored row, and one entry through to the rest. **Expectations, drift watching and muting** now open in the row's own expanding panel — the same shape as the score breakdown and the monitoring statistics, so a row has one way of showing more rather than three that behave differently. In the row the fields get its full width (710px rather than 192px), the keyword and status boxes sit side by side in an auto-fit grid that stacks on a narrow screen, every label fits on one line, and Save is on screen. `Esc` and **Cancel** close it, `Enter` saves, and a failed save leaves it open with the typed values still in the fields.
+- **fix** — The popover was 192px because it is absolutely positioned inside an `inline-flex` that sits in a flex item with `min-width: 0`, so it shrank to the trigger button and `min-width: 15rem` lost that argument. An explicit width fixes the wrapping, which was never about the amount of content (`health-view.css`).
+- **fix** — The panel is built on first open rather than rendered hidden into every row: a form per monitored row is real DOM for something rarely looked at, and its labels landed in the row's text content — enough that "the muted bookmark" matched every row that merely *offers* the mute checkbox.
+
+### Docs
+
+- **new** — Two regression tests, one per complaint: the menu fits without a scrollbar, and every control in the panel sits inside it. Both were falsified — restoring the old width makes the menu scroll again, capping the panel puts controls outside it.
 
 ---
 
