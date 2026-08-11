@@ -39,6 +39,11 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		Title  string `json:"title"`
 		Source string `json:"source"`
 		Note   string `json:"note"`
+		// Tags were silently dropped before this: InboxLink carries them and
+		// AddInboxLink normalises them, but the request struct had no field, so
+		// anything posting tags — the extension, a script — lost them on the
+		// way in with no error to notice.
+		Tags []string `json:"tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -63,6 +68,7 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		Title:  strings.TrimSpace(request.Title),
 		Source: strings.TrimSpace(request.Source),
 		Note:   strings.TrimSpace(request.Note),
+		Tags:   request.Tags,
 	}
 
 	created, err := h.store.AddInboxLink(link, dedupe, maxItems)
@@ -70,6 +76,9 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, ErrInboxDuplicateURL) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusConflict)
+			// `created` is the item already holding this URL, not a zero value:
+			// AddInboxLink's dedupe branch returns the existing entry alongside
+			// the error, which is what lets the client jump to it.
 			json.NewEncoder(w).Encode(map[string]any{
 				"error":   "duplicate_url",
 				"message": "URL already in inbox",
