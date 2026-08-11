@@ -1,0 +1,18 @@
+{
+    "tag": "v2026.09.09.3",
+    "date": "August 2026",
+    "releasedAt": "2026-08-11",
+    "hideFromModal": true,
+    "modalLead": "A fix on top of v2026.09.09. Recorded here but not announced: v2026.09.09 is the release worth reading, and this does not displace it.",
+    "sections": [
+        {
+            "title": "Dashboard",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Opening a bookmark from Health no longer claims its category was deleted.</strong> The jump was following the link before the grid had been drawn at all, so it searched an empty page and reported a category that was sitting in plain sight. It now runs once the grid is up, and waits if it is still rendering."
+                }
+            ]
+        }
+    ]
+}

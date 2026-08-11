@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v2026.09.09.3 — August 2026](#v202609093--august-2026)
 - [v2026.09.09.2 — August 2026](#v202609092--august-2026)
 - [v2026.09.09.1 — August 2026](#v202609091--august-2026)
 - [v2026.09.09 — August 2026](#v20260909--august-2026)
@@ -156,6 +157,29 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v2026.09.09.3 — August 2026
+
+A fix on top of v2026.09.09, recorded in the index but flagged `hideFromModal` like v2026.09.09.1 and v2026.09.09.2: the What's new modal keeps showing v2026.09.09, while **Config → Overview** reports the version you are actually running.
+
+### Dashboard
+
+- **fix** — **A deep link announced that a category had been deleted while it sat in plain sight.** Opening a bookmark on the dashboard from the Health view resolved the link inside `loadData()`, which finishes before `init()` renders the grid — so it searched an empty DOM, found nothing, and reported the category gone. Measured against the reported bookmark: **0 categories** in the DOM at that moment, against 12 once the grid is up. The call moved to after `renderDashboard()`, where the elements it resolves against actually exist (`dashboard.js`, `dashboard-data.js`).
+- **fix** — The jump also waited a fixed two animation frames and then assumed the grid was built, which was long enough on a small collection and not on a large one. It now waits until the target is in the DOM, with a 2s deadline so a link to a genuinely removed category still ends in the message rather than hanging; already-rendered resolves in ~2ms and adds no delay to the common case. Kept alongside the ordering fix rather than replaced by it: it is the right guard for a slow render, and it now has something to wait for. The message is also held back when the bookmark row itself was found — a row present while its category element is not means the grid is showing it some other way, and the link has done its job (`dashboard-page-nav.js`).
+- **fix** — That message arrived as the raw key, `dashboard.deepLinkCategoryNotFound`. `language.t()` answers with the key when a string is missing, and a non-empty string is truthy, so the `|| 'Category not found…'` fallback could never fire. Both deep-link toasts now use the `t(key, fallback)` helper defined a few methods above them, which compares against the key — they were the only call sites in that file not using it.
+
+Worth recording what was **not** wrong, since it looked like the obvious suspect: the category id chain is sound end to end. `Bookmark.Category` holds the id (`cat_mrjjzqik_o2rt0`, not `VPS`), Health forwards that id, and the grid writes the same value into `data-category-id`. Nothing matches on name.
+
+### Release tooling
+
+- **fix** — **`release-to-main.sh` was dropping three files main needs.** Its modify/delete resolver keeps a short allowlist and deletes everything else, on the assumption that a file main does not have is a dev-only file. `CHANGELOG.md`, `static/data/whats-new/index.json` and `asset_hashes_gen.go` all fell through it, and none of them appear in `PRUNE_DIRS` or the explicit removal list — they were never meant to go. The consequences ran deep: `extract_changelog_notes` reads CHANGELOG.md **on main**, so with the file gone it returned 1 and every GitHub release published with a bare `Release <tag>` body, which is why v2026.09.09, v2026.09.09.1 and v2026.09.09.2 all had to be filled in by hand. Without `index.json` the What's new manifest had no source on a main build even though all 131 release files shipped, and without `asset_hashes_gen.go` main did not compile at all. The allowlist now covers them, and the changelog fallback says so on stderr instead of failing silently.
+- **fix** — main was repaired directly rather than waiting for the next release to carry the files across.
+
+### Docs
+
+- **new** — `tests/dashboard-deep-link-timing.spec.js`, the first e2e coverage of dashboard deep links — which is how all three faults survived. Six tests, each falsified. One of them follows a real deep link on a cold load rather than exercising the helper, because an ordering bug is invisible to a helper test: the five written against the waiting logic passed throughout while the notice was still appearing. Putting the call back inside `loadData()` reproduces the reported message verbatim.
 
 ---
 

@@ -738,8 +738,58 @@ class DashboardPageNav {
             }
         }
 
-        const focus = () => this.focusDashboardDeepLinkTarget(link);
-        requestAnimationFrame(() => requestAnimationFrame(focus));
+        // Wait for the grid to actually hold the target rather than guessing at
+        // two frames. Two was enough on a small collection and not enough on a
+        // large one, where the rows this link points at had not been rendered
+        // yet — so expandCategoryForDeepLink found nothing and announced that
+        // the category had been deleted, about a category sitting in plain
+        // sight on the same page.
+        await this.waitForDeepLinkTarget(link);
+        this.focusDashboardDeepLinkTarget(link);
+    }
+
+    /**
+     * Resolve once the deep link's target exists in the DOM, or give up.
+     *
+     * Polls per animation frame up to a deadline. The deadline matters as much
+     * as the wait: a link can legitimately point at a category that really was
+     * deleted, and that case has to end in the message rather than hanging.
+     * Returns whether the target was found, so the caller can tell "not there
+     * yet" apart from "not there at all".
+     */
+    waitForDeepLinkTarget(link, timeoutMs = 2000) {
+        if (!link) return Promise.resolve(false);
+        const present = () => {
+            // A category link is satisfied by its category; a bookmark-only
+            // link by its row. Either is enough to stop waiting.
+            if (link.categoryId) {
+                const escaped = typeof CSS !== 'undefined' && CSS.escape
+                    ? CSS.escape(link.categoryId)
+                    : String(link.categoryId).replace(/["\\]/g, '\\$&');
+                if (document.querySelector(`.category[data-category-id="${escaped}"]`)) return true;
+            }
+            return Boolean(this.findBookmarkRowForDeepLink(link));
+        };
+
+        return new Promise((resolve) => {
+            if (present()) {
+                resolve(true);
+                return;
+            }
+            const deadline = Date.now() + timeoutMs;
+            const tick = () => {
+                if (present()) {
+                    resolve(true);
+                    return;
+                }
+                if (Date.now() >= deadline) {
+                    resolve(false);
+                    return;
+                }
+                requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+        });
     }
 
 
@@ -799,10 +849,28 @@ class DashboardPageNav {
             const catEl = this.expandCategoryForDeepLink(link.categoryId);
             if (catEl) {
                 catEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } else {
-                const msg = d.language?.t?.('dashboard.deepLinkCategoryNotFound')
-                    || 'Category not found — it may have been deleted. Showing all bookmarks.';
-                d.showNotification(msg, 'info', { duration: 6000 });
+            } else if (!this.findBookmarkRowForDeepLink(link)) {
+                // Only when the bookmark is missing too. A row that is on the
+                // page while its category element is not means the grid is
+                // showing it some other way — a tag filter, a smart
+                // collection — and the link has done its job, so saying the
+                // category was deleted would be wrong and alarming.
+                //
+                // this.t() rather than language.t(): the latter returns the
+                // key itself when a string is missing, and a non-empty string
+                // is truthy, so the `|| 'Category not found…'` fallback this
+                // used to carry could never fire — which is how the toast came
+                // to read "dashboard.deepLinkCategoryNotFound". The helper a
+                // few methods up already compares against the key; these two
+                // were the only call sites not using it.
+                d.showNotification(
+                    this.t(
+                        'dashboard.deepLinkCategoryNotFound',
+                        'Category not found — it may have been deleted. Showing all bookmarks.'
+                    ),
+                    'info',
+                    { duration: 6000 }
+                );
             }
         }
 
@@ -831,9 +899,16 @@ class DashboardPageNav {
                 requestAnimationFrame(() => d.tryOpenInlineBookmarkEdit());
             }
         } else if (link.bookmarkIndex != null || link.url) {
-            const msg = d.language?.t?.('dashboard.deepLinkBookmarkNotFound')
-                || 'Bookmark not found on this page (it may have moved).';
-            d.showNotification(msg, 'info', { duration: 4000 });
+            // Same fallback bug as the category message above: t() answers with
+            // the key when a string is missing, so `|| '…'` never ran.
+            d.showNotification(
+                this.t(
+                    'dashboard.deepLinkBookmarkNotFound',
+                    'Bookmark not found on this page (it may have moved).'
+                ),
+                'info',
+                { duration: 4000 }
+            );
         }
 
         DashboardDeepLink.stripDeepLinkParams();
