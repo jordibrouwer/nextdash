@@ -485,7 +485,34 @@ button.health-view-tile:hover {
    right-click row menu (a vertical list of filters rather than actions), and
    even that is the same markup .health-view-menu-item already provides. */
 .health-view-filter-overflow-menu {
-    min-width: 10rem;
+    min-width: 12rem;
+}
+
+/* Inside the menu the count is doing a different job than on an inline pill.
+   On a pill it trails a label you can already read, so 70% opacity is enough
+   to keep it subordinate. In a closed menu it is the only thing saying that
+   three stale bookmarks are hiding behind "More" — at the same weight it reads
+   as decoration and gets skipped. Pushed to the right edge, given its own
+   ground and full opacity, it becomes a column of quantities you can scan. */
+.health-view-filter-overflow-menu .health-view-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.health-view-filter-overflow-menu .health-view-filter-count {
+    margin-left: 0;
+    opacity: 1;
+    flex: 0 0 auto;
+    min-width: 1.5rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
 }
 
 .health-view-search-input {
