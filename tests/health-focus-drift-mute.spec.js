@@ -262,6 +262,56 @@ test.describe('per-bookmark alert muting', () => {
         await expect(notMuted.locator('.health-muted-badge')).toHaveCount(0);
     });
 
+
+    // The menu grew a keyword box, status codes, two checkboxes and a Save
+    // button over three releases, and ended up 531px of content in a 382px
+    // window: five controls including Save sat below a scrollbar. It is a menu
+    // again — three modes, an interval, and a way through to the rest.
+    test('the check-mode menu fits without a scrollbar', async ({ page }) => {
+        await openHealthView(page);
+
+        const row = page.locator('.health-view-item', { hasText: 'Drift C' });
+        await row.locator('.health-check-mode').click();
+        const menu = row.locator('.health-check-menu');
+        await expect(menu).toBeVisible();
+
+        const fits = await menu.evaluate((el) => el.scrollHeight <= el.clientHeight + 1);
+        expect(fits, 'the check-mode menu scrolls again').toBe(true);
+
+        // The form is not in there any more, only the entry that opens it.
+        await expect(menu.locator('[data-expect-save]')).toHaveCount(0);
+        await expect(menu.locator('[data-expect-text]')).toHaveCount(0);
+        await expect(menu.locator('[data-expect-open]')).toHaveCount(1);
+    });
+
+    // Save below the fold was the worst of it: the form could be filled in with
+    // no visible way to store it.
+    test('every control in the expectations panel is reachable without scrolling', async ({ page }) => {
+        await openHealthView(page);
+
+        const row = page.locator('.health-view-item', { hasText: 'Drift C' });
+        await row.locator('.health-check-mode').click();
+        await row.locator('[data-expect-open]').click();
+
+        const panel = row.locator('.health-view-expect-panel');
+        await expect(panel).toBeVisible();
+        await expect(panel.locator('[data-expect-save]')).toBeVisible();
+
+        const report = await panel.evaluate((el) => {
+            const box = el.getBoundingClientRect();
+            const offscreen = [];
+            el.querySelectorAll('button, input').forEach((c) => {
+                const b = c.getBoundingClientRect();
+                if (b.bottom > box.bottom + 1 || b.top < box.top - 1) {
+                    offscreen.push((c.textContent || c.type || '').trim());
+                }
+            });
+            return { scrollable: el.scrollHeight > el.clientHeight + 1, offscreen };
+        });
+        expect(report.scrollable, 'the panel scrolls').toBe(false);
+        expect(report.offscreen, 'controls sit outside the panel').toEqual([]);
+    });
+
     test('the toggle rides along with the rest of the expectations', async ({ page }) => {
         await openHealthView(page);
 
@@ -276,13 +326,19 @@ test.describe('per-bookmark alert muting', () => {
             });
         });
 
+        // The expectations moved out of the check-mode popover and into the
+        // row's own panel: the menu now only picks a mode, and carries an entry
+        // that opens the panel.
         const row = page.locator('.health-view-item', { hasText: 'Drift A' });
         await row.locator('.health-check-mode').click();
         const menu = row.locator('.health-check-menu');
         await expect(menu).toBeVisible();
+        await menu.locator('[data-expect-open]').click();
 
-        await menu.locator('[data-notify-muted]').check();
-        await menu.locator('[data-expect-save]').click();
+        const panel = row.locator('.health-view-expect-panel');
+        await expect(panel).toBeVisible();
+        await panel.locator('[data-notify-muted]').check();
+        await panel.locator('[data-expect-save]').click();
 
         await expect.poll(() => sent).not.toBeNull();
         expect(sent.notifyMuted).toBe(true);

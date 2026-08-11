@@ -41,6 +41,9 @@ class DashboardHealth {
         /** Deep-link target from `?hv_id=` — applied after the feed renders. */
         this.focusIssueKey = null;
         this.expandedScores = new Set();
+        // Rows whose expectations panel is open, keyed the same way as
+        // expandedScores so both survive a re-render identically.
+        this.expandedExpect = new Set();
         /** Collapses the fleet panel's worst/slower/incidents lists, leaving just
          *  the three uptime tiles — a long "All monitors" block otherwise pushes
          *  the row list off screen on a collection with a lot of history. */
@@ -934,6 +937,160 @@ class DashboardHealth {
         const expanded = this.expandedScores.has(key);
         if (panel) panel.hidden = !expanded;
         button?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    }
+
+    /* ── Expectations panel ────────────────────────────────────────────── */
+
+    /**
+     * What "healthy" means for one bookmark, in the row's own width.
+     *
+     * These controls lived in the check-mode popover until they outgrew it: a
+     * keyword, status codes, two checkboxes and a Save button do not fit in a
+     * 192px menu, and five of them ended up below a scrollbar — Save among
+     * them, so it was possible to fill the form in and never see the way to
+     * store it. Opening in the row instead gives the fields the full width and
+     * puts every control on screen at once.
+     *
+     * Mirrors toggleScorePanel deliberately: same expand-in-place shape, same
+     * Set-of-keys bookkeeping, so the row has one way of showing more rather
+     * than two that behave differently.
+     */
+    toggleExpectPanel(key, force) {
+        const next = typeof force === 'boolean' ? force : !this.expandedExpect.has(key);
+        if (next) {
+            this.expandedExpect.add(key);
+        } else {
+            this.expandedExpect.delete(key);
+        }
+        this.syncExpectPanel(key);
+        if (next) {
+            // The keyword is the field people come here for, so focus lands
+            // there rather than on the panel itself.
+            const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(key)}"]`);
+            row?.querySelector('[data-expect-text]')?.focus({ preventScroll: true });
+        }
+    }
+
+    syncExpectPanel(key) {
+        const row = document.querySelector(`.health-view-item[data-health-key="${CSS.escape(key)}"]`);
+        if (!row) return;
+        const panel = row.querySelector('.health-view-expect-panel');
+        const expanded = this.expandedExpect.has(key);
+        if (panel) {
+            // Built on open rather than rendered hidden into every row. A form
+            // per monitored row costs real DOM for something almost never
+            // looked at, and its labels would sit in the row's text content —
+            // enough to make "the muted bookmark" match every monitored row
+            // that merely *offers* the mute checkbox.
+            if (expanded && !panel.firstElementChild) {
+                const issue = this.getFilteredIssues().find((i) => this.issueKey(i) === key)
+                    || (this.report?.issues || []).find((i) => this.issueKey(i) === key);
+                if (issue) {
+                    panel.innerHTML = this.renderExpectPanel(issue);
+                    this.bindExpectPanel(row, issue, key);
+                }
+            }
+            panel.hidden = !expanded;
+        }
+        row.querySelector('[data-expect-open]')?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    }
+
+    /**
+     * Wire the panel's controls. Separate from the row's own binding because
+     * the panel is built on first open, so this runs then rather than at
+     * render time.
+     *
+     * The panel sits in the row rather than in a popover, so none of the
+     * stopPropagation the old menu form needed applies — nothing closes
+     * underneath it. Only keydown is held back, to keep Enter and the list's
+     * single-letter shortcuts out of each other's way while a field has focus.
+     */
+    bindExpectPanel(row, issue, key) {
+        const panel = row.querySelector('.health-view-expect-panel');
+        if (!panel || panel.dataset.bound === '1') return;
+        panel.dataset.bound = '1';
+
+        const close = () => {
+            this.toggleExpectPanel(key, false);
+            row.querySelector('.health-check-mode')?.focus({ preventScroll: true });
+        };
+
+        panel.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                void this.saveExpectations(issue, panel);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                close();
+            }
+        });
+        panel.querySelector('[data-expect-save]')?.addEventListener('click', () => {
+            void this.saveExpectations(issue, panel);
+        });
+        panel.querySelector('[data-expect-cancel]')?.addEventListener('click', close);
+    }
+
+    /**
+     * The panel body. Empty for a row that is not monitored: the checks that
+     * read these fields belong to the monitor, so offering them elsewhere would
+     * be a control that governs nothing.
+     */
+    renderExpectPanel(issue) {
+        if (this.checkModeOf(issue) !== window.CheckMode.MONITOR) return '';
+        const esc = (v) => this.escape(v);
+        return `
+            <div class="health-expect-form" role="group"
+                 aria-label="${esc(this.t('dashboard.healthExpectLabel', 'Expected response'))}">
+                <p class="health-expect-intro">${esc(this.t(
+                    'dashboard.healthExpectIntro',
+                    'A reachability check only asks whether the host answered. These say what a good answer looks like for this page.'
+                ))}</p>
+
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="expect-text-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthExpectTextLabel', 'Text the page must contain'))}</label>
+                    <input type="text" id="expect-text-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-expect-text maxlength="200"
+                        placeholder="${esc(this.t('dashboard.healthExpectTextPlaceholder', 'Page must contain…'))}"
+                        value="${esc(issue.expectText || '')}">
+                    <label class="health-expect-check">
+                        <input type="checkbox" data-expect-absent ${issue.expectTextAbsent ? 'checked' : ''}>
+                        <span>${esc(this.t('dashboard.healthExpectAbsent', 'Fail if present instead'))}</span>
+                    </label>
+                </div>
+
+                <div class="health-expect-field">
+                    <label class="health-expect-label" for="expect-status-${esc(issue.pageId)}-${esc(issue.index)}">${esc(
+                        this.t('dashboard.healthExpectStatusLabel', 'Status codes that count as healthy'))}</label>
+                    <input type="text" id="expect-status-${esc(issue.pageId)}-${esc(issue.index)}"
+                        class="health-expect-input" data-expect-status maxlength="40"
+                        placeholder="${esc(this.t('dashboard.healthExpectStatusPlaceholder', 'Status codes, e.g. 200,301'))}"
+                        value="${esc(issue.expectStatus || '')}">
+                    <span class="health-expect-note">${esc(this.t(
+                        'dashboard.healthExpectStatusNote',
+                        'Empty means anything under 500 counts as reachable.'
+                    ))}</span>
+                </div>
+
+                <div class="health-expect-toggles">
+                    <label class="health-expect-check">
+                        <input type="checkbox" data-watch-drift ${issue.watchDrift ? 'checked' : ''}>
+                        <span>${esc(this.t('dashboard.healthWatchDrift', 'Watch for redirects, retitling and rewrites'))}</span>
+                    </label>
+                    <label class="health-expect-check">
+                        <input type="checkbox" data-notify-muted ${issue.notifyMuted ? 'checked' : ''}>
+                        <span>${esc(this.t('dashboard.healthNotifyMuted', 'Do not alert me about this bookmark'))}</span>
+                    </label>
+                </div>
+
+                <div class="health-expect-actions">
+                    <button type="button" class="health-expect-save" data-expect-save>${esc(
+                        this.t('dashboard.healthExpectSave', 'Save'))}</button>
+                    <button type="button" class="health-expect-cancel" data-expect-cancel>${esc(
+                        this.t('dashboard.healthExpectCancel', 'Cancel'))}</button>
+                </div>
+            </div>`;
     }
 
     /* ── Actions ───────────────────────────────────────────────────────── */
@@ -1872,6 +2029,11 @@ class DashboardHealth {
             this.dash.showNotification?.(saved.expectText || saved.expectStatus || saved.watchDrift
                 ? this.t('dashboard.healthExpectSaved', 'Expectations saved.')
                 : this.t('dashboard.healthExpectCleared', 'Expectations cleared.'), 'success');
+            // Closed before the re-render rather than after, so the panel does
+            // not flash back open for a frame on its way out. A failed save
+            // deliberately leaves it open — the values are still in the fields
+            // and closing would throw away what was typed.
+            this.expandedExpect.delete(key);
             await this.loadAndRender({ refresh: true });
             return 'changed';
         } catch {
@@ -4213,39 +4375,24 @@ class DashboardHealth {
             </span>`
             : '';
 
-        // What counts as healthy for this one bookmark. Shown alongside the
-        // interval and for the same reason: this is the screen where you see a
-        // row reporting "up" for a page that is plainly broken, and the fix
-        // belongs where the symptom is. Only for a monitored row — the checks
-        // that read these fields are the monitor's.
-        const expectRow = active === window.CheckMode.MONITOR
-            ? `<span class="health-check-expect" role="group"
-                    aria-label="${this.escape(this.t('dashboard.healthExpectLabel', 'Expected response'))}">
-                <span class="health-check-expect-label">${this.escape(this.t('dashboard.healthExpectLabel', 'Expected response'))}</span>
-                <input type="text" class="health-check-expect-text" data-expect-text
-                    maxlength="200"
-                    placeholder="${this.escape(this.t('dashboard.healthExpectTextPlaceholder', 'Page must contain…'))}"
-                    aria-label="${this.escape(this.t('dashboard.healthExpectTextLabel', 'Text the page must contain'))}"
-                    value="${this.escape(issue.expectText || '')}">
-                <label class="health-check-expect-invert">
-                    <input type="checkbox" data-expect-absent ${issue.expectTextAbsent ? 'checked' : ''}>
-                    <span>${this.escape(this.t('dashboard.healthExpectAbsent', 'Fail if present instead'))}</span>
-                </label>
-                <input type="text" class="health-check-expect-status" data-expect-status
-                    maxlength="40"
-                    placeholder="${this.escape(this.t('dashboard.healthExpectStatusPlaceholder', 'Status codes, e.g. 200,301'))}"
-                    aria-label="${this.escape(this.t('dashboard.healthExpectStatusLabel', 'Status codes that count as healthy'))}"
-                    value="${this.escape(issue.expectStatus || '')}">
-                <label class="health-check-expect-invert">
-                    <input type="checkbox" data-watch-drift ${issue.watchDrift ? 'checked' : ''}>
-                    <span>${this.escape(this.t('dashboard.healthWatchDrift', 'Watch for redirects, retitling and rewrites'))}</span>
-                </label>
-                <label class="health-check-expect-invert">
-                    <input type="checkbox" data-notify-muted ${issue.notifyMuted ? 'checked' : ''}>
-                    <span>${this.escape(this.t('dashboard.healthNotifyMuted', 'Do not alert me about this bookmark'))}</span>
-                </label>
-                <button type="button" class="health-check-expect-save" data-expect-save>${this.escape(this.t('dashboard.healthExpectSave', 'Save'))}</button>
-            </span>`
+        // The way to everything else this bookmark can be told about itself.
+        //
+        // Expectations, drift watching and muting used to sit in this menu, and
+        // between them they made it a form: 531px of content in a 382px window
+        // on a 192px-wide popover, with five controls — including Save — below
+        // the fold. A menu picks one thing and closes; that was a settings panel
+        // wearing a menu's clothes. They now open in the row's own expanding
+        // panel, which is the full width of the row rather than a popover's, so
+        // nothing wraps to three lines and the Save button is on screen.
+        const expectEntry = active === window.CheckMode.MONITOR
+            ? `<button type="button" class="health-view-menu-item health-check-expect-open"
+                    role="menuitem" data-expect-open>
+                <span class="health-check-option-label">${this.escape(this.t('dashboard.healthExpectLabel', 'Expected response'))}</span>
+                <span class="health-check-option-body">${this.escape(this.t(
+                    'dashboard.healthExpectMenuHint',
+                    'Keyword, status codes, rot watching and alerts'
+                ))}</span>
+            </button>`
             : '';
 
         // A span, not a div: this popover lives inside the row's <p> meta line, and
@@ -4253,7 +4400,7 @@ class DashboardHealth {
         // early, stranding the menu outside the row it belongs to.
         return `<span class="health-view-menu health-check-menu" role="menu" hidden
             data-menu-for="${this.escape(key)}" data-menu-owner="check"
-            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}${intervalRow}${expectRow}</span>`;
+            aria-label="${this.escape(this.t('dashboard.healthCheckModeLabel', 'Availability checking'))}">${items}${intervalRow}${expectEntry}</span>`;
     }
 
     /**
@@ -4821,6 +4968,7 @@ class DashboardHealth {
             ? this.t('dashboard.healthMoreReasons', '+{count} more', { count: reasons.length - 1 })
             : '';
         const expanded = this.expandedScores.has(key);
+        const expectOpen = this.expandedExpect.has(key);
         const iconSrc = this.resolveIssueIconSrc(issue.icon);
         const icon = iconSrc
             ? `<img class="health-view-item-icon-img" src="${this.escape(iconSrc)}" alt="" loading="lazy">`
@@ -4858,6 +5006,7 @@ class DashboardHealth {
                 </p>
                 ${this.renderMonitorStrip(issue)}
                 <div class="health-view-score-panel" ${expanded ? '' : 'hidden'}>${this.renderScorePanel(issue)}</div>
+                <div class="health-view-expect-panel" ${expectOpen ? '' : 'hidden'}>${expectOpen ? this.renderExpectPanel(issue) : ''}</div>
                 <div class="health-view-item-actions">
                     <div class="health-view-item-actions-inner">
                         <button type="button" class="health-view-action-btn" data-health-action="recheck">${this.escape(this.t('dashboard.healthRecheck', 'Re-check'))}<kbd>p</kbd></button>
@@ -4937,23 +5086,18 @@ class DashboardHealth {
             });
         });
 
-        // The expectation fields are inputs inside a menu that closes on any
-        // click within it, so every event here has to stop travelling — without
-        // this, focusing the box shuts the menu the box lives in.
-        const expectWrap = row.querySelector('.health-check-expect');
-        if (expectWrap) {
-            expectWrap.addEventListener('click', (e) => e.stopPropagation());
-            expectWrap.addEventListener('keydown', (e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    void this.saveExpectations(issue, expectWrap);
-                }
-            });
-            expectWrap.querySelector('[data-expect-save]')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                void this.saveExpectations(issue, expectWrap);
-            });
+        // Opens the expectations panel on the row and closes the menu behind it,
+        // so the panel is not competing with a popover for the same screen.
+        row.querySelector('[data-expect-open]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.closeAllMenus();
+            this.toggleExpectPanel(key, true);
+        });
+
+        // The panel's own controls are bound when it is built, which happens on
+        // first open rather than at render time.
+        if (row.querySelector('.health-view-expect-panel')?.firstElementChild) {
+            this.bindExpectPanel(row, issue, key);
         }
 
         const menuActions = {

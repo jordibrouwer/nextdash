@@ -923,8 +923,14 @@ button.health-view-tile:hover {
 
 /* ─── Check-mode popover ─────────────────────────────────────────────────── */
 
+/* An explicit width, not a min-width. The menu is absolutely positioned inside
+   .health-check-mode-wrap, an inline-flex sitting in a flex item with
+   `min-width: 0` — so it shrank to the trigger button's width (192px) and
+   min-width lost that argument, breaking every option's sentence across three
+   lines. Wide enough for those sentences to read as sentences. */
 .health-check-menu {
-    min-width: 15rem;
+    width: 20rem;
+    max-width: min(20rem, calc(100vw - 2rem));
 }
 
 .health-check-option {
@@ -962,59 +968,134 @@ button.health-view-tile:hover {
     margin-top: 0.3rem;
 }
 
-.health-check-expect {
-    display: block;
-    padding: 0.5rem 0.6rem 0.55rem;
+/* The menu entry that opens the expectations panel. Same two-line shape as the
+   three mode options above it, so the menu reads as one list rather than a list
+   with something bolted on. */
+.health-check-expect-open {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
     border-top: 1px solid var(--border-color);
     margin-top: 0.3rem;
+    padding-top: 0.45rem;
 }
 
-.health-check-expect-label {
-    display: block;
-    font-size: 0.68rem;
+/* ─── Expectations panel ────────────────────────────────────────────────
+   These controls used to live in the check-mode popover, where 531px of
+   content sat in a 382px window: five controls including Save were below a
+   scrollbar, and at 192px wide every label wrapped to three lines. In the row
+   they get its full width, so the fields sit two across and nothing is hidden. */
+
+.health-view-expect-panel {
+    margin-top: 0.5rem;
+}
+
+.health-expect-form {
+    padding: 0.7rem 0.85rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--text-primary) 3%, var(--background-primary));
+}
+
+.health-expect-intro {
+    margin: 0 0 0.7rem;
+    font-size: 0.74rem;
+    line-height: 1.45;
     color: var(--text-secondary);
-    margin-bottom: 0.35rem;
 }
 
-.health-check-expect-text,
-.health-check-expect-status {
-    display: block;
+/* Two across where there is room, stacked on a narrow screen. The fields are
+   short and independent, so side by side costs nothing and halves the height. */
+.health-expect-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 0.35rem 1.1rem;
+}
+
+.health-expect-intro,
+.health-expect-toggles,
+.health-expect-actions {
+    grid-column: 1 / -1;
+}
+
+.health-expect-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.health-expect-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.health-expect-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 0.3rem 0.4rem;
-    margin-bottom: 0.35rem;
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.35rem;
     background: var(--background-primary);
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.72rem;
+    font-size: 0.78rem;
 }
 
-.health-check-expect-invert {
+.health-expect-input:focus-visible {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.health-expect-note {
+    font-size: 0.68rem;
+    color: var(--text-tertiary, var(--text-secondary));
+    opacity: 0.85;
+}
+
+.health-expect-check {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    margin-bottom: 0.4rem;
-    font-size: 0.68rem;
+    gap: 0.4rem;
+    font-size: 0.74rem;
     color: var(--text-secondary);
     cursor: pointer;
 }
 
-.health-check-expect-save {
-    padding: 0.25rem 0.6rem;
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
+.health-expect-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1.4rem;
+    margin: 0.15rem 0 0.65rem;
+}
+
+.health-expect-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.health-expect-save,
+.health-expect-cancel {
+    padding: 0.3rem 0.85rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.35rem;
     background: var(--background-secondary);
     color: var(--text-primary);
     font: inherit;
-    font-size: 0.7rem;
+    font-size: 0.76rem;
     cursor: pointer;
 }
 
-.health-check-expect-save:hover,
-.health-check-expect-save:focus-visible {
-    border-color: var(--accent-color, #4a90d9);
+.health-expect-save {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.health-expect-save:hover,
+.health-expect-save:focus-visible,
+.health-expect-cancel:hover,
+.health-expect-cancel:focus-visible {
+    background: color-mix(in srgb, var(--text-primary) 6%, var(--background-secondary));
 }
 
 /* Certificate expiry on a row. Per host, so several rows on one domain carry

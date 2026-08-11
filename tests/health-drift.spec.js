@@ -51,7 +51,10 @@ test.describe('drift watching', () => {
                 body: JSON.stringify({ status: 'success', watchDrift: posted.watchDrift }) });
         });
 
+        // Drift watching lives in the row's expectations panel now, reached
+        // from the check-mode menu rather than crammed into it.
         await page.locator('.health-check-mode').click();
+        await page.locator('[data-expect-open]').click();
         const checkbox = page.locator('[data-watch-drift]');
         await expect(checkbox).toBeVisible();
         await expect(checkbox).not.toBeChecked();
