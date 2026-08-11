@@ -388,12 +388,32 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// An empty string is indistinguishable from "field not sent" on a JSON
+	// struct, so each clearable text field gets an explicit opt-in, matching the
+	// clearNote=1 convention this endpoint already used for notes. Without them
+	// a field can be set but never emptied again.
+	clearing := func(param string) bool {
+		return r.URL.Query().Get(param) == "1"
+	}
+	clearTitle := clearing("clearTitle")
+	clearNote := clearing("clearNote")
+	clearPreview := clearing("clearPreview")
+
 	markedRead := false
 	updated, err := h.store.UpdateInboxLink(id, func(item *InboxLink) error {
-		if request.Title != "" {
+		if request.Title != "" || clearTitle {
 			item.Title = strings.TrimSpace(request.Title)
+			// A title is never left blank on a stored item: the list would show
+			// an empty row. Falls back the same way AddInboxLink does.
+			if item.Title == "" {
+				if item.Domain != "" {
+					item.Title = item.Domain
+				} else {
+					item.Title = item.URL
+				}
+			}
 		}
-		if request.Note != "" || r.URL.Query().Get("clearNote") == "1" {
+		if request.Note != "" || clearNote {
 			item.Note = strings.TrimSpace(request.Note)
 		}
 		if request.ReadAt != nil {
@@ -414,13 +434,16 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 				item.SnoozedUntil = 0
 			}
 		}
-		if request.PreviewTitle != "" {
+		// The three preview fields share one flag: they are enrichment output
+		// written together, and clearing one while keeping the others would
+		// leave a card describing a page it no longer matches.
+		if request.PreviewTitle != "" || clearPreview {
 			item.PreviewTitle = strings.TrimSpace(request.PreviewTitle)
 		}
-		if request.PreviewDesc != "" {
+		if request.PreviewDesc != "" || clearPreview {
 			item.PreviewDesc = strings.TrimSpace(request.PreviewDesc)
 		}
-		if request.PreviewImage != "" {
+		if request.PreviewImage != "" || clearPreview {
 			item.PreviewImage = strings.TrimSpace(request.PreviewImage)
 		}
 		return nil
