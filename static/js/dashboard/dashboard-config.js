@@ -2815,6 +2815,32 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureMonitoringTitle',
+                titleFallback: 'Watch a bookmark, not just check it',
+                whatKey: 'config.overviewNewFeatureMonitoringWhat',
+                whatFallback: 'A status check told you a link was broken the next time you happened to look. It could not tell you a site had been down all night, how often it goes down, or that its certificate expires on Friday.',
+                howKey: 'config.overviewNewFeatureMonitoringHow',
+                howFallback: 'Press c on a row in Health and choose Monitor. The server then checks it on its own interval, whether or not you have the dashboard open, and the row grows a heartbeat, an uptime percentage and an outage history. Say what "up" means for that page with a keyword or specific status codes, watch for it quietly turning into a different page, and get an alert on Slack, Telegram, Pushover and others when it goes down.',
+                enableKey: 'config.overviewNewFeatureMonitoringEnable',
+                enableFallback: 'Per bookmark, from the Health view. Alerts, check cadence and maintenance windows live on this tab.',
+                ctaKey: 'config.overviewNewFeatureMonitoringCta',
+                ctaFallback: 'Open Status & health →',
+                go: { section: 'behavior', behaviorTab: 'status' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureWorkThroughTitle',
+                titleFallback: 'Clear the Health list one bookmark at a time',
+                whatKey: 'config.overviewNewFeatureWorkThroughWhat',
+                whatFallback: 'Filtering to Broken tells you what is wrong and then leaves every fix costing the same three moves: find the row again after the list redraws, aim at its action, decide.',
+                howKey: 'config.overviewNewFeatureWorkThroughHow',
+                howFallback: 'Open Health and press f, or use the Work through button. One bookmark fills the screen with its actions large — re-check, open, delete, skip — and j and k move between them. Esc leaves you on the row you had reached, so dipping in for three fixes and back out is not a mode switch.',
+                enableKey: 'config.overviewNewFeatureWorkThroughEnable',
+                enableFallback: 'Nothing to switch on. It works on whatever the current filter shows.',
+                ctaKey: 'config.overviewNewFeatureWorkThroughCta',
+                ctaFallback: 'Open Health →',
+                go: { view: 'health' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureThemePreviewTitle',
                 titleFallback: 'Try a theme on before you keep it',
                 whatKey: 'config.overviewNewFeatureThemePreviewWhat',

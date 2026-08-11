@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v2026.09.09 — August 2026](#v20260909--august-2026)
 - [v2026.09.08.2 — August 2026](#v202609082--august-2026)
 - [v2026.09.08.1 — August 2026](#v202609081--august-2026)
 - [v2026.09.08 — August 2026](#v20260908--august-2026)
@@ -153,6 +154,63 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v2026.09.09 — August 2026
+
+**Health grew up** — bookmarks can now be *monitored* on their own schedule, with uptime history, certificate expiry, drift detection and alerts that reach Slack, Telegram or your phone. Plus **Work through**, for clearing the list one bookmark at a time.
+
+### Monitoring
+
+- **new** — **A monitor tier alongside periodic checks.** `c` on a Health row, or the right-click menu, sets a bookmark to **Monitor**: the server pings it on its own cadence (5m–24h, default 15m) whether or not the dashboard is open, and keeps 30 days of samples in `data/health-history.json`. The row grows a heartbeat bar, a 24h uptime figure and a response-time sparkline; the expanded panel adds the three uptime windows and an outage list. Every uptime percentage carries the number of checks behind it, because *100%* from three checks is a much weaker claim than from three hundred (`health_monitor.go`, `health_history.go`, `health_uptime.go`).
+- **new** — **The interval is set from the row.** The mode popover on an already-monitored row grows a **Check interval** strip (5m, 15m, 30m, 1h, 6h, 24h). Only there: offering it elsewhere would be a second, hidden way of switching monitoring on. It also decides the heartbeat's time axis (`health_check_mode_single.go`).
+- **new** — **Expected response.** A page that answers 200 while showing *Database connection failed* is up by every ordinary measure. Set **Text the page must contain** — or invert it to catch an error banner — and the **status codes** that count as healthy (`200`, `200-299`, `200,301,401`). A code that cannot be parsed is dropped rather than obeyed, so a typo cannot take a working bookmark down. These failures get their own **Content** tile and filter, ranked apart from Broken: a server that is down and a checkout button that vanished need different responses (`health_expect.go`).
+- **new** — **Drift detection.** A bookmark can answer 200 forever while the page behind it stops being the page you saved. Opt in per bookmark and the next check records a baseline — where it landed, the title, a rough fingerprint of the body — and every check after compares against *that*, never against the previous check, so a page cannot drift past the alarm one imperceptible step at a time. Redirect beats title beats content, so one finding is reported rather than three for the same fact. Cosmetic redirects (http→https, `www.`, trailing slash, locale prefix) are ignored by design (`health_drift.go`).
+- **new** — **Certificate expiry.** Every monitored HTTPS check already completes a TLS handshake, so the expiry date is a by-product — no extra request, nothing to switch on. Rows carry a badge with the days left and warnings go out at **30, 7 and 3 days**, three marks rather than a daily countdown. Certificates belong to a host, so ten bookmarks on one domain share one and a single renewal clears them all (`health_cert.go`).
+- **new** — **Fleet panel.** The **Monitored** filter opens with what no single row can say: pooled uptime over 24h/7d/30d, how many monitors answer right now, and the average response time. Uptime counts individual checks rather than averaging percentages, so a monitor with three checks does not weigh as heavily as one with three thousand. Below it: **Least available**, **Slower than last week** and **Outages** (`health_fleet.go`).
+- **new** — Monitored rows **group by live status** — down, drift, certificate warning, healthy — rather than by link-hygiene status, which is what that filter is actually about.
+
+### Working through the list
+
+- **new** — **Work through** (`f`, or the toolbar button) puts one issue on screen at a time with its actions large: re-check, open, delete, skip. It starts on the row under the cursor rather than the top, clamps at either end rather than wrapping — reaching the end of a cleanup queue is information — and `Esc` leaves the cursor where you got to. Every action delegates to the view's own method, so there is no second implementation to drift, and the queue holds issue *keys* rather than objects, since rows re-render underneath (`dashboard-health-focus.js`).
+- **new** — **Accept drift, in bulk.** A rebrand or a docs move trips drift on every bookmark pointing at that site at once. Tick them and **Accept drift** clears the findings *and* the baselines they were measured against — clearing only the finding would re-report the identical drift on the very next check, since the stored baseline still describes the page as it was before. Bulk-only and never "accept everything": it discards evidence, so the rows are always ones you picked (`health_drift_accept.go`).
+- **new** — **Silence one bookmark.** Alerting was all-or-nothing. **Do not alert me about this bookmark** withholds the message and nothing else: the check still runs, the sample is still stored, the row still reads as down and carries a **Muted** badge. The gate sits ahead of the alert bookkeeping, so a muted outage never consumes its own alert — un-muting mid-outage still fires (`health_notify.go`, `models.go`).
+- **new** — A **settings** link in the Health header opens Config → Behavior → Status & health directly. This is the screen where you conclude a setting is wrong, and it named that tab only in prose. Placed in the header rather than the trend row, which only draws after three days of history.
+- **fix** — The filter pills wrapped onto a second line. The common ones stay visible and the rest moved behind **More**, with counts styled to be scannable in a closed menu rather than faded to 70% like an inline suffix.
+
+### Alerts
+
+- **new** — **Notification presets**: Slack, Discord, Telegram, Gotify, ntfy, Pushover, or raw JSON. Each shapes the body that service expects and asks only for what it needs — Telegram a chat ID, Pushover an app token and user key instead of a URL, since its endpoint is fixed. **Send test alert** posts one synthetic failure down the exact path a real one takes, because a mistyped chat ID otherwise fails silently and the alert you find out about is the one that never arrived (`health_notify_presets.go`).
+- **new** — **Maintenance windows.** A service that restarts nightly is not broken; left alone, every one of those gaps becomes an incident and a dent in uptime until the alerts stop meaning anything. Set days and times under **Behavior → Status & health**. Inside a window the checks still run and the heartbeat still records — only the *counting* changes. A window whose end precedes its start runs past midnight, which is when most maintenance happens (`health_maintenance.go`).
+- **new** — **A burst collapses into one message.** One upstream failing takes every bookmark behind it down in the same sweep, and a dozen near-identical posts in a second is exactly what Slack and Telegram rate-limit — so the alerts that mattered got dropped by the service. Past four in a round they become one summary. Below that the individual messages are kept (they name the bookmark and its error), mixed rounds stay expanded, and certificate warnings never collapse since each names a different host.
+
+### Fixes
+
+- **fix** — A drift baseline survived turning **Monitor** off through the check-mode menu, so a manual re-check kept evolving a baseline nobody was watching and switching Monitor back on compared against it. Gated in `expectationFor` itself rather than at the call sites, which turned up two more paths with the same hole.
+- **fix** — Certificates that expired under 24 hours ago showed as *urgent* rather than *expired*: `certDaysLeft` truncated toward zero, so −0.5 days read as 0.
+- **fix** — The **Monitored** filter did not group by live status as its commit message claimed.
+- **fix** — Notification-preset credential fields had no length cap.
+- **fix** — The interval picker highlighted the 15m default on a bookmark with no stored interval, and again on one with no sample history.
+- **fix** — The check-mode menu ate clicks in Safari.
+- **fix** — Maintenance downtime still counted, expectations were ignored on some paths, certificate notification wording was wrong, and a redirected host looked up the wrong certificate.
+- **fix** — A failed bookmark save reported a generic error rather than the reason.
+
+### Inbox
+
+- **fix** — **Undo could not restore a link into a full inbox.** `RestoreInboxLink` prepended the item and then trimmed by `AddedAt`, which a restored item always loses — it carries the timestamp from when it was first saved. At capacity the same call that "restored" it discarded it, while the handler answered 200 with the item echoed back, so the client re-added it locally and it looked restored until the next reload. The returning item is now protected and the oldest of the others makes way; a genuine refusal answers 409 instead of faking success (`inbox.go`).
+- **fix** — **A failed mark-read reported as a success.** `markRead` toasted and returned where every other write on that endpoint throws, so it resolved — the row greyed out, `markAllRead`'s partial-failure branch was dead code, and an error toast was followed by "Marked 1 read" about the same item. It now throws; the four callers each handle it, and triage's Open and Keep differ deliberately (Open advances, Keep stays put, since there the read mark *is* the action).
+- **fix** — Tags sent when a link is captured were dropped: `InboxLink` carried them and the store normalised them, but the request struct had no field to decode them into. The client half followed, so a caller can now pass a title, a note and tags.
+- **fix** — PATCH could set a title or a preview but never clear one, an empty string being indistinguishable from an omitted field. `clearTitle=1` and `clearPreview=1` join the existing `clearNote=1`; a cleared title falls back to the domain rather than rendering as an empty row.
+- **perf** — The startup favicon backfill retried failed fetches on **every restart, forever**: nothing recorded that an attempt had been made, so a site with no favicon was indistinguishable from one never tried. `IconFetchedAt` stamps the attempt rather than the outcome.
+
+### Docs
+
+- **new** — A **one-time tutorial** on first opening Health: six steps around one worked example — a status page behind a login, backed up nightly — rather than settings in the abstract. `Esc`, the backdrop and Skip all count as seen; replay from **Behavior → General**.
+- **new** — The Health help tab gains focus mode, bulk drift-accept, muting and the digest; the Inbox tab explains why undo works at the item cap. Each states the part the control cannot: that accepting drift asserts the new page is correct, that a muted bookmark is still checked, that un-muting mid-outage still alerts.
+- **new** — `MANUAL.md` covers the same ground, and a keyboard row that was already wrong is corrected: it listed `f` as favicon and `o` as open URL, and the Health view binds neither.
+- **fix** — `f` was bound in the Health view but never added to `KeyboardViewLegends`, which feeds both the legend under the list and the cheat sheet — so focus mode was invisible in both at once.
+- **new** — Release plumbing for **v2026.09.09**: `static/data/whats-new/v2026.09.09.json`, the index entry, both `whats-new-stub.js` tokens (`…-v180`, `whats-new-v239`), the constants test, and two **overviewNewFeatures()** spotlights (monitoring, Work through) with their locale keys in en, nl, de and fr.
 
 ---
 

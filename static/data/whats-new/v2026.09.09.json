@@ -1,0 +1,88 @@
+{
+    "tag": "v2026.09.09",
+    "date": "August 2026",
+    "releasedAt": "2026-08-11",
+    "modalLead": "<strong>This is a big one.</strong> Health grew up: bookmarks can now be <strong>monitored</strong> on their own schedule, with uptime history, certificate expiry, drift detection and alerts when something goes down — plus a new <strong>Work through</strong> mode for clearing the list one bookmark at a time. There is a lot here, and most of it rewards five minutes of reading first: <strong>Config → Help → Health</strong> walks through the whole thing around one worked example, and the Health view offers the same tour the first time you open it. With this much new at once, something is bound to have slipped through — if you hit a bug, please <a href=\"https://github.com/jordibrouwer/nextdash/issues\" target=\"_blank\" rel=\"noopener noreferrer\">report it on GitHub</a>, it is the fastest way to get it fixed.",
+    "sections": [
+        {
+            "title": "Monitoring",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Monitor a bookmark.</strong> Press <strong>c</strong> on a row in Health, or right-click it, and choose <strong>Monitor</strong>. The server then checks it on its own interval — 5 minutes to 24 hours — whether or not you have the dashboard open, and the row grows a heartbeat bar, an uptime percentage and a response-time chart."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Say what \"up\" means for a page.</strong> A shop that answers with \"Database connection failed\" is up by every ordinary measure. Set <strong>Text the page must contain</strong>, or the <strong>status codes</strong> that count as healthy, and those failures get their own <strong>Content</strong> tile rather than being lost among the broken links."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Watch a page stop being the page you saved.</strong> Turn on <strong>Watch for redirects, retitling and rewrites</strong> and a bookmark that quietly starts pointing somewhere else — a lapsed domain, a moved article — gets a <strong>Moved</strong>, <strong>Retitled</strong> or <strong>Changed</strong> badge, even while it answers 200."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Certificate expiry.</strong> Every monitored HTTPS check already completes a TLS handshake, so the expiry date comes free. Rows carry a badge with the days left, and warnings go out at 30, 7 and 3 days."
+                }
+            ]
+        },
+        {
+            "title": "Working through the list",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Work through.</strong> Filtering to Broken tells you what is wrong and then makes you hunt for each row again after every fix. The <strong>Work through</strong> button — or <strong>f</strong> — puts one bookmark on screen at a time with its actions large: re-check, open, delete, skip. <strong>Esc</strong> leaves you on the row you reached."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Accept a change you meant to happen.</strong> A rebrand or a docs move trips drift on every bookmark pointing at that site at once. Tick them and use <strong>Accept drift</strong> to clear the lot — the next check records the pages as they are now."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>One tidy row of filters.</strong> The common filters stay visible and the rest moved behind <strong>More</strong>, with their counts beside them."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>A guided tour on first use.</strong> Opening Health for the first time walks you through setting up one monitored bookmark, start to finish. Replay it from <strong>Config → Behavior → General</strong>."
+                }
+            ]
+        },
+        {
+            "title": "Alerts",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Pick your service.</strong> Rather than hand-writing a webhook body, choose <strong>Slack</strong>, <strong>Discord</strong>, <strong>Telegram</strong>, <strong>Gotify</strong>, <strong>ntfy</strong> or <strong>Pushover</strong> — each asks only for what it needs. <strong>Send test alert</strong> confirms it lands before you rely on it."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Quieten one bookmark.</strong> Tick <strong>Do not alert me about this bookmark</strong> and it is still checked and still shown as down — only the message is held back. The row says <strong>Muted</strong> so it is never mistaken for one that failed to warn you."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Maintenance windows.</strong> A service that restarts nightly is not broken. Set the days and times under <strong>Config → Behavior → Status &amp; health</strong> and failures inside them raise no alert and do not count against uptime — while the checks still run and the heartbeat still records them."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>One message when everything falls over at once.</strong> A host going down takes every bookmark behind it with it. Rather than a dozen near-identical alerts in a second, you get one naming the first few and counting the rest."
+                }
+            ]
+        },
+        {
+            "title": "Inbox",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Undo works at the item limit.</strong> Undoing a delete in a full inbox used to report success and quietly drop the link — it looked restored until the next reload. The returning link is now kept, and if there is genuinely no room the undo says so."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>A failed mark-read no longer reads as a success.</strong> When the save failed, the row greyed out anyway and a \"marked read\" message followed the error. Both now tell you the same thing."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Tags survive a capture.</strong> Tags sent when a link is saved are kept instead of being dropped on the way in."
+                }
+            ]
+        }
+    ]
+}
