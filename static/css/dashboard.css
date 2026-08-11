@@ -986,6 +986,26 @@ body[data-side-margin="airy"] {
     display: none;
 }
 
+/* On a touch device wide enough to keep the desktop layout — a tablet, or a
+   phone in landscape — the page tabs stay on screen and are tapped with a
+   finger. They measured 28x33 there, under the 44px both iOS and Android ask
+   for. The phone layout is unaffected: it hides #page-navigation outright and
+   has its own 44px rules for the controls it keeps.
+
+   Scoped to coarse pointers rather than applied everywhere, because on a mouse
+   these are a dense row of tabs and padding them out to 44px would push the
+   later pages off the strip for no gain. */
+@media (hover: none) and (pointer: coarse) {
+    body:not([data-mobile-layout="true"]) .page-nav-btn {
+        min-height: 44px;
+        min-width: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+    }
+}
+
 .page-nav-btn {
     padding: 0.4rem 0.6rem;
     font-size: var(--font-size-controls);
