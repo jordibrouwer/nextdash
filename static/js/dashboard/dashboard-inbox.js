@@ -119,10 +119,21 @@ class DashboardInbox {
         const targets = this.checkedItems().filter((i) => !i.readAt);
         if (!targets.length) return;
         this._trackAction('bulk-read', { size: this._countBucket(targets.length) });
-        await Promise.allSettled(targets.map((item) => this.markRead(item.id)));
+        // The results were discarded outright, so a selection that failed to
+        // save reported nothing at all — the ticks cleared and the rows simply
+        // stayed unread.
+        const results = await Promise.allSettled(targets.map((item) => this.markRead(item.id)));
+        const failed = results.filter((r) => r.status === 'rejected').length;
         this.clearChecked();
         if (this.isActiveView()) {
             this.render();
+        }
+        if (failed) {
+            this.dash.showNotification(
+                this.t('dashboard.inboxMarkAllReadPartial', 'Marked read, {count} failed', { count: failed }),
+                'info',
+                { duration: 3000 }
+            );
         }
     }
 
@@ -834,6 +845,19 @@ class DashboardInbox {
         }
     }
 
+    /**
+     * Mark one item read on the server.
+     *
+     * Throws on failure, the same as patchSnooze and deleteItem. It used to
+     * toast and return instead, which resolved — so every caller treated a
+     * failed write as a success: the row greyed out, markAllRead's
+     * partial-failure branch could never fire, and the user got an error toast
+     * immediately followed by "Marked 1 read" about the same item. The row came
+     * back unread on the next reload.
+     *
+     * Reporting is left to the caller for the same reason: a bulk run of twenty
+     * failures should say so once, not stack twenty identical toasts.
+     */
     async markRead(id) {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const res = await fetcher('/api/inbox', {
@@ -842,17 +866,31 @@ class DashboardInbox {
             body: JSON.stringify({ id, readAt: Date.now() }),
         });
         if (!res.ok) {
-            this.dash.showNotification?.(
-                this.t('dashboard.inboxMarkReadFailed', 'Could not mark as read'),
-                'error'
-            );
-            return;
+            throw new Error(`inbox mark read HTTP ${res.status}`);
         }
         const item = this.items.find((entry) => entry.id === id);
         if (item) {
             item.readAt = Date.now();
         }
         this.dash.pageNav?.updateInboxTabBadge?.();
+    }
+
+    /**
+     * markRead plus the single-item error toast, for the paths that act on one
+     * row and have nobody else to report for them. Returns whether it landed,
+     * so a caller only updates the row when the write actually happened.
+     */
+    async markReadReporting(id) {
+        try {
+            await this.markRead(id);
+            return true;
+        } catch {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxMarkReadFailed', 'Could not mark as read'),
+                'error'
+            );
+            return false;
+        }
     }
 
     applySettingsChange() {
@@ -1212,8 +1250,12 @@ class DashboardInbox {
             return;
         }
         this._trackAction('mark-read');
-        await this.markRead(item.id);
-        this.applyItemReadLocally(item.id);
+        // Only grey the row out once the write landed — it used to do so
+        // regardless, so a failed PATCH left a row that looked read until the
+        // next reload put it back.
+        if (await this.markReadReporting(item.id)) {
+            this.applyItemReadLocally(item.id);
+        }
     }
 
     /** Row class + header tiles/toolbar after a read without a full re-render. */
@@ -1660,6 +1702,9 @@ class DashboardInbox {
         }
         // One event for the whole run — markRead() per item would spam.
         this._trackAction('mark-all-read', { size: this._countBucket(targets.length) });
+        // This branch was unreachable until markRead started throwing: it
+        // resolved on failure too, so `failed` was always zero and the toast
+        // claimed the whole batch had been marked.
         const results = await Promise.allSettled(targets.map((item) => this.markRead(item.id)));
         const failed = results.filter((r) => r.status === 'rejected').length;
         if (this.isActiveView()) {
@@ -2897,8 +2942,12 @@ class DashboardInbox {
             return;
         }
         window.open(url, '_blank', 'noopener,noreferrer');
-        void this.markRead(item.id).then(() => {
-            this.applyItemReadLocally(item.id);
+        // The link is already open either way; only the read mark is in doubt,
+        // so the row is updated when the write lands rather than optimistically.
+        void this.markReadReporting(item.id).then((ok) => {
+            if (ok) {
+                this.applyItemReadLocally(item.id);
+            }
         });
     }
 
@@ -2943,7 +2992,12 @@ class DashboardInbox {
 
     async completePromote(id) {
         if (this.dash.settings?.inboxDeleteAfterPromote === false) {
-            await this.markRead(id);
+            // Best-effort, like the delete below it: the bookmark is already
+            // saved, and failing to tidy the inbox entry afterwards is not
+            // worth turning a successful promote into an error.
+            try {
+                await this.markRead(id);
+            } catch { /* the promote itself succeeded */ }
             return;
         }
         try {
