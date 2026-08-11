@@ -41,6 +41,10 @@ type monitorTransition struct {
 	up     bool
 	reason string
 	at     int64
+	// muted suppresses this bookmark's alerts without suppressing its check:
+	// the sample is still recorded and the row still reads as down, only the
+	// outbound message is held back.
+	muted bool
 }
 
 // monitorNotification is a transition that cleared the alerting rules and should
@@ -149,6 +153,15 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 	alerted := map[string]bool{}
 
 	for _, t := range transitions {
+		// A muted bookmark is checked and recorded like any other; only the
+		// message is withheld. Skipped before the alert bookkeeping below rather
+		// than filtered out of the result, so a muted outage never stamps its
+		// sample as alerted — otherwise un-muting mid-outage would find the
+		// outage already "handled" and stay silent until the next one.
+		if t.muted {
+			continue
+		}
+
 		prior := history[t.key]
 		priorFailures := trailingFailures(prior)
 		prevUp, hadState := lastSampleUp(prior)

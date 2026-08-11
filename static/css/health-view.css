@@ -1000,6 +1000,21 @@ button.health-view-tile:hover {
     color: var(--accent-warning, #b45309);
 }
 
+/* Same shape as the drift badge, deliberately quieter: muting is a state
+   somebody chose, not a finding. It borrows the secondary text colour so it
+   reads as a note on the row rather than competing with the status. */
+.health-muted-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.05rem 0.35rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    white-space: nowrap;
+    opacity: 0.75;
+    color: var(--text-tertiary, var(--text-secondary));
+}
+
 /* A tile reporting something the list cannot be filtered by. Matches the others
    so the row reads as one strip, without the affordances of a button. */
 .health-view-tile--static {

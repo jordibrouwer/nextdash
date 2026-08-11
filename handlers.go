@@ -730,7 +730,11 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				DriftNoticed:     driftFieldsFor(bm).noticed,
 				DriftReason:      driftFieldsFor(bm).reason,
 				DriftSince:       driftFieldsFor(bm).since,
-				CertHost:         bm.CertHost,
+				// Gated on Monitor like the fields above it: only monitored
+				// bookmarks ever raise an alert, so a mute on any other row
+				// would render a control that governs nothing.
+				NotifyMuted: bm.Monitor && bm.NotifyMuted,
+				CertHost:    bm.CertHost,
 			})
 		}
 	}

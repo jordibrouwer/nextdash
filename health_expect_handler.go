@@ -42,6 +42,12 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		// endpoint already answers, not a new subsystem: where the check lands,
 		// what the page is titled, roughly what it says.
 		WatchDrift bool `json:"watchDrift"`
+		// NotifyMuted rides along here rather than getting its own endpoint: it
+		// is per-bookmark alerting policy, set from the same panel, and sending
+		// it with the rest keeps the "all fields replace what is stored" rule
+		// this handler already documents. A caller that omits it un-mutes, which
+		// is the same wholesale-replace semantics as every other field above.
+		NotifyMuted bool `json:"notifyMuted"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -91,6 +97,7 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		bm.ExpectText = text
 		bm.ExpectTextAbsent = req.ExpectTextAbsent && text != ""
 		bm.ExpectStatus = status
+		bm.NotifyMuted = req.NotifyMuted
 		// Clearing the expectation clears the failure it caused. Without this a
 		// bookmark marked down for a missing keyword would stay down until its
 		// next check, with no visible reason left to explain it.
@@ -132,5 +139,6 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		"expectTextAbsent": applied.ExpectTextAbsent,
 		"expectStatus":     applied.ExpectStatus,
 		"watchDrift":       applied.WatchDrift,
+		"notifyMuted":      applied.NotifyMuted,
 	})
 }

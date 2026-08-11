@@ -1776,6 +1776,7 @@ class DashboardHealth {
         const absent = Boolean(wrap.querySelector('[data-expect-absent]')?.checked);
         const status = String(wrap.querySelector('[data-expect-status]')?.value || '').trim();
         const watchDrift = Boolean(wrap.querySelector('[data-watch-drift]')?.checked);
+        const notifyMuted = Boolean(wrap.querySelector('[data-notify-muted]')?.checked);
 
         this.closeAllMenus();
         window.nextdashTrack?.('health:expectations');
@@ -1790,7 +1791,7 @@ class DashboardHealth {
                 body: JSON.stringify({
                     pageId, index: issue.index, url,
                     expectText: text, expectTextAbsent: absent, expectStatus: status,
-                    watchDrift,
+                    watchDrift, notifyMuted,
                 }),
             });
             if (res.status === 409) {
@@ -4143,6 +4144,10 @@ class DashboardHealth {
                     <input type="checkbox" data-watch-drift ${issue.watchDrift ? 'checked' : ''}>
                     <span>${this.escape(this.t('dashboard.healthWatchDrift', 'Watch for redirects, retitling and rewrites'))}</span>
                 </label>
+                <label class="health-check-expect-invert">
+                    <input type="checkbox" data-notify-muted ${issue.notifyMuted ? 'checked' : ''}>
+                    <span>${this.escape(this.t('dashboard.healthNotifyMuted', 'Do not alert me about this bookmark'))}</span>
+                </label>
                 <button type="button" class="health-check-expect-save" data-expect-save>${this.escape(this.t('dashboard.healthExpectSave', 'Save'))}</button>
             </span>`
             : '';
@@ -4184,6 +4189,22 @@ class DashboardHealth {
      * or the new title, so the badge itself stays short and the detail is one
      * hover away.
      */
+    /**
+     * Says that this row's alerts are silenced.
+     *
+     * Worth a badge rather than living only inside the check menu: a muted
+     * bookmark still shows as down, so without this the row reads exactly like
+     * one that should have paged you and did not. The badge is the difference
+     * between "the alerting is broken" and "you turned this one off".
+     */
+    renderMutedBadge(issue) {
+        if (!issue?.notifyMuted) return '';
+        return `<span class="health-muted-badge" title="${this.escape(this.t(
+            'dashboard.healthNotifyMutedHint',
+            'Alerts are off for this bookmark. It is still checked, and still shown here.'
+        ))}">${this.escape(this.t('dashboard.healthNotifyMutedBadge', 'Muted'))}</span>`;
+    }
+
     renderDriftBadge(issue) {
         if (!issue?.watchDrift || !issue?.driftNoticed) return '';
         const label = String(issue.driftNoticed).startsWith('title')
@@ -4727,6 +4748,7 @@ class DashboardHealth {
                         <span>${this.escape(domain)}</span>
                         ${this.renderCertBadge(issue)}
                         ${this.renderDriftBadge(issue)}
+                        ${this.renderMutedBadge(issue)}
                         <span class="health-check-mode-wrap">
                             ${this.renderCheckModeBadge(issue, key)}
                             ${this.renderCheckModeMenu(issue, key)}

@@ -86,6 +86,16 @@ type Bookmark struct {
 	// because the baseline it was computed against is deliberately not updated
 	// once drift is found.
 	DriftReason string `json:"driftReason,omitempty"`
+	// NotifyMuted silences outbound alerts for this one bookmark: it is still
+	// checked, still recorded, and still shown as down in the view — only the
+	// webhook and browser push are held back.
+	//
+	// Deliberately phrased as "muted" rather than "notify enabled". The notifying
+	// default is on, and a bool with omitempty drops its false value from the
+	// JSON entirely — so an "enabled" field would read back as false for every
+	// bookmark saved before this existed and silently mute the whole collection.
+	// Muted-by-absence is the migration-free direction.
+	NotifyMuted bool `json:"notifyMuted,omitempty"`
 	// CertHost is the hostname a check's TLS handshake was actually served for,
 	// which after a redirect can differ from this bookmark's own URL. Certificates
 	// are stored per host, not per bookmark (health_cert.go), so the report needs
@@ -3053,6 +3063,10 @@ type HealthIssue struct {
 	DriftNoticed string `json:"driftNoticed,omitempty"`
 	DriftReason  string `json:"driftReason,omitempty"`
 	DriftSince   int64  `json:"driftSince,omitempty"`
+	// NotifyMuted reports that this bookmark's alerts are silenced. The row
+	// still shows its real status — muting withholds the message, not the
+	// finding — so the view needs this to say so on the row.
+	NotifyMuted bool `json:"notifyMuted,omitempty"`
 	// CertHost is the hostname to look up in the report's certificates map — the
 	// post-redirect host a check actually saw, which can differ from this
 	// bookmark's own URL. Empty until a check has recorded one.

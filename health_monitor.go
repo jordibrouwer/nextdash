@@ -78,6 +78,10 @@ type monitorTarget struct {
 	// status code, an expected string in the page — resolved here so the check
 	// goroutine does not have to reach back into the store.
 	expect expectation
+	// muted silences this bookmark's outbound alerts. Resolved with the rest of
+	// the bookmark's settings so the notification pass never has to reach back
+	// into the store for a bookmark that may since have moved.
+	muted bool
 }
 
 // StartHealthMonitorScheduler runs the uptime-monitor loop until stop is closed.
@@ -155,6 +159,7 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 				pageID:   page.ID,
 				interval: interval,
 				expect:   expectationFor(bm),
+				muted:    bm.NotifyMuted,
 			})
 		}
 	}
@@ -250,6 +255,7 @@ func (h *Handlers) runDueMonitors() {
 			up:     up,
 			reason: errMsg,
 			at:     out.at,
+			muted:  out.target.muted,
 		})
 	}
 
