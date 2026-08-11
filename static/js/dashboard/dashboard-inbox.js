@@ -705,6 +705,16 @@ class DashboardInbox {
                 body: JSON.stringify({
                     url: trimmed,
                     source: options.source || 'paste',
+                    // The endpoint takes these too, and options was already
+                    // threaded through for `source` — a caller that knows the
+                    // page title or wants the link tagged had no way to say so.
+                    // Omitted rather than sent empty so the server's own
+                    // fallbacks (title from the domain) still apply.
+                    ...(options.title ? { title: String(options.title).trim() } : {}),
+                    ...(options.note ? { note: String(options.note).trim() } : {}),
+                    ...(Array.isArray(options.tags) && options.tags.length
+                        ? { tags: options.tags }
+                        : {}),
                 }),
             });
             if (res.status === 409) {
