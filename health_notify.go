@@ -257,6 +257,12 @@ func (h *Handlers) dispatchMonitorNotifications(ctx context.Context, notificatio
 		return
 	}
 
+	// One upstream failing takes every bookmark behind it down in the same
+	// sweep. Collapsed here, at the single point both sinks pass through, so the
+	// webhook and the browser both get the summary rather than one of them
+	// getting the burst.
+	notifications = collapseMonitorNotifications(notifications)
+
 	// Browser push and the webhook are independent sinks for the same decision:
 	// either can be configured without the other, so this runs before the webhook
 	// target check rather than inside it.
@@ -332,6 +338,84 @@ func (h *Handlers) postMonitorNotification(ctx context.Context, client *http.Cli
 	if resp.StatusCode >= 400 {
 		log.Printf("health-notify: webhook returned HTTP %d for %s", resp.StatusCode, n.URL)
 	}
+}
+
+// monitorDigestThreshold is how many notifications one round may carry before
+// they are collapsed into a single summary.
+//
+// Set at four because the burst this guards against has a characteristic shape:
+// one upstream failing — a host, a reverse proxy, the local network — takes
+// every bookmark behind it down in the same sweep. Alerting per bookmark then
+// posts a dozen near-identical messages within a second, which is precisely the
+// pattern Slack and Telegram rate-limit, so the alerts that matter get dropped
+// by the service rather than delivered.
+//
+// Below the threshold the individual messages are strictly better: they name
+// the bookmark and its error. The digest is the fallback for the case where
+// per-bookmark detail is unreadable anyway.
+const monitorDigestThreshold = 4
+
+// collapseMonitorNotifications reduces a round's notifications to what should
+// actually be posted.
+//
+// Under the threshold, or when the round is a mix of event kinds, the list is
+// returned unchanged: a digest that says "3 events" while one was a recovery
+// and one a certificate warning is less informative than the three messages it
+// replaced. Only a run of same-event alerts — the burst shape — is collapsed.
+//
+// Pure so the threshold logic can be tested without a webhook.
+func collapseMonitorNotifications(notifications []monitorNotification) []monitorNotification {
+	// The threshold check below already implies a non-empty slice, but the
+	// indexing that follows should not depend on a tuning constant staying
+	// above zero to be memory-safe.
+	if len(notifications) == 0 || len(notifications) < monitorDigestThreshold {
+		return notifications
+	}
+	event := notifications[0].Event
+	for _, n := range notifications[1:] {
+		if n.Event != event {
+			return notifications
+		}
+	}
+	// Certificate warnings are already deduplicated per host and arrive on a
+	// threshold crossing, not on a sweep, so a run of them is not the burst this
+	// exists to flatten.
+	if event == "cert-expiring" {
+		return notifications
+	}
+
+	names := make([]string, 0, len(notifications))
+	for _, n := range notifications {
+		name := strings.TrimSpace(n.Name)
+		if name == "" {
+			name = n.URL
+		}
+		names = append(names, name)
+	}
+	// The first few by name, then a count: enough to recognise which corner of
+	// the collection went down without a message that scrolls. Clamped rather
+	// than assumed to be in range, so lowering monitorDigestThreshold cannot
+	// turn a tuning change into a slice-bounds panic.
+	shown := 3
+	if shown > len(names) {
+		shown = len(names)
+	}
+	summary := strings.Join(names[:shown], ", ")
+	if rest := len(names) - shown; rest > 0 {
+		summary += fmt.Sprintf(" and %d more", rest)
+	}
+
+	digest := monitorNotification{
+		Event:  event,
+		Name:   fmt.Sprintf("%d bookmarks", len(notifications)),
+		URL:    notifications[0].URL,
+		Status: notifications[0].Status,
+		Error:  summary,
+		At:     notifications[0].At,
+	}
+	// Failures is deliberately left zero: one bookmark's consecutive-failure
+	// count presented as the group's would be a number nobody can act on.
+	return []monitorNotification{digest}
 }
 
 func monitorNotificationTitle(n monitorNotification) string {
