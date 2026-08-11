@@ -3098,6 +3098,16 @@ class DashboardHealth {
         )}">${this.escape(this.t('dashboard.healthHistoryExportAll', 'Export history'))}</button>`;
     }
 
+    /**
+     * Turn checking on for everything the current filter shows.
+     *
+     * The labels say "shown" rather than "these" on purpose. These buttons act
+     * on the filtered list, while the bulk bar directly below them acts on the
+     * ticked rows — and with a selection open both are on screen at once, so
+     * "Monitor these 3" sat a few pixels above "2 selected" with nothing to say
+     * which set was which. The confirmation has always named the right scope
+     * ("in the current list"); only the buttons were ambiguous.
+     */
     renderBulkEnableButtons() {
         if (this.filter === 'all') return '';
         const monitorCount = this.bulkEnableTargets('monitor').length;
@@ -3105,13 +3115,13 @@ class DashboardHealth {
         let html = '';
         if (monitorCount) {
             html += `<button type="button" class="health-view-bulk-monitor-btn" title="${this.escape(
-                this.t('dashboard.healthBulkEnableHint', 'Set the {count} bookmark(s) in this list to Monitor', { count: monitorCount })
-            )}">${this.escape(this.t('dashboard.healthBulkEnable', 'Monitor these {count}', { count: monitorCount }))}</button>`;
+                this.t('dashboard.healthBulkEnableHint', 'Set the {count} bookmark(s) this filter shows to Monitor — not the ticked rows', { count: monitorCount })
+            )}">${this.escape(this.t('dashboard.healthBulkEnable', 'Monitor all {count} shown', { count: monitorCount }))}</button>`;
         }
         if (periodicCount) {
             html += `<button type="button" class="health-view-bulk-periodic-btn" title="${this.escape(
-                this.t('dashboard.healthBulkEnablePeriodicHint', 'Set the {count} bookmark(s) in this list to Periodic', { count: periodicCount })
-            )}">${this.escape(this.t('dashboard.healthBulkEnablePeriodic', 'Periodic these {count}', { count: periodicCount }))}</button>`;
+                this.t('dashboard.healthBulkEnablePeriodicHint', 'Set the {count} bookmark(s) this filter shows to Periodic — not the ticked rows', { count: periodicCount })
+            )}">${this.escape(this.t('dashboard.healthBulkEnablePeriodic', 'Periodic all {count} shown', { count: periodicCount }))}</button>`;
         }
         return html;
     }

@@ -217,6 +217,25 @@ test.describe('health view check mode', () => {
         await expect(btn).toContainText('1');
     });
 
+    // These buttons act on the filtered list while the bulk bar right below them
+    // acts on the ticked rows, and with a selection open both are on screen at
+    // once. "Monitor these 3" sat a few pixels above "2 selected" with nothing
+    // saying which set was which, so the label names its own scope now.
+    test('the bulk enable label says it acts on the shown rows, not the ticked ones', async ({ page }) => {
+        await openHealthView(page);
+
+        await page.click('[data-health-filter="unchecked"]');
+        const btn = page.locator('.health-view-bulk-monitor-btn');
+        await expect(btn).toHaveCount(1);
+
+        // "shown" is the word that separates it from the selection bar.
+        await expect(btn).toContainText(/shown/i);
+        await expect(btn, 'the ambiguous wording is back').not.toContainText(/these \d/i);
+
+        // The tooltip says the same thing the long way round.
+        expect(await btn.getAttribute('title')).toMatch(/not the ticked rows/i);
+    });
+
     test('bulk monitor confirms, then posts only the visible rows', async ({ page }) => {
         await openHealthView(page);
         /** @type {any[]} */
