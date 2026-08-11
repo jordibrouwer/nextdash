@@ -131,3 +131,48 @@ test.describe('deep link messages read as sentences', () => {
         expect(msg).toContain('Category not found');
     });
 });
+
+// The fault underneath the waiting: consumeDashboardDeepLink used to run inside
+// loadData(), which finishes before init() renders the grid. A link resolves
+// against DOM that did not exist yet, so it could only ever fail — and did,
+// reporting a category as deleted while it sat on screen. Following a real deep
+// link end to end is the only way to catch an ordering bug like that; asserting
+// on the helper alone passes either way.
+test.describe('a deep link followed on a cold load', () => {
+    test('finds its bookmark and says nothing about a missing category', async ({ page }) => {
+        await openDashboard(page);
+        const link = await realLink(page);
+        test.skip(!link.categoryId || !link.url, 'needs a categorised bookmark in the fixture');
+
+        const notices = [];
+        page.on('console', () => {});
+        const url = `/?page=${link.pageId}&category=${encodeURIComponent(link.categoryId)}`
+            + `&url=${encodeURIComponent(link.url)}`;
+        await page.goto(url);
+        await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
+        await page.waitForTimeout(1200);
+
+        const state = await page.evaluate((wanted) => ({
+            // The same URL can appear in more than one place — a smart
+            // collection carries copies — so this asks whether the link's own
+            // category rendered and holds the row, not which copy came first
+            // in the document.
+            categoryRendered: Boolean(
+                document.querySelector(`.category[data-category-id="${CSS.escape(wanted.categoryId)}"]`)
+            ),
+            rowInThatCategory: Boolean(document.querySelector(
+                `.category[data-category-id="${CSS.escape(wanted.categoryId)}"] `
+                + `.bookmark-link[data-bookmark-url="${CSS.escape(wanted.url)}"]`
+            )),
+            toasts: [...document.querySelectorAll('.app-notification, [class*="toast"]')]
+                .map((el) => el.textContent.trim()).filter(Boolean),
+        }), link);
+
+        expect(state.categoryRendered, 'the linked category never rendered').toBe(true);
+        expect(state.rowInThatCategory, 'the deep link did not reach its bookmark').toBe(true);
+        // The report: a "category was deleted" notice about a visible category.
+        expect(state.toasts.join(' '), `unexpected notice: ${JSON.stringify(state.toasts)}`)
+            .not.toMatch(/category not found/i);
+        expect(notices).toEqual([]);
+    });
+});

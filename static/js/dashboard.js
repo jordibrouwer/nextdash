@@ -275,6 +275,11 @@ class Dashboard {
                 this.pageNav?.updateInboxTabBadge?.();
             });
             this.renderDashboard({ animate: true });
+            // After the grid exists, not during loadData(). A deep link resolves
+            // against the DOM — a category element, a bookmark row — so running
+            // it before the first render could only ever fail, and did: it
+            // reported the category as deleted while it was on screen.
+            void this.consumeDashboardDeepLink();
             this.setupPageShortcuts();
             this.setupTagFilterEscapeShortcut();
             this.setupTagFilterIndicator();

@@ -368,7 +368,12 @@ class DashboardData {
                     this.saveSettings().catch(() => {});
                 }
 
-                await d.consumeDashboardDeepLink();
+                // Deliberately not consumed here. A deep link points at DOM —
+                // a category element, a bookmark row — and none of it exists
+                // during loadData(): the grid is rendered by init() afterwards.
+                // Following the link at this point found nothing and announced
+                // that the category had been deleted, about one sitting in
+                // plain sight. init() runs it once the grid is up.
 
                 const initialHash = window.location.hash.substring(1);
                 if (initialHash === 'inbox' && d.inbox?.isEnabled?.()) {
