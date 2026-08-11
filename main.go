@@ -138,6 +138,7 @@ func main() {
 	r.HandleFunc("/api/health/check-mode-all", handlers.SetAllCheckModes).Methods("POST")
 	r.HandleFunc("/api/health/check-mode", handlers.SetBookmarkCheckMode).Methods("POST")
 	r.HandleFunc("/api/health/expectations", handlers.SetBookmarkExpectations).Methods("POST")
+	r.HandleFunc("/api/health/accept-drift", handlers.AcceptDrift).Methods("POST")
 	r.HandleFunc("/api/health/check-url", handlers.CheckBookmarkHealthURL).Methods("POST")
 	r.HandleFunc("/api/health/open-broken", handlers.OpenBroken).Methods("POST")
 	r.HandleFunc("/api/health/merge-duplicates", handlers.MergeDuplicates).Methods("POST")
