@@ -86,6 +86,46 @@ test.describe('config help — health', () => {
         await expect(body).toContainText(/Changed/);
     });
 
+    test('covers focus mode, including the key and where it starts', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Work through/);
+        // The key is the part someone comes back to the help for.
+        await expect(body.locator('code', { hasText: /^f$/ }).first()).toBeVisible();
+        // The two behaviours that are not guessable from the button.
+        await expect(body).toContainText(/starts at the row your cursor is on/i);
+        await expect(body).toContainText(/rather than quietly wrapping/i);
+    });
+
+    test('covers accepting drift: what it clears and what it asserts', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Accept drift/);
+        // Clearing the baseline as well as the finding is the whole mechanism.
+        await expect(body).toContainText(/drops the baseline/i);
+        // And the consequence a user has to understand before clicking it.
+        await expect(body).toContainText(/would be marked healthy/i);
+    });
+
+    test('covers per-bookmark muting and the burst digest', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/Do not alert me about this bookmark/);
+        await expect(body).toContainText(/Muted/);
+        // Muting withholds the message, not the check — the distinction the
+        // badge exists for.
+        await expect(body).toContainText(/still checked/i);
+        // And that un-muting mid-outage is not silently swallowed.
+        await expect(body).toContainText(/Un-muting during an outage still alerts/i);
+
+        // The digest, and the reason it exists rather than just its behaviour.
+        await expect(body).toContainText(/collapsed into one message/i);
+        await expect(body).toContainText(/rate-limit/i);
+    });
+
     test('covers maintenance windows: what they exclude and what they do not', async ({ page }) => {
         await openHealthHelp(page);
         const body = page.locator('#config-help-body');
@@ -183,6 +223,18 @@ test.describe('config help — inbox', () => {
         await expect(body).toContainText(/500/);
         await expect(body).toContainText(/silently dropped/i);
         await expect(body).toContainText(/[Dd]eduplicat/);
+    });
+
+    // The cap and undo interact in a way that is not guessable: a restored link
+    // carries its original timestamp, which is exactly what the cap trims by.
+    test('explains that undo still works at the cap', async ({ page }) => {
+        await openInboxHelp(page);
+        const body = page.locator('#config-help-body');
+
+        await expect(body).toContainText(/undo still works/i);
+        await expect(body).toContainText(/oldest of the others makes way/i);
+        // And that a genuine refusal is reported rather than faked.
+        await expect(body).toContainText(/says the inbox is full/i);
     });
 });
 

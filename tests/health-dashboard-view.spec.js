@@ -342,6 +342,24 @@ test.describe('health dashboard view', () => {
         await expect(page.locator('.health-view-legend')).toContainText('Enter / Space');
     });
 
+    // The legend and the cheat sheet both read from KeyboardViewLegends, so a
+    // key bound in the view but never added there is invisible in both places
+    // at once — which is exactly how f shipped before this.
+    test('the legend lists every key the view actually binds', async ({ page }) => {
+        await openHealthView(page);
+        await page.click('[data-health-filter="all"]');
+
+        // Read from the <kbd> elements rather than the legend's whole text: a
+        // single letter is a substring of half the labels ("f" is inside
+        // "refresh" and "first / last"), so a containText check on the strip
+        // can never fail and would prove nothing.
+        const keys = await page.locator('.health-view-legend kbd').allTextContents();
+        const trimmed = keys.map((k) => k.trim());
+        for (const key of ['j / k', 's', 'i', 'p', 'f', 'R / ?', 'c', 'm', 'x', 'Enter / Space', 'Esc']) {
+            expect(trimmed, `legend lists ${key}`).toContain(key);
+        }
+    });
+
     test('the Escape row in the legend names both of its effects', async ({ page }) => {
         // Escape clears an open multi-select before it closes the view — the
         // legend used to only mention the second half of that behaviour.
