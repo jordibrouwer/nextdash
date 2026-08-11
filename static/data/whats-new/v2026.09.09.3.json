@@ -10,7 +10,7 @@
             "items": [
                 {
                     "badge": "fix",
-                    "text": "<strong>Opening a bookmark from Health no longer claims its category was deleted.</strong> The jump waited a fixed two frames for the grid and then gave up, which was long enough on a small collection and not on a real one — so it reported a category that was sitting in plain sight on the same page. It now waits until the row is actually there."
+                    "text": "<strong>Opening a bookmark from Health no longer claims its category was deleted.</strong> The jump was following the link before the grid had been drawn at all, so it searched an empty page and reported a category that was sitting in plain sight. It now runs once the grid is up, and waits if it is still rendering."
                 }
             ]
         }
