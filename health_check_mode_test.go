@@ -31,6 +31,16 @@ func hasReason(issue HealthIssue, substr string) bool {
 	return false
 }
 
+// Flags are exact machine values, unlike reasons — match them whole.
+func hasFlag(issue HealthIssue, flag string) bool {
+	for _, f := range issue.Flags {
+		if f == flag {
+			return true
+		}
+	}
+	return false
+}
+
 // A monitored bookmark is checked more often than a periodic one, so it must not
 // be scored as "never checked" just because checkStatus is off. Before this, the
 // two flags overlapped and only checkStatus counted.

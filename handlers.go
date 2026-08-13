@@ -383,6 +383,11 @@ func healthReasonLegacyLabel(r HealthReason) string {
 		if n := r.Params["count"]; n != "" {
 			return fmt.Sprintf("Shortcut conflict with %s bookmarks", n)
 		}
+	case "orphaned_category":
+		if c := r.Params["category"]; c != "" {
+			return fmt.Sprintf("Category %q no longer exists", c)
+		}
+		return "Category no longer exists"
 	case "status_never_run":
 		return "Status check has never run"
 	case "status_stale":
@@ -414,6 +419,9 @@ const (
 	healthPenaltyBroken           = 60
 	healthPenaltyDuplicate        = 15
 	healthPenaltyShortcutConflict = 15
+	// Same weight as the other data-integrity faults: the bookmark still works,
+	// but it has fallen out of the category structure the user organised it into.
+	healthPenaltyOrphanedCategory = 15
 	healthPenaltyNeverChecked     = 10
 	healthPenaltyNotOpened30Days  = 10
 	healthPenaltyNeverOpened      = 10
@@ -442,6 +450,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	duplicateRefs := make(map[string][]BookmarkRef)
 	duplicateCounts := make(map[string]int)
 	shortcutCounts := make(map[string]int)
+	// Valid category ids per page, read once per page rather than once per
+	// bookmark. Bookmark.Category holds a category id, so a bookmark whose id is
+	// absent here points at a category that was deleted out from under it —
+	// deleting one category from a non-empty list is allowed and deliberately
+	// leaves its bookmarks behind (see SaveCategoriesByPage), and the
+	// rebuild-from-refs recovery only fires when the list is entirely empty, so
+	// nothing heals these on read.
+	categoryIDsByPage := make(map[int]map[string]struct{}, len(pages))
 
 	// One read serves every monitored row; buildMonitorStats derives the rest.
 	monitorHistory := h.readAllHealthHistory()
@@ -452,6 +468,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
+		categories := h.store.GetCategoriesByPage(page.ID)
+		validCategoryIDs := make(map[string]struct{}, len(categories))
+		for _, category := range categories {
+			if id := strings.TrimSpace(category.ID); id != "" {
+				validCategoryIDs[id] = struct{}{}
+			}
+		}
+		categoryIDsByPage[page.ID] = validCategoryIDs
 		entries := make([]bookmarkEntry, 0, len(bookmarks))
 		for idx, bm := range bookmarks {
 			entry := bookmarkEntry{bookmark: bm, index: idx}
@@ -493,16 +517,18 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			return 2
 		case "shortcut-conflict":
 			return 3
-		case "unchecked":
+		case "orphaned-category":
 			return 4
-		case "stale":
+		case "unchecked":
 			return 5
+		case "stale":
+			return 6
 		case "unused":
-			return 6
-		case "missing-preview":
-			return 6
-		default:
 			return 7
+		case "missing-preview":
+			return 7
+		default:
+			return 8
 		}
 	}
 
@@ -538,6 +564,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			isMissingPreview := missingPreview(bm)
 			shortcutKey := normalizeShortcut(bm.Shortcut)
 			isShortcutConflict := shortcutKey != "" && shortcutCounts[shortcutKey] > 1
+			// An empty category is "uncategorized", a legitimate state — only a
+			// non-empty id that matches no category on the page is orphaned.
+			categoryKey := strings.TrimSpace(bm.Category)
+			isOrphanedCategory := false
+			if categoryKey != "" {
+				_, known := categoryIDsByPage[page.ID][categoryKey]
+				isOrphanedCategory = !known
+			}
 			isDrifting := bm.Monitor && bm.WatchDrift && strings.TrimSpace(bm.DriftNoticed) != ""
 
 			status := "healthy"
@@ -593,6 +627,18 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 					Penalty: healthPenaltyShortcutConflict,
 				})
 				score -= healthPenaltyShortcutConflict
+			}
+			if isOrphanedCategory {
+				if status == "healthy" {
+					status = "orphaned-category"
+				}
+				flags = append(flags, "orphaned-category")
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{
+					Code:    "orphaned_category",
+					Params:  map[string]string{"category": categoryKey},
+					Penalty: healthPenaltyOrphanedCategory,
+				})
+				score -= healthPenaltyOrphanedCategory
 			}
 			// Never run and overdue are two ways of being "unchecked" and share the
 			// status, so they share the flag too — matching UncheckedCount, which
@@ -674,6 +720,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 			if isShortcutConflict {
 				report.Summary.ShortcutConflictCount++
+			}
+			if isOrphanedCategory {
+				report.Summary.OrphanedCategoryCount++
 			}
 			if isChecked && (isUnchecked || isStaleCheck) {
 				report.Summary.UncheckedCount++
@@ -1282,6 +1331,8 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		imported++
 	}
 
+	// Both the bookmarks and the categories the report reads have changed.
+	h.invalidateHealthReportCache()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]int{"imported": imported, "skipped": skipped})
 	logBrowserImport(request.PageID, imported, skipped, r)
@@ -1394,6 +1445,10 @@ func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
 	if !respondCategoriesSaveError(w, h.store.SaveCategoriesByPage(pageID, categories)) {
 		return
 	}
+	// The report reads categories to find bookmarks orphaned by a deleted one,
+	// so a category save now changes what it would say. Without this the
+	// orphaned-category rows only appear once the cache TTL expires.
+	h.invalidateHealthReportCache()
 	logCategoriesSave(pageID, len(categories), r)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})

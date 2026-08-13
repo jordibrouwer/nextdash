@@ -13,11 +13,15 @@ class DashboardHealth {
         content: 1,
         duplicate: 2,
         'shortcut-conflict': 3,
-        unchecked: 4,
-        stale: 5,
-        unused: 6,
-        'missing-preview': 7,
-        healthy: 8,
+        // A bookmark pointing at a category that no longer exists. Grouped with
+        // the other data-integrity faults rather than the network ones: it still
+        // opens, it has just fallen out of the structure.
+        'orphaned-category': 4,
+        unchecked: 5,
+        stale: 6,
+        unused: 7,
+        'missing-preview': 8,
+        healthy: 9,
     };
 
     /**
@@ -2374,6 +2378,7 @@ class DashboardHealth {
             stale: this.t('dashboard.healthFilterStale', 'Stale'),
             unused: this.t('dashboard.healthFilterUnused', 'Unused'),
             'shortcut-conflict': this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts'),
+            'orphaned-category': this.t('dashboard.healthFilterOrphanedCategory', 'Missing category'),
             'missing-preview': this.t('dashboard.healthFilterMissingPreview', 'Missing preview'),
             healthy: this.t('dashboard.healthFilterHealthy', 'Healthy'),
             all: this.t('dashboard.healthFilterAll', 'All'),
@@ -2440,6 +2445,7 @@ class DashboardHealth {
             stale: this.t('dashboard.healthNoteStale', 'You have opened these before, but not in the last 30 days. Nothing is wrong with them — they are candidates for tidying up.'),
             unused: this.t('dashboard.healthNoteUnused', 'These have never been opened since they were added. Often worth keeping, sometimes worth deleting, but always worth a look.'),
             'shortcut-conflict': this.t('dashboard.healthNoteShortcutConflict', 'More than one bookmark claims the same keyboard shortcut, so pressing it is a coin toss between them.'),
+            'orphaned-category': this.t('dashboard.healthNoteOrphanedCategory', 'These point at a category that no longer exists on their page, usually because it was deleted without moving them first. They still work, but on the dashboard they sit with the uncategorized ones — edit a row to file it somewhere that exists.'),
             'missing-preview': this.t('dashboard.healthNoteMissingPreview', 'No title, description or image has been fetched yet, so these rows have little to show beyond their address.'),
             healthy: this.t('dashboard.healthNoteHealthy', 'Nothing is wrong with these: reachable if they are checked, opened recently enough, and not clashing with anything.'),
             all: this.t('dashboard.healthNoteAll', 'Every bookmark, whatever its state. Sort by score to bring the ones needing attention to the top.'),
@@ -3380,6 +3386,7 @@ class DashboardHealth {
             ['unused', this.t('dashboard.healthFilterUnused', 'Unused')],
             ['drift', this.t('dashboard.healthFilterDrift', 'Drift')],
             ['shortcut-conflict', this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts')],
+            ['orphaned-category', this.t('dashboard.healthFilterOrphanedCategory', 'Missing category')],
             ['missing-preview', this.t('dashboard.healthFilterMissingPreview', 'Missing preview')],
             ['healthy', this.t('dashboard.healthFilterHealthy', 'Healthy')],
         ];
@@ -3868,6 +3875,10 @@ class DashboardHealth {
                 this.t('dashboard.healthEmptyShortcutConflict', 'No shortcut conflicts'),
                 this.t('dashboard.healthEmptyShortcutConflictHint', 'No shortcut is shared by more than one bookmark.'),
             ],
+            'orphaned-category': [
+                this.t('dashboard.healthEmptyOrphanedCategory', 'No missing categories'),
+                this.t('dashboard.healthEmptyOrphanedCategoryHint', 'Every bookmark is filed under a category that still exists on its page.'),
+            ],
             'missing-preview': [
                 this.t('dashboard.healthEmptyMissingPreview', 'No missing previews'),
                 this.t('dashboard.healthEmptyMissingPreviewHint', 'Every bookmark has preview metadata.'),
@@ -4066,8 +4077,8 @@ class DashboardHealth {
 
     static STATE_KEY = 'nextdash:health-view-state';
     static PERSISTED_FILTERS = new Set([
-        'all', 'broken', 'content', 'duplicate', 'shortcut-conflict', 'unchecked',
-        'stale', 'unused', 'missing-preview', 'healthy', 'monitored',
+        'all', 'broken', 'content', 'duplicate', 'shortcut-conflict', 'orphaned-category',
+        'unchecked', 'stale', 'unused', 'missing-preview', 'healthy', 'monitored',
     ]);
     static PERSISTED_SORTS = new Set(['score', 'status', 'last-checked', 'last-checked-desc', 'name']);
 

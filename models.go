@@ -3004,6 +3004,12 @@ type HealthSummary struct {
 	MissingPreviewCount   int `json:"missingPreviewCount"`
 	UnusedCount           int `json:"unusedCount"`
 	ShortcutConflictCount int `json:"shortcutConflictCount"`
+	// OrphanedCategoryCount is bookmarks whose Category id matches no category
+	// on their own page — the category was deleted without moving them. They
+	// still work and still open; they have just dropped out of the structure,
+	// which is invisible on the dashboard because uncategorized and
+	// orphaned-category rows land in the same place.
+	OrphanedCategoryCount int `json:"orphanedCategoryCount"`
 	PinnedCount           int `json:"pinnedCount"`
 	// DriftCount is bookmarks currently flagged by rot detection — a redirect,
 	// title, or content change since the watched baseline. Layered on top of
