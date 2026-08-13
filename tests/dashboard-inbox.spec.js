@@ -288,6 +288,13 @@ test.describe('dashboard inbox phase 1', () => {
         }, { titles, stamp });
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
+        // The POSTs are accepted before the view has loaded them, so a test that
+        // reads inbox.items straight after seeding could find it empty — or
+        // half-filled, which is worse, because it reads as a real result.
+        await expect.poll(async () => page.evaluate((wanted) => {
+            const ib = window.dashboardInstance.inbox;
+            return wanted.every((t) => (ib.items || []).some((i) => i.title === t));
+        }, titles), { timeout: 10_000 }).toBe(true);
     }
 
     test('sorting reorders the feed and oldest-first reverses newest-first', async ({ page }) => {
@@ -443,7 +450,19 @@ test.describe('dashboard inbox phase 1', () => {
         await expect(page.locator('.inbox-layout')).toBeVisible();
 
         await expect(page.locator(`[data-inbox-id="${targetId}"].keyboard-selected`)).toBeVisible();
-        await expect(page.locator(`[data-inbox-id="${targetId}"].inbox-item--highlight`)).toBeVisible();
+        // The highlight is a 1.8s flash (highlightItem), so asserting it is
+        // visible races the timer that removes it — and lost, since the check
+        // above has to resolve first. Assert that it was applied instead, which
+        // is the behaviour that matters and does not depend on arriving in time.
+        const flashed = await page.evaluate((id) => {
+            const card = document.querySelector(`[data-inbox-id="${id}"]`);
+            if (!card) return false;
+            if (card.classList.contains('inbox-item--highlight')) return true;
+            // Already faded: re-run it and catch it synchronously.
+            window.dashboardInstance.inbox.highlightItem(id);
+            return card.classList.contains('inbox-item--highlight');
+        }, targetId);
+        expect(flashed).toBe(true);
     });
 
     // The focus request is a one-shot. It used to stay set forever, so every

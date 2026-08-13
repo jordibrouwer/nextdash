@@ -13,6 +13,10 @@ async function openHealthWithTrend(page) {
     await page.waitForSelector('.health-view-toolbar', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The toolbar can be on screen before the view object is assigned, so
+    // reading dashboardInstance.health straight after the selector is a race.
+    await page.waitForFunction(() => window.dashboardInstance?.health != null,
+        null, { timeout: 15_000 });
 
     // The chart needs three or more recorded days; the report supplies them.
     await page.evaluate(() => {

@@ -48,7 +48,14 @@ test.describe('a failed read must never become a write', () => {
 
         // It must give up loudly rather than post a one-item list.
         expect(outcome).toMatch(/^threw:/);
-        expect(await catIds(page)).toEqual(before);
+
+        // What matters is that nothing was destroyed: the categories that were
+        // there are still there, and the probe id was never written. Asserted
+        // as a superset rather than an exact match, because other specs in a
+        // parallel run add categories to this page while this one runs.
+        const after = await catIds(page);
+        expect(after).toEqual(expect.arrayContaining(before));
+        expect(after).not.toContain('zzz-probe');
     });
 
     // B6. Four loaders shared the same shape. A failed load must not render as
