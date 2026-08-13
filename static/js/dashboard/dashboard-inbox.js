@@ -19,6 +19,8 @@ class DashboardInbox {
         // Ids ticked for a bulk action. Kept separate from selectedItemId, which is
         // the keyboard cursor: moving the cursor must not change what is ticked.
         this.checkedIds = new Set();
+        /** Last row ticked, the fixed end of a Shift-extended range. */
+        this.checkAnchorId = null;
         this.triage = typeof DashboardInboxTriage === 'function' ? new DashboardInboxTriage(this) : null;
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
@@ -55,6 +57,53 @@ class DashboardInbox {
     }
 
     /**
+     * Ticked rows the current filter is hiding.
+     *
+     * The bulk buttons only ever act on what checkedItems() returns, so a filter
+     * change silently shrinks their reach: the count in the bar drops with no
+     * explanation, and widening the filter brings the old ticks back. Naming the
+     * hidden number is what makes the buttons honest about what they will touch.
+     */
+    offscreenCheckedCount() {
+        const visible = new Set(this.getFilteredItems().map((i) => i.id));
+        let hidden = 0;
+        this.checkedIds.forEach((id) => {
+            if (!visible.has(id)) hidden += 1;
+        });
+        return hidden;
+    }
+
+    /**
+     * Tick (or untick) every row between the anchor and `id`, inclusive.
+     *
+     * Walks the filtered order rather than the DOM so the range means what the
+     * user sees. Without an anchor there is no range to extend, so the caller
+     * falls back to a plain toggle.
+     */
+    extendCheckedTo(id, on) {
+        const visible = this.getFilteredItems();
+        const from = visible.findIndex((item) => item.id === this.checkAnchorId);
+        const to = visible.findIndex((item) => item.id === id);
+        if (from < 0 || to < 0) {
+            this.setChecked(id, on);
+            return;
+        }
+        const [lo, hi] = from <= to ? [from, to] : [to, from];
+        for (let i = lo; i <= hi; i += 1) {
+            this.setChecked(visible[i].id, on);
+        }
+    }
+
+    /** Drop the ticks the filter is hiding, keeping only what is on screen. */
+    keepOnlyVisibleChecked() {
+        const visible = new Set(this.getFilteredItems().map((i) => i.id));
+        [...this.checkedIds].forEach((id) => {
+            if (!visible.has(id)) this.checkedIds.delete(id);
+        });
+        this.renderBulkBar();
+    }
+
+    /**
      * Tick every row the current filter shows, or clear them when they are all
      * ticked already — so the same chord undoes itself.
      *
@@ -71,6 +120,7 @@ class DashboardInbox {
     clearChecked() {
         if (!this.checkedIds.size) return;
         this.checkedIds.clear();
+        this.checkAnchorId = null;
         document.querySelectorAll('.inbox-item.is-checked').forEach((el) => {
             el.classList.remove('is-checked');
             const box = el.querySelector('.inbox-item-check-input');
@@ -114,19 +164,121 @@ class DashboardInbox {
                     this.clearChecked();
                 } else if (action === 'snooze') {
                     this.openSnoozeMenu(null, btn, this.checkedItems());
+                } else if (action === 'open') {
+                    this.bulkOpen();
+                } else if (action === 'copy') {
+                    void this.bulkCopyLinks();
+                } else if (action === 'keep-visible') {
+                    this.keepOnlyVisibleChecked();
                 }
             });
             container.querySelector('.inbox-toolbar')?.after(bar);
         }
+        const hidden = this.offscreenCheckedCount();
+        const offscreen = hidden
+            ? `<span class="inbox-selection-offscreen">
+                    <span class="inbox-selection-offscreen-text">${this.escape(this.t(
+                        'dashboard.inboxSelectedOffscreen',
+                        '{count} not shown by the current filter',
+                        { count: hidden }
+                    ))}</span>
+                    <button type="button" class="inbox-bulk-btn" data-inbox-selection="keep-visible">${this.escape(
+                        this.t('dashboard.inboxKeepVisible', 'Select only these')
+                    )}</button>
+               </span>`
+            : '';
+
         bar.innerHTML = `
             <span class="inbox-selection-count">${this.escape(
                 this.t('dashboard.inboxSelectedCount', '{count} selected', { count })
             )}</span>
+            ${offscreen}
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="open">${this.escape(this.t('dashboard.inboxSelectionOpen', 'Open'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="copy">${this.escape(this.t('dashboard.inboxSelectionCopy', 'Copy links'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="read">${this.escape(this.t('dashboard.inboxMarkRead', 'Mark read'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="snooze">${this.escape(this.t('dashboard.inboxSnooze', 'Snooze'))}</button>
             <button type="button" class="inbox-bulk-btn inbox-bulk-btn--danger" data-inbox-selection="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="clear">${this.escape(this.t('dashboard.inboxSelectionClear', 'Clear selection'))}</button>
         `;
+    }
+
+    /**
+     * Open every ticked link in a new tab.
+     *
+     * The most natural inbox bulk action and the one that was missing: the view
+     * exists to work through links, and there was no way to open five at once.
+     * Marked read as they go, because opening is what "read" means here — the
+     * same rule openItem() applies to a single row.
+     */
+    bulkOpen() {
+        const targets = this.checkedItems();
+        if (!targets.length) return;
+        this._trackAction('bulk-open', { size: this._countBucket(targets.length) });
+        targets.forEach((item) => {
+            const href = this.dash.safeBookmarkOpenHref?.(item.url) || item.url;
+            if (href) window.open(href, '_blank', 'noopener,noreferrer');
+        });
+        const unread = targets.filter((item) => !item.readAt);
+        if (unread.length) {
+            void Promise.allSettled(unread.map((item) => this.markRead(item.id)))
+                .then(() => {
+                    if (this.isActiveView()) this.render();
+                });
+        }
+    }
+
+    /**
+     * Every ticked link's URL, one per line, on the clipboard.
+     *
+     * Same shape as multi-select's copySelectedLinks, execCommand fallback
+     * included: the Clipboard API is unavailable on plain-HTTP LAN installs,
+     * which is exactly where a self-hosted dashboard often runs.
+     */
+    async bulkCopyLinks() {
+        const targets = this.checkedItems();
+        const urls = targets.map((item) => String(item.url || '').trim()).filter(Boolean);
+        if (!urls.length) return;
+        this._trackAction('bulk-copy', { size: this._countBucket(urls.length) });
+
+        const text = urls.join('\n');
+        const done = () => this.dash.showNotification?.(
+            this.t('dashboard.inboxCopiedLinks', 'Copied {count} links', { count: urls.length }),
+            'success',
+            { duration: 2500 }
+        );
+        const failed = () => this.dash.showErrorNotification?.(
+            this.t('dashboard.inboxCopyFailed', 'Could not copy links to clipboard.')
+        );
+
+        if (navigator.clipboard?.writeText) {
+            try {
+                await navigator.clipboard.writeText(text);
+                done();
+                return;
+            } catch {
+                // Falls through to the execCommand path below.
+            }
+        }
+        if (this.execCopyFallback(text)) done();
+        else failed();
+    }
+
+    /** Pre-Clipboard-API copy, kept for plain-HTTP LAN installs. */
+    execCopyFallback(value) {
+        const ta = document.createElement('textarea');
+        ta.value = value;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try {
+            ok = document.execCommand('copy');
+        } catch {
+            ok = false;
+        }
+        ta.remove();
+        return ok;
     }
 
     async bulkMarkRead() {
@@ -1217,6 +1369,23 @@ class DashboardInbox {
             return false;
         }
 
+        // Shift+arrow extends the tick range as it moves, the keyboard twin of
+        // Shift+click. Handled before the plain arrows below, which would
+        // otherwise swallow it and just move the cursor.
+        if (e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (!this.checkAnchorId && this.selectedItemId) {
+                this.checkAnchorId = this.selectedItemId;
+                this.setChecked(this.selectedItemId, true);
+            }
+            this.moveKeyboardSelection(e.key === 'ArrowDown' ? 1 : -1, cards);
+            if (this.selectedItemId) {
+                this.extendCheckedTo(this.selectedItemId, true);
+            }
+            return true;
+        }
+
         if (e.key === 'ArrowDown' || e.key === 'j') {
             if (e.key === 'j' && onRowControl) return false;
             e.preventDefault();
@@ -1273,6 +1442,7 @@ class DashboardInbox {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.setChecked(selected.id, !this.checkedIds.has(selected.id));
+            this.checkAnchorId = selected.id;
             // Advance after ticking, as the health view does: marking a run of
             // rows is x x x rather than x j x j.
             const next = this.neighbourItemId(selected.id);
@@ -3028,8 +3198,19 @@ class DashboardInbox {
         });
 
         const checkInput = card.querySelector('.inbox-item-check-input');
+        // Shift extends from the last row ticked, so a contiguous run is two
+        // clicks rather than one per row. Read on click (change carries no
+        // modifier state) and applied in change, which still fires after it.
+        let shiftHeld = false;
+        checkInput?.addEventListener('click', (e) => { shiftHeld = e.shiftKey; });
         checkInput?.addEventListener('change', () => {
-            this.setChecked(item.id, checkInput.checked);
+            if (shiftHeld && this.checkAnchorId && this.checkAnchorId !== item.id) {
+                this.extendCheckedTo(item.id, checkInput.checked);
+            } else {
+                this.setChecked(item.id, checkInput.checked);
+            }
+            shiftHeld = false;
+            this.checkAnchorId = item.id;
         });
         // The checkbox is inside the row, which opens on click — without this,
         // ticking a box would also launch the link.

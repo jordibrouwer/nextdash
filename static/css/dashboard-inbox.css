@@ -1118,6 +1118,22 @@ body.inbox-triage-active {
     font-variant-numeric: tabular-nums;
 }
 
+/* Ticked rows the filter is hiding. The bulk buttons only reach what is on
+   screen, so the count has to say what it will not touch — and offer a way to
+   make the selection match it. */
+.inbox-selection-offscreen {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-right: 0.25rem;
+}
+
+.inbox-selection-offscreen-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
 .inbox-bulk-btn--danger:hover {
     border-color: color-mix(in srgb, var(--accent-error) 55%, transparent);
     color: var(--accent-error);
