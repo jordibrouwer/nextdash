@@ -264,7 +264,6 @@ type Settings struct {
 	SmartRecentPageIds            []int                        `json:"smartRecentPageIds"`           // Page IDs where smart recent is enabled (empty = all)
 	SmartStalePageIds             []int                        `json:"smartStalePageIds"`            // Page IDs where smart stale is enabled (empty = all)
 	SmartMostUsedPageIds          []int                        `json:"smartMostUsedPageIds"`         // Page IDs where smart most used is enabled (empty = all)
-	ArchivedPageIds               []int                        `json:"archivedPageIds"`              // Archived pages hidden from active management flows
 	Collections                   []Collection                 `json:"collections,omitempty"`        // User-defined dynamic collections
 	ShowTagCollections            bool                         `json:"showTagCollections"`           // Auto-generate a collection per tag
 	TagCollectionsMinCount        int                          `json:"tagCollectionsMinCount"`       // Minimum bookmarks per tag to show collection (0 = all)
@@ -347,6 +346,19 @@ type Settings struct {
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
+	SavedSearches        []SavedSearch         `json:"savedSearches,omitempty"`        // Named queries from the search bar
+}
+
+// SavedSearch is a query the user named and kept from the search bar.
+//
+// Stored in settings.json rather than localStorage, which is where they used to
+// live: :save and :saved are a documented feature, but the entries survived
+// neither a cleared cache nor a move to another browser, and — the part that
+// mattered — they were in no backup at all, so a reassuring ZIP did not contain
+// them.
+type SavedSearch struct {
+	Name  string `json:"name"`
+	Query string `json:"query"`
 }
 
 // DiscoverabilityState persists UI discoverability progress in settings.json (shared across browsers).
@@ -730,7 +742,6 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartRecentPageIds:           []int{},
 			SmartStalePageIds:            []int{},
 			SmartMostUsedPageIds:         []int{},
-			ArchivedPageIds:              []int{},
 			FaviconRefreshPolicy:         "on-save",
 			OnboardingCompleted:          false,
 			ThemeIconStyling:             defaultThemeIconStyling(),
@@ -1504,6 +1515,12 @@ func (fs *FileStore) SaveFinders(finders []Finder) error {
 
 	fs.ensureDataDir()
 
+	// Names arrive unvalidated: nothing trimmed or capped them, so a finder
+	// could be stored with an empty or 500-character name.
+	for i := range finders {
+		finders[i].Name = clampEntityName(finders[i].Name)
+	}
+
 	filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
 	return fs.writeStoreJSONFile(filePath, finders, 0)
 }
@@ -1557,6 +1574,9 @@ func (fs *FileStore) GetCategoriesByPage(pageID int) []Category {
 // SaveCategoriesByPage saves categories inside bookmarks-{pageID}.json, creating the file if needed
 // It also updates bookmarks to use the new category IDs when category names change
 func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) error {
+	for i := range categories {
+		categories[i].Name = clampEntityName(categories[i].Name)
+	}
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -1870,9 +1890,23 @@ func defaultPageName(id int) string {
 	return fmt.Sprintf("Page %d", id)
 }
 
+// NameMaxLength caps a page, category, finder, theme or collection name.
+// Mirrors DashboardConfig.NAME_MAX_LENGTH: the browser is where the limit is
+// explained, this is where it is enforced, since the API is reachable without
+// it (the extension, a script, a second client).
+const NameMaxLength = 60
+
+// clampEntityName trims a user-entered name and cuts it to NameMaxLength.
+// Rune-wise via truncateRunes, so a name ending in a multi-byte character is
+// not cut mid-character.
+func clampEntityName(name string) string {
+	return truncateRunes(strings.TrimSpace(name), NameMaxLength)
+}
+
 func normalizePageMeta(page Page, fileID int) Page {
 	page.ID = fileID
-	if strings.TrimSpace(page.Name) == "" {
+	page.Name = clampEntityName(page.Name)
+	if page.Name == "" {
 		page.Name = defaultPageName(fileID)
 	}
 	return page
@@ -2310,7 +2344,6 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartTodayPageIds:              []int{},
 			SmartRecentPageIds:             []int{},
 			SmartStalePageIds:              []int{},
-			ArchivedPageIds:                []int{},
 			FaviconRefreshPolicy:           "on-save",
 			LayoutPreset:                   "default",
 			LayoutVersion:                  "classic",
@@ -2491,9 +2524,6 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["smartStalePageIds"]; !ok || settings.SmartStalePageIds == nil {
 			settings.SmartStalePageIds = []int{}
-		}
-		if _, ok := rawSettings["archivedPageIds"]; !ok || settings.ArchivedPageIds == nil {
-			settings.ArchivedPageIds = []int{}
 		}
 		if _, ok := rawSettings["faviconRefreshPolicy"]; !ok || (settings.FaviconRefreshPolicy != "manual" && settings.FaviconRefreshPolicy != "on-save") {
 			settings.FaviconRefreshPolicy = "on-save"

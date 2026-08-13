@@ -2424,10 +2424,29 @@ class SearchComponent {
         }];
     }
 
+    /**
+     * Saved searches, from settings.
+     *
+     * They used to live only in localStorage, so a documented feature vanished
+     * on a cleared cache or a different browser — and, worst of all, sat in no
+     * backup: a ZIP taken the same day did not contain them. They are now part
+     * of settings.json, which the backup already carries. Any localStorage
+     * entries left over from before are read once and migrated up.
+     */
     loadSavedSearches() {
+        const fromSettings = window.dashboardInstance?.settings?.savedSearches;
+        if (Array.isArray(fromSettings) && fromSettings.length) {
+            return fromSettings.filter((entry) => entry && entry.name && entry.query);
+        }
         try {
             const stored = localStorage.getItem('dashboardSavedSearches');
-            return stored ? JSON.parse(stored).filter((entry) => entry && entry.name && entry.query) : [];
+            const legacy = stored ? JSON.parse(stored).filter((entry) => entry && entry.name && entry.query) : [];
+            if (legacy.length) {
+                // Migrate on first read, then let the server own them.
+                this.savedSearches = legacy;
+                void this.saveSavedSearches();
+            }
+            return legacy;
         } catch (error) {
             return [];
         }
@@ -2441,8 +2460,19 @@ class SearchComponent {
      * was kept. The caller reports the outcome instead of always claiming success.
      */
     saveSavedSearches() {
+        const list = this.savedSearches.slice(0, 10);
+        const d = window.dashboardInstance;
+        if (d?.settings) {
+            d.settings.savedSearches = list;
+            // Fire and forget: saveSettings reports its own failures, and the
+            // caller's outcome is about whether the entry was accepted here.
+            void d.saveSettings?.();
+            // Kept in localStorage as well, so an older tab still sees them.
+            try { localStorage.setItem('dashboardSavedSearches', JSON.stringify(list)); } catch { /* ignore */ }
+            return true;
+        }
         try {
-            localStorage.setItem('dashboardSavedSearches', JSON.stringify(this.savedSearches.slice(0, 10)));
+            localStorage.setItem('dashboardSavedSearches', JSON.stringify(list));
             return true;
         } catch {
             return false;

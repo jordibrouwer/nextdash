@@ -1711,16 +1711,25 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		settings.UpdateCheckEnabled = h.store.GetSettings().UpdateCheckEnabled
 	}
 
-	// Validate and sanitize collections
+	// Validate and sanitize collections.
+	//
+	// Anything dropped here is reported back rather than discarded in silence.
+	// A collection with no name, or whose only rule has an empty value — which
+	// is exactly the shape the "Add collection" button creates — used to vanish
+	// while the response still said "success", so the row stayed on screen with
+	// its rules until a reload took it away for good.
 	seenIDs := make(map[string]struct{})
 	sanitized := settings.Collections[:0]
+	var droppedCollections []string
 	for _, col := range settings.Collections {
 		col.ID = strings.TrimSpace(col.ID)
-		col.Name = strings.TrimSpace(col.Name)
+		col.Name = clampEntityName(col.Name)
 		if col.ID == "" || col.Name == "" {
+			droppedCollections = append(droppedCollections, collectionLabel(col))
 			continue
 		}
 		if _, dup := seenIDs[col.ID]; dup {
+			droppedCollections = append(droppedCollections, collectionLabel(col))
 			continue
 		}
 		seenIDs[col.ID] = struct{}{}
@@ -1732,12 +1741,14 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if len(validRules) == 0 {
+			droppedCollections = append(droppedCollections, collectionLabel(col))
 			continue
 		}
 		col.Rules = validRules
 		sanitized = append(sanitized, col)
 	}
 	settings.Collections = sanitized
+	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
@@ -1758,7 +1769,41 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	)
 	serverLog.SetPaused(!settings.ServerLogEnabled)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+	response := map[string]any{"status": "success"}
+	if len(droppedCollections) > 0 {
+		response["droppedCollections"] = droppedCollections
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
+// normalizeSavedSearches trims, drops incomplete entries and caps the list at
+// the same ten the search bar has always kept.
+func normalizeSavedSearches(list []SavedSearch) []SavedSearch {
+	out := make([]SavedSearch, 0, len(list))
+	for _, entry := range list {
+		entry.Name = clampEntityName(entry.Name)
+		entry.Query = strings.TrimSpace(entry.Query)
+		if entry.Name == "" || entry.Query == "" {
+			continue
+		}
+		out = append(out, entry)
+		if len(out) == 10 {
+			break
+		}
+	}
+	return out
+}
+
+// collectionLabel names a collection for a message to the user, falling back to
+// its id when the name is what went missing.
+func collectionLabel(col Collection) string {
+	if name := strings.TrimSpace(col.Name); name != "" {
+		return name
+	}
+	if id := strings.TrimSpace(col.ID); id != "" {
+		return id
+	}
+	return "(unnamed)"
 }
 
 // Colors keeps the old /colors bookmark working. It targets the view section

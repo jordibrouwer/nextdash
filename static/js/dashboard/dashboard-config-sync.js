@@ -300,6 +300,33 @@ class DashboardConfigSync {
         }
     }
 
+    /**
+     * Announce a config change to the other tabs.
+     *
+     * The listener above, the pending-marker drain and their tests all existed;
+     * nothing ever published. A second tab therefore kept showing the old pages,
+     * categories and settings until it was reloaded by hand — the exact case
+     * this module was written for. The specs did not catch it because they write
+     * the markers themselves, so they pass with or without a publisher.
+     *
+     * `kind` is 'structure' (pages, categories, bookmarks) or 'settings'.
+     */
+    publishConfigSync(kind = 'structure') {
+        const d = this.dash;
+        const eventKey = kind === 'settings' ? d.settingsSyncEventKey : d.structureSyncEventKey;
+        const pendingKey = kind === 'settings' ? d.pendingSettingsSyncKey : d.pendingStructureSyncKey;
+        if (!eventKey) return;
+
+        const payload = JSON.stringify({ sourceTabId: d.tabId, timestamp: Date.now() });
+        try {
+            // A storage event only fires in *other* tabs, which is what makes
+            // this work without echoing back into the tab that wrote it.
+            localStorage.setItem(eventKey, payload);
+            // Kept so a tab that was hidden during the write still picks the
+            // change up when it comes back, via maybeRefreshAfterConfigReturn.
+            sessionStorage.setItem(pendingKey, payload);
+        } catch { /* private mode or a full quota must not fail the save */ }
+    }
 
 }
 
