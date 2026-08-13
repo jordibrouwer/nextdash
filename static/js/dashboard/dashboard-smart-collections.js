@@ -250,7 +250,7 @@ class DashboardSmartCollections {
     _getCurrentPageDisplayName() {
         const d = this.dash;
         const page = (d.pages || []).find((p) => Number(p.id) === Number(d.currentPageId));
-        const raw = page?.name || d.language?.t?.('dashboard.defaultPageTitle') || 'dashboard';
+        const raw = page?.name || this._smartWhyT('defaultPageTitle', 'dashboard');
         return String(raw).trim() || 'dashboard';
     }
 

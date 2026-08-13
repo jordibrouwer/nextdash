@@ -1497,7 +1497,7 @@ class DashboardRenderCore {
                 whyBtn.textContent = 'ℹ';
                 whyBtn.setAttribute(
                     'aria-label',
-                    d.language?.t?.('dashboard.smartWhyAria') || 'Why am I seeing this collection?'
+                    d.formatDashboardLabel('smartWhyAria', {}, 'Why am I seeing this collection?')
                 );
                 window.DashboardSmartWhyPopover?.attach?.(whyBtn, whyHint);
                 whyBtn.addEventListener('click', (e) => {

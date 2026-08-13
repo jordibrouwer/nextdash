@@ -197,9 +197,11 @@ class DashboardTagFilter {
             const empty = document.createElement('div');
             empty.className = 'empty-state empty-state--tag-filter';
             const tagsLabel = this.formatTagFilterTagsListForMessage(tags);
-            const emptyText = (d.language?.t?.('dashboard.tagFilterEmpty', 'No bookmarks with {tags} on this page.')
-                || 'No bookmarks with {tags} on this page.')
-                .replace('{tags}', tagsLabel);
+            const emptyText = d.formatDashboardLabel(
+                'tagFilterEmpty',
+                { tags: tagsLabel },
+                'No bookmarks with {tags} on this page.'
+            );
             const text = document.createElement('p');
             text.className = 'empty-state--tag-filter-text';
             text.textContent = emptyText;
@@ -211,7 +213,7 @@ class DashboardTagFilter {
             const clearBtn = document.createElement('button');
             clearBtn.type = 'button';
             clearBtn.className = 'empty-state--tag-filter-btn';
-            clearBtn.textContent = d.language?.t?.('dashboard.tagFilterEmptyClear', 'Clear tag filter') || 'Clear tag filter';
+            clearBtn.textContent = d.formatDashboardLabel('tagFilterEmptyClear', {}, 'Clear tag filter');
             clearBtn.addEventListener('click', () => this.clearTagFilter());
             actions.appendChild(clearBtn);
 
@@ -219,7 +221,7 @@ class DashboardTagFilter {
                 const browseBtn = document.createElement('button');
                 browseBtn.type = 'button';
                 browseBtn.className = 'empty-state--tag-filter-btn';
-                browseBtn.textContent = d.language?.t?.('dashboard.tagFilterEmptyBrowseTags', 'Browse tags') || 'Browse tags';
+                browseBtn.textContent = d.formatDashboardLabel('tagFilterEmptyBrowseTags', {}, 'Browse tags');
                 browseBtn.addEventListener('click', () => window.DashboardTagCloud.openModal());
                 actions.appendChild(browseBtn);
             }
