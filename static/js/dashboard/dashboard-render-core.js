@@ -1103,6 +1103,10 @@ class DashboardRenderCore {
     _startCategoryRename(titleEl, nameSpan, category) {
         const d = this.dash;
         if (titleEl.querySelector('.category-rename-input')) return;
+        // Uncategorized and orphan headers are synthesized views, not stored
+        // categories (see the category-menu's identical guard) — renaming one
+        // would fabricate a real category from a virtual one.
+        if (category?.isVirtualCategory) return;
 
         const originalName = category.name;
         titleEl.classList.add('category-title--renaming');
