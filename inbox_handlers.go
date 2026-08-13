@@ -51,6 +51,14 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := strings.TrimSpace(request.URL)
+	// validateBookmarkURL deliberately allows an empty string — a bookmark may
+	// have no URL. An inbox item is nothing but a URL, so the emptiness has to be
+	// caught here; without this it slipped through and failed deeper as a generic
+	// 500, reporting a client mistake as a server fault.
+	if url == "" {
+		http.Error(w, "URL is required", http.StatusBadRequest)
+		return
+	}
 	if err := h.validateBookmarkURL(url); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
 		return
@@ -83,6 +91,19 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 				"error":   "duplicate_url",
 				"message": "URL already in inbox",
 				"item":    created,
+			})
+			return
+		}
+		// Same reasoning as the restore path below: a full inbox is not a server
+		// fault, and the add is the case where reporting success would lose the
+		// item silently — the client believes it landed and only finds out on the
+		// next reload.
+		if errors.Is(err, ErrInboxAtCapacity) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]any{
+				"error":   "at_capacity",
+				"message": "Inbox is full",
 			})
 			return
 		}
@@ -252,6 +273,23 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+
+	// Restore is a client-supplied write of a whole InboxLink, so it has to clear
+	// the same bar as AddInboxItem. Without this it was the one way to store a
+	// URL the add path refuses — javascript:, or a private address under
+	// allowLocalBookmarks:false — and the only path where a client could set Icon,
+	// which otherwise only server-side fetch code writes.
+	restoredURL := strings.TrimSpace(request.Item.URL)
+	if restoredURL == "" {
+		http.Error(w, "URL is required", http.StatusBadRequest)
+		return
+	}
+	if err := h.validateBookmarkURL(restoredURL); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
+		return
+	}
+	request.Item.URL = restoredURL
+	request.Item.Icon = sanitizeBookmarkIcon(request.Item.Icon)
 
 	settings := h.store.GetSettings()
 	maxItems := settings.InboxMaxItems

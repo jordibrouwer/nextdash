@@ -213,7 +213,24 @@ func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (In
 	link.Tags = normalizeTags(link.Tags)
 
 	inbox.Items = append(inbox.Items, link)
-	inbox.Items = trimInboxItems(inbox.Items, maxItems)
+	// Trimmed with the new item protected, for the same reason RestoreInboxLink
+	// does it: the cut is age-ordered, so a caller supplying an older AddedAt —
+	// an extension replaying a queued save, an import, a sync retry — would have
+	// its item dropped by the very call that added it, and still be told it
+	// worked.
+	inbox.Items = trimInboxItemsKeeping(inbox.Items, maxItems, link.ID)
+
+	survived := false
+	for i := range inbox.Items {
+		if inbox.Items[i].ID == link.ID {
+			survived = true
+			break
+		}
+	}
+	if !survived {
+		return InboxLink{}, ErrInboxAtCapacity
+	}
+
 	if err := fs.saveInboxDataLocked(inbox); err != nil {
 		return InboxLink{}, err
 	}
