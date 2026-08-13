@@ -51,6 +51,11 @@
             return t(language, 'health.reasonShortcutConflict', 'Shortcut conflict with {count} bookmarks', { count: shortcutMatch[1] });
         }
 
+        const orphanMatch = String(reason).match(/^Category "(.+)" no longer exists$/);
+        if (orphanMatch) {
+            return t(language, 'health.reasonOrphanedCategory', 'Category "{category}" no longer exists', { category: orphanMatch[1] });
+        }
+
         const httpMatch = String(reason).match(/^HTTP (\d+)$/);
         if (httpMatch) {
             return t(language, 'health.errorHttp', 'HTTP {status}', { status: httpMatch[1] });
@@ -81,6 +86,8 @@
                 return t(language, 'health.reasonDuplicateUrl', 'Duplicate URL in {count} bookmarks', { count: params.count || '' });
             case 'shortcut_conflict':
                 return t(language, 'health.reasonShortcutConflict', 'Shortcut conflict with {count} bookmarks', { count: params.count || '' });
+            case 'orphaned_category':
+                return t(language, 'health.reasonOrphanedCategory', 'Category "{category}" no longer exists', { category: params.category || '' });
             case 'status_never_run':
                 return t(language, 'health.reasonStatusNeverRun', 'Status check has never run');
             case 'status_stale':

@@ -2815,6 +2815,32 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureInboxTagsTitle',
+                titleFallback: 'Tags on inbox links, at last',
+                whatKey: 'config.overviewNewFeatureInboxTagsWhat',
+                whatFallback: 'Links saved with tags — from the browser extension, or captured with a tag already on them — kept those tags and showed you none of them. You could not see them, change them, or search for them.',
+                howKey: 'config.overviewNewFeatureInboxTagsHow',
+                howFallback: 'Tags now sit on the row. Click one to see only that tag, and click it again to go back. Right-click a link and choose Tags to edit them, search matches them along with the title and note, and both the CSV and JSON exports carry them.',
+                enableKey: 'config.overviewNewFeatureInboxTagsEnable',
+                enableFallback: 'Nothing to switch on. Any link that already had tags shows them from now on.',
+                ctaKey: 'config.overviewNewFeatureInboxTagsCta',
+                ctaFallback: 'Open the Inbox →',
+                go: { view: 'inbox' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureInboxStatsTitle',
+                titleFallback: 'How much of the Inbox you actually use',
+                whatKey: 'config.overviewNewFeatureInboxStatsWhat',
+                whatFallback: 'An inbox is easy to fill and easy to stop emptying. Whether the links you save become bookmarks or quietly pile up was not something the view could tell you.',
+                howKey: 'config.overviewNewFeatureInboxStatsHow',
+                howFallback: 'The Stats button in the Inbox toolbar shows how many links you have added, promoted and deleted, what share of the ones you decided on became bookmarks, and how long a link sits there before you deal with it.',
+                enableKey: 'config.overviewNewFeatureInboxStatsEnable',
+                enableFallback: 'Nothing to switch on. The figures cover the whole life of your inbox.',
+                ctaKey: 'config.overviewNewFeatureInboxStatsCta',
+                ctaFallback: 'Open the Inbox →',
+                go: { view: 'inbox' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureMonitoringTitle',
                 titleFallback: 'Watch a bookmark, not just check it',
                 whatKey: 'config.overviewNewFeatureMonitoringWhat',
@@ -16176,7 +16202,12 @@ class DashboardConfig {
     renderHelpStart() {
         const esc = (v) => this.dash.escapeHtml(v);
         const tips = this.helpTips().map((tip) => `<li class="config-help-tip">${tip}</li>`).join('');
-        return this.helpPanel('config.helpStartTitle', 'Getting started',
+        return this.helpPanel('config.helpVersionTitle', 'nextDash 1.0',
+            'config.helpVersionBody', '',
+            `<div class="config-actions">
+                <button type="button" class="config-btn" data-help-action="whats-new">${esc(this.t('config.helpVersionWhatsNew', "See what's new"))}</button>
+            </div>`)
+            + this.helpPanel('config.helpStartTitle', 'Getting started',
             'config.helpStartBody', '',
             `<div class="config-actions">
                 <button type="button" class="config-btn" data-help-action="cheatsheet">${esc(this.t('config.openCheatSheet', 'Open the cheat sheet'))}</button>

@@ -81,10 +81,19 @@ class DashboardConfigSync {
 
     setupDataRevisionListener() {
         const d = this.dash;
+        // Alt-tabbing back can fire both visibilitychange and focus within the
+        // same tick (order and pairing vary by browser), which without this
+        // would cost a second /api/data-revision round-trip for every refocus.
+        let lastCheckAt = 0;
         const checkRevision = () => {
             if (document.visibilityState && document.visibilityState !== 'visible') {
                 return;
             }
+            const now = Date.now();
+            if (now - lastCheckAt < 500) {
+                return;
+            }
+            lastCheckAt = now;
             void d.data?.refreshIfDataRevisionChanged?.();
         };
         document.addEventListener('visibilitychange', checkRevision);

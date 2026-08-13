@@ -15,62 +15,89 @@
 
 /* ─── Header ────────────────────────────────────────────────────────────── */
 
+/* Two rows, matching .inbox-header's height: the title (with its breadcrumb)
+   on the first, and the subtitle, score meta and settings button sharing the
+   second. The score used to sit beside the title, which put it a line above
+   the text it summarises. */
 .health-view-header {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    /* Wraps so the trend chart drops onto its own line under the title and meta
-       rather than squeezing between them. */
-    flex-wrap: wrap;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.25rem;
     padding: 0.25rem 0.35rem 0.5rem;
     border-bottom: 1px solid var(--border-primary);
 }
 
-/* The way from a symptom on this screen to the setting behind it. Sits at the
-   right-hand end of the header's last row — beside the trend chart when there
-   is one, and on a line of its own before there are three days of history, so
-   it does not appear and disappear with the chart.
+/* Subtitle left, score meta and the settings button right, all on one
+   baseline. */
+.health-view-header-second-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
 
-   Deliberately quiet: it is a signpost, not an action. Styled as a text link
-   rather than a button so it does not compete with the toolbar below it. */
+/* The way from a symptom on this screen to the setting behind it. A real
+   button rather than the text link it used to be: it sits on the same line as
+   the score now, where an underlined word read as part of the sentence beside
+   it instead of something to press. Quiet styling still — it is a signpost,
+   not an action, and must not compete with the toolbar below. */
 .health-view-settings-link {
-    margin-left: auto;
-    align-self: center;
+    flex-shrink: 0;
+    /* An outline, not a border: it paints outside the box, so the button reads
+       as a button without adding the 2px that a border would. Together with the
+       matched line-height and no vertical padding, this keeps the button the
+       same height as the subtitle text beside it — which is what keeps this
+       header level with .inbox-header. */
     border: none;
-    background: none;
-    padding: 0;
+    outline: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    padding: 0 0.5rem;
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 0.68rem;
-    opacity: 0.75;
-    text-decoration: underline;
-    text-underline-offset: 0.15em;
+    font-size: var(--font-size-controls);
+    line-height: inherit;
     cursor: pointer;
 }
 
-.health-view-settings-link:hover,
+.health-view-settings-link:hover {
+    color: var(--accent-primary);
+    outline-color: var(--accent-primary);
+}
+
+/* Thicker rather than a different colour: the resting state already uses the
+   outline, so focus has to be visible against it without the ring growing into
+   the line box. */
 .health-view-settings-link:focus-visible {
     color: var(--accent-primary);
-    opacity: 1;
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
 }
 
 /* ─── Collection trend ──────────────────────────────────────────────────── */
 
-/* Full-width row of its own: the chart is a wide, short shape and pairing it
-   beside the meta would compress both. */
+/* Lives in the toolbar's action row, filling the gap that was left between the
+   buttons and the help icon. It used to be a full-width row inside the header,
+   which is what made the health header taller than the inbox one — the two are
+   otherwise the same shape, and the difference read as a mistake. */
 .health-view-trend {
-    flex-basis: 100%;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 0.1rem;
+    /* Takes the free space rather than a fixed width, so the chart grows into
+       whatever the buttons leave and shrinks first when they need room. */
+    flex: 1 1 6rem;
+    min-width: 0;
+    justify-content: flex-end;
 }
 
 .health-view-trend-chart {
     color: var(--accent-success);
     opacity: 0.85;
-    max-width: 100%;
+    /* Overrides the SVG's width attribute: the viewBox keeps the aspect ratio
+       while the element itself follows the flex track. */
+    width: 100%;
+    min-width: 0;
     height: auto;
 }
 
@@ -242,6 +269,17 @@
     opacity: 0.8;
 }
 
+/* Title and breadcrumb share one line, so this header is two rows like
+   .inbox-header rather than three. Health is the only one of the three views
+   with a breadcrumb, and putting it on its own line made this header taller
+   than the inbox's for a reason the user cannot see. */
+.health-view-title-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
 .health-view-title {
     margin: 0;
     font-size: 1.15rem;
@@ -249,10 +287,8 @@
     color: var(--text-primary);
 }
 
-/* Full-width under the heading, above the section intro — same placement as
-   config-view-head-breadcrumb. */
 .health-view-head-breadcrumb {
-    margin: 0.15rem 0 0;
+    margin: 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
 }
@@ -262,7 +298,7 @@
 }
 
 .health-view-subtitle {
-    margin: 0.25rem 0 0;
+    margin: 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
 }
@@ -281,7 +317,11 @@
     align-items: center;
     justify-content: center;
     min-width: 2.25rem;
-    padding: 0.1rem 0.45rem;
+    /* No vertical padding: this badge shares its line with the subtitle text,
+       and any extra height here sets the row's — which is what keeps this
+       header level with .inbox-header. The pill shape comes from the
+       horizontal padding and the radius, not from height. */
+    padding: 0 0.45rem;
     border-radius: 999px;
     font-size: 0.72rem;
     font-weight: var(--font-weight-semibold);

@@ -67,12 +67,32 @@ func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	return false
 }
 
+func (h *Handlers) pageExists(pageID int) bool {
+	for _, page := range h.store.GetPages() {
+		if page.ID == pageID {
+			return true
+		}
+	}
+	return false
+}
+
 func respondBookmarkMutationError(w http.ResponseWriter, err error) bool {
 	if err == nil {
 		return true
 	}
 	if errors.Is(err, ErrBookmarkNotFound) {
 		http.Error(w, "Bookmark index out of range", http.StatusNotFound)
+		return false
+	}
+	return respondStorePersistError(w, err)
+}
+
+func respondCategoriesSaveError(w http.ResponseWriter, err error) bool {
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, ErrCategoriesStillReferenced) {
+		http.Error(w, "Bookmarks on this page still reference a category; move or delete them first", http.StatusConflict)
 		return false
 	}
 	return respondStorePersistError(w, err)
@@ -363,6 +383,11 @@ func healthReasonLegacyLabel(r HealthReason) string {
 		if n := r.Params["count"]; n != "" {
 			return fmt.Sprintf("Shortcut conflict with %s bookmarks", n)
 		}
+	case "orphaned_category":
+		if c := r.Params["category"]; c != "" {
+			return fmt.Sprintf("Category %q no longer exists", c)
+		}
+		return "Category no longer exists"
 	case "status_never_run":
 		return "Status check has never run"
 	case "status_stale":
@@ -394,6 +419,9 @@ const (
 	healthPenaltyBroken           = 60
 	healthPenaltyDuplicate        = 15
 	healthPenaltyShortcutConflict = 15
+	// Same weight as the other data-integrity faults: the bookmark still works,
+	// but it has fallen out of the category structure the user organised it into.
+	healthPenaltyOrphanedCategory = 15
 	healthPenaltyNeverChecked     = 10
 	healthPenaltyNotOpened30Days  = 10
 	healthPenaltyNeverOpened      = 10
@@ -422,6 +450,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	duplicateRefs := make(map[string][]BookmarkRef)
 	duplicateCounts := make(map[string]int)
 	shortcutCounts := make(map[string]int)
+	// Valid category ids per page, read once per page rather than once per
+	// bookmark. Bookmark.Category holds a category id, so a bookmark whose id is
+	// absent here points at a category that was deleted out from under it —
+	// deleting one category from a non-empty list is allowed and deliberately
+	// leaves its bookmarks behind (see SaveCategoriesByPage), and the
+	// rebuild-from-refs recovery only fires when the list is entirely empty, so
+	// nothing heals these on read.
+	categoryIDsByPage := make(map[int]map[string]struct{}, len(pages))
 
 	// One read serves every monitored row; buildMonitorStats derives the rest.
 	monitorHistory := h.readAllHealthHistory()
@@ -432,6 +468,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 
 	for _, page := range pages {
 		bookmarks := h.store.GetBookmarksByPage(page.ID)
+		categories := h.store.GetCategoriesByPage(page.ID)
+		validCategoryIDs := make(map[string]struct{}, len(categories))
+		for _, category := range categories {
+			if id := strings.TrimSpace(category.ID); id != "" {
+				validCategoryIDs[id] = struct{}{}
+			}
+		}
+		categoryIDsByPage[page.ID] = validCategoryIDs
 		entries := make([]bookmarkEntry, 0, len(bookmarks))
 		for idx, bm := range bookmarks {
 			entry := bookmarkEntry{bookmark: bm, index: idx}
@@ -473,16 +517,18 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			return 2
 		case "shortcut-conflict":
 			return 3
-		case "unchecked":
+		case "orphaned-category":
 			return 4
-		case "stale":
+		case "unchecked":
 			return 5
+		case "stale":
+			return 6
 		case "unused":
-			return 6
-		case "missing-preview":
-			return 6
-		default:
 			return 7
+		case "missing-preview":
+			return 7
+		default:
+			return 8
 		}
 	}
 
@@ -518,6 +564,14 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			isMissingPreview := missingPreview(bm)
 			shortcutKey := normalizeShortcut(bm.Shortcut)
 			isShortcutConflict := shortcutKey != "" && shortcutCounts[shortcutKey] > 1
+			// An empty category is "uncategorized", a legitimate state — only a
+			// non-empty id that matches no category on the page is orphaned.
+			categoryKey := strings.TrimSpace(bm.Category)
+			isOrphanedCategory := false
+			if categoryKey != "" {
+				_, known := categoryIDsByPage[page.ID][categoryKey]
+				isOrphanedCategory = !known
+			}
 			isDrifting := bm.Monitor && bm.WatchDrift && strings.TrimSpace(bm.DriftNoticed) != ""
 
 			status := "healthy"
@@ -573,6 +627,18 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 					Penalty: healthPenaltyShortcutConflict,
 				})
 				score -= healthPenaltyShortcutConflict
+			}
+			if isOrphanedCategory {
+				if status == "healthy" {
+					status = "orphaned-category"
+				}
+				flags = append(flags, "orphaned-category")
+				appendHealthReason(&reasonDetails, &reasons, HealthReason{
+					Code:    "orphaned_category",
+					Params:  map[string]string{"category": categoryKey},
+					Penalty: healthPenaltyOrphanedCategory,
+				})
+				score -= healthPenaltyOrphanedCategory
 			}
 			// Never run and overdue are two ways of being "unchecked" and share the
 			// status, so they share the flag too — matching UncheckedCount, which
@@ -654,6 +720,9 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			}
 			if isShortcutConflict {
 				report.Summary.ShortcutConflictCount++
+			}
+			if isOrphanedCategory {
+				report.Summary.OrphanedCategoryCount++
 			}
 			if isChecked && (isUnchecked || isStaleCheck) {
 				report.Summary.UncheckedCount++
@@ -924,9 +993,11 @@ func (h *Handlers) GetBookmarks(w http.ResponseWriter, r *http.Request) {
 		}
 		bookmarks = h.store.GetBookmarksByPage(pageID)
 	} else {
-		// No page ID provided - return empty array
-		// Pages are required now, no global bookmarks
-		bookmarks = []Bookmark{}
+		// Silently returning an empty array here used to mask a typo'd or
+		// missing query param as "this page has zero bookmarks" — now it is
+		// what it actually is, a malformed request.
+		http.Error(w, "page or all is required", http.StatusBadRequest)
+		return
 	}
 
 	writeJSONWithETag(w, r, bookmarks)
@@ -1040,6 +1111,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 	for i := range bookmarks {
 		bookmarks[i].Tags = normalizeTags(bookmarks[i].Tags)
 		bookmarks[i].Icon = sanitizeBookmarkIcon(bookmarks[i].Icon)
+		trimBookmarkTextFields(&bookmarks[i])
 	}
 
 	beforeBookmarks := h.store.GetBookmarksByPage(pageID)
@@ -1111,6 +1183,7 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 
 	request.Bookmark.Tags = normalizeTags(request.Bookmark.Tags)
 	request.Bookmark.Icon = sanitizeBookmarkIcon(request.Bookmark.Icon)
+	trimBookmarkTextFields(&request.Bookmark)
 
 	if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.Page, request.Bookmark)) {
 		return
@@ -1119,6 +1192,14 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	logBookmarkAdd(request.Bookmark, r)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+// trimBookmarkTextFields trims the free-text fields that were being stored
+// verbatim while Tags/Icon were already normalized at the same call sites.
+func trimBookmarkTextFields(b *Bookmark) {
+	b.Name = strings.TrimSpace(b.Name)
+	b.Category = strings.TrimSpace(b.Category)
+	b.Note = strings.TrimSpace(b.Note)
 }
 
 // normalizeTags trims, lowercases, deduplicates, and removes empty tag values.
@@ -1221,7 +1302,7 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		for _, name := range newCatOrder {
 			categories = append(categories, Category{ID: newCatNames[name], Name: name})
 		}
-		if !respondStorePersistError(w, h.store.SaveCategoriesByPage(request.PageID, categories)) {
+		if !respondCategoriesSaveError(w, h.store.SaveCategoriesByPage(request.PageID, categories)) {
 			return
 		}
 	}
@@ -1250,6 +1331,8 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		imported++
 	}
 
+	// Both the bookmarks and the categories the report reads have changed.
+	h.invalidateHealthReportCache()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]int{"imported": imported, "skipped": skipped})
 	logBrowserImport(request.PageID, imported, skipped, r)
@@ -1303,6 +1386,10 @@ func (h *Handlers) GetCategories(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
 		return
 	}
+	if !h.pageExists(pageID) {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
 
 	categories := h.store.GetCategoriesByPage(pageID)
 	writeJSONWithETag(w, r, categories)
@@ -1350,10 +1437,32 @@ func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
 		return
 	}
-
-	if !respondStorePersistError(w, h.store.SaveCategoriesByPage(pageID, categories)) {
+	if !h.pageExists(pageID) {
+		http.Error(w, "Page not found", http.StatusNotFound)
 		return
 	}
+
+	// ?dryRun=1 answers with what the save would change and writes nothing.
+	// Same handler, same payload, same validation as the real save — a separate
+	// endpoint would be free to drift from the thing it is meant to predict.
+	if dryRun := r.URL.Query().Get("dryRun"); dryRun == "1" || dryRun == "true" {
+		preview, err := h.store.PreviewCategoriesByPage(pageID, categories)
+		if err != nil {
+			http.Error(w, "Failed to preview categories", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(preview)
+		return
+	}
+
+	if !respondCategoriesSaveError(w, h.store.SaveCategoriesByPage(pageID, categories)) {
+		return
+	}
+	// The report reads categories to find bookmarks orphaned by a deleted one,
+	// so a category save now changes what it would say. Without this the
+	// orphaned-category rows only appear once the cache TTL expires.
+	h.invalidateHealthReportCache()
 	logCategoriesSave(pageID, len(categories), r)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
@@ -1884,6 +1993,14 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 		return preview
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// An error page still has a <title> and og: tags — parsing it would
+		// cache a plausible-looking preview for a link that is actually
+		// dead, masking exactly the breakage the health checker exists to
+		// surface.
+		return preview
+	}
 
 	if resp.Request != nil && resp.Request.URL != nil {
 		preview.URL = resp.Request.URL.String()

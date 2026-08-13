@@ -17,6 +17,34 @@
 class DashboardStructureCreate {
     constructor(dashboard) {
         this.dash = dashboard;
+        // Every method here is read-the-list, change it, write-the-whole-list
+        // back — there is no version check on the server. Several unrelated UI
+        // entry points (the pages overlay, the grid's category placeholder, its
+        // right-click menu, the command palette) can all reach the same pageId's
+        // methods, so serializing per key here is the one place that covers all
+        // of them at once instead of each caller having to remember to disable
+        // its own button.
+        this._pendingStructureWrites = new Map();
+    }
+
+
+    /**
+     * Run `fn` after any write already in flight for `key` settles, so two
+     * overlapping create/delete calls against the same page's category list
+     * (or the page list itself) apply in order instead of one clobbering the
+     * other's read-modify-write.
+     */
+    _serializeStructureWrite(key, fn) {
+        const prior = this._pendingStructureWrites.get(key) || Promise.resolve();
+        const run = prior.then(fn, fn);
+        const settled = run.catch(() => {});
+        this._pendingStructureWrites.set(key, settled);
+        settled.finally(() => {
+            if (this._pendingStructureWrites.get(key) === settled) {
+                this._pendingStructureWrites.delete(key);
+            }
+        });
+        return run;
     }
 
 
@@ -41,6 +69,10 @@ class DashboardStructureCreate {
      * Resolves to `{ id }` on success or `{ error }` with a message to show.
      */
     async createPageFromForm(name) {
+        return this._serializeStructureWrite('pages', () => this._createPageFromForm(name));
+    }
+
+    async _createPageFromForm(name) {
         const d = this.dash;
         const cfg = (key, fb) => d.configLabel(key, fb);
         try {
@@ -78,6 +110,13 @@ class DashboardStructureCreate {
      * Resolves to `{ id }` on success or `{ error }` with a message to show.
      */
     async createCategoryFromForm(pageId, name) {
+        return this._serializeStructureWrite(
+            `categories:${pageId}`,
+            () => this._createCategoryFromForm(pageId, name)
+        );
+    }
+
+    async _createCategoryFromForm(pageId, name) {
         const d = this.dash;
         const cfg = (key, fb) => d.configLabel(key, fb);
         try {
@@ -128,6 +167,13 @@ class DashboardStructureCreate {
      * second one, so it cannot drift from what was actually deleted.
      */
     async deleteCategory(pageId, categoryId) {
+        return this._serializeStructureWrite(
+            `categories:${pageId}`,
+            () => this._deleteCategory(pageId, categoryId)
+        );
+    }
+
+    async _deleteCategory(pageId, categoryId) {
         const d = this.dash;
         const cfg = (key, fb) => d.configLabel(key, fb);
         try {
@@ -186,6 +232,13 @@ class DashboardStructureCreate {
      * Resolves to `{ ok }` or `{ error }`.
      */
     async restoreCategories(pageId, rows) {
+        return this._serializeStructureWrite(
+            `categories:${pageId}`,
+            () => this._restoreCategories(pageId, rows)
+        );
+    }
+
+    async _restoreCategories(pageId, rows) {
         const d = this.dash;
         const cfg = (key, fb) => d.configLabel(key, fb);
         try {

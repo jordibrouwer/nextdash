@@ -89,6 +89,10 @@ class DashboardRecent {
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
 
         const skeletonCount = 5;
+        // aria-hidden on the rows keeps screen readers from reading placeholder
+        // shapes, but on its own that left assistive tech announcing nothing at
+        // all while it loaded — aria-busy on the container that hosts it says
+        // "content is coming" instead of silence.
         const skeletonHtml = `<div class="recent-bookmarks-skeleton" aria-hidden="true">${
             Array.from({ length: skeletonCount }, () =>
                 `<div class="recent-bookmarks-skeleton-row">
@@ -117,6 +121,9 @@ class DashboardRecent {
                 this._cleanupRecentModalKeyHandler();
             },
         });
+        (document.getElementById('modal-text')
+            || document.querySelector('.recent-bookmarks-modal .modal-body'))
+            ?.setAttribute('aria-busy', 'true');
 
         if (!d._bookmarksReady) {
             d._pendingRecentModalRefresh = true;
@@ -190,6 +197,7 @@ class DashboardRecent {
             : `<div class="recent-bookmarks-empty">${d.escapeHtml(noRecentText)}</div>`;
 
         contentEl.innerHTML = listHtml;
+        contentEl.setAttribute('aria-busy', 'false');
 
         if (recentBookmarks.length > 0) {
             contentEl.querySelectorAll('.recent-bookmarks-modal-item[data-recent-index]').forEach((item) => {

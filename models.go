@@ -17,6 +17,13 @@ import (
 
 var ErrBookmarkNotFound = errors.New("bookmark not found")
 
+// ErrCategoriesStillReferenced is returned by SaveCategoriesByPage when the
+// caller submits an empty category list while bookmarks on the page still
+// reference one. Saving is refused rather than silently ignored, so a client
+// that really means to clear every category (moving those bookmarks to
+// uncategorized) gets a signal instead of a 200 that changed nothing.
+var ErrCategoriesStillReferenced = errors.New("categories still referenced by bookmarks")
+
 type Bookmark struct {
 	Name        string `json:"name"`
 	URL         string `json:"url"`
@@ -488,6 +495,7 @@ type Store interface {
 	// Categories - per page only
 	GetCategoriesByPage(pageID int) []Category
 	SaveCategoriesByPage(pageID int, categories []Category) error
+	PreviewCategoriesByPage(pageID int, categories []Category) (CategoryRemapPreview, error)
 	// Finders
 	GetFinders() []Finder
 	SaveFinders(finders []Finder) error
@@ -516,7 +524,7 @@ type Store interface {
 	InvalidateReadCache()
 	// Inbox
 	GetInboxItems() []InboxLink
-	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, error)
+	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error)
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)
@@ -1044,7 +1052,7 @@ func (fs *FileStore) writePageWithBookmarksLocked(pageID int, pageWithBookmarks 
 	for i := range pageWithBookmarks.Bookmarks {
 		pageWithBookmarks.Bookmarks[i].PageID = pageID
 	}
-	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
 }
 
 func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) error {
@@ -1149,7 +1157,10 @@ func (fs *FileStore) saveBookmarksByPageLocked(pageID int, bookmarks []Bookmark)
 			Categories: getDefaultNewPageCategories(),
 			Bookmarks:  bookmarks,
 		}
-		return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+		// A new bookmarks-N.json file changes what GetPages() reports (its
+		// list is filename-driven — see getPages), so this is not a
+		// single-page-scoped write even though it only touches one page's file.
+		return fs.writeStoreJSONFile(filePath, pageWithBookmarks, 0)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
@@ -1159,7 +1170,7 @@ func (fs *FileStore) saveBookmarksByPageLocked(pageID int, bookmarks []Bookmark)
 
 	stampBookmarkUpdatedAt(pageWithBookmarks.Bookmarks, bookmarks, time.Now().UnixMilli())
 	pageWithBookmarks.Bookmarks = bookmarks
-	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
 }
 
 // stampBookmarkUpdatedAt sets UpdatedAt on every bookmark in next whose content
@@ -1281,7 +1292,9 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 			Categories: getDefaultNewPageCategories(),
 			Bookmarks:  []Bookmark{bookmark},
 		}
-		return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+		// New bookmarks-N.json file — see the same note in
+		// saveBookmarksByPageLocked.
+		return fs.writeStoreJSONFile(filePath, pageWithBookmarks, 0)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
@@ -1294,7 +1307,7 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 		bookmark.UpdatedAt = time.Now().UnixMilli()
 	}
 	pageWithBookmarks.Bookmarks = append(pageWithBookmarks.Bookmarks, bookmark)
-	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
 }
 
 func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmark) error {
@@ -1324,12 +1337,7 @@ func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmar
 	}
 	pageWithBookmarks.Bookmarks = updated
 
-	// Save the updated data
-	newData, err := json.MarshalIndent(pageWithBookmarks, "", "  ")
-	if err != nil {
-		return err
-	}
-	return writeFileAtomic(filePath, newData, 0644)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
 }
 
 func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Bookmark) ([]Bookmark, bool) {
@@ -1497,7 +1505,7 @@ func (fs *FileStore) SaveFinders(finders []Finder) error {
 	fs.ensureDataDir()
 
 	filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
-	return fs.writeStoreJSONFile(filePath, finders)
+	return fs.writeStoreJSONFile(filePath, finders, 0)
 }
 
 // GetCategoriesByPage returns categories stored inside bookmarks-{pageID}.json if present
@@ -1568,7 +1576,9 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 			Categories: categories,
 			Bookmarks:  []Bookmark{},
 		}
-		return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+		// New bookmarks-N.json file — see the same note in
+		// saveBookmarksByPageLocked.
+		return fs.writeStoreJSONFile(filePath, pageWithBookmarks, 0)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
@@ -1577,29 +1587,10 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 	}
 
 	if len(categories) == 0 && bookmarksReferenceCategories(pageWithBookmarks.Bookmarks) {
-		// Ignore accidental empty saves while bookmarks still reference categories.
-		return nil
+		return ErrCategoriesStillReferenced
 	}
 
-	// Create a mapping from old category IDs to new category IDs
-	// This allows us to update bookmarks when category names (and thus IDs) change
-	oldToNewCategoryMap := make(map[string]string)
-
-	// Build the mapping using originalId if available, otherwise try to match by position or name
-	for i, newCat := range categories {
-		// If originalId is set, use it to find the old category
-		if newCat.OriginalID != "" {
-			oldToNewCategoryMap[newCat.OriginalID] = newCat.ID
-			// Also map from current ID to new ID in case they're different
-			if newCat.OriginalID != newCat.ID {
-				oldToNewCategoryMap[newCat.OriginalID] = newCat.ID
-			}
-		} else if i < len(pageWithBookmarks.Categories) {
-			// Fallback: map by position if originalId is not available
-			oldCat := pageWithBookmarks.Categories[i]
-			oldToNewCategoryMap[oldCat.ID] = newCat.ID
-		}
-	}
+	oldToNewCategoryMap := buildCategoryRemap(categories)
 
 	// Update bookmarks to use new category IDs
 	for i := range pageWithBookmarks.Bookmarks {
@@ -1610,7 +1601,156 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 	}
 
 	pageWithBookmarks.Categories = categories
-	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
+}
+
+// buildCategoryRemap maps old category IDs to the IDs they become.
+//
+// Built from originalId. Every known client sends it on every category (see
+// dashboard-persistence.js, dashboard-render-core.js,
+// dashboard-category-sort.js), so it is the only reliable signal for "this new
+// entry replaces that old one". A positional fallback was tried here before and
+// misfired: dropping a middle category shifts every later index by one, so
+// category N's bookmarks would be silently reassigned to category N+1's new ID.
+// If a category is genuinely unchanged (id kept as is) it needs no mapping at
+// all — its bookmarks already point at the right ID — so the only remaining
+// safe fallback is "same ID in and out".
+//
+// Shared with PreviewCategoriesByPage rather than duplicated there: a preview
+// that computed the outcome its own way would eventually disagree with the save
+// it is supposed to be predicting, which is the one thing a dry-run may not do.
+func buildCategoryRemap(categories []Category) map[string]string {
+	remap := make(map[string]string, len(categories))
+	for _, newCat := range categories {
+		if newCat.OriginalID != "" {
+			remap[newCat.OriginalID] = newCat.ID
+			continue
+		}
+		remap[newCat.ID] = newCat.ID
+	}
+	return remap
+}
+
+// CategoryRemapMove is one bookmark that a category save would move, named so
+// the client can show which rows are affected rather than only how many.
+type CategoryRemapMove struct {
+	BookmarkName string `json:"bookmarkName"`
+	URL          string `json:"url"`
+	FromCategory string `json:"fromCategory"`
+	ToCategory   string `json:"toCategory"`
+}
+
+// CategoryRemapPreview is what SaveCategoriesByPage would do, without doing it.
+type CategoryRemapPreview struct {
+	PageID int `json:"pageId"`
+	// Moved lists bookmarks whose category id would change.
+	Moved []CategoryRemapMove `json:"moved"`
+	// Orphaned lists bookmarks whose category would survive the save pointing
+	// at an id that no longer exists — the case that makes this preview worth
+	// having, since the save reports nothing about it and the dashboard renders
+	// the result identically to "uncategorized".
+	Orphaned []CategoryRemapMove `json:"orphaned"`
+	// MissingOriginalID names categories submitted without an originalId whose
+	// id is not among the current ones. The remap can only treat those as new,
+	// so if one was meant as a rename its bookmarks are left behind.
+	MissingOriginalID []string `json:"missingOriginalId"`
+	// Rejected is set when the save would fail outright rather than apply, with
+	// Reason carrying the sentinel's name.
+	Rejected bool   `json:"rejected"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+// PreviewCategoriesByPage reports what SaveCategoriesByPage would change.
+//
+// The remap is driven by originalId, which is fragile in a specific way: a
+// client that omits it on a renamed category gets a silent no-op — the save
+// succeeds, the category list updates, and the bookmarks are quietly left
+// pointing at an id that no longer exists. Nothing in the response says so.
+// This computes the same outcome through the same helper, so a caller can show
+// the damage before committing to it.
+func (fs *FileStore) PreviewCategoriesByPage(pageID int, categories []Category) (CategoryRemapPreview, error) {
+	fs.mutex.RLock()
+	defer fs.mutex.RUnlock()
+
+	preview := CategoryRemapPreview{
+		PageID:            pageID,
+		Moved:             []CategoryRemapMove{},
+		Orphaned:          []CategoryRemapMove{},
+		MissingOriginalID: []string{},
+	}
+
+	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// A save here creates the page with these categories and no
+			// bookmarks, so there is nothing to remap and nothing to warn about.
+			return preview, nil
+		}
+		return preview, err
+	}
+
+	var pageWithBookmarks PageWithBookmarks
+	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
+		return preview, fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
+	}
+
+	// Mirrors the guard in SaveCategoriesByPage: a preview that promised a
+	// clean apply for a save that will be refused would be worse than none.
+	if len(categories) == 0 && bookmarksReferenceCategories(pageWithBookmarks.Bookmarks) {
+		preview.Rejected = true
+		preview.Reason = "categories_still_referenced"
+		return preview, nil
+	}
+
+	remap := buildCategoryRemap(categories)
+
+	currentIDs := make(map[string]struct{}, len(pageWithBookmarks.Categories))
+	for _, category := range pageWithBookmarks.Categories {
+		if id := strings.TrimSpace(category.ID); id != "" {
+			currentIDs[id] = struct{}{}
+		}
+	}
+	for _, category := range categories {
+		if category.OriginalID != "" {
+			continue
+		}
+		if _, known := currentIDs[category.ID]; !known {
+			preview.MissingOriginalID = append(preview.MissingOriginalID, category.ID)
+		}
+	}
+
+	survivingIDs := make(map[string]struct{}, len(categories))
+	for _, category := range categories {
+		if id := strings.TrimSpace(category.ID); id != "" {
+			survivingIDs[id] = struct{}{}
+		}
+	}
+
+	for _, bookmark := range pageWithBookmarks.Bookmarks {
+		from := strings.TrimSpace(bookmark.Category)
+		if from == "" {
+			continue
+		}
+		to := from
+		if mapped, exists := remap[from]; exists {
+			to = mapped
+		}
+		move := CategoryRemapMove{
+			BookmarkName: bookmark.Name,
+			URL:          bookmark.URL,
+			FromCategory: from,
+			ToCategory:   to,
+		}
+		if to != from {
+			preview.Moved = append(preview.Moved, move)
+		}
+		if _, survives := survivingIDs[to]; !survives {
+			preview.Orphaned = append(preview.Orphaned, move)
+		}
+	}
+
+	return preview, nil
 }
 
 func (fs *FileStore) GetPages() []Page {
@@ -1821,7 +1961,7 @@ func (fs *FileStore) savePageOrder(order []int) error {
 		Order: order,
 	}
 
-	return fs.writeStoreJSONFile(fs.pageOrderFile, pageOrder)
+	return fs.writeStoreJSONFile(fs.pageOrderFile, pageOrder, 0)
 }
 
 func (fs *FileStore) SavePage(page Page) error {
@@ -1847,7 +1987,9 @@ func (fs *FileStore) SavePage(page Page) error {
 		existing.Categories = getDefaultNewPageCategories()
 	}
 
-	return fs.writeStoreJSONFile(fileName, existing)
+	// May create bookmarks-N.json (new page) or rename an existing one — either
+	// way GetPages() can change, so this is not single-page-scoped.
+	return fs.writeStoreJSONFile(fileName, existing, 0)
 }
 
 func (fs *FileStore) removeFactoryResetUserAssets() {
@@ -1898,7 +2040,7 @@ func (fs *FileStore) resetAllDataLocked() error {
 	// user the previous one's data through the trash.
 	os.Remove(trashFilePath(fs.dataDir))
 
-	fs.noteDataMutation()
+	fs.noteDataMutation(0)
 	return nil
 }
 
@@ -1981,7 +2123,7 @@ func (fs *FileStore) MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIc
 	if err := writeFileAtomic(filePath, newData, 0644); err != nil {
 		return 0
 	}
-	fs.noteDataMutation()
+	fs.noteDataMutation(pageID)
 	return applied
 }
 
@@ -1996,7 +2138,9 @@ func (fs *FileStore) DeletePage(pageID int) error {
 	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	fs.noteDataMutation()
+	// Removing bookmarks-N.json changes what GetPages() reports — see the same
+	// note in saveBookmarksByPageLocked.
+	fs.noteDataMutation(0)
 	return nil
 }
 
@@ -2032,7 +2176,8 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	if restored.Bookmarks == nil {
 		restored.Bookmarks = []Bookmark{}
 	}
-	if err := fs.writeStoreJSONFile(filePath, restored); err != nil {
+	// A restore always creates a new bookmarks-N.json — not single-page-scoped.
+	if err := fs.writeStoreJSONFile(filePath, restored, 0); err != nil {
 		return err
 	}
 
@@ -2040,7 +2185,7 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	order := fs.getPageOrder()
 	for _, id := range order {
 		if id == snapshot.Page.ID {
-			fs.noteDataMutation()
+			fs.noteDataMutation(0)
 			return nil
 		}
 	}
@@ -2055,7 +2200,7 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	if err := fs.savePageOrder(next); err != nil {
 		return err
 	}
-	fs.noteDataMutation()
+	fs.noteDataMutation(0)
 	return nil
 }
 
@@ -2567,7 +2712,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 		settings.Theme = defaultThemeID
 	}
 
-	return fs.writeStoreJSONFile(fs.settingsFile, settings)
+	return fs.writeStoreJSONFile(fs.settingsFile, settings, 0)
 }
 
 func getDefaultLightTheme() ThemeColors {
@@ -2966,7 +3111,7 @@ func (fs *FileStore) SaveColors(colors ColorTheme) error {
 		colors.Custom = map[string]ThemeColors{}
 	}
 
-	return fs.writeStoreJSONFile(fs.colorsFile, colors)
+	return fs.writeStoreJSONFile(fs.colorsFile, colors, 0)
 }
 
 type HealthSummary struct {
@@ -2990,6 +3135,12 @@ type HealthSummary struct {
 	MissingPreviewCount   int `json:"missingPreviewCount"`
 	UnusedCount           int `json:"unusedCount"`
 	ShortcutConflictCount int `json:"shortcutConflictCount"`
+	// OrphanedCategoryCount is bookmarks whose Category id matches no category
+	// on their own page — the category was deleted without moving them. They
+	// still work and still open; they have just dropped out of the structure,
+	// which is invisible on the dashboard because uncategorized and
+	// orphaned-category rows land in the same place.
+	OrphanedCategoryCount int `json:"orphanedCategoryCount"`
 	PinnedCount           int `json:"pinnedCount"`
 	// DriftCount is bookmarks currently flagged by rot detection — a redirect,
 	// title, or content change since the watched baseline. Layered on top of

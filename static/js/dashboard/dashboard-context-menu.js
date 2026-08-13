@@ -124,10 +124,33 @@ class DashboardContextMenu {
         const currentMode = bookmarkRef.scope === 'inbox'
             ? null
             : window.CheckMode?.meta(window.CheckMode.of(bookmark));
+        // The inbox row's own actions, not just the three every link shares.
+        // Right-click is the mouse user's reflex, and it used to land on a menu
+        // with no way to promote, snooze, note or mark read — the four things
+        // this view exists to do, reachable only from the hover-revealed row
+        // buttons or a keyboard shortcut.
+        const inboxItem = bookmarkRef.scope === 'inbox'
+            ? (d.inbox?.items || []).find((entry) => entry.id === row?.getAttribute('data-inbox-id'))
+            : null;
         const inboxActions = [
             { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
+            { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★' },
+            // Only offered while the row is unread: markReadFromKeyboard is a
+            // no-op on an already-read row, so a "Mark unread" entry here would
+            // do nothing at all.
+            ...(inboxItem && !inboxItem.readAt
+                ? [{ id: 'inbox-read', label: this.t('dashboard.inboxMarkRead', 'Mark read'), icon: '✓' }]
+                : []),
+            { id: 'inbox-snooze', label: this.t('dashboard.inboxSnooze', 'Snooze'), icon: '⏰' },
+            { id: 'inbox-note', label: this.t('dashboard.inboxNoteAction', 'Note'), icon: '✎' },
+            { id: 'inbox-tags', label: this.t('dashboard.inboxTagsAction', 'Tags'), icon: '#' },
+            // buildItemShareUrl preserves the filter, sort, query and domain
+            // alongside the item id, so the link reopens the view as the sender
+            // had it. That work existed with no entry point offering it.
+            { id: 'inbox-copy-link', label: this.t('dashboard.inboxCopyItemLink', 'Copy link to this item'), icon: '🔗' },
+            { id: 'inbox-delete', label: this.t('dashboard.inboxDelete', 'Delete'), icon: '✕', danger: true },
         ];
         // Right-clicking a row that is part of a selection means "act on the
         // selection" — acting on the one row under the cursor would silently
@@ -764,6 +787,30 @@ class DashboardContextMenu {
                     }
                 }
                 void this.shareBookmark(shareTarget, row);
+                break;
+            }
+            // The inbox row's own actions. Each defers to the method the row
+            // buttons and keyboard shortcuts already call, so right-click cannot
+            // drift from the other two routes.
+            case 'inbox-promote':
+            case 'inbox-read':
+            case 'inbox-snooze':
+            case 'inbox-note':
+            case 'inbox-tags':
+            case 'inbox-copy-link':
+            case 'inbox-delete': {
+                const inbox = d.inbox;
+                const item = (inbox?.items || []).find(
+                    (entry) => entry.id === row?.getAttribute('data-inbox-id')
+                );
+                if (!inbox || !item) break;
+                if (action === 'inbox-promote') inbox.promoteItem(item);
+                else if (action === 'inbox-read') void inbox.markReadFromKeyboard(item);
+                else if (action === 'inbox-snooze') inbox.openSnoozeMenu(item, row);
+                else if (action === 'inbox-note') void inbox.editNote(item);
+                else if (action === 'inbox-tags') void inbox.editTags(item);
+                else if (action === 'inbox-copy-link') void inbox.copyItemLink(item.id);
+                else void inbox.deleteItemWithUndo(item.id);
                 break;
             }
             case 'edit':

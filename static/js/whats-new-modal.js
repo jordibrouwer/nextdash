@@ -363,6 +363,45 @@
         `;
     }
 
+    /**
+     * Compare two release tags, newest first when the result is positive.
+     *
+     * Mirrors compareReleaseTags in update_check.go, including the rule that
+     * matters most here: a semantic tag outranks a calendar one whatever the
+     * numbers say. nextDash tagged vYYYY.MM.N for its whole life, so a plain
+     * numeric sort puts v1.0.0 below every release that came before it — 1 is
+     * less than 2026 — and the newest release would sink to the bottom of the
+     * modal. A first segment at or above 1000 is a year; no semantic major will
+     * plausibly reach it.
+     */
+    const CALENDAR_VERSION_FLOOR = 1000;
+
+    function releaseTagParts(tag) {
+        const raw = String(tag || '').trim().replace(/^v/, '');
+        if (!raw) return [];
+        const parts = raw.split('.').map((seg) => Number.parseInt(seg.trim(), 10));
+        return parts.some((n) => !Number.isFinite(n)) ? [] : parts;
+    }
+
+    function compareReleaseTags(a, b) {
+        const pa = releaseTagParts(a);
+        const pb = releaseTagParts(b);
+
+        if (pa.length && pb.length) {
+            const calA = pa[0] >= CALENDAR_VERSION_FLOOR;
+            const calB = pb[0] >= CALENDAR_VERSION_FLOOR;
+            if (calA !== calB) return calA ? -1 : 1;
+        }
+
+        const len = Math.max(pa.length, pb.length);
+        for (let i = 0; i < len; i += 1) {
+            const va = i < pa.length ? pa[i] : 0;
+            const vb = i < pb.length ? pb[i] : 0;
+            if (va !== vb) return va < vb ? -1 : 1;
+        }
+        return 0;
+    }
+
     function releaseId(entry) {
         return (entry && (entry.id || entry.tag)) || '';
     }
@@ -377,7 +416,7 @@
             }))
             .sort((a, b) => {
                 // Version tag is authoritative (v2026.07.03 > v2026.07.02); releasedAt is tie-breaker only.
-                const tagDiff = b.tag.localeCompare(a.tag, undefined, { numeric: true });
+                const tagDiff = compareReleaseTags(b.tag, a.tag);
                 if (tagDiff !== 0) {
                     return tagDiff;
                 }

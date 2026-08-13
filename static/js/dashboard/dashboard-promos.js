@@ -6,14 +6,41 @@ class DashboardPromos {
         this.dash = dashboard;
     }
 
-    canShowPostOnboardingPrompts() {
+    /**
+     * May unprompted UI take the screen right now?
+     *
+     * The single answer for every module that wants to show something the user
+     * did not ask for — the what's-new prompt here, the occasional keyboard tip
+     * in dashboard-keyboard-tip.js. Both used to keep their own copy of these
+     * checks and their own retry loop; the copies had already drifted (the tip
+     * knew about .quickstart-card, this one did not).
+     *
+     * Note this is NOT an initialization milestone: it is a condition that goes
+     * false again whenever a modal opens or an inline edit starts, so callers
+     * still poll rather than awaiting a one-shot "ready" signal. Deliberately
+     * kept separate from the deep-link and data-loaded waits, which answer
+     * genuinely different questions.
+     *
+     * `options.ignoreQuickstart` exists for the what's-new prompt: it and the
+     * quick-start card can legitimately share a first run, where a tip cannot.
+     */
+    canShowUnpromptedUi(options = {}) {
         const d = this.dash;
         if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
         if (d.onboardingStartedInSession) return false;
         if (!d.settings?.onboardingCompleted) return false;
         if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
         if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
+        if (!options.ignoreQuickstart && document.querySelector('.quickstart-card')) return false;
         return true;
+    }
+
+
+    canShowPostOnboardingPrompts() {
+        // The what's-new prompt predates the quick-start card check and has
+        // always been allowed to run alongside it; keeping that exemption here
+        // rather than in the shared primitive.
+        return this.canShowUnpromptedUi({ ignoreQuickstart: true });
     }
 
 

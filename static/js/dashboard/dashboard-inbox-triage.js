@@ -343,7 +343,18 @@ class DashboardInboxTriage {
         if (!item) {
             return;
         }
-        await this.inbox.deleteItemWithUndo(item.id, { silent: true, skipRender: true });
+        // The result decides whether the card may go. It was discarded before,
+        // and `silent` suppresses the toast as well, so a failed delete removed
+        // the card from the queue and the row from the feed while the item was
+        // still on the server — reappearing on the next reload, with nothing
+        // said. Same shape as actOpen's markReadReporting check above.
+        const deleted = await this.inbox.deleteItemWithUndo(item.id, { silent: true, skipRender: true });
+        if (!deleted) {
+            this.inbox.dash.showErrorNotification?.(
+                this.inbox.t('dashboard.inboxDeleteFailed', 'Could not delete')
+            );
+            return;
+        }
         await this.afterAction(true, { removedId: item.id });
     }
 

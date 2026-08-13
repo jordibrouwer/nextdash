@@ -3,7 +3,7 @@
     "date": "August 2026",
     "releasedAt": "2026-08-11",
     "hideFromModal": true,
-    "modalLead": "Small fixes on top of v2026.09.09. Recorded here but not announced: v2026.09.09 is the release worth reading, and this does not displace it.",
+    "modalLead": "Small fixes on top of v2026.09.09: tap targets on tablets, and clearer labels where a control did not say what it would act on.",
     "sections": [
         {
             "title": "Dashboard",

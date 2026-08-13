@@ -597,6 +597,25 @@ body.no-animations .inbox-item-actions {
     font-size: 0.85rem;
 }
 
+/* Shown only when the load failed, so an unreachable server offers a way back
+   rather than reading as an empty inbox. Matches .health-view-retry-btn. */
+.inbox-retry-btn {
+    margin-top: 0.85rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 0;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--accent-primary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.inbox-retry-btn:hover,
+.inbox-retry-btn:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+}
+
 /* ─── Paste choice modal ─────────────────────────────────────────────────── */
 
 .paste-choice-overlay {
@@ -1099,6 +1118,22 @@ body.inbox-triage-active {
     font-variant-numeric: tabular-nums;
 }
 
+/* Ticked rows the filter is hiding. The bulk buttons only reach what is on
+   screen, so the count has to say what it will not touch — and offer a way to
+   make the selection match it. */
+.inbox-selection-offscreen {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-right: 0.25rem;
+}
+
+.inbox-selection-offscreen-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
 .inbox-bulk-btn--danger:hover {
     border-color: color-mix(in srgb, var(--accent-error) 55%, transparent);
     color: var(--accent-error);
@@ -1362,4 +1397,87 @@ body[data-layout-version="modern"] .inbox-empty {
         transition: none;
         transform: none;
     }
+}
+
+/* ─── Lifetime statistics ────────────────────────────────────────────────────
+   Behind the toolbar's Stats button. The figures come from /api/inbox-stats,
+   which survives items being triaged away — the config view reads the same
+   endpoint, but "am I promoting these or hoarding them" is the inbox's own
+   question, so it is answerable here too. */
+.inbox-stats {
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    padding: 0.7rem 0.85rem;
+}
+
+.inbox-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    gap: 0.6rem 1rem;
+}
+
+.inbox-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.inbox-stat-label {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    text-transform: lowercase;
+}
+
+.inbox-stat-value {
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.inbox-stats-since,
+.inbox-stats-empty {
+    margin: 0.6rem 0 0;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.inbox-stats-empty {
+    margin: 0;
+}
+
+/* Page picker for a bulk promote; reuses the snooze menu's surface. */
+.inbox-promote-menu-title {
+    margin: 0 0 0.3rem;
+    padding: 0 0.15rem;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+}
+
+/* ─── Row tags ───────────────────────────────────────────────────────────────
+   InboxLink.Tags was stored and normalised from the start but never rendered,
+   so the extension could file a link with tags nobody could see. Chips rather
+   than plain text because they filter, the way the domain button does. */
+.inbox-item-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0.3rem 0 0;
+}
+
+.inbox-item-tag {
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    border-radius: 999px;
+    padding: 0.05rem 0.45rem;
+    font-family: inherit;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.inbox-item-tag:hover,
+.inbox-item-tag:focus-visible {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    color: var(--accent-primary);
 }

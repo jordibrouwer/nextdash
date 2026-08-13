@@ -390,37 +390,87 @@ class DashboardVisual {
     /**
      * Keep the header badge fresh while bookmarks or monitors change elsewhere.
      * The health view has its own live refresh — polling is paused there.
+     *
+     * The base interval matches the server's health report cache TTL
+     * (healthReportCacheTTL, handlers.go). The old 60s interval meant two of
+     * every three polls could only ever be handed the same cached report back,
+     * paying a full round trip and a full JSON parse to learn nothing.
+     *
+     * On failure the delay backs off exponentially up to HEALTH_POLL_MAX_MS,
+     * so a server that is down or restarting is not hammered once a minute per
+     * open tab, and the badge recovers on its own once it answers again. A
+     * successful poll resets the delay.
      */
+    static HEALTH_POLL_BASE_MS = 3 * 60 * 1000;
+    static HEALTH_POLL_MAX_MS = 15 * 60 * 1000;
+
     syncHealthBadgePolling() {
         this.stopHealthBadgePolling();
         const d = this.dash;
         if (d.settings.showHealthDashboard !== true) {
             return;
         }
-        const tick = () => {
+        const base = DashboardVisual.HEALTH_POLL_BASE_MS;
+        const max = DashboardVisual.HEALTH_POLL_MAX_MS;
+        this._healthBadgePollDelay = base;
+
+        const stop = () => {
+            if (this._healthBadgePollTimer) {
+                clearTimeout(this._healthBadgePollTimer);
+                this._healthBadgePollTimer = null;
+            }
+            this._healthBadgePollArmedFor = null;
+        };
+        // setTimeout rather than setInterval: the delay is not constant, and a
+        // re-armed timeout also cannot stack ticks if a poll outlives its own
+        // interval.
+        const schedule = (delay) => {
+            stop();
+            // Recorded so the current backoff level is inspectable — from a
+            // console while diagnosing a quiet badge, and by the tests, which
+            // assert on the delay rather than waiting minutes for it.
+            this._healthBadgePollArmedFor = delay;
+            this._healthBadgePollTimer = setTimeout(tick, delay);
+        };
+        const tick = async () => {
+            this._healthBadgePollTimer = null;
             if (document.visibilityState !== 'visible') {
+                // Not rescheduled here: the visibility handler restarts polling
+                // when the tab comes back, and re-arming now would wake a
+                // background tab for a request it must not make anyway.
                 return;
             }
-            if (d.activeView === 'health') {
-                return;
+            // The health view refreshes itself; skipping keeps the badge from
+            // duplicating that work, but polling must resume on the way out, so
+            // this reschedules rather than returning like the hidden case.
+            if (d.activeView !== 'health') {
+                const ok = await this.updateHealthBadge();
+                this._healthBadgePollDelay = ok
+                    ? base
+                    : Math.min(this._healthBadgePollDelay * 2, max);
             }
-            void this.updateHealthBadge();
+            schedule(this._healthBadgePollDelay);
         };
         const start = () => {
             if (this._healthBadgePollTimer) {
                 return;
             }
-            this._healthBadgePollTimer = setInterval(tick, 60000);
+            schedule(this._healthBadgePollDelay);
         };
-        const stop = () => {
-            if (this._healthBadgePollTimer) {
-                clearInterval(this._healthBadgePollTimer);
-                this._healthBadgePollTimer = null;
-            }
-        };
+        // One poll, then re-arm — exactly what the timer fires. Exposed so the
+        // backoff can be exercised without waiting out delays measured in
+        // minutes; nothing in the app calls it.
+        this._healthBadgePollNow = tick;
         this._healthBadgeVisibilityHandler = () => {
             if (document.visibilityState === 'visible') {
-                void this.updateHealthBadge();
+                // Returning to the tab is the one moment the badge is most
+                // likely stale, so the clock starts over rather than serving
+                // whatever the backoff had crept up to. The immediate refresh
+                // is deliberately *not* done here: dashboard.js's own
+                // visibilitychange handler already calls updateHealthBadge on
+                // return, and doing it in both places fetched the report twice
+                // on every tab switch.
+                this._healthBadgePollDelay = base;
                 start();
             } else {
                 stop();
@@ -434,7 +484,7 @@ class DashboardVisual {
 
     stopHealthBadgePolling() {
         if (this._healthBadgePollTimer) {
-            clearInterval(this._healthBadgePollTimer);
+            clearTimeout(this._healthBadgePollTimer);
             this._healthBadgePollTimer = null;
         }
         if (this._healthBadgeVisibilityHandler) {
@@ -444,23 +494,33 @@ class DashboardVisual {
     }
 
 
+    /**
+     * @returns {Promise<boolean>} whether the badge was refreshed from a real
+     * response. The poll loop reads this to decide between its base interval
+     * and an exponential backoff; every other caller fires and forgets, which
+     * is why a failure still resolves rather than throwing.
+     */
     async updateHealthBadge() {
         const d = this.dash;
         const anchor = document.querySelector('.health-link a');
         const utils = window.HealthBadgeUtils;
-        if (!anchor || !utils) return;
+        if (!anchor || !utils) return false;
 
         try {
             const summary = await utils.fetchBookmarkHealthSummary();
-            if (!summary) return;
+            // A null summary is a non-ok response, not an empty report — the
+            // same thing a thrown error means for the backoff.
+            if (!summary) return false;
             // keepHref: the icon opens the view; its href is only the middle-click path.
             utils.applyHealthBadgeToAnchor(anchor, summary, d.language, {
                 keepHref: true,
                 onApplied: (counts) => this.maybePulseHealthAlert(counts?.monitorDown || 0),
             });
             d.updateMiniStatusLine();
+            return true;
         } catch (e) {
             // Silently skip — badge is non-critical
+            return false;
         }
     }
 

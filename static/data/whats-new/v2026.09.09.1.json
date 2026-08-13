@@ -3,7 +3,7 @@
     "date": "August 2026",
     "releasedAt": "2026-08-11",
     "hideFromModal": true,
-    "modalLead": "Hotfix on top of v2026.09.09. Recorded here but not announced: v2026.09.09 is the release worth reading, and this does not displace it.",
+    "modalLead": "A hotfix on top of v2026.09.09, tidying up the check-mode popover in Health.",
     "sections": [
         {
             "title": "Health",

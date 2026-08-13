@@ -39,7 +39,6 @@
     // much weaker evidence than actively dismissing it.
     const SHOWN_COOLDOWN_DAYS = 1;
 
-    let cardEl = null;
     let pending = null;
 
     function nowSeconds() {
@@ -147,7 +146,7 @@
         if (state()?.analyticsChoiceMade === true) return false;
         // Still inside a snooze window from an earlier, undecided visit.
         if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return false;
-        if (cardEl) return false;
+        if (isOpen()) return false;
         // Config, health and the inbox are hash routes on this same page, so
         // without this the card drops on top of whatever the user opened. Only
         // interrupt the bookmarks view. ("bookmarks" is also the value before the
@@ -162,12 +161,14 @@
         return true;
     }
 
+    // The card element belongs to the shared helper, so closing goes through it.
     function teardown() {
-        const el = cardEl;
-        if (!el) return;
-        cardEl = null;
-        el.classList.remove('show');
-        setTimeout(() => { if (el.isConnected) el.remove(); }, 260);
+        card.close();
+    }
+
+    /** Whether this card is currently on screen. */
+    function isOpen() {
+        return card.element !== null;
     }
 
     /** "No thanks" — a real answer, so the card does not come back. */
@@ -302,43 +303,39 @@
         window.location.hash = 'config/behavior/privacy';
     }
 
-    /** @returns {boolean} whether the card was actually put on screen. */
+    // The card mechanism (markup, transition, corner etiquette) is shared; only
+    // the gating and the three actions below are specific to this notice.
+    // shouldShow() stays here rather than moving into canShow: it is exported and
+    // several tests call it directly.
+    const card = window.NoticeCard.define({
+        id: 'analytics-notice',
+        title: () => t('dashboard.analyticsNoticeTitle', 'Privacy-friendly analytics'),
+        body: () => t('dashboard.analyticsNoticeBody',
+            'Analytics is off. Turning it on shares anonymous usage statistics so it is visible which features are used and what can be improved — never bookmark names, URLs, or searches. You can switch it back off at any time.'),
+        dismissLabel: () => t('dashboard.analyticsNoticeDismiss', 'Dismiss'),
+        canShow: () => shouldShow(),
+        // × is "not now" (snooze); "No thanks" below is an actual decline. Same
+        // visual affordance, deliberately different meaning.
+        onDismiss: askLater,
+        onShown: coolDownAfterShowing,
+        actionAttr: 'data-an-action',
+        dismissName: 'later',
+        actions: [
+            { name: 'optin', label: () => t('dashboard.analyticsNoticeOptIn', 'Turn on'), primary: true, onClick: optIn },
+            { name: 'details', label: () => t('dashboard.analyticsNoticeLearnMore', 'What is recorded?'), onClick: openDetails },
+            { name: 'dismiss', label: () => t('dashboard.analyticsNoticeNoThanks', 'No thanks'), onClick: dismiss },
+        ],
+    });
+
+    /**
+     * @returns {boolean} whether the card was actually put on screen.
+     *
+     * Synchronous on purpose: several callers and tests treat the return value
+     * as a plain boolean. This card's gating is synchronous too, so renderSync
+     * gives the answer without a promise.
+     */
     function render() {
-        if (!shouldShow()) return false;
-
-        const el = document.createElement('div');
-        el.className = 'quickstart-card analytics-notice-card';
-        el.setAttribute('role', 'complementary');
-        el.setAttribute('aria-label', t('dashboard.analyticsNoticeTitle', 'Privacy-friendly analytics'));
-        el.innerHTML = `
-            <div class="quickstart-stripe"></div>
-            <div class="quickstart-inner">
-                <div class="quickstart-head">
-                    <p class="quickstart-title">${escape(t('dashboard.analyticsNoticeTitle', 'Privacy-friendly analytics'))}</p>
-                    <button type="button" class="quickstart-close" data-an-action="later"
-                            aria-label="${escape(t('dashboard.analyticsNoticeDismiss', 'Dismiss'))}">×</button>
-                </div>
-                <p class="analytics-notice-text">${escape(t('dashboard.analyticsNoticeBody',
-                    'Analytics is off. Turning it on shares anonymous usage statistics so it is visible which features are used and what can be improved — never bookmark names, URLs, or searches. You can switch it back off at any time.'))}</p>
-                <div class="analytics-notice-actions">
-                    <button type="button" class="quickstart-btn quickstart-btn-primary" data-an-action="optin">${escape(t('dashboard.analyticsNoticeOptIn', 'Turn on'))}</button>
-                    <button type="button" class="quickstart-btn quickstart-btn-ghost" data-an-action="details">${escape(t('dashboard.analyticsNoticeLearnMore', 'What is recorded?'))}</button>
-                    <button type="button" class="quickstart-btn quickstart-btn-ghost" data-an-action="dismiss">${escape(t('dashboard.analyticsNoticeNoThanks', 'No thanks'))}</button>
-                </div>
-            </div>`;
-
-        // × is "not now" (snooze); "No thanks" is an actual decline. Same visual
-        // affordance, deliberately different meaning.
-        el.querySelector('[data-an-action="later"]')?.addEventListener('click', askLater);
-        el.querySelector('[data-an-action="dismiss"]')?.addEventListener('click', dismiss);
-        el.querySelector('[data-an-action="details"]')?.addEventListener('click', openDetails);
-        el.querySelector('[data-an-action="optin"]')?.addEventListener('click', optIn);
-
-        document.body.appendChild(el);
-        cardEl = el;
-        requestAnimationFrame(() => el.classList.add('show'));
-        coolDownAfterShowing();
-        return true;
+        return card.renderSync();
     }
 
     /** Called when the what's-new modal closes; waits a beat so it doesn't stack. */
@@ -358,7 +355,7 @@
         const maxAttempts = 40; // ~40 × 1.5s ≈ 60s
         const tick = () => {
             attempts += 1;
-            if (cardEl) return;
+            if (isOpen()) return;
             if (state()?.analyticsChoiceMade === true) return;
             if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return;
             if (render()) return;
@@ -382,7 +379,7 @@
 
         const tick = () => {
             attempts += 1;
-            if (cardEl || pending) return;              // already showing or queued
+            if (isOpen() || pending) return;            // already showing or queued
             if (state()?.analyticsChoiceMade === true) return;
             if (nowSeconds() < (Number(state()?.analyticsAskAfter) || 0)) return;
             if (dash()?.settings?.analyticsOptIn === true) return;

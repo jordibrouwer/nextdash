@@ -11,6 +11,8 @@ class DashboardInbox {
         this.filter = 'all';
         this.searchQuery = '';
         this.domainFilter = '';
+        /** Active tag chip filter; cleared the same way the domain filter is. */
+        this.tagFilter = '';
         this.sort = 'newest';
         this.visibleLimit = 50;
         this.selectedItemId = null;
@@ -19,6 +21,12 @@ class DashboardInbox {
         // Ids ticked for a bulk action. Kept separate from selectedItemId, which is
         // the keyboard cursor: moving the cursor must not change what is ticked.
         this.checkedIds = new Set();
+        /** Last row ticked, the fixed end of a Shift-extended range. */
+        this.checkAnchorId = null;
+        /** Lifetime aggregate from /api/inbox-stats, loaded on first open. */
+        this.stats = null;
+        this.statsOpen = false;
+        this._statsFailed = false;
         this.triage = typeof DashboardInboxTriage === 'function' ? new DashboardInboxTriage(this) : null;
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
@@ -54,9 +62,71 @@ class DashboardInbox {
         return (this.items || []).filter((i) => this.checkedIds.has(i.id) && visible.has(i.id));
     }
 
+    /**
+     * Ticked rows the current filter is hiding.
+     *
+     * The bulk buttons only ever act on what checkedItems() returns, so a filter
+     * change silently shrinks their reach: the count in the bar drops with no
+     * explanation, and widening the filter brings the old ticks back. Naming the
+     * hidden number is what makes the buttons honest about what they will touch.
+     */
+    offscreenCheckedCount() {
+        const visible = new Set(this.getFilteredItems().map((i) => i.id));
+        let hidden = 0;
+        this.checkedIds.forEach((id) => {
+            if (!visible.has(id)) hidden += 1;
+        });
+        return hidden;
+    }
+
+    /**
+     * Tick (or untick) every row between the anchor and `id`, inclusive.
+     *
+     * Walks the filtered order rather than the DOM so the range means what the
+     * user sees. Without an anchor there is no range to extend, so the caller
+     * falls back to a plain toggle.
+     */
+    extendCheckedTo(id, on) {
+        const visible = this.getFilteredItems();
+        const from = visible.findIndex((item) => item.id === this.checkAnchorId);
+        const to = visible.findIndex((item) => item.id === id);
+        if (from < 0 || to < 0) {
+            this.setChecked(id, on);
+            return;
+        }
+        const [lo, hi] = from <= to ? [from, to] : [to, from];
+        for (let i = lo; i <= hi; i += 1) {
+            this.setChecked(visible[i].id, on);
+        }
+    }
+
+    /** Drop the ticks the filter is hiding, keeping only what is on screen. */
+    keepOnlyVisibleChecked() {
+        const visible = new Set(this.getFilteredItems().map((i) => i.id));
+        [...this.checkedIds].forEach((id) => {
+            if (!visible.has(id)) this.checkedIds.delete(id);
+        });
+        this.renderBulkBar();
+    }
+
+    /**
+     * Tick every row the current filter shows, or clear them when they are all
+     * ticked already — so the same chord undoes itself.
+     *
+     * Scoped to the filtered set rather than this.items: ticking rows the user
+     * cannot see would arm the bulk buttons over a selection they never made.
+     */
+    checkAllVisible() {
+        const visible = this.getFilteredItems();
+        if (!visible.length) return;
+        const allChecked = visible.every((item) => this.checkedIds.has(item.id));
+        visible.forEach((item) => this.setChecked(item.id, !allChecked));
+    }
+
     clearChecked() {
         if (!this.checkedIds.size) return;
         this.checkedIds.clear();
+        this.checkAnchorId = null;
         document.querySelectorAll('.inbox-item.is-checked').forEach((el) => {
             el.classList.remove('is-checked');
             const box = el.querySelector('.inbox-item-check-input');
@@ -100,19 +170,275 @@ class DashboardInbox {
                     this.clearChecked();
                 } else if (action === 'snooze') {
                     this.openSnoozeMenu(null, btn, this.checkedItems());
+                } else if (action === 'open') {
+                    this.bulkOpen();
+                } else if (action === 'copy') {
+                    void this.bulkCopyLinks();
+                } else if (action === 'promote') {
+                    this.openBulkPromoteMenu(btn);
+                } else if (action === 'keep-visible') {
+                    this.keepOnlyVisibleChecked();
                 }
             });
             container.querySelector('.inbox-toolbar')?.after(bar);
         }
+        const hidden = this.offscreenCheckedCount();
+        const offscreen = hidden
+            ? `<span class="inbox-selection-offscreen">
+                    <span class="inbox-selection-offscreen-text">${this.escape(this.t(
+                        'dashboard.inboxSelectedOffscreen',
+                        '{count} not shown by the current filter',
+                        { count: hidden }
+                    ))}</span>
+                    <button type="button" class="inbox-bulk-btn" data-inbox-selection="keep-visible">${this.escape(
+                        this.t('dashboard.inboxKeepVisible', 'Select only these')
+                    )}</button>
+               </span>`
+            : '';
+
         bar.innerHTML = `
             <span class="inbox-selection-count">${this.escape(
                 this.t('dashboard.inboxSelectedCount', '{count} selected', { count })
             )}</span>
+            ${offscreen}
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="open">${this.escape(this.t('dashboard.inboxSelectionOpen', 'Open'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="copy">${this.escape(this.t('dashboard.inboxSelectionCopy', 'Copy links'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="read">${this.escape(this.t('dashboard.inboxMarkRead', 'Mark read'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="snooze">${this.escape(this.t('dashboard.inboxSnooze', 'Snooze'))}</button>
             <button type="button" class="inbox-bulk-btn inbox-bulk-btn--danger" data-inbox-selection="delete">${this.escape(this.t('dashboard.inboxDelete', 'Delete'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="clear">${this.escape(this.t('dashboard.inboxSelectionClear', 'Clear selection'))}</button>
         `;
+    }
+
+    /**
+     * Open every ticked link in a new tab.
+     *
+     * The most natural inbox bulk action and the one that was missing: the view
+     * exists to work through links, and there was no way to open five at once.
+     * Marked read as they go, because opening is what "read" means here — the
+     * same rule openItem() applies to a single row.
+     */
+    bulkOpen() {
+        const targets = this.checkedItems();
+        if (!targets.length) return;
+        this._trackAction('bulk-open', { size: this._countBucket(targets.length) });
+        targets.forEach((item) => {
+            const href = this.dash.safeBookmarkOpenHref?.(item.url) || item.url;
+            if (href) window.open(href, '_blank', 'noopener,noreferrer');
+        });
+        const unread = targets.filter((item) => !item.readAt);
+        if (unread.length) {
+            void Promise.allSettled(unread.map((item) => this.markRead(item.id)))
+                .then(() => {
+                    if (this.isActiveView()) this.render();
+                });
+        }
+    }
+
+    /**
+     * Promote every ticked link to a bookmark on one page.
+     *
+     * Promoting is what this view exists to produce, and it was single-row only:
+     * ten links from the same docs site meant ten trips through the bookmark
+     * form to say the same thing ten times. The per-row promote still opens the
+     * full form — that is right for one link you want to name and file properly
+     * — so this is the other half rather than a replacement: pick the
+     * destination once, and the titles the inbox already captured are used as-is.
+     */
+    async bulkPromote(pageId) {
+        const targets = this.checkedItems();
+        if (!targets.length) return;
+        this._trackAction('bulk-promote', { size: this._countBucket(targets.length) });
+
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const results = await Promise.allSettled(targets.map(async (item) => {
+            const res = await fetcher('/api/bookmarks/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: Number(pageId),
+                    bookmark: {
+                        name: item.previewTitle || item.title || item.domain || item.url,
+                        url: item.url,
+                        category: '',
+                        tags: Array.isArray(item.tags) ? item.tags : [],
+                        createdAt: Date.now(),
+                    },
+                }),
+            });
+            if (!res.ok) throw new Error(`promote HTTP ${res.status}`);
+            // Only clear the inbox entry once its bookmark exists, so a failure
+            // leaves the link here to try again rather than losing it.
+            await this.completePromote(item.id);
+            return item.id;
+        }));
+
+        const promoted = results.filter((r) => r.status === 'fulfilled').length;
+        const failed = results.length - promoted;
+        this.clearChecked();
+        if (this.isActiveView()) {
+            await this.loadAndRender({ refresh: true });
+        } else {
+            await this.refreshBadge();
+        }
+
+        if (promoted) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxPromotedCount', 'Promoted {count} links', { count: promoted }),
+                'success',
+                { duration: 3000 }
+            );
+        }
+        if (failed) {
+            this.dash.showErrorNotification?.(
+                this.t('dashboard.inboxPromotePartial', '{count} could not be promoted', { count: failed })
+            );
+        }
+    }
+
+    /** Pick the page the ticked links become bookmarks on. */
+    openBulkPromoteMenu(anchor) {
+        this.closeSnoozeMenu();
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        if (!pages.length) return;
+
+        const menu = document.createElement('div');
+        menu.className = 'inbox-snooze-menu inbox-promote-menu';
+        menu.setAttribute('role', 'menu');
+        menu.innerHTML = `<p class="inbox-promote-menu-title">${this.escape(
+            this.t('dashboard.inboxPromoteToPage', 'Promote to page')
+        )}</p>` + pages.map((page) => `
+            <button type="button" class="inbox-snooze-option" role="menuitem" data-promote-page="${this.escape(String(page.id))}">${this.escape(page.name || String(page.id))}</button>
+        `).join('');
+
+        document.body.appendChild(menu);
+        this._snoozeMenu = menu;
+
+        const rect = anchor?.getBoundingClientRect?.();
+        if (rect) {
+            menu.style.left = `${Math.round(rect.left)}px`;
+            const below = rect.bottom + 6;
+            menu.style.top = below + menu.offsetHeight > window.innerHeight - 8
+                ? `${Math.round(rect.top - menu.offsetHeight - 6)}px`
+                : `${Math.round(below)}px`;
+        }
+
+        menu.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-promote-page]');
+            if (!btn) return;
+            const pageId = btn.getAttribute('data-promote-page');
+            this.closeSnoozeMenu();
+            void this.bulkPromote(pageId);
+        });
+
+        const onOutside = (e) => {
+            if (!menu.contains(e.target) && e.target !== anchor) {
+                this.closeSnoozeMenu();
+                document.removeEventListener('click', onOutside, true);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
+    }
+
+    /**
+     * Every ticked link's URL, one per line, on the clipboard.
+     *
+     * Same shape as multi-select's copySelectedLinks, execCommand fallback
+     * included: the Clipboard API is unavailable on plain-HTTP LAN installs,
+     * which is exactly where a self-hosted dashboard often runs.
+     */
+    async bulkCopyLinks() {
+        const targets = this.checkedItems();
+        const urls = targets.map((item) => String(item.url || '').trim()).filter(Boolean);
+        if (!urls.length) return;
+        this._trackAction('bulk-copy', { size: this._countBucket(urls.length) });
+
+        const text = urls.join('\n');
+        const done = () => this.dash.showNotification?.(
+            this.t('dashboard.inboxCopiedLinks', 'Copied {count} links', { count: urls.length }),
+            'success',
+            { duration: 2500 }
+        );
+        const failed = () => this.dash.showErrorNotification?.(
+            this.t('dashboard.inboxCopyFailed', 'Could not copy links to clipboard.')
+        );
+
+        if (navigator.clipboard?.writeText) {
+            try {
+                await navigator.clipboard.writeText(text);
+                done();
+                return;
+            } catch {
+                // Falls through to the execCommand path below.
+            }
+        }
+        if (this.execCopyFallback(text)) done();
+        else failed();
+    }
+
+    /**
+     * A row's tags, as chips that filter.
+     *
+     * InboxLink.Tags has been a real field all along — normalised on add and
+     * restore, and the extension can send them — but nothing rendered them, so
+     * a link could be filed with tags the user was never shown. Clicking one
+     * filters to it, the way the domain button beside them already works.
+     */
+    renderItemTags(item) {
+        const tags = Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [];
+        if (!tags.length) return '';
+        const chips = tags.map((tag) => `
+            <button type="button" class="inbox-item-tag" data-inbox-tag="${this.escape(tag)}"
+                title="${this.escape(this.t('dashboard.inboxFilterByTag', 'Show only #{tag}', { tag }))}">#${this.escape(tag)}</button>
+        `).join('');
+        return `<p class="inbox-item-tags">${chips}</p>`;
+    }
+
+    /**
+     * Copy a shareable link to one item.
+     *
+     * buildItemShareUrl already existed and already preserved filter, sort,
+     * query and domain alongside the id — but its only caller was the bookmark
+     * context menu's Share, so nothing in the inbox itself offered it.
+     */
+    async copyItemLink(id) {
+        const url = this.buildItemShareUrl(id);
+        if (!url) return;
+        const done = () => this.dash.showNotification?.(
+            this.t('dashboard.inboxCopiedItemLink', 'Link copied'),
+            'success',
+            { duration: 2500 }
+        );
+        if (navigator.clipboard?.writeText) {
+            try {
+                await navigator.clipboard.writeText(url);
+                done();
+                return;
+            } catch {
+                // Falls through to the execCommand path.
+            }
+        }
+        if (this.execCopyFallback(url)) done();
+        else this.dash.showErrorNotification?.(this.t('dashboard.inboxCopyFailed', 'Could not copy links to clipboard.'));
+    }
+
+    /** Pre-Clipboard-API copy, kept for plain-HTTP LAN installs. */
+    execCopyFallback(value) {
+        const ta = document.createElement('textarea');
+        ta.value = value;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try {
+            ok = document.execCommand('copy');
+        } catch {
+            ok = false;
+        }
+        ta.remove();
+        return ok;
     }
 
     async bulkMarkRead() {
@@ -141,12 +467,23 @@ class DashboardInbox {
         const targets = (items || []).filter(Boolean);
         if (!targets.length || !until) return;
         this._trackAction('bulk-snooze', { size: this._countBucket(targets.length) });
-        await Promise.allSettled(targets.map((item) => this.patchSnooze(item.id, until)));
+        // Reported for the same reason bulkMarkRead reports: discarding the
+        // results meant a selection that failed to save said nothing at all —
+        // the ticks cleared and the rows simply stayed awake.
+        const results = await Promise.allSettled(targets.map((item) => this.patchSnooze(item.id, until)));
+        const failed = results.filter((r) => r.status === 'rejected').length;
         this.clearChecked();
         if (this.isActiveView()) {
             this.render();
         } else {
             await this.refreshBadge();
+        }
+        if (failed) {
+            this.dash.showNotification(
+                this.t('dashboard.inboxSnoozePartial', 'Snoozed, {count} failed', { count: failed }),
+                'info',
+                { duration: 3000 }
+            );
         }
     }
 
@@ -166,9 +503,15 @@ class DashboardInbox {
         if (!ok) return;
         this._trackAction('bulk-delete', { size: this._countBucket(targets.length) });
         const d = this.dash;
-        const snapshots = targets.map((item) => JSON.parse(JSON.stringify(item)));
         const results = await Promise.allSettled(targets.map((item) => this.deleteItem(item.id)));
-        const removed = results.filter((r) => r.status === 'fulfilled').length;
+        // Only the items that really went are snapshotted: undoing a partial
+        // batch used to re-PUT the survivors too, restoring items that were
+        // never deleted.
+        const snapshots = targets
+            .filter((_, i) => results[i].status === 'fulfilled')
+            .map((item) => JSON.parse(JSON.stringify(item)));
+        const removed = snapshots.length;
+        const failed = results.length - removed;
         this.clearChecked();
         if (this.isActiveView()) {
             this.render();
@@ -178,6 +521,16 @@ class DashboardInbox {
         if (!removed) {
             d.showNotification(this.t('dashboard.inboxDeleteFailed', 'Could not delete'), 'error');
             return;
+        }
+        if (failed) {
+            // Named rather than folded into the success count: the ticks are
+            // already cleared, so a silent partial leaves no way to tell which
+            // rows still need dealing with.
+            d.showNotification(
+                this.t('dashboard.inboxSelectionDeletePartial', '{count} could not be deleted', { count: failed }),
+                'info',
+                { duration: 4000 }
+            );
         }
         d.showNotification(
             this.t('dashboard.inboxSelectionDeleteDone', 'Removed {count} selected items', { count: removed }),
@@ -373,6 +726,11 @@ class DashboardInbox {
                 this.domainFilter = domain;
                 fromUrl = true;
             }
+            const tag = (params.get('ib_tag') || '').trim().toLowerCase();
+            if (tag) {
+                this.tagFilter = tag;
+                fromUrl = true;
+            }
             const itemId = (params.get('ib_id') || '').trim();
             if (itemId) {
                 this.focusItemId = itemId;
@@ -429,6 +787,7 @@ class DashboardInbox {
             setOrDelete('ib_sort', this.sort, this.sort === 'newest');
             setOrDelete('ib_q', String(this.searchQuery || '').trim(), !String(this.searchQuery || '').trim());
             setOrDelete('ib_domain', String(this.domainFilter || '').trim(), !String(this.domainFilter || '').trim());
+            setOrDelete('ib_tag', String(this.tagFilter || '').trim(), !String(this.tagFilter || '').trim());
             setOrDelete('ib_id', String(this.focusItemId || '').trim(), !String(this.focusItemId || '').trim());
             const query = params.toString();
             history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#inbox`);
@@ -460,6 +819,10 @@ class DashboardInbox {
         const domain = String(this.domainFilter || '').trim();
         if (domain) {
             url.searchParams.set('ib_domain', domain);
+        }
+        const tag = String(this.tagFilter || '').trim();
+        if (tag) {
+            url.searchParams.set('ib_tag', tag);
         }
         return url.toString();
     }
@@ -738,6 +1101,19 @@ class DashboardInbox {
             await this.refreshBadge();
             const toastMsg = this.t('dashboard.inboxAddedToast', 'Added to Inbox');
             d.showNotification(toastMsg, 'success', { duration: 3000 });
+            // Adding at the cap pushes the oldest links out. That used to happen
+            // in silence — saved items simply stopped existing — so it is named
+            // at the moment it is caused, where the user can still act on it.
+            const evicted = Number(body?.evicted) || 0;
+            if (evicted > 0) {
+                d.showNotification(
+                    evicted === 1
+                        ? this.t('dashboard.inboxEvictedOne', 'Inbox is full — the oldest link was removed')
+                        : this.t('dashboard.inboxEvictedCount', 'Inbox is full — the {count} oldest links were removed', { count: evicted }),
+                    'info',
+                    { duration: 6000 }
+                );
+            }
             if (this.isActiveView()) {
                 await this.loadAndRender();
             }
@@ -802,6 +1178,23 @@ class DashboardInbox {
         return item;
     }
 
+    /**
+     * The row the cursor should land on once `id` is gone: the one after it, or
+     * the one before when it was last. Null when it was the only row.
+     *
+     * Read from the filtered order rather than the DOM so it is right even when
+     * the caller renders later (or not at all).
+     */
+    neighbourItemId(id) {
+        const visible = this.getFilteredItems();
+        const index = visible.findIndex((item) => item.id === id);
+        if (index < 0) {
+            return this.selectedItemId;
+        }
+        const next = visible[index + 1] || visible[index - 1];
+        return next ? next.id : null;
+    }
+
     async deleteItemWithUndo(id, options = {}) {
         const d = this.dash;
         const snapshot = this.items.find((item) => item.id === id);
@@ -813,8 +1206,14 @@ class DashboardInbox {
             return false;
         }
         const copy = JSON.parse(JSON.stringify(snapshot));
+        // Worked out before the delete, while the row is still in the list:
+        // afterwards there is nothing to take a position from. Without this the
+        // cursor was simply dropped, so a run of deletes meant delete, hunt for
+        // your place, arrow back down — the main friction in keyboard triage.
+        const nextSelectedId = this.selectedItemId === id ? this.neighbourItemId(id) : this.selectedItemId;
         try {
             await this.deleteItem(id);
+            this.selectedItemId = nextSelectedId;
             if (this.isActiveView() && !options.skipRender) {
                 this.render();
             }
@@ -1084,6 +1483,22 @@ class DashboardInbox {
         if (d.isInlineEditActive?.()) {
             return false;
         }
+        const typingTarget = e.target?.tagName === 'INPUT'
+            || e.target?.tagName === 'TEXTAREA'
+            || e.target?.isContentEditable;
+
+        // Ctrl/Cmd+A ticks every visible row, the one chord this view claims —
+        // and only while the feed has the cursor, so it keeps its browser
+        // meaning everywhere else. Handled before the modifier guard below,
+        // which nothing else gets past. Matches the health view.
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
+            && (e.key === 'a' || e.key === 'A') && !typingTarget) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.checkAllVisible();
+            return true;
+        }
+
         if (e.ctrlKey || e.altKey || e.metaKey) {
             return false;
         }
@@ -1106,9 +1521,52 @@ class DashboardInbox {
             && target?.matches?.('button, a, input, select')
         );
 
+        // View-level keys, handled before the empty-list guard below: they are
+        // about the view rather than a row, so they have to keep working when a
+        // filter or search has left nothing on screen. Escape in particular was
+        // unreachable exactly when it was needed — the bulk bar hides itself once
+        // the ticked rows are filtered out, but the ticks are still set, and this
+        // was the only way to clear them.
+        // Escape drops the selection before it closes anything else: an
+        // accidental tick should be cheap to undo.
+        if (e.key === 'Escape' && this.checkedIds.size) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.clearChecked();
+            return true;
+        }
+        // Uppercase R, matching the health view. Lowercase r is taken here by
+        // mark-read.
+        if (e.key === 'R') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.refreshFromKeyboard();
+            return true;
+        }
+
         const cards = this.getVisibleItemCards();
         if (!cards.length) {
+            // t starts triage over whatever the filter currently selects, so on
+            // an empty list there is genuinely nothing to start — but the keys
+            // above had to come first.
             return false;
+        }
+
+        // Shift+arrow extends the tick range as it moves, the keyboard twin of
+        // Shift+click. Handled before the plain arrows below, which would
+        // otherwise swallow it and just move the cursor.
+        if (e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (!this.checkAnchorId && this.selectedItemId) {
+                this.checkAnchorId = this.selectedItemId;
+                this.setChecked(this.selectedItemId, true);
+            }
+            this.moveKeyboardSelection(e.key === 'ArrowDown' ? 1 : -1, cards);
+            if (this.selectedItemId) {
+                this.extendCheckedTo(this.selectedItemId, true);
+            }
+            return true;
         }
 
         if (e.key === 'ArrowDown' || e.key === 'j') {
@@ -1167,14 +1625,14 @@ class DashboardInbox {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.setChecked(selected.id, !this.checkedIds.has(selected.id));
-            return true;
-        }
-        if (e.key === 'Escape' && this.checkedIds.size) {
-            // Escape drops the selection before it closes anything else: an
-            // accidental tick should be cheap to undo.
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            this.clearChecked();
+            this.checkAnchorId = selected.id;
+            // Advance after ticking, as the health view does: marking a run of
+            // rows is x x x rather than x j x j.
+            const next = this.neighbourItemId(selected.id);
+            if (next && next !== selected.id) {
+                this.selectedItemId = next;
+                this.applyKeyboardSelection();
+            }
             return true;
         }
         if (e.key === 'z' && selected) {
@@ -1866,6 +2324,153 @@ class DashboardInbox {
     }
 
 
+    /**
+     * The durable lifetime aggregate behind /api/inbox-stats.
+     *
+     * Fetched lazily and only when the panel is open, because it answers a
+     * different question from the feed and most visits never ask it. Kept as
+     * null on failure so the panel can say so rather than render zeros as if
+     * they were real.
+     */
+    async loadStats() {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/inbox-stats');
+            if (!res.ok) throw new Error(`inbox stats HTTP ${res.status}`);
+            this.stats = await res.json();
+            this._statsFailed = false;
+        } catch {
+            this.stats = null;
+            this._statsFailed = true;
+        }
+        if (this.isActiveView()) {
+            this.render();
+        }
+    }
+
+    /** Toggle the stats panel, loading the aggregate the first time it opens. */
+    toggleStats() {
+        this.statsOpen = !this.statsOpen;
+        window.nextdashTrack?.('inbox:stats-toggle', { open: this.statsOpen });
+        if (this.statsOpen && !this.stats && !this._statsFailed) {
+            void this.loadStats();
+            return;
+        }
+        this.render();
+    }
+
+    /** "3d" / "5h" / "20m", matching the config stats panel's format. */
+    formatRetention(ms) {
+        const n = Number(ms);
+        if (!Number.isFinite(n) || n <= 0) return '—';
+        const days = n / 86400000;
+        if (days >= 1) return this.t('dashboard.inboxStatsDays', '{n}d', { n: Math.round(days) });
+        const hours = n / 3600000;
+        if (hours >= 1) return this.t('dashboard.inboxStatsHours', '{n}h', { n: Math.round(hours) });
+        return this.t('dashboard.inboxStatsMinutes', '{n}m', { n: Math.max(1, Math.round(n / 60000)) });
+    }
+
+    /**
+     * Lifetime figures for this inbox: how much comes in, how much becomes a
+     * bookmark, and how long things sit here.
+     *
+     * The endpoint has existed all along but was only ever read by the config
+     * view. "Am I actually promoting these, or just hoarding them" is the
+     * inbox's own question, and answering it needed no new backend — the same
+     * way the health view puts its fleet panel in the view rather than in
+     * config.
+     */
+    renderStatsPanel() {
+        if (!this.statsOpen) return null;
+
+        const panel = document.createElement('section');
+        panel.className = 'inbox-stats';
+        panel.setAttribute('aria-label', this.t('dashboard.inboxStatsTitle', 'Inbox statistics'));
+
+        if (this._statsFailed) {
+            panel.innerHTML = `<p class="inbox-stats-empty">${this.escape(
+                this.t('dashboard.inboxStatsFailed', 'Could not load statistics')
+            )}</p>`;
+            return panel;
+        }
+        if (!this.stats) {
+            panel.innerHTML = `<p class="inbox-stats-empty">${this.escape(
+                this.t('dashboard.inboxLoading', 'Loading…')
+            )}</p>`;
+            return panel;
+        }
+
+        const s = this.stats;
+        const added = Number(s.totalAdded) || 0;
+        const promoted = Number(s.totalPromoted) || 0;
+        const deleted = Number(s.totalDeleted) || 0;
+        const retentionCount = Number(s.retentionCount) || 0;
+        const avgRetention = retentionCount
+            ? Number(s.sumRetentionMs) / retentionCount
+            : 0;
+        // Of everything that left the inbox, how much became a bookmark. Against
+        // triaged rather than added, since items still waiting have not been
+        // decided yet and would drag the rate down for no reason.
+        const triaged = promoted + deleted;
+        const promoteRate = triaged ? Math.round((promoted / triaged) * 100) : null;
+
+        const stat = (label, value, hint = '') => `
+            <div class="inbox-stat"${hint ? ` title="${this.escape(hint)}"` : ''}>
+                <span class="inbox-stat-label">${this.escape(label)}</span>
+                <span class="inbox-stat-value">${this.escape(String(value))}</span>
+            </div>`;
+
+        const since = Number(s.firstEventAt) || 0;
+        const sinceLine = since
+            ? `<p class="inbox-stats-since">${this.escape(
+                this.t('dashboard.inboxStatsSince', 'Since {date}', {
+                    date: new Date(since).toLocaleDateString(),
+                })
+            )}</p>`
+            : '';
+
+        panel.innerHTML = `
+            <div class="inbox-stats-grid">
+                ${stat(this.t('dashboard.inboxStatsAdded', 'Added'), added)}
+                ${stat(this.t('dashboard.inboxStatsPromoted', 'Promoted'), promoted)}
+                ${stat(this.t('dashboard.inboxStatsDeleted', 'Deleted'), deleted)}
+                ${promoteRate === null
+                    ? ''
+                    : stat(
+                        this.t('dashboard.inboxStatsPromoteRate', 'Promote rate'),
+                        `${promoteRate}%`,
+                        this.t('dashboard.inboxStatsPromoteRateHint',
+                            'Of the links you decided on, how many became bookmarks')
+                    )}
+                ${stat(
+                    this.t('dashboard.inboxStatsRetention', 'Average stay'),
+                    this.formatRetention(avgRetention),
+                    this.t('dashboard.inboxStatsRetentionHint',
+                        'How long a link sits here before you deal with it')
+                )}
+            </div>
+            ${sinceLine}`;
+        return panel;
+    }
+
+    /**
+     * Re-fetch the feed on demand.
+     *
+     * loadAndRender has always accepted `refresh`, but nothing ever passed it:
+     * after the first load the list only changed through the preview poll or the
+     * view's own mutations, so a link added from the extension or another tab
+     * never appeared. Bound to R, as in the health view.
+     */
+    async refreshFromKeyboard() {
+        window.nextdashTrack?.('inbox:refresh');
+        await this.loadAndRender({ refresh: true });
+        this.dash.showNotification?.(
+            this.t('dashboard.inboxRefreshed', 'Inbox refreshed'),
+            'success',
+            { duration: 1500 }
+        );
+    }
+
     async loadAndRender({ refresh = false } = {}) {
         const needsFetch = refresh || !this._itemsLoaded;
         this.loading = needsFetch && !(this.items && this.items.length);
@@ -1875,7 +2480,13 @@ class DashboardInbox {
         if (needsFetch) {
             try {
                 await this.fetchItems();
+                this._loadFailed = false;
             } catch {
+                // Recorded so render() can tell "the load failed" from "there is
+                // nothing here". Without it an unreachable server produced an
+                // empty list, and the empty state told the user their inbox was
+                // empty and invited them to add to it.
+                this._loadFailed = true;
                 if (!this.items?.length) {
                     this.items = [];
                 }
@@ -1969,6 +2580,11 @@ class DashboardInbox {
         if (domainWant) {
             list = list.filter((item) => this.itemDomain(item) === domainWant);
         }
+        const tagWant = String(this.tagFilter || '').trim().toLowerCase();
+        if (tagWant) {
+            list = list.filter((item) => (Array.isArray(item.tags) ? item.tags : [])
+                .some((tag) => String(tag).toLowerCase() === tagWant));
+        }
         const query = String(this.searchQuery || '').trim().toLowerCase();
         if (query) {
             list = list.filter((item) => {
@@ -1978,6 +2594,9 @@ class DashboardInbox {
                     item.previewTitle,
                     item.domain,
                     item.note,
+                    // Tags were stored and never searched, so a link findable by
+                    // its tag in principle was not findable in practice.
+                    ...(Array.isArray(item.tags) ? item.tags : []),
                 ].filter(Boolean).join(' ').toLowerCase();
                 return haystack.includes(query);
             });
@@ -2055,6 +2674,7 @@ class DashboardInbox {
         }
         this.searchQuery = '';
         this.domainFilter = '';
+        this.tagFilter = '';
 
         let filtered = this.getFilteredItems();
         let index = filtered.findIndex((entry) => entry.id === sid);
@@ -2062,6 +2682,7 @@ class DashboardInbox {
             this.filter = 'all';
             this.searchQuery = '';
             this.domainFilter = '';
+            this.tagFilter = '';
             filtered = this.getFilteredItems();
             index = filtered.findIndex((entry) => entry.id === sid);
         }
@@ -2103,6 +2724,13 @@ class DashboardInbox {
         if (!card) {
             return;
         }
+        // Consumed here, once the focus has actually landed. Leaving it set made
+        // the request permanent: every later render re-selected and re-flashed
+        // this row, yanking the cursor back from wherever the user had arrowed
+        // to, and every later loadAndRender re-ran prepareItemFocus — which
+        // clears searchQuery and domainFilter unconditionally. Undoing a bulk
+        // delete therefore threw away the active search and site filter.
+        this.focusItemId = null;
         this.selectedItemId = id;
         this.applyKeyboardSelection();
         this.highlightItem(id);
@@ -2583,6 +3211,7 @@ class DashboardInbox {
             ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
             <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
             <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
             <button type="button" class="view-help-btn inbox-help-btn" data-inbox-help
                     aria-haspopup="dialog"
@@ -2683,6 +3312,10 @@ class DashboardInbox {
         toolbar.querySelector('.inbox-triage-btn')?.addEventListener('click', () => {
             void this.startTriage();
         });
+        toolbar.querySelector('[data-inbox-stats]')?.addEventListener('click', () => {
+            this.toggleStats();
+        });
+
         toolbar.querySelector('[data-inbox-help]')?.addEventListener('click', () => {
             this.showInboxExplainer();
         });
@@ -2701,11 +3334,40 @@ class DashboardInbox {
         const note = this.renderFilterNote();
         if (note) container.appendChild(note);
 
+        // Above the loading and empty branches below: the lifetime figures are
+        // about the inbox as a whole, so they stay readable while the feed is
+        // arriving and on a filter that matched nothing.
+        const stats = this.renderStatsPanel();
+        if (stats) {
+            stats.id = 'inbox-stats-panel';
+            container.appendChild(stats);
+        }
+
         if (this.loading) {
             const loading = document.createElement('p');
             loading.className = 'inbox-empty';
             loading.textContent = this.t('dashboard.inboxLoading', 'Loading…');
             container.appendChild(loading);
+            this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
+            return;
+        }
+
+        // Checked before the empty state, because a failed load also leaves the
+        // list empty and the two mean opposite things: one says there is nothing
+        // to do, the other that we do not know. Same three-part panel the health
+        // view uses, retry included.
+        if (this._loadFailed && !this.items.length) {
+            const failed = document.createElement('div');
+            failed.className = 'inbox-empty-state';
+            failed.innerHTML = `
+                <p class="inbox-empty-title">${this.escape(this.t('dashboard.inboxLoadFailed', 'Unable to load the inbox'))}</p>
+                <p class="inbox-empty-hint">${this.escape(this.t('dashboard.inboxLoadFailedHint', 'Check that the server is reachable and try again.'))}</p>
+                <button type="button" class="inbox-retry-btn">${this.escape(this.t('dashboard.inboxRetry', 'Retry'))}</button>
+            `;
+            failed.querySelector('.inbox-retry-btn')?.addEventListener('click', () => {
+                void this.loadAndRender({ refresh: true });
+            });
+            container.appendChild(failed);
             this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
@@ -2718,12 +3380,17 @@ class DashboardInbox {
                 <p class="inbox-empty-hint">${this.escape(this.t('dashboard.inboxEmptyHint', 'Paste a URL with Ctrl+V to add a link'))}</p>
             `;
             container.appendChild(empty);
+            this.announceListState(0);
             this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
 
         if (!filtered.length) {
             container.appendChild(this.renderEmptyState());
+            // Announced here as well as at the end: a filter or search that
+            // matches nothing returns early, and "no results" is precisely the
+            // outcome a screen-reader user most needs told.
+            this.announceListState(0);
             this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
@@ -2772,7 +3439,38 @@ class DashboardInbox {
         this.schedulePreviewRefresh();
         this.scheduleWakeRefresh();
         this.applyPendingItemFocus();
+        this.announceListState(filtered.length);
         this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
+    }
+
+    /**
+     * Say how many rows the current filter and search leave, for screen readers.
+     *
+     * The list changes under the user constantly — a debounced search, the wake
+     * timer, the preview poll, a filter pill — and none of it was announced, so
+     * filtering to Unread gave no indication of what happened. Mirrors the
+     * pattern already in templates/dashboard.html for search results.
+     */
+    announceListState(count) {
+        const container = document.getElementById('dashboard-layout');
+        if (!container) return;
+        let live = container.querySelector('.inbox-live-region');
+        if (!live) {
+            live = document.createElement('div');
+            live.className = 'sr-only inbox-live-region';
+            live.setAttribute('aria-live', 'polite');
+            live.setAttribute('aria-atomic', 'true');
+            container.appendChild(live);
+        }
+        const message = count === 1
+            ? this.t('dashboard.inboxAnnounceOne', '1 link')
+            : this.t('dashboard.inboxAnnounceCount', '{count} links', { count });
+        // Only on change: repeating the same string does not re-announce in some
+        // readers, and re-announcing an unchanged count on every poll would be
+        // noise in the ones where it does.
+        if (live.textContent !== message) {
+            live.textContent = message;
+        }
     }
 
     createItemElement(item) {
@@ -2839,6 +3537,7 @@ class DashboardInbox {
                     ${wakeLabel}
                 </p>
                 ${item.note ? `<p class="inbox-item-note">${this.escape(item.note)}</p>` : ''}
+                ${this.renderItemTags(item)}
                 <div class="inbox-item-actions">
                     <div class="inbox-item-actions-inner">
                         <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
@@ -2872,12 +3571,42 @@ class DashboardInbox {
         });
 
         const checkInput = card.querySelector('.inbox-item-check-input');
+        // Shift extends from the last row ticked, so a contiguous run is two
+        // clicks rather than one per row. Read on click (change carries no
+        // modifier state) and applied in change, which still fires after it.
+        let shiftHeld = false;
+        checkInput?.addEventListener('click', (e) => { shiftHeld = e.shiftKey; });
         checkInput?.addEventListener('change', () => {
-            this.setChecked(item.id, checkInput.checked);
+            if (shiftHeld && this.checkAnchorId && this.checkAnchorId !== item.id) {
+                this.extendCheckedTo(item.id, checkInput.checked);
+            } else {
+                this.setChecked(item.id, checkInput.checked);
+            }
+            shiftHeld = false;
+            this.checkAnchorId = item.id;
         });
         // The checkbox is inside the row, which opens on click — without this,
         // ticking a box would also launch the link.
         card.querySelector('.inbox-item-check')?.addEventListener('click', (e) => e.stopPropagation());
+
+        // Same shape as the domain button below: a chip is a filter you can
+        // click, and clicking the active one clears it again.
+        card.querySelectorAll('[data-inbox-tag]').forEach((chip) => {
+            chip.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const tag = String(e.currentTarget.getAttribute('data-inbox-tag') || '').trim().toLowerCase();
+                if (!tag) return;
+                this.tagFilter = this.tagFilter === tag ? '' : tag;
+                this.filter = 'all';
+                this.visibleLimit = 50;
+                this.checkedIds.clear();
+                this.focusItemId = null;
+                this._trackAction('filter', { filter: 'tag', via: 'tag-click' });
+                this.syncUrlState();
+                this.render();
+                this.dash.pageNav?.updatePageTitle?.();
+            });
+        });
 
         card.querySelector('.inbox-item-domain-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -3069,6 +3798,83 @@ class DashboardInbox {
     }
 
     /** Textarea modal → the entered note, or null if the user cancelled. */
+    /**
+     * Edit a row's tags.
+     *
+     * A comma-separated field rather than the bookmark tag popover: an inbox
+     * item is undecided by definition, so there is rarely an existing tag list
+     * to pick from, and typing two words beats opening a chooser that is empty
+     * for most people.
+     */
+    async editTags(item) {
+        if (!item) return;
+        const current = (Array.isArray(item.tags) ? item.tags : []).join(', ');
+        const next = await this.promptTags(current);
+        if (next === null) return;
+
+        const tags = next.split(',')
+            .map((tag) => tag.trim().toLowerCase())
+            .filter((tag, i, all) => tag && all.indexOf(tag) === i);
+        if (tags.join(',') === (Array.isArray(item.tags) ? item.tags : []).join(',')) {
+            return;
+        }
+
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/inbox', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                // Sent even when empty: the server takes a null/absent tags field
+                // as "unchanged", so clearing every tag has to send [].
+                body: JSON.stringify({ id: item.id, tags }),
+            });
+            if (!res.ok) throw new Error(`tags HTTP ${res.status}`);
+            const stored = this.items.find((entry) => entry.id === item.id);
+            if (stored) stored.tags = tags;
+            if (this.isActiveView()) this.render();
+            this.dash.showNotification(
+                tags.length
+                    ? this.t('dashboard.inboxTagsSaved', 'Tags saved')
+                    : this.t('dashboard.inboxTagsCleared', 'Tags removed'),
+                'success',
+                { duration: 2000 }
+            );
+        } catch {
+            this.dash.showErrorNotification?.(
+                this.t('dashboard.inboxTagsFailed', 'Could not save tags')
+            );
+        }
+    }
+
+    promptTags(current) {
+        const modal = window.AppModal;
+        if (!modal || typeof modal.show !== 'function') {
+            const value = window.prompt(this.t('dashboard.inboxTagsPrompt', 'Tags'), current);
+            return Promise.resolve(value === null ? null : value);
+        }
+        return new Promise((resolve) => {
+            const label = this.escape(this.t('dashboard.inboxTagsLabel', 'Tags for this link, separated by commas'));
+            const placeholder = this.escape(this.t('dashboard.inboxTagsPlaceholder', 'reading, work, later'));
+            modal.show({
+                title: this.t('dashboard.inboxTagsTitle', 'Inbox tags'),
+                htmlMessage: `
+                    <label class="inbox-note-modal-label" for="inbox-tags-modal-input">${label}</label>
+                    <input id="inbox-tags-modal-input" class="inbox-note-modal-input" type="text" placeholder="${placeholder}">
+                `,
+                confirmText: this.t('dashboard.inboxTagsSave', 'Save tags'),
+                cancelText: this.t('dashboard.healthCancel', 'Cancel'),
+                initialFocusSelector: '#inbox-tags-modal-input',
+                onConfirm: () => {
+                    const input = document.getElementById('inbox-tags-modal-input');
+                    resolve(input ? input.value : '');
+                },
+                onCancel: () => resolve(null),
+            });
+            const input = document.getElementById('inbox-tags-modal-input');
+            if (input) input.value = current;
+        });
+    }
+
     promptNote(current) {
         const modal = window.AppModal;
         if (!modal || typeof modal.show !== 'function') {
@@ -3144,6 +3950,7 @@ class DashboardInbox {
             this.t('dashboard.inboxExportColUrl', 'URL'),
             this.t('dashboard.inboxExportColDomain', 'Domain'),
             this.t('dashboard.inboxExportColNote', 'Note'),
+            this.t('dashboard.inboxExportColTags', 'Tags'),
             this.t('dashboard.inboxExportColAdded', 'Added'),
             this.t('dashboard.inboxExportColRead', 'Read'),
             this.t('dashboard.inboxExportColSnoozedUntil', 'Snoozed until'),
@@ -3154,6 +3961,7 @@ class DashboardInbox {
             item.url || '',
             this.itemDomain(item),
             item.note || '',
+            (Array.isArray(item.tags) ? item.tags : []).join(' '),
             item.addedAt ? new Date(item.addedAt).toISOString() : '',
             item.readAt ? new Date(item.readAt).toISOString() : '',
             item.snoozedUntil ? new Date(item.snoozedUntil).toISOString() : '',
@@ -3184,6 +3992,7 @@ class DashboardInbox {
             previewTitle: item.previewTitle || '',
             domain: this.itemDomain(item),
             note: item.note || '',
+            tags: Array.isArray(item.tags) ? item.tags : [],
             addedAt: item.addedAt || 0,
             readAt: item.readAt || 0,
             snoozedUntil: item.snoozedUntil || 0,

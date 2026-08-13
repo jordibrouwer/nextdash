@@ -1103,6 +1103,10 @@ class DashboardRenderCore {
     _startCategoryRename(titleEl, nameSpan, category) {
         const d = this.dash;
         if (titleEl.querySelector('.category-rename-input')) return;
+        // Uncategorized and orphan headers are synthesized views, not stored
+        // categories (see the category-menu's identical guard) — renaming one
+        // would fabricate a real category from a virtual one.
+        if (category?.isVirtualCategory) return;
 
         const originalName = category.name;
         titleEl.classList.add('category-title--renaming');
@@ -1493,7 +1497,7 @@ class DashboardRenderCore {
                 whyBtn.textContent = 'ℹ';
                 whyBtn.setAttribute(
                     'aria-label',
-                    d.language?.t?.('dashboard.smartWhyAria') || 'Why am I seeing this collection?'
+                    d.formatDashboardLabel('smartWhyAria', {}, 'Why am I seeing this collection?')
                 );
                 window.DashboardSmartWhyPopover?.attach?.(whyBtn, whyHint);
                 whyBtn.addEventListener('click', (e) => {

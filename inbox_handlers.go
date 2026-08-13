@@ -51,6 +51,14 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := strings.TrimSpace(request.URL)
+	// validateBookmarkURL deliberately allows an empty string — a bookmark may
+	// have no URL. An inbox item is nothing but a URL, so the emptiness has to be
+	// caught here; without this it slipped through and failed deeper as a generic
+	// 500, reporting a client mistake as a server fault.
+	if url == "" {
+		http.Error(w, "URL is required", http.StatusBadRequest)
+		return
+	}
 	if err := h.validateBookmarkURL(url); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
 		return
@@ -71,7 +79,7 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		Tags:   request.Tags,
 	}
 
-	created, err := h.store.AddInboxLink(link, dedupe, maxItems)
+	created, evicted, err := h.store.AddInboxLink(link, dedupe, maxItems)
 	if err != nil {
 		if errors.Is(err, ErrInboxDuplicateURL) {
 			w.Header().Set("Content-Type", "application/json")
@@ -86,11 +94,32 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
+		// Same reasoning as the restore path below: a full inbox is not a server
+		// fault, and the add is the case where reporting success would lose the
+		// item silently — the client believes it landed and only finds out on the
+		// next reload.
+		if errors.Is(err, ErrInboxAtCapacity) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]any{
+				"error":   "at_capacity",
+				"message": "Inbox is full",
+			})
+			return
+		}
 		if !respondStorePersistError(w, err) {
 			return
 		}
 		http.Error(w, "Failed to save inbox item", http.StatusInternalServerError)
 		return
+	}
+
+	// Favicons of items the capacity trim dropped. Cleaned up here rather than
+	// inside the store: removeUnusedIconFile takes the store lock, which
+	// AddInboxLink still holds, and it has to see the saved state before it can
+	// tell whether an icon is still referenced.
+	for _, item := range evicted {
+		h.store.removeUnusedIconFile(item.Icon)
 	}
 
 	h.store.RecordInboxEvent(InboxEvent{
@@ -100,10 +129,15 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Respond immediately; enrich preview metadata asynchronously.
+	//
+	// `evicted` tells the client that adding this link pushed older ones out at
+	// the capacity cap. It used to happen in silence: items the user had saved
+	// simply stopped existing, with nothing said at the moment it was caused.
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"status": "success",
-		"item":   created,
+		"status":  "success",
+		"item":    created,
+		"evicted": len(evicted),
 	})
 	h.enrichInboxPreviewAsync(created.ID, url)
 }
@@ -253,6 +287,23 @@ func (h *Handlers) PutInboxItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Restore is a client-supplied write of a whole InboxLink, so it has to clear
+	// the same bar as AddInboxItem. Without this it was the one way to store a
+	// URL the add path refuses — javascript:, or a private address under
+	// allowLocalBookmarks:false — and the only path where a client could set Icon,
+	// which otherwise only server-side fetch code writes.
+	restoredURL := strings.TrimSpace(request.Item.URL)
+	if restoredURL == "" {
+		http.Error(w, "URL is required", http.StatusBadRequest)
+		return
+	}
+	if err := h.validateBookmarkURL(restoredURL); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
+		return
+	}
+	request.Item.URL = restoredURL
+	request.Item.Icon = sanitizeBookmarkIcon(request.Item.Icon)
+
 	settings := h.store.GetSettings()
 	maxItems := settings.InboxMaxItems
 	if maxItems <= 0 {
@@ -377,6 +428,11 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 		PreviewTitle string `json:"previewTitle"`
 		PreviewDesc  string `json:"previewDesc"`
 		PreviewImage string `json:"previewImage"`
+		// A pointer, like ReadAt above: an empty slice and "not sent" are
+		// indistinguishable otherwise, and clearing every tag has to be
+		// expressible. The other clearable fields use a ?clearX=1 flag because
+		// they are plain strings; a slice can carry the distinction itself.
+		Tags *[]string `json:"tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -422,7 +478,19 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 			if item.ReadAt == 0 && *request.ReadAt != 0 {
 				markedRead = true
 			}
-			item.ReadAt = *request.ReadAt
+			// Clamped like SnoozedUntil below, and for the same reason: a
+			// negative or absurd future timestamp is not a state the UI can
+			// represent. Anything non-zero means read, so a bad value is stored
+			// as "read, now" rather than kept verbatim to corrupt the read/unread
+			// reconciliation the client does against this field.
+			switch {
+			case *request.ReadAt <= 0:
+				item.ReadAt = 0
+			case *request.ReadAt > time.Now().UnixMilli():
+				item.ReadAt = time.Now().UnixMilli()
+			default:
+				item.ReadAt = *request.ReadAt
+			}
 		}
 		if request.SnoozedUntil != nil {
 			// A pointer lets a client clear a snooze by sending 0. Negative or past
@@ -446,6 +514,15 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 		if request.PreviewImage != "" || clearPreview {
 			item.PreviewImage = strings.TrimSpace(request.PreviewImage)
 		}
+		if request.Tags != nil {
+			// Same normalisation the add path applies: trimmed, lowercased,
+			// deduplicated, empties dropped. Without it the same tag typed with
+			// different capitalisation would read as two.
+			item.Tags = normalizeTags(*request.Tags)
+		}
+		// Bounded here as well as on add: a patch is a client write like any
+		// other, and inbox.json is rewritten whole on every mutation.
+		clampInboxLinkFields(item)
 		return nil
 	})
 	if err != nil {

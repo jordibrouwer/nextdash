@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.0.0 — August 2026](#v100--august-2026)
 - [v2026.09.09.3 — August 2026](#v202609093--august-2026)
 - [v2026.09.09.2 — August 2026](#v202609092--august-2026)
 - [v2026.09.09.1 — August 2026](#v202609091--august-2026)
@@ -157,6 +158,84 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.0.0 — August 2026
+
+The first release under semantic versioning, and  deliberate milestone: after a long run of bug fixing and consolidation has left the app feeling finished and stable rather than in flux. From here `1.x.0` carries features and `1.0.x` carries fixes; see v2026.09.09.3 for the scheme change itself, which shipped the comparison logic ahead of this tag.
+
+The bulk of this release is correctness work. A recurring class of bug ran through it: an operation that reported success for something it had not done — a move that could lose the bookmark, a category save that silently no-opped, an add that discarded the item it had just accepted. Several were found by tracing a pattern already solved correctly elsewhere in the same file.
+
+### Data integrity
+
+- **fix** — `_moveBookmarkToPage` (`dashboard-inline-edit.js`) did a double whole-list read-modify-write: GET both pages, splice/push in memory, POST both back. A concurrent write to either page was clobbered, and a source save landing while the target save failed lost the bookmark from both. Now uses the single-item `POST /api/bookmarks/add` + `DELETE /api/bookmarks` endpoints, each atomic under the store lock.
+- **fix** — `bulkMoveTagFilterToPage` (`dashboard-tag-filter.js`) had the same shape for a whole batch. Converted to per-item add+delete via `Promise.allSettled`, with a partial-failure toast.
+- **fix** — `deleteRemoteBookmarkInline` read the whole source page, spliced, and POSTed it back, racing any concurrent write. Now uses the single-item DELETE endpoint. `saveRemoteBookmarkEdit` deliberately left as-is: no single-item update endpoint exists, and emulating one as delete+add would move the bookmark to the end of its page.
+- **fix** — `SaveCategoriesByPage` returned `nil` for an empty-list save while bookmarks still referenced a category, changing nothing. Now returns `ErrCategoriesStillReferenced`, mapped to 409 by `respondCategoriesSaveError`.
+- **fix** — category rename without `originalId` fell back to matching by array position, so dropping a middle category reassigned later categories' bookmarks. Positional fallback removed.
+- **fix** — `AddInboxLink` trimmed at capacity *after* appending, discarding an item with an older `AddedAt` while returning success. Now uses `trimInboxItemsKeeping` plus a survival check, mirroring `RestoreInboxLink`.
+- **fix** — `DeleteBookmarkFromPage` skipped read-cache invalidation.
+- **fix** — concurrent page/category creation could clobber each other.
+- **fix** — `fetchBookmarkPreview` cached error pages as valid previews.
+
+### API and validation
+
+- **fix** — `PUT /api/inbox` skipped every validation `POST` performs: no `validateBookmarkURL`, no `sanitizeBookmarkIcon`. It was the one route that would store a `javascript:` URL or a private address under `allowLocalBookmarks:false`, and the only path where a client could write `Icon`.
+- **fix** — an empty inbox URL returned 500 for a client error. `validateBookmarkURL` intentionally permits empty strings (bookmarks may have none), so the check belongs in the handler.
+- **fix** — `GetCategories`/`SaveCategories` accepted a nonexistent page, materialising `bookmarks-N.json` as a side effect. Both now 404 via `pageExists`.
+- **fix** — `GetBookmarks` silently returned `200 []` for a missing `page`/`all` param.
+- **fix** — bookmark `Name`/`Category`/`Note` were never trimmed server-side, unlike `Tags`/`Icon`.
+- **new** — `POST /api/categories?dryRun=1` reports what a category save would do — which bookmarks move, which are orphaned, which submitted categories carry no `originalId` — and writes nothing. Shares `buildCategoryRemap` with the real save so the preview cannot drift from it.
+- **new** — inbox text fields are bounded (`clampInboxLinkFields`), applied on add, patch and restore. `inbox.json` is rewritten whole on every mutation, so an unbounded field is paid for by every later request.
+- **fix** — `PATCH /api/inbox` stored `readAt` verbatim, including negative and far-future values, while `snoozedUntil` directly above it was carefully clamped.
+- **new** — `PATCH /api/inbox` accepts `tags` (a pointer, so clearing is expressible).
+
+### Inbox
+
+- **new** — tags are rendered as filter chips, editable from the row menu, matched by search, and included in both exports. `InboxLink.Tags` had existed and been normalised since the field was added, with no UI at all.
+- **new** — a Stats panel reads `/api/inbox-stats`, previously consumed only by the config view. Promote rate is measured against triaged (promoted + deleted) rather than added.
+- **new** — bulk promote, bulk open, bulk copy links, Shift+click and Shift+arrow range selection, `Ctrl/Cmd+A` select-all.
+- **new** — the right-click menu carries the inbox's own actions rather than the bookmark menu's.
+- **new** — `R` re-fetches the feed, wiring up `loadAndRender({refresh})`, which had no caller.
+- **fix** — a failed load rendered the empty state; now a distinct panel with a Retry button, matching the health view.
+- **fix** — the keyboard cursor is no longer dropped after a delete.
+- **fix** — `Escape` and view-level keys ran below the empty-list guard, so clearing ticks was impossible exactly when a filter hid them.
+- **fix** — a consumed `?ib_id=` deep link kept clearing `searchQuery`/`domainFilter` on every later render.
+- **fix** — triage's delete ignored `deleteItemWithUndo`'s return value; `bulkSnooze` discarded its results entirely; `bulkDelete` reported partial success as success and snapshotted survivors for undo.
+- **fix** — capacity eviction is reported to the client, and evicted items' icons are cleaned up (previously only the explicit DELETE path called `removeUnusedIconFile`).
+- **new** — a polite live region announces the row count after each render.
+
+### Health
+
+- **new** — an `orphaned-category` issue type: bookmarks whose `Category` id matches no category on their page. Detect-only, following the `shortcut-conflict` precedent. Category save and browser import now invalidate the health report cache, which they did not need to before.
+- **fix** — header badge polling moved from a fixed 60s interval to the server's cache TTL with exponential backoff, and no longer double-fetches on tab return (`dashboard.js` already refreshed there).
+- **new** — header restructured to two rows matching `.inbox-header`; the trend chart moved into the toolbar.
+
+### Dashboard
+
+- **fix** — `_smartCollectionFilterNeedsCrossPageData` had been collapsed into `!_isSmartCollectionPageAllowed` in an earlier commit; the two answer different questions and diverge on the default empty scope, silently disabling cross-page loading. Both restored, sharing only the id normalisation.
+- **fix** — the staleness fingerprint omitted `pinned`, `checkStatus`, `icon` and `note`.
+- **fix** — `saveSettings` swallowed its error without logging.
+- **fix** — the translation-fallback pattern never fell back on a missing key.
+- **fix** — multi-select Clear referenced a nonexistent `keyboardNav` property.
+- **fix** — smart collection headers could be renamed via long-press/double-click.
+- **fix** — `copySelectedLinks` had no `execCommand` fallback for plain-HTTP installs.
+- **fix** — the inline-edit save hint always showed Ctrl, never Cmd on macOS.
+- **fix** — multi-select Move/Tags buttons lacked `aria-haspopup`/`aria-expanded`; the recent-bookmarks skeleton lacked `aria-busy`.
+- **fix** — the double `/api/data-revision` round-trip on tab refocus is debounced.
+- **new** — bulk tag-filter delete offers an undo toast.
+- **new** — `_applyLoadedPageData`'s full-container view identity moved into one `FULL_CONTAINER_VIEWS` table instead of three hand-copied checks.
+- **new** — `NoticeCard` (`static/js/notice-card.js`) is the shared bottom-left card; the analytics and side-rail notices were rewritten onto it. The push/outage notice was removed entirely.
+- **perf** — `noteDataMutation(pageID)` scopes read-cache invalidation to the page a write touched.
+
+### Docs
+
+- `static/data/whats-new/v1.0.0.json` added; `index.json` gains the entry first.
+- `static/js/whats-new-stub.js` — both tokens bumped to `2026.08-dashboard-release-v1.0.0` / `whats-new-v240`.
+- `tests/whats-new-hidden-release.spec.js` — constants test renamed and both literals updated.
+- `CHANGELOG.md`, `README.md`, `MANUAL.md` updated; `Config → Help` gains a v1.0.0 note.
+- `go generate ./...` regenerated `asset_hashes_gen.go`.
 
 ---
 

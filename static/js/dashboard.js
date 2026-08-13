@@ -672,6 +672,10 @@ class Dashboard {
         return this.recent.recordBookmarkOpened(...arguments);
     }
 
+    canShowUnpromptedUi(options = {}) {
+        return this.promos.canShowUnpromptedUi(...arguments);
+    }
+
     canShowPostOnboardingPrompts() {
         return this.promos.canShowPostOnboardingPrompts(...arguments);
     }

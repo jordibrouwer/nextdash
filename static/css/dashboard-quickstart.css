@@ -370,32 +370,42 @@
     }
 }
 
-/* ── One-time analytics disclosure ──────────────────────────────────────
-   Reuses .quickstart-card for placement and chrome; only the body differs. */
-.analytics-notice-text {
+/* ── Notice cards ───────────────────────────────────────────────────────
+   The bottom-left invitations (analytics, side rail, and any future one) all
+   reuse .quickstart-card for placement and chrome; these are the shared parts
+   of the body. Built by NoticeCard.define — see static/js/notice-card.js.
+   Previously duplicated per card, which is how they drifted apart. */
+.notice-card-text {
     margin: 0.35rem 0 0;
     font-size: var(--font-size-small, 0.72rem);
     color: var(--text-secondary);
     line-height: 1.5;
 }
 
-.analytics-notice-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.8rem;
-}
-
-/* ── One-time side-rail invitation ──────────────────────────────────────
-   Same card chrome as the analytics notice; only the body differs. */
-.side-rail-notice-text {
-    margin: 0.35rem 0 0;
+/* A footnote rather than part of the pitch: quieter than the body text so it
+   reads as a caveat rather than a second paragraph. */
+.notice-card-caveat {
+    margin: 0.5rem 0 0;
+    padding-left: 0.55rem;
+    border-left: 2px solid var(--border-color, rgba(128, 128, 128, 0.35));
     font-size: var(--font-size-small, 0.72rem);
-    color: var(--text-secondary);
-    line-height: 1.5;
+    color: var(--text-muted, var(--text-secondary));
+    line-height: 1.45;
+    opacity: 0.9;
 }
 
-.side-rail-notice-actions {
+/* Why an action failed, kept on the card rather than in a toast that fades
+   before it can be read. Styled like the caveat, in the error colour. */
+.notice-card-error {
+    margin: 0.5rem 0 0;
+    padding-left: 0.55rem;
+    border-left: 2px solid var(--accent-error, #c0392b);
+    font-size: var(--font-size-small, 0.72rem);
+    color: var(--accent-error, #c0392b);
+    line-height: 1.45;
+}
+
+.notice-card-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -406,13 +416,10 @@
    for the one person who has just proved they care where the bar sits. */
 .side-rail-notice-hint {
     margin: 0.6rem 0 0;
+    width: 100%;
     font-size: var(--font-size-small, 0.72rem);
     color: var(--text-tertiary, var(--text-secondary));
     line-height: 1.5;
-}
-
-.side-rail-notice-hint[hidden] {
-    display: none;
 }
 
 .side-rail-notice-hint kbd {
@@ -423,45 +430,6 @@
     border-radius: 3px;
     padding: 0.05rem 0.3rem;
     color: var(--text-secondary);
-}
-
-/* ── One-time push-notification invitation ──────────────────────────────
-   Same card chrome as the analytics notice; the caveat line is the addition. */
-.push-notice-text {
-    margin: 0.35rem 0 0;
-    font-size: var(--font-size-small, 0.72rem);
-    color: var(--text-secondary);
-    line-height: 1.5;
-}
-
-/* Safari's HTTPS restriction is a footnote, not part of the pitch: quieter than
-   the body text so it reads as a caveat rather than a second paragraph. */
-.push-notice-caveat {
-    margin: 0.5rem 0 0;
-    padding-left: 0.55rem;
-    border-left: 2px solid var(--border-color, rgba(128, 128, 128, 0.35));
-    font-size: var(--font-size-small, 0.72rem);
-    color: var(--text-muted, var(--text-secondary));
-    line-height: 1.45;
-    opacity: 0.9;
-}
-
-/* Why the opt-in failed, kept on the card rather than in a toast that fades
-   before it can be read. Styled like the caveat, in the error colour. */
-.push-notice-error {
-    margin: 0.5rem 0 0;
-    padding-left: 0.55rem;
-    border-left: 2px solid var(--accent-error, #c0392b);
-    font-size: var(--font-size-small, 0.72rem);
-    color: var(--accent-error, #c0392b);
-    line-height: 1.45;
-}
-
-.push-notice-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.8rem;
 }
 
 /* The shared .whats-new-modal shell only scrolls once it hits max-height; this

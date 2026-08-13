@@ -48,15 +48,36 @@ func (fs *FileStore) invalidateReadCache() {
 	fs.readCache = newStoreReadCache()
 }
 
-func (fs *FileStore) noteDataMutation() {
-	fs.invalidateReadCache()
+// noteDataMutation invalidates the cache after a write. pageID narrows it to
+// that page's bookmarks/categories when the write cannot have touched
+// anything else; pass 0 for a write whose scope isn't a single page (settings,
+// colors, finders, page order, page create/delete) to invalidate everything,
+// matching the old behavior.
+//
+// allBookmarks, pages and page order stay cleared unconditionally even for a
+// scoped write: GetPages() derives the list from bookmarks-N.json files on
+// disk (see getPages), and GetAllBookmarks() aggregates every page, so a
+// single page's write can change what either of those report. Only the
+// per-page bookmarks/categories entries for *other* pages are the ones a
+// scoped write can safely leave alone.
+func (fs *FileStore) noteDataMutation(pageID int) {
+	if pageID <= 0 {
+		fs.invalidateReadCache()
+		return
+	}
+	fs.readCache.allBookmarksOK = false
+	fs.readCache.pagesOK = false
+	fs.readCache.pageOrderOK = false
+	fs.readCache.revisionOK = false
+	delete(fs.readCache.bookmarks, pageID)
+	delete(fs.readCache.categories, pageID)
 }
 
-func (fs *FileStore) writeStoreJSONFile(path string, v any) error {
+func (fs *FileStore) writeStoreJSONFile(path string, v any, pageID int) error {
 	if err := writeIndentJSONFile(path, v); err != nil {
 		return err
 	}
-	fs.noteDataMutation()
+	fs.noteDataMutation(pageID)
 	return nil
 }
 
