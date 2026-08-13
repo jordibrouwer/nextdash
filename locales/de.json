@@ -89,6 +89,8 @@
         "inboxMarkAllRead": "Alle als gelesen",
         "inboxMarkAllReadDone": "{count} als gelesen markiert",
         "inboxMarkAllReadPartial": "Markiert, {count} fehlgeschlagen",
+        "inboxSnoozePartial": "Zurückgestellt, {count} fehlgeschlagen",
+        "inboxSelectionDeletePartial": "{count} konnten nicht gelöscht werden",
         "inboxClearRead": "Gelesene löschen",
         "inboxClearReadAction": "Löschen",
         "inboxClearReadConfirm": "{count} gelesene Links aus der Inbox entfernen?",

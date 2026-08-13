@@ -114,6 +114,8 @@
         "inboxMarkAllRead": "Alles als gelezen",
         "inboxMarkAllReadDone": "{count} als gelezen gemarkeerd",
         "inboxMarkAllReadPartial": "Gemarkeerd, {count} mislukt",
+        "inboxSnoozePartial": "Uitgesteld, {count} mislukt",
+        "inboxSelectionDeletePartial": "{count} konden niet worden verwijderd",
         "inboxClearRead": "Gelezen wissen",
         "inboxClearReadAction": "Wissen",
         "inboxClearReadConfirm": "{count} gelezen links uit de Inbox verwijderen?",

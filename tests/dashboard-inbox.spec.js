@@ -446,6 +446,38 @@ test.describe('dashboard inbox phase 1', () => {
         await expect(page.locator(`[data-inbox-id="${targetId}"].inbox-item--highlight`)).toBeVisible();
     });
 
+    // The focus request is a one-shot. It used to stay set forever, so every
+    // later render re-selected the deep-linked row, and every later
+    // loadAndRender re-ran prepareItemFocus — which clears the search and the
+    // site filter unconditionally. Searching after arriving on a deep link had
+    // its query wiped the next time anything reloaded the list.
+    test('a deep link is consumed once and stops clobbering the search', async ({ page }) => {
+        await seedInbox(page, ['Alpha', 'Beta target', 'Gamma']);
+        const targetId = await page.evaluate(() => {
+            const item = window.dashboardInstance.inbox.items.find((i) => i.title === 'Beta target');
+            return item?.id || '';
+        });
+        expect(targetId).toBeTruthy();
+
+        await page.goto(`/?ib_id=${encodeURIComponent(targetId)}#inbox`);
+        await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+        await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator(`[data-inbox-id="${targetId}"].keyboard-selected`)).toBeVisible();
+
+        // Consumed: the pending request is gone once it has been applied.
+        expect(await page.evaluate(() => window.dashboardInstance.inbox.focusItemId)).toBeNull();
+
+        // A search set afterwards must survive a reload of the list, which is
+        // what an undo or any other refresh triggers.
+        await page.evaluate(async () => {
+            const inbox = window.dashboardInstance.inbox;
+            inbox.searchQuery = 'Gamma';
+            await inbox.loadAndRender();
+        });
+        expect(await page.evaluate(() => window.dashboardInstance.inbox.searchQuery)).toBe('Gamma');
+    });
+
     test('noted filter shows only items with a note', async ({ page }) => {
         await seedInbox(page, ['Plain link', 'Annotated link']);
         await page.evaluate(async () => {

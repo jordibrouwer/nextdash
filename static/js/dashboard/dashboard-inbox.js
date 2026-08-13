@@ -141,12 +141,23 @@ class DashboardInbox {
         const targets = (items || []).filter(Boolean);
         if (!targets.length || !until) return;
         this._trackAction('bulk-snooze', { size: this._countBucket(targets.length) });
-        await Promise.allSettled(targets.map((item) => this.patchSnooze(item.id, until)));
+        // Reported for the same reason bulkMarkRead reports: discarding the
+        // results meant a selection that failed to save said nothing at all —
+        // the ticks cleared and the rows simply stayed awake.
+        const results = await Promise.allSettled(targets.map((item) => this.patchSnooze(item.id, until)));
+        const failed = results.filter((r) => r.status === 'rejected').length;
         this.clearChecked();
         if (this.isActiveView()) {
             this.render();
         } else {
             await this.refreshBadge();
+        }
+        if (failed) {
+            this.dash.showNotification(
+                this.t('dashboard.inboxSnoozePartial', 'Snoozed, {count} failed', { count: failed }),
+                'info',
+                { duration: 3000 }
+            );
         }
     }
 
@@ -166,9 +177,15 @@ class DashboardInbox {
         if (!ok) return;
         this._trackAction('bulk-delete', { size: this._countBucket(targets.length) });
         const d = this.dash;
-        const snapshots = targets.map((item) => JSON.parse(JSON.stringify(item)));
         const results = await Promise.allSettled(targets.map((item) => this.deleteItem(item.id)));
-        const removed = results.filter((r) => r.status === 'fulfilled').length;
+        // Only the items that really went are snapshotted: undoing a partial
+        // batch used to re-PUT the survivors too, restoring items that were
+        // never deleted.
+        const snapshots = targets
+            .filter((_, i) => results[i].status === 'fulfilled')
+            .map((item) => JSON.parse(JSON.stringify(item)));
+        const removed = snapshots.length;
+        const failed = results.length - removed;
         this.clearChecked();
         if (this.isActiveView()) {
             this.render();
@@ -178,6 +195,16 @@ class DashboardInbox {
         if (!removed) {
             d.showNotification(this.t('dashboard.inboxDeleteFailed', 'Could not delete'), 'error');
             return;
+        }
+        if (failed) {
+            // Named rather than folded into the success count: the ticks are
+            // already cleared, so a silent partial leaves no way to tell which
+            // rows still need dealing with.
+            d.showNotification(
+                this.t('dashboard.inboxSelectionDeletePartial', '{count} could not be deleted', { count: failed }),
+                'info',
+                { duration: 4000 }
+            );
         }
         d.showNotification(
             this.t('dashboard.inboxSelectionDeleteDone', 'Removed {count} selected items', { count: removed }),
@@ -2103,6 +2130,13 @@ class DashboardInbox {
         if (!card) {
             return;
         }
+        // Consumed here, once the focus has actually landed. Leaving it set made
+        // the request permanent: every later render re-selected and re-flashed
+        // this row, yanking the cursor back from wherever the user had arrowed
+        // to, and every later loadAndRender re-ran prepareItemFocus — which
+        // clears searchQuery and domainFilter unconditionally. Undoing a bulk
+        // delete therefore threw away the active search and site filter.
+        this.focusItemId = null;
         this.selectedItemId = id;
         this.applyKeyboardSelection();
         this.highlightItem(id);

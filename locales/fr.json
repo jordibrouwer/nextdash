@@ -89,6 +89,8 @@
         "inboxMarkAllRead": "Tout marquer comme lu",
         "inboxMarkAllReadDone": "{count} marqué(s) comme lu(s)",
         "inboxMarkAllReadPartial": "Marqué(s), {count} échec(s)",
+        "inboxSnoozePartial": "Reporté(s), {count} échec(s)",
+        "inboxSelectionDeletePartial": "{count} n'ont pas pu être supprimés",
         "inboxClearRead": "Effacer les lus",
         "inboxClearReadAction": "Effacer",
         "inboxClearReadConfirm": "Retirer {count} liens lus de l'Inbox ?",

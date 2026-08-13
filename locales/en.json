@@ -115,6 +115,8 @@
         "inboxMarkAllRead": "Mark all read",
         "inboxMarkAllReadDone": "Marked {count} read",
         "inboxMarkAllReadPartial": "Marked read, {count} failed",
+        "inboxSnoozePartial": "Snoozed, {count} failed",
+        "inboxSelectionDeletePartial": "{count} could not be deleted",
         "inboxClearRead": "Clear read",
         "inboxClearReadAction": "Clear",
         "inboxClearReadConfirm": "Remove {count} read links from the Inbox?",
