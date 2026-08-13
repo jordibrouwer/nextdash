@@ -14,7 +14,9 @@ async function openDisplayTab(page) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-    await page.locator('[data-appearance-tab="display"]').click();
+    // showRecentButton sits on the Toolbar tab ("Button bar — extras"), not on
+    // Display; the setting moved and this helper kept clicking the old tab.
+    await page.locator('[data-appearance-tab="toolbar"]').click();
     await expect(page.locator('[data-behavior-field="showRecentButton"]')).toBeVisible();
 }
 
@@ -105,7 +107,7 @@ test.describe('config save feedback', () => {
 
         // Save immediately after a view switch, while the transform is running.
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-        await page.locator('[data-appearance-tab="display"]').click();
+        await page.locator('[data-appearance-tab="toolbar"]').click();
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
         await page.locator('[data-behavior-field="showRecentButton"]').click();
         await page.waitForSelector('#config-save-state.is-saved');

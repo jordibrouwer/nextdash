@@ -54,9 +54,9 @@ test.describe('category spacing', () => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config;
-            cfg.behaviorTab = 'layout';
-            await cfg.openConfigView('behavior');
+            await cfg.openConfigView('appearance');
         });
+        await page.locator('[data-appearance-tab="layout"]').click();
 
         const card = page.locator('[data-behavior-field="categorySpacing"][data-behavior-value="snug"]');
         await expect(card).toBeVisible();
@@ -134,9 +134,9 @@ test.describe('page margins', () => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config;
-            cfg.behaviorTab = 'layout';
-            await cfg.openConfigView('behavior');
+            await cfg.openConfigView('appearance');
         });
+        await page.locator('[data-appearance-tab="layout"]').click();
 
         for (const field of ['categorySpacing', 'sideMargin']) {
             await expect(page.locator(`[data-behavior-field="${field}"][data-behavior-type="cards"]`)).toHaveCount(3);
@@ -151,9 +151,9 @@ test.describe('page margins', () => {
         await loadDashboard(page);
         await page.evaluate(async () => {
             const cfg = window.dashboardInstance.config;
-            cfg.behaviorTab = 'layout';
-            await cfg.openConfigView('behavior');
+            await cfg.openConfigView('appearance');
         });
+        await page.locator('[data-appearance-tab="layout"]').click();
 
         await page.locator('[data-behavior-field="sideMargin"][data-behavior-value="snug"]').click();
         await expect.poll(() => page.evaluate(() => document.body.getAttribute('data-side-margin'))).toBe('snug');
