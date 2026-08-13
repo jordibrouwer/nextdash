@@ -1065,9 +1065,16 @@ class DashboardConfig {
                 // Some sections repaint through render(), which replaces the
                 // strip wholesale and drops the focus set above. Re-focus the
                 // rebuilt button so a second arrow press still works.
-                if (!target.isConnected) {
-                    document.querySelector(`[${attr}="${CSS.escape(tab)}"]`)?.focus();
-                }
+                //
+                // Unconditionally and on the next frame: testing isConnected
+                // right here ran before Appearance had repainted, so the node
+                // still looked attached, the branch was skipped, and focus
+                // landed on <body> once the replacement arrived — leaving the
+                // strip dead to every further arrow press.
+                requestAnimationFrame(() => {
+                    const live = document.querySelector(`[${attr}="${CSS.escape(tab)}"]`);
+                    if (live && live !== document.activeElement) live.focus();
+                });
             });
         });
     }

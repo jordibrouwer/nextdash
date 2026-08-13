@@ -16,9 +16,11 @@ test.describe('health lazy load', () => {
         const requested = [];
         page.on('request', (req) => {
             const url = req.url();
+            // last-opened-format.js is deliberately eager since 8115b0e7: row
+            // tooltips and the preview card need formatLastOpened on every
+            // session, not only after Health has been opened.
             if (url.includes('dashboard-health.js')
-                || url.includes('health-reason-utils.js')
-                || url.includes('last-opened-format.js')) {
+                || url.includes('health-reason-utils.js')) {
                 requested.push(url);
             }
         });

@@ -88,7 +88,11 @@ test.describe('config info + reset affordances', () => {
             'showAddBookmarkButton', 'showSearchButton', 'showFindersButton', 'showCommandsButton',
             'showSmartTodayCollection', 'showSmartRecentCollection', 'showSmartStaleCollection',
             'showSmartMostUsedCollection', 'pushNotifyMonitor', 'pushNotifyBackup',
-            'pushNotifyRelease', 'pushNotifySubject',
+            'pushNotifyRelease', 'pushNotifySubject', 'showCollapseAllButton',
+            // Listed in FIELD_META for the ↺ button and the changed-settings
+            // count, with a comment saying they carry no ℹ of their own: a
+            // field with no `def` reports itself unchanged whatever it holds.
+            'pasteDestination', 'monitorEmphasis', 'theme', 'fontSize', 'customTitle',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });

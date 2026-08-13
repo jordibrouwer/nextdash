@@ -151,7 +151,10 @@ test.describe('config: sections restored from the old config', () => {
 
         const tabs = await page.locator('[data-help-tab]')
             .evaluateAll((els) => els.map((e) => e.getAttribute('data-help-tab')));
-        expect(tabs).toEqual(['start', 'config', 'organizing', 'search', 'health', 'data', 'about']);
+        // Against HELP_TABS rather than a copy of it: tabs have been added
+        // since (inbox, stats) and a hardcoded list only says the test is old.
+        const declared = await page.evaluate(() => window.DashboardConfig.HELP_TABS);
+        expect(tabs).toEqual(declared);
 
         for (const tab of tabs) {
             await page.locator(`[data-help-tab="${tab}"]`).click();
