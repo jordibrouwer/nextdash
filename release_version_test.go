@@ -48,8 +48,10 @@ func TestWhatsNewStubReleaseConstants(t *testing.T) {
 	if dashboardRelease == "" {
 		t.Fatal("DASHBOARD_RELEASE not found in whats-new-stub.js")
 	}
-	if !regexp.MustCompile(`^2026\.07-dashboard-release-v\d+$`).MatchString(dashboardRelease) {
-		t.Fatalf("DASHBOARD_RELEASE = %q, want format 2026.07-dashboard-release-vNNN", dashboardRelease)
+	// Since the move to semver the suffix carries the release tag itself rather
+	// than a running number, so both shapes stay valid here.
+	if !regexp.MustCompile(`^\d{4}\.\d{2}-dashboard-release-v[\d.]+$`).MatchString(dashboardRelease) {
+		t.Fatalf("DASHBOARD_RELEASE = %q, want format YYYY.MM-dashboard-release-vN[.N.N]", dashboardRelease)
 	}
 
 	dataVersion := extractJSStringConst(src, "NEXTDASH_WHATS_NEW_DATA_VERSION")

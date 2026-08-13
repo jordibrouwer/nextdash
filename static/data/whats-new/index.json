@@ -1,24 +1,27 @@
 [
   {
+    "id": "v1.0.0",
+    "tag": "v1.0.0",
+    "date": "August 2026",
+    "releasedAt": "2026-08-13"
+  },
+  {
     "id": "v2026.09.09.3",
     "tag": "v2026.09.09.3",
     "date": "August 2026",
-    "releasedAt": "2026-08-11",
-    "hideFromModal": true
+    "releasedAt": "2026-08-11"
   },
   {
     "id": "v2026.09.09.2",
     "tag": "v2026.09.09.2",
     "date": "August 2026",
-    "releasedAt": "2026-08-11",
-    "hideFromModal": true
+    "releasedAt": "2026-08-11"
   },
   {
     "id": "v2026.09.09.1",
     "tag": "v2026.09.09.1",
     "date": "August 2026",
-    "releasedAt": "2026-08-11",
-    "hideFromModal": true
+    "releasedAt": "2026-08-11"
   },
   {
     "id": "v2026.09.09",

@@ -122,8 +122,8 @@ func TestBuildUpdateStatusDetectsNewerRelease(t *testing.T) {
 
 	h.setUpdateCheckCache(updateCheckCacheEntry{
 		info: upstreamReleaseInfo{
-			Tag:        "v9999.99.99.9",
-			ReleaseURL: "https://github.com/jordibrouwer/nextdash/releases/tag/v9999.99.99.9",
+			Tag:        "v99.0.0",
+			ReleaseURL: "https://github.com/jordibrouwer/nextdash/releases/tag/v99.0.0",
 		},
 		fetchedAt: time.Now(),
 	})
@@ -132,7 +132,7 @@ func TestBuildUpdateStatusDetectsNewerRelease(t *testing.T) {
 	if !status.UpdateAvailable {
 		t.Fatalf("status = %+v, want updateAvailable=true", status)
 	}
-	if status.Latest != "v9999.99.99.9" {
+	if status.Latest != "v99.0.0" {
 		t.Fatalf("latest = %q", status.Latest)
 	}
 }

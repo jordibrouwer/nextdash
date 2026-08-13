@@ -3,7 +3,7 @@
     "date": "August 2026",
     "releasedAt": "2026-08-11",
     "hideFromModal": true,
-    "modalLead": "A fix on top of v2026.09.09. Recorded here but not announced: v2026.09.09 is the release worth reading, and this does not displace it.",
+    "modalLead": "A fix on top of v2026.09.09: opening a bookmark from Health no longer claims its category had been deleted.",
     "sections": [
         {
             "title": "Dashboard",

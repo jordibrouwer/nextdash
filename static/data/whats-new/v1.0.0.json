@@ -1,0 +1,140 @@
+{
+    "tag": "v1.0.0",
+    "date": "August 2026",
+    "releasedAt": "2026-08-13",
+    "modalLead": "<strong>nextDash is 1.0.</strong> After a long stretch of squashing bugs and sanding down rough edges, this finally feels like a finished, stable app rather than a work in progress — so the version number says so. From here the number describes the change instead of the date: <strong>1.<em>x</em>.0</strong> adds features, <strong>1.0.<em>x</em></strong> fixes things. This release is mostly the quiet kind of work: a long list of cases where something claimed to have worked and had not, plus a much stronger Inbox.",
+    "sections": [
+        {
+            "title": "Things that said they worked and did not",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Moving a bookmark to another page could lose it.</strong> If the save half-finished, the bookmark could vanish from both pages at once. It now lands on the new page before it leaves the old one, so a failure leaves it exactly where it started."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Moving several bookmarks at once had the same fault</strong>, with the whole batch at risk instead of one. Each is now moved on its own, so one failure cannot take the rest with it."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Deleting all categories on a page appeared to work and changed nothing.</strong> It now tells you the bookmarks still filed under them have to be moved first."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Renaming a category could file bookmarks under the wrong one.</strong> Deleting a category from the middle of the list shifted the ones after it, quietly moving their bookmarks somewhere you never chose."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>A saved link could be silently thrown away.</strong> Saving to a full Inbox could discard the very link you just added while reporting success. It is now kept, and the oldest one makes room instead."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Deleting a link during Triage looked like it worked when it had not.</strong> The card disappeared and the link came back on the next reload. It now says so instead."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Bulk actions reported partial success as complete success.</strong> Snoozing or deleting five links where two failed said everything had gone through. The failures are now named, and Undo no longer restores links that were never deleted."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Deleting a bookmark shown on another page could overwrite other changes</strong> made on that page at the same time."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Previews of pages that failed to load were cached as if they had worked</strong>, leaving an error page's title on the bookmark."
+                }
+            ]
+        },
+        {
+            "title": "Inbox",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Tags are finally visible.</strong> Links saved with tags — from the browser extension, for instance — showed nothing at all. Tags now appear on the row, you can edit them from the right-click menu, search finds them, and both exports include them. Click one to see only that tag."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Stats.</strong> The <strong>Stats</strong> button answers the question the Inbox is really about: how much of what lands here you turn into bookmarks, and how long things sit before you deal with them."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Promote several links at once.</strong> Tick a handful, choose a page, and they all become bookmarks — instead of walking through the form once per link."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Right-click a link and get the Inbox's own actions</strong> — Promote, Snooze, Note, Tags, Mark read, Delete — rather than the bookmark menu."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Open and Copy links</strong> now sit alongside the other actions when you tick several rows, and <strong>Shift+click</strong> selects a whole run at once. <strong>Ctrl/Cmd+A</strong> ticks everything on screen."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>An unreachable server said your Inbox was empty</strong> and invited you to add to it. It now says the list could not be loaded and offers to try again."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Deleting a row lost your place.</strong> Working down the list with the keyboard meant hunting for where you were after every delete; the cursor now moves to the next row."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Filling up the Inbox no longer happens in silence.</strong> When an older link is dropped to make room, you are told."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Opening a shared link to one item wiped your search.</strong> It also kept dragging you back to that row on every later update."
+                }
+            ]
+        },
+        {
+            "title": "Health",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Bookmarks filed under a category that no longer exists are now findable.</strong> Deleting a category leaves its bookmarks behind, and on the dashboard they look no different from uncategorised ones. Health lists them under <strong>Missing category</strong> and names the one they are still pointing at."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>The header is tidier.</strong> The score sits on the same line as the description, the trend chart moved down beside the buttons, and <strong>settings</strong> is a proper button."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The header badge stops hammering a server that is down.</strong> It checks less often and backs off when something is wrong, instead of asking every minute forever."
+                }
+            ]
+        },
+        {
+            "title": "Elsewhere",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Creating a page and a category at the same moment could undo one of them.</strong>"
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Bookmark names, categories and notes kept any stray spaces</strong> you typed around them."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The save hint in the bookmark editor said Ctrl+Enter on a Mac</strong>, where it has always been Cmd+Enter."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Copying several links did nothing on some setups</strong> — plain-HTTP installs on a home network, in particular."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Deleting several tagged bookmarks at once now offers an Undo</strong>, rather than only being recoverable from the 30-day trash."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Smart collection headings could be renamed by accident</strong> with a long press or a double click, even though they are not real categories."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Screen readers are told what changed</strong> — the Inbox announces how many links a filter leaves, and the buttons that open menus now say that they do."
+                }
+            ]
+        }
+    ]
+}
