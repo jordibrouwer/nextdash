@@ -1383,11 +1383,12 @@ class DashboardInlineEdit {
 
         const hint = document.createElement('span');
         hint.className = 'bookmark-inline-hint';
-        hint.textContent = d.formatDashboardLabel(
-            'inlineEditHint',
-            {},
-            'Ctrl+Enter to save · Esc to cancel'
-        );
+        // The handler below already accepts metaKey alongside ctrlKey — this
+        // just makes the hint tell a Mac user which key that means.
+        const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(navigator.platform || '');
+        hint.textContent = isMac
+            ? d.formatDashboardLabel('inlineEditHintMac', {}, '⌘+Enter to save · Esc to cancel')
+            : d.formatDashboardLabel('inlineEditHint', {}, 'Ctrl+Enter to save · Esc to cancel');
         actions.appendChild(hint);
 
         form.appendChild(actions);

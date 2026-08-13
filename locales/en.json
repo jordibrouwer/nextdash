@@ -27,6 +27,7 @@
         "bookmarkLinkFallback": "Bookmark",
         "renameCategoryAria": "Rename category",
         "inlineEditHint": "Ctrl+Enter to save · Esc to cancel",
+        "inlineEditHintMac": "⌘+Enter to save · Esc to cancel",
         "deleteBookmarkConfirm": "Remove \"{name}\"?",
         "extensionBookmarkSaved": "Bookmark saved from extension",
         "pagesOverview": "pages",
