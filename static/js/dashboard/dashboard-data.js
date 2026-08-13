@@ -596,11 +596,22 @@ class DashboardData {
             .join('\0');
     }
 
+    // Field set mirrors the Go side's bookmarkContentFingerprint
+    // (activity_bookmark.go) — kept in sync by hand, since a field one side
+    // treats as content and the other omits would let a real change through
+    // undetected. Encoding (case-folding, tag sort order) differs from Go's
+    // fingerprint because this one only ever compares against itself.
     _bookmarkStaleFingerprint(bookmark) {
         const name = String(bookmark?.name ?? '').trim();
         const shortcut = String(bookmark?.shortcut ?? '').trim().toUpperCase();
         const url = this._bookmarkUrlKey(bookmark?.url);
-        return `${name}\x01${url}\x01${shortcut}\x01${String(bookmark?.category ?? '').trim()}\x01${this._bookmarkTagsKey(bookmark?.tags)}`;
+        const category = String(bookmark?.category ?? '').trim();
+        const tags = this._bookmarkTagsKey(bookmark?.tags);
+        const pinned = bookmark?.pinned ? '1' : '0';
+        const checkStatus = bookmark?.checkStatus ? '1' : '0';
+        const icon = String(bookmark?.icon ?? '').trim();
+        const note = String(bookmark?.note ?? '').trim();
+        return [name, url, shortcut, category, tags, pinned, checkStatus, icon, note].join('\x01');
     }
 
     isPageBookmarksStale(pageId, bookmarks) {

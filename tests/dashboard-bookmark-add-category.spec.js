@@ -287,4 +287,57 @@ test.describe('dashboard bookmark add category placement', () => {
         expect(result.shortcutStale).toBe(true);
         expect(result.fresh).toBe(false);
     });
+
+    test('isPageBookmarksStale detects icon, note and pinned divergence', async ({ page }) => {
+        // The Go-side content fingerprint (bookmarkContentFingerprint in
+        // activity_bookmark.go) treats icon/note/pinned/checkStatus as content
+        // alongside name/url/shortcut/category/tags. The JS fingerprint used to
+        // omit all four, so a bookmark whose icon or pin state changed on
+        // another page/tab would not be detected as stale here.
+        await page.goto(`/?_=${Date.now()}`);
+        await page.waitForSelector('#dashboard-layout .bookmark-link', { timeout: 15_000 });
+
+        const result = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const pageId = Number(d.currentPageId) || 1;
+            const source = Array.isArray(d.bookmarks) && d.bookmarks.length
+                ? d.bookmarks[0]
+                : null;
+            if (!source) {
+                return { ok: false, reason: 'no-bookmarks' };
+            }
+
+            const urlKey = String(source.url || '').trim().toLowerCase();
+            const staleIcon = d.bookmarks.map((bm, index) => (
+                index === 0 ? { ...bm, icon: '/data/icons/stale-probe.png' } : bm
+            ));
+            const staleNote = d.bookmarks.map((bm, index) => (
+                index === 0 ? { ...bm, note: 'stale note probe' } : bm
+            ));
+            const stalePinned = d.bookmarks.map((bm, index) => (
+                index === 0 ? { ...bm, pinned: !bm.pinned } : bm
+            ));
+            const freshAll = (d.allBookmarks || []).map((bm) => (
+                String(bm?.url || '').trim().toLowerCase() === urlKey
+                    && Number(bm.pageId) === pageId
+                    ? { ...bm, icon: source.icon, note: source.note, pinned: source.pinned }
+                    : bm
+            ));
+
+            d.allBookmarks = freshAll;
+            return {
+                ok: true,
+                iconStale: d.data.isPageBookmarksStale(pageId, staleIcon),
+                noteStale: d.data.isPageBookmarksStale(pageId, staleNote),
+                pinnedStale: d.data.isPageBookmarksStale(pageId, stalePinned),
+                fresh: d.data.isPageBookmarksStale(pageId, d.bookmarks),
+            };
+        });
+
+        expect(result.ok).toBe(true);
+        expect(result.iconStale).toBe(true);
+        expect(result.noteStale).toBe(true);
+        expect(result.pinnedStale).toBe(true);
+        expect(result.fresh).toBe(false);
+    });
 });
