@@ -1057,6 +1057,7 @@ class DashboardData {
             void d.inbox?.bootstrap?.();
             return true;
         } catch (error) {
+            console.warn('Save settings failed:', error);
             d.showErrorNotification(
                 d.formatDashboardLabel('saveSettingsFailed', {}, 'Failed to save settings.')
             );
