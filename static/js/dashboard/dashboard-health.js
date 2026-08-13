@@ -2453,15 +2453,41 @@ class DashboardHealth {
         return notes[filter] || '';
     }
 
-    /** The explanation line under the toolbar. */
+    /**
+     * The explanation line under the toolbar, with the trend chart beside it.
+     *
+     * The chart used to sit at the end of the toolbar's button row, where it got
+     * whatever sliver the buttons left over. This row is the whitespace it was
+     * always meant to fill: the note is one or two lines of text and leaves the
+     * right half empty, so the chart takes that half at a readable size instead
+     * of being squeezed between a button and the help icon.
+     */
     renderFilterNote() {
         const text = this.filterExplanation();
-        if (!text) return null;
-        const note = document.createElement('p');
-        // Shared class styles it; the view-specific one stays as this view's hook.
-        note.className = 'view-filter-note health-view-filter-note';
-        note.textContent = text;
-        return note;
+        const chart = this.renderTrendChart();
+        if (!text && !chart) return null;
+
+        const row = document.createElement('div');
+        row.className = 'health-view-note-row';
+
+        if (text) {
+            const note = document.createElement('p');
+            // Shared class styles it; the view-specific one stays as this view's hook.
+            note.className = 'view-filter-note health-view-filter-note';
+            note.textContent = text;
+            row.appendChild(note);
+        }
+        if (chart) {
+            const holder = document.createElement('div');
+            holder.className = 'health-view-trend-holder';
+            holder.innerHTML = chart;
+            holder.querySelector('[data-health-trend-help]')?.addEventListener('click', () => {
+                this.showTrendExplainer();
+            });
+            this.bindTrendChart(holder);
+            row.appendChild(holder);
+        }
+        return row;
     }
 
     /**
@@ -2758,9 +2784,12 @@ class DashboardHealth {
         const values = points.map((p) => this.trendPercent(p));
         if (values.filter((v) => v !== null).length < 3) return '';
 
+        // Sized for the note row rather than the button row it used to sit in.
+        // The taller box is what makes a two-point move legible on a fixed
+        // 0–100 axis; at 34px high the line was a flat smear.
         const w = 240;
-        const h = 34;
-        const padY = 3;
+        const h = 96;
+        const padY = 8;
         const plotH = h - padY * 2;
         const step = w / Math.max(1, values.length - 1);
 
@@ -2793,17 +2822,167 @@ class DashboardHealth {
             'Healthy bookmarks over the last {days} days, from {first}% to {last}%',
             { days: points.length, first, last });
 
+        // Just the ceiling and the midpoint. At this height the quarter lines
+        // crowded the plot, and these two are the ones that carry meaning: where
+        // 100% sits, and which half of the range the line is in.
+        const grid = [50, 100].map((v) => {
+            const y = yFor(v);
+            const top = v === 100;
+            return `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="currentColor"
+                          stroke-width="0.5" ${top ? 'stroke-dasharray="3 3"' : ''}
+                          opacity="${top ? 0.45 : 0.2}"/>`;
+        }).join('');
+
+        // The last reading, marked: the eye should land on where the collection
+        // stands now, not on the middle of the line.
+        const lastIndex = values.reduce((acc, v, i) => (v === null ? acc : i), -1);
+        const endDot = lastIndex >= 0
+            ? `<circle cx="${(lastIndex * step).toFixed(1)}" cy="${yFor(values[lastIndex])}" r="2.5"
+                       fill="currentColor"/>`
+            : '';
+
+        const caption = this.t('dashboard.healthTrendCaption', '{days} days', { days: points.length });
+        const helpLabel = this.t('dashboard.healthTrendHelpHint', 'What this chart shows');
+
+        // One hit zone per day, laid over the plot. Percentage widths rather
+        // than SVG geometry: the chart stretches with preserveAspectRatio="none",
+        // so anything positioned inside the viewBox would drift away from what
+        // the pointer is actually over.
+        const zoneW = 100 / values.length;
+        const zones = values.map((v, i) => {
+            const point = points[i];
+            const day = this.trendPointLabel(point);
+            const readout = v === null
+                ? this.t('dashboard.healthTrendNoData', 'no reading')
+                : `${v}%`;
+            return `<button type="button" class="health-view-trend-zone"
+                        style="left:${(i * zoneW).toFixed(3)}%;width:${zoneW.toFixed(3)}%"
+                        data-trend-day="${this.escape(day)}"
+                        data-trend-value="${this.escape(readout)}"
+                        data-trend-empty="${v === null ? 'true' : 'false'}"
+                        tabindex="-1" aria-hidden="true"></button>`;
+        }).join('');
+
         return `<div class="health-view-trend">
-            <svg class="health-view-trend-chart" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"
-                 role="img" aria-label="${this.escape(label)}">
-                <line class="health-view-trend-base" x1="0" y1="${yFor(100)}" x2="${w}" y2="${yFor(100)}"
-                      stroke="currentColor" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.25"/>
-                ${paths}
-            </svg>
-            <span class="health-view-trend-caption">${this.escape(
-                this.t('dashboard.healthTrendCaption', '{days} days', { days: points.length })
-            )}</span>
+            <div class="health-view-trend-head">
+                <span class="health-view-trend-title">${this.escape(
+                    this.t('dashboard.healthTrendTitle', 'Healthy over time')
+                )}</span>
+                <button type="button" class="view-help-btn health-view-trend-help" data-health-trend-help
+                        aria-haspopup="dialog"
+                        title="${this.escape(helpLabel)}"
+                        aria-label="${this.escape(helpLabel)}">ℹ</button>
+            </div>
+            <div class="health-view-trend-plot">
+                <!-- Outside the SVG: preserveAspectRatio="none" would stretch
+                     the type along with the plot. -->
+                <span class="health-view-trend-axis health-view-trend-axis--max">100%</span>
+                <svg class="health-view-trend-chart" viewBox="0 0 ${w} ${h}"
+                     preserveAspectRatio="none"
+                     role="img" aria-label="${this.escape(label)}">
+                    ${grid}
+                    ${paths}
+                    ${endDot}
+                </svg>
+                <div class="health-view-trend-zones">${zones}</div>
+                <span class="health-view-trend-tip" hidden></span>
+            </div>
+            <div class="health-view-trend-foot">
+                <span class="health-view-trend-caption">${this.escape(caption)}</span>
+                <span class="health-view-trend-now">${this.escape(
+                    this.t('dashboard.healthTrendNow', 'now {value}%', { value: last })
+                )}</span>
+            </div>
         </div>`;
+    }
+
+    /** A trend point's day, as short as the tooltip has room for. */
+    trendPointLabel(point) {
+        // HealthTrendPoint.t is Unix ms at the start of the day it describes.
+        const ms = Number(point?.t) || 0;
+        if (!ms) return '';
+        const date = new Date(ms);
+        if (Number.isNaN(date.getTime())) return '';
+        try {
+            return date.toLocaleDateString(this.dashboard?.language?.current || undefined,
+                { month: 'short', day: 'numeric' });
+        } catch {
+            return date.toISOString().slice(0, 10);
+        }
+    }
+
+    /**
+     * Hover readout for the trend chart.
+     *
+     * The zones are plain buttons rather than SVG hit areas so the pointer maths
+     * stays in CSS percentages — see the comment where they are built.
+     */
+    bindTrendChart(root) {
+        const plot = root.querySelector('.health-view-trend-plot');
+        if (!plot) return;
+        const tip = plot.querySelector('.health-view-trend-tip');
+        if (!tip) return;
+
+        const show = (zone) => {
+            const day = zone.dataset.trendDay || '';
+            const value = zone.dataset.trendValue || '';
+            tip.textContent = day ? `${day} · ${value}` : value;
+            tip.hidden = false;
+            // Clamped so the readout never hangs off either edge of the plot.
+            const left = zone.offsetLeft + zone.offsetWidth / 2;
+            const half = tip.offsetWidth / 2;
+            const max = plot.clientWidth - half;
+            tip.style.left = `${Math.min(Math.max(left, half), Math.max(half, max))}px`;
+            plot.classList.add('is-probing');
+            zone.classList.add('is-active');
+        };
+        const hide = () => {
+            tip.hidden = true;
+            plot.classList.remove('is-probing');
+            plot.querySelectorAll('.health-view-trend-zone.is-active')
+                .forEach((z) => z.classList.remove('is-active'));
+        };
+
+        plot.querySelectorAll('.health-view-trend-zone').forEach((zone) => {
+            zone.addEventListener('mouseenter', () => show(zone));
+            zone.addEventListener('focus', () => show(zone));
+        });
+        plot.addEventListener('mouseleave', hide);
+        plot.addEventListener('blur', hide, true);
+    }
+
+    /**
+     * What the trend line is actually plotting, behind the ℹ beside it.
+     *
+     * Kept separate from showHealthExplainer: that one covers the whole view,
+     * and the questions this chart raises — why the axis is fixed, why a line
+     * has gaps, what a day even is here — are specific enough that folding them
+     * in would bury them.
+     */
+    showTrendExplainer() {
+        if (typeof window.AppModal?.show !== 'function') return;
+        window.nextdashTrack?.('health:trend-explainer');
+
+        const points = this.trendPoints();
+        const paras = [
+            this.t('dashboard.healthTrendHelpWhat',
+                'The share of your bookmarks that counted as healthy on each day, going back {days} days.',
+                { days: points.length }),
+            this.t('dashboard.healthTrendHelpAxis',
+                'The axis is fixed at 0–100%, so the line only moves when the number really moves. A collection sitting between 91% and 93% looks flat here, which is the honest picture — scaling to the range would turn that into a cliff.'),
+            this.t('dashboard.healthTrendHelpGaps',
+                'A reading is recorded when the health report runs, so days you did not open nextDash leave a gap and the line breaks rather than guessing across it.'),
+            this.t('dashboard.healthTrendHelpHealthy',
+                'Healthy means reachable if checking is on, opened recently enough, and not clashing with another bookmark — the same rule the Healthy tile counts.'),
+        ];
+
+        window.AppModal.show({
+            title: this.t('dashboard.healthTrendTitle', 'Healthy over time'),
+            htmlMessage: paras.map((p) => `<p>${this.escape(p)}</p>`).join(''),
+            confirmText: this.t('common.close', 'close'),
+            showCancel: false,
+            modalClass: 'health-trend-explainer-modal',
+        });
     }
 
     /**
@@ -3480,7 +3659,6 @@ class DashboardHealth {
                     ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
                     : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
                 ${this.renderBulkEnableButtons()}
-                ${this.renderTrendChart()}
                 <button type="button" class="view-help-btn health-view-help-btn" data-health-help
                         aria-haspopup="dialog"
                         title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"

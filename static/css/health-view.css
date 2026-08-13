@@ -76,36 +76,202 @@
 
 /* ─── Collection trend ──────────────────────────────────────────────────── */
 
-/* Lives in the toolbar's action row, filling the gap that was left between the
-   buttons and the help icon. It used to be a full-width row inside the header,
-   which is what made the health header taller than the inbox one — the two are
-   otherwise the same shape, and the difference read as a mistake. */
+/* The note and the trend share one row: the explanation is one or two lines of
+   text that leave the right-hand half of the row empty, and that gap is exactly
+   where the chart belongs. It used to sit at the end of the toolbar's button
+   row, taking whatever sliver the buttons left over — too small to read a trend
+   off, which defeated the point of drawing one. */
+.health-view-note-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin: 0.6rem 0 0.9rem;
+}
+
+/* The note keeps its own top margin from the shared stylesheet; inside this row
+   the flex gap owns the spacing instead.
+   It yields the row's width rather than claiming it: the note is prose that
+   reads fine wrapped over three lines, while the chart stops being a chart once
+   it is squeezed. Hence the note shrinks (1 1 0) and the chart holds its basis. */
+.health-view-note-row .view-filter-note {
+    flex: 1 1 0;
+    min-width: 12rem;
+    margin: 0;
+    align-self: flex-start;
+}
+
+.health-view-trend-holder {
+    /* Just under half the row at the widths this view is used at. `0 0 auto`
+       rather than a shrink factor so the note gives way first; the media query
+       below takes over before this can crowd the text. */
+    flex: 0 0 auto;
+    width: 26rem;
+    max-width: 50%;
+    min-width: 0;
+    display: flex;
+}
+
+.health-view-trend-holder > .health-view-trend {
+    flex: 1 1 auto;
+}
+
+/* Kept to roughly the height of the note beside it. Taller reads as a panel
+   demanding attention, which this is not — it is a glance at the direction of
+   travel next to the sentence explaining the filter. */
 .health-view-trend {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    /* Takes the free space rather than a fixed width, so the chart grows into
-       whatever the buttons leave and shrinks first when they need room. */
-    flex: 1 1 6rem;
+    flex-direction: column;
+    gap: 0.2rem;
     min-width: 0;
-    justify-content: flex-end;
+    padding: 0.35rem 0.6rem 0.3rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--layout-radius-sm, 8px);
+}
+
+.health-view-trend-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.health-view-trend-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Smaller than the toolbar's ℹ: this one annotates a panel, not the view. */
+.health-view-trend-help {
+    flex: none;
+    font-size: 0.7rem;
+    line-height: 1;
+    padding: 0.1rem 0.3rem;
+}
+
+/* Holds the chart, the axis labels and the hit zones in one positioned box. */
+.health-view-trend-plot {
+    position: relative;
+    display: flex;
+    /* Room for the axis labels, which sit outside the plot area so the stretched
+       viewBox cannot distort them. */
+    padding-left: 2.1rem;
+}
+
+.health-view-trend-axis {
+    position: absolute;
+    left: 0;
+    font-size: 0.6rem;
+    line-height: 1;
+    color: var(--text-tertiary, var(--text-secondary));
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
+
+/* Only the ceiling is labelled. The 50% rule is still drawn as a reference, but
+   naming it added a second number to a chart whose whole point is the shape of
+   the line. */
+.health-view-trend-axis--max { top: 0; }
+
+/* One transparent button per day, filling the plot. */
+.health-view-trend-zones {
+    position: absolute;
+    inset: 0 0 0 2.1rem;
+}
+
+.health-view-trend-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: default;
+}
+
+.health-view-trend-zone.is-active {
+    background: color-mix(in srgb, var(--accent-success) 12%, transparent);
+}
+
+/* Below the plot rather than above it: above, the readout covered the panel's
+   own title, which is the one label that should never be obscured. */
+.health-view-trend-tip {
+    position: absolute;
+    top: calc(100% - 0.15rem);
+    transform: translateX(-50%);
+    z-index: 2;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.25rem;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font-size: 0.65rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
 }
 
 .health-view-trend-chart {
     color: var(--accent-success);
     opacity: 0.85;
-    /* Overrides the SVG's width attribute: the viewBox keeps the aspect ratio
-       while the element itself follows the flex track. */
+    /* preserveAspectRatio="none" on the SVG lets the fixed 0–100 viewBox stretch
+       to whatever box this row gives it, so the height is a layout decision
+       rather than a constant baked into the path data. */
     width: 100%;
     min-width: 0;
-    height: auto;
+    /* With the head and foot rows this lands the block at about the height of
+       the three-line note beside it. */
+    height: 2.6rem;
 }
 
-.health-view-trend-caption {
+/* The hover readout drops into this row, so it hides the caption rather than
+   overlapping it — the caption is static text the reader has already taken in,
+   while the readout is what they asked for by pointing at the chart. */
+.health-view-trend-plot.is-probing + .health-view-trend-foot {
+    visibility: hidden;
+}
+
+.health-view-trend-foot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.health-view-trend-caption,
+.health-view-trend-now {
     font-size: 0.68rem;
     color: var(--text-secondary);
     opacity: 0.75;
     white-space: nowrap;
+}
+
+.health-view-trend-now {
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-success);
+    opacity: 0.9;
+}
+
+/* On narrow screens the two stack, and the chart takes the full width rather
+   than a third of it. */
+@media (max-width: 900px) {
+    .health-view-note-row {
+        flex-direction: column;
+        gap: 0.7rem;
+    }
+
+    .health-view-trend-holder {
+        flex: 1 1 auto;
+        width: auto;
+        max-width: none;
+        margin-top: 0;
+    }
 }
 
 /* Direction of travel beside the healthy badge. Green for up, red for down —
@@ -120,6 +286,12 @@
 .health-view-trend-delta.is-up { color: var(--accent-success); }
 .health-view-trend-delta.is-down { color: var(--accent-error); }
 .health-view-trend-delta.is-flat { color: var(--text-secondary); opacity: 0.8; }
+
+/* The explainer is four separate points; without this they run together into
+   one wall of text, because the modal body has no paragraph spacing of its own. */
+.health-trend-explainer-modal p + p {
+    margin-top: 0.7rem;
+}
 
 /* ─── Collection-wide monitoring ────────────────────────────────────────── */
 
