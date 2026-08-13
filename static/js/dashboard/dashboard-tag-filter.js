@@ -438,12 +438,37 @@ class DashboardTagFilter {
         if (!saved) {
             return;
         }
+        // Recorded after the save so a delete that did not persist cannot leave
+        // a phantom trash entry. The undo below is the fast path; the 30-day
+        // trash (this same record()) is what catches it after the toast is gone.
         await window.DashboardTrash?.record(trashed, 'tag-filter');
         d.showGroupedNotification(
             'tag-filter-delete',
             count,
             (n) => d.formatDashboardLabel('tagFilterDeleted', { count: n }, `Deleted ${n} bookmark(s)`),
-            'success'
+            'success',
+            {
+                duration: 8000,
+                undoCallback: async () => {
+                    // Lowest index first, mirroring how a single-bookmark delete's
+                    // undo re-inserts: splicing high-to-low would shift the still-
+                    // pending lower indexes out from under themselves.
+                    const restoreOrder = [...trashed].sort((a, b) => a.index - b.index);
+                    restoreOrder.forEach((entry) => {
+                        d.bookmarks.splice(entry.index, 0, entry.bookmark);
+                        d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+                    });
+                    d.pendingReorderSnapshot = null;
+                    try {
+                        await d.saveBookmarkOrder();
+                        await d.data?.refreshAfterBookmarkMutation?.({
+                            pageIds: [...new Set(restoreOrder.map((entry) => entry.pageId))],
+                        });
+                    } catch (_error) {
+                        // saveBookmarkOrder already surfaces errors and reverts when possible.
+                    }
+                },
+            }
         );
     }
 
