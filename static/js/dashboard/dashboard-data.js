@@ -1073,7 +1073,25 @@ class DashboardData {
             if (!response.ok) {
                 throw new Error('Failed to save settings');
             }
-            
+
+            // The server drops collections it cannot store — no name, or no
+            // rule with a value — and used to do so behind a plain "success",
+            // so the row stayed on screen and was gone after a reload with
+            // nothing said. Report it instead.
+            //
+            // Reporting only: the row is deliberately left on screen. A
+            // half-filled collection is the normal state between clicking "Add
+            // collection" and typing the rule value, and removing it there
+            // would take the editor away mid-edit.
+            try {
+                const body = await response.clone().json();
+                const dropped = Array.isArray(body?.droppedCollections) ? body.droppedCollections : [];
+                if (dropped.length) {
+                    d._droppedCollections = dropped;
+                }
+            } catch { /* a body we cannot read must not fail an accepted save */ }
+
+
             // Also save device-local subset when device-specific is enabled.
             // The server already accepted the settings by this point, so a failure
             // here (private mode, quota exceeded) must not surface as "failed to
@@ -1091,6 +1109,8 @@ class DashboardData {
                 console.warn('Device-local settings mirror failed:', storageError);
             }
             void d.inbox?.bootstrap?.();
+            // Other tabs hold their own copy of settings; tell them it moved.
+            d.configSync?.publishConfigSync?.('settings');
             return true;
         } catch (error) {
             console.warn('Save settings failed:', error);

@@ -4496,7 +4496,10 @@
     "maintenanceLabelPlaceholder": "Ce qui tourne alors (facultatif)",
     "maintenanceIncomplete": "Indiquez un début et une fin — une fenêtre incomplète est ignorée.",
     "maintenanceSameTime": "Début et fin identiques : cette fenêtre ne couvre rien et est ignorée.",
-    "maintenanceWraps": "Se poursuit après minuit, le jour suivant."
+    "maintenanceWraps": "Se poursuit après minuit, le jour suivant.",
+    "findersLoadFailed": "Les moteurs n'ont pas pu être chargés et ne seront donc pas enregistrés. Rechargez puis réessayez.",
+    "categoriesLoadFailed": "Les catégories n'ont pas pu être chargées et ne seront donc pas enregistrées. Rechargez puis réessayez.",
+    "collectionsDropped": "Non enregistré : {names}. Une collection a besoin d'un nom et d'au moins une règle avec une valeur."
   },
   "colors": {
     "title": "personnalisation du thème",

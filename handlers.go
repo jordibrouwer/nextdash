@@ -1711,16 +1711,25 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		settings.UpdateCheckEnabled = h.store.GetSettings().UpdateCheckEnabled
 	}
 
-	// Validate and sanitize collections
+	// Validate and sanitize collections.
+	//
+	// Anything dropped here is reported back rather than discarded in silence.
+	// A collection with no name, or whose only rule has an empty value — which
+	// is exactly the shape the "Add collection" button creates — used to vanish
+	// while the response still said "success", so the row stayed on screen with
+	// its rules until a reload took it away for good.
 	seenIDs := make(map[string]struct{})
 	sanitized := settings.Collections[:0]
+	var droppedCollections []string
 	for _, col := range settings.Collections {
 		col.ID = strings.TrimSpace(col.ID)
 		col.Name = strings.TrimSpace(col.Name)
 		if col.ID == "" || col.Name == "" {
+			droppedCollections = append(droppedCollections, collectionLabel(col))
 			continue
 		}
 		if _, dup := seenIDs[col.ID]; dup {
+			droppedCollections = append(droppedCollections, collectionLabel(col))
 			continue
 		}
 		seenIDs[col.ID] = struct{}{}
@@ -1732,6 +1741,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if len(validRules) == 0 {
+			droppedCollections = append(droppedCollections, collectionLabel(col))
 			continue
 		}
 		col.Rules = validRules
@@ -1758,7 +1768,23 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	)
 	serverLog.SetPaused(!settings.ServerLogEnabled)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+	response := map[string]any{"status": "success"}
+	if len(droppedCollections) > 0 {
+		response["droppedCollections"] = droppedCollections
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
+// collectionLabel names a collection for a message to the user, falling back to
+// its id when the name is what went missing.
+func collectionLabel(col Collection) string {
+	if name := strings.TrimSpace(col.Name); name != "" {
+		return name
+	}
+	if id := strings.TrimSpace(col.ID); id != "" {
+		return id
+	}
+	return "(unnamed)"
 }
 
 // Colors keeps the old /colors bookmark working. It targets the view section

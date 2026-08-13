@@ -4497,7 +4497,10 @@
     "maintenanceLabelPlaceholder": "What runs then (optional)",
     "maintenanceIncomplete": "Set a start and end time — an incomplete window is ignored.",
     "maintenanceSameTime": "Start and end are the same, so this window covers nothing and is ignored.",
-    "maintenanceWraps": "Runs past midnight into the next day."
+    "maintenanceWraps": "Runs past midnight into the next day.",
+    "findersLoadFailed": "Finders could not be loaded, so they will not be saved. Reload and try again.",
+    "categoriesLoadFailed": "Categories could not be loaded, so they will not be saved. Reload and try again.",
+    "collectionsDropped": "Not saved: {names}. A collection needs a name and at least one rule with a value."
   },
   "colors": {
     "title": "theme customization",

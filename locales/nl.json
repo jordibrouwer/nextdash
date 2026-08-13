@@ -4496,7 +4496,10 @@
     "maintenanceLabelPlaceholder": "Wat er dan draait (optioneel)",
     "maintenanceIncomplete": "Stel een begin- en eindtijd in — een onvolledig venster wordt genegeerd.",
     "maintenanceSameTime": "Begin en einde zijn gelijk, dus dit venster dekt niets en wordt genegeerd.",
-    "maintenanceWraps": "Loopt over middernacht door naar de volgende dag."
+    "maintenanceWraps": "Loopt over middernacht door naar de volgende dag.",
+    "findersLoadFailed": "Finders konden niet worden geladen en worden daarom niet opgeslagen. Herlaad en probeer opnieuw.",
+    "categoriesLoadFailed": "Categorieën konden niet worden geladen en worden daarom niet opgeslagen. Herlaad en probeer opnieuw.",
+    "collectionsDropped": "Niet opgeslagen: {names}. Een collectie heeft een naam nodig en minstens één regel met een waarde."
   },
   "colors": {
     "title": "thema-aanpassing",

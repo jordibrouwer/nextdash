@@ -4831,9 +4831,18 @@ class DashboardConfig {
     /** Re-download every bookmark favicon across all pages. */
     async refreshAllFavicons() {
         if (!await this.confirmAction(this.t('config.bulkRefreshFaviconsConfirm', 'Download every bookmark icon again? This can take a while on a large dashboard.'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false })) return;
+        // Via ConfigFaviconPrefetch, like the command palette and the quickstart
+        // do. Posting to /api/bookmarks/prefetch-icons directly cannot work: the
+        // endpoint is per-page and batched, and decodes the request body first,
+        // so a body-less POST was rejected with 400 every single time — the
+        // button always ended on "Could not refresh the favicons."
+        if (typeof window.ConfigFaviconPrefetch !== 'function') {
+            this.notify(this.t('config.bulkRefreshFaviconsError', 'Could not refresh the favicons.'), 'error');
+            return;
+        }
         try {
-            const res = await this.writeFetch('/api/bookmarks/prefetch-icons', { method: 'POST' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const prefetch = new window.ConfigFaviconPrefetch((key) => this.t(key));
+            await prefetch.run(null, { refreshAll: true });
             this.notify(this.t('config.bulkRefreshFaviconsDone', 'Favicons refreshed.'), 'success');
             await this.dash.loadAllBookmarks?.();
             this.dash.renderDashboard?.({ animate: false });
@@ -9209,6 +9218,9 @@ class DashboardConfig {
     bindPagesTags(container) {
         this.bindSubTabStrip(container, 'data-pt-tab', (tab) => {
             if (tab === this.ptTab) return;
+            // Leaving Collections is the moment a half-filled row stops being
+            // work in progress and starts being something the server threw away.
+            if (this.ptTab === 'collections') this.reportDroppedCollections();
             this.clearListKeyboardSelection();
             this.ptTab = tab;
             this.restoreConfigHash();
@@ -9440,10 +9452,18 @@ class DashboardConfig {
         if (this._finders != null) return;
         try {
             const res = await fetch('/api/finders');
-            const data = res && res.ok ? await res.json() : [];
-            this._finders = Array.isArray(data) ? data : [];
+            if (!res || !res.ok) throw new Error(`HTTP ${res?.status ?? 'network'}`);
+            const data = await res.json();
+            if (!Array.isArray(data)) throw new Error('finders: unexpected payload');
+            this._finders = data;
+            this._findersLoadFailed = false;
         } catch {
+            // Not []: saveFinders posts the whole list, so a failed load that
+            // rendered as "no finders yet" let the first edit replace every
+            // saved finder with that one row. The flag keeps the two apart and
+            // blocks the write until a load succeeds.
             this._finders = [];
+            this._findersLoadFailed = true;
         }
         if (this.ptTab === 'finders') this.repaintPtBody();
     }
@@ -9533,6 +9553,12 @@ class DashboardConfig {
     }
 
     async saveFinders() {
+        // Refuse to write what we never managed to read — see loadFinders.
+        if (this._findersLoadFailed) {
+            this.notify(this.t('config.findersLoadFailed',
+                'Finders could not be loaded, so they will not be saved. Reload and try again.'), 'error');
+            return false;
+        }
         try {
             const res = await this.writeFetch('/api/finders', {
                 method: 'POST',
@@ -9540,8 +9566,11 @@ class DashboardConfig {
                 body: JSON.stringify(this._finders || []),
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.dash.configSync?.publishConfigSync?.('structure');
+            return true;
         } catch {
             this.notify(this.t('config.findersSaveError', 'Could not save finders.'), 'error');
+            return false;
         }
     }
 
@@ -10186,6 +10215,24 @@ class DashboardConfig {
         await this.saveSettingsWithFeedback();
     }
 
+    /**
+     * Tell the user which collections the server refused to keep.
+     *
+     * Deferred to leaving the tab rather than shown on every save: a collection
+     * with no name yet, or a rule whose value is still being typed, is dropped
+     * on each keystroke, and saying so each time would be noise. On the way out
+     * it is the last word on what was actually stored — which used to be
+     * nothing at all, behind a "Saved" badge.
+     */
+    reportDroppedCollections() {
+        const dropped = this.dash._droppedCollections;
+        if (!Array.isArray(dropped) || !dropped.length) return;
+        this.dash._droppedCollections = null;
+        this.notify(this.t('config.collectionsDropped',
+            'Not saved: {names}. A collection needs a name and at least one rule with a value.')
+            .replace('{names}', dropped.join(', ')), 'error', { duration: 8000 });
+    }
+
     /** Live count of what a collection currently matches. */
     updateCollectionMatchCount(col) {
         const el = document.querySelector('[data-collection-match]');
@@ -10599,10 +10646,16 @@ class DashboardConfig {
         if (this._categories != null && this._catLoadedFor === pageId) return;
         try {
             const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
-            const data = res && res.ok ? await res.json() : [];
-            this._categories = Array.isArray(data) ? data : [];
+            if (!res || !res.ok) throw new Error(`HTTP ${res?.status ?? 'network'}`);
+            const data = await res.json();
+            if (!Array.isArray(data)) throw new Error('categories: unexpected payload');
+            this._categories = data;
+            this._categoriesLoadFailed = false;
         } catch {
+            // See loadFinders: an empty list here is a write instruction, so a
+            // failed read has to be remembered rather than rendered as "none".
             this._categories = [];
+            this._categoriesLoadFailed = true;
         }
         this._catLoadedFor = pageId;
         if (this.ptTab === 'categories') this.repaintPtBody();
@@ -10634,7 +10687,8 @@ class DashboardConfig {
                     }
                 )) return;
                 this._categories[i].name = input.value;
-                void this.saveCategories();
+                // Page id captured now, not at write time — see saveCategories.
+                void this.saveCategories(this._catPageId);
             });
         });
         const addBtn = container.querySelector('[data-cat-add]');
@@ -10648,7 +10702,7 @@ class DashboardConfig {
             );
             this._categories.push({ id, name });
             this.repaintPtBody();
-            void this.saveCategories();
+            void this.saveCategories(this._catPageId);
         });
         container.querySelectorAll('[data-cat-delete]').forEach((btn) => {
             btn.addEventListener('click', async () => {
@@ -10676,7 +10730,16 @@ class DashboardConfig {
                 const removed = { ...cat };
                 this._categories.splice(i, 1);
                 this.repaintPtBody();
-                await this.saveCategories();
+                // The server refuses to drop the last category while bookmarks
+                // still point at it (409). Without checking, the delete carried
+                // on: a trash entry and a "Category deleted." toast for a
+                // category that is still there, contradicting the error toast
+                // saveCategories had just shown.
+                if (await this.saveCategories(pageId) === false) {
+                    this._categories.splice(i, 0, removed);
+                    this.repaintPtBody();
+                    return;
+                }
                 // After the save, so a delete that did not persist cannot leave
                 // a phantom entry in the trash.
                 await window.DashboardTrash?.recordCategory?.(removed, pageId, i, 'config-category-delete');
@@ -10725,23 +10788,48 @@ class DashboardConfig {
                 if (!this._categories || swap < 0 || swap >= this._categories.length) return;
                 [this._categories[i], this._categories[swap]] = [this._categories[swap], this._categories[i]];
                 this.repaintPtBody();
-                void this.saveCategories();
+                void this.saveCategories(this._catPageId);
             });
         });
     }
 
-    async saveCategories() {
+    /**
+     * Write the edited category list back.
+     *
+     * Returns whether it saved. Callers act on the outcome — the delete flow
+     * records a trash entry and offers Undo — and previously could not tell
+     * success from failure, because this swallowed the error and returned
+     * undefined either way. A 409 (categories still referenced) then produced a
+     * "Category deleted." toast for a category the server still had.
+     *
+     * The page id is captured on entry rather than read at write time: every
+     * caller fires this without awaiting, and the page picker reassigns
+     * `_catPageId` synchronously, so switching pages mid-save sent one page's
+     * categories to another.
+     */
+    async saveCategories(pageId = this._catPageId) {
+        if (this._categoriesLoadFailed) {
+            this.notify(this.t('config.categoriesLoadFailed',
+                'Categories could not be loaded, so they will not be saved. Reload and try again.'), 'error');
+            return false;
+        }
+        const payload = JSON.stringify(this._categories || []);
         try {
-            const res = await this.writeFetch(`/api/categories?page=${encodeURIComponent(this._catPageId)}`, {
+            const res = await this.writeFetch(`/api/categories?page=${encodeURIComponent(pageId)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this._categories || []),
+                body: payload,
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             this.dash.renderDashboard?.({ animate: false });
-            this.invalidateBookmarkCategoriesCache(this._catPageId);
+            this.invalidateBookmarkCategoriesCache(pageId);
+            // Tell the other tabs; without this they show stale categories
+            // until reloaded by hand.
+            this.dash.configSync?.publishConfigSync?.('structure');
+            return true;
         } catch {
             this.notify(this.t('config.categoriesSaveError', 'Could not save categories.'), 'error');
+            return false;
         }
     }
 
@@ -13170,8 +13258,14 @@ class DashboardConfig {
     async ensureCategoryOnPage(pageId, categoryId) {
         if (!pageId || !categoryId) return;
         const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
-        const current = res && res.ok ? await res.json() : [];
-        const list = Array.isArray(current) ? current : [];
+        // A failed read must not degrade to an empty list: the POST below sends
+        // the whole list, so treating "could not read" as "there are none"
+        // replaced every category on the page with this single one, and the
+        // server's empty-list guard cannot catch a one-item write.
+        if (!res || !res.ok) throw new Error(`HTTP ${res?.status ?? 'network'}`);
+        const current = await res.json();
+        if (!Array.isArray(current)) throw new Error('categories: unexpected payload');
+        const list = current;
         if (list.some((c) => String(c.id) === String(categoryId))) return;
         const name = this._pendingCategories?.get(categoryId)
             || this.knownCategories(pageId).find((c) => String(c.id) === String(categoryId))?.label

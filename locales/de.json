@@ -4496,7 +4496,10 @@
     "maintenanceLabelPlaceholder": "Was dann läuft (optional)",
     "maintenanceIncomplete": "Beginn und Ende festlegen — ein unvollständiges Fenster wird ignoriert.",
     "maintenanceSameTime": "Beginn und Ende sind gleich, dieses Fenster deckt nichts ab und wird ignoriert.",
-    "maintenanceWraps": "Läuft über Mitternacht in den nächsten Tag."
+    "maintenanceWraps": "Läuft über Mitternacht in den nächsten Tag.",
+    "findersLoadFailed": "Finder konnten nicht geladen werden und werden daher nicht gespeichert. Neu laden und erneut versuchen.",
+    "categoriesLoadFailed": "Kategorien konnten nicht geladen werden und werden daher nicht gespeichert. Neu laden und erneut versuchen.",
+    "collectionsDropped": "Nicht gespeichert: {names}. Eine Sammlung braucht einen Namen und mindestens eine Regel mit einem Wert."
   },
   "colors": {
     "title": "themenanpassung",
