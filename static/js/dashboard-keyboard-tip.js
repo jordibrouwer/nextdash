@@ -72,14 +72,23 @@
         const d = dash();
         if (!d || shownThisLoad) return false;
         if (d.settings?.enableSessionTips === false) return false;
-        // Same gating as the other post-onboarding prompts: not during first run,
-        // not on touch, not while something else owns the screen.
-        if (d.promos?.canShowPostOnboardingPrompts?.() === false) return false;
-        if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
-        if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
-        if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
-        // Never compete with the quick-start or analytics cards for attention.
-        if (document.querySelector('.quickstart-card')) return false;
+
+        // Whether unprompted UI may take the screen is one shared question,
+        // answered by dashboard-promos.js for every module that asks it. A tip
+        // does compete with the quick-start card, so it does not take the
+        // what's-new prompt's exemption.
+        if (typeof d.promos?.canShowUnpromptedUi === 'function') {
+            if (!d.promos.canShowUnpromptedUi()) return false;
+        } else {
+            // promos is part of the same bundle, so this only happens if the tip
+            // timer fires mid-construction. Falling back to the same checks
+            // rather than showing regardless: the point of the gate is that an
+            // unprompted toast never lands on top of something else.
+            if (global.MobileExperience?.shouldShowDiscoverabilityUi?.() === false) return false;
+            if (document.body.classList.contains('bookmark-inline-edit-active')) return false;
+            if (typeof d.isModalOpen === 'function' && d.isModalOpen()) return false;
+            if (document.querySelector('.quickstart-card')) return false;
+        }
 
         const notBefore = Number(global.DiscoverabilityState?.getTipsNotBefore?.() || 0);
         if (notBefore && Date.now() < notBefore) return false;
