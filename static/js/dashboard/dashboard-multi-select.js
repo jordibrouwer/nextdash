@@ -319,15 +319,45 @@ class DashboardMultiSelect {
             return btn;
         };
 
-        addButton(this.t('dashboard.multiSelectMove', 'Move'), 'multi-select-move-btn', (btn) => {
+        // The popover's own close() restores focus to its anchor, but while it
+        // is open #dashboard-layout (which this toolbar lives inside) is marked
+        // inert for the focus trap, and that inert flag is cleared by an async
+        // MutationObserver — so a focus-based reset here would race it and
+        // frequently land on <body> instead of the button. Watching the popover
+        // element's own removal from the DOM sidesteps that race entirely.
+        const markExpandedUntilPopoverCloses = (btn, popoverId) => {
+            // Some of these calls refuse silently (no selection left, nothing to
+            // move to) and never create the popover at all — nothing to watch
+            // for then, and marking expanded with no close to ever fire would
+            // leave the flag stuck true.
+            if (!document.getElementById(popoverId)) {
+                return;
+            }
+            btn.setAttribute('aria-expanded', 'true');
+            const observer = new MutationObserver(() => {
+                if (!document.getElementById(popoverId)) {
+                    observer.disconnect();
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        };
+
+        const moveBtn = addButton(this.t('dashboard.multiSelectMove', 'Move'), 'multi-select-move-btn', (btn) => {
             this.openMovePopover(btn);
+            markExpandedUntilPopoverCloses(btn, 'move-popover');
         });
+        moveBtn.setAttribute('aria-haspopup', 'true');
+        moveBtn.setAttribute('aria-expanded', 'false');
         // Beside Move, which already carries the category choice in its popover.
         // Tags is the one field a cleanup wants to set in bulk that had no route
         // here at all — the row's own Shift+T popover is single-bookmark.
-        addButton(this.t('dashboard.multiSelectTags', 'Tags'), 'multi-select-tags-btn', (btn) => {
+        const tagsBtn = addButton(this.t('dashboard.multiSelectTags', 'Tags'), 'multi-select-tags-btn', (btn) => {
             this.openTagsPopover(btn);
+            markExpandedUntilPopoverCloses(btn, 'multi-select-tags-popover');
         });
+        tagsBtn.setAttribute('aria-haspopup', 'true');
+        tagsBtn.setAttribute('aria-expanded', 'false');
         addButton(this.t('dashboard.multiSelectOpen', 'Open'), '', () => {
             this.openSelected();
         });
