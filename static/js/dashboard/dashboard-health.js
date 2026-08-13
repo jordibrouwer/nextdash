@@ -2884,8 +2884,10 @@ class DashboardHealth {
         header.className = 'health-view-header';
         header.innerHTML = `
             <div class="health-view-header-text" tabindex="0" role="group" aria-label="${this.escape(this.headerTitleHint())}">
-                <h2 class="health-view-title">${this.escape(this.t('dashboard.healthPageTitle', 'Health'))}</h2>
-                <p class="health-view-head-breadcrumb"${showTrail ? '' : ' hidden'}>${this.escape(trail)}</p>
+                <div class="health-view-title-row">
+                    <h2 class="health-view-title">${this.escape(this.t('dashboard.healthPageTitle', 'Health'))}</h2>
+                    <p class="health-view-head-breadcrumb"${showTrail ? '' : ' hidden'}>${this.escape(trail)}</p>
+                </div>
                 <p class="health-view-subtitle">${this.escape(this.t('dashboard.healthPageSubtitle', 'Bookmarks that need attention'))}</p>
             </div>
             <div class="health-view-header-meta" tabindex="0" role="group" aria-label="${this.escape(this.headerMetaHint())}">
@@ -2900,7 +2902,6 @@ class DashboardHealth {
                     : ''}
                 ${this.renderReportAge()}
             </div>
-            ${this.renderTrendChart()}
             ${this.renderSettingsLink()}
         `;
         window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-text'), this.headerTitleHint());
@@ -3477,6 +3478,7 @@ class DashboardHealth {
                     ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
                     : this.t('dashboard.healthCheckOffNone', 'No bookmarks have checking enabled'))}">${this.escape(this.t('dashboard.healthCheckOff', 'Checking off'))}</button>
                 ${this.renderBulkEnableButtons()}
+                ${this.renderTrendChart()}
                 <button type="button" class="view-help-btn health-view-help-btn" data-health-help
                         aria-haspopup="dialog"
                         title="${this.escape(this.t('dashboard.healthHelpHint', 'How the health view works'))}"

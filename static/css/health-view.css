@@ -15,27 +15,26 @@
 
 /* ─── Header ────────────────────────────────────────────────────────────── */
 
+/* Deliberately the same shape as .inbox-header — same padding, same alignment,
+   same border. The two sit one keystroke apart, and any height difference
+   between them reads as a mistake rather than a distinction. That is why the
+   trend chart moved to the toolbar: as a full-width third row here it made this
+   header taller than the inbox's for no reason the user could see. */
 .health-view-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    /* Wraps so the trend chart drops onto its own line under the title and meta
-       rather than squeezing between them. */
-    flex-wrap: wrap;
     gap: 1rem;
     padding: 0.25rem 0.35rem 0.5rem;
     border-bottom: 1px solid var(--border-primary);
 }
 
 /* The way from a symptom on this screen to the setting behind it. Sits at the
-   right-hand end of the header's last row — beside the trend chart when there
-   is one, and on a line of its own before there are three days of history, so
-   it does not appear and disappear with the chart.
+   right-hand end of the header, after the meta.
 
    Deliberately quiet: it is a signpost, not an action. Styled as a text link
    rather than a button so it does not compete with the toolbar below it. */
 .health-view-settings-link {
-    margin-left: auto;
     align-self: center;
     border: none;
     background: none;
@@ -57,20 +56,28 @@
 
 /* ─── Collection trend ──────────────────────────────────────────────────── */
 
-/* Full-width row of its own: the chart is a wide, short shape and pairing it
-   beside the meta would compress both. */
+/* Lives in the toolbar's action row, filling the gap that was left between the
+   buttons and the help icon. It used to be a full-width row inside the header,
+   which is what made the health header taller than the inbox one — the two are
+   otherwise the same shape, and the difference read as a mistake. */
 .health-view-trend {
-    flex-basis: 100%;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 0.1rem;
+    /* Takes the free space rather than a fixed width, so the chart grows into
+       whatever the buttons leave and shrinks first when they need room. */
+    flex: 1 1 6rem;
+    min-width: 0;
+    justify-content: flex-end;
 }
 
 .health-view-trend-chart {
     color: var(--accent-success);
     opacity: 0.85;
-    max-width: 100%;
+    /* Overrides the SVG's width attribute: the viewBox keeps the aspect ratio
+       while the element itself follows the flex track. */
+    width: 100%;
+    min-width: 0;
     height: auto;
 }
 
@@ -242,6 +249,17 @@
     opacity: 0.8;
 }
 
+/* Title and breadcrumb share one line, so this header is two rows like
+   .inbox-header rather than three. Health is the only one of the three views
+   with a breadcrumb, and putting it on its own line made this header taller
+   than the inbox's for a reason the user cannot see. */
+.health-view-title-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
 .health-view-title {
     margin: 0;
     font-size: 1.15rem;
@@ -249,10 +267,8 @@
     color: var(--text-primary);
 }
 
-/* Full-width under the heading, above the section intro — same placement as
-   config-view-head-breadcrumb. */
 .health-view-head-breadcrumb {
-    margin: 0.15rem 0 0;
+    margin: 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
 }
