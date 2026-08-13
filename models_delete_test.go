@@ -32,6 +32,41 @@ func TestDeleteBookmarkFromPageMatchesCanonicalURLWithoutName(t *testing.T) {
 	}
 }
 
+// DeleteBookmarkFromPage used to write with a raw writeFileAtomic call instead
+// of the fs.writeStoreJSONFile helper every other mutator uses, so it never
+// called noteDataMutation() and never invalidated storeReadCache. A caller
+// that had already read the page (priming the cache) would keep seeing the
+// deleted bookmark until some unrelated write anywhere in the store happened
+// to flush the whole cache.
+func TestDeleteBookmarkFromPageInvalidatesReadCache(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+
+	store := NewStore()
+	if err := store.SaveBookmarksByPage(1, []Bookmark{
+		{Name: "Google", URL: "https://google.com"},
+	}); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	// Prime the read cache the way a normal GET /api/bookmarks would.
+	if got := store.GetBookmarksByPage(1); len(got) != 1 {
+		t.Fatalf("priming read: len = %d, want 1", len(got))
+	}
+
+	if err := store.DeleteBookmarkFromPage(1, Bookmark{
+		Name: "Google",
+		URL:  "https://google.com",
+	}); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+
+	remaining := store.GetBookmarksByPage(1)
+	if len(remaining) != 0 {
+		t.Fatalf("len = %d, want 0 — deleted bookmark is still served from a stale cache", len(remaining))
+	}
+}
+
 func TestDeleteBookmarkHandlerReturns404WhenMissing(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)

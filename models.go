@@ -1324,12 +1324,7 @@ func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmar
 	}
 	pageWithBookmarks.Bookmarks = updated
 
-	// Save the updated data
-	newData, err := json.MarshalIndent(pageWithBookmarks, "", "  ")
-	if err != nil {
-		return err
-	}
-	return writeFileAtomic(filePath, newData, 0644)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
 }
 
 func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Bookmark) ([]Bookmark, bool) {
