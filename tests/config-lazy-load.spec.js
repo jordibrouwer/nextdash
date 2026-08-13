@@ -90,4 +90,26 @@ test.describe('config lazy load', () => {
         await page.evaluate(() => window.dashboardInstance.config.setBehavior('dashboardTitle', 'lazy-load-probe', ''));
         await expect.poll(() => page.evaluate(() => typeof window.DashboardConfig)).toBe('function');
     });
+
+    test('a plain value read on an unregistered property is a function, not the value', async ({ page }) => {
+        // Documents a known, accepted sharp edge rather than guarding a fix:
+        // the Proxy cannot tell a value read from the first half of a method
+        // call, so it always returns a callable for an unknown property before
+        // the module loads. That makes `if (dash.config.someUnregisteredFlag)`
+        // always truthy — new boolean-style state that must be readable before
+        // the module loads has to go in DashboardConfigLoader.PROXIED_STATE
+        // instead of relying on this fallback. If this ever starts returning
+        // the plain value instead, the "method call before the module loads"
+        // test above must still be checked — that is the behaviour a fix here
+        // would be trading away.
+        await page.goto('/');
+        await waitReady(page);
+
+        const result = await page.evaluate(() => ({
+            notLoadedYet: typeof window.DashboardConfig === 'undefined',
+            type: typeof window.dashboardInstance.config.someUnregisteredProbeFlag,
+        }));
+        expect(result.notLoadedYet).toBe(true);
+        expect(result.type).toBe('function');
+    });
 });

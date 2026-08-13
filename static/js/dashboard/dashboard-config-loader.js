@@ -266,6 +266,18 @@ function createConfigLoader(dashboard) {
             // Unknown property, module not loaded: expose it as a call that
             // loads first. A non-method read cannot be answered synchronously,
             // which is why state read before load lives in PROXIED_STATE.
+            //
+            // This is deliberately a function even when the caller meant a
+            // plain value read: a Proxy trap has to pick one return value
+            // before it knows whether the caller is about to invoke it or just
+            // test it, and a function is the only shape that keeps the "call a
+            // not-yet-loaded method" contract working (see
+            // config-lazy-load.spec.js's "method call before the module
+            // loads"). The unavoidable cost is that `if (dash.config.newFlag)`
+            // on an unregistered, unloaded property always reads truthy —
+            // there is no value that is both callable and JS-falsy under a
+            // bare `if`. New boolean-style state read before the module loads
+            // must go in PROXIED_STATE above, not rely on this fallback.
             return (...args) => target.load().then((loaded) => {
                 const value = loaded[prop];
                 return typeof value === 'function' ? value.apply(loaded, args) : value;
