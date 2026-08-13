@@ -4499,7 +4499,15 @@
     "maintenanceWraps": "Loopt over middernacht door naar de volgende dag.",
     "findersLoadFailed": "Finders konden niet worden geladen en worden daarom niet opgeslagen. Herlaad en probeer opnieuw.",
     "categoriesLoadFailed": "Categorieën konden niet worden geladen en worden daarom niet opgeslagen. Herlaad en probeer opnieuw.",
-    "collectionsDropped": "Niet opgeslagen: {names}. Een collectie heeft een naam nodig en minstens één regel met een waarde."
+    "collectionsDropped": "Niet opgeslagen: {names}. Een collectie heeft een naam nodig en minstens één regel met een waarde.",
+    "addBookmarkBtn": "Bladwijzer toevoegen",
+    "bookmarkNotFound": "Deze bladwijzer is niet gevonden.",
+    "clearBookmarkFilters": "Filters wissen",
+    "saved": "Opgeslagen",
+    "nameEmpty": "Een naam is verplicht.",
+    "nameTooLong": "Die naam is te lang (maximaal {max} tekens).",
+    "updateCheckedAt": "(gecontroleerd {when})",
+    "backupNextAt": "Volgende {when}"
   },
   "colors": {
     "title": "thema-aanpassing",

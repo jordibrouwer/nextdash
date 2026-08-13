@@ -1723,7 +1723,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	var droppedCollections []string
 	for _, col := range settings.Collections {
 		col.ID = strings.TrimSpace(col.ID)
-		col.Name = strings.TrimSpace(col.Name)
+		col.Name = clampEntityName(col.Name)
 		if col.ID == "" || col.Name == "" {
 			droppedCollections = append(droppedCollections, collectionLabel(col))
 			continue

@@ -4500,7 +4500,15 @@
     "maintenanceWraps": "Runs past midnight into the next day.",
     "findersLoadFailed": "Finders could not be loaded, so they will not be saved. Reload and try again.",
     "categoriesLoadFailed": "Categories could not be loaded, so they will not be saved. Reload and try again.",
-    "collectionsDropped": "Not saved: {names}. A collection needs a name and at least one rule with a value."
+    "collectionsDropped": "Not saved: {names}. A collection needs a name and at least one rule with a value.",
+    "addBookmarkBtn": "Add bookmark",
+    "bookmarkNotFound": "Could not find this bookmark.",
+    "clearBookmarkFilters": "Clear filters",
+    "saved": "Saved",
+    "nameEmpty": "A name is required.",
+    "nameTooLong": "That name is too long (max {max} characters).",
+    "updateCheckedAt": "(checked {when})",
+    "backupNextAt": "Next {when}"
   },
   "colors": {
     "title": "theme customization",

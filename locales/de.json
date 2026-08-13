@@ -4499,7 +4499,15 @@
     "maintenanceWraps": "Läuft über Mitternacht in den nächsten Tag.",
     "findersLoadFailed": "Finder konnten nicht geladen werden und werden daher nicht gespeichert. Neu laden und erneut versuchen.",
     "categoriesLoadFailed": "Kategorien konnten nicht geladen werden und werden daher nicht gespeichert. Neu laden und erneut versuchen.",
-    "collectionsDropped": "Nicht gespeichert: {names}. Eine Sammlung braucht einen Namen und mindestens eine Regel mit einem Wert."
+    "collectionsDropped": "Nicht gespeichert: {names}. Eine Sammlung braucht einen Namen und mindestens eine Regel mit einem Wert.",
+    "addBookmarkBtn": "Lesezeichen hinzufügen",
+    "bookmarkNotFound": "Dieses Lesezeichen wurde nicht gefunden.",
+    "clearBookmarkFilters": "Filter zurücksetzen",
+    "saved": "Gespeichert",
+    "nameEmpty": "Ein Name ist erforderlich.",
+    "nameTooLong": "Dieser Name ist zu lang (max. {max} Zeichen).",
+    "updateCheckedAt": "(geprüft {when})",
+    "backupNextAt": "Nächste {when}"
   },
   "colors": {
     "title": "themenanpassung",

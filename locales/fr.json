@@ -4499,7 +4499,15 @@
     "maintenanceWraps": "Se poursuit après minuit, le jour suivant.",
     "findersLoadFailed": "Les moteurs n'ont pas pu être chargés et ne seront donc pas enregistrés. Rechargez puis réessayez.",
     "categoriesLoadFailed": "Les catégories n'ont pas pu être chargées et ne seront donc pas enregistrées. Rechargez puis réessayez.",
-    "collectionsDropped": "Non enregistré : {names}. Une collection a besoin d'un nom et d'au moins une règle avec une valeur."
+    "collectionsDropped": "Non enregistré : {names}. Une collection a besoin d'un nom et d'au moins une règle avec une valeur.",
+    "addBookmarkBtn": "Ajouter un favori",
+    "bookmarkNotFound": "Ce favori est introuvable.",
+    "clearBookmarkFilters": "Effacer les filtres",
+    "saved": "Enregistré",
+    "nameEmpty": "Un nom est obligatoire.",
+    "nameTooLong": "Ce nom est trop long (max. {max} caractères).",
+    "updateCheckedAt": "(vérifié {when})",
+    "backupNextAt": "Prochaine {when}"
   },
   "colors": {
     "title": "personnalisation du thème",

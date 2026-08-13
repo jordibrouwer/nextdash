@@ -2046,9 +2046,44 @@ class DashboardConfig {
         return entries;
     }
 
+    /**
+     * Give every settings control an accessible name.
+     *
+     * The schema renders its labels as `<span class="config-field-label">`, not
+     * `<label for=…>`, so a screen reader in forms mode announced "combo box,
+     * 30" with nothing saying which setting that was — across all of Behavior
+     * and much of Appearance. Checkboxes were always fine; they wrap their input
+     * in a real `<label>`.
+     *
+     * Done here rather than at the ~30 render sites: the markup is generated in
+     * many places but always with the same shape, so one pass over the rendered
+     * panel names them all and cannot fall out of step with a new field.
+     */
+    labelSettingsControls(root) {
+        const panel = root || document.getElementById('config-section-panel');
+        if (!panel) return;
+        panel.querySelectorAll('.config-field').forEach((field) => {
+            const labelEl = field.querySelector('.config-field-label');
+            const name = labelEl?.textContent?.trim();
+            if (!name) return;
+            field.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach((control) => {
+                // Never override a name the markup states for itself.
+                if (control.getAttribute('aria-label') || control.getAttribute('aria-labelledby')) return;
+                control.setAttribute('aria-label', name);
+                // A range reads out its raw number ("0.85") while the UI shows
+                // "85%", so give it the text the user can see.
+                if (control.type === 'range' && !control.getAttribute('aria-valuetext')) {
+                    const shown = field.querySelector('.config-range-value, output')?.textContent?.trim();
+                    if (shown) control.setAttribute('aria-valuetext', shown);
+                }
+            });
+        });
+    }
+
     cacheSettingsJumpFields() {
         const panel = document.getElementById('config-section-panel');
         if (!panel) return;
+        this.labelSettingsControls(panel);
         const section = this.section;
         const subTab = DashboardConfig.SUB_TAB_STATE[section] ? this[DashboardConfig.SUB_TAB_STATE[section]] : null;
         const subtitle = this.settingsJumpSubtitle(section, subTab);
@@ -2628,6 +2663,16 @@ class DashboardConfig {
         if (desc.tone === 'warn' && this._updateStatus?.latest && !this._updateStatusChecking) {
             statusMessage = this.t('config.updateCheckModalAvailable', '{latest} is available on GitHub.')
                 .replace(/\{latest\}/g, this._updateStatus.latest);
+        }
+        // When the check ran. The server caches its answer for 24 hours and
+        // ships checkedAt on every response, but nothing read it — so pressing
+        // "Check for updates" re-rendered the same sentence and the button read
+        // as broken, while the answer could be a day old.
+        const checkedAt = Number(this._updateStatus?.checkedAt) || 0;
+        if (statusMessage && checkedAt && !this._updateStatusChecking) {
+            const ago = this.formatRelative(checkedAt);
+            statusMessage = `${statusMessage} ${this.t('config.updateCheckedAt', '(checked {when})')
+                .replace('{when}', ago)}`;
         }
         const statusHidden = !statusMessage && !this._updateStatusChecking;
 
@@ -3754,8 +3799,14 @@ class DashboardConfig {
                 tone: newest ? 'good' : 'warn',
                 label: this.t('config.tileLastBackup', 'Last backup'),
                 value: newest ? this.formatRelative(newest.createdAt) : this.t('config.backupNone', 'none'),
+                // The server computes nextBackupAt and shipped it unread, so the
+                // tile could only restate that the feature is on. When the next
+                // one runs is the thing worth knowing.
                 detail: enabled
-                    ? this.t('config.backupAutoOn', 'Auto-backup on')
+                    ? (Date.parse(data?.nextBackupAt || '')
+                        ? this.t('config.backupNextAt', 'Next {when}')
+                            .replace('{when}', this.formatRelative(Date.parse(data.nextBackupAt)))
+                        : this.t('config.backupAutoOn', 'Auto-backup on'))
                     : this.t('config.backupAutoOff', 'Auto-backup off'),
             },
             {
@@ -9120,13 +9171,52 @@ class DashboardConfig {
      * repaintAppearanceBody(), which falls back to a full render() for
      * anything but the custom-themes tab.
      */
+    /**
+     * Remember which settings control had focus, and put it back after the
+     * panel is rebuilt. Returns the restore function.
+     *
+     * Identified by its field name rather than by node, since the element the
+     * user was on no longer exists once innerHTML is replaced.
+     */
+    captureControlPanelFocus() {
+        const active = document.activeElement;
+        const field = active?.getAttribute?.('data-behavior-field')
+            || active?.getAttribute?.('data-appearance-field');
+        if (!field) return () => {};
+        const selectionStart = active.selectionStart;
+        const selectionEnd = active.selectionEnd;
+        return () => {
+            const next = document.querySelector(
+                `[data-behavior-field="${CSS.escape(field)}"], [data-appearance-field="${CSS.escape(field)}"]`
+            );
+            if (!next) return;
+            next.focus?.();
+            // Text inputs keep the caret too, or typing resumes at the wrong end.
+            if (selectionStart != null && next.setSelectionRange) {
+                try { next.setSelectionRange(selectionStart, selectionEnd); } catch { /* not a text input */ }
+            }
+        };
+    }
+
     repaintActiveControlPanels() {
         if (!this.isActiveView()) return;
         const container = document.getElementById('dashboard-layout');
         if (!container) return;
+        // Controls bind on `change`, which for a select or checkbox fires while
+        // the control still has focus — and this replaces the whole body, so
+        // focus fell back to the document and the next Tab started from the top
+        // of the page. repaintTagsBody has done this for its own inputs for a
+        // while, with a comment explaining exactly this hazard; the settings
+        // panels never got it.
+        const restoreFocus = this.captureControlPanelFocus();
         if (this.section === 'behavior') {
             const body = document.getElementById('config-behavior-body');
-            if (body) { body.innerHTML = this.renderBehaviorBody(); this.bindControlPanels(container, 'behavior'); }
+            if (body) {
+                body.innerHTML = this.renderBehaviorBody();
+                this.bindControlPanels(container, 'behavior');
+                this.labelSettingsControls();
+                restoreFocus();
+            }
             return;
         }
         if (this.section === 'appearance') {
@@ -9156,6 +9246,8 @@ class DashboardConfig {
                 // two handlers flip the flag twice per click, so the button
                 // did nothing at all.
                 this.bindAppearanceControls(body);
+                this.labelSettingsControls();
+                restoreFocus();
             }
             return;
         }
@@ -9420,7 +9512,7 @@ class DashboardConfig {
             return `
             <li class="config-crud-row" data-finder-index="${i}">
                 <div class="config-crud-fields">
-                    <input type="text" class="config-text" data-finder="name" data-index="${i}" placeholder="${esc(this.t('config.finderNamePlaceholder', 'Name'))}" value="${esc(f.name || '')}">
+                    <input type="text" class="config-text" maxlength="60" data-finder="name" data-index="${i}" placeholder="${esc(this.t('config.finderNamePlaceholder', 'Name'))}" value="${esc(f.name || '')}">
                     <input type="text" class="config-text${missingPlaceholder ? ' field-conflict' : ''}" data-finder="searchUrl" data-index="${i}" placeholder="https://example.com/search?q=%s" value="${esc(f.searchUrl || '')}">
                     <input type="text" class="config-text" style="min-width:70px" data-finder="shortcut" data-index="${i}" placeholder="${esc(this.t('config.finderShortcutPlaceholder', 'key'))}" value="${esc(f.shortcut || '')}">
                     ${warning}
@@ -10401,7 +10493,7 @@ class DashboardConfig {
             <li class="config-crud-row" data-page-row="${esc(p.id)}">
                 <div class="config-crud-fields">
                     <input type="text" class="config-text" style="min-width:56px;max-width:64px" data-page="icon" data-id="${esc(p.id)}" placeholder="📄" value="${esc(p.icon || '')}">
-                    <input type="text" class="config-text" data-page="name" data-id="${esc(p.id)}" placeholder="${esc(this.t('config.pageNamePlaceholder', 'Page name'))}" value="${esc(p.name || '')}">
+                    <input type="text" class="config-text" maxlength="60" data-page="name" data-id="${esc(p.id)}" placeholder="${esc(this.t('config.pageNamePlaceholder', 'Page name'))}" value="${esc(p.name || '')}">
                     <input type="color" class="config-color" data-page="color" data-id="${esc(p.id)}" value="${esc(p.color || '#888888')}" title="${esc(this.t('config.pageColorLabel', 'Tab colour'))}">
                     ${this.renderStatMeta(pageCounts[i], scales[i], 'config.pageBookmarkCount', '{count} bookmarks')}
                 </div>
@@ -13293,14 +13385,22 @@ class DashboardConfig {
     }
 
     /**
+     * Longest name accepted for a page, category, tag, finder, theme or
+     * collection. Matches the maxlength the bookmark editor's category field
+     * already carried — that limit existed, it was just applied in only one of
+     * the two places a category can be named.
+     */
+    static NAME_MAX_LENGTH = 60;
+
+    /**
      * Is `name` free, given the names already taken?
      *
      * `taken` is any iterable of existing names. `self` is the entry being
      * renamed, excluded so that re-saving a row without changing its name — or
      * only changing its capitalisation — is not reported as a clash with itself.
      *
-     * An empty name is never treated as a duplicate here; emptiness is a
-     * separate concern handled by the callers that care about it.
+     * An empty name is never treated as a duplicate here; emptiness is rejected
+     * one level up, in guardUniqueName, so every caller gets it.
      */
     static isNameTaken(name, taken, self = null) {
         const key = DashboardConfig.nameKey(name);
@@ -13329,8 +13429,32 @@ class DashboardConfig {
      * the caller is told to abandon the write.
      *
      * Returns true when the name is free and the caller should proceed.
+     *
+     * Emptiness and length are checked here too. They used to be nobody's job:
+     * this guard only asked about duplicates and left the rest to callers that
+     * did not ask, so a cleared name saved as "" — rendering a category header
+     * with no title, a blank row in the theme picker, and a delete-confirm that
+     * named the internal id — while a pasted 500-character name pushed the
+     * Trash buttons off the screen. Two emptied names also stopped colliding
+     * with each other, since "" is never "taken".
      */
     guardUniqueName(input, name, taken, { previous = null, message } = {}) {
+        const trimmed = String(name ?? '').trim();
+        if (!trimmed) {
+            if (input && previous !== null) input.value = previous;
+            this.notify(this.t('config.nameEmpty', 'A name is required.'), 'error');
+            input?.focus?.();
+            input?.select?.();
+            return false;
+        }
+        if (trimmed.length > DashboardConfig.NAME_MAX_LENGTH) {
+            if (input && previous !== null) input.value = previous;
+            this.notify(this.t('config.nameTooLong', 'That name is too long (max {max} characters).')
+                .replace('{max}', String(DashboardConfig.NAME_MAX_LENGTH)), 'error');
+            input?.focus?.();
+            input?.select?.();
+            return false;
+        }
         if (!DashboardConfig.isNameTaken(name, taken, previous)) return true;
         if (input && previous !== null) input.value = previous;
         this.notify(
@@ -13497,6 +13621,13 @@ class DashboardConfig {
             };
             const onKey = (e) => {
                 if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+                // aria-modal="true" promises focus stays inside; without a Tab
+                // handler it wandered out to the page behind, including on
+                // "Reset all data". FocusTrapUtils is what modal.js and search
+                // already use.
+                else if (e.key === 'Tab') {
+                    window.FocusTrapUtils?.trapTabKey?.(e, overlay.querySelector('.modal') || overlay);
+                }
             };
             // Capture phase: the config view and the dashboard both listen for
             // Escape, and the dialog has to win while it is open.
@@ -13564,6 +13695,13 @@ class DashboardConfig {
             };
             const onKey = (e) => {
                 if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+                // aria-modal="true" promises focus stays inside; without a Tab
+                // handler it wandered out to the page behind, including on
+                // "Reset all data". FocusTrapUtils is what modal.js and search
+                // already use.
+                else if (e.key === 'Tab') {
+                    window.FocusTrapUtils?.trapTabKey?.(e, overlay.querySelector('.modal') || overlay);
+                }
             };
             document.addEventListener('keydown', onKey, true);
             // The button stays disabled until the word matches, so there is no
@@ -15711,7 +15849,11 @@ class DashboardConfig {
         const added = Number(agg.totalAdded || 0);
         const promoted = Number(agg.totalPromoted || 0);
         const deleted = Number(agg.totalDeleted || 0);
-        const triaged = promoted + deleted;
+        // Kept counts as triaged: the server records it, the panel above shows
+        // it as its own tile, but the conversion sum left it out — so the
+        // arithmetic on screen never reconciled with the tiles beside it.
+        const kept = Number(agg.totalKept || 0);
+        const triaged = promoted + deleted + kept;
         const pct = triaged > 0 ? Math.round((promoted / triaged) * 100) : 0;
         const avgRetention = Number(agg.retentionCount || 0) > 0
             ? Number(agg.sumRetentionMs || 0) / Number(agg.retentionCount)
