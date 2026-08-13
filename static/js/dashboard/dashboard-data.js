@@ -707,13 +707,43 @@ class DashboardData {
         }
     }
 
+    // Full-container views (inbox/health/config) replace the entire dashboard
+    // layout. _applyLoadedPageData must not yank the user out of one, or
+    // rewrite the hash out from under it, while its data loaded in the
+    // background — checked with three signals below because each alone has a
+    // blind spot. Every view's identity — its name, its layout class, and how
+    // to recognize its hash — lives in exactly this one table so a new
+    // full-container view is one row here, not three separate edits to keep
+    // in sync by hand. (The original deep-link bug this guards against was
+    // exactly that shape: one of several places that needed updating for a
+    // view got missed.)
+    static FULL_CONTAINER_VIEWS = [
+        {
+            view: 'inbox',
+            layoutClass: 'inbox-layout',
+            matchesHash: (hash) => hash === '#inbox',
+            isEnabled: (d) => Boolean(d.inbox?.isEnabled?.()),
+        },
+        {
+            view: 'health',
+            layoutClass: 'health-layout',
+            matchesHash: (hash) => hash === '#health',
+            isEnabled: (d) => Boolean(d.health?.isEnabled?.()),
+        },
+        {
+            view: 'config',
+            layoutClass: 'config-layout',
+            // Config deep links carry a section (#config/appearance), so match
+            // the prefix rather than the bare hash the other two views use.
+            matchesHash: (hash) => hash === '#config' || hash.startsWith('#config/'),
+            isEnabled: (d) => Boolean(d.config?.isEnabled?.()),
+        },
+    ];
+
     _applyLoadedPageData(targetPageId, bookmarks, categories, options = {}) {
         const d = this.dash;
         const { skipRender = false, animate = false } = options;
         const previousPageId = Number(d.currentPageId);
-        // Loading a page's data in the background must not yank the user out of a
-        // view they are reading, nor rewrite the hash out from under it.
-        //
         // Three signals, because each alone has a blind spot:
         //  - the hash, for startup: the initial page load runs before #health/#inbox
         //    is consumed, so activeView is still 'bookmarks' and writing #<n> here
@@ -723,21 +753,12 @@ class DashboardData {
         //    started while the grid was up can land after the user has opened a view,
         //    and would then rewrite the hash from #health back to #1.
         const layoutEl = document.getElementById('dashboard-layout');
-        const viewOnScreen = layoutEl?.classList.contains('inbox-layout')
-            || layoutEl?.classList.contains('health-layout')
-            || layoutEl?.classList.contains('config-layout');
-        // Config deep links carry a section (#config/appearance), so match the
-        // prefix rather than the bare hash the other two views use.
         const hash = window.location.hash;
-        const pendingViewHash = hash === '#health'
-            || hash === '#inbox'
-            || hash === '#config'
-            || hash.startsWith('#config/');
-        const preserveView = pendingViewHash
-            || viewOnScreen
-            || (d.activeView === 'inbox' && d.inbox?.isEnabled?.())
-            || (d.activeView === 'health' && d.health?.isEnabled?.())
-            || (d.activeView === 'config' && d.config?.isEnabled?.());
+        const preserveView = DashboardData.FULL_CONTAINER_VIEWS.some(({ view, layoutClass, matchesHash, isEnabled }) => (
+            matchesHash(hash)
+                || Boolean(layoutEl?.classList.contains(layoutClass))
+                || (d.activeView === view && isEnabled(d))
+        ));
 
         // A freshly created empty category is held on screen against the
         // "hide empty categories" setting; that only applies to the page it was
