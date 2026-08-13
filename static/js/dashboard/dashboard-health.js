@@ -2888,21 +2888,23 @@ class DashboardHealth {
                     <h2 class="health-view-title">${this.escape(this.t('dashboard.healthPageTitle', 'Health'))}</h2>
                     <p class="health-view-head-breadcrumb"${showTrail ? '' : ' hidden'}>${this.escape(trail)}</p>
                 </div>
+            </div>
+            <div class="health-view-header-second-row">
                 <p class="health-view-subtitle">${this.escape(this.t('dashboard.healthPageSubtitle', 'Bookmarks that need attention'))}</p>
+                <div class="health-view-header-meta" tabindex="0" role="group" aria-label="${this.escape(this.headerMetaHint())}">
+                    <span class="health-view-score-badge ${this.bandClass(pct)}" aria-label="${this.escape(pctLabel)}">${pct}%</span>
+                    ${this.renderTrendDelta()}
+                    ${broken > 0
+                        ? `<span class="health-view-issue-count">${this.escape(
+                            broken === 1
+                                ? this.t('dashboard.healthBrokenOne', '1 broken')
+                                : this.t('dashboard.healthBrokenCount', '{count} broken', { count: broken })
+                        )}</span>`
+                        : ''}
+                    ${this.renderReportAge()}
+                </div>
+                ${this.renderSettingsLink()}
             </div>
-            <div class="health-view-header-meta" tabindex="0" role="group" aria-label="${this.escape(this.headerMetaHint())}">
-                <span class="health-view-score-badge ${this.bandClass(pct)}" aria-label="${this.escape(pctLabel)}">${pct}%</span>
-                ${this.renderTrendDelta()}
-                ${broken > 0
-                    ? `<span class="health-view-issue-count">${this.escape(
-                        broken === 1
-                            ? this.t('dashboard.healthBrokenOne', '1 broken')
-                            : this.t('dashboard.healthBrokenCount', '{count} broken', { count: broken })
-                    )}</span>`
-                    : ''}
-                ${this.renderReportAge()}
-            </div>
-            ${this.renderSettingsLink()}
         `;
         window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-text'), this.headerTitleHint());
         window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-meta'), this.headerMetaHint());

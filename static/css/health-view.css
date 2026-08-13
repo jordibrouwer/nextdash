@@ -15,43 +15,52 @@
 
 /* ─── Header ────────────────────────────────────────────────────────────── */
 
-/* Deliberately the same shape as .inbox-header — same padding, same alignment,
-   same border. The two sit one keystroke apart, and any height difference
-   between them reads as a mistake rather than a distinction. That is why the
-   trend chart moved to the toolbar: as a full-width third row here it made this
-   header taller than the inbox's for no reason the user could see. */
+/* Two rows, matching .inbox-header's height: the title (with its breadcrumb)
+   on the first, and the subtitle, score meta and settings button sharing the
+   second. The score used to sit beside the title, which put it a line above
+   the text it summarises. */
 .health-view-header {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.25rem;
     padding: 0.25rem 0.35rem 0.5rem;
     border-bottom: 1px solid var(--border-primary);
 }
 
-/* The way from a symptom on this screen to the setting behind it. Sits at the
-   right-hand end of the header, after the meta.
+/* Subtitle left, score meta and the settings button right, all on one
+   baseline. */
+.health-view-header-second-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
 
-   Deliberately quiet: it is a signpost, not an action. Styled as a text link
-   rather than a button so it does not compete with the toolbar below it. */
+/* The way from a symptom on this screen to the setting behind it. A real
+   button rather than the text link it used to be: it sits on the same line as
+   the score now, where an underlined word read as part of the sentence beside
+   it instead of something to press. Quiet styling still — it is a signpost,
+   not an action, and must not compete with the toolbar below. */
 .health-view-settings-link {
-    align-self: center;
-    border: none;
-    background: none;
-    padding: 0;
+    flex-shrink: 0;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    /* Vertical padding kept off the line box: the row's height is set by the
+       subtitle beside it, so a taller button here would push this header past
+       .inbox-header's, which it deliberately matches. */
+    padding: 0 0.5rem;
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 0.68rem;
-    opacity: 0.75;
-    text-decoration: underline;
-    text-underline-offset: 0.15em;
+    font-size: var(--font-size-controls);
+    line-height: 1.5;
     cursor: pointer;
 }
 
 .health-view-settings-link:hover,
 .health-view-settings-link:focus-visible {
     color: var(--accent-primary);
-    opacity: 1;
+    border-color: var(--accent-primary);
 }
 
 /* ─── Collection trend ──────────────────────────────────────────────────── */
@@ -278,7 +287,7 @@
 }
 
 .health-view-subtitle {
-    margin: 0.25rem 0 0;
+    margin: 0;
     font-size: var(--font-size-controls);
     color: var(--text-secondary);
 }
