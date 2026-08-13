@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.0.1 — August 2026](#v101--august-2026)
 - [v1.0.0 — August 2026](#v100--august-2026)
 - [v2026.09.09.3 — August 2026](#v202609093--august-2026)
 - [v2026.09.09.2 — August 2026](#v202609092--august-2026)
@@ -160,6 +161,30 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.0.1 — August 2026
+
+A patch release on top of v1.0.0. Recorded here and versioned normally, but flagged `hideFromModal` in `index.json` so it does not reopen the What's new modal in front of users who have just read the 1.0 entry — see v2026.09.09.1 for the same treatment.
+
+### Health
+
+- **new** — the collection trend chart moved out of `.health-view-toolbar-actions`, where it was a `flex: 1 1 6rem` track competing with the button row for space, into a new `.health-view-note-row` shared with the filter note. Reserving a column beside the buttons via `padding-right` was tried first and reverted: it stranded whichever button ran out of room on a line of its own.
+- **new** — the chart gained a midpoint gridline, an endpoint dot, and a `100%` axis label rendered outside the SVG. The label sits outside because `preserveAspectRatio="none"` stretches the viewBox to the layout box and would distort any type inside it. Only the ceiling is labelled; a 50% label was added and removed as one number too many.
+- **new** — per-day hover readout. Hit zones are absolutely positioned `<button>` elements sized in CSS percentages rather than SVG geometry, for the same `preserveAspectRatio` reason: coordinates inside the viewBox drift away from where the pointer actually is. `trendPointLabel()` reads `HealthTrendPoint.t` (Unix ms), not a `d`/`day` field — an earlier draft assumed the latter and produced empty labels. A null reading renders "no reading" rather than 0%.
+- **new** — `showTrendExplainer()` behind an `ℹ` beside the chart, kept separate from `showHealthExplainer()` so the fixed-axis and gap rationale is not buried in the view-wide text.
+
+### Update check
+
+- **fix** — `fetchGitHubLatestRelease` read GitHub's `/releases/latest`, which resolves "latest" by `published_at` rather than by version. A patch published on the calendar line after v1.0.0 would be named there and then correctly rejected by `compareReleaseTags`, so a genuinely newer release was never announced in the modal or in Config → Overview. Now reads the release listing and orders it with `compareReleaseTags`, falling back to `/releases/latest` when the listing cannot be read.
+- **fix** — the listing URL is derived from `githubLatestReleaseURL` via `releaseListURL()` rather than declared as a second package var. As two independent vars, `TestFetchGitHubLatestRelease` stubbed one and reached the real api.github.com with the other, passing against live data.
+
+### Docs
+
+- Three inbox shortcuts shipped in v1.0.0 without reaching `KeyboardViewLegends`: `Shift+↑/↓` (extend selection), `Ctrl/Cmd+A` (select all) and `R` (refresh). Added to `INBOX_VIEW`, which feeds both the inline legend and the cheat sheet. Printable sheet: 55 → 58 rows; `nextDash-cheatsheet.html` and both PDFs regenerated.
+- `TestWhatsNewStubReleaseConstants` asserted a literal `2026.07` prefix on `DASHBOARD_RELEASE`; the regex now accepts both the calendar and semver suffix shapes.
+- `TestBuildUpdateStatusDetectsNewerRelease` used `v9999.99.99.9` as its newer upstream. That first segment is above `calendarVersionFloor` (1000), so it is read as a calendar tag and correctly loses to semver — the fixture was wrong, not the comparison. Now `v99.0.0`.
+- New `tests/health-trend-placement.spec.js` (6 specs). Locale keys for the trend title, axis, hover and explainer added to en/nl/de/fr.
+- `go generate ./...` regenerated `asset_hashes_gen.go` for the changed JS and CSS.
 
 ## v1.0.0 — August 2026
 
