@@ -73,13 +73,25 @@ class DashboardData {
         return this._smartCollectionFilterNeedsCrossPageData(s.smartTodayPageIds);
     }
 
-    // A collection scoped to the current page needs no cross-page bookmarks;
-    // this is the same "does the current page fall within pageIds" question
-    // dashboard-smart-collections.js asks to decide whether to refresh, just
-    // inverted — delegate instead of keeping two hand-maintained copies of
-    // the same normalization/matching logic in sync.
+    // Whether evaluating this collection requires bookmarks from pages other
+    // than the current one. NOT the inverse of
+    // dashboard-smart-collections.js's _isSmartCollectionPageAllowed — that
+    // asks only "is the current page in scope", which is also true for a
+    // scope spanning the current page *and* others (still needs cross-page
+    // data) and for an empty/all-pages scope (always needs cross-page data).
+    // Only the id/index normalization is shared, via
+    // dash.smartCollections' helpers.
     _smartCollectionFilterNeedsCrossPageData(pageIds) {
-        return !this.dash.smartCollections._isSmartCollectionPageAllowed(pageIds);
+        const sc = this.dash.smartCollections;
+        const { currentPageId, currentPageNumber } = sc._resolveSmartCollectionPageIdentity();
+        if (!Array.isArray(pageIds) || pageIds.length === 0) {
+            return true;
+        }
+        const normalizedIds = sc._normalizeSmartCollectionPageIds(pageIds);
+        if (normalizedIds.length === 0) {
+            return true;
+        }
+        return !normalizedIds.every((id) => id === currentPageId || id === currentPageNumber);
     }
 
     deferredLoadAllBookmarks() {

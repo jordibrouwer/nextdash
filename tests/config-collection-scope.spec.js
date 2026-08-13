@@ -123,16 +123,18 @@ test.describe('config collection scope', () => {
         })).toEqual([]);
     });
 
-    // dashboard-data.js's needsCrossPageBookmarks(AtStartup) and
-    // dashboard-smart-collections.js's smartCollectionsNeedRefreshAfterOpen ask
-    // the same "does pageIds cover the current page" question from opposite
-    // directions. _smartCollectionFilterNeedsCrossPageData delegates to
-    // _isSmartCollectionPageAllowed rather than re-implementing the id/index
-    // matching — this pins the two as exact inverses across the cases that
-    // matter (empty scope, matching id, matching 1-based index, a scope that
-    // excludes the current page) so a future edit to one can't silently drift
-    // from the other.
-    test('needsCrossPageData stays the exact inverse of isPageAllowed', async ({ page }) => {
+    // _isSmartCollectionPageAllowed ("is the current page in scope") and
+    // _smartCollectionFilterNeedsCrossPageData ("does evaluating this scope
+    // need bookmarks from other pages") look like inverses but are not: a
+    // scope spanning the current page *and* another page is allowed=true and
+    // still needs cross-page data=true, and an empty/all-pages scope is
+    // allowed=true and needs cross-page data=true too (every page, including
+    // others, is in scope). A prior commit collapsed needsCrossPageData into
+    // `!isPageAllowed`, which silently broke cross-page bookmark loading for
+    // the default empty-pageIds settings — the "empty" and "currentPlusOther"
+    // cases below pin exactly the values that regression got wrong, not just
+    // internal consistency between the two functions.
+    test('needsCrossPageData and isPageAllowed answer different questions, not inverses', async ({ page }) => {
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
@@ -151,6 +153,7 @@ test.describe('config collection scope', () => {
                 matchingId: [currentPageId],
                 matchingIndex: currentPageNumber !== null ? [currentPageNumber] : [currentPageId],
                 onlyOtherPage: [otherPageId],
+                currentPlusOther: [currentPageId, otherPageId],
             };
 
             return Object.fromEntries(Object.entries(cases).map(([label, pageIds]) => [label, {
@@ -159,11 +162,21 @@ test.describe('config collection scope', () => {
             }]));
         });
 
-        for (const [label, { allowed, needsCrossPage }] of Object.entries(results)) {
-            expect(needsCrossPage, `case "${label}": needsCrossPageData should be !allowed`).toBe(!allowed);
-        }
-        // Sanity: not every case degenerated to the same trivially-true/false pair.
-        expect(results.matchingId.allowed).toBe(true);
-        expect(results.onlyOtherPage.allowed).toBe(false);
+        // Empty/all-pages scope: current page is trivially in scope, and every
+        // other page is too, so cross-page data is always needed. This is the
+        // default (unset smartXPageIds), and the exact case the `!allowed`
+        // regression broke.
+        expect(results.empty).toEqual({ allowed: true, needsCrossPage: true });
+        expect(results.notArray).toEqual({ allowed: true, needsCrossPage: true });
+        // Scoped to exactly the current page (by id or by 1-based index): in
+        // scope, and nothing outside it is needed.
+        expect(results.matchingId).toEqual({ allowed: true, needsCrossPage: false });
+        expect(results.matchingIndex).toEqual({ allowed: true, needsCrossPage: false });
+        // Scoped to a page that isn't current: out of scope, so nothing on
+        // this page needs fetching for it either.
+        expect(results.onlyOtherPage).toEqual({ allowed: false, needsCrossPage: true });
+        // Scoped to current *and* another page: current is in scope (allowed),
+        // but the other page's bookmarks still have to be fetched.
+        expect(results.currentPlusOther).toEqual({ allowed: true, needsCrossPage: true });
     });
 });

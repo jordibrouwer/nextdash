@@ -537,17 +537,39 @@ class DashboardSmartCollections {
     }
 
 
-    _isSmartCollectionPageAllowed(pageIds) {
+    /**
+     * Shared by _isSmartCollectionPageAllowed here and
+     * _smartCollectionFilterNeedsCrossPageData in dashboard-data.js. Those two
+     * ask genuinely different questions from the same normalized id/index set
+     * — "is the current page in scope" vs. "does this scope reach beyond the
+     * current page" — and are NOT inverses of each other (a scope covering the
+     * current page *and* another page is allowed=true and still needs
+     * cross-page data=true; an empty/all-pages scope is allowed=true and
+     * needs cross-page data=true too). An earlier commit collapsed the second
+     * into `!` of the first, which silently broke cross-page loading for the
+     * default (empty pageIds = all pages) case. Only the id normalization —
+     * genuinely identical between them — gets shared here.
+     */
+    _resolveSmartCollectionPageIdentity() {
         const d = this.dash;
         const currentPageId = Number(d.currentPageId);
         const currentPageIndex = d.pages.findIndex((page) => Number(page.id) === currentPageId);
         const currentPageNumber = currentPageIndex >= 0 ? (currentPageIndex + 1) : null;
+        return { currentPageId, currentPageNumber };
+    }
+
+    _normalizeSmartCollectionPageIds(pageIds) {
+        return (Array.isArray(pageIds) ? pageIds : [])
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value) && value > 0);
+    }
+
+    _isSmartCollectionPageAllowed(pageIds) {
+        const { currentPageId, currentPageNumber } = this._resolveSmartCollectionPageIdentity();
         if (!Array.isArray(pageIds) || pageIds.length === 0) {
             return true;
         }
-        const normalizedIds = pageIds
-            .map((value) => Number(value))
-            .filter((value) => Number.isFinite(value) && value > 0);
+        const normalizedIds = this._normalizeSmartCollectionPageIds(pageIds);
         if (normalizedIds.includes(currentPageId)) {
             return true;
         }
