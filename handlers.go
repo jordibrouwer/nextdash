@@ -1051,6 +1051,7 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 	for i := range bookmarks {
 		bookmarks[i].Tags = normalizeTags(bookmarks[i].Tags)
 		bookmarks[i].Icon = sanitizeBookmarkIcon(bookmarks[i].Icon)
+		trimBookmarkTextFields(&bookmarks[i])
 	}
 
 	beforeBookmarks := h.store.GetBookmarksByPage(pageID)
@@ -1122,6 +1123,7 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 
 	request.Bookmark.Tags = normalizeTags(request.Bookmark.Tags)
 	request.Bookmark.Icon = sanitizeBookmarkIcon(request.Bookmark.Icon)
+	trimBookmarkTextFields(&request.Bookmark)
 
 	if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.Page, request.Bookmark)) {
 		return
@@ -1130,6 +1132,14 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	logBookmarkAdd(request.Bookmark, r)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+// trimBookmarkTextFields trims the free-text fields that were being stored
+// verbatim while Tags/Icon were already normalized at the same call sites.
+func trimBookmarkTextFields(b *Bookmark) {
+	b.Name = strings.TrimSpace(b.Name)
+	b.Category = strings.TrimSpace(b.Category)
+	b.Note = strings.TrimSpace(b.Note)
 }
 
 // normalizeTags trims, lowercases, deduplicates, and removes empty tag values.
