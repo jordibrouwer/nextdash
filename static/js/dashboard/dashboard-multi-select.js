@@ -339,7 +339,7 @@ class DashboardMultiSelect {
         });
         addButton(this.t('dashboard.multiSelectClear', 'Clear'), '', () => {
             this.clear();
-            this.dash.keyboardNav?.restoreKbdSelection?.();
+            this.dash.keyboardNavigation?.restoreKbdSelection?.();
         });
     }
 
