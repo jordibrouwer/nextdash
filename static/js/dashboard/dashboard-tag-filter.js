@@ -494,66 +494,91 @@ class DashboardTagFilter {
         }
 
         const sorted = [...refs].sort((a, b) => b.index - a.index);
-        const toMove = sorted.map((ref) => ({ ...ref.bookmark }));
+        const headers = { 'Content-Type': 'application/json' };
 
-        try {
-            const targetRes = await fetch(`/api/bookmarks?page=${targetId}`);
-            if (!targetRes.ok) {
-                throw new Error(d.formatDashboardLabel('loadSourcePageFailed', {}, 'Failed to load source page.'));
-            }
-            const targetBookmarks = await targetRes.json();
-
-            d.ensureBookmarkMutationSnapshot();
-            const remaining = [...d.bookmarks];
-            sorted.forEach((ref) => {
-                d.removeBookmarkFromAllBookmarks(ref);
-                remaining.splice(ref.index, 1);
-            });
-            targetBookmarks.push(...toMove);
-
-            const headers = { 'Content-Type': 'application/json' };
-            const sourceSaveRes = await dashFetch(`/api/bookmarks?page=${sourcePageId}`, {
+        // Single-item add + delete per bookmark instead of a whole-list
+        // read-modify-write on each side: two full-array snapshots taken up
+        // front raced against any concurrent write to either page, and a
+        // source save that landed while the target save then failed lost
+        // every selected bookmark from both lists at once (see
+        // _moveBookmarkToPage, fixed the same way for the single-bookmark
+        // case). Each add/delete pair is atomic under the store's own lock,
+        // so one bookmark failing cannot corrupt the others, and a failed add
+        // leaves that bookmark exactly where it started. Promise.allSettled
+        // rather than a loop so one failure doesn't block the rest — same
+        // pattern as the inbox's bulk actions.
+        const outcomes = await Promise.allSettled(sorted.map(async (ref) => {
+            const bookmarkPayload = { ...ref.bookmark };
+            const addRes = await dashFetch('/api/bookmarks/add', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify(remaining),
+                body: JSON.stringify({ page: targetId, bookmark: bookmarkPayload }),
             });
-            if (!sourceSaveRes.ok) {
-                throw new Error(d.formatDashboardLabel('saveBookmarkDeletionFailed', {}, 'Failed to save bookmark deletion.'));
+            if (!addRes.ok) {
+                throw new Error('add failed');
             }
-            const targetSaveRes = await dashFetch(`/api/bookmarks?page=${targetId}`, {
-                method: 'POST',
+            const deleteRes = await dashFetch('/api/bookmarks', {
+                method: 'DELETE',
                 headers,
-                body: JSON.stringify(targetBookmarks),
+                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkPayload }),
             });
-            if (!targetSaveRes.ok) {
-                throw new Error(d.formatDashboardLabel('moveBookmarkFailed', {}, 'Failed to move bookmark.'));
+            if (!deleteRes.ok) {
+                // The copy on the target page is now the only way to avoid
+                // losing this bookmark outright, so it stays there rather than
+                // trying to undo the add — same tradeoff as _moveBookmarkToPage.
+                throw new Error('delete failed');
             }
+            return ref;
+        }));
 
-            d.bookmarks = remaining;
-            d.data?.invalidatePageDataCache?.(sourcePageId);
-            d.data?.invalidatePageDataCache?.(targetId);
-            d.data?.updatePageDataCache?.(sourcePageId, { bookmarks: remaining });
-            void d.data?.fetchAndStoreDataRevision?.();
-            await d.loadAllBookmarks();
-            d.renderDashboard();
+        // allSettled resolves in input order, so movedRefs keeps sorted's
+        // descending-index order — splicing high-to-low below is still safe.
+        const movedRefs = outcomes
+            .filter((outcome) => outcome.status === 'fulfilled')
+            .map((outcome) => outcome.value);
 
-            const targetPage = (d.pages || []).find((page) => Number(page.id) === targetId);
-            const targetName = targetPage?.name || String(targetId);
-            const movedCount = toMove.length;
-            d.showGroupedNotification(
-                `move-page:${targetId}`,
-                movedCount,
-                (n) => d.formatDashboardLabel(
-                    'tagFilterMovedToPage',
-                    { count: n, name: targetName },
-                    `Moved ${n} bookmark(s) to "${targetName}"`
-                ),
-                'success',
-                { duration: 2500 }
-            );
-        } catch (error) {
+        if (!movedRefs.length) {
+            d.showErrorNotification(d.formatDashboardLabel('tagFilterMoveFailed', {}, 'Failed to move bookmarks.'));
+            return;
+        }
+
+        const remaining = [...d.bookmarks];
+        movedRefs.forEach((ref) => {
+            d.removeBookmarkFromAllBookmarks(ref);
+            remaining.splice(ref.index, 1);
+        });
+        d.bookmarks = remaining;
+
+        d.data?.invalidatePageDataCache?.(sourcePageId);
+        d.data?.invalidatePageDataCache?.(targetId);
+        d.data?.updatePageDataCache?.(sourcePageId, { bookmarks: remaining });
+        void d.data?.fetchAndStoreDataRevision?.();
+        await d.loadAllBookmarks();
+        d.renderDashboard();
+
+        const targetPage = (d.pages || []).find((page) => Number(page.id) === targetId);
+        const targetName = targetPage?.name || String(targetId);
+        const movedCount = movedRefs.length;
+        d.showGroupedNotification(
+            `move-page:${targetId}`,
+            movedCount,
+            (n) => d.formatDashboardLabel(
+                'tagFilterMovedToPage',
+                { count: n, name: targetName },
+                `Moved ${n} bookmark(s) to "${targetName}"`
+            ),
+            'success',
+            { duration: 2500 }
+        );
+
+        const failedCount = sorted.length - movedRefs.length;
+        if (failedCount > 0) {
             d.showErrorNotification(
-                error.message || d.formatDashboardLabel('tagFilterMoveFailed', {}, 'Failed to move bookmarks.')
+                d.formatDashboardLabel(
+                    'tagFilterMovePartialFailed',
+                    { count: failedCount },
+                    `Could not move ${failedCount} bookmark(s)`
+                )
             );
         }
     }

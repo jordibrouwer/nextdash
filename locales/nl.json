@@ -480,6 +480,7 @@
         "tagFilterMovedToCategory": "{count} bladwijzer(s) verplaatst naar \"{name}\"",
         "tagFilterMovedToPage": "{count} bladwijzer(s) verplaatst naar \"{name}\"",
         "tagFilterMoveFailed": "Verplaatsen mislukt",
+        "tagFilterMovePartialFailed": "{count} bladwijzer(s) konden niet worden verplaatst",
         "searchCursor": "_",
         "searchButton": "zoeken",
         "recentBookmarksButton": "recente",

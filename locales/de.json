@@ -477,6 +477,7 @@
         "tagFilterMovedToCategory": "{count} Lesezeichen nach \"{name}\" verschoben",
         "tagFilterMovedToPage": "{count} Lesezeichen nach \"{name}\" verschoben",
         "tagFilterMoveFailed": "Verschieben fehlgeschlagen",
+        "tagFilterMovePartialFailed": "{count} Lesezeichen konnten nicht verschoben werden",
         "searchCursor": "_",
         "searchButton": "Suche",
         "recentBookmarksButton": "zuletzt",

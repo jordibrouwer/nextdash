@@ -481,6 +481,7 @@
         "tagFilterMovedToCategory": "Moved {count} bookmark(s) to \"{name}\"",
         "tagFilterMovedToPage": "Moved {count} bookmark(s) to \"{name}\"",
         "tagFilterMoveFailed": "Failed to move bookmarks",
+        "tagFilterMovePartialFailed": "Could not move {count} bookmark(s)",
         "searchCursor": "_",
         "searchButton": "search",
         "recentBookmarksButton": "recent",

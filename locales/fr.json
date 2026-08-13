@@ -477,6 +477,7 @@
         "tagFilterMovedToCategory": "{count} favori(s) déplacé(s) vers « {name} »",
         "tagFilterMovedToPage": "{count} favori(s) déplacé(s) vers « {name} »",
         "tagFilterMoveFailed": "Échec du déplacement",
+        "tagFilterMovePartialFailed": "{count} favori(s) n'ont pas pu être déplacés",
         "searchCursor": "_",
         "searchButton": "rechercher",
         "recentBookmarksButton": "récents",
