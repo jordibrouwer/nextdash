@@ -87,6 +87,17 @@ func respondBookmarkMutationError(w http.ResponseWriter, err error) bool {
 	return respondStorePersistError(w, err)
 }
 
+func respondCategoriesSaveError(w http.ResponseWriter, err error) bool {
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, ErrCategoriesStillReferenced) {
+		http.Error(w, "Bookmarks on this page still reference a category; move or delete them first", http.StatusConflict)
+		return false
+	}
+	return respondStorePersistError(w, err)
+}
+
 func isDefaultURLPort(scheme, port string) bool {
 	switch scheme {
 	case "https":
@@ -1242,7 +1253,7 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		for _, name := range newCatOrder {
 			categories = append(categories, Category{ID: newCatNames[name], Name: name})
 		}
-		if !respondStorePersistError(w, h.store.SaveCategoriesByPage(request.PageID, categories)) {
+		if !respondCategoriesSaveError(w, h.store.SaveCategoriesByPage(request.PageID, categories)) {
 			return
 		}
 	}
@@ -1380,7 +1391,7 @@ func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !respondStorePersistError(w, h.store.SaveCategoriesByPage(pageID, categories)) {
+	if !respondCategoriesSaveError(w, h.store.SaveCategoriesByPage(pageID, categories)) {
 		return
 	}
 	logCategoriesSave(pageID, len(categories), r)

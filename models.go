@@ -17,6 +17,13 @@ import (
 
 var ErrBookmarkNotFound = errors.New("bookmark not found")
 
+// ErrCategoriesStillReferenced is returned by SaveCategoriesByPage when the
+// caller submits an empty category list while bookmarks on the page still
+// reference one. Saving is refused rather than silently ignored, so a client
+// that really means to clear every category (moving those bookmarks to
+// uncategorized) gets a signal instead of a 200 that changed nothing.
+var ErrCategoriesStillReferenced = errors.New("categories still referenced by bookmarks")
+
 type Bookmark struct {
 	Name        string `json:"name"`
 	URL         string `json:"url"`
@@ -1579,8 +1586,7 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 	}
 
 	if len(categories) == 0 && bookmarksReferenceCategories(pageWithBookmarks.Bookmarks) {
-		// Ignore accidental empty saves while bookmarks still reference categories.
-		return nil
+		return ErrCategoriesStillReferenced
 	}
 
 	// Create a mapping from old category IDs to new category IDs

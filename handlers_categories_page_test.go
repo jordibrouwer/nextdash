@@ -52,6 +52,48 @@ func TestSaveCategoriesReturns404ForNonexistentPageAndDoesNotCreateFile(t *testi
 	}
 }
 
+// SaveCategoriesByPage used to answer an empty-categories save with a silent
+// nil (200 success) when bookmarks on the page still referenced one — a
+// client asking to clear every category got told it worked while nothing
+// changed. It now returns ErrCategoriesStillReferenced, which the handler
+// must surface as a real error rather than paper over with a 200.
+func TestSaveCategoriesReturns409WhenBookmarksStillReferenceCategories(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+
+	store := NewStore()
+	h := NewHandlers(store, embeddedFiles)
+
+	pages := store.GetPages()
+	if len(pages) == 0 {
+		t.Fatal("expected at least one page from a fresh store")
+	}
+	pageID := pages[0].ID
+
+	if err := store.SaveCategoriesByPage(pageID, []Category{{ID: "work", Name: "Work"}}); err != nil {
+		t.Fatalf("seed category: %v", err)
+	}
+	if err := store.SaveBookmarksByPage(pageID, []Bookmark{
+		{Name: "Referencing", URL: "https://example.com/still-referenced", Category: "work"},
+	}); err != nil {
+		t.Fatalf("seed bookmark: %v", err)
+	}
+
+	body := []byte(`[]`)
+	req := httptest.NewRequest(http.MethodPost, "/api/categories?page="+strconv.Itoa(pageID), bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.SaveCategories(rec, req)
+
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409, body = %s", rec.Code, rec.Body.String())
+	}
+
+	got := store.GetCategoriesByPage(pageID)
+	if len(got) != 1 || got[0].ID != "work" {
+		t.Fatalf("categories = %+v, want the category preserved", got)
+	}
+}
+
 func TestSaveCategoriesStillWorksForAnExistingPage(t *testing.T) {
 	// The control: without this, the tests above would pass just as well
 	// against a check that rejects every page, not only missing ones.

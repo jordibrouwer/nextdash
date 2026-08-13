@@ -2,11 +2,18 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
+// An empty save while bookmarks still reference a category used to return
+// nil — success — and silently do nothing, so a client that really meant
+// "clear every category" (or a caller with a client-side bug) had no way to
+// tell its request had no effect. SaveCategoriesByPage now refuses with
+// ErrCategoriesStillReferenced instead, and the categories are still
+// preserved exactly as before.
 func TestSaveCategoriesByPageRejectsEmptyWipeWhenBookmarksReferenceCategories(t *testing.T) {
 	t.Parallel()
 
@@ -31,8 +38,9 @@ func TestSaveCategoriesByPageRejectsEmptyWipeWhenBookmarksReferenceCategories(t 
 		t.Fatalf("write initial: %v", err)
 	}
 
-	if err := store.SaveCategoriesByPage(1, []Category{}); err != nil {
-		t.Fatalf("SaveCategoriesByPage: %v", err)
+	err = store.SaveCategoriesByPage(1, []Category{})
+	if !errors.Is(err, ErrCategoriesStillReferenced) {
+		t.Fatalf("SaveCategoriesByPage error = %v, want ErrCategoriesStillReferenced", err)
 	}
 
 	got := store.GetCategoriesByPage(1)
