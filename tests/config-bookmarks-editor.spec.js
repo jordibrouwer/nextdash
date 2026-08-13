@@ -555,6 +555,11 @@ test.describe('bookmark statistics', () => {
         await openFirstEditor(page, { openCount: 33, lastOpened: Date.now() - 3 * 60 * 60 * 1000 });
 
         await bookmarkModalForm(page).locator('.bookmark-inline-textarea').fill('stats must survive');
+        // The modal animates in, so Playwright's stability check on Save can
+        // outlast its own timeout while the transition settles.
+        await page.addStyleTag({
+            content: '*, *::before, *::after { transition: none !important; animation: none !important; }',
+        });
         await modalSaveBtn(page).click();
         await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
 

@@ -8,8 +8,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [v1.0.1 — August 2026](#v101--august-2026)
-- [v1.0.0 — August 2026](#v100--august-2026)
+- [v1.0.1 — 13 August 2026](#v101--13-august-2026)
+- [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [v2026.09.09.3 — August 2026](#v202609093--august-2026)
 - [v2026.09.09.2 — August 2026](#v202609092--august-2026)
 - [v2026.09.09.1 — August 2026](#v202609091--august-2026)
@@ -162,7 +162,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## v1.0.1 — August 2026
+## v1.0.1 — 13 August 2026
 
 A patch release on top of v1.0.0. Recorded here and versioned normally, but flagged `hideFromModal` in `index.json` so it does not reopen the What's new modal in front of users who have just read the 1.0 entry — see v2026.09.09.1 for the same treatment.
 
@@ -186,7 +186,7 @@ A patch release on top of v1.0.0. Recorded here and versioned normally, but flag
 - New `tests/health-trend-placement.spec.js` (6 specs). Locale keys for the trend title, axis, hover and explainer added to en/nl/de/fr.
 - `go generate ./...` regenerated `asset_hashes_gen.go` for the changed JS and CSS.
 
-## v1.0.0 — August 2026
+## v1.0.0 — 13 August 2026
 
 The first release under semantic versioning, and  deliberate milestone: after a long run of bug fixing and consolidation has left the app feeling finished and stable rather than in flux. From here `1.x.0` carries features and `1.0.x` carries fixes; see v2026.09.09.3 for the scheme change itself, which shipped the comparison logic ahead of this tag.
 

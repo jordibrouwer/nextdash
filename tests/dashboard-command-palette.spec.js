@@ -159,7 +159,10 @@ test.describe('dashboard command palette', () => {
         await expect(sheet).toBeVisible({ timeout: 3000 });
         await expect(sheet.locator('summary', { hasText: /Health view/i })).toBeVisible();
         await expect(sheet.locator('summary', { hasText: /Inbox view/i })).toBeVisible();
-        await expect(sheet.getByText(/refresh report|Refresh the cached/i)).toBeVisible();
+        // Rows live inside collapsed <details>, so the health section has to be
+        // opened before any of its lines can be visible.
+        await sheet.locator('summary', { hasText: /Health view/i }).click();
+        await expect(sheet.getByText(/refresh report|Refresh the cached/i).first()).toBeVisible();
     });
 
     test(':overview closes palette and opens page overview', async ({ page }) => {

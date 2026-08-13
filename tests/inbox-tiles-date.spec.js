@@ -30,6 +30,9 @@ test.describe('inbox summary tiles and added date', () => {
 
         await page.locator('#page-nav-inbox-btn').click();
         await expect(page.locator('.inbox-layout')).toBeVisible();
+        // The view may have rendered before the seed POST landed; reload rather
+        // than waiting on a render that has already happened.
+        await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
         await page.waitForSelector('.inbox-item', { timeout: 15_000 });
 
         // Four tiles, in order: Total, Unread, Snoozed, This week.

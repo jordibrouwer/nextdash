@@ -70,6 +70,12 @@ class ConfigFaviconPrefetch {
             }
 
             this._updateOverlay(overlay, totalMissing, totalMissing, true);
+            // Stop swallowing clicks the moment the work is done. The overlay
+            // covers the whole viewport at z-index 12000, and it used to stay
+            // up for the 900ms victory lap below *and* the reload after it —
+            // several seconds during which the page looked finished ("Icons
+            // updated") but every click landed on the overlay instead.
+            overlay?.style?.setProperty('pointer-events', 'none');
             await this._delay(900);
 
             if (typeof configManager !== 'undefined') {
@@ -151,6 +157,9 @@ class ConfigFaviconPrefetch {
         if (title) {
             title.textContent = this.t('config.faviconPrefetchTitle') || 'Fetching bookmark icons…';
         }
+        // Cleared here as well as set on completion: a second run reuses the
+        // same element, and it must block again while it is actually working.
+        overlay.style.removeProperty('pointer-events');
         overlay.hidden = false;
         return overlay;
     }

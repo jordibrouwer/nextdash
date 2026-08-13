@@ -1,6 +1,6 @@
 {
     "tag": "v1.0.0",
-    "date": "August 2026",
+    "date": "13 August 2026",
     "releasedAt": "2026-08-13",
     "modalLead": "<strong>nextDash is 1.0.</strong> After a long stretch of squashing bugs and sanding down rough edges, this finally feels like a finished, stable app rather than a work in progress — so the version number says so. From here the number describes the change instead of the date: <strong>1.<em>x</em>.0</strong> adds features, <strong>1.0.<em>x</em></strong> fixes things. This release is mostly the quiet kind of work: a long list of cases where something claimed to have worked and had not, plus a much stronger Inbox.",
     "sections": [
