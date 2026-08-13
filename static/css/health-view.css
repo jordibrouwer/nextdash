@@ -44,23 +44,34 @@
    not an action, and must not compete with the toolbar below. */
 .health-view-settings-link {
     flex-shrink: 0;
-    border: 1px solid var(--border-primary);
+    /* An outline, not a border: it paints outside the box, so the button reads
+       as a button without adding the 2px that a border would. Together with the
+       matched line-height and no vertical padding, this keeps the button the
+       same height as the subtitle text beside it — which is what keeps this
+       header level with .inbox-header. */
+    border: none;
+    outline: 1px solid var(--border-primary);
     background: var(--background-secondary);
-    /* Vertical padding kept off the line box: the row's height is set by the
-       subtitle beside it, so a taller button here would push this header past
-       .inbox-header's, which it deliberately matches. */
     padding: 0 0.5rem;
     color: var(--text-secondary);
     font-family: inherit;
     font-size: var(--font-size-controls);
-    line-height: 1.5;
+    line-height: inherit;
     cursor: pointer;
 }
 
-.health-view-settings-link:hover,
+.health-view-settings-link:hover {
+    color: var(--accent-primary);
+    outline-color: var(--accent-primary);
+}
+
+/* Thicker rather than a different colour: the resting state already uses the
+   outline, so focus has to be visible against it without the ring growing into
+   the line box. */
 .health-view-settings-link:focus-visible {
     color: var(--accent-primary);
-    border-color: var(--accent-primary);
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 1px;
 }
 
 /* ─── Collection trend ──────────────────────────────────────────────────── */
@@ -306,7 +317,11 @@
     align-items: center;
     justify-content: center;
     min-width: 2.25rem;
-    padding: 0.1rem 0.45rem;
+    /* No vertical padding: this badge shares its line with the subtitle text,
+       and any extra height here sets the row's — which is what keeps this
+       header level with .inbox-header. The pill shape comes from the
+       horizontal padding and the radius, not from height. */
+    padding: 0 0.45rem;
     border-radius: 999px;
     font-size: 0.72rem;
     font-weight: var(--font-weight-semibold);
