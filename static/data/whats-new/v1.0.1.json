@@ -1,0 +1,34 @@
+{
+    "tag": "v1.0.1",
+    "date": "August 2026",
+    "releasedAt": "2026-08-13",
+    "modalLead": "A small follow-up to v1.0.0: the trend line in Health is now big enough to read and says what it is showing, and nextDash notices a new version again whatever order releases were published in.",
+    "sections": [
+        {
+            "title": "Health",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>The trend line is readable at last.</strong> It sat squeezed between the buttons, too narrow to see anything in. It has moved down beside the text explaining the filter, where there was empty space all along, and now takes about half that width."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Point at a day to see it.</strong> Hovering the chart names the day and the share that was healthy on it. A day with no reading says so, rather than showing 0% as though everything had broken at once."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>The chart says what it is measuring.</strong> A 100% mark on the left, a line through the middle for reference, and a dot on the most recent reading so the eye lands on where things stand now. The <strong>ℹ</strong> beside it explains why the scale never moves and why the line has gaps."
+                }
+            ]
+        },
+        {
+            "title": "Elsewhere",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>A new version could go unannounced.</strong> nextDash asked which release was published most recently rather than which one is newest, so publishing a fix on an older line after a newer release hid that newer release completely. It now compares the version numbers itself."
+                }
+            ]
+        }
+    ]
+}
