@@ -17,7 +17,7 @@ func TestInboxAddDedupeAndDelete(t *testing.T) {
 	store.initializeDefaultFiles()
 
 	link := InboxLink{URL: "https://example.com/article", Source: "test"}
-	created, err := store.AddInboxLink(link, true, 500)
+	created, _, err := store.AddInboxLink(link, true, 500)
 	if err != nil {
 		t.Fatalf("AddInboxLink: %v", err)
 	}
@@ -28,7 +28,7 @@ func TestInboxAddDedupeAndDelete(t *testing.T) {
 		t.Fatalf("domain = %q", created.Domain)
 	}
 
-	_, err = store.AddInboxLink(InboxLink{URL: "https://example.com/article"}, true, 500)
+	_, _, err = store.AddInboxLink(InboxLink{URL: "https://example.com/article"}, true, 500)
 	if err != ErrInboxDuplicateURL {
 		t.Fatalf("expected duplicate error, got %v", err)
 	}
@@ -59,7 +59,7 @@ func TestInboxIconPersists(t *testing.T) {
 	}
 	store.initializeDefaultFiles()
 
-	created, err := store.AddInboxLink(InboxLink{URL: "https://example.com/article"}, true, 500)
+	created, _, err := store.AddInboxLink(InboxLink{URL: "https://example.com/article"}, true, 500)
 	if err != nil {
 		t.Fatalf("AddInboxLink: %v", err)
 	}
@@ -124,7 +124,7 @@ func TestRemoveUnusedIconFile(t *testing.T) {
 
 	// Case 2: an icon still used by a bookmark is kept.
 	shared := writeIcon("icon-shared.png")
-	created, err := store.AddInboxLink(InboxLink{URL: "https://b.example.com"}, true, 500)
+	created, _, err := store.AddInboxLink(InboxLink{URL: "https://b.example.com"}, true, 500)
 	if err != nil {
 		t.Fatalf("AddInboxLink: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestInboxMaxItemsTrim(t *testing.T) {
 	store.initializeDefaultFiles()
 
 	for i := 0; i < 5; i++ {
-		_, err := store.AddInboxLink(InboxLink{
+		_, _, err := store.AddInboxLink(InboxLink{
 			URL: "https://example.com/" + string(rune('a'+i)),
 		}, false, 3)
 		if err != nil {
@@ -187,7 +187,7 @@ func TestInboxRestoreLink(t *testing.T) {
 		AddedAt: 123,
 		Source:  "test",
 	}
-	created, err := store.AddInboxLink(original, false, 500)
+	created, _, err := store.AddInboxLink(original, false, 500)
 	if err != nil {
 		t.Fatalf("AddInboxLink: %v", err)
 	}

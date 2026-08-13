@@ -524,7 +524,7 @@ type Store interface {
 	InvalidateReadCache()
 	// Inbox
 	GetInboxItems() []InboxLink
-	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, error)
+	AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []string, error)
 	RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, error)
 	DeleteInboxLink(id string) error
 	UpdateInboxLink(id string, mutate func(*InboxLink) error) (InboxLink, error)

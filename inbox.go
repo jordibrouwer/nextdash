@@ -177,20 +177,83 @@ func (fs *FileStore) GetInboxItems() []InboxLink {
 	return items
 }
 
-func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, error) {
+// Field ceilings for stored inbox text.
+//
+// inbox.json is read and rewritten in full on every mutation and shipped whole
+// on every dashboard load, so an unbounded field is paid for again and again by
+// every later request — not just by the one that stored it. The limits are far
+// above anything a real title or note reaches; they exist to stop a runaway
+// value, not to police length.
+const (
+	inboxMaxTitleLen   = 500
+	inboxMaxNoteLen    = 2000
+	inboxMaxPreviewLen = 1000
+	inboxMaxSourceLen  = 100
+	inboxMaxURLLen     = 2048
+)
+
+// truncateRunes cuts to at most n runes, never splitting one in half.
+func truncateRunes(value string, n int) string {
+	runes := []rune(value)
+	if len(runes) <= n {
+		return value
+	}
+	return string(runes[:n])
+}
+
+// evictedIconFiles lists the icon filenames of items present in `before` but
+// gone from `after` — what a capacity trim silently dropped.
+//
+// Only the explicit DELETE path ever cleaned up an icon, so every eviction left
+// a favicon behind in data/icons/ for good: one orphan per evicted item, forever,
+// on any inbox sitting at its cap.
+func evictedIconFiles(before, after []InboxLink) []string {
+	if len(before) == len(after) {
+		return nil
+	}
+	kept := make(map[string]struct{}, len(after))
+	for i := range after {
+		kept[after[i].ID] = struct{}{}
+	}
+	var icons []string
+	for i := range before {
+		if _, ok := kept[before[i].ID]; ok {
+			continue
+		}
+		if icon := strings.TrimSpace(before[i].Icon); icon != "" {
+			icons = append(icons, icon)
+		}
+	}
+	return icons
+}
+
+// clampInboxLinkFields bounds every client-supplied text field on an inbox item.
+// Applied on add, patch and restore, so no write path can store more than the
+// others allow.
+func clampInboxLinkFields(link *InboxLink) {
+	link.URL = truncateRunes(link.URL, inboxMaxURLLen)
+	link.Title = truncateRunes(link.Title, inboxMaxTitleLen)
+	link.Note = truncateRunes(link.Note, inboxMaxNoteLen)
+	link.Source = truncateRunes(link.Source, inboxMaxSourceLen)
+	link.PreviewTitle = truncateRunes(link.PreviewTitle, inboxMaxPreviewLen)
+	link.PreviewDesc = truncateRunes(link.PreviewDesc, inboxMaxPreviewLen)
+	link.PreviewImage = truncateRunes(link.PreviewImage, inboxMaxURLLen)
+}
+
+func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []string, error) {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
 	inbox := fs.readInboxDataLocked()
 	urlKey := canonicalBookmarkURLKey(link.URL)
 	if urlKey == "" {
-		return InboxLink{}, fmt.Errorf("invalid inbox url")
+		return InboxLink{}, nil, fmt.Errorf("invalid inbox url")
 	}
 
 	if dedupe {
 		for _, existing := range inbox.Items {
 			if canonicalBookmarkURLKey(existing.URL) == urlKey {
-				return existing, ErrInboxDuplicateURL
+				return existing, nil, ErrInboxDuplicateURL
 			}
 		}
 	}
@@ -211,6 +274,7 @@ func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (In
 		}
 	}
 	link.Tags = normalizeTags(link.Tags)
+	clampInboxLinkFields(&link)
 
 	inbox.Items = append(inbox.Items, link)
 	// Trimmed with the new item protected, for the same reason RestoreInboxLink
@@ -218,7 +282,9 @@ func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (In
 	// an extension replaying a queued save, an import, a sync retry — would have
 	// its item dropped by the very call that added it, and still be told it
 	// worked.
+	beforeTrim := append([]InboxLink(nil), inbox.Items...)
 	inbox.Items = trimInboxItemsKeeping(inbox.Items, maxItems, link.ID)
+	evictedIcons := evictedIconFiles(beforeTrim, inbox.Items)
 
 	survived := false
 	for i := range inbox.Items {
@@ -228,13 +294,16 @@ func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (In
 		}
 	}
 	if !survived {
-		return InboxLink{}, ErrInboxAtCapacity
+		return InboxLink{}, nil, ErrInboxAtCapacity
 	}
 
 	if err := fs.saveInboxDataLocked(inbox); err != nil {
-		return InboxLink{}, err
+		return InboxLink{}, nil, err
 	}
-	return link, nil
+	// Returned rather than cleaned up here: removeUnusedIconFile takes the store
+	// lock, which this function still holds, and it must see the saved state
+	// before deciding an icon is unreferenced.
+	return link, evictedIcons, nil
 }
 
 var ErrInboxDuplicateURL = errors.New("inbox duplicate url")
@@ -329,6 +398,7 @@ func (fs *FileStore) RestoreInboxLink(link InboxLink, maxItems int) (InboxLink, 
 		}
 	}
 
+	clampInboxLinkFields(&link)
 	link.ID = id
 	link.URL = strings.TrimSpace(link.URL)
 	if link.URL == "" {

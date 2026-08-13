@@ -18,7 +18,7 @@ import (
 
 func seedInboxItem(t *testing.T, h *Handlers, link InboxLink) InboxLink {
 	t.Helper()
-	created, err := h.store.AddInboxLink(link, false, 500)
+	created, _, err := h.store.AddInboxLink(link, false, 500)
 	if err != nil {
 		t.Fatalf("seed inbox item: %v", err)
 	}

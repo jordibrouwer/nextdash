@@ -102,11 +102,11 @@ func TestUndoRestoresAnOldItemAtCapacity(t *testing.T) {
 	now := time.Now().UnixMilli()
 
 	old := InboxLink{ID: "inl_old", URL: "https://old.example", AddedAt: now - 900000}
-	if _, err := h.store.AddInboxLink(old, false, 3); err != nil {
+	if _, _, err := h.store.AddInboxLink(old, false, 3); err != nil {
 		t.Fatalf("seed old: %v", err)
 	}
 	for i, u := range []string{"https://a.example", "https://b.example"} {
-		if _, err := h.store.AddInboxLink(InboxLink{URL: u, AddedAt: now - int64(i*1000)}, false, 3); err != nil {
+		if _, _, err := h.store.AddInboxLink(InboxLink{URL: u, AddedAt: now - int64(i*1000)}, false, 3); err != nil {
 			t.Fatalf("seed: %v", err)
 		}
 	}
@@ -119,7 +119,7 @@ func TestUndoRestoresAnOldItemAtCapacity(t *testing.T) {
 	}
 
 	// Something else arrives before undo is pressed: back to capacity.
-	if _, err := h.store.AddInboxLink(InboxLink{URL: "https://new.example", AddedAt: now}, false, 3); err != nil {
+	if _, _, err := h.store.AddInboxLink(InboxLink{URL: "https://new.example", AddedAt: now}, false, 3); err != nil {
 		t.Fatalf("refill: %v", err)
 	}
 
@@ -150,7 +150,7 @@ func TestRestoreReportsCapacityRatherThanFakingSuccess(t *testing.T) {
 	// maxItems of 1 leaves no room for anything but the protected item, so a
 	// second restore into a full list is the case that must be refused.
 	items := []InboxLink{{ID: "keeper", URL: "https://keeper.example", AddedAt: 5000}}
-	if _, err := h.store.AddInboxLink(items[0], false, 1); err != nil {
+	if _, _, err := h.store.AddInboxLink(items[0], false, 1); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 

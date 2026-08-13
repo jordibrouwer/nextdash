@@ -79,7 +79,7 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		Tags:   request.Tags,
 	}
 
-	created, err := h.store.AddInboxLink(link, dedupe, maxItems)
+	created, evictedIcons, err := h.store.AddInboxLink(link, dedupe, maxItems)
 	if err != nil {
 		if errors.Is(err, ErrInboxDuplicateURL) {
 			w.Header().Set("Content-Type", "application/json")
@@ -112,6 +112,14 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Error(w, "Failed to save inbox item", http.StatusInternalServerError)
 		return
+	}
+
+	// Favicons of items the capacity trim dropped. Cleaned up here rather than
+	// inside the store: removeUnusedIconFile takes the store lock, which
+	// AddInboxLink still holds, and it has to see the saved state before it can
+	// tell whether an icon is still referenced.
+	for _, icon := range evictedIcons {
+		h.store.removeUnusedIconFile(icon)
 	}
 
 	h.store.RecordInboxEvent(InboxEvent{
@@ -460,7 +468,19 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 			if item.ReadAt == 0 && *request.ReadAt != 0 {
 				markedRead = true
 			}
-			item.ReadAt = *request.ReadAt
+			// Clamped like SnoozedUntil below, and for the same reason: a
+			// negative or absurd future timestamp is not a state the UI can
+			// represent. Anything non-zero means read, so a bad value is stored
+			// as "read, now" rather than kept verbatim to corrupt the read/unread
+			// reconciliation the client does against this field.
+			switch {
+			case *request.ReadAt <= 0:
+				item.ReadAt = 0
+			case *request.ReadAt > time.Now().UnixMilli():
+				item.ReadAt = time.Now().UnixMilli()
+			default:
+				item.ReadAt = *request.ReadAt
+			}
 		}
 		if request.SnoozedUntil != nil {
 			// A pointer lets a client clear a snooze by sending 0. Negative or past
@@ -484,6 +504,9 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 		if request.PreviewImage != "" || clearPreview {
 			item.PreviewImage = strings.TrimSpace(request.PreviewImage)
 		}
+		// Bounded here as well as on add: a patch is a client write like any
+		// other, and inbox.json is rewritten whole on every mutation.
+		clampInboxLinkFields(item)
 		return nil
 	})
 	if err != nil {

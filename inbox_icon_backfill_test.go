@@ -28,7 +28,7 @@ func TestBackfillSkipsItemsAlreadyAttempted(t *testing.T) {
 		AddedAt: time.Now().UnixMilli(),
 	}
 	for _, link := range []InboxLink{tried, untried} {
-		if _, err := h.store.AddInboxLink(link, false, 500); err != nil {
+		if _, _, err := h.store.AddInboxLink(link, false, 500); err != nil {
 			t.Fatalf("seed %s: %v", link.ID, err)
 		}
 	}
@@ -70,7 +70,7 @@ func TestBackfillSkipsItemsWithoutAURL(t *testing.T) {
 // on the next read and the retry loop would come back.
 func TestIconFetchedAtPersists(t *testing.T) {
 	h, _ := healthRecheckTestHandlers(t, `{}`)
-	created, err := h.store.AddInboxLink(
+	created, _, err := h.store.AddInboxLink(
 		InboxLink{URL: "https://a.example", AddedAt: time.Now().UnixMilli()}, false, 500)
 	if err != nil {
 		t.Fatalf("seed: %v", err)

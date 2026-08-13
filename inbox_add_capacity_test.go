@@ -21,13 +21,13 @@ func TestAddInboxLinkKeepsAnOlderNewItemAndEvictsInstead(t *testing.T) {
 	store := &FileStore{dataDir: dir}
 
 	for _, u := range []string{"https://a.example", "https://b.example", "https://c.example"} {
-		if _, err := store.AddInboxLink(InboxLink{URL: u}, false, 3); err != nil {
+		if _, _, err := store.AddInboxLink(InboxLink{URL: u}, false, 3); err != nil {
 			t.Fatalf("seed %s: %v", u, err)
 		}
 	}
 
 	// Older than everything present, into a full inbox.
-	if _, err := store.AddInboxLink(InboxLink{URL: "https://old.example", AddedAt: 1000}, false, 3); err != nil {
+	if _, _, err := store.AddInboxLink(InboxLink{URL: "https://old.example", AddedAt: 1000}, false, 3); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 
@@ -56,12 +56,12 @@ func TestAddInboxLinkStillEvictsTheOldestForANewItem(t *testing.T) {
 	store := &FileStore{dataDir: dir}
 
 	for _, u := range []string{"https://a.example", "https://b.example", "https://c.example"} {
-		if _, err := store.AddInboxLink(InboxLink{URL: u}, false, 3); err != nil {
+		if _, _, err := store.AddInboxLink(InboxLink{URL: u}, false, 3); err != nil {
 			t.Fatalf("seed %s: %v", u, err)
 		}
 	}
 
-	if _, err := store.AddInboxLink(InboxLink{URL: "https://fresh.example"}, false, 3); err != nil {
+	if _, _, err := store.AddInboxLink(InboxLink{URL: "https://fresh.example"}, false, 3); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 
