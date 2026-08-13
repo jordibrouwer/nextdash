@@ -64,11 +64,46 @@ func updateCheckEnabled(settings Settings) bool {
 	return settings.UpdateCheckEnabled
 }
 
-// compareReleaseTags compares tags like v2026.08.02.3 using numeric segment
-// ordering, matching the What's new modal sort in whats-new-modal.js.
+// calendarVersionFloor is the first segment above which a tag is read as a
+// calendar version rather than a semantic one.
+//
+// nextDash tagged releases as vYYYY.MM.N for its whole life and is moving to
+// semver, which breaks a plain numeric comparison: 1 is less than 2026, so
+// v1.0.0 would read as older than every release before it and no running
+// install would ever be told an update exists. Nothing else separates the two
+// schemes — both are dot-separated integers — so the year is the signal, and
+// 1000 is chosen simply because no semantic major version will plausibly reach
+// it while every calendar year clears it.
+const calendarVersionFloor = 1000
+
+// releaseTagScheme reports whether a tag's segments read as a calendar version.
+func releaseTagIsCalendar(parts []int) bool {
+	return len(parts) > 0 && parts[0] >= calendarVersionFloor
+}
+
+// compareReleaseTags compares tags like v2026.08.02.3 or v1.2.0 using numeric
+// segment ordering, matching the What's new modal sort in whats-new-modal.js.
+//
+// A semantic tag always sorts above a calendar one, whatever the numbers say.
+// That is the whole point of the switch: v1.0.0 succeeds v2026.09.09.3, and
+// comparing them segment by segment would conclude the opposite.
 func compareReleaseTags(a, b string) int {
 	pa := releaseTagParts(a)
 	pb := releaseTagParts(b)
+
+	// Only when both parse. An unparseable tag has no segments and falls
+	// through to the numeric path below, which treats it as all-zero — the
+	// existing behaviour for junk input, kept deliberately.
+	if len(pa) > 0 && len(pb) > 0 {
+		calA, calB := releaseTagIsCalendar(pa), releaseTagIsCalendar(pb)
+		if calA != calB {
+			if calA {
+				return -1 // a is the old calendar scheme, b is semver
+			}
+			return 1
+		}
+	}
+
 	maxLen := len(pa)
 	if len(pb) > maxLen {
 		maxLen = len(pb)

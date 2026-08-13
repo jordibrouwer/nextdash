@@ -29,6 +29,53 @@ func TestCompareReleaseTags(t *testing.T) {
 	}
 }
 
+// The move from vYYYY.MM.N to semver.
+//
+// A plain numeric comparison reads v1.0.0 as older than v2026.09.09.3, because
+// 1 is less than 2026. That is not a cosmetic sorting detail: updateStatus only
+// sets UpdateAvailable when the published tag compares greater than the running
+// one, so every existing install would sit on the last calendar release and
+// never be told a v1 exists. A semantic tag therefore outranks a calendar one
+// regardless of the numbers.
+func TestCompareReleaseTagsAcrossVersionSchemes(t *testing.T) {
+	tests := []struct {
+		a, b string
+		want int
+		why  string
+	}{
+		{"v1.0.0", "v2026.09.09.3", 1, "the first semver release succeeds the last calendar one"},
+		{"v2026.09.09.3", "v1.0.0", -1, "and the reverse holds"},
+		{"v1.0", "v2026.09.09.3", 1, "a two-segment semver tag too"},
+		{"v0.9.0", "v2026.01.01", 1, "even a 0.x tag, since the scheme decides rather than the value"},
+
+		// Within one scheme nothing changes.
+		{"v1.1.0", "v1.0.9", 1, "semver still compares numerically"},
+		{"v1.0.0", "v1.0.1", -1, "including patch segments"},
+		{"v2.0.0", "v1.9.9", 1, "and majors"},
+		{"v2026.09.09.3", "v2026.09.09", 1, "calendar tags are untouched"},
+		{"v1.0.0", "v1.0.0", 0, "equal is still equal"},
+
+		// The boundary itself.
+		{"v999.0.0", "v1000.0.0", 1, "999 is semver, 1000 is a year, so 999 wins"},
+	}
+	for _, tc := range tests {
+		if got := compareReleaseTags(tc.a, tc.b); got != tc.want {
+			t.Errorf("compareReleaseTags(%q, %q) = %d, want %d — %s", tc.a, tc.b, got, tc.want, tc.why)
+		}
+	}
+}
+
+// The comparison exists to drive this one decision, so it is worth asserting
+// end to end rather than trusting the sign of an integer.
+func TestUpdateAvailableAcrossVersionSchemes(t *testing.T) {
+	if compareReleaseTags("v1.0.0", "v2026.09.09.3") <= 0 {
+		t.Fatal("an install on the last calendar release would never be offered v1.0.0")
+	}
+	if compareReleaseTags("v2026.09.09.3", "v1.0.0") >= 0 {
+		t.Fatal("an install already on v1.0.0 would be offered the old calendar release as an update")
+	}
+}
+
 func TestUpdateCheckEnabledRespectsEnv(t *testing.T) {
 	t.Setenv("DISABLE_UPDATE_CHECK", "true")
 	settings := Settings{UpdateCheckEnabled: true}
