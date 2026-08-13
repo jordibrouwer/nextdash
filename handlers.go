@@ -933,9 +933,11 @@ func (h *Handlers) GetBookmarks(w http.ResponseWriter, r *http.Request) {
 		}
 		bookmarks = h.store.GetBookmarksByPage(pageID)
 	} else {
-		// No page ID provided - return empty array
-		// Pages are required now, no global bookmarks
-		bookmarks = []Bookmark{}
+		// Silently returning an empty array here used to mask a typo'd or
+		// missing query param as "this page has zero bookmarks" — now it is
+		// what it actually is, a malformed request.
+		http.Error(w, "page or all is required", http.StatusBadRequest)
+		return
 	}
 
 	writeJSONWithETag(w, r, bookmarks)
