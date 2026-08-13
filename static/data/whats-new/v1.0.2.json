@@ -1,0 +1,112 @@
+{
+    "tag": "v1.0.2",
+    "date": "14 August 2026",
+    "releasedAt": "2026-08-14",
+    "modalLead": "Mostly a repair release. A handful of things in Config claimed to have worked when they had not, and a few doors only opened one way — you could take a theme or your bookmarks out, but not put them back.",
+    "sections": [
+        {
+            "title": "Things that said they worked and did not",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>A hiccup while saving could wipe a page's categories.</strong> If the app could not read the current list first, it treated that as \"there are none\" and saved the one category you were adding over all of them. It now stops and says so."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Refresh all favicons never worked.</strong> The button always ended on \"Could not refresh the favicons\", whatever the state of your bookmarks. It now does what it says."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Deleting a category could report success while it was refused.</strong> The server keeps a category that bookmarks still point at; the screen said it was deleted anyway, offered to undo it, and filed it in the trash. The row now comes back with an explanation."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>A new collection could vanish without a word.</strong> A collection with no name, or no rule with a value in it, was quietly discarded while the screen said \"Saved\" — it was gone after a reload. It now says what was not kept."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Finders, categories and tags could be replaced by an empty list</strong> after a failed load. The list looked empty, and the next edit saved that emptiness back over your real one."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Changing a setting in a second tab left the first one stale.</strong> Both tabs now keep up with each other, as they were meant to."
+                }
+            ]
+        },
+        {
+            "title": "Getting things in and out",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Themes can be imported.</strong> Export has been there all along; a palette built on one machine can now be carried to another, or shared, without restoring a whole backup over everything."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Bookmarks can be imported from CSV.</strong> Export the list, tidy hundreds of rows in a spreadsheet — fixing categories, adding tags — and put the result back. Unlike the browser import, this route carries tags and notes."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>The trash has a search box and can restore several at once.</strong> Undoing a bulk delete of twenty was twenty clicks in a list of up to five hundred, with no way to find anything. Each is restored on its own, so one that cannot come back does not stop the rest."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Saved searches survive a new browser.</strong> They lived only in your browser's storage, which meant they were in no backup at all — a cleared cache took them for good. They are now kept with the rest of your settings."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>A failed load no longer reads as an empty trash</strong>, which is the one message likely to stop you recovering something you just lost."
+                }
+            ]
+        },
+        {
+            "title": "Keyboard and screen readers",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Settings controls now say what they are.</strong> A screen reader announced \"combo box, 30\" with nothing naming the setting, across all of Behavior and much of Appearance."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The arrow keys stopped working on the Appearance tabs</strong> after the first press. Focus was lost the moment the page redrew itself."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Changing a setting no longer throws you back to the top of the page.</strong> The control you were on keeps the focus, so Tab carries on where you were."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Confirmation dialogs keep the keyboard inside them.</strong> Tab used to wander off into the page behind — including on Reset all data."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The icon-fetching overlay stopped swallowing clicks</strong> after it had finished. It said \"Icons updated\" while every click still landed on it."
+                }
+            ]
+        },
+        {
+            "title": "Elsewhere",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Names cannot be emptied or pasted to any length.</strong> Clearing a category's name saved it as nothing — a heading with no title, a blank row in the theme picker — and a very long name pushed buttons off the screen."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Check for updates says when it last checked.</strong> The answer is cached for a day, so the button used to look broken when it repeated itself."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>The backup tile says when the next one runs</strong>, rather than only that backups are on."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>The Inbox conversion figure counts links you kept.</strong> They were left out of the sum while the panel above showed them as their own tile, so the arithmetic never added up."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Page archiving is gone from the manual.</strong> It was described as a working feature, with a note on where to find it; it had never been built."
+                }
+            ]
+        }
+    ]
+}

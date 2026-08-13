@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.0.2 — 14 August 2026](#v102--14-august-2026)
 - [v1.0.1 — 13 August 2026](#v101--13-august-2026)
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
 - [v2026.09.09.3 — August 2026](#v202609093--august-2026)
@@ -161,6 +162,52 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.0.2 — 14 August 2026
+
+A repair release for the config view, from a full audit of it. Flagged `hideFromModal` in `index.json` like v1.0.1, so it does not reopen the What's new modal.
+
+The recurring fault: a read that failed degraded to an empty list, and the next write posted that emptiness back as the complete state. Failure and emptiness were the same value, so a server blip during an edit destroyed real data behind a "Saved" badge.
+
+### Data integrity
+
+- **fix** — `ensureCategoryOnPage` (`dashboard-config.js`) turned a failed GET into a one-item POST that replaced every category on the page. Proven end to end: five categories in, one out, no error shown. `SaveCategoriesByPage`'s guard cannot catch it, since it only rejects a zero-length list. Now throws rather than degrading.
+- **fix** — `loadFinders` and `loadCategoriesEditor` set a `_xLoadFailed` flag instead of `[]`; `saveFinders` and `saveCategories` refuse to write while it is set.
+- **fix** — `saveCategories` returns whether it saved and takes the page id as an argument, captured by each caller at edit time. It swallowed the error and returned `undefined` either way, so the delete flow acted on a 409 as if it had worked — trash entry, undo toast and all. The page picker reassigns `_catPageId` synchronously, so a save in flight could also land on the wrong page.
+- **fix** — `SaveSettings` (`handlers.go`) reports dropped collections in the response instead of discarding them behind `{"status":"success"}`. Surfaced when leaving the Collections tab, not per save: a half-filled row is the normal state while typing.
+- **fix** — `publishConfigSync` added to `dashboard-config-sync.js`. The listener, the pending-marker drain and four specs all existed; nothing ever published, so a second tab stayed stale until reloaded by hand. The specs write the markers themselves, so they passed either way.
+
+### Config
+
+- **fix** — `refreshAllFavicons` posted a body-less request to `/api/bookmarks/prefetch-icons`, which is per-page and decodes the body first, so it answered 400 every time. Routed through `ConfigFaviconPrefetch`, as `search-commands.js` and `dashboard-quickstart.js` already did.
+- **fix** — the prefetch overlay drops `pointer-events` on completion. It covers the viewport at `z-index: 12000` and stayed up through the 900ms completion pause and the reloads after it, so the page read "Icons updated" while every click landed on the overlay. Found via a spec that timed out clicking Save; `elementFromPoint` over the button returned the overlay.
+- **fix** — `guardUniqueName` rejects empty and over-long names. It only ever checked duplicates and delegated emptiness to callers that never picked it up, so a cleared name saved as `""` and two emptied names stopped colliding, since `""` is never taken. Server clamps to the same 60 characters via `clampEntityName` (rune-wise, through `truncateRunes`), because the API is reachable without the browser.
+- **new** — `checkedAt`, `nextBackupAt` and `totalKept` are rendered. All three were shipped by the server and read by nothing; `totalKept` was silently excluded from the inbox conversion sum while the panel above showed it as its own tile.
+- **fix** — four `config.*` keys were missing from every locale (`addBookmarkBtn`, `bookmarkNotFound`, `clearBookmarkFilters`, `saved`).
+
+### Accessibility
+
+- **fix** — `labelSettingsControls()` names every schema-rendered control after the panel is drawn. Labels render as `<span class="config-field-label">`, not `<label for>`, so selects and number inputs across Behavior and much of Appearance had no accessible name. Done in one pass rather than at ~30 render sites that would drift. Ranges also get `aria-valuetext`, since `0.85` is not what the UI shows.
+- **fix** — `captureControlPanelFocus()` restores focus and caret across `repaintActiveControlPanels`. Controls bind on `change`, which fires while the control still has focus, and the repaint replaces the whole body — so the next Tab started from the top of the page. `repaintTagsBody` already did this, with a comment explaining the hazard.
+- **fix** — `bindSubTabStrip` re-focuses on the next frame rather than testing `target.isConnected` immediately. Appearance activates through `render()`, which had not run yet, so the branch was skipped and focus landed on `<body>` — one ArrowRight killed every press after it.
+- **fix** — both hand-rolled confirm dialogs handle Tab through `FocusTrapUtils.trapTabKey`. They declared `aria-modal="true"` and only handled Escape, so focus wandered into the page behind, including on Reset all data.
+
+### Import and export
+
+- **new** — theme import (`importThemeFromFile`, `normalizeImportedTheme`), reusing Duplicate's id and naming logic so it lands as a new theme and cannot overwrite the palette on screen. A JSON file with no colour values is refused.
+- **new** — CSV import (`importBookmarksCSV`, `parseBookmarksCSV`). Hand-written parser rather than `split(',')`: the export quotes every field so a note can hold a comma, a doubled quote or a newline. Columns are matched by header, so reordering them in a spreadsheet still imports. Rows go through `/api/bookmarks/import-browser`, keeping URL de-duplication server-side.
+- **new** — trash search across name, URL, tag, category and origin page, plus tick boxes and a bulk restore that runs per item so one failure cannot take the batch with it. Select-all covers what the search shows.
+- **new** — `SavedSearch` added to `Settings`, normalized by `normalizeSavedSearches` (trimmed, incomplete entries dropped, capped at ten). Saved searches lived only in `localStorage`, so they were in no ZIP backup; anything left there is migrated on first read.
+
+### Removed
+
+- Page archiving. `Settings.ArchivedPageIds` had defaults and a migration, and MANUAL and README described it as working and said where to find it, but no line of JS ever read it.
+
+### Docs
+
+- Release dates now name the day in both the changelog and the modal, per the new convention; v1.0.0 and v1.0.1 backfilled.
+- Twelve spec files fixed. None were product regressions: seeded inbox items read before the view had loaded them; `showRecentButton` asserted on the Display tab after it moved to Toolbar (eight failures from one line); `appearanceTab` set before `openConfigView`, which resets it; `.first()` matching a bookmark's smart-collection copy, whose row carries no page-local index; `role="feed"` asserted on `#dashboard-layout` for health, which renders it on `.health-view-feed`; cheat-sheet rows asserted visible inside collapsed `<details>`; `last-opened-format.js` still counted as lazy after `8115b0e7` made it eager; a hardcoded help-tab list now read from `HELP_TABS`; analytics regexes demanding the retired `vYYYY.` scheme; and `config-info-reset` demanding an `ℹ` for five fields whose own comment in `FIELD_META` explains they carry none.
+- Known and not addressed: the suite is not hermetic. All 170 spec files share one data directory with no reset between tests, so parallel and sequential runs drop different handfuls. Every file that failed the last full run passes on its own.
 
 ## v1.0.1 — 13 August 2026
 
