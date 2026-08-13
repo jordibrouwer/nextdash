@@ -16,6 +16,12 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 🗂️ **[Cheat sheet](nextDash-cheatsheet.pdf?raw=true)** — printable shortcut reference ([HTML](nextDash-cheatsheet.html?raw=true)); press **!** or **F1** on the dashboard for the live searchable list. Regenerate with `npm run generate:cheatsheet`.
 
+🌐 **Official Website:** [nextdash.cc](https://nextdash.cc)
+
+📰 **Developer Blog & Updates:** [jordibrw.cc](https://jordibrw.cc)
+
+🍏 **macOS Dropzone 5 Integration:** Send URLs straight to your dashboard or Inbox from any app or browser using the [Dropzone 5 script for nextDash](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
+
 ---
 
 ## Screenshots
@@ -94,14 +100,6 @@ go build -o nextDash && ./nextDash
 ```
 
 By default, data is stored in `./data`. Override with `NEXTDASH_DATA_DIR` (absolute or relative path) when you need a separate data location.
-
----
-
-### News & Integrations
-
-- 🌐 **Official Website:** [nextdash.cc](https://nextdash.cc)
-- 📰 **Developer Blog & Updates:** [jordibrw.cc](https://jordibrw.cc)
-- 🍏 **macOS Dropzone 5 Integration:** Send URLs straight to your dashboard or Inbox from any app or browser using the [Dropzone 5 script for nextDash](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
 
 ---
 
