@@ -68,7 +68,8 @@ test.describe('analytics — release version in the settings snapshot', () => {
             const index = await res.json();
             return index[0]?.tag || index[0]?.id || '';
         });
-        expect(expected).toMatch(/^v\d{4}\./);
+        // Both schemes: tags were vYYYY.MM.N until the move to semver at v1.0.0.
+        expect(expected).toMatch(/^v(\d{4}\.|\d+\.\d+\.\d+$)/);
         expect(snap.props.appVersion).toBe(expected);
     });
 
@@ -80,7 +81,7 @@ test.describe('analytics — release version in the settings snapshot', () => {
         // would be a second copy to bump every release, and would drift.
         const attr = await page.evaluate(() => document
             .querySelector('script[data-nextdash-analytics="on"]')?.getAttribute('data-release'));
-        expect(attr).toMatch(/^v\d{4}\./);
+        expect(attr).toMatch(/^v(\d{4}\.|\d+\.\d+\.\d+$)/);
     });
 
     test('no tracker and no version are emitted while analytics is off', async ({ page }) => {
