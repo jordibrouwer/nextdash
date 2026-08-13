@@ -428,6 +428,11 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 		PreviewTitle string `json:"previewTitle"`
 		PreviewDesc  string `json:"previewDesc"`
 		PreviewImage string `json:"previewImage"`
+		// A pointer, like ReadAt above: an empty slice and "not sent" are
+		// indistinguishable otherwise, and clearing every tag has to be
+		// expressible. The other clearable fields use a ?clearX=1 flag because
+		// they are plain strings; a slice can carry the distinction itself.
+		Tags *[]string `json:"tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -508,6 +513,12 @@ func (h *Handlers) PatchInboxItem(w http.ResponseWriter, r *http.Request) {
 		}
 		if request.PreviewImage != "" || clearPreview {
 			item.PreviewImage = strings.TrimSpace(request.PreviewImage)
+		}
+		if request.Tags != nil {
+			// Same normalisation the add path applies: trimmed, lowercased,
+			// deduplicated, empties dropped. Without it the same tag typed with
+			// different capitalisation would read as two.
+			item.Tags = normalizeTags(*request.Tags)
 		}
 		// Bounded here as well as on add: a patch is a client write like any
 		// other, and inbox.json is rewritten whole on every mutation.

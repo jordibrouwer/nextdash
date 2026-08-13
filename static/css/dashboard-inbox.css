@@ -1453,3 +1453,31 @@ body[data-layout-version="modern"] .inbox-empty {
     font-size: 0.68rem;
     color: var(--text-secondary);
 }
+
+/* ─── Row tags ───────────────────────────────────────────────────────────────
+   InboxLink.Tags was stored and normalised from the start but never rendered,
+   so the extension could file a link with tags nobody could see. Chips rather
+   than plain text because they filter, the way the domain button does. */
+.inbox-item-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0.3rem 0 0;
+}
+
+.inbox-item-tag {
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    border-radius: 999px;
+    padding: 0.05rem 0.45rem;
+    font-family: inherit;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.inbox-item-tag:hover,
+.inbox-item-tag:focus-visible {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    color: var(--accent-primary);
+}

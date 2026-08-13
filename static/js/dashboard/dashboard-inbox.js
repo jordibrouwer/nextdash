@@ -11,6 +11,8 @@ class DashboardInbox {
         this.filter = 'all';
         this.searchQuery = '';
         this.domainFilter = '';
+        /** Active tag chip filter; cleared the same way the domain filter is. */
+        this.tagFilter = '';
         this.sort = 'newest';
         this.visibleLimit = 50;
         this.selectedItemId = null;
@@ -376,6 +378,24 @@ class DashboardInbox {
     }
 
     /**
+     * A row's tags, as chips that filter.
+     *
+     * InboxLink.Tags has been a real field all along — normalised on add and
+     * restore, and the extension can send them — but nothing rendered them, so
+     * a link could be filed with tags the user was never shown. Clicking one
+     * filters to it, the way the domain button beside them already works.
+     */
+    renderItemTags(item) {
+        const tags = Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [];
+        if (!tags.length) return '';
+        const chips = tags.map((tag) => `
+            <button type="button" class="inbox-item-tag" data-inbox-tag="${this.escape(tag)}"
+                title="${this.escape(this.t('dashboard.inboxFilterByTag', 'Show only #{tag}', { tag }))}">#${this.escape(tag)}</button>
+        `).join('');
+        return `<p class="inbox-item-tags">${chips}</p>`;
+    }
+
+    /**
      * Copy a shareable link to one item.
      *
      * buildItemShareUrl already existed and already preserved filter, sort,
@@ -706,6 +726,11 @@ class DashboardInbox {
                 this.domainFilter = domain;
                 fromUrl = true;
             }
+            const tag = (params.get('ib_tag') || '').trim().toLowerCase();
+            if (tag) {
+                this.tagFilter = tag;
+                fromUrl = true;
+            }
             const itemId = (params.get('ib_id') || '').trim();
             if (itemId) {
                 this.focusItemId = itemId;
@@ -762,6 +787,7 @@ class DashboardInbox {
             setOrDelete('ib_sort', this.sort, this.sort === 'newest');
             setOrDelete('ib_q', String(this.searchQuery || '').trim(), !String(this.searchQuery || '').trim());
             setOrDelete('ib_domain', String(this.domainFilter || '').trim(), !String(this.domainFilter || '').trim());
+            setOrDelete('ib_tag', String(this.tagFilter || '').trim(), !String(this.tagFilter || '').trim());
             setOrDelete('ib_id', String(this.focusItemId || '').trim(), !String(this.focusItemId || '').trim());
             const query = params.toString();
             history.replaceState(history.state, '', `${url.pathname}${query ? `?${query}` : ''}#inbox`);
@@ -793,6 +819,10 @@ class DashboardInbox {
         const domain = String(this.domainFilter || '').trim();
         if (domain) {
             url.searchParams.set('ib_domain', domain);
+        }
+        const tag = String(this.tagFilter || '').trim();
+        if (tag) {
+            url.searchParams.set('ib_tag', tag);
         }
         return url.toString();
     }
@@ -2550,6 +2580,11 @@ class DashboardInbox {
         if (domainWant) {
             list = list.filter((item) => this.itemDomain(item) === domainWant);
         }
+        const tagWant = String(this.tagFilter || '').trim().toLowerCase();
+        if (tagWant) {
+            list = list.filter((item) => (Array.isArray(item.tags) ? item.tags : [])
+                .some((tag) => String(tag).toLowerCase() === tagWant));
+        }
         const query = String(this.searchQuery || '').trim().toLowerCase();
         if (query) {
             list = list.filter((item) => {
@@ -2559,6 +2594,9 @@ class DashboardInbox {
                     item.previewTitle,
                     item.domain,
                     item.note,
+                    // Tags were stored and never searched, so a link findable by
+                    // its tag in principle was not findable in practice.
+                    ...(Array.isArray(item.tags) ? item.tags : []),
                 ].filter(Boolean).join(' ').toLowerCase();
                 return haystack.includes(query);
             });
@@ -2636,6 +2674,7 @@ class DashboardInbox {
         }
         this.searchQuery = '';
         this.domainFilter = '';
+        this.tagFilter = '';
 
         let filtered = this.getFilteredItems();
         let index = filtered.findIndex((entry) => entry.id === sid);
@@ -2643,6 +2682,7 @@ class DashboardInbox {
             this.filter = 'all';
             this.searchQuery = '';
             this.domainFilter = '';
+            this.tagFilter = '';
             filtered = this.getFilteredItems();
             index = filtered.findIndex((entry) => entry.id === sid);
         }
@@ -3497,6 +3537,7 @@ class DashboardInbox {
                     ${wakeLabel}
                 </p>
                 ${item.note ? `<p class="inbox-item-note">${this.escape(item.note)}</p>` : ''}
+                ${this.renderItemTags(item)}
                 <div class="inbox-item-actions">
                     <div class="inbox-item-actions-inner">
                         <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
@@ -3547,6 +3588,25 @@ class DashboardInbox {
         // The checkbox is inside the row, which opens on click — without this,
         // ticking a box would also launch the link.
         card.querySelector('.inbox-item-check')?.addEventListener('click', (e) => e.stopPropagation());
+
+        // Same shape as the domain button below: a chip is a filter you can
+        // click, and clicking the active one clears it again.
+        card.querySelectorAll('[data-inbox-tag]').forEach((chip) => {
+            chip.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const tag = String(e.currentTarget.getAttribute('data-inbox-tag') || '').trim().toLowerCase();
+                if (!tag) return;
+                this.tagFilter = this.tagFilter === tag ? '' : tag;
+                this.filter = 'all';
+                this.visibleLimit = 50;
+                this.checkedIds.clear();
+                this.focusItemId = null;
+                this._trackAction('filter', { filter: 'tag', via: 'tag-click' });
+                this.syncUrlState();
+                this.render();
+                this.dash.pageNav?.updatePageTitle?.();
+            });
+        });
 
         card.querySelector('.inbox-item-domain-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -3738,6 +3798,83 @@ class DashboardInbox {
     }
 
     /** Textarea modal → the entered note, or null if the user cancelled. */
+    /**
+     * Edit a row's tags.
+     *
+     * A comma-separated field rather than the bookmark tag popover: an inbox
+     * item is undecided by definition, so there is rarely an existing tag list
+     * to pick from, and typing two words beats opening a chooser that is empty
+     * for most people.
+     */
+    async editTags(item) {
+        if (!item) return;
+        const current = (Array.isArray(item.tags) ? item.tags : []).join(', ');
+        const next = await this.promptTags(current);
+        if (next === null) return;
+
+        const tags = next.split(',')
+            .map((tag) => tag.trim().toLowerCase())
+            .filter((tag, i, all) => tag && all.indexOf(tag) === i);
+        if (tags.join(',') === (Array.isArray(item.tags) ? item.tags : []).join(',')) {
+            return;
+        }
+
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/inbox', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                // Sent even when empty: the server takes a null/absent tags field
+                // as "unchanged", so clearing every tag has to send [].
+                body: JSON.stringify({ id: item.id, tags }),
+            });
+            if (!res.ok) throw new Error(`tags HTTP ${res.status}`);
+            const stored = this.items.find((entry) => entry.id === item.id);
+            if (stored) stored.tags = tags;
+            if (this.isActiveView()) this.render();
+            this.dash.showNotification(
+                tags.length
+                    ? this.t('dashboard.inboxTagsSaved', 'Tags saved')
+                    : this.t('dashboard.inboxTagsCleared', 'Tags removed'),
+                'success',
+                { duration: 2000 }
+            );
+        } catch {
+            this.dash.showErrorNotification?.(
+                this.t('dashboard.inboxTagsFailed', 'Could not save tags')
+            );
+        }
+    }
+
+    promptTags(current) {
+        const modal = window.AppModal;
+        if (!modal || typeof modal.show !== 'function') {
+            const value = window.prompt(this.t('dashboard.inboxTagsPrompt', 'Tags'), current);
+            return Promise.resolve(value === null ? null : value);
+        }
+        return new Promise((resolve) => {
+            const label = this.escape(this.t('dashboard.inboxTagsLabel', 'Tags for this link, separated by commas'));
+            const placeholder = this.escape(this.t('dashboard.inboxTagsPlaceholder', 'reading, work, later'));
+            modal.show({
+                title: this.t('dashboard.inboxTagsTitle', 'Inbox tags'),
+                htmlMessage: `
+                    <label class="inbox-note-modal-label" for="inbox-tags-modal-input">${label}</label>
+                    <input id="inbox-tags-modal-input" class="inbox-note-modal-input" type="text" placeholder="${placeholder}">
+                `,
+                confirmText: this.t('dashboard.inboxTagsSave', 'Save tags'),
+                cancelText: this.t('dashboard.healthCancel', 'Cancel'),
+                initialFocusSelector: '#inbox-tags-modal-input',
+                onConfirm: () => {
+                    const input = document.getElementById('inbox-tags-modal-input');
+                    resolve(input ? input.value : '');
+                },
+                onCancel: () => resolve(null),
+            });
+            const input = document.getElementById('inbox-tags-modal-input');
+            if (input) input.value = current;
+        });
+    }
+
     promptNote(current) {
         const modal = window.AppModal;
         if (!modal || typeof modal.show !== 'function') {
@@ -3813,6 +3950,7 @@ class DashboardInbox {
             this.t('dashboard.inboxExportColUrl', 'URL'),
             this.t('dashboard.inboxExportColDomain', 'Domain'),
             this.t('dashboard.inboxExportColNote', 'Note'),
+            this.t('dashboard.inboxExportColTags', 'Tags'),
             this.t('dashboard.inboxExportColAdded', 'Added'),
             this.t('dashboard.inboxExportColRead', 'Read'),
             this.t('dashboard.inboxExportColSnoozedUntil', 'Snoozed until'),
@@ -3823,6 +3961,7 @@ class DashboardInbox {
             item.url || '',
             this.itemDomain(item),
             item.note || '',
+            (Array.isArray(item.tags) ? item.tags : []).join(' '),
             item.addedAt ? new Date(item.addedAt).toISOString() : '',
             item.readAt ? new Date(item.readAt).toISOString() : '',
             item.snoozedUntil ? new Date(item.snoozedUntil).toISOString() : '',
@@ -3853,6 +3992,7 @@ class DashboardInbox {
             previewTitle: item.previewTitle || '',
             domain: this.itemDomain(item),
             note: item.note || '',
+            tags: Array.isArray(item.tags) ? item.tags : [],
             addedAt: item.addedAt || 0,
             readAt: item.readAt || 0,
             snoozedUntil: item.snoozedUntil || 0,

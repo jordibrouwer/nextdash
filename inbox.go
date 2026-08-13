@@ -190,6 +190,8 @@ const (
 	inboxMaxPreviewLen = 1000
 	inboxMaxSourceLen  = 100
 	inboxMaxURLLen     = 2048
+	inboxMaxTags       = 25
+	inboxMaxTagLen     = 50
 )
 
 // truncateRunes cuts to at most n runes, never splitting one in half.
@@ -235,6 +237,15 @@ func clampInboxLinkFields(link *InboxLink) {
 	link.PreviewTitle = truncateRunes(link.PreviewTitle, inboxMaxPreviewLen)
 	link.PreviewDesc = truncateRunes(link.PreviewDesc, inboxMaxPreviewLen)
 	link.PreviewImage = truncateRunes(link.PreviewImage, inboxMaxURLLen)
+
+	// Tags are client-supplied too, and a runaway list is the same problem as a
+	// runaway title: it is rewritten into inbox.json on every later mutation.
+	if len(link.Tags) > inboxMaxTags {
+		link.Tags = link.Tags[:inboxMaxTags]
+	}
+	for i := range link.Tags {
+		link.Tags[i] = truncateRunes(link.Tags[i], inboxMaxTagLen)
+	}
 }
 
 func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error) {

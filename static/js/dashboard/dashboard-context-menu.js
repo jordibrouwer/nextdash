@@ -145,6 +145,7 @@ class DashboardContextMenu {
                 : []),
             { id: 'inbox-snooze', label: this.t('dashboard.inboxSnooze', 'Snooze'), icon: '⏰' },
             { id: 'inbox-note', label: this.t('dashboard.inboxNoteAction', 'Note'), icon: '✎' },
+            { id: 'inbox-tags', label: this.t('dashboard.inboxTagsAction', 'Tags'), icon: '#' },
             // buildItemShareUrl preserves the filter, sort, query and domain
             // alongside the item id, so the link reopens the view as the sender
             // had it. That work existed with no entry point offering it.
@@ -795,6 +796,7 @@ class DashboardContextMenu {
             case 'inbox-read':
             case 'inbox-snooze':
             case 'inbox-note':
+            case 'inbox-tags':
             case 'inbox-copy-link':
             case 'inbox-delete': {
                 const inbox = d.inbox;
@@ -806,6 +808,7 @@ class DashboardContextMenu {
                 else if (action === 'inbox-read') void inbox.markReadFromKeyboard(item);
                 else if (action === 'inbox-snooze') inbox.openSnoozeMenu(item, row);
                 else if (action === 'inbox-note') void inbox.editNote(item);
+                else if (action === 'inbox-tags') void inbox.editTags(item);
                 else if (action === 'inbox-copy-link') void inbox.copyItemLink(item.id);
                 else void inbox.deleteItemWithUndo(item.id);
                 break;

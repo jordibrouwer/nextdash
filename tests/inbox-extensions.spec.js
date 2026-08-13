@@ -133,3 +133,116 @@ test.describe('inbox extensions', () => {
         expect(copied).toContain('#inbox');
     });
 });
+
+/**
+ * U1 — InboxLink.Tags was a real field all along: normalised on add and
+ * restore, and the extension can send them. Nothing rendered them, nothing
+ * edited them, the search ignored them and the exports left the column out, so
+ * a link could be filed with tags its owner never saw.
+ */
+test.describe('inbox tags', () => {
+    async function seedTagged(page) {
+        const stamp = Date.now();
+        await page.evaluate(async (stamp) => {
+            const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await api('/api/inbox', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: `https://tagged-${stamp}.example/x`,
+                    title: `TAG tagged ${stamp}`,
+                    tags: ['reading', 'work'],
+                }),
+            });
+            await api('/api/inbox', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: `https://plain-${stamp}.example/x`, title: `TAG plain ${stamp}` }),
+            });
+        }, stamp);
+        await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
+        return stamp;
+    }
+
+    test('tags are shown on the row', async ({ page }) => {
+        await openInbox(page);
+        await seedTagged(page);
+
+        const row = page.locator('.inbox-item', { hasText: 'TAG tagged' }).first();
+        await expect(row.locator('[data-inbox-tag="reading"]')).toBeVisible();
+        await expect(row.locator('[data-inbox-tag="work"]')).toBeVisible();
+        // A row without tags gets no empty chip strip.
+        const plain = page.locator('.inbox-item', { hasText: 'TAG plain' }).first();
+        await expect(plain.locator('.inbox-item-tags')).toHaveCount(0);
+    });
+
+    test('clicking a tag filters to it, and clicking again clears it', async ({ page }) => {
+        await openInbox(page);
+        const stamp = await seedTagged(page);
+
+        await page.locator('[data-inbox-tag="reading"]').first().click();
+        expect(await page.evaluate(() => window.dashboardInstance.inbox.tagFilter)).toBe('reading');
+
+        // Asserted on the filtered set rather than a row count: the inbox is
+        // shared across the run, so earlier tests leave their own tagged rows
+        // behind. What matters is that every surviving row carries the tag and
+        // this run's untagged row is gone.
+        const state = await page.evaluate((stamp) => {
+            const items = window.dashboardInstance.inbox.getFilteredItems();
+            return {
+                allTagged: items.every((i) => (i.tags || []).includes('reading')),
+                plainGone: !items.some((i) => (i.title || '').includes(`TAG plain ${stamp}`)),
+                taggedShown: items.some((i) => (i.title || '').includes(`TAG tagged ${stamp}`)),
+            };
+        }, stamp);
+        expect(state.allTagged).toBe(true);
+        expect(state.plainGone).toBe(true);
+        expect(state.taggedShown).toBe(true);
+
+        await page.locator('[data-inbox-tag="reading"]').first().click();
+        expect(await page.evaluate(() => window.dashboardInstance.inbox.tagFilter)).toBe('');
+    });
+
+    test('search matches a tag, not just the title', async ({ page }) => {
+        await openInbox(page);
+        await seedTagged(page);
+
+        const matched = await page.evaluate(() => {
+            const inbox = window.dashboardInstance.inbox;
+            inbox.searchQuery = 'reading';
+            const hits = inbox.getFilteredItems();
+            inbox.searchQuery = '';
+            return hits.map((i) => i.title);
+        });
+        expect(matched.some((t) => t.includes('TAG tagged'))).toBe(true);
+        expect(matched.some((t) => t.includes('TAG plain'))).toBe(false);
+    });
+
+    test('the exports carry the tags', async ({ page }) => {
+        await openInbox(page);
+        await seedTagged(page);
+
+        const captured = await page.evaluate(() => {
+            const inbox = window.dashboardInstance.inbox;
+            const seen = {};
+            const original = inbox.downloadExportFile.bind(inbox);
+            inbox.downloadExportFile = (name, content) => { seen[name.endsWith('.csv') ? 'csv' : 'json'] = content; };
+            inbox.exportFilteredCsv();
+            inbox.exportFilteredJson();
+            inbox.downloadExportFile = original;
+            return seen;
+        });
+
+        expect(captured.csv).toContain('reading');
+        expect(JSON.parse(captured.json).some((r) => (r.tags || []).includes('reading'))).toBe(true);
+    });
+
+    test('the row menu can edit tags', async ({ page }) => {
+        await openInbox(page);
+        await seedTagged(page);
+
+        await page.locator('.inbox-item', { hasText: 'TAG plain' }).first().click({ button: 'right' });
+        await page.waitForSelector('#bookmark-context-menu', { timeout: 10_000 });
+        await expect(page.locator('#bookmark-context-menu [data-action="inbox-tags"]')).toBeVisible();
+    });
+});
