@@ -346,6 +346,19 @@ type Settings struct {
 	PushNotifyRelease    bool                  `json:"pushNotifyRelease"`              // Deprecated: release updates use in-app toast only
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
+	SavedSearches        []SavedSearch         `json:"savedSearches,omitempty"`        // Named queries from the search bar
+}
+
+// SavedSearch is a query the user named and kept from the search bar.
+//
+// Stored in settings.json rather than localStorage, which is where they used to
+// live: :save and :saved are a documented feature, but the entries survived
+// neither a cleared cache nor a move to another browser, and — the part that
+// mattered — they were in no backup at all, so a reassuring ZIP did not contain
+// them.
+type SavedSearch struct {
+	Name  string `json:"name"`
+	Query string `json:"query"`
 }
 
 // DiscoverabilityState persists UI discoverability progress in settings.json (shared across browsers).

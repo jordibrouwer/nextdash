@@ -702,7 +702,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:density comfortable\|compact\|dense` | Row density |
 | `:columns <1-6>` | Column count |
 | `:buttonbar bottom\|bottom-left\|bottom-right\|side-left\|side-right` | Button bar position (`side-left` / `side-right` = vertical rail on that edge) |
-| `:save` / `:saved` | Save / list saved searches |
+| `:save` / `:saved` | Save / list saved searches (kept in settings, so they are in every ZIP backup and follow you between browsers — **v1.0.2**) |
 | `:history` / `:history clear` | Search history |
 
 ### 10.6 Finders (`?`)
@@ -902,7 +902,7 @@ Two things worth knowing:
 ### Themes
 
 - 74 built-in families (dark/light pairs), including twenty-three new pairs from **v2026.09.08.2** — Blueprint, Static Noise, Signal Flare, Bone China, Peacock, Tyrian, Absinthe, and sixteen more — and twenty from **v2026.07.26** (Patina Verdigris, Rhubarb Tart, Bio Abyss, Sumi Ink, Denim Fade, and fifteen more).  
-- **config → appearance → custom themes** — build, edit, and delete your own palettes. A contrast check warns when text against background is too weak to read. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard half-edited.
+- **config → appearance → custom themes** — build, edit, and delete your own palettes. **Export** writes a palette to a `.json`; **Import** reads one back as a new theme (**v1.0.2**), so a palette built on one machine can be carried to another, or shared, without a full ZIP restore. A contrast check warns when text against background is too weak to read. Changes preview live on the dashboard behind the config view; leaving the tab drops an unsaved preview rather than leaving the dashboard half-edited.
 - **config → appearance → general** — pick the active theme for the whole app (built-in or one of your own). Since **v2026.09.08.2** the list previews as you move through it: arrow keys or the mouse apply each theme to the dashboard behind the config view, and nothing is saved until you press Enter or click one. **Esc**, a click elsewhere, or moving focus away puts back the theme you started with, so browsing the list can never leave you somewhere you did not choose.
 - **Random theme** (**v2026.07.26**) — under **config → appearance → Theme**, below your saved theme. Choose **Off** (always use the saved theme), **On page refresh** (new built-in pick on each reload), or **On view change** (new pick when switching bookmarks ↔ config ↔ inbox ↔ health, or when switching dashboard pages — tabs, `1`–`9`, swipe, or hash; **v2026.07.26.2**). Each rotate picks a different theme from the pool when more than one is eligible (**v2026.07.26.3**). A **Currently showing** hint names the active theme while random is on. If random is on and you pick a different saved theme, your choice is stored but the display keeps rotating until you turn random off — a toast confirms this (**v2026.07.26.3**), including from `:theme` in search. With **auto dark mode**, only variants matching your system light/dark are eligible; custom single-palette themes are skipped. The first desktop visit to Appearance may show a one-time popover pointing at this control (**v2026.07.26.1**); dismiss it with **Got it** or **Esc** — the button stays fixed while the card appears.
 - **Auto dark mode** follows system light/dark for built-in theme pairs; your saved theme id stays stable (the app applies the matching dark/light variant without overwriting the palette name). Disabled with a fully custom theme.
@@ -1175,7 +1175,10 @@ Severity is inferred rather than declared: a request line takes its level from t
 
 Deleting is not final. Deleted **bookmarks, pages and categories** go to the trash and stay there for **30 days**, then go for good. The toast's undo is for the moment right after; the trash is for the next morning.
 
+- **Search** — filters the list by name, URL, tag, category or the page it came from (**v1.0.2**). The count beside it says how many of the total are showing.
 - **Restore** — puts the bookmark back on its own page, at the position it had. If the page has shrunk since, it lands at the end rather than failing.
+- **Restore selected** — tick several rows and bring them all back at once (**v1.0.2**), which is the answer to a bulk delete of twenty. Each is restored on its own, so one that cannot come back (its page is gone) does not stop the rest; the toast says how many did and how many stayed.
+- **Select all** — ticks what the search is showing, not the whole trash, so a search narrows what "all" means.
 - **Delete forever** — removes one entry ahead of the 30 days.
 - **Empty trash** — clears everything at once. Both ask first.
 
@@ -1303,9 +1306,11 @@ Permanently deletes pages, categories, bookmarks, finders, settings, custom them
 - Folders in the HTML become **categories**.  
 - Duplicate URLs (same page + within file) are skipped using the same rules as the server.
 
-### CSV export
+### CSV export and import
 
 All bookmarks: localized column headers — Name, URL, Category (display name), Page, Shortcut, **Tags**, **Notes** — for Excel/Sheets.
+
+**Import bookmarks (CSV)** reads the same file back onto the current page (**v1.0.2**), so you can tidy hundreds of rows in a spreadsheet — bulk-fixing categories, adding tags — and return the result. Quoted commas, doubled quotes and line breaks inside a field are handled, and columns are matched by header name, so reordering them is fine. Rows without a URL are skipped, and existing URLs are skipped as duplicates, exactly as the browser import does. Unlike the browser-HTML import, this route carries **tags and notes**.
 
 ### When to use which
 

@@ -3947,9 +3947,11 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(this.t('config.csvExportDescription', 'Export every bookmark as a CSV file, or import bookmarks exported from a browser.'))}</p>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-backup-action="csv-export">${esc(this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))}</button>
+                    <button type="button" class="config-btn" data-backup-action="csv-import">${esc(this.t('config.csvImportBtn', 'Import bookmarks (CSV)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="browser-import">${esc(this.t('config.browserImportBtn', 'Import browser bookmarks…'))}</button>
                 </div>
                 <input type="file" id="config-browser-import-input" accept=".html,.htm" hidden>
+                <input type="file" id="config-csv-import-input" accept=".csv,text/csv" hidden>
             </div>
 
             <div class="config-panel">
@@ -4522,12 +4524,53 @@ class DashboardConfig {
             'Deleted bookmarks stay here for {days} days, then go for good.'
         ).replace('{days}', String(days));
 
-        const items = Array.isArray(data.items) ? data.items : [];
-        if (!items.length) {
+        // A failed load is not an empty trash. Saying "the trash is empty" when
+        // the server could not be reached is the one message that stops someone
+        // from trying to recover what they just lost.
+        if (this._trashLoadFailed) {
+            return `
+                <p class="config-view-intro">${esc(intro)}</p>
+                <p class="config-panel-empty">${esc(this.t('config.trashLoadFailed',
+                    'The trash could not be loaded.'))}</p>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-trash-action="reload">${esc(this.t('config.trashRetry', 'Try again'))}</button>
+                </div>`;
+        }
+
+        const allItems = Array.isArray(data.items) ? data.items : [];
+        if (!allItems.length) {
             return `
                 <p class="config-view-intro">${esc(intro)}</p>
                 <p class="config-panel-empty">${esc(this.t('config.trashEmpty', 'The trash is empty.'))}</p>
             `;
+        }
+
+        // Deleting twenty bookmarks in one bulk action and restoring them one
+        // by one, from a list that holds up to 500 with no way to search, is
+        // the case this view is for — and the only screen where the user is
+        // under time pressure.
+        const query = String(this._trashQuery || '').trim().toLowerCase();
+        const items = query ? allItems.filter((it) => this.trashItemHaystack(it).includes(query)) : allItems;
+        const selected = this._trashSelected instanceof Set ? this._trashSelected : new Set();
+
+        const toolbar = `
+            <div class="config-pt-toolbar">
+                <input type="search" class="config-text" data-trash-search
+                       value="${esc(this._trashQuery || '')}"
+                       placeholder="${esc(this.t('config.trashSearchPlaceholder', 'Search the trash…'))}"
+                       aria-label="${esc(this.t('config.trashSearchPlaceholder', 'Search the trash…'))}">
+                <span class="config-field-hint">${esc(this.t('config.trashShowing', '{n} of {total}')
+                    .replace('{n}', String(items.length)).replace('{total}', String(allItems.length)))}</span>
+            </div>`;
+
+        if (!items.length) {
+            return `
+                <p class="config-view-intro">${esc(intro)}</p>
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t('config.trashTitle', 'Deleted items'))}</h3>
+                    ${toolbar}
+                    <p class="config-panel-empty">${esc(this.t('config.trashNoMatches', 'Nothing here matches that search.'))}</p>
+                </div>`;
         }
 
         const rows = items.map((item) => {
@@ -4553,6 +4596,10 @@ class DashboardConfig {
                 : '';
             return `
                 <li class="config-backup-row">
+                    <label class="config-toggle config-trash-select">
+                        <input type="checkbox" data-trash-select="${esc(item.id)}" ${selected.has(String(item.id)) ? 'checked' : ''}
+                               aria-label="${esc(this.t('config.trashSelectItem', 'Select {name}').replace('{name}', name))}">
+                    </label>
                     <div class="config-backup-meta">
                         <span class="config-backup-name">${esc(name)}</span>
                         <span class="config-backup-size">${esc(url)}</span>
@@ -4570,20 +4617,43 @@ class DashboardConfig {
             <p class="config-view-intro">${esc(intro)}</p>
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.trashTitle', 'Deleted items'))}</h3>
+                ${toolbar}
                 <ul class="config-backup-list">${rows}</ul>
                 <div class="config-actions">
+                    <button type="button" class="config-btn" data-trash-action="select-all">${esc(
+                        selected.size >= items.length
+                            ? this.t('config.trashSelectNone', 'Select none')
+                            : this.t('config.trashSelectAll', 'Select all'))}</button>
+                    <button type="button" class="config-btn" data-trash-action="restore-selected"${selected.size ? '' : ' disabled'}>${esc(
+                        this.t('config.trashRestoreSelected', 'Restore selected ({n})').replace('{n}', String(selected.size)))}</button>
                     <button type="button" class="config-btn config-btn--danger" data-trash-action="empty">${esc(this.t('config.trashEmptyBtn', 'Empty trash'))}</button>
                 </div>
             </div>
         `;
     }
 
+    /** Everything about a trash entry a search should match. */
+    trashItemHaystack(item) {
+        const kind = item?.kind || 'bookmark';
+        const parts = [
+            item?.bookmark?.name, item?.bookmark?.url, item?.bookmark?.category,
+            item?.pageName, kind,
+            item?.trashedPage?.page?.name,
+            item?.trashedCategory?.category?.name, item?.trashedCategory?.category?.id,
+        ];
+        if (Array.isArray(item?.bookmark?.tags)) parts.push(item.bookmark.tags.join(' '));
+        return parts.filter(Boolean).join(' ').toLowerCase();
+    }
+
     /** Fetch the trash and repaint the tab, when it is the one showing. */
     async loadTrash({ repaint = true } = {}) {
         try {
             this._trashData = await window.DashboardTrash.list();
+            this._trashLoadFailed = false;
         } catch (_error) {
+            // Kept apart from a genuinely empty trash — see renderDataTrash.
             this._trashData = { items: [], count: 0, retentionDays: 30 };
+            this._trashLoadFailed = true;
         }
         if (!repaint || this.dbTab !== 'trash') {
             return;
@@ -4636,7 +4706,81 @@ class DashboardConfig {
         }
     }
 
+    /**
+     * Redraw just the trash body, keeping the search caret where it was.
+     *
+     * Typing repaints on every keystroke, so without this the caret jumped to
+     * the start of the field after the first character.
+     */
+    repaintTrashBody({ keepFocus = false } = {}) {
+        const body = document.getElementById('config-db-body');
+        if (!body) return;
+        const search = body.querySelector('[data-trash-search]');
+        const caret = keepFocus && search ? search.selectionStart : null;
+        body.innerHTML = this.renderDbTab();
+        this.bindDataBackupsActions(body);
+        if (keepFocus) {
+            const next = body.querySelector('[data-trash-search]');
+            next?.focus?.();
+            if (caret != null) { try { next?.setSelectionRange(caret, caret); } catch { /* ignore */ } }
+        }
+    }
+
+    /** Restore several entries at once, reporting per-item outcome. */
+    async restoreSelectedTrash() {
+        const ids = [...(this._trashSelected instanceof Set ? this._trashSelected : new Set())];
+        if (!ids.length) return;
+
+        // One at a time rather than one bulk call: the server has no bulk
+        // restore endpoint, and a page whose id was reused legitimately refuses
+        // — so a single failure must not take the rest of the batch with it.
+        const failures = [];
+        for (const id of ids) {
+            try {
+                await window.DashboardTrash.restore(id);
+            } catch (error) {
+                failures.push(String(error?.message || id));
+            }
+        }
+        const restored = ids.length - failures.length;
+        this._trashSelected = new Set();
+
+        const pagesRes = await fetch('/api/pages').catch(() => null);
+        if (pagesRes?.ok) {
+            this.dash.pages = await pagesRes.json();
+            this.dash.pageNav?.renderPageNavigation?.();
+        }
+        await this.dash.data?.refreshAfterBookmarkMutation?.({});
+
+        if (failures.length) {
+            this.notify(this.t('config.trashRestoredSomeFailed',
+                'Restored {ok}. {failed} could not be restored and stay in the trash.')
+                .replace('{ok}', String(restored)).replace('{failed}', String(failures.length)), 'error');
+        } else {
+            this.notify(this.t('config.trashRestoredMany', 'Restored {n} items.')
+                .replace('{n}', String(restored)), 'success');
+        }
+        await this.loadTrash();
+    }
+
     async handleTrashAction(action, id) {
+        // Selection and search are view state, not server actions.
+        if (action === 'reload') { void this.loadTrash(); return; }
+        if (action === 'select-all') {
+            const data = this._trashData;
+            const all = Array.isArray(data?.items) ? data.items : [];
+            const query = String(this._trashQuery || '').trim().toLowerCase();
+            const shown = query ? all.filter((it) => this.trashItemHaystack(it).includes(query)) : all;
+            const current = this._trashSelected instanceof Set ? this._trashSelected : new Set();
+            // Selects what is on screen, so a search narrows what "all" means.
+            this._trashSelected = current.size >= shown.length
+                ? new Set()
+                : new Set(shown.map((it) => String(it.id)));
+            this.repaintTrashBody();
+            return;
+        }
+        if (action === 'restore-selected') { await this.restoreSelectedTrash(); return; }
+
         try {
             if (action === 'restore') {
                 // The response says what came back: a page restore also has to
@@ -4798,6 +4942,22 @@ class DashboardConfig {
                 );
             });
         });
+        const search = container.querySelector('[data-trash-search]');
+        if (search) {
+            search.addEventListener('input', () => {
+                this._trashQuery = search.value;
+                this.repaintTrashBody({ keepFocus: true });
+            });
+        }
+        container.querySelectorAll('[data-trash-select]').forEach((box) => {
+            box.addEventListener('change', () => {
+                if (!(this._trashSelected instanceof Set)) this._trashSelected = new Set();
+                const id = String(box.getAttribute('data-trash-select'));
+                if (box.checked) this._trashSelected.add(id);
+                else this._trashSelected.delete(id);
+                this.repaintTrashBody();
+            });
+        });
         container.querySelectorAll('[data-backup-action]').forEach((btn) => {
             btn.addEventListener('click', () => this.handleBackupAction(btn.getAttribute('data-backup-action')));
         });
@@ -4817,6 +4977,7 @@ class DashboardConfig {
         };
         bindFileInput('#config-import-input', this.importBackup);
         bindFileInput('#config-browser-import-input', this.importBrowserBookmarks);
+        bindFileInput('#config-csv-import-input', this.importBookmarksCSV);
         bindFileInput('#config-settings-import-input', this.importSettings);
 
         container.querySelectorAll('[data-backup-toggle]').forEach((input) => {
@@ -4838,6 +4999,7 @@ class DashboardConfig {
             case 'import': document.getElementById('config-import-input')?.click(); break;
             case 'csv-export': void this.exportBookmarksCSV(); break;
             case 'browser-import': document.getElementById('config-browser-import-input')?.click(); break;
+            case 'csv-import': document.getElementById('config-csv-import-input')?.click(); break;
             case 'settings-export': void this.exportSettings(); break;
             case 'settings-import': document.getElementById('config-settings-import-input')?.click(); break;
             case 'reset': void this.resetAllData(); break;
@@ -5200,6 +5362,123 @@ class DashboardConfig {
         } catch {
             this.notify(this.t('config.browserImportError', 'Could not import the bookmarks.'), 'error');
         }
+    }
+
+    /**
+     * Read back a CSV written by Export.
+     *
+     * Export has been one-way since it shipped: you could take the list out,
+     * tidy 200 rows in a spreadsheet — bulk-fixing categories, adding tags —
+     * and have no way to put it back. The browser-HTML import is not a
+     * substitute, because that format carries neither tags nor notes, which is
+     * exactly the kind of editing a spreadsheet is for.
+     *
+     * Rows land on the current page through the same endpoint the browser
+     * import uses, so URL de-duplication is the server's existing behaviour
+     * rather than a second implementation here.
+     */
+    async importBookmarksCSV(file) {
+        if (!/\.csv$/i.test(file.name)) {
+            this.notify(this.t('config.csvImportInvalidFile', 'Please choose a CSV file.'), 'error');
+            return;
+        }
+        let rows;
+        try {
+            rows = DashboardConfig.parseBookmarksCSV(await file.text());
+        } catch {
+            this.notify(this.t('config.csvImportError', 'Could not read that CSV file.'), 'error');
+            return;
+        }
+        if (!rows.length) {
+            this.notify(this.t('config.csvImportEmpty', 'No bookmarks found in that file.'), 'error');
+            return;
+        }
+
+        const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
+        const ok = await this.confirmAction(
+            this.t('config.csvImportConfirm', 'Import {n} bookmarks onto the current page?')
+                .replace('{n}', String(rows.length)),
+            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false }
+        );
+        if (!ok) return;
+
+        try {
+            const res = await this.writeFetch('/api/bookmarks/import-browser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pageId, bookmarks: rows }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const result = await res.json().catch(() => ({}));
+            this.notify(
+                this.t('config.csvImportDone', 'Imported {i}, skipped {s} duplicates. Reloading…')
+                    .replace('{i}', String(Number(result.imported) || 0))
+                    .replace('{s}', String(Number(result.skipped) || 0)),
+                'success'
+            );
+            setTimeout(() => window.location.reload(), 1000);
+        } catch {
+            this.notify(this.t('config.csvImportError', 'Could not import the bookmarks.'), 'error');
+        }
+    }
+
+    /**
+     * Parse the CSV that exportBookmarksCSV writes.
+     *
+     * Written by hand rather than split(',') because the export quotes every
+     * field: a note containing a comma, a quote (doubled, per RFC 4180) or a
+     * line break would otherwise tear a row apart. Column order is read from
+     * the header, so a spreadsheet that reorders columns still imports.
+     */
+    static parseBookmarksCSV(text) {
+        const src = String(text || '').replace(/^﻿/, '');
+        const rows = [];
+        let row = [];
+        let field = '';
+        let quoted = false;
+        for (let i = 0; i < src.length; i += 1) {
+            const ch = src[i];
+            if (quoted) {
+                if (ch === '"') {
+                    if (src[i + 1] === '"') { field += '"'; i += 1; }
+                    else quoted = false;
+                } else field += ch;
+                continue;
+            }
+            if (ch === '"') { quoted = true; continue; }
+            if (ch === ',') { row.push(field); field = ''; continue; }
+            if (ch === '\r') continue;
+            if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; continue; }
+            field += ch;
+        }
+        if (field !== '' || row.length) { row.push(field); rows.push(row); }
+        if (rows.length < 2) return [];
+
+        const header = rows[0].map((h) => h.trim().toLowerCase());
+        const at = (name) => header.indexOf(name);
+        const iName = at('name');
+        const iUrl = at('url');
+        if (iUrl < 0) return [];   // without a URL there is no bookmark
+        const iCategory = at('category');
+        const iShortcut = at('shortcut');
+        const iTags = at('tags');
+        const iNotes = at('notes');
+
+        const out = [];
+        for (let r = 1; r < rows.length; r += 1) {
+            const cells = rows[r];
+            const url = String(cells[iUrl] ?? '').trim();
+            if (!url) continue;
+            const bookmark = { name: String(cells[iName] ?? '').trim() || url, url };
+            if (iCategory >= 0 && cells[iCategory]?.trim()) bookmark.category = cells[iCategory].trim();
+            if (iShortcut >= 0 && cells[iShortcut]?.trim()) bookmark.shortcut = cells[iShortcut].trim();
+            if (iNotes >= 0 && cells[iNotes]?.trim()) bookmark.note = cells[iNotes].trim();
+            if (iTags >= 0 && cells[iTags]?.trim()) {
+                bookmark.tags = cells[iTags].split(',').map((t) => t.trim()).filter(Boolean);
+            }
+            out.push(bookmark);
+        }
+        return out;
     }
 
     async exportSettings() {
@@ -6381,6 +6660,7 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-theme-action="apply">${esc(this.t('config.themeApply', 'Use this theme'))}</button>
                     <button type="button" class="config-btn" data-theme-action="duplicate">${esc(this.t('config.themeDuplicate', 'Duplicate'))}</button>
                     <button type="button" class="config-btn" data-theme-action="export">${esc(this.t('config.themeExport', 'Export'))}</button>
+                    <button type="button" class="config-btn" data-theme-action="import">${esc(this.t('config.themeImport', 'Import'))}</button>
                     ${isCustom ? '' : `<button type="button" class="config-btn" data-theme-action="reset">${esc(this.t('config.themeResetDefaults', 'Reset to default'))}</button>`}
                 </div>
             </div>`;
@@ -6796,6 +7076,69 @@ class DashboardConfig {
             a.click();
             URL.revokeObjectURL(url);
         }
+        if (action === 'import') {
+            this.importThemeFromFile();
+        }
+    }
+
+    /**
+     * Read a theme back in from an exported .json.
+     *
+     * Export has existed on its own since custom themes shipped, which made it
+     * a one-way door: a palette built on a laptop could not be carried to the
+     * server instance except through a full ZIP restore, which overwrites
+     * everything. Lands as a new theme rather than overwriting one, so an
+     * import can never destroy the palette you are looking at — the naming and
+     * id logic is the same as Duplicate's.
+     */
+    importThemeFromFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json,.json';
+        input.addEventListener('change', async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            try {
+                const parsed = JSON.parse(await file.text());
+                const theme = this.normalizeImportedTheme(parsed);
+                if (!theme) throw new Error('not a theme');
+
+                const names = Object.values(this._colorsData.custom || {}).map((t) => t.name);
+                const newId = DashboardConfig.newThemeId();
+                this._colorsData.custom[newId] = {
+                    ...theme,
+                    name: DashboardConfig.uniqueNameFrom(theme.name, names),
+                };
+                this._themeSelected = newId;
+                this.syncCustomThemeIds();
+                this.repaintAppearanceBody();
+                await this.saveColorsData();
+                this.notify(this.t('config.themeImported', 'Theme imported.'), 'success');
+            } catch {
+                this.notify(this.t('config.themeImportError',
+                    'That file is not a nextDash theme.'), 'error');
+            }
+        });
+        input.click();
+    }
+
+    /**
+     * Accept an exported theme, reject anything else.
+     *
+     * A theme is an object of colour values; without a check, any JSON file at
+     * all would be accepted and land as a theme with no colours in it.
+     */
+    normalizeImportedTheme(parsed) {
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+        const colorKeys = Object.keys(parsed).filter((k) => k !== 'name'
+            && typeof parsed[k] === 'string' && /^(#|rgb|hsl|var\()/i.test(parsed[k].trim()));
+        if (!colorKeys.length) return null;
+        const out = { name: DashboardConfig.NAME_MAX_LENGTH
+            ? String(parsed.name || this.t('config.themeImportedName', 'Imported theme'))
+                .trim().slice(0, DashboardConfig.NAME_MAX_LENGTH)
+            : String(parsed.name || '') };
+        colorKeys.forEach((k) => { out[k] = parsed[k]; });
+        return out.name ? out : null;
     }
 
     /**

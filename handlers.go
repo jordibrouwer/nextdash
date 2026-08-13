@@ -1748,6 +1748,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		sanitized = append(sanitized, col)
 	}
 	settings.Collections = sanitized
+	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
@@ -1773,6 +1774,24 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		response["droppedCollections"] = droppedCollections
 	}
 	json.NewEncoder(w).Encode(response)
+}
+
+// normalizeSavedSearches trims, drops incomplete entries and caps the list at
+// the same ten the search bar has always kept.
+func normalizeSavedSearches(list []SavedSearch) []SavedSearch {
+	out := make([]SavedSearch, 0, len(list))
+	for _, entry := range list {
+		entry.Name = clampEntityName(entry.Name)
+		entry.Query = strings.TrimSpace(entry.Query)
+		if entry.Name == "" || entry.Query == "" {
+			continue
+		}
+		out = append(out, entry)
+		if len(out) == 10 {
+			break
+		}
+	}
+	return out
 }
 
 // collectionLabel names a collection for a message to the user, falling back to
