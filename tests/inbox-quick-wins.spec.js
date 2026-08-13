@@ -34,6 +34,13 @@ async function seed(page, titles) {
     }, { titles, stamp });
     await page.locator('#page-nav-inbox-btn').click();
     await expect(page.locator('.inbox-layout')).toBeVisible();
+    // The POSTs are accepted before the view has loaded them, so reading
+    // inbox.items straight after seeding could find it empty, or half-filled —
+    // which is worse, because a partial list reads as a real result.
+    await expect.poll(async () => page.evaluate((wanted) => {
+        const ib = window.dashboardInstance.inbox;
+        return wanted.every((t) => (ib.items || []).some((i) => (i.title || '') === t));
+    }, titles), { timeout: 10_000 }).toBe(true);
 }
 
 test.describe('inbox quick wins', () => {
