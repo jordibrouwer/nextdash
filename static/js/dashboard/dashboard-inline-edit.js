@@ -2093,25 +2093,21 @@ class DashboardInlineEdit {
         }
 
         try {
-            const sourceRes = await fetch(`/api/bookmarks?page=${sourcePageId}`);
-            if (!sourceRes.ok) {
-                throw new Error(d.formatDashboardLabel('loadSourcePageFailed', {}, 'Failed to load source page.'));
-            }
-            const sourceBookmarks = await sourceRes.json();
-            const sourceIndex = d.findBookmarkIndexByReference(sourceBookmarks, bookmarkRef);
-            if (sourceIndex < 0) {
-                throw new Error(d.formatDashboardLabel('bookmarkNotFoundOnSourcePage', {}, 'Could not locate bookmark on source page.'));
-            }
-
-            const deletedBookmark = { ...sourceBookmarks[sourceIndex] };
-            sourceBookmarks.splice(sourceIndex, 1);
-
-            const saveRes = await dashFetch(`/api/bookmarks?page=${sourcePageId}`, {
-                method: 'POST',
+            // Single-item delete instead of a whole-list read-modify-write: the
+            // old GET-splice-POST raced any concurrent write to the source page
+            // landing between the read and the save, silently clobbering it.
+            // DELETE /api/bookmarks matches and removes the one bookmark
+            // atomically under the store's own lock, so there is no window for
+            // a concurrent write to be lost.
+            const deleteRes = await dashFetch('/api/bookmarks', {
+                method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(sourceBookmarks)
+                body: JSON.stringify({ page: sourcePageId, bookmark })
             });
-            if (!saveRes.ok) {
+            if (!deleteRes.ok) {
+                if (deleteRes.status === 404) {
+                    throw new Error(d.formatDashboardLabel('bookmarkNotFoundOnSourcePage', {}, 'Could not locate bookmark on source page.'));
+                }
                 throw new Error(d.formatDashboardLabel('saveBookmarkDeletionFailed', {}, 'Failed to save bookmark deletion.'));
             }
 
@@ -2121,7 +2117,7 @@ class DashboardInlineEdit {
             d.data?.invalidatePageDataCache?.(sourcePageId);
             await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [sourcePageId] });
 
-            const deletedLabel = String(deletedBookmark.name || deletedBookmark.url).slice(0, 40);
+            const deletedLabel = String(bookmark.name || bookmark.url).slice(0, 40);
             d.showNotification(
                 d.formatDashboardLabel('bookmarkDeleted', { name: deletedLabel }, `"${deletedLabel}" deleted`),
                 'success'

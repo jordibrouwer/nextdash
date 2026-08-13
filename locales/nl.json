@@ -639,7 +639,6 @@
         "moveBookmarkFailed": "Bladwijzer verplaatsen mislukt.",
         "bookmarkSourcePageUnresolved": "Bronpagina van bladwijzer niet gevonden.",
         "loadSourcePageBookmarksFailed": "Bladwijzers van bronpagina laden mislukt.",
-        "loadSourcePageFailed": "Bronpagina laden mislukt.",
         "bookmarkNotFoundOnSourcePage": "Bladwijzer niet gevonden op bronpagina.",
         "saveBookmarkOnSourcePageFailed": "Bladwijzer op bronpagina opslaan mislukt.",
         "saveBookmarkChangesFailed": "Bladwijzerwijzigingen opslaan mislukt.",

@@ -636,7 +636,6 @@
         "moveBookmarkFailed": "Lesezeichen verschieben fehlgeschlagen.",
         "bookmarkSourcePageUnresolved": "Quellseite des Lesezeichens nicht ermittelbar.",
         "loadSourcePageBookmarksFailed": "Lesezeichen der Quellseite laden fehlgeschlagen.",
-        "loadSourcePageFailed": "Quellseite laden fehlgeschlagen.",
         "bookmarkNotFoundOnSourcePage": "Lesezeichen auf Quellseite nicht gefunden.",
         "saveBookmarkOnSourcePageFailed": "Lesezeichen auf Quellseite speichern fehlgeschlagen.",
         "saveBookmarkChangesFailed": "Lesezeichenänderungen speichern fehlgeschlagen.",

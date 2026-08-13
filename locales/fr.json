@@ -636,7 +636,6 @@
         "moveBookmarkFailed": "Échec du déplacement du favori.",
         "bookmarkSourcePageUnresolved": "Impossible de déterminer la page source du favori.",
         "loadSourcePageBookmarksFailed": "Échec du chargement des favoris de la page source.",
-        "loadSourcePageFailed": "Échec du chargement de la page source.",
         "bookmarkNotFoundOnSourcePage": "Favori introuvable sur la page source.",
         "saveBookmarkOnSourcePageFailed": "Échec de l'enregistrement du favori sur la page source.",
         "saveBookmarkChangesFailed": "Échec de l'enregistrement des modifications du favori.",

@@ -640,7 +640,6 @@
         "moveBookmarkFailed": "Failed to move bookmark.",
         "bookmarkSourcePageUnresolved": "Unable to resolve bookmark source page.",
         "loadSourcePageBookmarksFailed": "Failed to load source page bookmarks.",
-        "loadSourcePageFailed": "Failed to load source page.",
         "bookmarkNotFoundOnSourcePage": "Could not locate bookmark on source page.",
         "saveBookmarkOnSourcePageFailed": "Failed to save bookmark on source page.",
         "saveBookmarkChangesFailed": "Failed to save bookmark changes.",
