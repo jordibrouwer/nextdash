@@ -2198,6 +2198,7 @@ class DashboardInlineEdit {
         const sourcePageId = Number(bookmarkRef.pageId || d.currentPageId);
         const isCurrentScope = bookmarkRef.scope === 'current';
         const bookmarksSnapshot = isCurrentScope ? [...d.bookmarks] : null;
+        const headers = { 'Content-Type': 'application/json' };
 
         try {
             if (row) {
@@ -2205,47 +2206,52 @@ class DashboardInlineEdit {
                 await new Promise(resolve => setTimeout(resolve, 320));
             }
 
-            let sourceBookmarks;
+            // No ensureBookmarkMutationSnapshot() here: that sets
+            // d.pendingReorderSnapshot for saveBookmarkOrder()'s whole-list
+            // rollback path, which this method no longer calls. Left set, an
+            // unrelated debounced reorder-save (scheduleBookmarkOrderSave) could
+            // still fire afterwards and flush that stale pre-move snapshot back
+            // to the source page, silently undoing the delete below.
+
+            // Single-item add + delete instead of a whole-list read-modify-write
+            // on each side: two full-array snapshots taken up front raced against
+            // any concurrent write to either page, and if the source save
+            // succeeded but the target save failed, the bookmark vanished from
+            // both lists entirely. AddBookmark/DeleteBookmark are each atomic
+            // under the store's own lock, so a mid-move failure now leaves the
+            // bookmark exactly where it started rather than nowhere.
+            const addRes = await dashFetch('/api/bookmarks/add', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ page: targetPageId, bookmark: { ...bookmarkState } }),
+            });
+            if (!addRes.ok) {
+                let message = 'Failed to save target page bookmarks.';
+                try {
+                    const body = await addRes.json();
+                    if (body?.message) message = body.message;
+                } catch { /* non-JSON error body, keep the default message */ }
+                throw new Error(message);
+            }
+
+            const deleteRes = await dashFetch('/api/bookmarks', {
+                method: 'DELETE',
+                headers,
+                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkState }),
+            });
+            if (!deleteRes.ok) {
+                // The copy on the target page is now the only way to avoid losing
+                // the bookmark outright, so leave it there and surface a clear
+                // error rather than trying to undo the add and risk losing both.
+                throw new Error('Bookmark copied to the target page but could not be removed from the source page.');
+            }
+
             if (isCurrentScope) {
-                this.ensureBookmarkMutationSnapshot();
-                sourceBookmarks = [...d.bookmarks];
-                sourceBookmarks.splice(bookmarkRef.index, 1);
-            } else {
-                const sourceRes = await fetch(`/api/bookmarks?page=${sourcePageId}`);
-                if (!sourceRes.ok) throw new Error('Failed to load source page.');
-                sourceBookmarks = await sourceRes.json();
-                const sourceIndex = d.findBookmarkIndexByReference(sourceBookmarks, bookmarkRef);
-                if (sourceIndex < 0) {
-                    throw new Error('Could not locate original bookmark on source page.');
+                const removeIndex = d.findBookmarkIndexByReference(d.bookmarks, bookmarkRef);
+                if (removeIndex >= 0) {
+                    d.bookmarks = [...d.bookmarks];
+                    d.bookmarks.splice(removeIndex, 1);
                 }
-                sourceBookmarks.splice(sourceIndex, 1);
-            }
-
-            const targetRes = await fetch(`/api/bookmarks?page=${targetPageId}`);
-            if (!targetRes.ok) throw new Error('Failed to load target page.');
-            const targetBookmarks = await targetRes.json();
-            targetBookmarks.push({ ...bookmarkState });
-
-            const headers = { 'Content-Type': 'application/json' };
-            const sourceSaveRes = await dashFetch(`/api/bookmarks?page=${sourcePageId}`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(sourceBookmarks)
-            });
-            if (!sourceSaveRes.ok) {
-                throw new Error('Failed to save source page bookmarks.');
-            }
-            const targetSaveRes = await dashFetch(`/api/bookmarks?page=${targetPageId}`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(targetBookmarks)
-            });
-            if (!targetSaveRes.ok) {
-                throw new Error('Failed to save target page bookmarks.');
-            }
-
-            if (isCurrentScope) {
-                d.bookmarks = sourceBookmarks;
             }
 
             const targetPage = (Array.isArray(d.pages) ? d.pages : []).find(p => Number(p.id) === targetPageId);
