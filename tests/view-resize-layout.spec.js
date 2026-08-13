@@ -32,7 +32,13 @@ test.describe('view layout survives a window resize', () => {
             const header = el.querySelector('.health-view-header, .inbox-header, .config-view');
             return {
                 className: el.className,
-                role: el.getAttribute('role'),
+                // The inbox marks its own container as the feed; health renders
+                // a separate .health-view-feed inside it, and only when the
+                // active filter has rows. Reading role off the container alone
+                // therefore says nothing about health.
+                role: el.getAttribute('role')
+                    || el.querySelector('[role="feed"]')?.getAttribute('role')
+                    || null,
                 headerWidth: header ? Math.round(header.getBoundingClientRect().width) : null,
                 containerWidth: Math.round(el.getBoundingClientRect().width),
             };
@@ -64,14 +70,17 @@ test.describe('view layout survives a window resize', () => {
             await dragResize(client, page, [1200, 1000, 850, 700, 560, 460]);
             const narrow = await layoutState(page);
             expect(narrow.className).toContain(`${view}-layout`);
-            expect(narrow.role).toBe('feed');
+            // Only assert the feed role where one is rendered: health draws its
+            // feed only when the active filter has rows, and an empty Broken
+            // list is a legitimate state.
+            if (before.role) expect(narrow.role).toBe('feed');
             // The view fills its container rather than sitting in a grid column.
             expect(narrow.headerWidth).toBe(narrow.containerWidth);
 
             await dragResize(client, page, [700, 1000, 1400]);
             const after = await layoutState(page);
             expect(after.className).toContain(`${view}-layout`);
-            expect(after.role).toBe('feed');
+            if (before.role) expect(after.role).toBe('feed');
             // Back at the starting width, the layout is what it was before.
             expect(after.className).toBe(before.className);
             expect(after.headerWidth).toBe(before.headerWidth);

@@ -36,6 +36,10 @@ async function openInbox(page) {
 
     await page.locator('#page-nav-inbox-btn').click();
     await expect(page.locator('.inbox-layout')).toBeVisible();
+    // The view may have loaded its list before the seed POST landed, which
+    // leaves the feed empty; ask it to reload rather than waiting on a render
+    // that already happened.
+    await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
     await expect(page.locator('.inbox-feed .inbox-item').first()).toBeVisible();
 }
 
