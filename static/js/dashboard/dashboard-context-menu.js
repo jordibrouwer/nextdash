@@ -145,6 +145,10 @@ class DashboardContextMenu {
                 : []),
             { id: 'inbox-snooze', label: this.t('dashboard.inboxSnooze', 'Snooze'), icon: '⏰' },
             { id: 'inbox-note', label: this.t('dashboard.inboxNoteAction', 'Note'), icon: '✎' },
+            // buildItemShareUrl preserves the filter, sort, query and domain
+            // alongside the item id, so the link reopens the view as the sender
+            // had it. That work existed with no entry point offering it.
+            { id: 'inbox-copy-link', label: this.t('dashboard.inboxCopyItemLink', 'Copy link to this item'), icon: '🔗' },
             { id: 'inbox-delete', label: this.t('dashboard.inboxDelete', 'Delete'), icon: '✕', danger: true },
         ];
         // Right-clicking a row that is part of a selection means "act on the
@@ -791,6 +795,7 @@ class DashboardContextMenu {
             case 'inbox-read':
             case 'inbox-snooze':
             case 'inbox-note':
+            case 'inbox-copy-link':
             case 'inbox-delete': {
                 const inbox = d.inbox;
                 const item = (inbox?.items || []).find(
@@ -801,6 +806,7 @@ class DashboardContextMenu {
                 else if (action === 'inbox-read') void inbox.markReadFromKeyboard(item);
                 else if (action === 'inbox-snooze') inbox.openSnoozeMenu(item, row);
                 else if (action === 'inbox-note') void inbox.editNote(item);
+                else if (action === 'inbox-copy-link') void inbox.copyItemLink(item.id);
                 else void inbox.deleteItemWithUndo(item.id);
                 break;
             }

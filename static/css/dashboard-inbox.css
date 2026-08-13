@@ -1398,3 +1398,58 @@ body[data-layout-version="modern"] .inbox-empty {
         transform: none;
     }
 }
+
+/* ─── Lifetime statistics ────────────────────────────────────────────────────
+   Behind the toolbar's Stats button. The figures come from /api/inbox-stats,
+   which survives items being triaged away — the config view reads the same
+   endpoint, but "am I promoting these or hoarding them" is the inbox's own
+   question, so it is answerable here too. */
+.inbox-stats {
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    padding: 0.7rem 0.85rem;
+}
+
+.inbox-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    gap: 0.6rem 1rem;
+}
+
+.inbox-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.inbox-stat-label {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    text-transform: lowercase;
+}
+
+.inbox-stat-value {
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.inbox-stats-since,
+.inbox-stats-empty {
+    margin: 0.6rem 0 0;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.inbox-stats-empty {
+    margin: 0;
+}
+
+/* Page picker for a bulk promote; reuses the snooze menu's surface. */
+.inbox-promote-menu-title {
+    margin: 0 0 0.3rem;
+    padding: 0 0.15rem;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+}

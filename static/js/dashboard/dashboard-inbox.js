@@ -21,6 +21,10 @@ class DashboardInbox {
         this.checkedIds = new Set();
         /** Last row ticked, the fixed end of a Shift-extended range. */
         this.checkAnchorId = null;
+        /** Lifetime aggregate from /api/inbox-stats, loaded on first open. */
+        this.stats = null;
+        this.statsOpen = false;
+        this._statsFailed = false;
         this.triage = typeof DashboardInboxTriage === 'function' ? new DashboardInboxTriage(this) : null;
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
@@ -168,6 +172,8 @@ class DashboardInbox {
                     this.bulkOpen();
                 } else if (action === 'copy') {
                     void this.bulkCopyLinks();
+                } else if (action === 'promote') {
+                    this.openBulkPromoteMenu(btn);
                 } else if (action === 'keep-visible') {
                     this.keepOnlyVisibleChecked();
                 }
@@ -193,6 +199,7 @@ class DashboardInbox {
                 this.t('dashboard.inboxSelectedCount', '{count} selected', { count })
             )}</span>
             ${offscreen}
+            <button type="button" class="inbox-bulk-btn" data-inbox-selection="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="open">${this.escape(this.t('dashboard.inboxSelectionOpen', 'Open'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="copy">${this.escape(this.t('dashboard.inboxSelectionCopy', 'Copy links'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-selection="read">${this.escape(this.t('dashboard.inboxMarkRead', 'Mark read'))}</button>
@@ -225,6 +232,111 @@ class DashboardInbox {
                     if (this.isActiveView()) this.render();
                 });
         }
+    }
+
+    /**
+     * Promote every ticked link to a bookmark on one page.
+     *
+     * Promoting is what this view exists to produce, and it was single-row only:
+     * ten links from the same docs site meant ten trips through the bookmark
+     * form to say the same thing ten times. The per-row promote still opens the
+     * full form — that is right for one link you want to name and file properly
+     * — so this is the other half rather than a replacement: pick the
+     * destination once, and the titles the inbox already captured are used as-is.
+     */
+    async bulkPromote(pageId) {
+        const targets = this.checkedItems();
+        if (!targets.length) return;
+        this._trackAction('bulk-promote', { size: this._countBucket(targets.length) });
+
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const results = await Promise.allSettled(targets.map(async (item) => {
+            const res = await fetcher('/api/bookmarks/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: Number(pageId),
+                    bookmark: {
+                        name: item.previewTitle || item.title || item.domain || item.url,
+                        url: item.url,
+                        category: '',
+                        tags: Array.isArray(item.tags) ? item.tags : [],
+                        createdAt: Date.now(),
+                    },
+                }),
+            });
+            if (!res.ok) throw new Error(`promote HTTP ${res.status}`);
+            // Only clear the inbox entry once its bookmark exists, so a failure
+            // leaves the link here to try again rather than losing it.
+            await this.completePromote(item.id);
+            return item.id;
+        }));
+
+        const promoted = results.filter((r) => r.status === 'fulfilled').length;
+        const failed = results.length - promoted;
+        this.clearChecked();
+        if (this.isActiveView()) {
+            await this.loadAndRender({ refresh: true });
+        } else {
+            await this.refreshBadge();
+        }
+
+        if (promoted) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxPromotedCount', 'Promoted {count} links', { count: promoted }),
+                'success',
+                { duration: 3000 }
+            );
+        }
+        if (failed) {
+            this.dash.showErrorNotification?.(
+                this.t('dashboard.inboxPromotePartial', '{count} could not be promoted', { count: failed })
+            );
+        }
+    }
+
+    /** Pick the page the ticked links become bookmarks on. */
+    openBulkPromoteMenu(anchor) {
+        this.closeSnoozeMenu();
+        const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
+        if (!pages.length) return;
+
+        const menu = document.createElement('div');
+        menu.className = 'inbox-snooze-menu inbox-promote-menu';
+        menu.setAttribute('role', 'menu');
+        menu.innerHTML = `<p class="inbox-promote-menu-title">${this.escape(
+            this.t('dashboard.inboxPromoteToPage', 'Promote to page')
+        )}</p>` + pages.map((page) => `
+            <button type="button" class="inbox-snooze-option" role="menuitem" data-promote-page="${this.escape(String(page.id))}">${this.escape(page.name || String(page.id))}</button>
+        `).join('');
+
+        document.body.appendChild(menu);
+        this._snoozeMenu = menu;
+
+        const rect = anchor?.getBoundingClientRect?.();
+        if (rect) {
+            menu.style.left = `${Math.round(rect.left)}px`;
+            const below = rect.bottom + 6;
+            menu.style.top = below + menu.offsetHeight > window.innerHeight - 8
+                ? `${Math.round(rect.top - menu.offsetHeight - 6)}px`
+                : `${Math.round(below)}px`;
+        }
+
+        menu.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-promote-page]');
+            if (!btn) return;
+            const pageId = btn.getAttribute('data-promote-page');
+            this.closeSnoozeMenu();
+            void this.bulkPromote(pageId);
+        });
+
+        const onOutside = (e) => {
+            if (!menu.contains(e.target) && e.target !== anchor) {
+                this.closeSnoozeMenu();
+                document.removeEventListener('click', onOutside, true);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', onOutside, true), 0);
     }
 
     /**
@@ -261,6 +373,34 @@ class DashboardInbox {
         }
         if (this.execCopyFallback(text)) done();
         else failed();
+    }
+
+    /**
+     * Copy a shareable link to one item.
+     *
+     * buildItemShareUrl already existed and already preserved filter, sort,
+     * query and domain alongside the id — but its only caller was the bookmark
+     * context menu's Share, so nothing in the inbox itself offered it.
+     */
+    async copyItemLink(id) {
+        const url = this.buildItemShareUrl(id);
+        if (!url) return;
+        const done = () => this.dash.showNotification?.(
+            this.t('dashboard.inboxCopiedItemLink', 'Link copied'),
+            'success',
+            { duration: 2500 }
+        );
+        if (navigator.clipboard?.writeText) {
+            try {
+                await navigator.clipboard.writeText(url);
+                done();
+                return;
+            } catch {
+                // Falls through to the execCommand path.
+            }
+        }
+        if (this.execCopyFallback(url)) done();
+        else this.dash.showErrorNotification?.(this.t('dashboard.inboxCopyFailed', 'Could not copy links to clipboard.'));
     }
 
     /** Pre-Clipboard-API copy, kept for plain-HTTP LAN installs. */
@@ -2155,6 +2295,135 @@ class DashboardInbox {
 
 
     /**
+     * The durable lifetime aggregate behind /api/inbox-stats.
+     *
+     * Fetched lazily and only when the panel is open, because it answers a
+     * different question from the feed and most visits never ask it. Kept as
+     * null on failure so the panel can say so rather than render zeros as if
+     * they were real.
+     */
+    async loadStats() {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/inbox-stats');
+            if (!res.ok) throw new Error(`inbox stats HTTP ${res.status}`);
+            this.stats = await res.json();
+            this._statsFailed = false;
+        } catch {
+            this.stats = null;
+            this._statsFailed = true;
+        }
+        if (this.isActiveView()) {
+            this.render();
+        }
+    }
+
+    /** Toggle the stats panel, loading the aggregate the first time it opens. */
+    toggleStats() {
+        this.statsOpen = !this.statsOpen;
+        window.nextdashTrack?.('inbox:stats-toggle', { open: this.statsOpen });
+        if (this.statsOpen && !this.stats && !this._statsFailed) {
+            void this.loadStats();
+            return;
+        }
+        this.render();
+    }
+
+    /** "3d" / "5h" / "20m", matching the config stats panel's format. */
+    formatRetention(ms) {
+        const n = Number(ms);
+        if (!Number.isFinite(n) || n <= 0) return '—';
+        const days = n / 86400000;
+        if (days >= 1) return this.t('dashboard.inboxStatsDays', '{n}d', { n: Math.round(days) });
+        const hours = n / 3600000;
+        if (hours >= 1) return this.t('dashboard.inboxStatsHours', '{n}h', { n: Math.round(hours) });
+        return this.t('dashboard.inboxStatsMinutes', '{n}m', { n: Math.max(1, Math.round(n / 60000)) });
+    }
+
+    /**
+     * Lifetime figures for this inbox: how much comes in, how much becomes a
+     * bookmark, and how long things sit here.
+     *
+     * The endpoint has existed all along but was only ever read by the config
+     * view. "Am I actually promoting these, or just hoarding them" is the
+     * inbox's own question, and answering it needed no new backend — the same
+     * way the health view puts its fleet panel in the view rather than in
+     * config.
+     */
+    renderStatsPanel() {
+        if (!this.statsOpen) return null;
+
+        const panel = document.createElement('section');
+        panel.className = 'inbox-stats';
+        panel.setAttribute('aria-label', this.t('dashboard.inboxStatsTitle', 'Inbox statistics'));
+
+        if (this._statsFailed) {
+            panel.innerHTML = `<p class="inbox-stats-empty">${this.escape(
+                this.t('dashboard.inboxStatsFailed', 'Could not load statistics')
+            )}</p>`;
+            return panel;
+        }
+        if (!this.stats) {
+            panel.innerHTML = `<p class="inbox-stats-empty">${this.escape(
+                this.t('dashboard.inboxLoading', 'Loading…')
+            )}</p>`;
+            return panel;
+        }
+
+        const s = this.stats;
+        const added = Number(s.totalAdded) || 0;
+        const promoted = Number(s.totalPromoted) || 0;
+        const deleted = Number(s.totalDeleted) || 0;
+        const retentionCount = Number(s.retentionCount) || 0;
+        const avgRetention = retentionCount
+            ? Number(s.sumRetentionMs) / retentionCount
+            : 0;
+        // Of everything that left the inbox, how much became a bookmark. Against
+        // triaged rather than added, since items still waiting have not been
+        // decided yet and would drag the rate down for no reason.
+        const triaged = promoted + deleted;
+        const promoteRate = triaged ? Math.round((promoted / triaged) * 100) : null;
+
+        const stat = (label, value, hint = '') => `
+            <div class="inbox-stat"${hint ? ` title="${this.escape(hint)}"` : ''}>
+                <span class="inbox-stat-label">${this.escape(label)}</span>
+                <span class="inbox-stat-value">${this.escape(String(value))}</span>
+            </div>`;
+
+        const since = Number(s.firstEventAt) || 0;
+        const sinceLine = since
+            ? `<p class="inbox-stats-since">${this.escape(
+                this.t('dashboard.inboxStatsSince', 'Since {date}', {
+                    date: new Date(since).toLocaleDateString(),
+                })
+            )}</p>`
+            : '';
+
+        panel.innerHTML = `
+            <div class="inbox-stats-grid">
+                ${stat(this.t('dashboard.inboxStatsAdded', 'Added'), added)}
+                ${stat(this.t('dashboard.inboxStatsPromoted', 'Promoted'), promoted)}
+                ${stat(this.t('dashboard.inboxStatsDeleted', 'Deleted'), deleted)}
+                ${promoteRate === null
+                    ? ''
+                    : stat(
+                        this.t('dashboard.inboxStatsPromoteRate', 'Promote rate'),
+                        `${promoteRate}%`,
+                        this.t('dashboard.inboxStatsPromoteRateHint',
+                            'Of the links you decided on, how many became bookmarks')
+                    )}
+                ${stat(
+                    this.t('dashboard.inboxStatsRetention', 'Average stay'),
+                    this.formatRetention(avgRetention),
+                    this.t('dashboard.inboxStatsRetentionHint',
+                        'How long a link sits here before you deal with it')
+                )}
+            </div>
+            ${sinceLine}`;
+        return panel;
+    }
+
+    /**
      * Re-fetch the feed on demand.
      *
      * loadAndRender has always accepted `refresh`, but nothing ever passed it:
@@ -2902,6 +3171,7 @@ class DashboardInbox {
             ${readCount > 0 ? `<button type="button" class="inbox-bulk-btn" data-inbox-bulk="clear-read">${this.escape(this.t('dashboard.inboxClearRead', 'Clear read'))}</button>` : ''}
             <button type="button" class="inbox-bulk-btn" data-inbox-export="csv" title="${this.escape(this.t('dashboard.inboxExportCsvHint', 'Download filtered list as CSV'))}">${this.escape(this.t('dashboard.inboxExportCsv', 'CSV'))}</button>
             <button type="button" class="inbox-bulk-btn" data-inbox-export="json" title="${this.escape(this.t('dashboard.inboxExportJsonHint', 'Download filtered list as JSON'))}">${this.escape(this.t('dashboard.inboxExportJson', 'JSON'))}</button>
+            <button type="button" class="inbox-bulk-btn" data-inbox-stats aria-expanded="${this.statsOpen ? 'true' : 'false'}" aria-controls="inbox-stats-panel" title="${this.escape(this.t('dashboard.inboxStatsHint', 'How much of this inbox you actually turn into bookmarks'))}">${this.escape(this.t('dashboard.inboxStats', 'Stats'))}</button>
             <button type="button" class="inbox-triage-btn">${this.escape(this.t('dashboard.inboxTriage', 'Triage'))}<kbd>t</kbd></button>
             <button type="button" class="view-help-btn inbox-help-btn" data-inbox-help
                     aria-haspopup="dialog"
@@ -3002,6 +3272,10 @@ class DashboardInbox {
         toolbar.querySelector('.inbox-triage-btn')?.addEventListener('click', () => {
             void this.startTriage();
         });
+        toolbar.querySelector('[data-inbox-stats]')?.addEventListener('click', () => {
+            this.toggleStats();
+        });
+
         toolbar.querySelector('[data-inbox-help]')?.addEventListener('click', () => {
             this.showInboxExplainer();
         });
@@ -3019,6 +3293,15 @@ class DashboardInbox {
         // "what was being looked for" is the only useful thing left to say.
         const note = this.renderFilterNote();
         if (note) container.appendChild(note);
+
+        // Above the loading and empty branches below: the lifetime figures are
+        // about the inbox as a whole, so they stay readable while the feed is
+        // arriving and on a filter that matched nothing.
+        const stats = this.renderStatsPanel();
+        if (stats) {
+            stats.id = 'inbox-stats-panel';
+            container.appendChild(stats);
+        }
 
         if (this.loading) {
             const loading = document.createElement('p');
