@@ -1885,6 +1885,14 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// An error page still has a <title> and og: tags — parsing it would
+		// cache a plausible-looking preview for a link that is actually
+		// dead, masking exactly the breakage the health checker exists to
+		// surface.
+		return preview
+	}
+
 	if resp.Request != nil && resp.Request.URL != nil {
 		preview.URL = resp.Request.URL.String()
 		preview.Domain = extractDomain(preview.URL)
