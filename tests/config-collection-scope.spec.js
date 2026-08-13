@@ -122,4 +122,48 @@ test.describe('config collection scope', () => {
             return (await res.json()).smartRecentPageIds;
         })).toEqual([]);
     });
+
+    // dashboard-data.js's needsCrossPageBookmarks(AtStartup) and
+    // dashboard-smart-collections.js's smartCollectionsNeedRefreshAfterOpen ask
+    // the same "does pageIds cover the current page" question from opposite
+    // directions. _smartCollectionFilterNeedsCrossPageData delegates to
+    // _isSmartCollectionPageAllowed rather than re-implementing the id/index
+    // matching — this pins the two as exact inverses across the cases that
+    // matter (empty scope, matching id, matching 1-based index, a scope that
+    // excludes the current page) so a future edit to one can't silently drift
+    // from the other.
+    test('needsCrossPageData stays the exact inverse of isPageAllowed', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        const results = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const currentPageId = Number(d.currentPageId);
+            const currentIndex = d.pages.findIndex((p) => Number(p.id) === currentPageId);
+            const currentPageNumber = currentIndex >= 0 ? currentIndex + 1 : null;
+            const otherPageId = d.pages.map((p) => Number(p.id)).find((id) => id !== currentPageId) ?? 999999;
+
+            const cases = {
+                empty: [],
+                notArray: null,
+                matchingId: [currentPageId],
+                matchingIndex: currentPageNumber !== null ? [currentPageNumber] : [currentPageId],
+                onlyOtherPage: [otherPageId],
+            };
+
+            return Object.fromEntries(Object.entries(cases).map(([label, pageIds]) => [label, {
+                allowed: d._isSmartCollectionPageAllowed(pageIds),
+                needsCrossPage: d._smartCollectionFilterNeedsCrossPageData(pageIds),
+            }]));
+        });
+
+        for (const [label, { allowed, needsCrossPage }] of Object.entries(results)) {
+            expect(needsCrossPage, `case "${label}": needsCrossPageData should be !allowed`).toBe(!allowed);
+        }
+        // Sanity: not every case degenerated to the same trivially-true/false pair.
+        expect(results.matchingId.allowed).toBe(true);
+        expect(results.onlyOtherPage.allowed).toBe(false);
+    });
 });

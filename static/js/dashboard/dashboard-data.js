@@ -73,21 +73,13 @@ class DashboardData {
         return this._smartCollectionFilterNeedsCrossPageData(s.smartTodayPageIds);
     }
 
+    // A collection scoped to the current page needs no cross-page bookmarks;
+    // this is the same "does the current page fall within pageIds" question
+    // dashboard-smart-collections.js asks to decide whether to refresh, just
+    // inverted — delegate instead of keeping two hand-maintained copies of
+    // the same normalization/matching logic in sync.
     _smartCollectionFilterNeedsCrossPageData(pageIds) {
-        const d = this.dash;
-        const currentPageId = Number(d.currentPageId);
-        const currentPageIndex = d.pages.findIndex((page) => Number(page.id) === currentPageId);
-        const currentPageNumber = currentPageIndex >= 0 ? (currentPageIndex + 1) : null;
-        if (!Array.isArray(pageIds) || pageIds.length === 0) {
-            return true;
-        }
-        const normalizedIds = pageIds
-            .map((value) => Number(value))
-            .filter((value) => Number.isFinite(value) && value > 0);
-        if (normalizedIds.length === 0) {
-            return true;
-        }
-        return !normalizedIds.every((id) => id === currentPageId || id === currentPageNumber);
+        return !this.dash.smartCollections._isSmartCollectionPageAllowed(pageIds);
     }
 
     deferredLoadAllBookmarks() {
