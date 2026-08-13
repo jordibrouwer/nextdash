@@ -120,7 +120,8 @@ func TestPatchClampsReadAt(t *testing.T) {
 }
 
 // V8 — only the explicit DELETE path ever cleaned up an icon, so every capacity
-// eviction left a favicon behind in data/icons/ for good.
+// eviction left a favicon behind in data/icons/ for good. The evicted items are
+// also what tells the client an add pushed something out (V5).
 func TestCapacityEvictionReportsIconsToClean(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("NEXTDASH_DATA_DIR", dir)
@@ -144,8 +145,11 @@ func TestCapacityEvictionReportsIconsToClean(t *testing.T) {
 		t.Fatalf("add: %v", err)
 	}
 
-	if len(evicted) != 1 || evicted[0] != "evicted-icon.ico" {
-		t.Fatalf("evicted icons = %v, want [evicted-icon.ico]", evicted)
+	if len(evicted) != 1 || evicted[0].Icon != "evicted-icon.ico" {
+		t.Fatalf("evicted = %+v, want the one item carrying evicted-icon.ico", evicted)
+	}
+	if evicted[0].URL != "https://evicted.example" {
+		t.Errorf("evicted the wrong item: %q", evicted[0].URL)
 	}
 }
 
@@ -166,7 +170,7 @@ func TestAddWithRoomReportsNoIconsToClean(t *testing.T) {
 		t.Fatalf("add: %v", err)
 	}
 	if len(evicted) != 0 {
-		t.Errorf("evicted icons = %v, want none", evicted)
+		t.Errorf("evicted = %+v, want none", evicted)
 	}
 }
 

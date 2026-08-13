@@ -201,13 +201,13 @@ func truncateRunes(value string, n int) string {
 	return string(runes[:n])
 }
 
-// evictedIconFiles lists the icon filenames of items present in `before` but
-// gone from `after` — what a capacity trim silently dropped.
+// evictedInboxItems lists the items present in `before` but gone from `after` —
+// what a capacity trim dropped.
 //
 // Only the explicit DELETE path ever cleaned up an icon, so every eviction left
 // a favicon behind in data/icons/ for good: one orphan per evicted item, forever,
 // on any inbox sitting at its cap.
-func evictedIconFiles(before, after []InboxLink) []string {
+func evictedInboxItems(before, after []InboxLink) []InboxLink {
 	if len(before) == len(after) {
 		return nil
 	}
@@ -215,16 +215,13 @@ func evictedIconFiles(before, after []InboxLink) []string {
 	for i := range after {
 		kept[after[i].ID] = struct{}{}
 	}
-	var icons []string
+	var gone []InboxLink
 	for i := range before {
-		if _, ok := kept[before[i].ID]; ok {
-			continue
-		}
-		if icon := strings.TrimSpace(before[i].Icon); icon != "" {
-			icons = append(icons, icon)
+		if _, ok := kept[before[i].ID]; !ok {
+			gone = append(gone, before[i])
 		}
 	}
-	return icons
+	return gone
 }
 
 // clampInboxLinkFields bounds every client-supplied text field on an inbox item.
@@ -240,7 +237,7 @@ func clampInboxLinkFields(link *InboxLink) {
 	link.PreviewImage = truncateRunes(link.PreviewImage, inboxMaxURLLen)
 }
 
-func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []string, error) {
+func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (InboxLink, []InboxLink, error) {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -284,7 +281,7 @@ func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (In
 	// worked.
 	beforeTrim := append([]InboxLink(nil), inbox.Items...)
 	inbox.Items = trimInboxItemsKeeping(inbox.Items, maxItems, link.ID)
-	evictedIcons := evictedIconFiles(beforeTrim, inbox.Items)
+	evicted := evictedInboxItems(beforeTrim, inbox.Items)
 
 	survived := false
 	for i := range inbox.Items {
@@ -303,7 +300,7 @@ func (fs *FileStore) AddInboxLink(link InboxLink, dedupe bool, maxItems int) (In
 	// Returned rather than cleaned up here: removeUnusedIconFile takes the store
 	// lock, which this function still holds, and it must see the saved state
 	// before deciding an icon is unreferenced.
-	return link, evictedIcons, nil
+	return link, evicted, nil
 }
 
 var ErrInboxDuplicateURL = errors.New("inbox duplicate url")

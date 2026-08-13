@@ -931,6 +931,19 @@ class DashboardInbox {
             await this.refreshBadge();
             const toastMsg = this.t('dashboard.inboxAddedToast', 'Added to Inbox');
             d.showNotification(toastMsg, 'success', { duration: 3000 });
+            // Adding at the cap pushes the oldest links out. That used to happen
+            // in silence — saved items simply stopped existing — so it is named
+            // at the moment it is caused, where the user can still act on it.
+            const evicted = Number(body?.evicted) || 0;
+            if (evicted > 0) {
+                d.showNotification(
+                    evicted === 1
+                        ? this.t('dashboard.inboxEvictedOne', 'Inbox is full — the oldest link was removed')
+                        : this.t('dashboard.inboxEvictedCount', 'Inbox is full — the {count} oldest links were removed', { count: evicted }),
+                    'info',
+                    { duration: 6000 }
+                );
+            }
             if (this.isActiveView()) {
                 await this.loadAndRender();
             }
@@ -3044,12 +3057,17 @@ class DashboardInbox {
                 <p class="inbox-empty-hint">${this.escape(this.t('dashboard.inboxEmptyHint', 'Paste a URL with Ctrl+V to add a link'))}</p>
             `;
             container.appendChild(empty);
+            this.announceListState(0);
             this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
 
         if (!filtered.length) {
             container.appendChild(this.renderEmptyState());
+            // Announced here as well as at the end: a filter or search that
+            // matches nothing returns early, and "no results" is precisely the
+            // outcome a screen-reader user most needs told.
+            this.announceListState(0);
             this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
@@ -3098,7 +3116,38 @@ class DashboardInbox {
         this.schedulePreviewRefresh();
         this.scheduleWakeRefresh();
         this.applyPendingItemFocus();
+        this.announceListState(filtered.length);
         this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
+    }
+
+    /**
+     * Say how many rows the current filter and search leave, for screen readers.
+     *
+     * The list changes under the user constantly — a debounced search, the wake
+     * timer, the preview poll, a filter pill — and none of it was announced, so
+     * filtering to Unread gave no indication of what happened. Mirrors the
+     * pattern already in templates/dashboard.html for search results.
+     */
+    announceListState(count) {
+        const container = document.getElementById('dashboard-layout');
+        if (!container) return;
+        let live = container.querySelector('.inbox-live-region');
+        if (!live) {
+            live = document.createElement('div');
+            live.className = 'sr-only inbox-live-region';
+            live.setAttribute('aria-live', 'polite');
+            live.setAttribute('aria-atomic', 'true');
+            container.appendChild(live);
+        }
+        const message = count === 1
+            ? this.t('dashboard.inboxAnnounceOne', '1 link')
+            : this.t('dashboard.inboxAnnounceCount', '{count} links', { count });
+        // Only on change: repeating the same string does not re-announce in some
+        // readers, and re-announcing an unchanged count on every poll would be
+        // noise in the ones where it does.
+        if (live.textContent !== message) {
+            live.textContent = message;
+        }
     }
 
     createItemElement(item) {

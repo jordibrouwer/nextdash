@@ -177,3 +177,77 @@ test.describe('inbox quick wins', () => {
         expect(await page.evaluate(() => window.dashboardInstance.inbox.selectedItemId)).not.toBe(first);
     });
 });
+
+test.describe('inbox announcements', () => {
+    async function open(page) {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.waitForFunction(() => window.dashboardInstance?.inbox != null, null, { timeout: 15_000 });
+        await page.evaluate(() => { window.dashboardInstance.settings.inboxEnabled = true; });
+        await page.locator('#page-nav-inbox-btn').click();
+        await expect(page.locator('.inbox-layout')).toBeVisible();
+    }
+
+    // V9 — the list changes under the user constantly and none of it was
+    // announced, so filtering gave a screen-reader user no idea what happened.
+    test('a polite live region reports how many rows the filter leaves', async ({ page }) => {
+        await open(page);
+
+        const live = page.locator('.inbox-live-region');
+        await expect(live).toHaveAttribute('aria-live', 'polite');
+
+        const shown = await page.evaluate(() => {
+            const inbox = window.dashboardInstance.inbox;
+            inbox.searchQuery = '';
+            inbox.render();
+            return inbox.getFilteredItems().length;
+        });
+        await expect(live).toContainText(String(shown));
+
+        // And it follows a filter that matches nothing.
+        await page.evaluate(() => {
+            const inbox = window.dashboardInstance.inbox;
+            inbox.searchQuery = 'zzz-no-match-zzz';
+            inbox.render();
+        });
+        await expect(live).toContainText('0');
+    });
+
+    // V5 — adding at the cap pushed the oldest links out in silence.
+    test('an add that evicts says so', async ({ page }) => {
+        await open(page);
+
+        await page.route('**/api/inbox', async (route) => {
+            if (route.request().method() !== 'POST') return route.fallback();
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ status: 'success', item: { id: 'x', url: 'https://e.example' }, evicted: 2 }),
+            });
+        });
+
+        await page.evaluate(() => window.dashboardInstance.inbox.addFromUrl('https://e.example'));
+        await expect(page.locator('.app-notification', { hasText: /full/i })).toBeVisible({ timeout: 10_000 });
+    });
+
+    test('an add with room says nothing about eviction', async ({ page }) => {
+        // The control: the notice must not appear on every add.
+        await open(page);
+
+        await page.route('**/api/inbox', async (route) => {
+            if (route.request().method() !== 'POST') return route.fallback();
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ status: 'success', item: { id: 'y', url: 'https://f.example' }, evicted: 0 }),
+            });
+        });
+
+        await page.evaluate(() => window.dashboardInstance.inbox.addFromUrl('https://f.example'));
+        await page.waitForTimeout(500);
+        await expect(page.locator('.app-notification', { hasText: /full/i })).toHaveCount(0);
+    });
+});

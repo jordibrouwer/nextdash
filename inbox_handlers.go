@@ -79,7 +79,7 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 		Tags:   request.Tags,
 	}
 
-	created, evictedIcons, err := h.store.AddInboxLink(link, dedupe, maxItems)
+	created, evicted, err := h.store.AddInboxLink(link, dedupe, maxItems)
 	if err != nil {
 		if errors.Is(err, ErrInboxDuplicateURL) {
 			w.Header().Set("Content-Type", "application/json")
@@ -118,8 +118,8 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 	// inside the store: removeUnusedIconFile takes the store lock, which
 	// AddInboxLink still holds, and it has to see the saved state before it can
 	// tell whether an icon is still referenced.
-	for _, icon := range evictedIcons {
-		h.store.removeUnusedIconFile(icon)
+	for _, item := range evicted {
+		h.store.removeUnusedIconFile(item.Icon)
 	}
 
 	h.store.RecordInboxEvent(InboxEvent{
@@ -129,10 +129,15 @@ func (h *Handlers) AddInboxItem(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Respond immediately; enrich preview metadata asynchronously.
+	//
+	// `evicted` tells the client that adding this link pushed older ones out at
+	// the capacity cap. It used to happen in silence: items the user had saved
+	// simply stopped existing, with nothing said at the moment it was caused.
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"status": "success",
-		"item":   created,
+		"status":  "success",
+		"item":    created,
+		"evicted": len(evicted),
 	})
 	h.enrichInboxPreviewAsync(created.ID, url)
 }
