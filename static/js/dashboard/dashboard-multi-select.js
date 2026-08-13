@@ -614,6 +614,26 @@ class DashboardMultiSelect {
         d.openBookmarksInNewTabs?.(bookmarks);
     }
 
+    /**
+     * Pre-Clipboard-API copy, kept for plain-HTTP LAN installs.
+     * A local copy of dashboard-context-menu.js's execCopyFallback rather than
+     * a cross-module call: that module is behind a lazy bundle loader on some
+     * builds, and pulling the whole bookmark-editor bundle in just for this
+     * would be the wrong tradeoff for a few lines with no shared state.
+     */
+    execCopyFallback(value) {
+        const ta = document.createElement('textarea');
+        ta.value = value;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch { ok = false; }
+        document.body.removeChild(ta);
+        return ok;
+    }
+
     copySelectedLinks() {
         const d = this.dash;
         const urls = this.resolveRefs()
@@ -630,17 +650,23 @@ class DashboardMultiSelect {
                 'success'
             );
         };
+        const failed = () => {
+            d.showErrorNotification?.(
+                this.t('dashboard.multiSelectCopyFailed', 'Could not copy links to clipboard.')
+            );
+        };
         if (navigator.clipboard?.writeText) {
             navigator.clipboard.writeText(text).then(notify).catch(() => {
-                d.showErrorNotification?.(
-                    this.t('dashboard.multiSelectCopyFailed', 'Could not copy links to clipboard.')
-                );
+                if (this.execCopyFallback(text)) notify();
+                else failed();
             });
             return;
         }
-        d.showErrorNotification?.(
-            this.t('dashboard.multiSelectCopyFailed', 'Could not copy links to clipboard.')
-        );
+        if (this.execCopyFallback(text)) {
+            notify();
+            return;
+        }
+        failed();
     }
 
     async deleteSelected() {
