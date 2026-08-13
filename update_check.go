@@ -15,6 +15,17 @@ import (
 
 var githubLatestReleaseURL = "https://api.github.com/repos/jordibrouwer/nextdash/releases/latest"
 
+// githubReleaseListURL is read first so the highest version wins regardless of
+// publication order; githubLatestReleaseURL is the fallback.
+//
+// Derived from githubLatestReleaseURL rather than declared alongside it, so
+// that pointing the latter at a test server redirects both. Two independent
+// vars let a test stub one and silently reach the real API with the other.
+func releaseListURL() string {
+	base := strings.TrimSuffix(strings.TrimSpace(githubLatestReleaseURL), "/latest")
+	return base + "?per_page=30"
+}
+
 const (
 	updateCheckCacheTTL       = 24 * time.Hour
 	updateCheckRequestTimeout = 10 * time.Second
@@ -194,10 +205,21 @@ func (h *Handlers) buildUpdateStatus(forceRefresh bool) UpdateStatusResponse {
 	return status
 }
 
-func (h *Handlers) fetchGitHubLatestRelease(ctx context.Context) (upstreamReleaseInfo, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, githubLatestReleaseURL, nil)
+// githubRelease is the subset of GitHub's release payload the check reads.
+// Both endpoints return the same shape — one object, or an array of them.
+type githubRelease struct {
+	TagName     string `json:"tag_name"`
+	HTMLURL     string `json:"html_url"`
+	PublishedAt string `json:"published_at"`
+	Draft       bool   `json:"draft"`
+	Prerelease  bool   `json:"prerelease"`
+}
+
+// getGitHubJSON performs the GET the two release endpoints share.
+func (h *Handlers) getGitHubJSON(ctx context.Context, url string, out any) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return upstreamReleaseInfo{}, err
+		return err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", updateCheckUserAgent)
@@ -208,26 +230,64 @@ func (h *Handlers) fetchGitHubLatestRelease(ctx context.Context) (upstreamReleas
 	client := h.outboundHTTPClient(updateCheckRequestTimeout, 3)
 	resp, err := client.Do(req)
 	if err != nil {
-		return upstreamReleaseInfo{}, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
 	if err != nil {
-		return upstreamReleaseInfo{}, err
+		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return upstreamReleaseInfo{}, fmt.Errorf("GitHub API HTTP %d", resp.StatusCode)
+		return fmt.Errorf("GitHub API HTTP %d", resp.StatusCode)
+	}
+	return json.Unmarshal(body, out)
+}
+
+// fetchGitHubHighestRelease picks the highest release by version, not by
+// publication date.
+//
+// GitHub's /releases/latest resolves "latest" as most-recently-published, which
+// is not the same question. Publish a patch on an older line after a newer one
+// — a v2026.09.09.4 landing after v1.0.0 — and that endpoint names the older
+// tag, which compareReleaseTags then correctly rejects as not newer. The real
+// release would never be announced. Ordering the listing ourselves makes the
+// check independent of the order releases happen to be published in.
+func (h *Handlers) fetchGitHubHighestRelease(ctx context.Context) (upstreamReleaseInfo, error) {
+	var releases []githubRelease
+	if err := h.getGitHubJSON(ctx, releaseListURL(), &releases); err != nil {
+		return upstreamReleaseInfo{}, err
 	}
 
-	var payload struct {
-		TagName     string `json:"tag_name"`
-		HTMLURL     string `json:"html_url"`
-		PublishedAt string `json:"published_at"`
-		Draft       bool   `json:"draft"`
-		Prerelease  bool   `json:"prerelease"`
+	var best githubRelease
+	for _, rel := range releases {
+		if rel.Draft || rel.Prerelease || strings.TrimSpace(rel.TagName) == "" {
+			continue
+		}
+		if best.TagName == "" || compareReleaseTags(rel.TagName, best.TagName) > 0 {
+			best = rel
+		}
 	}
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if best.TagName == "" {
+		return upstreamReleaseInfo{}, errors.New("no published GitHub releases")
+	}
+	return upstreamReleaseInfo{
+		Tag:         strings.TrimSpace(best.TagName),
+		ReleaseURL:  strings.TrimSpace(best.HTMLURL),
+		PublishedAt: strings.TrimSpace(best.PublishedAt),
+	}, nil
+}
+
+// fetchGitHubLatestRelease reads the highest published release, falling back to
+// GitHub's own /releases/latest when the listing cannot be read (a rate limit,
+// say) so the check degrades rather than going silent.
+func (h *Handlers) fetchGitHubLatestRelease(ctx context.Context) (upstreamReleaseInfo, error) {
+	if info, err := h.fetchGitHubHighestRelease(ctx); err == nil {
+		return info, nil
+	}
+
+	var payload githubRelease
+	if err := h.getGitHubJSON(ctx, githubLatestReleaseURL, &payload); err != nil {
 		return upstreamReleaseInfo{}, err
 	}
 	tag := strings.TrimSpace(payload.TagName)

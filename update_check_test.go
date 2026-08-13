@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -164,6 +165,100 @@ func TestFetchGitHubLatestRelease(t *testing.T) {
 	}
 	if info.Tag != "v2026.08.06" {
 		t.Fatalf("tag = %q", info.Tag)
+	}
+}
+
+// The bug this guards: GitHub's /releases/latest resolves "latest" as
+// most-recently-published. Publishing a patch on the old calendar line after
+// v1.0.0 makes that endpoint name v2026.09.09.4, which compareReleaseTags then
+// correctly rejects as not newer — so a genuinely newer release is never
+// announced. Ordering the listing ourselves removes the dependency on
+// publication order.
+func TestFetchGitHubHighestReleaseIgnoresPublicationOrder(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasSuffix(r.URL.Path, "/releases") {
+			http.NotFound(w, r)
+			return
+		}
+		// Newest-published first, the order GitHub returns.
+		_ = json.NewEncoder(w).Encode([]map[string]any{
+			{"tag_name": "v2026.09.09.4", "html_url": "https://x/old", "published_at": "2026-08-20T00:00:00Z"},
+			{"tag_name": "v1.2.0", "html_url": "https://x/new", "published_at": "2026-08-15T00:00:00Z"},
+			{"tag_name": "v1.0.0", "html_url": "https://x/one", "published_at": "2026-08-13T00:00:00Z"},
+		})
+	}))
+	defer srv.Close()
+
+	oldURL := githubLatestReleaseURL
+	githubLatestReleaseURL = srv.URL + "/repos/jordibrouwer/nextdash/releases/latest"
+	t.Cleanup(func() { githubLatestReleaseURL = oldURL })
+
+	h := newPushTestHandlers(t, newFakePushService(t), nil)
+	info, err := h.fetchGitHubLatestRelease(context.Background())
+	if err != nil {
+		t.Fatalf("fetchGitHubLatestRelease: %v", err)
+	}
+	if info.Tag != "v1.2.0" {
+		t.Fatalf("tag = %q, want v1.2.0 (highest version, not newest published)", info.Tag)
+	}
+	if info.ReleaseURL != "https://x/new" {
+		t.Fatalf("releaseURL = %q, want the URL of the tag that won", info.ReleaseURL)
+	}
+}
+
+func TestFetchGitHubHighestReleaseSkipsDraftsAndPrereleases(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasSuffix(r.URL.Path, "/releases") {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode([]map[string]any{
+			{"tag_name": "v9.0.0", "html_url": "https://x/draft", "draft": true},
+			{"tag_name": "v8.0.0", "html_url": "https://x/pre", "prerelease": true},
+			{"tag_name": "v1.2.0", "html_url": "https://x/real"},
+		})
+	}))
+	defer srv.Close()
+
+	oldURL := githubLatestReleaseURL
+	githubLatestReleaseURL = srv.URL + "/repos/jordibrouwer/nextdash/releases/latest"
+	t.Cleanup(func() { githubLatestReleaseURL = oldURL })
+
+	h := newPushTestHandlers(t, newFakePushService(t), nil)
+	info, err := h.fetchGitHubLatestRelease(context.Background())
+	if err != nil {
+		t.Fatalf("fetchGitHubLatestRelease: %v", err)
+	}
+	if info.Tag != "v1.2.0" {
+		t.Fatalf("tag = %q, want v1.2.0", info.Tag)
+	}
+}
+
+// An unreadable listing (rate limit, say) must degrade to GitHub's own answer
+// rather than leaving the check silent.
+func TestFetchGitHubLatestReleaseFallsBackWhenListingFails(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/releases/latest") {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"tag_name": "v1.3.0", "html_url": "https://x/fallback",
+			})
+			return
+		}
+		http.Error(w, "rate limited", http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	oldURL := githubLatestReleaseURL
+	githubLatestReleaseURL = srv.URL + "/repos/jordibrouwer/nextdash/releases/latest"
+	t.Cleanup(func() { githubLatestReleaseURL = oldURL })
+
+	h := newPushTestHandlers(t, newFakePushService(t), nil)
+	info, err := h.fetchGitHubLatestRelease(context.Background())
+	if err != nil {
+		t.Fatalf("fetchGitHubLatestRelease: %v", err)
+	}
+	if info.Tag != "v1.3.0" {
+		t.Fatalf("tag = %q, want v1.3.0 from the fallback endpoint", info.Tag)
 	}
 }
 
