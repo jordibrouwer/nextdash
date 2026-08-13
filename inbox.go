@@ -115,7 +115,7 @@ func (fs *FileStore) saveInboxDataLocked(inbox InboxData) error {
 	if inbox.Items == nil {
 		inbox.Items = []InboxLink{}
 	}
-	return fs.writeStoreJSONFile(fs.inboxFile(), inbox)
+	return fs.writeStoreJSONFile(fs.inboxFile(), inbox, 0)
 }
 
 func trimInboxItems(items []InboxLink, maxItems int) []InboxLink {

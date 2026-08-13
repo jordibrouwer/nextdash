@@ -1044,7 +1044,7 @@ func (fs *FileStore) writePageWithBookmarksLocked(pageID int, pageWithBookmarks 
 	for i := range pageWithBookmarks.Bookmarks {
 		pageWithBookmarks.Bookmarks[i].PageID = pageID
 	}
-	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
 }
 
 func (fs *FileStore) TrackBookmarkOpen(pageID int, index int) error {
@@ -1149,7 +1149,10 @@ func (fs *FileStore) saveBookmarksByPageLocked(pageID int, bookmarks []Bookmark)
 			Categories: getDefaultNewPageCategories(),
 			Bookmarks:  bookmarks,
 		}
-		return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+		// A new bookmarks-N.json file changes what GetPages() reports (its
+		// list is filename-driven — see getPages), so this is not a
+		// single-page-scoped write even though it only touches one page's file.
+		return fs.writeStoreJSONFile(filePath, pageWithBookmarks, 0)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
@@ -1159,7 +1162,7 @@ func (fs *FileStore) saveBookmarksByPageLocked(pageID int, bookmarks []Bookmark)
 
 	stampBookmarkUpdatedAt(pageWithBookmarks.Bookmarks, bookmarks, time.Now().UnixMilli())
 	pageWithBookmarks.Bookmarks = bookmarks
-	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
 }
 
 // stampBookmarkUpdatedAt sets UpdatedAt on every bookmark in next whose content
@@ -1281,7 +1284,9 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 			Categories: getDefaultNewPageCategories(),
 			Bookmarks:  []Bookmark{bookmark},
 		}
-		return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+		// New bookmarks-N.json file — see the same note in
+		// saveBookmarksByPageLocked.
+		return fs.writeStoreJSONFile(filePath, pageWithBookmarks, 0)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
@@ -1294,7 +1299,7 @@ func (fs *FileStore) AddBookmarkToPage(pageID int, bookmark Bookmark) error {
 		bookmark.UpdatedAt = time.Now().UnixMilli()
 	}
 	pageWithBookmarks.Bookmarks = append(pageWithBookmarks.Bookmarks, bookmark)
-	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
 }
 
 func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmark) error {
@@ -1324,7 +1329,7 @@ func (fs *FileStore) DeleteBookmarkFromPage(pageID int, bookmarkToDelete Bookmar
 	}
 	pageWithBookmarks.Bookmarks = updated
 
-	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
 }
 
 func (fs *FileStore) removeBookmarkFromSlice(bookmarks []Bookmark, toDelete Bookmark) ([]Bookmark, bool) {
@@ -1492,7 +1497,7 @@ func (fs *FileStore) SaveFinders(finders []Finder) error {
 	fs.ensureDataDir()
 
 	filePath := fmt.Sprintf("%s/finders.json", fs.dataDir)
-	return fs.writeStoreJSONFile(filePath, finders)
+	return fs.writeStoreJSONFile(filePath, finders, 0)
 }
 
 // GetCategoriesByPage returns categories stored inside bookmarks-{pageID}.json if present
@@ -1563,7 +1568,9 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 			Categories: categories,
 			Bookmarks:  []Bookmark{},
 		}
-		return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+		// New bookmarks-N.json file — see the same note in
+		// saveBookmarksByPageLocked.
+		return fs.writeStoreJSONFile(filePath, pageWithBookmarks, 0)
 	}
 
 	var pageWithBookmarks PageWithBookmarks
@@ -1606,7 +1613,7 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 	}
 
 	pageWithBookmarks.Categories = categories
-	return fs.writeStoreJSONFile(filePath, pageWithBookmarks)
+	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
 }
 
 func (fs *FileStore) GetPages() []Page {
@@ -1817,7 +1824,7 @@ func (fs *FileStore) savePageOrder(order []int) error {
 		Order: order,
 	}
 
-	return fs.writeStoreJSONFile(fs.pageOrderFile, pageOrder)
+	return fs.writeStoreJSONFile(fs.pageOrderFile, pageOrder, 0)
 }
 
 func (fs *FileStore) SavePage(page Page) error {
@@ -1843,7 +1850,9 @@ func (fs *FileStore) SavePage(page Page) error {
 		existing.Categories = getDefaultNewPageCategories()
 	}
 
-	return fs.writeStoreJSONFile(fileName, existing)
+	// May create bookmarks-N.json (new page) or rename an existing one — either
+	// way GetPages() can change, so this is not single-page-scoped.
+	return fs.writeStoreJSONFile(fileName, existing, 0)
 }
 
 func (fs *FileStore) removeFactoryResetUserAssets() {
@@ -1894,7 +1903,7 @@ func (fs *FileStore) resetAllDataLocked() error {
 	// user the previous one's data through the trash.
 	os.Remove(trashFilePath(fs.dataDir))
 
-	fs.noteDataMutation()
+	fs.noteDataMutation(0)
 	return nil
 }
 
@@ -1977,7 +1986,7 @@ func (fs *FileStore) MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIc
 	if err := writeFileAtomic(filePath, newData, 0644); err != nil {
 		return 0
 	}
-	fs.noteDataMutation()
+	fs.noteDataMutation(pageID)
 	return applied
 }
 
@@ -1992,7 +2001,9 @@ func (fs *FileStore) DeletePage(pageID int) error {
 	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	fs.noteDataMutation()
+	// Removing bookmarks-N.json changes what GetPages() reports — see the same
+	// note in saveBookmarksByPageLocked.
+	fs.noteDataMutation(0)
 	return nil
 }
 
@@ -2028,7 +2039,8 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	if restored.Bookmarks == nil {
 		restored.Bookmarks = []Bookmark{}
 	}
-	if err := fs.writeStoreJSONFile(filePath, restored); err != nil {
+	// A restore always creates a new bookmarks-N.json — not single-page-scoped.
+	if err := fs.writeStoreJSONFile(filePath, restored, 0); err != nil {
 		return err
 	}
 
@@ -2036,7 +2048,7 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	order := fs.getPageOrder()
 	for _, id := range order {
 		if id == snapshot.Page.ID {
-			fs.noteDataMutation()
+			fs.noteDataMutation(0)
 			return nil
 		}
 	}
@@ -2051,7 +2063,7 @@ func (fs *FileStore) RestorePage(snapshot TrashedPage) error {
 	if err := fs.savePageOrder(next); err != nil {
 		return err
 	}
-	fs.noteDataMutation()
+	fs.noteDataMutation(0)
 	return nil
 }
 
@@ -2563,7 +2575,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 		settings.Theme = defaultThemeID
 	}
 
-	return fs.writeStoreJSONFile(fs.settingsFile, settings)
+	return fs.writeStoreJSONFile(fs.settingsFile, settings, 0)
 }
 
 func getDefaultLightTheme() ThemeColors {
@@ -2962,7 +2974,7 @@ func (fs *FileStore) SaveColors(colors ColorTheme) error {
 		colors.Custom = map[string]ThemeColors{}
 	}
 
-	return fs.writeStoreJSONFile(fs.colorsFile, colors)
+	return fs.writeStoreJSONFile(fs.colorsFile, colors, 0)
 }
 
 type HealthSummary struct {

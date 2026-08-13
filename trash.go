@@ -156,7 +156,7 @@ func (fs *FileStore) saveTrashDataLocked(trash TrashData) error {
 	if trash.Items == nil {
 		trash.Items = []TrashedBookmark{}
 	}
-	return fs.writeStoreJSONFile(fs.trashFile(), trash)
+	return fs.writeStoreJSONFile(fs.trashFile(), trash, 0)
 }
 
 // pruneTrashItems drops everything past the retention window, then caps what is
