@@ -67,6 +67,15 @@ func respondStorePersistError(w http.ResponseWriter, err error) bool {
 	return false
 }
 
+func (h *Handlers) pageExists(pageID int) bool {
+	for _, page := range h.store.GetPages() {
+		if page.ID == pageID {
+			return true
+		}
+	}
+	return false
+}
+
 func respondBookmarkMutationError(w http.ResponseWriter, err error) bool {
 	if err == nil {
 		return true
@@ -1303,6 +1312,10 @@ func (h *Handlers) GetCategories(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
 		return
 	}
+	if !h.pageExists(pageID) {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
 
 	categories := h.store.GetCategoriesByPage(pageID)
 	writeJSONWithETag(w, r, categories)
@@ -1348,6 +1361,10 @@ func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
 	pageID, err := strconv.Atoi(pageIDStr)
 	if err != nil {
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
+		return
+	}
+	if !h.pageExists(pageID) {
+		http.Error(w, "Page not found", http.StatusNotFound)
 		return
 	}
 
