@@ -597,6 +597,25 @@ body.no-animations .inbox-item-actions {
     font-size: 0.85rem;
 }
 
+/* Shown only when the load failed, so an unreachable server offers a way back
+   rather than reading as an empty inbox. Matches .health-view-retry-btn. */
+.inbox-retry-btn {
+    margin-top: 0.85rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 0;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--accent-primary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.inbox-retry-btn:hover,
+.inbox-retry-btn:focus-visible {
+    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+}
+
 /* ─── Paste choice modal ─────────────────────────────────────────────────── */
 
 .paste-choice-overlay {

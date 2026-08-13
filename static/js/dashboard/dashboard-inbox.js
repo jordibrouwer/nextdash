@@ -54,6 +54,20 @@ class DashboardInbox {
         return (this.items || []).filter((i) => this.checkedIds.has(i.id) && visible.has(i.id));
     }
 
+    /**
+     * Tick every row the current filter shows, or clear them when they are all
+     * ticked already — so the same chord undoes itself.
+     *
+     * Scoped to the filtered set rather than this.items: ticking rows the user
+     * cannot see would arm the bulk buttons over a selection they never made.
+     */
+    checkAllVisible() {
+        const visible = this.getFilteredItems();
+        if (!visible.length) return;
+        const allChecked = visible.every((item) => this.checkedIds.has(item.id));
+        visible.forEach((item) => this.setChecked(item.id, !allChecked));
+    }
+
     clearChecked() {
         if (!this.checkedIds.size) return;
         this.checkedIds.clear();
@@ -829,6 +843,23 @@ class DashboardInbox {
         return item;
     }
 
+    /**
+     * The row the cursor should land on once `id` is gone: the one after it, or
+     * the one before when it was last. Null when it was the only row.
+     *
+     * Read from the filtered order rather than the DOM so it is right even when
+     * the caller renders later (or not at all).
+     */
+    neighbourItemId(id) {
+        const visible = this.getFilteredItems();
+        const index = visible.findIndex((item) => item.id === id);
+        if (index < 0) {
+            return this.selectedItemId;
+        }
+        const next = visible[index + 1] || visible[index - 1];
+        return next ? next.id : null;
+    }
+
     async deleteItemWithUndo(id, options = {}) {
         const d = this.dash;
         const snapshot = this.items.find((item) => item.id === id);
@@ -840,8 +871,14 @@ class DashboardInbox {
             return false;
         }
         const copy = JSON.parse(JSON.stringify(snapshot));
+        // Worked out before the delete, while the row is still in the list:
+        // afterwards there is nothing to take a position from. Without this the
+        // cursor was simply dropped, so a run of deletes meant delete, hunt for
+        // your place, arrow back down — the main friction in keyboard triage.
+        const nextSelectedId = this.selectedItemId === id ? this.neighbourItemId(id) : this.selectedItemId;
         try {
             await this.deleteItem(id);
+            this.selectedItemId = nextSelectedId;
             if (this.isActiveView() && !options.skipRender) {
                 this.render();
             }
@@ -1111,6 +1148,22 @@ class DashboardInbox {
         if (d.isInlineEditActive?.()) {
             return false;
         }
+        const typingTarget = e.target?.tagName === 'INPUT'
+            || e.target?.tagName === 'TEXTAREA'
+            || e.target?.isContentEditable;
+
+        // Ctrl/Cmd+A ticks every visible row, the one chord this view claims —
+        // and only while the feed has the cursor, so it keeps its browser
+        // meaning everywhere else. Handled before the modifier guard below,
+        // which nothing else gets past. Matches the health view.
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
+            && (e.key === 'a' || e.key === 'A') && !typingTarget) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.checkAllVisible();
+            return true;
+        }
+
         if (e.ctrlKey || e.altKey || e.metaKey) {
             return false;
         }
@@ -1133,8 +1186,34 @@ class DashboardInbox {
             && target?.matches?.('button, a, input, select')
         );
 
+        // View-level keys, handled before the empty-list guard below: they are
+        // about the view rather than a row, so they have to keep working when a
+        // filter or search has left nothing on screen. Escape in particular was
+        // unreachable exactly when it was needed — the bulk bar hides itself once
+        // the ticked rows are filtered out, but the ticks are still set, and this
+        // was the only way to clear them.
+        // Escape drops the selection before it closes anything else: an
+        // accidental tick should be cheap to undo.
+        if (e.key === 'Escape' && this.checkedIds.size) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.clearChecked();
+            return true;
+        }
+        // Uppercase R, matching the health view. Lowercase r is taken here by
+        // mark-read.
+        if (e.key === 'R') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            void this.refreshFromKeyboard();
+            return true;
+        }
+
         const cards = this.getVisibleItemCards();
         if (!cards.length) {
+            // t starts triage over whatever the filter currently selects, so on
+            // an empty list there is genuinely nothing to start — but the keys
+            // above had to come first.
             return false;
         }
 
@@ -1194,14 +1273,13 @@ class DashboardInbox {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.setChecked(selected.id, !this.checkedIds.has(selected.id));
-            return true;
-        }
-        if (e.key === 'Escape' && this.checkedIds.size) {
-            // Escape drops the selection before it closes anything else: an
-            // accidental tick should be cheap to undo.
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            this.clearChecked();
+            // Advance after ticking, as the health view does: marking a run of
+            // rows is x x x rather than x j x j.
+            const next = this.neighbourItemId(selected.id);
+            if (next && next !== selected.id) {
+                this.selectedItemId = next;
+                this.applyKeyboardSelection();
+            }
             return true;
         }
         if (e.key === 'z' && selected) {
@@ -1893,6 +1971,24 @@ class DashboardInbox {
     }
 
 
+    /**
+     * Re-fetch the feed on demand.
+     *
+     * loadAndRender has always accepted `refresh`, but nothing ever passed it:
+     * after the first load the list only changed through the preview poll or the
+     * view's own mutations, so a link added from the extension or another tab
+     * never appeared. Bound to R, as in the health view.
+     */
+    async refreshFromKeyboard() {
+        window.nextdashTrack?.('inbox:refresh');
+        await this.loadAndRender({ refresh: true });
+        this.dash.showNotification?.(
+            this.t('dashboard.inboxRefreshed', 'Inbox refreshed'),
+            'success',
+            { duration: 1500 }
+        );
+    }
+
     async loadAndRender({ refresh = false } = {}) {
         const needsFetch = refresh || !this._itemsLoaded;
         this.loading = needsFetch && !(this.items && this.items.length);
@@ -1902,7 +1998,13 @@ class DashboardInbox {
         if (needsFetch) {
             try {
                 await this.fetchItems();
+                this._loadFailed = false;
             } catch {
+                // Recorded so render() can tell "the load failed" from "there is
+                // nothing here". Without it an unreachable server produced an
+                // empty list, and the empty state told the user their inbox was
+                // empty and invited them to add to it.
+                this._loadFailed = true;
                 if (!this.items?.length) {
                     this.items = [];
                 }
@@ -2740,6 +2842,26 @@ class DashboardInbox {
             loading.className = 'inbox-empty';
             loading.textContent = this.t('dashboard.inboxLoading', 'Loading…');
             container.appendChild(loading);
+            this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
+            return;
+        }
+
+        // Checked before the empty state, because a failed load also leaves the
+        // list empty and the two mean opposite things: one says there is nothing
+        // to do, the other that we do not know. Same three-part panel the health
+        // view uses, retry included.
+        if (this._loadFailed && !this.items.length) {
+            const failed = document.createElement('div');
+            failed.className = 'inbox-empty-state';
+            failed.innerHTML = `
+                <p class="inbox-empty-title">${this.escape(this.t('dashboard.inboxLoadFailed', 'Unable to load the inbox'))}</p>
+                <p class="inbox-empty-hint">${this.escape(this.t('dashboard.inboxLoadFailedHint', 'Check that the server is reachable and try again.'))}</p>
+                <button type="button" class="inbox-retry-btn">${this.escape(this.t('dashboard.inboxRetry', 'Retry'))}</button>
+            `;
+            failed.querySelector('.inbox-retry-btn')?.addEventListener('click', () => {
+                void this.loadAndRender({ refresh: true });
+            });
+            container.appendChild(failed);
             this.finishInboxRenderFocus(container, preserveSearch, searchCaret);
             return;
         }
