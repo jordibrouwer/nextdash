@@ -495,6 +495,7 @@ type Store interface {
 	// Categories - per page only
 	GetCategoriesByPage(pageID int) []Category
 	SaveCategoriesByPage(pageID int, categories []Category) error
+	PreviewCategoriesByPage(pageID int, categories []Category) (CategoryRemapPreview, error)
 	// Finders
 	GetFinders() []Finder
 	SaveFinders(finders []Finder) error
@@ -1589,26 +1590,7 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 		return ErrCategoriesStillReferenced
 	}
 
-	// Create a mapping from old category IDs to new category IDs
-	// This allows us to update bookmarks when category names (and thus IDs) change
-	oldToNewCategoryMap := make(map[string]string)
-
-	// Build the mapping using originalId. Every known client sends it on
-	// every category (see dashboard-persistence.js, dashboard-render-core.js,
-	// dashboard-category-sort.js), so this is the only reliable signal for
-	// "this new entry replaces that old one". A positional fallback was tried
-	// here before and misfired: dropping a middle category shifts every later
-	// index by one, so category N's bookmarks would be silently reassigned to
-	// category N+1's new ID. If a category is genuinely unchanged (id kept as
-	// is) it needs no mapping at all — its bookmarks already point at the
-	// right ID — so the only remaining safe fallback is "same ID in and out".
-	for _, newCat := range categories {
-		if newCat.OriginalID != "" {
-			oldToNewCategoryMap[newCat.OriginalID] = newCat.ID
-			continue
-		}
-		oldToNewCategoryMap[newCat.ID] = newCat.ID
-	}
+	oldToNewCategoryMap := buildCategoryRemap(categories)
 
 	// Update bookmarks to use new category IDs
 	for i := range pageWithBookmarks.Bookmarks {
@@ -1620,6 +1602,155 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 
 	pageWithBookmarks.Categories = categories
 	return fs.writeStoreJSONFile(filePath, pageWithBookmarks, pageID)
+}
+
+// buildCategoryRemap maps old category IDs to the IDs they become.
+//
+// Built from originalId. Every known client sends it on every category (see
+// dashboard-persistence.js, dashboard-render-core.js,
+// dashboard-category-sort.js), so it is the only reliable signal for "this new
+// entry replaces that old one". A positional fallback was tried here before and
+// misfired: dropping a middle category shifts every later index by one, so
+// category N's bookmarks would be silently reassigned to category N+1's new ID.
+// If a category is genuinely unchanged (id kept as is) it needs no mapping at
+// all — its bookmarks already point at the right ID — so the only remaining
+// safe fallback is "same ID in and out".
+//
+// Shared with PreviewCategoriesByPage rather than duplicated there: a preview
+// that computed the outcome its own way would eventually disagree with the save
+// it is supposed to be predicting, which is the one thing a dry-run may not do.
+func buildCategoryRemap(categories []Category) map[string]string {
+	remap := make(map[string]string, len(categories))
+	for _, newCat := range categories {
+		if newCat.OriginalID != "" {
+			remap[newCat.OriginalID] = newCat.ID
+			continue
+		}
+		remap[newCat.ID] = newCat.ID
+	}
+	return remap
+}
+
+// CategoryRemapMove is one bookmark that a category save would move, named so
+// the client can show which rows are affected rather than only how many.
+type CategoryRemapMove struct {
+	BookmarkName string `json:"bookmarkName"`
+	URL          string `json:"url"`
+	FromCategory string `json:"fromCategory"`
+	ToCategory   string `json:"toCategory"`
+}
+
+// CategoryRemapPreview is what SaveCategoriesByPage would do, without doing it.
+type CategoryRemapPreview struct {
+	PageID int `json:"pageId"`
+	// Moved lists bookmarks whose category id would change.
+	Moved []CategoryRemapMove `json:"moved"`
+	// Orphaned lists bookmarks whose category would survive the save pointing
+	// at an id that no longer exists — the case that makes this preview worth
+	// having, since the save reports nothing about it and the dashboard renders
+	// the result identically to "uncategorized".
+	Orphaned []CategoryRemapMove `json:"orphaned"`
+	// MissingOriginalID names categories submitted without an originalId whose
+	// id is not among the current ones. The remap can only treat those as new,
+	// so if one was meant as a rename its bookmarks are left behind.
+	MissingOriginalID []string `json:"missingOriginalId"`
+	// Rejected is set when the save would fail outright rather than apply, with
+	// Reason carrying the sentinel's name.
+	Rejected bool   `json:"rejected"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+// PreviewCategoriesByPage reports what SaveCategoriesByPage would change.
+//
+// The remap is driven by originalId, which is fragile in a specific way: a
+// client that omits it on a renamed category gets a silent no-op — the save
+// succeeds, the category list updates, and the bookmarks are quietly left
+// pointing at an id that no longer exists. Nothing in the response says so.
+// This computes the same outcome through the same helper, so a caller can show
+// the damage before committing to it.
+func (fs *FileStore) PreviewCategoriesByPage(pageID int, categories []Category) (CategoryRemapPreview, error) {
+	fs.mutex.RLock()
+	defer fs.mutex.RUnlock()
+
+	preview := CategoryRemapPreview{
+		PageID:            pageID,
+		Moved:             []CategoryRemapMove{},
+		Orphaned:          []CategoryRemapMove{},
+		MissingOriginalID: []string{},
+	}
+
+	filePath := fmt.Sprintf("%s/bookmarks-%d.json", fs.dataDir, pageID)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// A save here creates the page with these categories and no
+			// bookmarks, so there is nothing to remap and nothing to warn about.
+			return preview, nil
+		}
+		return preview, err
+	}
+
+	var pageWithBookmarks PageWithBookmarks
+	if err := json.Unmarshal(data, &pageWithBookmarks); err != nil {
+		return preview, fmt.Errorf("decode bookmarks page %d: %w", pageID, err)
+	}
+
+	// Mirrors the guard in SaveCategoriesByPage: a preview that promised a
+	// clean apply for a save that will be refused would be worse than none.
+	if len(categories) == 0 && bookmarksReferenceCategories(pageWithBookmarks.Bookmarks) {
+		preview.Rejected = true
+		preview.Reason = "categories_still_referenced"
+		return preview, nil
+	}
+
+	remap := buildCategoryRemap(categories)
+
+	currentIDs := make(map[string]struct{}, len(pageWithBookmarks.Categories))
+	for _, category := range pageWithBookmarks.Categories {
+		if id := strings.TrimSpace(category.ID); id != "" {
+			currentIDs[id] = struct{}{}
+		}
+	}
+	for _, category := range categories {
+		if category.OriginalID != "" {
+			continue
+		}
+		if _, known := currentIDs[category.ID]; !known {
+			preview.MissingOriginalID = append(preview.MissingOriginalID, category.ID)
+		}
+	}
+
+	survivingIDs := make(map[string]struct{}, len(categories))
+	for _, category := range categories {
+		if id := strings.TrimSpace(category.ID); id != "" {
+			survivingIDs[id] = struct{}{}
+		}
+	}
+
+	for _, bookmark := range pageWithBookmarks.Bookmarks {
+		from := strings.TrimSpace(bookmark.Category)
+		if from == "" {
+			continue
+		}
+		to := from
+		if mapped, exists := remap[from]; exists {
+			to = mapped
+		}
+		move := CategoryRemapMove{
+			BookmarkName: bookmark.Name,
+			URL:          bookmark.URL,
+			FromCategory: from,
+			ToCategory:   to,
+		}
+		if to != from {
+			preview.Moved = append(preview.Moved, move)
+		}
+		if _, survives := survivingIDs[to]; !survives {
+			preview.Orphaned = append(preview.Orphaned, move)
+		}
+	}
+
+	return preview, nil
 }
 
 func (fs *FileStore) GetPages() []Page {

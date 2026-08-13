@@ -1442,6 +1442,20 @@ func (h *Handlers) SaveCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ?dryRun=1 answers with what the save would change and writes nothing.
+	// Same handler, same payload, same validation as the real save — a separate
+	// endpoint would be free to drift from the thing it is meant to predict.
+	if dryRun := r.URL.Query().Get("dryRun"); dryRun == "1" || dryRun == "true" {
+		preview, err := h.store.PreviewCategoriesByPage(pageID, categories)
+		if err != nil {
+			http.Error(w, "Failed to preview categories", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(preview)
+		return
+	}
+
 	if !respondCategoriesSaveError(w, h.store.SaveCategoriesByPage(pageID, categories)) {
 		return
 	}
