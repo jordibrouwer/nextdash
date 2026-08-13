@@ -1580,20 +1580,21 @@ func (fs *FileStore) SaveCategoriesByPage(pageID int, categories []Category) err
 	// This allows us to update bookmarks when category names (and thus IDs) change
 	oldToNewCategoryMap := make(map[string]string)
 
-	// Build the mapping using originalId if available, otherwise try to match by position or name
-	for i, newCat := range categories {
-		// If originalId is set, use it to find the old category
+	// Build the mapping using originalId. Every known client sends it on
+	// every category (see dashboard-persistence.js, dashboard-render-core.js,
+	// dashboard-category-sort.js), so this is the only reliable signal for
+	// "this new entry replaces that old one". A positional fallback was tried
+	// here before and misfired: dropping a middle category shifts every later
+	// index by one, so category N's bookmarks would be silently reassigned to
+	// category N+1's new ID. If a category is genuinely unchanged (id kept as
+	// is) it needs no mapping at all — its bookmarks already point at the
+	// right ID — so the only remaining safe fallback is "same ID in and out".
+	for _, newCat := range categories {
 		if newCat.OriginalID != "" {
 			oldToNewCategoryMap[newCat.OriginalID] = newCat.ID
-			// Also map from current ID to new ID in case they're different
-			if newCat.OriginalID != newCat.ID {
-				oldToNewCategoryMap[newCat.OriginalID] = newCat.ID
-			}
-		} else if i < len(pageWithBookmarks.Categories) {
-			// Fallback: map by position if originalId is not available
-			oldCat := pageWithBookmarks.Categories[i]
-			oldToNewCategoryMap[oldCat.ID] = newCat.ID
+			continue
 		}
+		oldToNewCategoryMap[newCat.ID] = newCat.ID
 	}
 
 	// Update bookmarks to use new category IDs
