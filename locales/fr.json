@@ -1239,7 +1239,10 @@
     "sortModeOpens": "Plus ouverts",
     "filterByOpened": "Filtrer par dernière ouverture (never/today/week/month/year)",
     "filterByAdded": "Filtrer par date d'ajout (today/week/month/year)",
-    "reorderNeedsManualOrder": "Passez cette catégorie en ordre manuel pour déplacer les favoris."
+    "reorderNeedsManualOrder": "Passez cette catégorie en ordre manuel pour déplacer les favoris.",
+    "categorySortMenuAria": "Trier cette catégorie",
+    "categorySortManualShort": "Manuel",
+    "categorySortManualAria": "Ordre manuel (glisser pour organiser)"
   },
   "health": {
     "pageTitle": "health beta",

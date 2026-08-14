@@ -1240,7 +1240,10 @@
     "sortModeOpens": "Most opened",
     "filterByOpened": "Filter by when it was last opened (never/today/week/month/year)",
     "filterByAdded": "Filter by when it was added (today/week/month/year)",
-    "reorderNeedsManualOrder": "Switch this category to manual order to move bookmarks."
+    "reorderNeedsManualOrder": "Switch this category to manual order to move bookmarks.",
+    "categorySortMenuAria": "Sort this category",
+    "categorySortManualShort": "Manual",
+    "categorySortManualAria": "Manual order (drag to arrange)"
   },
   "health": {
     "pageTitle": "health beta",

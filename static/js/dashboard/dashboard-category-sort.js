@@ -240,48 +240,152 @@
             },
         ];
 
-        modes.forEach(({ mode, short, aria }) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'category-sort-btn';
-            btn.textContent = short;
-            btn.setAttribute('data-sort-mode', mode);
-            btn.setAttribute('aria-pressed', sortMode === mode ? 'true' : 'false');
-            if (sortMode === mode) {
-                btn.classList.add('is-active');
-            }
-            const modeLabel = label(dash, aria, mode === 'az' ? 'Sort A to Z' : 'Sort by recently used');
-            btn.setAttribute(
-                'aria-label',
-                categoryName ? `${modeLabel} (${categoryName})` : modeLabel
-            );
-            btn.addEventListener('click', (e) => {
+        // One button, not four. Four sort buttons on every category header —
+        // and the header is repeated per category — took more width than the
+        // bookmark names beside them. The active mode stays visible because it
+        // is the one thing worth knowing at a glance; the rest move behind a ⋯.
+        //
+        // In manual order, which is the default, even that button is dropped:
+        // there is no sort to report, so the header shows nothing but the ⋯.
+        const active = modes.find((m) => m.mode === sortMode) || null;
+
+        if (active) {
+            const current = document.createElement('button');
+            current.type = 'button';
+            current.className = 'category-sort-btn is-active';
+            current.textContent = active.short;
+            current.setAttribute('data-sort-mode', active.mode);
+            current.setAttribute('aria-pressed', 'true');
+            const activeLabel = label(dash, active.aria, active.mode);
+            current.setAttribute('aria-label',
+                categoryName ? `${activeLabel} (${categoryName})` : activeLabel);
+            // Clicking the active mode turns it off, back to manual order —
+            // the same toggle the four buttons had.
+            current.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const next = setCategorySortMode(dash, category.id || '', mode, { toggle: true });
-                const categoryEl = controls.closest('.category[data-category-id]');
-                if (categoryEl) {
-                    updateCategorySortUi(dash, categoryEl, { ...category, sortMode: next });
-                }
-                renderCore?.renderDashboard?.({ animate: false });
+                applyMode(active.mode);
             });
-            controls.appendChild(btn);
+            controls.appendChild(current);
+        }
+
+        const menuBtn = document.createElement('button');
+        menuBtn.type = 'button';
+        menuBtn.className = 'category-sort-menu-btn';
+        menuBtn.textContent = '⋯';
+        menuBtn.setAttribute('aria-haspopup', 'menu');
+        menuBtn.setAttribute('aria-expanded', 'false');
+        const menuLabel = label(dash, 'dashboard.categorySortMenuAria', 'Sort this category');
+        menuBtn.setAttribute('aria-label',
+            categoryName ? `${menuLabel} (${categoryName})` : menuLabel);
+        controls.appendChild(menuBtn);
+
+        function applyMode(mode) {
+            const next = setCategorySortMode(dash, category.id || '', mode, { toggle: true });
+            const categoryEl = controls.closest('.category[data-category-id]');
+            if (categoryEl) {
+                updateCategorySortUi(dash, categoryEl, { ...category, sortMode: next });
+            }
+            renderCore?.renderDashboard?.({ animate: false });
+        }
+
+        function closeMenu() {
+            controls.querySelector('.category-sort-menu')?.remove();
+            menuBtn.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('click', onOutside, true);
+        }
+
+        function onOutside(e) {
+            if (!controls.contains(e.target)) closeMenu();
+        }
+
+        menuBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (controls.querySelector('.category-sort-menu')) {
+                closeMenu();
+                return;
+            }
+            // Close any other category's menu first: two open at once reads as
+            // a bug, and the outside-click handler only knows about its own.
+            document.querySelectorAll('.category-sort-menu').forEach((m) => m.remove());
+            document.querySelectorAll('.category-sort-menu-btn[aria-expanded="true"]')
+                .forEach((b) => b.setAttribute('aria-expanded', 'false'));
+
+            const menu = document.createElement('div');
+            menu.className = 'category-sort-menu';
+            menu.setAttribute('role', 'menu');
+
+            const entries = [
+                { mode: 'order', short: label(dash, 'dashboard.categorySortManualShort', 'Manual'),
+                  aria: 'dashboard.categorySortManualAria' },
+                ...modes,
+            ];
+            entries.forEach(({ mode, short, aria }) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'category-sort-menu-item';
+                item.setAttribute('role', 'menuitemradio');
+                item.setAttribute('data-sort-mode', mode);
+                const on = sortMode === mode || (mode === 'order' && !active);
+                item.setAttribute('aria-checked', on ? 'true' : 'false');
+                if (on) item.classList.add('is-active');
+                item.textContent = short;
+                const itemLabel = label(dash, aria, mode);
+                item.setAttribute('aria-label',
+                    categoryName ? `${itemLabel} (${categoryName})` : itemLabel);
+                item.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    closeMenu();
+                    // 'order' is the absence of a sort, so it is set rather than
+                    // toggled — clicking it twice must not turn a sort back on.
+                    if (mode === 'order') {
+                        const next = setCategorySortMode(dash, category.id || '', 'order', { toggle: false });
+                        const categoryEl = controls.closest('.category[data-category-id]');
+                        if (categoryEl) {
+                            updateCategorySortUi(dash, categoryEl, { ...category, sortMode: next });
+                        }
+                        renderCore?.renderDashboard?.({ animate: false });
+                        return;
+                    }
+                    applyMode(mode);
+                });
+                menu.appendChild(item);
+            });
+
+            controls.appendChild(menu);
+            menuBtn.setAttribute('aria-expanded', 'true');
+            menu.querySelector('.category-sort-menu-item.is-active, .category-sort-menu-item')?.focus();
+            document.addEventListener('click', onOutside, true);
         });
 
         controls.addEventListener('keydown', (e) => {
-            const buttons = [...controls.querySelectorAll('.category-sort-btn')];
-            const index = buttons.indexOf(document.activeElement);
+            const menu = controls.querySelector('.category-sort-menu');
+            if (e.key === 'Escape' && menu) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeMenu();
+                menuBtn.focus();
+                return;
+            }
+            const items = menu
+                ? [...menu.querySelectorAll('.category-sort-menu-item')]
+                : [...controls.querySelectorAll('.category-sort-btn, .category-sort-menu-btn')];
+            const index = items.indexOf(document.activeElement);
             if (index < 0) {
                 return;
             }
-            if (e.key === 'ArrowRight' && index < buttons.length - 1) {
+            const forward = menu ? 'ArrowDown' : 'ArrowRight';
+            const back = menu ? 'ArrowUp' : 'ArrowLeft';
+            if (e.key === forward && index < items.length - 1) {
                 e.preventDefault();
                 e.stopPropagation();
-                buttons[index + 1].focus();
-            } else if (e.key === 'ArrowLeft' && index > 0) {
+                items[index + 1].focus();
+            } else if (e.key === back && index > 0) {
                 e.preventDefault();
                 e.stopPropagation();
-                buttons[index - 1].focus();
+                items[index - 1].focus();
             }
         });
 
@@ -321,13 +425,12 @@
         const controls = categoryEl.querySelector('.category-sort-controls');
         if (controls) {
             controls.setAttribute('data-sort-mode', sortMode);
+            // The strip is one button plus a ⋯, and which button that is
+            // depends on the mode — so switching sort changes the markup, not
+            // just a class on a button that is always there. Rebuild it.
+            const rebuilt = createSortControls(dash, { ...category, sortMode }, dash.renderCore);
+            controls.replaceWith(rebuilt);
         }
-        categoryEl.querySelectorAll('.category-sort-btn[data-sort-mode]').forEach((btn) => {
-            const mode = btn.getAttribute('data-sort-mode');
-            const active = mode === sortMode;
-            btn.classList.toggle('is-active', active);
-            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-        });
     }
 
     function refreshAllCategorySortUi(dash, root = document) {

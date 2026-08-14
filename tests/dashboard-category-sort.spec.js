@@ -26,9 +26,12 @@ test.describe('dashboard per-category sort', () => {
         const categoryId = await ensureSortableCategory(page);
         expect(categoryId).not.toBe('');
         const category = page.locator(`#dashboard-layout .category[data-category-id="${categoryId}"]`);
+        // A–Z now lives in the ⋯ menu: four sort buttons per header took more
+        // width than the bookmark names beside them.
+        const menuBtn = category.locator('.category-sort-menu-btn');
         const azBtn = category.locator('.category-sort-btn[data-sort-mode="az"]');
         await category.locator('.category-title').hover();
-        await expect(azBtn).toBeVisible();
+        await expect(menuBtn).toBeVisible();
 
         const sortOpacity = await category.locator('.category-sort-controls').evaluate((el) => (
             Number.parseFloat(getComputedStyle(el).opacity)
@@ -38,13 +41,16 @@ test.describe('dashboard per-category sort', () => {
         const namesBefore = await category.locator('.bookmark-link .bookmark-text').allTextContents();
         expect(namesBefore.length).toBeGreaterThan(1);
 
-        await azBtn.click();
+        await menuBtn.click();
+        await category.locator('.category-sort-menu-item[data-sort-mode="az"]').click();
 
+        // The chosen mode becomes the one button in front of the ⋯.
+        await expect(azBtn).toBeVisible();
         await expect(azBtn).toHaveClass(/is-active/);
         await expect(azBtn).toHaveAttribute('aria-pressed', 'true');
-        // 'recent' was renamed to 'opened': Config used the same word for
-        // createdAt under the label "Recently added".
-        await expect(category.locator('.category-sort-btn[data-sort-mode="opened"]')).not.toHaveClass(/is-active/);
+        // Only the active mode is rendered as a button now, so the others are
+        // absent rather than present-and-inactive.
+        await expect(category.locator('.category-sort-btn[data-sort-mode="opened"]')).toHaveCount(0);
 
         await expect(category.locator('.bookmarks-list')).toHaveClass(/bookmarks-list--sort-active/);
         await expect(azBtn).toHaveClass(/is-active/);
@@ -69,12 +75,12 @@ test.describe('dashboard per-category sort', () => {
         expect(result.mode).toBe('az');
         expect(result.handleDisplay).toBe('none');
 
+        // Clicking the active mode turns it off, back to manual order — where
+        // there is no sort to report, so the button goes with it and only the
+        // ⋯ is left.
         await azBtn.click();
-        await expect(azBtn).not.toHaveClass(/is-active/);
-        await expect(azBtn).toHaveAttribute('aria-pressed', 'false');
-        // 'recent' was renamed to 'opened': Config used the same word for
-        // createdAt under the label "Recently added".
-        await expect(category.locator('.category-sort-btn[data-sort-mode="opened"]')).not.toHaveClass(/is-active/);
+        await expect(category.locator('.category-sort-btn')).toHaveCount(0);
+        await expect(category.locator('.category-sort-menu-btn')).toBeVisible();
         await expect(category.locator('.bookmarks-list')).not.toHaveClass(/bookmarks-list--sort-active/);
     });
 });
