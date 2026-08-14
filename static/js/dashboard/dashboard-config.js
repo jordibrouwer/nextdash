@@ -641,6 +641,23 @@ class DashboardConfig {
             // they were. Health and inbox already guard the same way.
             if (window.DashboardTagCloud?.modalOpen) return;
             if (d.isModalOpen()) return;
+            // The row's right-click menu is layered over the view and owns
+            // Escape while it is up, the same as the theme picker below. This
+            // handler is on document in the capture phase and registers first,
+            // so without this the menu never saw the key and config closed
+            // underneath it.
+            // The menu decides what Escape means — from its check-mode submenu
+            // it walks back to the parent rather than closing, the way a native
+            // submenu does. Asked explicitly rather than by letting the event
+            // travel on: this handler is registered before the menu's own, and
+            // relying on which capture listener runs first is the kind of
+            // ordering that breaks the next time one is added.
+            if (this._bmContextMenu?.isOpen?.()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this._bmContextMenu.handleEscape();
+                return;
+            }
             if (window.ConfigSettingPromo?.dismissActive?.({ persist: true })) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -13474,7 +13491,21 @@ class DashboardConfig {
     }
 
     /** Row-level handlers, rebound after every list repaint. */
+    /**
+     * The right-click menu on a row, created on first use.
+     *
+     * Lazily rather than in the constructor: config itself is lazy-loaded, and
+     * a session that never opens the Bookmarks section never needs it.
+     */
+    bookmarkContextMenu() {
+        if (this._bmContextMenu) return this._bmContextMenu;
+        if (typeof window.DashboardConfigContextMenu !== 'function') return null;
+        this._bmContextMenu = new window.DashboardConfigContextMenu(this);
+        return this._bmContextMenu;
+    }
+
     bindBookmarkRows(root) {
+        this.bookmarkContextMenu()?.bindList(root);
         const listRoot = root.querySelector('#config-bm-list') || root;
         listRoot.querySelectorAll('[data-feed-action="open"]').forEach((btn) => {
             btn.addEventListener('click', () => {
