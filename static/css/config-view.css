@@ -2764,12 +2764,13 @@ body.no-animations .config-new-features-panel-star {
  * Tags get their own line once there are more than two, so a long list stops
  * competing with the domain for the identifying line above it.
  */
+/* Matches .inbox-item-tags. */
 .config-bm-tag-row {
-    margin: 0.25rem 0 0;
+    margin: 0.3rem 0 0;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.3rem 0.35rem;
+    gap: 0.3rem;
     min-width: 0;
 }
 
@@ -3154,19 +3155,23 @@ body.no-animations .config-new-features-panel-star {
     margin-top: 0.5rem;
 }
 
+/* Same chip as the inbox rows (.inbox-item-tag): a tag should look like a tag
+   wherever it is listed, and the two were drifting — a tinted fill against a
+   solid one, and two different border tokens. */
 .config-bm-tag-chip {
-    padding: 0.05rem 0.4rem;
+    padding: 0.05rem 0.45rem;
     border-radius: 999px;
-    border: 1px solid var(--border-secondary);
-    background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-family: inherit;
     cursor: pointer;
 }
 
-.config-bm-tag-chip:hover {
-    border-color: var(--accent-primary);
+.config-bm-tag-chip:hover,
+.config-bm-tag-chip:focus-visible {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
     color: var(--accent-primary);
 }
 
