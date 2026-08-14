@@ -663,10 +663,9 @@ class DashboardContextMenu {
 
         const done = () => {
             if (row) {
-                row.classList.remove('bookmark-copy-flash');
-                void row.offsetWidth;
-                row.classList.add('bookmark-copy-flash');
-                row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
+                // Shared helper: the remove/reflow/add dance replays an animation that
+                // may still be running, and was written out by hand in five places.
+                d.bookmarkRows?.restartRowAnimation?.(row, 'bookmark-copy-flash');
             }
             // Name the reason when it is the origin, because that one is fixable:
             // the browser does have a share sheet and is withholding it over

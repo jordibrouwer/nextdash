@@ -703,10 +703,9 @@ class SearchCommandsComponent {
 
         const flashRow = () => {
             if (!row) return;
-            row.classList.remove('bookmark-copy-flash');
-            void row.offsetWidth;
-            row.classList.add('bookmark-copy-flash');
-            row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
+            // Shared helper: the remove/reflow/add dance replays an animation that
+            // may still be running, and was written out by hand in five places.
+            window.dashboardInstance?.bookmarkRows?.restartRowAnimation?.(row, 'bookmark-copy-flash');
         };
 
         const done = () => {

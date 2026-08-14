@@ -415,6 +415,9 @@ class DashboardBookmarkRows {
 
     populateBookmarkRowView(row, bookmark, categoryId, allowInlineEdit) {
         const d = this.dash;
+        // Resolved once per row build rather than per click: #dashboard-layout
+        // outlives every repaint, only its children are replaced.
+        const gridElement = document.getElementById('dashboard-layout');
         if (row._bookmarkLongPressAbort) {
             row._bookmarkLongPressAbort.abort();
             row._bookmarkLongPressAbort = null;
@@ -509,6 +512,10 @@ class DashboardBookmarkRows {
         openLink.href = safeHref || '#';
         openLink.id = this.bookmarkCellId(bookmark, bookmarkIndex, categoryId);
         openLink.setAttribute('role', 'gridcell');
+        // Constant: the grid is one column wide. Stamped here so syncBookmarkGridA11y
+        // does not have to find this element again on every render to rewrite them.
+        openLink.setAttribute('aria-colindex', '1');
+        openLink.setAttribute('aria-colcount', '1');
         /* Roving tabindex: only the arrow-selected row’s link is in tab order (see KeyboardNavigation). */
         openLink.tabIndex = -1;
         const displayLabel = this.bookmarkDisplayLabel(bookmark);
@@ -552,11 +559,11 @@ class DashboardBookmarkRows {
                 return;
             }
             recordOpen();
-            if (document.getElementById('dashboard-layout')?.classList.contains('layout-launcher')) {
-                row.classList.remove('bookmark-pulse');
-                void row.offsetWidth; // force reflow so re-clicking restarts the animation
-                row.classList.add('bookmark-pulse');
-                row.addEventListener('animationend', () => row.classList.remove('bookmark-pulse'), { once: true });
+            // gridElement is resolved once at render time rather than per click:
+            // #dashboard-layout survives every repaint (only its children are
+            // replaced), so this was a document lookup on every bookmark open.
+            if (gridElement?.classList.contains('layout-launcher')) {
+                this.restartRowAnimation(row, 'bookmark-pulse');
             }
             if (window.hyprMode && window.hyprMode.isEnabled()) {
                 e.preventDefault();
@@ -1118,13 +1125,13 @@ class DashboardBookmarkRows {
         rowgroups.forEach((group) => {
             const rows = group.querySelectorAll('.bookmark-link[data-bookmark-url]');
             group.setAttribute('aria-rowcount', String(rows.length));
+            // aria-colindex/colcount are constant — one column, always — so they
+            // are stamped once in populateBookmarkRowView instead. Setting them
+            // here meant a querySelector per row on every render, every
+            // incremental render, every tag-filter change and every keyboard
+            // rebuild, to write the same two values back.
             rows.forEach((row, idx) => {
                 row.setAttribute('aria-rowindex', String(idx + 1));
-                const openLink = row.querySelector('a.bookmark-open');
-                if (openLink) {
-                    openLink.setAttribute('aria-colindex', '1');
-                    openLink.setAttribute('aria-colcount', '1');
-                }
             });
             totalRows += rows.length;
         });
@@ -1929,10 +1936,21 @@ class DashboardBookmarkRows {
     _attachActionPopoverPositioning(pop, anchorEl) {
         const d = this.dash;
         this._positionActionPopoverBeside(pop, anchorEl);
-        const reposition = () => this._positionActionPopoverBeside(pop, anchorEl);
+        // One reposition per frame. Scroll fires far faster than the popover can
+        // move, and each run reads offsetWidth/offsetHeight and then writes two
+        // styles — a forced reflow per event for as long as a popover is open.
+        let rafId = 0;
+        const reposition = () => {
+            if (rafId) return;
+            rafId = requestAnimationFrame(() => {
+                rafId = 0;
+                this._positionActionPopoverBeside(pop, anchorEl);
+            });
+        };
         window.addEventListener('resize', reposition);
         window.addEventListener('scroll', reposition, true);
         return () => {
+            if (rafId) cancelAnimationFrame(rafId);
             window.removeEventListener('resize', reposition);
             window.removeEventListener('scroll', reposition, true);
         };
@@ -2019,6 +2037,31 @@ class DashboardBookmarkRows {
             listbox.tabIndex = -1;
         }
         listbox.focus({ preventScroll: true });
+    }
+
+
+    /**
+     * Replay a one-shot row animation.
+     *
+     * The remove/reflow/add dance is needed to restart an animation that may
+     * already be running — clicking the same bookmark twice, copying twice — and
+     * it was written out by hand in five places. The forced reflow is the point,
+     * not an oversight: without it the browser coalesces the class removal and
+     * addition and nothing replays.
+     *
+     * The listener removes the class again, which is why reduced motion collapses
+     * these to 0.01ms rather than `animation: none` (see dashboard.css): an
+     * animation that never starts fires no `animationend`, and the class would
+     * stay on the row for the rest of the session.
+     */
+    restartRowAnimation(row, className) {
+        if (!(row instanceof HTMLElement) || !className) {
+            return;
+        }
+        row.classList.remove(className);
+        void row.offsetWidth;
+        row.classList.add(className);
+        row.addEventListener('animationend', () => row.classList.remove(className), { once: true });
     }
 
 

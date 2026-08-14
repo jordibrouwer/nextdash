@@ -1498,10 +1498,9 @@ class KeyboardNavigation {
         if (!url) return;
 
         const flashRow = () => {
-            row.classList.remove('bookmark-copy-flash');
-            void row.offsetWidth; // force reflow to restart animation
-            row.classList.add('bookmark-copy-flash');
-            row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
+            // Shared helper: the remove/reflow/add dance replays an animation that
+            // may still be running, and was written out by hand in five places.
+            this.dashboard?.bookmarkRows?.restartRowAnimation?.(row, 'bookmark-copy-flash');
         };
 
         const notify = () => {
