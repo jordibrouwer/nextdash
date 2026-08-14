@@ -746,9 +746,18 @@ class DashboardUiHelpers {
                             name,
                             url: fullUrl,
                             shortcut,
-                            category: '',
-                            pinned: false,
-                            checkStatus: false,
+                            // Defaults from settings rather than fixed: a
+                            // homelab dashboard wants every new service checked,
+                            // and quick-add landing everything uncategorised is
+                            // what creates the cleanup work later.
+                            category: String(d.settings?.newBookmarkCategory || ''),
+                            pinned: d.settings?.newBookmarkPinned === true,
+                            checkStatus: d.settings?.newBookmarkCheckMode === 'periodic'
+                                || d.settings?.newBookmarkCheckMode === 'monitor',
+                            monitorEnabled: d.settings?.newBookmarkCheckMode === 'monitor' ? true : undefined,
+                            monitorIntervalMinutes: d.settings?.newBookmarkCheckMode === 'monitor'
+                                ? (Number(d.settings?.defaultMonitorIntervalMinutes) || 15)
+                                : undefined,
                             icon,
                             previewTitle: previewTitle || undefined,
                             previewDesc: previewDesc || undefined,

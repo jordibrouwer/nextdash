@@ -93,6 +93,9 @@ test.describe('config info + reset affordances', () => {
             // count, with a comment saying they carry no ℹ of their own: a
             // field with no `def` reports itself unchanged whatever it holds.
             'pasteDestination', 'monitorEmphasis', 'theme', 'fontSize', 'customTitle',
+            // Carried for the ↺ button and the changed-settings count; it has no
+            // control of its own, so there is nothing for an ℹ to sit beside.
+            'newBookmarkCategory',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });
