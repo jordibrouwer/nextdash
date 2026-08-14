@@ -400,7 +400,11 @@
       "navAddCategory": "Ajouter une catégorie à la page actuelle (appuyez brièvement sur c pour rechercher)",
       "cnPageNew": "Créer une page et s’y rendre (n dans l’aperçu des pages fait de même)",
       "cbCategoryNew": "Créer une catégorie sur la page actuelle (maintenir c fait de même)",
-      "bmCategoryMenu": "Clic droit sur un en-tête de catégorie pour renommer, ajouter ou supprimer"
+      "bmCategoryMenu": "Clic droit sur un en-tête de catégorie pour renommer, ajouter ou supprimer",
+      "bmTogglePin": "Épingler ou détacher le favori ciblé",
+      "bmShare": "Partager le favori ciblé, ou copier son nom et son URL là où il n’y a pas de fenêtre de partage",
+      "bmRevealHealth": "Ouvrir le favori ciblé sur sa propre ligne dans Santé",
+      "bmFilterTag": "Filtrer la grille sur le tag du favori ciblé ; plusieurs tags ouvrent le sélecteur"
     },
     "firstBookmarkGuide": "Ajoutez votre premier favori avec + ou Shift+B (& pour ajout rapide), ou configurez les pages dans config → pages.",
     "emptyStateAddTouch": "Touchez + favori dans la barre ci-dessous",
@@ -1221,7 +1225,14 @@
     "healthTutorialStep6Title": "Soyez prévenu quand ça casse vraiment",
     "healthTutorialStep6Body1": "Alertes de panne propose maintenant un sélecteur de Service, pour que le message arrive réellement sous une forme lisible plutôt qu'un bloc de JSON brut qu'une appli de chat ignore silencieusement. Choisissez celui que votre équipe surveille déjà — seuls les champs nécessaires à ce service s'affichent.",
     "healthTutorialStep6Body2": "Réglez Alert after sur 3 pour qu'une seule vérification manquée pendant un incident réseau ne prévienne personne, et cliquez une fois sur Send test alert avant de lui faire confiance pour la vraie alerte — un mauvais identifiant de discussion échoue autrement silencieusement, sans rien à l'écran pour expliquer pourquoi.",
-    "healthTutorialStep6Closing": "C'est tout le cycle : une barre de heartbeat, un taux de disponibilité, et un message qui arrive là où vous le verrez vraiment — seulement quand quelque chose ne va vraiment pas."
+    "healthTutorialStep6Closing": "C'est tout le cycle : une barre de heartbeat, un taux de disponibilité, et un message qui arrive là où vous le verrez vraiment — seulement quand quelque chose ne va vraiment pas.",
+    "smartAddedCollection": "Récemment ajoutés",
+    "categorySortAddedShort": "Nouv",
+    "categorySortOpensShort": "Top",
+    "categorySortAddedAria": "Trier cette catégorie par date d’ajout",
+    "categorySortOpensAria": "Trier cette catégorie par fréquence d’ouverture",
+    "sortModeAdded": "Plus récents",
+    "sortModeOpens": "Plus ouverts"
   },
   "health": {
     "pageTitle": "health beta",
@@ -4563,7 +4574,9 @@
     "bulkFaviconConfirmFromInfoTitle": "Quand confirmer une récupération",
     "bulkFaviconConfirmFromInfoMessage": "À partir de ce nombre de lignes sélectionnées, une confirmation est demandée, comme pour l'actualisation du tableau entier. Zéro ne demande jamais.",
     "bookmarkArchiveUrlInfoTitle": "Service d'archive",
-    "bookmarkArchiveUrlInfoMessage": "Où « Chercher dans Web Archive » envoie un favori. {url} est remplacé par son adresse, donc une ArchiveBox auto-hébergée ou archive.today fonctionne aussi."
+    "bookmarkArchiveUrlInfoMessage": "Où « Chercher dans Web Archive » envoie un favori. {url} est remplacé par son adresse, donc une ArchiveBox auto-hébergée ou archive.today fonctionne aussi.",
+    "showSmartAddedCollection": "Afficher la collection « Récemment ajoutés »",
+    "smartAddedLimit": "Limite récemment ajoutés"
   },
   "colors": {
     "title": "personnalisation du thème",
@@ -4880,7 +4893,9 @@
     "categoryNewOption": "Nouvelle catégorie…",
     "categoryNewHint": "Saisis un nom pour la nouvelle catégorie",
     "categoryNewLabel": "Créer la catégorie « {name} »",
-    "categoryNewFirst": "Aucune catégorie — crée la première"
+    "categoryNewFirst": "Aucune catégorie — crée la première",
+    "sortModeAdded": "Récemment ajoutés",
+    "sortModeOpens": "Plus ouverts"
   },
   "quickstart": {
     "title": "Démarrage rapide",

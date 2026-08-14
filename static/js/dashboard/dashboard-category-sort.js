@@ -1,8 +1,12 @@
 /**
- * Per-category bookmark sort modes (order / az / recent).
+ * Per-category bookmark sort modes (order / az / opened / added / opens).
+ *
+ * `opened` was called `recent` and sorted on lastOpened, while Config →
+ * Bookmarks used the same word for createdAt and labelled it "Recently added".
+ * The old value is still accepted so stored categories keep working.
  */
 (function () {
-    const VALID_MODES = new Set(['order', 'az', 'recent']);
+    const VALID_MODES = new Set(['order', 'az', 'opened', 'added', 'opens']);
 
     function normalizeSortMode(mode) {
         const value = String(mode || 'order').toLowerCase();
@@ -12,8 +16,14 @@
         if (value === 'a-z' || value === 'alphabetical' || value === 'name') {
             return 'az';
         }
-        if (value === 'recently' || value === 'recently-used' || value === 'rec') {
-            return 'recent';
+        if (value === 'recent' || value === 'recently' || value === 'recently-used' || value === 'rec') {
+            return 'opened';
+        }
+        if (value === 'created' || value === 'newest') {
+            return 'added';
+        }
+        if (value === 'most-used' || value === 'opencount') {
+            return 'opens';
         }
         return VALID_MODES.has(value) ? value : 'order';
     }
@@ -214,9 +224,19 @@
         const modes = [
             { mode: 'az', short: 'A–Z', aria: 'dashboard.categorySortAZAria' },
             {
-                mode: 'recent',
+                mode: 'opened',
                 short: label(dash, 'dashboard.categorySortRecentShort', 'Rec'),
                 aria: 'dashboard.categorySortRecentAria',
+            },
+            {
+                mode: 'added',
+                short: label(dash, 'dashboard.categorySortAddedShort', 'New'),
+                aria: 'dashboard.categorySortAddedAria',
+            },
+            {
+                mode: 'opens',
+                short: label(dash, 'dashboard.categorySortOpensShort', 'Top'),
+                aria: 'dashboard.categorySortOpensAria',
             },
         ];
 

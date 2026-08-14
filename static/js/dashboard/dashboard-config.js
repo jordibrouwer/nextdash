@@ -7758,6 +7758,8 @@ class DashboardConfig {
         showSmartRecentCollection: { def: false },
         showSmartStaleCollection: { def: false },
         showSmartMostUsedCollection: { def: false },
+        showSmartAddedCollection: { def: false },
+        smartAddedLimit: { def: 20 },
         smartTodayLimit: { info: ['smartTodayLimitInfoTitle', 'smartTodayLimitInfoMessage'], def: 8 },
         smartRecentLimit: { info: ['smartRecentLimitInfoTitle', 'smartRecentLimitInfoMessage'], def: 50 },
         smartStaleLimit: { info: ['smartStaleLimitInfoTitle', 'smartStaleLimitInfoMessage'], def: 50 },
@@ -10473,6 +10475,8 @@ class DashboardConfig {
                     { field: 'smartStaleLimit', type: 'select', label: t('config.smartStaleLimit', 'Stale limit'), special: 'render', options: limitOpts },
                     bool('showSmartMostUsedCollection', 'config.showSmartMostUsedCollection', 'Show “Most used” collection'),
                     { field: 'smartMostUsedLimit', type: 'select', label: t('config.smartMostUsedLimit', 'Most-used limit'), special: 'render', options: limitOpts },
+                    bool('showSmartAddedCollection', 'config.showSmartAddedCollection', 'Show “Recently added” collection'),
+                    { field: 'smartAddedLimit', type: 'select', label: t('config.smartAddedLimit', 'Recently-added limit'), special: 'render', options: limitOpts },
                     {
                         type: 'note',
                         // Turning this on before anything has been opened looks

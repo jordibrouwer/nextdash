@@ -422,7 +422,11 @@
       "navAddCategory": "Add a category to the current page (tap c to search instead)",
       "cnPageNew": "Create a page and go to it (n in the page overview does the same)",
       "cbCategoryNew": "Create a category on the current page (hold c does the same)",
-      "bmCategoryMenu": "Right-click a category header to rename, add, or delete it"
+      "bmCategoryMenu": "Right-click a category header to rename, add, or delete it",
+      "bmTogglePin": "Pin or unpin the focused bookmark",
+      "bmShare": "Share the focused bookmark, or copy its name and URL where no share sheet exists",
+      "bmRevealHealth": "Open the focused bookmark on its own row in Health",
+      "bmFilterTag": "Filter the grid to the focused bookmark’s tag; several tags open the picker"
     },
     "searchPrefix": ">",
     "searchModeSearch": "SEARCH",
@@ -1222,7 +1226,14 @@
     "healthTutorialStep6Title": "Get told when it actually breaks",
     "healthTutorialStep6Body1": "Downtime alerts now has a Service picker, so the message actually lands somewhere readable instead of a block of raw JSON a chat app silently drops. Pick the one your team already watches — only the fields that service needs are shown.",
     "healthTutorialStep6Body2": "Set Alert after to 3 so one dropped check during a blip does not page anyone, and click Send test alert once before trusting it with the real thing — a wrong chat ID otherwise fails silently, with nothing on screen to say why.",
-    "healthTutorialStep6Closing": "That is the whole loop: a heartbeat bar, an uptime percentage, and a message where you will actually see it — only when something is truly wrong."
+    "healthTutorialStep6Closing": "That is the whole loop: a heartbeat bar, an uptime percentage, and a message where you will actually see it — only when something is truly wrong.",
+    "smartAddedCollection": "Recently added",
+    "categorySortAddedShort": "New",
+    "categorySortOpensShort": "Top",
+    "categorySortAddedAria": "Sort this category by when bookmarks were added",
+    "categorySortOpensAria": "Sort this category by how often bookmarks are opened",
+    "sortModeAdded": "Newest",
+    "sortModeOpens": "Most opened"
   },
   "health": {
     "pageTitle": "health beta",
@@ -4564,7 +4575,9 @@
     "bulkFaviconConfirmFromInfoTitle": "When to confirm an icon refresh",
     "bulkFaviconConfirmFromInfoMessage": "Fetching icons for this many selected rows asks first, the way the whole-dashboard refresh does. Zero never asks.",
     "bookmarkArchiveUrlInfoTitle": "Archive service",
-    "bookmarkArchiveUrlInfoMessage": "Where \"Find in Web Archive\" sends a bookmark. {url} is replaced with its address, so a self-hosted ArchiveBox or archive.today works too."
+    "bookmarkArchiveUrlInfoMessage": "Where \"Find in Web Archive\" sends a bookmark. {url} is replaced with its address, so a self-hosted ArchiveBox or archive.today works too.",
+    "showSmartAddedCollection": "Show “Recently added” collection",
+    "smartAddedLimit": "Recently-added limit"
   },
   "colors": {
     "title": "theme customization",
@@ -4881,7 +4894,9 @@
     "categoryNewOption": "New category…",
     "categoryNewHint": "Type a name for the new category",
     "categoryNewLabel": "Create category \"{name}\"",
-    "categoryNewFirst": "No categories yet — create the first"
+    "categoryNewFirst": "No categories yet — create the first",
+    "sortModeAdded": "Recently added",
+    "sortModeOpens": "Most opened"
   },
   "quickstart": {
     "title": "Quick start",

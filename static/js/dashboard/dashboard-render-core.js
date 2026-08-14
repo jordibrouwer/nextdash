@@ -490,10 +490,29 @@ class DashboardRenderCore {
             ];
         }
 
-        if (method === 'recent') {
+        // 'opened' was called 'recent', which Config used for createdAt under
+        // the label "Recently added" — the same word meaning two things in two
+        // surfaces of the same app. normalizeSortMode still accepts the old
+        // value, so stored categories keep working.
+        if (method === 'opened') {
             return [
                 ...pinned,
                 ...regular.sort((a, b) => (b?.lastOpened || 0) - (a?.lastOpened || 0))
+            ];
+        }
+
+        // createdAt was written on every create path and read by nothing.
+        if (method === 'added') {
+            return [
+                ...pinned,
+                ...regular.sort((a, b) => (b?.createdAt || 0) - (a?.createdAt || 0))
+            ];
+        }
+
+        if (method === 'opens') {
+            return [
+                ...pinned,
+                ...regular.sort((a, b) => (b?.openCount || 0) - (a?.openCount || 0))
             ];
         }
 
@@ -589,9 +608,11 @@ class DashboardRenderCore {
         }
         listElement._sortLockedHintBound = true;
 
-        const modeLabel = sortMode === 'recent'
-            ? d.formatDashboardLabel('sortModeRecent', {}, 'Recent')
-            : d.formatDashboardLabel('sortModeAZ', {}, 'A–Z');
+        const modeLabel = {
+            opened: d.formatDashboardLabel('sortModeRecent', {}, 'Recent'),
+            added: d.formatDashboardLabel('sortModeAdded', {}, 'Newest'),
+            opens: d.formatDashboardLabel('sortModeOpens', {}, 'Most opened'),
+        }[sortMode] || d.formatDashboardLabel('sortModeAZ', {}, 'A–Z');
         const hint = d.formatDashboardLabel(
             'reorderSortLockedHint',
             { mode: modeLabel },

@@ -173,6 +173,47 @@ class KeyboardNavigation {
                     this.openCheckModePopoverForCurrent();
                     return;
                 }
+                // Pin was the odd one out in this family: it existed as :pin and
+                // in the inline editor, but had no key and no control on the row
+                // at all — for a one-bit, daily action.
+                if (e.code === 'KeyP') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.togglePinForCurrent();
+                    return;
+                }
+                // Share/copy "name — URL" was right-click only: no command, no
+                // key, not even in the cheat sheet.
+                if (e.code === 'KeyS') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.shareCurrent();
+                    return;
+                }
+                // Shift+H opens Health but loses the row; only the context menu
+                // could reveal this particular bookmark there.
+                if (e.code === 'KeyR') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.revealCurrentInHealth();
+                    return;
+                }
+            }
+
+            // Filter to the tag on the focused row. The row already carries its
+            // tags as a data attribute, but acting on the tag you can see meant
+            // opening the tag cloud and finding it among all the others.
+            // Text fields are already filtered out at the top of this handler.
+            if (e.key === 't' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+                if (this.filterByCurrentTag()) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    return;
+                }
             }
 
             // Plain c — add a category. Acts only on a hold, so a quick tap still
@@ -1655,6 +1696,81 @@ class KeyboardNavigation {
         if (!bookmark) return;
         const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
         dash.showTagPopover(row, bookmark, bookmarkIndex);
+    }
+
+    /**
+     * Shift+P — pin or unpin the selected bookmark.
+     *
+     * Through the same command the palette's :pin uses, so the write, the toast
+     * and the re-render stay one implementation.
+     */
+    togglePinForCurrent() {
+        const bookmark = this.getSelectedBookmark();
+        if (!bookmark) return;
+        const commands = this.dashboard?.searchComponent?.commandsComponent;
+        if (typeof commands?._persistBookmarkField !== 'function') return;
+        const willPin = !bookmark.pinned;
+        bookmark.pinned = willPin;
+        // Same write the palette's :pin performs, so there is one persistence
+        // path rather than a second one that could drift.
+        commands._persistBookmarkField(bookmark, { pinned: willPin });
+    }
+
+    /**
+     * Shift+S — share, or copy "name — URL" where no share sheet exists.
+     *
+     * Was right-click only: no command, no key, and absent from the cheat sheet,
+     * even though it is the only path that copies the name with the address.
+     */
+    shareCurrent() {
+        const row = this._resolveActionPopoverRow();
+        const bookmark = this.getSelectedBookmark();
+        if (!bookmark) return;
+        void this.dashboard?.contextMenu?.shareBookmark?.(bookmark, row);
+    }
+
+    /**
+     * Shift+R — open the selected bookmark's row in Health.
+     *
+     * Shift+H and :health open the view but carry no bookmark, so landing on
+     * this particular row was a right-click-only route.
+     */
+    revealCurrentInHealth() {
+        const row = this._resolveActionPopoverRow();
+        const bookmark = this.getSelectedBookmark();
+        if (!bookmark) return;
+        const pageId = Number(this.dashboard?.currentPageId);
+        const index = parseInt(row?.dataset?.bookmarkIndex ?? '-1', 10);
+        void this.dashboard?.contextMenu?.revealInHealth?.({
+            pageId, index, bookmark, scope: index >= 0 ? 'current' : 'all',
+        });
+    }
+
+    /**
+     * t — filter the grid to the tag on the focused row.
+     *
+     * Returns whether it acted, so the caller only swallows the key when there
+     * was a tag to filter by. The row already carries its tags; acting on the
+     * one you can see meant opening the tag cloud and hunting for it.
+     */
+    filterByCurrentTag() {
+        const row = this._resolveActionPopoverRow();
+        const raw = row?.getAttribute?.('data-bookmark-tags') || '';
+        const tags = raw.split(',').map((t) => t.trim()).filter(Boolean);
+        if (!tags.length) return false;
+        const dash = this.dashboard;
+        if (tags.length === 1 && typeof dash?.toggleTagFilter === 'function') {
+            dash.toggleTagFilter(tags[0]);
+            return true;
+        }
+        // More than one: let the user pick, through the popover that already
+        // knows how to render a bookmark's tags.
+        const bookmark = this.getSelectedBookmark();
+        if (bookmark && typeof dash?.showTagPopover === 'function') {
+            dash.showTagPopover(row, bookmark, parseInt(row.dataset.bookmarkIndex ?? '-1', 10));
+            return true;
+        }
+        return false;
     }
 
     /**

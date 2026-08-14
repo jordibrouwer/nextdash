@@ -256,6 +256,9 @@ type Settings struct {
 	SmartRecentLimit              int                          `json:"smartRecentLimit"`             // Max items in smart recently opened (0 = unlimited)
 	SmartStaleLimit               int                          `json:"smartStaleLimit"`              // Max items in smart stale bookmarks (0 = unlimited)
 	SmartMostUsedLimit            int                          `json:"smartMostUsedLimit"`           // Max items in smart most used (0 = unlimited)
+	ShowSmartAddedCollection      bool                         `json:"showSmartAddedCollection"`     // Show smart recently added collection
+	SmartAddedLimit               int                          `json:"smartAddedLimit"`              // Max items in smart recently added (0 = unlimited)
+	SmartAddedPageIds             []int                        `json:"smartAddedPageIds"`            // Page IDs where smart recently added is enabled (empty = all)
 	CategoryItemLimit             int                          `json:"categoryItemLimit"`            // Max bookmarks shown per category before a "show more" toggle (0 = unlimited)
 	SmartTodayWorkKeywords        string                       `json:"smartTodayWorkKeywords"`       // Comma-separated work-hour keyword boosts
 	SmartTodayEveningKeywords     string                       `json:"smartTodayEveningKeywords"`    // Comma-separated evening keyword boosts
@@ -755,6 +758,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartRecentPageIds:           []int{},
 			SmartStalePageIds:            []int{},
 			SmartMostUsedPageIds:         []int{},
+			SmartAddedPageIds:            []int{},
+			SmartAddedLimit:              20,
 			FaviconRefreshPolicy:         "on-save",
 			OnboardingCompleted:          false,
 			ConfigBookmarksSort:          defaultConfigBookmarksSort,
@@ -2428,6 +2433,8 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartTodayPageIds:              []int{},
 			SmartRecentPageIds:             []int{},
 			SmartStalePageIds:              []int{},
+			SmartAddedPageIds:              []int{},
+			SmartAddedLimit:                20,
 			FaviconRefreshPolicy:           "on-save",
 			ConfigBookmarksSort:            defaultConfigBookmarksSort,
 			ConfigBookmarksPageSize:        defaultConfigBookmarksPageSize,
@@ -2615,6 +2622,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["smartStalePageIds"]; !ok || settings.SmartStalePageIds == nil {
 			settings.SmartStalePageIds = []int{}
+		}
+		if _, ok := rawSettings["smartAddedPageIds"]; !ok || settings.SmartAddedPageIds == nil {
+			settings.SmartAddedPageIds = []int{}
 		}
 		if _, ok := rawSettings["faviconRefreshPolicy"]; !ok || (settings.FaviconRefreshPolicy != "manual" && settings.FaviconRefreshPolicy != "on-save") {
 			settings.FaviconRefreshPolicy = "on-save"

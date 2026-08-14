@@ -421,7 +421,11 @@
       "navAddCategory": "Voeg een categorie toe aan de huidige pagina (tik c om te zoeken)",
       "cnPageNew": "Maak een pagina en ga erheen (n in het pagina-overzicht doet hetzelfde)",
       "cbCategoryNew": "Maak een categorie op de huidige pagina (c ingedrukt houden doet hetzelfde)",
-      "bmCategoryMenu": "Rechtsklik op een categoriekop om te hernoemen, toe te voegen of te verwijderen"
+      "bmCategoryMenu": "Rechtsklik op een categoriekop om te hernoemen, toe te voegen of te verwijderen",
+      "bmTogglePin": "Zet de gerichte bladwijzer vast of maak los",
+      "bmShare": "Deel de gerichte bladwijzer, of kopieer naam en URL waar geen deelvenster is",
+      "bmRevealHealth": "Open de gerichte bladwijzer op zijn eigen rij in Health",
+      "bmFilterTag": "Filter het raster op de tag van de gerichte bladwijzer; bij meerdere tags opent de kiezer"
     },
     "searchPrefix": ">",
     "searchModeSearch": "SEARCH",
@@ -1221,7 +1225,14 @@
     "healthTutorialStep6Title": "Word ingelicht als het echt misgaat",
     "healthTutorialStep6Body1": "Downtime-waarschuwingen heeft nu een Dienst-kiezer, zodat het bericht daadwerkelijk ergens leesbaars aankomt in plaats van een blok ruwe JSON dat een chatapp stilletjes negeert. Kies de dienst die je team al in de gaten houdt — alleen de velden die die dienst nodig heeft worden getoond.",
     "healthTutorialStep6Body2": "Zet Alert after op 3 zodat één gemiste controle tijdens een hikje niemand oproept, en klik één keer op Send test alert voordat je erop vertrouwt voor het echte werk — een verkeerd chat-ID faalt anders stilletjes, zonder dat iets op het scherm zegt waarom.",
-    "healthTutorialStep6Closing": "Dat is de hele kringloop: een heartbeat-balk, een uptime-percentage, en een bericht waar je het daadwerkelijk ziet — alleen wanneer er echt iets mis is."
+    "healthTutorialStep6Closing": "Dat is de hele kringloop: een heartbeat-balk, een uptime-percentage, en een bericht waar je het daadwerkelijk ziet — alleen wanneer er echt iets mis is.",
+    "smartAddedCollection": "Recent toegevoegd",
+    "categorySortAddedShort": "Nieuw",
+    "categorySortOpensShort": "Top",
+    "categorySortAddedAria": "Sorteer deze categorie op wanneer bladwijzers zijn toegevoegd",
+    "categorySortOpensAria": "Sorteer deze categorie op hoe vaak bladwijzers worden geopend",
+    "sortModeAdded": "Nieuwste",
+    "sortModeOpens": "Meest geopend"
   },
   "health": {
     "pageTitle": "health beta",
@@ -4563,7 +4574,9 @@
     "bulkFaviconConfirmFromInfoTitle": "Wanneer iconen ophalen bevestigen",
     "bulkFaviconConfirmFromInfoMessage": "Vanaf dit aantal geselecteerde rijen wordt eerst gevraagd, net als bij het verversen van het hele dashboard. Nul vraagt nooit.",
     "bookmarkArchiveUrlInfoTitle": "Archiefdienst",
-    "bookmarkArchiveUrlInfoMessage": "Waar \"Zoek in Web Archive\" een bladwijzer naartoe stuurt. {url} wordt vervangen door het adres, dus een zelf gehoste ArchiveBox of archive.today werkt ook."
+    "bookmarkArchiveUrlInfoMessage": "Waar \"Zoek in Web Archive\" een bladwijzer naartoe stuurt. {url} wordt vervangen door het adres, dus een zelf gehoste ArchiveBox of archive.today werkt ook.",
+    "showSmartAddedCollection": "Toon collectie “Recent toegevoegd”",
+    "smartAddedLimit": "Limiet recent toegevoegd"
   },
   "colors": {
     "title": "thema-aanpassing",
@@ -4880,7 +4893,9 @@
     "categoryNewOption": "Nieuwe categorie…",
     "categoryNewHint": "Typ een naam voor de nieuwe categorie",
     "categoryNewLabel": "Categorie \"{name}\" aanmaken",
-    "categoryNewFirst": "Nog geen categorieën — maak de eerste"
+    "categoryNewFirst": "Nog geen categorieën — maak de eerste",
+    "sortModeAdded": "Recent toegevoegd",
+    "sortModeOpens": "Meest geopend"
   },
   "quickstart": {
     "title": "Snel starten",
