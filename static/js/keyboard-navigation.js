@@ -144,7 +144,16 @@ class KeyboardNavigation {
             }
 
             // Shift+M / Shift+D / Shift+T / Shift+C — quick action popovers (use e.code for layout reliability)
-            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            //
+            // Every key in this block acts on the row under the cursor, so with
+            // no row there is nothing to act on and the key belongs to whoever
+            // else wants it. Each handler below already swallows the event
+            // before calling a method that then returns early — harmless while
+            // these keys meant nothing else, but Shift+S also opens config, and
+            // adding share to this block took that shortcut away whenever no
+            // bookmark was selected. Fall through instead of swallowing.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
+                && this._resolveActionPopoverRow()) {
                 if (e.code === 'KeyM') {
                     e.preventDefault();
                     e.stopImmediatePropagation();
