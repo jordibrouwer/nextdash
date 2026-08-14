@@ -165,7 +165,17 @@ class DashboardConfigLoader {
             'js/dashboard/dashboard-config.js',
             'dashboardConfig',
             () => typeof window.DashboardConfig === 'function'
-        ).then(() => {
+        ).then(() => (
+            // The Bookmarks row menu, fetched with config rather than on the
+            // dashboard's critical path: nothing outside config uses it. Its
+            // failure is not fatal — config without a right-click menu is worse
+            // than config, but far better than no config.
+            window.LazyScript.loadScriptOnce(
+                'js/dashboard/dashboard-config-context-menu.js',
+                'dashboardConfigContextMenu',
+                () => typeof window.DashboardConfigContextMenu === 'function'
+            ).catch(() => {})
+        )).then(() => {
             if (typeof window.DashboardConfig !== 'function') {
                 throw new Error('config module loaded without defining DashboardConfig');
             }

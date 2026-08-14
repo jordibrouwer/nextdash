@@ -293,7 +293,14 @@ class DashboardMultiSelect {
             bar.className = 'multi-select-toolbar';
             bar.setAttribute('role', 'toolbar');
             bar.setAttribute('aria-label', this.t('dashboard.multiSelectToolbarAria', 'Selection actions'));
-            container.prepend(bar);
+            // Before the grid, not inside it. #dashboard-layout carries
+            // role="grid", whose children must be rows or rowgroups — a
+            // role="toolbar" among them is invalid. It also laid out wrong:
+            // the grid is a flex row, so a full-width bar was squeezed into a
+            // narrow vertical strip beside the columns instead of sitting above
+            // them. Sticky positioning is unaffected; the scrolling ancestor is
+            // the same either way.
+            (container.parentElement || container).insertBefore(bar, container);
             this._toolbar = bar;
         }
 
@@ -411,16 +418,18 @@ class DashboardMultiSelect {
         header.textContent = this.t('dashboard.multiSelectTagsTitle', 'Tag selection…');
         pop.appendChild(header);
 
+        let unbindOutside = null;
+        let unbindPosition = null;
         const close = () => {
             pop.remove();
-            document.removeEventListener('click', onOutside, true);
+            unbindOutside?.();
+            unbindOutside = null;
+            unbindPosition?.();
+            unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
             if (d._multiSelectTagsCleanup === close) {
                 d._multiSelectTagsCleanup = null;
             }
-        };
-        const onOutside = (e) => {
-            if (!pop.contains(e.target) && e.target !== anchorEl) close();
         };
         const onKey = (e) => {
             if (e.key === 'Escape') {
@@ -491,18 +500,36 @@ class DashboardMultiSelect {
         });
 
         document.body.appendChild(pop);
-        d._positionActionPopoverBeside?.(pop, anchorEl);
+
         // The shared helper centres the popover on its anchor, which is right for
         // a bookmark row but not here: the toolbar sits at the top-left, so a tall
         // tag list centred on a short button rides up over the bar it came from.
         // Align its top to the button and let it grow downward instead.
-        const anchorRect = anchorEl.getBoundingClientRect();
         const pad = window.DashboardPromoPlacement?.VIEWPORT_PAD ?? 8;
-        const maxTop = window.innerHeight - pop.offsetHeight - pad;
-        pop.style.top = `${Math.round(Math.max(pad, Math.min(anchorRect.top, maxTop)))}px`;
+        const reposition = () => {
+            d._positionActionPopoverBeside?.(pop, anchorEl);
+            const rect = anchorEl.getBoundingClientRect();
+            const maxTop = window.innerHeight - pop.offsetHeight - pad;
+            pop.style.top = `${Math.round(Math.max(pad, Math.min(rect.top, maxTop)))}px`;
+        };
+        reposition();
         window.FocusTrapUtils?.syncDashboardInert?.();
+
+        // Anchored to a toolbar button that scrolls with the grid, so it has to
+        // follow it. The row popovers already do; this one bound nothing at all
+        // and drifted away from the button it belongs to.
+        window.addEventListener('resize', reposition);
+        window.addEventListener('scroll', reposition, true);
+        unbindPosition = () => {
+            window.removeEventListener('resize', reposition);
+            window.removeEventListener('scroll', reposition, true);
+        };
+
+        // contextmenu as well as click, and the anchor matched by containment
+        // rather than identity so an icon added to the button later cannot make
+        // its own click close and reopen the popover.
+        unbindOutside = d.bookmarkRows._bindActionPopoverOutsideClose(pop, close, { anchorEl });
         setTimeout(() => {
-            document.addEventListener('click', onOutside, true);
             document.addEventListener('keydown', onKey, true);
         }, 0);
         d._multiSelectTagsCleanup = close;
@@ -669,6 +696,34 @@ class DashboardMultiSelect {
         failed();
     }
 
+    /**
+     * Drop the trash entries an undo has just made redundant.
+     *
+     * Undo restores through saveBookmarkOrder rather than through the trash, so
+     * without this the bookmarks come back on the page *and* stay in the trash.
+     * Matched on page and URL rather than on id, because record() assigns those
+     * server-side and does not hand them back.
+     *
+     * Best-effort, like the category undo: a stale entry is untidy, a blocked
+     * undo is not.
+     */
+    async dropRestoredTrashEntries(entries) {
+        try {
+            const data = await window.DashboardTrash?.list?.();
+            const items = data?.items || [];
+            for (const entry of entries) {
+                const hit = items.find((item) => item.kind !== 'category'
+                    && Number(item.pageId) === Number(entry.pageId)
+                    && String(item.bookmark?.url || '') === String(entry.bookmark?.url || ''));
+                if (hit) {
+                    await window.DashboardTrash.remove(hit.id);
+                }
+            }
+        } catch (_error) {
+            /* leave them; the restore itself already succeeded */
+        }
+    }
+
     async deleteSelected() {
         const d = this.dash;
         const refs = this.resolveRefs();
@@ -714,6 +769,19 @@ class DashboardMultiSelect {
 
         const saved = await d.saveBookmarkOrder();
         if (!saved) {
+            // The rows are already spliced out and the selection already
+            // cleared, so a silent return left the user watching bookmarks
+            // vanish with no sign the write failed. Put them back in the order
+            // they came from and say so.
+            [...trashed].sort((a, b) => a.index - b.index).forEach((entry) => {
+                d.bookmarks.splice(entry.index, 0, entry.bookmark);
+                d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+            });
+            d.pendingReorderSnapshot = null;
+            d.renderDashboard();
+            d.showErrorNotification?.(
+                this.t('dashboard.multiSelectDeleteFailed', 'Could not delete the selected bookmarks')
+            );
             return;
         }
         await window.DashboardTrash?.record(trashed, 'dashboard-multi-select');
@@ -722,7 +790,30 @@ class DashboardMultiSelect {
             count,
             (n) => this.t('dashboard.multiSelectDeleted', 'Deleted {count} bookmark(s)')
                 .replace('{count}', String(n)),
-            'success'
+            'success',
+            {
+                // Same fast path the single delete offers (see
+                // deleteBookmarkInline): the trash catches it an hour later,
+                // the toast catches it now. Ascending index order, because
+                // each splice shifts everything after it.
+                duration: 8000,
+                undoCallback: async () => {
+                    [...trashed].sort((a, b) => a.index - b.index).forEach((entry) => {
+                        d.bookmarks.splice(entry.index, 0, entry.bookmark);
+                        d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+                    });
+                    d.pendingReorderSnapshot = null;
+                    try {
+                        await d.saveBookmarkOrder();
+                        await this.dropRestoredTrashEntries(trashed);
+                        await d.data?.refreshAfterBookmarkMutation?.({
+                            pageIds: [...new Set(trashed.map((entry) => entry.pageId))],
+                        });
+                    } catch (_error) {
+                        // saveBookmarkOrder surfaces its own errors and reverts.
+                    }
+                }
+            }
         );
     }
 }

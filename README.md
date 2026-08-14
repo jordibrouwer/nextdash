@@ -401,7 +401,7 @@ Type these directly in the search bar (`>` mode, or after opening search). Expan
 - `status:pinned` / `status:unpinned` / `status:checked` / `status:unchecked`
 - `page:current` / `page:all` / `page:2`
 - `tag:name` — filter by tag
-- `added:` / `opened:` — `today`, `week`, `month` or `year`; `opened:never` finds bookmarks you have never opened
+- `added:` / `opened:` — `today`, `week`, `month` or `year`; `opened:never` finds bookmarks you have never opened. Both are offered while you type, with their words listed once the key is in
 - The page's own fetched description is searched too, below the title, URL, tags and your note — often the only place holding what you remember about a page titled *Untitled* or *Login*
 
 Partial values (e.g. `status:on`) keep showing suggestions until the filter is complete. `status:online` uses persisted reachability on monitored bookmarks, not only the live status cache.

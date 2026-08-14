@@ -70,10 +70,15 @@ class DashboardCategoryMenu {
         nameHint.textContent = String(category.name || category.id || '').trim() || '—';
         pop.appendChild(nameHint);
 
+        // `key` is the keyboard route to the same action, shown as a chip so the
+        // menu teaches its own shortcuts. Untranslated, like every other key
+        // hint in the app. "Add category" has none: it is a *held* c — a tap
+        // goes to the shortcut search — and a chip reading "c" would promise
+        // something that does not work.
         const actions = [
-            { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎' },
+            { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎', key: 'F2' },
             { id: 'add', label: this.t('categoryMenuAdd', 'Add category'), icon: '+' },
-            { id: 'delete', label: this.t('categoryMenuDelete', 'Delete'), icon: '✕', danger: true },
+            { id: 'delete', label: this.t('categoryMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
         ];
 
         const items = [];
@@ -96,6 +101,16 @@ class DashboardCategoryMenu {
             const label = document.createElement('span');
             label.textContent = action.label;
             item.appendChild(label);
+
+            if (action.key) {
+                const kbd = document.createElement('kbd');
+                kbd.className = 'move-popover-item-key';
+                kbd.textContent = action.key;
+                // The chip is a label, not a second thing to read out: the item
+                // already says what it does.
+                kbd.setAttribute('aria-hidden', 'true');
+                item.appendChild(kbd);
+            }
 
             pop.appendChild(item);
             items.push(item);

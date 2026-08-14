@@ -7,7 +7,6 @@ class DashboardTagFilter {
     }
 
     normalizeTagFilters(tags) {
-        const d = this.dash;
         const list = Array.isArray(tags) ? tags : (tags ? [tags] : []);
         const seen = new Set();
         const normalized = [];
@@ -22,25 +21,21 @@ class DashboardTagFilter {
 
 
     tagFiltersKey(tags) {
-        const d = this.dash;
         return this.normalizeTagFilters(tags).join('\u0001');
     }
 
 
     tagFiltersEqual(a, b) {
-        const d = this.dash;
         return this.tagFiltersKey(a) === this.tagFiltersKey(b);
     }
 
 
     hasActiveTagFilters(tags = this.dash._tagFilters) {
-        const d = this.dash;
         return this.normalizeTagFilters(tags).length > 0;
     }
 
 
     formatTagFilterTagsLabel(tags = this.dash._tagFilters) {
-        const d = this.dash;
         return this.normalizeTagFilters(tags).map((tag) => `#${tag}`).join(', ');
     }
 
@@ -124,7 +119,6 @@ class DashboardTagFilter {
 
 
     clearTagFilter() {
-        const d = this.dash;
         void this.setTagFilters([], { animate: true });
     }
 
@@ -158,7 +152,6 @@ class DashboardTagFilter {
 
 
     getBookmarksForTagFilter(tag) {
-        const d = this.dash;
         return this.getBookmarksForTagFilters([tag]);
     }
 
@@ -299,7 +292,6 @@ class DashboardTagFilter {
 
 
     setupTagFilterIndicator() {
-        const d = this.dash;
         this.updateTagFilterIndicator();
     }
 
@@ -315,7 +307,6 @@ class DashboardTagFilter {
 
 
     getTagFilterMatchedBookmarksWithUrls() {
-        const d = this.dash;
         return this.getBookmarksForTagFilters().filter(
             (bookmark) => bookmark && String(bookmark.url || '').trim()
         );
@@ -777,7 +768,6 @@ class DashboardTagFilter {
 
 
     _appendTagFilterToolbarButton(actions, { label, className = '', onClick }) {
-        const d = this.dash;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `recent-bookmarks-open-btn modal-button tag-filter-bulk-btn ${className}`.trim();
@@ -791,7 +781,14 @@ class DashboardTagFilter {
     }
 
 
-    renderTagFilterBanner(wrap, { tags, count = 0 } = {}) {
+    /**
+     * @param {object} options
+     * @param {boolean} [options.withToolbar=true] Include the bulk-action row.
+     *   The header indicator asks for the chips only: the actions belong with
+     *   the results, and a second copy of them in the header both crowds it and
+     *   gives every one of those buttons a duplicate on the page.
+     */
+    renderTagFilterBanner(wrap, { tags, count = 0, withToolbar = true } = {}) {
         const d = this.dash;
         const normalized = this.normalizeTagFilters(tags);
         wrap.replaceChildren();
@@ -882,7 +879,7 @@ class DashboardTagFilter {
         head.append(chipsWrap, summary, clearBtn);
         wrap.appendChild(head);
 
-        if (count <= 0) {
+        if (count <= 0 || !withToolbar) {
             return;
         }
 
@@ -948,6 +945,16 @@ class DashboardTagFilter {
     }
 
 
+    /**
+     * Keep the header chip in step with the active tag filters.
+     *
+     * The in-grid banner lives inside #dashboard-layout, which every render
+     * clears — so the moment the grid repaints for any other reason, the only
+     * sign that a filter is on is the shortened list itself. This element sits
+     * in the header and survives that, which is what it was added for; it had
+     * been reduced to a teardown that emptied it unconditionally, so it never
+     * showed anything.
+     */
     updateTagFilterIndicator() {
         const d = this.dash;
         const wrap = document.getElementById('tag-filter-indicator');
@@ -955,10 +962,22 @@ class DashboardTagFilter {
             return;
         }
         d.tagFilterIndicator = wrap;
-        wrap.replaceChildren();
-        wrap.hidden = true;
-        wrap.removeAttribute('role');
-        wrap.removeAttribute('aria-label');
+
+        const tags = this.normalizeTagFilters(d._tagFilters);
+        // Hidden while the grid is showing its own banner, so the chips are not
+        // on screen twice — this exists for the views that have no banner.
+        const bannerOnScreen = Boolean(document.getElementById('tag-filter-banner'));
+        if (!tags.length || bannerOnScreen) {
+            wrap.replaceChildren();
+            wrap.hidden = true;
+            wrap.removeAttribute('role');
+            wrap.removeAttribute('aria-label');
+            return;
+        }
+
+        const count = this.getBookmarksForTagFilters().length;
+        this.renderTagFilterBanner(wrap, { tags, count, withToolbar: false });
+        wrap.hidden = false;
     }
 
 

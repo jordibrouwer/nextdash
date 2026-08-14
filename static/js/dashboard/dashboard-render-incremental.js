@@ -300,6 +300,18 @@ class DashboardRenderIncremental {
             };
             textSpan.textContent = t('dashboard.emptyCategoryText', 'no bookmarks');
             emptyEl.appendChild(textSpan);
+            // Same "+ bookmark" the full render offers. Without it, emptying a
+            // category by deleting its last row left a different, actionless
+            // empty state than reloading the page produced — the one moment the
+            // offer is most useful.
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'empty-state--category-btn';
+            addBtn.textContent = t('dashboard.emptyStateAddAction', '+ bookmark');
+            addBtn.addEventListener('click', () => {
+                window.dashboardInstance?.quickAddWidget?.open();
+            });
+            emptyEl.appendChild(addBtn);
             list.appendChild(emptyEl);
         }
 

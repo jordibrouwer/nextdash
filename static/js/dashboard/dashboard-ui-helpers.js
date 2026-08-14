@@ -32,7 +32,6 @@ class DashboardUiHelpers {
 
 
     bookmarkFallbackName() {
-        const d = this.dash;
         return this.configLabel('detailBookmarkFallback', '')
             || this.formatDashboardLabel('bookmarkLinkFallback', {}, 'Bookmark');
     }
@@ -73,7 +72,6 @@ class DashboardUiHelpers {
      */
 
     isVisibleBlockingOverlay(el) {
-        const d = this.dash;
         if (!(el instanceof HTMLElement)) return false;
         const style = window.getComputedStyle(el);
         if (style.display === 'none' || style.visibility === 'hidden') return false;
@@ -83,7 +81,6 @@ class DashboardUiHelpers {
 
 
     isModalOpen() {
-        const d = this.dash;
         const appModal = document.getElementById('app-modal');
         if (appModal?.classList.contains('show')) return true;
         if (window.DashboardTagCloud?.modalOpen) return true;
@@ -274,7 +271,6 @@ class DashboardUiHelpers {
 
 
     _setupCheatSheetKeyboardNav() {
-        const d = this.dash;
         this._cleanupCheatSheetKeyHandler();
         this._cheatSheetKeyHandler = (e) => {
             const overlay = document.getElementById('app-modal');

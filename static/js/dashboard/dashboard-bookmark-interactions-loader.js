@@ -88,7 +88,6 @@
 
     class DashboardInlineEditLoader {
         static ROW_LONG_PRESS_MS = 500;
-        static CLICK_OUTSIDE_DELAY_MS = 500;
 
         constructor(dashboard) {
             this.dash = dashboard;
@@ -417,10 +416,9 @@
 
             const done = () => {
                 if (row) {
-                    row.classList.remove('bookmark-copy-flash');
-                    void row.offsetWidth;
-                    row.classList.add('bookmark-copy-flash');
-                    row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
+                    // Shared helper: the remove/reflow/add dance replays an animation that
+                    // may still be running, and was written out by hand in five places.
+                    this.dash?.bookmarkRows?.restartRowAnimation?.(row, 'bookmark-copy-flash');
                 }
                 const refused = isShareRefused();
                 const insecure = !refused && window.isSecureContext === false;
@@ -529,11 +527,25 @@
                     };
                 }
             }
+            // Kept in step with DashboardContextMenu.resolveRowBookmark: the same
+            // URL sits on more than one page, so the copy whose name matches the
+            // row's label is the one that was clicked. Preferring the current
+            // page by list order resolved another page's row to the wrong
+            // bookmark. This copy is the one that runs on the first right-click
+            // of a session, before the module has loaded.
             const url = row.getAttribute('data-bookmark-url');
             if (!url) return null;
-            const bookmark = (d.bookmarks || []).find((b) => b.url === url)
-                || (d.allBookmarks || []).find((b) => b.url === url);
-            return bookmark ? d.resolveBookmarkReference(bookmark) : null;
+            const label = (row.querySelector('.bookmark-text')?.textContent || '').trim();
+            const candidates = [];
+            [d.bookmarks, d.allBookmarks].forEach((list) => {
+                (list || []).forEach((b) => {
+                    if (b?.url === url && !candidates.includes(b)) candidates.push(b);
+                });
+            });
+            if (!candidates.length) return null;
+            const bookmark = (label && candidates.find((b) => String(b.name || '').trim() === label))
+                || candidates[0];
+            return d.resolveBookmarkReference(bookmark);
         }
 
         /** Sync label for menu markup — must not return a Promise from the loader proxy. */

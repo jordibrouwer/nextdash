@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.0.4 — 15 August 2026](#v104--15-august-2026)
 - [v1.0.3 — 14 August 2026](#v103--14-august-2026)
 - [v1.0.2 — 14 August 2026](#v102--14-august-2026)
 - [v1.0.1 — 13 August 2026](#v101--13-august-2026)
@@ -163,6 +164,63 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.0.4 — 15 August 2026
+
+A review pass over the bookmark grid and the menus around it, in five rounds: correctness first, then consistency between routes that do the same thing, then accessibility, then performance, then cleanup. `DASHBOARD_RELEASE` and `NEXTDASH_WHATS_NEW_DATA_VERSION` are bumped, so the modal reopens once.
+
+### The grid
+
+- **fix** — `repaintBookmarkMutationSurfaces` passed `incremental: false`, the one flag `canAttemptDataPatch` refuses outright, so every add, edit, delete, move and tag change tore down the whole grid — every `DragReorder` instance, the scroll offset and the focused row — for what is usually one changed row. The incremental path's own guards decide now: `canAttemptDataPatch` still bails on a layout-settings change and `categoryStructureMatches` on a category added, removed or reordered.
+- **new** — the scroll offset is stored per page in `_pageScrollPositions` and consumed on return. Consumed, not kept: `takeRememberedScroll` deletes the entry, so a later deliberate visit still starts at the top.
+- **fix** — the incremental renderer built a category's empty state without the `+ bookmark` button `createCategoryElement` includes.
+- **fix** — rows are built at `tabIndex = -1` for the roving tab stop and `KeyboardNavigation` hands one of them a `0` only after walking the grid, which a render does not do — so Tab skipped the grid entirely from first paint. `syncBookmarkGridA11y` guarantees exactly one stop now, on the row `currentIndex` points at rather than on row 0, which would walk the tab position away from the user on every repaint.
+
+### Selecting several bookmarks
+
+- **new** — `deleteSelected` offers an undo toast for 8s, restoring in ascending index order (each splice shifts what follows) and dropping the redundant trash entries afterwards via `dropRestoredTrashEntries`.
+- **fix** — a failed save left the rows spliced out of the model and the selection cleared, then returned silently. Both are restored and `showErrorNotification` is called.
+- **fix** — the toolbar was `prepend`ed into `#dashboard-layout`, which carries `role="grid"`; a `role="toolbar"` among rows and rowgroups is invalid. It also rendered as a 90×278 vertical strip, because the grid is a flex row and `width: 100%` had nothing to fill. Inserted before the grid instead: full width, 44px tall, still sticky.
+- **fix** — the tags popover bound no scroll or resize handler and drifted away from its anchor. It reuses the shared reposition and outside-close helpers now.
+
+### Search
+
+- **new** — `SearchComponent.FILTER_KEYS` replaces three hardcoded four-item lists. `opened:` and `added:` parsed and filtered correctly but were absent from `getFilterHintItems`, unoffered as a prefix, and unrecognised by `_isCompleteFilterQuery`, so the completion list kept firing over real results. Their values are offered the way status values are, with `never` only under `opened:`.
+
+### Tag filters
+
+- **fix** — `updateTagFilterIndicator` had been reduced to a teardown that emptied `#tag-filter-indicator` on every call, leaving the header element and its CSS doing nothing. It carries the active tags and the match count now, and hides itself while the in-grid banner is on screen so the chips are not shown twice. `renderTagFilterBanner` gained `withToolbar` for that.
+
+### Menus and popovers
+
+- **fix** — `resolveRowBookmark` fell back to the URL for rows with no page-local index and searched the current page first. The same URL legitimately sits on more than one page, so a row belonging to another page resolved to the wrong bookmark before delete ever saw it. It matches on the row's visible label now; list order only decides when nothing distinguishes the candidates. Fixed in both copies — `dashboard-bookmark-interactions-loader.js` keeps its own, and that is the one that runs on the first right-click of a session.
+- **fix** — `_persistBookmarkField` swallowed every error and returned nothing while all three pin routes flipped `pinned` themselves. It applies the change (synchronously, before its first await, so the palette label still updates), reverts on failure, surfaces an error and returns a boolean; the callers no longer flip anything.
+- **fix** — the `Delete` key went through `AppModal` while `Shift+D` and the context menu used the anchored popover. All three use the popover now. The modal stays for the inline editor, whose row is a form at that moment, and for a multi-row selection.
+- **fix** — one shared `_bindActionPopoverOutsideClose` for Move, Delete, Tag and the multi-select tags popover: it also closes on an outside `contextmenu`, and matches the anchor by containment rather than identity.
+- **fix** — `_focusActionPopoverItem` picks its pattern from the container's role: `aria-activedescendant` with focus on the box for `role="listbox"`, roving tabindex for menus. The tag popover's second capture-phase keydown listener is removed — document capture runs first and every branch calls `stopImmediatePropagation`, so it never ran.
+- **new** — the check-mode submenu entry sets `aria-expanded`, opens with `ArrowRight` and closes with `ArrowLeft`, matching the Escape path that already existed.
+- **new** — the category menu shows `F2` and `Delete` as `aria-hidden` chips. "Add category" gets none: it is a held `c`, and a chip would promise a tap that goes to the shortcut search.
+- **new** — the category sort button opens on `ArrowDown`, which `aria-haspopup="menu"` already promised.
+- **fix** — `_restoreActionPopoverFocus` fell back to focusing a detached anchor, a no-op that left focus on `<body>`. It falls through to the first row still on the grid.
+
+### Reduced motion
+
+- **fix** — `dashboard.css` overrode four selectors with `animation: none !important`, contradicting `reduced-motion.css`, which uses `0.01ms` precisely so `animationend` still fires. `bookmark-copy-flash` and `bookmark-pulse` stayed on the row for the rest of the session. The 320ms wait before a cross-page move is skipped under reduced motion (`ANIM.BOOKMARK_MOVE_OUT`, `prefersReducedMotion()`).
+
+### Performance
+
+- `aria-colindex`/`aria-colcount` are constant and are stamped in `populateBookmarkRowView`; `syncBookmarkGridA11y` no longer does a `querySelector` per row on every render to rewrite them.
+- Click and auxclick are delegated to `#dashboard-layout` — two listeners for the grid instead of two per row. `contextmenu` stays per row: `bindRow` serves inbox cards too.
+- `restartRowAnimation` replaces five hand-written copies of remove/reflow/add plus `animationend`.
+- The action popovers reposition once per frame instead of once per scroll event, and the toolbar tooltip's `pointermove` sweep is frame-throttled with its header buttons cached.
+
+### Docs
+
+- `MANUAL.md` — the `Delete` row in the shortcut table, and the `Shift+S` entries in the cheat sheet registry and all four locales.
+- `nextDash-cheatsheet.html` and both PDFs — unchanged this release; the affected rows are not in the printed sheet.
+- `static/data/whats-new/v1.0.4.json`, `index.json`, `whats-new-stub.js`, `tests/whats-new-hidden-release.spec.js`, `README.md`.
+- 64 unused `const d = this.dash;` bindings across 12 files; two JSDoc blocks moved to the functions they describe; `CLICK_OUTSIDE_DELAY_MS`, `syncAllBookmarksMetadata` and the public delegate for `updateBookmarkRowsCategoryInDom` removed.
+- `go generate ./...` for the changed CSS, JS and locales.
 
 ## v1.0.3 — 14 August 2026
 

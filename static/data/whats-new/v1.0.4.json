@@ -1,0 +1,123 @@
+{
+  "tag": "v1.0.4",
+  "date": "15 August 2026",
+  "releasedAt": "2026-08-15",
+  "modalLead": "A pass over the bookmark grid and the menus around it: getting your place back after an edit, a way out of a bulk delete, and the same answer to the same gesture wherever you make it.",
+  "sections": [
+    {
+      "title": "The grid",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Editing a bookmark no longer moves you.</strong> Renaming one row, changing a tag or moving a bookmark rebuilt the whole page: the row you had selected lost its highlight and a long page jumped back to the top. Now only what changed is redrawn, and you stay where you were."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Pages remember where you were reading.</strong> Switching to another page and back used to put you at the top again. Come back within the same visit and you land where you left off; open the page fresh and it starts at the top as before."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>An emptied category still offers to fill it.</strong> Deleting the last bookmark in a category left a bare \"no bookmarks\" line, while reloading the page showed a <strong>+ bookmark</strong> button in the same spot. Both look the same now."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Tab reaches the bookmarks again.</strong> Until you pressed an arrow key, pressing Tab skipped straight past the grid — every bookmark on the page was unreachable that way."
+        }
+      ]
+    },
+    {
+      "title": "Selecting several bookmarks",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Deleting a selection can be undone.</strong> Removing fifteen bookmarks at once had no way back except the trash. The toast now offers <strong>Undo</strong> for eight seconds and puts every one of them back where it was."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A delete that fails says so.</strong> If the save did not go through, the rows vanished from the screen anyway and nothing told you. They come back now, with a message."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The selection bar looks like a bar.</strong> It was being squeezed into a narrow strip beside the columns instead of sitting across the top of the grid."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The tag list stays with its button.</strong> Opening <strong>Tags</strong> and then scrolling left the list floating away from the toolbar it belongs to."
+        }
+      ]
+    },
+    {
+      "title": "Search",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Filtering by age is offered while you type.</strong> <code>opened:</code> and <code>added:</code> already worked if you knew them, but nothing suggested them and nothing offered the words that go with them. Both now appear in the filter list, with <em>today</em>, <em>week</em>, <em>month</em>, <em>year</em> — and <em>never</em>, for bookmarks you have not opened at all."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Suggestions get out of the way.</strong> After a complete filter such as <code>opened:week</code>, the suggestion list kept covering the results it had just found."
+        }
+      ]
+    },
+    {
+      "title": "Tag filters",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>An active filter stays visible outside the grid.</strong> Open Health, Inbox or Config with a tag filter on and the only sign of it was the shortened list you had left behind. The tags and the number of matches now sit in the header, with an × to clear them."
+        }
+      ]
+    },
+    {
+      "title": "Keyboard and mouse",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Shift+S opens Config again.</strong> With no bookmark selected the key had stopped doing anything at all. On a selected bookmark it still shares that bookmark — the cheat sheet now says which is which."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Delete asks the same way as the right-click menu.</strong> Pressing Delete on a bookmark opened a dialog in the middle of the screen, while right-click → Delete and Shift+D asked beside the row. All three ask beside the row now. Deleting a whole selection still asks in a dialog, with the count named."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The category menu shows its shortcuts.</strong> Right-click a category header and Rename and Delete now carry the key that does the same thing — F2 and Delete."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Menus open with the arrow keys.</strong> The sort button on a category header opens with ↓, and the check-mode submenu in the bookmark menu opens with → and closes with ←."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Right-clicking elsewhere closes an open menu.</strong> The Move, Tags and Delete lists stayed open behind the menu your right-click had just opened."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Pinning tells you when it fails.</strong> If the change could not be saved, the pin still looked set until the next reload."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Acting on a bookmark that appears twice.</strong> The same address saved on two pages could send a right-click action to the copy on the other page — including Delete."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Right-click a row in Config → Bookmarks.</strong> Open, copy the address, edit, move to another page or category, change how often it is checked, pin, or delete — the things that were spread across the row buttons and the toolbar, in one menu on the row you pointed at."
+        }
+      ]
+    },
+    {
+      "title": "Reduced motion",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Highlights fade out again.</strong> With the system setting for less motion on, the green flash after copying a link — and the pulse in the launcher layout — stayed on the row for the rest of the session. Moving a bookmark to another page also paused for a third of a second waiting for an animation that had been switched off."
+        }
+      ]
+    }
+  ]
+}

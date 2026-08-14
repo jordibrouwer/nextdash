@@ -405,7 +405,6 @@ class DashboardInlineEdit {
 
 
     async confirmInlineEditBeforeNavigation() {
-        const d = this.dash;
         if (!this.isInlineEditActive()) {
             return true;
         }
@@ -461,6 +460,13 @@ class DashboardInlineEdit {
     }
 
 
+    /**
+     * Open the inline editor for the row the keyboard is on — or the row Tab
+     * focused (an `.bookmark-open` anchor), or a smart-collection row, which has
+     * no `data-bookmark-index` to resolve through.
+     *
+     * @returns {boolean} whether an editor was opened
+     */
     tryOpenInlineBookmarkEdit() {
         const d = this.dash;
         const kn = d.keyboardNavigation;
@@ -514,11 +520,6 @@ class DashboardInlineEdit {
         this.openBookmarkInlineEditor(el, bookmarkRef);
         return true;
     }
-
-    /**
-     * Long-press (not on reorder handle) opens inline editor. Uses AbortController on row to drop listeners on rebuild.
-     * @param {AbortSignal} signal
-     */
 
     isPointerInsideInlineEdit(event) {
         const editingRow = document.querySelector('.bookmark-link.bookmark-inline-editing');
@@ -1826,7 +1827,6 @@ class DashboardInlineEdit {
 
 
     async uploadBookmarkIconFromUrl(iconUrl) {
-        const d = this.dash;
         try {
             const response = await dashFetch('/api/icon/from-url', {
                 method: 'POST',
@@ -1847,7 +1847,6 @@ class DashboardInlineEdit {
 
 
     async uploadBookmarkIconFile(file) {
-        const d = this.dash;
         const formData = new FormData();
         formData.append('icon', file);
         try {
@@ -1867,7 +1866,6 @@ class DashboardInlineEdit {
 
 
     deriveFaviconFromBookmarkUrl(bookmarkUrl) {
-        const d = this.dash;
         const safeUrl = String(bookmarkUrl || '').trim();
         if (!safeUrl) {
             return '';
@@ -1885,7 +1883,6 @@ class DashboardInlineEdit {
 
 
     async fetchAndAssignFaviconForUrl(bookmarkUrl) {
-        const d = this.dash;
         const safeUrl = String(bookmarkUrl || '').trim();
         if (!safeUrl) {
             return '';
@@ -1920,11 +1917,6 @@ class DashboardInlineEdit {
         }
     }
 
-    /**
-     * Open inline edit for keyboard-selected row, Tab-focused row (e.g. .bookmark-open), or smart list row without data-bookmark-index.
-     * @returns {boolean} true if editor opened
-     */
-
     _shouldSyncBookmarkMutation(bookmarkRef, candidate, previousUrlTrimmed) {
         const d = this.dash;
         if (!bookmarkRef || !candidate) {
@@ -1942,7 +1934,6 @@ class DashboardInlineEdit {
 
 
     _applyBookmarkMutationFields(target, source) {
-        const d = this.dash;
         if (!target || !source) {
             return;
         }
@@ -1980,7 +1971,6 @@ class DashboardInlineEdit {
 
 
     async deleteBookmarkInline(bookmarkRef, options = {}) {
-        const d = this.dash;
         if (!bookmarkRef?.bookmark) {
             return;
         }
@@ -2199,7 +2189,12 @@ class DashboardInlineEdit {
         try {
             if (row) {
                 row.classList.add('bookmark-move-out');
-                await new Promise(resolve => setTimeout(resolve, 320));
+                // Skipped under reduced motion: the animation is collapsed to a
+                // frame there, so waiting its full length was a dead pause on
+                // every cross-page move with nothing to show for it.
+                if (typeof prefersReducedMotion !== 'function' || !prefersReducedMotion()) {
+                    await new Promise(resolve => setTimeout(resolve, ANIM.BOOKMARK_MOVE_OUT));
+                }
             }
 
             // No ensureBookmarkMutationSnapshot() here: that sets
@@ -2281,8 +2276,15 @@ class DashboardInlineEdit {
     }
 
 
+    /**
+     * Long-press (not on the reorder handle) opens the inline editor.
+     *
+     * Listeners are hung on an AbortController owned by the row, so a rebuild
+     * drops them all at once rather than leaving them on a detached node.
+     *
+     * @param {AbortSignal} signal
+     */
     attachBookmarkRowLongPress(row, openLink, bookmarkRef, signal) {
-        const d = this.dash;
         const longMs = DashboardInlineEdit.ROW_LONG_PRESS_MS;
         const slop = 8;
         let timer = null;
@@ -2402,6 +2404,5 @@ class DashboardInlineEdit {
 }
 
 DashboardInlineEdit.ROW_LONG_PRESS_MS = 500;
-DashboardInlineEdit.CLICK_OUTSIDE_DELAY_MS = 500;
 
 window.DashboardInlineEdit = DashboardInlineEdit;

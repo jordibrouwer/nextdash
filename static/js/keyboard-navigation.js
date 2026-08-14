@@ -144,7 +144,25 @@ class KeyboardNavigation {
             }
 
             // Shift+M / Shift+D / Shift+T / Shift+C — quick action popovers (use e.code for layout reliability)
-            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            //
+            // Every key in this block acts on the row under the cursor, so with
+            // no row there is nothing to act on and the key belongs to whoever
+            // else wants it. Each handler below already swallows the event
+            // before calling a method that then returns early — harmless while
+            // these keys meant nothing else, but Shift+S also opens config, and
+            // adding share to this block took that shortcut away whenever no
+            // bookmark was selected. Fall through instead of swallowing.
+            // Both, in this order: _resolveActionPopoverRow adopts the focused
+            // row and sets currentIndex, which getSelectedBookmark then reads —
+            // so asking for the bookmark first would answer null on a row that
+            // is about to become the current one. Gating on the bookmark as
+            // well is what these actions actually need; a row whose bookmark
+            // cannot be resolved would otherwise swallow the key for a method
+            // that returns early. Reachable only by stripping a row's data
+            // attributes by hand, so this closes a gap rather than a reported
+            // fault.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
+                && this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
                 if (e.code === 'KeyM') {
                     e.preventDefault();
                     e.stopImmediatePropagation();
@@ -1480,10 +1498,9 @@ class KeyboardNavigation {
         if (!url) return;
 
         const flashRow = () => {
-            row.classList.remove('bookmark-copy-flash');
-            void row.offsetWidth; // force reflow to restart animation
-            row.classList.add('bookmark-copy-flash');
-            row.addEventListener('animationend', () => row.classList.remove('bookmark-copy-flash'), { once: true });
+            // Shared helper: the remove/reflow/add dance replays an animation that
+            // may still be running, and was written out by hand in five places.
+            this.dashboard?.bookmarkRows?.restartRowAnimation?.(row, 'bookmark-copy-flash');
         };
 
         const notify = () => {
@@ -1522,6 +1539,22 @@ class KeyboardNavigation {
             ? dash.resolveBookmarkReference(bookmark)
             : null;
         if (!bookmarkRef) {
+            return;
+        }
+        // The same confirmation Shift+D and the right-click menu use, rather
+        // than the modal this took before. All three act on the row the user is
+        // already looking at, from the same position, so asking in three
+        // different ways was the odd part — not the popover itself. The modal
+        // stays where it earns its weight: the inline editor, whose row is a
+        // form at that moment, and a multi-row selection, where a popover beside
+        // one row says nothing about the others.
+        //
+        // showDeletePopover handles a remote-scope reference as well, so this
+        // covers everything the direct call below did; that call remains as the
+        // fallback so Delete can never end up doing nothing at all.
+        if (typeof dash.showDeletePopover === 'function' && row) {
+            const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+            dash.showDeletePopover(row, bookmark, bookmarkIndex);
             return;
         }
         if (typeof dash.deleteBookmarkInline === 'function') {
@@ -1789,11 +1822,10 @@ class KeyboardNavigation {
         if (!bookmark) return;
         const commands = this.dashboard?.searchComponent?.commandsComponent;
         if (typeof commands?._persistBookmarkField !== 'function') return;
-        const willPin = !bookmark.pinned;
-        bookmark.pinned = willPin;
         // Same write the palette's :pin performs, so there is one persistence
-        // path rather than a second one that could drift.
-        commands._persistBookmarkField(bookmark, { pinned: willPin });
+        // path rather than a second one that could drift. It applies the flip
+        // itself, optimistically, and reverts it if the write fails.
+        commands._persistBookmarkField(bookmark, { pinned: !bookmark.pinned });
     }
 
     /**

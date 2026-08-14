@@ -641,6 +641,23 @@ class DashboardConfig {
             // they were. Health and inbox already guard the same way.
             if (window.DashboardTagCloud?.modalOpen) return;
             if (d.isModalOpen()) return;
+            // The row's right-click menu is layered over the view and owns
+            // Escape while it is up, the same as the theme picker below. This
+            // handler is on document in the capture phase and registers first,
+            // so without this the menu never saw the key and config closed
+            // underneath it.
+            // The menu decides what Escape means — from its check-mode submenu
+            // it walks back to the parent rather than closing, the way a native
+            // submenu does. Asked explicitly rather than by letting the event
+            // travel on: this handler is registered before the menu's own, and
+            // relying on which capture listener runs first is the kind of
+            // ordering that breaks the next time one is added.
+            if (this._bmContextMenu?.isOpen?.()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this._bmContextMenu.handleEscape();
+                return;
+            }
             if (window.ConfigSettingPromo?.dismissActive?.({ persist: true })) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -2902,6 +2919,32 @@ class DashboardConfig {
     /** Catalog of feature spotlights shown on the overview. */
     overviewNewFeatures() {
         return [
+            {
+                titleKey: 'config.overviewNewFeatureBulkUndoTitle',
+                titleFallback: 'A way back out of a bulk delete',
+                whatKey: 'config.overviewNewFeatureBulkUndoWhat',
+                whatFallback: 'Removing fifteen bookmarks at once had no way back except digging them out of the trash one at a time. And if the save did not go through, the rows disappeared from the screen anyway with nothing to tell you they were still there.',
+                howKey: 'config.overviewNewFeatureBulkUndoHow',
+                howFallback: 'The toast now offers Undo for eight seconds and puts every bookmark back in the position it held. A delete that fails puts them back on its own and says so. The trash still catches everything for 30 days after that.',
+                enableKey: 'config.overviewNewFeatureBulkUndoEnable',
+                enableFallback: 'Nothing to switch on. Tick some rows with x, or Ctrl-click them, and Delete asks once for the whole set.',
+                ctaKey: 'config.overviewNewFeatureBulkUndoCta',
+                ctaFallback: 'Open the trash →',
+                go: { section: 'data-backups', dbTab: 'trash' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureBookmarksMenuTitle',
+                titleFallback: 'Right-click a row in Bookmarks',
+                whatKey: 'config.overviewNewFeatureBookmarksMenuWhat',
+                whatFallback: 'Everything you can do to a bookmark here was spread across the buttons on the row and the toolbar above the list, and which of them applied to the row you were pointing at was not always obvious.',
+                howKey: 'config.overviewNewFeatureBookmarksMenuHow',
+                howFallback: 'Right-click any row for one menu on that row: open it, copy the address, edit, move it to another page or category, change how often it is checked, pin it, or delete it. Right-click a row that is part of a selection and the menu switches to the whole selection, with the count named.',
+                enableKey: 'config.overviewNewFeatureBookmarksMenuEnable',
+                enableFallback: 'Nothing to switch on. Shift and right-click still gives you the browser menu.',
+                ctaKey: 'config.overviewNewFeatureBookmarksMenuCta',
+                ctaFallback: 'Open Bookmarks →',
+                go: { section: 'bookmarks' },
+            },
             {
                 titleKey: 'config.overviewNewFeatureBookmarkSettingsTitle',
                 titleFallback: 'Config → Bookmarks finally has settings',
@@ -13474,7 +13517,21 @@ class DashboardConfig {
     }
 
     /** Row-level handlers, rebound after every list repaint. */
+    /**
+     * The right-click menu on a row, created on first use.
+     *
+     * Lazily rather than in the constructor: config itself is lazy-loaded, and
+     * a session that never opens the Bookmarks section never needs it.
+     */
+    bookmarkContextMenu() {
+        if (this._bmContextMenu) return this._bmContextMenu;
+        if (typeof window.DashboardConfigContextMenu !== 'function') return null;
+        this._bmContextMenu = new window.DashboardConfigContextMenu(this);
+        return this._bmContextMenu;
+    }
+
     bindBookmarkRows(root) {
+        this.bookmarkContextMenu()?.bindList(root);
         const listRoot = root.querySelector('#config-bm-list') || root;
         listRoot.querySelectorAll('[data-feed-action="open"]').forEach((btn) => {
             btn.addEventListener('click', () => {

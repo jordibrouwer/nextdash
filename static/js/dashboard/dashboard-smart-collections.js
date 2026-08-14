@@ -291,7 +291,6 @@ class DashboardSmartCollections {
 
 
     getSmartCollectionWhyHint(collectionId, category = {}) {
-        const d = this.dash;
         const page = this._getCurrentPageDisplayName();
 
         if (collectionId === '__smart_today__') {
@@ -361,7 +360,6 @@ class DashboardSmartCollections {
 
 
     _evaluateCollection(collection, bookmarks) {
-        const d = this.dash;
         return bookmarks.filter(bm => {
             const results = collection.rules.map(rule => {
                 const field = rule.field;
@@ -523,7 +521,6 @@ class DashboardSmartCollections {
 
 
     parseSmartKeywordList(raw, firstBoost = 4, restBoost = 3) {
-        const d = this.dash;
         const text = String(raw || '');
         const tokens = text
             .split(',')
@@ -557,7 +554,6 @@ class DashboardSmartCollections {
 
 
     getStaleBookmarksList(days) {
-        const d = this.dash;
         const effectiveDays = (days && days > 0) ? days : 30;
         const staleWindowMs = effectiveDays * 24 * 60 * 60 * 1000;
         const now = Date.now();

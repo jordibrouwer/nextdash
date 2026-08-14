@@ -7,7 +7,6 @@ class DashboardRecent {
     }
 
     getRecentBookmarksWithUrls(bookmarks, limit) {
-        const d = this.dash;
         return this.getRecentBookmarks(bookmarks, limit).filter(
             (bookmark) => bookmark && String(bookmark.url || '').trim()
         );
@@ -15,7 +14,6 @@ class DashboardRecent {
 
 
     sameBookmarkList(a, b) {
-        const d = this.dash;
         if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
         const key = (bookmark) => String(bookmark?.id ?? bookmark?.url ?? '');
         return a.every((item, index) => key(item) === key(b[index]));
@@ -49,7 +47,6 @@ class DashboardRecent {
 
 
     openBookmarksInNewTabs(bookmarks) {
-        const d = this.dash;
         (bookmarks || []).forEach((bookmark) => {
             const url = window.BookmarkUrlUtils?.safeHttpResourceUrl?.(bookmark?.url) || '';
             if (url) window.open(url, '_blank', 'noopener,noreferrer');
@@ -65,7 +62,6 @@ class DashboardRecent {
 
 
     isRecentBookmarksModalOpen() {
-        const d = this.dash;
         const overlay = document.getElementById('app-modal');
         const panel = overlay ? overlay.querySelector('.modal') : null;
         return Boolean(
@@ -276,7 +272,6 @@ class DashboardRecent {
 
 
     getRecentBookmarks(bookmarks, limit = 10) {
-        const d = this.dash;
         const sorted = [...(Array.isArray(bookmarks) ? bookmarks : [])]
             .filter((bookmark) => bookmark && bookmark.lastOpened)
             .sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0));
@@ -322,7 +317,6 @@ class DashboardRecent {
 
 
     buildBookmarkTooltip(bookmark, previewTitle, previewDescription) {
-        const d = this.dash;
         const parts = [];
         const title = previewTitle || bookmark.name || '';
         if (title) parts.push(title);
