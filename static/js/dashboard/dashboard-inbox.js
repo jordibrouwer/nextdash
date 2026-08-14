@@ -4,6 +4,17 @@
 class DashboardInbox {
     static VIEW = 'inbox';
 
+    /**
+     * The one-time tour's tip id, repeated from inbox-tutorial.js.
+     *
+     * Health can leave this to its tutorial module because the health view and
+     * its tutorial load together. The inbox module loads during bootstrap so
+     * unread badges work without opening the view, so the tutorial is fetched
+     * separately — and the whole point of a seen-check here is to not fetch it
+     * at all once the tour is done. Both copies must stay in step.
+     */
+    static TUTORIAL_TIP_ID = 'inboxTutorialV1';
+
     constructor(dashboard) {
         this.dash = dashboard;
         this.items = [];
@@ -1360,7 +1371,33 @@ class DashboardInbox {
         await this.loadAndRender();
         this.restoreInboxHash();
         this.syncUrlState();
+        // Not awaited: the view is already usable, and a slow script fetch must
+        // not hold up the navigation that asked for it.
+        void this.maybeShowTutorial();
         return true;
+    }
+
+    /**
+     * Fetch and run the one-time tour, the first time someone lands here.
+     *
+     * The cheap guards are repeated before the fetch so a session that has
+     * already seen it, or has session tips off, never asks for the script at
+     * all. Everything else — an open modal, active search, mobile — is left to
+     * the module, which re-checks the tip id too.
+     */
+    async maybeShowTutorial() {
+        if (window.DiscoverabilityState?.hasSeenTip?.(DashboardInbox.TUTORIAL_TIP_ID)) return;
+        if (this.dash.settings?.enableSessionTips === false) return;
+        if (typeof window.InboxTutorial === 'undefined') {
+            try {
+                await window.LazyScript.loadScriptOnce('js/inbox-tutorial.js', 'inboxTutorialModule',
+                    () => typeof window.InboxTutorial !== 'undefined');
+            } catch {
+                // A tour that cannot be fetched is not worth an error toast.
+                return;
+            }
+        }
+        window.InboxTutorial?.maybeShow?.();
     }
 
     async leaveInboxView(pageId) {

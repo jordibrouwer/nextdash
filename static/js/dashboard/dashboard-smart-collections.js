@@ -121,6 +121,14 @@ class DashboardSmartCollections {
 
         const todayBookmarks = memo(() => this.getSmartStartTodayBookmarks(normalized));
 
+        // createdAt is written on every create path and, until now, read by
+        // nothing on the dashboard. The other four collections all key on
+        // lastOpened or openCount, so "what did I just add" was unanswerable:
+        // Stale is its inverse, and Recently opened only fires if you opened it.
+        const addedBookmarks = memo(() => normalized
+            .filter((bookmark) => Number(bookmark.createdAt || 0) > 0)
+            .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)));
+
         const collections = [];
 
         if (d.settings.showSmartTodayCollection !== false && pageAllowed(d.settings.smartTodayPageIds) && todayBookmarks().length > 0) {
@@ -153,6 +161,25 @@ class DashboardSmartCollections {
                 name: `${recentTitle} (${recentCount})`,
                 icon: '⚡',
                 bookmarks: effectiveLimit ? recent.slice(0, effectiveLimit) : recent
+            });
+        }
+
+        if (d.settings.showSmartAddedCollection === true && pageAllowed(d.settings.smartAddedPageIds) && addedBookmarks().length > 0) {
+            const added = addedBookmarks();
+            const configuredLimit = Number(d.settings.smartAddedLimit ?? 20);
+            const effectiveLimit = Number.isFinite(configuredLimit) && configuredLimit > 0
+                ? configuredLimit
+                : null;
+            const addedLabel = d.language?.t?.('dashboard.smartAddedCollection');
+            const addedTitle = addedLabel && addedLabel !== 'dashboard.smartAddedCollection'
+                ? addedLabel
+                : 'Recently added';
+            const addedCount = effectiveLimit ? Math.min(added.length, effectiveLimit) : added.length;
+            collections.push({
+                id: '__smart_added__',
+                name: `${addedTitle} (${addedCount})`,
+                icon: '✚',
+                bookmarks: effectiveLimit ? added.slice(0, effectiveLimit) : added
             });
         }
 
@@ -340,6 +367,38 @@ class DashboardSmartCollections {
                 const field = rule.field;
                 const op = rule.operator || 'includes';
                 const val = (rule.value || '').toLowerCase();
+
+                // Fields that are a question on their own: the built-in
+                // collections score on openCount and lastOpened right above, so
+                // the user-defined ones were running on the weaker engine —
+                // "my dev links I have not touched in 90 days" could not be
+                // expressed at all.
+                if (field === 'pinned') {
+                    const yes = !['false', 'no', '0'].includes(val);
+                    const match = Boolean(bm.pinned) === yes;
+                    return op === 'excludes' ? !match : match;
+                }
+                if (field === 'untagged') {
+                    const empty = !(bm.tags || []).some((t) => String(t || '').trim());
+                    return op === 'excludes' ? !empty : empty;
+                }
+                if (field === 'notOpenedDays') {
+                    const days = Number(val);
+                    if (!Number.isFinite(days) || days <= 0) return false;
+                    const last = Number(bm.lastOpened || 0);
+                    // Never opened counts as neglected, the way the Stale
+                    // collection already treats it.
+                    const stale = last === 0 || (Date.now() - last) > days * 86400000;
+                    return op === 'excludes' ? !stale : stale;
+                }
+                if (field === 'changedDays') {
+                    const days = Number(val);
+                    if (!Number.isFinite(days) || days <= 0) return false;
+                    const changed = Number(bm.updatedAt || 0);
+                    const recent = changed > 0 && (Date.now() - changed) <= days * 86400000;
+                    return op === 'excludes' ? !recent : recent;
+                }
+
                 if (!val) return false;
                 if (field === 'tag') {
                     const has = (bm.tags || []).some(t => t.toLowerCase() === val);

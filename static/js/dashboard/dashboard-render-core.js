@@ -490,10 +490,29 @@ class DashboardRenderCore {
             ];
         }
 
-        if (method === 'recent') {
+        // 'opened' was called 'recent', which Config used for createdAt under
+        // the label "Recently added" — the same word meaning two things in two
+        // surfaces of the same app. normalizeSortMode still accepts the old
+        // value, so stored categories keep working.
+        if (method === 'opened') {
             return [
                 ...pinned,
                 ...regular.sort((a, b) => (b?.lastOpened || 0) - (a?.lastOpened || 0))
+            ];
+        }
+
+        // createdAt was written on every create path and read by nothing.
+        if (method === 'added') {
+            return [
+                ...pinned,
+                ...regular.sort((a, b) => (b?.createdAt || 0) - (a?.createdAt || 0))
+            ];
+        }
+
+        if (method === 'opens') {
+            return [
+                ...pinned,
+                ...regular.sort((a, b) => (b?.openCount || 0) - (a?.openCount || 0))
             ];
         }
 
@@ -589,9 +608,11 @@ class DashboardRenderCore {
         }
         listElement._sortLockedHintBound = true;
 
-        const modeLabel = sortMode === 'recent'
-            ? d.formatDashboardLabel('sortModeRecent', {}, 'Recent')
-            : d.formatDashboardLabel('sortModeAZ', {}, 'A–Z');
+        const modeLabel = {
+            opened: d.formatDashboardLabel('sortModeRecent', {}, 'Recent'),
+            added: d.formatDashboardLabel('sortModeAdded', {}, 'Newest'),
+            opens: d.formatDashboardLabel('sortModeOpens', {}, 'Most opened'),
+        }[sortMode] || d.formatDashboardLabel('sortModeAZ', {}, 'A–Z');
         const hint = d.formatDashboardLabel(
             'reorderSortLockedHint',
             { mode: modeLabel },
@@ -1531,8 +1552,25 @@ class DashboardRenderCore {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');
-                if (!titleElement.classList.contains('category-title--renaming')) {
-                }
+                return;
+            }
+            // Renaming was long-press, double-click or right-click only — three
+            // pointer gestures and no key, in a keyboard-first app. F2 is the
+            // rename key every file manager has taught.
+            if (e.key === 'F2' && !titleElement.classList.contains('category-title--renaming')) {
+                e.preventDefault();
+                this._startCategoryRename(titleElement, nameSpan, category);
+                return;
+            }
+            // Delete and the rest had only the right-click menu; adding a
+            // category already had the c-hold. Opening that same menu from the
+            // keyboard keeps one implementation of the confirm and the undo.
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                const box = titleElement.getBoundingClientRect();
+                d.categoryMenu?.show?.(titleElement, category, {
+                    x: box.left + 8, y: box.bottom,
+                });
             }
         });
 

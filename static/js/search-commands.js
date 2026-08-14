@@ -195,12 +195,14 @@ class SearchCommandsComponent {
     }
 
     _sortModeLabel(method) {
-        const key = method === 'az'
-            ? 'commands.sortModeAz'
-            : method === 'recent'
-                ? 'commands.sortModeRecent'
-                : 'commands.sortModeOrder';
-        const fallback = method === 'az' ? 'A–Z' : method === 'recent' ? 'Recent' : 'Manual order';
+        // 'opened' was 'recent'; the old key is kept so translations stay put.
+        const map = {
+            az: ['commands.sortModeAz', 'A–Z'],
+            opened: ['commands.sortModeRecent', 'Last opened'],
+            added: ['commands.sortModeAdded', 'Recently added'],
+            opens: ['commands.sortModeOpens', 'Most opened'],
+        };
+        const [key, fallback] = map[method] || ['commands.sortModeOrder', 'Manual order'];
         return this._t(key, fallback);
     }
 
@@ -1950,7 +1952,7 @@ class SearchCommandsComponent {
             dashboard,
             { id: categoryId }
         ) || 'order';
-        const validMethods = ['order', 'az', 'recent'];
+        const validMethods = ['order', 'az', 'opened', 'added', 'opens'];
 
         if (!method) {
             return validMethods.map((sortMethod) => ({

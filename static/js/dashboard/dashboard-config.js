@@ -38,6 +38,20 @@ class DashboardConfig {
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
     /**
+     * How long the remembered config location survives.
+     *
+     * Returning to config a moment later is a continuation — you left to check
+     * something and came back — and dropping you on Overview each time makes
+     * you re-navigate. Coming back an hour later is a new task, and the tab you
+     * happened to be on last time is no longer where you meant to be. Fifteen
+     * minutes is the line between the two.
+     *
+     * Mirrored in dashboard-config-loader.js, which reads the same entry on a
+     * cold load before this module exists. Both must agree.
+     */
+    static CONFIG_LAST_TTL_MS = 15 * 60 * 1000;
+
+    /**
      * The activity chart's range, remembered per browser.
      *
      * The sub-tab you were on already survives a visit (SUB_TAB_STATE, via the
@@ -92,8 +106,11 @@ class DashboardConfig {
         // Empty means the list is unfiltered by it.
         this.bmCleanupFilter = '';
         this.bmTagFilter = [];
-        this.bmSort = 'page';
-        this.bmVisibleLimit = DashboardConfig.BM_PAGE_SIZE;
+        // null until the list is first rendered, when it takes the stored
+        // preference. Health and Inbox both remember their sort; this list was
+        // the only one that reset to page order on every visit.
+        this.bmSort = null;
+        this.bmVisibleLimit = this.bmPageSize();
         this.bmEditing = null;
         this.bmDirty = false;
         this.bmSelected = new Set();
@@ -360,12 +377,20 @@ class DashboardConfig {
         }
     }
 
-    /** Read the last config section/sub-tab saved when leaving via Shift+H or Shift+I. */
+    /**
+     * Read the config section/sub-tab you were last on, if it is still fresh.
+     *
+     * An entry with no `savedAt` was written before the location expired at
+     * all, and there is no way to tell whether it is a minute or a month old —
+     * so it is treated as stale, and that browser starts on Overview once.
+     */
     loadLastConfigLocation() {
         try {
             const raw = localStorage.getItem(DashboardConfig.CONFIG_LAST_KEY);
             if (!raw) return null;
             const data = JSON.parse(raw);
+            const savedAt = Number(data?.savedAt) || 0;
+            if (!savedAt || Date.now() - savedAt > DashboardConfig.CONFIG_LAST_TTL_MS) return null;
             const section = data?.section;
             if (!section || !DashboardConfig.SECTIONS.includes(section)) return null;
             let subTab = data?.subTab ?? null;
@@ -421,7 +446,14 @@ class DashboardConfig {
         }
     }
 
-    /** Remember where the user left config — only when exiting via Shift+H or Shift+I. */
+    /**
+     * Remember where the user left config, on every way out.
+     *
+     * The timestamp is what makes that safe: without an expiry, remembering
+     * every exit would mean a tab you opened once, weeks ago, greeting you
+     * forever. It is stamped on the way out rather than on the way in, so the
+     * fifteen minutes count from when you last had config open.
+     */
     saveLastConfigLocation() {
         try {
             const section = this.section;
@@ -431,16 +463,8 @@ class DashboardConfig {
             localStorage.setItem(DashboardConfig.CONFIG_LAST_KEY, JSON.stringify({
                 section,
                 subTab: subTab || null,
+                savedAt: Date.now(),
             }));
-        } catch {
-            // localStorage unavailable — skip silently
-        }
-    }
-
-    /** Drop stored config location so the next visit starts on Overview. */
-    clearLastConfigLocation() {
-        try {
-            localStorage.removeItem(DashboardConfig.CONFIG_LAST_KEY);
         } catch {
             // localStorage unavailable — skip silently
         }
@@ -458,23 +482,22 @@ class DashboardConfig {
      * Section (and optional sub-tab) when opening config without an explicit
      * target or `#config/…` hash — e.g. Shift+S from the bookmark grid.
      *
-     * Saved location (Shift+H / Shift+I) applies when returning from health
-     * or inbox via Shift+S. Cold load to bare `#config` is handled in
-     * dashboard-data.js before the lazy module loads. Opening config from
-     * bookmarks with a page hash (#1) always lands on Overview.
+     * The saved location applies wherever you are coming from — the grid, the
+     * inbox, health — as long as it is still inside the fifteen-minute window;
+     * loadLastConfigLocation answers with nothing once it is not. It used to
+     * apply only when returning from health or inbox, which meant the far more
+     * common route, Shift+S from the grid, always landed on Overview.
+     *
+     * An explicit section and a `#config/…` hash both still win: those name a
+     * destination, and the memory is only for when nothing else does.
+     * Cold load to bare `#config` is handled in dashboard-data.js before the
+     * lazy module loads.
      */
     resolveConfigOpenTarget(explicitSection) {
         const hash = window.location.hash;
         const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
         const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
-        const saved = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
-        let stored = null;
-        if (saved?.section) {
-            const fromView = this.dash.activeView;
-            if (fromView === 'health' || fromView === 'inbox') {
-                stored = saved;
-            }
-        }
+        const stored = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
         const targetSection = explicitSection || hashSection || stored?.section || 'overview';
 
         if (!hashIsGeneric && hashSection === targetSection) {
@@ -569,8 +592,10 @@ class DashboardConfig {
         if (d.activeView !== DashboardConfig.VIEW) {
             return false;
         }
-        // Escape and other non–Shift+H/I exits start fresh on Overview next time.
-        this.clearLastConfigLocation();
+        // Every way out remembers where you were, not just Shift+H and Shift+I.
+        // The fifteen-minute expiry in loadLastConfigLocation is what keeps that
+        // from turning into a tab that greets you forever.
+        this.saveLastConfigLocation();
         // The save indicator lives on <body>, so leaving the view has to take it
         // down; otherwise a "Saved" would linger over the dashboard.
         clearTimeout(this._saveStateTimer);
@@ -890,8 +915,8 @@ class DashboardConfig {
 
     /**
      * Page tabs (1–9) and Inbox (0) work from config too — same as on the
-     * bookmark grid — so you can leave without Esc first. Unlike Shift+H/I,
-     * these do not remember where you were in config.
+     * bookmark grid — so you can leave without Esc first. These remember where
+     * you were, the same as every other way out.
      */
     handleShellViewShortcut(e) {
         if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
@@ -903,7 +928,7 @@ class DashboardConfig {
             if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                this.clearLastConfigLocation();
+                this.saveLastConfigLocation();
                 void d.inbox.openInboxView();
                 return true;
             }
@@ -915,7 +940,7 @@ class DashboardConfig {
             if (pageIndex >= d.pages.length) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.clearLastConfigLocation();
+            this.saveLastConfigLocation();
             void d.requestPageNavigation(d.pages[pageIndex].id);
             return true;
         }
@@ -1191,6 +1216,9 @@ class DashboardConfig {
             this.bindPagesTags(container);
         } else if (this.section === 'bookmarks') {
             this.bindBookmarksSection(container);
+            // The section carries schema panels of its own now, which bind the
+            // same way the Behavior ones do.
+            this.bindControlPanels(container, 'behavior');
             void this.prefetchAllBookmarkCategories();
         } else if (this.section === 'stats') {
             this.bindStats(container);
@@ -1654,6 +1682,13 @@ class DashboardConfig {
         const bookmark = this.findBookmarkByKey(key);
         if (!bookmark?.url) return;
         const href = this.dash.safeBookmarkOpenHref?.(bookmark.url) || bookmark.url;
+        // Honour the openInNewTab preference, which the dashboard grid already
+        // respects: opening from Config used to force a new tab whatever it
+        // said, so the setting only half applied.
+        if (this.dash?.settings?.openInNewTab === false) {
+            window.location.href = href;
+            return;
+        }
         window.open(href, '_blank', 'noopener,noreferrer');
         this.dash.recordBookmarkOpened?.(bookmark, undefined, 'config');
         this.refreshBookmarkUsageLine(key, bookmark);
@@ -1838,6 +1873,7 @@ class DashboardConfig {
         { tab: 'health', titleKey: 'config.helpHealthTitle', fallback: 'Availability & health' },
         { tab: 'health', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
         { tab: 'health', titleKey: 'config.helpInboxWorkTitle', fallback: 'Working through the inbox' },
+        { tab: 'health', titleKey: 'config.helpInboxTourTitle', fallback: 'The one-time tour' },
         { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
         { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
         { tab: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
@@ -2867,6 +2903,58 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureBookmarkSettingsTitle',
+                titleFallback: 'Config → Bookmarks finally has settings',
+                whatKey: 'config.overviewNewFeatureBookmarkSettingsWhat',
+                whatFallback: 'Every choice this section made was made for you and could not be changed: the sort reset on every visit, fifty rows loaded at a time whatever your screen, and a quick-added bookmark always arrived unchecked, unpinned and without a category.',
+                howKey: 'config.overviewNewFeatureBookmarkSettingsHow',
+                howFallback: 'Ten settings of its own, including what a quick-added bookmark starts with, the interval a bookmark gets when you switch it to Monitor, how many rows a delete has to touch before it asks, what counts as "not opened in a while", and which archive service the archive links point at.',
+                enableKey: 'config.overviewNewFeatureBookmarkSettingsEnable',
+                enableFallback: 'Nothing to switch on. Every setting starts at exactly the value that used to be fixed, so nothing changes until you change it.',
+                ctaKey: 'config.overviewNewFeatureBookmarkSettingsCta',
+                ctaFallback: 'Open Bookmarks →',
+                go: { section: 'bookmarks' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureUsageDataTitle',
+                titleFallback: 'Ask when you added something, or last opened it',
+                whatKey: 'config.overviewNewFeatureUsageDataWhat',
+                whatFallback: 'nextDash records when you add a bookmark, when you last opened it and how often — and none of it could be reached from the search bar or from a collection of your own. "Added this month and never opened since" was not a question you could ask.',
+                howKey: 'config.overviewNewFeatureUsageDataHow',
+                howFallback: 'Search takes added: and opened: with today, week, month or year — and opened:never. Your own collections can now use pinned, untagged, days since last opened and days since last changed, and a Recently added collection answers the one question the others never could.',
+                enableKey: 'config.overviewNewFeatureUsageDataEnable',
+                enableFallback: 'The search filters work straight away. Recently added is off until you switch it on, and takes its own limit and pages.',
+                ctaKey: 'config.overviewNewFeatureUsageDataCta',
+                ctaFallback: 'Open Collections →',
+                go: { section: 'pages-tags', ptTab: 'collections' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureRowKeysTitle',
+                titleFallback: 'Four more things you can do without the mouse',
+                whatKey: 'config.overviewNewFeatureRowKeysWhat',
+                whatFallback: 'Pinning, sharing, opening a bookmark in Health and filtering to a tag you can see all needed the mouse or the command palette, in an app where everything else on a row has a key.',
+                howKey: 'config.overviewNewFeatureRowKeysHow',
+                howFallback: 'Shift + P pins, Shift + S shares, Shift + R opens the row in Health, and t filters to its tag. Ctrl/Cmd + Enter opens a bookmark in a new tab for that press alone, whatever your standing preference says. Pin also has a right-click entry now.',
+                enableKey: 'config.overviewNewFeatureRowKeysEnable',
+                enableFallback: 'Nothing to switch on. Press ! or F1 for the full list, which is also on the printable cheat sheet.',
+                ctaKey: 'config.overviewNewFeatureRowKeysCta',
+                ctaFallback: 'Open Keyboard help →',
+                go: { section: 'help', helpTab: 'search' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureRowTagsTitle',
+                titleFallback: 'Tags on the bookmark rows themselves',
+                whatKey: 'config.overviewNewFeatureRowTagsWhat',
+                whatFallback: 'Every row already carried its tags and showed none of them, so the one place you could not act on a bookmark\u2019s tag was the row in front of you.',
+                howKey: 'config.overviewNewFeatureRowTagsHow',
+                howFallback: 'Switch on tags in the grid and the first two appear on the row, with the rest collapsing into a count. They give way before the bookmark name does, and stay out of the way on a phone.',
+                enableKey: 'config.overviewNewFeatureRowTagsEnable',
+                enableFallback: 'Off by default, under Appearance → Display. Category headers also give back their width: the sort in use stays in front and the rest move behind a \u22ef.',
+                ctaKey: 'config.overviewNewFeatureRowTagsCta',
+                ctaFallback: 'Open Display →',
+                go: { section: 'appearance', appearanceTab: 'display' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureInboxTagsTitle',
                 titleFallback: 'Tags on inbox links, at last',
                 whatKey: 'config.overviewNewFeatureInboxTagsWhat',
@@ -3601,6 +3689,15 @@ class DashboardConfig {
             if (target.behaviorTab && target.section === 'behavior') {
                 this.behaviorTab = target.behaviorTab;
                 if (this.section === 'behavior') {
+                    this.render();
+                    return;
+                }
+            }
+            // Pages & tags has its own strip too, and was the one section a
+            // spotlight could name a tab for and not reach it.
+            if (target.ptTab && target.section === 'pages-tags') {
+                this.ptTab = target.ptTab;
+                if (this.section === 'pages-tags') {
                     this.render();
                     return;
                 }
@@ -5542,6 +5639,11 @@ class DashboardConfig {
         const ok = await this.confirmAction(this.t('config.resetOnboardingConfirm', 'Replay the welcome tour and tips next time?'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false });
         if (!ok) return;
         this.dash.settings.onboardingCompleted = false;
+        // The dialog promises the tour and the tips, and only the quick-start
+        // card came back: the tip and tour ids live in discoverabilityState,
+        // which onboardingCompleted does not touch. Persisted by the save
+        // below rather than on its own timer, so one click is one write.
+        window.DiscoverabilityState?.clearSeenTips?.({ persist: false });
         try {
             await this.dash.saveSettings?.();
             this.notify(this.t('config.resetOnboardingSuccess', 'Onboarding will replay next time.'), 'success');
@@ -7681,6 +7783,20 @@ class DashboardConfig {
         // listed so the ↺ button and the changed-settings count can see them;
         // a field with no `def` silently reports itself as unchanged whatever
         // it holds. Values come from models.go — see config-field-defaults.spec.js.
+        // Config → Bookmarks. The list had no settings of its own; these are the
+        // choices it used to make on the user's behalf. Defaults mirror
+        // models.go, so the ↺ button and the changed-settings count agree with
+        // the server about what "unchanged" means.
+        configBookmarksSort: { info: ['configBookmarksSortInfoTitle', 'configBookmarksSortInfoMessage'], def: 'page' },
+        configBookmarksPageSize: { info: ['configBookmarksPageSizeInfoTitle', 'configBookmarksPageSizeInfoMessage'], def: 50 },
+        bookmarkDeleteConfirmFrom: { info: ['bookmarkDeleteConfirmFromInfoTitle', 'bookmarkDeleteConfirmFromInfoMessage'], def: 1 },
+        defaultMonitorIntervalMinutes: { info: ['defaultMonitorIntervalInfoTitle', 'defaultMonitorIntervalInfoMessage'], def: 15 },
+        newBookmarkCheckMode: { info: ['newBookmarkCheckModeInfoTitle', 'newBookmarkCheckModeInfoMessage'], def: 'off' },
+        newBookmarkPinned: { info: ['newBookmarkPinnedInfoTitle', 'newBookmarkPinnedInfoMessage'], def: false },
+        newBookmarkCategory: { def: '' },
+        bookmarkStaleDays: { info: ['bookmarkStaleDaysInfoTitle', 'bookmarkStaleDaysInfoMessage'], def: 90 },
+        bulkFaviconConfirmFrom: { info: ['bulkFaviconConfirmFromInfoTitle', 'bulkFaviconConfirmFromInfoMessage'], def: 0 },
+        bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { def: 'ask' },
         monitorEmphasis: { def: 'problems' },
         theme: { def: 'moss-stone-dark' },
@@ -7731,6 +7847,10 @@ class DashboardConfig {
         showSmartRecentCollection: { def: false },
         showSmartStaleCollection: { def: false },
         showSmartMostUsedCollection: { def: false },
+        showRowTags: { info: ['showRowTagsInfoTitle', 'showRowTagsInfoMessage'], def: false },
+        rowTagsMax: { def: 2 },
+        showSmartAddedCollection: { def: false },
+        smartAddedLimit: { def: 20 },
         smartTodayLimit: { info: ['smartTodayLimitInfoTitle', 'smartTodayLimitInfoMessage'], def: 8 },
         smartRecentLimit: { info: ['smartRecentLimitInfoTitle', 'smartRecentLimitInfoMessage'], def: 50 },
         smartStaleLimit: { info: ['smartStaleLimitInfoTitle', 'smartStaleLimitInfoMessage'], def: 50 },
@@ -7917,6 +8037,60 @@ class DashboardConfig {
         const layoutPresets = window.LayoutUtils?.getLayoutPresets?.()
             || ['default', 'compact', 'cards', 'terminal', 'masonry', 'list', 'widgets', 'launcher'];
         return [
+            // Config → Bookmarks had no settings at all; the list made these
+            // choices on the user's behalf and forgot them between visits.
+            {
+                section: 'bookmarks',
+                tab: null,
+                title: t('config.bookmarksGroupList', 'The list'),
+                note: t('config.bookmarksGroupListNote', 'How this list opens and how much of it loads at a time.'),
+                controls: [
+                    { field: 'configBookmarksSort', type: 'select', label: t('config.configBookmarksSortLabel', 'Open sorted by'), options: [
+                        opt('page', t('config.sortByPage', 'Page order')),
+                        opt('name', t('config.sortByName', 'Name (A–Z)')),
+                        opt('url', t('config.sortByUrl', 'URL')),
+                        opt('category', t('config.sortByCategory', 'Category')),
+                        opt('recent', t('config.sortByRecent', 'Recently added')),
+                        opt('lastOpened', t('config.sortByLastOpened', 'Last opened')),
+                        opt('opens', t('config.sortByOpens', 'Most opened')),
+                        opt('pinned', t('config.sortByPinned', 'Pinned first')),
+                    ] },
+                    { field: 'configBookmarksPageSize', type: 'number', min: 10, max: 500, step: 10,
+                        label: t('config.configBookmarksPageSizeLabel', 'Rows per load') },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: null,
+                title: t('config.bookmarksGroupNew', 'New bookmarks'),
+                note: t('config.bookmarksGroupNewNote', 'What a bookmark added with & or + starts out as.'),
+                controls: [
+                    { field: 'newBookmarkCheckMode', type: 'select', label: t('config.newBookmarkCheckModeLabel', 'Availability'), options: [
+                        opt('off', t('config.checkModeOff', 'Off')),
+                        opt('periodic', t('config.checkModePeriodic', 'Periodic')),
+                        opt('monitor', t('config.checkModeMonitor', 'Monitor')),
+                    ] },
+                    bool('newBookmarkPinned', 'config.newBookmarkPinnedLabel', 'Pinned'),
+                    { field: 'defaultMonitorIntervalMinutes', type: 'number', min: 5, max: 1440, step: 5,
+                        label: t('config.defaultMonitorIntervalLabel', 'Monitor interval (minutes)') },
+                ],
+            },
+            {
+                section: 'bookmarks',
+                tab: null,
+                title: t('config.bookmarksGroupBulk', 'Bulk actions and cleanup'),
+                note: t('config.bookmarksGroupBulkNote', 'When to ask first, and what counts as neglected.'),
+                controls: [
+                    { field: 'bookmarkDeleteConfirmFrom', type: 'number', min: 1, max: 500, step: 1,
+                        label: t('config.bookmarkDeleteConfirmFromLabel', 'Confirm deleting from') },
+                    { field: 'bulkFaviconConfirmFrom', type: 'number', min: 0, max: 1000, step: 10,
+                        label: t('config.bulkFaviconConfirmFromLabel', 'Confirm icon refresh from') },
+                    { field: 'bookmarkStaleDays', type: 'number', min: 7, max: 365, step: 1,
+                        label: t('config.bookmarkStaleDaysLabel', 'Count as neglected after (days)') },
+                    { field: 'bookmarkArchiveUrl', type: 'text',
+                        label: t('config.bookmarkArchiveUrlLabel', 'Archive service') },
+                ],
+            },
             {
                 section: 'behavior',
                 tab: 'general',
@@ -8043,6 +8217,9 @@ class DashboardConfig {
                         opt(700, '700 ms'), opt(1000, '1 s'),
                     ] },
                     bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
+                    { ...bool('showRowTags', 'config.showRowTagsLabel', 'Show tags on bookmark rows'), special: 'render' },
+                    { field: 'rowTagsMax', type: 'number', min: 1, max: 5, step: 1, special: 'render',
+                        label: t('config.rowTagsMaxLabel', 'Tags shown before “+N”') },
                 ],
             },
             /*
@@ -10392,6 +10569,8 @@ class DashboardConfig {
                     { field: 'smartStaleLimit', type: 'select', label: t('config.smartStaleLimit', 'Stale limit'), special: 'render', options: limitOpts },
                     bool('showSmartMostUsedCollection', 'config.showSmartMostUsedCollection', 'Show “Most used” collection'),
                     { field: 'smartMostUsedLimit', type: 'select', label: t('config.smartMostUsedLimit', 'Most-used limit'), special: 'render', options: limitOpts },
+                    bool('showSmartAddedCollection', 'config.showSmartAddedCollection', 'Show “Recently added” collection'),
+                    { field: 'smartAddedLimit', type: 'select', label: t('config.smartAddedLimit', 'Recently-added limit'), special: 'render', options: limitOpts },
                     {
                         type: 'note',
                         // Turning this on before anything has been opened looks
@@ -10450,6 +10629,10 @@ class DashboardConfig {
             tag: ['config.collectionRuleFieldTag', 'Tag'],
             category: ['config.collectionRuleFieldCategory', 'Category'],
             shortcut: ['config.collectionRuleFieldShortcut', 'Shortcut'],
+            pinned: ['config.collectionRuleFieldPinned', 'Pinned'],
+            untagged: ['config.collectionRuleFieldUntagged', 'Has no tags'],
+            notOpenedDays: ['config.collectionRuleFieldNotOpened', 'Not opened in (days)'],
+            changedDays: ['config.collectionRuleFieldChanged', 'Changed within (days)'],
         };
         const [key, fallback] = map[field] || [field, field];
         return this.t(key, fallback);
@@ -10524,7 +10707,7 @@ class DashboardConfig {
             return `
             <div class="config-collection-rule" data-collection-rule="${i}">
                 <select class="config-select" data-rule-field="${i}">
-                    ${['tag', 'category', 'shortcut'].map((f) =>
+                    ${['tag', 'category', 'shortcut', 'pinned', 'untagged', 'notOpenedDays', 'changedDays'].map((f) =>
                         `<option value="${f}" ${f === field ? 'selected' : ''}>${esc(this.collectionRuleFieldLabel(f))}</option>`).join('')}
                 </select>
                 <select class="config-select" data-rule-operator="${i}">
@@ -11364,7 +11547,7 @@ class DashboardConfig {
     }
 
     resetBookmarkVisibleLimit() {
-        this.bmVisibleLimit = DashboardConfig.BM_PAGE_SIZE;
+        this.bmVisibleLimit = this.bmPageSize();
     }
 
     scheduleBookmarkSearchRepaint() {
@@ -11594,6 +11777,7 @@ class DashboardConfig {
 
     renderBookmarksSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        if (this.bmSort == null) this.bmSort = this.defaultBookmarksSort();
         const pages = this.dash.pages || [];
         const pageOptions = [`<option value="">${esc(this.t('config.allPages', 'All pages'))}</option>`]
             .concat(pages.map((p) => {
@@ -11649,6 +11833,7 @@ class DashboardConfig {
                 <div id="config-bm-bulk">${this.renderBulkToolbar()}</div>
                 <div id="config-bm-list">${this.renderBookmarksList()}</div>
             </div>
+            ${this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior')}
         `;
     }
 
@@ -11989,6 +12174,32 @@ class DashboardConfig {
      */
     static BM_PAGE_SIZE = 50;
 
+    /** Days after which an unopened bookmark counts as neglected. */
+    bookmarkStaleDays() {
+        const n = Number(this.dash?.settings?.bookmarkStaleDays);
+        return Number.isFinite(n) && n >= 7 ? Math.min(365, Math.round(n)) : 90;
+    }
+
+    /** Whether deleting `count` rows should ask first. */
+    deleteNeedsConfirm(count) {
+        const from = Number(this.dash?.settings?.bookmarkDeleteConfirmFrom);
+        const threshold = Number.isFinite(from) && from >= 1 ? from : 1;
+        return count >= threshold;
+    }
+
+    /** The sort this list opens on, from settings. */
+    defaultBookmarksSort() {
+        const allowed = ['page', 'name', 'url', 'category', 'recent', 'lastOpened', 'opens', 'pinned'];
+        const stored = String(this.dash?.settings?.configBookmarksSort || '');
+        return allowed.includes(stored) ? stored : 'page';
+    }
+
+    /** Rows per load step, from settings; the constant is the fallback. */
+    bmPageSize() {
+        const n = Number(this.dash?.settings?.configBookmarksPageSize);
+        return Number.isFinite(n) && n >= 10 ? Math.min(500, Math.round(n)) : DashboardConfig.BM_PAGE_SIZE;
+    }
+
     static CLEANUP_FILTERS = {
         never: (b) => !Number(b.openCount || 0) && !Number(b.lastOpened || 0),
         once: (b) => Number(b.openCount || 0) === 1,
@@ -12036,7 +12247,7 @@ class DashboardConfig {
         // versus query "a" with tag "b" must not share a token.
         const token = JSON.stringify([
             this.bmQuery, this.bmPageFilter, this.bmCategoryFilter,
-            this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmSort,
+            this.bookmarkTagFilters(), this.bmCleanupFilter, this.bmSort ?? this.defaultBookmarksSort(),
         ]);
         if (this._bmVisibleSource === all && this._bmVisibleToken === token && this._bmVisible) {
             return this._bmVisible;
@@ -12102,7 +12313,7 @@ class DashboardConfig {
                 if (dp !== 0) return dp;
                 return pageIndex(a.pageId) - pageIndex(b.pageId);
             },
-        }[this.bmSort] || null;
+        }[this.bmSort ?? this.defaultBookmarksSort()] || null;
         return cmp ? [...rows].sort(cmp) : rows;
     }
 
@@ -12341,7 +12552,7 @@ class DashboardConfig {
         const names = this.pageNameIndex();
         const pageName = (id) => names.get(String(id)) || id;
         const showPageBadge = !this.bmPageFilter;
-        const limit = Math.max(DashboardConfig.BM_PAGE_SIZE, Number(this.bmVisibleLimit) || DashboardConfig.BM_PAGE_SIZE);
+        const limit = Math.max(this.bmPageSize(), Number(this.bmVisibleLimit) || this.bmPageSize());
         const rows = allRows.slice(0, limit);
         const ctx = { esc, pageName, showPageBadge, isDuplicate: (b) => {
             const url = String(b.url || '').trim().toLowerCase();
@@ -12885,7 +13096,11 @@ class DashboardConfig {
         this.closeBookmarkMenus();
         const url = String(b?.url || '').trim();
         if (!url) return;
-        window.open(`https://web.archive.org/web/*/${url}`, '_blank', 'noopener,noreferrer');
+        // Template from settings: a self-hoster may run ArchiveBox or prefer
+        // archive.today over the Wayback Machine.
+        const template = String(this.dash?.settings?.bookmarkArchiveUrl || '').trim()
+            || 'https://web.archive.org/web/*/{url}';
+        window.open(template.replace('{url}', encodeURIComponent(url)), '_blank', 'noopener,noreferrer');
     }
 
     async refreshBookmarkFavicon(key) {
@@ -14093,7 +14308,7 @@ class DashboardConfig {
      */
     selectAllBookmarksLabel() {
         const total = this.visibleBookmarks().length;
-        const shown = Math.min(total, Math.max(DashboardConfig.BM_PAGE_SIZE, Number(this.bmVisibleLimit) || DashboardConfig.BM_PAGE_SIZE));
+        const shown = Math.min(total, Math.max(this.bmPageSize(), Number(this.bmVisibleLimit) || this.bmPageSize()));
         if (total > shown) {
             return this.t('config.selectAllBookmarksCount', 'Select all {n}').replace('{n}', String(total));
         }
@@ -14152,7 +14367,7 @@ class DashboardConfig {
             const total = this.visibleBookmarks().length;
             if (this.bmVisibleLimit >= total) return;
             this._bmLoadMoreArmed = false;
-            this.bmVisibleLimit += DashboardConfig.BM_PAGE_SIZE;
+            this.bmVisibleLimit += this.bmPageSize();
             this.repaintBookmarksList();
         }, { root: root || null, rootMargin: '160px' });
         this._bmLoadMoreObserver.observe(sentinel);
@@ -14260,7 +14475,11 @@ class DashboardConfig {
     async deleteBookmarkByKey(key) {
         const parsed = this.parseBookmarkKey(key);
         if (!parsed) return;
-        if (!await this.confirmAction(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
+        // Below the threshold the confirm is skipped: the undo toast and the
+        // 30-day trash already cover a misclick, and a cleanup pass should not
+        // cost one Enter per row.
+        if (this.deleteNeedsConfirm(1)
+            && !await this.confirmAction(this.t('config.deleteBookmarkConfirm', 'Delete this bookmark?'))) return;
         try {
             // Snapshot before the write, so the toast can put this row back —
             // same as bulk delete and the :remove command.
@@ -14546,7 +14765,8 @@ class DashboardConfig {
         await this.mutateSelected(picked, (b) => {
             const next = { ...b };
             if (window.CheckMode) {
-                next.monitorIntervalMinutes = window.CheckMode.intervalOf?.(b) || 15;
+                next.monitorIntervalMinutes = window.CheckMode.intervalOf?.(b)
+                    || Number(this.dash?.settings?.defaultMonitorIntervalMinutes) || 15;
                 window.CheckMode.assign(next, mode);
             }
             return next;
@@ -14565,7 +14785,7 @@ class DashboardConfig {
     async bulkDelete(picked) {
         const msg = this.t('config.bulkDeleteConfirm', 'Delete {n} bookmarks?')
             .replace('{n}', String(picked.length));
-        if (!await this.confirmAction(msg)) return;
+        if (this.deleteNeedsConfirm(picked.length) && !await this.confirmAction(msg)) return;
 
         const byPage = [...this.selectionTargetsByPage(picked)];
         // Snapshot each affected page before touching it, so the toast can put
@@ -14625,6 +14845,14 @@ class DashboardConfig {
     }
 
     async bulkFavicons(picked) {
+        // The global refresh asks first because it is slow on a large library;
+        // the bulk one did the same work on any number of rows without a word.
+        const from = Number(this.dash?.settings?.bulkFaviconConfirmFrom) || 0;
+        if (from > 0 && picked.length >= from) {
+            const ask = this.t('config.bulkFaviconConfirm', 'Fetch icons for {n} bookmarks? This can take a while.')
+                .replace('{n}', String(picked.length));
+            if (!await this.confirmAction(ask, { danger: false })) return;
+        }
         let ok = 0;
         for (const b of picked) {
             const key = this.bookmarkKey(b);
@@ -15380,7 +15608,8 @@ class DashboardConfig {
                 <h3 class="config-panel-title">${esc(this.t('config.statsRotTitle', 'Link rot & clashes'))}</h3>
                 <ul class="config-stat-details">
                     ${line(this.t('config.statsNeverOpened', 'Never opened'), s.neverOpened)}
-                    ${line(this.t('config.statsStale90', 'Not opened in 90 days'), s.stale90)}
+                    ${line(this.t('config.statsStaleDays', 'Not opened in {days} days')
+                        .replace('{days}', String(this.bookmarkStaleDays())), s.stale90)}
                     ${line(this.t('config.statsUntagged', 'Untagged'), s.total - s.tagged)}
                 </ul>
             </div>`;
@@ -15776,7 +16005,11 @@ class DashboardConfig {
         let checked = 0;
         let neverOpened = 0;
 
-        const cutoff90 = Date.now() - 90 * 86400000;
+        // The threshold is a judgement, not a law: a daily work library is
+        // stale at 30 days, a reference archive is not at 90. It also drives
+        // the cleanup score, so it decides what the overview calls neglected.
+        const staleDays = this.bookmarkStaleDays();
+        const cutoff90 = Date.now() - staleDays * 86400000;
         let stale90 = 0;
         const urlCounts = new Map();
         const shortcutCounts = new Map();
@@ -16912,7 +17145,13 @@ class DashboardConfig {
             + this.helpPanel('config.helpInboxTriageTitle', 'Triage mode',
                 'config.helpInboxTriageBody', '')
             + this.helpPanel('config.helpInboxSettingsTitle', 'Settings behind the scenes',
-                'config.helpInboxSettingsBody', '');
+                'config.helpInboxSettingsBody', '')
+            // Last, not first: someone reading this page has already found the
+            // documentation, so what the tour said is a footnote for them. It
+            // is here for the reader who skipped or dismissed it and wants to
+            // know what they walked past.
+            + this.helpPanel('config.helpInboxTourTitle', 'The one-time tour',
+                'config.helpInboxTourBody', '');
     }
 
     renderHelpData() {

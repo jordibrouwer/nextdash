@@ -121,7 +121,9 @@ type Finder struct {
 }
 
 type CollectionRule struct {
-	Field    string `json:"field"`    // "tag", "category", "shortcut"
+	// "tag", "category", "shortcut", plus the ones that are a question on
+	// their own: "pinned", "untagged", "notOpenedDays", "changedDays".
+	Field    string `json:"field"`
 	Operator string `json:"operator"` // "includes", "excludes"
 	Value    string `json:"value"`
 }
@@ -256,6 +258,11 @@ type Settings struct {
 	SmartRecentLimit              int                          `json:"smartRecentLimit"`             // Max items in smart recently opened (0 = unlimited)
 	SmartStaleLimit               int                          `json:"smartStaleLimit"`              // Max items in smart stale bookmarks (0 = unlimited)
 	SmartMostUsedLimit            int                          `json:"smartMostUsedLimit"`           // Max items in smart most used (0 = unlimited)
+	ShowSmartAddedCollection      bool                         `json:"showSmartAddedCollection"`     // Show smart recently added collection
+	SmartAddedLimit               int                          `json:"smartAddedLimit"`              // Max items in smart recently added (0 = unlimited)
+	SmartAddedPageIds             []int                        `json:"smartAddedPageIds"`            // Page IDs where smart recently added is enabled (empty = all)
+	ShowRowTags                   bool                         `json:"showRowTags"`                  // Show tag chips on dashboard bookmark rows
+	RowTagsMax                    int                          `json:"rowTagsMax"`                   // Chips shown before a "+N" (rest collapse)
 	CategoryItemLimit             int                          `json:"categoryItemLimit"`            // Max bookmarks shown per category before a "show more" toggle (0 = unlimited)
 	SmartTodayWorkKeywords        string                       `json:"smartTodayWorkKeywords"`       // Comma-separated work-hour keyword boosts
 	SmartTodayEveningKeywords     string                       `json:"smartTodayEveningKeywords"`    // Comma-separated evening keyword boosts
@@ -347,6 +354,19 @@ type Settings struct {
 	UpdateCheckEnabled   bool                  `json:"updateCheckEnabled"`             // Poll GitHub for newer releases (on by default)
 	DiscoverabilityState *DiscoverabilityState `json:"discoverabilityState,omitempty"` // Cross-browser what's-new and tips state
 	SavedSearches        []SavedSearch         `json:"savedSearches,omitempty"`        // Named queries from the search bar
+
+	// Config → Bookmarks. The list view had no settings of its own; these are
+	// the choices it used to make on the user's behalf.
+	ConfigBookmarksSort       string `json:"configBookmarksSort"`       // Sort the list opens on: page/name/recent/lastOpened/opens/pinned
+	ConfigBookmarksPageSize   int    `json:"configBookmarksPageSize"`   // Rows added per "load more" step
+	BookmarkDeleteConfirmFrom int    `json:"bookmarkDeleteConfirmFrom"` // Ask before deleting this many rows or more (1 = always)
+	DefaultMonitorIntervalMin int    `json:"defaultMonitorIntervalMinutes"` // Interval a bookmark gets when switched to Monitor
+	NewBookmarkCheckMode      string `json:"newBookmarkCheckMode"`      // Availability a quick-added bookmark starts on: off/periodic/monitor
+	NewBookmarkPinned         bool   `json:"newBookmarkPinned"`         // Quick-add pins by default
+	NewBookmarkCategory       string `json:"newBookmarkCategory"`       // Category id a quick-added bookmark lands in ("" = none)
+	BookmarkStaleDays         int    `json:"bookmarkStaleDays"`         // "Not opened in N days" in the cleanup score and stats
+	BulkFaviconConfirmFrom    int    `json:"bulkFaviconConfirmFrom"`    // Ask before refreshing icons for this many rows (0 = never)
+	BookmarkArchiveUrl        string `json:"bookmarkArchiveUrl"`        // Archive service, {url} replaced with the bookmark's address
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -742,8 +762,18 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartRecentPageIds:           []int{},
 			SmartStalePageIds:            []int{},
 			SmartMostUsedPageIds:         []int{},
+			SmartAddedPageIds:            []int{},
+			SmartAddedLimit:              20,
+			RowTagsMax:                   2,
 			FaviconRefreshPolicy:         "on-save",
 			OnboardingCompleted:          false,
+			ConfigBookmarksSort:          defaultConfigBookmarksSort,
+			ConfigBookmarksPageSize:      defaultConfigBookmarksPageSize,
+			BookmarkDeleteConfirmFrom:    defaultBookmarkDeleteConfirmFrom,
+			DefaultMonitorIntervalMin:    defaultMonitorIntervalMinutes,
+			NewBookmarkCheckMode:         defaultNewBookmarkCheckMode,
+			BookmarkStaleDays:            defaultBookmarkStaleDays,
+			BookmarkArchiveUrl:           defaultBookmarkArchiveUrl,
 			ThemeIconStyling:             defaultThemeIconStyling(),
 			PackedColumns:                true,
 			// Was omitted here while both other Settings constructions set it,
@@ -1890,6 +1920,76 @@ func defaultPageName(id int) string {
 	return fmt.Sprintf("Page %d", id)
 }
 
+// Defaults for the Config → Bookmarks settings. Kept together so the two
+// default blocks below and the clamps in SaveSettings cannot drift apart.
+const (
+	defaultConfigBookmarksSort       = "page"
+	defaultConfigBookmarksPageSize   = 50
+	defaultBookmarkDeleteConfirmFrom = 1
+	defaultNewBookmarkCheckMode      = "off"
+	defaultBookmarkStaleDays         = 90
+	defaultBookmarkArchiveUrl        = "https://web.archive.org/web/*/{url}"
+)
+
+// configBookmarksSortModes are the orders the Config bookmark list can open on.
+var configBookmarksSortModes = map[string]bool{
+	"page": true, "name": true, "url": true, "category": true,
+	"recent": true, "lastOpened": true, "opens": true, "pinned": true,
+}
+
+// newBookmarkCheckModes mirrors the availability modes CheckMode understands.
+var newBookmarkCheckModes = map[string]bool{"off": true, "periodic": true, "monitor": true}
+
+// clampBookmarkSettings keeps the Config → Bookmarks settings inside the range
+// their controls offer. The API is reachable without the browser, and a value
+// outside the range would otherwise be stored and then silently ignored by the
+// code that reads it — which is exactly the "said Saved, did nothing" shape
+// these settings were added to avoid.
+func clampBookmarkSettings(s *Settings) {
+	if !configBookmarksSortModes[s.ConfigBookmarksSort] {
+		s.ConfigBookmarksSort = defaultConfigBookmarksSort
+	}
+	if s.ConfigBookmarksPageSize < 10 {
+		s.ConfigBookmarksPageSize = 10
+	}
+	if s.ConfigBookmarksPageSize > 500 {
+		s.ConfigBookmarksPageSize = 500
+	}
+	if s.BookmarkDeleteConfirmFrom < 1 {
+		s.BookmarkDeleteConfirmFrom = 1
+	}
+	if s.DefaultMonitorIntervalMin < minMonitorIntervalMinutes {
+		s.DefaultMonitorIntervalMin = minMonitorIntervalMinutes
+	}
+	if s.DefaultMonitorIntervalMin > maxMonitorIntervalMinutes {
+		s.DefaultMonitorIntervalMin = maxMonitorIntervalMinutes
+	}
+	if !newBookmarkCheckModes[s.NewBookmarkCheckMode] {
+		s.NewBookmarkCheckMode = defaultNewBookmarkCheckMode
+	}
+	if s.BookmarkStaleDays < 7 {
+		s.BookmarkStaleDays = 7
+	}
+	if s.BookmarkStaleDays > 365 {
+		s.BookmarkStaleDays = 365
+	}
+	if s.RowTagsMax < 1 {
+		s.RowTagsMax = 1
+	}
+	if s.RowTagsMax > 5 {
+		s.RowTagsMax = 5
+	}
+	if s.BulkFaviconConfirmFrom < 0 {
+		s.BulkFaviconConfirmFrom = 0
+	}
+	s.BookmarkArchiveUrl = strings.TrimSpace(s.BookmarkArchiveUrl)
+	// Must be a template that can carry the address, and must not be a
+	// javascript: or data: URL — this string is handed to window.open.
+	if !strings.Contains(s.BookmarkArchiveUrl, "{url}") || !strings.HasPrefix(s.BookmarkArchiveUrl, "http") {
+		s.BookmarkArchiveUrl = defaultBookmarkArchiveUrl
+	}
+}
+
 // NameMaxLength caps a page, category, finder, theme or collection name.
 // Mirrors DashboardConfig.NAME_MAX_LENGTH: the browser is where the limit is
 // explained, this is where it is enforced, since the API is reachable without
@@ -2344,7 +2444,17 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartTodayPageIds:              []int{},
 			SmartRecentPageIds:             []int{},
 			SmartStalePageIds:              []int{},
+			SmartAddedPageIds:              []int{},
+			SmartAddedLimit:                20,
+			RowTagsMax:                     2,
 			FaviconRefreshPolicy:           "on-save",
+			ConfigBookmarksSort:            defaultConfigBookmarksSort,
+			ConfigBookmarksPageSize:        defaultConfigBookmarksPageSize,
+			BookmarkDeleteConfirmFrom:      defaultBookmarkDeleteConfirmFrom,
+			DefaultMonitorIntervalMin:      defaultMonitorIntervalMinutes,
+			NewBookmarkCheckMode:           defaultNewBookmarkCheckMode,
+			BookmarkStaleDays:              defaultBookmarkStaleDays,
+			BookmarkArchiveUrl:             defaultBookmarkArchiveUrl,
 			LayoutPreset:                   "default",
 			LayoutVersion:                  "classic",
 			DensityMode:                    "compact",
@@ -2524,6 +2634,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if _, ok := rawSettings["smartStalePageIds"]; !ok || settings.SmartStalePageIds == nil {
 			settings.SmartStalePageIds = []int{}
+		}
+		if _, ok := rawSettings["smartAddedPageIds"]; !ok || settings.SmartAddedPageIds == nil {
+			settings.SmartAddedPageIds = []int{}
 		}
 		if _, ok := rawSettings["faviconRefreshPolicy"]; !ok || (settings.FaviconRefreshPolicy != "manual" && settings.FaviconRefreshPolicy != "on-save") {
 			settings.FaviconRefreshPolicy = "on-save"

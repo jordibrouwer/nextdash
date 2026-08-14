@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.0.3 — 14 August 2026](#v103--14-august-2026)
 - [v1.0.2 — 14 August 2026](#v102--14-august-2026)
 - [v1.0.1 — 13 August 2026](#v101--13-august-2026)
 - [v1.0.0 — 13 August 2026](#v100--13-august-2026)
@@ -162,6 +163,63 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.0.3 — 14 August 2026
+
+One theme across most of it: `openCount`, `lastOpened`, `createdAt`, `updatedAt` and `tags` were written on every path, fed the built-in features, and reached almost none of the ones the user drives. Plus settings for `Config → Bookmarks`, which had none.
+
+Unlike v1.0.1 and v1.0.2 this is **not** flagged `hideFromModal`, and both of those had the flag removed in this release — every version is visible in the What's new modal again. `DASHBOARD_RELEASE` and `NEXTDASH_WHATS_NEW_DATA_VERSION` are bumped, so the modal reopens once for everyone.
+
+### Config
+
+- **new** — the remembered config location applies on every exit and every way back in, expiring after 15 minutes (`CONFIG_LAST_TTL_MS`, stamped on the way out). It was saved only when leaving via `Shift+H` or `Shift+I` and cleared on every other exit, and `resolveConfigOpenTarget` additionally required `activeView` to be health or inbox — so the common route, Escape out and `Shift+S` back in, always landed on Overview. `clearLastConfigLocation` has no callers left and is removed. The expiry is duplicated in `dashboard-config-loader.js`, which reads the same entry on a cold load before the module exists; an entry with no `savedAt` predates the expiry and is treated as stale.
+
+### Config → Bookmarks settings
+
+- **new** — ten settings, all previously constants: stored sort (`configBookmarksSort`), rows per load step, and the availability, pin and category a quick-added bookmark starts with; the interval a bookmark gets when switched to Monitor, including in bulk; thresholds for confirming a delete and a bulk icon refresh; the "not opened in N days" figure, which also drives the cleanup score; and the archive service template.
+- **new** — `clampBookmarkSettings` enforces every range server-side rather than leaving it to the controls, since the API is reachable without the browser. The archive template must contain `{url}` and start with `http`, so it can never become a `javascript:` URL handed to `window.open`.
+- **fix** — opening a bookmark from Config now respects `openInNewTab`. The setting existed and the grid honoured it; this path forced a new tab regardless.
+
+### Reaching the data
+
+- **new** — `opened:` and `added:` in the search parser, matched by `matchesAgeFilter` against `today`/`week`/`month`/`year`, plus `never` for `opened:`. An unrecognised word filters nothing rather than everything, which is the safer way round for a typo.
+- **new** — custom collection rules gain `pinned`, `untagged`, `notOpenedDays` and `changedDays`. `valuelessRuleFields` keeps `pinned` and `untagged` without a value, so the server no longer drops them as half-filled. `changedDays` is the first reader `updatedAt` has ever had on the dashboard.
+- **new** — a **Recently added** smart collection on `createdAt`, off by default, with its own limit and page scope. The other four all key on `lastOpened` or `openCount`, so "what did I just add" was unanswerable.
+- **new** — `previewDesc` joins the search haystack, scored below the note: the site's words rather than the user's.
+- **new** — drift reaches the dashboard header badge in the warning tier. A drifted link still returns 200, which is exactly why it needed a human.
+
+### Grid
+
+- **new** — tag chips on rows, off by default, capped at a configurable two with the rest collapsing into `+N`. Rendered inside `.bookmark-link` rather than as a column: it is a subgrid whose columns align across every category, so an extra column would shift every row. Verified by measuring the shortcut column before and after — identical to the pixel, and pinned as a test.
+- **new** — `createSortControls` rebuilt as one active button plus a `⋯` menu. Four buttons per header, repeated per category, took more width than the bookmark names; the strip goes from ~90px to 19px, or 58px once something is sorted.
+- **new** — two sort modes, `added` and `opens`.
+- **fix** — the grid's `recent` mode sorted by `lastOpened` while Config used the same words for `createdAt`. Renamed to `opened`; `normalizeSortMode` still accepts the old value so stored categories keep working.
+
+### Keyboard and pointer
+
+- **new** — `Shift+P` pin, `Shift+S` share, `Shift+R` reveal in Health, `t` filter to the row's tag. Each delegates to the existing implementation — `_persistBookmarkField`, `shareBookmark`, `revealInHealth`, `toggleTagFilter` — rather than adding a second path that could drift.
+- **new** — pin gains a right-click entry. It had `Shift+P` and `:pin` but no pointer route at all from the grid, while every other one-bit row action had one.
+- **fix** — `Ctrl/Cmd+Enter` opens in a new tab for that press alone. `selectCurrentElement` fired a bare `.click()`, which constructs no `MouseEvent` and carries no modifier, so the keyboard had only the standing `openInNewTab` preference.
+
+### Inbox
+
+- **fix** — triage swallowed every key but Escape. Its guard asked `dash.isModalOpen()`, which counts the triage overlay itself, so the overlay blocked its own keyboard. Now asks `isLayeredModalOpen()` — whether something sits *over* triage. `advance()` was correct all along; nothing called it. Reported earlier and not reproducible then; the repro is a seeded queue of three and two presses of `j`.
+- **new** — a seven-step one-time tour (`inbox-tutorial.js`, `inboxTutorialV1`), fetched on demand rather than with the module: the inbox loads during bootstrap for the unread badge, so riding along would cost every session that never opens the view. Guards and structure mirror `health-tutorial.js`.
+- **fix** — `resetOnboarding` now calls `clearSeenTips()`. It only cleared `onboardingCompleted` while its own dialog promised to replay "the welcome tour and tips" — those ids live in `discoverabilityState.seenTips`, which it never touched, so no tour or tip had ever come back. `tipsNotBefore` is cleared with them; `seenSettingPromos` is deliberately left alone.
+
+### Config → Help
+
+- **new** — a fifth panel under Help → Inbox describing the one-time tour, and a matching entry in the help search index.
+
+### Docs
+
+- `README.md` and `MANUAL.md` (§4.5, the config chapter and the shortcut table) corrected for the config location memory: three of the four places describing it stated the old rule.
+- Four tests in `config-dashboard-view.spec.js` asserted the restored section without resetting `config.section` first, which `closeConfigView` leaves in memory — so they could not have failed. They reset it now.
+- `MANUAL.md` §4.4 and §7.9 cover the tour; the Health tour's replay line was corrected — it claimed a button that did not do what it said, which is what turned up the `resetOnboarding` defect.
+- `README.md`, `CHANGELOG.md`, the What's new modal and Config → Overview updated for this release.
+- 45 locale keys per language for the tour, 2 for the help panel, in `en`, `nl`, `de` and `fr`; the German and French reset hints were corrected against the real control labels.
+- `resetDashboardData()` added to the e2e helpers, and used by four spec files that depend on what they find. `/api/reset` re-seeds the defaults in ~39ms, so this is far cheaper than the per-spec fixtures estimated earlier. The suite as a whole is still not hermetic: ~166 files share one data directory.
+- Known and not addressed: `monitor-visibility-reveal` shows two flaky tests in group runs that pass on retry.
 
 ## v1.0.2 — 14 August 2026
 

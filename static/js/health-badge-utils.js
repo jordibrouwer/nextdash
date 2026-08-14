@@ -15,11 +15,16 @@
     function summarizeHealthCounts(summary) {
         const monitorDown = Number(summary?.monitorDownCount || 0);
         const broken = Number(summary?.brokenCount || 0);
+        // Drift belongs in the warning tier, not the red one: a drifted link
+        // still returns 200 and looks fine, which is exactly why it never
+        // reached the dashboard — it was findable only by opening Health and
+        // selecting the drift filter on purpose.
         const warn = Number(summary?.duplicateCount || 0)
             + Number(summary?.shortcutConflictCount || 0)
             + Number(summary?.uncheckedCount || 0)
-            + Number(summary?.staleCount || 0);
-        return { monitorDown, broken, warn };
+            + Number(summary?.staleCount || 0)
+            + Number(summary?.driftCount || 0);
+        return { monitorDown, broken, warn, drift: Number(summary?.driftCount || 0) };
     }
 
     // Accepts either the counts object or a bare broken number, so older callers
@@ -28,6 +33,9 @@
         const c = typeof counts === 'number' ? { broken: counts } : (counts || {});
         if (Number(c.monitorDown) > 0) return '/?hv_filter=monitored#health';
         if (Number(c.broken) > 0) return '/?hv_filter=broken#health';
+        // Drift is the one warning class with a filter of its own worth landing
+        // on, and the one that needs a human decision.
+        if (Number(c.drift) > 0) return '/?hv_filter=drift#health';
         return '/#health';
     }
 

@@ -50,6 +50,9 @@ class DashboardConfigLoader {
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
+    /** Mirrors DashboardConfig.CONFIG_LAST_TTL_MS; both must agree. */
+    static CONFIG_LAST_TTL_MS = 15 * 60 * 1000;
+
     /** Mirrors DashboardConfig.SUB_TAB_STATE for pre-load sub-tab replay. */
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
@@ -66,6 +69,11 @@ class DashboardConfigLoader {
             const raw = localStorage.getItem(DashboardConfigLoader.CONFIG_LAST_KEY);
             if (!raw) return null;
             const data = JSON.parse(raw);
+            // Same expiry as the module's own reader: a cold load straight into
+            // bare `#config` must not restore a location the module would have
+            // thrown away.
+            const savedAt = Number(data?.savedAt) || 0;
+            if (!savedAt || Date.now() - savedAt > DashboardConfigLoader.CONFIG_LAST_TTL_MS) return null;
             const section = data?.section;
             if (!section || !DashboardConfigLoader.SECTIONS.includes(section)) return null;
             let subTab = data?.subTab ?? null;

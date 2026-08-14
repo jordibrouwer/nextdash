@@ -670,6 +670,13 @@ class DashboardBookmarkRows {
         }
         openLink.appendChild(noteBadge);
 
+        // Tag chips, inside the link rather than as a grid column of their own:
+        // the row is a subgrid whose columns line up across every category, so a
+        // new column would shift every row on the page. Off by default — a row
+        // with several tags is noticeably busier, and the whole point of the
+        // grid is that it stays scannable.
+        this.renderRowTags(row, openLink, bookmark);
+
         if (allowInlineEdit && bookmarkRef) {
             const ac = new AbortController();
             row._bookmarkLongPressAbort = ac;
@@ -712,6 +719,42 @@ class DashboardBookmarkRows {
         ].join('\u0001');
     }
 
+
+    /**
+     * The focused row's tags, as the same chip the inbox and Config rows use.
+     *
+     * Rendered into the link so the subgrid is untouched, and capped: past two
+     * or three the chips stop being a glance and start being a second line of
+     * text competing with the name.
+     */
+    renderRowTags(row, openLink, bookmark) {
+        const d = this.dash;
+        openLink.querySelector('.bookmark-tag-strip')?.remove();
+        if (d.settings?.showRowTags !== true) return;
+
+        const tags = (bookmark?.tags || [])
+            .map((t) => String(t || '').trim())
+            .filter(Boolean);
+        if (!tags.length) return;
+
+        const max = Number(d.settings?.rowTagsMax) || 2;
+        const strip = document.createElement('span');
+        strip.className = 'bookmark-tag-strip';
+        strip.setAttribute('aria-hidden', 'true');   // the row's aria-label already names them
+        tags.slice(0, max).forEach((tag) => {
+            const chip = document.createElement('span');
+            chip.className = 'bookmark-tag-chip';
+            chip.textContent = tag;
+            strip.appendChild(chip);
+        });
+        if (tags.length > max) {
+            const more = document.createElement('span');
+            more.className = 'bookmark-tag-chip bookmark-tag-chip--more';
+            more.textContent = `+${tags.length - max}`;
+            strip.appendChild(more);
+        }
+        openLink.appendChild(strip);
+    }
 
     restoreBookmarkRowStatus(row, bookmark) {
         const d = this.dash;

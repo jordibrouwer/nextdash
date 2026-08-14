@@ -70,7 +70,8 @@ class FuzzySearchComponent {
 
     /**
      * Handle fuzzy search query — returns results sorted by relevance score.
-     * Also searches URL domain, tags and note as secondary fields (lower score).
+     * Also searches URL domain, tags, note and the fetched page description
+     * as secondary fields (lower score).
      * @param {string} query - The search query (without the '/' prefix)
      * @returns {Array} Array of match objects sorted best-first
      */
@@ -118,6 +119,21 @@ class FuzzySearchComponent {
                     meta = bookmark.note.length > 60
                         ? bookmark.note.substring(0, 60) + '…'
                         : bookmark.note;
+                }
+            }
+
+            if (score === 0) {
+                // Tertiary: the fetched page description, scored below the note
+                // because it is the site's words rather than the user's. It is
+                // fetched for every bookmark and was searched by nothing, yet it
+                // often holds what you remember about a page whose title is
+                // unhelpful — "Untitled", "Dashboard", "Login".
+                const desc = (bookmark.previewDesc || '').toLowerCase();
+                if (desc && desc.includes(q)) {
+                    score = 25;
+                    meta = bookmark.previewDesc.length > 60
+                        ? bookmark.previewDesc.substring(0, 60) + '…'
+                        : bookmark.previewDesc;
                 }
             }
 

@@ -185,6 +185,15 @@ class DashboardContextMenu {
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
             { id: 'edit', label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎' },
+            // Pin had no pointer route at all from the grid — not a row button,
+            // not an entry here — while every other one-bit row action did.
+            {
+                id: 'pin',
+                label: bookmarkRef.bookmark?.pinned
+                    ? this.t('dashboard.contextMenuUnpin', 'Unpin')
+                    : this.t('dashboard.contextMenuPin', 'Pin'),
+                icon: '📌',
+            },
             { id: 'tags', label: this.t('dashboard.contextMenuTags', 'Tags…'), icon: '#' },
             { id: 'move', label: this.t('dashboard.contextMenuMove', 'Move to…'), icon: '→' },
             ...(currentMode
@@ -825,6 +834,18 @@ class DashboardContextMenu {
             case 'check-mode':
                 this.showCheckModeMenu(row, bookmarkRef, { parentPoint: options.parentPoint });
                 break;
+            case 'pin': {
+                // Through the palette's persistence path, so pin has one writer
+                // whether it comes from :pin, Shift+P or this menu.
+                const target = bookmarkRef.bookmark;
+                const commands = d.searchComponent?.commandsComponent;
+                if (target && typeof commands?._persistBookmarkField === 'function') {
+                    const willPin = !target.pinned;
+                    target.pinned = willPin;
+                    commands._persistBookmarkField(target, { pinned: willPin });
+                }
+                break;
+            }
             case 'health':
                 void this.revealInHealth(bookmarkRef);
                 break;

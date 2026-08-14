@@ -2273,6 +2273,10 @@ body[data-category-spacing="airy"] {
     flex-shrink: 0;
 }
 
+/* One button plus a ⋯, not the full set: four sort buttons on every category
+   header — and the header repeats per category — took more width than the
+   bookmark names beside them. In manual order there is no sort to report, so
+   only the ⋯ is left. */
 .category-sort-controls {
     display: inline-flex;
     align-items: center;
@@ -2281,6 +2285,73 @@ body[data-category-spacing="airy"] {
     flex-shrink: 0;
     opacity: 1;
     pointer-events: auto;
+    position: relative;
+}
+
+.category-sort-menu-btn {
+    font: inherit;
+    font-size: 0.68em;
+    line-height: 1;
+    min-height: 1.45em;
+    padding: 0.15em 0.4em;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    background: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.category-sort-menu-btn:hover,
+.category-sort-menu-btn:focus-visible,
+.category-sort-menu-btn[aria-expanded="true"] {
+    opacity: 1;
+    color: var(--text-secondary);
+    border-color: color-mix(in srgb, var(--text-tertiary) 28%, transparent);
+    background: color-mix(in srgb, var(--background-secondary, transparent) 55%, transparent);
+}
+
+.category-sort-menu {
+    position: absolute;
+    top: calc(100% + 0.25em);
+    right: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    min-width: 7em;
+    padding: 0.2em;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 6px);
+    background: var(--background-primary);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+.category-sort-menu-item {
+    font: inherit;
+    font-size: 0.68em;
+    text-align: left;
+    padding: 0.3em 0.5em;
+    border: 0;
+    border-radius: 3px;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.category-sort-menu-item:hover,
+.category-sort-menu-item:focus-visible {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--text-primary);
+}
+
+.category-sort-menu-item.is-active {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-bold);
+}
+
+.category-sort-menu-item.is-active::before {
+    content: '· ';
 }
 
 .category-sort-btn {
@@ -4538,3 +4609,56 @@ body.no-animations .bookmark-move-out {
 }
 
 
+
+/* ─── Row tag chips ──────────────────────────────────────────────────────── */
+
+/* Inside the link, not a grid column: .bookmark-link is a subgrid whose columns
+   line up across every category on the page, so a new column would move every
+   row. Same chip as the inbox (.inbox-item-tag) and Config (.config-bm-tag-chip)
+   — a tag should look like a tag wherever it is listed. */
+.bookmark-tag-strip {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.4rem;
+    min-width: 0;
+    /* Never at the cost of the name: the strip gives way first. */
+    flex: 0 1 auto;
+    overflow: hidden;
+}
+
+.bookmark-tag-chip {
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    font-weight: var(--font-weight-normal, 400);
+    line-height: 1.5;
+    white-space: nowrap;
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bookmark-tag-chip--more {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+}
+
+/* Terminal and list presets are deliberately dense; a chip there costs more
+   than it says, so it drops to text weight instead of a pill. */
+.dashboard-grid.layout-terminal .bookmark-tag-chip,
+.dashboard-grid.layout-list .bookmark-tag-chip {
+    border: 0;
+    background: none;
+    padding: 0 0.15rem;
+    opacity: 0.7;
+}
+
+@media (max-width: 720px) {
+    /* On a phone the name is the only thing with room. */
+    .bookmark-tag-strip { display: none; }
+}

@@ -210,6 +210,24 @@ class DashboardInboxTriage {
         return `<div class="inbox-triage-thumb inbox-triage-thumb--placeholder" aria-hidden="true">🔗</div>`;
     }
 
+    /**
+     * Whether a modal sits on top of triage.
+     *
+     * Deliberately not dash.isModalOpen(): that one reports triage itself as a
+     * modal, which is right for the dashboard's own handlers and wrong here.
+     */
+    isLayeredModalOpen() {
+        if (document.getElementById('app-modal')?.classList.contains('show')) return true;
+        if (document.getElementById('config-confirm-modal')) return true;
+        if (document.getElementById('paste-choice-modal')?.classList.contains('show')) return true;
+        if (document.getElementById('new-bookmark-modal')?.classList.contains('show')) return true;
+        if (document.getElementById('bookmark-form-modal')?.classList.contains('show')) return true;
+        if (document.getElementById('date-popover')) return true;
+        if (document.getElementById('move-popover')) return true;
+        if (document.getElementById('tag-popover')) return true;
+        return false;
+    }
+
     handleKeydown(e) {
         if (!this.isOpen()) {
             return;
@@ -222,7 +240,11 @@ class DashboardInboxTriage {
                 return;
             }
         }
-        if (this.dash.isModalOpen?.() && e.key !== 'Escape') {
+        // isModalOpen() counts this overlay itself (see dashboard-ui-helpers),
+        // so asking it here meant every key but Escape was swallowed by the
+        // very thing that was open — j and k did nothing and triage sat on the
+        // first link. Ask whether something is layered *over* triage instead.
+        if (this.isLayeredModalOpen() && e.key !== 'Escape') {
             return;
         }
         const tag = e.target?.tagName;

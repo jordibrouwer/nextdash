@@ -202,11 +202,12 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 - **Linkable and remembered** — filter, sort and search appear in the address bar (`?ib_filter=`, `?ib_sort=`, `?ib_q=`), so a view can be bookmarked or shared. Filter and sort also return on your next visit; a shared link overrides what was stored. The search box is deliberately not remembered.  
 - **Select several** — tick rows (click the box, or `x` on the selected row) and a bar offers **Mark read**, **Snooze** and **Delete** for just those items, instead of the toolbar's all-or-nothing bulk. `Esc` clears the selection, switching filter clears it too (so a bulk action cannot reach rows you can no longer see), and deleting names the count and asks first.  
 - Keyboard: `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `x` select, `d` delete. Toolbar bulk actions: **Mark all read** and **Clear read**.  
+- **First visit** — a one-time tour walks the whole loop in seven steps, from where links come from to how a backlog gets cleared. **Config → Help → Inbox** covers the same ground in more depth, at any time.
 - Toggle under **Config → Behavior → Search & inbox → Enable Inbox**; set the paste destination there too, to skip the choice dialog.
 
 ### 4.5 Config vs dashboard
 
-Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config with **`Shift+S`**, **`<`**, or the gear icon restores the **last section and sub-tab** only when you left via **`Shift+H`** or **`Shift+I`**; **`Escape`** and **`0`–`9`** clear stored location so the next visit starts on **Overview**. A deep link like `/#config/appearance` still takes priority.
+Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config with **`Shift+S`**, **`<`**, or the gear icon restores the **last section and sub-tab** you were on — whichever way you left, including **`Escape`** and **`0`–`9`**. The memory lasts **15 minutes** from the moment you left: come back later and you start on **Overview**, on the reasoning that a quick return is a continuation of what you were doing and a return an hour later is a new task. A deep link like `/#config/appearance` still takes priority.
 
 | Dashboard view | Config view |
 |-----------------|------------------|
@@ -438,6 +439,7 @@ HTML export from Chrome/Firefox/Edge (see [Import, export, and backup](#17-impor
 5c. **Stats (v1.0.0)** — the **Stats** button reports how many links you have added, promoted and deleted, what share of the ones you decided on became bookmarks, and how long a link typically sits here.  
 6. **Triage** — click **Triage** or run **`:inbox triage`** to walk unread items one by one: `J`/`K` move, `O` open, `P` promote, `R` keep (mark read), `D` delete, `Esc` close.
 7. **How it works** — the **`ℹ`** at the end of the toolbar explains what the inbox is for, what read and unread track, what snoozing hides, what promoting leaves behind, and the two ways through a backlog (**v2026.09.06.2**).
+8. **The one-time tour** — the first time the inbox opens, a guided modal walks the whole loop in seven steps: where links come from, what read really means, snoozing, notes, promoting, triage, and selecting several at once. It appears once — finishing it, **Skip** and `Esc` all count as seen — and everything in it is covered at more length in **Config → Help → Inbox**. Turning off *Show occasional keyboard tips* under **Config → Behavior → General → Onboarding** suppresses it along with every other one-time hint, and **Show quick-start card again**, in the same place, brings it back after you have seen it.
 
 **Snoozed links are counted as hidden.** The tiles, the header badge and the Inbox tab all count what you can act on now, so a snoozed link is left out of every one of them until it wakes — including *This week* — and **Clear read** leaves snoozed links alone (**v2026.09.06.2**). Your filter, sort and chosen site are remembered for the next visit; a site filter is dropped once its last link leaves the inbox, rather than filtering the list down to nothing.
 
@@ -1011,7 +1013,7 @@ Summary tiles (click to filter) → Compact controls (filters, search, sort, ret
 
 Filter, sort, and search state persist in the session across refreshes and sync to the URL (`hv_filter`, `hv_sort`, `hv_q`, `hv_id`).
 
-**A guided tour on first use.** The first time you open the Health view, a short six-step walkthrough introduces the monitoring features around one worked example — a self-hosted status page behind a login, backed up nightly — rather than listing settings in the abstract: turning on **Monitor** and picking an interval, saying what *up* means for that page with status codes `200,401` and a keyword check, watching for **drift**, excluding the nightly backup with a maintenance window, and wiring up an alert with **Alert after 3** and a test send. It appears once and then never again; `Esc`, the backdrop and **Skip** all count as having seen it. Replay it, along with the other one-time hints, from **Config → Behavior → General**.
+**A guided tour on first use.** The first time you open the Health view, a short six-step walkthrough introduces the monitoring features around one worked example — a self-hosted status page behind a login, backed up nightly — rather than listing settings in the abstract: turning on **Monitor** and picking an interval, saying what *up* means for that page with status codes `200,401` and a keyword check, watching for **drift**, excluding the nightly backup with a maintenance window, and wiring up an alert with **Alert after 3** and a test send. It appears once and then never again; `Esc`, the backdrop and **Skip** all count as having seen it. **Show quick-start card again**, under **Config → Behavior → General**, brings it back along with the inbox tour and the keyboard tips — the one-time hints attached to individual settings in config are left alone.
 
 **URL deep links** — Open health view with query parameters:
 
@@ -1081,7 +1083,7 @@ Configuration is a **view inside the dashboard**, not a separate page. It opens 
 |---------|----------|
 | **`Shift+S`**, **`<`** (`Shift+,`), the **config** (gear) link in the header, or the `/#config` address | **`Escape`** (unless you are typing in a field, or something is open on top of it), or the back link |
 
-Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores the **last section and sub-tab** unless a `/#config/…` deep link names something else.
+Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores the **last section and sub-tab** for 15 minutes after you left, unless a `/#config/…` deep link names something else.
 
 Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/appearance/layout` opens Appearance on Layout, `/#config/bookmarks/<pageId>` scopes Bookmarks to one page, and the address bar keeps up as you click.
 
@@ -1208,7 +1210,7 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 
 | Keys | Action |
 |------|--------|
-| `Shift+S` or `<` | Toggle config; reopening restores the last section and sub-tab only after leaving via `Shift+H` or `Shift+I` |
+| `Shift+S` or `<` | Toggle config; reopening within 15 minutes restores the last section and sub-tab, however you left |
 | `0`–`9` | Leave config for Inbox (`0`) or a bookmark page (`1`–`9`); clears stored config location |
 | `j` / `k` | Previous / next section in the left rail |
 | `g` / `G` | First / last section |

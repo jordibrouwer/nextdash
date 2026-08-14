@@ -1,5 +1,27 @@
 // Search Component JavaScript
 class SearchComponent {
+    /**
+     * Match a timestamp against an age word used by `opened:` and `added:`.
+     *
+     * `never` is only meaningful for opened — a bookmark always has a created
+     * date — but it costs nothing to accept for both and reads the same way.
+     */
+    static matchesAgeFilter(timestamp, word) {
+        const ts = Number(timestamp || 0);
+        const key = String(word || '').toLowerCase();
+        if (key === 'never') return ts === 0;
+        const windows = {
+            today: 86400000,
+            week: 7 * 86400000,
+            month: 30 * 86400000,
+            year: 365 * 86400000,
+        };
+        const span = windows[key];
+        if (!span) return true;      // an unknown word filters nothing
+        if (ts === 0) return false;
+        return (Date.now() - ts) <= span;
+    }
+
     static STATUS_FILTER_VALUES = new Set([
         'online', 'offline', 'broken', 'ok', 'pinned', 'unpinned', 'checked', 'unchecked',
     ]);
@@ -868,6 +890,10 @@ class SearchComponent {
                 filters.page = lower.slice(5);
             } else if (lower.startsWith('tag:')) {
                 filters.tag = lower.slice(4);
+            } else if (lower.startsWith('opened:')) {
+                filters.opened = lower.slice(7);
+            } else if (lower.startsWith('added:')) {
+                filters.added = lower.slice(6);
             } else {
                 remaining.push(part);
             }
@@ -1031,10 +1057,13 @@ class SearchComponent {
             toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')),
             toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)')),
             toCompletion('page:', t('filterByPage', 'Filter by page (current/all/number)')),
-            toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)'))
+            toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)')),
+            toCompletion('opened:', t('filterByOpened', 'Filter by when it was last opened (never/today/week/month/year)')),
+            toCompletion('added:', t('filterByAdded', 'Filter by when it was added (today/week/month/year)'))
         ]);
 
-        if (currentToken === '' || currentToken === 'category' || currentToken === 'status' || currentToken === 'page' || currentToken === 'tag') {
+        if (currentToken === '' || currentToken === 'category' || currentToken === 'status' || currentToken === 'page'
+            || currentToken === 'tag' || currentToken === 'opened' || currentToken === 'added') {
             return filterTypeHints();
         }
 
@@ -1203,6 +1232,17 @@ class SearchComponent {
             if (!(bookmark.tags || []).some(tag => tag.toLowerCase().includes(t))) {
                 return false;
             }
+        }
+
+        // openCount, lastOpened and createdAt drive every smart collection and the
+        // whole stats page, and were reachable from none of the filters — so
+        // "added this month and never opened" was answerable in Config and not
+        // from the search bar a keyboard-first user actually lives in.
+        if (filters.opened && !SearchComponent.matchesAgeFilter(bookmark.lastOpened, filters.opened)) {
+            return false;
+        }
+        if (filters.added && !SearchComponent.matchesAgeFilter(bookmark.createdAt, filters.added)) {
+            return false;
         }
 
         if (filters.page && filters.page !== 'all' && filters.page !== 'global') {

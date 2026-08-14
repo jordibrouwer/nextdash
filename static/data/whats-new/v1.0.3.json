@@ -1,0 +1,133 @@
+{
+    "tag": "v1.0.3",
+    "date": "14 August 2026",
+    "releasedAt": "2026-08-14",
+    "modalLead": "This one is about the things nextDash already knew about your bookmarks and never let you use — when you added them, how often you open them, what you tagged them — and about giving Config → Bookmarks the settings it never had.",
+    "sections": [
+        {
+            "title": "Config",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Config picks up where you left off.</strong> Stepping out to check something and coming back put you on Overview, to navigate your way back to the tab you were just on. It now returns you there for fifteen minutes, however you left — after that it starts on Overview again, because by then you are doing something else."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>The list remembers how you sorted it.</strong> Health and the Inbox both keep their sort; this one snapped back to page order every time, including on the way back from editing a single bookmark."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Rows per load step is yours to pick.</strong> It was fixed at fifty — too many on a phone, too few when you are working through a large library."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>A quick-added bookmark can land somewhere sensible.</strong> It always arrived unchecked, unpinned and uncategorised, and everything landing uncategorised is what creates the tidying-up the cleanup filters exist to find. Choose the availability, the pin and the category new links start with."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Switching bookmarks to Monitor no longer means correcting each one.</strong> Every row got fifteen minutes whatever you were watching, so thirty rows meant thirty corrections. Set the interval a monitored bookmark starts with."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Deleting can stop asking.</strong> Undo and the thirty-day trash already cover a misclick, so a tidy-up cost one extra key per row for nothing. Choose how many rows a delete has to touch before it asks — and the same for refreshing icons."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>\"Not opened in a while\" is a number you choose.</strong> It was ninety days, everywhere, and it also decides which bookmarks the overview calls neglected."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Archive links can point at your own archive.</strong> They always went to the Wayback Machine; if you run something of your own, or prefer another service, it can go there instead."
+                }
+            ]
+        },
+        {
+            "title": "Using what nextDash already knew",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Search can ask when you added or last opened something.</strong> <code>added:</code> and <code>opened:</code> take <code>today</code>, <code>week</code>, <code>month</code> or <code>year</code> — and <code>opened:never</code> — so \"added this month and never opened since\" is a question you can now ask from the search bar instead of only from Config."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Your own collections can ask the questions the built-in ones do.</strong> Rules gained pinned, untagged, days since last opened and days since last changed — so \"my dev links I have not touched in ninety days\" is something you can build, rather than something only the built-in collections could do."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>A Recently added collection.</strong> The other collections all key on what you open, so \"what did I just save\" had no answer. Off by default, with its own limit and choice of pages."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Search looks at the page's own description too.</strong> It is fetched for every bookmark and was searched by nothing, though it is often the only place holding what you remember about a page titled \"Untitled\" or \"Login\"."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>A link that quietly turned into a different page now shows on the dashboard.</strong> It still answers normally and looks fine, which is exactly why it needed you to go and look for it in Health on purpose."
+                }
+            ]
+        },
+        {
+            "title": "The grid",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Tags can show on the rows.</strong> Every row already carried its tags and displayed none of them, so the one place you could not act on a bookmark's tag was the row showing it. Off by default; the first two show and the rest collapse into a count."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Category headers take back their width.</strong> Four sort buttons sat on every header, and headers repeat down the page — together they took more room than the bookmark names beside them. The one in use stays in front and the rest move behind a ⋯."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Two more ways to sort a category:</strong> by when you added a bookmark, and by how often you open it."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>\"Recently added\" meant two different things.</strong> Config sorted by when you added a bookmark; the grid used the same words for when you last opened one. The grid's is now called what it is."
+                }
+            ]
+        },
+        {
+            "title": "Keyboard and mouse",
+            "items": [
+                {
+                    "badge": "new",
+                    "text": "<strong>Pinning has a key.</strong> <code>Shift + P</code> on the row you are on. It was a daily one-key decision that could only be made from the command palette or by opening the editor — and it now has a right-click entry too, which it never had at all."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Sharing has a key.</strong> <code>Shift + S</code> shares the row, or copies its name and address where there is no share sheet."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Jump straight from a row to Health.</strong> <code>Shift + R</code> opens Health on that bookmark; before this, opening Health and then finding the row again was the only way there."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>Filter to a tag you can see.</strong> <code>t</code> filters to the tag on the row you are on, instead of opening the tag cloud and hunting for it among all the others."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>Ctrl/Cmd + Enter opens in a new tab</strong> for that press alone. The keyboard had only your standing preference, so opening one link differently meant reaching for the mouse."
+                }
+            ]
+        },
+        {
+            "title": "Inbox",
+            "items": [
+                {
+                    "badge": "fix",
+                    "text": "<strong>Triage ignored the keyboard.</strong> It is a keyboard-only way of working and it took no keys but Escape — <code>j</code>, <code>k</code>, the arrows, promote, snooze, note and delete all did nothing, and it sat on the first link whatever you pressed."
+                },
+                {
+                    "badge": "new",
+                    "text": "<strong>A short tour the first time you open the Inbox.</strong> Seven steps through the whole loop: where links come from, what read really means, snoozing, notes, promoting, triage, and working on several at once. It appears once, and Config → Help → Inbox covers the same ground whenever you want it."
+                },
+                {
+                    "badge": "fix",
+                    "text": "<strong>\"Show quick-start card again\" now replays the tours and tips it promised.</strong> It offered to bring back the welcome tour and the tips and only ever brought back the quick-start card."
+                }
+            ]
+        }
+    ]
+}
