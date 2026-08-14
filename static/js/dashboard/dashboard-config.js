@@ -1851,6 +1851,7 @@ class DashboardConfig {
         { tab: 'health', titleKey: 'config.helpHealthTitle', fallback: 'Availability & health' },
         { tab: 'health', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
         { tab: 'health', titleKey: 'config.helpInboxWorkTitle', fallback: 'Working through the inbox' },
+        { tab: 'health', titleKey: 'config.helpInboxTourTitle', fallback: 'The one-time tour' },
         { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
         { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
         { tab: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
@@ -5555,6 +5556,11 @@ class DashboardConfig {
         const ok = await this.confirmAction(this.t('config.resetOnboardingConfirm', 'Replay the welcome tour and tips next time?'), { confirmLabel: this.t('config.confirmContinue', 'Continue'), danger: false });
         if (!ok) return;
         this.dash.settings.onboardingCompleted = false;
+        // The dialog promises the tour and the tips, and only the quick-start
+        // card came back: the tip and tour ids live in discoverabilityState,
+        // which onboardingCompleted does not touch. Persisted by the save
+        // below rather than on its own timer, so one click is one write.
+        window.DiscoverabilityState?.clearSeenTips?.({ persist: false });
         try {
             await this.dash.saveSettings?.();
             this.notify(this.t('config.resetOnboardingSuccess', 'Onboarding will replay next time.'), 'success');
@@ -17056,7 +17062,13 @@ class DashboardConfig {
             + this.helpPanel('config.helpInboxTriageTitle', 'Triage mode',
                 'config.helpInboxTriageBody', '')
             + this.helpPanel('config.helpInboxSettingsTitle', 'Settings behind the scenes',
-                'config.helpInboxSettingsBody', '');
+                'config.helpInboxSettingsBody', '')
+            // Last, not first: someone reading this page has already found the
+            // documentation, so what the tour said is a footnote for them. It
+            // is here for the reader who skipped or dismissed it and wants to
+            // know what they walked past.
+            + this.helpPanel('config.helpInboxTourTitle', 'The one-time tour',
+                'config.helpInboxTourBody', '');
     }
 
     renderHelpData() {

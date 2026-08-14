@@ -173,12 +173,13 @@ test.describe('config help — health', () => {
 });
 
 test.describe('config help — inbox', () => {
-    test('splits into four panels, each with real prose', async ({ page }) => {
+    test('splits into five panels, each with real prose', async ({ page }) => {
         await openInboxHelp(page);
 
         const body = page.locator('#config-help-body');
-        // Capture, working the backlog, triage mode, and the settings with no UI.
-        await expect(body.locator('.config-panel')).toHaveCount(4);
+        // Capture, working the backlog, triage mode, the settings with no UI,
+        // and the one-time tour.
+        await expect(body.locator('.config-panel')).toHaveCount(5);
 
         await expect(body).not.toContainText('config.help');
 
@@ -254,8 +255,9 @@ test.describe('config help — translations', () => {
                 english: ['Availability & health', 'Working through the list', 'Uptime, trends & statistics'],
             },
             inbox: {
-                count: 4,
-                english: ['Working through the inbox', 'Triage mode', 'Settings behind the scenes'],
+                count: 5,
+                english: ['Working through the inbox', 'Triage mode', 'Settings behind the scenes',
+                    'The one-time tour'],
             },
         };
 

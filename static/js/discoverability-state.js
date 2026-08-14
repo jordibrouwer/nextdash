@@ -171,6 +171,28 @@
         }
     }
 
+    /**
+     * Forget every tip and tour, so they all show once more.
+     *
+     * seenTips holds two kinds of id: the rotating keyboard tips, and the
+     * one-time tours (health, inbox, config). Both are what "replay the welcome
+     * tour and tips" means, so both go. tipsNotBefore goes with them — it is
+     * the few-days gap between toasts, and leaving it set would mean the tips
+     * are back in principle but silent for the rest of the week.
+     *
+     * seenSettingPromos is deliberately left alone: those are attached to
+     * individual settings in config, not to the dashboard's onboarding, and
+     * bringing them all back would re-nag on every panel someone opens.
+     */
+    function clearSeenTips(options = {}) {
+        state.seenTips = [];
+        setTipsNotBefore(0, { persist: false });
+        applyToDashboardSettings();
+        if (options.persist !== false) {
+            schedulePersist();
+        }
+    }
+
     function getSeenSettingPromos() {
         return Array.isArray(state.seenSettingPromos) ? state.seenSettingPromos.slice() : [];
     }
@@ -324,6 +346,7 @@
         getSeenTips,
         hasSeenTip,
         markTipSeen,
+        clearSeenTips,
         getSeenSettingPromos,
         hasSeenSettingPromo,
         markSettingPromoSeen,
