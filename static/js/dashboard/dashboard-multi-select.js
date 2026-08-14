@@ -293,7 +293,14 @@ class DashboardMultiSelect {
             bar.className = 'multi-select-toolbar';
             bar.setAttribute('role', 'toolbar');
             bar.setAttribute('aria-label', this.t('dashboard.multiSelectToolbarAria', 'Selection actions'));
-            container.prepend(bar);
+            // Before the grid, not inside it. #dashboard-layout carries
+            // role="grid", whose children must be rows or rowgroups — a
+            // role="toolbar" among them is invalid. It also laid out wrong:
+            // the grid is a flex row, so a full-width bar was squeezed into a
+            // narrow vertical strip beside the columns instead of sitting above
+            // them. Sticky positioning is unaffected; the scrolling ancestor is
+            // the same either way.
+            (container.parentElement || container).insertBefore(bar, container);
             this._toolbar = bar;
         }
 

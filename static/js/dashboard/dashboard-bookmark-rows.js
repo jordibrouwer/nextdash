@@ -416,9 +416,6 @@ class DashboardBookmarkRows {
 
     populateBookmarkRowView(row, bookmark, categoryId, allowInlineEdit) {
         const d = this.dash;
-        // Resolved once per row build rather than per click: #dashboard-layout
-        // outlives every repaint, only its children are replaced.
-        const gridElement = document.getElementById('dashboard-layout');
         if (row._bookmarkLongPressAbort) {
             row._bookmarkLongPressAbort.abort();
             row._bookmarkLongPressAbort = null;
@@ -526,64 +523,7 @@ class DashboardBookmarkRows {
         textSpan.title = this.bookmarkRowTitle(bookmark);
         openLink.appendChild(textSpan);
 
-        const recordOpen = () => d.recordBookmarkOpened(
-            bookmark,
-            bookmarkIndex >= 0 ? bookmarkIndex : undefined
-        );
-        openLink.addEventListener('click', (e) => {
-            // Ctrl/Cmd+click ticks the row, Shift+click extends from the anchor.
-            // Both must win over opening the link — and over the browser's own
-            // "open in new tab" on Ctrl+click, which is why preventDefault comes
-            // before anything else.
-            const multi = d.multiSelect;
-            if (multi && (e.ctrlKey || e.metaKey || e.shiftKey)) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.shiftKey) {
-                    multi.selectRange(row);
-                } else {
-                    multi.toggleRow(row);
-                }
-                return;
-            }
-            // A plain click with a selection open clears it rather than opening,
-            // so a stray click cannot silently act on rows the user forgot were
-            // ticked.
-            if (multi?.isActive()) {
-                e.preventDefault();
-                e.stopPropagation();
-                multi.clear();
-                return;
-            }
-            if (!safeHref) {
-                e.preventDefault();
-                return;
-            }
-            recordOpen();
-            // gridElement is resolved once at render time rather than per click:
-            // #dashboard-layout survives every repaint (only its children are
-            // replaced), so this was a document lookup on every bookmark open.
-            if (gridElement?.classList.contains('layout-launcher')) {
-                this.restartRowAnimation(row, 'bookmark-pulse');
-            }
-            if (window.hyprMode && window.hyprMode.isEnabled()) {
-                e.preventDefault();
-                window.hyprMode.handleBookmarkClick(safeHref);
-            }
-        });
-        openLink.addEventListener('auxclick', (e) => {
-            if (e.button === 1) {
-                if (!safeHref) {
-                    e.preventDefault();
-                    return;
-                }
-                recordOpen();
-                if (window.hyprMode && window.hyprMode.isEnabled()) {
-                    e.preventDefault();
-                    window.hyprMode.handleBookmarkClick(safeHref);
-                }
-            }
-        });
+        this.ensureBookmarkOpenDelegation();
 
         if (d.settings.openInNewTab) {
             openLink.target = '_blank';
@@ -2046,6 +1986,103 @@ class DashboardBookmarkRows {
      * animation that never starts fires no `animationend`, and the class would
      * stay on the row for the rest of the session.
      */
+    /**
+     * One click/auxclick pair for the whole grid instead of two per row.
+     *
+     * Everything the per-row handlers closed over is recoverable from the row
+     * itself — the link's href is already the sanitised one, and the bookmark
+     * resolves the way every other row-driven action resolves it. Bound once on
+     * #dashboard-layout, which outlives every repaint, so rows carry no click
+     * listeners of their own at all.
+     */
+    ensureBookmarkOpenDelegation() {
+        const d = this.dash;
+        const grid = document.getElementById('dashboard-layout');
+        if (!grid || grid.dataset.bookmarkOpenDelegated === '1') {
+            return;
+        }
+        grid.dataset.bookmarkOpenDelegated = '1';
+
+        const resolve = (e) => {
+            const link = e.target instanceof Element
+                ? e.target.closest('a.bookmark-open')
+                : null;
+            if (!link || !grid.contains(link)) return null;
+            const row = link.closest('.bookmark-link');
+            if (!row) return null;
+            // '#' is what populateBookmarkRowView writes when the URL did not
+            // survive sanitising, so it means "nothing safe to open".
+            const rawHref = link.getAttribute('href');
+            return { link, row, safeHref: rawHref && rawHref !== '#' ? link.href : '' };
+        };
+
+        const recordOpen = (row) => {
+            const bookmark = d.multiSelect?.bookmarkForRow?.(row);
+            if (!bookmark) return;
+            const index = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+            d.recordBookmarkOpened(bookmark, index >= 0 ? index : undefined);
+        };
+
+        grid.addEventListener('click', (e) => {
+            const hit = resolve(e);
+            if (!hit) return;
+            const { row, safeHref } = hit;
+
+            // Ctrl/Cmd+click ticks the row, Shift+click extends from the anchor.
+            // Both must win over opening the link — and over the browser's own
+            // "open in new tab" on Ctrl+click, which is why preventDefault comes
+            // before anything else.
+            const multi = d.multiSelect;
+            if (multi && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.shiftKey) {
+                    multi.selectRange(row);
+                } else {
+                    multi.toggleRow(row);
+                }
+                return;
+            }
+            // A plain click with a selection open clears it rather than opening,
+            // so a stray click cannot silently act on rows the user forgot were
+            // ticked.
+            if (multi?.isActive()) {
+                e.preventDefault();
+                e.stopPropagation();
+                multi.clear();
+                return;
+            }
+            if (!safeHref) {
+                e.preventDefault();
+                return;
+            }
+            recordOpen(row);
+            if (grid.classList.contains('layout-launcher')) {
+                this.restartRowAnimation(row, 'bookmark-pulse');
+            }
+            if (window.hyprMode && window.hyprMode.isEnabled()) {
+                e.preventDefault();
+                window.hyprMode.handleBookmarkClick(safeHref);
+            }
+        });
+
+        grid.addEventListener('auxclick', (e) => {
+            if (e.button !== 1) return;
+            const hit = resolve(e);
+            if (!hit) return;
+            if (!hit.safeHref) {
+                e.preventDefault();
+                return;
+            }
+            recordOpen(hit.row);
+            if (window.hyprMode && window.hyprMode.isEnabled()) {
+                e.preventDefault();
+                window.hyprMode.handleBookmarkClick(hit.safeHref);
+            }
+        });
+    }
+
+
     restartRowAnimation(row, className) {
         if (!(row instanceof HTMLElement) || !className) {
             return;

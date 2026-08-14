@@ -55,13 +55,38 @@ test.describe('the shared row animation helper', () => {
         expect(result.stillOn).toBe(false);
     });
 
-    // Not asserted: that calling it twice in one task replays the animation.
-    // The remove/reflow/add pattern is meant to do that, and every copy of it in
-    // the codebase says so, but measured here it does not — this animation runs
-    // on the row's ::after, and forcing layout on the row does not restart it.
-    // Left as it was rather than asserted either way: the claim belongs with
-    // whoever changes that pattern, not with a test that would pin down
-    // behaviour nobody has decided on.
+    test('restarts an animation that is already running', async ({ page }) => {
+        await openDashboard(page);
+
+        const result = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const row = document.querySelector('#dashboard-layout .bookmark-link');
+            row.classList.remove('bookmark-copy-flash');
+            await new Promise((resolve) => setTimeout(resolve, 800));
+
+            let starts = 0;
+            const onStart = () => { starts += 1; };
+            row.addEventListener('animationstart', onStart);
+
+            d.bookmarkRows.restartRowAnimation(row, 'bookmark-copy-flash');
+            // Waited out, so the animation is genuinely running before the
+            // second call. Firing both in one task proves nothing: the first
+            // has not started yet, so there is nothing to restart and the count
+            // is 1 either way.
+            await new Promise((resolve) => setTimeout(resolve, 120));
+            const afterFirst = starts;
+
+            d.bookmarkRows.restartRowAnimation(row, 'bookmark-copy-flash');
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            row.removeEventListener('animationstart', onStart);
+
+            return { afterFirst, total: starts };
+        });
+
+        expect(result.afterFirst).toBe(1);
+        // The forced reflow is what makes this 2 rather than 1.
+        expect(result.total).toBe(2);
+    });
 
     test('the copy shortcut flashes the row through it', async ({ page }) => {
         await openDashboard(page);

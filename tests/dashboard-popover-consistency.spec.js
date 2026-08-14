@@ -180,8 +180,10 @@ test.describe('the multi-select tags popover', () => {
         });
 
         // The gap between button and popover is what must not change; both move
-        // together with the page.
-        expect(Math.abs(drift.offsetAfter - drift.offsetBefore)).toBeLessThan(4);
+        // together with the page. A few pixels of slack, because the popover's
+        // top is clamped into the viewport and the button is sticky — unbound,
+        // the drift is the whole scroll distance, so this still catches it.
+        expect(Math.abs(drift.offsetAfter - drift.offsetBefore)).toBeLessThan(20);
     });
 
     test('closes on a right-click outside it', async ({ page }) => {
