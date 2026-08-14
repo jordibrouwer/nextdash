@@ -426,7 +426,11 @@
       "bmTogglePin": "Pin or unpin the focused bookmark",
       "bmShare": "Share the focused bookmark, or copy its name and URL where no share sheet exists",
       "bmRevealHealth": "Open the focused bookmark on its own row in Health",
-      "bmFilterTag": "Filter the grid to the focused bookmark’s tag; several tags open the picker"
+      "bmFilterTag": "Filter the grid to the focused bookmark’s tag; several tags open the picker",
+      "bmOpenNewTab": "Open the focused bookmark in a new tab, whatever the open-in-new-tab setting says",
+      "bmMoveRow": "Move the focused bookmark within its category (manual order only)",
+      "bmRenameCategoryKey": "Rename the focused category header",
+      "bmCategoryMenuKey": "Open the category menu — rename, add or delete"
     },
     "searchPrefix": ">",
     "searchModeSearch": "SEARCH",
@@ -1233,7 +1237,10 @@
     "categorySortAddedAria": "Sort this category by when bookmarks were added",
     "categorySortOpensAria": "Sort this category by how often bookmarks are opened",
     "sortModeAdded": "Newest",
-    "sortModeOpens": "Most opened"
+    "sortModeOpens": "Most opened",
+    "filterByOpened": "Filter by when it was last opened (never/today/week/month/year)",
+    "filterByAdded": "Filter by when it was added (today/week/month/year)",
+    "reorderNeedsManualOrder": "Switch this category to manual order to move bookmarks."
   },
   "health": {
     "pageTitle": "health beta",
@@ -4577,7 +4584,11 @@
     "bookmarkArchiveUrlInfoTitle": "Archive service",
     "bookmarkArchiveUrlInfoMessage": "Where \"Find in Web Archive\" sends a bookmark. {url} is replaced with its address, so a self-hosted ArchiveBox or archive.today works too.",
     "showSmartAddedCollection": "Show “Recently added” collection",
-    "smartAddedLimit": "Recently-added limit"
+    "smartAddedLimit": "Recently-added limit",
+    "collectionRuleFieldPinned": "Pinned",
+    "collectionRuleFieldUntagged": "Has no tags",
+    "collectionRuleFieldNotOpened": "Not opened in (days)",
+    "collectionRuleFieldChanged": "Changed within (days)"
   },
   "colors": {
     "title": "theme customization",

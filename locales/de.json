@@ -404,7 +404,11 @@
       "bmTogglePin": "Fokussiertes Lesezeichen anheften oder lösen",
       "bmShare": "Fokussiertes Lesezeichen teilen oder Name und URL kopieren, wo es kein Teilen-Fenster gibt",
       "bmRevealHealth": "Fokussiertes Lesezeichen in Health auf seiner eigenen Zeile öffnen",
-      "bmFilterTag": "Raster nach dem Tag des fokussierten Lesezeichens filtern; bei mehreren öffnet die Auswahl"
+      "bmFilterTag": "Raster nach dem Tag des fokussierten Lesezeichens filtern; bei mehreren öffnet die Auswahl",
+      "bmOpenNewTab": "Fokussiertes Lesezeichen in neuem Tab öffnen, unabhängig von der Einstellung",
+      "bmMoveRow": "Fokussiertes Lesezeichen innerhalb seiner Kategorie verschieben (nur bei manueller Reihenfolge)",
+      "bmRenameCategoryKey": "Fokussierte Kategorieüberschrift umbenennen",
+      "bmCategoryMenuKey": "Kategoriemenü öffnen — umbenennen, hinzufügen oder löschen"
     },
     "firstBookmarkGuide": "Fügen Sie Ihr erstes Lesezeichen mit + oder Shift+B hinzu (& für Schnellzeile), oder richten Sie Seiten unter config → Seiten ein.",
     "emptyStateAddTouch": "Tippen Sie unten auf + Lesezeichen in der Leiste",
@@ -1232,7 +1236,10 @@
     "categorySortAddedAria": "Diese Kategorie danach sortieren, wann Lesezeichen hinzugefügt wurden",
     "categorySortOpensAria": "Diese Kategorie danach sortieren, wie oft Lesezeichen geöffnet werden",
     "sortModeAdded": "Neueste",
-    "sortModeOpens": "Am häufigsten geöffnet"
+    "sortModeOpens": "Am häufigsten geöffnet",
+    "filterByOpened": "Nach letztem Öffnen filtern (never/today/week/month/year)",
+    "filterByAdded": "Nach Hinzufügedatum filtern (today/week/month/year)",
+    "reorderNeedsManualOrder": "Stelle diese Kategorie auf manuelle Reihenfolge, um Lesezeichen zu verschieben."
   },
   "health": {
     "pageTitle": "health beta",
@@ -4576,7 +4583,11 @@
     "bookmarkArchiveUrlInfoTitle": "Archivdienst",
     "bookmarkArchiveUrlInfoMessage": "Wohin „Im Web Archive suchen\" ein Lesezeichen schickt. {url} wird durch die Adresse ersetzt, sodass auch eine selbst gehostete ArchiveBox oder archive.today funktioniert.",
     "showSmartAddedCollection": "Sammlung „Kürzlich hinzugefügt\" anzeigen",
-    "smartAddedLimit": "Limit kürzlich hinzugefügt"
+    "smartAddedLimit": "Limit kürzlich hinzugefügt",
+    "collectionRuleFieldPinned": "Angeheftet",
+    "collectionRuleFieldUntagged": "Hat keine Tags",
+    "collectionRuleFieldNotOpened": "Nicht geöffnet seit (Tagen)",
+    "collectionRuleFieldChanged": "Geändert innerhalb (Tagen)"
   },
   "colors": {
     "title": "themenanpassung",

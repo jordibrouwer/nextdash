@@ -203,6 +203,17 @@ class KeyboardNavigation {
                 }
             }
 
+            // Alt+↑ / Alt+↓ — move the focused bookmark. Alt keeps it clear of
+            // the plain arrows, which move the cursor.
+            if (e.altKey && !e.ctrlKey && !e.metaKey
+                && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                this.moveCurrentBookmark(e.key === 'ArrowUp' ? -1 : 1);
+                return;
+            }
+
             // Filter to the tag on the focused row. The row already carries its
             // tags as a data attribute, but acting on the tag you can see meant
             // opening the tag cloud and finding it among all the others.
@@ -929,7 +940,7 @@ class KeyboardNavigation {
                     break;
                 }
                 e.preventDefault();
-                this.selectCurrentElement();
+                this.selectCurrentElement({ newTab: e.ctrlKey || e.metaKey || e.shiftKey });
                 break;
 
             case ';':
@@ -1551,7 +1562,15 @@ class KeyboardNavigation {
         return bookmark || null;
     }
 
-    selectCurrentElement() {
+    /**
+     * Open the focused row. `newTab` forces a new tab for this press alone.
+     *
+     * A bare .click() constructs no MouseEvent and carries no modifier, so the
+     * browser could not act on one: the mouse had a per-invocation new-tab
+     * (middle-click, the context menu) and the keyboard had only the global
+     * openInNewTab preference.
+     */
+    selectCurrentElement({ newTab = false } = {}) {
         if (this.currentIndex >= 0 && this.currentIndex < this.navigableElements.length) {
             const currentElement = this.navigableElements[this.currentIndex];
             if (this._isShowMoreElement(currentElement)) {
@@ -1559,11 +1578,16 @@ class KeyboardNavigation {
                 return;
             }
             const openLink = currentElement.querySelector && currentElement.querySelector('a.bookmark-open');
-            if (openLink) {
-                openLink.click();
-            } else {
-                currentElement.click();
+            const target = openLink || currentElement;
+            if (newTab) {
+                // Forwarded on a real MouseEvent, which is what the browser
+                // reads to decide between this tab and a new one.
+                target.dispatchEvent(new MouseEvent('click', {
+                    bubbles: true, cancelable: true, view: window, ctrlKey: true, metaKey: true,
+                }));
+                return;
             }
+            target.click();
         }
     }
 
@@ -1696,6 +1720,62 @@ class KeyboardNavigation {
         if (!bookmark) return;
         const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
         dash.showTagPopover(row, bookmark, bookmarkIndex);
+    }
+
+    /**
+     * Alt+↑ / Alt+↓ — move the selected bookmark within its category.
+     *
+     * Reordering was drag-only, and the grid said so itself: the sort-locked
+     * hint names dragging as the only means, while Esc could already undo a
+     * drag — a keyboard affordance for an action with no keyboard entry point.
+     *
+     * Two invariants the drag path also honours: only in manual order, since
+     * A–Z or Recent would sort the move away, and never across the pinned
+     * boundary, because pinned rows are rendered as their own block above the
+     * rest.
+     */
+    moveCurrentBookmark(direction) {
+        const row = this._resolveActionPopoverRow();
+        if (!row) return false;
+        const list = row.closest('[data-category-id]');
+        if (!list || list.getAttribute('data-smart-collection') === 'true') return false;
+
+        const d = this.dashboard;
+        const categoryId = list.getAttribute('data-category-id') || '';
+        const mode = window.DashboardCategorySort?.getCategorySortMode?.(d, { id: categoryId }) || 'order';
+        if (mode !== 'order') {
+            d.showNotification?.(
+                d.formatDashboardLabel?.('reorderNeedsManualOrder', {},
+                    'Switch this category to manual order to move bookmarks.')
+                || 'Switch this category to manual order to move bookmarks.',
+                'info'
+            );
+            return false;
+        }
+
+        const rows = [...list.querySelectorAll('.bookmark-link')];
+        const index = rows.indexOf(row);
+        const target = index + (direction < 0 ? -1 : 1);
+        if (index < 0 || target < 0 || target >= rows.length) return false;
+
+        // Pinned rows form their own block; moving across the boundary would be
+        // undone by the next render.
+        const isPinned = (el) => el.classList.contains('is-pinned')
+            || el.querySelector('.bookmark-pin-icon, .config-bm-pin-icon') != null
+            || el.getAttribute('data-pinned') === 'true';
+        if (isPinned(row) !== isPinned(rows[target])) return false;
+
+        if (direction < 0) list.insertBefore(row, rows[target]);
+        else list.insertBefore(rows[target], row);
+
+        // The same persistence the drag path uses, so there is one writer.
+        this.dashboard?.renderCore?.syncBookmarksFromDom?.()
+            ?? this.dashboard?.syncBookmarksFromDom?.();
+        window.nextdashTrack?.('bookmark:reorder-keyboard');
+        this.updateNavigableElements?.();
+        this.currentIndex = this.navigableElements.indexOf(row);
+        this.highlightCurrentElement({ keyboardNav: true });
+        return true;
     }
 
     /**

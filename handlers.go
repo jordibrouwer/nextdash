@@ -1736,7 +1736,9 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		validRules := col.Rules[:0]
 		for _, rule := range col.Rules {
 			rule.Value = strings.TrimSpace(rule.Value)
-			if rule.Value != "" {
+			// "untagged" and "pinned" are complete without one; the rest need a
+			// value to compare against.
+			if rule.Value != "" || valuelessRuleFields[rule.Field] {
 				validRules = append(validRules, rule)
 			}
 		}
@@ -1794,6 +1796,10 @@ func normalizeSavedSearches(list []SavedSearch) []SavedSearch {
 	}
 	return out
 }
+
+// valuelessRuleFields are collection-rule fields that carry their question in
+// the field name, so an empty value is not a half-filled rule.
+var valuelessRuleFields = map[string]bool{"untagged": true, "pinned": true}
 
 // collectionLabel names a collection for a message to the user, falling back to
 // its id when the name is what went missing.

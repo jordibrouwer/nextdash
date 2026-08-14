@@ -10535,6 +10535,10 @@ class DashboardConfig {
             tag: ['config.collectionRuleFieldTag', 'Tag'],
             category: ['config.collectionRuleFieldCategory', 'Category'],
             shortcut: ['config.collectionRuleFieldShortcut', 'Shortcut'],
+            pinned: ['config.collectionRuleFieldPinned', 'Pinned'],
+            untagged: ['config.collectionRuleFieldUntagged', 'Has no tags'],
+            notOpenedDays: ['config.collectionRuleFieldNotOpened', 'Not opened in (days)'],
+            changedDays: ['config.collectionRuleFieldChanged', 'Changed within (days)'],
         };
         const [key, fallback] = map[field] || [field, field];
         return this.t(key, fallback);
@@ -10609,7 +10613,7 @@ class DashboardConfig {
             return `
             <div class="config-collection-rule" data-collection-rule="${i}">
                 <select class="config-select" data-rule-field="${i}">
-                    ${['tag', 'category', 'shortcut'].map((f) =>
+                    ${['tag', 'category', 'shortcut', 'pinned', 'untagged', 'notOpenedDays', 'changedDays'].map((f) =>
                         `<option value="${f}" ${f === field ? 'selected' : ''}>${esc(this.collectionRuleFieldLabel(f))}</option>`).join('')}
                 </select>
                 <select class="config-select" data-rule-operator="${i}">

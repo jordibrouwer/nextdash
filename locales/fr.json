@@ -404,7 +404,11 @@
       "bmTogglePin": "Épingler ou détacher le favori ciblé",
       "bmShare": "Partager le favori ciblé, ou copier son nom et son URL là où il n’y a pas de fenêtre de partage",
       "bmRevealHealth": "Ouvrir le favori ciblé sur sa propre ligne dans Santé",
-      "bmFilterTag": "Filtrer la grille sur le tag du favori ciblé ; plusieurs tags ouvrent le sélecteur"
+      "bmFilterTag": "Filtrer la grille sur le tag du favori ciblé ; plusieurs tags ouvrent le sélecteur",
+      "bmOpenNewTab": "Ouvrir le favori ciblé dans un nouvel onglet, quel que soit le réglage",
+      "bmMoveRow": "Déplacer le favori ciblé dans sa catégorie (ordre manuel uniquement)",
+      "bmRenameCategoryKey": "Renommer l’en-tête de catégorie ciblé",
+      "bmCategoryMenuKey": "Ouvrir le menu de catégorie — renommer, ajouter ou supprimer"
     },
     "firstBookmarkGuide": "Ajoutez votre premier favori avec + ou Shift+B (& pour ajout rapide), ou configurez les pages dans config → pages.",
     "emptyStateAddTouch": "Touchez + favori dans la barre ci-dessous",
@@ -1232,7 +1236,10 @@
     "categorySortAddedAria": "Trier cette catégorie par date d’ajout",
     "categorySortOpensAria": "Trier cette catégorie par fréquence d’ouverture",
     "sortModeAdded": "Plus récents",
-    "sortModeOpens": "Plus ouverts"
+    "sortModeOpens": "Plus ouverts",
+    "filterByOpened": "Filtrer par dernière ouverture (never/today/week/month/year)",
+    "filterByAdded": "Filtrer par date d'ajout (today/week/month/year)",
+    "reorderNeedsManualOrder": "Passez cette catégorie en ordre manuel pour déplacer les favoris."
   },
   "health": {
     "pageTitle": "health beta",
@@ -4576,7 +4583,11 @@
     "bookmarkArchiveUrlInfoTitle": "Service d'archive",
     "bookmarkArchiveUrlInfoMessage": "Où « Chercher dans Web Archive » envoie un favori. {url} est remplacé par son adresse, donc une ArchiveBox auto-hébergée ou archive.today fonctionne aussi.",
     "showSmartAddedCollection": "Afficher la collection « Récemment ajoutés »",
-    "smartAddedLimit": "Limite récemment ajoutés"
+    "smartAddedLimit": "Limite récemment ajoutés",
+    "collectionRuleFieldPinned": "Épinglé",
+    "collectionRuleFieldUntagged": "Sans tag",
+    "collectionRuleFieldNotOpened": "Non ouvert depuis (jours)",
+    "collectionRuleFieldChanged": "Modifié depuis (jours)"
   },
   "colors": {
     "title": "personnalisation du thème",

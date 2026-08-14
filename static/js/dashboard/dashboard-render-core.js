@@ -1552,8 +1552,25 @@ class DashboardRenderCore {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 setCategoryCollapsed(categoryDiv.getAttribute('data-collapsed') !== 'true');
-                if (!titleElement.classList.contains('category-title--renaming')) {
-                }
+                return;
+            }
+            // Renaming was long-press, double-click or right-click only — three
+            // pointer gestures and no key, in a keyboard-first app. F2 is the
+            // rename key every file manager has taught.
+            if (e.key === 'F2' && !titleElement.classList.contains('category-title--renaming')) {
+                e.preventDefault();
+                this._startCategoryRename(titleElement, nameSpan, category);
+                return;
+            }
+            // Delete and the rest had only the right-click menu; adding a
+            // category already had the c-hold. Opening that same menu from the
+            // keyboard keeps one implementation of the confirm and the undo.
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                const box = titleElement.getBoundingClientRect();
+                d.categoryMenu?.show?.(titleElement, category, {
+                    x: box.left + 8, y: box.bottom,
+                });
             }
         });
 

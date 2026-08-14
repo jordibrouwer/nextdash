@@ -367,6 +367,38 @@ class DashboardSmartCollections {
                 const field = rule.field;
                 const op = rule.operator || 'includes';
                 const val = (rule.value || '').toLowerCase();
+
+                // Fields that are a question on their own: the built-in
+                // collections score on openCount and lastOpened right above, so
+                // the user-defined ones were running on the weaker engine —
+                // "my dev links I have not touched in 90 days" could not be
+                // expressed at all.
+                if (field === 'pinned') {
+                    const yes = !['false', 'no', '0'].includes(val);
+                    const match = Boolean(bm.pinned) === yes;
+                    return op === 'excludes' ? !match : match;
+                }
+                if (field === 'untagged') {
+                    const empty = !(bm.tags || []).some((t) => String(t || '').trim());
+                    return op === 'excludes' ? !empty : empty;
+                }
+                if (field === 'notOpenedDays') {
+                    const days = Number(val);
+                    if (!Number.isFinite(days) || days <= 0) return false;
+                    const last = Number(bm.lastOpened || 0);
+                    // Never opened counts as neglected, the way the Stale
+                    // collection already treats it.
+                    const stale = last === 0 || (Date.now() - last) > days * 86400000;
+                    return op === 'excludes' ? !stale : stale;
+                }
+                if (field === 'changedDays') {
+                    const days = Number(val);
+                    if (!Number.isFinite(days) || days <= 0) return false;
+                    const changed = Number(bm.updatedAt || 0);
+                    const recent = changed > 0 && (Date.now() - changed) <= days * 86400000;
+                    return op === 'excludes' ? !recent : recent;
+                }
+
                 if (!val) return false;
                 if (field === 'tag') {
                     const has = (bm.tags || []).some(t => t.toLowerCase() === val);

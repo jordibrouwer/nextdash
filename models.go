@@ -121,7 +121,9 @@ type Finder struct {
 }
 
 type CollectionRule struct {
-	Field    string `json:"field"`    // "tag", "category", "shortcut"
+	// "tag", "category", "shortcut", plus the ones that are a question on
+	// their own: "pinned", "untagged", "notOpenedDays", "changedDays".
+	Field    string `json:"field"`
 	Operator string `json:"operator"` // "includes", "excludes"
 	Value    string `json:"value"`
 }

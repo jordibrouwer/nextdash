@@ -425,7 +425,11 @@
       "bmTogglePin": "Zet de gerichte bladwijzer vast of maak los",
       "bmShare": "Deel de gerichte bladwijzer, of kopieer naam en URL waar geen deelvenster is",
       "bmRevealHealth": "Open de gerichte bladwijzer op zijn eigen rij in Health",
-      "bmFilterTag": "Filter het raster op de tag van de gerichte bladwijzer; bij meerdere tags opent de kiezer"
+      "bmFilterTag": "Filter het raster op de tag van de gerichte bladwijzer; bij meerdere tags opent de kiezer",
+      "bmOpenNewTab": "Open de gerichte bladwijzer in een nieuw tabblad, wat de instelling ook zegt",
+      "bmMoveRow": "Verplaats de gerichte bladwijzer binnen zijn categorie (alleen bij handmatige volgorde)",
+      "bmRenameCategoryKey": "Hernoem de gerichte categoriekop",
+      "bmCategoryMenuKey": "Open het categoriemenu — hernoemen, toevoegen of verwijderen"
     },
     "searchPrefix": ">",
     "searchModeSearch": "SEARCH",
@@ -1232,7 +1236,10 @@
     "categorySortAddedAria": "Sorteer deze categorie op wanneer bladwijzers zijn toegevoegd",
     "categorySortOpensAria": "Sorteer deze categorie op hoe vaak bladwijzers worden geopend",
     "sortModeAdded": "Nieuwste",
-    "sortModeOpens": "Meest geopend"
+    "sortModeOpens": "Meest geopend",
+    "filterByOpened": "Filter op wanneer laatst geopend (never/today/week/month/year)",
+    "filterByAdded": "Filter op wanneer toegevoegd (today/week/month/year)",
+    "reorderNeedsManualOrder": "Zet deze categorie op handmatige volgorde om bladwijzers te verplaatsen."
   },
   "health": {
     "pageTitle": "health beta",
@@ -4576,7 +4583,11 @@
     "bookmarkArchiveUrlInfoTitle": "Archiefdienst",
     "bookmarkArchiveUrlInfoMessage": "Waar \"Zoek in Web Archive\" een bladwijzer naartoe stuurt. {url} wordt vervangen door het adres, dus een zelf gehoste ArchiveBox of archive.today werkt ook.",
     "showSmartAddedCollection": "Toon collectie “Recent toegevoegd”",
-    "smartAddedLimit": "Limiet recent toegevoegd"
+    "smartAddedLimit": "Limiet recent toegevoegd",
+    "collectionRuleFieldPinned": "Vastgezet",
+    "collectionRuleFieldUntagged": "Heeft geen tags",
+    "collectionRuleFieldNotOpened": "Niet geopend in (dagen)",
+    "collectionRuleFieldChanged": "Gewijzigd binnen (dagen)"
   },
   "colors": {
     "title": "thema-aanpassing",
