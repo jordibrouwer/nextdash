@@ -207,7 +207,7 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 
 ### 4.5 Config vs dashboard
 
-Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config with **`Shift+S`**, **`<`**, or the gear icon restores the **last section and sub-tab** only when you left via **`Shift+H`** or **`Shift+I`**; **`Escape`** and **`0`–`9`** clear stored location so the next visit starts on **Overview**. A deep link like `/#config/appearance` still takes priority.
+Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config with **`Shift+S`**, **`<`**, or the gear icon restores the **last section and sub-tab** you were on — whichever way you left, including **`Escape`** and **`0`–`9`**. The memory lasts **15 minutes** from the moment you left: come back later and you start on **Overview**, on the reasoning that a quick return is a continuation of what you were doing and a return an hour later is a new task. A deep link like `/#config/appearance` still takes priority.
 
 | Dashboard view | Config view |
 |-----------------|------------------|
@@ -1083,7 +1083,7 @@ Configuration is a **view inside the dashboard**, not a separate page. It opens 
 |---------|----------|
 | **`Shift+S`**, **`<`** (`Shift+,`), the **config** (gear) link in the header, or the `/#config` address | **`Escape`** (unless you are typing in a field, or something is open on top of it), or the back link |
 
-Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores the **last section and sub-tab** unless a `/#config/…` deep link names something else.
+Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores the **last section and sub-tab** for 15 minutes after you left, unless a `/#config/…` deep link names something else.
 
 Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/appearance/layout` opens Appearance on Layout, `/#config/bookmarks/<pageId>` scopes Bookmarks to one page, and the address bar keeps up as you click.
 
@@ -1210,7 +1210,7 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 
 | Keys | Action |
 |------|--------|
-| `Shift+S` or `<` | Toggle config; reopening restores the last section and sub-tab only after leaving via `Shift+H` or `Shift+I` |
+| `Shift+S` or `<` | Toggle config; reopening within 15 minutes restores the last section and sub-tab, however you left |
 | `0`–`9` | Leave config for Inbox (`0`) or a bookmark page (`1`–`9`); clears stored config location |
 | `j` / `k` | Previous / next section in the left rail |
 | `g` / `G` | First / last section |

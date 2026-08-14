@@ -309,6 +309,11 @@ environment:
 - `Shift + T` — *Quick tag* popover beside the focused bookmark: `↑`/`↓` navigate ranked tags; `Enter`/`Space` toggle a tag and advance to the next; `✓` shows tags already on the bookmark
 - `Shift + D` — quick-delete popover with undo in the toast
 - `Shift + C` — *Checking* popover beside the focused bookmark: choose **Off**, **Periodic**, or **Monitor** with `o` / `p` / `m`, or arrow to one and press `Enter`
+- `Shift + P` — pin or unpin the focused bookmark; also in the right-click menu
+- `Shift + S` — share the focused bookmark, or copy its name and URL where no share sheet exists
+- `Shift + R` — open the focused bookmark on its own row in **Health**
+- `t` — filter the grid to the focused bookmark's tag; several tags open the picker
+- `Ctrl/Cmd + Enter` — open the focused bookmark in a new tab for that press alone, whatever **open in new tab** is set to
 - `Ctrl + C` / `Cmd + C` — copy the URL of the focused bookmark (row flashes green)
 - `[` — toggle the hover preview card on the focused bookmark
 - `Delete` — delete the focused bookmark
@@ -371,7 +376,7 @@ environment:
 
 #### Config (for self-hosters)
 
-**Where things live** — config is a view inside the dashboard at `/#config`, opened with **`Shift+S`**, **`<`**, or the header link, and closed with **`Escape`**. Reopening it restores the **last section and sub-tab** you were on; a deep link like `/#config/behavior/privacy` still wins. It has eight sections: **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, and **Help**. Sections with sub-tabs are addressable too — `/#config/behavior/privacy` opens Behavior on Privacy — so a link to any setting can be shared.
+**Where things live** — config is a view inside the dashboard at `/#config`, opened with **`Shift+S`**, **`<`**, or the header link, and closed with **`Escape`**. Reopening it within **15 minutes** restores the **last section and sub-tab** you were on, whichever way you left; after that it starts on **Overview** again. A deep link like `/#config/behavior/privacy` still wins. It has eight sections: **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, and **Help**. Sections with sub-tabs are addressable too — `/#config/behavior/privacy` opens Behavior on Privacy — so a link to any setting can be shared.
 
 The settings a self-hoster reaches for most: **Behavior → General** (localhost & private-network bookmarks, HyprMode, session tips), **Behavior → Privacy** (analytics), **Behavior → Status & health** (background rechecks, downtime webhook), and **Data & backups** (backup, restore, import/export, the **Trash** — deleted bookmarks stay recoverable for 30 days, with search and bulk restore — and **Reset**, each on its own sub-tab).
 
@@ -396,6 +401,8 @@ Type these directly in the search bar (`>` mode, or after opening search). Expan
 - `status:pinned` / `status:unpinned` / `status:checked` / `status:unchecked`
 - `page:current` / `page:all` / `page:2`
 - `tag:name` — filter by tag
+- `added:` / `opened:` — `today`, `week`, `month` or `year`; `opened:never` finds bookmarks you have never opened
+- The page's own fetched description is searched too, below the title, URL, tags and your note — often the only place holding what you remember about a page titled *Untitled* or *Login*
 
 Partial values (e.g. `status:on`) keep showing suggestions until the filter is complete. `status:online` uses persisted reachability on monitored bookmarks, not only the live status cache.
 
@@ -403,7 +410,8 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 
 - Unlimited pages and categories
 - Drag-and-drop reorder within and between categories (drag strip on the left); saves debounce 1s with a success toast on the dashboard; bulk tag-filter move/delete groups rapid toasts into one message
-- **Per-category sort** — **A–Z** and **Rec** chips in each category header (including *Other* and unknown-category blocks); click an active chip again for manual order; `:sort` in the command palette; legacy global sort removed from Config → General
+- **Per-category sort** — sort by name, by when you last opened a bookmark, by when you added it, or by how often you open it. The sort in use sits in the category header as a single chip and the rest are behind a **⋯**; click the active chip again for manual order. Also `:sort` in the command palette
+- **Tags on the rows** — off by default (**Config → Appearance → Display**); the first two show and the rest collapse into a count. Click one to filter the grid to it
 - **Config → pages** and **config → categories** — drag or **↑/↓** to reorder; auto-save after ~600 ms with a localized sync toast; **Usage** column with popularity bar + bookmark count (Tags-style tier styling)
 - **Config → tags** (desktop) — popularity-scaled word cloud (dashboard-style), structured list with usage bars, sorted by bookmark count; scrolls with the page; global rename/merge/delete; drill-down with **Open**; filter + clear; auto-save with undo; **↑/↓** moves focus between tag rows
 - **Config → finders** (desktop) — filter list; drag or **↑/↓** reorder with auto-save; usage stats on tab open; stable ids + duplicate shortcut guard
@@ -428,6 +436,7 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - **Snooze** a link (`z`: 3 hours, tomorrow, the weekend, next week, or a date of your own) and it is hidden until it wakes — left out of every count, tile and filter except **Snoozed**, so the numbers above the list always describe what is actually waiting for you. **Wake now** brings one back early
 - **Promote** (`p`) opens the full bookmark form pre-filled, with every page and category available; the inbox entry goes once the bookmark is saved. **Triage** (`t`, or `:inbox triage`) walks the list one link at a time without the mouse: `j`/`k` move, `o` open, `p` promote, `r` keep, `d` delete, `Esc` close
 - Tick rows to mark read, snooze or delete just those; **Mark all read** and **Clear read** act on the whole list, and **Clear read** leaves snoozed links alone. Export the filtered list as CSV or JSON. Long lists load further rows as you scroll
+- The first visit runs a **one-time tour** — seven steps through the whole loop, from where links come from to how a backlog gets cleared. **Config → Help → Inbox** covers the same ground at any time, and **Show quick-start card again** under **Config → Behavior → General** brings the tour back
 - Toggle under **Config → Behavior → Search & inbox → Enable Inbox**; unread items show a badge on the Inbox tab
 
 ### Smart collections
@@ -438,7 +447,10 @@ Dynamic bookmark groups that appear automatically:
 - **Recently opened** — bookmarks you've opened lately
 - **Most used** — your highest open-count bookmarks
 - **Stale** — bookmarks you haven't visited in a while
+- **Recently added** — what you have just saved, off by default with its own limit and choice of pages; every other collection keys on what you *open*, so this was the one question they could not answer
 - **Tag collections** — one group per tag, shown when a tag has enough entries
+
+Collections of your own take rules on category, tag, page, URL, name and status, plus **pinned**, **untagged**, **days since last opened** and **days since last changed** — so "my dev links I have not touched in 90 days" is something you can build rather than something only the built-in collections could do.
 
 ### Appearance
 

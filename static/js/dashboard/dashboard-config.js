@@ -38,6 +38,20 @@ class DashboardConfig {
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
     /**
+     * How long the remembered config location survives.
+     *
+     * Returning to config a moment later is a continuation — you left to check
+     * something and came back — and dropping you on Overview each time makes
+     * you re-navigate. Coming back an hour later is a new task, and the tab you
+     * happened to be on last time is no longer where you meant to be. Fifteen
+     * minutes is the line between the two.
+     *
+     * Mirrored in dashboard-config-loader.js, which reads the same entry on a
+     * cold load before this module exists. Both must agree.
+     */
+    static CONFIG_LAST_TTL_MS = 15 * 60 * 1000;
+
+    /**
      * The activity chart's range, remembered per browser.
      *
      * The sub-tab you were on already survives a visit (SUB_TAB_STATE, via the
@@ -363,12 +377,20 @@ class DashboardConfig {
         }
     }
 
-    /** Read the last config section/sub-tab saved when leaving via Shift+H or Shift+I. */
+    /**
+     * Read the config section/sub-tab you were last on, if it is still fresh.
+     *
+     * An entry with no `savedAt` was written before the location expired at
+     * all, and there is no way to tell whether it is a minute or a month old —
+     * so it is treated as stale, and that browser starts on Overview once.
+     */
     loadLastConfigLocation() {
         try {
             const raw = localStorage.getItem(DashboardConfig.CONFIG_LAST_KEY);
             if (!raw) return null;
             const data = JSON.parse(raw);
+            const savedAt = Number(data?.savedAt) || 0;
+            if (!savedAt || Date.now() - savedAt > DashboardConfig.CONFIG_LAST_TTL_MS) return null;
             const section = data?.section;
             if (!section || !DashboardConfig.SECTIONS.includes(section)) return null;
             let subTab = data?.subTab ?? null;
@@ -424,7 +446,14 @@ class DashboardConfig {
         }
     }
 
-    /** Remember where the user left config — only when exiting via Shift+H or Shift+I. */
+    /**
+     * Remember where the user left config, on every way out.
+     *
+     * The timestamp is what makes that safe: without an expiry, remembering
+     * every exit would mean a tab you opened once, weeks ago, greeting you
+     * forever. It is stamped on the way out rather than on the way in, so the
+     * fifteen minutes count from when you last had config open.
+     */
     saveLastConfigLocation() {
         try {
             const section = this.section;
@@ -434,16 +463,8 @@ class DashboardConfig {
             localStorage.setItem(DashboardConfig.CONFIG_LAST_KEY, JSON.stringify({
                 section,
                 subTab: subTab || null,
+                savedAt: Date.now(),
             }));
-        } catch {
-            // localStorage unavailable — skip silently
-        }
-    }
-
-    /** Drop stored config location so the next visit starts on Overview. */
-    clearLastConfigLocation() {
-        try {
-            localStorage.removeItem(DashboardConfig.CONFIG_LAST_KEY);
         } catch {
             // localStorage unavailable — skip silently
         }
@@ -461,23 +482,22 @@ class DashboardConfig {
      * Section (and optional sub-tab) when opening config without an explicit
      * target or `#config/…` hash — e.g. Shift+S from the bookmark grid.
      *
-     * Saved location (Shift+H / Shift+I) applies when returning from health
-     * or inbox via Shift+S. Cold load to bare `#config` is handled in
-     * dashboard-data.js before the lazy module loads. Opening config from
-     * bookmarks with a page hash (#1) always lands on Overview.
+     * The saved location applies wherever you are coming from — the grid, the
+     * inbox, health — as long as it is still inside the fifteen-minute window;
+     * loadLastConfigLocation answers with nothing once it is not. It used to
+     * apply only when returning from health or inbox, which meant the far more
+     * common route, Shift+S from the grid, always landed on Overview.
+     *
+     * An explicit section and a `#config/…` hash both still win: those name a
+     * destination, and the memory is only for when nothing else does.
+     * Cold load to bare `#config` is handled in dashboard-data.js before the
+     * lazy module loads.
      */
     resolveConfigOpenTarget(explicitSection) {
         const hash = window.location.hash;
         const hashIsGeneric = DashboardConfig.isGenericConfigHash(hash);
         const hashSection = hashIsGeneric ? null : DashboardConfig.sectionFromHash(hash);
-        const saved = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
-        let stored = null;
-        if (saved?.section) {
-            const fromView = this.dash.activeView;
-            if (fromView === 'health' || fromView === 'inbox') {
-                stored = saved;
-            }
-        }
+        const stored = (!explicitSection && !hashSection) ? this.loadLastConfigLocation() : null;
         const targetSection = explicitSection || hashSection || stored?.section || 'overview';
 
         if (!hashIsGeneric && hashSection === targetSection) {
@@ -572,8 +592,10 @@ class DashboardConfig {
         if (d.activeView !== DashboardConfig.VIEW) {
             return false;
         }
-        // Escape and other non–Shift+H/I exits start fresh on Overview next time.
-        this.clearLastConfigLocation();
+        // Every way out remembers where you were, not just Shift+H and Shift+I.
+        // The fifteen-minute expiry in loadLastConfigLocation is what keeps that
+        // from turning into a tab that greets you forever.
+        this.saveLastConfigLocation();
         // The save indicator lives on <body>, so leaving the view has to take it
         // down; otherwise a "Saved" would linger over the dashboard.
         clearTimeout(this._saveStateTimer);
@@ -893,8 +915,8 @@ class DashboardConfig {
 
     /**
      * Page tabs (1–9) and Inbox (0) work from config too — same as on the
-     * bookmark grid — so you can leave without Esc first. Unlike Shift+H/I,
-     * these do not remember where you were in config.
+     * bookmark grid — so you can leave without Esc first. These remember where
+     * you were, the same as every other way out.
      */
     handleShellViewShortcut(e) {
         if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
@@ -906,7 +928,7 @@ class DashboardConfig {
             if (d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                this.clearLastConfigLocation();
+                this.saveLastConfigLocation();
                 void d.inbox.openInboxView();
                 return true;
             }
@@ -918,7 +940,7 @@ class DashboardConfig {
             if (pageIndex >= d.pages.length) return false;
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.clearLastConfigLocation();
+            this.saveLastConfigLocation();
             void d.requestPageNavigation(d.pages[pageIndex].id);
             return true;
         }
@@ -2881,6 +2903,58 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureBookmarkSettingsTitle',
+                titleFallback: 'Config → Bookmarks finally has settings',
+                whatKey: 'config.overviewNewFeatureBookmarkSettingsWhat',
+                whatFallback: 'Every choice this section made was made for you and could not be changed: the sort reset on every visit, fifty rows loaded at a time whatever your screen, and a quick-added bookmark always arrived unchecked, unpinned and without a category.',
+                howKey: 'config.overviewNewFeatureBookmarkSettingsHow',
+                howFallback: 'Ten settings of its own, including what a quick-added bookmark starts with, the interval a bookmark gets when you switch it to Monitor, how many rows a delete has to touch before it asks, what counts as "not opened in a while", and which archive service the archive links point at.',
+                enableKey: 'config.overviewNewFeatureBookmarkSettingsEnable',
+                enableFallback: 'Nothing to switch on. Every setting starts at exactly the value that used to be fixed, so nothing changes until you change it.',
+                ctaKey: 'config.overviewNewFeatureBookmarkSettingsCta',
+                ctaFallback: 'Open Bookmarks →',
+                go: { section: 'bookmarks' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureUsageDataTitle',
+                titleFallback: 'Ask when you added something, or last opened it',
+                whatKey: 'config.overviewNewFeatureUsageDataWhat',
+                whatFallback: 'nextDash records when you add a bookmark, when you last opened it and how often — and none of it could be reached from the search bar or from a collection of your own. "Added this month and never opened since" was not a question you could ask.',
+                howKey: 'config.overviewNewFeatureUsageDataHow',
+                howFallback: 'Search takes added: and opened: with today, week, month or year — and opened:never. Your own collections can now use pinned, untagged, days since last opened and days since last changed, and a Recently added collection answers the one question the others never could.',
+                enableKey: 'config.overviewNewFeatureUsageDataEnable',
+                enableFallback: 'The search filters work straight away. Recently added is off until you switch it on, and takes its own limit and pages.',
+                ctaKey: 'config.overviewNewFeatureUsageDataCta',
+                ctaFallback: 'Open Collections →',
+                go: { section: 'pages-tags', ptTab: 'collections' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureRowKeysTitle',
+                titleFallback: 'Four more things you can do without the mouse',
+                whatKey: 'config.overviewNewFeatureRowKeysWhat',
+                whatFallback: 'Pinning, sharing, opening a bookmark in Health and filtering to a tag you can see all needed the mouse or the command palette, in an app where everything else on a row has a key.',
+                howKey: 'config.overviewNewFeatureRowKeysHow',
+                howFallback: 'Shift + P pins, Shift + S shares, Shift + R opens the row in Health, and t filters to its tag. Ctrl/Cmd + Enter opens a bookmark in a new tab for that press alone, whatever your standing preference says. Pin also has a right-click entry now.',
+                enableKey: 'config.overviewNewFeatureRowKeysEnable',
+                enableFallback: 'Nothing to switch on. Press ! or F1 for the full list, which is also on the printable cheat sheet.',
+                ctaKey: 'config.overviewNewFeatureRowKeysCta',
+                ctaFallback: 'Open Keyboard help →',
+                go: { section: 'help', helpTab: 'search' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureRowTagsTitle',
+                titleFallback: 'Tags on the bookmark rows themselves',
+                whatKey: 'config.overviewNewFeatureRowTagsWhat',
+                whatFallback: 'Every row already carried its tags and showed none of them, so the one place you could not act on a bookmark\u2019s tag was the row in front of you.',
+                howKey: 'config.overviewNewFeatureRowTagsHow',
+                howFallback: 'Switch on tags in the grid and the first two appear on the row, with the rest collapsing into a count. They give way before the bookmark name does, and stay out of the way on a phone.',
+                enableKey: 'config.overviewNewFeatureRowTagsEnable',
+                enableFallback: 'Off by default, under Appearance → Display. Category headers also give back their width: the sort in use stays in front and the rest move behind a \u22ef.',
+                ctaKey: 'config.overviewNewFeatureRowTagsCta',
+                ctaFallback: 'Open Display →',
+                go: { section: 'appearance', appearanceTab: 'display' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureInboxTagsTitle',
                 titleFallback: 'Tags on inbox links, at last',
                 whatKey: 'config.overviewNewFeatureInboxTagsWhat',
@@ -3615,6 +3689,15 @@ class DashboardConfig {
             if (target.behaviorTab && target.section === 'behavior') {
                 this.behaviorTab = target.behaviorTab;
                 if (this.section === 'behavior') {
+                    this.render();
+                    return;
+                }
+            }
+            // Pages & tags has its own strip too, and was the one section a
+            // spotlight could name a tab for and not reach it.
+            if (target.ptTab && target.section === 'pages-tags') {
+                this.ptTab = target.ptTab;
+                if (this.section === 'pages-tags') {
                     this.render();
                     return;
                 }
