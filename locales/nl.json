@@ -343,7 +343,7 @@
       "bmTogglePreview": "Hover-voorbeeldkaart op bladwijzer met focus aan/uit",
       "bmShowMoreToggle": "Klap een lange categorie uit of in — de selectie gaat terug naar de laatste bladwijzer boven de knop",
       "bmDelete": "Verwijder bladwijzer met focus (bevestigingsdialoog); met een open selectie verwijdert dit alles wat geselecteerd is",
-      "bmContextMenu": "Menu met openen in nieuw tabblad, URL kopiëren, bewerken, tags, verplaatsen, controle, selecteren, verwijderen (Shift + rechtermuisknop voor het browsermenu)",
+      "bmContextMenu": "Menu met openen in nieuw tabblad, URL kopiëren, delen, bewerken, vastzetten, tags, verplaatsen, controle, Toon in Health, selecteren, verwijderen (Shift + rechtermuisknop voor het browsermenu)",
       "sectionMultiSelect": "Meerdere bladwijzers selecteren",
       "msToggleRow": "Vink de bladwijzer met focus aan en ga naar de volgende — zo is een reeks rijen x-x-x",
       "msSelectCategory": "Vink elke bladwijzer in de categorie met focus aan",
@@ -1242,7 +1242,9 @@
     "reorderNeedsManualOrder": "Zet deze categorie op handmatige volgorde om bladwijzers te verplaatsen.",
     "categorySortMenuAria": "Sorteer deze categorie",
     "categorySortManualShort": "Handmatig",
-    "categorySortManualAria": "Handmatige volgorde (sleep om te ordenen)"
+    "categorySortManualAria": "Handmatige volgorde (sleep om te ordenen)",
+    "contextMenuPin": "Vastzetten",
+    "contextMenuUnpin": "Losmaken"
   },
   "health": {
     "pageTitle": "health beta",

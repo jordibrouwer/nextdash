@@ -322,7 +322,7 @@
       "bmTogglePreview": "Activer/désactiver l'aperçu au survol du favori focalisé",
       "bmShowMoreToggle": "Déplier ou replier une catégorie longue — la sélection revient au dernier favori au-dessus du bouton",
       "bmDelete": "Supprimer le favori focalisé (boîte de confirmation) ; avec une sélection ouverte, supprime tout ce qui est sélectionné",
-      "bmContextMenu": "Menu avec ouvrir dans un nouvel onglet, copier l'URL, modifier, tags, déplacer, vérification, sélectionner, supprimer (Shift + clic droit pour le menu du navigateur)",
+      "bmContextMenu": "Menu avec ouvrir dans un nouvel onglet, copier l’URL, partager, modifier, épingler, tags, déplacer, vérification, Afficher dans Santé, sélectionner, supprimer (Maj + clic droit pour le menu du navigateur)",
       "sectionMultiSelect": "Sélectionner plusieurs favoris",
       "msToggleRow": "Cocher le favori focalisé et passer au suivant — une série de lignes se fait ainsi x-x-x",
       "msSelectCategory": "Cocher tous les favoris de la catégorie focalisée",
@@ -1242,7 +1242,9 @@
     "reorderNeedsManualOrder": "Passez cette catégorie en ordre manuel pour déplacer les favoris.",
     "categorySortMenuAria": "Trier cette catégorie",
     "categorySortManualShort": "Manuel",
-    "categorySortManualAria": "Ordre manuel (glisser pour organiser)"
+    "categorySortManualAria": "Ordre manuel (glisser pour organiser)",
+    "contextMenuPin": "Épingler",
+    "contextMenuUnpin": "Détacher"
   },
   "health": {
     "pageTitle": "health beta",

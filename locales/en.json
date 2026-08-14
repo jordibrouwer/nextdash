@@ -344,7 +344,7 @@
       "bmTogglePreview": "Toggle hover preview card on focused bookmark",
       "bmShowMoreToggle": "Expand or collapse a long category — selection returns to the last bookmark above the toggle",
       "bmDelete": "Delete focused bookmark (confirmation dialog); with a selection open, deletes everything selected",
-      "bmContextMenu": "Menu with open in new tab, copy URL, edit, tags, move, checking, select, delete (Shift + right-click for the browser menu)",
+      "bmContextMenu": "Menu with open in new tab, copy URL, share, edit, pin, tags, move, checking, Show in Health, select, delete (Shift + right-click for the browser menu)",
       "sectionMultiSelect": "Selecting several bookmarks",
       "msToggleRow": "Tick the focused bookmark and move to the next — so a run of rows is x-x-x",
       "msSelectCategory": "Tick every bookmark in the focused category",
@@ -1243,7 +1243,9 @@
     "reorderNeedsManualOrder": "Switch this category to manual order to move bookmarks.",
     "categorySortMenuAria": "Sort this category",
     "categorySortManualShort": "Manual",
-    "categorySortManualAria": "Manual order (drag to arrange)"
+    "categorySortManualAria": "Manual order (drag to arrange)",
+    "contextMenuPin": "Pin",
+    "contextMenuUnpin": "Unpin"
   },
   "health": {
     "pageTitle": "health beta",

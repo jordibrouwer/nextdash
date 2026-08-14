@@ -322,7 +322,7 @@
       "bmTogglePreview": "Hover-Vorschaukarte am fokussierten Lesezeichen umschalten",
       "bmShowMoreToggle": "Eine lange Kategorie aus- oder einklappen — die Auswahl kehrt zum letzten Lesezeichen über der Schaltfläche zurück",
       "bmDelete": "Fokussiertes Lesezeichen löschen (Bestätigungsdialog); bei offener Auswahl wird alles Ausgewählte gelöscht",
-      "bmContextMenu": "Menü mit In neuem Tab öffnen, URL kopieren, Bearbeiten, Tags, Verschieben, Prüfung, Auswählen, Löschen (Shift + Rechtsklick für das Browsermenü)",
+      "bmContextMenu": "Menü mit In neuem Tab öffnen, URL kopieren, Teilen, Bearbeiten, Anheften, Tags, Verschieben, Prüfung, In Health anzeigen, Auswählen, Löschen (Shift + Rechtsklick für das Browsermenü)",
       "sectionMultiSelect": "Mehrere Lesezeichen auswählen",
       "msToggleRow": "Das fokussierte Lesezeichen markieren und zum nächsten springen — eine Reihe ist so x-x-x",
       "msSelectCategory": "Jedes Lesezeichen in der fokussierten Kategorie markieren",
@@ -1242,7 +1242,9 @@
     "reorderNeedsManualOrder": "Stelle diese Kategorie auf manuelle Reihenfolge, um Lesezeichen zu verschieben.",
     "categorySortMenuAria": "Diese Kategorie sortieren",
     "categorySortManualShort": "Manuell",
-    "categorySortManualAria": "Manuelle Reihenfolge (zum Ordnen ziehen)"
+    "categorySortManualAria": "Manuelle Reihenfolge (zum Ordnen ziehen)",
+    "contextMenuPin": "Anheften",
+    "contextMenuUnpin": "Lösen"
   },
   "health": {
     "pageTitle": "health beta",
