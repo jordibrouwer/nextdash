@@ -570,7 +570,11 @@ A toolbar appears above the grid while a selection is open, with **Move**, **Tag
 
 **Tags** lists every tag you already use, each showing how it sits across the selection: a **✓** when every selected bookmark has it, so clicking takes it off; a **–** and *on 2 of 3* when only some do, so clicking fills in the rest; and plain when none do. The count is spelled out because *add* and *remove* mean different things for a mixed selection. Since **v2026.09.05.1**.
 
+**Deleting a selection can be undone** (v1.0.4). The toast offers **Undo** for eight seconds and puts every bookmark back in the position it held; the [trash](#trash-data--backups--trash) still catches it for 30 days after that. If the save does not go through, the rows come back and an error says so, rather than disappearing from the screen in silence.
+
 A **plain click while a selection is open clears it** instead of opening the bookmark, so a stray click cannot act on rows you had forgotten were ticked. A bookmark that appears in a [smart collection](#13-smart-collections-and-custom-collections) as well as its own category lights up in both places, because it is one bookmark shown twice.
+
+**Pages remember where you were reading** (v1.0.4). Switching to another page and back returns you to the offset you left, within the same visit; opening the page fresh starts at the top as it always did.
 
 ### 9.5 Cheat sheet
 
@@ -628,8 +632,10 @@ Three input modes share one overlay; switch with keys or footer chips.
 | `tag:` | `tag:work` |
 | `page:` | `page:2`, `page:all`, `page:current` |
 | `status:` | `status:online`, `status:broken`, `status:pinned`, … |
+| `opened:` | `opened:today`, `opened:week`, `opened:month`, `opened:year`, `opened:never` |
+| `added:` | `added:today`, `added:week`, `added:month`, `added:year` |
 
-While typing a partial value (e.g. `status:on`), autocomplete stays visible until the token is complete. `status:online` / `status:offline` use persisted reachability on monitored bookmarks.
+Since **v1.0.4** the two age filters are offered while you type, like the others, with their words listed once the key is in — `never` only under `opened:`, since a bookmark has no "never added" state. While typing a partial value (e.g. `status:on`), autocomplete stays visible until the token is complete. `status:online` / `status:offline` use persisted reachability on monitored bookmarks.
 
 **Bookmark shortcuts starting with `G`** — a quick tap on `G` opens the shortcut search bar (`g`, `ga`, `g1`, …). Hold `G` (~300 ms) or press `G` then a digit / `P` / second `G` activates category jump instead (see §9.2).
 

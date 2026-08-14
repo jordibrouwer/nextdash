@@ -2920,6 +2920,32 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureBulkUndoTitle',
+                titleFallback: 'A way back out of a bulk delete',
+                whatKey: 'config.overviewNewFeatureBulkUndoWhat',
+                whatFallback: 'Removing fifteen bookmarks at once had no way back except digging them out of the trash one at a time. And if the save did not go through, the rows disappeared from the screen anyway with nothing to tell you they were still there.',
+                howKey: 'config.overviewNewFeatureBulkUndoHow',
+                howFallback: 'The toast now offers Undo for eight seconds and puts every bookmark back in the position it held. A delete that fails puts them back on its own and says so. The trash still catches everything for 30 days after that.',
+                enableKey: 'config.overviewNewFeatureBulkUndoEnable',
+                enableFallback: 'Nothing to switch on. Tick some rows with x, or Ctrl-click them, and Delete asks once for the whole set.',
+                ctaKey: 'config.overviewNewFeatureBulkUndoCta',
+                ctaFallback: 'Open the trash →',
+                go: { section: 'data-backups', dbTab: 'trash' },
+            },
+            {
+                titleKey: 'config.overviewNewFeatureBookmarksMenuTitle',
+                titleFallback: 'Right-click a row in Bookmarks',
+                whatKey: 'config.overviewNewFeatureBookmarksMenuWhat',
+                whatFallback: 'Everything you can do to a bookmark here was spread across the buttons on the row and the toolbar above the list, and which of them applied to the row you were pointing at was not always obvious.',
+                howKey: 'config.overviewNewFeatureBookmarksMenuHow',
+                howFallback: 'Right-click any row for one menu on that row: open it, copy the address, edit, move it to another page or category, change how often it is checked, pin it, or delete it. Right-click a row that is part of a selection and the menu switches to the whole selection, with the count named.',
+                enableKey: 'config.overviewNewFeatureBookmarksMenuEnable',
+                enableFallback: 'Nothing to switch on. Shift and right-click still gives you the browser menu.',
+                ctaKey: 'config.overviewNewFeatureBookmarksMenuCta',
+                ctaFallback: 'Open Bookmarks →',
+                go: { section: 'bookmarks' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureBookmarkSettingsTitle',
                 titleFallback: 'Config → Bookmarks finally has settings',
                 whatKey: 'config.overviewNewFeatureBookmarkSettingsWhat',
