@@ -165,7 +165,6 @@ class DashboardPageNav {
      * rather than out in the left-hand column under the view name.
      */
     updatePageBreadcrumb() {
-        const d = this.dash;
         const el = document.querySelector('.title-breadcrumb');
         if (!el) return;
 
@@ -224,7 +223,6 @@ class DashboardPageNav {
     /** Inline page-tab rename (name/icon/color) — desktop/tablet landscape only. */
 
     allowsPageTabInlineEdit() {
-        const d = this.dash;
         return window.MobileExperience?.isMobileLayout?.() !== true;
     }
 
@@ -541,7 +539,6 @@ class DashboardPageNav {
      */
 
     _positionPageTabPopover(popover, anchorEl, { initial = false } = {}) {
-        const d = this.dash;
         const pad = 8;
         const gap = 6;
         if (initial) {
@@ -815,7 +812,6 @@ class DashboardPageNav {
 
 
     findBookmarkRowForDeepLink(link) {
-        const d = this.dash;
         if (!link) return null;
         if (link.bookmarkIndex != null && link.bookmarkIndex >= 0) {
             const byIndex = document.querySelector(

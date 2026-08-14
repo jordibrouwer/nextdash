@@ -7,7 +7,6 @@ class DashboardRenderCore {
     }
 
     shouldStackDashboardCategories() {
-        const d = this.dash;
         return (
             typeof window.matchMedia === 'function' &&
             window.matchMedia('(max-width: 767px)').matches
@@ -16,7 +15,6 @@ class DashboardRenderCore {
 
 
     getEffectiveColumnsPerRow() {
-        const d = this.dash;
         if (this.shouldStackDashboardCategories()) {
             return 1;
         }
@@ -98,7 +96,6 @@ class DashboardRenderCore {
 
 
     _distributeDashboardColumnBlocks(container, columnBlocks, { animate = false, gridLayout = null } = {}) {
-        const d = this.dash;
         if (!container || !columnBlocks.length) {
             return;
         }
@@ -1670,7 +1667,6 @@ class DashboardRenderCore {
 
 
     isUploadedCategoryIcon(iconValue) {
-        const d = this.dash;
         return typeof iconValue === 'string' && /\.[a-z0-9]+$/i.test(iconValue);
     }
 

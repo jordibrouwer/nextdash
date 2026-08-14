@@ -11,12 +11,10 @@ class DashboardData {
     }
 
     safeBookmarkOpenHref(url) {
-        const d = this.dash;
         return window.BookmarkUrlUtils?.safeHttpResourceUrl?.(url) || '';
     }
 
     samePageId(a, b) {
-        const d = this.dash;
         return Number(a) === Number(b);
     }
 
@@ -118,7 +116,6 @@ class DashboardData {
     }
 
     async withRetry(task, retries = 2, baseDelayMs = 220) {
-        const d = this.dash;
         let lastError = null;
         for (let attempt = 0; attempt <= retries; attempt += 1) {
             try {

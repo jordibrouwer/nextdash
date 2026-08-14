@@ -1413,10 +1413,6 @@ class Dashboard {
         return this.bookmarkRows.applyBookmarkCategoryMove(...arguments);
     }
 
-    updateBookmarkRowsCategoryInDom(refs, categoryId) {
-        return this.bookmarkRows.updateBookmarkRowsCategoryInDom(...arguments);
-    }
-
     collectBookmarkCategoryIds(bookmarks = []) {
         return this.bookmarkRows.collectBookmarkCategoryIds(...arguments);
     }
@@ -1491,10 +1487,6 @@ class Dashboard {
 
     syncBookmarkMetadataAcrossViews(updatedBookmark, pageId) {
         return this.bookmarkRows.syncBookmarkMetadataAcrossViews(...arguments);
-    }
-
-    syncAllBookmarksMetadata(updatedBookmark) {
-        return this.bookmarkRows.syncAllBookmarksMetadata(...arguments);
     }
 
     syncBookmarkGridA11y() {

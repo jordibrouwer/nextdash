@@ -88,7 +88,6 @@
 
     class DashboardInlineEditLoader {
         static ROW_LONG_PRESS_MS = 500;
-        static CLICK_OUTSIDE_DELAY_MS = 500;
 
         constructor(dashboard) {
             this.dash = dashboard;

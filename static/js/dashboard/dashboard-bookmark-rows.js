@@ -192,8 +192,13 @@ class DashboardBookmarkRows {
     }
 
 
-    updateBookmarkRowsCategoryInDom(refs, categoryId) {
-        const d = this.dash;
+    /**
+     * Retag rows in place when there is no target list to move them into.
+     *
+     * Private to reparentBookmarkRowsInDom's fallback — it reads as public API
+     * and had a delegate on the dashboard to match, which nothing ever called.
+     */
+    _updateBookmarkRowsCategoryInDom(refs, categoryId) {
         const normalizedCategoryId = String(categoryId ?? '');
         (refs || []).forEach((ref) => {
             const bookmark = ref?.bookmark;
@@ -210,13 +215,12 @@ class DashboardBookmarkRows {
 
 
     reparentBookmarkRowsInDom(refs, categoryId) {
-        const d = this.dash;
         const normalizedCategoryId = String(categoryId ?? '');
         const targetList = document.querySelector(
             `.bookmarks-list[data-category-id="${CSS.escape(normalizedCategoryId)}"]`
         );
         if (!targetList) {
-            this.updateBookmarkRowsCategoryInDom(refs, categoryId);
+            this._updateBookmarkRowsCategoryInDom(refs, categoryId);
             return false;
         }
 
@@ -244,7 +248,6 @@ class DashboardBookmarkRows {
 
 
     collectBookmarkCategoryIds(bookmarks = []) {
-        const d = this.dash;
         const ids = new Set();
         (bookmarks || []).forEach((entry) => {
             const bookmark = entry?.bookmark ?? entry;
@@ -289,7 +292,6 @@ class DashboardBookmarkRows {
 
 
     canonicalBookmarkURLKey(raw) {
-        const d = this.dash;
         if (typeof BookmarkUrlUtils !== 'undefined' && typeof BookmarkUrlUtils.canonicalBookmarkURLKey === 'function') {
             return BookmarkUrlUtils.canonicalBookmarkURLKey(raw);
         }
@@ -308,7 +310,6 @@ class DashboardBookmarkRows {
 
 
     bookmarkMatchesCanonicalUrl(candidate, bookmark) {
-        const d = this.dash;
         const key = this.canonicalBookmarkURLKey(bookmark?.url || '');
         if (!key) {
             return false;
@@ -956,7 +957,6 @@ class DashboardBookmarkRows {
 
 
     findBookmarkIndexByReference(list, bookmarkRef) {
-        const d = this.dash;
         const original = bookmarkRef?.original || {};
         const originalUrl = String(original.url || '').trim();
         const originalName = String(original.name || '').trim();
@@ -982,7 +982,6 @@ class DashboardBookmarkRows {
 
 
     createBookmarkElement(bookmark, categoryId, allowInlineEdit = true) {
-        const d = this.dash;
         const row = document.createElement('div');
         this.populateBookmarkRowView(row, bookmark, categoryId, allowInlineEdit);
         return row;
@@ -1085,10 +1084,6 @@ class DashboardBookmarkRows {
     }
 
 
-    syncAllBookmarksMetadata(updatedBookmark) {
-        const d = this.dash;
-        this.syncBookmarkMetadataAcrossViews(updatedBookmark, this.resolveBookmarkPageId(updatedBookmark));
-    }
 
 
     syncBookmarkGridA11y() {
@@ -1167,7 +1162,6 @@ class DashboardBookmarkRows {
 
 
     _hashForA11yId(value) {
-        const d = this.dash;
         const str = String(value || '');
         let hash = 0;
         for (let i = 0; i < str.length; i += 1) {
@@ -1178,7 +1172,6 @@ class DashboardBookmarkRows {
 
 
     getBookmarkGridElement() {
-        const d = this.dash;
         const root = document.getElementById('dashboard-layout');
         if (!root) {
             return null;
@@ -1746,7 +1739,6 @@ class DashboardBookmarkRows {
 
 
     _quickMoveToCategory(bookmark, categoryId) {
-        const d = this.dash;
         const ref = this.resolveBookmarkReference(bookmark);
         if (!ref) {
             return;
@@ -1908,7 +1900,6 @@ class DashboardBookmarkRows {
 
 
     _closeActionPopovers() {
-        const d = this.dash;
         this._closeMovePopover();
         this._closeDeletePopover();
         this._closeTagPopover();
@@ -1916,7 +1907,6 @@ class DashboardBookmarkRows {
 
 
     _positionActionPopoverBeside(pop, anchorEl) {
-        const d = this.dash;
         if (!(pop instanceof HTMLElement) || !(anchorEl instanceof HTMLElement)) {
             return;
         }
@@ -1934,7 +1924,6 @@ class DashboardBookmarkRows {
 
 
     _attachActionPopoverPositioning(pop, anchorEl) {
-        const d = this.dash;
         this._positionActionPopoverBeside(pop, anchorEl);
         // One reposition per frame. Scroll fires far faster than the popover can
         // move, and each run reads offsetWidth/offsetHeight and then writes two
@@ -2007,7 +1996,6 @@ class DashboardBookmarkRows {
      *    the item itself, which is the convention there.
      */
     _focusActionPopoverItem(items, idx, { syncAriaSelected = false } = {}) {
-        const d = this.dash;
         const target = items[idx];
         const listbox = target?.closest?.('[role="listbox"]') || null;
 

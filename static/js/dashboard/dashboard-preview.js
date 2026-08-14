@@ -200,7 +200,6 @@ class DashboardPreview {
 
 
     extractDomainFromUrl(url) {
-        const d = this.dash;
         try {
             return new URL(url).hostname || '';
         } catch (_error) {
@@ -504,7 +503,6 @@ class DashboardPreview {
 
 
     dismissBookmarkPreviewInteractions() {
-        const d = this.dash;
         const hoverLinks = document.querySelectorAll('.bookmark-open');
         hoverLinks.forEach((linkEl) => {
             if (linkEl && linkEl._previewHoverTimer) {

@@ -663,7 +663,6 @@ class DashboardToolbar {
 
 
     isTagCloudTipRelevant() {
-        const d = this.dash;
         return this.isTagCloudDesktopShortcutVisible()
             && window.DashboardTagCloud?.libraryHasTags?.() === true;
     }

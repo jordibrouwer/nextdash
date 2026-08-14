@@ -20,7 +20,6 @@ class DashboardNotifications {
 
 
     showGroupedNotification(key, count, buildMessage, type = 'success', options = {}) {
-        const d = this.dash;
         if (!window.AppNotification?.showGrouped) {
             this.showNotification(buildMessage(count), type, options);
             return;
@@ -62,7 +61,6 @@ class DashboardNotifications {
 
 
     notifyDashboard(key, fallback, type = 'success', options = {}) {
-        const d = this.dash;
         const message = this.tDashboard(key, fallback);
         if (type === 'error') {
             this.showErrorNotification(message, options);
@@ -73,7 +71,6 @@ class DashboardNotifications {
 
 
     notifyConfig(key, fallback, type = 'success', options = {}) {
-        const d = this.dash;
         const message = this.tConfig(key, fallback);
         if (type === 'error') {
             this.showErrorNotification(message, options);

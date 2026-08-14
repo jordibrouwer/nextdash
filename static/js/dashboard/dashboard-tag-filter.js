@@ -7,7 +7,6 @@ class DashboardTagFilter {
     }
 
     normalizeTagFilters(tags) {
-        const d = this.dash;
         const list = Array.isArray(tags) ? tags : (tags ? [tags] : []);
         const seen = new Set();
         const normalized = [];
@@ -22,25 +21,21 @@ class DashboardTagFilter {
 
 
     tagFiltersKey(tags) {
-        const d = this.dash;
         return this.normalizeTagFilters(tags).join('\u0001');
     }
 
 
     tagFiltersEqual(a, b) {
-        const d = this.dash;
         return this.tagFiltersKey(a) === this.tagFiltersKey(b);
     }
 
 
     hasActiveTagFilters(tags = this.dash._tagFilters) {
-        const d = this.dash;
         return this.normalizeTagFilters(tags).length > 0;
     }
 
 
     formatTagFilterTagsLabel(tags = this.dash._tagFilters) {
-        const d = this.dash;
         return this.normalizeTagFilters(tags).map((tag) => `#${tag}`).join(', ');
     }
 
@@ -124,7 +119,6 @@ class DashboardTagFilter {
 
 
     clearTagFilter() {
-        const d = this.dash;
         void this.setTagFilters([], { animate: true });
     }
 
@@ -158,7 +152,6 @@ class DashboardTagFilter {
 
 
     getBookmarksForTagFilter(tag) {
-        const d = this.dash;
         return this.getBookmarksForTagFilters([tag]);
     }
 
@@ -299,7 +292,6 @@ class DashboardTagFilter {
 
 
     setupTagFilterIndicator() {
-        const d = this.dash;
         this.updateTagFilterIndicator();
     }
 
@@ -315,7 +307,6 @@ class DashboardTagFilter {
 
 
     getTagFilterMatchedBookmarksWithUrls() {
-        const d = this.dash;
         return this.getBookmarksForTagFilters().filter(
             (bookmark) => bookmark && String(bookmark.url || '').trim()
         );
@@ -777,7 +768,6 @@ class DashboardTagFilter {
 
 
     _appendTagFilterToolbarButton(actions, { label, className = '', onClick }) {
-        const d = this.dash;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `recent-bookmarks-open-btn modal-button tag-filter-bulk-btn ${className}`.trim();
