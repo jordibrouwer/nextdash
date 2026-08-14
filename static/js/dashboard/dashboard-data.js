@@ -740,10 +740,45 @@ class DashboardData {
         },
     ];
 
+    /**
+     * Remember where the user was on the page they are leaving.
+     *
+     * Read before the grid is swapped out — once renderDashboard has run, the
+     * document height belongs to the new page and window.scrollY has already
+     * been clamped to it.
+     */
+    rememberScrollForPage(pageId) {
+        const d = this.dash;
+        if (!Number.isFinite(pageId) || pageId <= 0 || d.activeView !== 'bookmarks') {
+            return;
+        }
+        if (!d._pageScrollPositions) {
+            d._pageScrollPositions = new Map();
+        }
+        d._pageScrollPositions.set(pageId, window.scrollY || 0);
+    }
+
+    /**
+     * Consume the remembered offset for a page, if there is one.
+     *
+     * Consumed, not just read: the offset describes one particular departure,
+     * and leaving it behind would make a later deliberate visit to that page
+     * land halfway down for no reason the user can see.
+     */
+    takeRememberedScroll(pageId) {
+        const key = Number(pageId);
+        const stored = this.dash._pageScrollPositions?.get(key);
+        this.dash._pageScrollPositions?.delete(key);
+        return Number.isFinite(stored) ? stored : 0;
+    }
+
     _applyLoadedPageData(targetPageId, bookmarks, categories, options = {}) {
         const d = this.dash;
         const { skipRender = false, animate = false } = options;
         const previousPageId = Number(d.currentPageId);
+        if (previousPageId !== targetPageId) {
+            this.rememberScrollForPage(previousPageId);
+        }
         // Three signals, because each alone has a blind spot:
         //  - the hash, for startup: the initial page load runs before #health/#inbox
         //    is consumed, so activeView is still 'bookmarks' and writing #<n> here
@@ -788,8 +823,16 @@ class DashboardData {
         if (d.searchComponent) {
             d.updateSearchComponent();
             if (!skipRender) {
+                const restoreTo = this.takeRememberedScroll(targetPageId);
                 window.scrollTo({ top: 0, behavior: 'instant' });
                 d.renderDashboard({ animate });
+                // After the render, or there is nothing tall enough to scroll to
+                // yet. A page that has since grown shorter clamps itself.
+                if (restoreTo > 0) {
+                    requestAnimationFrame(() => {
+                        window.scrollTo({ top: restoreTo, behavior: 'instant' });
+                    });
+                }
 
                 if (d.keyboardNavigation) {
                     if (d.keyboardNavigation.isNavigating()) {
@@ -1018,7 +1061,14 @@ class DashboardData {
         d.config?.repaintBookmarksFilters?.();
         d.config?.repaintBookmarksList?.();
 
-        const renderOpts = { incremental: false, animate, despiteModal };
+        // Not `incremental: false`. Every add/edit/delete/move/tag change comes
+        // through here, and forcing the full rebuild threw away the grid, every
+        // DragReorder instance, the scroll position and the focused row for
+        // what is usually a single changed row. The incremental path decides
+        // for itself: canAttemptDataPatch() bails on a layout-settings change
+        // and categoryStructureMatches() bails when categories were added,
+        // removed or reordered, both falling through to the full render below.
+        const renderOpts = { animate, despiteModal };
 
         if (d.activeView === 'health' && d.health?.isEnabled?.()) {
             if (d.isInlineEditActive() && !despiteModal) {

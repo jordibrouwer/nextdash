@@ -2199,7 +2199,12 @@ class DashboardInlineEdit {
         try {
             if (row) {
                 row.classList.add('bookmark-move-out');
-                await new Promise(resolve => setTimeout(resolve, 320));
+                // Skipped under reduced motion: the animation is collapsed to a
+                // frame there, so waiting its full length was a dead pause on
+                // every cross-page move with nothing to show for it.
+                if (typeof prefersReducedMotion !== 'function' || !prefersReducedMotion()) {
+                    await new Promise(resolve => setTimeout(resolve, ANIM.BOOKMARK_MOVE_OUT));
+                }
             }
 
             // No ensureBookmarkMutationSnapshot() here: that sets

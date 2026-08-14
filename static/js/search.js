@@ -25,6 +25,21 @@ class SearchComponent {
     static STATUS_FILTER_VALUES = new Set([
         'online', 'offline', 'broken', 'ok', 'pinned', 'unpinned', 'checked', 'unchecked',
     ]);
+
+    /**
+     * Every filter key the parser understands, in one place.
+     *
+     * The autocomplete used to carry its own hardcoded list of four, so
+     * `opened:` and `added:` worked when typed in full but were invisible to the
+     * hint panel and to the incomplete/complete-query checks — the latter
+     * meaning `opened:week` never counted as a finished filter and autocomplete
+     * kept firing over real results.
+     */
+    static FILTER_KEYS = ['category', 'status', 'page', 'tag', 'opened', 'added'];
+
+    /** Age words shared by `opened:` and `added:` — see matchesAgeFilter. */
+    static AGE_FILTER_VALUES = new Set(['today', 'week', 'month', 'year']);
+
     static TOP_TAG_FILTER_SUGGESTIONS = 20;
 
     constructor(bookmarksForSearch, currentBookmarks, allBookmarks, settings = {}, language = null, finders = [], pages = []) {
@@ -934,11 +949,12 @@ class SearchComponent {
             return false;
         }
         if (!token.includes(':')) {
-            return ['category', 'status', 'page', 'tag'].some((prefix) => (
+            return SearchComponent.FILTER_KEYS.some((prefix) => (
                 prefix.startsWith(token) || token.startsWith(prefix)
             ));
         }
-        return /^(category|status|page|tag):/.test(token);
+        const key = token.slice(0, token.indexOf(':'));
+        return SearchComponent.FILTER_KEYS.includes(key);
     }
 
     _isCompleteFilterQuery(raw) {
@@ -964,6 +980,15 @@ class SearchComponent {
             if (lower.startsWith('page:')) {
                 const pageValue = lower.slice(5);
                 return pageValue === 'current' || pageValue === 'all' || /^\d+$/.test(pageValue);
+            }
+            if (lower.startsWith('opened:')) {
+                const value = lower.slice(7);
+                // `never` only says anything about a bookmark that was never
+                // opened, so it is accepted here but not under `added:`.
+                return value === 'never' || SearchComponent.AGE_FILTER_VALUES.has(value);
+            }
+            if (lower.startsWith('added:')) {
+                return SearchComponent.AGE_FILTER_VALUES.has(lower.slice(6));
             }
             return false;
         });
@@ -1017,6 +1042,21 @@ class SearchComponent {
                 shortcut: '↳',
                 name: this.dashboardLabel('filterByTag', 'Filter by tag (example: tag:work)'),
                 completion: 'tag: ',
+                type: 'filter-completion',
+            },
+            {
+                shortcut: '↳',
+                name: this.dashboardLabel(
+                    'filterByOpened',
+                    'Filter by when it was last opened (never/today/week/month/year)',
+                ),
+                completion: 'opened: ',
+                type: 'filter-completion',
+            },
+            {
+                shortcut: '↳',
+                name: this.dashboardLabel('filterByAdded', 'Filter by when it was added (today/week/month/year)'),
+                completion: 'added: ',
                 type: 'filter-completion',
             },
         ];
@@ -1103,6 +1143,12 @@ class SearchComponent {
             if ('tag'.startsWith(currentToken) && currentToken.length >= 2) {
                 partialHints.push(toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)')));
             }
+            if ('opened'.startsWith(currentToken) && currentToken.length >= 2) {
+                partialHints.push(toCompletion('opened:', t('filterByOpened', 'Filter by when it was last opened (never/today/week/month/year)')));
+            }
+            if ('added'.startsWith(currentToken) && currentToken.length >= 2) {
+                partialHints.push(toCompletion('added:', t('filterByAdded', 'Filter by when it was added (today/week/month/year)')));
+            }
 
             const combined = [...valueHits, ...partialHints];
             if (combined.length > 0) {
@@ -1171,6 +1217,29 @@ class SearchComponent {
                 `tag:${tag}`,
                 t('filterCompletionTag', 'Tag: {value}', { value: tag })
             ));
+        }
+
+        // The age words are a closed vocabulary, so they can be offered the same
+        // way status values are. `never` is only on `opened:` — a bookmark has
+        // no "never added" state.
+        if (currentToken.startsWith('opened:') || currentToken.startsWith('added:')) {
+            const key = currentToken.startsWith('opened:') ? 'opened' : 'added';
+            const value = currentToken.slice(key.length + 1);
+            const entries = [
+                ['today', t('filterAgeToday', 'Within the last day')],
+                ['week', t('filterAgeWeek', 'Within the last week')],
+                ['month', t('filterAgeMonth', 'Within the last month')],
+                ['year', t('filterAgeYear', 'Within the last year')],
+            ];
+            if (key === 'opened') {
+                entries.push(['never', t('filterAgeNever', 'Never opened')]);
+            }
+            return entries
+                .filter(([word]) => word.startsWith(value))
+                .map(([word, desc]) => toCompletion(
+                    `${key}:${word}`,
+                    t('filterAgeEntry', '{key}:{value} — {desc}', { key, value: word, desc })
+                ));
         }
 
         return [];

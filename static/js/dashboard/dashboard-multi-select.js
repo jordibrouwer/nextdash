@@ -669,6 +669,34 @@ class DashboardMultiSelect {
         failed();
     }
 
+    /**
+     * Drop the trash entries an undo has just made redundant.
+     *
+     * Undo restores through saveBookmarkOrder rather than through the trash, so
+     * without this the bookmarks come back on the page *and* stay in the trash.
+     * Matched on page and URL rather than on id, because record() assigns those
+     * server-side and does not hand them back.
+     *
+     * Best-effort, like the category undo: a stale entry is untidy, a blocked
+     * undo is not.
+     */
+    async dropRestoredTrashEntries(entries) {
+        try {
+            const data = await window.DashboardTrash?.list?.();
+            const items = data?.items || [];
+            for (const entry of entries) {
+                const hit = items.find((item) => item.kind !== 'category'
+                    && Number(item.pageId) === Number(entry.pageId)
+                    && String(item.bookmark?.url || '') === String(entry.bookmark?.url || ''));
+                if (hit) {
+                    await window.DashboardTrash.remove(hit.id);
+                }
+            }
+        } catch (_error) {
+            /* leave them; the restore itself already succeeded */
+        }
+    }
+
     async deleteSelected() {
         const d = this.dash;
         const refs = this.resolveRefs();
@@ -714,6 +742,19 @@ class DashboardMultiSelect {
 
         const saved = await d.saveBookmarkOrder();
         if (!saved) {
+            // The rows are already spliced out and the selection already
+            // cleared, so a silent return left the user watching bookmarks
+            // vanish with no sign the write failed. Put them back in the order
+            // they came from and say so.
+            [...trashed].sort((a, b) => a.index - b.index).forEach((entry) => {
+                d.bookmarks.splice(entry.index, 0, entry.bookmark);
+                d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+            });
+            d.pendingReorderSnapshot = null;
+            d.renderDashboard();
+            d.showErrorNotification?.(
+                this.t('dashboard.multiSelectDeleteFailed', 'Could not delete the selected bookmarks')
+            );
             return;
         }
         await window.DashboardTrash?.record(trashed, 'dashboard-multi-select');
@@ -722,7 +763,30 @@ class DashboardMultiSelect {
             count,
             (n) => this.t('dashboard.multiSelectDeleted', 'Deleted {count} bookmark(s)')
                 .replace('{count}', String(n)),
-            'success'
+            'success',
+            {
+                // Same fast path the single delete offers (see
+                // deleteBookmarkInline): the trash catches it an hour later,
+                // the toast catches it now. Ascending index order, because
+                // each splice shifts everything after it.
+                duration: 8000,
+                undoCallback: async () => {
+                    [...trashed].sort((a, b) => a.index - b.index).forEach((entry) => {
+                        d.bookmarks.splice(entry.index, 0, entry.bookmark);
+                        d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+                    });
+                    d.pendingReorderSnapshot = null;
+                    try {
+                        await d.saveBookmarkOrder();
+                        await this.dropRestoredTrashEntries(trashed);
+                        await d.data?.refreshAfterBookmarkMutation?.({
+                            pageIds: [...new Set(trashed.map((entry) => entry.pageId))],
+                        });
+                    } catch (_error) {
+                        // saveBookmarkOrder surfaces its own errors and reverts.
+                    }
+                }
+            }
         );
     }
 }

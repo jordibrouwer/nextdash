@@ -308,6 +308,9 @@ class DashboardRenderCore {
         if (d.hasActiveTagFilters()) {
             d._categoryListsCache = null;
             d.renderTagFilterDashboard(container, options);
+            // After the render, not before: the indicator hides itself when the
+            // grid's own banner is on screen, and that banner is built in there.
+            d.updateTagFilterIndicator();
             return;
         }
 

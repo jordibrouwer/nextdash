@@ -250,11 +250,18 @@ class DashboardToolbar {
             }
         };
 
+        // Resolved once, like toolbarButtons above. This runs on every
+        // pointermove, and re-querying four selectors per mouse move cost a
+        // document query plus a style resolution for each — for elements that do
+        // not move between renders. Rebound on the next renderToolbar anyway.
+        const headerButtons = headerDefs
+            .map((def) => ({ def, btn: document.querySelector(def.selector) }))
+            .filter((entry) => entry.btn);
+
         const syncToolbarKbdTooltip = () => {
-            for (const def of headerDefs) {
+            for (const { def, btn } of headerButtons) {
                 if (def.when && !def.when()) continue;
-                const btn = document.querySelector(def.selector);
-                if (btn?.matches(':hover') || btn?.matches(':focus-visible')) {
+                if (btn.matches(':hover') || btn.matches(':focus-visible')) {
                     show(btn, def.labelKey, def.keys, { below: true });
                     return;
                 }
@@ -274,13 +281,28 @@ class DashboardToolbar {
             hide();
         };
 
+        // Pointermove fires far faster than the tooltip can change, and each run
+        // resolves :hover on every toolbar button — a style recalc per event.
+        // One run per frame is indistinguishable to the eye. Focus changes stay
+        // unthrottled: those are discrete and must land immediately.
+        let rafId = 0;
+        const syncOnNextFrame = () => {
+            if (rafId) return;
+            rafId = requestAnimationFrame(() => {
+                rafId = 0;
+                syncToolbarKbdTooltip();
+            });
+        };
+
         if (d._toolbarKbdTooltipSync) {
-            document.removeEventListener('pointermove', d._toolbarKbdTooltipSync);
+            document.removeEventListener('pointermove', d._toolbarKbdTooltipPointerSync
+                || d._toolbarKbdTooltipSync);
             document.removeEventListener('focusin', d._toolbarKbdTooltipSync);
             document.removeEventListener('focusout', d._toolbarKbdTooltipSync);
         }
         d._toolbarKbdTooltipSync = syncToolbarKbdTooltip;
-        document.addEventListener('pointermove', syncToolbarKbdTooltip, { passive: true });
+        d._toolbarKbdTooltipPointerSync = syncOnNextFrame;
+        document.addEventListener('pointermove', syncOnNextFrame, { passive: true });
         document.addEventListener('focusin', syncToolbarKbdTooltip);
         document.addEventListener('focusout', syncToolbarKbdTooltip);
 
@@ -303,10 +325,14 @@ class DashboardToolbar {
     teardownToolbarKbdTooltips() {
         const d = this.dash;
         if (d._toolbarKbdTooltipSync) {
-            document.removeEventListener('pointermove', d._toolbarKbdTooltipSync);
+            // pointermove is bound to the frame-throttled wrapper, not to the
+            // sync itself — removing the wrong reference leaves it running.
+            document.removeEventListener('pointermove',
+                d._toolbarKbdTooltipPointerSync || d._toolbarKbdTooltipSync);
             document.removeEventListener('focusin', d._toolbarKbdTooltipSync);
             document.removeEventListener('focusout', d._toolbarKbdTooltipSync);
             d._toolbarKbdTooltipSync = null;
+            d._toolbarKbdTooltipPointerSync = null;
         }
         document.getElementById('toolbar-kbd-tooltip')?.remove();
     }

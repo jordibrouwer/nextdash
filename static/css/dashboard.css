@@ -642,7 +642,17 @@ body[data-side-margin="airy"] {
     opacity: 0.55;
 }
 
+/* Shown only while a tag filter is on — updateTagFilterIndicator sets `hidden`
+   the rest of the time, and [hidden] would otherwise lose to this rule. */
 .tag-filter-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.tag-filter-indicator[hidden] {
     display: none;
 }
 
@@ -4589,14 +4599,25 @@ body.no-animations .bookmark-move-out {
     #dashboard-layout.page-transition,
     .category.animate-enter,
     .bookmark-link.animate-enter,
-    .bookmark-inline-form,
-    .bookmark-move-out { animation: none !important; transform: none !important; opacity: 1 !important; }
-    /* Decorative looping */
+    .bookmark-inline-form { animation: none !important; transform: none !important; opacity: 1 !important; }
+
+    /* Near-zero rather than `none`, matching reduced-motion.css: each of these
+       classes is removed again by an `animationend` listener with { once: true }
+       (bookmark-move-out in dashboard-inline-edit, bookmark-copy-flash in four
+       copy paths, bookmark-pulse in dashboard-bookmark-rows, deep-link-focus in
+       dashboard-page-nav). `animation: none` fires no event, so the listener
+       never ran and the class stayed on the row for the rest of the session.
+       There is nothing to see either way — the animation is over in a frame. */
+    .bookmark-move-out { animation-duration: 0.01ms !important; transform: none !important; opacity: 1 !important; }
+    .bookmark-link.bookmark-deep-link-focus,
+    .bookmark-link.bookmark-copy-flash::after,
+    .bookmark-link.bookmark-flash::after,
+    .layout-launcher .bookmark-link.bookmark-pulse {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+    /* Decorative looping, nothing waits on it */
     .health-link a { animation: none !important; }
-    .bookmark-link.bookmark-deep-link-focus { animation: none !important; }
-    .bookmark-link.bookmark-copy-flash::after { animation: none !important; }
-    .bookmark-link.bookmark-flash::after { animation: none !important; }
-    .layout-launcher .bookmark-link.bookmark-pulse { animation: none !important; }
     /* Promo balloons (entrance + float) */
     .dashboard-feature-promo-balloon,
     .dashboard-g-jump-promo-balloon,

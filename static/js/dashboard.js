@@ -12,8 +12,20 @@ const ANIM = Object.freeze({
     CATEGORY_ENTER_BASE:   150,   // ms base delay before first category enter animation clears
     PAGE_TRANSITION:       250,   // ms page-transition CSS class lifetime
     BOOKMARK_MOVE_IN:      180,   // ms bookmark-move-in animation duration after reorder
+    BOOKMARK_MOVE_OUT:     320,   // ms bookmark-move-out animation, must match dashboard.css
     STALE_FLASH:          2200,   // ms stale-bookmark highlight flash duration
 });
+
+/**
+ * Does the viewer want motion suppressed?
+ *
+ * reduced-motion.css already collapses the animations themselves, but code that
+ * *waits* the animation's length has to ask, or a reduced-motion user pays the
+ * full delay for something they never see.
+ */
+function prefersReducedMotion() {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+}
 
 
 const _sessionTags = new Set();
