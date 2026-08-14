@@ -152,8 +152,17 @@ class KeyboardNavigation {
             // these keys meant nothing else, but Shift+S also opens config, and
             // adding share to this block took that shortcut away whenever no
             // bookmark was selected. Fall through instead of swallowing.
+            // Both, in this order: _resolveActionPopoverRow adopts the focused
+            // row and sets currentIndex, which getSelectedBookmark then reads —
+            // so asking for the bookmark first would answer null on a row that
+            // is about to become the current one. Gating on the bookmark as
+            // well is what these actions actually need; a row whose bookmark
+            // cannot be resolved would otherwise swallow the key for a method
+            // that returns early. Reachable only by stripping a row's data
+            // attributes by hand, so this closes a gap rather than a reported
+            // fault.
             if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-                && this._resolveActionPopoverRow()) {
+                && this._resolveActionPopoverRow() && this.getSelectedBookmark()) {
                 if (e.code === 'KeyM') {
                     e.preventDefault();
                     e.stopImmediatePropagation();
