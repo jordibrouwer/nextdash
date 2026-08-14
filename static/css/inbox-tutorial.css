@@ -1,0 +1,166 @@
+/**
+ * The one-time Inbox tutorial modal.
+ *
+ * Same shape as health-tutorial.css: the app's modal chrome carries the title
+ * and buttons, and only the reading column between them is styled here. Kept
+ * as its own sheet rather than folded into the health one so neither tour's
+ * visuals can drift into the other's.
+ */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.inbox-tutorial-modal) .modal {
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.inbox-tutorial-modal) .modal {
+    transform: translateY(0) scale(1);
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.inbox-tutorial-modal) .modal {
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
+.inbox-tutorial-progress {
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin: 0 0 0.4rem;
+}
+
+.inbox-tutorial-step-title {
+    margin: 0 0 0.7rem;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.inbox-tutorial-step-body p {
+    margin: 0 0 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.inbox-tutorial-step-body p:last-child {
+    margin-bottom: 0;
+}
+
+.inbox-tutorial-closing {
+    color: var(--text-primary) !important;
+    font-style: italic;
+}
+
+/* The "here is the actual control" strip above each step's prose. */
+.inbox-tutorial-visual {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
+    margin: 0 0 0.9rem;
+    border: 1px dashed var(--border-secondary);
+    border-radius: 0.5rem;
+    background: var(--background-secondary);
+}
+
+.inbox-tutorial-visual-url {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    flex: 1 1 8rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inbox-tutorial-visual-sources {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    flex: 0 0 auto;
+}
+
+.inbox-tutorial-visual-hint {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    flex: 1 1 10rem;
+    min-width: 0;
+}
+
+/* The note preview reads as the thing someone typed, not as chrome. */
+.inbox-tutorial-visual-note {
+    flex: 1 1 10rem;
+    min-width: 0;
+    font-size: 0.76rem;
+    font-style: italic;
+    color: var(--text-secondary);
+    border-left: 2px solid var(--border-secondary);
+    padding-left: 0.5rem;
+}
+
+.inbox-tutorial-chip {
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-secondary);
+    color: var(--text-secondary);
+    background: var(--background-primary);
+}
+
+/* Mirrors the kbd chips in the inbox legend, so the key someone reads here is
+   the same shape as the one under the real list. */
+.inbox-tutorial-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.inbox-tutorial-key kbd {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.3rem;
+    border: 1px solid var(--border-secondary);
+    background: var(--background-primary);
+    color: var(--text-primary);
+}
+
+.inbox-tutorial-visual--keys {
+    gap: 0.55rem;
+}
+
+.inbox-tutorial-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 1.2rem;
+}
+
+.inbox-tutorial-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--border-secondary);
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.inbox-tutorial-dot.is-active {
+    background: var(--accent-primary);
+    transform: scale(1.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body:has(#dashboard-layout) #app-modal.modal-overlay:has(.inbox-tutorial-modal) .modal,
+    body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.inbox-tutorial-modal) .modal {
+        transform: none !important;
+        transition: opacity 0.15s ease !important;
+    }
+
+    .inbox-tutorial-dot {
+        transition: none;
+    }
+}

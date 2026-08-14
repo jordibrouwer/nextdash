@@ -113,6 +113,18 @@ async function markHealthTutorialSeen(page) {
 }
 
 /**
+ * The same, for the one-time Inbox tutorial. openInboxView() checks the tip
+ * before it even fetches the tour's script, so marking it here is enough to
+ * keep the modal out of every spec that only wants the inbox list.
+ * @param {import('@playwright/test').Page} page
+ */
+async function markInboxTutorialSeen(page) {
+    await page.evaluate(() => {
+        window.DiscoverabilityState?.markTipSeen?.('inboxTutorialV1', { persist: false });
+    });
+}
+
+/**
  * Dismiss What's new, search promo, and grid keyboard promo when they block interaction.
  * @param {import('@playwright/test').Page} page
  */
@@ -121,6 +133,7 @@ async function dismissBlockingOverlays(page) {
     await dismissAppNotificationIfPresent(page);
     await suppressStatusEmptyHint(page);
     await markHealthTutorialSeen(page);
+    await markInboxTutorialSeen(page);
     const searchPromo = page.locator('.dashboard-search-promo');
     if (await searchPromo.count()) {
         await searchPromo.locator('button').first().click();
@@ -470,6 +483,7 @@ module.exports = {
     dismissAppNotificationIfPresent,
     suppressStatusEmptyHint,
     markHealthTutorialSeen,
+    markInboxTutorialSeen,
     dismissBlockingOverlays,
     prepareDashboardInteraction,
     dismissOnboardingIfPresent,
