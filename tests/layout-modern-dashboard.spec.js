@@ -3,8 +3,7 @@ const { test, expect } = require('@playwright/test');
 const {
     markWhatsNewSeen,
     prepareDashboardInteraction,
-    openShortcutSearch,
-} = require('./e2e-helpers');
+    openShortcutSearch, resetDashboardData } = require('./e2e-helpers');
 
 /**
  * Modern layout coverage for the dashboard chrome and the overlay layer —
@@ -60,6 +59,14 @@ async function bothLayouts(page, selector, props) {
     const modern = await computed(page, selector, props);
     return { classic, modern };
 }
+
+// This file counts rows and indexes into the bookmark list, so what an earlier
+// spec left behind changes its answers. The suite shares one data directory.
+test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance != null, null, { timeout: 15_000 });
+    await resetDashboardData(page);
+});
 
 test.describe('modern layout — dashboard chrome', () => {
     test('turns the page tabs into a pill group', async ({ page }) => {

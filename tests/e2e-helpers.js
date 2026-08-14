@@ -425,7 +425,41 @@ async function waitForConfigReady(page) {
     );
 }
 
+/**
+ * Put the data directory back to a fresh install.
+ *
+ * The suite shares one data directory across all 170 spec files with no reset
+ * between them, so a spec that renames a category or deletes a bookmark changes
+ * what every later spec sees. Most cope; the ones that count rows or index into
+ * dashboardInstance.bookmarks do not, and they fail differently depending on
+ * what ran before them.
+ *
+ * /api/reset re-seeds the defaults on the way out (ResetAllData calls
+ * initializeDefaultFiles), so this restores the seven default bookmarks rather
+ * than leaving an empty install — measured at well under 100ms, cheap enough
+ * for a beforeEach in the specs that need it.
+ *
+ * Opt-in rather than global: a spec that is happy with whatever it finds should
+ * not pay for a reset, and a few deliberately build on their own seeded state.
+ */
+async function resetDashboardData(page) {
+    const result = await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await api('/api/reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirm: true }),
+        });
+        return { ok: res.ok, status: res.status };
+    });
+    if (!result.ok) {
+        throw new Error(`resetDashboardData: /api/reset returned HTTP ${result.status}`);
+    }
+    return result;
+}
+
 module.exports = {
+    resetDashboardData,
     WRITE_TOKEN,
     DASHBOARD_WHATS_NEW_RELEASE,
     DEFAULT_DISCOVERABILITY_KEYS,

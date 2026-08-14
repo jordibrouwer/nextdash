@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, resetDashboardData } = require('./e2e-helpers');
 
 async function loadDashboard(page) {
     await page.goto('/');
@@ -65,6 +65,18 @@ async function openFirstEditor(page, stats = null) {
     await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
     await applyBookmarkStats(page, stats);
 }
+
+// Once for the file, not per test: this spec counts rows and indexes into the
+// bookmark list, so what an earlier *file* left behind changes its answers —
+// but several of its own tests build on state a previous one set up, which a
+// per-test reset would wipe.
+test.beforeAll(async ({ browser }) => {
+    const page = await browser.newPage();
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance != null, null, { timeout: 15_000 });
+    await resetDashboardData(page);
+    await page.close();
+});
 
 test.describe('config bookmarks editor', () => {
     test('the editor carries every field the old detail panel had', async ({ page }) => {
@@ -548,8 +560,19 @@ test.describe('bookmark statistics', () => {
 
     test('saving an edit does not clear the statistics', async ({ page }) => {
         await openBookmarks(page);
+        // Read from the rendered row, the way applyBookmarkStats seeds it.
+        // visibleBookmarks()[0] and the first DOM row are the same bookmark only
+        // while the list is in its default order — and the order is a setting
+        // now, so a spec that changed it made these two disagree.
         const target = await page.evaluate(() => {
-            const bm = window.dashboardInstance.config.visibleBookmarks()[0];
+            const cfg = window.dashboardInstance.config;
+            const key = document.querySelector('#config-bm-list .config-bm-row[data-bm-key]')
+                ?.getAttribute('data-bm-key');
+            const parsed = key ? cfg.parseBookmarkKey(key) : null;
+            const bm = parsed
+                ? window.dashboardInstance.allBookmarks.find(
+                    (b) => String(b.pageId) === String(parsed.pageId) && b.url === parsed.url)
+                : cfg.visibleBookmarks()[0];
             return { pageId: bm.pageId, url: bm.url };
         });
         await openFirstEditor(page, { openCount: 33, lastOpened: Date.now() - 3 * 60 * 60 * 1000 });

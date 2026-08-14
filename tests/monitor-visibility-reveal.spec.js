@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen } = require('./e2e-helpers');
+const { dismissOnboardingIfPresent, dismissBlockingOverlays, markWhatsNewSeen, resetDashboardData } = require('./e2e-helpers');
 
 /**
  * Monitored bookmarks on the dashboard, and the way back into the Health view.
@@ -38,6 +38,18 @@ async function setMode(page, index, mode) {
     await page.waitForTimeout(1200);
     return url;
 }
+
+// Once for the file, not per test: this spec counts rows and indexes into the
+// bookmark list, so what an earlier *file* left behind changes its answers —
+// but several of its own tests build on state a previous one set up, which a
+// per-test reset would wipe.
+test.beforeAll(async ({ browser }) => {
+    const page = await browser.newPage();
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance != null, null, { timeout: 15_000 });
+    await resetDashboardData(page);
+    await page.close();
+});
 
 test.describe('monitored bookmarks on the dashboard', () => {
     test('a monitored bookmark gets a status, like a periodic one', async ({ page }) => {

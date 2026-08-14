@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
+const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, resetDashboardData } = require('./e2e-helpers');
 
 /**
  * Tags were on every row as a data attribute and rendered nowhere. The chips go
@@ -12,6 +12,12 @@ async function load(page) {
     await page.goto('/');
     await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
+    await dismissBlockingOverlays(page);
+    await page.waitForFunction(() => (window.dashboardInstance?.bookmarks || []).length > 2,
+        null, { timeout: 15_000 });
+    await resetDashboardData(page);
+    await page.reload();
+    await page.waitForSelector('.bookmark-link', { timeout: 15_000 });
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => (window.dashboardInstance?.bookmarks || []).length > 2,
         null, { timeout: 15_000 });
@@ -32,6 +38,11 @@ const shortcutLefts = (page) => page.evaluate(() =>
         const s = r.querySelector('.bookmark-shortcut');
         return s ? Math.round(s.getBoundingClientRect().left) : null;
     }));
+
+// This file counts rows and indexes into the bookmark list, so what an earlier
+// spec left behind changes its answers. The suite shares one data directory.
+// Folded into load() rather than a beforeEach of its own: the reset needs a
+// loaded page, and a second navigation afterwards raced the seeding below.
 
 test.describe('tag chips on the grid', () => {
     test('off by default', async ({ page }) => {
