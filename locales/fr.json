@@ -486,6 +486,8 @@
     "tagFilterGroupAria": "Filtres tag actifs : {tags}, {count} sur cette page",
     "tagFilterTagsPair": "{first} ou {second}",
     "tagFilterChipClear": "Effacer le filtre tag",
+    "gridCountOne": "1 favori",
+    "gridCountMany": "{count} favoris",
     "tagFilterCountOne": "1 favori",
     "tagFilterCountMany": "{count} favoris",
     "tagFilterActiveTooltip": "Filtre : {tags}",

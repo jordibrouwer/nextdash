@@ -645,13 +645,33 @@ class DashboardToolbar {
             const badgeText = badge.textContent.trim();
             if (badgeText) parts.push(badgeText);
         }
+        // How many rows are actually on screen. This element is aria-live, and
+        // it was only ever refreshed on a page change — so narrowing the grid
+        // with a tag filter, or collapsing a category, changed what was there
+        // with nothing said about it. Adds and deletes were already covered:
+        // their toasts go through a live region of their own.
+        const rowCount = document.querySelectorAll(
+            '#dashboard-layout .bookmark-link[data-bookmark-url]:not(.is-overflow-hidden)'
+        ).length;
+        if (rowCount > 0) {
+            parts.push(rowCount === 1
+                ? (d.language?.t('dashboard.gridCountOne') || '1 bookmark')
+                : (d.language?.t('dashboard.gridCountMany') || '{count} bookmarks')
+                    .replace('{count}', String(rowCount)));
+        }
         if (!parts.length) {
             el.hidden = true;
             el.textContent = '';
             return;
         }
+        const next = parts.join(' · ');
+        // Writing the same string back into a live region announces it again.
+        if (el.textContent === next) {
+            el.hidden = false;
+            return;
+        }
         el.hidden = false;
-        el.textContent = parts.join(' · ');
+        el.textContent = next;
     }
 
 

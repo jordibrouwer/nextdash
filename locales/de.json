@@ -486,6 +486,8 @@
     "tagFilterGroupAria": "Aktive Tag-Filter: {tags}, {count} auf dieser Seite",
     "tagFilterTagsPair": "{first} oder {second}",
     "tagFilterChipClear": "Tag-Filter löschen",
+    "gridCountOne": "1 Lesezeichen",
+    "gridCountMany": "{count} Lesezeichen",
     "tagFilterCountOne": "1 Lesezeichen",
     "tagFilterCountMany": "{count} Lesezeichen",
     "tagFilterActiveTooltip": "Filter: {tags}",

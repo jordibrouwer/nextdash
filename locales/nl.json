@@ -489,6 +489,8 @@
     "tagFilterGroupAria": "Actieve tagfilters: {tags}, {count} op deze pagina",
     "tagFilterTagsPair": "{first} of {second}",
     "tagFilterChipClear": "Tagfilter wissen",
+    "gridCountOne": "1 bladwijzer",
+    "gridCountMany": "{count} bladwijzers",
     "tagFilterCountOne": "1 bladwijzer",
     "tagFilterCountMany": "{count} bladwijzers",
     "tagFilterActiveTooltip": "Filter: {tags}",

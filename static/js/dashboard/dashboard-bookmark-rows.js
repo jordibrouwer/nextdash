@@ -1140,6 +1140,10 @@ class DashboardBookmarkRows {
             'aria-label',
             d.language?.t('dashboard.bookmarksGridLabel') || 'Bookmarks'
         );
+
+        // Runs on every render, so it is where the live status line can notice
+        // the grid changed size. It rewrites nothing when the text is the same.
+        d.updateMiniStatusLine?.();
     }
 
     /**

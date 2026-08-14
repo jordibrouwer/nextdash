@@ -490,6 +490,8 @@
     "tagFilterGroupAria": "Active tag filters: {tags}, {count} on this page",
     "tagFilterTagsPair": "{first} or {second}",
     "tagFilterChipClear": "Clear tag filter",
+    "gridCountOne": "1 bookmark",
+    "gridCountMany": "{count} bookmarks",
     "tagFilterCountOne": "1 bookmark",
     "tagFilterCountMany": "{count} bookmarks",
     "tagFilterActiveTooltip": "Filtering: {tags}",

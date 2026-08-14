@@ -390,6 +390,21 @@ body[data-side-margin="airy"] {
 
 /* The accelerator is printed on the option rather than taught elsewhere, so the
    keyboard route is discoverable from the menu itself. */
+/* Keyboard hint on a menu row: pushed to the trailing edge so the labels stay
+   left-aligned and the keys line up as a column of their own. Same chip as
+   .check-mode-option-key, which sits inside a label rather than beside one. */
+.move-popover-item-key {
+    margin-left: auto;
+    padding: 0 0.25rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.2rem;
+    font-family: inherit;
+    font-size: 0.65rem;
+    line-height: 1.4;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
 .check-mode-option-key {
     padding: 0 0.25rem;
     border: 1px solid var(--border-secondary);

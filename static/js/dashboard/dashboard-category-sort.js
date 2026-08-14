@@ -299,6 +299,16 @@
             if (!controls.contains(e.target)) closeMenu();
         }
 
+        // ArrowDown opens it, which is what aria-haspopup="menu" promises and
+        // what every native menu button does. Only the click did before.
+        menuBtn.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowDown' || e.altKey || e.ctrlKey || e.metaKey) return;
+            if (controls.querySelector('.category-sort-menu')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            menuBtn.click();
+        });
+
         menuBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
