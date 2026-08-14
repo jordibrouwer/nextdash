@@ -23,15 +23,32 @@ async function openDashboard(page) {
     await page.waitForFunction(() => window.dashboardInstance?._bookmarksReady === true, null, { timeout: 20_000 });
 }
 
-/** Tick two rows the way a user does, and report what is selected. */
+/**
+ * Tick two rows the way a user does, and report what is selected.
+ *
+ * Walks to a row belonging to the page currently open before ticking: smart
+ * collections render rows from other pages, and a selection keyed to another
+ * page resolves to nothing here, so deleteSelected would quietly return before
+ * any of this is exercised.
+ */
 async function selectTwoBookmarks(page) {
     await page.evaluate(() => document.activeElement?.blur());
-    await page.keyboard.press('ArrowDown');
-    await expect
-        .poll(() => page.evaluate(() => window.dashboardInstance.keyboardNavigation?.currentIndex ?? -1))
-        .toBeGreaterThanOrEqual(0);
-    await page.keyboard.press('x');
-    await page.keyboard.press('x');
+    let ticked = 0;
+    for (let step = 0; step < 25 && ticked < 2; step += 1) {
+        await page.keyboard.press('ArrowDown');
+        const onCurrentPage = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const kn = d.keyboardNavigation;
+            const row = (kn?.navigableElements || [])[kn?.currentIndex ?? -1];
+            if (!row) return false;
+            const idx = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+            return Number.isFinite(idx) && idx >= 0 && Boolean(d.bookmarks[idx]);
+        });
+        if (!onCurrentPage) continue;
+        await page.keyboard.press('x');
+        ticked += 1;
+    }
+    expect(ticked, 'not enough rows on the current page to select two').toBe(2);
     await expect
         .poll(() => page.evaluate(() => window.dashboardInstance.multiSelect.count()))
         .toBe(2);

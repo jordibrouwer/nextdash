@@ -448,7 +448,12 @@ class DashboardBookmarkRows {
         const reorderHandle = document.createElement('div');
         reorderHandle.className = 'bookmark-reorder-handle';
         const dragLabel = d.formatDashboardLabel('dragToReorderAria', {}, 'Drag to reorder');
-        reorderHandle.setAttribute('aria-label', dragLabel);
+        // Hidden from assistive tech rather than labelled: it is a plain div with
+        // no role, no tab stop and nothing a key can do to it, so the label was
+        // announced by nothing and only promised an affordance that is not there.
+        // The keyboard route to the same result is Alt+↑/↓ on the row, which the
+        // cheat sheet lists. The title stays — that is the mouse user's tooltip.
+        reorderHandle.setAttribute('aria-hidden', 'true');
         reorderHandle.title = dragLabel;
         lead.appendChild(reorderHandle);
 
@@ -1086,6 +1091,28 @@ class DashboardBookmarkRows {
             return;
         }
 
+        // Exactly one row has to be reachable by Tab. Every row is built with
+        // tabIndex -1 for the roving tab stop, and KeyboardNavigation only hands
+        // one of them a 0 once it has walked the grid — which it does on the
+        // first arrow key, not on a render. So from the first paint until an
+        // arrow key was pressed, Tab skipped the entire grid: fourteen bookmarks
+        // and no way into them from the keyboard. This runs on every render, so
+        // it is the one place that can promise it.
+        const openLinks = [...grid.querySelectorAll('.bookmark-link a.bookmark-open')];
+        if (openLinks.length && !openLinks.some((link) => link.tabIndex === 0)) {
+            // The row the cursor is on when there is one, not simply the first:
+            // a full render rebuilds every row at -1, and putting the stop back
+            // on row 0 would walk the tab position away from where the user was
+            // every time anything on the page changed. The `keyboard-selected`
+            // class is no use here — KeyboardNavigation re-applies it after this
+            // runs — but its index survives the render, and it re-syncs anyway
+            // on its next update, so an off-by-one against a show-more toggle
+            // corrects itself.
+            const cursor = d.keyboardNavigation?.currentIndex ?? -1;
+            const target = (cursor >= 0 && openLinks[cursor]) || openLinks[0];
+            target.tabIndex = 0;
+        }
+
         const rowgroups = grid.querySelectorAll('.category[role="rowgroup"]');
         let totalRows = 0;
         rowgroups.forEach((group) => {
@@ -1268,7 +1295,7 @@ class DashboardBookmarkRows {
         };
         setFocus(focusedIdx);
 
-        let onOutside = null;
+        let unbindOutside = null;
         let unbindPosition = null;
         const close = () => {
             if (pop.parentNode) {
@@ -1278,10 +1305,8 @@ class DashboardBookmarkRows {
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
-            if (onOutside) {
-                document.removeEventListener('click', onOutside);
-                onOutside = null;
-            }
+            unbindOutside?.();
+            unbindOutside = null;
             if (d._movePopoverCleanup === close) {
                 d._movePopoverCleanup = null;
             }
@@ -1318,10 +1343,7 @@ class DashboardBookmarkRows {
         });
 
         document.addEventListener('keydown', onKey, true);
-        setTimeout(() => {
-            onOutside = (e) => { if (!pop.contains(e.target)) close(); };
-            document.addEventListener('click', onOutside);
-        }, 0);
+        unbindOutside = this._bindActionPopoverOutsideClose(pop, close, { anchorEl });
         requestAnimationFrame(() => setFocus(focusedIdx));
     }
 
@@ -1482,7 +1504,7 @@ class DashboardBookmarkRows {
             focusedIdx = firstCurrent >= 0 ? firstCurrent : 0;
         }
 
-        let onOutside = null;
+        let unbindOutside = null;
         let unbindPosition = null;
         let toggleInFlight = false;
 
@@ -1490,15 +1512,12 @@ class DashboardBookmarkRows {
             if (pop.parentNode) {
                 pop.remove();
             }
-            pop.removeEventListener('keydown', onKey, true);
             this._restoreActionPopoverFocus(previousFocus, anchorEl, bookmarkIndex);
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
-            if (onOutside) {
-                document.removeEventListener('click', onOutside);
-                onOutside = null;
-            }
+            unbindOutside?.();
+            unbindOutside = null;
             if (d._tagPopoverCleanup === close) {
                 d._tagPopoverCleanup = null;
             }
@@ -1571,13 +1590,12 @@ class DashboardBookmarkRows {
             });
         });
 
-        pop.addEventListener('keydown', onKey, true);
+        // Document capture only. A second capture listener on the popover never
+        // ran: document is the outer node, so it handles the key first and every
+        // branch of onKey calls stopImmediatePropagation.
         document.addEventListener('keydown', onKey, true);
         trapPopoverFocus();
-        setTimeout(() => {
-            onOutside = (e) => { if (!pop.contains(e.target)) close(); };
-            document.addEventListener('click', onOutside);
-        }, 0);
+        unbindOutside = this._bindActionPopoverOutsideClose(pop, close, { anchorEl });
         requestAnimationFrame(() => {
             trapPopoverFocus();
             requestAnimationFrame(() => trapPopoverFocus());
@@ -1666,7 +1684,7 @@ class DashboardBookmarkRows {
         };
         setFocus(focusedIdx);
 
-        let onOutside = null;
+        let unbindOutside = null;
         let unbindPosition = null;
         const close = () => {
             if (pop.parentNode) {
@@ -1676,10 +1694,8 @@ class DashboardBookmarkRows {
             unbindPosition?.();
             unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
-            if (onOutside) {
-                document.removeEventListener('click', onOutside);
-                onOutside = null;
-            }
+            unbindOutside?.();
+            unbindOutside = null;
             if (d._deletePopoverCleanup === close) {
                 d._deletePopoverCleanup = null;
             }
@@ -1717,10 +1733,7 @@ class DashboardBookmarkRows {
         });
 
         document.addEventListener('keydown', onKey, true);
-        setTimeout(() => {
-            onOutside = (e) => { if (!pop.contains(e.target)) close(); };
-            document.addEventListener('click', onOutside);
-        }, 0);
+        unbindOutside = this._bindActionPopoverOutsideClose(pop, close, { anchorEl });
         requestAnimationFrame(() => setFocus(focusedIdx));
     }
 
@@ -1926,18 +1939,86 @@ class DashboardBookmarkRows {
     }
 
 
+    /**
+     * Close a popover when the next pointer gesture lands outside it.
+     *
+     * Bound on the next tick, or the very click that opened the popover closes
+     * it again. `contextmenu` as well as `click`, because a right-click
+     * elsewhere opens the native menu without ever producing a click — the row
+     * popovers used to stay open behind it, which the bookmark context menu had
+     * already fixed for itself.
+     *
+     * @returns {() => void} unbind
+     */
+    _bindActionPopoverOutsideClose(pop, close, { anchorEl = null } = {}) {
+        let handler = null;
+        const timer = setTimeout(() => {
+            handler = (e) => {
+                if (pop.contains(e.target)) return;
+                // The anchor's own gesture is what toggles the popover; letting
+                // this handler see it too would close and reopen in one click.
+                if (anchorEl && (e.target === anchorEl || anchorEl.contains(e.target))) return;
+                close();
+            };
+            document.addEventListener('click', handler, true);
+            document.addEventListener('contextmenu', handler, true);
+        }, 0);
+
+        return () => {
+            clearTimeout(timer);
+            if (!handler) return;
+            document.removeEventListener('click', handler, true);
+            document.removeEventListener('contextmenu', handler, true);
+            handler = null;
+        };
+    }
+
+
+    /**
+     * Move the highlight to one item of a popover.
+     *
+     * Two patterns, picked by the container's role, because the two ARIA
+     * widgets disagree about where focus belongs:
+     *
+     *  - `role="listbox"`: focus stays on the box and `aria-activedescendant`
+     *    names the active option. Individually focusing options is what a
+     *    listbox is specifically not supposed to do, and the tag popover was
+     *    already doing it the right way while Move, Delete and the tag-filter
+     *    move popover — the same surface, to a user — did not.
+     *  - anything else (the context menus, `role="menu"`): roving tabindex on
+     *    the item itself, which is the convention there.
+     */
     _focusActionPopoverItem(items, idx, { syncAriaSelected = false } = {}) {
         const d = this.dash;
+        const target = items[idx];
+        const listbox = target?.closest?.('[role="listbox"]') || null;
+
         items.forEach((el, i) => {
             el.classList.toggle('is-focused', i === idx);
-            el.tabIndex = i === idx ? 0 : -1;
+            el.tabIndex = listbox ? -1 : (i === idx ? 0 : -1);
             if (syncAriaSelected) {
                 el.setAttribute('aria-selected', String(i === idx));
             }
         });
-        const target = items[idx];
-        target?.scrollIntoView({ block: 'nearest' });
-        target?.focus({ preventScroll: true });
+
+        if (!target) {
+            listbox?.removeAttribute('aria-activedescendant');
+            return;
+        }
+        target.scrollIntoView({ block: 'nearest' });
+
+        if (!listbox) {
+            target.focus({ preventScroll: true });
+            return;
+        }
+        if (!target.id) {
+            target.id = `action-popover-opt-${idx}-${Math.random().toString(36).slice(2, 8)}`;
+        }
+        listbox.setAttribute('aria-activedescendant', target.id);
+        if (!listbox.hasAttribute('tabindex')) {
+            listbox.tabIndex = -1;
+        }
+        listbox.focus({ preventScroll: true });
     }
 
 
@@ -1963,7 +2044,30 @@ class DashboardBookmarkRows {
         const restoreTarget = (previousFocus && previousFocus.isConnected)
             ? previousFocus
             : anchorEl;
-        restoreTarget?.focus?.({ preventScroll: true });
+        if (restoreTarget?.isConnected) {
+            restoreTarget.focus({ preventScroll: true });
+            return;
+        }
+
+        // Everything the popover was anchored to is gone — the usual cause is
+        // the row itself having just been deleted. Focusing a detached element
+        // is a no-op, which would leave focus on <body>: the next Tab starts
+        // from the top of the page and arrow keys reach nothing. Hand it to the
+        // first row still on the grid, or to the grid itself if the page is now
+        // empty.
+        const firstRow = document.querySelector('#dashboard-layout .bookmark-link a.bookmark-open');
+        if (firstRow) {
+            firstRow.tabIndex = 0;
+            firstRow.focus({ preventScroll: true });
+            return;
+        }
+        const grid = document.getElementById('dashboard-layout');
+        if (grid) {
+            if (!grid.hasAttribute('tabindex')) {
+                grid.tabIndex = -1;
+            }
+            grid.focus({ preventScroll: true });
+        }
     }
 
 }

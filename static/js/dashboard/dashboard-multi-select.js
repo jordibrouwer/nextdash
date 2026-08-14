@@ -411,16 +411,18 @@ class DashboardMultiSelect {
         header.textContent = this.t('dashboard.multiSelectTagsTitle', 'Tag selection…');
         pop.appendChild(header);
 
+        let unbindOutside = null;
+        let unbindPosition = null;
         const close = () => {
             pop.remove();
-            document.removeEventListener('click', onOutside, true);
+            unbindOutside?.();
+            unbindOutside = null;
+            unbindPosition?.();
+            unbindPosition = null;
             document.removeEventListener('keydown', onKey, true);
             if (d._multiSelectTagsCleanup === close) {
                 d._multiSelectTagsCleanup = null;
             }
-        };
-        const onOutside = (e) => {
-            if (!pop.contains(e.target) && e.target !== anchorEl) close();
         };
         const onKey = (e) => {
             if (e.key === 'Escape') {
@@ -491,18 +493,36 @@ class DashboardMultiSelect {
         });
 
         document.body.appendChild(pop);
-        d._positionActionPopoverBeside?.(pop, anchorEl);
+
         // The shared helper centres the popover on its anchor, which is right for
         // a bookmark row but not here: the toolbar sits at the top-left, so a tall
         // tag list centred on a short button rides up over the bar it came from.
         // Align its top to the button and let it grow downward instead.
-        const anchorRect = anchorEl.getBoundingClientRect();
         const pad = window.DashboardPromoPlacement?.VIEWPORT_PAD ?? 8;
-        const maxTop = window.innerHeight - pop.offsetHeight - pad;
-        pop.style.top = `${Math.round(Math.max(pad, Math.min(anchorRect.top, maxTop)))}px`;
+        const reposition = () => {
+            d._positionActionPopoverBeside?.(pop, anchorEl);
+            const rect = anchorEl.getBoundingClientRect();
+            const maxTop = window.innerHeight - pop.offsetHeight - pad;
+            pop.style.top = `${Math.round(Math.max(pad, Math.min(rect.top, maxTop)))}px`;
+        };
+        reposition();
         window.FocusTrapUtils?.syncDashboardInert?.();
+
+        // Anchored to a toolbar button that scrolls with the grid, so it has to
+        // follow it. The row popovers already do; this one bound nothing at all
+        // and drifted away from the button it belongs to.
+        window.addEventListener('resize', reposition);
+        window.addEventListener('scroll', reposition, true);
+        unbindPosition = () => {
+            window.removeEventListener('resize', reposition);
+            window.removeEventListener('scroll', reposition, true);
+        };
+
+        // contextmenu as well as click, and the anchor matched by containment
+        // rather than identity so an icon added to the button later cannot make
+        // its own click close and reopen the popover.
+        unbindOutside = d.bookmarkRows._bindActionPopoverOutsideClose(pop, close, { anchorEl });
         setTimeout(() => {
-            document.addEventListener('click', onOutside, true);
             document.addEventListener('keydown', onKey, true);
         }, 0);
         d._multiSelectTagsCleanup = close;

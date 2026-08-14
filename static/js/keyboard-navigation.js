@@ -1542,6 +1542,22 @@ class KeyboardNavigation {
         if (!bookmarkRef) {
             return;
         }
+        // The same confirmation Shift+D and the right-click menu use, rather
+        // than the modal this took before. All three act on the row the user is
+        // already looking at, from the same position, so asking in three
+        // different ways was the odd part — not the popover itself. The modal
+        // stays where it earns its weight: the inline editor, whose row is a
+        // form at that moment, and a multi-row selection, where a popover beside
+        // one row says nothing about the others.
+        //
+        // showDeletePopover handles a remote-scope reference as well, so this
+        // covers everything the direct call below did; that call remains as the
+        // fallback so Delete can never end up doing nothing at all.
+        if (typeof dash.showDeletePopover === 'function' && row) {
+            const bookmarkIndex = parseInt(row.dataset.bookmarkIndex ?? '-1', 10);
+            dash.showDeletePopover(row, bookmark, bookmarkIndex);
+            return;
+        }
         if (typeof dash.deleteBookmarkInline === 'function') {
             void dash.deleteBookmarkInline(bookmarkRef);
             return;
@@ -1807,11 +1823,10 @@ class KeyboardNavigation {
         if (!bookmark) return;
         const commands = this.dashboard?.searchComponent?.commandsComponent;
         if (typeof commands?._persistBookmarkField !== 'function') return;
-        const willPin = !bookmark.pinned;
-        bookmark.pinned = willPin;
         // Same write the palette's :pin performs, so there is one persistence
-        // path rather than a second one that could drift.
-        commands._persistBookmarkField(bookmark, { pinned: willPin });
+        // path rather than a second one that could drift. It applies the flip
+        // itself, optimistically, and reverts it if the write fails.
+        commands._persistBookmarkField(bookmark, { pinned: !bookmark.pinned });
     }
 
     /**

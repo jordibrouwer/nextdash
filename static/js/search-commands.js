@@ -1159,7 +1159,9 @@ class SearchCommandsComponent {
             stateId: 'pin',
             type: 'command',
             action: () => {
-                ctx.pinned = willPin;
+                // No flip here: _persistBookmarkField applies it synchronously
+                // before its first await, so the refresh below still sees the
+                // new value — and a failed write can put it back.
                 this._persistBookmarkField(ctx, { pinned: willPin });
                 return this._paletteRefresh('pin');
             }
@@ -1814,29 +1816,62 @@ class SearchCommandsComponent {
 
     // ─── persist helper ───────────────────────────────────────────────────────
 
+    /**
+     * Write one or more fields of a bookmark, optimistically.
+     *
+     * The update is applied to the in-memory object first so the pin badge and
+     * the palette label change under the user's hand, and reverted if the write
+     * does not land. Callers used to do that flip themselves and had nothing to
+     * revert with, so a failed write left the dashboard claiming a bookmark was
+     * pinned when the file said otherwise — silently, on all three pin routes
+     * (:pin, Shift+P and the context menu). Doing it here keeps that one
+     * implementation rather than three.
+     *
+     * @returns {Promise<boolean>} whether the change reached the server.
+     */
     async _persistBookmarkField(bookmark, updates) {
         const dash = window.dashboardInstance;
-        if (!dash) return;
+        if (!dash) return false;
         const pageId = Number(bookmark.pageId || bookmark.pageID || dash.currentPageId);
-        if (!pageId) return;
+        if (!pageId) return false;
+
+        const previous = {};
+        Object.keys(updates).forEach((key) => { previous[key] = bookmark[key]; });
+        Object.assign(bookmark, updates);
+
+        const revert = (message) => {
+            Object.assign(bookmark, previous);
+            if (dash.bookmarks && Number(dash.currentPageId) === pageId) {
+                const localIdx = dash.bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
+                if (localIdx >= 0) Object.assign(dash.bookmarks[localIdx], previous);
+            }
+            if (typeof dash.renderDashboard === 'function') dash.renderDashboard();
+            dash.showErrorNotification?.(message);
+            return false;
+        };
+
+        const failedLabel = this._t('commands.bookmarkUpdateFailed', 'Could not save the change');
+
         try {
             const res = await fetch(`/api/bookmarks?page=${pageId}`);
-            if (!res.ok) return;
+            if (!res.ok) return revert(failedLabel);
             const bookmarks = await res.json();
             const idx = bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
             if (idx >= 0) Object.assign(bookmarks[idx], updates);
-            await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${pageId}`, {
+            const write = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(`/api/bookmarks?page=${pageId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookmarks)
             });
+            if (!write?.ok) return revert(failedLabel);
             if (dash.bookmarks && Number(dash.currentPageId) === pageId) {
                 const localIdx = dash.bookmarks.findIndex(b => b.url === bookmark.url && b.name === bookmark.name);
                 if (localIdx >= 0) Object.assign(dash.bookmarks[localIdx], updates);
             }
             if (typeof dash.renderDashboard === 'function') dash.renderDashboard();
+            return true;
         } catch (e) {
-            // ignore
+            return revert(failedLabel);
         }
     }
 

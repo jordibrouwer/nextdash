@@ -86,12 +86,28 @@ class DashboardContextMenu {
                 };
             }
         }
-        // Smart collections render rows without a page-local index; fall back to the URL.
+        // Smart collections render rows without a page-local index; fall back to
+        // the URL. The same URL legitimately sits on more than one page — Health
+        // reports those as duplicates rather than treating them as an error — and
+        // taking the current page's copy first meant a row belonging to another
+        // page resolved to the wrong bookmark, on the wrong page, before delete
+        // ever saw it. The row displays a name, so the copy whose name matches
+        // what is on screen is the one that was clicked; list order only decides
+        // when nothing distinguishes them. Same idea as multi-select's
+        // bookmarkForRow, which resolves its rows this way already.
         const url = row.getAttribute('data-bookmark-url');
         if (!url) return null;
-        const bookmark = (d.bookmarks || []).find(b => b.url === url)
-            || (d.allBookmarks || []).find(b => b.url === url);
-        return bookmark ? d.resolveBookmarkReference(bookmark) : null;
+        const label = (row.querySelector('.bookmark-text')?.textContent || '').trim();
+        const candidates = [];
+        [d.bookmarks, d.allBookmarks].forEach((list) => {
+            (list || []).forEach((b) => {
+                if (b?.url === url && !candidates.includes(b)) candidates.push(b);
+            });
+        });
+        if (!candidates.length) return null;
+        const bookmark = (label && candidates.find((b) => String(b.name || '').trim() === label))
+            || candidates[0];
+        return d.resolveBookmarkReference(bookmark);
     }
 
     close() {
@@ -253,6 +269,11 @@ class DashboardContextMenu {
 
             if (action.submenu) {
                 item.setAttribute('aria-haspopup', 'menu');
+                // Promised by aria-haspopup and expected by anything reading the
+                // menu: closed until the submenu is actually open. The entry is
+                // rebuilt each time the menu opens, so `false` here is always
+                // the truth at that moment.
+                item.setAttribute('aria-expanded', 'false');
                 const caret = document.createElement('span');
                 caret.className = 'move-popover-submenu-caret';
                 caret.textContent = '▸';
@@ -304,6 +325,20 @@ class DashboardContextMenu {
             if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx + 1) % items.length); return; }
             if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); setFocus((focusedIdx - 1 + items.length) % items.length); return; }
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopImmediatePropagation(); if (items[focusedIdx]) confirm(items[focusedIdx]); return; }
+            // ArrowRight opens a submenu — the convention in every native menu,
+            // and the counterpart to the Escape-walks-back path that was already
+            // here. Without it the submenu could only be entered with Enter,
+            // which also happens to be how you activate an ordinary item, so
+            // there was no way to tell the two apart from the keyboard.
+            if (e.key === 'ArrowRight') {
+                const item = items[focusedIdx];
+                if (item?.getAttribute('aria-haspopup') === 'menu') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    confirm(item);
+                }
+                return;
+            }
         };
 
         items.forEach((item, idx) => {
@@ -479,6 +514,18 @@ class DashboardContextMenu {
                 // Step back out to the menu this was opened from, so Escape
                 // walks the levels rather than dropping the whole stack. A
                 // second Escape then closes the parent.
+                if (parentPoint) {
+                    this.show(row, bookmarkRef, parentPoint);
+                }
+                return;
+            }
+            // ArrowLeft leaves the submenu the same way Escape does — the pair
+            // ArrowRight/ArrowLeft is how native menus are walked, and only the
+            // way back existed.
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                close();
                 if (parentPoint) {
                     this.show(row, bookmarkRef, parentPoint);
                 }
@@ -840,9 +887,9 @@ class DashboardContextMenu {
                 const target = bookmarkRef.bookmark;
                 const commands = d.searchComponent?.commandsComponent;
                 if (target && typeof commands?._persistBookmarkField === 'function') {
-                    const willPin = !target.pinned;
-                    target.pinned = willPin;
-                    commands._persistBookmarkField(target, { pinned: willPin });
+                    // It applies the flip itself and reverts it if the write
+                    // fails, so the badge cannot end up disagreeing with the file.
+                    void commands._persistBookmarkField(target, { pinned: !target.pinned });
                 }
                 break;
             }

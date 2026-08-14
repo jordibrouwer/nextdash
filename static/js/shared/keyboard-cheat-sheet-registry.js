@@ -120,7 +120,7 @@
                 { keys: 'Ctrl + C', cheatKey: 'bmCopyUrl', fallback: 'Copy URL of focused bookmark (row flashes green)' },
                 { keys: '[', cheatKey: 'bmTogglePreview', fallback: 'Toggle hover preview card on focused bookmark' },
                 { keys: 'Enter on "+ N more"', cheatKey: 'bmShowMoreToggle', fallback: 'Expand or collapse a long category — selection returns to the last bookmark above the toggle' },
-                { keys: 'Delete', cheatKey: 'bmDelete', fallback: 'Delete focused bookmark (confirmation dialog); with a selection open, deletes everything selected' },
+                { keys: 'Delete', cheatKey: 'bmDelete', fallback: 'Delete focused bookmark — confirm in the popover beside it; with a selection open, deletes everything selected' },
                 { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, share, edit, pin, tags, move, checking, Show in Health, select, delete (Shift + right-click for the browser menu)' },
                 { keys: 'Double-click page tab', cheatKey: 'bmRenamePageTab', fallback: 'Rename page tab — also set emoji icon and colour dot' },
                 { keys: 'Long-press category (~500 ms)', cheatKey: 'bmRenameCategory', fallback: 'Rename category header (not on sort buttons)' },
