@@ -7758,6 +7758,8 @@ class DashboardConfig {
         showSmartRecentCollection: { def: false },
         showSmartStaleCollection: { def: false },
         showSmartMostUsedCollection: { def: false },
+        showRowTags: { info: ['showRowTagsInfoTitle', 'showRowTagsInfoMessage'], def: false },
+        rowTagsMax: { def: 2 },
         showSmartAddedCollection: { def: false },
         smartAddedLimit: { def: 20 },
         smartTodayLimit: { info: ['smartTodayLimitInfoTitle', 'smartTodayLimitInfoMessage'], def: 8 },
@@ -8126,6 +8128,9 @@ class DashboardConfig {
                         opt(700, '700 ms'), opt(1000, '1 s'),
                     ] },
                     bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
+                    { ...bool('showRowTags', 'config.showRowTagsLabel', 'Show tags on bookmark rows'), special: 'render' },
+                    { field: 'rowTagsMax', type: 'number', min: 1, max: 5, step: 1, special: 'render',
+                        label: t('config.rowTagsMaxLabel', 'Tags shown before “+N”') },
                 ],
             },
             /*

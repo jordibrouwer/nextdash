@@ -4588,7 +4588,11 @@
     "collectionRuleFieldPinned": "Pinned",
     "collectionRuleFieldUntagged": "Has no tags",
     "collectionRuleFieldNotOpened": "Not opened in (days)",
-    "collectionRuleFieldChanged": "Changed within (days)"
+    "collectionRuleFieldChanged": "Changed within (days)",
+    "showRowTagsLabel": "Show tags on bookmark rows",
+    "rowTagsMaxLabel": "Tags shown before “+N”",
+    "showRowTagsInfoTitle": "Tags on the grid",
+    "showRowTagsInfoMessage": "Adds a small chip per tag beside the bookmark name, the same chip the Inbox and Config → Bookmarks use. Off by default: a row with several tags is busier, and the grid earns its keep by staying scannable. Tags never push the name out — they give way first, and are hidden on a phone."
   },
   "colors": {
     "title": "theme customization",

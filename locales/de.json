@@ -4587,7 +4587,11 @@
     "collectionRuleFieldPinned": "Angeheftet",
     "collectionRuleFieldUntagged": "Hat keine Tags",
     "collectionRuleFieldNotOpened": "Nicht geöffnet seit (Tagen)",
-    "collectionRuleFieldChanged": "Geändert innerhalb (Tagen)"
+    "collectionRuleFieldChanged": "Geändert innerhalb (Tagen)",
+    "showRowTagsLabel": "Tags in Lesezeichenzeilen anzeigen",
+    "rowTagsMaxLabel": "Tags vor „+N\"",
+    "showRowTagsInfoTitle": "Tags im Raster",
+    "showRowTagsInfoMessage": "Setzt pro Tag einen kleinen Chip neben den Namen — derselbe Chip wie im Posteingang und in Config → Lesezeichen. Standardmäßig aus: eine Zeile mit mehreren Tags wird unruhiger, und das Raster lebt davon, überschaubar zu bleiben. Tags verdrängen den Namen nie — sie weichen zuerst und sind auf dem Handy ausgeblendet."
   },
   "colors": {
     "title": "themenanpassung",

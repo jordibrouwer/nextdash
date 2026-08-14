@@ -261,6 +261,8 @@ type Settings struct {
 	ShowSmartAddedCollection      bool                         `json:"showSmartAddedCollection"`     // Show smart recently added collection
 	SmartAddedLimit               int                          `json:"smartAddedLimit"`              // Max items in smart recently added (0 = unlimited)
 	SmartAddedPageIds             []int                        `json:"smartAddedPageIds"`            // Page IDs where smart recently added is enabled (empty = all)
+	ShowRowTags                   bool                         `json:"showRowTags"`                  // Show tag chips on dashboard bookmark rows
+	RowTagsMax                    int                          `json:"rowTagsMax"`                   // Chips shown before a "+N" (rest collapse)
 	CategoryItemLimit             int                          `json:"categoryItemLimit"`            // Max bookmarks shown per category before a "show more" toggle (0 = unlimited)
 	SmartTodayWorkKeywords        string                       `json:"smartTodayWorkKeywords"`       // Comma-separated work-hour keyword boosts
 	SmartTodayEveningKeywords     string                       `json:"smartTodayEveningKeywords"`    // Comma-separated evening keyword boosts
@@ -762,6 +764,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			SmartMostUsedPageIds:         []int{},
 			SmartAddedPageIds:            []int{},
 			SmartAddedLimit:              20,
+			RowTagsMax:                   2,
 			FaviconRefreshPolicy:         "on-save",
 			OnboardingCompleted:          false,
 			ConfigBookmarksSort:          defaultConfigBookmarksSort,
@@ -1970,6 +1973,12 @@ func clampBookmarkSettings(s *Settings) {
 	if s.BookmarkStaleDays > 365 {
 		s.BookmarkStaleDays = 365
 	}
+	if s.RowTagsMax < 1 {
+		s.RowTagsMax = 1
+	}
+	if s.RowTagsMax > 5 {
+		s.RowTagsMax = 5
+	}
 	if s.BulkFaviconConfirmFrom < 0 {
 		s.BulkFaviconConfirmFrom = 0
 	}
@@ -2437,6 +2446,7 @@ func (fs *FileStore) GetSettings() Settings {
 			SmartStalePageIds:              []int{},
 			SmartAddedPageIds:              []int{},
 			SmartAddedLimit:                20,
+			RowTagsMax:                     2,
 			FaviconRefreshPolicy:           "on-save",
 			ConfigBookmarksSort:            defaultConfigBookmarksSort,
 			ConfigBookmarksPageSize:        defaultConfigBookmarksPageSize,

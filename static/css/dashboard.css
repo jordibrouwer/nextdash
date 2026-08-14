@@ -4538,3 +4538,56 @@ body.no-animations .bookmark-move-out {
 }
 
 
+
+/* ─── Row tag chips ──────────────────────────────────────────────────────── */
+
+/* Inside the link, not a grid column: .bookmark-link is a subgrid whose columns
+   line up across every category on the page, so a new column would move every
+   row. Same chip as the inbox (.inbox-item-tag) and Config (.config-bm-tag-chip)
+   — a tag should look like a tag wherever it is listed. */
+.bookmark-tag-strip {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.4rem;
+    min-width: 0;
+    /* Never at the cost of the name: the strip gives way first. */
+    flex: 0 1 auto;
+    overflow: hidden;
+}
+
+.bookmark-tag-chip {
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    font-weight: var(--font-weight-normal, 400);
+    line-height: 1.5;
+    white-space: nowrap;
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bookmark-tag-chip--more {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+}
+
+/* Terminal and list presets are deliberately dense; a chip there costs more
+   than it says, so it drops to text weight instead of a pill. */
+.dashboard-grid.layout-terminal .bookmark-tag-chip,
+.dashboard-grid.layout-list .bookmark-tag-chip {
+    border: 0;
+    background: none;
+    padding: 0 0.15rem;
+    opacity: 0.7;
+}
+
+@media (max-width: 720px) {
+    /* On a phone the name is the only thing with room. */
+    .bookmark-tag-strip { display: none; }
+}

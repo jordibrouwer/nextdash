@@ -4587,7 +4587,11 @@
     "collectionRuleFieldPinned": "Vastgezet",
     "collectionRuleFieldUntagged": "Heeft geen tags",
     "collectionRuleFieldNotOpened": "Niet geopend in (dagen)",
-    "collectionRuleFieldChanged": "Gewijzigd binnen (dagen)"
+    "collectionRuleFieldChanged": "Gewijzigd binnen (dagen)",
+    "showRowTagsLabel": "Tags tonen op bladwijzerrijen",
+    "rowTagsMaxLabel": "Tags getoond vóór “+N”",
+    "showRowTagsInfoTitle": "Tags op het raster",
+    "showRowTagsInfoMessage": "Zet een klein chipje per tag naast de naam, hetzelfde chipje als in de Inbox en Config → Bladwijzers. Standaard uit: een rij met meerdere tags is onrustiger, en het raster is juist nuttig doordat het scanbaar blijft. Tags verdringen de naam nooit — zij wijken als eerste, en op een telefoon zijn ze verborgen."
   },
   "colors": {
     "title": "thema-aanpassing",

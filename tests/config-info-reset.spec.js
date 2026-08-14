@@ -87,7 +87,7 @@ test.describe('config info + reset affordances', () => {
             'showRecentButton', 'showCheatSheetButton', 'showConfigButton', 'showHealthDashboard',
             'showAddBookmarkButton', 'showSearchButton', 'showFindersButton', 'showCommandsButton',
             'showSmartTodayCollection', 'showSmartRecentCollection', 'showSmartStaleCollection',
-            'showSmartMostUsedCollection', 'pushNotifyMonitor', 'pushNotifyBackup',
+            'showSmartMostUsedCollection', 'showSmartAddedCollection', 'pushNotifyMonitor', 'pushNotifyBackup',
             'pushNotifyRelease', 'pushNotifySubject', 'showCollapseAllButton',
             // Listed in FIELD_META for the ↺ button and the changed-settings
             // count, with a comment saying they carry no ℹ of their own: a
@@ -96,6 +96,8 @@ test.describe('config info + reset affordances', () => {
             // Carried for the ↺ button and the changed-settings count; it has no
             // control of its own, so there is nothing for an ℹ to sit beside.
             'newBookmarkCategory',
+            // Reads as part of the toggle above it, which carries the ℹ.
+            'rowTagsMax', 'smartAddedLimit',
         ]);
         expect(gaps.filter((f) => !allowed.has(f))).toEqual([]);
     });
