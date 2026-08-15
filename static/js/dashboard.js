@@ -401,6 +401,9 @@ class Dashboard {
             this.updateMiniStatusLine();
             // Feature-adoption snapshot, once settings are resolved.
             window.nextdashTrackSettings?.(this.settings);
+            // The size of the install, as a second event: the two together are
+            // past Umami's 50 properties, and they answer different questions.
+            window.nextdashTrackContent?.();
             this.initializeOnboarding();
             if (window.MobileExperience?.shouldShowDiscoverabilityUi?.() !== false && !this.onboardingStartedInSession) {
                 this.schedulePostOnboardingPrompts({ delay: 900, resetAttempts: true });

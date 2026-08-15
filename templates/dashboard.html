@@ -16,7 +16,7 @@
     <script src="{{asset "js/app-version-guard.js"}}"></script>
     <script src="{{asset "js/update-notice.js"}}"></script>
     <script src="{{asset "js/write-api.js"}}"></script>
-    {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}"></script>{{end}}
+    {{if .AnalyticsEnabled}}<script src="{{asset "js/umami-analytics.js"}}" data-nextdash-analytics="on" data-website-id="{{.AnalyticsWebsiteID}}" data-analytics-src="{{.AnalyticsScriptSrc}}" data-release="{{.ReleaseTag}}" data-content="{{.AnalyticsContentJSON}}"></script>{{end}}
     <script src="{{asset "js/font-presets.js"}}"></script>
     <script src="{{asset "js/device-settings-merge.js"}}"></script>
     <script src="{{asset "js/settings-sanitize.js"}}"></script>
