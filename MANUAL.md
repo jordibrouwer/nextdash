@@ -414,14 +414,14 @@ Right-click any bookmark on the dashboard for its actions in one place:
 
 | Item | What it does |
 |------|--------------|
-| **Open in new tab** | Opens the bookmark in a background tab and counts the open, like a normal click |
-| **Copy URL** | Copies the URL to the clipboard; the row flashes green |
+| **Open in new tab** | Opens the bookmark in a background tab and counts the open, like a normal click (also `Ctrl/Cmd + Enter`) |
+| **Copy URL** | Copies the URL to the clipboard; the row flashes green (also `Ctrl/Cmd + C`) |
 | **Share… / Copy name + URL** | Hands the bookmark to your system's share sheet with its name and URL. **The entry names what your browser will actually do.** Sharing needs more than the feature being present: browsers only open a sheet in a *secure context*, and **Safari on macOS refuses it over plain `http://` — including `localhost`** — even though it reports the feature as available. When a share is refused the link is copied instead, the message says the browser will not open a sheet here, and the entry re-labels itself to **Copy name + URL** so it stops promising a dialog. Reach the dashboard over **HTTPS** (a reverse proxy or Tailscale) for a real share sheet. Chrome and Firefox on macOS/Linux have no Web Share at all. Closing the sheet does nothing, so a cancel is never mistaken for a copy. Since **v2026.08.08.3** this works on the first attempt: the entry used to do nothing at all when the interaction module had not been fetched yet |
-| **Edit** | Opens the same inline editor as long-press |
+| **Edit** | Opens the same inline editor as long-press (also `Shift + E`) |
 | **Tags…** | The quick-tag popover (also `Shift + T`) |
 | **Move to…** | The move popover — another category or page (also `Shift + M`) |
 | **Checking** | Names the bookmark's current availability mode and opens the three-way choice — **Off** / **Periodic** / **Monitor** (also `Shift + C`) |
-| **Show in Health** | Opens the [health view](#15-status-monitoring-and-health) with this bookmark's row selected. Offered for **every** bookmark, including ones with checking switched off — the report covers the whole library, and that row is where checking gets turned on |
+| **Show in Health** | Opens the [health view](#15-status-monitoring-and-health) with this bookmark's row selected (also `Shift + R`). Offered for **every** bookmark, including ones with checking switched off — the report covers the whole library, and that row is where checking gets turned on |
 | **Select** / **Select all in category** | Starts a [multi-selection](#94-selecting-several-bookmarks) with this row, or with every row in its category. Placed above the divider: below it is the destructive zone, and selecting is not destructive |
 | **Delete** | Asks for confirmation first, then deletes with undo in the toast. The bookmark goes to the [trash](#trash-data--backups--trash) for 30 days |
 
@@ -429,7 +429,7 @@ Right-click a bookmark that is **part of an open selection** and the menu switch
 
 Apart from sharing, nothing here is exclusive to the menu — the rest is reachable from the [command palette](#93-bookmark-actions) and config, and the menu just puts it where most people look first.
 
-Arrow keys move through the items and `Enter` activates one; `Esc` or a click outside closes it. It works on **smart collection** rows too. The menu deliberately stays out of the way where the browser's own menu matters: it does not open while the inline editor is active or over a modal, and **`Shift` + right-click** always gives you the browser menu instead. Not available on touch, which has no right-click — use long-press for inline edit there.
+**Every entry that has a key shows it** beside the label, so the menu teaches the keyboard route to the thing you just clicked; screen readers get the same key through `aria-keyshortcuts`. The menu also opens from the keyboard with **`Shift + F10`** or the **Menu** key, beside the row rather than in the corner of the window. Arrow keys move through the items and `Enter` activates one; `Esc` or a click outside closes it. It works on **smart collection** rows too. The menu deliberately stays out of the way where the browser's own menu matters: it does not open while the inline editor is active or over a modal, and **`Shift` + right-click** always gives you the browser menu instead. Not available on touch, which has no right-click — use long-press for inline edit there.
 
 ### 7.6 Config → bookmarks (bulk and detail)
 
@@ -509,7 +509,7 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 - **Category headers** are keyboard-focusable: **Enter** or **Space** toggles collapse (`aria-expanded` updates).  
 - When you move the **mouse over bookmarks**, the stale keyboard highlight **softens** until your next keyboard move.  
 - **Enter** or **Space** opens the selected row.  
-- If the bookmark has a **shortcut** letter and you are not in an input, press that key to open. For shortcuts starting with **`G`**, use a **quick tap** (press and release); **hold `G`** (~300 ms) or **`G` then a digit / `P` / second `G`** activates category jump instead.
+- If the bookmark has a **shortcut** letter and you are not in an input, press that key to open. Six letters belong to the dashboard itself and act at once — **`c`** new category, **`g`** the jump chord, **`j`** / **`k`** move the highlight, **`t`** filter by tag, **`x`** tick a row — so open search with **`>`** first for a bookmark shortcut starting with one of them ( `c` and `g` used to wait out a hold so a tap could fall through).
 
 ### Hyprland / special setups
 
@@ -551,7 +551,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; `Enter` or `Space` switches page; focus stays trapped inside the panel; closing restores focus to the trigger |
 | `n` | In the page overview: open the **New page** row. Arrowing one stop past the last page reaches it too (**v2026.09.06**) |
-| Hold `c` | Add a category to the page on screen (**v2026.09.06**). A **hold** of about 300 ms, not a tap — a quick `c` is a shortcut-search keystroke and still goes there |
+| `c` | Add a category to the page on screen (**v2026.09.06**). Acts on the first press; it used to need a hold of about 300 ms so a tap could still reach the shortcut search |
 | `<` | Open **config** (`<` is `Shift+,`). In config, `<` returns to the dashboard — asking to confirm first if there are unsaved changes |
 | `.` | Collapse or expand **all** categories at once (smart toggle — any open → all collapse; state remembered per page) |
 
@@ -560,13 +560,14 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | Keys | Action |
 |------|--------|
 | `↑` `↓` `←` `→` | Move selection (first arrow key starts navigation if none selected) |
+| `k` / `j` | Same as `↑` / `↓`, matching the lists in config |
 | `1`–`9` (page switch) | Also selects the first visible bookmark on the new page |
 | `Tab` / `Shift+Tab` | Linear next/previous bookmark when a row is selected; at the first/last bookmark, Tab exits to the header/FAB |
-| `G` then `1`–`9` | Jump to nth visible category or smart collection, select first bookmark (also: hold `G` ~300 ms, then digit — first hold may show a one-time **Got it** hint) |
+| `G` then `1`–`9` | Jump to nth visible category or smart collection, select first bookmark. The first `G` arms the chord straight away; it lapses after three seconds |
 | `G` then `P` | Jump to first pinned bookmark on the page |
 | `GG` | Jump to very first bookmark (second `G` while chord pending) |
-| Quick tap `G` | Open bookmark shortcuts starting with `G` (`g`, `ga`, `g1`, …) — not category jump |
 | `Ctrl + Home` / `Ctrl + End` | First / last bookmark on the page (`Cmd` on Mac) |
+| `Shift + Home` | Step up from the list to its category header, where `F2`, `Shift + W`, `Delete` and `Shift + F10` act on the category |
 | `Enter` / `Space` | Open selected |
 | `Esc` | Clear selection and move focus to the first bookmark; may undo last drag reorder |
 
@@ -574,14 +575,17 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 
 | Keys | Action |
 |------|--------|
-| `;` | Inline-edit selected row (page switches confirm before discarding unsaved edits) |
+| `Shift + E` | Inline-edit selected row (page switches confirm before discarding unsaved edits). Was `;`, which still works but is no longer listed |
 | `Shift + M` | Move to… (category or another page); popover receives focus — use arrows and `Enter` inside it |
 | `Shift + T` | Quick-tag selected row (popover receives focus — `↑`/`↓` navigate; `Enter`/`Space` toggle tag and advance to next; `✓` on tags already applied) |
 | `Shift + D` | Quick-delete selected row (popover receives focus; undo in toast) |
 | `Shift + C` | Availability checking for the selected row — **Off** / **Periodic** / **Monitor**. The popover anchors below the row and opens on the current mode; pick with `o` / `p` / `m`, or arrow and `Enter` |
 | `Shift + W` | Spread the focused category across columns, or put it back to one |
 | `Ctrl + C` | Copy URL (row flashes green) |
-| `[` | Toggle hover preview card on selection |
+| `Shift + P` | Pin or unpin the selected row |
+| `Shift + L` | Share the selected row, or copy its name and URL where there is no share sheet. Was `Shift + S`, which now always opens config |
+| `Shift + R` | Show the selected row on its own line in Health |
+| `Shift + V` | Toggle hover preview card on selection. Was `[`, which still works but is no longer listed — brackets mean *previous / next sub-tab* in config |
 | `Delete` | Delete selected bookmark — the same popover `Shift+D` and the right-click menu open, beside the row. With a selection open it deletes everything selected instead, confirmed in one modal that names the count |
 | `Enter` / `Space` on **+ N more** | Expand or collapse a long category; selection returns to the last bookmark above the toggle so you can keep arrowing down |
 
@@ -632,10 +636,10 @@ While any of these are open, the bookmark grid behind them is **inert** (not cli
 | Page overview | `,` |
 | Quick-add omnibox | `&` |
 | Quick move / quick tag / quick delete / checking | `Shift+M` / `Shift+T` / `Shift+D` / `Shift+C` |
-| Inline edit | `;` |
+| Inline edit | `Shift+E` |
 | App modal | e.g. new bookmark `+`, confirmations, recent bookmarks `*` |
 
-**Tab** / **Shift+Tab** cycle within the open overlay. **Escape** closes it and restores focus to the control that opened it (or the bookmark grid). One-time **Got it** discoverability balloons dismiss with **Esc** without trapping the overlay open. A `MutationObserver` re-syncs dashboard `inert` when overlays are added or removed so the grid is not left stuck non-interactive. With an **active tag filter**, only the bookmark list is `inert` — the filter banner and bulk toolbar stay interactive while the tag cloud is open. Grid shortcuts **`;`**, **`Shift+M`**, **`Shift+T`**, **`Shift+D`**, and **`Shift+C`** work on the keyboard-selected row when no overlay is open.
+**Tab** / **Shift+Tab** cycle within the open overlay. **Escape** closes it and restores focus to the control that opened it (or the bookmark grid). One-time **Got it** discoverability balloons dismiss with **Esc** without trapping the overlay open. A `MutationObserver` re-syncs dashboard `inert` when overlays are added or removed so the grid is not left stuck non-interactive. With an **active tag filter**, only the bookmark list is `inert` — the filter banner and bulk toolbar stay interactive while the tag cloud is open. Grid shortcuts **`Shift+E`**, **`Shift+M`**, **`Shift+T`**, **`Shift+D`**, **`Shift+C`**, **`Shift+P`**, **`Shift+L`**, **`Shift+R`** and **`Shift+V`** work on the keyboard-selected row when no overlay is open.
 
 ---
 
@@ -671,7 +675,7 @@ Three input modes share one overlay; switch with keys or footer chips.
 
 Since **v1.0.4** the two age filters are offered while you type, like the others, with their words listed once the key is in — `never` only under `opened:`, since a bookmark has no "never added" state. While typing a partial value (e.g. `status:on`), autocomplete stays visible until the token is complete. `status:online` / `status:offline` use persisted reachability on monitored bookmarks.
 
-**Bookmark shortcuts starting with `G`** — a quick tap on `G` opens the shortcut search bar (`g`, `ga`, `g1`, …). Hold `G` (~300 ms) or press `G` then a digit / `P` / second `G` activates category jump instead (see §9.2).
+**Bookmark shortcuts starting with `G`** — `G` now belongs to the jump chord in every case (see §9.2): the first press arms it, a digit or `P` follows, and a second `G` goes to the top. Reach a bookmark whose shortcut starts with `g` through search (`>`) instead.
 
 ### 10.2 Tag word cloud (`/`, desktop)
 
@@ -774,10 +778,10 @@ Temporarily hides bookmark tiles that do not match. Clear with `:find clear` (or
 Neither has to start in config (**v2026.09.06**). Both gestures live where the things themselves live.
 
 - **A page** — open the pages overview with **`,`** and use the **New page** row under the list: by click, by **`n`**, or by arrowing one stop past the last page. Naming it takes you straight to the new page, which is where its first category gets added anyway. The pages button in the header is unchanged — switching pages is the daily action, creating one is the rare one.
-- **A category** — a **`+`** sits beside the **A–Z** / **Rec** chips in a category header, and **holding `c`** (about 300 ms) does the same from the keyboard. Both act on the page on screen, so neither asks which page you meant. It is a hold rather than a tap because `c` is a letter you type into shortcut search constantly; a tap still goes there. The `+` appears in whichever header ends the grid, and costs no space of its own.
+- **A category** — a **`+`** sits beside the **A–Z** / **Rec** chips in a category header, and **`c`** does the same from the keyboard. Both act on the page on screen, so neither asks which page you meant. The key acts on the first press: it used to wait out a hold of about 300 ms so a tap could still reach the shortcut search, and it was one of only two keys that did. The `+` appears in whichever header ends the grid, and costs no space of its own.
 - **From the bookmark form** — the **Page** and **Category** dropdowns each lead with **➕ New page…** and **➕ New category…**, so a bookmark can be filed somewhere that does not exist yet without leaving the half-filled form.
 
-**Right-click a category header** for **rename**, **add category** and **delete** in one menu. Renaming was previously only reachable through a long press, and deleting meant a trip to config. Deleting tells you what it will do first, with the count — the bookmarks are **kept** but lose their category and reappear under *unknown category* — and the delete goes to the [trash](#trash-data--backups--trash). Smart collections and tag-filter groups have no menu: they are views over bookmarks rather than stored categories.
+**Right-click a category header** — or press **`Shift + F10`** on it, or the **Menu** key — for **rename**, **spread across columns**, **add category** and **delete** in one menu, each with its key beside it. **`Delete`** on a focused header deletes that category directly, with the same confirmation — it used to open the menu, the one place in nextDash where `Delete` meant *show me the options*. Renaming was previously only reachable through a long press, and deleting meant a trip to config. Deleting tells you what it will do first, with the count — the bookmarks are **kept** but lose their category and reappear under *unknown category* — and the delete goes to the [trash](#trash-data--backups--trash). Smart collections and tag-filter groups have no menu: they are views over bookmarks rather than stored categories.
 
 A category you have just created **stays visible** even with *hide empty categories* on, until you leave the page — otherwise it would vanish in the moment between creating it and putting something in it.
 
@@ -853,7 +857,7 @@ Click category header or chevron, or focus the header and press **Enter** / **Sp
 ### Previews and favicons
 
 - Auto-fetch title/description/image when adding URLs (if enabled).  
-- **`[`** toggles preview card on keyboard focus.  
+- **`Shift+V`** toggles preview card on keyboard focus.  
 - **Show favicons** — **Config → Appearance** or `:favicons on/off` on the dashboard.
 - **Refresh every icon** — `:favicons fetch` re-downloads the favicon of every bookmark on every page, replacing the ones already stored, so icons that changed at the source are updated too. A progress bar shows how far along it is. The same run happens automatically once on a new install, right after you finish or skip the first-run setup card while keeping the example bookmarks. Individual icons can also be refreshed from the health view (`f` on the selected row), and **Config → Bookmarks** has a bulk **Refresh favicons** button for a selection.  
 - **Fetch favicon** in config detail or health actions.
@@ -882,7 +886,7 @@ Each can be limited to certain pages and item limits (`0` = unlimited).
 
 Cross-page bookmark data loads at startup only when smart collections, tag collections, or **Use shortcuts from all pages** need it — faster startup when those features are off.
 
-You can **long-press** or press **`;`** on a smart-collection row to inline-edit or delete; changes apply to the real bookmark on its page and stay in sync across collection columns.
+You can **long-press** or press **`Shift+E`** on a smart-collection row to inline-edit or delete; changes apply to the real bookmark on its page and stay in sync across collection columns.
 
 ### Custom collections
 
@@ -1712,7 +1716,7 @@ Set manual city or browser location permission; save general settings; check ref
 ```
 > search    : commands    ? finders    & quick-add    + new modal
 1-9 pages   , overview    * recent     ! cheat sheet
-arrows nav  Enter open    ; edit       Shift+M move  Shift+T tag  Shift+D delete
+arrows nav  Enter open    Shift+E edit  Shift+M move  Shift+T tag  Shift+D delete
 ```
 
 ### Config

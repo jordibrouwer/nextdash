@@ -290,32 +290,32 @@ environment:
 - `<` — open **config** (`<` is `Shift+,`); in config, `<` returns to the dashboard, confirming first if there are unsaved changes
 - `↑/↓/←/→` — move bookmark selection (first arrow key starts navigation); `1–9` page switch also selects the first visible bookmark; mouse hover softens the stale keyboard highlight until your next keypress; on **Modern**, keyboard-selected rows use a full-row accent fill
 - `Tab` / `Shift+Tab` — step linearly through all bookmarks when one is already selected
-- `G + 1–9` — jump to the nth category or smart collection and select its first bookmark (hold `G` ~300 ms, or press `G` then a digit; a **quick tap** on `G` opens bookmark shortcuts starting with `G` instead)
+- `G + 1–9` — jump to the nth category or smart collection and select its first bookmark. The first `G` arms the chord straight away and it lapses after three seconds; a second `G` jumps to the top of the page
 - `G + P` — jump to the first pinned bookmark on the page (hold `G` or `G` then `P`)
 - `GG` — jump to the very first bookmark (second `G` while the chord is pending)
 - `Ctrl + Home` / `Ctrl + End` — first / last bookmark on the page (`Cmd` on Mac)
 - `Enter` / `Space` — open the focused bookmark (middle-click also counts toward open stats and smart collections)
 - `Esc` — clear selection, close overlay, or undo an unsaved drag reorder (before the 1s save completes)
 
-**Blocking overlays** — While search (`>`), the cheat sheet (`!` / `F1`), recent bookmarks (`*`), tag cloud (`/`), page overview (`,`), quick-add omnibox (`&`), quick-move/delete/tag popovers (`Shift+M` / `Shift+D` / `Shift+T`), inline edit (`;`), or an app modal is open, keyboard focus stays inside that overlay (`Tab` cycles within it) and the bookmark grid behind it is `inert` (not clickable). With an **active tag filter**, only the filtered bookmark list is `inert` — the filter banner and bulk toolbar stay interactive while the tag cloud is open. Closing the overlay restores mouse and keyboard access to the grid; quick-move/delete/tag popovers also restore the keyboard highlight on the same bookmark row.
+**Blocking overlays** — While search (`>`), the cheat sheet (`!` / `F1`), recent bookmarks (`*`), tag cloud (`/`), page overview (`,`), quick-add omnibox (`&`), quick-move/delete/tag popovers (`Shift+M` / `Shift+D` / `Shift+T`), inline edit (`Shift+E`), or an app modal is open, keyboard focus stays inside that overlay (`Tab` cycles within it) and the bookmark grid behind it is `inert` (not clickable). With an **active tag filter**, only the filtered bookmark list is `inert` — the filter banner and bulk toolbar stay interactive while the tag cloud is open. Closing the overlay restores mouse and keyboard access to the grid; quick-move/delete/tag popovers also restore the keyboard highlight on the same bookmark row.
 
 **Bookmarks**
 - `+` — open the full new-bookmark modal (dashboard only, when no input is focused)
 - `&` — quick-add omnibox: type `name | url | shortcut` in one line
 - `Ctrl + Shift + A` — same full new-bookmark modal from anywhere
 - `Ctrl + V` — paste a URL on the dashboard: choose **Save to Inbox** or open the new-bookmark modal (blocked while inline edit or the tag word cloud is open; default under General → *Paste URL default*)
-- `;` — inline-edit the focused bookmark
+- `Shift + E` — inline-edit the focused bookmark (`;` still works, undocumented)
 - `Shift + M` — *Move to…* quick-move popover: choose a category or page with arrow keys
 - `Shift + T` — *Quick tag* popover beside the focused bookmark: `↑`/`↓` navigate ranked tags; `Enter`/`Space` toggle a tag and advance to the next; `✓` shows tags already on the bookmark
 - `Shift + D` — quick-delete popover with undo in the toast
 - `Shift + C` — *Checking* popover beside the focused bookmark: choose **Off**, **Periodic**, or **Monitor** with `o` / `p` / `m`, or arrow to one and press `Enter`
 - `Shift + P` — pin or unpin the focused bookmark; also in the right-click menu
-- `Shift + S` — share the focused bookmark, or copy its name and URL where no share sheet exists
+- `Shift + L` — share the focused bookmark, or copy its name and URL where no share sheet exists
 - `Shift + R` — open the focused bookmark on its own row in **Health**
 - `t` — filter the grid to the focused bookmark's tag; several tags open the picker
 - `Ctrl/Cmd + Enter` — open the focused bookmark in a new tab for that press alone, whatever **open in new tab** is set to
 - `Ctrl + C` / `Cmd + C` — copy the URL of the focused bookmark (row flashes green)
-- `[` — toggle the hover preview card on the focused bookmark
+- `Shift + V` — toggle the hover preview card on the focused bookmark (`[` still works, undocumented)
 - `Delete` — delete the focused bookmark
 - `x` / `X` — tick the focused bookmark and advance / tick its whole category. `Shift + ↑`/`↓` extends a range, `Ctrl/Cmd + A` takes everything on screen, and `Ctrl+click` / `Shift+click` do the same with the mouse. A toolbar appears with **Move**, **Open**, **Copy links** and **Delete**, matching the entries the right-click menu gains; `Esc` clears the selection. A plain click with a selection open clears it rather than opening a bookmark
 
