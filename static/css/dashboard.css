@@ -2439,6 +2439,14 @@ body[data-category-spacing="airy"] {
     }
 }
 
+/* Centred rather than baseline-aligned, which is what keeps the controls in the
+   header from making it taller. On a baseline the "+" sits by its own text
+   baseline, and the padding and border below that baseline hang past the line
+   the title occupies — 1.4px of extra header, per header, for a button that is
+   shorter than the text beside it. Centring aligns boxes instead, so the header
+   is simply as tall as its tallest child and a control that fits costs nothing.
+   Titles that wrap keep flex-start (see .category-title--multiline): chips
+   belong beside the first line there, not centred across both. */
 .category-title {
     font-size: var(--font-size-category);
     font-weight: var(--font-weight-bold);
@@ -2446,7 +2454,7 @@ body[data-category-spacing="airy"] {
     color: var(--text-tertiary);
     display: flex;
     flex-wrap: nowrap;
-    align-items: baseline;
+    align-items: center;
     min-width: 0;
 }
 
