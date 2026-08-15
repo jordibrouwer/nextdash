@@ -1,0 +1,21 @@
+{
+  "tag": "v1.1.2",
+  "date": "15 August 2026",
+  "releasedAt": "2026-08-15",
+  "modalLead": "The keyboard release is announced after all. v1.1.1 was recorded quietly so it would not push v1.1.0 aside; it is in this list now, and everything it changed about the keys is one entry down.",
+  "sections": [
+    {
+      "title": "What's new",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The releases since v1.1.0 are in this window.</strong> <strong>v1.1.1</strong> was held back from it on purpose — it landed the same day as v1.1.0 and would have displaced a release people were still reading. It is the entry below this one, and it is the interesting one: every action on a bookmark is now <strong>Shift</strong> plus a letter, bare letters act on the first press, and the right-click menu shows the key beside each entry."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>This window opens once more.</strong> Nothing is wrong with your copy: it reopens when there is a release worth reading, and the two before this one arrived without it. Close it and it stays closed until the next release."
+        }
+      ]
+    }
+  ]
+}

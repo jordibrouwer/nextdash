@@ -128,49 +128,41 @@ test.describe('a release flagged hideFromModal', () => {
     });
 
     // The cases above prove the mechanism against a fixture. This one asserts
-    // the shipped files actually use it, which is the part a release can get
-    // wrong: an entry added without the flag reopens the modal for everyone.
-    test('v1.1.1 is the newest release, and stays out of the modal', async ({ page }) => {
+    // what the shipped files do with it, which is the part a release gets wrong:
+    // a flag left on hides a release nobody meant to hide, and a flag taken off
+    // without bumping the tokens announces it to nobody.
+    test('nothing is hidden now, and the modal leads with v1.1.2', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
-        expect(index[0].tag).toBe('v1.1.1');
-        expect(index[0].hideFromModal).toBe(true);
-        expect(index[1].tag).toBe('v1.1.0');
-        expect(index[1].hideFromModal).toBeUndefined();
-
-        // The Latest update panel renders the release itself, so the file the
-        // index points at has to be there and parse.
-        const release = await page.evaluate(async () =>
-            (await fetch('/static/data/whats-new/v1.1.1.json')).json());
-        expect(release.tag).toBe('v1.1.1');
-        expect(Array.isArray(release.sections)).toBe(true);
-        expect(release.sections.length).toBeGreaterThan(0);
+        expect(index[0].tag).toBe('v1.1.2');
+        expect(index[1].tag).toBe('v1.1.1');
+        // v1.1.1 shipped flagged and is deliberately unflagged again by v1.1.2.
+        expect(index.slice(0, 3).some((entry) => entry.hideFromModal)).toBe(false);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
         await expect(modal).toBeVisible({ timeout: 15_000 });
         await page.waitForTimeout(1200);
 
-        // The release *entries* are what the flag governs. The version banner
-        // above them comes from the update check and names the version you are
-        // actually running, which is v1.1.1 — hiding that would have the modal
-        // claim you are on an older release than you are.
         const tags = await modal.evaluate((m) => [...new Set(
             [...m.querySelectorAll('*')]
                 .filter((e) => e.childElementCount === 0)
                 .map((e) => e.textContent.trim())
                 .filter((t) => /^v\d+\.\d+\.\d+$/.test(t)),
         )]);
-        expect(tags).toContain('v1.1.0');
-        expect(tags).not.toContain('v1.1.1');
+        expect(tags).toContain('v1.1.2');
+        expect(tags).toContain('v1.1.1');
     });
 
-    test('v1.1.0 release constants are bumped', async ({ page }) => {
+    // Bumped on purpose this time: these two tokens are what reopens the modal
+    // for everyone, which is the whole point of a release that exists to
+    // announce the one before it.
+    test('v1.1.2 release constants are bumped', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.1.0'");
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v243'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.1.2'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v244'");
     });
 });

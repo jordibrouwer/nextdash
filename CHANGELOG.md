@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.1.2 — 15 August 2026](#v112--15-august-2026)
 - [v1.1.1 — 15 August 2026](#v111--15-august-2026)
 - [v1.1.0 — 15 August 2026](#v110--15-august-2026)
 - [v1.0.4 — 15 August 2026](#v104--15-august-2026)
@@ -166,6 +167,21 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.1.2 — 15 August 2026
+
+A release that exists to announce the one before it. v1.1.1 shipped `hideFromModal` so it would not displace v1.1.0 on the day both landed; that call is reversed here.
+
+### What's new
+
+- **fix** — the `hideFromModal` flag is dropped from the v1.1.1 index entry, so the modal lists it again. The flag only ever gated the modal: the release tag and **Config → Overview → Latest update** read `index[0]` and have shown v1.1.1 since it shipped.
+- **new** — `DASHBOARD_RELEASE` (`2026.08-dashboard-release-v1.1.2`) and `NEXTDASH_WHATS_NEW_DATA_VERSION` (`whats-new-v244`) are bumped, so the modal reopens once for every user. Unbumped they would have left the un-hiding invisible to anyone who had already dismissed it — the two tokens are the whole re-show mechanism, which is why v1.1.1 deliberately left them alone.
+
+### Docs
+
+- `static/data/whats-new/v1.1.2.json`, and the index entry ahead of v1.1.1.
+- `tests/whats-new-hidden-release.spec.js`: the real-index case flips from asserting v1.1.1 is hidden to asserting nothing in the top three is, and that the modal lists both v1.1.2 and v1.1.1; the constants case moves to the v1.1.2 literals and says why bumping is right here where it was wrong there. The four fixture-driven cases are untouched — the flag still works, it is simply no longer in use.
+- `MANUAL.md`: the What's new section now says a release can be recorded without being announced, and names v1.1.1 as the one that was.
 
 ## v1.1.1 — 15 August 2026
 
