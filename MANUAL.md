@@ -1138,7 +1138,7 @@ Below **Help**, separated by a gap, **Find settings** opens the settings-jump ov
 |---------|------------------|
 | **Overview** | Six headline tiles (including **Monitored**), anything needing attention, a **New features** carousel, **Latest update**, optional **GitHub update check** (since **v2026.08.04**), tips, and about-the-developer panels |
 | **Pages & tags** | Categories, tags, pages, finders, and custom collections — five sub-tabs (**Categories** opens first since **v2026.08.06**) |
-| **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) |
+| **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) — two sub-tabs since **v1.1.0** |
 | **Appearance** | Theme, layout, display, and custom themes — four sub-tabs |
 | **Behavior** | General, date & weather, search, status, and privacy — five sub-tabs |
 | **Data & backups** | Backup, restore, import, export — plus **Reset** on its own tab |
@@ -1155,11 +1155,12 @@ Config only writes what actually changed — editing one setting does not re-upl
 
 ### Sub-tabs
 
-Five sections divide their content further. Every strip is a proper tab widget: **`←`/`→`** move between tabs and wrap around at the ends, **`Home`**/**`End`** jump to first and last, and the strip is a single stop in the page's tab order rather than one stop per tab.
+Six sections divide their content further. Every strip is a proper tab widget: **`←`/`→`** move between tabs and wrap around at the ends, **`Home`**/**`End`** jump to first and last, and the strip is a single stop in the page's tab order rather than one stop per tab.
 
 | Section | Sub-tabs |
 |---------|----------|
 | **Pages & tags** | Categories · Tags · Pages · Finders · Collections |
+| **Bookmarks** | List · Settings (**v1.1.0**) |
 | **Appearance** | Theme · Layout · Display · Toolbar & tabs · Branding · Custom themes |
 | **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
 | **Data & backups** | Backups & data · Icons & previews · Server log · Trash · Reset |
@@ -1169,6 +1170,8 @@ Five sections divide their content further. Every strip is a proper tab widget: 
 ### Working with bookmarks
 
 **Bookmarks** lists every bookmark with a **debounced search** field (matches name, URL, category, note, shortcut, and tags), **filter chips** for page, category, tag, and search text, and a **page filter**. With **All pages**, category labels read `Page · Category` and each row carries a page badge; click a page or category on a row to filter. Pick one page to scope categories and share the view as `/#config/bookmarks/<pageId>`. **Summary tiles** above the list follow active filters when any are set. Rows load **50 at a time** as you scroll. Sort includes last opened, most opened, and pinned first. Rows use the same Health/Inbox action bar; **Edit** opens the prefilled add-bookmark modal with name, URL, page, category, tags, shortcut, note, pinned, icon, and availability checking (Off / Periodic / Monitor, with an interval for Monitor). Press **`o`** or double-click a row to open the URL.
+
+Its **settings** — what a quick-added bookmark starts with, the sort the list opens on, how many rows load at a time, and the rest — are on the **Settings** sub-tab (**v1.1.0**). They used to sit under the list, fifty rows down and further as the infinite scroll loaded more, which also ruled out jumping to the bottom: the bottom moved as you approached it.
 
 **+ Bookmark** opens the same add form the dashboard uses. Tick several rows for the bulk toolbar — move to another page or category, pin, **refresh favicons**, **export CSV**, edit tags across the selection, or delete. **Select all** applies to the rows your filters are currently showing, not the whole library.
 

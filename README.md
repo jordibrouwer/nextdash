@@ -411,6 +411,7 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 
 - Unlimited pages and categories
 - Drag-and-drop reorder within and between categories (drag strip on the left); saves debounce 1s with a success toast on the dashboard; bulk tag-filter move/delete groups rapid toasts into one message
+- **Config → Bookmarks has two sub-tabs** (**v1.1.0**) — **List** and **Settings**; the settings used to sit under a list of fifty to five hundred rows
 - **Spread a category across columns** (**v1.1.0**) — a long category can run across several grid columns instead of towering over its neighbours, its bookmarks flowing across them. A switch, not a width: how many columns it takes follows from **items per category** and how many bookmarks it holds, so it grows and shrinks with the category and never exceeds the column count. Right-click the header, **Shift+W**, `:width`, or a ↔ button per row in **Config → Pages & tags → Categories**
 - **Per-category sort** — sort by name, by when you last opened a bookmark, by when you added it, or by how often you open it. The sort in use sits in the category header as a single chip and the rest are behind a **⋯**; click the active chip again for manual order. Also `:sort` in the command palette
 - **Tags on the rows** — off by default (**Config → Appearance → Display**); the first two show and the rest collapse into a count. Click one to filter the grid to it

@@ -192,6 +192,15 @@ The first minor since 1.0: a category can be wider than one column. `DASHBOARD_R
 - **new** — `type: 'action'` panel controls with `bindPanelActions`, used for *Turn spreading off everywhere*; `NEW_THIS_RELEASE` is the one place naming where the twinkle points, drawn on the section, the sub-tab and the panel.
 - **new** — `#category-context-menu` sizes to its content (`width: max-content`, capped at 24rem). The shared `.move-popover` cap is for the move/tag/delete pickers; at 16rem the widest row here needed 274px and got 237, so the `Shift+W` chip was trimmed away — and the French label is half again as long.
 
+### Config → Bookmarks
+
+- **new** — the section gets the sub-tab strip five others already have: **List** and **Settings**. The nine settings sat after the list — fifty rows down by default and up to five hundred as the infinite scroll loads more, which also rules out jumping to the bottom of a list whose bottom moves as you approach it. Registered in `SUB_TABS`, `SUB_TAB_STATE`, `SUB_TAB_ATTR` and `SUB_TAB_SECTION`, so the deep link, the remembered location and the arrow-key walk come for free; `handleOverviewGo` accepts `bmTab`.
+
+### Views
+
+- **new** — Health, Inbox and Config → Bookmarks draw one card from `feed-row.css` instead of three copies. The rule was written out in `health-view.css`, `dashboard-inbox.css` and `config-view.css` and the copies had drifted into being byte-identical — one design, three places to change it, and no way to tell whether a difference was meant. What genuinely differs is a modifier: `feed-row--with-select` for Health's checkbox column, and the coloured left edge each view uses for its own state, including modern layout's inset redraw of it. Classic layout also gains the row focus ring only modern had.
+- **new** — the shape the three views disagreed on is settled: Inbox rounded its filter pills and buttons where Health squared them off; rounded won. Config → Bookmarks reads as a view rather than a settings panel — a header with a count, the search box sized like Health's, and tiles matching Health's without the stripe.
+
 ### Discoverability
 
 - **new** — `spread-notice.js` (a `NoticeCard`) and `spread-tutorial.js`, a four-step `AppModal` walkthrough in the shape of the inbox and health tours, reachable afterwards from `Help → Pages & categories`.
@@ -199,7 +208,7 @@ The first minor since 1.0: a category can be wider than one column. `DASHBOARD_R
 
 ### Docs
 
-- `MANUAL.md` — the spreading section with the columns-per-bookmark-count table, and the config-memory paragraphs at five minutes.
+- `MANUAL.md` — the spreading section with the columns-per-bookmark-count table, and the config-memory paragraphs at five minutes. Config → Bookmarks is described with its two sub-tabs.
 - `README.md` — the feature bullet, `Shift+W`, `:width on|off`, and the five-minute memory.
 - `CHANGELOG.md`, `static/data/whats-new/v1.1.0.json`, `index.json`, `whats-new-stub.js`, `tests/whats-new-hidden-release.spec.js`, the four locale files, and `go generate ./...` for `asset_hashes_gen.go`.
 

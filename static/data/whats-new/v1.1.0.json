@@ -33,6 +33,10 @@
       "title": "Config",
       "items": [
         {
+          "badge": "new",
+          "text": "<strong>The Bookmarks settings are one click away.</strong> They sat under the list — fifty rows down, more as it loaded — and you could not even jump to the bottom, because the bottom moved as you got there. Bookmarks now opens on <strong>List</strong>, with <strong>Settings</strong> beside it."
+        },
+        {
           "badge": "fix",
           "text": "<strong>Config brings you back to where you were.</strong> Leaving through the health, inbox or page buttons in the header lost your place, so reopening dropped you on Overview. Every way out is remembered now, for five minutes counted from the moment you left — read one panel for half an hour, step away for ten seconds, and you land back on it."
         },
