@@ -145,7 +145,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/shared/config-setting-promo.js": "640cf8caccd6",
 	"js/shared/config-setting-promos.js": "962afbb5378e",
 	"js/shared/inline-create-row.js": "d610d93ab25f",
-	"js/shared/keyboard-cheat-sheet-registry.js": "bba83e5a5197",
+	"js/shared/keyboard-cheat-sheet-registry.js": "063f612b3822",
 	"js/shared/keyboard-view-legends.js": "01a68b347621",
 	"js/shared/last-opened-format.js": "a968982d0c81",
 	"js/shortcut-format.js": "7df3b94a7e08",
