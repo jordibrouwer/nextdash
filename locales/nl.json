@@ -4292,6 +4292,8 @@
     "selectAllBookmarks": "Alles selecteren",
     "selectAllBookmarksCount": "Selecteer alle {n}",
     "tagsNoMatch": "Geen tags komen overeen met je filter.",
+    "bmTabList": "Lijst",
+    "bmTabSettings": "Instellingen",
     "dbTabBackups": "Back-ups & gegevens",
     "dbTabReset": "Resetten",
     "resetIntro": "Deze acties verwijderen gegevens definitief. Maak eerst een back-up — dit kan niet ongedaan worden gemaakt.",

@@ -127,6 +127,7 @@ class DashboardConfig {
         this.statsTab = 'overview';
         // Data & backups sub-tab.
         this.dbTab = 'backups';
+        this.bmTab = 'list';
         // Server log viewer. Refresh is off by default: an idle config page
         // should not poll, and the tab is usually opened to read one thing.
         this.logRefreshSeconds = 0;
@@ -284,6 +285,7 @@ class DashboardConfig {
             stats: DashboardConfig.STATS_TABS,
             'data-backups': DashboardConfig.DB_TABS,
             help: DashboardConfig.HELP_TABS,
+            bookmarks: DashboardConfig.BM_TABS,
         };
     }
 
@@ -295,6 +297,7 @@ class DashboardConfig {
         stats: 'statsTab',
         'data-backups': 'dbTab',
         help: 'helpTab',
+        bookmarks: 'bmTab',
     };
 
     /**
@@ -310,6 +313,7 @@ class DashboardConfig {
         'data-stats-tab': 'stats',
         'data-db-tab': 'data-backups',
         'data-help-tab': 'help',
+        'data-bm-tab': 'bookmarks',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -320,6 +324,7 @@ class DashboardConfig {
         stats: 'data-stats-tab',
         'data-backups': 'data-db-tab',
         help: 'data-help-tab',
+        bookmarks: 'data-bm-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -1903,6 +1908,7 @@ class DashboardConfig {
             case 'appearance': return this.appearanceTabLabel(tab);
             case 'stats': return this.statsTabLabel(tab);
             case 'data-backups': return this.dbTabLabel(tab);
+            case 'bookmarks': return this.bmTabLabel(tab);
             case 'help': return this.helpTabLabel(tab);
             default: return tab;
         }
@@ -3745,6 +3751,14 @@ class DashboardConfig {
                     return;
                 }
             }
+            // Bookmarks has a strip too, now that its settings live on one.
+            if (target.bmTab && target.section === 'bookmarks') {
+                this.bmTab = target.bmTab;
+                if (this.section === 'bookmarks') {
+                    this.render();
+                    return;
+                }
+            }
             // Data & backups has its own strip, same as Behavior: set the field
             // the strip reads before the section renders.
             if (target.dbTab && target.section === 'data-backups') {
@@ -4024,6 +4038,15 @@ class DashboardConfig {
             return this.renderDataLogs();
         }
         return this.renderDataBackupsMain();
+    }
+
+    bmTabLabel(tab) {
+        const map = {
+            list: ['config.bmTabList', 'List'],
+            settings: ['config.bmTabSettings', 'Settings'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
     }
 
     dbTabLabel(tab) {
@@ -9837,6 +9860,14 @@ class DashboardConfig {
      */
     static DB_TABS = ['backups', 'icons', 'logs', 'trash', 'reset'];
 
+    /**
+     * Bookmarks is a list section, so its settings used to sit after the list —
+     * behind fifty rows by default and up to five hundred as the infinite scroll
+     * loads more, which also means you cannot reach them by jumping to the
+     * bottom: the bottom moves. One strip, the same one five other sections use.
+     */
+    static BM_TABS = ['list', 'settings'];
+
     static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'branding', 'custom-themes'];
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
@@ -11820,6 +11851,43 @@ class DashboardConfig {
 
     renderBookmarksSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const totalAll = (this.dash.allBookmarks || []).length;
+        const tabs = DashboardConfig.BM_TABS.map((tab) => {
+            const active = tab === this.bmTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-bm-body" data-bm-tab="${esc(tab)}">${esc(this.bmTabLabel(tab))}</button>`;
+        }).join('');
+
+        return `
+            <div class="config-bm-header">
+                <div class="config-bm-header-text">
+                    <p class="config-bm-subtitle">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+                </div>
+                <div class="config-bm-header-meta">
+                    <span class="config-bm-header-badge">${esc(String(totalAll))}</span>
+                </div>
+            </div>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-bm-body" role="tabpanel" tabindex="0">${this.renderBmTab()}</div>
+        `;
+    }
+
+    /** Which sub-tab of Bookmarks is showing. */
+    renderBmTab() {
+        if (this.bmTab === 'settings') {
+            return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
+        }
+        return this.renderBookmarksListTab();
+    }
+
+    /**
+     * The list tab: the tiles, the filter row and the rows themselves.
+     *
+     * The tiles come with the list rather than staying above the strip: they
+     * count what the filters below them produce, and each one is a filter of its
+     * own — they belong to the thing they act on.
+     */
+    renderBookmarksListTab() {
+        const esc = (v) => this.dash.escapeHtml(v);
         if (this.bmSort == null) this.bmSort = this.defaultBookmarksSort();
         const pages = this.dash.pages || [];
         const pageOptions = [`<option value="">${esc(this.t('config.allPages', 'All pages'))}</option>`]
@@ -11849,17 +11917,7 @@ class DashboardConfig {
         const filtered = this.visibleBookmarks();
         const totalAll = (this.dash.allBookmarks || []).length;
         const countLabel = this.renderBookmarkCountLabel(filtered.length, totalAll);
-
         return `
-            <div class="config-bm-header">
-                <div class="config-bm-header-text">
-                    <h3 class="config-bm-head-title">${esc(this.t('config.bookmarks', 'Bookmarks'))}</h3>
-                    <p class="config-bm-subtitle">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
-                </div>
-                <div class="config-bm-header-meta">
-                    <span class="config-bm-header-badge">${esc(String(totalAll))}</span>
-                </div>
-            </div>
             <div class="config-bm-tiles-wrap">
                 <p class="config-bm-tiles-hint" id="config-bm-tiles-hint"${this.bookmarksFiltersActive() ? '' : ' hidden'}>${esc(this.t('config.bookmarksTilesFilteredHint', 'Filtered view — counts below match your filters'))}</p>
                 <div class="config-tiles config-tiles--bookmarks" id="config-bm-tiles" role="list">${this.bookmarksSummaryTiles(this.bookmarksFiltersActive() ? this.computeBookmarkSubsetStats(filtered) : null).map((t) => this.renderTile(t)).join('')}</div>
@@ -11884,7 +11942,6 @@ class DashboardConfig {
                 <div id="config-bm-bulk">${this.renderBulkToolbar()}</div>
                 <div id="config-bm-list">${this.renderBookmarksList()}</div>
             </div>
-            ${this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior')}
         `;
     }
 
@@ -13373,6 +13430,31 @@ class DashboardConfig {
     }
 
     bindBookmarksSection(container) {
+        this.bindSubTabStrip(container, 'data-bm-tab', (tab) => {
+            if (tab === this.bmTab) return;
+            this.bmTab = tab;
+            this.restoreConfigHash();
+            const body = document.getElementById('config-bm-body');
+            if (!body) return;
+            body.innerHTML = this.renderBmTab();
+            // Bind the new body only: re-binding the whole container would stack
+            // a second listener on every tab button.
+            if (tab === 'settings') {
+                this.bindControlPanels(body, 'behavior');
+            } else {
+                this.bindBookmarksListTab(body);
+            }
+            // The strip is not repainted with the body, so the active button has
+            // to be moved by hand — the same call the other strips make.
+            this.syncSubTabStrip('data-bm-tab', tab);
+        });
+        if (this.bmTab === 'settings') {
+            return;
+        }
+        this.bindBookmarksListTab(container);
+    }
+
+    bindBookmarksListTab(container) {
         const search = container.querySelector('#config-bm-search');
         if (search) {
             search.addEventListener('input', () => {

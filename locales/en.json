@@ -4293,6 +4293,8 @@
     "selectAllBookmarks": "Select all",
     "selectAllBookmarksCount": "Select all {n}",
     "tagsNoMatch": "No tags match your filter.",
+    "bmTabList": "List",
+    "bmTabSettings": "Settings",
     "dbTabBackups": "Backups & data",
     "dbTabReset": "Reset",
     "resetIntro": "These actions permanently remove data. Make a backup first — there is no undo.",

@@ -289,18 +289,10 @@
     gap: 1rem;
     padding: 0.25rem 0.35rem 0.5rem;
     margin-bottom: 0.85rem;
-    border-bottom: 1px solid var(--border-primary);
-}
-
-.config-bm-head-title {
-    margin: 0;
-    font-size: 1.15rem;
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
 }
 
 .config-bm-subtitle {
-    margin: 0.25rem 0 0;
+    margin: 0;
     max-width: 62ch;
     font-size: var(--font-size-controls);
     line-height: 1.5;

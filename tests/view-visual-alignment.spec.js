@@ -184,7 +184,7 @@ test.describe('rounded is the shared shape', () => {
 });
 
 test.describe('Config → Bookmarks opens like a view', () => {
-    test('it has a titled header with a count, the way Health and Inbox do', async ({ page }) => {
+    test('it has a header with a subtitle and a count, the way Health and Inbox do', async ({ page }) => {
         await openDashboard(page);
         await openConfigBookmarks(page);
 
@@ -192,14 +192,17 @@ test.describe('Config → Bookmarks opens like a view', () => {
             const h = document.querySelector('.config-bm-header');
             if (!h) return null;
             return {
-                title: h.querySelector('.config-bm-head-title')?.textContent?.trim() || '',
+                // The section shell already prints "Bookmarks" above the
+                // breadcrumb, so the header carries no title of its own —
+                // two of them one line apart read as a mistake.
+                ownTitle: h.querySelector('h1, h2, h3') !== null,
                 subtitle: Boolean(h.querySelector('.config-bm-subtitle')),
                 badge: h.querySelector('.config-bm-header-badge')?.textContent?.trim() || '',
             };
         });
 
         expect(header).not.toBeNull();
-        expect(header.title).not.toBe('');
+        expect(header.ownTitle).toBe(false);
         expect(header.subtitle).toBe(true);
         // The count is the number of bookmarks, not a placeholder.
         expect(Number(header.badge)).toBe(await page.evaluate(

@@ -19,6 +19,11 @@ async function openBookmarks(page) {
 test.describe('Config → Bookmarks settings', () => {
     test('every declared field renders a control', async ({ page }) => {
         await openBookmarks(page);
+        // The settings moved onto their own sub-tab: behind the list they were
+        // fifty rows down by default, and the infinite scroll meant the bottom
+        // moved away as you scrolled toward it.
+        await page.locator('[data-bm-tab="settings"]').click();
+        await page.waitForSelector('[data-behavior-field]', { timeout: 10_000 });
         const missing = await page.evaluate(() => [
             'configBookmarksSort', 'configBookmarksPageSize', 'bookmarkDeleteConfirmFrom',
             'defaultMonitorIntervalMinutes', 'newBookmarkCheckMode', 'newBookmarkPinned',

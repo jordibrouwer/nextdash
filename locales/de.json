@@ -4292,6 +4292,8 @@
     "selectAllBookmarks": "Alle auswählen",
     "selectAllBookmarksCount": "Alle {n} auswählen",
     "tagsNoMatch": "Keine Tags passen zu deinem Filter.",
+    "bmTabList": "Liste",
+    "bmTabSettings": "Einstellungen",
     "dbTabBackups": "Backups & Daten",
     "dbTabReset": "Zurücksetzen",
     "resetIntro": "Diese Aktionen löschen Daten endgültig. Erstelle zuerst ein Backup — es gibt kein Zurück.",
