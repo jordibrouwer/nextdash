@@ -1212,7 +1212,7 @@ What the server has been doing, without shell access to the container. Every lin
 - **Limit the log** — by **age** or by **number of entries**, never both. Whichever you pick, the other control is greyed out, because a log capped two ways drops lines for a reason neither setting explains on its own.
   - **By age** → **Keep entries for** 1, 2, 4, 12 or 24 hours, 7 or 30 days, or **Until cleared**. Older lines drop away on their own; how many there are does not matter.
   - **By number of entries** → **Keep at most** 100, 500, 1000, 2500 or 5000. Only the newest that many are kept and older ones fall off as new lines arrive; how old they are does not matter.
-- **Show** — everything, warnings and errors, or errors only. **Search** filters on the message and on the subsystem name. Both are applied by the server, so they search the whole buffer rather than what is on screen.
+- **Show** — everything, warnings and errors, errors only, or **Activity only**. The last one is not a severity but a source: activity lines are what *was done* — a bookmark saved, a page added, a check run — and they have always been written into this same log, findable only by knowing to search for the word. **Search** filters on the message and on the subsystem name. All of it is applied by the server, so it covers the whole buffer rather than what is on screen.
 - **Scroll to newest lines** — follows the tail, and stops following while you are scrolled up reading something.
 - **Copy**, **Download** — the current lines to the clipboard, or the whole buffer as a `.log` file.
 - **Clear log** — empties the buffer **and** deletes `server.log` and its rotated copies from the data directory. It asks first, and cannot be undone.
@@ -1556,6 +1556,8 @@ Only matching `Origin` headers receive CORS headers. Include your extension orig
 ### Activity log
 
 Structured JSON lines for bookmark mutations and status checks (opens optional). See [README.md → Activity log](README.md#activity-log-bookmark-events) for `NEXTDASH_ACTIVITY_LOG`, `NEXTDASH_ACTIVITY_LOG_PERSIST`, and example lines. Treat logs as sensitive — URLs are included.
+
+They are also readable in the app: **Config → Data & backups → Server log**, with **Show → Activity only**. That needs **Collect server log** switched on, since it is the same buffer. Which events are written stays an environment setting; the viewer only decides what you look at.
 
 ### Rate limits
 

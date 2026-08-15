@@ -166,6 +166,40 @@ func TestServerLogSinkFilters(t *testing.T) {
 	}
 }
 
+// The viewer's "show me" control carries one value that is a source rather than
+// a severity: activity lines are what the user did, written through the same
+// logger as everything else. Before this they could only be found by typing
+// "activity" into the search box and knowing to.
+func TestServerLogSinkActivityFilter(t *testing.T) {
+	s := &serverLogSink{}
+	s.appendLine(`2026/08/10 00:11:43 activity: {"event":"bookmark.create","source":"dashboard"}`)
+	s.appendLine("2026/08/10 00:11:43 import: all good")
+	s.appendLine("2026/08/10 00:11:43 req1 GET /api/pages 200 48B 1ms")
+	s.appendLine(`2026/08/10 00:11:43 activity: {"event":"categories.save","pageId":1}`)
+
+	only, _, _ := s.Entries(-1, logFilterActivity, "", 0)
+	if len(only) != 2 {
+		t.Fatalf("activity filter returned %d entries, want 2", len(only))
+	}
+	for _, e := range only {
+		if e.Source != logSourceActivity {
+			t.Fatalf("activity filter let through a %q line: %s", e.Source, e.Message)
+		}
+	}
+
+	// It is a source, so it must not behave like a severity: activity lines are
+	// plain info, and a filter that fell through to logLevelAtLeast would return
+	// every line in the buffer rather than these two.
+	if all, _, _ := s.Entries(-1, "", "", 0); len(all) != 4 {
+		t.Fatalf("unfiltered returned %d entries, want 4", len(all))
+	}
+
+	// And the severity filters are unchanged by its presence.
+	if warn, _, _ := s.Entries(-1, logLevelWarn, "", 0); len(warn) != 0 {
+		t.Fatalf("warn filter returned %d entries, want 0", len(warn))
+	}
+}
+
 func TestServerLogRetentionDropsOldLines(t *testing.T) {
 	s := &serverLogSink{}
 	now := time.Now()

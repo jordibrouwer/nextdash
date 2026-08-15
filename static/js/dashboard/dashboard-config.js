@@ -4290,6 +4290,11 @@ class DashboardConfig {
             ['', this.t('config.logLevelAll', 'Everything')],
             ['warn', this.t('config.logLevelWarn', 'Warnings & errors')],
             ['error', this.t('config.logLevelError', 'Errors only')],
+            // Not a severity: activity lines are what someone did — a bookmark
+            // saved, a page added — and they have always been in here, mixed
+            // in with the requests. Finding them meant knowing to type
+            // "activity" into the search box.
+            ['activity', this.t('config.logLevelActivity', 'Activity only')],
         ].map(([v, label]) => `<option value="${esc(v)}" ${v === this.logLevelFilter ? 'selected' : ''}>${esc(label)}</option>`).join('');
 
         return `
@@ -4331,6 +4336,8 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(this.t('config.logLevelLabel', 'Show'))}</span>
                     <select class="config-select" data-log-select="level">${levelOptions}</select>
                 </div>
+                <p class="config-panel-note" data-log-activity-note ${this.logLevelFilter === 'activity' ? '' : 'hidden'}>${esc(this.t('config.logActivityHint',
+                    'What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.logSearchLabel', 'Search'))}</span>
                     <input type="search" class="config-text" data-log-search
@@ -4590,6 +4597,11 @@ class DashboardConfig {
                 }
                 if (kind === 'level') {
                     this.logLevelFilter = value;
+                    // Toggled rather than repainted: rebuilding the panel to
+                    // show one line of explanation would take the focus off the
+                    // select the user just used.
+                    const note = container.querySelector('[data-log-activity-note]');
+                    if (note) note.hidden = value !== 'activity';
                     void this.loadServerLog({ reset: true });
                 }
             });

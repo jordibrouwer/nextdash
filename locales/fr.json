@@ -4765,7 +4765,9 @@
     "showRowTagsLabel": "Afficher les tags sur les lignes",
     "rowTagsMaxLabel": "Tags affichés avant « +N »",
     "showRowTagsInfoTitle": "Tags dans la grille",
-    "showRowTagsInfoMessage": "Ajoute une petite puce par tag à côté du nom, la même que dans la boîte de réception et Config → Favoris. Désactivé par défaut : une ligne avec plusieurs tags est plus chargée, et la grille vaut par sa lisibilité. Les tags ne chassent jamais le nom — ils cèdent en premier et sont masqués sur téléphone."
+    "showRowTagsInfoMessage": "Ajoute une petite puce par tag à côté du nom, la même que dans la boîte de réception et Config → Favoris. Désactivé par défaut : une ligne avec plusieurs tags est plus chargée, et la grille vaut par sa lisibilité. Les tags ne chassent jamais le nom — ils cèdent en premier et sont masqués sur téléphone.",
+    "logLevelActivity": "Activité uniquement",
+    "logActivityHint": "Ce qui a été fait — favoris enregistrés, pages ajoutées, vérifications lancées — dans le même journal que les requêtes. Choisissez Activité uniquement pour ne lire que celles-là, ou activez les catégories avec NEXTDASH_ACTIVITY_LOG."
   },
   "colors": {
     "title": "personnalisation du thème",

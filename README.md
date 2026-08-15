@@ -158,6 +158,8 @@ Example log line:
 activity: {"ts":"2026-07-03T12:00:00Z","event":"bookmark.add","pageId":1,"name":"GitHub","url":"https://github.com","source":"dashboard"}
 ```
 
+To read them without shell access, open **Config → Data & backups → Server log** and set **Show** to **Activity only** — the same lines, with the request traffic around them filtered out. It needs **Collect server log** switched on, because it is the same buffer; which events get written is still decided by the environment variables above.
+
 Status pings are deduplicated for the same URL + result for 10 minutes unless `refresh=1` is passed to `/api/ping`. URLs appear in logs — treat log files as sensitive on shared hosts.
 
 ### Rate limits (outbound & SSRF APIs)

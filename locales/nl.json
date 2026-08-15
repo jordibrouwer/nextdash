@@ -4765,7 +4765,9 @@
     "showRowTagsLabel": "Tags tonen op bladwijzerrijen",
     "rowTagsMaxLabel": "Tags getoond vóór “+N”",
     "showRowTagsInfoTitle": "Tags op het raster",
-    "showRowTagsInfoMessage": "Zet een klein chipje per tag naast de naam, hetzelfde chipje als in de Inbox en Config → Bladwijzers. Standaard uit: een rij met meerdere tags is onrustiger, en het raster is juist nuttig doordat het scanbaar blijft. Tags verdringen de naam nooit — zij wijken als eerste, en op een telefoon zijn ze verborgen."
+    "showRowTagsInfoMessage": "Zet een klein chipje per tag naast de naam, hetzelfde chipje als in de Inbox en Config → Bladwijzers. Standaard uit: een rij met meerdere tags is onrustiger, en het raster is juist nuttig doordat het scanbaar blijft. Tags verdringen de naam nooit — zij wijken als eerste, en op een telefoon zijn ze verborgen.",
+    "logLevelActivity": "Alleen activiteit",
+    "logActivityHint": "Wat er is gedaan — bladwijzers opgeslagen, pagina's toegevoegd, controles uitgevoerd — in hetzelfde log als de requests. Kies Alleen activiteit om alleen die te lezen, of zet categorieën aan en uit met NEXTDASH_ACTIVITY_LOG."
   },
   "colors": {
     "title": "thema-aanpassing",

@@ -96,6 +96,46 @@ test.describe('Data & backups → Server log', () => {
         await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(0);
     });
 
+    test('Activity only shows what was done, not the requests around it', async ({ page }) => {
+        await openLogs(page, { clear: true });
+        // Something the user did, alongside the request lines the page load
+        // produced anyway. Saving categories is logged as an activity line.
+        await page.evaluate(async () => {
+            const pageId = window.dashboardInstance.currentPageId;
+            const current = await (await fetch(`/api/categories?page=${pageId}`)).json();
+            // Saved back unchanged: the point is that the save is logged as an
+            // activity line, not what it writes.
+            // Through nextDashFetch, which is what the app writes with: a bare
+            // fetch misses the write token and comes back 401.
+            await window.nextDashFetch(`/api/categories?page=${pageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Array.isArray(current) ? current : []),
+            });
+            await window.dashboardInstance.config.loadServerLog({ reset: true });
+        });
+        await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(1);
+
+        await page.locator('[data-log-select="level"]').selectOption('activity');
+
+        // Every remaining line is an activity line — the filter reaches the
+        // server, which is what makes it different from typing "activity" into
+        // the search box over lines already fetched.
+        await expect.poll(async () => page.evaluate(() =>
+            [...document.querySelectorAll('.config-log-line')].length), { timeout: 10_000 })
+            .toBeGreaterThan(0);
+        const sources = await page.evaluate(() =>
+            [...document.querySelectorAll('.config-log-line')]
+                .map((el) => el.textContent || ''));
+        expect(sources.every((text) => text.includes('activity'))).toBe(true);
+        expect(sources.some((text) => text.includes('GET /api/'))).toBe(false);
+
+        // The one line of explanation appears with it, and goes away again.
+        await expect(page.locator('[data-log-activity-note]')).toBeVisible();
+        await page.locator('[data-log-select="level"]').selectOption('');
+        await expect(page.locator('[data-log-activity-note]')).toBeHidden();
+    });
+
     test('clearing empties the buffer on the server', async ({ page }) => {
         await openLogs(page);
         await expect.poll(() => page.locator('.config-log-line').count()).toBeGreaterThan(1);

@@ -4765,7 +4765,9 @@
     "showRowTagsLabel": "Tags in Lesezeichenzeilen anzeigen",
     "rowTagsMaxLabel": "Tags vor „+N\"",
     "showRowTagsInfoTitle": "Tags im Raster",
-    "showRowTagsInfoMessage": "Setzt pro Tag einen kleinen Chip neben den Namen — derselbe Chip wie im Posteingang und in Config → Lesezeichen. Standardmäßig aus: eine Zeile mit mehreren Tags wird unruhiger, und das Raster lebt davon, überschaubar zu bleiben. Tags verdrängen den Namen nie — sie weichen zuerst und sind auf dem Handy ausgeblendet."
+    "showRowTagsInfoMessage": "Setzt pro Tag einen kleinen Chip neben den Namen — derselbe Chip wie im Posteingang und in Config → Lesezeichen. Standardmäßig aus: eine Zeile mit mehreren Tags wird unruhiger, und das Raster lebt davon, überschaubar zu bleiben. Tags verdrängen den Namen nie — sie weichen zuerst und sind auf dem Handy ausgeblendet.",
+    "logLevelActivity": "Nur Aktivität",
+    "logActivityHint": "Was getan wurde — Lesezeichen gespeichert, Seiten angelegt, Prüfungen ausgeführt — im selben Log wie die Requests. Wähle Nur Aktivität, um nur diese zu lesen, oder schalte Kategorien mit NEXTDASH_ACTIVITY_LOG an und aus."
   },
   "colors": {
     "title": "themenanpassung",
