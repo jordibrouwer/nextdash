@@ -197,15 +197,6 @@ class KeyboardNavigation {
                     this.togglePinForCurrent();
                     return;
                 }
-                // Share/copy "name — URL" was right-click only: no command, no
-                // key, not even in the cheat sheet.
-                if (e.code === 'KeyS') {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    e.stopPropagation();
-                    this.shareCurrent();
-                    return;
-                }
                 // Shift+H opens Health but loses the row; only the context menu
                 // could reveal this particular bookmark there.
                 if (e.code === 'KeyR') {
@@ -213,6 +204,37 @@ class KeyboardNavigation {
                     e.stopImmediatePropagation();
                     e.stopPropagation();
                     this.revealCurrentInHealth();
+                    return;
+                }
+                // Inline edit and the preview card used to be ';' and '[' — the
+                // two row actions outside this family, on keys that say nothing
+                // about what they do. Both still work (see below), undocumented,
+                // the way 0 still opens the inbox.
+                if (e.code === 'KeyE') {
+                    if (this.dashboard?.tryOpenInlineBookmarkEdit?.()) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        e.stopPropagation();
+                    }
+                    return;
+                }
+                if (e.code === 'KeyV') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.togglePreviewCardForCurrent();
+                    return;
+                }
+                // Shift+L — share, or copy "name — URL" where no share sheet
+                // exists. It was Shift+S, which also opens config when no row is
+                // selected: the only key in the app whose meaning depended on
+                // whether something was selected, and two lines of cheat sheet
+                // to explain. Shift+S is config now, always.
+                if (e.code === 'KeyL') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this.shareCurrent();
                     return;
                 }
             }
@@ -302,7 +324,9 @@ class KeyboardNavigation {
                 return;
             }
 
-            // '[' — toggle preview card (only when a row is selected)
+            // '[' — the old preview key, kept working but undocumented now that
+            // Shift+V does it. Brackets mean "previous / next sub-tab" in
+            // config, and one pair of keys should not mean two things.
             if (e.key === '[' && this.currentIndex >= 0) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -1746,7 +1770,7 @@ class KeyboardNavigation {
     }
 
     /**
-     * Shift+S — share, or copy "name — URL" where no share sheet exists.
+     * Shift+L — share, or copy "name — URL" where no share sheet exists.
      *
      * Was right-click only: no command, no key, and absent from the cheat sheet,
      * even though it is the only path that copies the name with the address.
