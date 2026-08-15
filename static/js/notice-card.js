@@ -33,7 +33,12 @@
 
     const SHOW_DELAY_MS = 5000;
     const RETRY_MS = 2000;
-    const MAX_ATTEMPTS = 20;
+    // How long a card keeps polling before it settles down to waiting on an
+    // event. Long enough to outlast a slow first render, short enough that a
+    // page nobody is looking at is not ticking all afternoon: whatever frees
+    // the corner later — another card being answered, the what's-new modal
+    // closing — wakes the queue directly.
+    const POLL_WINDOW_MS = 40000;
     const TEARDOWN_MS = 260;
 
     function dash() {
@@ -78,6 +83,94 @@
         return true;
     }
 
+
+/*
+The queue.
+
+Every card wants the same corner and only one may have it, so a card that
+loses the moment has to be able to come back. It used to poll twenty times
+at two-second intervals and then give up for good, which is fine when the
+corner clears within forty seconds and useless when it does not: the side
+rail's invitation stands until it is answered, and a reader who leaves it
+alone never saw anything offered after it. Two cards with the same delay,
+one script tag apart, decided it between them by load order.
+
+So a card that cannot show now joins a queue instead of counting down.
+The queue is tried again whenever the corner might have come free — a card
+closing is the obvious case, but the what's-new modal is not a card and
+closes without telling anyone, so a MutationObserver on the body covers
+both. Order is registration order, which is the order the scripts load:
+the queue decides *when*, never *whether*, and a card still asks its own
+canShow every time.
+*/
+    const queue = [];
+    let queueTimer = null;
+    let queueDeadline = 0;
+    let queueRunning = false;
+    let bodyObserver = null;
+
+    // Async because a card may gate on something that needs awaiting, which is
+    // also why the pass is guarded: a card closing mid-await would otherwise
+    // start a second walk over the same queue.
+    async function runQueue() {
+        queueTimer = null;
+        if (queueRunning) return;
+        queueRunning = true;
+        try {
+            // First come, first served, and only one: build() takes the corner,
+            // so a second card in the same pass would be refused by
+            // cornerIsFree anyway — stopping here says that on purpose rather
+            // than by accident.
+            for (const entry of [...queue]) {
+                if (await entry.tryShow()) {
+                    dequeue(entry.id);
+                    break;
+                }
+            }
+        } finally {
+            queueRunning = false;
+        }
+        if (queue.length && Date.now() < queueDeadline && !queueTimer) {
+            queueTimer = setTimeout(runQueue, RETRY_MS);
+        }
+    }
+
+    /** Ask the queue to try again, and give it a fresh window to poll in. */
+    function wakeQueue() {
+        if (!queue.length) return;
+        queueDeadline = Date.now() + POLL_WINDOW_MS;
+        if (queueTimer) return;
+        queueTimer = setTimeout(() => { void runQueue(); }, 0);
+    }
+
+    function watchBody() {
+        if (bodyObserver || typeof MutationObserver !== 'function' || !document.body) return;
+        bodyObserver = new MutationObserver((records) => {
+            const freed = records.some((record) => [...record.removedNodes].some((node) =>
+                node.nodeType === 1
+                && (node.matches?.('.quickstart-card, .whats-new-modal')
+                    || node.querySelector?.('.quickstart-card, .whats-new-modal'))));
+            if (freed) wakeQueue();
+        });
+        bodyObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    function enqueue(entry) {
+        if (queue.some((queued) => queued.id === entry.id)) return;
+        queue.push(entry);
+        watchBody();
+        wakeQueue();
+    }
+
+    function dequeue(id) {
+        const at = queue.findIndex((entry) => entry.id === id);
+        if (at >= 0) queue.splice(at, 1);
+        if (!queue.length && queueTimer) {
+            clearTimeout(queueTimer);
+            queueTimer = null;
+        }
+    }
+
     function define(spec) {
         const cardClass = `${spec.id}-card`;
         let cardEl = null;
@@ -90,7 +183,11 @@
             if (!el) return;
             cardEl = null;
             el.classList.remove('show');
-            setTimeout(() => { if (el.isConnected) el.remove(); }, TEARDOWN_MS);
+            setTimeout(() => {
+                if (el.isConnected) el.remove();
+                // Whoever is next has been waiting for exactly this.
+                wakeQueue();
+            }, TEARDOWN_MS);
         }
 
         /** Put a failure on the card, where it stays until the user acts on it. */
@@ -198,21 +295,23 @@
         }
 
         /**
-         * Poll for a free moment rather than taking a single chance at a fixed
-         * delay: quick-start, the what's-new modal and any other notice all
-         * occupy this same corner on a fresh install.
+         * Wait out this card's own delay, then join the queue.
+         *
+         * The delay is the card's alone — it is how long after arriving the
+         * dashboard leaves someone in peace. Everything after it is shared: see
+         * the queue above.
          */
         function autoStart() {
-            let attempts = 0;
-            const tick = async () => {
-                attempts += 1;
-                if (cardEl) return;
-                if (await render()) return;
-                if (attempts < MAX_ATTEMPTS) {
-                    pending = setTimeout(tick, RETRY_MS);
-                }
-            };
-            pending = setTimeout(tick, spec.showDelayMs ?? SHOW_DELAY_MS);
+            pending = setTimeout(() => {
+                pending = null;
+                enqueue({
+                    id: cardClass,
+                    // render(), not renderSync(): a card may gate on something
+                    // asynchronous, and the sync path would read the pending
+                    // promise as a yes.
+                    tryShow: async () => !cardEl && (await render()) === true,
+                });
+            }, spec.showDelayMs ?? SHOW_DELAY_MS);
         }
 
         function stop() {
@@ -220,6 +319,7 @@
                 clearTimeout(pending);
                 pending = null;
             }
+            dequeue(cardClass);
         }
 
         return {
@@ -229,5 +329,5 @@
         };
     }
 
-    global.NoticeCard = { define, cornerIsFree };
+    global.NoticeCard = { define, cornerIsFree, wakeQueue };
 }(typeof window !== 'undefined' ? window : globalThis));

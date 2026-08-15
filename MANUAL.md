@@ -205,6 +205,8 @@ On a phone every category is one column wide.
 
 The first time it is worth knowing about, a card in the bottom-left corner offers a four-step walkthrough of all this — the before/after shape, where the switch is, the sum that decides the column count, and where the remaining settings live. Dismiss it and it does not come back.
 
+That corner holds **one card at a time**, and the others wait their turn rather than being dropped: a card that finds the corner busy — another invitation still unanswered, the ★ release notes open — comes back as soon as it frees up, however long that takes. Until **v1.1.3** it gave up after forty seconds, so on an install carrying an unanswered card, everything behind it was never offered at all.
+
 ### 4.3 Bookmarks
 
 Each bookmark has:
