@@ -35,6 +35,19 @@ class DashboardConfig {
     ];
 
     /** Device-local last config section (and sub-tab) for Shift+S / `<` return visits. */
+    /**
+     * Where this release's new setting lives, and the only place that is
+     * written down.
+     *
+     * The twinkle is drawn three times — on the section in the rail, on the
+     * sub-tab, and on the panel — and the three used to be three separate
+     * literals scattered through the render methods. Moving the mark then meant
+     * finding all of them, and a half-moved trail points at nothing.
+     *
+     * Cleared (set to `{}`) once the setting is no longer new.
+     */
+    static NEW_THIS_RELEASE = { section: 'appearance', tab: 'layout' };
+
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
     /**
@@ -42,14 +55,19 @@ class DashboardConfig {
      *
      * Returning to config a moment later is a continuation — you left to check
      * something and came back — and dropping you on Overview each time makes
-     * you re-navigate. Coming back an hour later is a new task, and the tab you
-     * happened to be on last time is no longer where you meant to be. Fifteen
+     * you re-navigate. Coming back much later is a new task, and the tab you
+     * happened to be on last time is no longer where you meant to be. Five
      * minutes is the line between the two.
+     *
+     * Measured from the moment config stopped being on screen, not from the
+     * last click inside it: setActiveView stamps it on the way out, so sitting
+     * on one section for an hour and stepping away for ten seconds still comes
+     * back where you were.
      *
      * Mirrored in dashboard-config-loader.js, which reads the same entry on a
      * cold load before this module exists. Both must agree.
      */
-    static CONFIG_LAST_TTL_MS = 15 * 60 * 1000;
+    static CONFIG_LAST_TTL_MS = 5 * 60 * 1000;
 
     /**
      * The activity chart's range, remembered per browser.
@@ -127,6 +145,7 @@ class DashboardConfig {
         this.statsTab = 'overview';
         // Data & backups sub-tab.
         this.dbTab = 'backups';
+        this.bmTab = 'list';
         // Server log viewer. Refresh is off by default: an idle config page
         // should not poll, and the tab is usually opened to read one thing.
         this.logRefreshSeconds = 0;
@@ -284,6 +303,7 @@ class DashboardConfig {
             stats: DashboardConfig.STATS_TABS,
             'data-backups': DashboardConfig.DB_TABS,
             help: DashboardConfig.HELP_TABS,
+            bookmarks: DashboardConfig.BM_TABS,
         };
     }
 
@@ -295,6 +315,7 @@ class DashboardConfig {
         stats: 'statsTab',
         'data-backups': 'dbTab',
         help: 'helpTab',
+        bookmarks: 'bmTab',
     };
 
     /**
@@ -310,6 +331,7 @@ class DashboardConfig {
         'data-stats-tab': 'stats',
         'data-db-tab': 'data-backups',
         'data-help-tab': 'help',
+        'data-bm-tab': 'bookmarks',
     };
 
     /** data-* attribute on each section's sub-tab strip buttons. */
@@ -320,6 +342,7 @@ class DashboardConfig {
         stats: 'data-stats-tab',
         'data-backups': 'data-db-tab',
         help: 'data-help-tab',
+        bookmarks: 'data-bm-tab',
     };
 
     /** Apply a sub-tab from the hash, if the section has one. */
@@ -375,6 +398,15 @@ class DashboardConfig {
                 `${window.location.pathname}${window.location.search}${wanted}`
             );
         }
+        // Every move inside config comes through here — it is what writes the
+        // section and sub-tab into the address bar — so this is also where the
+        // location is remembered. It used to be saved only on the ways out that
+        // config itself knows about (Esc, `<`, its own shortcuts), which left
+        // out every route that simply switches view around it: the health,
+        // inbox and page buttons in the header. Those changed what was on
+        // screen without config ever hearing about it, so the memory kept an
+        // older tab.
+        this.saveLastConfigLocation();
     }
 
     /**
@@ -593,7 +625,7 @@ class DashboardConfig {
             return false;
         }
         // Every way out remembers where you were, not just Shift+H and Shift+I.
-        // The fifteen-minute expiry in loadLastConfigLocation is what keeps that
+        // The five-minute expiry in loadLastConfigLocation is what keeps that
         // from turning into a tab that greets you forever.
         this.saveLastConfigLocation();
         // The save indicator lives on <body>, so leaving the view has to take it
@@ -1903,6 +1935,7 @@ class DashboardConfig {
             case 'appearance': return this.appearanceTabLabel(tab);
             case 'stats': return this.statsTabLabel(tab);
             case 'data-backups': return this.dbTabLabel(tab);
+            case 'bookmarks': return this.bmTabLabel(tab);
             case 'help': return this.helpTabLabel(tab);
             default: return tab;
         }
@@ -1984,6 +2017,8 @@ class DashboardConfig {
         pasteDestination: ['paste', 'clipboard', 'inbox'],
         pasteUrlQuickAdd: ['paste', 'clipboard', 'quick add'],
         columnsPerRow: ['columns', 'grid', 'layout'],
+        defaultCategorySpread: ['spread', 'width', 'columns', 'category', 'wide'],
+        categorySpreadResetScope: ['spread', 'reset', 'columns', 'category'],
         densityMode: ['density', 'spacing', 'compact'],
         categorySpacing: ['spacing', 'gap', 'density'],
         sideMargin: ['margin', 'padding', 'width'],
@@ -2479,14 +2514,22 @@ class DashboardConfig {
         const activeNavId = `config-section-${this.section}`;
         const nav = DashboardConfig.SECTIONS.map((section) => {
             const active = section === this.section;
+            // The twinkle marks the way to this release's new setting: the
+            // section, then the sub-tab inside it, then the panel itself. Each
+            // step only has to get you to the next one, which is why the
+            // section carries it as well as the panel — the panel is three
+            // clicks deep and nobody goes looking for a setting they have not
+            // heard of.
+            const isNew = section === DashboardConfig.NEW_THIS_RELEASE.section;
+            const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
             return `
-                <button type="button" class="config-nav-item${active ? ' is-active' : ''}"
+                <button type="button" class="config-nav-item${active ? ' is-active' : ''}${isNew ? ' config-nav-item--animated' : ''}"
                         role="tab" aria-selected="${active ? 'true' : 'false'}"
                         tabindex="${active ? '0' : '-1'}"
                         id="config-section-${esc(section)}"
                         aria-controls="${panelId}"
                         data-config-section="${esc(section)}">
-                    ${esc(this.sectionLabel(section))}
+                    ${esc(this.sectionLabel(section))}${stars}
                 </button>`;
         }).join('');
         const searchLabel = this.t('config.settingsSearchLabel', 'Find settings');
@@ -2919,6 +2962,19 @@ class DashboardConfig {
     /** Catalog of feature spotlights shown on the overview. */
     overviewNewFeatures() {
         return [
+            {
+                titleKey: 'config.overviewNewFeatureSpreadTitle',
+                titleFallback: 'A category can span several columns',
+                whatKey: 'config.overviewNewFeatureSpreadWhat',
+                whatFallback: 'A category with forty bookmarks in it towered over everything beside it, and everything past the items-per-category limit sat behind a "+ N more" you had to click every visit. One long category was enough to make a page feel lopsided.',
+                howKey: 'config.overviewNewFeatureSpreadHow',
+                howFallback: 'Let a category spread and its bookmarks run across two or three columns instead of down one, at the same height as the blocks around it. How many columns it takes is not something you set: it follows from the items-per-category limit and how many bookmarks are in it, so it grows and shrinks with the category and never goes wider than the grid.',
+                enableKey: 'config.overviewNewFeatureSpreadEnable',
+                enableFallback: 'Right-click a category header and pick Spread across columns, or press Shift+W on it. Pages & tags → Categories has the same switch on every row. It needs an items-per-category limit — spreading is unavailable while that is set to Unlimited.',
+                ctaKey: 'config.overviewNewFeatureSpreadCta',
+                ctaFallback: 'Open Layout →',
+                go: { section: 'appearance', appearanceTab: 'layout' },
+            },
             {
                 titleKey: 'config.overviewNewFeatureBulkUndoTitle',
                 titleFallback: 'A way back out of a bulk delete',
@@ -3745,6 +3801,14 @@ class DashboardConfig {
                     return;
                 }
             }
+            // Bookmarks has a strip too, now that its settings live on one.
+            if (target.bmTab && target.section === 'bookmarks') {
+                this.bmTab = target.bmTab;
+                if (this.section === 'bookmarks') {
+                    this.render();
+                    return;
+                }
+            }
             // Data & backups has its own strip, same as Behavior: set the field
             // the strip reads before the section renders.
             if (target.dbTab && target.section === 'data-backups') {
@@ -4024,6 +4088,15 @@ class DashboardConfig {
             return this.renderDataLogs();
         }
         return this.renderDataBackupsMain();
+    }
+
+    bmTabLabel(tab) {
+        const map = {
+            list: ['config.bmTabList', 'List'],
+            settings: ['config.bmTabSettings', 'Settings'],
+        };
+        const [key, fallback] = map[tab] || [tab, tab];
+        return this.t(key, fallback);
     }
 
     dbTabLabel(tab) {
@@ -5876,7 +5949,10 @@ class DashboardConfig {
 
         const apTabs = DashboardConfig.APPEARANCE_TABS.map((tab) => {
             const active = tab === this.appearanceTab;
-            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-appearance-body" data-appearance-tab="${esc(tab)}">${esc(this.appearanceTabLabel(tab))}</button>`;
+            const isNew = DashboardConfig.NEW_THIS_RELEASE.section === 'appearance'
+                && tab === DashboardConfig.NEW_THIS_RELEASE.tab;
+            const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-appearance-body" data-appearance-tab="${esc(tab)}">${esc(this.appearanceTabLabel(tab))}${stars}</button>`;
         }).join('');
 
         const shell = (body) => `
@@ -7785,12 +7861,14 @@ class DashboardConfig {
         categorySpacing: { info: ['categorySpacingInfoTitle', 'categorySpacingInfoMessage'], def: 'balanced' },
         sideMargin: { info: ['sideMarginInfoTitle', 'sideMarginInfoMessage'], def: 'balanced' },
         packedColumns: { info: ['packedColumnsInfoTitle', 'packedColumnsInfoMessage'], def: true },
+        defaultCategorySpread: { info: ['defaultCategorySpreadInfoTitle', 'defaultCategorySpreadInfoMessage'], hint: 'defaultCategorySpreadHint', def: false },
+        categorySpreadResetScope: { info: ['categorySpreadResetScopeInfoTitle', 'categorySpreadResetScopeInfoMessage'], hint: 'categorySpreadResetScopeHint', def: 'page' },
         interleaveMode: { info: ['interleaveModeInfoTitle', 'interleaveModeInfoMessage'], def: false },
         hideEmptyCategories: { info: ['hideEmptyCategoriesInfoTitle', 'hideEmptyCategoriesInfoMessage'], def: true },
         alwaysCollapseCategories: { info: ['alwaysCollapseCategoriesInfoTitle', 'alwaysCollapseCategoriesInfoMessage'], def: false },
         layoutVersion: { info: ['layoutVersionInfoTitle', 'layoutVersionInfoMessage'], def: 'classic' },
         layoutPreset: { info: ['layoutPresetInfoTitle', 'layoutPresetInfoMessage'], def: 'default' },
-        categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], def: 15 },
+        categoryItemLimit: { info: ['categoryItemLimitInfoTitle', 'categoryItemLimitInfoMessage'], hint: 'categoryItemLimitHint', def: 15 },
         launcherIconSize: { info: ['launcherIconSizeInfoTitle', 'launcherIconSizeInfoMessage'], def: 'normal' },
         // Bookmark display
         showShortcuts: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: true },
@@ -8222,10 +8300,11 @@ class DashboardConfig {
                         { value: 'balanced', label: t('config.sideMarginBalanced', 'Balanced'), body: t('config.sideMarginBalancedBody', 'The default.') },
                         { value: 'airy', label: t('config.sideMarginAiry', 'Airy'), body: t('config.sideMarginAiryBody', 'Wide edges — columns pulled together.') },
                     ] },
-                    { field: 'categoryItemLimit', type: 'select', label: t('config.categoryItemLimitLabelShort', 'Items per category'), special: 'render', options: [
-                        opt(10, '10'), opt(15, '15'), opt(20, '20'), opt(25, '25'), opt(30, '30'), opt(50, '50'),
-                        opt(0, t('config.categoryItemLimitUnlimited', 'Unlimited')),
-                    ] },
+                    // Unlimited is out of reach while any category is wider than
+                    // one column: the limit is what caps the height of a
+                    // column, and a wide category is measured in columns. Left
+                    // in the list and disabled rather than removed, so the
+                    // choice can be seen not to have vanished.
                     bool('packedColumns', 'config.packedColumnsLabel', 'Pack columns tightly'),
                     bool('interleaveMode', 'config.interleaveModeLabel', 'Interleave categories across columns'),
                     bool('hideEmptyCategories', 'config.hideEmptyCategoriesLabel', 'Hide empty categories'),
@@ -8242,6 +8321,43 @@ class DashboardConfig {
                         opt('large', t('config.launcherIconSizeLarge', 'Large')),
                     ] },
                     bool('alwaysCollapseCategories', 'config.alwaysCollapseCategoriesLabel', 'Start with categories collapsed'),
+                ],
+            },
+            // Its own panel, and the items-per-category limit moved into it.
+            //
+            // The width of a single category is set on the category itself — on
+            // the grid, or per row in Pages & tags → Categories — so what is
+            // left here is what applies to all of them at once. The limit came
+            // along because the two decide one thing together: the limit caps
+            // the height of a column, the width says how many columns, and each
+            // rules out the other's extreme. Two panels apart, the greyed-out
+            // Unlimited had no visible explanation.
+            {
+                section: 'appearance',
+                tab: 'layout',
+                title: t('config.generalGroupCategoryWidth', 'Categories across columns'),
+                highlight: true,
+                note: t('config.generalCategoryWidthIntro',
+                    'How tall a category gets, and how wide it may be. Width needs two things: a limit below (not Unlimited) and at least two columns. Then set a category with Shift+W on the dashboard, right-click → Width, or per row in Pages & tags → Categories — the settings here only decide what a new category starts at and how far the reset reaches.'),
+                controls: [
+                    { field: 'categoryItemLimit', type: 'select', label: t('config.categoryItemLimitLabelShort', 'Items per category'), special: 'render', options: [
+                        opt(10, '10'), opt(15, '15'), opt(20, '20'), opt(25, '25'), opt(30, '30'), opt(50, '50'),
+                        {
+                            value: 0,
+                            label: window.DashboardCategorySpan?.anySpreadCategory(this.dash)
+                                ? t('config.categoryItemLimitUnlimitedBlocked', 'Unlimited — not while a category spreads across columns')
+                                : t('config.categoryItemLimitUnlimited', 'Unlimited'),
+                            disabled: window.DashboardCategorySpan?.anySpreadCategory(this.dash) === true,
+                        },
+                    ] },
+                    bool('defaultCategorySpread', 'config.defaultCategorySpreadLabel', 'New categories spread across columns'),
+                    { field: 'categorySpreadResetScope', type: 'select', label: t('config.categorySpreadResetScopeLabel', 'Turning spreading off covers'), options: [
+                        opt('page', t('config.categorySpreadResetScopePage', 'The current page')),
+                        opt('all', t('config.categorySpreadResetScopeAll', 'Every page')),
+                    ] },
+                    { type: 'action', action: 'resetCategorySpreads',
+                        label: t('config.categorySpreadResetLabel', 'Turn spreading off everywhere'),
+                        button: t('config.categorySpreadResetButton', 'Turn off') },
                 ],
             },
             {
@@ -8379,7 +8495,6 @@ class DashboardConfig {
                 title: t('config.monitorEmphasisTitle', 'Monitored bookmarks on the dashboard'),
                 note: t('config.monitorEmphasisNote', 'How much a monitored bookmark stands out among the others. A monitor that is down is always marked, whichever you pick — this chooses how visible the healthy ones are.'),
                 appliesTo: t('config.appliesToMonitorOnly', 'Monitor only'),
-                highlight: true,
                 controls: [
                     {
                         field: 'monitorEmphasis',
@@ -8558,6 +8673,17 @@ class DashboardConfig {
                         <span class="config-field-hint" data-monitor-notify-test-status></span>
                     </div>`;
             }
+            // A button that does something once instead of a value that is
+            // stored — no field, so like `note` it has to be handled before
+            // anything below reads c.field.
+            if (c.type === 'action') {
+                return `
+                    <div class="config-field-row">
+                        <span class="config-field-label">${esc(c.label)}</span>
+                        <button type="button" class="config-btn" data-config-action="${esc(c.action)}">${esc(c.button)}</button>
+                        <span class="config-field-hint" data-config-action-status="${esc(c.action)}"></span>
+                    </div>`;
+            }
             const val = s[c.field];
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
             const aff = this.renderFieldAffordances(c.field, val);
@@ -8596,8 +8722,12 @@ class DashboardConfig {
             }
             let control;
             if (c.type === 'select') {
+                // A disabled option is still listed: the reader has to be able
+                // to see that the choice exists and read why it is out of
+                // reach, or they go looking for a setting that seems to have
+                // been taken away.
                 const opts = c.options.map((o) =>
-                    `<option value="${esc(o.value)}" ${String(val) === String(o.value) ? 'selected' : ''}>${esc(o.label)}</option>`
+                    `<option value="${esc(o.value)}" ${String(val) === String(o.value) ? 'selected' : ''}${o.disabled ? ' disabled' : ''}>${esc(o.label)}</option>`
                 ).join('');
                 // A <select> always yields a string, but these fields are ints
                 // server-side and a string fails to unmarshal — rejecting the
@@ -8760,6 +8890,7 @@ class DashboardConfig {
         this.bindPushDeviceControls(container);
         this.bindMaintenanceWindows(container);
         this.bindMonitorNotifyTest(container);
+        this.bindPanelActions(container);
         this.bindAffordances(container, (field) => {
             const el = container.querySelector(`[data-${prefix}-field="${CSS.escape(field)}"]`);
             const special = el?.getAttribute(`data-${prefix}-special`) || '';
@@ -9152,6 +9283,54 @@ class DashboardConfig {
      * is clicked the server already has whatever was just typed — no need to
      * gather values from the DOM here.
      */
+    /**
+     * Wire the one-shot buttons a panel schema declares with `type: 'action'`.
+     *
+     * The button reports back beside itself rather than through a toast: it is
+     * the kind of action whose result is a number ("12 categories reset"), and
+     * a number is easier to read where the button that produced it is.
+     */
+    bindPanelActions(container) {
+        container.querySelectorAll('[data-config-action]').forEach((btn) => {
+            const action = btn.getAttribute('data-config-action');
+            if (action !== 'resetCategorySpreads') {
+                return;
+            }
+            btn.addEventListener('click', async () => {
+                const status = container.querySelector(`[data-config-action-status="${CSS.escape(action)}"]`);
+                const scope = this.dash.settings?.categorySpreadResetScope === 'all' ? 'all' : 'page';
+                const scopeLabel = scope === 'all'
+                    ? this.t('config.categorySpreadResetScopeAll', 'Every page')
+                    : this.t('config.categorySpreadResetScopePage', 'The current page');
+                // Not danger: nothing is lost that cannot be set again in a
+                // click, and the default confirm button says "Delete".
+                const ok = await this.confirmAction(
+                    this.t('config.categorySpreadResetConfirm',
+                        'Put every category back to one column? Reach: {scope}.').replace('{scope}', scopeLabel.toLowerCase()),
+                    {
+                        title: this.t('config.categorySpreadResetLabel', 'Turn spreading off everywhere'),
+                        confirmLabel: this.t('config.categorySpreadResetButton', 'Turn off'),
+                        danger: false,
+                    }
+                );
+                if (!ok) {
+                    return;
+                }
+                btn.disabled = true;
+                try {
+                    const changed = await window.DashboardCategorySpan?.resetAllCategorySpreads(this.dash, scope);
+                    if (status) {
+                        status.textContent = this.t('config.categorySpreadResetDone', '{n} categories reset')
+                            .replace('{n}', String(changed || 0));
+                    }
+                    this.dash.renderDashboard?.({ animate: false, forceFull: true });
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        });
+    }
+
     bindMonitorNotifyTest(container) {
         const btn = container.querySelector('[data-monitor-notify-test]');
         if (!btn) return;
@@ -9366,11 +9545,8 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.BEHAVIOR_TABS.map((tab) => {
             const active = tab === this.behaviorTab;
-            // The Status tab carries this release's new setting, so it gets the
-            // same twinkle the overview's New features panel and the Ko-fi
-            // button use — the established "look here" mark in this app. Dropped
-            // once the setting is no longer new.
-            const isNew = tab === 'status';
+            const isNew = DashboardConfig.NEW_THIS_RELEASE.section === 'behavior'
+                && tab === DashboardConfig.NEW_THIS_RELEASE.tab;
             const stars = isNew ? this.renderNewFeaturesPanelStars() : '';
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}${isNew ? ' config-subtab--animated' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-behavior-body" data-behavior-tab="${esc(tab)}">${esc(this.behaviorTabLabel(tab))}${stars}</button>`;
         }).join('');
@@ -9836,6 +10012,14 @@ class DashboardConfig {
      * upkeep on another: neither belongs beside the export buttons.
      */
     static DB_TABS = ['backups', 'icons', 'logs', 'trash', 'reset'];
+
+    /**
+     * Bookmarks is a list section, so its settings used to sit after the list —
+     * behind fifty rows by default and up to five hundred as the infinite scroll
+     * loads more, which also means you cannot reach them by jumping to the
+     * bottom: the bottom moves. One strip, the same one five other sections use.
+     */
+    static BM_TABS = ['list', 'settings'];
 
     static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'branding', 'custom-themes'];
 
@@ -11268,13 +11452,22 @@ class DashboardConfig {
             const scales = DashboardConfig.statScales(catCounts);
             const visible = this.ptVisibleRows('categories', this._categories, (c) => c.name);
             const last = this._categories.length - 1;
+            // An icon beside the other row buttons rather than a labelled
+            // checkbox: ten rows of "Spread across columns" is a column of
+            // repeated prose between the names and their counts, and the row
+            // already has a place where its controls live.
+            const spreadLabel = this.t('config.categorySpreadLabel', 'Spread across columns');
             const rows = visible.map(({ item: c, index: i }) => `
                 <li class="config-crud-row" data-cat-row="${i}">
                     <div class="config-crud-fields">
                         <input type="text" class="config-text" data-cat="name" data-index="${i}" value="${esc(c.name || '')}">
+
                         ${this.renderStatMeta(catCounts[i], scales[i], 'config.categoryBookmarkCount', '{count} bookmarks')}
                     </div>
                     <div class="config-crud-row-actions">
+                        <button type="button" class="config-btn config-btn--small config-btn--icon${c.spread ? ' is-active' : ''}"
+                                data-cat-spread="${i}" aria-pressed="${c.spread ? 'true' : 'false'}"
+                                title="${esc(spreadLabel)}" aria-label="${esc(spreadLabel)}">↔</button>
                         ${locked ? '' : `
                         <button type="button" class="config-btn config-btn--small" data-cat-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                         <button type="button" class="config-btn config-btn--small" data-cat-move="down" data-index="${i}" ${i === last ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
@@ -11359,6 +11552,35 @@ class DashboardConfig {
                 void this.saveCategories(this._catPageId);
             });
         });
+        container.querySelectorAll('[data-cat-spread]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const i = Number(btn.getAttribute('data-cat-spread'));
+                if (!this._categories || !this._categories[i]) return;
+                const on = btn.getAttribute('aria-pressed') !== 'true';
+                btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+                btn.classList.toggle('is-active', on);
+                if (on) {
+                    this._categories[i].spread = true;
+                } else {
+                    delete this._categories[i].spread;
+                }
+                // Mirrored onto the dashboard's own copy first: saveCategories
+                // re-renders the grid, and the grid reads the switch from there
+                // rather than from the editor's list.
+                if (Number(this._catPageId) === Number(this.dash.currentPageId)) {
+                    const live = (this.dash.categories || []).find(
+                        (cat) => String(cat.id) === String(this._categories[i].id));
+                    if (live) {
+                        if (on) {
+                            live.spread = true;
+                        } else {
+                            delete live.spread;
+                        }
+                    }
+                }
+                void this.saveCategories(this._catPageId);
+            });
+        });
         const addBtn = container.querySelector('[data-cat-add]');
         if (addBtn) addBtn.addEventListener('click', () => {
             this._categories = this._categories || [];
@@ -11368,7 +11590,10 @@ class DashboardConfig {
                 this.t('config.categoryNewName', 'New category'),
                 this._categories.map((c) => c.name)
             );
-            this._categories.push({ id, name });
+            // Same default a category created on the dashboard gets, and left
+            // off the object entirely when it is the plain single column.
+            const spread = this.dash.settings?.defaultCategorySpread === true;
+            this._categories.push(spread ? { id, name, spread: true } : { id, name });
             this.repaintPtBody();
             void this.saveCategories(this._catPageId);
         });
@@ -11820,6 +12045,43 @@ class DashboardConfig {
 
     renderBookmarksSection() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const totalAll = (this.dash.allBookmarks || []).length;
+        const tabs = DashboardConfig.BM_TABS.map((tab) => {
+            const active = tab === this.bmTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-bm-body" data-bm-tab="${esc(tab)}">${esc(this.bmTabLabel(tab))}</button>`;
+        }).join('');
+
+        return `
+            <div class="config-bm-header">
+                <div class="config-bm-header-text">
+                    <p class="config-bm-subtitle">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+                </div>
+                <div class="config-bm-header-meta">
+                    <span class="config-bm-header-badge">${esc(String(totalAll))}</span>
+                </div>
+            </div>
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-bm-body" role="tabpanel" tabindex="0">${this.renderBmTab()}</div>
+        `;
+    }
+
+    /** Which sub-tab of Bookmarks is showing. */
+    renderBmTab() {
+        if (this.bmTab === 'settings') {
+            return this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior');
+        }
+        return this.renderBookmarksListTab();
+    }
+
+    /**
+     * The list tab: the tiles, the filter row and the rows themselves.
+     *
+     * The tiles come with the list rather than staying above the strip: they
+     * count what the filters below them produce, and each one is a filter of its
+     * own — they belong to the thing they act on.
+     */
+    renderBookmarksListTab() {
+        const esc = (v) => this.dash.escapeHtml(v);
         if (this.bmSort == null) this.bmSort = this.defaultBookmarksSort();
         const pages = this.dash.pages || [];
         const pageOptions = [`<option value="">${esc(this.t('config.allPages', 'All pages'))}</option>`]
@@ -11849,15 +12111,13 @@ class DashboardConfig {
         const filtered = this.visibleBookmarks();
         const totalAll = (this.dash.allBookmarks || []).length;
         const countLabel = this.renderBookmarkCountLabel(filtered.length, totalAll);
-
         return `
-            <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
             <div class="config-bm-tiles-wrap">
                 <p class="config-bm-tiles-hint" id="config-bm-tiles-hint"${this.bookmarksFiltersActive() ? '' : ' hidden'}>${esc(this.t('config.bookmarksTilesFilteredHint', 'Filtered view — counts below match your filters'))}</p>
                 <div class="config-tiles config-tiles--bookmarks" id="config-bm-tiles" role="list">${this.bookmarksSummaryTiles(this.bookmarksFiltersActive() ? this.computeBookmarkSubsetStats(filtered) : null).map((t) => this.renderTile(t)).join('')}</div>
             </div>
             <div class="config-panel">
-                <div class="config-crud-toolbar">
+                <div class="config-crud-toolbar config-crud-toolbar--view">
                     <input type="search" class="config-text" id="config-bm-search" placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}" value="${esc(this.bmQuery || '')}">
                     <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}"
                             data-config-setting-promo-anchor="bookmarksPageFilter">${pageOptions}</select>
@@ -11876,7 +12136,6 @@ class DashboardConfig {
                 <div id="config-bm-bulk">${this.renderBulkToolbar()}</div>
                 <div id="config-bm-list">${this.renderBookmarksList()}</div>
             </div>
-            ${this.renderControlPanels(this.panelsFor('bookmarks', 'general'), 'behavior')}
         `;
     }
 
@@ -12535,7 +12794,7 @@ class DashboardConfig {
                 <div class="config-bm-usage-col" title="${usageTip}">${this.renderBookmarkUsageLine(b)}</div>
             </div>`;
         return `
-            <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1"
+            <article class="feed-row health-view-item config-bm-row config-bm-item${ticked ? ' is-checked feed-row--edge-accent' : ''}" data-bm-key="${esc(key)}" tabindex="-1"
                      role="listitem"${ctx.setSize ? ` aria-posinset="${ctx.posInSet}" aria-setsize="${ctx.setSize}"` : ''}>
                 <label class="config-bm-check">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
@@ -12615,7 +12874,7 @@ class DashboardConfig {
                <p class="config-bm-load-hint">${esc(this.t('config.bookmarksLoadMoreHint', '{shown} of {total} shown — scroll for more')
                    .replace('{shown}', String(rows.length)).replace('{total}', String(allRows.length)))}</p>`
             : '';
-        return `<div class="health-view-feed config-bm-feed" role="list">${items}${more}</div>`;
+        return `<div class="feed-list health-view-feed config-bm-feed" role="list">${items}${more}</div>`;
     }
 
     /**
@@ -13365,6 +13624,31 @@ class DashboardConfig {
     }
 
     bindBookmarksSection(container) {
+        this.bindSubTabStrip(container, 'data-bm-tab', (tab) => {
+            if (tab === this.bmTab) return;
+            this.bmTab = tab;
+            this.restoreConfigHash();
+            const body = document.getElementById('config-bm-body');
+            if (!body) return;
+            body.innerHTML = this.renderBmTab();
+            // Bind the new body only: re-binding the whole container would stack
+            // a second listener on every tab button.
+            if (tab === 'settings') {
+                this.bindControlPanels(body, 'behavior');
+            } else {
+                this.bindBookmarksListTab(body);
+            }
+            // The strip is not repainted with the body, so the active button has
+            // to be moved by hand — the same call the other strips make.
+            this.syncSubTabStrip('data-bm-tab', tab);
+        });
+        if (this.bmTab === 'settings') {
+            return;
+        }
+        this.bindBookmarksListTab(container);
+    }
+
+    bindBookmarksListTab(container) {
         const search = container.querySelector('#config-bm-search');
         if (search) {
             search.addEventListener('input', () => {
@@ -17078,7 +17362,7 @@ class DashboardConfig {
     renderHelpStart() {
         const esc = (v) => this.dash.escapeHtml(v);
         const tips = this.helpTips().map((tip) => `<li class="config-help-tip">${tip}</li>`).join('');
-        return this.helpPanel('config.helpVersionTitle', 'nextDash 1.0',
+        return this.helpPanel('config.helpVersionTitle', 'nextDash 1.1.0',
             'config.helpVersionBody', '',
             `<div class="config-actions">
                 <button type="button" class="config-btn" data-help-action="whats-new">${esc(this.t('config.helpVersionWhatsNew', "See what's new"))}</button>
@@ -17131,8 +17415,15 @@ class DashboardConfig {
     }
 
     renderHelpOrganizing() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        // The walkthrough the corner card offers, kept reachable after the card
+        // has been dismissed — which is the state most readers of this page are
+        // in. Same pattern as the cheat sheet button above it.
         return this.helpPanel('config.helpWorkspaceTitle', 'Pages & categories',
-            'config.helpWorkspaceBody', '')
+            'config.helpWorkspaceBody', '',
+            `<div class="config-actions">
+                <button type="button" class="config-btn" data-help-action="spread-tour">${esc(this.t('config.helpSpreadTour', 'Walk me through spreading a category'))}</button>
+            </div>`)
             + this.helpPanel('config.helpBookmarksTitle', 'Bookmarks',
                 'config.helpBookmarksBody', '')
             + this.helpPanel('config.helpTagsTitle', 'Tags & collections',
@@ -17280,6 +17571,7 @@ class DashboardConfig {
             kbd('+', this.t('config.tipAddBookmark', 'Add a bookmark')),
             kbd('Shift + B', this.t('config.tipAddBookmarkShift', 'Open the new-bookmark form')),
             kbd('.', this.t('config.tipCollapseAll', 'Collapse or expand every category')),
+            kbd('Shift + W', this.t('config.tipCategoryWidth', 'Set how many columns the focused category covers')),
             kbd('Shift + H', this.t('config.tipHealth', 'Open the health view')),
             kbd('Shift + I', this.t('config.tipInbox', 'Open the inbox')),
             kbd('Shift + S', this.t('config.tipConfig', 'Open config')),
@@ -17374,6 +17666,11 @@ class DashboardConfig {
                     // view first or it would open behind it.
                     this.closeConfigView();
                     this.dash.showKeyboardCheatSheet?.();
+                } else if (action === 'spread-tour') {
+                    // Config is a view on this same page and the walkthrough is
+                    // a modal over it, so this one can stay where it is — the
+                    // reader lands back on this panel when it closes.
+                    window.SpreadTutorial?.open?.();
                 }
             });
         });

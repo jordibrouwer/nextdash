@@ -44,7 +44,7 @@ class SearchCommandsComponent {
                 label: 'Look & layout',
                 labelKey: 'commands.groupLookAndFeel',
                 commands: [
-                    'theme', 'layoutversion', 'layout', 'density', 'columns', 'fontsize', 'buttonbar', 'packed',
+                    'theme', 'layoutversion', 'layout', 'density', 'columns', 'width', 'fontsize', 'buttonbar', 'packed',
                     'preview', 'favicons', 'title', 'opacity', 'animations', 'status', 'dark', 'lang', 'buttons',
                     'shortcuts',
                 ],
@@ -75,6 +75,7 @@ class SearchCommandsComponent {
             'theme': this.handleThemeCommand.bind(this),
             'fontsize': this.handleFontSizeCommand.bind(this),
             'columns': this.handleColumnsCommand.bind(this),
+            'width': this.handleWidthCommand.bind(this),
             'save': this.handleSaveSearchCommand.bind(this),
             'saved': this.handleSavedSearchesCommand.bind(this),
             'history': this.handleHistoryCommand.bind(this),
@@ -2017,6 +2018,108 @@ class SearchCommandsComponent {
             type: 'command',
             action: () => this.applySort(dashboard, sortMethod, categoryId),
         }));
+    }
+
+    /**
+     * :width — whether the focused category spreads across columns.
+     *
+     * On or off, not a number: how many columns a spread category takes follows
+     * from the items-per-category limit and how many bookmarks are in it.
+     *
+     * `all` is the escape hatch for the case the per-category rows are bad at:
+     * undoing an afternoon of switching things on.
+     */
+    handleWidthCommand(args) {
+        const dashboard = window.dashboardInstance;
+        const span = window.DashboardCategorySpan;
+        if (!dashboard || !span) {
+            return [];
+        }
+
+        const blocked = span.spreadUnavailableReason(dashboard);
+        if (blocked) {
+            return [{
+                name: blocked === 'unlimited-items'
+                    ? this._t('commands.widthNeedsLimit',
+                        'Spreading needs a limit on items per category — that limit decides how many columns')
+                    : this._t('commands.widthUnavailable',
+                        'There is only one column to work with — spreading needs at least two'),
+                shortcut: ':WIDTH',
+                type: 'command',
+                action: () => false,
+            }];
+        }
+
+        const categoryEl = span.resolveFocusedCategoryEl(dashboard);
+        const category = categoryEl ? span.categoryFromEl(dashboard, categoryEl) : null;
+        if (!category) {
+            return [{
+                name: this._t('commands.widthNoCategory', 'No category on this page yet'),
+                shortcut: ':WIDTH',
+                type: 'command',
+                action: () => false,
+            }];
+        }
+
+        const label = String(category.name || category.id || '').trim();
+        const current = span.isCategorySpread(dashboard, category);
+        const rows = [true, false].map((on) => ({
+            name: this._markCurrent(
+                this._formatSpreadPaletteLabel(on, label),
+                on === current,
+            ),
+            shortcut: ':WIDTH',
+            stateId: `width:${on ? 'on' : 'off'}`,
+            completion: `:width ${on ? 'on' : 'off'} `,
+            type: 'command',
+            action: () => this.applyCategorySpread(dashboard, category.id, on),
+        }));
+
+        rows.push({
+            name: this._t('commands.widthResetAll', 'Every category back to one column'),
+            shortcut: ':WIDTH',
+            stateId: 'width:reset',
+            completion: ':width all ',
+            type: 'command',
+            action: () => this.applyCategorySpreadReset(dashboard),
+        });
+
+        const query = (args[0] || '').toLowerCase();
+        if (!query) {
+            return rows;
+        }
+        if ('all'.startsWith(query) || 'reset'.startsWith(query)) {
+            return [rows[rows.length - 1]];
+        }
+        return rows.filter((row) => row.stateId === `width:${query}`
+            || ('on'.startsWith(query) && row.stateId === 'width:on')
+            || ('off'.startsWith(query) && row.stateId === 'width:off'));
+    }
+
+    _formatSpreadPaletteLabel(on, categoryLabel) {
+        const state = on
+            ? this._t('commands.widthSpreadOn', 'Spread across columns')
+            : this._t('commands.widthSpreadOff', 'One column');
+        if (!categoryLabel) {
+            return state;
+        }
+        return this._t('commands.widthForCategory', '{width} — {category}')
+            .replace('{width}', state)
+            .replace('{category}', categoryLabel);
+    }
+
+    applyCategorySpread(dashboard, categoryId, on) {
+        const span = window.DashboardCategorySpan;
+        span?.setCategorySpread(dashboard, categoryId, on);
+        span?.refreshCategorySpreadUi(dashboard, categoryId);
+        return this._paletteRefresh(`width:${on ? 'on' : 'off'}`);
+    }
+
+    applyCategorySpreadReset(dashboard) {
+        const scope = dashboard.settings?.categorySpreadResetScope === 'all' ? 'all' : 'page';
+        void window.DashboardCategorySpan?.resetAllCategorySpreads(dashboard, scope)
+            .then(() => dashboard.renderDashboard?.({ animate: false, forceFull: true }));
+        return this._paletteRefresh('width:reset');
     }
 
     applySort(dashboard, method, categoryId) {

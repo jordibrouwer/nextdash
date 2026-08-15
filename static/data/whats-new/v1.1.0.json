@@ -1,0 +1,59 @@
+{
+  "tag": "v1.1.0",
+  "date": "15 August 2026",
+  "releasedAt": "2026-08-15",
+  "modalLead": "A category no longer has to be one column wide. Let a long one spread and its bookmarks run across the grid instead of down it — and config now brings you back to the panel you were reading.",
+  "sections": [
+    {
+      "title": "Categories across columns",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A long category can spread across columns.</strong> Instead of towering over its neighbours with the rest hidden behind <strong>+ N more</strong>, its bookmarks flow across two or three columns and it stays the height of the blocks around it. Right-click a category header and pick <strong>Spread across columns</strong>, or press <strong>Shift+W</strong> on it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>You never pick the number of columns.</strong> It follows from <strong>Items per category</strong> and how many bookmarks the category holds, so it grows as you add and shrinks as you delete — and never goes wider than the grid. Change the column count and every spread category settles into what it can have."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The way in is the way out.</strong> Once a category spreads, the same menu entry reads <strong>Back to one column</strong>. A rule under the header runs the width of the block and a small <strong>↔</strong> beside the title says how many columns it takes, so two blocks side by side never read as two categories."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Switch it wherever you are.</strong> <strong>Pages &amp; tags → Categories</strong> has a ↔ button on every row for going through a page in one sitting, <strong>:width</strong> does it from the command palette, and <strong>Appearance → Layout → Categories across columns</strong> holds what applies to all of them: what a new category starts at, and a button that switches spreading off again."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A card in the corner offers a walkthrough.</strong> Four steps with a picture each — the shape it makes, where the switch is, what decides the column count, and where the rest of the settings live. It is in <strong>Help → Pages &amp; categories</strong> too, for after you have waved the card away."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The Bookmarks settings are one click away.</strong> They sat under the list — fifty rows down, more as it loaded — and you could not even jump to the bottom, because the bottom moved as you got there. Bookmarks now opens on <strong>List</strong>, with <strong>Settings</strong> beside it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Config brings you back to where you were.</strong> Leaving through the health, inbox or page buttons in the header lost your place, so reopening dropped you on Overview. Every way out is remembered now, for five minutes counted from the moment you left — read one panel for half an hour, step away for ten seconds, and you land back on it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Dragging a category no longer scrambles the page.</strong> With <strong>Pack columns tightly</strong> on, moving a category rearranged the ones around it into an order you had not asked for."
+        }
+      ]
+    },
+    {
+      "title": "Elsewhere",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>\"No thanks\" works on the side-rail invitation.</strong> The button did nothing; only the × beside it closed the card."
+        }
+      ]
+    }
+  ]
+}

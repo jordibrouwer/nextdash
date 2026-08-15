@@ -65,7 +65,13 @@ class DashboardRenderCore {
         const packed = this.shouldPackDashboardColumns();
         const packedClass = packed ? ' packed-columns' : '';
 
-        grid.className = `dashboard-grid columns-${colCount} layout-${d.settings.layoutPreset || 'default'} density-${d.settings.densityMode || 'compact'}${packedClass}`;
+        // The masonry shape has to survive this assignment. className is a
+        // replace, and every settings refresh runs through here — including the
+        // one behind a window resize. Losing the class left the categories as
+        // bare flex children of a row that no longer had columns in it: a dozen
+        // categories squeezed side by side, each a few characters wide.
+        const masonryClass = packed && grid.classList.contains('packed-masonry') ? ' packed-masonry' : '';
+        grid.className = `dashboard-grid columns-${colCount} layout-${d.settings.layoutPreset || 'default'} density-${d.settings.densityMode || 'compact'}${packedClass}${masonryClass}`;
         grid.setAttribute('role', 'grid');
         grid.setAttribute(
             'aria-label',
@@ -104,20 +110,7 @@ class DashboardRenderCore {
         const shouldPackColumns = gridLayout?.packed ?? this.shouldPackDashboardColumns();
 
         if (shouldPackColumns) {
-            const columns = Array.from({ length: colCount }, () => {
-                const col = document.createElement('div');
-                col.className = 'dashboard-column';
-                return col;
-            });
-            columnBlocks.forEach((el, i) => {
-                if (animate) {
-                    el.style.setProperty('--stagger-index', String(i));
-                    const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
-                    setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
-                }
-                columns[i % colCount].appendChild(el);
-            });
-            columns.forEach((c) => container.appendChild(c));
+            this._distributePackedColumns(container, columnBlocks, { animate, colCount });
             return;
         }
 
@@ -129,6 +122,106 @@ class DashboardRenderCore {
             }
             container.appendChild(el);
         });
+    }
+
+
+    /**
+     * Packed layout, in one of two shapes.
+     *
+     * Packed columns exists so categories of unequal height sit against each
+     * other instead of every grid row growing to its tallest member. It does
+     * that by filling a fixed set of columns round-robin — category 1 in column
+     * 1, category 2 in column 2 — which is cheap, stable, and the reason a
+     * category could never be wider than the column it sits in.
+     *
+     * So while nothing is wider than one column, that is exactly what happens:
+     * the layout below is the one this mode has always had.
+     *
+     * A category set wider changes the problem. Breaking the row into bands was
+     * tried and left a hole the height of the tallest column beside the wide
+     * block. Instead the whole page switches to a grid: every category spans as
+     * many short rows as it is tall and `grid-auto-flow: dense` fills what is
+     * left, so a wide block takes its columns wherever it fits and the ones
+     * after it carry on beside and beneath it.
+     *
+     * Two shapes, one switch, and one reader (below) that tells them apart by
+     * what is actually in the DOM rather than by asking the settings again.
+     */
+    _distributePackedColumns(container, columnBlocks, { animate = false, colCount = 1 } = {}) {
+        const spanOf = (el) => window.DashboardCategorySpan?.effectiveSpanFromElement(el) || 1;
+        const anyWide = columnBlocks.some((el) => spanOf(el) > 1);
+
+        const stagger = (el, i) => {
+            if (!animate) {
+                return;
+            }
+            el.style.setProperty('--stagger-index', String(i));
+            const categoryEnterDelay = (i * ANIM.CATEGORY_STAGGER_STEP) + ANIM.CATEGORY_ENTER_BASE;
+            setTimeout(() => el.classList.remove('animate-enter'), categoryEnterDelay);
+        };
+
+        container.classList.toggle('packed-masonry', anyWide);
+
+        if (anyWide) {
+            columnBlocks.forEach((el, i) => {
+                stagger(el, i);
+                container.appendChild(el);
+            });
+            // Heights can only be measured once the elements are in the
+            // document, so the packing is a step after the layout, not part of
+            // it. The observer keeps it true as categories grow and shrink.
+            window.DashboardPackedMasonry?.observe(container);
+            return;
+        }
+
+        window.DashboardPackedMasonry?.disconnect();
+        const columns = Array.from({ length: colCount }, () => {
+            const col = document.createElement('div');
+            col.className = 'dashboard-column';
+            return col;
+        });
+        columnBlocks.forEach((el, i) => {
+            stagger(el, i);
+            columns[i % colCount].appendChild(el);
+        });
+        columns.forEach((col) => container.appendChild(col));
+    }
+
+    /**
+     * The rendered categories, in the order they are stored in.
+     *
+     * Keyed on what the DOM holds, not on the settings: columns mean the
+     * round-robin layout and have to be read back round-robin, anything else is
+     * already in order. That is what keeps the two shapes from drifting apart —
+     * a reader that asked the settings could be told one thing while looking at
+     * the other.
+     *
+     * It used to exist twice and the two disagreed: the incremental render read
+     * packed columns round-robin (correctly), while the drag-and-drop sync read
+     * them in plain document order — column by column. Since those are not each
+     * other's inverse, every category drag in packed mode rewrote the order into
+     * one that redistributed differently, and the arrangement scrambled.
+     */
+    readCategoryElementsInOrder(container) {
+        if (!container) {
+            return [];
+        }
+        const columns = Array.from(container.querySelectorAll(':scope > .dashboard-column'));
+        if (!columns.length) {
+            return Array.from(container.querySelectorAll(':scope > .category[data-category-id]'));
+        }
+
+        const perColumn = columns.map((col) => Array.from(col.querySelectorAll(':scope > .category[data-category-id]')));
+        const rows = Math.max(...perColumn.map((items) => items.length), 0);
+        const ordered = [];
+        for (let row = 0; row < rows; row += 1) {
+            perColumn.forEach((items) => {
+                if (items[row]) {
+                    ordered.push(items[row]);
+                }
+            });
+        }
+        return ordered;
     }
 
 
@@ -449,6 +542,8 @@ class DashboardRenderCore {
 
         window.DashboardCategoryTitleFit?.ensureResizeObserver?.();
         window.DashboardCategoryTitleFit?.scheduleFitAllCategoryTitles?.(container);
+        // Measured, so it has to wait for the rows to be laid out.
+        requestAnimationFrame(() => window.DashboardCategorySpan?.syncWideColumnTracks(container));
     }
 
 
@@ -754,15 +849,28 @@ class DashboardRenderCore {
         const grid = document.getElementById('dashboard-layout');
         if (!grid) return;
 
-        const isPacked = grid.classList.contains('packed-columns');
+        // Columns in the DOM, not the setting: packed switches to a plain grid
+        // as soon as a category is wider than one column, and that shape wants
+        // the single-container reorder the plain layout uses.
+        const isPacked = grid.querySelector(':scope > .dashboard-column') !== null;
         const onReorder = () => {
             // Small delay so the DOM is fully settled after touch/mouse drag ends
-            requestAnimationFrame(() => this.syncCategoriesFromDom());
+            requestAnimationFrame(() => {
+                this.syncCategoriesFromDom();
+                // Round-robin is redistributed from the new order rather than
+                // left as the drag dropped it: the drag moved one element
+                // between columns, while the order it produced fills them in a
+                // different arrangement entirely.
+                if (isPacked) {
+                    d.renderDashboard?.({ animate: false, forceFull: true });
+                }
+            });
         };
 
         if (isPacked) {
             // Multiple column containers: a document-level drag-over relay moves the
             // dragged category across columns; per-item dragover is delegated to it.
+            //
             this.ensureCategoryDragOverRelay();
             grid.querySelectorAll('.dashboard-column').forEach((col) => {
                 d.dashboardCategoryReorderInstances.push(new DragReorder({
@@ -950,8 +1058,11 @@ class DashboardRenderCore {
         const d = this.dash;
         const grid = document.getElementById('dashboard-layout');
         if (!grid) return;
-        const els = grid.querySelectorAll('.category[data-category-id]:not([data-smart-collection="true"])');
-        const newIds = Array.from(els).map((el) => el.getAttribute('data-category-id')).filter(Boolean);
+        // Through the shared reader, not document order: in packed mode those
+        // two are different, and document order is the wrong one.
+        const els = this.readCategoryElementsInOrder(grid)
+            .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
+        const newIds = els.map((el) => el.getAttribute('data-category-id')).filter(Boolean);
 
         if (!newIds.length) return;
 
@@ -1349,10 +1460,23 @@ class DashboardRenderCore {
         const staleBtn = bookmarksList.querySelector(':scope > .category-show-more');
         if (staleBtn) staleBtn.remove();
 
-        const limit = Number(d.settings.categoryItemLimit);
-        if (!Number.isFinite(limit) || limit <= 0) return;
+        const configured = Number(d.settings.categoryItemLimit);
+        if (!Number.isFinite(configured) || configured <= 0) return;
 
         const rows = Array.from(bookmarksList.querySelectorAll(':scope > .bookmark-link'));
+
+        // The limit caps the height of a column, not the number of bookmarks in
+        // a category — that is what it is for: keeping one big category from
+        // towering over its neighbours. A spread category fills every column it
+        // was given before it grows any taller, so it may show its limit once
+        // per column. Cutting at the plain limit instead would make it half as
+        // tall as its neighbours and hide bookmarks the space was made for.
+        //
+        // Computed from the category and the row count rather than read off the
+        // element: while a category is being built its list is not attached yet.
+        const span = window.DashboardCategorySpan?.effectiveCategorySpan(d, category, rows.length) || 1;
+        const limit = configured * span;
+
         if (rows.length <= limit) return;
 
         const overflowStore = this._loadExpandedOverflow();
@@ -1661,6 +1785,13 @@ class DashboardRenderCore {
         categoryBody.className = 'category-body';
         categoryBody.appendChild(bookmarksList);
         categoryDiv.appendChild(categoryBody);
+        // Spread across columns — last, because it also puts the marker in the
+        // header, and the header does not exist until here. Not for tag-filter
+        // chunks: those are equal-width slices of one filtered list, not
+        // categories the user arranged.
+        if (!isTagFilterChunk) {
+            window.DashboardCategorySpan?.applyCategorySpan(d, categoryDiv, category, bookmarks.length);
+        }
         d.categoryMenu?.bindCategory(categoryDiv, category);
         return categoryDiv;
     }

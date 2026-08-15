@@ -127,7 +127,12 @@ class DashboardStructureCreate {
                 return { error: cfg('categoryExists', 'That category already exists.') };
             }
             const id = this.slugCategoryId(name, list.map((c) => c.id));
-            const payload = [...list, { id, name, icon: '' }];
+            // Spreading across columns. Left off entirely at the default so a
+            // category file only carries the field where it says something.
+            const created = d.settings?.defaultCategorySpread === true
+                ? { id, name, icon: '', spread: true }
+                : { id, name, icon: '' };
+            const payload = [...list, created];
             const save = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)(
                 `/api/categories?page=${encodeURIComponent(pageId)}`,
                 {

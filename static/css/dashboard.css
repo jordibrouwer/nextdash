@@ -241,6 +241,19 @@ body[data-side-margin="airy"] {
     animation: datePopoverIn 0.13s ease forwards;
 }
 
+/* The category menu sizes to what it holds.
+ *
+ * .move-popover is capped at 16rem for the move, tag and delete pickers, which
+ * list every category, page or tag you have and want to stay narrow. This menu
+ * is four fixed rows, and each carries the key that does the same thing — at
+ * the shared cap the widest row needed 274px and got 237, so the chip was
+ * quietly cut off by the ellipsis. Longer translations make that worse: the
+ * French label for spreading is half again as long as the English one. */
+#category-context-menu {
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 1rem));
+}
+
 /* The bookmark context menu is a fixed, short action list — unlike the move,
    tag and delete popovers, which share .move-popover and list every category,
    page or tag you have and genuinely need to scroll.
@@ -354,6 +367,31 @@ body[data-side-margin="airy"] {
     padding-left: 0.5rem;
     font-size: 0.7rem;
     color: var(--text-tertiary);
+}
+
+/* The current value of an entry that opens a submenu — "3 columns" beside
+   "Width", so the menu answers as well as asks. It takes over the trailing
+   alignment from whatever follows it, or the row would grow three separate
+   right-aligned blocks. */
+.move-popover-item-detail {
+    margin-left: auto;
+    padding-left: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.move-popover-item-detail ~ .move-popover-submenu-caret,
+.move-popover-item-detail ~ .move-popover-item-key {
+    margin-left: 0;
+}
+
+/* An entry that is present but cannot act — it still says what it is and, in
+   its detail, why it cannot. Removing it would leave the user looking for a
+   feature they read about. */
+.move-popover-item.is-disabled {
+    opacity: 0.55;
+    cursor: default;
 }
 
 /* ─── Check-mode submenu ─────────────────────────────────────
@@ -1412,9 +1450,13 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
        whitespace. Below this width the per-column calc() takes over and the
        columns shrink gracefully toward --dashboard-column-min. */
     --dashboard-column-max: 360px;
+    /* The horizontal space between two categories. Named because a wide
+       category has to reproduce it between its own inner columns, and packed
+       mode sets a different one. */
+    --dashboard-column-gap: 1.5rem;
     display: grid;
     row-gap: var(--category-row-gap, 2rem);
-    column-gap: 1.5rem;
+    column-gap: var(--dashboard-column-gap);
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     width: 100%;
     max-width: 100%;
@@ -1467,13 +1509,166 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
     max-width: 100%;
 }
 
-/* Packed columns: vertical stacks per column (round-robin), less vertical gap than CSS grid rows */
+/* A category set wider than one column.
+ *
+ * `width: fit-content` above shrinks a category to its content, which is right
+ * for a one-column block and wrong for this one: the whole point is to occupy
+ * the columns it was given. Same specificity as the rule above and deliberately
+ * placed after it, so this wins for the categories that carry the class.
+ *
+ * Grid only: this is the rule that reaches across grid columns. In packed mode
+ * the same width is carried by a band of its own — see the packed block below —
+ * and everything from the inner columns down is shared by both.
+ */
+.dashboard-grid:not(.packed-columns) .category.category--wide {
+    grid-column: span var(--category-span, 1);
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Every width, inner columns included, is driven by this one property, so
+   putting it back to 1 is enough to undo the whole thing.
+ *
+ * `!important` because the effective width is written as an inline style at
+ * render time and the window can be resized without a re-render — the grid
+ * would otherwise still be told to span three columns it no longer has, and
+ * spanning past the last column creates implicit ones and scrolls the page
+ * sideways. */
+@media (max-width: 767px) {
+    .dashboard-grid .category.category--wide {
+        --category-span: 1 !important;
+    }
+}
+
+.dashboard-grid.columns-1 .category.category--wide {
+    --category-span: 1 !important;
+}
+
+/* One category, several columns — and a way to see that at a glance.
+ *
+ * Two blocks of bookmarks side by side look like two categories. The rule below
+ * runs from the left edge of the first column to the right edge of the last,
+ * directly under the header, and says that everything beneath it belongs to the
+ * name above it — the way a table header rule does.
+ *
+ * Dropped while the category is collapsed: the body is still in the document
+ * with its rows squeezed to nothing, so the rule would be left hanging under a
+ * header with visibly nothing under it.
+ */
+.dashboard-grid .category.category--wide:not([data-collapsed="true"]) .category-body {
+    border-top: 1px solid color-mix(in srgb, var(--border-primary) 85%, transparent);
+    padding-top: 0.6rem;
+}
+
+/* The presets that already draw the category as a card say it themselves — a
+   second line inside the box is one line too many. */
+.dashboard-grid.layout-cards .category.category--wide:not([data-collapsed="true"]) .category-body,
+.dashboard-grid.layout-widgets .category.category--wide:not([data-collapsed="true"]) .category-body {
+    border-top: none;
+    padding-top: 0;
+}
+
+/* The marker in the header: how many columns this category is currently taking.
+   Small and quiet — it names what the rule already shows, for the times the
+   width alone is ambiguous (a narrow window, two columns of similar length). */
+.category-spread-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15em;
+    padding: 0 0.3em;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.25rem;
+    font-size: 0.7em;
+    line-height: 1.5;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+/* Wider means more bookmarks side by side, not longer rows.
+ *
+ * The list is a three-track grid (four with ping times) whose rows span every
+ * track, and each row is a subgrid of it — that is what keeps names and status
+ * aligned down a column. Repeating the whole track pattern once per column and
+ * letting a row span one pattern keeps all of that intact and fills row by row.
+ *
+ * The launcher and list presets replace the list's display entirely, so these
+ * declarations are inert there — their own wrapping already handles the width.
+ *
+ * Not scoped to either layout: how a wide category arranges its own bookmarks
+ * is the same question whether the width came from spanning grid columns or
+ * from a packed band.
+ */
+.dashboard-grid .category.category--wide .bookmarks-list {
+    grid-template-columns:
+        repeat(var(--category-span, 1),
+            var(--bookmark-lead-col, minmax(1.25rem, max-content))
+            minmax(0, 1fr)
+            var(--bookmark-shortcut-col, max-content));
+    /* The grid gap plus the padding two neighbouring categories would each
+       have contributed.
+     *
+     * A run of ordinary categories pads every column on both sides; a wide one
+     * is a single box and pads only its outer edges, so its inner columns drift
+     * left of the columns above and below by exactly that missing padding. Add
+     * it to the gap and the tracks land where a category's content lands.
+     *
+     * Only the column gap: the row gap belongs to the density setting, whose
+     * rule sits further down this file and would otherwise win both. */
+    column-gap: calc(var(--dashboard-column-gap, 1.5rem) + 2 * var(--category-inline-pad, 0.5rem));
+}
+
+/* The shortcut track is the one intrinsic column in the pattern, and repeating
+   the pattern sizes each copy to its own rows: odd rows land in the first
+   column, even rows in the second, so the two ended up different widths and
+   every column after the first drifted. It is measured across the whole list
+   and pinned — see syncWideColumnTracks — which makes the repeats identical
+   and the columns line up with the categories above and below. */
+.dashboard-grid .category--wide .bookmarks-list[data-show-ping="true"] {
+    grid-template-columns:
+        repeat(var(--category-span, 1),
+            var(--bookmark-lead-col, minmax(1.25rem, max-content))
+            minmax(0, 1fr)
+            var(--bookmark-status-col, 3.35em)
+            var(--bookmark-shortcut-col, max-content));
+}
+
+.dashboard-grid .category--wide .bookmarks-list > * {
+    grid-column: span 3;
+}
+
+.dashboard-grid .category--wide .bookmarks-list[data-show-ping="true"] > * {
+    grid-column: span 4;
+}
+
+/* The "+ N more" toggle and the empty-category placeholders are not bookmarks:
+   they belong under the whole list, not in the first column of it. */
+.dashboard-grid .category--wide .bookmarks-list > .category-show-more,
+.dashboard-grid .category--wide .bookmarks-list > .empty-state--category,
+.dashboard-grid .category--wide .bookmarks-list > .smart-collection-empty {
+    grid-column: 1 / -1;
+}
+
+/* Packed columns: vertical stacks per column (round-robin), less vertical gap than CSS grid rows.
+ *
+ * This is the layout packed mode has always had, and it is what runs while no
+ * category is wider than one column. A category set wider switches the page to
+ * the masonry grid further down — a block cannot reach across flex columns it
+ * is sitting inside of.
+ */
 .dashboard-grid.packed-columns {
+    /* The width of a single packed column, written once — the masonry tracks
+       below are the same width, so the two shapes line up. */
+    --dashboard-column-gap: var(--gap, 1.5rem);
+    --packed-column-width: min(
+        var(--dashboard-column-max, 300px),
+        calc((100% - (var(--packed-columns, 3) - 1) * var(--dashboard-column-gap)) / var(--packed-columns, 3))
+    );
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: flex-start;
     justify-content: center;
+    column-gap: var(--dashboard-column-gap);
     grid-template-columns: unset;
     width: 100%;
 }
@@ -1482,20 +1677,43 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
     display: flex;
     flex-direction: column;
     gap: 3rem;
-    flex: 0 0 min(
-        var(--dashboard-column-max, 300px),
-        calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3))
-    );
-    width: min(
-        var(--dashboard-column-max, 300px),
-        calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3))
-    );
-    max-width: min(
-        var(--dashboard-column-max, 300px),
-        calc((100% - (var(--packed-columns, 3) - 1) * var(--gap, 1.5rem)) / var(--packed-columns, 3))
-    );
+    flex: 0 0 var(--packed-column-width);
+    width: var(--packed-column-width);
+    max-width: var(--packed-column-width);
     min-width: 0;
     contain: layout style;
+}
+
+/* Packed, with something wider than one column in it.
+ *
+ * Fixed columns cannot carry a block that reaches across them, and breaking the
+ * page into bands left a hole the height of the tallest column beside the wide
+ * one. So the page becomes a grid of very short rows: every category spans as
+ * many of them as it is tall (set from JS, which is the only place a height is
+ * known), and dense flow fills what is left — a wide block takes its columns
+ * wherever it fits and the rest carry on beside and beneath it.
+ *
+ * align-self is what keeps the measuring honest: stretched to its row span, a
+ * category would report the height it was given rather than the height it has,
+ * and every pass would confirm the previous one.
+ */
+.dashboard-grid.packed-columns.packed-masonry {
+    display: grid;
+    grid-template-columns: repeat(var(--packed-columns, 3), var(--packed-column-width));
+    grid-auto-rows: 4px;
+    grid-auto-flow: row dense;
+    column-gap: var(--dashboard-column-gap);
+    row-gap: 0;
+    justify-content: center;
+    align-items: start;
+    width: 100%;
+}
+
+.dashboard-grid.packed-columns.packed-masonry > .category {
+    grid-row: span var(--masonry-span, 1);
+    grid-column: span var(--category-span, 1);
+    align-self: start;
+    min-width: 0;
 }
 
 .dashboard-grid.packed-columns .category {
@@ -2196,8 +2414,11 @@ body[data-category-spacing="airy"] {
     flex-direction: column;
     gap: 1rem;
     min-width: 0; /* Allow flex items to shrink below content size */
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    /* Named, because a wide category has to add it back between its inner
+       columns — see the column-gap on its bookmarks list. */
+    --category-inline-pad: 0.5rem;
+    padding-left: var(--category-inline-pad);
+    padding-right: var(--category-inline-pad);
 }
 
 .category.animate-enter {

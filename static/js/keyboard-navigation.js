@@ -221,6 +221,18 @@ class KeyboardNavigation {
                 }
             }
 
+            // Shift+W — spread the focused category across columns, or put it
+            // back. Outside the Shift block above because that one acts on a
+            // bookmark row, and a category needs no row selected.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyW') {
+                if (this.toggleFocusedCategorySpread()) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
             // Alt+↑ / Alt+↓ — move the focused bookmark. Alt keeps it clear of
             // the plain arrows, which move the cursor.
             if (e.altKey && !e.ctrlKey && !e.metaKey
@@ -491,6 +503,37 @@ class KeyboardNavigation {
 
     _isShowMoreElement(el) {
         return !!el && el.classList?.contains('category-show-more');
+    }
+
+    /**
+     * Turn spreading on or off for the category the cursor is in.
+     *
+     * Returns false when there was nothing to act on, so the caller can leave
+     * the key to whoever else wants it rather than swallowing it — the same
+     * rule the Shift+letter block follows.
+     */
+    toggleFocusedCategorySpread() {
+        const span = window.DashboardCategorySpan;
+        const d = this.dashboard;
+        const categoryEl = span?.resolveFocusedCategoryEl(d);
+        if (!categoryEl || !d.categoryMenu) {
+            return false;
+        }
+        const category = span.categoryFromEl(d, categoryEl);
+        const name = categoryEl.querySelector('.category-title-name')?.textContent?.trim() || '';
+        const on = d.categoryMenu.toggleSpread(category);
+        this._announceCategorySpread(name, on === true);
+        return true;
+    }
+
+    _announceCategorySpread(name, on) {
+        const live = this._ensureKbdLiveRegion();
+        const label = this.dashboard?.formatDashboardLabel?.(
+            on ? 'categorySpreadOn' : 'categorySpreadOff',
+            {},
+            on ? 'spread across columns' : 'one column',
+        ) || '';
+        live.textContent = name ? `${name}: ${label}` : label;
     }
 
     _ensureKbdLiveRegion() {

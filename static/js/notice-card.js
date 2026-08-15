@@ -160,8 +160,17 @@
                 close();
             });
             (spec.actions || []).forEach((action) => {
-                el.querySelector(`[${attr}="${action.name}"]`)
-                    ?.addEventListener('click', (event) => action.onClick?.(handle, event.currentTarget));
+                // `:not([data-notice-dismiss])` because a card that names its
+                // × with `dismissName` puts that same attribute on the ×, and
+                // the × comes first in the markup. A plain querySelector bound
+                // the action to the × and left the button carrying the same
+                // name with no listener at all — the side rail's "No thanks"
+                // was dead from the day the cards were unified, and looked
+                // fine because the × beside it still worked. The × keeps its
+                // own handler above, which already calls onDismiss.
+                el.querySelectorAll(`[${attr}="${action.name}"]:not([data-notice-dismiss])`)
+                    .forEach((btn) => btn.addEventListener(
+                        'click', (event) => action.onClick?.(handle, event.currentTarget)));
             });
 
             document.body.appendChild(el);
