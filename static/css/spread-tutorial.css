@@ -1,0 +1,204 @@
+/**
+ * The spread-across-columns walkthrough.
+ *
+ * Same shape as inbox-tutorial.css and health-tutorial.css: the app's modal
+ * chrome carries the title and the buttons, and only the reading column between
+ * them is styled here. Its own sheet, so no tour's visuals drift into another's.
+ *
+ * The visuals in this one are diagrams rather than copies of a control — the
+ * subject is a shape on the page, so stand-in columns and rows say more than a
+ * screenshot of a menu would.
+ */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.spread-tutorial-modal) .modal {
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.spread-tutorial-modal) .modal {
+    transform: translateY(0) scale(1);
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.spread-tutorial-modal) .modal {
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
+.spread-tutorial-progress {
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin: 0 0 0.4rem;
+}
+
+.spread-tutorial-step-title {
+    margin: 0 0 0.7rem;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.spread-tutorial-step-body p {
+    margin: 0 0 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.spread-tutorial-step-body p:last-child {
+    margin-bottom: 0;
+}
+
+.spread-tutorial-visual {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    margin: 0 0 0.9rem;
+    border: 1px dashed var(--border-secondary);
+    border-radius: 0.5rem;
+    background: var(--background-secondary);
+}
+
+.spread-tutorial-visual--compare,
+.spread-tutorial-visual--sum {
+    justify-content: center;
+}
+
+.spread-tutorial-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.spread-tutorial-cap {
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+/* The stand-in category: columns of blank rows, at the proportions a real one
+   has, so the before/after difference is a shape rather than a sentence. */
+.spread-tutorial-grid {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.35rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.35rem;
+    background: var(--background-primary);
+}
+
+.spread-tutorial-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 3.1rem;
+}
+
+.spread-tutorial-row {
+    height: 0.4rem;
+    border-radius: 0.15rem;
+    background: color-mix(in srgb, var(--accent-primary) 30%, var(--border-primary));
+}
+
+/* Every second row a little shorter: a flat stack of identical bars reads as a
+   loading skeleton rather than as bookmarks. */
+.spread-tutorial-row:nth-child(even) {
+    width: 78%;
+}
+
+.spread-tutorial-arrow,
+.spread-tutorial-op {
+    color: var(--text-tertiary);
+    font-size: 0.95rem;
+}
+
+.spread-tutorial-chip {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.spread-tutorial-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.spread-tutorial-key kbd {
+    padding: 0 0.3rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.25rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+}
+
+.spread-tutorial-hint {
+    flex: 1 1 10rem;
+    min-width: 0;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+/* The menu step: three rows of the real right-click menu, with the one this
+   tour is about picked out. */
+.spread-tutorial-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    width: 100%;
+    padding: 0.3rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.45rem;
+    background: var(--background-primary);
+}
+
+.spread-tutorial-menu-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.45rem;
+    border-radius: 0.3rem;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+}
+
+.spread-tutorial-menu-row.is-current {
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--text-primary);
+}
+
+.spread-tutorial-menu-row kbd {
+    margin-left: auto;
+    padding: 0 0.25rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.2rem;
+    font-family: inherit;
+    font-size: 0.68rem;
+    color: var(--text-tertiary);
+}
+
+.spread-tutorial-dots {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.9rem;
+}
+
+.spread-tutorial-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--border-secondary);
+}
+
+.spread-tutorial-dot.is-active {
+    background: var(--accent-primary);
+}
