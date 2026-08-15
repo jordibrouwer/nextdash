@@ -220,8 +220,11 @@ class DashboardCategoryMenu {
                 kbd.className = 'move-popover-item-key';
                 kbd.textContent = action.key;
                 // The chip is a label, not a second thing to read out: the item
-                // already says what it does.
+                // already says what it does. aria-keyshortcuts is how the key
+                // reaches a screen reader instead.
                 kbd.setAttribute('aria-hidden', 'true');
+                item.setAttribute('aria-keyshortcuts',
+                    window.ShortcutFormat?.ariaKeys?.(action.key) || action.key);
                 item.appendChild(kbd);
             }
 

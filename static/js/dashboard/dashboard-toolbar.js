@@ -6,9 +6,82 @@ class DashboardToolbar {
         this.dash = dashboard;
     }
 
+    /**
+     * The buttons that have a key, and which key.
+     *
+     * One list feeds three things: the hover tooltip, the side-rail legend, and
+     * the aria-keyshortcuts stamped on the buttons themselves. They used to be
+     * three lists, which is how the header row ended up with tooltips and no
+     * aria at all.
+     */
+    shortcutButtonDefs() {
+        const d = this.dash;
+        return [
+            { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['+'] },
+            { id: 'search-button', labelKey: 'dashboard.tooltipSearch', keys: ['>'] },
+            { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
+            { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
+            { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
+            { id: 'tag-cloud-toggle-btn', labelKey: 'dashboard.tagCloudToggleAria', keys: ['/'] },
+            { id: 'collapse-all-button', labelKey: 'dashboard.collapseAllLabel', keys: ['.'] },
+            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] },
+            // No key: the star is a button you click, and a chip reading "★"
+            // told people to press a key that does not exist.
+            { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] },
+            { selector: '#page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','], header: true },
+            {
+                selector: '#page-nav-inbox-btn',
+                labelKey: 'dashboard.inboxPageTitle',
+                keys: ['Shift+I'],
+                header: true,
+                when: () => d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false,
+            },
+            {
+                selector: '.health-link-anchor',
+                labelKey: 'dashboard.health',
+                keys: ['Shift+H'],
+                header: true,
+                when: () => d.health?.isEnabled?.(),
+            },
+            {
+                selector: '.config-link-anchor',
+                labelKey: 'dashboard.config',
+                keys: ['Shift+S'],
+                header: true,
+                when: () => d.config?.isEnabled?.(),
+            },
+        ];
+    }
+
+    /**
+     * Stamp aria-keyshortcuts on every button that has a key.
+     *
+     * Separate from the tooltips on purpose: those are a desktop hover affordance
+     * and can be switched off in settings, while this is the only way the keys
+     * reach a screen reader — so it runs on touch devices and with the tooltips
+     * turned off as well.
+     */
+    syncShortcutAriaHints() {
+        const SF = window.ShortcutFormat;
+        this.shortcutButtonDefs().forEach((def) => {
+            const btn = def.id ? document.getElementById(def.id) : document.querySelector(def.selector);
+            if (!btn) return;
+            const usable = def.keys.length && (!def.when || def.when());
+            if (!usable) {
+                btn.removeAttribute('aria-keyshortcuts');
+                return;
+            }
+            // Several keys for one button is a space-separated list in this
+            // attribute, not a chord.
+            btn.setAttribute('aria-keyshortcuts',
+                def.keys.map((key) => SF?.ariaKeys?.(key) || key).join(' '));
+        });
+    }
+
     setupToolbarActions() {
         const d = this.dash;
         this.setupToolbarKbdTooltips();
+        this.syncShortcutAriaHints();
         this.syncSideRailDiscoverability();
         const helpButton = document.getElementById('help-button');
         if (helpButton) {
@@ -160,38 +233,9 @@ class DashboardToolbar {
             return keysList.map((k) => SF.keysToHtml(k)).join('<span class="kbd-sep">·</span>');
         };
 
-        const defs = [
-            { id: 'quick-add-toolbar-btn', labelKey: 'dashboard.tooltipAddBookmark', keys: ['+'] },
-            { id: 'search-button', labelKey: 'dashboard.tooltipSearch', keys: ['>'] },
-            { id: 'commands-button', labelKey: 'dashboard.tooltipCommands', keys: [':'] },
-            { id: 'finders-button', labelKey: 'dashboard.tooltipFinders', keys: ['?'] },
-            { id: 'recent-bookmarks-button', labelKey: 'dashboard.tooltipRecent', keys: ['*'] },
-            { id: 'tag-cloud-toggle-btn', labelKey: 'dashboard.tagCloudToggleAria', keys: ['/'] },
-            { id: 'help-button', labelKey: 'dashboard.tooltipCheatsheet', keys: ['!', 'F1'] },
-            { id: 'whats-new-btn', labelKey: 'dashboard.whatsNewAria', keys: [] }
-        ];
-
-        const headerDefs = [
-            { selector: '#page-overview-header-btn', labelKey: 'dashboard.pagesOverview', keys: [','] },
-            {
-                selector: '#page-nav-inbox-btn',
-                labelKey: 'dashboard.inboxPageTitle',
-                keys: ['Shift+I'],
-                when: () => d.inbox?.isEnabled?.() && d.settings?.inboxShowInPageTabs !== false,
-            },
-            {
-                selector: '.health-link-anchor',
-                labelKey: 'dashboard.health',
-                keys: ['Shift+H'],
-                when: () => d.health?.isEnabled?.(),
-            },
-            {
-                selector: '.config-link-anchor',
-                labelKey: 'dashboard.config',
-                keys: ['Shift+S'],
-                when: () => d.config?.isEnabled?.(),
-            },
-        ];
+        const allDefs = this.shortcutButtonDefs();
+        const defs = allDefs.filter((def) => !def.header);
+        const headerDefs = allDefs.filter((def) => def.header);
 
         const toolbarButtons = [];
         const defByButton = new Map();
@@ -451,7 +495,10 @@ class DashboardToolbar {
                 { id: 'tag-cloud-toggle-btn', key: '/', labelKey: 'tagCloudToggleAria', fallback: 'tag cloud' },
                 { id: 'help-button', key: '!', labelKey: 'tooltipCheatsheet', fallback: 'cheatsheet' },
                 { id: 'collapse-all-button', key: '.', labelKey: 'collapseAllLabel', fallback: 'fold' },
-                { id: 'whats-new-btn', key: '★', labelKey: 'whatsNewAria', fallback: "what's new" },
+                // What's new is left out rather than listed: it has no key, and
+                // the ★ that stood here was the button's own glyph printed in
+                // the same chip as the real keys beside it — a key to press,
+                // read literally.
             ];
             return defs
                 .map((def) => {
