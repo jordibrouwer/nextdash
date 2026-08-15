@@ -429,7 +429,7 @@ Right-click a bookmark that is **part of an open selection** and the menu switch
 
 Apart from sharing, nothing here is exclusive to the menu — the rest is reachable from the [command palette](#93-bookmark-actions) and config, and the menu just puts it where most people look first.
 
-**Every entry that has a key shows it** beside the label, so the menu teaches the keyboard route to the thing you just clicked; screen readers get the same key through `aria-keyshortcuts`. The menu also opens from the keyboard with **`Shift + F10`** or the **Menu** key, beside the row rather than in the corner of the window. Arrow keys move through the items and `Enter` activates one; `Esc` or a click outside closes it. It works on **smart collection** rows too. The menu deliberately stays out of the way where the browser's own menu matters: it does not open while the inline editor is active or over a modal, and **`Shift` + right-click** always gives you the browser menu instead. Not available on touch, which has no right-click — use long-press for inline edit there.
+**Every entry that has a key shows it** beside the label (**v1.1.1**), so the menu teaches the keyboard route to the thing you just clicked; screen readers get the same key through `aria-keyshortcuts`. The menu also opens from the keyboard with **`Shift + F10`** or the **Menu** key, beside the row rather than in the corner of the window. Arrow keys move through the items and `Enter` activates one; `Esc` or a click outside closes it. It works on **smart collection** rows too. The menu deliberately stays out of the way where the browser's own menu matters: it does not open while the inline editor is active or over a modal, and **`Shift` + right-click** always gives you the browser menu instead. Not available on touch, which has no right-click — use long-press for inline edit there.
 
 ### 7.6 Config → bookmarks (bulk and detail)
 
@@ -551,7 +551,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; `Enter` or `Space` switches page; focus stays trapped inside the panel; closing restores focus to the trigger |
 | `n` | In the page overview: open the **New page** row. Arrowing one stop past the last page reaches it too (**v2026.09.06**) |
-| `c` | Add a category to the page on screen (**v2026.09.06**). Acts on the first press; it used to need a hold of about 300 ms so a tap could still reach the shortcut search |
+| `c` | Add a category to the page on screen (**v2026.09.06**). Acts on the first press since **v1.1.1**; it used to need a hold of about 300 ms so a tap could still reach the shortcut search |
 | `<` | Open **config** (`<` is `Shift+,`). In config, `<` returns to the dashboard — asking to confirm first if there are unsaved changes |
 | `.` | Collapse or expand **all** categories at once (smart toggle — any open → all collapse; state remembered per page) |
 
@@ -560,14 +560,14 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | Keys | Action |
 |------|--------|
 | `↑` `↓` `←` `→` | Move selection (first arrow key starts navigation if none selected) |
-| `k` / `j` | Same as `↑` / `↓`, matching the lists in config |
+| `k` / `j` | Same as `↑` / `↓`, matching the lists in config (**v1.1.1**) |
 | `1`–`9` (page switch) | Also selects the first visible bookmark on the new page |
 | `Tab` / `Shift+Tab` | Linear next/previous bookmark when a row is selected; at the first/last bookmark, Tab exits to the header/FAB |
 | `G` then `1`–`9` | Jump to nth visible category or smart collection, select first bookmark. The first `G` arms the chord straight away; it lapses after three seconds |
 | `G` then `P` | Jump to first pinned bookmark on the page |
 | `GG` | Jump to very first bookmark (second `G` while chord pending) |
 | `Ctrl + Home` / `Ctrl + End` | First / last bookmark on the page (`Cmd` on Mac) |
-| `Shift + Home` | Step up from the list to its category header, where `F2`, `Shift + W`, `Delete` and `Shift + F10` act on the category |
+| `Shift + Home` | Step up from the list to its category header, where `F2`, `Shift + W`, `Delete` and `Shift + F10` act on the category (**v1.1.1**) |
 | `Enter` / `Space` | Open selected |
 | `Esc` | Clear selection and move focus to the first bookmark; may undo last drag reorder |
 
@@ -575,7 +575,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 
 | Keys | Action |
 |------|--------|
-| `Shift + E` | Inline-edit selected row (page switches confirm before discarding unsaved edits). Was `;`, which still works but is no longer listed |
+| `Shift + E` | Inline-edit selected row (page switches confirm before discarding unsaved edits). Was `;`, which still works but is no longer listed (**v1.1.1**) |
 | `Shift + M` | Move to… (category or another page); popover receives focus — use arrows and `Enter` inside it |
 | `Shift + T` | Quick-tag selected row (popover receives focus — `↑`/`↓` navigate; `Enter`/`Space` toggle tag and advance to next; `✓` on tags already applied) |
 | `Shift + D` | Quick-delete selected row (popover receives focus; undo in toast) |
@@ -583,9 +583,9 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `Shift + W` | Spread the focused category across columns, or put it back to one |
 | `Ctrl + C` | Copy URL (row flashes green) |
 | `Shift + P` | Pin or unpin the selected row |
-| `Shift + L` | Share the selected row, or copy its name and URL where there is no share sheet. Was `Shift + S`, which now always opens config |
+| `Shift + L` | Share the selected row, or copy its name and URL where there is no share sheet. Was `Shift + S`, which now always opens config (**v1.1.1**) |
 | `Shift + R` | Show the selected row on its own line in Health |
-| `Shift + V` | Toggle hover preview card on selection. Was `[`, which still works but is no longer listed — brackets mean *previous / next sub-tab* in config |
+| `Shift + V` | Toggle hover preview card on selection. Was `[`, which still works but is no longer listed — brackets mean *previous / next sub-tab* in config (**v1.1.1**) |
 | `Delete` | Delete selected bookmark — the same popover `Shift+D` and the right-click menu open, beside the row. With a selection open it deletes everything selected instead, confirmed in one modal that names the count |
 | `Enter` / `Space` on **+ N more** | Expand or collapse a long category; selection returns to the last bookmark above the toggle so you can keep arrowing down |
 
@@ -781,7 +781,7 @@ Neither has to start in config (**v2026.09.06**). Both gestures live where the t
 - **A category** — a **`+`** sits beside the **A–Z** / **Rec** chips in a category header, and **`c`** does the same from the keyboard. Both act on the page on screen, so neither asks which page you meant. The key acts on the first press: it used to wait out a hold of about 300 ms so a tap could still reach the shortcut search, and it was one of only two keys that did. The `+` appears in whichever header ends the grid, and costs no space of its own.
 - **From the bookmark form** — the **Page** and **Category** dropdowns each lead with **➕ New page…** and **➕ New category…**, so a bookmark can be filed somewhere that does not exist yet without leaving the half-filled form.
 
-**Right-click a category header** — or press **`Shift + F10`** on it, or the **Menu** key — for **rename**, **spread across columns**, **add category** and **delete** in one menu, each with its key beside it. **`Delete`** on a focused header deletes that category directly, with the same confirmation — it used to open the menu, the one place in nextDash where `Delete` meant *show me the options*. Renaming was previously only reachable through a long press, and deleting meant a trip to config. Deleting tells you what it will do first, with the count — the bookmarks are **kept** but lose their category and reappear under *unknown category* — and the delete goes to the [trash](#trash-data--backups--trash). Smart collections and tag-filter groups have no menu: they are views over bookmarks rather than stored categories.
+**Right-click a category header** — or press **`Shift + F10`** on it, or the **Menu** key — for **rename**, **spread across columns**, **add category** and **delete** in one menu, each with its key beside it. **`Delete`** on a focused header deletes that category directly, with the same confirmation (**v1.1.1**) — it used to open the menu, the one place in nextDash where `Delete` meant *show me the options*. Renaming was previously only reachable through a long press, and deleting meant a trip to config. Deleting tells you what it will do first, with the count — the bookmarks are **kept** but lose their category and reappear under *unknown category* — and the delete goes to the [trash](#trash-data--backups--trash). Smart collections and tag-filter groups have no menu: they are views over bookmarks rather than stored categories.
 
 A category you have just created **stays visible** even with *hide empty categories* on, until you leave the page — otherwise it would vanish in the moment between creating it and putting something in it.
 
@@ -1171,7 +1171,7 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
 | **Help** | Getting started · Configuring · Pages & bookmarks · Search & keyboard · Health & inbox · Data & hosting · About |
 
-**Help → About** carries the nextDash wordmark and the three addresses worth having: **[nextdash.cc](https://nextdash.cc)** for the project itself, **[GitHub](https://github.com/jordibrouwer/nextDash)** for issues, requests and release notes, and **[jordibrw.nl](https://jordibrw.nl)** for the person who writes it.
+**Help → About** (**v1.1.1**) carries the nextDash wordmark and the three addresses worth having: **[nextdash.cc](https://nextdash.cc)** for the project itself, **[GitHub](https://github.com/jordibrouwer/nextDash)** for issues, requests and release notes, and **[jordibrw.nl](https://jordibrw.nl)** for the person who writes it.
 
 ### Working with bookmarks
 
@@ -1214,7 +1214,7 @@ What the server has been doing, without shell access to the container. Every lin
 - **Limit the log** — by **age** or by **number of entries**, never both. Whichever you pick, the other control is greyed out, because a log capped two ways drops lines for a reason neither setting explains on its own.
   - **By age** → **Keep entries for** 1, 2, 4, 12 or 24 hours, 7 or 30 days, or **Until cleared**. Older lines drop away on their own; how many there are does not matter.
   - **By number of entries** → **Keep at most** 100, 500, 1000, 2500 or 5000. Only the newest that many are kept and older ones fall off as new lines arrive; how old they are does not matter.
-- **Show** — everything, warnings and errors, errors only, or **Activity only**. The last one is not a severity but a source: activity lines are what *was done* — a bookmark saved, a page added, a check run — and they have always been written into this same log, findable only by knowing to search for the word. **Search** filters on the message and on the subsystem name. All of it is applied by the server, so it covers the whole buffer rather than what is on screen.
+- **Show** — everything, warnings and errors, errors only, or **Activity only** (**v1.1.1**). The last one is not a severity but a source: activity lines are what *was done* — a bookmark saved, a page added, a check run — and they have always been written into this same log, findable only by knowing to search for the word. **Search** filters on the message and on the subsystem name. All of it is applied by the server, so it covers the whole buffer rather than what is on screen.
 - **Scroll to newest lines** — follows the tail, and stops following while you are scrolled up reading something.
 - **Copy**, **Download** — the current lines to the clipboard, or the whole buffer as a `.log` file.
 - **Clear log** — empties the buffer **and** deletes `server.log` and its rotated copies from the data directory. It asks first, and cannot be undone.
@@ -1622,8 +1622,8 @@ These statistics exist to answer exactly those questions — **which features ge
 | Config sections | which of the eight sections you open, which sub-tab you land on and whether you got there by click or arrow key, whether an overview *needs attention* row was followed, and which backup action was run |
 | Settings you change | the **name** of the setting only — never what you typed into it. A toggle also reports `true`/`false`, since on/off is the whole point of measuring one; free-text fields such as the dashboard title or a webhook URL report the name alone |
 | List shape | which filter or sort you picked in health or inbox, and whether you used a summary tile or a filter pill. The search box in either view is never reported |
-| Settings snapshot | once per page load: which features you have switched on, as plain yes/no values and small enums — layout and density, what a bookmark row shows, search behaviour, inbox and paste, availability checking and its interval, and the rest — plus the **release you are running** (`v1.1.0`) so the numbers can be read per version rather than as one blur across every release. A theme you built yourself is reported as `custom`, never by its id |
-| Size of your install | once per page load, and every figure **rounded into a bucket**: how many bookmarks, pages, categories, distinct tags, finders and collections you have, how many bookmarks are monitored or merely checked, and the inbox totals — what is waiting now, and how many links have ever been added, promoted or deleted. `500+` rather than 1274, because an exact count would follow one install from release to release. Nothing is counted at all while analytics is off (**v1.1.0**) |
+| Settings snapshot | once per page load: which features you have switched on, as plain yes/no values and small enums — layout and density, what a bookmark row shows, search behaviour, inbox and paste, availability checking and its interval, and the rest — plus the **release you are running** (`v1.1.1`) so the numbers can be read per version rather than as one blur across every release. A theme you built yourself is reported as `custom`, never by its id |
+| Size of your install | once per page load, and every figure **rounded into a bucket**: how many bookmarks, pages, categories, distinct tags, finders and collections you have, how many bookmarks are monitored or merely checked, and the inbox totals — what is waiting now, and how many links have ever been added, promoted or deleted. `500+` rather than 1274, because an exact count would follow one install from release to release. Nothing is counted at all while analytics is off (**v1.1.1**) |
 
 The settings snapshot is what makes it possible to see, for example, that a given option is used by almost nobody and could be simplified away — or that one is popular and deserves more attention.
 
