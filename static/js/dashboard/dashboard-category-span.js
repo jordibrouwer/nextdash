@@ -356,14 +356,55 @@
      *
      * All three inputs move without a category being touched: the column count
      * and the items-per-category limit are settings, and the bookmark count
-     * changes with every add, delete and move.
+     * changes with every add, delete and move. That last one is why this also
+     * runs after an incremental patch — a category that has just grown past its
+     * limit needs the extra column then, not at the next reload.
+     *
+     * @returns {HTMLElement[]} the categories whose width actually changed.
      */
     function refreshAllCategorySpans(dash, root = document) {
         const scope = root?.querySelectorAll ? root : document;
+        const changed = [];
         scope.querySelectorAll('.category[data-category-id]:not([data-tag-filter-chunk="true"])').forEach((el) => {
-            applyCategorySpan(dash, el, categoryFromEl(dash, el), countFromElement(el));
+            const before = effectiveSpanFromElement(el);
+            const after = applyCategorySpan(dash, el, categoryFromEl(dash, el), countFromElement(el));
+            if (before !== after) {
+                changed.push(el);
+            }
         });
         syncWideColumnTracks(scope);
+        return changed;
+    }
+
+    /**
+     * Follow a width change through everything that depends on it.
+     *
+     * Two things do. The "+ N more" cut is the limit once per column, so a
+     * category that gained a column may show more of itself; and packed mode
+     * lays the page out in a different shape depending on whether anything is
+     * spread at all, which only a full render can change.
+     *
+     * @returns {boolean} true when the caller should stop — the page is being
+     *   rebuilt from scratch and anything else it was about to patch is moot.
+     */
+    function settleSpanChange(dash, changedElements) {
+        if (!changedElements.length) {
+            return false;
+        }
+        if (dash.renderCore?.shouldPackDashboardColumns()) {
+            dash.renderDashboard?.({ animate: false, forceFull: true });
+            return true;
+        }
+        changedElements.forEach((el) => {
+            if (el.getAttribute('data-smart-collection') === 'true') {
+                return;
+            }
+            const list = el.querySelector('.bookmarks-list');
+            if (list) {
+                dash.renderCore?.applyCategoryItemLimit(list, categoryFromEl(dash, el));
+            }
+        });
+        return false;
     }
 
     /**
@@ -428,6 +469,7 @@
         effectiveSpanFromElement,
         applyCategorySpan,
         refreshAllCategorySpans,
+        settleSpanChange,
         refreshCategorySpreadUi,
         syncWideColumnTracks,
         categoryFromEl,

@@ -195,6 +195,105 @@ test.describe('spreading is a switch, the width follows from the content', () =>
     });
 });
 
+test.describe('the width follows the category as it changes', () => {
+    test('a bookmark that pushes it past the limit brings the next column with it', async ({ page }) => {
+        await openDashboard(page);
+        const id = await categoryWith(page, 2);
+        test.skip(id === null, 'no stored category with two bookmarks in this fixture');
+
+        // The limit is set to exactly what this category holds, so it sits on
+        // the line: one more bookmark is one more column. Derived from the
+        // fixture rather than assumed, or the test measures the fixture.
+        await page.evaluate(async (categoryId) => {
+            const d = window.dashboardInstance;
+            const el = document.querySelector(`#dashboard-layout .category[data-category-id="${CSS.escape(categoryId)}"]`);
+            d.settings.categoryItemLimit = el.querySelectorAll('.bookmark-link').length;
+            await d.saveSettings?.();
+            d.renderDashboard({ animate: false, forceFull: true });
+        }, id);
+        await page.waitForTimeout(300);
+
+        await setSpread(page, id, true);
+        expect((await stateOf(page, id)).span).toBe(1);
+
+        // Added through the API and then the same refresh a real add triggers,
+        // which patches the grid in place rather than rebuilding it — the path
+        // where the width used to be left behind until a reload.
+        await page.evaluate(async (categoryId) => {
+            const d = window.dashboardInstance;
+            const res = await fetch(`/api/bookmarks?page=${d.currentPageId}`);
+            const list = await res.json();
+            list.push({ name: 'width-growth-probe', url: 'https://example.com/width-growth', category: categoryId, shortcut: '' });
+            const write = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await write(`/api/bookmarks?page=${d.currentPageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(list),
+            });
+            await d.data.refreshAfterBookmarkMutation({});
+        }, id);
+
+        await expect.poll(async () => (await stateOf(page, id)).span, { timeout: 5000 }).toBe(2);
+        // And the cut moves with it: the limit is per column, so two columns
+        // show everything the category now holds.
+        const after = await stateOf(page, id);
+        expect(after.visible).toBe(after.rows);
+
+        await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            const res = await fetch(`/api/bookmarks?page=${d.currentPageId}`);
+            const list = (await res.json()).filter((b) => b.name !== 'width-growth-probe');
+            const write = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await write(`/api/bookmarks?page=${d.currentPageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(list),
+            });
+            await d.data.refreshAfterBookmarkMutation({});
+        });
+    });
+});
+
+test.describe('the column count is the ceiling', () => {
+    test('lowering it narrows a spread category, raising it gives the columns back', async ({ page }) => {
+        await openDashboard(page, { columns: 3, itemLimit: 1 });
+        const id = await categoryWith(page, 3);
+        test.skip(id === null, 'no stored category with three bookmarks in this fixture');
+        await setSpread(page, id, true);
+
+        // One per column and three bookmarks: it asks for three, and gets what
+        // the grid has.
+        expect((await stateOf(page, id)).span).toBe(3);
+
+        // Opened once so the lazily loaded config module exists — changing the
+        // column count is something you do in config, and its own setBehavior
+        // is the path that takes.
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
+        await page.waitForFunction(() => window.dashboardInstance.config.instance != null, null, { timeout: 15_000 });
+        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+        await page.waitForTimeout(300);
+
+        const setColumns = async (n) => {
+            await page.evaluate(async (count) => {
+                await window.dashboardInstance.config.instance.setBehavior('columnsPerRow', count, 'render');
+            }, n);
+            await page.waitForTimeout(400);
+        };
+
+        await setColumns(2);
+        const narrowed = await stateOf(page, id);
+        // Never wider than the grid: a category reaching past the last column
+        // would create implicit ones and scroll the page sideways.
+        expect(narrowed.span).toBe(2);
+        expect(narrowed.visible).toBe(2);
+
+        await setColumns(4);
+        // Back to what it asks for, not to what the grid now allows: three
+        // bookmarks at one per column need three columns, not four.
+        expect((await stateOf(page, id)).span).toBe(3);
+    });
+});
+
 test.describe('a spread category shows that it is one category', () => {
     test('a rule under the header runs the width of the block, and a marker names it', async ({ page }) => {
         await openDashboard(page, { itemLimit: 1 });

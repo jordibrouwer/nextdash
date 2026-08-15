@@ -67,9 +67,6 @@ class DashboardRenderIncremental {
         }
 
         this.core.syncDashboardGridLayout();
-        // The column count is a setting too, and it caps every category width —
-        // without this a narrower grid keeps categories reaching past its edge.
-        window.DashboardCategorySpan?.refreshAllCategorySpans(d, container);
         document.querySelectorAll('#dashboard-layout .bookmarks-list[data-category-id]').forEach((list) => {
             const showPing = d.settings.showStatus && d.settings.showPing;
             if (showPing) {
@@ -358,6 +355,13 @@ class DashboardRenderIncremental {
         this.core.initializeCategoryReorder();
         this.core.initializeDashboardCategoryReorder();
         window.DashboardCategorySort?.refreshAllCategorySortUi?.(d, container);
+        // A patch changes what a category holds, and how wide a spread category
+        // is follows from that count — so a category that has just grown past
+        // its limit takes its extra column here rather than at the next reload.
+        const widthChanged = window.DashboardCategorySpan?.refreshAllCategorySpans(d, container) || [];
+        if (window.DashboardCategorySpan?.settleSpanChange(d, widthChanged)) {
+            return;
+        }
         // A patched category is a different height — a bookmark added or gone —
         // and in the masonry shape the height is what its place is made of.
         window.DashboardPackedMasonry?.schedule();
