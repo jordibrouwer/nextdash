@@ -32,7 +32,7 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--border-primary);
-    border-radius: 0;
+    border-radius: 0.4rem;
     background: transparent;
     color: var(--text-secondary);
     font-size: 0.78rem;

@@ -11851,13 +11851,21 @@ class DashboardConfig {
         const countLabel = this.renderBookmarkCountLabel(filtered.length, totalAll);
 
         return `
-            <p class="config-view-intro">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+            <div class="config-bm-header">
+                <div class="config-bm-header-text">
+                    <h3 class="config-bm-head-title">${esc(this.t('config.bookmarks', 'Bookmarks'))}</h3>
+                    <p class="config-bm-subtitle">${esc(this.t('config.bookmarksIntro', 'Every bookmark across your pages. Search, edit, or remove them here.'))}</p>
+                </div>
+                <div class="config-bm-header-meta">
+                    <span class="config-bm-header-badge">${esc(String(totalAll))}</span>
+                </div>
+            </div>
             <div class="config-bm-tiles-wrap">
                 <p class="config-bm-tiles-hint" id="config-bm-tiles-hint"${this.bookmarksFiltersActive() ? '' : ' hidden'}>${esc(this.t('config.bookmarksTilesFilteredHint', 'Filtered view — counts below match your filters'))}</p>
                 <div class="config-tiles config-tiles--bookmarks" id="config-bm-tiles" role="list">${this.bookmarksSummaryTiles(this.bookmarksFiltersActive() ? this.computeBookmarkSubsetStats(filtered) : null).map((t) => this.renderTile(t)).join('')}</div>
             </div>
             <div class="config-panel">
-                <div class="config-crud-toolbar">
+                <div class="config-crud-toolbar config-crud-toolbar--view">
                     <input type="search" class="config-text" id="config-bm-search" placeholder="${esc(this.t('config.searchBookmarks', 'Search bookmarks…'))}" value="${esc(this.bmQuery || '')}">
                     <select class="config-select" id="config-bm-page" aria-label="${esc(this.t('config.page', 'Page'))}"
                             data-config-setting-promo-anchor="bookmarksPageFilter">${pageOptions}</select>
@@ -12535,7 +12543,7 @@ class DashboardConfig {
                 <div class="config-bm-usage-col" title="${usageTip}">${this.renderBookmarkUsageLine(b)}</div>
             </div>`;
         return `
-            <article class="health-view-item config-bm-row config-bm-item${ticked ? ' is-checked' : ''}" data-bm-key="${esc(key)}" tabindex="-1"
+            <article class="feed-row health-view-item config-bm-row config-bm-item${ticked ? ' is-checked feed-row--edge-accent' : ''}" data-bm-key="${esc(key)}" tabindex="-1"
                      role="listitem"${ctx.setSize ? ` aria-posinset="${ctx.posInSet}" aria-setsize="${ctx.setSize}"` : ''}>
                 <label class="config-bm-check">
                     <input type="checkbox" class="config-bm-tick" data-bm-tick="${esc(key)}" ${ticked ? 'checked' : ''}
@@ -12615,7 +12623,7 @@ class DashboardConfig {
                <p class="config-bm-load-hint">${esc(this.t('config.bookmarksLoadMoreHint', '{shown} of {total} shown — scroll for more')
                    .replace('{shown}', String(rows.length)).replace('{total}', String(allRows.length)))}</p>`
             : '';
-        return `<div class="health-view-feed config-bm-feed" role="list">${items}${more}</div>`;
+        return `<div class="feed-list health-view-feed config-bm-feed" role="list">${items}${more}</div>`;
     }
 
     /**

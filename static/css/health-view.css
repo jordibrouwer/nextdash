@@ -339,7 +339,7 @@
 .health-fleet-collapse-btn {
     margin-left: auto;
     padding: 0.25rem 0.6rem;
-    border-radius: 0;
+    border-radius: 0.4rem;
     border: 1px solid var(--border-secondary);
     background: transparent;
     color: var(--text-secondary);
@@ -665,7 +665,7 @@ button.health-view-tile:hover {
     flex-wrap: wrap;
     gap: 0.25rem;
     padding: 0.15rem;
-    border-radius: 0;
+    border-radius: 999px;
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
 }
@@ -676,7 +676,7 @@ button.health-view-tile:hover {
     color: var(--text-secondary);
     font-size: 0.78rem;
     padding: 0.25rem 0.65rem;
-    border-radius: 0;
+    border-radius: 999px;
     cursor: pointer;
 }
 
@@ -706,7 +706,7 @@ button.health-view-tile:hover {
     color: var(--text-secondary);
     font-size: 0.78rem;
     padding: 0.25rem 0.65rem;
-    border-radius: 0;
+    border-radius: 999px;
     cursor: pointer;
 }
 
@@ -781,7 +781,7 @@ button.health-view-tile:hover {
 .health-view-load-more-btn,
 .health-view-retry-btn {
     padding: 0.35rem 0.7rem;
-    border-radius: 0;
+    border-radius: 0.4rem;
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     color: var(--accent-primary);
@@ -800,7 +800,7 @@ button.health-view-tile:hover {
 .health-view-history-export-btn,
 .health-view-checkoff-btn {
     padding: 0.35rem 0.7rem;
-    border-radius: 0;
+    border-radius: 0.4rem;
     border: 1px solid var(--border-secondary);
     background: transparent;
     color: var(--text-secondary);
@@ -829,7 +829,7 @@ button.health-view-tile:hover {
 .health-view-bulk-monitor-btn,
 .health-view-bulk-periodic-btn {
     padding: 0.35rem 0.7rem;
-    border-radius: 0;
+    border-radius: 0.4rem;
     border: 1px solid var(--border-secondary);
     background: transparent;
     color: var(--text-secondary);
@@ -898,42 +898,12 @@ button.health-view-tile:hover {
 /* Favicon column is 3rem, shared with the inbox feed so the two read as one
    system: health rows are scannable status lines, not previews, but the icon is
    large enough to recognise the site at a glance. */
-.health-view-item {
-    display: grid;
-    /* The first track is the select box. It keeps its width and only fades in,
-       so the row never reflows as the pointer crosses it. */
-    grid-template-columns: 1.1rem 3rem 1fr;
-    gap: 0.85rem;
-    padding: 0.75rem 0.85rem;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-secondary);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
+/* The card, its hover and its keyboard-cursor state now live in feed-row.css,
+   shared with Inbox and Config → Bookmarks. What stays here is the part that is
+   genuinely Health's: the severity edge classes the JS still writes. */
+.health-view-item.is-broken { border-left: 3px solid var(--accent-error); }
+.health-view-item.is-warn { border-left: 3px solid var(--accent-warning); }
 
-/* Same left-edge marker as an unread inbox item, tinted by severity. */
-.health-view-item.is-broken {
-    border-left: 3px solid var(--accent-error);
-}
-
-.health-view-item.is-warn {
-    border-left: 3px solid var(--accent-warning);
-}
-
-.health-view-item:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
-}
-
-.health-view-item.keyboard-selected {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
-}
-
-.health-view-item--highlight {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 35%, transparent);
-}
 
 .health-view-item-icon {
     width: 3rem;
@@ -1858,37 +1828,8 @@ button.health-view-tile:hover {
    opacity: reserving the space would leave every row padded with a strip of
    emptiness. The buttons keep their box (no display:none), so they stay
    focusable and Tab still reveals them via :focus-within. */
-.health-view-item-actions {
-    display: grid;
-    grid-template-rows: 0fr;
-    margin-top: 0;
-    opacity: 0;
-    transition: grid-template-rows 0.14s ease, opacity 0.12s ease, margin-top 0.14s ease;
-}
+/* The action bar's reveal is in feed-row.css. */
 
-.health-view-item-actions > * {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    min-height: 0;
-    overflow: hidden;
-}
-
-/* The collapsing wrapper clips its content, which would cut off an open menu.
-   Only while a menu is open does the row let it escape — the height animation is
-   finished by then, so nothing jumps. */
-.health-view-item-actions:has(.health-view-menu:not([hidden])),
-.health-view-item-actions:has(.health-view-menu:not([hidden])) > * {
-    overflow: visible;
-}
-
-.health-view-item:hover .health-view-item-actions,
-.health-view-item:focus-within .health-view-item-actions,
-.health-view-item.keyboard-selected .health-view-item-actions {
-    grid-template-rows: 1fr;
-    margin-top: 0.55rem;
-    opacity: 1;
-}
 
 /* Never hide an action from assistive tech or keyboard users: opacity:0 keeps
    the buttons focusable, and focus-within reveals them on Tab. */

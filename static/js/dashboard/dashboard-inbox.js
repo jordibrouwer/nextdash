@@ -3435,7 +3435,7 @@ class DashboardInbox {
         const visible = filtered.slice(0, this.visibleLimit);
         const groups = this.groupFilteredItems(visible);
         const list = document.createElement('div');
-        list.className = 'inbox-feed';
+        list.className = 'feed-list inbox-feed';
         groups.forEach((group) => {
             const section = document.createElement('section');
             section.className = 'inbox-date-group';
@@ -3513,7 +3513,9 @@ class DashboardInbox {
     createItemElement(item) {
         const d = this.dash;
         const card = document.createElement('article');
-        card.className = 'inbox-item' + (item.readAt ? ' is-read' : ' is-unread');
+        // feed-row is the shared card; the unread edge is the shared modifier.
+        card.className = 'feed-row inbox-item'
+            + (item.readAt ? ' is-read' : ' is-unread feed-row--edge-accent');
         card.dataset.inboxId = item.id;
         card.dataset.bookmarkUrl = item.url || '';
         card.dataset.inboxShareName = item.previewTitle || item.title || item.domain || '';
@@ -3575,7 +3577,7 @@ class DashboardInbox {
                 </p>
                 ${item.note ? `<p class="inbox-item-note">${this.escape(item.note)}</p>` : ''}
                 ${this.renderItemTags(item)}
-                <div class="inbox-item-actions">
+                <div class="feed-row-actions inbox-item-actions">
                     <div class="inbox-item-actions-inner">
                         <button type="button" class="inbox-action-btn" data-inbox-action="open">${this.escape(this.t('dashboard.inboxOpen', 'Open'))}</button>
                         <button type="button" class="inbox-action-btn" data-inbox-action="promote">${this.escape(this.t('dashboard.inboxPromote', 'Promote'))}<kbd>p</kbd></button>
@@ -4050,8 +4052,8 @@ class DashboardInbox {
         if (!card) {
             return;
         }
-        card.classList.add('inbox-item--highlight');
+        card.classList.add('inbox-item--highlight', 'feed-row--highlight');
         card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        setTimeout(() => card.classList.remove('inbox-item--highlight'), 1800);
+        setTimeout(() => card.classList.remove('inbox-item--highlight', 'feed-row--highlight'), 1800);
     }
 }

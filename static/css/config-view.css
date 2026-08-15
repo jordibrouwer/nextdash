@@ -274,6 +274,172 @@
     line-height: 1.25;
 }
 
+/* Config → Bookmarks reads as a view, not a settings panel.
+ *
+ * It shows the same rows as Health and Inbox, has the same tiles above them and
+ * the same right-click menu on them — but it opened with a bare panel title and
+ * a paragraph, where those two open with a titled header carrying a count. Same
+ * shape as .inbox-header / .health-view-header, deliberately, so moving between
+ * the three does not feel like moving between two products.
+ */
+.config-bm-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.25rem 0.35rem 0.5rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.config-bm-head-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.config-bm-subtitle {
+    margin: 0.25rem 0 0;
+    max-width: 62ch;
+    font-size: var(--font-size-controls);
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.config-bm-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-shrink: 0;
+}
+
+.config-bm-header-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+    color: var(--accent-primary);
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+/* The filter row, given the view toolbars' proportions.
+ *
+ * The controls stay selects rather than becoming segmented pills: page,
+ * category and sort have too many values for a strip of buttons, which is
+ * exactly why Health and Inbox use a select for their sort too. What is shared
+ * is the shape — same radius, same type size, same surface. */
+.config-crud-toolbar--view {
+    gap: 0.55rem;
+    padding: 0 0.35rem 0.35rem;
+    margin-bottom: 0.65rem;
+}
+
+.config-crud-toolbar--view .config-text {
+    flex: 1 1 12rem;
+    min-width: 8rem;
+    padding: 0.35rem 0.55rem;
+    border-radius: 0.4rem;
+    background: var(--background-primary);
+    font-size: 0.82rem;
+}
+
+.config-crud-toolbar--view .config-select {
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.4rem;
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.config-crud-toolbar--view .config-select:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+.config-crud-toolbar--view .config-btn {
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.4rem;
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.config-crud-toolbar--view .config-btn:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+}
+
+/* Config → Bookmarks tiles use the same tile as Health and Inbox.
+ *
+ * They sit above a list of the same rows those views show, so a second tile
+ * design one screen away read as a different product. The severity stripe is
+ * dropped with it: Health carries tone in the value's colour instead, which is
+ * what the tone classes now do here too.
+ *
+ * Scoped to --bookmarks. Overview keeps the card-style tile — it is a dashboard
+ * of unrelated numbers, not the header of a list.
+ */
+.config-tiles--bookmarks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.config-tiles--bookmarks .config-tile {
+    gap: 0.15rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary);
+    overflow: visible;
+}
+
+.config-tiles--bookmarks .config-tile::before {
+    content: none;
+}
+
+.config-tiles--bookmarks .config-tile-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.config-tiles--bookmarks .config-tile-value {
+    font-size: 1.05rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+.config-tiles--bookmarks .config-tile-detail {
+    font-size: 0.66rem;
+    color: var(--text-secondary);
+}
+
+/* Tone in the number, the way Health does it. */
+.config-tiles--bookmarks .config-tile--good .config-tile-value { color: var(--accent-success); }
+.config-tiles--bookmarks .config-tile--warn .config-tile-value { color: var(--accent-warning); }
+.config-tiles--bookmarks .config-tile--crit .config-tile-value { color: var(--accent-error); }
+
+.config-tiles--bookmarks button.config-tile:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
+}
+
+.config-tiles--bookmarks .config-tile.is-active {
+    border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, var(--background-secondary));
+}
+
 @media (max-width: 720px) {
     .config-tiles--overview {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2611,32 +2777,9 @@ body.no-animations .config-new-features-panel-star {
     margin: 0 0 16px;
 }
 
-.config-bm-item {
-    position: relative;
-    display: grid;
-    grid-template-columns: 3rem 1fr;
-    gap: 0.85rem;
-    padding: 0.75rem 0.85rem;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-secondary);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
+/* Card, hover and keyboard cursor come from feed-row.css. The ticked edge is
+   applied as feed-row--edge-accent by the renderer. */
 
-.config-bm-item:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
-}
-
-.config-bm-item.keyboard-selected {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
-}
-
-.config-bm-item.is-checked {
-    border-left: 3px solid var(--accent-primary);
-}
 
 .config-bm-check {
     position: absolute;

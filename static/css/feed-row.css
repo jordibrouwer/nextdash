@@ -1,0 +1,161 @@
+/* The bookmark feed row, shared by Health, Inbox and Config → Bookmarks.
+ *
+ * The three used to carry their own copy of this rule — `.health-view-item`,
+ * `.inbox-item` and `.config-bm-item` — and the copies had drifted into being
+ * byte-identical, which is the worst of both: one design, three places to change
+ * it, and no way to tell whether a difference was meant.
+ *
+ * What genuinely differs between the three is expressed as modifiers below: the
+ * checkbox column Health keeps in the grid, and the coloured left edge each view
+ * uses for its own state (unread, broken, ticked).
+ *
+ * Loaded before health-view.css, config-view.css and dashboard-inbox.css so
+ * those files can still override where a view really needs it.
+ */
+
+.feed-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: 0.85rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Health keeps the checkbox in the grid rather than floating it over the icon:
+   its rows are scanned in bulk, so the column is always there and only fades. */
+.feed-row--with-select {
+    grid-template-columns: 1.1rem 3rem 1fr;
+}
+
+.feed-row:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
+    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
+}
+
+.feed-row.keyboard-selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
+}
+
+/* The flash after jumping to a row from somewhere else. */
+.feed-row--highlight {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+/* Classic layout has no focus ring on the row at all — the keyboard cursor is
+   drawn by .keyboard-selected, but Tab-ing to a row with tabindex="-1" showed
+   nothing. Modern layout already had this; now both do. */
+.feed-row:focus-visible {
+    outline: var(--layout-focus-ring, 2px solid color-mix(in srgb, var(--accent-primary) 72%, transparent));
+    outline-offset: 2px;
+}
+
+/* The state edge. Each view names its own state; the shape is shared. */
+.feed-row--edge-accent {
+    border-left: 3px solid var(--accent-primary);
+}
+
+.feed-row--edge-error {
+    border-left: 3px solid var(--accent-error);
+}
+
+.feed-row--edge-warning {
+    border-left: 3px solid var(--accent-warning);
+}
+
+/* Rounded corners would clip a left border, so modern redraws the edge as an
+   inset shadow. Kept here with the edge it belongs to rather than repeated in
+   each view's modern block. */
+body[data-layout-version="modern"] .feed-row {
+    border-radius: var(--layout-radius-md, 12px);
+    border-color: var(--layout-surface-border);
+    background: var(--layout-surface);
+    box-shadow: var(--layout-shadow-sm);
+}
+
+body[data-layout-version="modern"] .feed-row--edge-accent,
+body[data-layout-version="modern"] .feed-row--edge-error,
+body[data-layout-version="modern"] .feed-row--edge-warning {
+    border-left-width: 1px;
+}
+
+body[data-layout-version="modern"] .feed-row--edge-accent {
+    box-shadow: var(--layout-shadow-sm), inset 3px 0 0 0 var(--accent-primary);
+}
+
+body[data-layout-version="modern"] .feed-row--edge-error {
+    box-shadow: var(--layout-shadow-sm), inset 3px 0 0 0 var(--accent-error);
+}
+
+body[data-layout-version="modern"] .feed-row--edge-warning {
+    box-shadow: var(--layout-shadow-sm), inset 3px 0 0 0 var(--accent-warning);
+}
+
+/* The feed itself: a column of cards, no dividers and no striping — the card
+   border and the gap do the separating. */
+.feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+/* The row's action bar, revealed on hover, focus or the keyboard cursor.
+   grid-template-rows rather than height, so it animates from nothing to its
+   own content height without a magic number. */
+.feed-row-actions {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    opacity: 0;
+    transition:
+        grid-template-rows 0.14s ease,
+        opacity 0.12s ease,
+        margin-top 0.14s ease;
+}
+
+.feed-row-actions > * {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.feed-row:hover .feed-row-actions,
+.feed-row:focus-within .feed-row-actions,
+.feed-row.keyboard-selected .feed-row-actions {
+    grid-template-rows: 1fr;
+    margin-top: 0.55rem;
+    opacity: 1;
+}
+
+/* The collapsing wrapper clips its content, which would cut off an open menu.
+   Only while a menu is open does the row let it escape — the height animation is
+   finished by then, so nothing jumps. Matches both the shared menu class and the
+   one Health names its own popovers with. */
+.feed-row-actions:has(.health-view-menu:not([hidden])),
+.feed-row-actions:has(.health-view-menu:not([hidden])) > * {
+    overflow: visible;
+}
+
+/* Nothing hovers on a touch screen, and the actions are the point of the row. */
+@media (hover: none) {
+    .feed-row-actions {
+        grid-template-rows: 1fr;
+        margin-top: 0.55rem;
+        opacity: 1;
+    }
+}
+
+@media (max-width: 520px) {
+    .feed-row-actions {
+        grid-template-rows: 1fr;
+        margin-top: 0.55rem;
+        opacity: 1;
+    }
+}

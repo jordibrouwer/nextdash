@@ -2189,8 +2189,8 @@ class DashboardHealth {
         if (!row) {
             return;
         }
-        row.classList.add('health-view-item--highlight');
-        setTimeout(() => row.classList.remove('health-view-item--highlight'), 1800);
+        row.classList.add('health-view-item--highlight', 'feed-row--highlight');
+        setTimeout(() => row.classList.remove('health-view-item--highlight', 'feed-row--highlight'), 1800);
     }
 
     /**
@@ -2328,7 +2328,7 @@ class DashboardHealth {
 
         const visible = filtered.slice(0, this.visibleLimit);
         const feed = document.createElement('div');
-        feed.className = 'health-view-feed';
+        feed.className = 'feed-list health-view-feed';
         feed.setAttribute('role', 'feed');
         feed.setAttribute('aria-label', this.t('dashboard.healthPageTitle', 'Health'));
         const groups = this.groupFilteredIssues(visible);
@@ -5153,11 +5153,14 @@ class DashboardHealth {
         const key = this.issueKey(issue);
         const row = document.createElement('article');
         const broken = issue.status === 'broken';
-        row.className = `health-view-item ${this.bandClass(issue.score)}`;
+        // feed-row* is the shared card (see feed-row.css); health-view-item stays
+        // for everything specific to this view, and for the selectors tests and
+        // sibling modules already reach for.
+        row.className = `feed-row feed-row--with-select health-view-item ${this.bandClass(issue.score)}`;
         if (broken) {
-            row.classList.add('is-broken');
+            row.classList.add('is-broken', 'feed-row--edge-error');
         } else if (this.scoreClass(issue.score) === 'warn') {
-            row.classList.add('is-warn');
+            row.classList.add('is-warn', 'feed-row--edge-warning');
         }
         row.dataset.healthKey = key;
         row.tabIndex = -1;
@@ -5210,7 +5213,7 @@ class DashboardHealth {
                 ${this.renderMonitorStrip(issue)}
                 <div class="health-view-score-panel" ${expanded ? '' : 'hidden'}>${this.renderScorePanel(issue)}</div>
                 <div class="health-view-expect-panel" ${expectOpen ? '' : 'hidden'}>${expectOpen ? this.renderExpectPanel(issue) : ''}</div>
-                <div class="health-view-item-actions">
+                <div class="feed-row-actions health-view-item-actions">
                     <div class="health-view-item-actions-inner">
                         <button type="button" class="health-view-action-btn" data-health-action="recheck">${this.escape(this.t('dashboard.healthRecheck', 'Re-check'))}<kbd>p</kbd></button>
                         <button type="button" class="health-view-action-btn" data-health-action="open">${this.escape(this.t('dashboard.healthOpen', 'Open'))}</button>

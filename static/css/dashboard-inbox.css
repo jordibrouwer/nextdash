@@ -275,35 +275,9 @@ body.no-animations .page-inbox-badge.is-inbox-badge-visible.is-inbox-badge-pop {
     gap: 0.65rem;
 }
 
-.inbox-item {
-    display: grid;
-    grid-template-columns: 3rem 1fr;
-    gap: 0.85rem;
-    padding: 0.75rem 0.85rem;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--layout-radius-sm, 8px);
-    background: var(--background-secondary);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
+/* Card, hover and keyboard cursor come from feed-row.css. The unread edge is
+   applied as feed-row--edge-accent by the renderer. */
 
-.inbox-item.is-unread {
-    border-left: 3px solid var(--accent-primary);
-}
-
-.inbox-item:hover {
-    border-color: color-mix(in srgb, var(--accent-primary) 42%, var(--border-primary));
-    background: color-mix(in srgb, var(--accent-primary) 7%, var(--background-secondary));
-}
-
-.inbox-item--highlight {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 35%, transparent);
-}
-
-.inbox-item.keyboard-selected {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 28%, transparent);
-    background: color-mix(in srgb, var(--accent-primary) 9%, var(--background-secondary));
-}
 
 /* 3rem square, shared with the health feed (.health-view-item-icon) so the two
    read as one system. Inbox has no stored favicon — the preview image is shown
@@ -448,29 +422,9 @@ body.no-animations .inbox-item-thumb--loading {
    matching the health view. grid-template-rows 0fr → 1fr animates the row's height
    rather than reserving an empty strip under every card; the buttons keep their box
    (no display:none) so they remain focusable and Tab reveals them via :focus-within. */
-.inbox-item-actions {
-    display: grid;
-    grid-template-rows: 0fr;
-    margin-top: 0;
-    opacity: 0;
-    transition: grid-template-rows 0.14s ease, opacity 0.12s ease, margin-top 0.14s ease;
-}
+/* The action bar's reveal is in feed-row.css; .inbox-item-actions-inner is
+   covered by its `.feed-row-actions > *` rule. */
 
-.inbox-item-actions-inner {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.inbox-item:hover .inbox-item-actions,
-.inbox-item:focus-within .inbox-item-actions,
-.inbox-item.keyboard-selected .inbox-item-actions {
-    grid-template-rows: 1fr;
-    margin-top: 0.55rem;
-    opacity: 1;
-}
 
 .inbox-action-btn {
     display: inline-flex;
@@ -602,7 +556,7 @@ body.no-animations .inbox-item-actions {
 .inbox-retry-btn {
     margin-top: 0.85rem;
     padding: 0.35rem 0.7rem;
-    border-radius: 0;
+    border-radius: 0.4rem;
     border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
     background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
     color: var(--accent-primary);
@@ -709,15 +663,6 @@ body.no-animations .inbox-item-actions {
         grid-template-columns: 1fr;
     }
 
-    .inbox-item {
-        grid-template-columns: 3rem 1fr;
-    }
-
-    .inbox-item-actions {
-        grid-template-rows: 1fr;
-        margin-top: 0.55rem;
-        opacity: 1;
-    }
 
     .inbox-toolbar {
         flex-wrap: wrap;

@@ -70,7 +70,7 @@
             ? `<button type="button" class="health-view-action-btn" data-feed-action="recheck">${esc(t('dashboard.healthRecheck', 'Re-check'))}<kbd>p</kbd></button>`
             : '';
         return `
-            <div class="health-view-item-actions">
+            <div class="feed-row-actions health-view-item-actions">
                 <div class="health-view-item-actions-inner">
                     ${recheck}
                     <button type="button" class="health-view-action-btn" data-feed-action="open">${esc(t('dashboard.healthOpen', 'Open'))}</button>
