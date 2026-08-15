@@ -166,6 +166,38 @@ if (printRows > PRINT_ROW_BUDGET) {
 }
 console.log(`  ok printable subset: ${print.length} sections, ${printRows} rows`);
 
+/* 8. A row's printFallback is what the sheet prints. It used to be handed to the
+      label resolver as a *fallback*, where the resolver's own answer always won —
+      and the generator's resolver answers from locales/en.json, a key the i18n
+      check guarantees exists. So the curated short wording never reached the
+      paper and the sheet ran to three pages.
+
+      Built with the generator's resolver, not the identity one used above: with
+      `(_k, fb) => fb` a printFallback wins either way, and this check would pass
+      against the very bug it exists to catch. */
+const sheet = registry.buildPrintSections((key, fallback) => {
+    const value = en.cheatsheet?.[key];
+    return value && value !== key ? value : fallback;
+});
+const printed = new Set(sheet.flatMap((section) => section.items.map((item) => item.description)));
+let shortLabels = 0;
+for (const section of registry.SECTIONS) {
+    for (const row of section.rows || []) {
+        if (!row.print || !row.printFallback || row.printFallback === row.fallback) continue;
+        const localeText = en.cheatsheet?.[row.cheatKey];
+        shortLabels++;
+        if (!printed.has(row.printFallback)) {
+            fail(`printable sheet dropped the short label for ${row.cheatKey}: `
+                + `expected "${row.printFallback}"`);
+        }
+        if (localeText && printed.has(localeText)) {
+            fail(`printable sheet kept the long label for ${row.cheatKey}`);
+        }
+    }
+}
+if (shortLabels === 0) fail('no row carries a short print label — the check above proves nothing');
+console.log(`  ok ${shortLabels} rows print their short label, not the modal sentence`);
+
 if (errors.length) {
     console.error(`\nRegistry validation failed (${errors.length}):\n`);
     for (const err of errors) console.error(`  ${err}`);

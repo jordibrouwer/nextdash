@@ -444,7 +444,20 @@
      * Rows marked for the printable one-pager, which stays a curated subset:
      * the PDF is A4 and meant to be readable at a glance, so it carries short
      * labels (printFallback) rather than the modal's full sentences.
+     *
+     * A printFallback is the label, not a fallback for one — which is why it is
+     * used directly rather than handed to `label()`. Passed through, it lost
+     * every time: the callers resolve a cheatKey against the locale first, that
+     * key is always present (the i18n check requires it), and so the sheet
+     * printed the modal's full sentences and ran to three pages. The short
+     * wording is English-only, which the sheet already is: it is generated from
+     * locales/en.json alone.
      */
+    /** A printed row's own short wording, or the translated one where it has none. */
+    function printLabel(label, row) {
+        return row.printFallback || label(row.cheatKey, row.fallback);
+    }
+
     function buildPrintSections(labelFor) {
         const label = typeof labelFor === 'function' ? labelFor : (_key, fallback) => fallback;
         const out = [];
@@ -462,7 +475,7 @@
                     .filter((row) => row.print && !row.printSection)
                     .map((row) => ({
                         keys: row.printKeys || row.keys,
-                        description: label(row.cheatKey, row.printFallback || row.fallback),
+                        description: printLabel(label, row),
                     }));
             }
             if (!items.length) continue;
@@ -480,7 +493,7 @@
                 if (!target) continue;
                 const item = {
                     keys: row.printKeys || row.keys,
-                    description: label(row.cheatKey, row.printFallback || row.fallback),
+                    description: printLabel(label, row),
                 };
                 if (Number.isInteger(row.printAt)) {
                     target.items.splice(row.printAt, 0, item);
