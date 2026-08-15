@@ -174,7 +174,7 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 
 #### Spreading a category across columns
 
-A category can run across several grid columns. Its bookmarks then flow across those columns instead of down a single one, which suits a category with many short entries.
+*(v1.1.0)* A category can run across several grid columns. Its bookmarks then flow across those columns instead of down a single one, which suits a category with many short entries.
 
 It is a switch, not a width. **How many** columns a spread category takes is not a setting: it follows from **items per category** — which caps the height of one column — and how many bookmarks the category holds. Forty bookmarks with a limit of fifteen take three columns, and two once you delete a handful. The column count is the ceiling: lower it and a spread category narrows to fit, raise it and it takes back only what it asks for.
 
@@ -240,7 +240,7 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 
 ### 4.5 Config vs dashboard
 
-Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config with **`Shift+S`**, **`<`**, or the gear icon restores the **last section and sub-tab** you were on — whichever way you left, including **`Escape`**, **`0`–`9`**, and the health, inbox and page buttons in the header, which switch view around config without it being asked. The memory lasts **5 minutes**, counted from the moment config left the screen rather than from your last click inside it: reading one panel for half an hour and stepping away for ten seconds still brings you back where you were, while coming back much later starts on **Overview** — a quick return is a continuation of what you were doing, a return an hour later is a new task. A deep link like `/#config/appearance` still takes priority.
+Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config with **`Shift+S`**, **`<`**, or the gear icon restores the **last section and sub-tab** you were on — whichever way you left, including **`Escape`**, **`0`–`9`**, and the health, inbox and page buttons in the header, which switch view around config without it being asked (**v1.1.0**). The memory lasts **5 minutes**, counted from the moment config left the screen rather than from your last click inside it: reading one panel for half an hour and stepping away for ten seconds still brings you back where you were, while coming back much later starts on **Overview** — a quick return is a continuation of what you were doing, a return an hour later is a new task. A deep link like `/#config/appearance` still takes priority.
 
 | Dashboard view | Config view |
 |-----------------|------------------|

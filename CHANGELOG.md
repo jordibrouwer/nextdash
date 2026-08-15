@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.1.0 — 15 August 2026](#v110--15-august-2026)
 - [v1.0.4 — 15 August 2026](#v104--15-august-2026)
 - [v1.0.3 — 14 August 2026](#v103--14-august-2026)
 - [v1.0.2 — 14 August 2026](#v102--14-august-2026)
@@ -162,6 +163,45 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.03 — March 2026](#v202603--march-2026)
 - [v2026.02 — February 2026](#v202602--february-2026)
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
+
+---
+
+## v1.1.0 — 15 August 2026
+
+The first minor since 1.0: a category can be wider than one column. `DASHBOARD_RELEASE` and `NEXTDASH_WHATS_NEW_DATA_VERSION` are bumped, so the modal reopens once.
+
+### Categories across columns
+
+- **new** — `Category.Spread` (`spread` in `bookmarks-{page}.json`) marks a category as allowed to run across grid columns; uncategorized and the smart collections keep theirs in `settings.categorySpreads[pageId][categoryId]`, the shape `categorySortModes` already uses. `dashboard-category-span.js` owns both, so no caller has to know which applies.
+- **new** — the width itself is derived, never stored: `spanForCount` is `min(ceil(count / categoryItemLimit), effectiveColumns, 12)`. It was a number the user picked in the first draft; it became a switch because the number is implied by two settings that already exist, and a stored number goes stale the moment a bookmark is added.
+- **new** — `applyCategoryItemLimit` multiplies the limit by the span, so a spread category shows its limit once per column and stays the height of its neighbours. `refreshAllCategorySpans` runs from `finishIncrementalRefresh`, which is what makes an added bookmark bring the next column with it rather than waiting for a reload; `settleSpanChange` follows that through to the "+ N more" cut and, in packed mode, to a full re-render.
+- **new** — the two settings rule out each other's extreme: `spreadUnavailableReason` returns `unlimited-items` when `categoryItemLimit` is 0, and the config select disables *Unlimited* while `anySpreadCategory` holds. Both say why where they are asked for.
+- **new** — routes: `DashboardCategoryMenu` (entry flips to *Back to one column*, no `aria-checked` beside a label that already flips), `Shift+W` in `keyboard-navigation.js`, `:width on|off|all`, a `data-cat-spread` button per row in the categories editor, and `Appearance → Layout → Categories across columns` for the defaults and the reset.
+- **new** — `.category--wide` spans with `grid-column: span var(--category-span)` and repeats the row's track pattern once per column, so `subgrid` alignment survives. The inner column gap is the grid gap plus `2 × --category-inline-pad`: a run of categories pads every column on both sides, a single wide box only its outer edges, and without that the inner columns sat 16px left of the grid. `syncWideColumnTracks` pins the shortcut and lead tracks, which are intrinsic and were sized per repeat by whichever rows happened to land in them.
+- **new** — a rule under the header spanning the block, and a `↔N` badge in the header, both dropped while the category is collapsed or one column wide.
+
+### Packed columns
+
+- **new** — packed keeps its round-robin flex columns while nothing spreads, and switches to a grid (`packed-masonry`) the moment something does: `--masonry-span` rows per category from `dashboard-packed-masonry.js`, `grid-auto-flow: row dense`, a `ResizeObserver` per category. Bands were tried first and left a hole the height of the tallest column beside the wide block.
+- **fix** — `syncCategoriesFromDom` read the columns in document order while the render filled them round-robin. Those are not each other's inverse, so every category drag rewrote the order into one that redistributed differently and scrambled the page. `readCategoryElementsInOrder` is the single inverse now, keyed on what is in the DOM, and `getExistingCategories` delegates to it.
+- **fix** — `syncDashboardGridLayout` rebuilds `className` wholesale and dropped `packed-masonry`, so any settings refresh — including the one behind a window resize — left the categories as bare flex children of a row with no columns in it.
+
+### Config
+
+- **fix** — the location memory was written only on the exits config knows about; the header's health, inbox and page buttons switch view around it. `restoreConfigHash` now saves on every move inside config and `setActiveView` stamps it on the way out. The TTL is 5 minutes (`DashboardConfig` and `DashboardConfigLoader` both), counted from leaving rather than from the last click inside.
+- **new** — `type: 'action'` panel controls with `bindPanelActions`, used for *Turn spreading off everywhere*; `NEW_THIS_RELEASE` is the one place naming where the twinkle points, drawn on the section, the sub-tab and the panel.
+- **new** — `#category-context-menu` sizes to its content (`width: max-content`, capped at 24rem). The shared `.move-popover` cap is for the move/tag/delete pickers; at 16rem the widest row here needed 274px and got 237, so the `Shift+W` chip was trimmed away — and the French label is half again as long.
+
+### Discoverability
+
+- **new** — `spread-notice.js` (a `NoticeCard`) and `spread-tutorial.js`, a four-step `AppModal` walkthrough in the shape of the inbox and health tours, reachable afterwards from `Help → Pages & categories`.
+- **fix** — `NoticeCard` bound an action with `querySelector`, and a card naming its × through `dismissName` puts that attribute on the × as well. The × comes first, so it took the handler and the button sharing its name got none: the side rail's *No thanks* had been dead since the cards were unified.
+
+### Docs
+
+- `MANUAL.md` — the spreading section with the columns-per-bookmark-count table, and the config-memory paragraphs at five minutes.
+- `README.md` — the feature bullet, `Shift+W`, `:width on|off`, and the five-minute memory.
+- `CHANGELOG.md`, `static/data/whats-new/v1.1.0.json`, `index.json`, `whats-new-stub.js`, `tests/whats-new-hidden-release.spec.js`, the four locale files, and `go generate ./...` for `asset_hashes_gen.go`.
 
 ---
 

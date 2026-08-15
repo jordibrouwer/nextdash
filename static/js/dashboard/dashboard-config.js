@@ -2963,6 +2963,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureSpreadTitle',
+                titleFallback: 'A category can span several columns',
+                whatKey: 'config.overviewNewFeatureSpreadWhat',
+                whatFallback: 'A category with forty bookmarks in it towered over everything beside it, and everything past the items-per-category limit sat behind a "+ N more" you had to click every visit. One long category was enough to make a page feel lopsided.',
+                howKey: 'config.overviewNewFeatureSpreadHow',
+                howFallback: 'Let a category spread and its bookmarks run across two or three columns instead of down one, at the same height as the blocks around it. How many columns it takes is not something you set: it follows from the items-per-category limit and how many bookmarks are in it, so it grows and shrinks with the category and never goes wider than the grid.',
+                enableKey: 'config.overviewNewFeatureSpreadEnable',
+                enableFallback: 'Right-click a category header and pick Spread across columns, or press Shift+W on it. Pages & tags → Categories has the same switch on every row. It needs an items-per-category limit — spreading is unavailable while that is set to Unlimited.',
+                ctaKey: 'config.overviewNewFeatureSpreadCta',
+                ctaFallback: 'Open Layout →',
+                go: { section: 'appearance', appearanceTab: 'layout' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureBulkUndoTitle',
                 titleFallback: 'A way back out of a bulk delete',
                 whatKey: 'config.overviewNewFeatureBulkUndoWhat',
@@ -17349,7 +17362,7 @@ class DashboardConfig {
     renderHelpStart() {
         const esc = (v) => this.dash.escapeHtml(v);
         const tips = this.helpTips().map((tip) => `<li class="config-help-tip">${tip}</li>`).join('');
-        return this.helpPanel('config.helpVersionTitle', 'nextDash 1.0',
+        return this.helpPanel('config.helpVersionTitle', 'nextDash 1.1.0',
             'config.helpVersionBody', '',
             `<div class="config-actions">
                 <button type="button" class="config-btn" data-help-action="whats-new">${esc(this.t('config.helpVersionWhatsNew', "See what's new"))}</button>
