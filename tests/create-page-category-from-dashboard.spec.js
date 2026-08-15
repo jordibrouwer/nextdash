@@ -51,13 +51,14 @@ const overlayRow = (page) => page.locator('#app-modal .page-overview-modal-actio
 const gridRow = (page) => page.locator('.bookmark-inline-create.category-add-create');
 
 /**
- * Hold c past the 300 ms threshold. A plain press() is too quick and is treated
- * as a search keystroke, which is the behaviour the hold exists to protect.
+ * c adds a category on the first press.
+ *
+ * It used to need a hold of about 300 ms so a tap could still fall through to
+ * the shortcut search; that made it one of two bare letters with a rule of
+ * their own, and the wait was paid on every use.
  */
-async function holdC(page) {
-    await page.keyboard.down('c');
-    await page.waitForTimeout(450);
-    await page.keyboard.up('c');
+async function pressC(page) {
+    await page.keyboard.press('c');
 }
 
 test.describe('pages overlay — creating a page', () => {
@@ -263,46 +264,38 @@ test.describe('dashboard grid — adding a category', () => {
         expect(delta).toBe(0);
     });
 
-    test('holding c opens the name row without a bookmark focused', async ({ page }) => {
+    test('c opens the name row without a bookmark focused', async ({ page }) => {
         await loadDashboard(page);
-        await holdC(page);
+        await pressC(page);
 
         await expect(gridRow(page)).toBeVisible();
         await expect(gridRow(page).locator('.bookmark-inline-create-input')).toBeFocused();
     });
 
-    test('a quick c types into the shortcut search instead of adding a category', async ({ page }) => {
+    test('a quick c adds a category rather than reaching the shortcut search', async ({ page }) => {
         await loadDashboard(page);
-        // The whole point of the hold: c is a letter people search with, so a tap
-        // must reach the search box and leave the grid alone.
+        // The hold is gone: a tap is the shortcut now, and the search box must
+        // not open behind it.
         await page.keyboard.press('c');
 
-        await expect.poll(async () => page.evaluate(() => {
-            const search = document.getElementById('shortcut-search');
-            if (!search?.classList.contains('show')) return null;
-            return String(window.dashboardInstance?.searchComponent?.currentQuery || '');
-        }), { timeout: 5000 }).toBe('C');
-        await expect(gridRow(page)).toHaveCount(0);
+        await expect(gridRow(page)).toBeVisible();
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
     });
 
-    test('the hold still works a second time', async ({ page }) => {
+    test('c still works a second time', async ({ page }) => {
         await loadDashboard(page);
-        await holdC(page);
+        await pressC(page);
         await expect(gridRow(page)).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(gridRow(page)).toHaveCount(0);
 
-        // Opening the row moves focus into its input, and the keyup handler bails
-        // on INPUT targets before it can clear the awaiting-release flag. Unless
-        // the hold clears that itself, the flag stays set and every later hold is
-        // skipped as "already awaiting" — the shortcut dies after one use.
-        await holdC(page);
+        await pressC(page);
         await expect(gridRow(page)).toBeVisible();
     });
 
     test('c while typing in the name row types a c instead of reopening', async ({ page }) => {
         await loadDashboard(page);
-        await holdC(page);
+        await pressC(page);
         await expect(gridRow(page)).toBeVisible();
 
         await page.keyboard.type('abc');
@@ -417,7 +410,7 @@ test.describe('dashboard grid — adding a category', () => {
 
     test('the name row is labelled for screen readers', async ({ page }) => {
         await loadDashboard(page);
-        await holdC(page);
+        await pressC(page);
 
         // A placeholder is not a name: without aria-label the field is announced
         // as unlabelled, and the conflict message is never announced at all.

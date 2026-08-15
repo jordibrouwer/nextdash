@@ -54,9 +54,10 @@ test.describe('the category menu', () => {
 
         expect(hints.rename).toBe('F2');
         expect(hints.delete).toBe('Delete');
-        // Deliberately absent: "add category" is a *held* c, and a chip reading
-        // "c" would promise a tap that goes to the shortcut search instead.
-        expect(hints.add).toBeNull();
+        // "Add category" carries its key too now that c acts on the first
+        // press. While it needed a hold, a chip reading "c" would have promised
+        // a tap that went to the shortcut search instead.
+        expect(hints.add).toBe('c');
     });
 
     test('the chips are decoration, not a second thing to read out', async ({ page }) => {

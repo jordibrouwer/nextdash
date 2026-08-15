@@ -1,10 +1,13 @@
 // Keyboard Navigation Component for Dashboard
-const G_CHORD_HOLD_MS = 300;
-// c is a letter people type into the shortcut search all the time, so it must
-// not act on a plain tap. It waits out the same hold as the g chord: a tap
-// releases the letter into search, holding adds a category. Shift+C is a
-// separate shortcut and still fires immediately.
-const C_HOLD_MS = G_CHORD_HOLD_MS;
+//
+// Bare letters act at once. c and g used to wait out a 300 ms hold so a quick
+// tap could still fall through to the shortcut search, but they were the only
+// two that did: t, x and X had always fired on the first press. Two rules for
+// one class of key is the harder thing to learn, and the hold cost every user
+// a third of a second on the common case to keep a fallback for the rare one.
+// The letters these keys take are still reachable in search: open it first
+// (>, @ or /) and type.
+const G_CHORD_MS = 3000;
 
 class KeyboardNavigation {
     constructor(dashboard) {
@@ -14,15 +17,8 @@ class KeyboardNavigation {
         this.isEnabled = true;
         this.observer = null; // Store observer for cleanup
         this._gPressed = false;
-        this._gAwaitingRelease = false;
-        this._gHoldTimer = null;
         this._gTimeout = null;
-        // Held-c state: set on keydown, cleared by whichever comes first — the
-        // hold firing or the key being released.
-        this._cAwaitingRelease = false;
-        this._cHoldTimer = null;
         this._keydownHandler = null;
-        this._keyupHandler = null;
         this._focusInHandler = null;
         this._focusInLayout = null;
         this._pointerOverLayout = null;
@@ -257,9 +253,8 @@ class KeyboardNavigation {
                 }
             }
 
-            // Plain c — add a category. Acts only on a hold, so a quick tap still
-            // types the letter into the shortcut search. Shift+C above is
-            // unaffected: it fires immediately, as it always has.
+            // Plain c — add a category. Shift+C is the availability popover and
+            // is handled above, so this branch only ever sees the bare key.
             if (e.code === 'KeyC' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -267,10 +262,7 @@ class KeyboardNavigation {
                 if (e.repeat) {
                     return;
                 }
-                if (!this._cAwaitingRelease) {
-                    this._cAwaitingRelease = true;
-                    this._cHoldTimer = setTimeout(() => this._fireCHoldAction(), C_HOLD_MS);
-                }
+                this._openCategoryAdd();
                 return;
             }
 
@@ -321,78 +313,6 @@ class KeyboardNavigation {
             this.handleKeyPress(e);
         };
         document.addEventListener('keydown', this._keydownHandler, true);
-
-        this._keyupHandler = (e) => {
-            if (!this.isEnabled) {
-                return;
-            }
-
-            if (document.body.classList.contains('bookmark-inline-edit-active')) {
-                return;
-            }
-
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
-                return;
-            }
-            if (e.target.isContentEditable) {
-                return;
-            }
-
-            if (document.querySelector('.modal-overlay.show')) {
-                return;
-            }
-
-            if (window.DashboardTagCloud?.modalOpen) {
-                return;
-            }
-
-            if (window.dashboardInstance?.uiHelpers?.isPageOverviewModalOpen?.()) {
-                return;
-            }
-
-            if (document.getElementById('omnibox-overlay')) {
-                return;
-            }
-
-            if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
-                return;
-            }
-
-            if (this.dashboard.searchComponent && this.dashboard.searchComponent.isActive()) {
-                return;
-            }
-
-            // Released before the hold elapsed — the letter was a keystroke, not a
-            // command, so it goes to the shortcut search like any other letter.
-            // Once the hold fires it clears _cAwaitingRelease itself, so reaching
-            // here always means the tap was short.
-            if (e.code === 'KeyC' && this._cAwaitingRelease) {
-                this._cancelCHoldTimer();
-                this._cAwaitingRelease = false;
-                this.dashboard?.searchComponent?.addShortcutLetter?.('C');
-                return;
-            }
-
-            const key = e.key;
-            if (key !== 'g' && key !== 'G') {
-                return;
-            }
-
-            if (!this._gAwaitingRelease) {
-                return;
-            }
-
-            this._cancelGHoldTimer();
-            this._gAwaitingRelease = false;
-
-            if (!this._gPressed) {
-                const search = this.dashboard?.searchComponent;
-                if (search && typeof search.addShortcutLetter === 'function') {
-                    search.addShortcutLetter('G');
-                }
-            }
-        };
-        document.addEventListener('keyup', this._keyupHandler, true);
 
         // Update navigable elements when dashboard changes
         this.observer = new MutationObserver(() => {
@@ -623,10 +543,6 @@ class KeyboardNavigation {
             document.removeEventListener('keydown', this._keydownHandler, true);
             this._keydownHandler = null;
         }
-        if (this._keyupHandler) {
-            document.removeEventListener('keyup', this._keyupHandler, true);
-            this._keyupHandler = null;
-        }
         if (this._focusInLayout && this._focusInHandler) {
             this._focusInLayout.removeEventListener('focusin', this._focusInHandler);
         }
@@ -844,21 +760,6 @@ class KeyboardNavigation {
     handleKeyPress(e) {
         const key = e.key;
 
-        const isGChordFollowUp = (key >= '1' && key <= '9') || key === 'p' || key === 'P';
-        if (this._gAwaitingRelease && isGChordFollowUp) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            this._activateGChordMode();
-            if (key === 'p' || key === 'P') {
-                this._clearGState();
-                this.jumpToPinned();
-                return;
-            }
-            this._clearGState();
-            this.jumpToCategory(parseInt(key, 10));
-            return;
-        }
-
         // G + P: jump to first pinned bookmark on the page
         if (this._gPressed && (key === 'p' || key === 'P')) {
             e.preventDefault();
@@ -1074,47 +975,24 @@ class KeyboardNavigation {
                 if (e.repeat) {
                     break;
                 }
-                if (this._gPressed || this._gAwaitingRelease) {
+                // First g arms the chord, a second one jumps to the top. The
+                // chord used to need a hold to arm; now the key does its own
+                // job at once and the digit that follows finds it waiting.
+                if (this._gPressed) {
                     this._performGgJump();
                 } else {
-                    this._gAwaitingRelease = true;
-                    this._gHoldTimer = setTimeout(() => this._activateGChordMode(), G_CHORD_HOLD_MS);
+                    this._activateGChordMode();
                 }
                 break;
         }
     }
 
-    _cancelGHoldTimer() {
-        if (this._gHoldTimer) {
-            clearTimeout(this._gHoldTimer);
-            this._gHoldTimer = null;
-        }
-    }
-
-    _cancelCHoldTimer() {
-        if (this._cHoldTimer) {
-            clearTimeout(this._cHoldTimer);
-            this._cHoldTimer = null;
-        }
-    }
-
-    /**
-     * The c key was held past the threshold — open the category name row.
-     */
-    _fireCHoldAction() {
-        this._cancelCHoldTimer();
-        // Cleared here rather than on keyup: opening the row moves focus into its
-        // input, and the keyup handler bails on INPUT targets before it reaches
-        // the c branch. Left set, every later hold would be skipped as "already
-        // awaiting release" — the shortcut would work exactly once per page load.
-        this._cAwaitingRelease = false;
+    /** Open the "name your category" row, if the dashboard can take it now. */
+    _openCategoryAdd() {
         const dash = this.dashboard;
         if (!dash || dash.isBookmarksView?.() === false || dash.isInlineEditActive?.()) {
             return;
         }
-        // Re-checked here, not just on keydown: the hold spans 300ms, and search
-        // or a modal may have opened in between. Firing into those would put the
-        // name row behind whatever is now on top.
         if (dash.searchComponent?.isActive?.() || dash.isModalOpen?.()) {
             return;
         }
@@ -1129,10 +1007,8 @@ class KeyboardNavigation {
     }
 
     _activateGChordMode() {
-        this._cancelGHoldTimer();
-        this._gAwaitingRelease = false;
         this._gPressed = true;
-        this._armGChordTimeout(3000);
+        this._armGChordTimeout(G_CHORD_MS);
     }
 
     _performGgJump() {
@@ -1143,8 +1019,6 @@ class KeyboardNavigation {
 
     _clearGState() {
         this._gPressed = false;
-        this._gAwaitingRelease = false;
-        this._cancelGHoldTimer();
         if (this._gTimeout) {
             clearTimeout(this._gTimeout);
             this._gTimeout = null;

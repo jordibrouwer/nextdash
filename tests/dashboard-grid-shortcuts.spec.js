@@ -215,29 +215,26 @@ test.describe('dashboard grid shortcuts', () => {
         ))).toBe(true);
     });
 
-    test('quick tap G opens shortcut search for g bookmarks', async ({ page }) => {
-        await tapShortcutLetter(page, 'G');
-        await expect.poll(async () => page.evaluate(() => (
-            window.dashboardInstance?.searchComponent?.currentQuery || ''
-        ))).toBe('G');
+    // G belongs to the jump chord in every case now. It used to arm only on a
+    // hold, so a tap could fall through to the shortcut search — one of two
+    // bare letters with a rule of its own, and a third of a second of waiting
+    // on the common case.
+    test('G arms the chord on the first press, without opening search', async ({ page }) => {
+        await page.keyboard.press('g');
+        await page.waitForTimeout(200);
+
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+        expect(await page.evaluate(() => (
+            window.dashboardInstance?.keyboardNavigation?.isGChordActive?.() === true
+        ))).toBe(true);
     });
 
-    test('G then digit without hold feeds shortcut query, not category jump', async ({ page }) => {
-        await tapShortcutLetter(page, 'G');
-        await page.keyboard.press('1');
-        await expect.poll(async () => page.evaluate(() => (
-            window.dashboardInstance?.searchComponent?.currentQuery || ''
-        ))).toBe('G1');
-    });
-
-    test('held G then digit jumps category without opening search', async ({ page }) => {
+    test('G then digit jumps to that category without opening search', async ({ page }) => {
         const categoryCount = await page.locator('.category').count();
         test.skip(categoryCount < 1, 'needs at least one category');
 
-        await page.keyboard.down('g');
-        await page.waitForTimeout(350);
+        await page.keyboard.press('g');
         await page.keyboard.press('1');
-        await page.keyboard.up('g');
 
         await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
         await expect.poll(async () => page.evaluate(() => (
@@ -245,4 +242,17 @@ test.describe('dashboard grid shortcuts', () => {
         ))).toBeGreaterThanOrEqual(0);
     });
 
+    test('a second G goes to the top of the page', async ({ page }) => {
+        await selectFirstBookmark(page);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+
+        await page.keyboard.press('g');
+        await page.keyboard.press('g');
+
+        await expect(page.locator('#shortcut-search.show')).toHaveCount(0);
+        await expect.poll(async () => page.evaluate(() => (
+            window.dashboardInstance?.keyboardNavigation?.currentIndex ?? -1
+        ))).toBe(0);
+    });
 });

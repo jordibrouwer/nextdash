@@ -738,24 +738,6 @@ class SearchComponent {
         this.addToQuery(key);
     }
 
-    addShortcutLetter(letter) {
-        const key = String(letter || '').toUpperCase();
-        if (!/^[A-Z]$/.test(key)) {
-            return false;
-        }
-        if (this.shouldDeferToDashboardOverlay()) {
-            return false;
-        }
-        if (this._isInboxViewActive()) {
-            return false;
-        }
-        if (this._isConfigViewActive()) {
-            return false;
-        }
-        this.addToQuery(key);
-        return true;
-    }
-
     addToQuery(key) {
         this.currentQuery += key;
 
