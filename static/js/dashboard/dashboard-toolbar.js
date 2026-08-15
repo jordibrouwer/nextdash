@@ -65,8 +65,21 @@ class DashboardToolbar {
                 return;
             }
 
+            // Guarded like the two keys below, with one difference: this key
+            // also closes its own modal, so a recent list already on screen is
+            // not "a modal is open, keep out". toggleRecentBookmarksModal()
+            // refuses to stack on top of another modal by itself; swallowing the
+            // key here as well keeps it from reaching anything behind.
             if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key === '*') {
+                const ownModalOpen = d.isRecentBookmarksModalOpen?.() === true;
+                if (!ownModalOpen && d.isModalOpen()) {
+                    return;
+                }
+                if (d.searchComponent && d.searchComponent.isActive()) {
+                    return;
+                }
                 e.preventDefault();
+                e.stopPropagation();
                 d.toggleRecentBookmarksModal();
             }
 

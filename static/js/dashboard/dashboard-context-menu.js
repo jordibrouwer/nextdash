@@ -46,7 +46,26 @@ class DashboardContextMenu {
 
         e.preventDefault();
         e.stopPropagation();
-        this.show(row, bookmarkRef, { x: e.clientX, y: e.clientY });
+        this.show(row, bookmarkRef, this.menuPointFor(e, row));
+    }
+
+    /**
+     * Where to put the menu for a contextmenu event.
+     *
+     * The event also arrives from the keyboard — the Menu key, or Shift+F10 —
+     * and then carries no pointer position: browsers report 0/0, or a negative
+     * detail, depending on which one. Taken at face value that pinned the menu
+     * to the top-left corner of the window, nowhere near the row it belongs to.
+     * The category header's Delete key already anchors to its own rectangle;
+     * this does the same for a row.
+     */
+    menuPointFor(e, row) {
+        const fromPointer = e.detail > 0 || e.clientX > 0 || e.clientY > 0;
+        if (fromPointer) {
+            return { x: e.clientX, y: e.clientY };
+        }
+        const box = row.getBoundingClientRect();
+        return { x: box.left + 16, y: box.bottom };
     }
 
     resolveRowBookmark(row) {

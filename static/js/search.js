@@ -208,11 +208,17 @@ class SearchComponent {
                 return;
             }
 
-            // Physical key codes — belt-and-suspenders for shift-modified action shortcuts
+            // Physical key codes — belt-and-suspenders for the shift-modified
+            // action shortcuts, on a layout where Shift+letter produces
+            // something the check above does not recognise as a letter. Every
+            // Shift+letter belongs to an action, so this asks about the family
+            // rather than naming its members: the list it replaced still held
+            // the four keys that existed when it was written and had silently
+            // fallen behind the ones added since.
             if (
                 !this.searchActive
                 && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey
-                && (e.code === 'KeyM' || e.code === 'KeyD' || e.code === 'KeyT' || e.code === 'KeyB')
+                && /^Key[A-Z]$/.test(e.code || '')
             ) {
                 return;
             }

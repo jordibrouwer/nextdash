@@ -51,7 +51,13 @@ class DashboardCategoryMenu {
             if (titleEl.querySelector('.category-rename-input')) return;
             e.preventDefault();
             e.stopPropagation();
-            this.show(titleEl, category, { x: e.clientX, y: e.clientY });
+            // The Menu key raises this event too, with no pointer behind it —
+            // taken literally the menu landed in the corner of the window.
+            const fromPointer = e.detail > 0 || e.clientX > 0 || e.clientY > 0;
+            const box = titleEl.getBoundingClientRect();
+            this.show(titleEl, category, fromPointer
+                ? { x: e.clientX, y: e.clientY }
+                : { x: box.left + 8, y: box.bottom });
         });
     }
 

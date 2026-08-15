@@ -515,7 +515,7 @@ class KeyboardNavigation {
     toggleFocusedCategorySpread() {
         const span = window.DashboardCategorySpan;
         const d = this.dashboard;
-        const categoryEl = span?.resolveFocusedCategoryEl(d);
+        const categoryEl = span?.resolveFocusedCategoryEl(d, { fallbackToFirst: false });
         if (!categoryEl || !d.categoryMenu) {
             return false;
         }
