@@ -106,6 +106,17 @@ const (
 	logLevelInfo  = "info"
 	logLevelWarn  = "warn"
 	logLevelError = "error"
+
+	// Not a severity but a source, and it travels in the same filter because the
+	// viewer offers one "show me" control rather than two. Activity lines are
+	// what the user did — a bookmark saved, a page added — written through the
+	// same logger as everything else and, until this existed, findable only by
+	// typing "activity" into the search box and knowing to.
+	logFilterActivity = "activity"
+
+	// The subsystem prefix logActivity writes, which parseServerLogLine already
+	// splits into Source. The filter matches on that rather than on the text.
+	logSourceActivity = "activity"
 )
 
 // One captured log line, as served to the viewer.
@@ -562,7 +573,7 @@ func (s *serverLogSink) Entries(since int64, level, query string, limit int) ([]
 		if e.Seq <= since {
 			continue
 		}
-		if !logLevelAtLeast(e.Level, level) {
+		if !logEntryMatchesFilter(e, level) {
 			continue
 		}
 		if query != "" && !strings.Contains(strings.ToLower(e.Message), query) &&
@@ -588,6 +599,15 @@ func logLevelAtLeast(entry, min string) bool {
 		return true
 	}
 	return rank[entry] >= want
+}
+
+// Whether an entry passes the viewer's "show me" filter, which is severity for
+// three of its values and a source for the fourth.
+func logEntryMatchesFilter(e serverLogEntry, filter string) bool {
+	if filter == logFilterActivity {
+		return e.Source == logSourceActivity
+	}
+	return logLevelAtLeast(e.Level, filter)
 }
 
 // Counts for the summary tiles, over the whole buffer rather than the current

@@ -66,59 +66,197 @@
     };
 
     /**
+     * Umami accepts at most 50 properties per event and silently drops the
+     * rest, so a payload that outgrows this is a payload with holes nobody
+     * would notice for months.
+     */
+    const MAX_EVENT_PROPS = 50;
+
+    /** true only when the setting is on. */
+    const flag = (key) => (s) => s[key] === true;
+    /** true unless the setting is explicitly off — for the default-on ones. */
+    const flagOn = (key) => (s) => s[key] !== false;
+    /** A short enum value, or the named default when it is missing. */
+    const pick = (key, fallback) => (s) => String(s[key] || fallback).slice(0, 40);
+    /** A number as the first step it fits in, so no exact figure goes out. */
+    const bucketOf = (key, steps) => (s) => bucket(s[key], steps);
+
+    /**
+     * A packaged theme id, or the constant `custom`.
+     *
+     * A packaged theme goes out by name — one of a fixed list, which is the
+     * whole point of asking. A theme the user built has an id like
+     * `theme-lz9k2p-x7fa`: random, unique to that install and stable across
+     * every page load, which in a payload that promises no profiles is a device
+     * id in all but name. It goes out as `custom`, which answers the only
+     * question worth asking about it — how many people build one.
+     *
+     * ThemeUtils is loaded on the dashboard but this file also runs on pages
+     * that do not carry it, so the prefix check is repeated rather than
+     * depended upon; without it the safe answer is `custom`.
+     */
+    function themeBucket(theme) {
+        const id = String(theme || 'default').trim();
+        if (!id) return 'default';
+        if (window.ThemeUtils?.isUserCustomThemeId) {
+            return window.ThemeUtils.isUserCustomThemeId(id) ? 'custom' : id.slice(0, 40);
+        }
+        return id.startsWith('theme-') || id.startsWith('custom-') ? 'custom' : id.slice(0, 40);
+    }
+
+    function bucket(n, steps) {
+        const value = Number(n);
+        if (!Number.isFinite(value)) return 'unset';
+        for (const step of steps) {
+            if (value <= step) return String(step);
+        }
+        return `${steps[steps.length - 1]}+`;
+    }
+
+    /**
+     * What the settings snapshot carries, one line per property.
+     *
+     * A table rather than an object literal because the rule this file lives by
+     * — booleans and small enums only, numbers bucketed, never a hostname, path
+     * or anything else free-form — is only checkable if every field states how
+     * it is encoded. It also keeps the count visible against the 50 above.
+     */
+    const SETTINGS_FIELDS = [
+        // Appearance and layout
+        ['theme', (s) => themeBucket(s.theme)],
+        ['autoDarkMode', flag('autoDarkMode')],
+        ['layoutVersion', pick('layoutVersion', 'classic')],
+        ['layoutPreset', pick('layoutPreset', 'default')],
+        ['densityMode', pick('densityMode', 'compact')],
+        ['categorySpacing', pick('categorySpacing', 'balanced')],
+        ['sideMargin', pick('sideMargin', 'balanced')],
+        ['fontPreset', pick('fontPreset', 'source-code-pro')],
+        ['fontSize', pick('fontSize', 'm')],
+        ['backgroundType', pick('backgroundType', 'none')],
+        ['buttonBarPosition', pick('buttonBarPosition', 'bottom')],
+        ['launcherIconSize', pick('launcherIconSize', 'normal')],
+        // The grid
+        ['columns', bucketOf('columnsPerRow', [1, 2, 3, 4, 6])],
+        ['packedColumns', flag('packedColumns')],
+        ['hideEmptyCategories', flag('hideEmptyCategories')],
+        ['categoryItemLimit', bucketOf('categoryItemLimit', [0, 10, 15, 25, 50])],
+        ['categorySpread', flag('defaultCategorySpread')],
+        // What a bookmark row shows
+        ['showStatus', flag('showStatus')],
+        ['showPing', flag('showPing')],
+        ['showShortcuts', flag('showShortcuts')],
+        ['showIcons', flag('showIcons')],
+        ['showRowTags', flag('showRowTags')],
+        ['linkPreviewCards', flag('showLinkPreviewCards')],
+        // Search
+        ['fuzzySuggestions', flag('enableFuzzySuggestions')],
+        ['interleaveMode', flag('interleaveMode')],
+        ['findersInSearch', flag('includeFindersInSearch')],
+        // Views and inbox
+        ['inboxEnabled', flagOn('inboxEnabled')],
+        ['inboxInPageTabs', flagOn('inboxShowInPageTabs')],
+        ['pasteDestination', pick('pasteDestination', 'ask')],
+        ['pasteQuickAdd', flag('pasteUrlQuickAdd')],
+        ['healthView', flagOn('healthViewEnabled')],
+        ['healthAutoRecheck', flag('healthAutoRecheckEnabled')],
+        ['newBookmarkCheckMode', pick('newBookmarkCheckMode', 'off')],
+        ['monitorInterval', bucketOf('defaultMonitorIntervalMin', [5, 15, 60, 360])],
+        ['staleDays', bucketOf('bookmarkStaleDays', [30, 90, 180, 365])],
+        // Smart collections
+        ['smartRecent', flag('showSmartRecentCollection')],
+        ['smartMostUsed', flag('showSmartMostUsedCollection')],
+        // Config habits and the rest
+        ['bookmarksSort', pick('configBookmarksSort', 'page')],
+        ['sessionTips', flagOn('enableSessionTips')],
+        ['serverLog', flag('serverLogEnabled')],
+        ['weather', flag('showWeatherWithDate')],
+        ['globalShortcuts', flag('globalShortcuts')],
+        ['hyprMode', flag('hyprMode')],
+        ['autoBackup', flag('autoBackupEnabled')],
+        ['openInNewTab', flagOn('openInNewTab')],
+    ];
+
+    /**
+     * Build a payload from a field table.
+     *
+     * `appVersion` is on every event: without it a default that changed between
+     * releases reads as a gradual drift rather than the switch it was.
+     *
+     * Over the cap it truncates and says so, rather than letting Umami drop the
+     * tail in silence — a short payload that admits it is short can be spotted;
+     * one that lies cannot.
+     */
+    function buildPayload(fields, source) {
+        const payload = { appVersion: releaseTag || 'unknown' };
+        for (const [key, read] of fields) {
+            if (Object.keys(payload).length >= MAX_EVENT_PROPS) {
+                payload.truncated = true;
+                break;
+            }
+            payload[key] = read(source);
+        }
+        return payload;
+    }
+
+    /**
      * One settings snapshot per page load, so adoption reads directly as
      * "X% of sessions have feature Y on" — a change-only event would miss
      * everyone who never touches a setting.
-     *
-     * Booleans and small enums only; numbers are bucketed. Never a hostname,
-     * path, title or any other free-form value.
      */
     function trackSettingsSnapshot(settings) {
         if (!enabled || !settings || typeof settings !== 'object') return;
         if (trackSettingsSnapshot._sent) return; // once per page load
         trackSettingsSnapshot._sent = true;
-        const bool = (v) => v === true;
-        const bucket = (n, steps) => {
-            const value = Number(n);
-            if (!Number.isFinite(value)) return 'unset';
-            for (const step of steps) {
-                if (value <= step) return String(step);
-            }
-            return `${steps[steps.length - 1]}+`;
-        };
-        window.nextdashTrack('settings-snapshot', {
-            // Which release these settings belong to. Without it every version's
-            // sessions land in one bucket, so a default that changed between
-            // releases reads as a gradual drift rather than the switch it was.
-            appVersion: releaseTag || 'unknown',
-            // Appearance / layout
-            theme: String(settings.theme || 'default').slice(0, 40),
-            autoDarkMode: bool(settings.autoDarkMode),
-            layoutPreset: String(settings.layoutPreset || 'default').slice(0, 20),
-            densityMode: String(settings.densityMode || 'compact').slice(0, 20),
-            columns: bucket(settings.columnsPerRow, [1, 2, 3, 4, 6]),
-            packedColumns: bool(settings.packedColumns),
-            hideEmptyCategories: bool(settings.hideEmptyCategories),
-            categoryItemLimit: bucket(settings.categoryItemLimit, [0, 10, 15, 25, 50]),
-            // Features
-            inboxEnabled: settings.inboxEnabled !== false,
-            healthView: settings.healthViewEnabled !== false,
-            healthAutoRecheck: bool(settings.healthAutoRecheckEnabled),
-            showStatus: bool(settings.showStatus),
-            linkPreviewCards: bool(settings.showLinkPreviewCards),
-            smartRecent: bool(settings.showSmartRecentCollection),
-            smartMostUsed: bool(settings.showSmartMostUsedCollection),
-            weather: bool(settings.showWeatherWithDate),
-            globalShortcuts: bool(settings.globalShortcuts),
-            hyprMode: bool(settings.hyprMode),
-            autoBackup: bool(settings.autoBackupEnabled),
-            openInNewTab: settings.openInNewTab !== false,
-        });
+        window.nextdashTrack('settings-snapshot', buildPayload(SETTINGS_FIELDS, settings));
+    }
+
+    /**
+     * How much is in there, as its own event.
+     *
+     * Split from the settings rather than appended to them for two reasons:
+     * the two together are past Umami's 50, and they answer different questions
+     * — which features are switched on, against how big an install is. The
+     * counts come from the server, which reads these files anyway; counting
+     * client-side would only ever see the page that happens to be open.
+     *
+     * Every figure is bucketed. An exact 1274 is distinctive enough to follow
+     * one install across releases; `500+` is not.
+     */
+    const CONTENT_FIELDS = [
+        ['bookmarks', bucketOf('bookmarks', [0, 10, 50, 200, 500])],
+        ['pages', bucketOf('pages', [1, 2, 5, 10])],
+        ['categories', bucketOf('categories', [0, 5, 15, 40])],
+        ['tags', bucketOf('tags', [0, 5, 20, 50])],
+        ['finders', bucketOf('finders', [0, 3, 10])],
+        ['collections', bucketOf('collections', [0, 1, 3])],
+        ['monitored', bucketOf('monitored', [0, 3, 10, 30])],
+        ['periodic', bucketOf('periodic', [0, 10, 50])],
+        ['inboxOpen', bucketOf('inboxOpen', [0, 5, 20, 100])],
+        ['inboxAdded', bucketOf('inboxAdded', [0, 10, 50, 200])],
+        ['inboxPromoted', bucketOf('inboxPromoted', [0, 10, 50])],
+        ['inboxDeleted', bucketOf('inboxDeleted', [0, 10, 50])],
+    ];
+
+    function trackContentSnapshot() {
+        if (!enabled) return;
+        if (trackContentSnapshot._sent) return;
+        const raw = self && self.getAttribute('data-content');
+        if (!raw) return;
+        let counts;
+        try {
+            counts = JSON.parse(raw);
+        } catch (_) {
+            return;
+        }
+        if (!counts || typeof counts !== 'object') return;
+        trackContentSnapshot._sent = true;
+        window.nextdashTrack('content-snapshot', buildPayload(CONTENT_FIELDS, counts));
     }
 
     // Exposed so the dashboard/config can report once their settings are loaded.
     // Always defined (a no-op when off) so callers never feature-detect.
     window.nextdashTrackSettings = trackSettingsSnapshot;
+    window.nextdashTrackContent = trackContentSnapshot;
 
     if (!enabled || !websiteId || !scriptSrc) {
         return;

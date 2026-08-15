@@ -371,6 +371,12 @@ class DashboardPageNav {
             pageBtn.setAttribute('role', 'tab');
             const isActive = d.isBookmarksView() && d.samePageId(page.id, d.currentPageId);
             pageBtn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            // 1–9 switch pages, and the tab itself never said so. Sighted users
+            // get the hint from the tooltip; this is how it reaches a screen
+            // reader. Only the first nine: there is no key for the tenth tab.
+            if (index < 9) {
+                pageBtn.setAttribute('aria-keyshortcuts', String(index + 1));
+            }
             pageBtn.tabIndex = isActive ? 0 : -1;
             if (isActive) {
                 pageBtn.classList.add('active');
@@ -421,6 +427,7 @@ class DashboardPageNav {
             const inboxLabel = d.language?.t?.('dashboard.inboxPageTitle');
             const inboxName = inboxLabel && inboxLabel !== 'dashboard.inboxPageTitle' ? inboxLabel : 'Inbox';
             inboxBtn.setAttribute('aria-label', inboxName);
+            inboxBtn.setAttribute('aria-keyshortcuts', 'Shift+I');
             inboxBtn.title = inboxName;
             inboxBtn.innerHTML = `
                 <svg class="page-tab-icon page-tab-icon--svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">

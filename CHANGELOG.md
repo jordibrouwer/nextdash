@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.1.1 — 15 August 2026](#v111--15-august-2026)
 - [v1.1.0 — 15 August 2026](#v110--15-august-2026)
 - [v1.0.4 — 15 August 2026](#v104--15-august-2026)
 - [v1.0.3 — 14 August 2026](#v103--14-august-2026)
@@ -165,6 +166,56 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.1.1 — 15 August 2026
+
+Keyboard consistency, and the parts of the app that teach it. Flagged `hideFromModal` in the index: it counts toward the version number and shows in **Config → Overview → Latest update**, but does not reopen the What's new modal, which still leads with v1.1.0. `DASHBOARD_RELEASE` and `NEXTDASH_WHATS_NEW_DATA_VERSION` are deliberately unchanged — those tokens are what re-show the modal.
+
+### Keyboard
+
+- **new** — the Shift+letter family is closed: `Shift+E` inline edit and `Shift+V` preview join move, tag, delete, checking, pin, share and reveal. `;` and `[` still work, undocumented, the way `0` still opens the inbox. Brackets mean *previous / next sub-tab* in config, and one pair of keys meaning two things was the reason to move preview off `[`.
+- **new** — share moves to `Shift+L`, so `Shift+S` always opens config. It was the only key whose meaning depended on whether a row was selected, which took two cheat-sheet rows and a parenthesis to explain. The capture-phase handler still *declines* rather than swallows a key it has no row for — that is what keeps `Shift+S` reaching `setupPageShortcuts` over a selected row, and `tests/shift-key-row-actions.spec.js` (renamed from `shift-s-two-meanings.spec.js`) pins it.
+- **new** — bare letters act on keydown. `C_HOLD_MS` and the g-chord hold are gone, and with them the whole `keyup` handler in `keyboard-navigation.js` and `SearchComponent.addShortcutLetter`, which had no other caller. `_activateGChordMode` now runs on the first `g`; `G_CHORD_MS` (3s) is the only timer left.
+- **new** — `j`/`k` alias `ArrowDown`/`ArrowUp` in the grid, matching config's section rail and bookmark list.
+- **new** — `Shift+Home` focuses the category header via `focusCategoryHeader()`, which reuses `resolveFocusedCategoryEl`. `Delete` on a focused header calls `categoryMenu.runAction('delete', …)` instead of opening the menu; `Shift+F10` opens it.
+- **fix** — `handleContextMenu` took `clientX`/`clientY` at face value, which a keyboard-raised `contextmenu` reports as 0/0. `menuPointFor()` falls back to the row's rectangle; the category menu's own handler does the same.
+- **fix** — `resolveFocusedCategoryEl` took an options argument: `:width` keeps the first-category fallback because the palette names what it acts on, `Shift+W` passes `fallbackToFirst: false` and falls through.
+- **fix** — `search.js` kept a code-name list (`KeyM`/`KeyD`/`KeyT`/`KeyB`) that had fallen behind the keys added since; it tests `/^Key[A-Z]$/` now.
+- **fix** — `setupPageShortcuts` was the only typing guard in the app without an `isContentEditable` check.
+
+### Discoverability
+
+- **new** — `DashboardContextMenu` renders a `kbd.move-popover-item-key` per entry with a matching `aria-keyshortcuts`, for all eleven actions that have a key. `ShortcutFormat.ariaKeys()` and `.modifierLabel()` are shared with the category menu, which had the chips but no aria.
+- **new** — `syncShortcutAriaHints()` stamps `aria-keyshortcuts` on the toolbar, the header buttons and the first nine page tabs. It runs independently of `showShortcutTooltips`: the tooltips are a desktop hover affordance that can be switched off, this is the only route the keys have to assistive technology. `shortcutButtonDefs()` replaces the three parallel lists that let the header row end up with tooltips and no aria.
+- **fix** — the side-rail legend printed the what's-new button's `★` glyph in the same chip as real keys.
+
+### Cheat sheet
+
+- **fix** — `buildPrintSections` passed each row's `printFallback` to the caller's label resolver as a *fallback*, and `generate-cheatsheet.cjs` resolves from `locales/en.json`, where the i18n check guarantees every `cheatKey` exists. The short wording therefore never reached paper for any of the 23 rows that carry one. `printLabel()` uses it directly. `validate-cheatsheet-registry.cjs` gains a check built with the generator's resolver — with the identity resolver the other checks use, a `printFallback` wins either way and the check would pass against the bug.
+- **new** — printed rows for `k`/`j`, `Shift+E` and `Shift+Home`; `nextDash-cheatsheet.html`, `nextDash-cheatsheet.pdf` and the `static/` copy regenerated.
+
+### Config
+
+- **new** — `logFilterActivity` is a fourth value for the log viewer's *Show* control, matched on `Source == "activity"` by `logEntryMatchesFilter()` rather than on severity. Activity lines already flowed into `serverLogSink` through `log.Printf("activity: …")` and `parseServerLogLine` already split the subsystem out; nothing about capture or `NEXTDASH_ACTIVITY_LOG` changes.
+- **new** — **Help → About** carries the wordmark and three addresses: `nextdash.cc`, GitHub, and `jordibrw.nl`. The `help-signature` sign-off is dropped, so each address appears once.
+
+### Dashboard
+
+- **fix** — `.category-title` centres its flex items instead of aligning them on the baseline. The `+` button hangs padding and a border below its own baseline, which made every header carrying it 1.44px taller; centring costs nothing, where a `line-height` tall enough to swallow the button added 3px to every header. `.category-title--multiline` keeps `flex-start`.
+- **fix** — `*` carries the same guards as `!` and `.`, with an exception for its own modal so it still closes the recent list.
+
+### Analytics
+
+- **new** — `settings-snapshot` widens from 21 to 45 fields and a new `content-snapshot` reports install size (bookmarks, pages, categories, tags, finders, collections, monitored, inbox totals). Every value is bucketed client-side; `MAX_EVENT_PROPS = 50` is Umami's per-event limit, which is why it is two events. `analytics_content.go` counts server-side and returns `""` when telemetry is off — `analytics_content_test.go` proves it with a nil store, where any counting would panic.
+- **fix** — a custom theme reported its own id, which is `theme-<base36>-<4 chars>` and random per install: not a name leak, but distinctive enough to follow one install across releases. It reports `custom`.
+
+### Docs
+
+- `MANUAL.md` and `README.md` follow the moved keys, the G chord, the category-header keys, the right-click menu chips, the log viewer's *Activity only* and the About tab.
+- `locales/{en,nl,de,fr}.json`: the cheat-sheet rows for the moved keys, two new rows (`navCategoryHeader`, `bmCategoryDeleteKey`), a rewritten `config.helpKeyboardBody`, `keyboardFixedNoteGridNav` without the hold, `logLevelActivity`, `logActivityHint`, `helpAboutBody`, `helpSiteProject`, `helpSiteAuthor`.
+- `static/nextdash-wordmark.png` is keyed out of `logo-ascii-on-black-large.png` by greenness rather than brightness; the existing `logo-ascii-transparent.png` clears only pixels darker than 40, which leaves the glow behind the middle of the word as a dark ellipse.
+- New: `tests/dashboard-keyboard-uniformity.spec.js`, `tests/config-help-about.spec.js`, `TestServerLogSinkActivityFilter`. Updated: the c-hold and G-chord cases in `tests/create-page-category-from-dashboard.spec.js` and `tests/dashboard-grid-shortcuts.spec.js`, the category-menu chip case in `tests/dashboard-nice-to-haves.spec.js`.
+- `go generate ./...` for the changed CSS/JS.
 
 ## v1.1.0 — 15 August 2026
 

@@ -1,0 +1,89 @@
+{
+  "tag": "v1.1.1",
+  "date": "15 August 2026",
+  "releasedAt": "2026-08-15",
+  "modalLead": "The keyboard reads as one set of rules now: every action on a bookmark is Shift plus a letter, bare letters act on the first press, and the right-click menu shows the key beside each entry so the keys can be picked up without looking them up.",
+  "sections": [
+    {
+      "title": "Keyboard",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Every row action is Shift plus a letter.</strong> Inline edit is <strong>Shift+E</strong> and the preview card is <strong>Shift+V</strong> — they were <strong>;</strong> and <strong>[</strong>, two keys that said nothing about what they do. Sharing moves to <strong>Shift+L</strong>, so <strong>Shift+S</strong> opens config wherever you press it instead of meaning one thing with a bookmark selected and another without. The old keys still work; they are simply no longer the ones taught."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The right-click menu shows the key.</strong> Every entry that has one now carries it beside the label — open in a new tab, copy, share, edit, pin, tags, move, checking, Show in Health, delete. The category menu has done this for a while; the bookmark menu had eleven keys and showed none of them."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A letter acts as soon as you press it.</strong> <strong>c</strong> adds a category and <strong>g</strong> starts the jump to one; both used to wait out a short hold so a quick tap could reach the shortcut search instead. What that costs: a bookmark whose shortcut starts with c, g, j, k, t or x is reached by opening search first with <strong>&gt;</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>k and j move the highlight,</strong> next to the arrow keys — the same pair that has always worked in the config lists and in Health."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Reach a category header without the mouse.</strong> <strong>Shift+Home</strong> steps up from the list to the header above it, where <strong>F2</strong> renames, <strong>Shift+W</strong> spreads it across columns, <strong>Delete</strong> deletes it and <strong>Shift+F10</strong> opens its menu. Delete on a header used to open the menu, which is the one place a Delete key meant \"show me the options\"."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The menu opens next to the row.</strong> Raised from the keyboard — the Menu key, or Shift+F10 — both the bookmark and the category menu appeared in the top-left corner of the window, nowhere near what they were about."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Shift+W with nothing selected does nothing.</strong> It used to spread whichever category happened to be first on the page."
+        }
+      ]
+    },
+    {
+      "title": "Cheat sheet",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The printable sheet is readable again.</strong> It was printing the long explanations from the cheat sheet window instead of the short ones written for paper, so rows ran past the width they were meant for."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Three keys join the printed sheet:</strong> <strong>k</strong> and <strong>j</strong> beside the arrows, <strong>Shift+E</strong> for inline edit, and <strong>Shift+Home</strong> for the category header."
+        }
+      ]
+    },
+    {
+      "title": "Config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Read the activity log in the app.</strong> <strong>Data &amp; backups → Server log</strong> has a new choice under <strong>Show</strong>: <strong>Activity only</strong>. Those lines — a bookmark saved, a page added, a check run — were already in there, mixed in with the request traffic, findable only if you knew to search for the word. Needs <strong>Collect server log</strong> switched on, because it is the same log."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help → About has somewhere to go.</strong> The nextDash wordmark, and three addresses: the project at <strong>nextdash.cc</strong>, issues and release notes on <strong>GitHub</strong>, and the person who writes it at <strong>jordibrw.nl</strong>."
+        }
+      ]
+    },
+    {
+      "title": "Privacy",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The optional usage snapshot says more, and still says nothing about you.</strong> With analytics switched on it now reports which settings you run and roughly how large your library is. Every number is rounded into a band — a library of 1274 bookmarks reports as <strong>500+</strong> — and a custom theme reports as <strong>custom</strong> rather than by its own identifier, which was distinctive enough to follow one install between releases. Switched off, nothing is counted at all: the count is not gathered and then discarded, it is never taken. <strong>Behavior → Privacy</strong> is where the switch lives."
+        }
+      ]
+    },
+    {
+      "title": "Elsewhere",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Category headers stopped being taller than they need to be.</strong> A header carrying the <strong>+</strong> button was a hair taller than one without it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The recent-bookmarks key keeps out of the way.</strong> <strong>*</strong> now leaves the key alone while something else is open, the way the cheat sheet and collapse-all keys already did."
+        }
+      ]
+    }
+  ]
+}

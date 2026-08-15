@@ -1686,10 +1686,19 @@ class DashboardRenderCore {
                 this._startCategoryRename(titleElement, nameSpan, category);
                 return;
             }
-            // Delete and the rest had only the right-click menu; adding a
-            // category already had the c-hold. Opening that same menu from the
-            // keyboard keeps one implementation of the confirm and the undo.
+            // Delete deletes, here as on a bookmark row — it used to open the
+            // menu instead, which is the one place in the app where the key
+            // meant "show me the options". The confirm and the undo are the
+            // menu's, so nothing about the deletion itself is duplicated.
             if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                void d.categoryMenu?.runAction?.('delete', titleElement, category);
+                return;
+            }
+            // Shift+F10 and the Menu key are what opens a context menu from the
+            // keyboard everywhere else; the bookmark rows answer to them too,
+            // through the browser's own contextmenu event.
+            if (e.key === 'F10' && e.shiftKey) {
                 e.preventDefault();
                 const box = titleElement.getBoundingClientRect();
                 d.categoryMenu?.show?.(titleElement, category, {

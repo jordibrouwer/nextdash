@@ -56,23 +56,21 @@
                 {
                     keys: 'Shift + S',
                     cheatKey: 'navSettingsView',
-                    fallback: 'Open config — settings, pages, and bookmarks (with no bookmark selected; on a selected row it shares instead)',
+                    fallback: 'Open config — settings, pages, and bookmarks',
                     when: (ctx) => ctx.configEnabled,
                     print: true,
-                    printFallback: 'Open config (no bookmark selected)',
+                    printFallback: 'Open config',
                 },
                 { keys: 'Shift + ← / →', cheatKey: 'navPrevNextPage', fallback: 'Previous / next page', print: true },
                 { keys: ',', cheatKey: 'navPageOverview', fallback: 'Page overview with bookmark counts', print: true, printFallback: 'Page overview' },
                 { keys: 'n', cheatKey: 'navPageOverviewNewPage', fallback: 'Create a new page from the page overview' },
                 { keys: '<', cheatKey: 'navOpenConfig', fallback: 'Open config (< is Shift+,; in config < returns here)' },
                 { keys: '.', cheatKey: 'navCollapseAll', fallback: 'Collapse or expand all categories' },
-                // Hold, not tap: a quick c is a search keystroke. The gesture is in
-                // the key label because a bare "c" would teach the wrong one. Reads
-                // as plain text like the other press-and-hold rows.
-                { keys: 'Hold c (~300 ms)', cheatKey: 'navAddCategory', fallback: 'Add a category to the current page (tap c to search instead)' },
-                { keys: '↑ / ↓', cheatKey: 'navFocusUpDown', fallback: 'Move focus up / down through bookmarks', print: true, printKeys: '↑ ↓ ← →', printFallback: 'Move focus' },
+                { keys: 'c', cheatKey: 'navAddCategory', fallback: 'Add a category to the current page' },
+                { keys: '↑ / ↓  ·  k / j', cheatKey: 'navFocusUpDown', fallback: 'Move focus up / down through bookmarks', print: true, printKeys: '↑ ↓ ← →  ·  k j', printFallback: 'Move focus' },
                 { keys: '← / →', cheatKey: 'navFocusLeftRight', fallback: 'Move focus left / right in grid' },
                 { keys: 'Home / End', cheatKey: 'navCategoryHomeEnd', fallback: 'First / last bookmark in the focused category' },
+                { keys: 'Shift + Home', cheatKey: 'navCategoryHeader', fallback: 'Jump from the list up to its category header, where F2, Shift+W and the menu live', print: true, printFallback: 'Focus the category header (F2, Shift+W, Delete act there)' },
                 { keys: 'Ctrl + Home / End', cheatKey: 'navGridHomeEnd', fallback: 'First / last bookmark on the page' },
                 { keys: 'Page Up / Page Down', cheatKey: 'navPageScroll', fallback: 'Jump one screen up / down through bookmarks' },
                 { keys: 'Tab / Shift+Tab', cheatKey: 'navTabLinear', fallback: 'Step linearly through all bookmarks' },
@@ -104,7 +102,7 @@
                 { keys: '+', cheatKey: 'bmNewBookmarkModal', fallback: 'Open full new-bookmark modal on the dashboard' },
                 { keys: 'Shift + B', cheatKey: 'bmNewBookmarkModalShift', fallback: 'Open full new-bookmark modal from anywhere (skipped while typing in a field)' },
                 { keys: 'Ctrl + Shift + A', cheatKey: 'bmNewBookmarkModalGlobal', fallback: 'Open full new-bookmark modal from anywhere' },
-                { keys: ';', cheatKey: 'bmInlineEdit', fallback: 'Inline-edit focused bookmark' },
+                { keys: 'Shift + E', cheatKey: 'bmInlineEdit', fallback: 'Inline-edit focused bookmark', print: true, printFallback: 'Inline-edit focused bookmark' },
                 { keys: 'Shift + M', cheatKey: 'bmQuickMove', fallback: 'Quick-move focused bookmark — choose category or page; Esc close restores selection on same row' },
                 { keys: 'Shift + D', cheatKey: 'bmQuickDelete', fallback: 'Quick-delete focused bookmark — confirm in popover; Esc close restores selection on same row' },
                 { keys: 'Shift + T', cheatKey: 'bmQuickTag', fallback: 'Quick-tag focused bookmark — ↑/↓ navigate; Enter/Space toggles tag and advances; ✓ shows tags on bookmark; Esc close restores selection on same row' },
@@ -120,12 +118,13 @@
                     print: true,
                     printFallback: 'Spread category across columns',
                 },
-                { keys: 'Delete on category', cheatKey: 'bmCategoryMenuKey', fallback: 'Open the category menu — rename, add or delete' },
-                { keys: 'Shift + S', cheatKey: 'bmShare', fallback: 'Share the focused bookmark, or copy its name and URL where no share sheet exists (with nothing selected the same key opens config)', print: true, printFallback: 'Share the focused bookmark — copies name + URL where there is no share sheet' },
+                { keys: 'Shift + F10 on category', cheatKey: 'bmCategoryMenuKey', fallback: 'Open the category menu — rename, spread, add or delete (the Menu key does the same)' },
+                { keys: 'Delete on category', cheatKey: 'bmCategoryDeleteKey', fallback: 'Delete the focused category — confirm first; its bookmarks are kept' },
+                { keys: 'Shift + L', cheatKey: 'bmShare', fallback: 'Share the focused bookmark, or copy its name and URL where no share sheet exists', print: true, printFallback: 'Share the focused bookmark — copies name + URL where there is no share sheet' },
                 { keys: 'Shift + R', cheatKey: 'bmRevealHealth', fallback: 'Open the focused bookmark on its own row in Health', print: true },
                 { keys: 't', cheatKey: 'bmFilterTag', fallback: 'Filter the grid to the focused bookmark\u2019s tag; several tags open the picker', print: true },
                 { keys: 'Ctrl + C', cheatKey: 'bmCopyUrl', fallback: 'Copy URL of focused bookmark (row flashes green)' },
-                { keys: '[', cheatKey: 'bmTogglePreview', fallback: 'Toggle hover preview card on focused bookmark' },
+                { keys: 'Shift + V', cheatKey: 'bmTogglePreview', fallback: 'Toggle hover preview card on focused bookmark' },
                 { keys: 'Enter on "+ N more"', cheatKey: 'bmShowMoreToggle', fallback: 'Expand or collapse a long category — selection returns to the last bookmark above the toggle' },
                 { keys: 'Delete', cheatKey: 'bmDelete', fallback: 'Delete focused bookmark — confirm in the popover beside it; with a selection open, deletes everything selected' },
                 { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, share, edit, pin, tags, move, checking, Show in Health, select, delete (Shift + right-click for the browser menu)' },
@@ -276,7 +275,7 @@
                 { keys: ':tag <name>', cheatKey: 'cbTagBrowse', fallback: 'Browse bookmarks by tag in the palette — :tag work or :tag:work' },
                 { keys: ':tag +name / :tag -name', cheatKey: 'cbTagMutate', fallback: 'Add or remove a tag on the focused bookmark — :tag +name / :tag -name' },
                 { keys: ':category / :cat', cheatKey: 'cbCategory', fallback: 'Jump to a category or smart collection by number or name' },
-                { keys: ':category new <name>', cheatKey: 'cbCategoryNew', fallback: 'Create a category on the current page (hold c does the same)' },
+                { keys: ':category new <name>', cheatKey: 'cbCategoryNew', fallback: 'Create a category on the current page (c does the same)' },
                 { keys: ':filter <tag> / :filter clear', cheatKey: 'cbFilter', fallback: 'Apply or clear dashboard tag filter (OR logic, same as tag cloud)' },
                 { keys: ':remove', cheatKey: 'cbRemove', fallback: 'Delete the focused bookmark' },
                 { keys: ':find <text> / :find clear', cheatKey: 'cbFind', fallback: 'Filter bookmark tiles on the current page — :find clear removes the filter' },
@@ -445,7 +444,20 @@
      * Rows marked for the printable one-pager, which stays a curated subset:
      * the PDF is A4 and meant to be readable at a glance, so it carries short
      * labels (printFallback) rather than the modal's full sentences.
+     *
+     * A printFallback is the label, not a fallback for one — which is why it is
+     * used directly rather than handed to `label()`. Passed through, it lost
+     * every time: the callers resolve a cheatKey against the locale first, that
+     * key is always present (the i18n check requires it), and so the sheet
+     * printed the modal's full sentences and ran to three pages. The short
+     * wording is English-only, which the sheet already is: it is generated from
+     * locales/en.json alone.
      */
+    /** A printed row's own short wording, or the translated one where it has none. */
+    function printLabel(label, row) {
+        return row.printFallback || label(row.cheatKey, row.fallback);
+    }
+
     function buildPrintSections(labelFor) {
         const label = typeof labelFor === 'function' ? labelFor : (_key, fallback) => fallback;
         const out = [];
@@ -463,7 +475,7 @@
                     .filter((row) => row.print && !row.printSection)
                     .map((row) => ({
                         keys: row.printKeys || row.keys,
-                        description: label(row.cheatKey, row.printFallback || row.fallback),
+                        description: printLabel(label, row),
                     }));
             }
             if (!items.length) continue;
@@ -481,7 +493,7 @@
                 if (!target) continue;
                 const item = {
                     keys: row.printKeys || row.keys,
-                    description: label(row.cheatKey, row.printFallback || row.fallback),
+                    description: printLabel(label, row),
                 };
                 if (Number.isInteger(row.printAt)) {
                     target.items.splice(row.printAt, 0, item);

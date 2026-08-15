@@ -432,13 +432,22 @@
     }
 
     /**
-     * The category the keyboard is in, or the first one on the page.
+     * The category the keyboard is in.
      *
      * Smart collections are kept: spreading is a layout choice, and a smart
      * collection occupies a column like any other block. Tag-filter chunks are
      * excluded — they are slices of one list, sized by the view.
+     *
+     * With nothing focused the answer depends on who is asking, so the caller
+     * says. The command palette wants the first category on the page: running
+     * `:width` takes focus out of the grid, and the palette names the category
+     * it is about to act on, so there is no surprise. A key press has no such
+     * label — Shift+W with the cursor nowhere would reshape whichever category
+     * happens to render first — so it passes fallbackToFirst: false and lets
+     * the key fall through instead.
      */
-    function resolveFocusedCategoryEl(dash) {
+    function resolveFocusedCategoryEl(dash, options) {
+        const fallbackToFirst = options?.fallbackToFirst !== false;
         const selector = '#dashboard-layout .category[data-category-id]:not([data-tag-filter-chunk="true"])';
         const kn = dash?.keyboardNavigation;
         if (kn && Number.isFinite(kn.currentIndex) && kn.currentIndex >= 0) {
@@ -451,7 +460,7 @@
         if (fromActive) {
             return fromActive;
         }
-        return document.querySelector(selector);
+        return fallbackToFirst ? document.querySelector(selector) : null;
     }
 
     window.DashboardCategorySpan = {

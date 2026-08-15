@@ -46,7 +46,26 @@ class DashboardContextMenu {
 
         e.preventDefault();
         e.stopPropagation();
-        this.show(row, bookmarkRef, { x: e.clientX, y: e.clientY });
+        this.show(row, bookmarkRef, this.menuPointFor(e, row));
+    }
+
+    /**
+     * Where to put the menu for a contextmenu event.
+     *
+     * The event also arrives from the keyboard — the Menu key, or Shift+F10 —
+     * and then carries no pointer position: browsers report 0/0, or a negative
+     * detail, depending on which one. Taken at face value that pinned the menu
+     * to the top-left corner of the window, nowhere near the row it belongs to.
+     * The category header's Delete key already anchors to its own rectangle;
+     * this does the same for a row.
+     */
+    menuPointFor(e, row) {
+        const fromPointer = e.detail > 0 || e.clientX > 0 || e.clientY > 0;
+        if (fromPointer) {
+            return { x: e.clientX, y: e.clientY };
+        }
+        const box = row.getBoundingClientRect();
+        return { x: box.left + 16, y: box.bottom };
     }
 
     resolveRowBookmark(row) {
@@ -180,8 +199,8 @@ class DashboardContextMenu {
                 { id: 'multi-move', label: this.t('dashboard.contextMenuMoveSelected', 'Move {count} selected…', { count: multi.count() }), icon: '→' },
                 { id: 'multi-open', label: this.t('dashboard.contextMenuOpenSelected', 'Open {count} selected', { count: multi.count() }), icon: '↗' },
                 { id: 'multi-copy', label: this.t('dashboard.contextMenuCopySelected', 'Copy {count} links', { count: multi.count() }), icon: '⧉' },
-                { id: 'multi-clear', label: this.t('dashboard.contextMenuClearSelection', 'Clear selection'), icon: '✕' },
-                { id: 'multi-delete', label: this.t('dashboard.contextMenuDeleteSelected', 'Delete {count} selected', { count: multi.count() }), icon: '✕', danger: true },
+                { id: 'multi-clear', label: this.t('dashboard.contextMenuClearSelection', 'Clear selection'), icon: '✕', key: 'Esc' },
+                { id: 'multi-delete', label: this.t('dashboard.contextMenuDeleteSelected', 'Delete {count} selected', { count: multi.count() }), icon: '✕', danger: true, key: 'Delete' },
             ]
             : [];
 
@@ -191,16 +210,22 @@ class DashboardContextMenu {
         // toolbar and every action on it.
         const startSelectionActions = (multi && !multi.isActive())
             ? [
-                { id: 'multi-start', label: this.t('dashboard.contextMenuSelect', 'Select'), icon: '☑' },
-                { id: 'multi-start-category', label: this.t('dashboard.contextMenuSelectCategory', 'Select all in category'), icon: '☰' },
+                { id: 'multi-start', label: this.t('dashboard.contextMenuSelect', 'Select'), icon: '☑', key: 'x' },
+                { id: 'multi-start-category', label: this.t('dashboard.contextMenuSelectCategory', 'Select all in category'), icon: '☰', key: 'X' },
             ]
             : [];
 
+        // `key` is the keyboard route to the same entry, shown as a chip. The
+        // category menu has taught its own shortcuts this way for a while; this
+        // menu had eleven entries with a key each and showed none of them, which
+        // is the busiest surface in the app for finding out that a key exists.
+        // Untranslated, like every other key hint.
+        const mod = window.ShortcutFormat?.modifierLabel?.() || 'Ctrl';
         const singleActions = bookmarkRef.scope === 'inbox' ? inboxActions : [
-            { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗' },
-            { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
-            { id: 'share', label: this.shareActionLabel(), icon: '↪' },
-            { id: 'edit', label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎' },
+            { id: 'open-new-tab', label: this.t('dashboard.contextMenuOpenNewTab', 'Open in new tab'), icon: '↗', key: `${mod}+Enter` },
+            { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉', key: `${mod}+C` },
+            { id: 'share', label: this.shareActionLabel(), icon: '↪', key: 'Shift+L' },
+            { id: 'edit', label: this.t('dashboard.contextMenuEdit', 'Edit'), icon: '✎', key: 'Shift+E' },
             // Pin had no pointer route at all from the grid — not a row button,
             // not an entry here — while every other one-bit row action did.
             {
@@ -209,15 +234,17 @@ class DashboardContextMenu {
                     ? this.t('dashboard.contextMenuUnpin', 'Unpin')
                     : this.t('dashboard.contextMenuPin', 'Pin'),
                 icon: '📌',
+                key: 'Shift+P',
             },
-            { id: 'tags', label: this.t('dashboard.contextMenuTags', 'Tags…'), icon: '#' },
-            { id: 'move', label: this.t('dashboard.contextMenuMove', 'Move to…'), icon: '→' },
+            { id: 'tags', label: this.t('dashboard.contextMenuTags', 'Tags…'), icon: '#', key: 'Shift+T' },
+            { id: 'move', label: this.t('dashboard.contextMenuMove', 'Move to…'), icon: '→', key: 'Shift+M' },
             ...(currentMode
                 ? [{
                     id: 'check-mode',
                     label: this.t('dashboard.contextMenuCheckMode', 'Checking ({mode})…', { mode: currentMode.badge }),
                     icon: '◉',
                     submenu: true,
+                    key: 'Shift+C',
                 }]
                 : []),
             // Offered for every bookmark, not only checked ones. The health
@@ -226,8 +253,8 @@ class DashboardContextMenu {
             // that), and that row is where its checking gets turned on. Hiding
             // the entry made the destination unreachable from the one place
             // someone would look for it.
-            { id: 'health', label: this.t('dashboard.healthOpenInHealth', 'Show in Health'), icon: '♥' },
-            { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true },
+            { id: 'health', label: this.t('dashboard.healthOpenInHealth', 'Show in Health'), icon: '♥', key: 'Shift+R' },
+            { id: 'delete', label: this.t('dashboard.contextMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
         ];
 
         // A selection replaces the single-row actions entirely rather than being
@@ -279,6 +306,20 @@ class DashboardContextMenu {
                 caret.textContent = '▸';
                 caret.setAttribute('aria-hidden', 'true');
                 item.appendChild(caret);
+            }
+
+            if (action.key) {
+                const kbd = document.createElement('kbd');
+                kbd.className = 'move-popover-item-key';
+                kbd.textContent = action.key;
+                // The chip is a label, not a second thing to read out: the item
+                // already says what it does. Screen readers get the key from
+                // aria-keyshortcuts on the item instead, which is what that
+                // attribute is for.
+                kbd.setAttribute('aria-hidden', 'true');
+                item.setAttribute('aria-keyshortcuts',
+                    window.ShortcutFormat?.ariaKeys?.(action.key) || action.key);
+                item.appendChild(kbd);
             }
 
             pop.appendChild(item);

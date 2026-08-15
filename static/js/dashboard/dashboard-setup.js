@@ -238,7 +238,8 @@ class DashboardSetup {
         document.addEventListener('keydown', (e) => {
             // Only handle number keys 1-9
             // Ignore if user is typing in an input field or if search is active
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT'
+                || e.target.isContentEditable) {
                 return;
             }
             if (document.body.classList.contains('bookmark-inline-edit-active')) {

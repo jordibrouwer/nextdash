@@ -3918,22 +3918,27 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-muted, #888);
 }
 
-.help-signature {
-    margin: 8px 0 0;
-    text-align: center;
-    font-size: calc(var(--font-size-text) * 1.006);
+/* The wordmark sits on its own plate rather than on the panel background.
+   It is bright green on transparency — the colour it is on a terminal — which
+   a light theme would leave barely legible, so the plate is dark in both
+   themes. Same near-black as the printable cheat sheet, so the two places the
+   logo appears look like the same product. */
+.help-about-mark {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 18px 20px;
+    margin: 0 0 14px;
+    background: #0a0a0a;
+    border: 1px solid var(--border-primary, #2a3528);
+    border-radius: var(--radius-md, 10px);
 }
 
-.help-signature-link {
-    /* --accent-primary, not --accent-color: the themes define the former, and
-       the latter resolves to nothing here — leaving the raw blue fallback. */
-    color: var(--accent-primary, var(--accent-color, #4a90d9));
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.help-signature-link:hover {
-    text-decoration: underline;
+.help-about-mark img {
+    display: block;
+    width: 100%;
+    max-width: 340px;
+    height: auto;
 }
 
 /* ── Overview → About the developer ─────────────────────────────────────

@@ -371,6 +371,10 @@ func (h *Handlers) invalidateHealthReportCache() {
 	h.healthReportMu.Lock()
 	h.healthReportOK = false
 	h.healthReportMu.Unlock()
+	// The analytics counts are drawn from the same files and go stale for the
+	// same reasons, so they ride along with the report rather than growing a
+	// second set of call sites to keep in step.
+	invalidateAnalyticsContentCache()
 }
 
 func healthReasonLegacyLabel(r HealthReason) string {
@@ -928,6 +932,11 @@ type htmlPageData struct {
 
 	// Umami analytics (privacy-friendly, opt-out). Fixed id + host for the
 	// project's shared instance. The template emits the tracker only when
+	// AnalyticsContentJSON is the bucketable size of this install, as JSON on
+	// the tracker's own script tag. Empty when analytics is off, which is also
+	// when it is not counted at all.
+	AnalyticsContentJSON string
+
 	// AnalyticsEnabled is true — that is the user's setting AND the operator
 	// not having switched telemetry off via DISABLE_TELEMETRY.
 	AnalyticsWebsiteID string
@@ -960,6 +969,7 @@ func (h *Handlers) htmlPageData(settings Settings) htmlPageData {
 		AnalyticsWebsiteID:   analyticsWebsiteID,
 		AnalyticsScriptSrc:   analyticsScriptSrc,
 		AnalyticsEnabled:     analyticsEnabled(settings),
+		AnalyticsContentJSON: h.analyticsContentJSON(analyticsEnabled(settings)),
 		TelemetryLockedOff:   telemetryDisabledByEnv(),
 		UpdateCheckLockedOff: updateCheckDisabledByEnv(),
 	}

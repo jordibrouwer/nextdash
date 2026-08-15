@@ -51,16 +51,20 @@ class DashboardCategoryMenu {
             if (titleEl.querySelector('.category-rename-input')) return;
             e.preventDefault();
             e.stopPropagation();
-            this.show(titleEl, category, { x: e.clientX, y: e.clientY });
+            // The Menu key raises this event too, with no pointer behind it —
+            // taken literally the menu landed in the corner of the window.
+            const fromPointer = e.detail > 0 || e.clientX > 0 || e.clientY > 0;
+            const box = titleEl.getBoundingClientRect();
+            this.show(titleEl, category, fromPointer
+                ? { x: e.clientX, y: e.clientY }
+                : { x: box.left + 8, y: box.bottom });
         });
     }
 
     show(titleEl, category, point) {
         // `key` is the keyboard route to the same action, shown as a chip so the
         // menu teaches its own shortcuts. Untranslated, like every other key
-        // hint in the app. "Add category" has none: it is a *held* c — a tap
-        // goes to the shortcut search — and a chip reading "c" would promise
-        // something that does not work.
+        // hint in the app.
         const span = window.DashboardCategorySpan;
         const blockedReason = span?.spreadUnavailableReason(this.dash) || null;
         const canSpread = blockedReason === null;
@@ -88,7 +92,7 @@ class DashboardCategoryMenu {
                 detail: canSpread ? '' : this.spreadUnavailableText(blockedReason, true),
                 disabled: !canSpread,
             },
-            { id: 'add', label: this.t('categoryMenuAdd', 'Add category'), icon: '+' },
+            { id: 'add', label: this.t('categoryMenuAdd', 'Add category'), icon: '+', key: 'c' },
             { id: 'delete', label: this.t('categoryMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
         ];
 
@@ -216,8 +220,11 @@ class DashboardCategoryMenu {
                 kbd.className = 'move-popover-item-key';
                 kbd.textContent = action.key;
                 // The chip is a label, not a second thing to read out: the item
-                // already says what it does.
+                // already says what it does. aria-keyshortcuts is how the key
+                // reaches a screen reader instead.
                 kbd.setAttribute('aria-hidden', 'true');
+                item.setAttribute('aria-keyshortcuts',
+                    window.ShortcutFormat?.ariaKeys?.(action.key) || action.key);
                 item.appendChild(kbd);
             }
 
