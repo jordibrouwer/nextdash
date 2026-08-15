@@ -17539,9 +17539,20 @@ class DashboardConfig {
             </div>
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.helpAboutTitle', 'About nextDash'))}</h3>
+                <!-- The wordmark on its own dark plate rather than on the panel:
+                     it is bright green on transparent, which a light theme
+                     would leave barely legible. The plate is the same near-black
+                     the printable cheat sheet uses, so the two pieces of
+                     nextDash that carry the logo look like each other. -->
+                <div class="help-about-mark">
+                    <img src="/static/nextdash-wordmark.png" alt="nextDash"
+                        width="2065" height="562" loading="lazy" decoding="async">
+                </div>
                 <div class="config-help-prose">${this.t('config.helpAboutBody', '')}</div>
                 <div class="config-actions">
                     <a class="config-btn" href="https://github.com/jordibrouwer/nextDash" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpGithub', 'Project on GitHub'))}</a>
+                    <a class="config-btn" href="https://nextdash.cc" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteProject', 'nextdash.cc'))}</a>
+                    <a class="config-btn" href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer">${esc(this.t('config.helpSiteAuthor', 'jordibrw.nl'))}</a>
                 </div>
                 ${this.renderKofiSupport()}
             </div>`;
@@ -17554,6 +17565,9 @@ class DashboardConfig {
      * only the surrounding block needed porting into config-view.css.
      */
     renderKofiSupport() {
+        // The jordibrw.nl sign-off that used to close this block is a button in
+        // the About row now, beside nextdash.cc — one place per address, rather
+        // than the author's twice and the project's own not at all.
         const esc = (v) => this.dash.escapeHtml(v);
         const stars = '<span class="wn-kofi-star"></span>'.repeat(4);
         return `
@@ -17564,8 +17578,7 @@ class DashboardConfig {
                     <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
                     <span class="wn-kofi-label">${esc(this.t('config.helpSupportKofi', 'Support me on Ko-fi'))}</span>
                 </a>
-            </div>
-            <p class="help-signature"><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer" class="help-signature-link">jordibrw.nl</a></p>`;
+            </div>`;
     }
 
     /**
