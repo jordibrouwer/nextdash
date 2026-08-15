@@ -2,13 +2,15 @@ const { test, expect } = require('@playwright/test');
 const { prepareDashboardInteraction } = require('./e2e-helpers');
 
 /**
- * Config returns you to where you were, for fifteen minutes.
+ * Config returns you to where you were, for five minutes.
  *
  * It used to remember only when you left via Shift+H or Shift+I, and clear the
  * memory on every other exit — so the common route, Escape out and Shift+S back
  * in, always landed on Overview. Now every exit remembers, which is only safe
  * because the entry expires: without that, a tab opened once weeks ago would
- * greet you forever.
+ * greet you forever. The clock starts when config leaves the screen, not at your
+ * last click inside it, so a long session followed by a short detour still comes
+ * back where you were.
  */
 
 const KEY = 'nextdash:config-last-location-v1';
@@ -80,7 +82,7 @@ test.describe('config remembers where you were', () => {
         expect(await page.evaluate(() => window.dashboardInstance.config.behaviorTab)).toBe('privacy');
     });
 
-    test('an entry older than fifteen minutes is ignored', async ({ page }) => {
+    test('an entry older than five minutes is ignored', async ({ page }) => {
         await load(page);
         await goToBehaviorPrivacy(page);
         await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
@@ -89,7 +91,7 @@ test.describe('config remembers where you were', () => {
         // Age it past the window rather than waiting out the clock.
         await page.evaluate((k) => {
             const data = JSON.parse(localStorage.getItem(k));
-            data.savedAt = Date.now() - (15 * 60 * 1000 + 1000);
+            data.savedAt = Date.now() - (5 * 60 * 1000 + 1000);
             localStorage.setItem(k, JSON.stringify(data));
         }, KEY);
 
@@ -105,12 +107,77 @@ test.describe('config remembers where you were', () => {
 
         await page.evaluate((k) => {
             const data = JSON.parse(localStorage.getItem(k));
-            data.savedAt = Date.now() - (14 * 60 * 1000);
+            data.savedAt = Date.now() - (4 * 60 * 1000);
             localStorage.setItem(k, JSON.stringify(data));
         }, KEY);
 
         await openConfigBare(page);
         expect(await section(page)).toBe('behavior');
+    });
+
+    test('switching to another view remembers, without config being asked', async ({ page }) => {
+        await load(page);
+        await goToBehaviorPrivacy(page);
+
+        // The header buttons and page tabs swap the view around config: it
+        // never runs closeConfigView, never hears the keystroke, and used to
+        // leave the memory holding whatever an earlier exit had written.
+        await page.evaluate(() => window.dashboardInstance.health.openHealthView());
+        await page.waitForFunction(() => window.dashboardInstance.activeView !== 'config', null, { timeout: 10_000 });
+
+        const saved = await stored(page);
+        expect(saved).toMatchObject({ section: 'behavior', subTab: 'privacy' });
+
+        await openConfigBare(page);
+        expect(await section(page)).toBe('behavior');
+        expect(await page.evaluate(() => window.dashboardInstance.config.behaviorTab)).toBe('privacy');
+    });
+
+    test('the five minutes are counted from leaving, not from the last click', async ({ page }) => {
+        await load(page);
+        await goToBehaviorPrivacy(page);
+
+        // Four and a half minutes of reading one config page, then a detour.
+        await page.evaluate((k) => {
+            const data = JSON.parse(localStorage.getItem(k));
+            data.savedAt = Date.now() - (4.5 * 60 * 1000);
+            localStorage.setItem(k, JSON.stringify(data));
+        }, KEY);
+        await page.evaluate(() => window.dashboardInstance.health.openHealthView());
+        await page.waitForFunction(() => window.dashboardInstance.activeView !== 'config', null, { timeout: 10_000 });
+
+        // Leaving restamps it, so the clock starts here rather than expiring
+        // thirty seconds from now while you are still on your way back.
+        const saved = await stored(page);
+        expect(Date.now() - saved.savedAt).toBeLessThan(60 * 1000);
+
+        await openConfigBare(page);
+        expect(await section(page)).toBe('behavior');
+    });
+
+    test('a move inside config is stored the moment it happens', async ({ page }) => {
+        await load(page);
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.openConfigView('appearance');
+            c.appearanceTab = 'layout';
+            c.render();
+            // What clicking the sub-tab does: it rewrites the address bar.
+            c.restoreConfigHash();
+        });
+        await page.waitForTimeout(200);
+
+        // No exit at all — the tab is reloaded out from under it, which is what
+        // a crash, a closed browser or a link followed from config look like.
+        expect(await stored(page)).toMatchObject({ section: 'appearance', subTab: 'layout' });
+
+        await page.reload();
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await prepareDashboardInteraction(page);
+        await openConfigBare(page);
+
+        expect(await section(page)).toBe('appearance');
+        expect(await page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('layout');
     });
 
     // Written before the location expired at all, so its age is unknowable.

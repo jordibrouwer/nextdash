@@ -875,6 +875,13 @@ class Dashboard {
             return previous;
         }
         this.activeView = view;
+        // Leaving config stamps where you were, whichever route took you out —
+        // the header buttons and page tabs switch view without config being
+        // asked, and the five-minute expiry is measured from this moment rather
+        // than from your last click inside it.
+        if (previous === 'config') {
+            this.config?.instance?.saveLastConfigLocation?.();
+        }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);
         }

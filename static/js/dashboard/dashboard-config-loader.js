@@ -51,7 +51,7 @@ class DashboardConfigLoader {
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
     /** Mirrors DashboardConfig.CONFIG_LAST_TTL_MS; both must agree. */
-    static CONFIG_LAST_TTL_MS = 15 * 60 * 1000;
+    static CONFIG_LAST_TTL_MS = 5 * 60 * 1000;
 
     /** Mirrors DashboardConfig.SUB_TAB_STATE for pre-load sub-tab replay. */
     static SUB_TAB_STATE = {

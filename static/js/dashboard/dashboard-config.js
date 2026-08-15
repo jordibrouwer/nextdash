@@ -42,14 +42,19 @@ class DashboardConfig {
      *
      * Returning to config a moment later is a continuation — you left to check
      * something and came back — and dropping you on Overview each time makes
-     * you re-navigate. Coming back an hour later is a new task, and the tab you
-     * happened to be on last time is no longer where you meant to be. Fifteen
+     * you re-navigate. Coming back much later is a new task, and the tab you
+     * happened to be on last time is no longer where you meant to be. Five
      * minutes is the line between the two.
+     *
+     * Measured from the moment config stopped being on screen, not from the
+     * last click inside it: setActiveView stamps it on the way out, so sitting
+     * on one section for an hour and stepping away for ten seconds still comes
+     * back where you were.
      *
      * Mirrored in dashboard-config-loader.js, which reads the same entry on a
      * cold load before this module exists. Both must agree.
      */
-    static CONFIG_LAST_TTL_MS = 15 * 60 * 1000;
+    static CONFIG_LAST_TTL_MS = 5 * 60 * 1000;
 
     /**
      * The activity chart's range, remembered per browser.
@@ -380,6 +385,15 @@ class DashboardConfig {
                 `${window.location.pathname}${window.location.search}${wanted}`
             );
         }
+        // Every move inside config comes through here — it is what writes the
+        // section and sub-tab into the address bar — so this is also where the
+        // location is remembered. It used to be saved only on the ways out that
+        // config itself knows about (Esc, `<`, its own shortcuts), which left
+        // out every route that simply switches view around it: the health,
+        // inbox and page buttons in the header. Those changed what was on
+        // screen without config ever hearing about it, so the memory kept an
+        // older tab.
+        this.saveLastConfigLocation();
     }
 
     /**
@@ -598,7 +612,7 @@ class DashboardConfig {
             return false;
         }
         // Every way out remembers where you were, not just Shift+H and Shift+I.
-        // The fifteen-minute expiry in loadLastConfigLocation is what keeps that
+        // The five-minute expiry in loadLastConfigLocation is what keeps that
         // from turning into a tab that greets you forever.
         this.saveLastConfigLocation();
         // The save indicator lives on <body>, so leaving the view has to take it
