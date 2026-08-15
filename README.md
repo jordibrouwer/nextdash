@@ -359,6 +359,7 @@ environment:
 - `:theme <name>` — switch colour theme
 - `:density <mode>` — `comfortable` / `compact` / `dense`
 - `:columns <n>` — set column count (1–6)
+- `:width on|off` — spread the focused category across columns (`:width all` switches every one back)
 - `@` — global search across all pages at once; each result shows the page name as context
 - `:find <text>` — hide tiles whose name or URL don't match; `:find clear` removes the filter
 - `:buttonbar <position>` — move the button bar: `bottom` / `bottom-left` / `bottom-right` / `side-left` / `side-right`

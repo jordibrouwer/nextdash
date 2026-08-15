@@ -56,51 +56,160 @@ class DashboardCategoryMenu {
     }
 
     show(titleEl, category, point) {
-        const d = this.dash;
-        this.close();
-
-        const pop = document.createElement('div');
-        pop.id = 'category-context-menu';
-        pop.className = 'move-popover bookmark-context-menu';
-        pop.setAttribute('role', 'menu');
-        pop.setAttribute('aria-label', this.t('categoryMenuTitle', 'Category actions'));
-
-        const nameHint = document.createElement('div');
-        nameHint.className = 'move-popover-current-hint';
-        nameHint.textContent = String(category.name || category.id || '').trim() || '—';
-        pop.appendChild(nameHint);
-
         // `key` is the keyboard route to the same action, shown as a chip so the
         // menu teaches its own shortcuts. Untranslated, like every other key
         // hint in the app. "Add category" has none: it is a *held* c — a tap
         // goes to the shortcut search — and a chip reading "c" would promise
         // something that does not work.
+        const span = window.DashboardCategorySpan;
+        const blockedReason = span?.spreadUnavailableReason(this.dash) || null;
+        const canSpread = blockedReason === null;
+        const isSpread = span?.isCategorySpread(this.dash, category) === true;
         const actions = [
             { id: 'rename', label: this.t('categoryMenuRename', 'Rename'), icon: '✎', key: 'F2' },
+            {
+                // A switch, not a size: how many columns a spread category
+                // takes follows from the items-per-category limit and how many
+                // bookmarks are in it, so there is nothing to choose.
+                //
+                // The label says what the click will do, the way Pin/Unpin does
+                // one entry down in the bookmark menu — this list is verbs, and
+                // a constant label with a tick beside it belongs to the radio
+                // submenus instead. It is deliberately not marked `checked`:
+                // paired with a label that already flips, a screen reader would
+                // announce "spread across columns, ticked" for the entry that
+                // undoes exactly that.
+                id: 'spread',
+                label: isSpread
+                    ? this.t('categoryMenuUnspread', 'Back to one column')
+                    : this.t('categoryMenuSpread', 'Spread across columns'),
+                icon: '↔',
+                key: 'Shift+W',
+                detail: canSpread ? '' : this.spreadUnavailableText(blockedReason, true),
+                disabled: !canSpread,
+            },
             { id: 'add', label: this.t('categoryMenuAdd', 'Add category'), icon: '+' },
             { id: 'delete', label: this.t('categoryMenuDelete', 'Delete'), icon: '✕', danger: true, key: 'Delete' },
         ];
 
+        this._openMenu({
+            id: 'category-context-menu',
+            ariaLabel: this.t('categoryMenuTitle', 'Category actions'),
+            hint: String(category.name || category.id || '').trim() || '—',
+            entries: actions,
+            point,
+            onPick: (action) => {
+                if (action === 'spread') {
+                    this.toggleSpread(category);
+                    return;
+                }
+                void this.runAction(action, titleEl, category);
+            },
+        });
+    }
+
+    /**
+     * Flip spreading for one category.
+     *
+     * Shared with Shift+W, which is why it is a method rather than a closure in
+     * the menu above.
+     */
+    toggleSpread(category) {
+        const d = this.dash;
+        const span = window.DashboardCategorySpan;
+        if (!span) {
+            return false;
+        }
+        const blocked = span.spreadUnavailableReason(d);
+        if (blocked) {
+            d.showNotification?.(this.spreadUnavailableText(blocked, false), 'info');
+            return false;
+        }
+        const next = span.toggleCategorySpread(d, category.id);
+        window.nextdashTrack?.('category:spread', { on: next });
+        span.refreshCategorySpreadUi(d, category.id);
+        return next;
+    }
+
+    /**
+     * Why spreading is out of reach, long or short.
+     *
+     * Short goes beside the menu entry, long into a toast — the same two
+     * reasons either way, so they are written in one place.
+     */
+    spreadUnavailableText(reason, short) {
+        if (reason === 'unlimited-items') {
+            return short
+                ? this.t('categorySpreadNeedsLimitShort', 'Needs an items-per-category limit')
+                : this.t('categorySpreadNeedsLimit',
+                    'Spreading needs a limit on items per category — that limit is what decides how many columns a category takes. Set one in Config → Appearance → Layout.');
+        }
+        return short
+            ? this.t('categorySpreadUnavailableShort', 'One column per category here')
+            : this.t('categorySpreadUnavailable',
+                'There is only one column to work with — spreading needs at least two.');
+    }
+
+    _openMenu({ id, ariaLabel, hint, entries, point, onPick, focusIndex = 0 }) {
+        const d = this.dash;
+        this.close();
+
+        const pop = document.createElement('div');
+        pop.id = id;
+        pop.className = 'move-popover bookmark-context-menu';
+        pop.setAttribute('role', 'menu');
+        pop.setAttribute('aria-label', ariaLabel);
+
+        if (hint) {
+            const nameHint = document.createElement('div');
+            nameHint.className = 'move-popover-current-hint';
+            nameHint.textContent = hint;
+            pop.appendChild(nameHint);
+        }
+
         const items = [];
-        actions.forEach((action) => {
+        entries.forEach((action) => {
             if (action.danger) {
                 const divider = document.createElement('div');
                 divider.className = 'move-popover-divider';
                 pop.appendChild(divider);
             }
             const item = document.createElement('div');
-            item.className = 'move-popover-item' + (action.danger ? ' is-danger' : '');
+            item.className = 'move-popover-item'
+                + (action.danger ? ' is-danger' : '')
+                + (action.disabled ? ' is-disabled' : '');
             item.setAttribute('role', 'menuitem');
             item.setAttribute('data-action', action.id);
+            if (action.checked) {
+                item.setAttribute('aria-checked', 'true');
+            }
+            if (action.disabled) {
+                item.setAttribute('aria-disabled', 'true');
+            }
 
             const check = document.createElement('span');
             check.className = 'move-popover-check';
-            check.textContent = action.icon;
+            check.textContent = action.icon || '';
             item.appendChild(check);
 
             const label = document.createElement('span');
             label.textContent = action.label;
             item.appendChild(label);
+
+            if (action.detail) {
+                const detail = document.createElement('span');
+                detail.className = 'move-popover-item-detail';
+                detail.textContent = action.detail;
+                item.appendChild(detail);
+            }
+
+            if (action.submenu) {
+                const caret = document.createElement('span');
+                caret.className = 'move-popover-submenu-caret';
+                caret.textContent = '›';
+                caret.setAttribute('aria-hidden', 'true');
+                item.appendChild(caret);
+            }
 
             if (action.key) {
                 const kbd = document.createElement('kbd');
@@ -122,7 +231,7 @@ class DashboardCategoryMenu {
         d.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
 
         const previousFocus = document.activeElement;
-        let focusedIdx = 0;
+        let focusedIdx = focusIndex;
         const setFocus = (idx) => {
             focusedIdx = ((idx % items.length) + items.length) % items.length;
             items.forEach((el, i) => {
@@ -156,15 +265,27 @@ class DashboardCategoryMenu {
         this._cleanup = close;
 
         const confirm = (item) => {
+            if (item.getAttribute('aria-disabled') === 'true') {
+                return;
+            }
             const action = item.getAttribute('data-action');
             close();
-            void this.runAction(action, titleEl, category);
+            onPick(action);
         };
+
+        const hasSubmenu = (item) => item.querySelector('.move-popover-submenu-caret') !== null;
 
         const onKey = (e) => {
             if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); return; }
             if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); setFocus(focusedIdx + 1); return; }
             if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); setFocus(focusedIdx - 1); return; }
+            // ArrowRight opens a submenu, the convention in every native menu.
+            if (e.key === 'ArrowRight' && items[focusedIdx] && hasSubmenu(items[focusedIdx])) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                confirm(items[focusedIdx]);
+                return;
+            }
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -185,7 +306,7 @@ class DashboardCategoryMenu {
             document.addEventListener('click', onOutside);
             document.addEventListener('contextmenu', onOutside);
         }, 0);
-        requestAnimationFrame(() => setFocus(0));
+        requestAnimationFrame(() => setFocus(focusIndex));
     }
 
     _positionAtPoint(pop, point) {

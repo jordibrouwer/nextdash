@@ -142,6 +142,7 @@ type Category struct {
 	OriginalID string `json:"originalId,omitempty"` // Track original ID for renames
 	Icon       string `json:"icon,omitempty"`       // Custom icon for category
 	SortMode   string `json:"sortMode,omitempty"`   // Bookmark sort within category: order, az, recent
+	Spread     bool   `json:"spread,omitempty"`     // May run across several grid columns; how many follows from the item limit
 }
 
 type Page struct {
@@ -240,6 +241,9 @@ type Settings struct {
 	CategorySpacing               string                       `json:"categorySpacing"`              // Vertical space between category rows: snug, balanced, airy
 	SideMargin                    string                       `json:"sideMargin"`                   // Left/right page margin on the dashboard: snug, balanced, airy
 	PackedColumns                 bool                         `json:"packedColumns"`                // Stack categories in vertical columns (round-robin) to reduce empty space
+	DefaultCategorySpread         bool                         `json:"defaultCategorySpread"`        // New categories may run across columns
+	CategorySpreadResetScope      string                       `json:"categorySpreadResetScope"`     // What "turn spreading off everywhere" covers: page, all
+	CategorySpreads               map[string]map[string]bool   `json:"categorySpreads,omitempty"`    // Per-page switch for uncategorized/smart collections, which have no stored category
 	LauncherIconSize              string                       `json:"launcherIconSize"`             // Launcher tile icon size: small, normal, large
 	CalendarUrl                   string                       `json:"calendarUrl"`                  // URL for calendar link in date popover (empty = hidden)
 	ButtonBarPosition             string                       `json:"buttonBarPosition"`            // Button bar position: bottom, bottom-left, bottom-right, side-left, side-right
@@ -776,6 +780,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			BookmarkArchiveUrl:           defaultBookmarkArchiveUrl,
 			ThemeIconStyling:             defaultThemeIconStyling(),
 			PackedColumns:                true,
+			DefaultCategorySpread:        false,
+			CategorySpreadResetScope:     defaultCategorySpreadResetScope,
 			// Was omitted here while both other Settings constructions set it,
 			// so a fresh install was served "" for a field whose documented
 			// default is "none". Harmless to the rendering, which treats an
@@ -1929,7 +1935,11 @@ const (
 	defaultNewBookmarkCheckMode      = "off"
 	defaultBookmarkStaleDays         = 90
 	defaultBookmarkArchiveUrl        = "https://web.archive.org/web/*/{url}"
+	defaultCategorySpreadResetScope  = "page"
 )
+
+// categorySpreadResetScopes are the reaches "turn spreading off" offers.
+var categorySpreadResetScopes = map[string]bool{"page": true, "all": true}
 
 // configBookmarksSortModes are the orders the Config bookmark list can open on.
 var configBookmarksSortModes = map[string]bool{
@@ -1939,6 +1949,36 @@ var configBookmarksSortModes = map[string]bool{
 
 // newBookmarkCheckModes mirrors the availability modes CheckMode understands.
 var newBookmarkCheckModes = map[string]bool{"off": true, "periodic": true, "monitor": true}
+
+// clampCategoryLayoutSettings keeps the spread settings inside what the
+// controls offer, and drops entries that carry no switch.
+//
+// The map holds the switch for categories that have no stored Category record —
+// uncategorized and the smart collections — keyed page id, then category id, the
+// same shape CategorySortModes uses. Without the pruning below it would grow an
+// entry per category the user ever touched, including the ones they turned back
+// off.
+func clampCategoryLayoutSettings(s *Settings) {
+	if !categorySpreadResetScopes[s.CategorySpreadResetScope] {
+		s.CategorySpreadResetScope = defaultCategorySpreadResetScope
+	}
+	if s.CategorySpreads == nil {
+		return
+	}
+	for pageKey, spreads := range s.CategorySpreads {
+		for categoryID, on := range spreads {
+			if !on {
+				delete(spreads, categoryID)
+			}
+		}
+		if len(spreads) == 0 {
+			delete(s.CategorySpreads, pageKey)
+		}
+	}
+	if len(s.CategorySpreads) == 0 {
+		s.CategorySpreads = nil
+	}
+}
 
 // clampBookmarkSettings keeps the Config → Bookmarks settings inside the range
 // their controls offer. The API is reachable without the browser, and a value
@@ -2461,6 +2501,8 @@ func (fs *FileStore) GetSettings() Settings {
 			CategorySpacing:                "balanced",
 			SideMargin:                     "balanced",
 			PackedColumns:                  true,
+			DefaultCategorySpread:          false,
+			CategorySpreadResetScope:       defaultCategorySpreadResetScope,
 			BackgroundType:                 "none",
 			BackgroundGradient:             "",
 			BackgroundImageUrl:             "",

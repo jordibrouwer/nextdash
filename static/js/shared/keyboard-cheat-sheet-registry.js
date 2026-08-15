@@ -113,6 +113,13 @@
                 { keys: 'Ctrl/Cmd + Enter', cheatKey: 'bmOpenNewTab', fallback: 'Open the focused bookmark in a new tab, whatever the open-in-new-tab setting says', print: true },
                 { keys: 'Alt + ↑ / ↓', cheatKey: 'bmMoveRow', fallback: 'Move the focused bookmark within its category (manual order only)' },
                 { keys: 'F2 on category', cheatKey: 'bmRenameCategoryKey', fallback: 'Rename the focused category header' },
+                {
+                    keys: 'Shift + W',
+                    cheatKey: 'bmCategoryWidth',
+                    fallback: 'Spread the focused category across columns, or put it back',
+                    print: true,
+                    printFallback: 'Spread category across columns',
+                },
                 { keys: 'Delete on category', cheatKey: 'bmCategoryMenuKey', fallback: 'Open the category menu — rename, add or delete' },
                 { keys: 'Shift + S', cheatKey: 'bmShare', fallback: 'Share the focused bookmark, or copy its name and URL where no share sheet exists (with nothing selected the same key opens config)', print: true, printFallback: 'Share the focused bookmark — copies name + URL where there is no share sheet' },
                 { keys: 'Shift + R', cheatKey: 'bmRevealHealth', fallback: 'Open the focused bookmark on its own row in Health', print: true },

@@ -172,6 +172,27 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 - Press and hold a category header (~500 ms, not on sort buttons) to rename — double-click still works. **Esc** cancels rename.
 - In **config → pages & tags → categories**, edits auto-save when you switch to another config tab or change the page selector (blocked if validation fails). Category lists are protected from accidental empty saves when bookmarks still reference those categories.
 
+#### Spreading a category across columns
+
+A category can run across several grid columns. Its bookmarks then flow across those columns instead of down a single one, which suits a category with many short entries.
+
+It is a switch, not a width. **How many** columns a spread category takes is not a setting: it follows from **items per category** — which caps the height of one column — and how many bookmarks the category holds. Forty bookmarks with a limit of fifteen take three columns, and two once you delete a handful. The column count is the ceiling.
+
+| Route | How |
+|-------|-----|
+| Mouse | Right-click the category header → **Spread across columns** |
+| Keyboard | **Shift + W** on the focused category |
+| Command | `:width on` / `:width off`, or `:width all` to switch every category back |
+| Config | **pages & tags → categories** has a ↔ button per row |
+
+**Config → appearance → layout → Categories across columns** holds what applies to all of them: **items per category**, whether a **new** category starts out spread, and whether **Turn spreading off everywhere** covers only the current page or every page.
+
+Spreading needs two things: **items per category** must not be *Unlimited*, and the grid must have at least two columns. With no limit there is nothing capping the height of a column, so nothing decides how many columns a category would need — which is why *Unlimited* is out of reach while any category spreads, and why the controls say what to set when it is.
+
+**With Pack columns tightly on** nothing changes while no category spreads — it is the same round-robin columns it has always been. Switch one on and the page becomes a packed grid: the spread category takes its columns where it falls, and the categories after it carry on beside and beneath it instead of waiting for a clear row.
+
+On a phone every category is one column wide.
+
 ### 4.3 Bookmarks
 
 Each bookmark has:
@@ -546,6 +567,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `Shift + T` | Quick-tag selected row (popover receives focus — `↑`/`↓` navigate; `Enter`/`Space` toggle tag and advance to next; `✓` on tags already applied) |
 | `Shift + D` | Quick-delete selected row (popover receives focus; undo in toast) |
 | `Shift + C` | Availability checking for the selected row — **Off** / **Periodic** / **Monitor**. The popover anchors below the row and opens on the current mode; pick with `o` / `p` / `m`, or arrow and `Enter` |
+| `Shift + W` | Spread the focused category across columns, or put it back to one |
 | `Ctrl + C` | Copy URL (row flashes green) |
 | `[` | Toggle hover preview card on selection |
 | `Delete` | Delete selected bookmark — the same popover `Shift+D` and the right-click menu open, beside the row. With a selection open it deletes everything selected instead, confirmed in one modal that names the count |
@@ -709,6 +731,7 @@ Use **`Enter`** or **`Space`** on a highlighted row to run it (including after a
 | `:theme <name>` | Switch theme |
 | `:density comfortable\|compact\|dense` | Row density |
 | `:columns <1-6>` | Column count |
+| `:width on` / `off` | Spread the focused category across columns, or put it back; `:width all` switches every category back |
 | `:buttonbar bottom\|bottom-left\|bottom-right\|side-left\|side-right` | Button bar position (`side-left` / `side-right` = vertical rail on that edge) |
 | `:save` / `:saved` | Save / list saved searches (kept in settings, so they are in every ZIP backup and follow you between browsers — **v1.0.2**) |
 | `:history` / `:history clear` | Search history |

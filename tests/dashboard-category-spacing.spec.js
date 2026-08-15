@@ -175,13 +175,17 @@ test.describe('Appearance → Layout panel order', () => {
         // are what people come here to change, while the version switch is a
         // one-off that wants to be findable rather than stepped over. This used
         // to open on Layout version.
+        //
+        // Categories across columns follows the grid it belongs to: how tall a category
+        // gets and how wide it may be are two halves of one question, and both
+        // are read after the column count they depend on.
         // First text node only: the heading also carries a "Reset panel" button
         // once something in that panel differs from its default, and whether it
         // is there depends on state left by other tests.
         await expect.poll(() => page.evaluate(() =>
             [...document.querySelectorAll('.config-panel-title')]
                 .map((h) => (h.firstChild?.textContent || '').trim())
-        )).toEqual(['Bookmarks layout', 'Button bar', 'Layout version']);
+        )).toEqual(['Bookmarks layout', 'Categories across columns', 'Button bar', 'Layout version']);
     });
 
     test('the moved controls are still bound', async ({ page }) => {

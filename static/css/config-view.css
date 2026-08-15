@@ -836,6 +836,14 @@
     font-size: calc(var(--font-size-text) * 0.891);
 }
 
+/* A row button that carries a symbol rather than a word — square, so a row of
+   them reads as a strip of controls instead of a ragged line of labels. */
+.config-btn--icon {
+    padding: 5px 9px;
+    min-width: 2rem;
+    text-align: center;
+}
+
 .config-btn--danger {
     color: #d1493f;
     border-color: color-mix(in srgb, #d1493f 45%, transparent);
@@ -1119,6 +1127,18 @@
     inset: -0.3rem -0.4rem;
 }
 
+/* The section in the left rail — the first step of the trail. The rail clips
+   nothing, so the stars sit in the bleed like everywhere else. */
+.config-nav-item--animated {
+    position: relative;
+    overflow: visible;
+    animation: config-new-features-panel-glow 3.4s ease-in-out infinite;
+}
+
+.config-nav-item--animated .config-new-features-panel-stars {
+    inset: -0.25rem -0.35rem;
+}
+
 .config-panel--animated {
     position: relative;
     isolation: isolate;
@@ -1212,11 +1232,6 @@
 .config-select:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-}
-
-.config-select:focus-visible {
-    outline: 2px solid var(--accent-color, #4a90d9);
-    outline-offset: 1px;
 }
 
 /*

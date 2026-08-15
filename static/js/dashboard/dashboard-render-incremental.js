@@ -67,6 +67,9 @@ class DashboardRenderIncremental {
         }
 
         this.core.syncDashboardGridLayout();
+        // The column count is a setting too, and it caps every category width —
+        // without this a narrower grid keeps categories reaching past its edge.
+        window.DashboardCategorySpan?.refreshAllCategorySpans(d, container);
         document.querySelectorAll('#dashboard-layout .bookmarks-list[data-category-id]').forEach((list) => {
             const showPing = d.settings.showStatus && d.settings.showPing;
             if (showPing) {
@@ -131,24 +134,9 @@ class DashboardRenderIncremental {
     }
 
     getExistingCategories(container) {
-        if (this.core.shouldPackDashboardColumns()) {
-            const columns = Array.from(container.querySelectorAll(':scope > .dashboard-column'));
-            if (!columns.length) {
-                return [];
-            }
-            const maxRows = Math.max(...columns.map((col) => col.querySelectorAll('.category[data-category-id]').length), 0);
-            const ordered = [];
-            for (let row = 0; row < maxRows; row += 1) {
-                for (let col = 0; col < columns.length; col += 1) {
-                    const categoryEl = columns[col].querySelectorAll('.category[data-category-id]')[row];
-                    if (categoryEl) {
-                        ordered.push(categoryEl);
-                    }
-                }
-            }
-            return ordered;
-        }
-        return Array.from(container.querySelectorAll(':scope > .category[data-category-id]'));
+        // The reader lives with the distribution it inverts — this used to be a
+        // second, separate implementation of the same idea.
+        return this.core.readCategoryElementsInOrder(container);
     }
 
     categoryStructureMatches(desiredBlocks, existingCategories) {
@@ -370,6 +358,12 @@ class DashboardRenderIncremental {
         this.core.initializeCategoryReorder();
         this.core.initializeDashboardCategoryReorder();
         window.DashboardCategorySort?.refreshAllCategorySortUi?.(d, container);
+        // A patched category is a different height — a bookmark added or gone —
+        // and in the masonry shape the height is what its place is made of.
+        window.DashboardPackedMasonry?.schedule();
+        // A patched row can be the widest one in its list, which decides where
+        // the columns of a wide category fall.
+        requestAnimationFrame(() => window.DashboardCategorySpan?.syncWideColumnTracks(container));
         window.DashboardCategoryTitleFit?.scheduleFitAllCategoryTitles?.(container);
         d.updateSearchComponent?.();
         d.syncBookmarkGridA11y?.();

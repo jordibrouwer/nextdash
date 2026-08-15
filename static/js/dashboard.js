@@ -91,6 +91,8 @@ class Dashboard {
             categorySpacing: 'balanced',
             sideMargin: 'balanced',
             packedColumns: true,
+            defaultCategorySpread: false,
+            categorySpreadResetScope: 'page',
             backgroundType: 'none',
             backgroundOpacity: 1,
             fontWeight: 'normal',

@@ -41,6 +41,7 @@
                 'tipEditRenamePage',
                 'tipEditPageTabDot',
                 'tipEditCopyUrl',
+                'tipEditCategorySpread',
             ],
         },
         {

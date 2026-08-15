@@ -1752,6 +1752,7 @@ func (h *Handlers) SaveSettings(w http.ResponseWriter, r *http.Request) {
 	settings.Collections = sanitized
 	settings.SavedSearches = normalizeSavedSearches(settings.SavedSearches)
 	clampBookmarkSettings(&settings)
+	clampCategoryLayoutSettings(&settings)
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
