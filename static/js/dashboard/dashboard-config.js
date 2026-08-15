@@ -17402,8 +17402,15 @@ class DashboardConfig {
     }
 
     renderHelpOrganizing() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        // The walkthrough the corner card offers, kept reachable after the card
+        // has been dismissed — which is the state most readers of this page are
+        // in. Same pattern as the cheat sheet button above it.
         return this.helpPanel('config.helpWorkspaceTitle', 'Pages & categories',
-            'config.helpWorkspaceBody', '')
+            'config.helpWorkspaceBody', '',
+            `<div class="config-actions">
+                <button type="button" class="config-btn" data-help-action="spread-tour">${esc(this.t('config.helpSpreadTour', 'Walk me through spreading a category'))}</button>
+            </div>`)
             + this.helpPanel('config.helpBookmarksTitle', 'Bookmarks',
                 'config.helpBookmarksBody', '')
             + this.helpPanel('config.helpTagsTitle', 'Tags & collections',
@@ -17646,6 +17653,11 @@ class DashboardConfig {
                     // view first or it would open behind it.
                     this.closeConfigView();
                     this.dash.showKeyboardCheatSheet?.();
+                } else if (action === 'spread-tour') {
+                    // Config is a view on this same page and the walkthrough is
+                    // a modal over it, so this one can stay where it is — the
+                    // reader lands back on this panel when it closes.
+                    window.SpreadTutorial?.open?.();
                 }
             });
         });

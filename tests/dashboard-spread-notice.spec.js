@@ -76,6 +76,27 @@ test.describe('the spread announcement', () => {
         await expect(page.locator('.spread-tutorial-visual--sum .spread-tutorial-col')).toHaveCount(3);
     });
 
+    test('Config → Help keeps the walkthrough after the card is gone', async ({ page }) => {
+        await loadWithCardPending(page);
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.openConfigView('help');
+            c.helpTab = 'organizing';
+            c.render();
+        });
+
+        // Most readers of this page have already dismissed the card, which is
+        // exactly why the tour has a second door.
+        const button = page.locator('[data-help-action="spread-tour"]');
+        await expect(button).toBeVisible();
+        await button.click();
+
+        await expect(page.locator('.spread-tutorial')).toBeVisible();
+        // Config is a view on this page and the tour is a modal over it, so it
+        // does not throw the reader back to the grid.
+        expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('config');
+    });
+
     test('it stays out of the way where spreading cannot be used', async ({ page }) => {
         await loadWithCardPending(page);
         await page.evaluate(async () => {

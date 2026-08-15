@@ -176,7 +176,17 @@ Switch pages with `0` (Inbox), `1`–`9`, `Shift + ←/→`, or the **pages** ov
 
 A category can run across several grid columns. Its bookmarks then flow across those columns instead of down a single one, which suits a category with many short entries.
 
-It is a switch, not a width. **How many** columns a spread category takes is not a setting: it follows from **items per category** — which caps the height of one column — and how many bookmarks the category holds. Forty bookmarks with a limit of fifteen take three columns, and two once you delete a handful. The column count is the ceiling.
+It is a switch, not a width. **How many** columns a spread category takes is not a setting: it follows from **items per category** — which caps the height of one column — and how many bookmarks the category holds. Forty bookmarks with a limit of fifteen take three columns, and two once you delete a handful. The column count is the ceiling: lower it and a spread category narrows to fit, raise it and it takes back only what it asks for.
+
+Because the width follows the contents, it also follows them as they change: a bookmark that pushes a category past its limit brings the next column with it there and then, and one that takes it back under drops the column again. With the limit at fifteen:
+
+| Bookmarks in the category | Columns |
+|---|---|
+| 1 – 15 | 1 |
+| 16 – 30 | 2 |
+| 31 – 45 | 3 |
+
+A spread category says so twice: a rule under its header running the width of the whole block, and a small **↔ N** beside the title naming the number of columns it currently takes.
 
 | Route | How |
 |-------|-----|
@@ -192,6 +202,8 @@ Spreading needs two things: **items per category** must not be *Unlimited*, and 
 **With Pack columns tightly on** nothing changes while no category spreads — it is the same round-robin columns it has always been. Switch one on and the page becomes a packed grid: the spread category takes its columns where it falls, and the categories after it carry on beside and beneath it instead of waiting for a clear row.
 
 On a phone every category is one column wide.
+
+The first time it is worth knowing about, a card in the bottom-left corner offers a four-step walkthrough of all this — the before/after shape, where the switch is, the sum that decides the column count, and where the remaining settings live. Dismiss it and it does not come back.
 
 ### 4.3 Bookmarks
 
@@ -228,7 +240,7 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 
 ### 4.5 Config vs dashboard
 
-Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config with **`Shift+S`**, **`<`**, or the gear icon restores the **last section and sub-tab** you were on — whichever way you left, including **`Escape`** and **`0`–`9`**. The memory lasts **15 minutes** from the moment you left: come back later and you start on **Overview**, on the reasoning that a quick return is a continuation of what you were doing and a return an hour later is a new task. A deep link like `/#config/appearance` still takes priority.
+Config is a **view inside the dashboard**, not a separate page — same tab, same session, no page load. Open it with **`Shift+S`**, the **config** (gear) link in the header, or the `/#config` address; **`<`** takes you back. Reopening config with **`Shift+S`**, **`<`**, or the gear icon restores the **last section and sub-tab** you were on — whichever way you left, including **`Escape`**, **`0`–`9`**, and the health, inbox and page buttons in the header, which switch view around config without it being asked. The memory lasts **5 minutes**, counted from the moment config left the screen rather than from your last click inside it: reading one panel for half an hour and stepping away for ten seconds still brings you back where you were, while coming back much later starts on **Overview** — a quick return is a continuation of what you were doing, a return an hour later is a new task. A deep link like `/#config/appearance` still takes priority.
 
 | Dashboard view | Config view |
 |-----------------|------------------|
@@ -1112,7 +1124,7 @@ Configuration is a **view inside the dashboard**, not a separate page. It opens 
 |---------|----------|
 | **`Shift+S`**, **`<`** (`Shift+,`), the **config** (gear) link in the header, or the `/#config` address | **`Escape`** (unless you are typing in a field, or something is open on top of it), or the back link |
 
-Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores the **last section and sub-tab** for 15 minutes after you left, unless a `/#config/…` deep link names something else.
+Reopening config (**`Shift+S`**, **`<`**, the gear link, or `/#config`) restores the **last section and sub-tab** for 5 minutes after you left, unless a `/#config/…` deep link names something else.
 
 Pick a section from the rail on the left, or link straight to one with `/#config/<section>`. Sections that have sub-tabs extend that: `/#config/appearance/layout` opens Appearance on Layout, `/#config/bookmarks/<pageId>` scopes Bookmarks to one page, and the address bar keeps up as you click.
 
@@ -1239,7 +1251,7 @@ Config has its own keyboard layer — dashboard grid shortcuts do not run while 
 
 | Keys | Action |
 |------|--------|
-| `Shift+S` or `<` | Toggle config; reopening within 15 minutes restores the last section and sub-tab, however you left |
+| `Shift+S` or `<` | Toggle config; reopening within 5 minutes restores the last section and sub-tab, however you left |
 | `0`–`9` | Leave config for Inbox (`0`) or a bookmark page (`1`–`9`); clears stored config location |
 | `j` / `k` | Previous / next section in the left rail |
 | `g` / `G` | First / last section |
