@@ -470,6 +470,24 @@ class KeyboardNavigation {
         return true;
     }
 
+    /**
+     * Put DOM focus on the header of the category the cursor is in.
+     *
+     * The row selection stays where it is: Escape or an arrow key brings you
+     * straight back to it, so this is a step sideways rather than a jump.
+     */
+    focusCategoryHeader() {
+        const span = window.DashboardCategorySpan;
+        const categoryEl = span?.resolveFocusedCategoryEl(this.dashboard, { fallbackToFirst: false });
+        const title = categoryEl?.querySelector('.category-title');
+        if (!title || typeof title.focus !== 'function') {
+            return false;
+        }
+        title.scrollIntoView({ block: 'nearest', behavior: this._scrollBehavior() });
+        title.focus({ preventScroll: true });
+        return true;
+    }
+
     _announceCategorySpread(name, on) {
         const live = this._ensureKbdLiveRegion();
         const label = this.dashboard?.formatDashboardLabel?.(
@@ -856,7 +874,11 @@ class KeyboardNavigation {
         }
 
         switch(key) {
+            // j / k alongside the arrows. Config's section rail and its
+            // bookmark list have had them for a while; the grid is where people
+            // try them first and was the one place they did nothing.
             case 'ArrowDown':
+            case 'j':
                 if (!this._handleGridArrowKey()) {
                     break;
                 }
@@ -865,6 +887,7 @@ class KeyboardNavigation {
                 break;
 
             case 'ArrowUp':
+            case 'k':
                 if (!this._handleGridArrowKey()) {
                     break;
                 }
@@ -893,6 +916,14 @@ class KeyboardNavigation {
                     break;
                 }
                 e.preventDefault();
+                // Shift+Home steps out of the list and onto the header above
+                // it. The header carries its own keys — rename, spread, the
+                // menu — and Tab from somewhere else was the only way to reach
+                // it: arrows walk bookmarks and skip straight past it.
+                if (e.shiftKey) {
+                    this.focusCategoryHeader();
+                    break;
+                }
                 this.navigateCategoryHome();
                 break;
 
