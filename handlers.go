@@ -2514,7 +2514,7 @@ func (h *Handlers) CacheScanResult(w http.ResponseWriter, r *http.Request) {
 	// A monitored bookmark also records the sample, so an on-demand check shows up
 	// in the uptime, heartbeat and outage view straight away rather than waiting
 	// for the next scheduled run.
-	h.recordManualHealthSample(key, req.Status == "online", req.PingMs, req.Code)
+	h.recordManualHealthSample(key, req.Status == "online", req.PingMs, req.Code, req.Error)
 	h.invalidateHealthReportCache()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -2709,6 +2709,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 						Up:     result.Status == "online",
 						PingMs: result.PingMs,
 						Code:   result.HTTPStatus,
+						Fail:   failureClass(result.ErrorDetail),
 					})
 				}
 			}
@@ -2763,6 +2764,20 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 	// worth failing a retest that already pinged everything successfully.
 	if err := h.appendHealthSamples(historyUpdates); err != nil {
 		log.Printf("health history: failed to record retest samples: %v", err)
+	}
+
+	// Certificates come out of the same handshakes this retest already made.
+	// Until now recordMonitorCertificates was called from exactly one place —
+	// the monitor sweep — so an install using periodic checks, which is the
+	// default, never saw a certificate warning at all.
+	certResults := make([]PingResult, 0, len(driftResults))
+	for _, result := range driftResults {
+		if result.CertExpiry > 0 && result.CertHost != "" {
+			certResults = append(certResults, result)
+		}
+	}
+	if len(certResults) > 0 {
+		h.recordMonitorCertificates(certResults)
 	}
 
 	h.invalidateHealthReportCache()

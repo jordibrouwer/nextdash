@@ -2482,3 +2482,34 @@ body[data-layout-version="modern"] .health-view-empty {
         transition: none;
     }
 }
+
+/* The series picker above the trend chart. Nine counters are recorded every day
+   and the chart drew one of them; these switch between the six that answer a
+   question someone actually asks. */
+.health-view-trend-series {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+    margin-left: auto;
+}
+
+.health-view-trend-series-btn {
+    padding: 0.05rem 0.4rem;
+    border: 1px solid transparent;
+    border-radius: 0.3rem;
+    background: none;
+    color: var(--text-tertiary);
+    font: inherit;
+    font-size: 0.68rem;
+    cursor: pointer;
+}
+
+.health-view-trend-series-btn:hover {
+    color: var(--text-secondary);
+}
+
+.health-view-trend-series-btn.is-active {
+    border-color: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+    color: var(--accent-primary);
+}

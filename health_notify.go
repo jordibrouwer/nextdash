@@ -62,6 +62,16 @@ type monitorNotification struct {
 	// DaysLeft is set on "cert-expiring" only: whole days until the certificate
 	// for this host stops being valid.
 	DaysLeft int `json:"daysLeft,omitempty"`
+	// DownSince, DurationMs and DownChecks are set on "up" only: when the outage
+	// began, how long it lasted, and how many failed checks it took.
+	//
+	// A recovery message used to carry the name, the URL and the time and
+	// nothing else, so "X is back online" left the reader with the one question
+	// a recovery raises — was it five minutes or five hours. The history needed
+	// for it is already read on this pass to count trailing failures.
+	DownSince  int64 `json:"downSince,omitempty"`
+	DurationMs int64 `json:"durationMs,omitempty"`
+	DownChecks int   `json:"downChecks,omitempty"`
 }
 
 // certExpiryNotifications turns crossed thresholds into notifications, reusing
@@ -194,12 +204,26 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 		// produces a lone "back online". Older histories predate the flag, so a
 		// sufficiently long outage still counts as alerted.
 		if hadState && !prevUp && (currentOutageAlerted(prior) || priorFailures >= threshold) {
+			// How long it was down, from the same history the failure count above
+			// was read from: the first sample of the trailing failure run is where
+			// the outage began.
+			downSince := int64(0)
+			if priorFailures > 0 && priorFailures <= len(prior) {
+				downSince = prior[len(prior)-priorFailures].T
+			}
+			duration := int64(0)
+			if downSince > 0 && t.at > downSince {
+				duration = t.at - downSince
+			}
 			pending = append(pending, monitorNotification{
-				Event:  "up",
-				Name:   t.name,
-				URL:    t.url,
-				Status: "online",
-				At:     t.at,
+				Event:      "up",
+				Name:       t.name,
+				URL:        t.url,
+				Status:     "online",
+				At:         t.at,
+				DownSince:  downSince,
+				DurationMs: duration,
+				DownChecks: priorFailures,
 			})
 		}
 	}
@@ -431,6 +455,37 @@ func collapseMonitorNotifications(notifications []monitorNotification) []monitor
 	return []monitorNotification{digest}
 }
 
+// formatOutageDuration renders a downtime span the way a person says it: whole
+// minutes under an hour, hours and minutes under a day, days and hours above.
+// Empty for a zero or negative span, so a caller can leave the phrase out
+// entirely rather than print "after 0m".
+func formatOutageDuration(ms int64) string {
+	if ms <= 0 {
+		return ""
+	}
+	d := time.Duration(ms) * time.Millisecond
+	switch {
+	case d < time.Minute:
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	case d < time.Hour:
+		return fmt.Sprintf("%dm", int(d.Minutes()))
+	case d < 24*time.Hour:
+		hours := int(d.Hours())
+		minutes := int(d.Minutes()) - hours*60
+		if minutes == 0 {
+			return fmt.Sprintf("%dh", hours)
+		}
+		return fmt.Sprintf("%dh %dm", hours, minutes)
+	default:
+		days := int(d.Hours()) / 24
+		hours := int(d.Hours()) % 24
+		if hours == 0 {
+			return fmt.Sprintf("%dd", days)
+		}
+		return fmt.Sprintf("%dd %dh", days, hours)
+	}
+}
+
 func monitorNotificationTitle(n monitorNotification) string {
 	name := strings.TrimSpace(n.Name)
 	if name == "" {
@@ -438,6 +493,11 @@ func monitorNotificationTitle(n monitorNotification) string {
 	}
 	switch n.Event {
 	case "up":
+		// How long it was gone, because that is the first thing anyone asks of a
+		// recovery message and the only thing it could not answer.
+		if d := formatOutageDuration(n.DurationMs); d != "" {
+			return name + " is back online after " + d
+		}
 		return name + " is back online"
 	case "cert-expiring":
 		// Not an outage: saying "offline" here would be actively wrong, since the

@@ -35,6 +35,20 @@ const (
 	monitorMaxConcurrentPings = 8
 	// monitorRunTimeout is a ceiling for one full sweep.
 	monitorRunTimeout = 10 * time.Minute
+	// monitorConfirmDelay is how long a failed check waits before it is tried
+	// once more, and monitorConfirmRetries how many times.
+	//
+	// A single dropped check used to write a permanent Up:false: it dented the
+	// 24h/7d/30d uptime for as long as the sample lived, opened a one-check
+	// incident, and coloured a heartbeat bucket. MonitorNotifyRetries only ever
+	// held back the outgoing alert; the record was already written by then.
+	//
+	// One retry after five seconds is deliberately modest. It catches the hiccup
+	// — a dropped packet, a container still coming up, a DNS blip — without
+	// hiding a service that is genuinely down, which fails the retry too and is
+	// recorded as it always was, five seconds later.
+	monitorConfirmDelay   = 5 * time.Second
+	monitorConfirmRetries = 1
 )
 
 // clampMonitorIntervalMinutes normalizes a stored/incoming per-bookmark cadence,
@@ -124,6 +138,18 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 
 	for _, page := range h.store.GetPages() {
 		for _, bm := range h.store.GetBookmarksByPage(page.ID) {
+			// Every checked bookmark keeps its host alive, not only the monitored
+			// ones: certificates are now recorded from periodic checks and manual
+			// retests too, and a host whose only checker is periodic would
+			// otherwise have its certificate pruned a minute after it was stored.
+			if bm.CheckStatus || bm.Monitor {
+				if host := strings.ToLower(strings.TrimSpace(bm.CertHost)); host != "" {
+					liveHosts[host] = struct{}{}
+				}
+				if parsed, err := url.Parse(strings.TrimSpace(bm.URL)); err == nil && parsed.Hostname() != "" {
+					liveHosts[strings.ToLower(parsed.Hostname())] = struct{}{}
+				}
+			}
 			if !bm.Monitor {
 				continue
 			}
@@ -132,12 +158,6 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 				continue
 			}
 			known[key] = true
-			if host := strings.ToLower(strings.TrimSpace(bm.CertHost)); host != "" {
-				liveHosts[host] = struct{}{}
-			}
-			if parsed, err := url.Parse(strings.TrimSpace(bm.URL)); err == nil && parsed.Hostname() != "" {
-				liveHosts[strings.ToLower(parsed.Hostname())] = struct{}{}
-			}
 			// The same URL can be bookmarked on several pages; check it once.
 			if seen[key] {
 				continue
@@ -209,6 +229,16 @@ func (h *Handlers) runDueMonitors() {
 			defer func() { <-sem }()
 
 			result := h.pingURLExpecting(ctx, t.url, t.expect)
+			// A failure is confirmed before it is believed. Same goroutine, so
+			// the sweep's concurrency cap still holds and a flaky host costs one
+			// extra check rather than a second full pass.
+			for attempt := 0; attempt < monitorConfirmRetries && result.Status != "online"; attempt++ {
+				select {
+				case <-ctx.Done():
+				case <-time.After(monitorConfirmDelay):
+					result = h.pingURLExpecting(ctx, t.url, t.expect)
+				}
+			}
 			mu.Lock()
 			outcomes = append(outcomes, outcome{target: t, result: result, at: time.Now().UnixMilli()})
 			mu.Unlock()
@@ -247,6 +277,7 @@ func (h *Handlers) runDueMonitors() {
 			PingMs: out.result.PingMs,
 			Code:   out.result.HTTPStatus,
 			Maint:  inMaintenance,
+			Fail:   failureClass(out.result.ErrorDetail),
 		}}
 		transitions = append(transitions, monitorTransition{
 			key:    out.target.key,

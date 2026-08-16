@@ -283,7 +283,11 @@ type Settings struct {
 	AnalyticsOptIn                bool                         `json:"analyticsOptIn"`       // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
 	EnableSessionTips             bool                         `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
 	ShowShortcutTooltips          bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default on, opt-out in Config → Behavior or `:shortcuts off`)
-	ShowGridKeyLegend             bool                         `json:"showGridKeyLegend"`    // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
+	ShowGridKeyLegend             bool                         `json:"showGridKeyLegend"`
+	// HealthCheckTimeoutSeconds is how long one availability check may take.
+	// 0 means the built-in default (3s), which is what every install had before
+	// this was a choice. Clamped to 2–30 on save.
+	HealthCheckTimeoutSeconds     int                          `json:"healthCheckTimeoutSeconds,omitempty"`    // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
 	QuickStart                    QuickStartState              `json:"quickStart"`           // First-run quick-start progress (server-side, per-user)
 	// ConfigGeneralLayer is the last Essentials/Advanced/all layer used in
 	// Config → General. Empty means "never chosen", which starts on Essentials.
@@ -2875,6 +2879,16 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 	settings.HealthAutoRecheckIntervalHours = clampHealthAutoRecheckIntervalHours(settings.HealthAutoRecheckIntervalHours)
+	// 0 stays 0 — it means "the built-in default" — and anything else is held
+	// inside the range a bounded sweep can afford.
+	if settings.HealthCheckTimeoutSeconds != 0 {
+		if settings.HealthCheckTimeoutSeconds < 2 {
+			settings.HealthCheckTimeoutSeconds = 2
+		}
+		if settings.HealthCheckTimeoutSeconds > 30 {
+			settings.HealthCheckTimeoutSeconds = 30
+		}
+	}
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
@@ -3535,6 +3549,17 @@ type HealthSample struct {
 	// actually happened — but uptime ratios skip it, so a nightly backup does not
 	// read as a nightly outage.
 	Maint bool `json:"m,omitempty"`
+	// Fail is why a failed check failed, as a short class: dns, timeout,
+	// refused, tls, redirect, content, http, or other. Empty on a sample that
+	// succeeded.
+	//
+	// The engine has always worked this out — classifyPingError runs on every
+	// failed check — and then dropped it, so a DNS outage and a refused
+	// connection were both recorded as "Up: false, Code: 0" and reached the
+	// incident list, the fleet timeline and the CSV export with no cause at all.
+	// A class rather than the sentence: the sentence is for a human reading one
+	// row, the class is what a list can group and a column can hold.
+	Fail string `json:"e,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept

@@ -125,7 +125,7 @@ func TestPendingNotificationsSurviveAManualRecheck(t *testing.T) {
 
 	// The user presses Re-check while it is down. That writes a sample straight to
 	// the history, outside the notification path, pushing the count to three.
-	h.recordManualHealthSample(key, false, 0, 0)
+	h.recordManualHealthSample(key, false, 0, 0, "")
 
 	// The next scheduled run now counts four consecutive failures. It must still
 	// alert: the outage crossed the threshold here for the first time, and testing

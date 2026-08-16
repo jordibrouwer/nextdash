@@ -92,7 +92,7 @@ func (h *Handlers) ExportHealthHistory(w http.ResponseWriter, r *http.Request) {
 	buf.WriteString("\ufeff")
 	writer := csv.NewWriter(&buf)
 	_ = writer.Write([]string{
-		"name", "url", "page", "timestamp", "up", "pingMs", "httpStatus", "maint",
+		"name", "url", "page", "timestamp", "up", "pingMs", "httpStatus", "maint", "reason",
 	})
 
 	rows := 0
@@ -116,6 +116,9 @@ func (h *Handlers) ExportHealthHistory(w http.ResponseWriter, r *http.Request) {
 				// Lets an external analysis exclude expected downtime instead of
 				// counting a maintenance window as a real outage.
 				strconv.FormatBool(s.Maint),
+				// Why a failed check failed. Empty for a check that succeeded,
+				// and for failures recorded before samples carried a class.
+				csvSafeField(failureClassReason(s.Fail)),
 			})
 			rows++
 		}

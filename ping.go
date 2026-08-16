@@ -51,7 +51,13 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	// How long a check may take, from settings. Three seconds was hardcoded for
+	// every check in the app, which permanently classified a self-hosted service
+	// that legitimately needs four or five — a large Nextcloud, a Jellyfin, a
+	// container that just started — as "Timeout" and therefore offline, with no
+	// control anywhere.
+	timeout := h.healthCheckTimeout()
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	urlStr = strings.TrimSpace(urlStr)
@@ -70,8 +76,11 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 	start := time.Now()
 	allowLocal := h.allowLocalBookmarks()
 	client := &http.Client{
-		Timeout:       3 * time.Second,
-		Transport:     newSSRFSafeTransport(allowLocal, 2*time.Second),
+		Timeout: timeout,
+		// The dial budget stays a fraction of the whole: a connection that
+		// cannot be opened should fail well before the body has a chance to be
+		// read, whatever the total allows.
+		Transport:     newSSRFSafeTransport(allowLocal, dialTimeoutFor(timeout)),
 		CheckRedirect: safeRedirectCheck(allowLocal, 5),
 	}
 
@@ -220,6 +229,102 @@ func classifyPingError(err error, resp *http.Response) string {
 		return fmt.Sprintf("HTTP %d", resp.StatusCode)
 	}
 	return "Unreachable"
+}
+
+const (
+	// defaultHealthCheckTimeout is what every check used before the timeout was
+	// a setting, so an install that never touches it behaves exactly as it did.
+	defaultHealthCheckTimeout = 3 * time.Second
+	minHealthCheckTimeout     = 2 * time.Second
+	maxHealthCheckTimeout     = 30 * time.Second
+)
+
+// healthCheckTimeout is the per-check budget, clamped to a range that keeps a
+// sweep bounded: 8 concurrent checks at 30 seconds still finishes far inside
+// monitorRunTimeout.
+func (h *Handlers) healthCheckTimeout() time.Duration {
+	seconds := h.store.GetSettings().HealthCheckTimeoutSeconds
+	if seconds <= 0 {
+		return defaultHealthCheckTimeout
+	}
+	d := time.Duration(seconds) * time.Second
+	if d < minHealthCheckTimeout {
+		return minHealthCheckTimeout
+	}
+	if d > maxHealthCheckTimeout {
+		return maxHealthCheckTimeout
+	}
+	return d
+}
+
+// dialTimeoutFor keeps the connect budget proportional to the whole check —
+// two thirds, as the original 2s-of-3s was — with a floor so a short timeout
+// still leaves room to connect.
+func dialTimeoutFor(total time.Duration) time.Duration {
+	dial := total * 2 / 3
+	if dial < time.Second {
+		dial = time.Second
+	}
+	return dial
+}
+
+// failureClass turns the human sentence classifyPingError produces into the
+// short class a sample stores: one word a list can group by and a column can
+// hold, where the sentence is for one row read by one person.
+//
+// Kept beside classifyPingError rather than derived at the call sites, so the
+// two cannot drift: a new branch there needs a case here or it lands in "other",
+// which is visible in the data rather than silently mapped to something wrong.
+func failureClass(detail string) string {
+	d := strings.ToLower(strings.TrimSpace(detail))
+	switch {
+	case d == "":
+		return ""
+	case strings.Contains(d, "dns"):
+		return "dns"
+	case strings.Contains(d, "timeout"):
+		return "timeout"
+	case strings.Contains(d, "refused"):
+		return "refused"
+	case strings.Contains(d, "tls"), strings.Contains(d, "certificate"):
+		return "tls"
+	case strings.Contains(d, "redirect"):
+		return "redirect"
+	case strings.HasPrefix(d, "page is missing"), strings.HasPrefix(d, "page contains"),
+		strings.Contains(d, "unexpected content"):
+		return "content"
+	case strings.HasPrefix(d, "http "):
+		return "http"
+	default:
+		return "other"
+	}
+}
+
+// failureClassReason turns a stored class back into something a person reads,
+// for the incident list and the export. The class is what the file keeps; this
+// is only ever presentation, so a class this does not know still shows up as
+// itself rather than disappearing.
+func failureClassReason(class string) string {
+	switch class {
+	case "dns":
+		return "DNS lookup failed"
+	case "timeout":
+		return "Timeout"
+	case "refused":
+		return "Connection refused"
+	case "tls":
+		return "TLS error"
+	case "redirect":
+		return "Too many redirects"
+	case "content":
+		return "Content check failed"
+	case "http":
+		return "HTTP error"
+	case "":
+		return ""
+	default:
+		return class
+	}
 }
 
 func duplicateKeepScore(ref BookmarkRef) (opens int, pinned int, created int64) {

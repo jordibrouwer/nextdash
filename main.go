@@ -138,6 +138,9 @@ func main() {
 	r.HandleFunc("/api/health/check-mode-all", handlers.SetAllCheckModes).Methods("POST")
 	r.HandleFunc("/api/health/check-mode", handlers.SetBookmarkCheckMode).Methods("POST")
 	r.HandleFunc("/api/health/expectations", handlers.SetBookmarkExpectations).Methods("POST")
+	// The same fields for a list of bookmarks, so muting a dozen during a known
+	// outage is one request rather than a dozen dialogs.
+	r.HandleFunc("/api/health/expectations-bulk", handlers.SetBookmarkExpectationsBulk).Methods("POST")
 	r.HandleFunc("/api/health/accept-drift", handlers.AcceptDrift).Methods("POST")
 	r.HandleFunc("/api/health/check-url", handlers.CheckBookmarkHealthURL).Methods("POST")
 	r.HandleFunc("/api/health/open-broken", handlers.OpenBroken).Methods("POST")

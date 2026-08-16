@@ -1380,7 +1380,28 @@
     "shortcutKeyTakenInGrid": "Das Dashboard nutzt {key}, solange eine Zeile ausgewählt ist — es {use}. Ohne Auswahl erreicht der Buchstabe das Lesezeichen.",
     "shortcutKeysInUse": "Belegt: {keys}",
     "shortcutKeysInUseMore": "Belegt: {keys} … und {count} weitere",
-    "dashboardKeyCheatSheet": "alle Tasten"
+    "dashboardKeyCheatSheet": "alle Tasten",
+    "healthStatsCoveredOnly": "nur {span} Verlauf",
+    "inboxMarkUnread": "Als ungelesen markieren",
+    "inboxMarkUnreadFailed": "Konnte nicht auf ungelesen gesetzt werden",
+    "inboxExportColDescription": "Beschreibung",
+    "healthTrendSeriesHealthy": "Gesund %",
+    "healthTrendSeriesScore": "Score",
+    "healthTrendSeriesBroken": "Defekt",
+    "healthTrendSeriesDown": "Monitore offline",
+    "healthTrendSeriesStale": "Veraltet",
+    "healthTrendSeriesUnchecked": "Ungeprüft",
+    "healthTrendNowCount": "jetzt {value}",
+    "categoryMoved": "verschoben",
+    "healthBulkMute": "Alarme stummschalten",
+    "healthBulkUnmute": "Stummschaltung aufheben",
+    "healthBulkMuteDone": "Alarme für {count} Lesezeichen stummgeschaltet",
+    "healthBulkUnmuteDone": "Stummschaltung für {count} Lesezeichen aufgehoben",
+    "healthBulkMutePartial": "{count} Lesezeichen geändert; {stale} hatten sich geändert — Bericht neu laden",
+    "healthBulkMuteFailed": "Stummschaltung konnte nicht geändert werden",
+    "categoryMenuIcon": "Symbol…",
+    "categoryIconClear": "Löschen",
+    "categoryIconFailed": "Symbol konnte nicht gespeichert werden"
   },
   "health": {
     "pageTitle": "health beta",
@@ -4868,7 +4889,11 @@
     "filterByPageTitle": "Nach Seite {name} filtern",
     "filterByCategoryTitle": "Nach Kategorie {name} filtern",
     "gridKeyLegendLabel": "Tastenlegende unter den Lesezeichen anzeigen",
-    "gridKeyLegendHint": "Erscheint, sobald du den Cursor mit der Tastatur bewegst, und verschwindet wieder, wenn du ein Lesezeichen öffnest. ! zeigt jederzeit die vollständige Übersicht."
+    "gridKeyLegendHint": "Erscheint, sobald du den Cursor mit der Tastatur bewegst, und verschwindet wieder, wenn du ein Lesezeichen öffnest. ! zeigt jederzeit die vollständige Übersicht.",
+    "backupLastFailed": "Letzter Lauf fehlgeschlagen: {error}",
+    "healthCheckTimeoutLabel": "Zeitlimit pro Prüfung",
+    "healthCheckTimeoutDefault": "Standard (3 Sekunden)",
+    "healthCheckTimeoutSeconds": "{n} Sekunden"
   },
   "colors": {
     "title": "themenanpassung",

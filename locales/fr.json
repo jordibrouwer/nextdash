@@ -1380,7 +1380,28 @@
     "shortcutKeyTakenInGrid": "Le tableau de bord utilise {key} quand une ligne est sélectionnée — elle {use}. Sans sélection, la lettre atteint bien ce favori.",
     "shortcutKeysInUse": "Déjà pris : {keys}",
     "shortcutKeysInUseMore": "Déjà pris : {keys} … et {count} de plus",
-    "dashboardKeyCheatSheet": "toutes les touches"
+    "dashboardKeyCheatSheet": "toutes les touches",
+    "healthStatsCoveredOnly": "seulement {span} d’historique",
+    "inboxMarkUnread": "Marquer comme non lu",
+    "inboxMarkUnreadFailed": "Impossible de le marquer non lu",
+    "inboxExportColDescription": "Description",
+    "healthTrendSeriesHealthy": "Sains %",
+    "healthTrendSeriesScore": "Score",
+    "healthTrendSeriesBroken": "Cassés",
+    "healthTrendSeriesDown": "Moniteurs hors ligne",
+    "healthTrendSeriesStale": "Obsolètes",
+    "healthTrendSeriesUnchecked": "Non vérifiés",
+    "healthTrendNowCount": "maintenant {value}",
+    "categoryMoved": "déplacée",
+    "healthBulkMute": "Couper les alertes",
+    "healthBulkUnmute": "Réactiver",
+    "healthBulkMuteDone": "Alertes coupées sur {count} favori(s)",
+    "healthBulkUnmuteDone": "Alertes réactivées sur {count} favori(s)",
+    "healthBulkMutePartial": "{count} favori(s) modifié(s) ; {stale} avaient changé — rechargez le rapport",
+    "healthBulkMuteFailed": "Impossible de modifier la coupure des alertes",
+    "categoryMenuIcon": "Icône…",
+    "categoryIconClear": "Effacer",
+    "categoryIconFailed": "Impossible d’enregistrer l’icône"
   },
   "health": {
     "pageTitle": "health beta",
@@ -4868,7 +4889,11 @@
     "filterByPageTitle": "Filtrer par page {name}",
     "filterByCategoryTitle": "Filtrer par catégorie {name}",
     "gridKeyLegendLabel": "Afficher une légende des touches sous les favoris",
-    "gridKeyLegendHint": "Apparaît dès que vous déplacez le curseur au clavier et disparaît quand vous ouvrez un favori. ! affiche à tout moment l’aide-mémoire complet."
+    "gridKeyLegendHint": "Apparaît dès que vous déplacez le curseur au clavier et disparaît quand vous ouvrez un favori. ! affiche à tout moment l’aide-mémoire complet.",
+    "backupLastFailed": "Dernière tentative échouée : {error}",
+    "healthCheckTimeoutLabel": "Délai par vérification",
+    "healthCheckTimeoutDefault": "Par défaut (3 secondes)",
+    "healthCheckTimeoutSeconds": "{n} secondes"
   },
   "colors": {
     "title": "personnalisation du thème",

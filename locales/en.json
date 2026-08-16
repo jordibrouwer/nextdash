@@ -1381,7 +1381,28 @@
     "shortcutKeyTakenInGrid": "The dashboard uses {key} while a row is selected — it {use}. With nothing selected the letter still reaches this bookmark.",
     "shortcutKeysInUse": "In use: {keys}",
     "shortcutKeysInUseMore": "In use: {keys} … and {count} more",
-    "dashboardKeyCheatSheet": "all keys"
+    "dashboardKeyCheatSheet": "all keys",
+    "healthStatsCoveredOnly": "only {span} of history",
+    "inboxMarkUnread": "Mark unread",
+    "inboxMarkUnreadFailed": "Could not mark it unread",
+    "inboxExportColDescription": "Description",
+    "healthTrendSeriesHealthy": "Healthy %",
+    "healthTrendSeriesScore": "Score",
+    "healthTrendSeriesBroken": "Broken",
+    "healthTrendSeriesDown": "Monitors down",
+    "healthTrendSeriesStale": "Stale",
+    "healthTrendSeriesUnchecked": "Unchecked",
+    "healthTrendNowCount": "now {value}",
+    "categoryMoved": "moved",
+    "healthBulkMute": "Mute alerts",
+    "healthBulkUnmute": "Unmute",
+    "healthBulkMuteDone": "Alerts muted on {count} bookmark(s)",
+    "healthBulkUnmuteDone": "Alerts unmuted on {count} bookmark(s)",
+    "healthBulkMutePartial": "Changed {count} bookmark(s); {stale} had changed — reload the report",
+    "healthBulkMuteFailed": "Could not change alert muting",
+    "categoryMenuIcon": "Icon…",
+    "categoryIconClear": "Clear",
+    "categoryIconFailed": "Could not save the icon"
   },
   "health": {
     "pageTitle": "health beta",
@@ -4869,7 +4890,11 @@
     "filterByPageTitle": "Filter by page {name}",
     "filterByCategoryTitle": "Filter by category {name}",
     "gridKeyLegendLabel": "Show a key legend under the bookmarks",
-    "gridKeyLegendHint": "Appears once you move the cursor with the keyboard and goes again when you open a bookmark. Press ! at any time for the full cheat sheet."
+    "gridKeyLegendHint": "Appears once you move the cursor with the keyboard and goes again when you open a bookmark. Press ! at any time for the full cheat sheet.",
+    "backupLastFailed": "Last run failed: {error}",
+    "healthCheckTimeoutLabel": "Check timeout",
+    "healthCheckTimeoutDefault": "Default (3 seconds)",
+    "healthCheckTimeoutSeconds": "{n} seconds"
   },
   "colors": {
     "title": "theme customization",
