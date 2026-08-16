@@ -123,6 +123,32 @@ class DashboardBookmarkRows {
         return candidates[0] || null;
     }
 
+    /**
+     * Put moved bookmarks back where they were.
+     *
+     * Works from the snapshot the move took rather than by moving again: a
+     * second move would fire its own toast and its own analytics event, and
+     * would file everything into one category — which is exactly what an undo
+     * of a bulk move must not do, since the rows came from several.
+     */
+    undoBookmarkCategoryMove(previous) {
+        const d = this.dash;
+        const entries = (previous || []).filter((entry) => entry?.ref?.bookmark);
+        if (!entries.length) return;
+
+        d.ensureBookmarkMutationSnapshot();
+        entries.forEach(({ ref, category }) => {
+            ref.bookmark.category = category;
+            if (ref.original) {
+                ref.original.category = category;
+            }
+        });
+        d.scheduleBookmarkOrderSave();
+        if (!d.isInlineEditActive()) {
+            d.renderDashboard({ animate: false });
+        }
+    }
+
     applyBookmarkCategoryMove(bookmarkRefs, categoryId, { notify = true, count } = {}) {
         const d = this.dash;
         const refs = (Array.isArray(bookmarkRefs) ? bookmarkRefs : [bookmarkRefs])
@@ -142,6 +168,11 @@ class DashboardBookmarkRows {
         const affectedCount = Number.isFinite(count) ? count : refs.length;
 
         d.ensureBookmarkMutationSnapshot();
+        // What each bookmark was filed under before this move. Deleting a row has
+        // offered eight seconds of Undo for a long time; moving one — or twenty,
+        // from the tag filter — offered nothing, and a bulk move to the wrong
+        // category lost every original category with no way back.
+        const previous = refs.map((ref) => ({ ref, category: ref.bookmark.category }));
         refs.forEach((ref) => {
             ref.bookmark.category = categoryId;
             if (ref.original) {
@@ -162,7 +193,10 @@ class DashboardBookmarkRows {
 
         if (notify) {
             const groupKey = `move-category:${categoryId}`;
-            const duration = 2500;
+            // Long enough to be caught, matching the delete toast: an undo nobody
+            // can reach is the same as no undo.
+            const duration = 8000;
+            const undoCallback = () => this.undoBookmarkCategoryMove(previous);
             if (affectedCount > 1) {
                 d.showGroupedNotification(
                     groupKey,
@@ -173,7 +207,7 @@ class DashboardBookmarkRows {
                         `Moved ${n} bookmark(s) to "${catName}"`
                     ),
                     'success',
-                    { duration }
+                    { duration, undoCallback }
                 );
             } else {
                 d.showNotification(
@@ -183,7 +217,7 @@ class DashboardBookmarkRows {
                         `Moved to "${catName}"`
                     ),
                     'success',
-                    { duration }
+                    { duration, undoCallback }
                 );
             }
         }
