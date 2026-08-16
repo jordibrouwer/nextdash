@@ -334,7 +334,7 @@ Each button can be shown or hidden individually under **Config → Appearance �
 | | `.` | `.` | Fold or unfold every category |
 | Bottom | `★` | — | What's new |
 
-Hover a button on desktop for a tooltip with shortcuts. In side-rail mode, tooltips appear to the **right** of the rail. The header icons — **pages**, **inbox**, **health**, **config** — carry the same tooltips (**v2026.08.08.6**) and open **below** the icon, since there is no room above them at the top of the window (**v2026.09.2**).
+**Off by default.** The shortcut popovers are a switch under **config → behavior → general** — *Show shortcut hints on toolbar icons* — and they now start off, for existing dashboards as well as new ones: the setting has been on since it existed and is written into every stored settings file, so changing the default alone would have left everybody exactly where they were. A one-time migration turns them off; switching them back on sticks, because the migration records that it ran and never runs again. With them on, hover a button on desktop for a tooltip with shortcuts. In side-rail mode, tooltips appear to the **right** of the rail. The header icons — **pages**, **inbox**, **health**, **config** — carry the same tooltips (**v2026.08.08.6**) and open **below** the icon, since there is no room above them at the top of the window (**v2026.09.2**).
 
 ### 🔗 Deep links from Health
 

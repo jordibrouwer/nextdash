@@ -63,9 +63,15 @@ const HEADER = ['#page-overview-header-btn', '.config-link-anchor'];
 const TOOLBAR = ['#search-button', '#commands-button', '#finders-button'];
 
 test.describe('dashboard shortcut popovers: one switch', () => {
-    test('they are on by default', async ({ page }) => {
+    test('they are off unless asked for, and the host exists once switched on', async ({ page }) => {
         await loadDashboard(page);
-        expect(await page.evaluate(() => window.dashboardInstance.settings.showShortcutTooltips)).not.toBe(false);
+        // Off for everyone, not only for new installs: the setting was on since
+        // it existed and written into every stored file, so a default change
+        // alone would have left every current dashboard as it was. A one-time
+        // migration turned them off, and turning them back on sticks.
+        expect(await page.evaluate(() => window.dashboardInstance.settings.showShortcutTooltips)).toBe(false);
+
+        await setTooltips(page, true);
         expect(await page.evaluate(() => Boolean(document.getElementById('toolbar-kbd-tooltip')))).toBe(true);
     });
 

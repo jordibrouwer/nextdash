@@ -189,6 +189,7 @@ type Settings struct {
 	ShowTagCloudButton            bool                         `json:"showTagCloudButton"`                      // Dashboard / key: horizontal tag cloud toggle
 	TagCloudDefaultMigrated       bool                         `json:"tagCloudDefaultMigrated,omitempty"`       // one-time: enable tag cloud for existing installs
 	LinkPreviewCardsOffMigrated   bool                         `json:"linkPreviewCardsOffMigrated,omitempty"`   // one-time: default hover preview cards to off
+	ShortcutTooltipsOffMigrated   bool                         `json:"shortcutTooltipsOffMigrated,omitempty"`   // one-time: default the toolbar shortcut hints to off
 	ConfigButtonDefaultOnMigrated bool                         `json:"configButtonDefaultOnMigrated,omitempty"` // one-time: restore config header icon after visibility fix
 	ShowSearchFlowBanner          bool                         `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton          bool                         `json:"showCheatSheetButton"`
@@ -693,7 +694,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			OpenInNewTab:                 true,
 			AnalyticsOptIn:               false,
 			EnableSessionTips:            true,
-			ShowShortcutTooltips:         true,
+			ShowShortcutTooltips:         false,
 			ShowGridKeyLegend:            true,
 			ColumnsPerRow:                3,
 			FontSize:                     "m",
@@ -856,6 +857,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	// One-time migration: remove existing custom themes and reset active custom theme to dark.
 	fs.migrateCustomThemesToUserManaged()
 	fs.migrateLinkPreviewCardsDefaultOff()
+	fs.migrateShortcutTooltipsDefaultOff()
 	fs.migrateHideEmptyCategoriesDefaultOn()
 	fs.migrateConfigButtonDefaultOn()
 
@@ -908,6 +910,49 @@ func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
 
 	raw["showLinkPreviewCards"] = json.RawMessage(`false`)
 	raw["linkPreviewCardsOffMigrated"] = json.RawMessage(`true`)
+
+	out, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = writeFileAtomic(fs.settingsFile, out, 0644)
+}
+
+// migrateShortcutTooltipsDefaultOff turns the toolbar shortcut hints off once,
+// for everyone.
+//
+// Unlike the fresh-install defaults changed elsewhere, this one reaches
+// existing dashboards on purpose: the setting has been on since it existed and
+// is written into every stored settings file, so a default change alone would
+// have left every current install exactly as it was.
+//
+// The marker is what keeps it a one-time event. Without it the flip would run
+// on every start and nobody could ever switch the hints back on — which is the
+// difference between changing a default and taking a choice away.
+func (fs *FileStore) migrateShortcutTooltipsDefaultOff() {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return
+	}
+	if migrated, ok := raw["shortcutTooltipsOffMigrated"]; ok {
+		var done bool
+		if json.Unmarshal(migrated, &done) == nil && done {
+			return
+		}
+	}
+
+	raw["showShortcutTooltips"] = json.RawMessage(`false`)
+	raw["shortcutTooltipsOffMigrated"] = json.RawMessage(`true`)
 
 	out, err := json.MarshalIndent(raw, "", "  ")
 	if err != nil {
@@ -2430,7 +2475,7 @@ func (fs *FileStore) GetSettings() Settings {
 			OpenInNewTab:                   true,
 			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
-			ShowShortcutTooltips:           true,
+			ShowShortcutTooltips:           false,
 			ShowGridKeyLegend:              true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
@@ -2756,11 +2801,11 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["enableSessionTips"]; !ok {
 			settings.EnableSessionTips = true
 		}
-		// Same default-on, opt-out contract: the shortcut popovers are how the
-		// keys are discovered in the first place, so they stay on until asked.
-		if _, ok := rawSettings["showShortcutTooltips"]; !ok {
-			settings.ShowShortcutTooltips = true
-		}
+		// Off unless the file says otherwise. This used to fill an absent key
+		// with true — the popovers were how the keys were discovered — and the
+		// one-time migration above has since turned them off for everyone, so
+		// filling in true here would put them straight back on any file written
+		// before the key existed.
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true
 		}
@@ -2921,6 +2966,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 		if json.Unmarshal(raw, &stored) == nil {
 			settings.TagCloudDefaultMigrated = stored.TagCloudDefaultMigrated
 			settings.LinkPreviewCardsOffMigrated = stored.LinkPreviewCardsOffMigrated
+			settings.ShortcutTooltipsOffMigrated = stored.ShortcutTooltipsOffMigrated
 			settings.HideEmptyCategoriesMigrated = stored.HideEmptyCategoriesMigrated
 			settings.ConfigButtonDefaultOnMigrated = stored.ConfigButtonDefaultOnMigrated
 		}
