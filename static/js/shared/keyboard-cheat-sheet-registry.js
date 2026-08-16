@@ -246,6 +246,20 @@
             titleKey: 'sectionSearchModes',
             titleFallback: 'Search modes',
             rows: [
+                {
+                    keys: 'type',
+                    cheatKey: 'smTypeToFilter',
+                    fallback: 'Just type — letters go to the search line and narrow the list. Nothing opens until Enter',
+                    print: true,
+                    printFallback: 'Type to filter the list',
+                },
+                {
+                    keys: 'Enter',
+                    cheatKey: 'smEnterOpens',
+                    fallback: 'Open the top result. A bookmark shortcut is an exact match, so its letters + Enter open it',
+                    print: true,
+                    printFallback: 'Open the top result',
+                },
                 { keys: '>', cheatKey: 'smRegularSearch', fallback: 'Regular search — filter bookmarks on current page by name', print: true, printFallback: 'Search' },
                 {
                     keys: '/',

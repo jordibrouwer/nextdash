@@ -270,6 +270,13 @@ class SearchComponent {
         }
 
         // Mode tab click handlers
+        // Escape does it too, but a line you typed into needs a way out you can
+        // point at — on touch there is no Escape at all.
+        document.getElementById('search-clear')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.closeSearch();
+        });
+
         document.querySelectorAll('.search-mode-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -752,37 +759,20 @@ class SearchComponent {
         }
 
         this.commandsComponent.resetState();
-        
-        // Check for exact match first
-        const query = this.currentQuery.startsWith('/') ? this.currentQuery.slice(1) : this.currentQuery;
-        const isShortcutMode = (this.currentQuery.startsWith('/') && this.interleaveMode) || (!this.currentQuery.startsWith('/') && !this.interleaveMode);
-        
-        if (isShortcutMode) {
-            const exactMatch = this.shortcuts.get(query.toLowerCase());
-            if (exactMatch) {
-                // If it's a single character or no other shortcuts start with this query
-                const hasLongerMatches = Array.from(this.shortcuts.keys()).some(shortcut => 
-                    shortcut !== query.toLowerCase() && 
-                    shortcut.startsWith(query.toLowerCase())
-                );
-                
-                const hasFinder = this.settings.includeFindersInSearch && (
-                    this.findersComponent.shortcuts.has(query.toLowerCase()) ||
-                    Array.from(this.findersComponent.shortcuts.keys()).some(finderShortcut => 
-                        finderShortcut.startsWith(query.toLowerCase())
-                    )
-                );
-                
-                if (!hasLongerMatches && !hasFinder) {
-                    // Open immediately if no longer matches exist and no finder conflicts
-                    this.openBookmark(exactMatch);
-                    this.resetQuery();
-                    return;
-                }
-            }
-        }
-        
-        // Show search interface and find matches
+
+        // Typing never opens anything; Enter does.
+        //
+        // A shortcut used to fire the moment the query matched it exactly and no
+        // longer shortcut shared the prefix — so whether your own typing
+        // survived depended on which other bookmarks you happened to own, and
+        // changed every time you added one. On an install with 200 shortcuts,
+        // eight of thirteen ordinary words were swallowed mid-word: "invoice"
+        // opened a bookmark at "in" and left "voice" behind, "github" arrived as
+        // "hub".
+        //
+        // The exact match still leads the list (see updateSearch), so a shortcut
+        // is one key longer than it was — type it and press Enter — and nothing
+        // can decide on your behalf that you had finished typing.
         this._scheduleUpdateSearch();
     }
 

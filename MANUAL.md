@@ -514,7 +514,9 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 - **Category headers** are keyboard-focusable: **Enter** or **Space** toggles collapse (`aria-expanded` updates).  
 - When you move the **mouse over bookmarks**, the stale keyboard highlight **softens** until your next keyboard move.  
 - **Enter** or **Space** opens the selected row.  
-- If the bookmark has a **shortcut** letter and you are not in an input, press that key to open. Six letters belong to the dashboard itself and act at once — **`c`** new category, **`g`** the jump chord, **`j`** / **`k`** move the highlight, **`t`** filter by tag, **`x`** tick a row — so open search with **`>`** first for a bookmark shortcut starting with one of them ( `c` and `g` used to wait out a hold so a tap could fall through).
+- If the bookmark has a **shortcut**, type it and press **`Enter`**. Typing filters the list; it never opens anything on its own. Before this, a shortcut fired the moment your query matched it exactly and no longer shortcut shared its letters — so whether your own word survived depended on which *other* bookmarks you owned: on an install with 200 shortcuts, eight of thirteen ordinary words were swallowed mid-word (`invoice` opened something at `in` and left `voice` behind; `github` arrived as `hub`). One extra keystroke buys a keyboard that behaves the same every day.
+- **While a row is selected the letters belong to the grid** — **`j`** / **`k`** move, **`x`** ticks, **`g`** starts the jump chord, **`t`** filters by the row's tag — and **`Esc`** hands them back to the search line. **`c`** is the exception: it adds a category whether or not a row is selected, so a search cannot begin with `c`; press **`>`** first.
+- **The shortcut field says what a letter costs.** Assigning `c`, `g`, `j`, `k` or `x` now shows what the dashboard does with it and when the bookmark is still reachable, beside the check that another bookmark already has it. Both the inline editor and the bookmark form say it.
 
 ### Hyprland / special setups
 

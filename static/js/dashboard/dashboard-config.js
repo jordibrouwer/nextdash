@@ -13516,6 +13516,7 @@ class DashboardConfig {
                         <input type="text" id="config-bm-shortcut" class="config-text config-bm-shortcut" data-bm-field="shortcut" maxlength="5" value="${esc(b.shortcut || '')}"
                                placeholder="${esc(this.t('config.bookmarkShortcutPlaceholder', 'Y, YS, YC'))}">
                         <p class="config-field-hint config-bm-conflict" data-bm-conflict="shortcut" hidden></p>
+                        <p class="config-field-hint config-bm-shortcut-hint" data-bm-shortcut-hint hidden></p>
                     </div>
 
                     <div class="config-bm-cell">
@@ -14944,9 +14945,19 @@ class DashboardConfig {
             el.textContent = msg || '';
             el.hidden = !msg;
         };
-        show('shortcut', shortcut && others.some((b) => String(b.shortcut || '').toUpperCase() === shortcut)
+        // Two things can make a letter a poor choice: another bookmark already
+        // has it, or the dashboard itself uses it. Only the first was ever said.
+        const taken = shortcut && others.some((b) => String(b.shortcut || '').toUpperCase() === shortcut);
+        const gridNote = window.ShortcutKeys?.gridKeyNote?.(shortcut, (key, fallback) => this.t(key, fallback)) || '';
+        show('shortcut', taken
             ? this.t('config.shortcutConflict', 'Shortcut already in use')
-            : '');
+            : gridNote);
+        const hint = editor.querySelector('[data-bm-shortcut-hint]');
+        if (hint) {
+            hint.textContent = window.ShortcutKeys?.usedShortcutsNote?.(
+                this.dash.allBookmarks, (key, fallback) => this.t(key, fallback), { pageId }) || '';
+            hint.hidden = !hint.textContent;
+        }
         const canon = (u) => window.BookmarkUrlUtils?.canonicalBookmarkURLKey?.(u) ?? String(u || '').trim().toLowerCase();
         show('url', url && others.some((b) => canon(b.url) === canon(url))
             ? this.t('config.urlConflictHint', 'This URL already exists on this page.')
