@@ -5221,7 +5221,8 @@
     "categoryNewLabel": "Create category \"{name}\"",
     "categoryNewFirst": "No categories yet — create the first",
     "sortModeAdded": "Recently added",
-    "sortModeOpens": "Most opened"
+    "sortModeOpens": "Most opened",
+    "trashLabel": "Open the trash — restore deleted items"
   },
   "quickstart": {
     "title": "Quick start",

@@ -24,6 +24,10 @@ class SearchComponent {
 
     static STATUS_FILTER_VALUES = new Set([
         'online', 'offline', 'broken', 'ok', 'pinned', 'unpinned', 'checked', 'unchecked',
+        // untagged is a first-class collection rule, a stats row and a config
+        // filter, and was the one tidy-up question the search bar could not ask.
+        // noted is its twin: a note is the thing you left to explain the link.
+        'untagged', 'tagged', 'noted', 'unnoted',
     ]);
 
     /**
@@ -225,7 +229,14 @@ class SearchComponent {
 
             // Don't trigger shortcuts if any modifier key is pressed
             // This allows browser shortcuts like Ctrl+W, Ctrl+R, Ctrl+Q, etc.
-            if (e.ctrlKey || e.altKey || e.metaKey) {
+            //
+            // Ctrl/Cmd+Enter is the exception: the grid has always honoured it to
+            // force a new tab whatever the open-in-new-tab setting says, and the
+            // overlay — where most opens actually happen — swallowed it here, so
+            // the chord never reached handleKeyPress at all.
+            const forceNewTab = (e.ctrlKey || e.metaKey) && !e.altKey && e.key === 'Enter'
+                && (this.searchActive || this.currentQuery.length > 0);
+            if (!forceNewTab && (e.ctrlKey || e.altKey || e.metaKey)) {
                 return;
             }
 
@@ -550,7 +561,7 @@ class SearchComponent {
         if (key === 'ENTER' && (this.searchActive || this.currentQuery.length > 0)) {
             e.preventDefault();
             this._flushSearchUpdate();
-            this.selectCurrentMatch();
+            this.selectCurrentMatch({ newTab: (e.ctrlKey || e.metaKey) && !e.altKey });
             return;
         }
         
@@ -867,29 +878,35 @@ class SearchComponent {
             category: '',
             status: '',
             page: '',
-            tag: ''
+            tag: '',
+            // Everything above, in the negative. Custom collections have had an
+            // "excludes" operator on every rule field since they were built, so
+            // "dev links that are not archived" was expressible in config and
+            // not in the bar — which is the shape most tidy-up questions take.
+            not: {},
         };
 
         const parts = (query || '').split(/\s+/).filter(Boolean);
         const remaining = [];
+        const KEYS = ['category', 'status', 'page', 'tag', 'opened', 'added'];
 
         parts.forEach((part) => {
-            const lower = part.toLowerCase();
-            if (lower.startsWith('category:')) {
-                filters.category = lower.slice(9);
-            } else if (lower.startsWith('status:')) {
-                filters.status = lower.slice(7);
-            } else if (lower.startsWith('page:')) {
-                filters.page = lower.slice(5);
-            } else if (lower.startsWith('tag:')) {
-                filters.tag = lower.slice(4);
-            } else if (lower.startsWith('opened:')) {
-                filters.opened = lower.slice(7);
-            } else if (lower.startsWith('added:')) {
-                filters.added = lower.slice(6);
-            } else {
+            const negated = part.startsWith('-') && part.length > 1;
+            const body = negated ? part.slice(1) : part;
+            const lower = body.toLowerCase();
+            const key = KEYS.find((name) => lower.startsWith(`${name}:`));
+            if (!key) {
                 remaining.push(part);
+                return;
             }
+            const value = lower.slice(key.length + 1);
+            if (negated) {
+                // An empty value ("-tag:") excludes nothing rather than
+                // everything, which is what a half-typed filter should do.
+                if (value) filters.not[key] = value;
+                return;
+            }
+            filters[key] = value;
         });
 
         return {
@@ -913,7 +930,12 @@ class SearchComponent {
     }
 
     _hasActiveFilters(filters) {
-        return Object.values(this._getActiveFilters(filters)).some((value) => Boolean(value));
+        const active = this._getActiveFilters(filters);
+        // `not` is an object, so a plain truthiness sweep would call an empty one
+        // an active filter and treat a bare query as filtered.
+        const { not = {}, ...scalars } = active;
+        return Object.values(scalars).some((value) => Boolean(value))
+            || Object.values(not).some((value) => Boolean(value));
     }
 
     _getCurrentFilterToken(rawQuery) {
@@ -941,7 +963,7 @@ class SearchComponent {
 
         const parsed = this.parseSearchFilters(text);
         if (parsed.query.length > 0) return false;
-        if (!Object.values(parsed.filters).some((value) => Boolean(value))) return false;
+        if (!this._hasActiveFilters(parsed.filters)) return false;
 
         const parts = text.split(/\s+/).filter(Boolean);
         return parts.every((part) => {
@@ -1241,68 +1263,98 @@ class SearchComponent {
         return fromDash || bookmark;
     }
 
+    /**
+     * Does one bookmark satisfy one filter key?
+     *
+     * Split out of matchesAdvancedFilters so the negative form can reuse it: a
+     * `-tag:x` is exactly `tag:x` with the answer flipped, and writing the
+     * predicate twice is how the two drift apart.
+     */
+    matchesFilterKey(bookmark, key, value) {
+        if (!value) return true;
+        const wanted = String(value).toLowerCase();
+
+        if (key === 'category') {
+            return String(bookmark.category || '').toLowerCase().includes(wanted);
+        }
+
+        if (key === 'tag') {
+            return (bookmark.tags || []).some((tag) => String(tag).toLowerCase().includes(wanted));
+        }
+
+        if (key === 'opened') {
+            return SearchComponent.matchesAgeFilter(bookmark.lastOpened, wanted);
+        }
+
+        if (key === 'added') {
+            return SearchComponent.matchesAgeFilter(bookmark.createdAt, wanted);
+        }
+
+        if (key === 'page') {
+            if (wanted === 'all' || wanted === 'global') return true;
+            const bookmarkPageId = Number(bookmark.pageId || bookmark.pageID || this.currentPageId || 0);
+            if (wanted === 'current') {
+                return !bookmarkPageId || bookmarkPageId === Number(this.currentPageId || 0);
+            }
+            if (/^\d+$/.test(wanted)) {
+                return bookmarkPageId === Number(wanted);
+            }
+            return true;
+        }
+
+        if (key === 'status') {
+            if (!SearchComponent.STATUS_FILTER_VALUES.has(wanted)) return true;
+            const hasStatus = bookmark.checkStatus === true;
+            const isPinned = bookmark.pinned === true;
+            const isBroken = Boolean(String(bookmark.lastError || '').trim());
+            const tagCount = (bookmark.tags || []).filter((tag) => String(tag).trim()).length;
+            const hasNote = Boolean(String(bookmark.note || '').trim());
+            const monitor = window.dashboardInstance?.statusMonitor;
+            const reachability = typeof monitor?.getBookmarkReachability === 'function'
+                ? monitor.getBookmarkReachability(bookmark)
+                : null;
+
+            switch (wanted) {
+                case 'checked': return hasStatus;
+                case 'unchecked': return !hasStatus;
+                case 'pinned': return isPinned;
+                case 'unpinned': return !isPinned;
+                case 'broken': return isBroken;
+                case 'ok': return hasStatus && !isBroken && reachability === 'online';
+                case 'online': return reachability === 'online';
+                case 'offline': return reachability === 'offline';
+                case 'untagged': return tagCount === 0;
+                case 'tagged': return tagCount > 0;
+                case 'noted': return hasNote;
+                case 'unnoted': return !hasNote;
+                default: return true;
+            }
+        }
+
+        return true;
+    }
+
     matchesAdvancedFilters(bookmark, filters) {
         if (!bookmark) return false;
         bookmark = this._resolveBookmarkForFilters(bookmark);
-
-        if (filters.category) {
-            const category = String(bookmark.category || '').toLowerCase();
-            if (!category.includes(filters.category)) {
-                return false;
-            }
-        }
-
-        if (filters.status) {
-            const normalized = filters.status.toLowerCase();
-            if (SearchComponent.STATUS_FILTER_VALUES.has(normalized)) {
-                const hasStatus = bookmark.checkStatus === true;
-                const isPinned = bookmark.pinned === true;
-                const isBroken = Boolean(String(bookmark.lastError || '').trim());
-                const monitor = window.dashboardInstance?.statusMonitor;
-                const reachability = typeof monitor?.getBookmarkReachability === 'function'
-                    ? monitor.getBookmarkReachability(bookmark)
-                    : null;
-
-                if (normalized === 'checked' && !hasStatus) return false;
-                if (normalized === 'unchecked' && hasStatus) return false;
-                if (normalized === 'pinned' && !isPinned) return false;
-                if (normalized === 'unpinned' && isPinned) return false;
-                if (normalized === 'broken' && !isBroken) return false;
-                if (normalized === 'ok' && !(hasStatus && !isBroken && reachability === 'online')) return false;
-                if (normalized === 'online' && reachability !== 'online') return false;
-                if (normalized === 'offline' && reachability !== 'offline') return false;
-            }
-        }
-
-        if (filters.tag) {
-            const t = filters.tag.toLowerCase();
-            if (!(bookmark.tags || []).some(tag => tag.toLowerCase().includes(t))) {
-                return false;
-            }
-        }
 
         // openCount, lastOpened and createdAt drive every smart collection and the
         // whole stats page, and were reachable from none of the filters — so
         // "added this month and never opened" was answerable in Config and not
         // from the search bar a keyboard-first user actually lives in.
-        if (filters.opened && !SearchComponent.matchesAgeFilter(bookmark.lastOpened, filters.opened)) {
-            return false;
-        }
-        if (filters.added && !SearchComponent.matchesAgeFilter(bookmark.createdAt, filters.added)) {
-            return false;
+        for (const key of ['category', 'status', 'tag', 'opened', 'added', 'page']) {
+            if (!this.matchesFilterKey(bookmark, key, filters[key])) {
+                return false;
+            }
         }
 
-        if (filters.page && filters.page !== 'all' && filters.page !== 'global') {
-            const pageValue = String(filters.page).toLowerCase();
-            const bookmarkPageId = Number(bookmark.pageId || bookmark.pageID || this.currentPageId || 0);
-            if (pageValue === 'current') {
-                if (bookmarkPageId && bookmarkPageId !== Number(this.currentPageId || 0)) {
-                    return false;
-                }
-            } else if (/^\d+$/.test(pageValue)) {
-                if (bookmarkPageId !== Number(pageValue)) {
-                    return false;
-                }
+        // The same predicates, inverted: a bookmark that matches an excluded
+        // filter is out.
+        const not = filters.not || {};
+        for (const key of Object.keys(not)) {
+            if (!not[key]) continue;
+            if (this.matchesFilterKey(bookmark, key, not[key])) {
+                return false;
             }
         }
 
@@ -2120,7 +2172,7 @@ class SearchComponent {
         this.updateSelectionHighlight();
     }
 
-    selectCurrentMatch() {
+    selectCurrentMatch({ newTab = false } = {}) {
         if (this.selectableMatches.length > 0 && this.selectedMatchIndex >= 0) {
             const selectedMatch = this.selectableMatches[this.selectedMatchIndex];
             if (selectedMatch.type === 'command-group-header') {
@@ -2181,13 +2233,13 @@ class SearchComponent {
             } else if (selectedMatch.type === 'hint-new' || selectedMatch.type === 'hint-finder') {
                 selectedMatch.action?.();
             } else {
-                this.openBookmark(selectedMatch.bookmark);
+                this.openBookmark(selectedMatch.bookmark, { newTab });
             }
         }
         // If no matches, do nothing (keep search open)
     }
 
-    openBookmark(bookmark) {
+    openBookmark(bookmark, { newTab = false } = {}) {
         this.recordSearchHistory(this.currentQuery);
         // Opening from search went uncounted before: it bypasses the dashboard row
         // handler that normally records the open. Attribute it to the search source.
@@ -2214,7 +2266,9 @@ class SearchComponent {
                 const link = document.createElement('a');
                 link.href = bookmark.url;
                 link.style.display = 'none'; // Hide the link
-                if (this.settings.openInNewTab) {
+                // newTab forces it whatever the setting says — the same
+                // promise Ctrl/Cmd+Enter makes on the grid.
+                if (newTab || this.settings.openInNewTab) {
                     link.target = '_blank';
                     link.rel = 'noopener noreferrer';
                 } else {

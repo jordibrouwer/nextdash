@@ -59,7 +59,7 @@ class SearchCommandsComponent {
                 id: 'settings-tools',
                 label: 'Settings & tools',
                 labelKey: 'commands.groupSettingsTools',
-                commands: ['config', 'backup', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'telemetry'],
+                commands: ['config', 'backup', 'trash', 'export', 'metadata', 'health', 'monitor', 'reload', 'cheat', 'help', 'whatsnew', 'telemetry'],
             },
         ];
         // Track which groups are expanded (none by default)
@@ -124,6 +124,7 @@ class SearchCommandsComponent {
             'collections': this.handleCollectionsCommand.bind(this),
             'opacity': this.handleOpacityCommand.bind(this),
             'backup': this.handleBackupCommand.bind(this),
+            'trash': this.handleTrashCommand.bind(this),
             'metadata': this.handleMetadataCommand.bind(this),
             'filter': this.handleFilterCommand.bind(this),
             'export': this.handleExportCommand.bind(this),
@@ -3556,6 +3557,32 @@ class SearchCommandsComponent {
             action: () => {
                 this._closeCommandPalette();
                 window.location.href = '/config#backups';
+                return { navigate: true };
+            },
+        }];
+    }
+
+    /**
+     * :trash — the 30-day recycle bin, from the dashboard.
+     *
+     * Deleted bookmarks, pages and categories have been kept for 30 days for a
+     * while, reachable only by mouse through Config → Data & backups → Trash.
+     * There was no command, no shortcut and no cheat-sheet row, and "trash" was
+     * not in the config-section list either, so even :config trash missed. The
+     * manual's own line — "the undo in the toast is for the moment after; the
+     * trash is for the next morning" — describes someone who is on the
+     * dashboard when the next morning comes.
+     */
+    handleTrashCommand(args, fullQuery) {
+        return [{
+            name: this._t('commands.trashLabel', 'Open the trash — restore deleted items'),
+            shortcut: ':TRASH',
+            type: 'command',
+            action: () => {
+                this._closeCommandPalette();
+                // The hash the config router already understands, so this needs
+                // no new target: section, then sub-tab.
+                window.location.hash = '#config/data-backups/trash';
                 return { navigate: true };
             },
         }];

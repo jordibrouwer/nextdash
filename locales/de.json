@@ -5220,7 +5220,8 @@
     "categoryNewLabel": "Kategorie „{name}“ erstellen",
     "categoryNewFirst": "Noch keine Kategorien — erstelle die erste",
     "sortModeAdded": "Kürzlich hinzugefügt",
-    "sortModeOpens": "Am häufigsten geöffnet"
+    "sortModeOpens": "Am häufigsten geöffnet",
+    "trashLabel": "Papierkorb öffnen — Gelöschtes wiederherstellen"
   },
   "quickstart": {
     "title": "Schnellstart",

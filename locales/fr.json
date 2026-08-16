@@ -5220,7 +5220,8 @@
     "categoryNewLabel": "Créer la catégorie « {name} »",
     "categoryNewFirst": "Aucune catégorie — crée la première",
     "sortModeAdded": "Récemment ajoutés",
-    "sortModeOpens": "Plus ouverts"
+    "sortModeOpens": "Plus ouverts",
+    "trashLabel": "Ouvrir la corbeille — restaurer des éléments supprimés"
   },
   "quickstart": {
     "title": "Démarrage rapide",

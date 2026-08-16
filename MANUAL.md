@@ -686,9 +686,14 @@ Three input modes share one overlay; switch with keys or footer chips.
 | `category:` | `category:dev` |
 | `tag:` | `tag:work` |
 | `page:` | `page:2`, `page:all`, `page:current` |
-| `status:` | `status:online`, `status:broken`, `status:pinned`, … |
+| `status:` | `status:online`, `status:broken`, `status:pinned`, `status:untagged`, `status:noted`, … |
 | `opened:` | `opened:today`, `opened:week`, `opened:month`, `opened:year`, `opened:never` |
 | `added:` | `added:today`, `added:week`, `added:month`, `added:year` |
+| `-` before any of them | `-tag:archive`, `-category:work`, `-status:pinned` |
+
+**Every filter also works in the negative.** A leading `-` excludes instead of selects, so `tag:dev -status:pinned` reads as "dev links I have not pinned". Custom collections have had an *excludes* operator on every rule field since they were built; the search bar could only say yes, which is the wrong half for a tidy-up question. A half-typed `-tag:` excludes nothing rather than everything.
+
+**`status:untagged` and `status:noted`** (with `tagged` / `unnoted` as their opposites) close the other gap: *untagged* was already a collection rule, a stats row and a config filter, and was the one thing the bar could not ask for — while a note is the sentence you left to explain why a link was worth keeping.
 
 Since **v1.0.4** the two age filters are offered while you type, like the others, with their words listed once the key is in — `never` only under `opened:`, since a bookmark has no "never added" state. While typing a partial value (e.g. `status:on`), autocomplete stays visible until the token is complete. `status:online` / `status:offline` use persisted reachability on monitored bookmarks.
 
@@ -1267,7 +1272,7 @@ Severity is inferred rather than declared: a request line takes its level from t
 
 ### Trash (Data & backups → Trash)
 
-Deleting is not final. Deleted **bookmarks, pages and categories** go to the trash and stay there for **30 days**, then go for good. The toast's undo is for the moment right after; the trash is for the next morning.
+Deleting is not final. Deleted **bookmarks, pages and categories** go to the trash and stay there for **30 days**, then go for good. The toast's undo is for the moment right after; the trash is for the next morning — and the next morning you are on the dashboard, so **`:trash`** opens it from there. It was reachable only by mouse before: no command, no shortcut, and `trash` was not in the config-section list either, so even `:config trash` missed.
 
 - **Search** — filters the list by name, URL, tag, category or the page it came from (**v1.0.2**). The count beside it says how many of the total are showing.
 - **Restore** — puts the bookmark back on its own page, at the position it had. If the page has shrunk since, it lands at the end rather than failing.

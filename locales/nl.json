@@ -5220,7 +5220,8 @@
     "categoryNewLabel": "Categorie \"{name}\" aanmaken",
     "categoryNewFirst": "Nog geen categorieën — maak de eerste",
     "sortModeAdded": "Recent toegevoegd",
-    "sortModeOpens": "Meest geopend"
+    "sortModeOpens": "Meest geopend",
+    "trashLabel": "Open de prullenbak — verwijderde items terugzetten"
   },
   "quickstart": {
     "title": "Snel starten",
