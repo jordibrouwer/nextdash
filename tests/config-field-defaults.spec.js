@@ -242,7 +242,7 @@ test.describe('the background re-check interval reaches the server', () => {
         }), { timeout: 10_000 }).toBe(168);
     });
 
-    test('both tabs show the same interval', async ({ page }) => {
+    test('the interval is offered in one place, and keeps what it was given', async ({ page }) => {
         await openStatusTab(page);
         await page.locator('[data-behavior-field="healthAutoRecheckIntervalHours"]').selectOption('12');
         await expect.poll(async () => page.evaluate(async () => {
@@ -250,8 +250,14 @@ test.describe('the background re-check interval reaches the server', () => {
             return (await res.json()).healthAutoRecheckIntervalHours;
         }), { timeout: 10_000 }).toBe(12);
 
+        // Data & backups used to carry a second copy of this control, on a tab
+        // about moving data around. Two controls over one setting is two places
+        // for it to read differently; the copy is gone rather than mirrored.
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('data-backups'));
-        await expect(page.locator('[data-backup-select="healthAutoRecheckIntervalHours"]')).toHaveValue('12');
+        await expect(page.locator('[data-backup-select="healthAutoRecheckIntervalHours"]')).toHaveCount(0);
+
+        await openStatusTab(page);
+        await expect(page.locator('[data-behavior-field="healthAutoRecheckIntervalHours"]')).toHaveValue('12');
     });
 
     /** Every option offered must be inside the server's 1–168 hour clamp. */

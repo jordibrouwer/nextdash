@@ -55,7 +55,9 @@ const bar = '#config-appearance-body .config-changed-bar';
 const toggle = '#config-appearance-body [data-config-action="toggle-changed"]';
 
 test.describe('appearance only-changed filter', () => {
-    for (const tab of ['general', 'layout', 'display', 'toolbar', 'branding']) {
+    // Branding is not a tab: one toggle, a text field and an upload live on
+    // Display rather than owning a tab of their own.
+    for (const tab of ['general', 'layout', 'display', 'toolbar']) {
         test(`the ${tab} tab offers the filter`, async ({ page }) => {
             await openAppearance(page, tab);
             await expect(page.locator(bar)).toBeVisible();
@@ -137,7 +139,8 @@ test.describe('appearance only-changed filter', () => {
     });
 
     test('a stock tab disables the toggle and says so', async ({ page }) => {
-        await openAppearance(page, 'branding', [
+        // Branding's controls, now on Display, at their defaults.
+        await openAppearance(page, 'display', [
             ['enableCustomTitle', false],
             ['customTitle', ''],
         ]);

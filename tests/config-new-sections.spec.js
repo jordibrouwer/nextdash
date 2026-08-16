@@ -98,10 +98,11 @@ test.describe('config: sections restored from the old config', () => {
      * which the dashboard loads for other reasons — so assert the animation
      * actually resolves rather than only that the markup is present.
      */
-    test('the about tab carries the Ko-fi support button', async ({ page }) => {
+    test('the About section carries the Ko-fi support button', async ({ page }) => {
         await loadDashboard(page);
-        await openSection(page, 'help');
-        await page.locator('[data-help-tab="about"]').click();
+        // About is a section of its own under Help — what this thing is and who
+        // wrote it is not a question about how something works.
+        await openSection(page, 'about');
 
         const btn = page.locator('.wn-kofi-btn');
         await expect(btn).toBeVisible();
@@ -123,8 +124,8 @@ test.describe('config: sections restored from the old config', () => {
         expect(styled.starAnim).not.toBe('none');
         expect(styled.stars).toBe(4);
 
-        // It belongs to About, not to every help tab.
-        await page.locator('[data-help-tab="start"]').click();
+        // It belongs to About, not to Help.
+        await openSection(page, 'help');
         await expect(page.locator('.wn-kofi-btn')).toHaveCount(0);
     });
 
@@ -135,7 +136,8 @@ test.describe('config: sections restored from the old config', () => {
         await expect(page.locator('.config-help-tips li').first()).toBeVisible();
         await page.locator('[data-help-tab="search"]').click();
         await expect(page.locator('[data-help-action="cheatsheet"]')).toBeVisible();
-        await page.locator('[data-help-tab="about"]').click();
+        // What's new moved out with About.
+        await openSection(page, 'about');
         await expect(page.locator('[data-help-action="whats-new"]')).toBeVisible();
     });
 
@@ -572,7 +574,10 @@ test.describe('config: font size applies live', () => {
  * were actually missing rather than the wording, which translators will edit.
  */
 test.describe('config help coverage', () => {
-    const TABS = ['start', 'config', 'organizing', 'search', 'health', 'data', 'about'];
+    // About left Help for a section of its own; Tips and Monitoring joined it,
+    // the second because Health had grown to nine panels against a median of
+    // four.
+    const TABS = ['start', 'tips', 'config', 'organizing', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data'];
 
     test('every tab renders prose with no unresolved locale keys', async ({ page }) => {
         const errors = [];
@@ -620,6 +625,7 @@ test.describe('config help coverage', () => {
         // roughly three times that. This guards against a regression that
         // silently drops sections.
         expect(total).toBeGreaterThan(16000);
+        // eslint-disable-next-line no-unused-expressions
     });
 
     test('reusing the old prose did not repoint the old config’s own titles', async ({ page }) => {
@@ -713,10 +719,12 @@ test.describe('statistics tabs', () => {
         await expect(page.locator('[data-stats-action="export"]')).toHaveCount(1);
         await expect(page.locator('.config-tiles')).toBeVisible();
 
-        // The range picker drives the activity chart, so it lives there.
+        // The range picker drives the activity chart, so it lives there. Export
+        // does not: it sits in the foot beside the "worked out at" stamp, on
+        // every sub-tab, because it carries all of their figures.
         await page.locator('[data-stats-tab="activity"]').click();
         await expect(page.locator('[data-stats-range]').first()).toBeVisible();
-        await expect(page.locator('[data-stats-action="export"]')).toHaveCount(0);
+        await expect(page.locator('[data-stats-action="export"]')).toHaveCount(1);
 
         await page.locator('[data-stats-tab="health"]').click();
         await expect(page.locator('#config-stats-health')).toBeVisible();
