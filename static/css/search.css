@@ -1058,3 +1058,46 @@ body[data-button-position="bottom-right"] .shortcut-search .search-container {
     .sfh-seg { animation: none !important; opacity: 1 !important; clip-path: none !important; }
     .search-flow-hint { transition: opacity 0.15s ease !important; }
 }
+
+/* The key that starts the mode, in front of the mode it starts. The tabs under
+   the line name all four; this puts the convention where the typing happens, so
+   "> to search" is legible without reading the legend — and so the way past a
+   single-letter bookmark shortcut is visible when you need it. */
+.search-chevron {
+    font-family: var(--font-family-main);
+    margin-right: 0.3rem;
+    font-size: 0.85em;
+    font-weight: var(--font-weight-semibold);
+    color: var(--accent-success);
+    opacity: 0.85;
+}
+
+.search-chevron[data-mode="command"] { color: var(--accent-primary); }
+.search-chevron[data-mode="finder"] { color: var(--accent-warning); }
+.search-chevron[data-mode="global"],
+.search-chevron[data-mode="fuzzy"] { color: var(--text-secondary); }
+
+/* Shown only once there is something to clear. Escape does the same, but a line
+   you typed into needs an exit you can point at — and touch has no Escape. */
+.search-clear {
+    margin-left: 0.5rem;
+    padding: 0 0.35em;
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.6em;
+    line-height: 1.6;
+    cursor: pointer;
+}
+
+.search-clear:hover,
+.search-clear:focus-visible {
+    color: var(--accent-error);
+    border-color: color-mix(in srgb, var(--accent-error) 45%, transparent);
+}
+
+.search-clear[hidden] {
+    display: none;
+}

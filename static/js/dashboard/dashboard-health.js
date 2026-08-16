@@ -2718,11 +2718,47 @@ class DashboardHealth {
         return Array.isArray(this.report?.trend) ? this.report.trend : [];
     }
 
-    /** A day's healthy share as a percentage, or null for a day with nothing in it. */
-    trendPercent(point) {
+    /**
+     * The series the trend chart can draw.
+     *
+     * HealthTrendPoint has stored nine counters a day for ninety days —
+     * broken, monitors down, monitored, unchecked, stale, unused, duplicate and
+     * the average score, alongside healthy and total — and the chart read two of
+     * them. The other eight were written on every report build and shown
+     * nowhere. Nothing on the server changes for this.
+     *
+     * `percent` series share the fixed 0–100 axis that makes a two-point move
+     * legible; counts get their own axis, scaled to what the window holds.
+     */
+    static TREND_SERIES = [
+        { id: 'healthy', key: 'h', mode: 'percent', labelKey: 'healthTrendSeriesHealthy', fallback: 'Healthy %' },
+        { id: 'score', key: 'c', mode: 'percent', labelKey: 'healthTrendSeriesScore', fallback: 'Score' },
+        { id: 'broken', key: 'b', mode: 'count', labelKey: 'healthTrendSeriesBroken', fallback: 'Broken' },
+        { id: 'down', key: 'd', mode: 'count', labelKey: 'healthTrendSeriesDown', fallback: 'Monitors down' },
+        { id: 'stale', key: 's', mode: 'count', labelKey: 'healthTrendSeriesStale', fallback: 'Stale' },
+        { id: 'unchecked', key: 'u', mode: 'count', labelKey: 'healthTrendSeriesUnchecked', fallback: 'Unchecked' },
+    ];
+
+    /** The series on screen, defaulting to the one the chart always drew. */
+    activeTrendSeries() {
+        const id = this.trendSeriesId || 'healthy';
+        return DashboardHealth.TREND_SERIES.find((s) => s.id === id)
+            || DashboardHealth.TREND_SERIES[0];
+    }
+
+    /** A day's value for the active series, or null for a day with nothing in it. */
+    trendPercent(point, series = this.activeTrendSeries()) {
         const total = Number(point?.n) || 0;
         if (!total) return null;
-        return Math.round(((Number(point?.h) || 0) / total) * 100);
+        if (series.mode === 'count') {
+            return Number(point?.[series.key]) || 0;
+        }
+        if (series.key === 'c') {
+            // Score is already a 0–100 average, not a share of the total.
+            const score = Number(point?.c);
+            return Number.isFinite(score) && score > 0 ? Math.round(score) : null;
+        }
+        return Math.round(((Number(point?.[series.key]) || 0) / total) * 100);
     }
 
     /**
@@ -2781,8 +2817,16 @@ class DashboardHealth {
         const points = this.trendPoints();
         if (points.length < 3) return '';
 
-        const values = points.map((p) => this.trendPercent(p));
+        const series = this.activeTrendSeries();
+        const values = points.map((p) => this.trendPercent(p, series));
         if (values.filter((v) => v !== null).length < 3) return '';
+
+        // A percentage has a fixed 0–100 axis so a two-point move looks like a
+        // two-point move; a count has no natural ceiling, so it takes the
+        // window's own maximum with a little headroom.
+        const maxValue = series.mode === 'count'
+            ? Math.max(1, ...values.filter((v) => v !== null)) * 1.1
+            : 100;
 
         // Sized for the note row rather than the button row it used to sit in.
         // The taller box is what makes a two-point move legible on a fixed
@@ -2795,7 +2839,7 @@ class DashboardHealth {
 
         // Fixed 0–100 axis rather than min/max scaling: a collection that moved
         // between 91% and 93% should look flat, not like a cliff.
-        const yFor = (v) => (h - padY - (v / 100) * plotH).toFixed(1);
+        const yFor = (v) => (h - padY - (v / maxValue) * plotH).toFixed(1);
 
         // Days with no recorded point break the line instead of interpolating,
         // matching how the response sparkline treats missing buckets.
@@ -2825,9 +2869,9 @@ class DashboardHealth {
         // Just the ceiling and the midpoint. At this height the quarter lines
         // crowded the plot, and these two are the ones that carry meaning: where
         // 100% sits, and which half of the range the line is in.
-        const grid = [50, 100].map((v) => {
+        const grid = [maxValue / 2, maxValue].map((v) => {
             const y = yFor(v);
-            const top = v === 100;
+            const top = v === maxValue;
             return `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="currentColor"
                           stroke-width="0.5" ${top ? 'stroke-dasharray="3 3"' : ''}
                           opacity="${top ? 0.45 : 0.2}"/>`;
@@ -2854,7 +2898,7 @@ class DashboardHealth {
             const day = this.trendPointLabel(point);
             const readout = v === null
                 ? this.t('dashboard.healthTrendNoData', 'no reading')
-                : `${v}%`;
+                : (series.mode === 'count' ? String(v) : `${v}%`);
             return `<button type="button" class="health-view-trend-zone"
                         style="left:${(i * zoneW).toFixed(3)}%;width:${zoneW.toFixed(3)}%"
                         data-trend-day="${this.escape(day)}"
@@ -2866,8 +2910,14 @@ class DashboardHealth {
         return `<div class="health-view-trend">
             <div class="health-view-trend-head">
                 <span class="health-view-trend-title">${this.escape(
-                    this.t('dashboard.healthTrendTitle', 'Healthy over time')
+                    this.t(`dashboard.${series.labelKey}`, series.fallback)
                 )}</span>
+                <span class="health-view-trend-series">${DashboardHealth.TREND_SERIES.map((entry) => `
+                    <button type="button" class="health-view-trend-series-btn${entry.id === series.id ? ' is-active' : ''}"
+                            data-trend-series="${this.escape(entry.id)}"
+                            aria-pressed="${entry.id === series.id ? 'true' : 'false'}">${this.escape(
+                                this.t(`dashboard.${entry.labelKey}`, entry.fallback)
+                            )}</button>`).join('')}</span>
                 <button type="button" class="view-help-btn health-view-trend-help" data-health-trend-help
                         aria-haspopup="dialog"
                         title="${this.escape(helpLabel)}"
@@ -2876,7 +2926,9 @@ class DashboardHealth {
             <div class="health-view-trend-plot">
                 <!-- Outside the SVG: preserveAspectRatio="none" would stretch
                      the type along with the plot. -->
-                <span class="health-view-trend-axis health-view-trend-axis--max">100%</span>
+                <span class="health-view-trend-axis health-view-trend-axis--max">${this.escape(
+                    series.mode === 'count' ? String(Math.round(maxValue)) : '100%'
+                )}</span>
                 <svg class="health-view-trend-chart" viewBox="0 0 ${w} ${h}"
                      preserveAspectRatio="none"
                      role="img" aria-label="${this.escape(label)}">
@@ -2890,7 +2942,9 @@ class DashboardHealth {
             <div class="health-view-trend-foot">
                 <span class="health-view-trend-caption">${this.escape(caption)}</span>
                 <span class="health-view-trend-now">${this.escape(
-                    this.t('dashboard.healthTrendNow', 'now {value}%', { value: last })
+                    series.mode === 'count'
+                        ? this.t('dashboard.healthTrendNowCount', 'now {value}', { value: last })
+                        : this.t('dashboard.healthTrendNow', 'now {value}%', { value: last })
                 )}</span>
             </div>
         </div>`;
@@ -2918,6 +2972,24 @@ class DashboardHealth {
      * stays in CSS percentages — see the comment where they are built.
      */
     bindTrendChart(root) {
+        // Switching series redraws the chart in place: the note row it sits in
+        // is rebuilt by the caller, and re-rendering the whole view would scroll
+        // the list back to the top for a chart change.
+        root.querySelectorAll('[data-trend-series]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-trend-series');
+                if (!id || id === this.trendSeriesId) return;
+                this.trendSeriesId = id;
+                window.nextdashTrack?.('health:trend-series', { series: id });
+                const holder = root;
+                holder.innerHTML = this.renderTrendChart();
+                holder.querySelector('[data-health-trend-help]')?.addEventListener('click', () => {
+                    this.showTrendExplainer();
+                });
+                this.bindTrendChart(holder);
+            });
+        });
+
         const plot = root.querySelector('.health-view-trend-plot');
         if (!plot) return;
         const tip = plot.querySelector('.health-view-trend-tip');
@@ -4775,18 +4847,27 @@ class DashboardHealth {
      */
     renderUptimeTiles(stats) {
         const windows = [
-            [this.t('dashboard.healthStatsUptime24h', '24 hours'), stats?.uptime24h],
-            [this.t('dashboard.healthStatsUptime7d', '7 days'), stats?.uptime7d],
-            [this.t('dashboard.healthStatsUptime30d', '30 days'), stats?.uptime30d],
+            [this.t('dashboard.healthStatsUptime24h', '24 hours'), stats?.uptime24h, 24 * 3600_000],
+            [this.t('dashboard.healthStatsUptime7d', '7 days'), stats?.uptime7d, 7 * 24 * 3600_000],
+            [this.t('dashboard.healthStatsUptime30d', '30 days'), stats?.uptime30d, 30 * 24 * 3600_000],
         ];
         const noData = this.t('dashboard.healthStatsNoData', 'no data');
-        const tiles = windows.map(([label, win]) => {
+        // How far the samples actually reach. History is capped per URL, so a
+        // 5-minute monitor holds about a week — and its "30 days" figure used to
+        // be computed over that week and labelled as a month anyway.
+        const covered = Number(stats?.coveredMs) || 0;
+        const tiles = windows.map(([label, win, windowMs]) => {
             const value = this.formatUptime(win);
             const samples = Number(win?.samples) || 0;
             const cls = value ? '' : ' health-monitor-stat--empty';
-            const sub = samples
-                ? this.t('dashboard.healthStatsChecks', '{count} checks', { count: samples })
-                : '';
+            const short = covered > 0 && samples > 0 && covered < windowMs * 0.9;
+            const sub = short
+                ? this.t('dashboard.healthStatsCoveredOnly', 'only {span} of history', {
+                    span: this.formatDuration(covered),
+                })
+                : (samples
+                    ? this.t('dashboard.healthStatsChecks', '{count} checks', { count: samples })
+                    : '');
             return `<div class="health-monitor-stat${cls}">
                 <span class="health-monitor-stat-label">${this.escape(label)}</span>
                 <span class="health-monitor-stat-value">${this.escape(value || noData)}</span>

@@ -58,6 +58,18 @@ type MonitorStats struct {
 	LastSample  int64 `json:"lastSample,omitempty"`
 	LastPingMs  int   `json:"lastPingMs,omitempty"`
 	TotalChecks int   `json:"totalChecks"`
+	// CoveredMs is how far back this monitor's samples actually reach.
+	//
+	// The retention window is 30 days, but maxHealthSamplesPerURL trims first
+	// for anything checked often: at the 5-minute floor, 2000 samples are about
+	// seven days. The 30-day figure was still printed as "30d", computed over
+	// whatever happened to be there — so a number that described a week was
+	// labelled a month, and nothing on screen said so.
+	//
+	// Reporting the span lets the view mark a window it cannot honestly fill.
+	// Keeping every sample instead would mean rewriting megabytes every minute;
+	// a daily roll-up is the real answer and a larger piece of work.
+	CoveredMs int64 `json:"coveredMs,omitempty"`
 }
 
 // uptimeRatio computes the reachable fraction over the window ending at now.
@@ -111,12 +123,16 @@ func deriveIncidents(samples []HealthSample, now time.Time) []HealthIncident {
 			}
 			current.Checks++
 			current.End = s.T
-			// The reason comes from the sample's HTTP status, which is all the
-			// history keeps: a network-level failure stores no code, so it stays
-			// blank rather than inventing a cause. Later codes in the same outage
-			// win, so a run that ends 500 is not still labelled with its first 503.
+			// The reason is the HTTP status when there is one, and the recorded
+			// failure class when there is not. Before samples carried a class,
+			// every network-level failure — DNS, timeout, refused, TLS — reached
+			// this list with a blank reason, because a network failure stores no
+			// code. Later samples in the same outage win, so a run that ends 500
+			// is not still labelled with its first 503.
 			if s.Code > 0 {
 				current.Reason = "HTTP " + strconv.Itoa(s.Code)
+			} else if s.Fail != "" {
+				current.Reason = failureClassReason(s.Fail)
 			}
 			continue
 		}
@@ -252,6 +268,7 @@ func buildMonitorStats(samples []HealthSample, intervalMinutes int, now time.Tim
 		LastSample:      last.T,
 		LastPingMs:      last.PingMs,
 		TotalChecks:     len(samples),
+		CoveredMs:       last.T - samples[0].T,
 	}
 
 	incidents := deriveIncidents(samples, now)

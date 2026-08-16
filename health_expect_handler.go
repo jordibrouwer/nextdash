@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -140,5 +141,152 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		"expectStatus":     applied.ExpectStatus,
 		"watchDrift":       applied.WatchDrift,
 		"notifyMuted":      applied.NotifyMuted,
+	})
+}
+
+// bulkExpectRequest names one field of an expectation per pointer, so a batch
+// can set only what the caller asked about. A nil pointer means "leave this
+// alone", which is what separates a bulk edit from the single-bookmark
+// endpoint's everything-replaces-everything rule: muting twelve bookmarks
+// during a known outage must not also clear the keyword checks they carry.
+type bulkExpectRequest struct {
+	Targets          []checkModeTarget `json:"targets"`
+	ExpectStatus     *string           `json:"expectStatus,omitempty"`
+	ExpectText       *string           `json:"expectText,omitempty"`
+	ExpectTextAbsent *bool             `json:"expectTextAbsent,omitempty"`
+	WatchDrift       *bool             `json:"watchDrift,omitempty"`
+	NotifyMuted      *bool             `json:"notifyMuted,omitempty"`
+}
+
+// SetBookmarkExpectationsBulk applies one expectation change to a list of
+// bookmarks.
+//
+// Check mode and monitor interval were the only per-bookmark health settings
+// that could be set on several rows at once. Everything SetBookmarkExpectations
+// writes — expected status, keyword, drift watching, muting — was strictly one
+// bookmark per request, so muting twelve during a known outage, or allowing
+// 200,401 on everything behind the same SSO proxy, was twelve dialogs. The
+// settings you most want to apply to a group were the ones that could not be.
+//
+// Same shape as setCheckModeForTargets on purpose: grouped per page for one
+// write each, stale entries skipped rather than failing the batch, and both
+// counts reported so the caller can say what actually happened.
+func (h *Handlers) SetBookmarkExpectationsBulk(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
+
+	var req bulkExpectRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	if len(req.Targets) == 0 {
+		http.Error(w, "targets are required", http.StatusBadRequest)
+		return
+	}
+	if req.ExpectStatus == nil && req.ExpectText == nil && req.ExpectTextAbsent == nil &&
+		req.WatchDrift == nil && req.NotifyMuted == nil {
+		http.Error(w, "nothing to change", http.StatusBadRequest)
+		return
+	}
+
+	var (
+		status string
+		text   string
+	)
+	if req.ExpectStatus != nil {
+		status = normalizeExpectStatus(*req.ExpectStatus)
+	}
+	if req.ExpectText != nil {
+		text = strings.TrimSpace(*req.ExpectText)
+		if len(text) > expectTextMaxLen {
+			http.Error(w, "expectText is too long", http.StatusBadRequest)
+			return
+		}
+	}
+
+	byPage := map[int][]checkModeTarget{}
+	skipped := 0
+	for _, t := range req.Targets {
+		if t.PageID <= 0 || t.Index < 0 || strings.TrimSpace(t.URL) == "" {
+			skipped++
+			continue
+		}
+		byPage[t.PageID] = append(byPage[t.PageID], t)
+	}
+
+	changed := 0
+	for pageID, pageTargets := range byPage {
+		err := h.store.MutateBookmarksOnPage(pageID, func(current []Bookmark) ([]Bookmark, error) {
+			for _, t := range pageTargets {
+				if t.Index >= len(current) {
+					skipped++
+					continue
+				}
+				if canonicalBookmarkURLKey(current[t.Index].URL) != canonicalBookmarkURLKey(t.URL) {
+					skipped++
+					continue
+				}
+				bm := &current[t.Index]
+				if req.ExpectStatus != nil {
+					bm.ExpectStatus = status
+				}
+				if req.ExpectText != nil {
+					bm.ExpectText = text
+					// Absent-mode only means something with a keyword to look
+					// for, exactly as the single-bookmark path enforces.
+					if text == "" {
+						bm.ExpectTextAbsent = false
+					}
+				}
+				if req.ExpectTextAbsent != nil && bm.ExpectText != "" {
+					bm.ExpectTextAbsent = *req.ExpectTextAbsent
+				}
+				if req.NotifyMuted != nil {
+					bm.NotifyMuted = *req.NotifyMuted
+				}
+				if req.WatchDrift != nil {
+					wasWatching := bm.WatchDrift
+					bm.WatchDrift = *req.WatchDrift
+					// Same rule as the single path: off clears the baseline and
+					// the finding, and on starts from nothing rather than
+					// resurrecting what was there before it was switched off.
+					if !bm.WatchDrift || !wasWatching {
+						bm.DriftURL = ""
+						bm.DriftTitle = ""
+						bm.DriftFingerprint = ""
+						bm.DriftNoticed = ""
+						bm.DriftReason = ""
+						bm.DriftSince = 0
+					}
+				}
+				// Clearing the expectation clears the failure it caused, so a
+				// bookmark marked down for a keyword does not stay down with no
+				// visible reason left.
+				if bm.ExpectText == "" && bm.ExpectStatus == "" && isContentFailure(bm.LastError) {
+					bm.LastError = ""
+				}
+				changed++
+			}
+			return current, nil
+		})
+		if err != nil {
+			log.Printf("expectations: failed to update page %d: %v", pageID, err)
+			http.Error(w, "Failed to update bookmarks", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	h.invalidateHealthReportCache()
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"changed": changed,
+		"skipped": skipped,
 	})
 }

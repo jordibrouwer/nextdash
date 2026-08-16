@@ -590,6 +590,14 @@
     margin: 0 0 16px;
 }
 
+/* The tab's own filter, at the end of the bar it shares with "Only changed":
+   both narrow what is below, so they belong on one row. Pushed right so the
+   count stays next to the button it belongs to. */
+.config-settings-filter {
+    margin-left: auto;
+    inline-size: min(16rem, 100%);
+}
+
 .config-changed-count {
     color: var(--text-muted, #888);
     font-size: calc(var(--font-size-text) * 0.914);
@@ -750,11 +758,84 @@
     gap: 6px;
 }
 
+/* The sub-tab strip and the page scope share a row: the scope applies to
+   every tab, so it belongs beside them rather than inside one. Wraps under the
+   tabs on a narrow window. */
+.config-stats-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.config-stats-scope {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.config-stats-scope-label {
+    font-size: calc(var(--font-size-text) * 0.86);
+    color: var(--text-muted, #888);
+}
+
+.config-stats-scope-note {
+    margin-top: 0;
+}
+
+/* The healthy share over time. Sits above the figures it dates, on a fixed
+   0–100 axis; the colour is the direction of travel, and the summary beside it
+   says the same thing in words for anyone who cannot read a 44px line. */
+.config-stats-trend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 0 0 14px;
+    color: var(--text-muted, #888);
+}
+
+.config-stats-trend--good { color: var(--accent-success, #3fa45b); }
+.config-stats-trend--bad { color: var(--accent-danger, #c0524a); }
+
+.config-stats-trend-chart {
+    width: 240px;
+    max-width: 100%;
+    height: 44px;
+    flex: 0 1 240px;
+}
+
+.config-stats-trend-summary {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.86);
+    color: var(--text-secondary, #666);
+    font-variant-numeric: tabular-nums;
+}
+
+/* The foot of the section: when the figures were worked out, and the two
+   controls that act on all of them. Wraps on a narrow window so the stamp and
+   the buttons stack rather than crushing each other. */
+.config-stats-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.config-stats-foot-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
 /* When the figures above were worked out. Recessive — it dates the page, it is
    not one of its numbers. */
 .config-stats-updated {
-    margin: 14px 0 0;
-    text-align: right;
+    margin: 0;
     font-size: calc(var(--font-size-text) * 0.78);
     color: var(--text-muted, #888);
     font-variant-numeric: tabular-nums;
@@ -1245,15 +1326,30 @@
 .config-theme-picker {
     position: relative;
     display: inline-block;
+    max-width: 100%;
 }
 
-/* Matches the arrow and text alignment of the real selects beside it. */
+/* Matches the arrow and text alignment of the real selects beside it.
+   Wide enough for a theme name on one line: at 12rem the closed button was
+   narrower than most of what it has to show — "Chartreuse Static [light]" is
+   25 characters — so the label wrapped and the field stood two lines tall.
+   The floor is in ch rather than rem so it tracks the configured text size
+   instead of guessing at it; max-content lets a longer custom name push wider,
+   up to a cap, and past that the label ellipsises rather than wrapping. */
 .config-theme-picker-button {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    min-width: 12rem;
+    width: max-content;
+    min-width: 26ch;
+    max-width: min(24rem, 100%);
     text-align: left;
+}
+
+.config-theme-picker-button [data-theme-picker-label] {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .config-theme-picker-button::after {
@@ -3095,10 +3191,60 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-bm-meta-category {
-    margin: 0.15rem 0 0;
-    font-size: 0.78rem;
+    margin: 0.25rem 0 0;
+    /* Larger than the 0.78rem it was: this line answers "where does this live",
+       which is the question the list is most often open for, and it was set
+       smaller than the tag chips beside it. */
+    font-size: 0.86rem;
     color: var(--text-secondary);
     overflow-wrap: anywhere;
+}
+
+/* Page › category as one pill in two halves. Bordered rather than underlined:
+   the click filters the list, and an underline promises navigation. Squarer
+   than the tag chips above it, so the two read as different kinds of fact. */
+.config-bm-crumb {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    max-width: 100%;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+}
+
+.config-bm-crumb-part {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+/* The page is the container, the category the thing inside it: the muted half
+   and the plain half say which is which without a label. */
+.config-bm-crumb-page {
+    color: var(--text-tertiary);
+}
+
+.config-bm-crumb-category {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.config-bm-crumb-part:hover,
+.config-bm-crumb-part:focus-visible {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.14em;
+}
+
+.config-bm-crumb-sep {
+    color: var(--text-tertiary);
+    font-size: 0.9em;
 }
 
 .config-bm-meta-footer {
@@ -3918,6 +4064,72 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-muted, #888);
 }
 
+/* A help panel's heading row: the title, and the link that names it. The
+   button stays faint until the panel is hovered or it has focus — a row of
+   chain links down the page would compete with the headings. */
+.config-help-panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.config-help-panel-link {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: calc(var(--font-size-text) * 0.9);
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    color: var(--text-muted, #888);
+}
+
+.config-help-panel:hover .config-help-panel-link,
+.config-help-panel-link:focus-visible {
+    opacity: 0.8;
+}
+
+/* Where a link landed. Fades out on its own — a permanent highlight would
+   still be there the next time the tab is opened. */
+.config-help-panel.is-linked {
+    outline: 2px solid var(--accent-primary, #4a90d9);
+    outline-offset: 4px;
+    border-radius: 8px;
+    transition: outline-color 0.6s ease;
+}
+
+/* Whether the feature this panel describes is on for the reader. */
+.config-help-state {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 10px;
+    font-size: calc(var(--font-size-text) * 0.88);
+    color: var(--text-secondary, #666);
+}
+
+.config-help-state-dot {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: var(--text-muted, #888);
+    flex: none;
+}
+
+.config-help-state.is-on .config-help-state-dot { background: var(--accent-success, #3fa45b); }
+.config-help-state.is-off .config-help-state-dot { background: var(--text-muted, #888); }
+
+/* The full tip catalogue on its own tab. */
+.config-help-tips {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 6px;
+}
+
 /* The wordmark sits on its own plate rather than on the panel background.
    It is bright green on transparency — the colour it is on a terminal — which
    a light theme would leave barely legible, so the plate is dark in both
@@ -4066,8 +4278,14 @@ body.no-animations .config-new-features-panel-star {
     gap: 8px;
 }
 
-/* A native colour input needs its chrome stripped to read as a swatch. */
-.config-theme-picker {
+/* A native colour input needs its chrome stripped to read as a swatch.
+   It has a name of its own now. It used to be .config-theme-picker, which the
+   theme listbox up the file also answers to — and being the later rule, it
+   sized that listbox's wrapper to 34px. Harmless while the button inside
+   carried its own width; not harmless the moment anything in there resolved a
+   percentage against its container. .config-theme-swatch was not free either:
+   that is the 16px dot in the theme list. */
+.config-theme-color-input {
     inline-size: 34px;
     block-size: 28px;
     padding: 0;
@@ -4078,9 +4296,9 @@ body.no-animations .config-new-features-panel-star {
     flex: none;
 }
 
-.config-theme-picker::-webkit-color-swatch-wrapper { padding: 2px; }
-.config-theme-picker::-webkit-color-swatch { border: none; border-radius: 4px; }
-.config-theme-picker::-moz-color-swatch { border: none; border-radius: 4px; }
+.config-theme-color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+.config-theme-color-input::-webkit-color-swatch { border: none; border-radius: 4px; }
+.config-theme-color-input::-moz-color-swatch { border: none; border-radius: 4px; }
 
 .config-theme-hex {
     flex: 1 1 110px;

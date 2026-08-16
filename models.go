@@ -189,6 +189,7 @@ type Settings struct {
 	ShowTagCloudButton            bool                         `json:"showTagCloudButton"`                      // Dashboard / key: horizontal tag cloud toggle
 	TagCloudDefaultMigrated       bool                         `json:"tagCloudDefaultMigrated,omitempty"`       // one-time: enable tag cloud for existing installs
 	LinkPreviewCardsOffMigrated   bool                         `json:"linkPreviewCardsOffMigrated,omitempty"`   // one-time: default hover preview cards to off
+	ShortcutTooltipsOffMigrated   bool                         `json:"shortcutTooltipsOffMigrated,omitempty"`   // one-time: default the toolbar shortcut hints to off
 	ConfigButtonDefaultOnMigrated bool                         `json:"configButtonDefaultOnMigrated,omitempty"` // one-time: restore config header icon after visibility fix
 	ShowSearchFlowBanner          bool                         `json:"showSearchFlowBanner"`
 	ShowCheatSheetButton          bool                         `json:"showCheatSheetButton"`
@@ -283,6 +284,11 @@ type Settings struct {
 	AnalyticsOptIn                bool                         `json:"analyticsOptIn"`       // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
 	EnableSessionTips             bool                         `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
 	ShowShortcutTooltips          bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default on, opt-out in Config → Behavior or `:shortcuts off`)
+	ShowGridKeyLegend             bool                         `json:"showGridKeyLegend"`
+	// HealthCheckTimeoutSeconds is how long one availability check may take.
+	// 0 means the built-in default (3s), which is what every install had before
+	// this was a choice. Clamped to 2–30 on save.
+	HealthCheckTimeoutSeconds     int                          `json:"healthCheckTimeoutSeconds,omitempty"`    // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
 	QuickStart                    QuickStartState              `json:"quickStart"`           // First-run quick-start progress (server-side, per-user)
 	// ConfigGeneralLayer is the last Essentials/Advanced/all layer used in
 	// Config → General. Empty means "never chosen", which starts on Essentials.
@@ -314,7 +320,12 @@ type Settings struct {
 	InboxShowInPageTabs            bool                             `json:"inboxShowInPageTabs"`            // Show Inbox tab in page navigation
 	InboxDeleteAfterPromote        bool                             `json:"inboxDeleteAfterPromote"`        // Remove inbox item after promote to bookmark
 	AllowLocalBookmarks            bool                             `json:"allowLocalBookmarks"`            // Allow http(s) bookmarks to localhost and private hosts
-	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`              // Automatically create a weekly local backup (keeps the latest 3)
+	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`              // Automatically create a local backup (keeps the latest few)
+	// AutoBackupIntervalDays is how often that runs. 0 means the built-in
+	// weekly default, which is what every install carried before this was a
+	// choice — so an absent key keeps the old behaviour rather than reading as
+	// "never".
+	AutoBackupIntervalDays         int                              `json:"autoBackupIntervalDays,omitempty"`
 	HealthAutoRecheckEnabled       bool                             `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int                              `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
 	ServerLogRetentionHours        int                              `json:"serverLogRetentionHours"`        // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
@@ -398,10 +409,10 @@ type DiscoverabilityState struct {
 
 // defaultThemeID is the theme a fresh install starts on. Existing dashboards
 // keep whatever they already have.
-const defaultThemeID = "moss-stone-dark"
+const defaultThemeID = "retro-crt-dark"
 
 // defaultThemeLightID is the light counterpart auto dark mode switches to.
-const defaultThemeLightID = "moss-stone-light"
+const defaultThemeLightID = "retro-crt-light"
 
 type ThemeIconStylingEntry struct {
 	Enabled   bool    `json:"enabled"`
@@ -410,13 +421,13 @@ type ThemeIconStylingEntry struct {
 }
 
 // defaultThemeIconStyling switches favicon harmonisation on for the default
-// theme of a fresh install, so mismatched site favicons blend with Moss & Stone
+// theme of a fresh install, so mismatched site favicons blend with Retro CRT
 // out of the box. Existing installs keep whatever map they already stored.
 //
 // Both variants are listed because the setting is keyed by the *displayed*
 // theme id, and auto dark mode (also on by default) swaps between the dark and
-// light Moss & Stone. With only one entry, harmonisation would silently apply
-// for half the day.
+// light Retro CRT. With only one entry, harmonisation would silently apply for
+// half the day.
 //
 // Values match the fallback the config UI assumes for an absent entry, so the
 // form shows the same style and intensity it would have defaulted to.
@@ -556,6 +567,9 @@ type Store interface {
 	MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIconUpdate) int
 	// GetDataRevision returns a fingerprint of on-disk data for client cache invalidation.
 	GetDataRevision() string
+	// GetSettingsRevision fingerprints only what decides how the app looks and
+	// behaves, so a polling client can tell a config change from a data change.
+	GetSettingsRevision() string
 	// InvalidateReadCache drops in-memory read caches after out-of-band disk writes (import/restore).
 	InvalidateReadCache()
 	// Inbox
@@ -680,7 +694,8 @@ func (fs *FileStore) initializeDefaultFiles() {
 			OpenInNewTab:                 true,
 			AnalyticsOptIn:               false,
 			EnableSessionTips:            true,
-			ShowShortcutTooltips:         true,
+			ShowShortcutTooltips:         false,
+			ShowGridKeyLegend:            true,
 			ColumnsPerRow:                3,
 			FontSize:                     "m",
 			ShowBackgroundDots:           true,
@@ -704,7 +719,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowTagCloudButton:           true,
 			ShowSearchFlowBanner:         true,
 			ShowCheatSheetButton:         false,
-			ShowCollapseAllButton:        true,
+			ShowCollapseAllButton:        false,
 			ShowSearchButtonText:         true,
 			ShowFindersButtonText:        true,
 			ShowCommandsButtonText:       true,
@@ -842,6 +857,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 	// One-time migration: remove existing custom themes and reset active custom theme to dark.
 	fs.migrateCustomThemesToUserManaged()
 	fs.migrateLinkPreviewCardsDefaultOff()
+	fs.migrateShortcutTooltipsDefaultOff()
 	fs.migrateHideEmptyCategoriesDefaultOn()
 	fs.migrateConfigButtonDefaultOn()
 
@@ -894,6 +910,49 @@ func (fs *FileStore) migrateLinkPreviewCardsDefaultOff() {
 
 	raw["showLinkPreviewCards"] = json.RawMessage(`false`)
 	raw["linkPreviewCardsOffMigrated"] = json.RawMessage(`true`)
+
+	out, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = writeFileAtomic(fs.settingsFile, out, 0644)
+}
+
+// migrateShortcutTooltipsDefaultOff turns the toolbar shortcut hints off once,
+// for everyone.
+//
+// Unlike the fresh-install defaults changed elsewhere, this one reaches
+// existing dashboards on purpose: the setting has been on since it existed and
+// is written into every stored settings file, so a default change alone would
+// have left every current install exactly as it was.
+//
+// The marker is what keeps it a one-time event. Without it the flip would run
+// on every start and nobody could ever switch the hints back on — which is the
+// difference between changing a default and taking a choice away.
+func (fs *FileStore) migrateShortcutTooltipsDefaultOff() {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	data, err := os.ReadFile(fs.settingsFile)
+	if err != nil {
+		return
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return
+	}
+	if migrated, ok := raw["shortcutTooltipsOffMigrated"]; ok {
+		var done bool
+		if json.Unmarshal(migrated, &done) == nil && done {
+			return
+		}
+	}
+
+	raw["showShortcutTooltips"] = json.RawMessage(`false`)
+	raw["shortcutTooltipsOffMigrated"] = json.RawMessage(`true`)
 
 	out, err := json.MarshalIndent(raw, "", "  ")
 	if err != nil {
@@ -2013,6 +2072,18 @@ func clampBookmarkSettings(s *Settings) {
 	if s.BookmarkStaleDays > 365 {
 		s.BookmarkStaleDays = 365
 	}
+	// 0 stays 0: it means "the built-in default", which is what an install that
+	// never chose an interval has. Anything else is held between daily and
+	// monthly — a backup less often than that is not a safety net, and more
+	// often than daily fills the rotation within a day.
+	if s.AutoBackupIntervalDays != 0 {
+		if s.AutoBackupIntervalDays < 1 {
+			s.AutoBackupIntervalDays = 1
+		}
+		if s.AutoBackupIntervalDays > 30 {
+			s.AutoBackupIntervalDays = 30
+		}
+	}
 	if s.RowTagsMax < 1 {
 		s.RowTagsMax = 1
 	}
@@ -2404,7 +2475,8 @@ func (fs *FileStore) GetSettings() Settings {
 			OpenInNewTab:                   true,
 			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
-			ShowShortcutTooltips:           true,
+			ShowShortcutTooltips:           false,
+			ShowGridKeyLegend:              true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -2427,7 +2499,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowRecentButton:               true,
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           true,
-			ShowCollapseAllButton:          true,
+			ShowCollapseAllButton:          false,
 			ShowSearchButtonText:           true,
 			ShowFindersButtonText:          true,
 			ShowCommandsButtonText:         true,
@@ -2540,7 +2612,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		// Absent for everyone until this setting existed, and the button it
 		// controls was visible all that time. Defaulting to false would take it
-		// away from every existing dashboard on upgrade.
+		// away from every existing dashboard on upgrade — which is why a fresh
+		// install starting without the button (see the constructors above) does
+		// not change anything here: no key means an upgrade, not a new install.
 		if _, ok := rawSettings["showCollapseAllButton"]; !ok {
 			settings.ShowCollapseAllButton = true
 		}
@@ -2727,11 +2801,11 @@ func (fs *FileStore) GetSettings() Settings {
 		if _, ok := rawSettings["enableSessionTips"]; !ok {
 			settings.EnableSessionTips = true
 		}
-		// Same default-on, opt-out contract: the shortcut popovers are how the
-		// keys are discovered in the first place, so they stay on until asked.
-		if _, ok := rawSettings["showShortcutTooltips"]; !ok {
-			settings.ShowShortcutTooltips = true
-		}
+		// Off unless the file says otherwise. This used to fill an absent key
+		// with true — the popovers were how the keys were discovered — and the
+		// one-time migration above has since turned them off for everyone, so
+		// filling in true here would put them straight back on any file written
+		// before the key existed.
 		if _, ok := rawSettings["packedColumns"]; !ok {
 			settings.PackedColumns = true
 		}
@@ -2853,6 +2927,16 @@ func (fs *FileStore) GetSettings() Settings {
 	settings.FontPreset = normalizeFontPreset(settings.FontPreset)
 	settings.FontSize = normalizeFontSize(settings.FontSize)
 	settings.HealthAutoRecheckIntervalHours = clampHealthAutoRecheckIntervalHours(settings.HealthAutoRecheckIntervalHours)
+	// 0 stays 0 — it means "the built-in default" — and anything else is held
+	// inside the range a bounded sweep can afford.
+	if settings.HealthCheckTimeoutSeconds != 0 {
+		if settings.HealthCheckTimeoutSeconds < 2 {
+			settings.HealthCheckTimeoutSeconds = 2
+		}
+		if settings.HealthCheckTimeoutSeconds > 30 {
+			settings.HealthCheckTimeoutSeconds = 30
+		}
+	}
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
 	settings.ServerLogRetentionMode = clampServerLogRetentionMode(settings.ServerLogRetentionMode)
 	settings.ServerLogMaxEntries = clampServerLogMaxEntries(settings.ServerLogMaxEntries)
@@ -2882,6 +2966,7 @@ func (fs *FileStore) SaveSettings(settings Settings) error {
 		if json.Unmarshal(raw, &stored) == nil {
 			settings.TagCloudDefaultMigrated = stored.TagCloudDefaultMigrated
 			settings.LinkPreviewCardsOffMigrated = stored.LinkPreviewCardsOffMigrated
+			settings.ShortcutTooltipsOffMigrated = stored.ShortcutTooltipsOffMigrated
 			settings.HideEmptyCategoriesMigrated = stored.HideEmptyCategoriesMigrated
 			settings.ConfigButtonDefaultOnMigrated = stored.ConfigButtonDefaultOnMigrated
 		}
@@ -3513,6 +3598,17 @@ type HealthSample struct {
 	// actually happened — but uptime ratios skip it, so a nightly backup does not
 	// read as a nightly outage.
 	Maint bool `json:"m,omitempty"`
+	// Fail is why a failed check failed, as a short class: dns, timeout,
+	// refused, tls, redirect, content, http, or other. Empty on a sample that
+	// succeeded.
+	//
+	// The engine has always worked this out — classifyPingError runs on every
+	// failed check — and then dropped it, so a DNS outage and a refused
+	// connection were both recorded as "Up: false, Code: 0" and reached the
+	// incident list, the fleet timeline and the CSV export with no cause at all.
+	// A class rather than the sentence: the sentence is for a human reading one
+	// row, the class is what a list can group and a column can hold.
+	Fail string `json:"e,omitempty"`
 }
 
 // HealthHistoryFile stores per-URL sample history for monitored bookmarks, kept
@@ -3641,4 +3737,35 @@ func (fs *FileStore) GetDataRevision() string {
 	fs.readCache.revision = revision
 	fs.readCache.revisionOK = true
 	return revision
+}
+
+// GetSettingsRevision is a fingerprint of the files that decide how the app
+// looks and behaves, as opposed to what is in it.
+//
+// The whole-data revision already changes when settings.json does, and the
+// client's poll only ever reloaded bookmarks, inbox and health on that change —
+// so a second device kept showing stale chrome after every config change while
+// paying for the poll that could have told it. A separate hash means the poll
+// can tell "someone edited a bookmark" from "someone changed a setting" and do
+// the right, more expensive thing only for the second.
+func (fs *FileStore) GetSettingsRevision() string {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	hash := sha256.New()
+	for _, path := range []string{fs.settingsFile, fs.colorsFile} {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			hash.Write([]byte(path + ":missing;"))
+			continue
+		}
+		fileHash := sha256.Sum256(data)
+		hash.Write([]byte(path + ":"))
+		hash.Write(fileHash[:])
+		hash.Write([]byte(";"))
+	}
+	sum := hash.Sum(nil)
+	return hex.EncodeToString(sum[:8])
 }

@@ -287,6 +287,15 @@ class DashboardHealthMultiSelect {
                         this.t('dashboard.healthBulkRecheck', 'Re-check')
                     )}</button>
                     ${acceptDriftBtn}
+                    <!-- Muting is per-bookmark alert policy and was the one
+                         health setting you most want to set on a group — twelve
+                         bookmarks behind one outage meant twelve dialogs. -->
+                    <button type="button" class="config-btn config-btn--small" data-bulk="mute">${esc(
+                        this.t('dashboard.healthBulkMute', 'Mute alerts')
+                    )}</button>
+                    <button type="button" class="config-btn config-btn--small" data-bulk="unmute">${esc(
+                        this.t('dashboard.healthBulkUnmute', 'Unmute')
+                    )}</button>
                 </div>
                 <div class="config-bulk-group">
                     <button type="button" class="config-btn config-btn--small" data-bulk="open">${esc(
@@ -314,6 +323,8 @@ class DashboardHealthMultiSelect {
                 if (mode) void this.bulkSetCheckMode(mode);
             },
             recheck: () => void this.bulkRecheck(),
+            mute: () => void this.bulkSetMuted(true),
+            unmute: () => void this.bulkSetMuted(false),
             'accept-drift': () => void this.bulkAcceptDrift(),
             open: () => this.bulkOpen(),
             copy: () => void this.bulkCopy(),
@@ -482,6 +493,69 @@ class DashboardHealthMultiSelect {
             this.t('dashboard.healthBulkCheckModeDone', 'Check mode set on {count} bookmark(s)', { count: applied }),
             'success'
         );
+    }
+
+    /**
+     * Mute or unmute alerts for the selection, in one request.
+     *
+     * Through the bulk expectations endpoint, which changes only the fields it
+     * is given: muting must not also clear the keyword checks or the drift
+     * baselines these bookmarks carry, which is exactly what sending them
+     * through the single-bookmark endpoint — where every field replaces what is
+     * stored — would have done.
+     */
+    async bulkSetMuted(muted) {
+        const issues = this.selectedIssues();
+        if (!issues.length) return;
+        window.nextdashTrack?.('health:bulk-mute', { count: issues.length, muted });
+
+        const targets = issues
+            .map((issue) => ({
+                pageId: Number(issue.pageId ?? issue.pageID ?? 0),
+                index: Number(issue.index ?? -1),
+                url: issue.url || '',
+            }))
+            .filter((t) => t.pageId > 0 && t.index >= 0 && t.url);
+        if (!targets.length) return;
+
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/health/expectations-bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targets, notifyMuted: muted }),
+            });
+            if (!res.ok) {
+                throw new Error(`bulk mute HTTP ${res.status}`);
+            }
+            const body = await res.json().catch(() => ({}));
+            await this.health.loadAndRender({ refresh: true });
+            const changed = Number(body?.changed) || 0;
+            const skipped = Number(body?.skipped) || 0;
+            if (skipped > 0) {
+                // Same wording as the check-mode batch: a row the report has
+                // gone stale on is not a failure to hide.
+                this.dash.showNotification(
+                    this.t(
+                        'dashboard.healthBulkMutePartial',
+                        'Changed {count} bookmark(s); {stale} had changed — reload the report',
+                        { count: changed, stale: skipped }
+                    ),
+                    'warning'
+                );
+                return;
+            }
+            this.dash.showNotification(
+                muted
+                    ? this.t('dashboard.healthBulkMuteDone', 'Alerts muted on {count} bookmark(s)', { count: changed })
+                    : this.t('dashboard.healthBulkUnmuteDone', 'Alerts unmuted on {count} bookmark(s)', { count: changed }),
+                'success'
+            );
+        } catch (_error) {
+            this.dash.showErrorNotification(
+                this.t('dashboard.healthBulkMuteFailed', 'Could not change alert muting')
+            );
+        }
     }
 
     async bulkDelete() {

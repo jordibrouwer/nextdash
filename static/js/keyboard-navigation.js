@@ -251,6 +251,25 @@ class KeyboardNavigation {
                 }
             }
 
+            // Alt+←/→ on a category header — reorder the category itself.
+            //
+            // Shift+Home already steps from a row up to its header, where F2,
+            // Delete, Shift+W and Shift+F10 act on the category; there was no key
+            // to move one. Reordering meant dragging the small // prefix or going
+            // to config. Alt+arrow already means "move the thing under the
+            // cursor" for a bookmark, so the same chord on a header is the same
+            // idea one level up — left and right rather than up and down,
+            // because categories sit beside each other in the grid.
+            if (e.altKey && !e.ctrlKey && !e.metaKey
+                && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                if (this.moveFocusedCategory(e.key === 'ArrowLeft' ? -1 : 1)) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
             // Alt+↑ / Alt+↓ — move the focused bookmark. Alt keeps it clear of
             // the plain arrows, which move the cursor.
             if (e.altKey && !e.ctrlKey && !e.metaKey
@@ -277,6 +296,11 @@ class KeyboardNavigation {
 
             // Plain c — add a category. Shift+C is the availability popover and
             // is handled above, so this branch only ever sees the bare key.
+            // Not gated on the cursor the way g, j and k are: "c adds a category"
+            // is a decision this project already made and pinned — see
+            // create-page-category-from-dashboard.spec.js, which asserts both
+            // that c works with no row focused and that it must not reach the
+            // shortcut search. The cost is that a search cannot begin with c.
             if (e.code === 'KeyC' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -411,6 +435,29 @@ class KeyboardNavigation {
         return this.currentIndex >= 0;
     }
 
+    /**
+     * Whether a bare letter may act on the grid rather than be typed.
+     *
+     * The dashboard has a search line that is always listening, so on this view
+     * every letter is a character someone might be typing. The rule that keeps
+     * the two apart is the cursor: a letter acts on the grid once a row is
+     * selected, and types before that. Arrows, Home/End and Tab are the way in,
+     * because none of them is a character.
+     *
+     * x, ; and Delete already worked this way. g, c, j and k did not, which is
+     * why a search for "github" arrived as "ithub" and j moved the cursor and
+     * then typed over its own selection.
+     */
+    _letterMayActOnGrid(key) {
+        // Only letters are in question. The arrows share a case block with j and
+        // k, and they are how the cursor gets into the grid in the first place —
+        // gating them on the cursor already being there locks the grid shut.
+        if (typeof key !== 'string' || key.length !== 1 || !/[a-z]/i.test(key)) {
+            return true;
+        }
+        return this._gridNavActive();
+    }
+
     _scrollBehavior() {
         return document.body?.classList.contains('no-animations') ? 'instant' : 'smooth';
     }
@@ -486,6 +533,57 @@ class KeyboardNavigation {
         title.scrollIntoView({ block: 'nearest', behavior: this._scrollBehavior() });
         title.focus({ preventScroll: true });
         return true;
+    }
+
+    /**
+     * Move the category whose header has focus one place left or right.
+     *
+     * Only acts when a header actually has focus — otherwise Alt+arrow keeps
+     * whatever meaning it has elsewhere, and a stray chord on the grid does not
+     * silently reorder the page. Smart collections are skipped: their order is
+     * derived, not stored, so moving one would be undone on the next render.
+     *
+     * Writes through the same array the drag reorder writes and reuses its
+     * debounced save, so one route cannot persist what the other does not.
+     */
+    moveFocusedCategory(direction) {
+        const d = this.dashboard;
+        const active = document.activeElement;
+        const title = active?.closest?.('.category-title');
+        const categoryEl = title?.closest?.('.category');
+        if (!title || !categoryEl) return false;
+        if (categoryEl.getAttribute('data-smart-collection') === 'true') return false;
+
+        const id = String(categoryEl.getAttribute('data-category-id') || '');
+        const categories = Array.isArray(d?.categories) ? d.categories : [];
+        const from = categories.findIndex((c) => String(c.id) === id);
+        if (from < 0) return false;
+        const to = from + direction;
+        if (to < 0 || to >= categories.length) return false;
+
+        const next = [...categories];
+        const [moved] = next.splice(from, 1);
+        next.splice(to, 0, moved);
+        d.categories = next;
+        d.renderCore?.scheduleCategoryOrderSave?.();
+        d.renderDashboard?.({ animate: false });
+
+        // The header element is rebuilt by the render, so focus follows the
+        // category rather than the node that used to hold it.
+        requestAnimationFrame(() => {
+            const grid = document.getElementById('dashboard-layout');
+            const el = grid?.querySelector(`.category[data-category-id="${CSS.escape(id)}"] .category-title`);
+            el?.focus?.({ preventScroll: true });
+            el?.scrollIntoView?.({ block: 'nearest', behavior: this._scrollBehavior() });
+        });
+        this._announceCategoryMove(moved?.name || id);
+        return true;
+    }
+
+    _announceCategoryMove(name) {
+        const live = this._ensureKbdLiveRegion();
+        const label = this.dashboard?.formatDashboardLabel?.('categoryMoved', {}, 'moved') || 'moved';
+        live.textContent = name ? `${name}: ${label}` : label;
     }
 
     _announceCategorySpread(name, on) {
@@ -879,19 +977,35 @@ class KeyboardNavigation {
             // try them first and was the one place they did nothing.
             case 'ArrowDown':
             case 'j':
+                // A bare letter belongs to whoever the reader is typing at. The
+                // arrows start grid navigation from anywhere because nothing
+                // else wants them; j and k are letters, so they only move once
+                // the cursor is already in the grid — otherwise "jira" would
+                // lose its j the way "github" used to lose its g.
+                if (!this._letterMayActOnGrid(key)) {
+                    break;
+                }
                 if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
+                // Without this the row is selected and the search line then
+                // types the letter, which clears the selection again: j moved
+                // the cursor and undid itself in the same keystroke.
+                e.stopImmediatePropagation();
                 this.navigateDown();
                 break;
 
             case 'ArrowUp':
             case 'k':
+                if (!this._letterMayActOnGrid(key)) {
+                    break;
+                }
                 if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
+                e.stopImmediatePropagation();
                 this.navigateUp();
                 break;
 
@@ -957,6 +1071,9 @@ class KeyboardNavigation {
                     break;
                 }
                 e.preventDefault();
+                // Opening is the end of the trip the legend was there for, so it
+                // goes again — it comes back on the next cursor move.
+                document.body?.removeAttribute('data-grid-keys');
                 this.selectCurrentElement({ newTab: e.ctrlKey || e.metaKey || e.shiftKey });
                 break;
 
@@ -1025,6 +1142,14 @@ class KeyboardNavigation {
 
             case 'g':
             case 'G':
+                // Unguarded, this swallowed the first letter of every search
+                // beginning with g: "github" arrived as "ithub", because the
+                // chord armed itself on an idle dashboard and stopped the key
+                // from reaching the search line. Every other letter on the grid
+                // already asks this question first.
+                if (!this._letterMayActOnGrid(key)) {
+                    break;
+                }
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if (e.repeat) {
@@ -1064,6 +1189,23 @@ class KeyboardNavigation {
     _activateGChordMode() {
         this._gPressed = true;
         this._armGChordTimeout(G_CHORD_MS);
+        this._paintGChordState();
+    }
+
+    /**
+     * Say on screen that g is waiting for its second key.
+     *
+     * For three seconds after g, the next key means something else — a second g
+     * jumps to the top, p to the first pinned row, 1–9 to a category. Nothing
+     * said so, so the only way to find out was to press a key and see what
+     * happened. The pill is the key itself followed by an ellipsis, which needs
+     * no translation.
+     */
+    _paintGChordState() {
+        document.body?.setAttribute('data-g-chord', this._gPressed ? 'armed' : 'idle');
+        if (!this._gPressed) {
+            document.body?.removeAttribute('data-g-chord');
+        }
     }
 
     _performGgJump() {
@@ -1078,6 +1220,7 @@ class KeyboardNavigation {
             clearTimeout(this._gTimeout);
             this._gTimeout = null;
         }
+        this._paintGChordState();
     }
 
     isGChordActive() {
@@ -1401,6 +1544,11 @@ class KeyboardNavigation {
                 // to tell those apart — see restoreInlineEditRow().
                 this._selectionFromKeyboard = true;
                 this._announceKeyboardSelection(currentElement);
+                // The legend under the grid, if it is switched on at all, is for
+                // someone who has started using the keyboard — so it appears at
+                // the first move rather than sitting under the bookmarks all
+                // day. See syncBookmarkGridLegend.
+                document.body?.setAttribute('data-grid-keys', 'shown');
             }
             this.syncRovingTabStops({ focus: doFocus });
         } else {

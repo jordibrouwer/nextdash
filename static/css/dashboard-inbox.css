@@ -461,6 +461,36 @@ body.no-animations .inbox-item-thumb--loading {
 
 /* ─── Keyboard legend ────────────────────────────────────────────────────── */
 
+/* The line under the list for the links that are asleep. Outside the Snoozed
+   tile they are in no count and no filter, so this is the only place the rest
+   of the view admits they exist. */
+.inbox-snoozed-note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.9rem 0 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.inbox-snoozed-note-btn {
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.3rem;
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.inbox-snoozed-note-btn:hover,
+.inbox-snoozed-note-btn:focus-visible {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
 .inbox-legend {
     display: flex;
     flex-wrap: wrap;
@@ -1380,6 +1410,16 @@ body[data-layout-version="modern"] .inbox-empty {
     font-variant-numeric: tabular-nums;
 }
 
+/* What the figure above it counts. It used to be a title attribute, which is
+   unreachable from the keyboard and on touch — and "Promote rate" beside
+   "Added" is exactly the pair that needs saying out loud. */
+.inbox-stat-hint {
+    font-size: 0.68rem;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    text-wrap: pretty;
+}
+
 .inbox-stats-since,
 .inbox-stats-empty {
     margin: 0.6rem 0 0;
@@ -1425,4 +1465,19 @@ body[data-layout-version="modern"] .inbox-empty {
 .inbox-item-tag:focus-visible {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
     color: var(--accent-primary);
+}
+
+/* The summary the server fetches when a link is captured. It was stored on every
+   item and shown nowhere: the row had title, domain, date, note and tags, and
+   the one line explaining what the page is stayed in the file. Two lines at
+   most — this is a hint, not the article. */
+.inbox-item-desc {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }

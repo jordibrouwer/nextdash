@@ -60,6 +60,7 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-inbox.css"}}">
     <link rel="stylesheet" href="{{asset "css/inbox-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/spread-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/setting-art.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-multi-select.css"}}">
     <link rel="stylesheet" href="{{asset "css/view-explainers.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
@@ -218,9 +219,16 @@
     <div id="shortcut-search" class="shortcut-search">
         <div class="search-container">
             <div class="search-prompt">
+                <!-- The key that starts this mode, in front of the mode it starts.
+                     The tabs below name all four, but the line you type into is
+                     where the convention has to be legible: > search, : commands,
+                     ? finders, @ everywhere. -->
+                <span class="search-chevron" data-mode="search" aria-hidden="true">&gt;</span>
                 <span class="search-prefix" data-mode="search">SEARCH</span>
                 <span id="search-query" class="search-query"></span>
                 <span class="search-cursor" data-i18n="dashboard.searchCursor">_</span>
+                <button type="button" id="search-clear" class="search-clear" hidden
+                        data-i18n-aria="dashboard.searchClearAria" aria-label="Clear search">&times;</button>
             </div>
             <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-aria="dashboard.searchInputAria" aria-label="Search" />
             <div id="search-matches" class="search-matches"></div>
@@ -369,6 +377,12 @@
     <script src="{{asset "js/tag-autocomplete.js"}}" defer></script>
     <script src="{{asset "js/quick-add.js"}}" defer></script>
     <script src="{{asset "js/skeleton-loading.js"}}" defer></script>
+    <!-- Stand-in drawings for settings whose difference is a shape; config and
+         help both read from it, so it loads before either. -->
+    <script src="{{asset "js/shared/setting-art.js"}}" defer></script>
+    <!-- What a bookmark shortcut shares the keyboard with; read by every
+         field that takes one. -->
+    <script src="{{asset "js/shared/shortcut-keys.js"}}" defer></script>
     <script src="{{asset "js/shortcut-format.js"}}" defer></script>
     <script src="{{asset "js/app-notification.js"}}" defer></script>
     <!-- Tip catalogue is shared with Config → Help so the two lists cannot drift. -->

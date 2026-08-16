@@ -103,6 +103,13 @@ func (h *Handlers) CheckBookmarkHealthURL(w http.ResponseWriter, r *http.Request
 		})
 	}
 
+	// The handshake this check already made knows when the certificate expires,
+	// so record it here too rather than only in the monitor sweep — otherwise a
+	// bookmark that is only ever checked on demand never contributes one.
+	if result.CertExpiry > 0 && result.CertHost != "" {
+		h.recordMonitorCertificates([]PingResult{result})
+	}
+
 	h.invalidateHealthReportCache()
 
 	w.Header().Set("Content-Type", "application/json")

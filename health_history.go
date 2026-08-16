@@ -140,11 +140,11 @@ func (h *Handlers) isMonitoredURL(key string) bool {
 // saying "awaiting first check": the scan cache was updated, but the monitor
 // view is derived purely from sample history, which only the scheduler wrote.
 // The user saw a check happen and no change, until the next scheduled run.
-func (h *Handlers) recordManualHealthSample(key string, up bool, pingMs, code int) {
+func (h *Handlers) recordManualHealthSample(key string, up bool, pingMs, code int, failDetail string) {
 	if !h.isMonitoredURL(key) {
 		return
 	}
-	sample := HealthSample{T: time.Now().UnixMilli(), Up: up, PingMs: pingMs, Code: code}
+	sample := HealthSample{T: time.Now().UnixMilli(), Up: up, PingMs: pingMs, Code: code, Fail: failureClass(failDetail)}
 	if err := h.appendHealthSamples(map[string][]HealthSample{key: {sample}}); err != nil {
 		log.Printf("health history: failed to record manual check for %s: %v", key, err)
 	}

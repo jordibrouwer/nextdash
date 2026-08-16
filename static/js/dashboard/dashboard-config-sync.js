@@ -212,9 +212,20 @@ class DashboardConfigSync {
     }
 
 
+    /**
+     * A toast when another tab pushes config or settings across.
+     *
+     * Gated on settings.showSyncToasts, which the server has never had: the
+     * client invented the key, defaulted it to false, and the toggle in config
+     * wrote a value the save dropped — so the toast has been off for everyone
+     * since the setting appeared, and could not be switched on. The setting is
+     * gone; this keeps the behaviour people actually have, and the callers stay
+     * as they are so turning it back on is a one-line change here rather than a
+     * hunt through four files.
+     */
     showSyncToast(message) {
         const d = this.dash;
-        if (d.settings?.showSyncToasts === false) {
+        if (!d.settings?.showSyncToasts) {
             return;
         }
         const now = Date.now();

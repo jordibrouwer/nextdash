@@ -68,5 +68,7 @@
   "previewCleared": "Link preview cleared.",
   "previewUntitled": "Untitled",
   "previewStatusCheck": "···",
-  "moreOptions": "More options"
+  "moreOptions": "More options",
+  "contextMenuInboxPage": "Save page to nextDash Inbox",
+  "contextMenuInboxLink": "Save link to nextDash Inbox"
 }

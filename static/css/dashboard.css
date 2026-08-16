@@ -4927,3 +4927,100 @@ body.no-animations .bookmark-move-out {
     /* On a phone the name is the only thing with room. */
     .bookmark-tag-strip { display: none; }
 }
+
+/* g is a chord: for three seconds after it, the next key means "top" (g),
+   "first pinned" (p) or a category number. Nothing said so, so the only way to
+   learn it was to press something and watch. The pill is the key itself, which
+   needs no translation. */
+body[data-g-chord="armed"]::after {
+    content: "g…";
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 60;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
+    color: var(--accent-primary);
+    font-family: var(--font-family-main);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+}
+
+/* The key legend under the grid, matching the one health and inbox carry under
+   their feeds. Decorative: every key it lists is in the cheat sheet, and the
+   rows announce what they do on their own. */
+.dashboard-legend {
+    display: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.3rem 0.9rem;
+    margin: 1rem 0 0.25rem;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    opacity: 0.75;
+}
+
+/* Only once the keyboard is in use: KeyboardNavigation stamps this at the first
+   cursor move and clears it on Enter. Without it the line sat under the grid
+   all day — under seven bookmarks, as tall as the thing it explained. No rule
+   above it either, which is what made it read as a section of its own. */
+body[data-grid-keys="shown"] .dashboard-legend {
+    display: flex;
+}
+
+.dashboard-legend kbd {
+    font-size: 0.7rem;
+    padding: 0.05rem 0.32rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+}
+
+/* The category icon editor: one field beside the header it changes, the same
+   shape the page-tab popover uses. Category.Icon has been stored and rendered
+   for a long time with nowhere to set it — eight categories on a page meant
+   eight identical ⊣ headers. */
+.category-icon-popover {
+    position: absolute;
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.4rem;
+    background: var(--background-secondary);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.category-icon-input {
+    width: 3.2rem;
+    padding: 0.15rem 0.35rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.3rem;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    text-align: center;
+}
+
+.category-icon-clear {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.category-icon-clear:hover,
+.category-icon-clear:focus-visible {
+    color: var(--accent-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}

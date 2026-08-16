@@ -1,0 +1,335 @@
+/* ─── Setting art ───────────────────────────────────────────────────────────
+   Stand-in drawings for the settings whose difference is a shape: how many
+   columns, how much room between rows, how wide the margins are. Same grammar
+   as the spread tour's visuals — blank bars at the proportions of the real
+   thing — so config, help and the tour all draw a bookmark the same way.
+
+   Decorative: every drawing sits beside the label that names it, so the markup
+   is aria-hidden and none of this is in the accessibility tree. */
+
+.setting-art {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    pointer-events: none;
+}
+
+.setting-art-frame {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.35rem;
+    background: var(--background-primary);
+}
+
+.setting-art-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    width: 1.5rem;
+}
+
+.setting-art-row {
+    height: 0.28rem;
+    border-radius: 0.12rem;
+    background: color-mix(in srgb, var(--accent-primary) 30%, var(--border-primary));
+}
+
+/* A stack of identical bars reads as a loading skeleton; the short one every
+   other line reads as text. */
+.setting-art-row:nth-child(even) {
+    width: 76%;
+}
+
+.setting-art-more {
+    align-self: flex-end;
+    font-size: 0.7rem;
+    line-height: 1;
+    color: var(--text-tertiary);
+}
+
+/* Density is row height and row gap, and nothing else. */
+.setting-art-col.is-comfortable { gap: 0.24rem; }
+.setting-art-col.is-compact { gap: 0.14rem; }
+.setting-art-col.is-dense { gap: 0.07rem; }
+.setting-art-col.is-auto { gap: 0.14rem; }
+.setting-art-col.is-dense .setting-art-row { height: 0.2rem; }
+.setting-art-col.is-auto .setting-art-row:nth-child(n + 4) { height: 0.2rem; }
+
+.setting-art-frame--density .setting-art-col {
+    width: 2.6rem;
+}
+
+/* Spacing: three category blocks, moved apart. */
+.setting-art-stack {
+    display: flex;
+    flex-direction: column;
+    width: 2.8rem;
+}
+
+.setting-art-stack.is-snug { gap: 0.12rem; }
+.setting-art-stack.is-balanced { gap: 0.3rem; }
+.setting-art-stack.is-airy { gap: 0.5rem; }
+
+.setting-art-band {
+    height: 0.34rem;
+    border-radius: 0.12rem;
+    background: color-mix(in srgb, var(--accent-primary) 28%, var(--border-primary));
+}
+
+/* Margins: the page, with the edges the setting leaves empty. */
+.setting-art-page {
+    display: flex;
+    align-items: stretch;
+    width: 5.2rem;
+}
+
+.setting-art-gutter {
+    flex: 0 0 auto;
+    background: repeating-linear-gradient(
+        45deg,
+        color-mix(in srgb, var(--text-tertiary) 22%, transparent) 0 2px,
+        transparent 2px 4px
+    );
+    border-radius: 0.12rem;
+}
+
+.setting-art-page.is-snug .setting-art-gutter { width: 0.18rem; }
+.setting-art-page.is-balanced .setting-art-gutter { width: 0.42rem; }
+.setting-art-page.is-airy .setting-art-gutter { width: 0.75rem; }
+
+.setting-art-content {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 0.18rem;
+    padding: 0 0.16rem;
+}
+
+.setting-art-content .setting-art-col {
+    width: auto;
+    flex: 1 1 0;
+}
+
+/* The dotted backdrop, drawn at its own scale rather than the grid's. */
+.setting-art-dots {
+    display: block;
+    width: 3.2rem;
+    height: 1.5rem;
+    border-radius: 0.2rem;
+    background: var(--background-secondary);
+}
+
+.setting-art-dots.is-on {
+    background-color: var(--background-secondary);
+    background-image: radial-gradient(
+        color-mix(in srgb, var(--text-tertiary) 55%, transparent) 1px,
+        transparent 1px
+    );
+    background-size: 0.42rem 0.42rem;
+}
+
+/* Type size: the only setting here whose subject is the letterform itself. */
+.setting-art-type {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: center;
+    min-width: 1.9rem;
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1;
+}
+
+/* All seven steps the picker offers, drawn at their own proportions rather
+   than at three sizes standing in for seven. */
+.setting-art-type.is-xs { font-size: 0.6rem; }
+.setting-art-type.is-s { font-size: 0.72rem; }
+.setting-art-type.is-sm { font-size: 0.85rem; }
+.setting-art-type.is-m { font-size: 0.98rem; }
+.setting-art-type.is-lg { font-size: 1.15rem; }
+.setting-art-type.is-l { font-size: 1.32rem; }
+.setting-art-type.is-xl { font-size: 1.55rem; }
+
+/* A route rather than a shape: where a pasted link ends up, what a promote
+   leaves behind. */
+.setting-art-flow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.setting-art-chip {
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: var(--background-secondary);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.setting-art-arrow {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+/* ─── Where the drawings sit ───────────────────────────────────────────────
+   On a choice card the art leads, above the title. Beside an ordinary control
+   it sits on the row's right, where the reset and info buttons are, so the
+   column of labels down the left is not disturbed. */
+.config-choice-card .setting-art {
+    margin-bottom: 0.35rem;
+}
+
+.config-field-art {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: -0.15rem 0 0.5rem auto;
+    padding-right: 0.1rem;
+}
+
+/* In help, the drawing is the panel's opening line. */
+.config-help-art {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 0.7rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.4rem;
+    background: var(--background-secondary);
+}
+
+.config-help-art .setting-art {
+    gap: 0.35rem;
+}
+
+.config-help-art-caption {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+}
+
+@media (max-width: 640px) {
+    .config-field-art {
+        margin-left: 0;
+    }
+}
+
+/* A choice button that leads with its drawing: the letters above, the name of
+   the size under them. */
+.config-choice--art {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.35rem 0.6rem;
+    line-height: 1.1;
+}
+
+.config-choice--art .setting-art {
+    min-height: 1.6rem;
+}
+
+.config-choice--art .config-choice-label {
+    font-size: 0.72rem;
+}
+
+/* Layout version: the same two categories, flat on the page or each on its own
+   raised card — which is the difference a reader is actually choosing between. */
+.setting-art-layout {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.setting-art-card {
+    padding: 0.12rem;
+    border-radius: 0.1rem;
+}
+
+.setting-art-layout.is-modern .setting-art-card {
+    padding: 0.18rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.28rem;
+    background: var(--background-secondary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+.setting-art-layout .setting-art-col {
+    width: 1.2rem;
+}
+
+/* Button bar: the page, with the bar where the setting puts it. */
+.setting-art-screen {
+    position: relative;
+    display: block;
+    width: 4.4rem;
+    height: 2.5rem;
+    padding: 0.22rem;
+    border-radius: 0.2rem;
+    background: var(--background-secondary);
+}
+
+.setting-art-screen-body {
+    display: flex;
+    gap: 0.16rem;
+    height: 100%;
+}
+
+.setting-art-screen-body .setting-art-col {
+    width: auto;
+    flex: 1 1 0;
+}
+
+/* The bar really does float over the grid, so the overlap is honest — but the
+   bookmarks behind it are backdrop here, not the subject, and at full strength
+   they compete with the one element the drawing is about. */
+.setting-art-screen-body .setting-art-row {
+    background: color-mix(in srgb, var(--text-tertiary) 30%, transparent);
+}
+
+.setting-art-bar {
+    position: absolute;
+    border-radius: 999px;
+    background: var(--accent-primary);
+}
+
+/* Horizontal bar along the bottom; the three positions differ in where along
+   that edge it sits. */
+.setting-art-screen.is-center-bottom .setting-art-bar,
+.setting-art-screen.is-bottom-left .setting-art-bar,
+.setting-art-screen.is-bottom-right .setting-art-bar {
+    bottom: 0.18rem;
+    height: 0.22rem;
+    width: 1.5rem;
+}
+
+.setting-art-screen.is-center-bottom .setting-art-bar {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.setting-art-screen.is-bottom-left .setting-art-bar { left: 0.2rem; }
+.setting-art-screen.is-bottom-right .setting-art-bar { right: 0.2rem; }
+
+/* The rails stand the same bar on its end against one edge. */
+.setting-art-screen.is-side-left .setting-art-bar,
+.setting-art-screen.is-side-right .setting-art-bar {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.22rem;
+    height: 1.5rem;
+}
+
+.setting-art-screen.is-side-left .setting-art-bar { left: 0.18rem; }
+.setting-art-screen.is-side-right .setting-art-bar { right: 0.18rem; }
+
+/* Two endings from one arrow: "ask each time" does not end anywhere single. */
+.setting-art-branch {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}

@@ -214,6 +214,10 @@ async function postInboxLink(serverUrl, url, options = {}) {
       title: options.title || '',
       note: options.note || '',
       source: options.source || 'extension',
+      // AddInboxItem has accepted tags since the extension could send them; this
+      // never did, so anything the caller knew about a link was dropped on the
+      // way in with no error to notice.
+      tags: Array.isArray(options.tags) ? options.tags : [],
     }),
   });
 }

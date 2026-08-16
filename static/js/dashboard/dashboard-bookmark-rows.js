@@ -123,6 +123,32 @@ class DashboardBookmarkRows {
         return candidates[0] || null;
     }
 
+    /**
+     * Put moved bookmarks back where they were.
+     *
+     * Works from the snapshot the move took rather than by moving again: a
+     * second move would fire its own toast and its own analytics event, and
+     * would file everything into one category — which is exactly what an undo
+     * of a bulk move must not do, since the rows came from several.
+     */
+    undoBookmarkCategoryMove(previous) {
+        const d = this.dash;
+        const entries = (previous || []).filter((entry) => entry?.ref?.bookmark);
+        if (!entries.length) return;
+
+        d.ensureBookmarkMutationSnapshot();
+        entries.forEach(({ ref, category }) => {
+            ref.bookmark.category = category;
+            if (ref.original) {
+                ref.original.category = category;
+            }
+        });
+        d.scheduleBookmarkOrderSave();
+        if (!d.isInlineEditActive()) {
+            d.renderDashboard({ animate: false });
+        }
+    }
+
     applyBookmarkCategoryMove(bookmarkRefs, categoryId, { notify = true, count } = {}) {
         const d = this.dash;
         const refs = (Array.isArray(bookmarkRefs) ? bookmarkRefs : [bookmarkRefs])
@@ -142,6 +168,11 @@ class DashboardBookmarkRows {
         const affectedCount = Number.isFinite(count) ? count : refs.length;
 
         d.ensureBookmarkMutationSnapshot();
+        // What each bookmark was filed under before this move. Deleting a row has
+        // offered eight seconds of Undo for a long time; moving one — or twenty,
+        // from the tag filter — offered nothing, and a bulk move to the wrong
+        // category lost every original category with no way back.
+        const previous = refs.map((ref) => ({ ref, category: ref.bookmark.category }));
         refs.forEach((ref) => {
             ref.bookmark.category = categoryId;
             if (ref.original) {
@@ -162,7 +193,10 @@ class DashboardBookmarkRows {
 
         if (notify) {
             const groupKey = `move-category:${categoryId}`;
-            const duration = 2500;
+            // Long enough to be caught, matching the delete toast: an undo nobody
+            // can reach is the same as no undo.
+            const duration = 8000;
+            const undoCallback = () => this.undoBookmarkCategoryMove(previous);
             if (affectedCount > 1) {
                 d.showGroupedNotification(
                     groupKey,
@@ -173,7 +207,7 @@ class DashboardBookmarkRows {
                         `Moved ${n} bookmark(s) to "${catName}"`
                     ),
                     'success',
-                    { duration }
+                    { duration, undoCallback }
                 );
             } else {
                 d.showNotification(
@@ -183,7 +217,7 @@ class DashboardBookmarkRows {
                         `Moved to "${catName}"`
                     ),
                     'success',
-                    { duration }
+                    { duration, undoCallback }
                 );
             }
         }
@@ -1059,14 +1093,21 @@ class DashboardBookmarkRows {
         let totalRows = 0;
         rowgroups.forEach((group) => {
             const rows = group.querySelectorAll('.bookmark-link[data-bookmark-url]');
-            group.setAttribute('aria-rowcount', String(rows.length));
+            // aria-rowcount belongs to the grid, not to a rowgroup — the role
+            // does not carry it, so a per-category count was written and then
+            // ignored.
+            group.removeAttribute('aria-rowcount');
             // aria-colindex/colcount are constant — one column, always — so they
             // are stamped once in populateBookmarkRowView instead. Setting them
             // here meant a querySelector per row on every render, every
             // incremental render, every tag-filter change and every keyboard
             // rebuild, to write the same two values back.
+            //
+            // The index counts through the whole grid rather than restarting per
+            // category: it is read against the grid's aria-rowcount, so starting
+            // over made the first row of every category "row 1 of 14".
             rows.forEach((row, idx) => {
-                row.setAttribute('aria-rowindex', String(idx + 1));
+                row.setAttribute('aria-rowindex', String(totalRows + idx + 1));
             });
             totalRows += rows.length;
         });
@@ -1084,6 +1125,57 @@ class DashboardBookmarkRows {
         // Runs on every render, so it is where the live status line can notice
         // the grid changed size. It rewrites nothing when the text is the same.
         d.updateMiniStatusLine?.();
+        this.syncBookmarkGridLegend(grid);
+    }
+
+    /**
+     * The key legend under the grid.
+     *
+     * Health and inbox have carried one under their feed since they were built.
+     * The dashboard had none, so the only way to learn the keys was the cheat
+     * sheet behind `!` — but the dashboard is also the shortest view, and a
+     * ten-entry legend under seven bookmarks reads as clutter rather than help.
+     *
+     * So it is off by default, four entries long, and even when switched on it
+     * stays hidden until the keyboard is actually used: KeyboardNavigation
+     * stamps data-grid-keys on <body> at the first cursor move and clears it
+     * again on Enter, when the reader has arrived where they were going.
+     *
+     * Rebuilt only when the text changes: this runs on every render, and the
+     * legend is constant unless the language does.
+     */
+    syncBookmarkGridLegend(grid) {
+        const d = this.dash ?? this;
+        const host = grid?.parentElement;
+        if (!grid || !host || !window.KeyboardViewLegends) {
+            return;
+        }
+        // Off unless asked for: on a dashboard with seven bookmarks the legend
+        // was as tall as the grid above it, which is a manual, not a hint.
+        if (d.settings?.showGridKeyLegend !== true) {
+            host.querySelector(':scope > .dashboard-legend')?.remove();
+            return;
+        }
+        const pairs = window.KeyboardViewLegends.toLegendPairs(
+            window.KeyboardViewLegends.DASHBOARD_VIEW,
+            (key, fallback) => d.formatDashboardLabel?.(key, {}, fallback) ?? fallback,
+        );
+        const html = pairs
+            .map(([keys, label]) => `<span><kbd>${d.escapeHtml(keys)}</kbd> ${d.escapeHtml(label)}</span>`)
+            .join('');
+        let legend = host.querySelector(':scope > .dashboard-legend');
+        if (!legend) {
+            legend = document.createElement('p');
+            legend.className = 'dashboard-legend';
+            // Decorative twice over: every key is in the cheat sheet, and the
+            // rows themselves announce what they do.
+            legend.setAttribute('aria-hidden', 'true');
+            grid.after(legend);
+        }
+        if (legend.dataset.rendered !== html) {
+            legend.innerHTML = html;
+            legend.dataset.rendered = html;
+        }
     }
 
     /**

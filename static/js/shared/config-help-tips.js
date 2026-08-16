@@ -16,6 +16,11 @@
             titleKey: 'tipsGroupEveryday',
             titleFallback: 'Everyday',
             tips: [
+                // What the dashboard does with a keystroke, before which key
+                // does what: this is the question every other tip assumes an
+                // answer to.
+                'tipEverydayTyping',
+                'tipEverydayGridLetters',
                 'tipEverydayModes',
                 'tipEverydayPages',
                 'tipEverydayArrows',

@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.2.0 — 16 August 2026](#v120--16-august-2026)
 - [v1.1.2 — 15 August 2026](#v112--15-august-2026)
 - [v1.1.1 — 15 August 2026](#v111--15-august-2026)
 - [v1.1.0 — 15 August 2026](#v110--15-august-2026)
@@ -167,6 +168,59 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.2.0 — 16 August 2026
+
+The keyboard release, and the one where three views stop lying about what they know. Typing on the dashboard used to open bookmarks mid-word; the inbox counted links it was not showing; a failed health check worked out its cause and threw it away. All three are now what they appear to be.
+
+### What's new
+
+**Typing and keys**
+
+- **fix** — typing on the grid no longer opens anything by itself. A bookmark shortcut fired the instant the typed query matched it exactly, so which of your words survived depended on which *other* bookmarks you owned: on a 200-shortcut install, eight of thirteen ordinary words were swallowed mid-word. Typing now narrows the list and **Enter** opens the top result, with the exact shortcut match leading it — one keystroke more, and stable against every bookmark you add later.
+- **fix** — `g`, `j` and `k` no longer eat the first letter of a word. Letters reach the grid only while a row is selected (`_letterMayActOnGrid`); the arrows always pass, `j`/`k` stop propagation once they act, and the `g`/`G` chord paints `data-grid-keys` on the body instead of swallowing the keystroke. `c` is the documented exception: it still creates a category unconditionally, because four specs pin that behaviour deliberately.
+- **new** — the mode prefix is drawn in front of the query line (`>` search, `:` commands, `?` finders) with an **×** to clear it, and `closeSearch()` now clears `#search-query` instead of leaving the old text behind.
+- **new** — an optional key legend under the bookmark grid, shown after the first keystroke and hidden again on Enter. **Behavior → General → Show grid key legend**, on for fresh installs (`Settings.ShowGridKeyLegend`).
+- **new** — **Show shortcut hints on toolbar icons** is off for everyone, via a one-time migration (`migrateShortcutTooltipsDefaultOff`, marker `ShortcutTooltipsOffMigrated`). A default change alone would not have reached existing installs, which all carry the field in their stored settings.
+- **new** — the shortcut field warns about the letter you are assigning: `ShortcutKeys.gridKeyNote()` says what the grid does with it and when, and `usedShortcutsNote()` lists the shortcuts the page has already spoken for.
+
+**Inbox**
+
+- **fix** — every count follows the active filter. `filterBaseItems()`/`narrowItems()` feed the tiles, the pills and the badge, **Mark all read** becomes **Mark shown read** while `isNarrowed()`, and the first tile is **Active** — asleep is deliberately excluded.
+- **fix** — snoozed links have a footer saying how many are asleep and when the first wakes, and `domainOptions()` no longer offers a host whose only link is asleep.
+- **new** — **Import** beside the CSV and JSON exports (`openImportPicker`, `parseImportPayload`, `importFromFile`), skipping links already present and reporting added / already there / rejected.
+- **new** — `markUnread(id)` and a row-menu entry for it, and the fetched summary (`previewDesc`) is rendered on the row, searched, and carried into both exports.
+
+**Health**
+
+- **fix** — a failure records its class (`failureClass`, `HealthSample.Fail`) so DNS, timeout, refused, TLS, redirect and content failures reach the incident list, the timeline and the CSV with a reason. Anything that was not an HTTP error stored `Up:false, Code:0` and showed nothing.
+- **fix** — a failed check is re-probed after `monitorConfirmDelay` and only recorded if it fails again, so one dropped check no longer dents a month of uptime.
+- **fix** — `buildMonitorStats` reports `CoveredMs`, and `renderUptimeTiles` prints how much history is behind a window rather than labelling a week "30 days".
+- **new** — certificate expiry comes from every check: `liveHosts` now includes `CheckStatus` bookmarks, not only monitored ones.
+- **new** — a recovery names its duration, `TREND_SERIES` gives the trend chart six series with a per-mode axis, `/api/health/expectations-bulk` mutes or unmutes a whole selection, and `Settings.HealthCheckTimeoutSeconds` replaces the fixed three-second dial timeout.
+
+**Search**
+
+- **new** — negation. `parseSearchFilters` produces `filters.not`, and `matchesAdvancedFilters` runs the positive keys then the negative ones, so `tag:dev -status:pinned` is expressible in the bar the way it always was in a collection rule.
+- **new** — `status:untagged`, `status:tagged`, `status:noted` and `status:unnoted`; `:trash` as a command onto `#config/data-backups/trash`; and `Ctrl/Cmd+Enter` on a result opens in a new tab regardless of the standing preference.
+
+**Dashboard and config**
+
+- **new** — undo for moves: single (`undoBookmarkCategoryMove`) and cross-page bulk (`undoBulkMoveToPage`), each restoring from a snapshot so every bookmark returns to its own category. `showGroupedNotification` translated `undoCallback` into nothing — the bulk-delete undo it also gates has been dead since it shipped.
+- **new** — category icons (`openIconEditor`, live preview into `.category-title-icon`) and `Alt+←/→` to move a category, announced to screen readers.
+- **new** — `setting-art.js` draws the settings whose subject is a shape (grid, spacing, margins, density, dots, type size, layout version, bar position, flow), in config and in help.
+- **fix** — a settings change made elsewhere now reaches an open dashboard: `fetchDataRevision` tracks the settings revision (`GetSettingsRevision`) and routes a change through `refreshAfterConfigSettingsUpdate`.
+- **fix** — a failed automatic backup is visible: `autoBackupRunState` records `LastRunAt`/`LastRunError` and the tile reports it.
+- **new** — a bookmark row in config carries a page › category breadcrumb pill, each half filtering the list.
+- **new** — fresh installs start on **Retro CRT** (`defaultThemeID`), with fold-all and shortcut hints off. Existing installs are untouched.
+- **new** — the extension can send a link straight to the inbox: two context-menu entries, a `quick-save-inbox` command on `Ctrl/Cmd+Shift+U`, and tags carried through `postInboxLink`.
+
+### Docs
+
+- `static/data/whats-new/v1.2.0.json` and the index entry ahead of v1.1.2. `DASHBOARD_RELEASE` (`2026.08-dashboard-release-v1.2.0`) and `NEXTDASH_WHATS_NEW_DATA_VERSION` (`whats-new-v245`) are both bumped: a feature release that left them alone would be announced to nobody who had already dismissed v1.1.2.
+- `tests/whats-new-hidden-release.spec.js`: the real-index and constants cases move to v1.2.0. The four fixture-driven `hideFromModal` cases are untouched.
+- **Config → Overview** gains three feature spotlights — typing filters/Enter opens, the health failure reason, and the inbox counts — with their five locale keys each in en/nl/de/fr.
+- `MANUAL.md` and `README.md` carry the keyboard model, the inbox round, the health engine and the new settings; **Config → Help** and the printable cheat sheet were updated alongside them.
 
 ## v1.1.2 — 15 August 2026
 

@@ -41,6 +41,28 @@
         { keys: 'Esc', legendKey: 'inboxKeyEsc', cheatKey: 'ivEsc', fallback: 'clear selection · back to bookmarks' },
     ];
 
+    /**
+     * The bookmark grid. Health and inbox have carried a legend under the feed
+     * since they were built; the dashboard — the view everyone starts in — had
+     * none, so the keys were discoverable only through the cheat sheet.
+     *
+     * Four rows, not ten. Ten was a paragraph under a grid that can hold seven
+     * bookmarks — as tall as the thing it explained. These are the keys someone
+     * needs to start, and the last one points at the sheet that has the rest.
+     *
+     * Arrows lead, because they are how the cursor gets into the grid: on this
+     * view a bare letter is a character the search line is listening for, and
+     * j/k only move once a row is selected.
+     *
+     * @type {LegendRow[]}
+     */
+    const DASHBOARD_VIEW = [
+        { keys: '↑ ↓ ← →', legendKey: 'dashboardKeyMove', cheatKey: 'dvMove', fallback: 'move' },
+        { keys: 'Enter', legendKey: 'dashboardKeyOpen', cheatKey: 'dvOpen', fallback: 'open' },
+        { keys: 'x', legendKey: 'dashboardKeySelect', cheatKey: 'dvSelect', fallback: 'select' },
+        { keys: '!', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
+    ];
+
     /** @type {LegendRow[]} */
     const INBOX_TRIAGE = [
         { keys: 'j / k', legendKey: 'inboxKeyMove', cheatKey: 'itMove', fallback: 'next / previous' },
@@ -73,6 +95,7 @@
     }
 
     global.KeyboardViewLegends = {
+        DASHBOARD_VIEW,
         HEALTH_VIEW,
         INBOX_VIEW,
         INBOX_TRIAGE,

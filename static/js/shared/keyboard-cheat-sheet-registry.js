@@ -108,8 +108,9 @@
                 { keys: 'Shift + T', cheatKey: 'bmQuickTag', fallback: 'Quick-tag focused bookmark — ↑/↓ navigate; Enter/Space toggles tag and advances; ✓ shows tags on bookmark; Esc close restores selection on same row' },
                 { keys: 'Shift + C', cheatKey: 'bmQuickCheckMode', fallback: 'Availability checking for focused bookmark — o off, p periodic, m monitor; ↑/↓ and Enter also work; Esc closes' },
                 { keys: 'Shift + P', cheatKey: 'bmTogglePin', fallback: 'Pin or unpin the focused bookmark', print: true },
-                { keys: 'Ctrl/Cmd + Enter', cheatKey: 'bmOpenNewTab', fallback: 'Open the focused bookmark in a new tab, whatever the open-in-new-tab setting says', print: true },
+                { keys: 'Ctrl/Cmd + Enter', cheatKey: 'bmOpenNewTab', fallback: 'Open the focused bookmark — or the highlighted search result — in a new tab, whatever the open-in-new-tab setting says', print: true },
                 { keys: 'Alt + ↑ / ↓', cheatKey: 'bmMoveRow', fallback: 'Move the focused bookmark within its category (manual order only)' },
+                { keys: 'Alt + ← / → on category', cheatKey: 'bmMoveCategory', fallback: 'Move the focused category one place left or right', print: true, printFallback: 'Move category' },
                 { keys: 'F2 on category', cheatKey: 'bmRenameCategoryKey', fallback: 'Rename the focused category header' },
                 {
                     keys: 'Shift + W',
@@ -246,6 +247,20 @@
             titleKey: 'sectionSearchModes',
             titleFallback: 'Search modes',
             rows: [
+                {
+                    keys: 'type',
+                    cheatKey: 'smTypeToFilter',
+                    fallback: 'Just type — letters go to the search line and narrow the list. Nothing opens until Enter',
+                    print: true,
+                    printFallback: 'Type to filter the list',
+                },
+                {
+                    keys: 'Enter',
+                    cheatKey: 'smEnterOpens',
+                    fallback: 'Open the top result. A bookmark shortcut is an exact match, so its letters + Enter open it',
+                    print: true,
+                    printFallback: 'Open the top result',
+                },
                 { keys: '>', cheatKey: 'smRegularSearch', fallback: 'Regular search — filter bookmarks on current page by name', print: true, printFallback: 'Search' },
                 {
                     keys: '/',
@@ -259,7 +274,8 @@
                 { keys: '*', cheatKey: 'smRecentPanel', fallback: 'Recent bookmarks panel', print: true, printFallback: 'Recent bookmarks' },
                 { keys: 'mode chips', cheatKey: 'smModeChips', fallback: 'Click › search · : commands · ? finders at the top of the overlay to switch mode instantly' },
                 { keys: '← / → (chip row)', cheatKey: 'smEmptyStateChips', fallback: 'Empty overlay — with a recent-search or recent-command chip row highlighted, cycle chips and Enter applies' },
-                { keys: 'category: / tag: / page: / status:', cheatKey: 'smFieldFilters', fallback: 'Filter results by field directly in the search bar' },
+                { keys: 'category: / tag: / page: / status:', cheatKey: 'smFieldFilters', fallback: 'Filter results by field directly in the search bar — status: also takes untagged, tagged, noted, unnoted' },
+                { keys: '-tag: / -category: / -status:', cheatKey: 'smNegatedFilters', fallback: 'A leading minus excludes instead of selects, on every filter key' },
             ],
         },
         {
@@ -337,6 +353,7 @@
             titleFallback: 'Commands — tools',
             rows: [
                 { keys: ':backup / :export', cheatKey: 'ctBackup', fallback: 'Open config backups or download a ZIP backup immediately' },
+                { keys: ':trash', cheatKey: 'ctTrash', fallback: 'Open the trash — deleted bookmarks, pages and categories wait 30 days', print: true, printFallback: 'Open the trash' },
                 { keys: ':metadata', cheatKey: 'ctMetadata', fallback: 'Open health missing previews or config bookmarks metadata view' },
                 { keys: ':monitor off', cheatKey: 'ctMonitor', fallback: 'Turn availability checking off for every bookmark at once (asks for confirmation first)' },
                 { keys: ':telemetry on / off', cheatKey: 'ctTelemetry', fallback: 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)' },

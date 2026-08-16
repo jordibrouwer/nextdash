@@ -471,6 +471,61 @@ class DashboardTagFilter {
     }
 
 
+    /**
+     * Send a cross-page bulk move back where it came from.
+     *
+     * Not a plain reversal of state: the bookmarks now live on the other page's
+     * file, so the undo is another add-plus-delete — the same atomic pair the
+     * move used, with source and target exchanged. A bookmark whose add fails
+     * stays on the target page rather than being deleted from both, which is
+     * the same trade the forward move makes.
+     */
+    async undoBulkMoveToPage(movedRefs, sourcePageId, targetPageId) {
+        const d = this.dash;
+        const refs = (movedRefs || []).filter((ref) => ref?.bookmark);
+        if (!refs.length) return;
+        const headers = { 'Content-Type': 'application/json' };
+
+        const outcomes = await Promise.allSettled(refs.map(async (ref) => {
+            const bookmarkPayload = { ...ref.bookmark };
+            const addRes = await dashFetch('/api/bookmarks/add', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkPayload }),
+            });
+            if (!addRes.ok) {
+                throw new Error('add failed');
+            }
+            const deleteRes = await dashFetch('/api/bookmarks', {
+                method: 'DELETE',
+                headers,
+                body: JSON.stringify({ page: targetPageId, bookmark: bookmarkPayload }),
+            });
+            if (!deleteRes.ok) {
+                throw new Error('delete failed');
+            }
+            return ref;
+        }));
+
+        const restored = outcomes.filter((o) => o.status === 'fulfilled').length;
+        d.data?.invalidatePageDataCache?.(sourcePageId);
+        d.data?.invalidatePageDataCache?.(targetPageId);
+        void d.data?.fetchAndStoreDataRevision?.();
+        await d.loadAllBookmarks();
+        await d.data?.loadPageBookmarks?.(sourcePageId);
+        d.renderDashboard();
+
+        if (restored < refs.length) {
+            d.showErrorNotification(
+                d.formatDashboardLabel(
+                    'tagFilterMovePartialFailed',
+                    { count: refs.length - restored },
+                    `Could not move ${refs.length - restored} bookmark(s)`
+                )
+            );
+        }
+    }
+
     async bulkMoveTagFilterToPage(targetPageId) {
         const d = this.dash;
         const refs = this.getTagFilterBookmarkRefs();
@@ -559,7 +614,15 @@ class DashboardTagFilter {
                 `Moved ${n} bookmark(s) to "${targetName}"`
             ),
             'success',
-            { duration: 2500 }
+            {
+                // Eight seconds, like every other undo, and the same shape: the
+                // move is an add on the target plus a delete on the source, so
+                // the way back is the same pair with the pages swapped. Only the
+                // bookmarks that actually moved are offered back — a partial
+                // failure left the rest where they were.
+                duration: 8000,
+                undoCallback: () => this.undoBulkMoveToPage(movedRefs, sourcePageId, targetId),
+            }
         );
 
         const failedCount = sorted.length - movedRefs.length;

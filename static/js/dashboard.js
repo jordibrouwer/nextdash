@@ -47,8 +47,9 @@ class Dashboard {
         this.pinnedEmptyCategoryId = null;
         this.settings = {
             currentPage: 'default',
-            theme: 'moss-stone-dark',
+            theme: 'retro-crt-dark',
             openInNewTab: true,
+            showGridKeyLegend: true,
             columnsPerRow: 3,
             fontSize: 'm',
             showBackgroundDots: true,
@@ -60,9 +61,8 @@ class Dashboard {
             showHealthDashboard: true,
             showRecentButton: false,
 
-            showSyncToasts: false,
             showCheatSheetButton: false,
-            showCollapseAllButton: true,
+            showCollapseAllButton: false,
             showAddBookmarkButton: true,
             showStatus: true,
             colorizeStatus: true,

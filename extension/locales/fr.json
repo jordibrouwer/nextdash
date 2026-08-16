@@ -68,5 +68,7 @@
   "previewCleared": "Aperçu du lien effacé.",
   "previewUntitled": "Sans titre",
   "previewStatusCheck": "···",
-  "moreOptions": "Plus d'options"
+  "moreOptions": "Plus d'options",
+  "contextMenuInboxPage": "Enregistrer la page dans l’Inbox nextDash",
+  "contextMenuInboxLink": "Enregistrer le lien dans l’Inbox nextDash"
 }

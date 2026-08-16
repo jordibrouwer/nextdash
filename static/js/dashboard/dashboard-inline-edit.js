@@ -849,8 +849,19 @@ class DashboardInlineEdit {
         const syncShortcutConflict = (value) => {
             const normalized = String(value || '').trim();
             const conflict = Boolean(normalized) && this.hasShortcutConflict(normalized, bookmarkRef);
-            shortcutConflictHint.hidden = !conflict;
             shortcutInput.classList.toggle('field-conflict', conflict);
+            if (conflict) {
+                shortcutConflictHint.textContent = d.language?.t('config.shortcutConflict') || 'Shortcut already in use';
+                shortcutConflictHint.hidden = false;
+                return;
+            }
+            // Not a conflict but worth knowing: with a row selected the grid
+            // claims c, g, j, k and x, so a bookmark on one of them answers only
+            // part of the time — and on c, never.
+            const note = window.ShortcutKeys?.gridKeyNote?.(
+                normalized, (key, fallback) => d.language?.t(key) || fallback) || '';
+            shortcutConflictHint.textContent = note;
+            shortcutConflictHint.hidden = !note;
         };
         shortcutInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
