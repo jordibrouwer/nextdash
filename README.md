@@ -144,6 +144,10 @@ Structured JSON activity lines are written to the server log for bookmark mutati
 NEXTDASH_ACTIVITY_LOG=mutate,status,open   # include opens
 NEXTDASH_ACTIVITY_LOG=off                  # disable all activity logs
 
+# Automatic backups: how many are kept, and where they live
+NEXTDASH_AUTO_BACKUP_KEEP=3                        # 1–50; default 3
+NEXTDASH_AUTO_BACKUP_DIR=/mnt/backups/nextdash     # absolute path; default data/auto-backups
+
 # Optional rotating file under the data directory
 NEXTDASH_ACTIVITY_LOG_PERSIST=1
 NEXTDASH_ACTIVITY_LOG_FILE=/path/to/activity.log   # optional; default data/activity.log

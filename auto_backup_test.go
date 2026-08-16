@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // newTestHandlers points the data dir at a temp directory and returns a Handlers
@@ -51,8 +52,8 @@ func TestWriteAutoBackupRotatesToThree(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(names) != maxAutoBackups {
-		t.Fatalf("kept %d backups, want %d", len(names), maxAutoBackups)
+	if len(names) != maxAutoBackups() {
+		t.Fatalf("kept %d backups, want %d", len(names), maxAutoBackups())
 	}
 	// Newest-first; oldest (Jan 01) must be gone, newest (Jan 22) present.
 	if names[0] != autoBackupPrefix+"2026-01-22T000000Z.zip" {
@@ -79,8 +80,8 @@ func TestWriteAutoBackupCreatesAndPrunes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(names) != maxAutoBackups {
-		t.Fatalf("kept %d backups, want %d", len(names), maxAutoBackups)
+	if len(names) != maxAutoBackups() {
+		t.Fatalf("kept %d backups, want %d", len(names), maxAutoBackups())
 	}
 }
 
@@ -288,9 +289,90 @@ func TestRestoreAutoBackupRejectsBadNames(t *testing.T) {
 	}
 }
 
+// The rotation and the interval used to be constants. Both are answers to
+// questions an operator or a user asks — how much disk, how often — so both are
+// configurable, and neither may be set to something that quietly stops backups.
+func TestAutoBackupKeepFromEnvironment(t *testing.T) {
+	if got := maxAutoBackups(); got != defaultMaxAutoBackups {
+		t.Fatalf("unset keep = %d, want the default %d", got, defaultMaxAutoBackups)
+	}
+
+	t.Setenv("NEXTDASH_AUTO_BACKUP_KEEP", "7")
+	if got := maxAutoBackups(); got != 7 {
+		t.Fatalf("keep = %d, want 7", got)
+	}
+
+	// Nonsense falls back rather than switching rotation off or letting a
+	// runaway value fill the disk.
+	for _, raw := range []string{"0", "-3", "banana", "9999"} {
+		t.Setenv("NEXTDASH_AUTO_BACKUP_KEEP", raw)
+		if got := maxAutoBackups(); got != defaultMaxAutoBackups {
+			t.Fatalf("keep for %q = %d, want the default %d", raw, got, defaultMaxAutoBackups)
+		}
+	}
+}
+
+func TestAutoBackupIntervalFromSettings(t *testing.T) {
+	h := newTestHandlers(t)
+
+	if got := h.autoBackupInterval(); got != autoBackupInterval {
+		t.Fatalf("unset interval = %v, want the weekly default %v", got, autoBackupInterval)
+	}
+
+	settings := h.store.GetSettings()
+	settings.AutoBackupIntervalDays = 1
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+	if got := h.autoBackupInterval(); got != 24*time.Hour {
+		t.Fatalf("interval = %v, want 24h", got)
+	}
+
+	// Out of range is the default, not a backup every ten minutes.
+	settings.AutoBackupIntervalDays = 999
+	if err := h.store.SaveSettings(settings); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+	if got := h.autoBackupInterval(); got != autoBackupInterval {
+		t.Fatalf("interval for 999 days = %v, want the weekly default", got)
+	}
+}
+
+// A restore replaces everything. The copy of what it replaced is taken on the
+// path both the ZIP import and the restore commit through, so neither can lose
+// the current state to a misclick.
+func TestRestoreWritesSafetyBackupFirst(t *testing.T) {
+	h := newTestHandlers(t)
+
+	if err := h.writeAutoBackup(); err != nil {
+		t.Fatalf("writeAutoBackup: %v", err)
+	}
+	names, err := listAutoBackupFiles()
+	if err != nil || len(names) != 1 {
+		t.Fatalf("setup: %d backups, %v", len(names), err)
+	}
+	restoreFrom := names[0]
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auto-backups/restore?name="+restoreFrom, nil)
+	rec := httptest.NewRecorder()
+	h.RestoreAutoBackup(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("restore status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+
+	after, err := listAutoBackupFiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The archive that was restored, plus the copy taken of what it replaced.
+	if len(after) < 2 {
+		t.Fatalf("after restore there are %d backups, want at least 2 — the safety copy was not written", len(after))
+	}
+}
+
 func TestAutoBackupDueWhenEmpty(t *testing.T) {
-	newTestHandlers(t)
-	if !autoBackupDue() {
+	h := newTestHandlers(t)
+	if !h.autoBackupDue() {
 		t.Fatal("expected a backup to be due when none exist")
 	}
 }
@@ -300,7 +382,7 @@ func TestAutoBackupNotDueAfterRecentBackup(t *testing.T) {
 	if err := h.writeAutoBackup(); err != nil {
 		t.Fatalf("writeAutoBackup: %v", err)
 	}
-	if autoBackupDue() {
+	if h.autoBackupDue() {
 		t.Fatal("did not expect a backup to be due right after one was made")
 	}
 }

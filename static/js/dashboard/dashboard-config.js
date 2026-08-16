@@ -3991,16 +3991,38 @@ class DashboardConfig {
         return `${(n / (1024 * 1024)).toFixed(1)} MB`;
     }
 
-    formatRelative(iso) {
-        const then = Date.parse(iso);
+    /**
+     * A moment, relative to now, in either direction.
+     *
+     * It spoke only the past: everything went through `now - then` and came back
+     * as "…ago", so the next scheduled backup — six days off — reported as "just
+     * now", the negative difference falling straight into the under-a-minute
+     * branch. Accepts a timestamp as well as a string, because the one caller
+     * that needed the future was already handing it a parsed number and got an
+     * empty string back for its trouble.
+     */
+    formatRelative(when) {
+        const then = typeof when === 'number' ? when : Date.parse(when);
         if (!Number.isFinite(then)) return '';
-        const mins = Math.round((Date.now() - then) / 60000);
+        const diffMins = Math.round((Date.now() - then) / 60000);
+        if (diffMins < 0) return this.formatRelativeAhead(-diffMins);
+        const mins = diffMins;
         if (mins < 1) return this.t('config.backupJustNow', 'just now');
         if (mins < 60) return this.t('config.backupMinutesAgo', '{n} min ago').replace('{n}', String(mins));
         const hours = Math.round(mins / 60);
         if (hours < 24) return this.t('config.backupHoursAgo', '{n}h ago').replace('{n}', String(hours));
         const days = Math.round(hours / 24);
         return this.t('config.backupDaysAgo', '{n}d ago').replace('{n}', String(days));
+    }
+
+    /** The future half of formatRelative, in the same steps. */
+    formatRelativeAhead(mins) {
+        if (mins < 1) return this.t('config.backupInAMoment', 'in a moment');
+        if (mins < 60) return this.t('config.backupInMinutes', 'in {n} min').replace('{n}', String(mins));
+        const hours = Math.round(mins / 60);
+        if (hours < 24) return this.t('config.backupInHours', 'in {n}h').replace('{n}', String(hours));
+        const days = Math.round(hours / 24);
+        return this.t('config.backupInDays', 'in {n}d').replace('{n}', String(days));
     }
 
     dataBackupsTiles() {
@@ -4021,7 +4043,7 @@ class DashboardConfig {
                 detail: enabled
                     ? (Date.parse(data?.nextBackupAt || '')
                         ? this.t('config.backupNextAt', 'Next {when}')
-                            .replace('{when}', this.formatRelative(Date.parse(data.nextBackupAt)))
+                            .replace('{when}', this.formatRelative(data.nextBackupAt))
                         : this.t('config.backupAutoOn', 'Auto-backup on'))
                     : this.t('config.backupAutoOff', 'Auto-backup off'),
             },
@@ -4119,23 +4141,25 @@ class DashboardConfig {
     /** Everything except the destructive actions, which live on their own tab. */
     renderDataBackupsMain() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        // Weekly is the default the server falls back to, and 0 is how an install
+        // that never chose says so — the option carries that value rather than 7
+        // so an untouched setting stays untouched.
+        const backupIntervalDays = Number(s.autoBackupIntervalDays) || 0;
+        const backupIntervalOptions = [[1, this.t('config.backupEveryDay', 'Every day')],
+            [7, this.t('config.backupEveryWeek', 'Every week')],
+            [14, this.t('config.backupEveryTwoWeeks', 'Every two weeks')],
+            [30, this.t('config.backupEveryMonth', 'Every month')]]
+            .map(([days, label]) => {
+                const selected = days === (backupIntervalDays || 7);
+                return `<option value="${days}" ${selected ? 'selected' : ''}>${esc(label)}</option>`;
+            }).join('');
+
         const loading = this._backupData == null;
         const tiles = loading
             ? `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`
             : `<div class="config-tiles" role="list">${this.dataBackupsTiles().map((t) => this.renderTile(t)).join('')}</div>`;
 
-        const s = this.dash.settings || {};
-        const recheckHours = Number(s.healthAutoRecheckIntervalHours) || 24;
-        const intervalOptions = [6, 12, 24, 48, 168].map((h) => {
-            const label = h < 24
-                ? this.t('config.recheckEveryHours', 'Every {n}h').replace('{n}', String(h))
-                : (h === 24
-                    ? this.t('config.recheckDaily', 'Daily')
-                    : (h === 168
-                        ? this.t('config.recheckWeekly', 'Weekly')
-                        : this.t('config.recheckEveryDays', 'Every {n} days').replace('{n}', String(h / 24))));
-            return `<option value="${h}" ${h === recheckHours ? 'selected' : ''}>${esc(label)}</option>`;
-        }).join('');
         const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
             || (() => { try { return localStorage.getItem('deviceSpecificSettings') === 'true'; } catch { return false; } })();
 
@@ -4150,8 +4174,12 @@ class DashboardConfig {
                 </div>
                 <label class="config-toggle">
                     <input type="checkbox" data-backup-toggle="autoBackupEnabled" ${s.autoBackupEnabled ? 'checked' : ''}>
-                    <span>${esc(this.t('config.autoBackupEnabledLabel', 'Automatic daily backups'))}</span>
+                    <span>${esc(this.t('config.autoBackupEnabledLabel', 'Create a backup automatically'))}</span>
                 </label>
+                <div class="config-field" style="margin-top:12px">
+                    <span class="config-field-label">${esc(this.t('config.autoBackupIntervalLabel', 'How often'))}</span>
+                    <select class="config-select" data-backup-select="autoBackupIntervalDays" ${s.autoBackupEnabled ? '' : 'disabled'}>${backupIntervalOptions}</select>
+                </div>
             </div>
 
             <div class="config-panel">
@@ -4193,17 +4221,6 @@ class DashboardConfig {
                 </label>
             </div>
 
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.statusRecheckInterval', 'Automatic health rechecks'))}</h3>
-                <label class="config-toggle">
-                    <input type="checkbox" data-backup-toggle="healthAutoRecheckEnabled" ${s.healthAutoRecheckEnabled ? 'checked' : ''}>
-                    <span>${esc(this.t('config.healthRecheckEnabledLabel', 'Recheck link health automatically'))}</span>
-                </label>
-                <div class="config-field" style="margin-top:12px">
-                    <span class="config-field-label">${esc(this.t('config.healthRecheckIntervalLabel', 'Interval'))}</span>
-                    <select class="config-select" data-backup-select="healthAutoRecheckIntervalHours" ${s.healthAutoRecheckEnabled ? '' : 'disabled'}>${intervalOptions}</select>
-                </div>
-            </div>
 
         `;
     }
@@ -5099,11 +5116,21 @@ class DashboardConfig {
         if (backups.length === 0) {
             return `<p class="config-panel-empty">${esc(this.t('config.backupListEmpty', 'No stored backups yet.'))}</p>`;
         }
+        // The rotation was invisible: the panel counted what exists and said
+        // nothing about a fourth pushing the oldest out — which makes "Make a
+        // backup now" a destructive button once the rotation is full, and the
+        // same is true of the copy taken before a restore.
+        const keep = Number(this._backupData?.keep) || 0;
+        const note = keep
+            ? `<p class="config-panel-note">${esc(this.t('config.backupRotationNote',
+                'The newest {keep} are kept. Making another — or restoring, which copies the current data first — removes the oldest.')
+                .replace('{keep}', String(keep)))}</p>`
+            : '';
         const rows = backups.map((b) => `
             <li class="config-backup-row">
                 <div class="config-backup-meta">
-                    <span class="config-backup-name">${esc(this.formatRelative(b.createdAt) || b.name)}</span>
-                    <span class="config-backup-size">${esc(this.formatBytes(b.size))}</span>
+                    <span class="config-backup-name" title="${esc(this.formatExactTime(b.createdAt))}">${esc(this.formatRelative(b.createdAt) || b.name)}</span>
+                    <span class="config-backup-size">${esc(this.formatBytes(b.size))}${esc(this.backupContentsLabel(b))}</span>
                 </div>
                 <div class="config-backup-row-actions">
                     <button type="button" class="config-btn config-btn--small" data-backup-item="restore" data-backup-name="${esc(b.name)}">${esc(this.t('config.autoBackupRestore', 'Restore'))}</button>
@@ -5112,7 +5139,33 @@ class DashboardConfig {
                 </div>
             </li>
         `).join('');
-        return `<ul class="config-backup-list">${rows}</ul>`;
+        return `${note}<ul class="config-backup-list">${rows}</ul>
+            <div class="config-actions">
+                <button type="button" class="config-btn config-btn--small" data-backup-action="download-all">${esc(
+                    this.t('config.backupDownloadAll', 'Download all'))}</button>
+            </div>`;
+    }
+
+    /** The exact moment, for the title on a row that shows "15h ago". */
+    formatExactTime(iso) {
+        const at = Date.parse(iso);
+        if (!Number.isFinite(at)) return '';
+        try {
+            return new Intl.DateTimeFormat(this.dash.settings?.language || undefined,
+                { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(at));
+        } catch {
+            return new Date(at).toISOString();
+        }
+    }
+
+    /** "· 412 bookmarks on 5 pages", or nothing where the archive was unreadable. */
+    backupContentsLabel(backup) {
+        const bookmarks = Number(backup?.bookmarks) || 0;
+        const pages = Number(backup?.pages) || 0;
+        if (!bookmarks && !pages) return '';
+        return ` · ${this.t('config.backupContents', '{bookmarks} bookmarks on {pages} pages')
+            .replace('{bookmarks}', this.statsNumber(bookmarks))
+            .replace('{pages}', this.statsNumber(pages))}`;
     }
 
     async loadBackupData() {
@@ -5244,7 +5297,35 @@ class DashboardConfig {
             case 'refresh-previews': void this.refreshAllPreviews(); break;
             case 'clear-previews': void this.clearAllPreviews(); break;
             case 'delete-bookmarks': void this.deleteAllBookmarks(); break;
+            case 'download-all': void this.downloadAllBackups(); break;
         }
+    }
+
+    /**
+     * Save every stored backup, one file at a time.
+     *
+     * Sequential rather than parallel: three archives of a megabyte or two are
+     * three navigations, and browsers throttle a burst of them into silently
+     * dropping all but the first. Sequential also means the count in the toast
+     * is the number that actually arrived.
+     */
+    async downloadAllBackups() {
+        const backups = Array.isArray(this._backupData?.backups) ? this._backupData.backups : [];
+        if (!backups.length) return;
+        let saved = 0;
+        for (const backup of backups) {
+            try {
+                await this.downloadStoredBackup(backup.name);
+                saved += 1;
+            } catch {
+                // Reported in the total below rather than one toast per file.
+            }
+        }
+        this.notify(saved === backups.length
+            ? this.t('config.backupDownloadAllDone', 'Saved {n} backups.').replace('{n}', String(saved))
+            : this.t('config.backupDownloadAllPartial', 'Saved {n} of {total} backups.')
+                .replace('{n}', String(saved)).replace('{total}', String(backups.length)),
+            saved === backups.length ? 'success' : 'error');
     }
 
     setBackupToggle(name, value) {
@@ -5271,6 +5352,15 @@ class DashboardConfig {
             this.dash.settings.faviconRefreshPolicy = value;
             void this.saveSettingsWithFeedback();
             this.repaintBackupSection();
+            return;
+        }
+        if (name === 'autoBackupIntervalDays') {
+            this.dash.settings.autoBackupIntervalDays = Number(value) || 0;
+            // Saved through the same path as the recheck interval beside it,
+            // rather than a patch helper of its own.
+            void this.saveSettingsWithFeedback();
+            // The tile says when the next one is due, which this changes.
+            void this.loadBackupData();
             return;
         }
         if (name !== 'healthAutoRecheckIntervalHours') return;

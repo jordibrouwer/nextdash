@@ -1257,6 +1257,12 @@ A restore that cannot go ahead is **refused rather than forced**, and the item s
 
 The destructive actions sit on their own sub-tab so they are not something you scroll past while changing backup settings.
 
+**Automatic backups** run **weekly** by default, and **How often** on the same panel offers daily, weekly, fortnightly or monthly. Only the **newest three** are kept: a fourth pushes the oldest out, and so does the copy taken before a restore, which the panel says beside the list. `NEXTDASH_AUTO_BACKUP_KEEP` raises that count (1–50), and `NEXTDASH_AUTO_BACKUP_DIR` (absolute path) moves the archives off the data directory altogether — backups kept inside the thing they back up are lost with it.
+
+Each stored backup lists **what is in it** — *1.7 MB · 412 bookmarks on 5 pages* — and the exact moment it was made is in the tooltip on its relative time, for when three of them are from the same day. **Download all** saves the lot one file at a time.
+
+**Restoring or importing writes a backup of the current data first**, on the server, before anything is replaced. It is taken after the archive has been read and found valid, so a corrupt file does not spend a rotation slot; if the copy cannot be written the restore still goes ahead and says so in the server log, because being unable to move forward *or* back is worse.
+
 - **Delete all bookmarks only** — removes every bookmark, keeps pages, categories, and settings. Asks once.
 - **Reset all data** — removes everything. Asks twice: a confirmation, then you type **RESET** (or the word in your language) before the button becomes clickable.
 

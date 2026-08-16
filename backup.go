@@ -605,6 +605,20 @@ func (e *importError) status() int   { return e.code }
 // atomic commit, save categories) for a set of staged files. It returns the
 // number of skipped bookmarks, or an *importError with an HTTP status.
 func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) (int, *importError) {
+	// A copy of what is about to be replaced, taken here because this is the one
+	// path both the ZIP import and the auto-backup restore commit through.
+	//
+	// After staging rather than before: staging is what proves the archive is
+	// readable, and a backup taken for an import that then turns out to be
+	// rubbish is a rotation slot spent on nothing. Failure is logged and the
+	// import proceeds — refusing to import because the safety copy could not be
+	// written would leave someone stuck with no way forward and no way back.
+	if err := h.writeAutoBackup(); err != nil {
+		log.Printf("import: safety backup before replacing data failed: %v", err)
+	} else {
+		log.Printf("import: safety backup written before replacing data")
+	}
+
 	allowLocalBookmarks := resolveImportAllowLocalBookmarks(staged, h.store.GetSettings().AllowLocalBookmarks)
 
 	prepared, importedCategoriesByPage, skippedBookmarks, err := prepareImportFromStaged(staged, allowLocalBookmarks)

@@ -314,7 +314,12 @@ type Settings struct {
 	InboxShowInPageTabs            bool                             `json:"inboxShowInPageTabs"`            // Show Inbox tab in page navigation
 	InboxDeleteAfterPromote        bool                             `json:"inboxDeleteAfterPromote"`        // Remove inbox item after promote to bookmark
 	AllowLocalBookmarks            bool                             `json:"allowLocalBookmarks"`            // Allow http(s) bookmarks to localhost and private hosts
-	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`              // Automatically create a weekly local backup (keeps the latest 3)
+	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`              // Automatically create a local backup (keeps the latest few)
+	// AutoBackupIntervalDays is how often that runs. 0 means the built-in
+	// weekly default, which is what every install carried before this was a
+	// choice — so an absent key keeps the old behaviour rather than reading as
+	// "never".
+	AutoBackupIntervalDays         int                              `json:"autoBackupIntervalDays,omitempty"`
 	HealthAutoRecheckEnabled       bool                             `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int                              `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
 	ServerLogRetentionHours        int                              `json:"serverLogRetentionHours"`        // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
@@ -2012,6 +2017,18 @@ func clampBookmarkSettings(s *Settings) {
 	}
 	if s.BookmarkStaleDays > 365 {
 		s.BookmarkStaleDays = 365
+	}
+	// 0 stays 0: it means "the built-in default", which is what an install that
+	// never chose an interval has. Anything else is held between daily and
+	// monthly — a backup less often than that is not a safety net, and more
+	// often than daily fills the rotation within a day.
+	if s.AutoBackupIntervalDays != 0 {
+		if s.AutoBackupIntervalDays < 1 {
+			s.AutoBackupIntervalDays = 1
+		}
+		if s.AutoBackupIntervalDays > 30 {
+			s.AutoBackupIntervalDays = 30
+		}
 	}
 	if s.RowTagsMax < 1 {
 		s.RowTagsMax = 1

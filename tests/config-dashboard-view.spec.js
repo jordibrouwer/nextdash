@@ -315,7 +315,10 @@ test.describe('config dashboard view (scaffold)', () => {
         // the quick-start card read as destructive.
         await expect(page.locator('[data-backup-action="reset-onboarding"]')).toHaveCount(0);
         await expect(page.locator('[data-backup-toggle="autoBackupEnabled"]')).toBeVisible();
-        await expect(page.locator('[data-backup-toggle="healthAutoRecheckEnabled"]')).toBeVisible();
+        // How often that runs belongs here; how often links are re-checked does
+        // not, and was a second copy of a control on Behavior → Status & health.
+        await expect(page.locator('[data-backup-select="autoBackupIntervalDays"]')).toBeVisible();
+        await expect(page.locator('[data-backup-toggle="healthAutoRecheckEnabled"]')).toHaveCount(0);
     });
 
     test('CSV export fetches bookmarks and triggers a download', async ({ page }) => {

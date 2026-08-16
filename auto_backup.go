@@ -24,9 +24,11 @@ const (
 	autoBackupDirName = "auto-backups"
 	// autoBackupPrefix + a sortable UTC timestamp + ".zip" forms each filename.
 	autoBackupPrefix = "nextdash-auto-backup-"
-	// maxAutoBackups is the rotation limit: the oldest is pruned beyond this.
-	maxAutoBackups = 3
-	// autoBackupInterval is the minimum age of the newest backup before a new one is made.
+	// defaultMaxAutoBackups is the rotation limit: the oldest is pruned beyond
+	// this. Override with NEXTDASH_AUTO_BACKUP_KEEP.
+	defaultMaxAutoBackups = 3
+	// autoBackupInterval is the default minimum age of the newest backup before
+	// a new one is made. Settings.AutoBackupIntervalDays overrides it.
 	autoBackupInterval = 7 * 24 * time.Hour
 	// autoBackupCheckInterval is how often the scheduler re-checks whether a backup is due.
 	// A short-ish cadence keeps "weekly" robust across container restarts.
@@ -55,8 +57,43 @@ func uniqueAutoBackupName(dir string) string {
 }
 
 // autoBackupDir returns the directory holding automatic backups.
+//
+// NEXTDASH_AUTO_BACKUP_DIR moves it off the data directory entirely, which is
+// the point of it: backups kept inside the thing they are backing up are lost
+// with it. An absolute path is required — a relative one would resolve against
+// the working directory, which differs between running the binary and running
+// it in a container.
 func autoBackupDir() string {
+	if custom := strings.TrimSpace(os.Getenv("NEXTDASH_AUTO_BACKUP_DIR")); custom != "" && filepath.IsAbs(custom) {
+		return custom
+	}
 	return filepath.Join(ResolveDataDir(), autoBackupDirName)
+}
+
+/*
+How many backups are kept, and how often one is made.
+
+Both were constants. The count is now an environment variable, because it is an
+operator's decision about disk rather than a user's about behaviour; the
+interval is a setting, because it is the opposite. Neither can be set to
+something that would quietly stop backups happening: the count floors at one,
+and the interval falls back to weekly when unset.
+*/
+func maxAutoBackups() int {
+	if raw := strings.TrimSpace(os.Getenv("NEXTDASH_AUTO_BACKUP_KEEP")); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n >= 1 && n <= 50 {
+			return n
+		}
+	}
+	return defaultMaxAutoBackups
+}
+
+func (h *Handlers) autoBackupInterval() time.Duration {
+	days := h.store.GetSettings().AutoBackupIntervalDays
+	if days >= 1 && days <= 30 {
+		return time.Duration(days) * 24 * time.Hour
+	}
+	return autoBackupInterval
 }
 
 // autoBackupInfo describes one stored automatic backup for the API.
@@ -64,12 +101,22 @@ type autoBackupInfo struct {
 	Name      string `json:"name"`
 	Size      int64  `json:"size"`
 	CreatedAt string `json:"createdAt"` // RFC3339, derived from mod time
+	// What is in it, read from the archive's own files. Size in kilobytes says
+	// nothing about whether this is the backup from before the import that went
+	// wrong; "412 bookmarks across 5 pages" does. Zero when the archive cannot
+	// be read, which the client renders as nothing rather than as "0".
+	Bookmarks int `json:"bookmarks,omitempty"`
+	Pages     int `json:"pages,omitempty"`
 }
 
 // autoBackupListResponse is the payload for GET /api/auto-backups.
 type autoBackupListResponse struct {
 	Enabled bool             `json:"enabled"`
 	Backups []autoBackupInfo `json:"backups"`
+	// Keep is the rotation limit and IntervalDays how often one is made, both
+	// so the panel can say what will happen rather than only what has happened.
+	Keep         int `json:"keep"`
+	IntervalDays int `json:"intervalDays"`
 	// NextBackupAt is when the next automatic backup is due (RFC3339), or empty
 	// when automatic backups are disabled. When it's in the past, one is due now.
 	NextBackupAt string `json:"nextBackupAt,omitempty"`
@@ -77,12 +124,12 @@ type autoBackupListResponse struct {
 
 // nextAutoBackupTime returns when the next automatic backup is due: the newest
 // backup's time plus the interval, or now when none exists yet.
-func nextAutoBackupTime() time.Time {
+func (h *Handlers) nextAutoBackupTime() time.Time {
 	newest, ok := newestAutoBackupModTime()
 	if !ok {
 		return time.Now()
 	}
-	return newest.Add(autoBackupInterval)
+	return newest.Add(h.autoBackupInterval())
 }
 
 // listAutoBackupFiles returns the valid auto-backup filenames sorted newest-first.
@@ -131,14 +178,15 @@ func (h *Handlers) writeAutoBackup() error {
 	return pruneAutoBackups()
 }
 
-// pruneAutoBackups deletes the oldest auto-backups until at most maxAutoBackups remain.
+// pruneAutoBackups deletes the oldest auto-backups until at most maxAutoBackups() remain.
 func pruneAutoBackups() error {
 	names, err := listAutoBackupFiles()
 	if err != nil {
 		return err
 	}
+	keep := maxAutoBackups()
 	// names is newest-first; anything past the limit is oldest and gets removed.
-	for _, name := range names[min(len(names), maxAutoBackups):] {
+	for _, name := range names[min(len(names), keep):] {
 		if err := os.Remove(filepath.Join(autoBackupDir(), name)); err != nil && !os.IsNotExist(err) {
 			return err
 		}
@@ -169,12 +217,12 @@ func newestAutoBackupModTime() (time.Time, bool) {
 
 // autoBackupDue reports whether a new automatic backup should be created now:
 // when none exists yet or the newest is older than autoBackupInterval.
-func autoBackupDue() bool {
+func (h *Handlers) autoBackupDue() bool {
 	newest, ok := newestAutoBackupModTime()
 	if !ok {
 		return true
 	}
-	return time.Since(newest) >= autoBackupInterval
+	return time.Since(newest) >= h.autoBackupInterval()
 }
 
 // StartAutoBackupScheduler runs a weekly backup loop until stop is closed.
@@ -203,7 +251,7 @@ func (h *Handlers) maybeRunAutoBackup() {
 	if !h.store.GetSettings().AutoBackupEnabled {
 		return
 	}
-	if !autoBackupDue() {
+	if !h.autoBackupDue() {
 		return
 	}
 	if err := h.writeAutoBackup(); err != nil {
@@ -229,19 +277,28 @@ func (h *Handlers) ListAutoBackups(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			continue
 		}
-		backups = append(backups, autoBackupInfo{
+		entry := autoBackupInfo{
 			Name:      name,
 			Size:      info.Size(),
 			CreatedAt: info.ModTime().UTC().Format(time.RFC3339),
-		})
+		}
+		entry.Bookmarks, entry.Pages = countBackupContents(filepath.Join(autoBackupDir(), name))
+		backups = append(backups, entry)
 	}
 
+	settings := h.store.GetSettings()
 	resp := autoBackupListResponse{
-		Enabled: h.store.GetSettings().AutoBackupEnabled,
+		Enabled: settings.AutoBackupEnabled,
 		Backups: backups,
+		// The rotation limit was a constant the client could not see, so the
+		// panel could only say how many backups exist — never that a fourth
+		// pushes the oldest out, which is what makes "Make a backup now" a
+		// destructive button on a full rotation.
+		Keep:         maxAutoBackups(),
+		IntervalDays: int(h.autoBackupInterval() / (24 * time.Hour)),
 	}
 	if resp.Enabled {
-		resp.NextBackupAt = nextAutoBackupTime().UTC().Format(time.RFC3339)
+		resp.NextBackupAt = h.nextAutoBackupTime().UTC().Format(time.RFC3339)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -449,4 +506,47 @@ func (h *Handlers) RunAutoBackup(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{"status": "success"})
+}
+
+// countBackupContents reads an archive and reports what it holds: how many
+// bookmarks, across how many pages.
+//
+// Read from the zip rather than recorded when it was written, so it also works
+// for archives made before this existed — and for one that was imported from
+// somewhere else. Failures are silent and report zero: a listing that refuses
+// to render because one old archive is unreadable is worse than a row without
+// a count.
+func countBackupContents(path string) (bookmarks int, pages int) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return 0, 0
+	}
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return 0, 0
+	}
+	for _, f := range zr.File {
+		name := filepath.Base(f.Name)
+		if !strings.HasPrefix(name, "bookmarks-") || !strings.HasSuffix(name, ".json") {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			continue
+		}
+		body, err := io.ReadAll(io.LimitReader(rc, 32<<20))
+		rc.Close()
+		if err != nil {
+			continue
+		}
+		var page struct {
+			Bookmarks []json.RawMessage `json:"bookmarks"`
+		}
+		if json.Unmarshal(body, &page) != nil {
+			continue
+		}
+		pages++
+		bookmarks += len(page.Bookmarks)
+	}
+	return bookmarks, pages
 }
