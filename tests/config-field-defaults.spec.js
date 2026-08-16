@@ -35,7 +35,7 @@ function serverDefaults() {
         tags[m[1]] = m[2];
     }
 
-    const named = { defaultThemeID: 'moss-stone-dark', defaultHealthAutoRecheckIntervalHours: 24 };
+    const named = { defaultThemeID: 'retro-crt-dark', defaultHealthAutoRecheckIntervalHours: 24 };
     const out = {};
     for (const m of block.matchAll(/^\s*(\w+):\s+(.+?),\s*$/gm)) {
         const key = tags[m[1]];

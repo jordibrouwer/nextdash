@@ -8201,7 +8201,7 @@ class DashboardConfig {
         bookmarkArchiveUrl: { info: ['bookmarkArchiveUrlInfoTitle', 'bookmarkArchiveUrlInfoMessage'], def: 'https://web.archive.org/web/*/{url}' },
         pasteDestination: { def: 'ask' },
         monitorEmphasis: { def: 'problems' },
-        theme: { def: 'moss-stone-dark' },
+        theme: { def: 'retro-crt-dark' },
         fontSize: { def: 'm' },
         customTitle: { def: '' },
         monitorNotifyRetries: { info: ['monitorNotifyRetriesInfoTitle', 'monitorNotifyRetriesInfoMessage'], def: 3 },

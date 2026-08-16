@@ -314,3 +314,41 @@ func TestServerLogMaxEntriesDefault(t *testing.T) {
 		})
 	}
 }
+
+// A fresh install starts on Retro CRT, and everything keyed to the default theme
+// starts with it.
+//
+// The theme is named in four places — the two constructors here, the client's
+// own settings object and the config form's default map — because none of them
+// can read the others at the moment they are needed. Only the first two are
+// checkable from Go; the client pair is held to it by
+// tests/config-field-defaults.spec.js.
+func TestFreshInstallStartsOnRetroCRT(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+
+	settings := NewStore().GetSettings()
+	if settings.Theme != "retro-crt-dark" {
+		t.Fatalf("fresh install theme = %q, want retro-crt-dark", settings.Theme)
+	}
+
+	// Auto dark mode is on by default, so the light variant has to exist and be
+	// the one the pair resolves to — a default that only holds after dark falls
+	// is not a default.
+	colors := NewStore().GetColors()
+	for _, id := range []string{defaultThemeID, defaultThemeLightID} {
+		if _, ok := colors.BuiltIn[id]; !ok {
+			t.Fatalf("packaged themes have no %q", id)
+		}
+	}
+
+	// Favicon harmonisation is seeded per displayed theme id, so both variants
+	// carry an entry; with only one, it would apply for half the day.
+	styling := settings.ThemeIconStyling
+	for _, id := range []string{"retro-crt-dark", "retro-crt-light"} {
+		entry, ok := styling[id]
+		if !ok || !entry.Enabled {
+			t.Fatalf("themeIconStyling[%q] = %+v, want an enabled entry", id, entry)
+		}
+	}
+}
