@@ -1167,7 +1167,9 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 |---------|----------|
 | **Pages & tags** | Categories · Tags · Pages · Finders · Collections |
 | **Bookmarks** | List · Settings (**v1.1.0**) |
-| **Appearance** | Theme · Layout · Display · Toolbar & tabs · Branding · Custom themes |
+| **Appearance** | Theme · Layout · Display · Toolbar & tabs · Custom themes |
+
+**Branding** — page title and favicon — is the tail of **Display** rather than a tab of its own; `/#config/appearance/branding` still lands on it. Each tab has a **filter** beside *Only changed*, and `Escape` clears it. The theme list answers to **typing**: open it and type the first letters of a name to jump to it among a hundred and fifty. Pointing at a **type size** shows it on the dashboard behind config and moving away puts it back — the same idea as browsing the theme list, which previews its colours. A custom theme has **⤓ Export** on its row and **Import theme…** beside *Add custom theme*, so one palette can move between installs without a whole backup.
 | **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
 
 Every Behavior tab has a **filter field** beside *Only changed*: it narrows the tab to the settings whose label, hint or options match what you type, and `Escape` clears it. That is the other half of `Ctrl/Cmd+Shift+K`, which finds one setting anywhere; this one narrows the eighty-odd in front of you. **Keep settings on this device only** lives here, in *Sync & feedback*, and only here — it used to be offered on Data & backups as well, where it was the copy that worked.

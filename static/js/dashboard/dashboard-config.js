@@ -253,6 +253,8 @@ class DashboardConfig {
         if (raw === 'config/behavior/layout') return 'appearance';
         if (raw === 'config/behavior/display') return 'appearance';
         if (raw === 'config') return 'overview';
+        // Branding stopped being a tab; its panel is the tail of Display.
+        if (raw === 'config/appearance/branding') return 'appearance';
         // A trailing /<tab> is optional and handled by subTabFromHash; help
         // adds a third segment naming one panel, which neither of them reads.
         const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z0-9-]+))?(?:\/([a-z0-9-]+))?$/);
@@ -272,6 +274,7 @@ class DashboardConfig {
         const raw = hash.replace(/^#/, '');
         if (raw === 'config/behavior/layout') return 'layout';
         if (raw === 'config/behavior/display') return 'display';
+        if (raw === 'config/appearance/branding') return 'display';
         // The optional third segment is a help panel, which this ignores — it
         // must not stop the tab in front of it from being read.
         const match = raw.match(/^config\/([a-z-]+)\/([a-z-]+)(?:\/[a-z0-9-]+)?$/);
@@ -2010,9 +2013,9 @@ class DashboardConfig {
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'display' },
-        { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'branding' },
-        { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'branding' },
-        { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'branding' },
+        { field: 'enableCustomTitle', labelKey: 'enableCustomTitle', fallback: 'Use a custom page title', section: 'appearance', subTab: 'display' },
+        { field: 'customTitle', labelKey: 'customTitleLabel', fallback: 'Title', section: 'appearance', subTab: 'display' },
+        { field: 'enableCustomFavicon', labelKey: 'uploadFaviconLabel', fallback: 'Custom favicon', section: 'appearance', subTab: 'display' },
         { field: 'faviconRefreshPolicy', labelKey: 'faviconRefreshPolicyLabel', fallback: 'Refresh favicons', section: 'data-backups', subTab: 'icons' },
         { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
     ];
@@ -6117,9 +6120,6 @@ class DashboardConfig {
         if (this.appearanceTab === 'toolbar') {
             return shell(this.renderAppearanceToolbarBody());
         }
-        if (this.appearanceTab === 'branding') {
-            return shell(this.renderAppearanceBrandingBody());
-        }
 
         return shell(`
             ${this.renderChangedFilterBar('appearance', 'general')}
@@ -6184,7 +6184,7 @@ class DashboardConfig {
             </div>
 
             <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.backgroundLabel', 'Background'))}</h3>
+                <h3 class="config-panel-title">${esc(this.t('config.appearanceBackgroundTitle', 'Background'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceBackgroundNote', 'What sits behind the bookmarks. Auto follows your theme; Gradient and Image let you choose your own, and opacity fades it back so the text stays readable.'))}</p>
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.backgroundLabel', 'Background'))}</span>
@@ -6218,11 +6218,11 @@ class DashboardConfig {
             + this.renderControlPanels(this.panelsFor('appearance', 'toolbar'), 'behavior');
     }
 
+    /** The branding panel, appended to Display since it lost its own tab. */
     renderAppearanceBrandingBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
         return `
-            ${this.renderChangedFilterBar('appearance', 'branding')}
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.generalGroupBranding', 'Branding'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.appearanceBrandingNote', 'The page title and favicon this dashboard uses in the browser tab.'))}</p>
@@ -6334,7 +6334,8 @@ class DashboardConfig {
                     ${this.appearanceAff('animationsEnabled')}
                 </div>
             </div>
-            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}`;
+            ${this.renderControlPanels(this.panelsFor('appearance', 'display'), 'behavior')}
+            ${this.renderAppearanceBrandingBody()}`;
     }
 
     /** Friendly name for a theme id, matching the old config's labels. */
@@ -6519,7 +6520,27 @@ class DashboardConfig {
                 // this as "close the config view" on the same key press.
                 e.stopPropagation();
                 close({ restore: true });
+                return;
             }
+            // Typeahead. A native select gives this for free and this
+            // hand-built replacement did not, which is felt at 150 themes:
+            // reaching Terracotta meant holding an arrow key or scrolling.
+            // Letters accumulate for a second so "te" beats "t", the way a
+            // select behaves, and a repeated single letter steps through the
+            // themes that start with it.
+            if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
+            e.preventDefault();
+            const now = Date.now();
+            if (now - (this._themeTypeaheadAt || 0) > 1000) this._themeTypeahead = '';
+            this._themeTypeaheadAt = now;
+            const repeat = this._themeTypeahead === e.key.toLowerCase();
+            this._themeTypeahead = repeat ? e.key.toLowerCase() : this._themeTypeahead + e.key.toLowerCase();
+            const query = this._themeTypeahead;
+            const labelOf = (option) => (option.textContent || '').trim().toLowerCase();
+            const from = repeat ? at + 1 : at;
+            const order = [...all.slice(from), ...all.slice(0, from)];
+            const hit = order.find((option) => labelOf(option).startsWith(query));
+            if (hit) highlight(hit);
         });
 
         // Leaving the picker entirely counts as cancelling. focusout fires
@@ -6600,6 +6621,30 @@ class DashboardConfig {
         this.bindSubTabStrip(container, 'data-appearance-tab', (tab) => {
             void this.switchAppearanceTab(tab);
         });
+        // The filter field is rendered by the shared bar, but this section is
+        // hand-written markup — so it is applied to the DOM after each render
+        // rather than while the controls are built.
+        this.applyDomSettingsFilter(container);
+        container.querySelectorAll('[data-settings-filter]').forEach((field) => {
+            if (field.dataset.domFilterBound === '1') return;
+            field.dataset.domFilterBound = '1';
+            let debounce = null;
+            const run = () => {
+                this.settingsFilter = field.value;
+                this.applyDomSettingsFilter(container);
+            };
+            field.addEventListener('input', () => {
+                clearTimeout(debounce);
+                debounce = setTimeout(run, 150);
+            });
+            field.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape' || !String(this.settingsFilter || '').trim()) return;
+                e.preventDefault();
+                e.stopPropagation();
+                field.value = '';
+                run();
+            });
+        });
         container.querySelectorAll('[data-tile-appearance-tab]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 void this.switchAppearanceTab(btn.getAttribute('data-tile-appearance-tab'));
@@ -6610,7 +6655,34 @@ class DashboardConfig {
             btn.addEventListener('click', () => this.setQuickMode(btn.getAttribute('data-appearance-theme')));
         });
         container.querySelectorAll('[data-appearance-font]').forEach((btn) => {
-            btn.addEventListener('click', () => this.setFontSize(btn.getAttribute('data-appearance-font')));
+            // Small/Medium/Large says nothing about what the grid will look
+            // like, so pointing at one shows it and leaving puts it back. The
+            // theme picker already works this way; type is the other choice you
+            // cannot judge from its label.
+            const size = btn.getAttribute('data-appearance-font');
+            const preview = () => {
+                if (this._fontSizeBeforePreview == null) {
+                    this._fontSizeBeforePreview = this.currentFontSize();
+                }
+                this.dash.settings.fontSize = size;
+                this.dash.applyFontSize?.();
+            };
+            const revert = () => {
+                const previous = this._fontSizeBeforePreview;
+                this._fontSizeBeforePreview = null;
+                if (previous == null) return;
+                this.dash.settings.fontSize = previous;
+                this.dash.applyFontSize?.();
+            };
+            btn.addEventListener('pointerenter', preview);
+            btn.addEventListener('focus', preview);
+            btn.addEventListener('pointerleave', revert);
+            btn.addEventListener('blur', revert);
+            btn.addEventListener('click', () => {
+                // Taken, so there is nothing to put back.
+                this._fontSizeBeforePreview = null;
+                this.setFontSize(size);
+            });
         });
         container.querySelectorAll('[data-appearance-layout]').forEach((btn) => {
             btn.addEventListener('click', () => this.setLayout(btn.getAttribute('data-appearance-layout')));
@@ -6837,7 +6909,6 @@ class DashboardConfig {
             layout: ['config.appearanceTabLayout', 'Layout'],
             display: ['config.appearanceTabDisplay', 'Display'],
             toolbar: ['config.appearanceTabToolbar', 'Toolbar & tabs'],
-            branding: ['config.appearanceTabBranding', 'Branding'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
@@ -6963,6 +7034,7 @@ class DashboardConfig {
                         </span>
                     </div>
                     <div class="config-crud-row-actions">
+                        <button type="button" class="config-btn config-btn--small" data-theme-export="${esc(id)}" aria-label="${esc(this.t('config.themeExport', 'Export theme'))}" title="${esc(this.t('config.themeExport', 'Export theme'))}">⤓</button>
                         <button type="button" class="config-btn config-btn--small" data-theme-move="up" data-id="${esc(id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                         <button type="button" class="config-btn config-btn--small" data-theme-move="down" data-id="${esc(id)}" ${i === ids.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
                         <button type="button" class="config-btn config-btn--small${active ? ' is-active' : ''}" data-theme-edit="${esc(id)}">${esc(active ? this.t('config.themeEditing', 'Editing') : this.t('config.themeEdit', 'Edit'))}</button>
@@ -6979,6 +7051,8 @@ class DashboardConfig {
                 <ul class="config-crud-list">${list}</ul>
                 <div class="config-actions">
                     <button type="button" class="config-btn" data-theme-add>${esc(this.t('config.addCustomTheme', 'Add custom theme'))}</button>
+                    <button type="button" class="config-btn" data-theme-import>${esc(this.t('config.themeImport', 'Import theme…'))}</button>
+                    <input type="file" id="config-theme-import-input" accept=".json,application/json" hidden>
                 </div>
             </div>
             <div class="config-panel">
@@ -7118,6 +7192,57 @@ class DashboardConfig {
      * variables, so a new theme copies a packaged one — the current theme where
      * possible, so "add" reads as "start from what I am looking at".
      */
+    /**
+     * One theme as a file, and back again.
+     *
+     * A theme is a name and a dozen colours — small enough to paste into a chat
+     * window, and until now movable only inside a whole-install backup, which
+     * carries every bookmark with it. Exported with a marker and a version so
+     * an import can tell a theme from any other JSON someone points at it.
+     */
+    exportCustomTheme(id) {
+        const theme = this._colorsData?.custom?.[id];
+        if (!theme) return;
+        const payload = { nextdashTheme: 1, name: theme.name || id, colors: { ...theme } };
+        delete payload.colors.name;
+        const safeName = String(theme.name || id).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        this.triggerDownload(
+            new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
+            `nextdash-theme-${safeName || 'custom'}.json`);
+    }
+
+    async importCustomTheme(file) {
+        const data = this._colorsData;
+        if (!data) return;
+        let payload = null;
+        try {
+            payload = JSON.parse(await file.text());
+        } catch {
+            this.notify(this.t('config.themeImportInvalid', 'That file is not a nextDash theme.'), 'error');
+            return;
+        }
+        // Either shape is accepted: what this exports, and a bare object of
+        // colours — someone who copied a palette out of a backup has the latter.
+        const colors = payload?.colors && typeof payload.colors === 'object'
+            ? payload.colors
+            : (payload && typeof payload === 'object' ? payload : null);
+        if (!colors || !colors.backgroundPrimary || !colors.textPrimary) {
+            this.notify(this.t('config.themeImportInvalid', 'That file is not a nextDash theme.'), 'error');
+            return;
+        }
+        const names = Object.values(data.custom || {}).map((t) => t.name);
+        const wanted = String(payload?.name || colors.name || this.t('config.customThemePrefix', 'My theme')).trim();
+        const id = DashboardConfig.newThemeId();
+        const clean = { ...colors };
+        delete clean.name;
+        data.custom[id] = { ...clean, name: DashboardConfig.uniqueNameFrom(wanted, names) };
+        this._themeSelected = id;
+        this.syncCustomThemeIds();
+        this.repaintAppearanceBody();
+        await this.saveColorsData();
+        this.notify(this.t('config.themeImported', 'Theme imported.'), 'success');
+    }
+
     addCustomTheme() {
         const data = this._colorsData;
         if (!data) return;
@@ -7270,6 +7395,17 @@ class DashboardConfig {
     bindCustomThemes(container) {
         container.querySelector('[data-theme-add]')
             ?.addEventListener('click', () => this.addCustomTheme());
+        container.querySelectorAll('[data-theme-export]').forEach((btn) => {
+            btn.addEventListener('click', () => this.exportCustomTheme(btn.getAttribute('data-theme-export')));
+        });
+        const themeImport = container.querySelector('#config-theme-import-input');
+        container.querySelector('[data-theme-import]')
+            ?.addEventListener('click', () => themeImport?.click());
+        themeImport?.addEventListener('change', () => {
+            const file = themeImport.files?.[0];
+            themeImport.value = '';
+            if (file) void this.importCustomTheme(file);
+        });
 
         container.querySelectorAll('[data-theme-delete]').forEach((btn) => {
             btn.addEventListener('click', () => void this.deleteCustomTheme(btn.getAttribute('data-theme-delete')));
@@ -9793,6 +9929,10 @@ class DashboardConfig {
      */
     renderChangedFilterBar(section, tab) {
         const esc = (v) => this.dash.escapeHtml(v);
+        // Custom themes is a list editor rather than a grid of settings: there
+        // is no default to differ from and nothing for a filter to narrow, so
+        // the bar is absent by decision instead of by accident.
+        if (section === 'appearance' && tab === 'custom-themes') return '';
         const panels = this.panelsFor(section, tab);
         const manual = this.manualFieldsFor(section, tab);
         const changed = panels.reduce((n, p) => n + this.panelChangedFields(p).length, 0)
@@ -9823,6 +9963,62 @@ class DashboardConfig {
                        aria-label="${esc(this.t('config.settingsFilterLabel', 'Filter the settings on this tab'))}"
                        value="${esc(this.settingsFilter || '')}">
             </div>`;
+    }
+
+    /**
+     * Narrow a hand-written section to what matches the filter.
+     *
+     * The schema sections filter while they render, because the controls are
+     * data there. Appearance is written out by hand, so the same field does
+     * nothing unless something walks the rendered DOM — which is what this is:
+     * every .config-field or .config-field-row whose text does not match is
+     * hidden, a panel left with nothing goes with it, and a section left with
+     * nothing says so rather than looking empty.
+     *
+     * Text rather than field names, matching the schema filter: someone typing
+     * "webhook" is reading the page.
+     */
+    applyDomSettingsFilter(container) {
+        const host = container.querySelector('#config-appearance-body');
+        if (!host) return;
+        const query = String(this.settingsFilter || '').trim().toLowerCase();
+        host.querySelectorAll('[data-filter-empty]').forEach((el) => el.remove());
+        // Only the outermost rows: a toggle or a field nested inside another row
+        // is carried by its parent, and hiding the two independently left the
+        // child visible in a hidden parent — which kept the panel alive and the
+        // "nothing matches" line away.
+        const rowSelector = '.config-field, .config-field-row';
+        const rows = [...host.querySelectorAll(rowSelector)]
+            .filter((row) => !row.parentElement?.closest(rowSelector));
+        const panels = host.querySelectorAll('.config-panel');
+        if (!query) {
+            rows.forEach((row) => row.removeAttribute('hidden'));
+            panels.forEach((panel) => panel.removeAttribute('hidden'));
+            return;
+        }
+        rows.forEach((row) => {
+            const text = (row.textContent || '').toLowerCase();
+            row.toggleAttribute('hidden', !text.includes(query));
+        });
+        let anyVisible = false;
+        panels.forEach((panel) => {
+            const visible = [...panel.querySelectorAll(rowSelector)]
+                .filter((row) => !row.parentElement?.closest(rowSelector))
+                .some((row) => !row.hasAttribute('hidden'));
+            // A panel of prose and buttons with no fields at all — the theme
+            // picker's own panel, say — is kept when its title or note matches.
+            const titleMatch = (panel.querySelector('.config-panel-title')?.textContent || '')
+                .toLowerCase().includes(query);
+            panel.toggleAttribute('hidden', !visible && !titleMatch);
+            if (visible || titleMatch) anyVisible = true;
+        });
+        if (!anyVisible) {
+            const note = document.createElement('p');
+            note.className = 'config-panel-empty';
+            note.setAttribute('data-filter-empty', '');
+            note.textContent = this.t('config.settingsFilterNone', 'No setting on this tab matches that.');
+            host.appendChild(note);
+        }
     }
 
     /**
@@ -10268,7 +10464,10 @@ class DashboardConfig {
      */
     static BM_TABS = ['list', 'settings'];
 
-    static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'branding', 'custom-themes'];
+    // Branding was a tab holding one panel with one toggle, a text field and an
+    // upload — a tab click for a single setting. It sits at the end of Display,
+    // which is already about what the page shows of itself.
+    static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'custom-themes'];
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
 

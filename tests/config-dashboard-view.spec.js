@@ -552,8 +552,9 @@ test.describe('config dashboard view (scaffold)', () => {
         await expect(page.locator('[data-appearance-toggle="showIcons"]')).toBeVisible();
         await expect(page.locator('[data-appearance-toggle="animationsEnabled"]')).toBeVisible();
 
-        // Branding (page title + favicon) has its own tab.
-        await page.locator('[data-appearance-tab="branding"]').click();
+        // Branding (page title + favicon) is the tail of Display now: one panel
+        // with one toggle, a text field and an upload did not earn a tab.
+        await expect(page.locator('[data-appearance-tab="branding"]')).toHaveCount(0);
         await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
         await expect(page.locator('[data-appearance-text="customTitle"]')).toBeVisible();
         await expect(page.locator('[data-appearance-action="upload-favicon"]')).toBeVisible();
