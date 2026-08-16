@@ -60,7 +60,6 @@ class Dashboard {
             showHealthDashboard: true,
             showRecentButton: false,
 
-            showSyncToasts: false,
             showCheatSheetButton: false,
             showCollapseAllButton: true,
             showAddBookmarkButton: true,

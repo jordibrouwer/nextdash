@@ -229,9 +229,6 @@ class DashboardData {
             if (![100, 150, 250].includes(Number(d.settings.linkPreviewHoverDelayMs))) {
                 d.settings.linkPreviewHoverDelayMs = 150;
             }
-            if (typeof d.settings.showSyncToasts === 'undefined') {
-                d.settings.showSyncToasts = false;
-            }
             if (typeof d.settings.updateCheckEnabled === 'undefined') {
                 d.settings.updateCheckEnabled = true;
             }

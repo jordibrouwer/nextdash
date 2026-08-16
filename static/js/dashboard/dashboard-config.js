@@ -149,6 +149,10 @@ class DashboardConfig {
         // while this one hides most of them, and a filter still in force from
         // last week would read as a shrunken library rather than as a choice.
         this.statsPageFilter = '';
+        // Narrows the controls on the config tab you are looking at. Not
+        // persisted: a filter still in force on the next visit reads as a
+        // section that has lost most of its settings.
+        this.settingsFilter = '';
         // Data & backups sub-tab.
         this.dbTab = 'backups';
         this.bmTab = 'list';
@@ -2042,7 +2046,6 @@ class DashboardConfig {
         updateCheckEnabled: ['update', 'github', 'release', 'version'],
         language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
         deviceSpecificSettings: ['device', 'sync', 'local'],
-        showSyncToasts: ['sync', 'toast', 'notification'],
         inboxEnabled: ['inbox', 'triage', 'later'],
         pasteDestination: ['paste', 'clipboard', 'inbox'],
         pasteUrlQuickAdd: ['paste', 'clipboard', 'quick add'],
@@ -4126,8 +4129,6 @@ class DashboardConfig {
                         : this.t('config.recheckEveryDays', 'Every {n} days').replace('{n}', String(h / 24))));
             return `<option value="${h}" ${h === recheckHours ? 'selected' : ''}>${esc(label)}</option>`;
         }).join('');
-        const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
-            || (() => { try { return localStorage.getItem('deviceSpecificSettings') === 'true'; } catch { return false; } })();
 
         const faviconPolicy = s.faviconRefreshPolicy || 'monthly';
         const faviconPolicyOptions = [
@@ -4208,8 +4209,6 @@ class DashboardConfig {
             ? `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`
             : `<div class="config-tiles" role="list">${this.dataBackupsTiles().map((t) => this.renderTile(t)).join('')}</div>`;
 
-        const deviceSpecific = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
-            || (() => { try { return localStorage.getItem('deviceSpecificSettings') === 'true'; } catch { return false; } })();
 
         return `
             ${tiles}
@@ -4263,10 +4262,6 @@ class DashboardConfig {
                     <button type="button" class="config-btn" data-backup-action="settings-import">${esc(this.t('config.settingsImportBtn', 'Import settings…'))}</button>
                 </div>
                 <input type="file" id="config-settings-import-input" accept=".json" hidden>
-                <label class="config-toggle">
-                    <input type="checkbox" data-backup-toggle="deviceSpecificSettings" ${deviceSpecific ? 'checked' : ''}>
-                    <span>${esc(this.t('config.deviceSpecificSettings', 'Keep some settings specific to this device'))}</span>
-                </label>
             </div>
 
 
@@ -5378,11 +5373,6 @@ class DashboardConfig {
 
     setBackupToggle(name, value) {
         const d = this.dash;
-        if (name === 'deviceSpecificSettings') {
-            try { localStorage.setItem('deviceSpecificSettings', value ? 'true' : 'false'); } catch { /* ignore */ }
-            this.notify(this.t('config.deviceSpecificSaved', 'Preference saved.'), 'success');
-            return;
-        }
         if (name === 'autoBackupEnabled' || name === 'healthAutoRecheckEnabled') {
             d.settings[name] = value;
             void this.saveSettingsWithFeedback();
@@ -8101,7 +8091,6 @@ class DashboardConfig {
         // Link previews
         linkPreviewHoverDelayMs: { info: ['linkPreviewHoverDelayInfoTitle', 'linkPreviewHoverDelayInfoMessage'], def: 150 },
         // Sync
-        showSyncToasts: { info: ['showSyncToastsInfoTitle', 'showSyncToastsInfoMessage'] },
         faviconRefreshPolicy: { info: ['faviconRefreshPolicyInfoTitle', 'faviconRefreshPolicyInfoMessage'], def: 'on-save' },
         // Privacy
         analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint', def: false },
@@ -8744,7 +8733,6 @@ class DashboardConfig {
                 title: t('config.generalGroupSync', 'Sync & feedback'),
                 note: t('config.generalGroupSyncNote', 'Settings normally follow you to every browser. Keep them on this device to give this one its own appearance and layout.'),
                 controls: [
-                    bool('showSyncToasts', 'config.showSyncToastsLabel', 'Show sync notifications'),
                     bool('deviceSpecificSettings', 'config.deviceSpecificSettingsLabel', 'Keep settings on this device only'),
                 ],
             },
@@ -8778,14 +8766,34 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const meta = this.fieldMeta(field);
         let out = '';
-        if (meta?.info) {
+        // Only where there is something to say. The button was drawn from the
+        // presence of an info *reference*, and ten of those pointed at locale
+        // keys nobody had written — so the ℹ opened a dialog with an empty
+        // title, an empty body and a Got it button.
+        if (meta?.info && this.hasInfoText(meta.info)) {
             out += `<button type="button" class="config-info-btn" data-info-field="${esc(field)}" aria-label="${esc(this.t('config.settingInfoAria', 'More info'))}" title="${esc(this.t('config.settingInfoAria', 'More info'))}">ℹ</button>`;
         }
         const showReset = meta && meta.def !== undefined && !this.isFieldDefault(field, val);
         if (meta && meta.def !== undefined) {
-            out += `<button type="button" class="config-reset-btn${showReset ? ' is-visible' : ''}" data-reset-field="${esc(field)}" aria-label="${esc(this.t('config.settingResetAria', 'Reset to default'))}" title="${esc(this.t('config.settingResetTitle', 'Reset to default'))}">↺</button>`;
+            // Kept in the DOM so the row does not reflow when a value changes,
+            // but out of the tab order and unannounced while it would do
+            // nothing: a screen reader used to meet a Reset button on every
+            // setting that was already at its default.
+            out += `<button type="button" class="config-reset-btn${showReset ? ' is-visible' : ''}" data-reset-field="${esc(field)}"${
+                showReset ? '' : ' tabindex="-1" aria-hidden="true"'} aria-label="${esc(this.t('config.settingResetAria', 'Reset to default'))}" title="${esc(this.t('config.settingResetTitle', 'Reset to default'))}">↺</button>`;
         }
         return out;
+    }
+
+    /** Whether an [titleKey, messageKey] pair resolves to real text. */
+    hasInfoText(info) {
+        const [titleKey, messageKey] = Array.isArray(info) ? info : [];
+        const resolved = (key) => {
+            if (!key) return '';
+            const value = this.t(`config.${key}`, '');
+            return value && value !== `config.${key}` ? value : '';
+        };
+        return Boolean(resolved(titleKey) || resolved(messageKey));
     }
 
     /** Render a schema of panels into HTML, keyed by a data-<prefix>-field. */
@@ -8839,7 +8847,12 @@ class DashboardConfig {
                         <span class="config-field-hint" data-config-action-status="${esc(c.action)}"></span>
                     </div>`;
             }
-            const val = s[c.field];
+            // deviceSpecificSettings is kept in this browser rather than in the
+            // settings object it is rendered from, so reading it the ordinary
+            // way would draw the box unchecked however it is set.
+            const val = c.field === 'deviceSpecificSettings'
+                ? window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true
+                : s[c.field];
             const dataAttrs = `data-${prefix}-field="${esc(c.field)}" data-${prefix}-special="${esc(c.special || '')}"`;
             const aff = this.renderFieldAffordances(c.field, val);
             const hintKey = this.fieldMeta(c.field)?.hint;
@@ -8911,9 +8924,13 @@ class DashboardConfig {
             // the rest show only the controls that differ. The note and the
             // applies-to badge stay: they explain the controls that remain.
             if (this.changedOnly && !changedFields.length) return '';
-            const controls = this.changedOnly
-                ? panel.controls.filter((c) => changedFields.includes(c.field))
+            const filtered = String(this.settingsFilter || '').trim()
+                ? panel.controls.filter((c) => this.controlMatchesFilter(c))
                 : panel.controls;
+            if (!filtered.length) return '';
+            const controls = this.changedOnly
+                ? filtered.filter((c) => changedFields.includes(c.field))
+                : filtered;
 
             const badge = panel.appliesTo
                 ? `<span class="config-applies-to" title="${esc(this.t('config.appliesToTitle', 'These settings only take effect for bookmarks set to this mode'))}">${esc(panel.appliesTo)}</span>`
@@ -8940,6 +8957,10 @@ class DashboardConfig {
         if (this.changedOnly && !rendered.trim()) {
             return `<p class="config-panel-empty">${esc(this.t('config.changedNoneOnTab',
                 'Nothing on this tab differs from its default.'))}</p>`;
+        }
+        if (String(this.settingsFilter || '').trim() && !rendered.trim()) {
+            return `<p class="config-panel-empty">${esc(this.t('config.settingsFilterNone',
+                'No setting on this tab matches that.'))}</p>`;
         }
         return rendered;
     }
@@ -9157,6 +9178,35 @@ class DashboardConfig {
             btn.addEventListener('click', () => {
                 this.changedOnly = !this.changedOnly;
                 this._trackAction('changed-filter', { value: this.changedOnly ? 'on' : 'off' });
+                this.repaintActiveControlPanels();
+            });
+        });
+        container.querySelectorAll('[data-settings-filter]').forEach((field) => {
+            if (field.dataset.filterBound === '1') return;
+            field.dataset.filterBound = '1';
+            let debounce = null;
+            field.addEventListener('input', () => {
+                clearTimeout(debounce);
+                debounce = setTimeout(() => {
+                    this.settingsFilter = field.value;
+                    this.repaintActiveControlPanels();
+                    // The repaint replaces the field, so the caret goes with it
+                    // unless it is put back where it was.
+                    const fresh = document.querySelector('[data-settings-filter]');
+                    if (fresh) {
+                        fresh.focus();
+                        fresh.setSelectionRange(fresh.value.length, fresh.value.length);
+                    }
+                }, 200);
+            });
+            // Escape clears the filter rather than closing config, matching the
+            // help search.
+            field.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape' || !String(this.settingsFilter || '').trim()) return;
+                e.preventDefault();
+                e.stopPropagation();
+                this.settingsFilter = '';
+                field.value = '';
                 this.repaintActiveControlPanels();
             });
         });
@@ -9767,7 +9817,34 @@ class DashboardConfig {
                     ${esc(this.t('config.changedOnlyToggle', 'Only changed'))}
                 </button>
                 <span class="config-changed-count">${esc(label)}</span>
+                <input type="search" class="config-text config-settings-filter"
+                       data-settings-filter="${esc(section)}"
+                       placeholder="${esc(this.t('config.settingsFilterPlaceholder', 'Filter settings…'))}"
+                       aria-label="${esc(this.t('config.settingsFilterLabel', 'Filter the settings on this tab'))}"
+                       value="${esc(this.settingsFilter || '')}">
             </div>`;
+    }
+
+    /**
+     * Whether a control survives the tab's filter.
+     *
+     * Matches the label a reader can see and the hint under it, not the field
+     * name: someone looking for "webhook" is reading the page, not the source.
+     * The global jump (Ctrl/Cmd+Shift+K) finds one setting anywhere; this
+     * narrows the eighty-odd on the tab in front of you, which is the other
+     * half of the same problem.
+     */
+    controlMatchesFilter(control) {
+        const query = String(this.settingsFilter || '').trim().toLowerCase();
+        if (!query) return true;
+        if (!control || control.type === 'note') return false;
+        const parts = [control.label, control.hint, control.field];
+        const meta = control.field ? this.fieldMeta(control.field) : null;
+        if (meta?.hint) parts.push(this.t(`config.${meta.hint}`, ''));
+        for (const option of control.options || []) {
+            parts.push(option.label);
+        }
+        return parts.filter(Boolean).some((part) => String(part).toLowerCase().includes(query));
     }
 
     renderOnboardingActions() {
@@ -9848,6 +9925,21 @@ class DashboardConfig {
     /** Apply a behaviour setting: mutate, run any special apply, save. */
     async setBehavior(field, value, special) {
         const d = this.dash;
+        // Not a synced setting: this one says whether the *other* settings
+        // follow you between browsers, so it can only live in this browser.
+        // Rendered by the same schema as its neighbours, it used to fall through
+        // to the ordinary save, which writes a key the server does not keep —
+        // the toggle moved and nothing happened. The Data & backups copy did the
+        // localStorage write; there is one control now, and it is this one.
+        if (field === 'deviceSpecificSettings') {
+            try {
+                localStorage.setItem('deviceSpecificSettings', value ? 'true' : 'false');
+            } catch { /* a browser refusing storage cannot keep the preference */ }
+            // DeviceSettingsMerge reads that same key on demand, so writing it
+            // is the whole of the change — there is no setter to call.
+            this.notify(this.t('config.deviceSpecificSaved', 'Preference saved.'), 'success');
+            return;
+        }
         d.settings[field] = value;
         // Which settings people actually change. The field name is a fixed enum
         // so it is safe to report; the value is not (titles, webhook URLs and

@@ -590,6 +590,14 @@
     margin: 0 0 16px;
 }
 
+/* The tab's own filter, at the end of the bar it shares with "Only changed":
+   both narrow what is below, so they belong on one row. Pushed right so the
+   count stays next to the button it belongs to. */
+.config-settings-filter {
+    margin-left: auto;
+    inline-size: min(16rem, 100%);
+}
+
 .config-changed-count {
     color: var(--text-muted, #888);
     font-size: calc(var(--font-size-text) * 0.914);

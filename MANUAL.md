@@ -1169,6 +1169,8 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 | **Bookmarks** | List · Settings (**v1.1.0**) |
 | **Appearance** | Theme · Layout · Display · Toolbar & tabs · Branding · Custom themes |
 | **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
+
+Every Behavior tab has a **filter field** beside *Only changed*: it narrows the tab to the settings whose label, hint or options match what you type, and `Escape` clears it. That is the other half of `Ctrl/Cmd+Shift+K`, which finds one setting anywhere; this one narrows the eighty-odd in front of you. **Keep settings on this device only** lives here, in *Sync & feedback*, and only here — it used to be offered on Data & backups as well, where it was the copy that worked.
 | **Data & backups** | Backups & data · Icons & previews · Server log · Trash · Reset |
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
 | **Help** | Getting started · Tips · Configuring · Pages & bookmarks · Search & keyboard · Health · Monitoring · Inbox · Statistics · Data & hosting |
