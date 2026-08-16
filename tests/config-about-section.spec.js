@@ -63,12 +63,16 @@ test.describe('a section is more than a panel', () => {
         await expect(page.locator('.help-about-mark')).toBeVisible();
     });
 
-    test('its buttons are wired, not just rendered', async ({ page }) => {
+    test('the release notes are not repeated here', async ({ page }) => {
         await openConfig(page, 'about');
-        // The panels moved out of Help, where bindHelpActions ran; without it
-        // here the button is present and does nothing.
-        await page.locator('[data-help-action="whats-new"]').click();
-        await expect(page.locator('.whats-new-modal')).toBeVisible({ timeout: 15_000 });
+        // What's new lives in Help → Getting started and beside the onboarding
+        // switches in Behavior. A third copy on the colophon was a panel, not a
+        // way in.
+        await expect(page.locator('[data-help-action="whats-new"]')).toHaveCount(0);
+        // The section is still what it was for: the wordmark, the prose and the
+        // addresses.
+        await expect(page.locator('.help-about-mark img')).toBeVisible();
+        await expect(page.locator('#config-section-panel .wn-kofi-btn')).toBeVisible();
     });
 
     test('the settings jump points at the section, not at a tab that is gone', async ({ page }) => {
@@ -78,7 +82,7 @@ test.describe('a section is more than a panel', () => {
                 .filter((e) => e.section === 'about')
                 .map((e) => ({ title: e.title, subTab: e.subTab })));
 
-        expect(entries.length).toBeGreaterThanOrEqual(2);
+        expect(entries.length).toBeGreaterThanOrEqual(1);
         // A leftover subTab would try to open a help tab that no longer exists.
         expect(entries.every((e) => !e.subTab)).toBe(true);
         expect(entries.map((e) => e.title).join(' ')).toMatch(/About nextDash/);

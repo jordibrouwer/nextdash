@@ -4832,7 +4832,7 @@
     "backupInHours": "in {n}h",
     "backupInDays": "in {n}d",
     "sectionAbout": "About",
-    "aboutIntro": "What nextDash is, what changed recently, and where it comes from.",
+    "aboutIntro": "What nextDash is, and where it comes from.",
     "helpTabTips": "Tips",
     "helpTabMonitoring": "Monitoring",
     "helpTipsUnavailable": "The tips are not available.",

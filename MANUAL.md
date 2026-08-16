@@ -1200,7 +1200,7 @@ Every Behavior tab has a **filter field** beside *Only changed*: it narrows the 
 
 The search box above the tabs covers every tab **and** the About section, so a word that appears only there is still found; each result says where it came from and takes you there.
 
-**About** — a section of its own at the foot of the rail, `/#config/about`. It was a tab of Help, which is where you look for *how something works*, not for what this thing is or who wrote it. It carries the nextDash wordmark, **Show what's new**, and the three addresses worth having: **[nextdash.cc](https://nextdash.cc)** for the project itself, **[GitHub](https://github.com/jordibrouwer/nextDash)** for issues, requests and release notes, and **[jordibrw.nl](https://jordibrw.nl)** for the person who writes it.
+**About** — a section of its own at the foot of the rail, `/#config/about`. It was a tab of Help, which is where you look for *how something works*, not for what this thing is or who wrote it. It carries the nextDash wordmark and the three addresses worth having: **[nextdash.cc](https://nextdash.cc)** for the project itself, **[GitHub](https://github.com/jordibrouwer/nextDash)** for issues, requests and release notes, and **[jordibrw.nl](https://jordibrw.nl)** for the person who writes it. The release notes are not repeated here: **Show what's new** sits in **Help → Getting started** and beside the onboarding switches in **Behavior → General**.
 
 ### Working with bookmarks
 

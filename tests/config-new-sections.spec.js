@@ -136,8 +136,9 @@ test.describe('config: sections restored from the old config', () => {
         await expect(page.locator('.config-help-tips li').first()).toBeVisible();
         await page.locator('[data-help-tab="search"]').click();
         await expect(page.locator('[data-help-action="cheatsheet"]')).toBeVisible();
-        // What's new moved out with About.
-        await openSection(page, 'about');
+        // What's new is on Getting started, where a reader lands first; About
+        // carries the colophon and nothing else.
+        await page.locator('[data-help-tab="start"]').click();
         await expect(page.locator('[data-help-action="whats-new"]')).toBeVisible();
     });
 

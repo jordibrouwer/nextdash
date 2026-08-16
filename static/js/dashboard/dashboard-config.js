@@ -1962,7 +1962,6 @@ class DashboardConfig {
         // About is a section now, not a help tab, so it carries its own target
         // rather than a `tab` the help view would fail to open.
         { section: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
-        { section: 'about', titleKey: 'config.helpWhatsNewTitle', fallback: 'What’s new' },
     ];
 
     subTabLabel(section, tab) {
@@ -18591,14 +18590,11 @@ class DashboardConfig {
         // for cache-busting (see appVersionToken in html_etag.go), not a release
         // number, so printing it as "Version" showed people a meaningless hash.
         // The real one is served by /api/version if this is ever wanted here.
+        // No what's-new panel: the release notes are already one button away in
+        // Help → Getting started and again beside the onboarding switches in
+        // Behavior, and a third copy on the colophon added a panel rather than a
+        // way in.
         return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.helpWhatsNewTitle', 'What’s new'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.helpWhatsNewHint', 'See what changed in the most recent releases.'))}</p>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-help-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
-                </div>
-            </div>
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.helpAboutTitle', 'About nextDash'))}</h3>
                 <!-- The wordmark on its own dark plate rather than on the panel:
