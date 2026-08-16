@@ -6885,7 +6885,7 @@ class DashboardConfig {
                     return `
                     <div class="config-field config-theme-field">
                         <span class="config-field-label">${esc(this.themeColorLabel(prop))}</span>
-                        <input type="color" class="config-theme-picker" data-theme-color-picker="${esc(prop)}" value="${esc(forPicker)}" aria-label="${esc(this.themeColorLabel(prop))}">
+                        <input type="color" class="config-theme-color-input" data-theme-color-picker="${esc(prop)}" value="${esc(forPicker)}" aria-label="${esc(this.themeColorLabel(prop))}">
                         <input type="text" class="config-text config-theme-hex" data-theme-color="${esc(prop)}" value="${esc(val)}" spellcheck="false" placeholder="#1a1a1a">
                     </div>`;
                 }).join('')}

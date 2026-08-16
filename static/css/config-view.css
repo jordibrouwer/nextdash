@@ -1318,15 +1318,30 @@
 .config-theme-picker {
     position: relative;
     display: inline-block;
+    max-width: 100%;
 }
 
-/* Matches the arrow and text alignment of the real selects beside it. */
+/* Matches the arrow and text alignment of the real selects beside it.
+   Wide enough for a theme name on one line: at 12rem the closed button was
+   narrower than most of what it has to show — "Chartreuse Static [light]" is
+   25 characters — so the label wrapped and the field stood two lines tall.
+   The floor is in ch rather than rem so it tracks the configured text size
+   instead of guessing at it; max-content lets a longer custom name push wider,
+   up to a cap, and past that the label ellipsises rather than wrapping. */
 .config-theme-picker-button {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    min-width: 12rem;
+    width: max-content;
+    min-width: 26ch;
+    max-width: min(24rem, 100%);
     text-align: left;
+}
+
+.config-theme-picker-button [data-theme-picker-label] {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .config-theme-picker-button::after {
@@ -4139,8 +4154,14 @@ body.no-animations .config-new-features-panel-star {
     gap: 8px;
 }
 
-/* A native colour input needs its chrome stripped to read as a swatch. */
-.config-theme-picker {
+/* A native colour input needs its chrome stripped to read as a swatch.
+   It has a name of its own now. It used to be .config-theme-picker, which the
+   theme listbox up the file also answers to — and being the later rule, it
+   sized that listbox's wrapper to 34px. Harmless while the button inside
+   carried its own width; not harmless the moment anything in there resolved a
+   percentage against its container. .config-theme-swatch was not free either:
+   that is the 16px dot in the theme list. */
+.config-theme-color-input {
     inline-size: 34px;
     block-size: 28px;
     padding: 0;
@@ -4151,9 +4172,9 @@ body.no-animations .config-new-features-panel-star {
     flex: none;
 }
 
-.config-theme-picker::-webkit-color-swatch-wrapper { padding: 2px; }
-.config-theme-picker::-webkit-color-swatch { border: none; border-radius: 4px; }
-.config-theme-picker::-moz-color-swatch { border: none; border-radius: 4px; }
+.config-theme-color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+.config-theme-color-input::-webkit-color-swatch { border: none; border-radius: 4px; }
+.config-theme-color-input::-moz-color-swatch { border: none; border-radius: 4px; }
 
 .config-theme-hex {
     flex: 1 1 110px;
