@@ -62,7 +62,7 @@ class Dashboard {
             showRecentButton: false,
 
             showCheatSheetButton: false,
-            showCollapseAllButton: true,
+            showCollapseAllButton: false,
             showAddBookmarkButton: true,
             showStatus: true,
             colorizeStatus: true,

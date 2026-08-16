@@ -238,8 +238,11 @@ func TestCollapseAllButtonDefaultsOnForExistingInstalls(t *testing.T) {
 	tmp := t.TempDir()
 	t.Chdir(tmp)
 
-	if got := NewStore().GetSettings().ShowCollapseAllButton; !got {
-		t.Fatalf("fresh install: showCollapseAllButton = %v, want true", got)
+	// A fresh install starts without the button; an upgrade keeps it. The two
+	// answers come from different places — the constructors and the absent-key
+	// migration — and the point of this test is that they stay different.
+	if got := NewStore().GetSettings().ShowCollapseAllButton; got {
+		t.Fatalf("fresh install: showCollapseAllButton = %v, want false", got)
 	}
 
 	for _, tc := range []struct {

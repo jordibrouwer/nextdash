@@ -711,7 +711,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowTagCloudButton:           true,
 			ShowSearchFlowBanner:         true,
 			ShowCheatSheetButton:         false,
-			ShowCollapseAllButton:        true,
+			ShowCollapseAllButton:        false,
 			ShowSearchButtonText:         true,
 			ShowFindersButtonText:        true,
 			ShowCommandsButtonText:       true,
@@ -2447,7 +2447,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowRecentButton:               true,
 			ShowSearchFlowBanner:           true,
 			ShowCheatSheetButton:           true,
-			ShowCollapseAllButton:          true,
+			ShowCollapseAllButton:          false,
 			ShowSearchButtonText:           true,
 			ShowFindersButtonText:          true,
 			ShowCommandsButtonText:         true,
@@ -2560,7 +2560,9 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		// Absent for everyone until this setting existed, and the button it
 		// controls was visible all that time. Defaulting to false would take it
-		// away from every existing dashboard on upgrade.
+		// away from every existing dashboard on upgrade — which is why a fresh
+		// install starting without the button (see the constructors above) does
+		// not change anything here: no key means an upgrade, not a new install.
 		if _, ok := rawSettings["showCollapseAllButton"]; !ok {
 			settings.ShowCollapseAllButton = true
 		}

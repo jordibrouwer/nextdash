@@ -316,7 +316,7 @@ The button bar can appear as a **floating bottom bar** (default), a **corner doc
 | `!` | `!` / `F1` | Keyboard cheat sheet |
 | `.` | `.` | Fold or unfold every category |
 
-Each button can be shown or hidden individually under **Config → Appearance → Toolbar & tabs**. `*` recent, `!` cheat sheet and `.` fold-all share one group, and it disappears only when all three are switched off.
+Each button can be shown or hidden individually under **Config → Appearance → Toolbar & tabs**. `*` recent, `!` cheat sheet and `.` fold-all share one group, and it disappears only when all three are switched off. **A fresh install starts without the fold-all button** — the key still works, and it is one switch away — while a dashboard that already had it keeps it: an existing `settings.json` with no such key reads as an upgrade, not as a new install.
 
 **Side rail** — 44×44 px square cells stacked vertically against one edge; the dashboard grid shifts by 44 px to clear it. Available on the **left** (`side-left`) or the **right** (`side-right`); the two are mirror images, so the divider faces the content and tooltips open inward. On mobile (≤768 px) the rail automatically reverts to a centred bottom bar.
 

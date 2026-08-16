@@ -8236,7 +8236,7 @@ class DashboardConfig {
         // Toolbar & chrome
         showRecentButton: { def: false },
         showCheatSheetButton: { def: false },
-        showCollapseAllButton: { def: true },
+        showCollapseAllButton: { def: false },
         showConfigButton: { def: true },
         showHealthDashboard: { def: true },
         showAddBookmarkButton: { def: true },
