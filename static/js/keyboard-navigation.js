@@ -251,6 +251,25 @@ class KeyboardNavigation {
                 }
             }
 
+            // Alt+←/→ on a category header — reorder the category itself.
+            //
+            // Shift+Home already steps from a row up to its header, where F2,
+            // Delete, Shift+W and Shift+F10 act on the category; there was no key
+            // to move one. Reordering meant dragging the small // prefix or going
+            // to config. Alt+arrow already means "move the thing under the
+            // cursor" for a bookmark, so the same chord on a header is the same
+            // idea one level up — left and right rather than up and down,
+            // because categories sit beside each other in the grid.
+            if (e.altKey && !e.ctrlKey && !e.metaKey
+                && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                if (this.moveFocusedCategory(e.key === 'ArrowLeft' ? -1 : 1)) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
             // Alt+↑ / Alt+↓ — move the focused bookmark. Alt keeps it clear of
             // the plain arrows, which move the cursor.
             if (e.altKey && !e.ctrlKey && !e.metaKey
@@ -514,6 +533,57 @@ class KeyboardNavigation {
         title.scrollIntoView({ block: 'nearest', behavior: this._scrollBehavior() });
         title.focus({ preventScroll: true });
         return true;
+    }
+
+    /**
+     * Move the category whose header has focus one place left or right.
+     *
+     * Only acts when a header actually has focus — otherwise Alt+arrow keeps
+     * whatever meaning it has elsewhere, and a stray chord on the grid does not
+     * silently reorder the page. Smart collections are skipped: their order is
+     * derived, not stored, so moving one would be undone on the next render.
+     *
+     * Writes through the same array the drag reorder writes and reuses its
+     * debounced save, so one route cannot persist what the other does not.
+     */
+    moveFocusedCategory(direction) {
+        const d = this.dashboard;
+        const active = document.activeElement;
+        const title = active?.closest?.('.category-title');
+        const categoryEl = title?.closest?.('.category');
+        if (!title || !categoryEl) return false;
+        if (categoryEl.getAttribute('data-smart-collection') === 'true') return false;
+
+        const id = String(categoryEl.getAttribute('data-category-id') || '');
+        const categories = Array.isArray(d?.categories) ? d.categories : [];
+        const from = categories.findIndex((c) => String(c.id) === id);
+        if (from < 0) return false;
+        const to = from + direction;
+        if (to < 0 || to >= categories.length) return false;
+
+        const next = [...categories];
+        const [moved] = next.splice(from, 1);
+        next.splice(to, 0, moved);
+        d.categories = next;
+        d.renderCore?.scheduleCategoryOrderSave?.();
+        d.renderDashboard?.({ animate: false });
+
+        // The header element is rebuilt by the render, so focus follows the
+        // category rather than the node that used to hold it.
+        requestAnimationFrame(() => {
+            const grid = document.getElementById('dashboard-layout');
+            const el = grid?.querySelector(`.category[data-category-id="${CSS.escape(id)}"] .category-title`);
+            el?.focus?.({ preventScroll: true });
+            el?.scrollIntoView?.({ block: 'nearest', behavior: this._scrollBehavior() });
+        });
+        this._announceCategoryMove(moved?.name || id);
+        return true;
+    }
+
+    _announceCategoryMove(name) {
+        const live = this._ensureKbdLiveRegion();
+        const label = this.dashboard?.formatDashboardLabel?.('categoryMoved', {}, 'moved') || 'moved';
+        live.textContent = name ? `${name}: ${label}` : label;
     }
 
     _announceCategorySpread(name, on) {

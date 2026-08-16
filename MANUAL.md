@@ -431,6 +431,8 @@ Right-click a bookmark that is **part of an open selection** and the menu switch
 
 Apart from sharing, nothing here is exclusive to the menu — the rest is reachable from the [command palette](#93-bookmark-actions) and config, and the menu just puts it where most people look first.
 
+**A category can have an icon.** Right-click its header and pick **Icon…**, type an emoji, press Enter. The header follows what you type before you commit, and Escape puts back what was there. `Category.Icon` has been stored and rendered for a long time — the strings for this control were still sitting unused in all four locales — but there was nowhere to set it, so eight categories on a page meant eight identical `▣` headers. **Clear** takes it off again.
+
 **Every entry that has a key shows it** beside the label (**v1.1.1**), so the menu teaches the keyboard route to the thing you just clicked; screen readers get the same key through `aria-keyshortcuts`. The menu also opens from the keyboard with **`Shift + F10`** or the **Menu** key, beside the row rather than in the corner of the window. Arrow keys move through the items and `Enter` activates one; `Esc` or a click outside closes it. It works on **smart collection** rows too. The menu deliberately stays out of the way where the browser's own menu matters: it does not open while the inline editor is active or over a modal, and **`Shift` + right-click** always gives you the browser menu instead. Not available on touch, which has no right-click — use long-press for inline edit there.
 
 ### 7.6 Config → bookmarks (bulk and detail)
@@ -581,6 +583,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `GG` | Jump to very first bookmark (second `G` while chord pending) |
 | `Ctrl + Home` / `Ctrl + End` | First / last bookmark on the page (`Cmd` on Mac) |
 | `Shift + Home` | Step up from the list to its category header, where `F2`, `Shift + W`, `Delete` and `Shift + F10` act on the category (**v1.1.1**) |
+| `Alt + ←` / `Alt + →` on a header | Move that category one place left or right. `Alt` + arrow already means "move the thing under the cursor" for a bookmark; on a header it is the same idea one level up. Reordering used to mean dragging the small `//` prefix or going to config. Smart collections are skipped — their order is derived, not stored — and focus follows the category rather than the header element the render replaces |
 | `Enter` / `Space` | Open selected |
 | `Esc` | Clear selection and move focus to the first bookmark; may undo last drag reorder. With something typed it clears the search line, which now empties on screen instead of keeping the abandoned query until the next keystroke |
 

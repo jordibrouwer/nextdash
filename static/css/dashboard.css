@@ -4979,3 +4979,48 @@ body[data-grid-keys="shown"] .dashboard-legend {
     background: var(--background-secondary);
     color: var(--text-secondary);
 }
+
+/* The category icon editor: one field beside the header it changes, the same
+   shape the page-tab popover uses. Category.Icon has been stored and rendered
+   for a long time with nowhere to set it — eight categories on a page meant
+   eight identical ⊣ headers. */
+.category-icon-popover {
+    position: absolute;
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.4rem;
+    background: var(--background-secondary);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.category-icon-input {
+    width: 3.2rem;
+    padding: 0.15rem 0.35rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.3rem;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    font: inherit;
+    text-align: center;
+}
+
+.category-icon-clear {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.category-icon-clear:hover,
+.category-icon-clear:focus-visible {
+    color: var(--accent-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}

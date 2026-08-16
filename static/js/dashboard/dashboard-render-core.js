@@ -1619,8 +1619,13 @@ class DashboardRenderCore {
             );
             labelWrap.appendChild(document.createTextNode(' '));
         } else {
-            const textIcon = categoryIcon || '▣';
-            labelWrap.appendChild(document.createTextNode(`${textIcon} `));
+            // In a span rather than a bare text node: the icon editor previews
+            // what you type by writing into this element, and a text node
+            // between two others is not something anything can address.
+            const textIcon = document.createElement('span');
+            textIcon.className = 'category-title-icon';
+            textIcon.textContent = `${categoryIcon || '▣'} `;
+            labelWrap.appendChild(textIcon);
         }
         labelWrap.appendChild(nameSpan);
 
