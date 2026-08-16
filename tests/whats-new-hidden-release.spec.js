@@ -131,14 +131,15 @@ test.describe('a release flagged hideFromModal', () => {
     // what the shipped files do with it, which is the part a release gets wrong:
     // a flag left on hides a release nobody meant to hide, and a flag taken off
     // without bumping the tokens announces it to nobody.
-    test('nothing is hidden now, and the modal leads with v1.1.2', async ({ page }) => {
+    test('nothing is hidden now, and the modal leads with v1.2.0', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
-        expect(index[0].tag).toBe('v1.1.2');
-        expect(index[1].tag).toBe('v1.1.1');
-        // v1.1.1 shipped flagged and is deliberately unflagged again by v1.1.2.
+        expect(index[0].tag).toBe('v1.2.0');
+        expect(index[1].tag).toBe('v1.1.2');
+        // v1.1.1 shipped flagged and was deliberately unflagged again by v1.1.2;
+        // nothing since has been hidden.
         expect(index.slice(0, 3).some((entry) => entry.hideFromModal)).toBe(false);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
@@ -146,23 +147,31 @@ test.describe('a release flagged hideFromModal', () => {
         await expect(modal).toBeVisible({ timeout: 15_000 });
         await page.waitForTimeout(1200);
 
-        const tags = await modal.evaluate((m) => [...new Set(
+        const shownTags = () => modal.evaluate((m) => [...new Set(
             [...m.querySelectorAll('*')]
                 .filter((e) => e.childElementCount === 0)
                 .map((e) => e.textContent.trim())
                 .filter((t) => /^v\d+\.\d+\.\d+$/.test(t)),
         )]);
-        expect(tags).toContain('v1.1.2');
-        expect(tags).toContain('v1.1.1');
+        expect(await shownTags()).toContain('v1.2.0');
+
+        // Releases load one at a time as you scroll, and v1.2.0 fills the panel
+        // on its own — where v1.1.2 and v1.1.1 were short enough to arrive
+        // together. The second release is a scroll away, not missing.
+        await modal.evaluate((m) => {
+            const body = m.querySelector('.modal-body') || m;
+            body.scrollTop = body.scrollHeight;
+        });
+        await expect.poll(shownTags, { timeout: 10_000 }).toContain('v1.1.2');
     });
 
-    // Bumped on purpose this time: these two tokens are what reopens the modal
-    // for everyone, which is the whole point of a release that exists to
-    // announce the one before it.
-    test('v1.1.2 release constants are bumped', async ({ page }) => {
+    // Bumped on purpose: these two tokens are what reopens the modal for
+    // everyone. A feature release that leaves them alone is announced to nobody
+    // who has already dismissed the last one.
+    test('v1.2.0 release constants are bumped', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.1.2'");
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v244'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.2.0'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v245'");
     });
 });

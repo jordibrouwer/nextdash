@@ -1,0 +1,121 @@
+{
+  "tag": "v1.2.0",
+  "date": "16 August 2026",
+  "releasedAt": "2026-08-16",
+  "modalLead": "A big one. Typing on the dashboard finally does only what you meant, the inbox counts what you can actually see, and the monitors say why something failed instead of leaving a blank.",
+  "sections": [
+    {
+      "title": "Typing and keys",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>What you type arrives whole.</strong> Typing <em>github</em> used to open a bookmark halfway through and leave <em>hub</em> behind, and a word starting with <strong>g</strong> lost its first letter. Nothing opens by itself any more: the list narrows as you type and <strong>Enter</strong> opens the top result. A bookmark shortcut is one keystroke longer — type it, press Enter — and it behaves the same tomorrow as today."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>j and k move the cursor again.</strong> They picked a row and then typed the letter over it, so the selection vanished in the same keypress. They move once a row is selected; the arrows are how you get there."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The line you type into says what it is.</strong> The key that starts each mode sits in front of it — <strong>&gt;</strong> search, <strong>:</strong> commands, <strong>?</strong> finders — and once there is something typed, an <strong>×</strong> clears it. Escape clears it on screen too, instead of leaving the old text behind."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A short key legend under the bookmarks</strong>, for anyone who wants one. It appears only once you start moving with the keyboard and goes again when you open something. Switch it on or off under <strong>Behavior → General</strong>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Shortcut hints on the toolbar icons are now off.</strong> They were on for everyone since they existed; the switch is in the same place if you want them back."
+        }
+      ]
+    },
+    {
+      "title": "Inbox",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Every number counts the links you can see.</strong> A search or a site filter now narrows the tiles, the pills and the badge along with the list, <strong>Mark all read</strong> becomes <strong>Mark shown read</strong> while something is narrowing the view, and the first tile is called <strong>Active</strong> — a sleeping link is deliberately not part of it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Sleeping links are no longer invisible.</strong> A line under the list says how many are asleep and when the first one wakes, and takes you to them. The site picker no longer offers a site whose only link is asleep and then answers with \"no matching links\"."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Import a list back in.</strong> The inbox could always be exported and never read back. <strong>Import</strong> sits beside CSV and JSON, skips links that are already there, and says afterwards how many arrived, how many were already in and how many did not fit."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A link can go back to unread</strong>, and the page description is shown under the title. Marking something read by mistake used to leave deleting as the only way out."
+        }
+      ]
+    },
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A failure says why.</strong> DNS, timeout, refused, TLS, content — it is on the outage and in the export, where the reason used to be blank for anything that was not an HTTP error."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>One dropped check no longer counts as an outage.</strong> A failed check is tried once more, five seconds later, and only recorded if it fails again. A single hiccup used to dent your uptime for a month."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Certificate warnings reach everyone.</strong> They came only from bookmarks set to Monitor, so an install using the ordinary periodic checks never saw one. Every check contributes now."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A 30-day figure that only has a week behind it says so</strong>, rather than printing a month either way."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A recovery says how long it was down</strong> — \"back online after 3h 12m\" — you can mute or unmute a whole selection at once, the trend chart can draw broken, stale, unchecked and score instead of only healthy, and the three-second limit on a check is now a setting for services that legitimately take longer."
+        }
+      ]
+    },
+    {
+      "title": "Finding things",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Search can say \"not\".</strong> A minus in front of any filter excludes instead of selects — <strong>tag:dev -status:pinned</strong> is \"dev links I have not pinned\". And <strong>status:untagged</strong> and <strong>status:noted</strong> finally answer the two questions the bar could not ask."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>:trash</strong> opens the recycle bin from the dashboard, where deleted bookmarks, pages and categories wait 30 days. <strong>Ctrl/Cmd+Enter</strong> on a result opens it in a new tab, whatever your setting says."
+        }
+      ]
+    },
+    {
+      "title": "Dashboard and config",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Moving a bookmark can be undone.</strong> Deleting one has offered Undo for a long time; moving one — or twenty at once — offered nothing, and each bookmark now goes back to the category it actually came from."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A category can carry an icon</strong> and be moved with the keyboard. Right-click its header for <strong>Icon…</strong>, type an emoji and watch the heading follow along; <strong>Alt</strong> with the left or right arrow moves the category itself."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Settings that are a shape are drawn.</strong> Columns, density, spacing, margins and type size show a small picture of what they do, and it redraws as you change them. Help does the same where the subject is a layout."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A setting changed on one device arrives on the other.</strong> The second screen used to keep its old look until you reloaded it by hand."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A failed automatic backup says so.</strong> The tile turns red and names the error — a full disk could stop backups for months while the panel looked perfectly normal."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A bookmark row in config says where it lives</strong> as one crumb, page then category, and each half filters the list. A fresh install now starts on <strong>Retro CRT</strong>; your theme is untouched."
+        }
+      ]
+    }
+  ]
+}
