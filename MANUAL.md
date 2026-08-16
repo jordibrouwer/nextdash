@@ -1383,6 +1383,7 @@ Bookmarks with **invalid URLs** (wrong scheme, or private/loopback hosts when lo
 - **Back Up Now** — creates an automatic backup on demand at any time, without waiting for the weekly run. It works even when the weekly toggle is off, and refreshes the **Last backup** date shown in the ZIP section.
 - **Totals** — a small summary line shows how many automatic backups you have and their combined size.
 - **Countdown** — the section shows how long until the next scheduled backup.
+- **A failed run says so** — the outcome of the last scheduled attempt is recorded and shown on the **Last backup** tile, which turns red and names the error. Until now a failing run only wrote a log line and, if Web Push happened to be configured, sent a push: a full disk or a wrong `NEXTDASH_AUTO_BACKUP_DIR` could stop backups for months while the panel looked normal, because the newest file's date does not move when a run fails.
 - **Enable / disable** — a toggle (on by default) controls the **weekly** run. Turning it off stops new automatic backups but never touches **Back Up Now** or your existing files.
 
 Filenames carry a UTC timestamp; if you create several backups within the same second, later ones get a `-2`, `-3`, … suffix so none overwrite each other. Like a manual **Import ZIP**, a restore is atomic and replaces everything — bookmark URL validation and skipped-URL handling work the same way.

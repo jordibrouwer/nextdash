@@ -566,6 +566,9 @@ type Store interface {
 	MergePrefetchBookmarkIcons(pageID int, updates []PrefetchIconUpdate) int
 	// GetDataRevision returns a fingerprint of on-disk data for client cache invalidation.
 	GetDataRevision() string
+	// GetSettingsRevision fingerprints only what decides how the app looks and
+	// behaves, so a polling client can tell a config change from a data change.
+	GetSettingsRevision() string
 	// InvalidateReadCache drops in-memory read caches after out-of-band disk writes (import/restore).
 	InvalidateReadCache()
 	// Inbox
@@ -3688,4 +3691,35 @@ func (fs *FileStore) GetDataRevision() string {
 	fs.readCache.revision = revision
 	fs.readCache.revisionOK = true
 	return revision
+}
+
+// GetSettingsRevision is a fingerprint of the files that decide how the app
+// looks and behaves, as opposed to what is in it.
+//
+// The whole-data revision already changes when settings.json does, and the
+// client's poll only ever reloaded bookmarks, inbox and health on that change —
+// so a second device kept showing stale chrome after every config change while
+// paying for the poll that could have told it. A separate hash means the poll
+// can tell "someone edited a bookmark" from "someone changed a setting" and do
+// the right, more expensive thing only for the second.
+func (fs *FileStore) GetSettingsRevision() string {
+	fs.mutex.Lock()
+	defer fs.mutex.Unlock()
+
+	fs.ensureDataDir()
+
+	hash := sha256.New()
+	for _, path := range []string{fs.settingsFile, fs.colorsFile} {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			hash.Write([]byte(path + ":missing;"))
+			continue
+		}
+		fileHash := sha256.Sum256(data)
+		hash.Write([]byte(path + ":"))
+		hash.Write(fileHash[:])
+		hash.Write([]byte(";"))
+	}
+	sum := hash.Sum(nil)
+	return hex.EncodeToString(sum[:8])
 }

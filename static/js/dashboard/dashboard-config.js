@@ -4084,21 +4084,30 @@ class DashboardConfig {
         const enabled = Boolean(data?.enabled);
         const newest = backups[0];
 
+        // The outcome of the last scheduled attempt, which is not the same as the
+        // newest file: a run that failed leaves the old file exactly where it
+        // was, so the tile went on reading "3 days ago · Next in 4 days" while
+        // nothing had been written for a month.
+        const lastError = String(data?.lastRunError || '').trim();
+
         return [
             {
                 key: 'last-backup',
-                tone: newest ? 'good' : 'warn',
+                tone: lastError ? 'bad' : (newest ? 'good' : 'warn'),
                 label: this.t('config.tileLastBackup', 'Last backup'),
                 value: newest ? this.formatRelative(newest.createdAt) : this.t('config.backupNone', 'none'),
                 // The server computes nextBackupAt and shipped it unread, so the
                 // tile could only restate that the feature is on. When the next
                 // one runs is the thing worth knowing.
-                detail: enabled
-                    ? (Date.parse(data?.nextBackupAt || '')
-                        ? this.t('config.backupNextAt', 'Next {when}')
-                            .replace('{when}', this.formatRelative(data.nextBackupAt))
-                        : this.t('config.backupAutoOn', 'Auto-backup on'))
-                    : this.t('config.backupAutoOff', 'Auto-backup off'),
+                detail: lastError
+                    ? this.t('config.backupLastFailed', 'Last run failed: {error}')
+                        .replace('{error}', lastError)
+                    : (enabled
+                        ? (Date.parse(data?.nextBackupAt || '')
+                            ? this.t('config.backupNextAt', 'Next {when}')
+                                .replace('{when}', this.formatRelative(data.nextBackupAt))
+                            : this.t('config.backupAutoOn', 'Auto-backup on'))
+                        : this.t('config.backupAutoOff', 'Auto-backup off')),
             },
             {
                 key: 'stored',
@@ -8857,6 +8866,18 @@ class DashboardConfig {
                         opt(24, t('config.recheckDaily', 'Daily')),
                         opt(48, t('config.recheckEveryDays', 'Every {n} days').replace('{n}', '2')),
                         opt(168, t('config.recheckWeekly', 'Weekly')),
+                    ] },
+                    // Three seconds was hardcoded for every check in the app, so
+                    // a service that legitimately answers in four — a large
+                    // Nextcloud, a container that just woke up — was permanently
+                    // "Timeout", which reads as offline. The server clamps to
+                    // 2–30; these are the useful points inside it.
+                    { field: 'healthCheckTimeoutSeconds', type: 'select', label: t('config.healthCheckTimeoutLabel', 'Check timeout'), numeric: true, options: [
+                        opt(0, t('config.healthCheckTimeoutDefault', 'Default (3 seconds)')),
+                        opt(5, t('config.healthCheckTimeoutSeconds', '{n} seconds').replace('{n}', '5')),
+                        opt(10, t('config.healthCheckTimeoutSeconds', '{n} seconds').replace('{n}', '10')),
+                        opt(15, t('config.healthCheckTimeoutSeconds', '{n} seconds').replace('{n}', '15')),
+                        opt(30, t('config.healthCheckTimeoutSeconds', '{n} seconds').replace('{n}', '30')),
                     ] },
                 ],
             },

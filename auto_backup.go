@@ -120,6 +120,58 @@ type autoBackupListResponse struct {
 	// NextBackupAt is when the next automatic backup is due (RFC3339), or empty
 	// when automatic backups are disabled. When it's in the past, one is due now.
 	NextBackupAt string `json:"nextBackupAt,omitempty"`
+	// LastRunAt and LastRunError are the outcome of the most recent scheduled
+	// attempt, whether or not it produced a file.
+	//
+	// A failing run wrote a log line and — only with Web Push configured and on
+	// — sent a push. The panel showed nothing: a full disk or a bad
+	// NEXTDASH_AUTO_BACKUP_DIR could stop backups for months while the screen
+	// looked normal, which is precisely the failure a backup feature exists to
+	// survive. The newest file's timestamp cannot stand in for this, because a
+	// run that failed leaves the old file exactly where it was.
+	LastRunAt    string `json:"lastRunAt,omitempty"`
+	LastRunError string `json:"lastRunError,omitempty"`
+}
+
+// autoBackupRunState is the outcome of the last scheduled attempt, kept beside
+// the archives so it survives a restart and needs no schema change anywhere
+// else.
+type autoBackupRunState struct {
+	At    string `json:"at"`
+	Error string `json:"error,omitempty"`
+}
+
+func autoBackupStatePath() string {
+	return filepath.Join(autoBackupDir(), ".last-run.json")
+}
+
+func readAutoBackupRunState() autoBackupRunState {
+	var state autoBackupRunState
+	data, err := os.ReadFile(autoBackupStatePath())
+	if err != nil {
+		return state
+	}
+	_ = json.Unmarshal(data, &state)
+	return state
+}
+
+// recordAutoBackupRun stores the outcome of a scheduled attempt. Best-effort:
+// failing to record that a backup failed must not itself fail anything.
+func recordAutoBackupRun(runErr error) {
+	state := autoBackupRunState{At: time.Now().UTC().Format(time.RFC3339)}
+	if runErr != nil {
+		state.Error = runErr.Error()
+	}
+	data, err := json.Marshal(state)
+	if err != nil {
+		return
+	}
+	if err := os.MkdirAll(autoBackupDir(), 0755); err != nil {
+		return
+	}
+	if err := writeFileAtomic(autoBackupStatePath(), data, 0644); err != nil {
+		log.Printf("auto-backup: failed to record run state: %v", err)
+	}
 }
 
 // nextAutoBackupTime returns when the next automatic backup is due: the newest
@@ -256,10 +308,12 @@ func (h *Handlers) maybeRunAutoBackup() {
 	}
 	if err := h.writeAutoBackup(); err != nil {
 		log.Printf("auto-backup: failed to create scheduled backup: %v", err)
+		recordAutoBackupRun(err)
 		h.pushAutoBackupResult(context.Background(), err)
 		return
 	}
 	log.Printf("auto-backup: created scheduled backup")
+	recordAutoBackupRun(nil)
 	h.pushAutoBackupResult(context.Background(), nil)
 }
 
@@ -299,6 +353,10 @@ func (h *Handlers) ListAutoBackups(w http.ResponseWriter, r *http.Request) {
 	}
 	if resp.Enabled {
 		resp.NextBackupAt = h.nextAutoBackupTime().UTC().Format(time.RFC3339)
+	}
+	if state := readAutoBackupRunState(); state.At != "" {
+		resp.LastRunAt = state.At
+		resp.LastRunError = state.Error
 	}
 
 	w.Header().Set("Content-Type", "application/json")

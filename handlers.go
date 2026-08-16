@@ -1022,6 +1022,10 @@ func (h *Handlers) GetDataRevision(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"revision": h.store.GetDataRevision(),
+		// Settings and colours on their own, so a polling client can tell a
+		// bookmark edit from a config change and only pay for the heavier
+		// refresh when the second happened.
+		"settingsRevision": h.store.GetSettingsRevision(),
 	})
 }
 

@@ -510,6 +510,9 @@ class DashboardData {
             }
             const body = await res.json();
             const revision = String(body?.revision || '').trim();
+            // Stashed rather than returned: every caller wants the data
+            // revision, and only the poll cares whether settings moved with it.
+            this._lastSettingsRevision = String(body?.settingsRevision || '').trim();
             return revision || null;
         } catch {
             return null;
@@ -549,6 +552,24 @@ class DashboardData {
             return false;
         }
         const changed = await this.syncDataRevision({ invalidateOnChange: true });
+        const settingsChanged = Boolean(this._lastSettingsRevision)
+            && Boolean(d._serverSettingsRevision)
+            && this._lastSettingsRevision !== d._serverSettingsRevision;
+        d._serverSettingsRevision = this._lastSettingsRevision || d._serverSettingsRevision;
+
+        // A config change on another device used to be invisible here: this poll
+        // reloaded bookmarks, inbox and health and never settings, while the
+        // revision it polls is hashed over settings.json too. So the second
+        // device kept its old chrome — theme, visible buttons, layout — until it
+        // was reloaded by hand, having paid for the poll that knew.
+        //
+        // Routed through the same path a config save uses locally, so there is
+        // one way to apply settings rather than two that can drift.
+        if (settingsChanged && typeof d.configSync?.refreshAfterConfigSettingsUpdate === 'function') {
+            await d.configSync.refreshAfterConfigSettingsUpdate({});
+            return true;
+        }
+
         if (!changed) {
             return false;
         }
