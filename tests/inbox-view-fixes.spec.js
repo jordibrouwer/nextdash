@@ -272,7 +272,10 @@ test.describe('what the view says in words', () => {
         await seed(page, [['o-host.example.com', 'Plain title']]);
         const hits = await page.evaluate(() => {
             const inbox = window.dashboardInstance.inbox;
-            inbox.items[0].previewDescription = 'a distinctive summary sentence';
+            // The name the API sends. This test set previewDescription, which
+            // matched the equally wrong name the haystack read at the time; both
+            // are now previewDesc.
+            inbox.items[0].previewDesc = 'a distinctive summary sentence';
             inbox.searchQuery = 'distinctive summary';
             const found = inbox.getFilteredItems().length;
             inbox.searchQuery = '';

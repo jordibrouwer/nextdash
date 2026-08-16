@@ -1466,3 +1466,18 @@ body[data-layout-version="modern"] .inbox-empty {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-primary));
     color: var(--accent-primary);
 }
+
+/* The summary the server fetches when a link is captured. It was stored on every
+   item and shown nowhere: the row had title, domain, date, note and tags, and
+   the one line explaining what the page is stayed in the file. Two lines at
+   most — this is a hint, not the article. */
+.inbox-item-desc {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}

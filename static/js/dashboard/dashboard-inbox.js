@@ -1300,6 +1300,49 @@ class DashboardInbox {
     }
 
     /**
+     * Put a link back to unread.
+     *
+     * The server has always accepted it — PatchInboxItem clamps a readAt of 0 or
+     * less back to 0 — and no client route ever sent it. Unread is the whole
+     * notion of "not dealt with yet" in the inbox, and it was the one state that
+     * only went one way: snoozing, notes, tags and deletes are all reversible.
+     * The only escape was Clear read, which removes the link.
+     */
+    async markUnread(id) {
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const res = await fetcher('/api/inbox', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, readAt: 0 }),
+        });
+        if (!res.ok) {
+            throw new Error(`inbox mark unread HTTP ${res.status}`);
+        }
+        const item = this.items.find((entry) => entry.id === id);
+        if (item) {
+            item.readAt = 0;
+        }
+        this.dash.pageNav?.updateInboxTabBadge?.();
+    }
+
+    /** markUnread with the row repaint and the error toast the row paths need. */
+    async markUnreadFromRow(item) {
+        if (!item?.id || !item.readAt) return;
+        this._trackAction('mark-unread');
+        try {
+            await this.markUnread(item.id);
+            if (this.isActiveView()) {
+                this.render();
+            }
+        } catch (_error) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxMarkUnreadFailed', 'Could not mark it unread'),
+                'error'
+            );
+        }
+    }
+
+    /**
      * markRead plus the single-item error toast, for the paths that act on one
      * row and have nobody else to report for them. Returns whether it landed,
      * so a caller only updates the row when the write actually happened.
@@ -2669,9 +2712,11 @@ class DashboardInbox {
                     item.url,
                     item.title,
                     item.previewTitle,
-                    // The fetched summary is on the row, so a phrase read there
-                    // has to be a phrase the search can find.
-                    item.previewDescription,
+                    // The fetched summary, under the name the API actually
+                    // sends: this read item.previewDescription for a day, a key
+                    // that is never on the object, so the one consumer of the
+                    // summary matched nothing at all.
+                    item.previewDesc,
                     item.domain,
                     item.note,
                     // Tags were stored and never searched, so a link findable by
@@ -3769,6 +3814,7 @@ class DashboardInbox {
                     ${timeLabel ? `<span class="inbox-item-time">${this.escape(timeLabel)}</span>` : ''}
                     ${wakeLabel}
                 </p>
+                ${item.previewDesc ? `<p class="inbox-item-desc">${this.escape(item.previewDesc)}</p>` : ''}
                 ${item.note ? `<p class="inbox-item-note">${this.escape(item.note)}</p>` : ''}
                 ${this.renderItemTags(item)}
                 <div class="feed-row-actions inbox-item-actions">
@@ -4206,6 +4252,7 @@ class DashboardInbox {
             this.t('dashboard.inboxExportColTitle', 'Title'),
             this.t('dashboard.inboxExportColUrl', 'URL'),
             this.t('dashboard.inboxExportColDomain', 'Domain'),
+            this.t('dashboard.inboxExportColDescription', 'Description'),
             this.t('dashboard.inboxExportColNote', 'Note'),
             this.t('dashboard.inboxExportColTags', 'Tags'),
             this.t('dashboard.inboxExportColAdded', 'Added'),
@@ -4217,6 +4264,7 @@ class DashboardInbox {
             item.previewTitle || item.title || '',
             item.url || '',
             this.itemDomain(item),
+            item.previewDesc || '',
             item.note || '',
             (Array.isArray(item.tags) ? item.tags : []).join(' '),
             item.addedAt ? new Date(item.addedAt).toISOString() : '',
@@ -4246,6 +4294,7 @@ class DashboardInbox {
             title: item.title || '',
             previewTitle: item.previewTitle || '',
             domain: this.itemDomain(item),
+            previewDesc: item.previewDesc || '',
             note: item.note || '',
             tags: Array.isArray(item.tags) ? item.tags : [],
             addedAt: item.addedAt || 0,

@@ -172,11 +172,15 @@ class DashboardContextMenu {
             { id: 'copy-url', label: this.t('dashboard.contextMenuCopyUrl', 'Copy URL'), icon: '⧉' },
             { id: 'share', label: this.shareActionLabel(), icon: '↪' },
             { id: 'inbox-promote', label: this.t('dashboard.inboxPromote', 'Promote'), icon: '★' },
-            // Only offered while the row is unread: markReadFromKeyboard is a
-            // no-op on an already-read row, so a "Mark unread" entry here would
-            // do nothing at all.
+            // Whichever way the row can still go: read, or back to unread. The
+            // second was missing entirely — the server accepted it and nothing
+            // ever sent it — so a link marked read by mistake could only be
+            // deleted.
             ...(inboxItem && !inboxItem.readAt
                 ? [{ id: 'inbox-read', label: this.t('dashboard.inboxMarkRead', 'Mark read'), icon: '✓' }]
+                : []),
+            ...(inboxItem && inboxItem.readAt
+                ? [{ id: 'inbox-unread', label: this.t('dashboard.inboxMarkUnread', 'Mark unread'), icon: '○' }]
                 : []),
             { id: 'inbox-snooze', label: this.t('dashboard.inboxSnooze', 'Snooze'), icon: '⏰' },
             { id: 'inbox-note', label: this.t('dashboard.inboxNoteAction', 'Note'), icon: '✎' },
@@ -890,6 +894,7 @@ class DashboardContextMenu {
             // drift from the other two routes.
             case 'inbox-promote':
             case 'inbox-read':
+            case 'inbox-unread':
             case 'inbox-snooze':
             case 'inbox-note':
             case 'inbox-tags':
@@ -902,6 +907,7 @@ class DashboardContextMenu {
                 if (!inbox || !item) break;
                 if (action === 'inbox-promote') inbox.promoteItem(item);
                 else if (action === 'inbox-read') void inbox.markReadFromKeyboard(item);
+                else if (action === 'inbox-unread') void inbox.markUnreadFromRow(item);
                 else if (action === 'inbox-snooze') inbox.openSnoozeMenu(item, row);
                 else if (action === 'inbox-note') void inbox.editNote(item);
                 else if (action === 'inbox-tags') void inbox.editTags(item);
