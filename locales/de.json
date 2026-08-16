@@ -4771,7 +4771,16 @@
     "helpSiteProject": "nextdash.cc",
     "helpSiteAuthor": "jordibrw.nl",
     "statsOpenHealthView": "Health öffnen",
-    "statsNoActivityEver": "Es wurde noch nichts geöffnet, also gibt es nichts zu zeichnen. Das füllt sich, sobald du deine Lesezeichen benutzt."
+    "statsNoActivityEver": "Es wurde noch nichts geöffnet, also gibt es nichts zu zeichnen. Das füllt sich, sobald du deine Lesezeichen benutzt.",
+    "statsScopeLabel": "Anzeige",
+    "statsScopeAll": "Alle Seiten",
+    "statsScopeWholeLibrary": "Diese Zahlen gelten für die ganze Sammlung, nicht nur für {page}.",
+    "statsHealthTrendWaiting": "Bei jedem Lauf des Health-Berichts wird ein Tag festgehalten. Sobald es ein paar sind, erscheint hier der Verlauf.",
+    "statsHealthTrendUp": "{points} Punkte hoch über {days} erfasste Tage",
+    "statsHealthTrendDown": "{points} Punkte runter über {days} erfasste Tage",
+    "statsHealthTrendFlat": "unverändert über {days} erfasste Tage",
+    "statsHealthTrendAria": "Gesunder Anteil über die Zeit",
+    "statsAxisDay": "Tag"
   },
   "colors": {
     "title": "themenanpassung",

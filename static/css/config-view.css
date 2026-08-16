@@ -750,6 +750,62 @@
     gap: 6px;
 }
 
+/* The sub-tab strip and the page scope share a row: the scope applies to
+   every tab, so it belongs beside them rather than inside one. Wraps under the
+   tabs on a narrow window. */
+.config-stats-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.config-stats-scope {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.config-stats-scope-label {
+    font-size: calc(var(--font-size-text) * 0.86);
+    color: var(--text-muted, #888);
+}
+
+.config-stats-scope-note {
+    margin-top: 0;
+}
+
+/* The healthy share over time. Sits above the figures it dates, on a fixed
+   0–100 axis; the colour is the direction of travel, and the summary beside it
+   says the same thing in words for anyone who cannot read a 44px line. */
+.config-stats-trend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 0 0 14px;
+    color: var(--text-muted, #888);
+}
+
+.config-stats-trend--good { color: var(--accent-success, #3fa45b); }
+.config-stats-trend--bad { color: var(--accent-danger, #c0524a); }
+
+.config-stats-trend-chart {
+    width: 240px;
+    max-width: 100%;
+    height: 44px;
+    flex: 0 1 240px;
+}
+
+.config-stats-trend-summary {
+    margin: 0;
+    font-size: calc(var(--font-size-text) * 0.86);
+    color: var(--text-secondary, #666);
+    font-variant-numeric: tabular-nums;
+}
+
 /* The foot of the section: when the figures were worked out, and the two
    controls that act on all of them. Wraps on a narrow window so the stamp and
    the buttons stack rather than crushing each other. */

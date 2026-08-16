@@ -4771,7 +4771,16 @@
     "helpSiteProject": "nextdash.cc",
     "helpSiteAuthor": "jordibrw.nl",
     "statsOpenHealthView": "Health openen",
-    "statsNoActivityEver": "Er is nog niets geopend, dus valt er niets te tekenen. Dit vult zich zodra je je bladwijzers gebruikt."
+    "statsNoActivityEver": "Er is nog niets geopend, dus valt er niets te tekenen. Dit vult zich zodra je je bladwijzers gebruikt.",
+    "statsScopeLabel": "Weergave",
+    "statsScopeAll": "Alle pagina’s",
+    "statsScopeWholeLibrary": "Deze cijfers gaan over de hele bibliotheek, niet alleen over {page}.",
+    "statsHealthTrendWaiting": "Elke keer dat het gezondheidsrapport draait, wordt er een dag vastgelegd. Zodra er een paar zijn, verschijnt het verloop hier.",
+    "statsHealthTrendUp": "{points} punten omhoog over {days} vastgelegde dagen",
+    "statsHealthTrendDown": "{points} punten omlaag over {days} vastgelegde dagen",
+    "statsHealthTrendFlat": "onveranderd over {days} vastgelegde dagen",
+    "statsHealthTrendAria": "Gezond aandeel over tijd",
+    "statsAxisDay": "Dag"
   },
   "colors": {
     "title": "thema-aanpassing",

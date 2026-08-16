@@ -143,6 +143,11 @@ class DashboardConfig {
         this.statsRange = DashboardConfig.readStoredStatsRange();
         // Statistics sub-tab.
         this.statsTab = 'overview';
+        // Which page the figures describe; '' is the whole library. Deliberately
+        // not persisted, unlike the activity range: a range reframes the numbers
+        // while this one hides most of them, and a filter still in force from
+        // last week would read as a shrunken library rather than as a choice.
+        this.statsPageFilter = '';
         // Data & backups sub-tab.
         this.dbTab = 'backups';
         this.bmTab = 'list';
@@ -15294,9 +15299,25 @@ class DashboardConfig {
             return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-stats-body" data-stats-tab="${esc(tab)}">${esc(this.statsTabLabel(tab))}</button>`;
         }).join('');
 
+        const pages = this.dash.pages || [];
+        // Offered only where there is a choice to make: on a single-page
+        // install every figure is that page's already.
+        const scope = pages.length > 1
+            ? `<label class="config-stats-scope">
+                    <span class="config-stats-scope-label">${esc(this.t('config.statsScopeLabel', 'Showing'))}</span>
+                    <select class="config-select" data-stats-scope>
+                        <option value=""${this.statsPageFilter ? '' : ' selected'}>${esc(this.t('config.statsScopeAll', 'All pages'))}</option>
+                        ${pages.map((p) => `<option value="${esc(String(p.id))}"${String(p.id) === String(this.statsPageFilter) ? ' selected' : ''}>${esc(p.name || `#${p.id}`)}</option>`).join('')}
+                    </select>
+                </label>`
+            : '';
+
         return `
             <p class="config-view-intro">${esc(this.t('config.statsIntroView', 'What is in your dashboard right now. These numbers update as you change things.'))}</p>
-            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div class="config-stats-head">
+                <div class="config-subtabs" role="tablist">${tabs}</div>
+                ${scope}
+            </div>
             <div id="config-stats-body" role="tabpanel" tabindex="0">${this.renderStatsBody()}</div>
             ${this.renderStatsTimestamp()}
         `;
@@ -16403,9 +16424,54 @@ class DashboardConfig {
         return canonical || value.toLowerCase();
     }
 
-    computeStats() {
+    /**
+     * The line that says a panel ignores the page filter.
+     *
+     * Two of the five tabs are worked out somewhere the filter cannot reach —
+     * the inbox belongs to no page, and the health report is built by the
+     * server for the whole collection. Saying so is the difference between a
+     * limit and a bug.
+     */
+    statsScopeNote() {
+        const page = this.statsScopePage();
+        if (!page) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<p class="config-panel-note config-stats-scope-note">${esc(
+            this.t('config.statsScopeWholeLibrary', 'These figures cover the whole library, not just {page}.')
+                .replace('{page}', page.name || `#${page.id}`))}</p>`;
+    }
+
+    /** The page the figures describe, or null for the whole library. */
+    statsScopePage() {
+        const id = Number(this.statsPageFilter);
+        if (!Number.isFinite(id) || id <= 0) return null;
+        return (this.dash.pages || []).find((p) => Number(p.id) === id) || null;
+    }
+
+    /**
+     * The bookmarks the figures are worked out from.
+     *
+     * Everything computed on the client narrows with the page filter — counts,
+     * coverage, activity, the cleanup score. What cannot: the inbox, which
+     * belongs to no page, and the health report, which the server builds for
+     * the whole collection. Both say so where they are shown rather than
+     * quietly ignoring the filter.
+     */
+    statsScopedBookmarks() {
         const all = this.dash.allBookmarks || [];
-        const pages = this.dash.pages || [];
+        const page = this.statsScopePage();
+        if (!page) return all;
+        return all.filter((b) => Number(b?.pageId) === Number(page.id));
+    }
+
+    statsScopedPages() {
+        const page = this.statsScopePage();
+        return page ? [page] : (this.dash.pages || []);
+    }
+
+    computeStats() {
+        const all = this.statsScopedBookmarks();
+        const pages = this.statsScopedPages();
         const total = all.length;
 
         const tagCounts = new Map();
@@ -16730,6 +16796,94 @@ class DashboardConfig {
         return { buckets, labels, dateLabels, activeCount, totalOpens, wow, bucketDays };
     }
 
+    /**
+     * The healthy share over time, as a line under the health figures.
+     *
+     * Everything else in this section is a snapshot: true now, with nothing to
+     * say whether it is better or worse than it was. The server has recorded a
+     * point per day all along — the health view draws it above its list — so
+     * this reads the same series rather than starting a second one. It is drawn
+     * here rather than borrowed from the health module because that module is
+     * lazily loaded and reads a report this section does not hold.
+     *
+     * A day with nothing in the collection has no percentage, so it leaves a
+     * gap in the line rather than being plotted as zero.
+     */
+    renderStatsHealthTrend() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const points = Array.isArray(this._statsHealth?.trend) ? this._statsHealth.trend : [];
+        const percent = (p) => {
+            const total = Number(p?.n) || 0;
+            return total ? Math.round(((Number(p?.h) || 0) / total) * 100) : null;
+        };
+        const values = points.map(percent);
+        const known = values.filter((v) => v !== null);
+        // Two days is a before and an after, not a trend; below that the panel
+        // says what it is waiting for rather than drawing a dot.
+        if (known.length < 2) {
+            return `<p class="config-panel-note">${esc(this.t('config.statsHealthTrendWaiting',
+                'A day is recorded each time the health report runs. Once there are a few, the change over time appears here.'))}</p>`;
+        }
+
+        const first = known[0];
+        const last = known[known.length - 1];
+        const delta = last - first;
+        const days = points.length;
+        const word = delta === 0
+            ? this.t('config.statsHealthTrendFlat', 'unchanged over {days} recorded days')
+            : (delta > 0
+                ? this.t('config.statsHealthTrendUp', 'up {points} points over {days} recorded days')
+                : this.t('config.statsHealthTrendDown', 'down {points} points over {days} recorded days'));
+        const summary = word.replace('{points}', String(Math.abs(delta))).replace('{days}', String(days));
+
+        const W = 240;
+        const H = 44;
+        const step = values.length > 1 ? W / (values.length - 1) : W;
+        // Fixed 0–100 axis: a self-scaling one would turn a two-point wobble
+        // into a cliff, which is the opposite of what a trend is for.
+        const coords = values.map((v, i) => (v === null
+            ? null
+            : `${(i * step).toFixed(1)},${(H - (v / 100) * H).toFixed(1)}`));
+        // Gaps break the line rather than joining across them: a day the app
+        // was never opened is missing data, not a straight run.
+        const segments = [];
+        let current = [];
+        coords.forEach((c) => {
+            if (c === null) {
+                if (current.length > 1) segments.push(current.join(' '));
+                current = [];
+            } else {
+                current.push(c);
+            }
+        });
+        if (current.length > 1) segments.push(current.join(' '));
+
+        const tone = delta > 0 ? 'good' : (delta < 0 ? 'bad' : '');
+        const lines = segments.map((pts) =>
+            `<polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>`).join('');
+        const rows = points.map((p, i) => {
+            const v = values[i];
+            const date = new Date(Number(p?.t) || 0).toISOString().slice(0, 10);
+            return `<tr><th scope="row">${esc(date)}</th><td>${v === null ? '—' : esc(String(v))}</td></tr>`;
+        }).join('');
+
+        return `
+            <div class="config-stats-trend${tone ? ` config-stats-trend--${tone}` : ''}">
+                <svg class="config-stats-trend-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"
+                     role="img" aria-label="${esc(this.t('config.statsHealthTrendAria', 'Healthy share over time'))}: ${esc(summary)}">
+                    ${lines}
+                </svg>
+                <p class="config-stats-trend-summary">
+                    <strong>${esc(String(last))}%</strong> ${esc(this.t('config.statsHealthy', 'Healthy'))} · ${esc(summary)}
+                </p>
+            </div>
+            <table class="config-sr-only">
+                <caption>${esc(this.t('config.statsHealthTrendAria', 'Healthy share over time'))}</caption>
+                <thead><tr><th scope="col">${esc(this.t('config.statsAxisDay', 'Day'))}</th><th scope="col">%</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    }
+
     renderStatsHealth() {
         const esc = (v) => this.dash.escapeHtml(v);
         const h = this._statsHealth;
@@ -16747,6 +16901,8 @@ class DashboardConfig {
                 <span class="config-stat-penalty">${esc(String(n))}</span>
             </li>`;
         return `
+            ${this.statsScopeNote()}
+            ${this.renderStatsHealthTrend()}
             ${this.statsScaleCaption(this.t('config.statsAxisShareHealthy',
                 'Healthy share of {total} tracked bookmarks — 0% to 100%').replace('{total}', String(total)))}
             <div class="config-ratio">
@@ -16817,6 +16973,7 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         return `
             <p class="config-view-intro">${esc(this.t('config.statsInboxIntro', 'What is waiting in the inbox, and how much of it you turn into bookmarks.'))}</p>
+            ${this.statsScopeNote()}
             <div id="config-stats-inbox">${this.renderStatsInboxBody()}</div>`;
     }
 
@@ -17088,6 +17245,11 @@ class DashboardConfig {
                 duplicates: sum.duplicateCount || 0,
                 stale: sum.staleCount || 0,
                 shortcutConflicts: sum.shortcutConflictCount || 0,
+                // One point per day, recorded by the server whenever a report
+                // is built. It arrives with the report already; this section
+                // simply never read it, so every figure here was "now" with
+                // nothing to compare it against.
+                trend: Array.isArray(data?.trend) ? data.trend : [],
             };
         } catch {
             this._statsHealth = null;
@@ -17260,6 +17422,13 @@ class DashboardConfig {
                 this.openConfigView('bookmarks');
             });
         });
+        const scopeSelect = container.querySelector('[data-stats-scope]');
+        if (scopeSelect) {
+            scopeSelect.addEventListener('change', () => {
+                this.statsPageFilter = scopeSelect.value || '';
+                this.repaintStatsBody();
+            });
+        }
         container.querySelectorAll('[data-stats-goto]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const tab = btn.getAttribute('data-stats-goto');
@@ -17277,8 +17446,12 @@ class DashboardConfig {
     exportStatsCSV() {
         const s = this.computeStats();
         const a = s.activity;
+        const scopePage = this.statsScopePage();
         const rows = [
             ['metric', 'value'],
+            // Named first: a file of counts with no scope in it is a file that
+            // will be misread the week after it was exported.
+            ['scope', scopePage ? (scopePage.name || `#${scopePage.id}`) : 'all pages'],
             ['bookmarks', s.total],
             ['pages', s.pages],
             ['categories', s.categories],

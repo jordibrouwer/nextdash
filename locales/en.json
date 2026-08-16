@@ -4772,7 +4772,16 @@
     "helpSiteProject": "nextdash.cc",
     "helpSiteAuthor": "jordibrw.nl",
     "statsOpenHealthView": "Open Health",
-    "statsNoActivityEver": "Nothing has been opened yet, so there is nothing to plot. This fills in as you use your bookmarks."
+    "statsNoActivityEver": "Nothing has been opened yet, so there is nothing to plot. This fills in as you use your bookmarks.",
+    "statsScopeLabel": "Showing",
+    "statsScopeAll": "All pages",
+    "statsScopeWholeLibrary": "These figures cover the whole library, not just {page}.",
+    "statsHealthTrendWaiting": "A day is recorded each time the health report runs. Once there are a few, the change over time appears here.",
+    "statsHealthTrendUp": "up {points} points over {days} recorded days",
+    "statsHealthTrendDown": "down {points} points over {days} recorded days",
+    "statsHealthTrendFlat": "unchanged over {days} recorded days",
+    "statsHealthTrendAria": "Healthy share over time",
+    "statsAxisDay": "Day"
   },
   "colors": {
     "title": "theme customization",
