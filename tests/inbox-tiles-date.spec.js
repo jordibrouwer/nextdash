@@ -35,18 +35,19 @@ test.describe('inbox summary tiles and added date', () => {
         await page.evaluate(() => window.dashboardInstance.inbox.loadAndRender({ refresh: true }));
         await page.waitForSelector('.inbox-item', { timeout: 15_000 });
 
-        // Four tiles, in order: Total, Unread, Snoozed, This week.
+        // Four tiles, in order: Active, Unread, Snoozed, This week. "Active"
+        // rather than "Total" because a sleeping link is in none of them.
         const tiles = page.locator('.inbox-tiles .inbox-tile');
         await expect(tiles).toHaveCount(4);
         const labels = await page.locator('.inbox-tiles .inbox-tile-label').allTextContents();
-        expect(labels.map((l) => l.toLowerCase())).toEqual(['total', 'unread', 'snoozed', 'this week']);
+        expect(labels.map((l) => l.toLowerCase())).toEqual(['active', 'unread', 'snoozed', 'this week']);
 
         // The first three are filter buttons; "This week" is a plain readout.
         await expect(page.locator('button.inbox-tile[data-inbox-tile="all"]')).toBeVisible();
         await expect(page.locator('button.inbox-tile[data-inbox-tile="unread"]')).toBeVisible();
         await expect(page.locator('button.inbox-tile[data-inbox-tile="snoozed"]')).toBeVisible();
 
-        // A freshly-seeded item counts toward Total, Unread and This week (all >= 1).
+        // A freshly-seeded item counts toward Active, Unread and This week (all >= 1).
         const seededRow = page.locator('.inbox-item').filter({ hasText: 'Tiles seed' });
         await expect(seededRow).toHaveCount(1);
         await expect(seededRow.locator('.inbox-item-date')).toHaveText(/\w/);
