@@ -4769,7 +4769,9 @@
     "logLevelActivity": "Activité uniquement",
     "logActivityHint": "Ce qui a été fait — favoris enregistrés, pages ajoutées, vérifications lancées — dans le même journal que les requêtes. Choisissez Activité uniquement pour ne lire que celles-là, ou activez les catégories avec NEXTDASH_ACTIVITY_LOG.",
     "helpSiteProject": "nextdash.cc",
-    "helpSiteAuthor": "jordibrw.nl"
+    "helpSiteAuthor": "jordibrw.nl",
+    "statsOpenHealthView": "Ouvrir Health",
+    "statsNoActivityEver": "Rien n'a encore été ouvert, il n'y a donc rien à tracer. Cela se remplit à mesure que vous utilisez vos favoris."
   },
   "colors": {
     "title": "personnalisation du thème",

@@ -750,11 +750,28 @@
     gap: 6px;
 }
 
+/* The foot of the section: when the figures were worked out, and the two
+   controls that act on all of them. Wraps on a narrow window so the stamp and
+   the buttons stack rather than crushing each other. */
+.config-stats-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.config-stats-foot-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
 /* When the figures above were worked out. Recessive — it dates the page, it is
    not one of its numbers. */
 .config-stats-updated {
-    margin: 14px 0 0;
-    text-align: right;
+    margin: 0;
     font-size: calc(var(--font-size-text) * 0.78);
     color: var(--text-muted, #888);
     font-variant-numeric: tabular-nums;

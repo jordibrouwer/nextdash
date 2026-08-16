@@ -15315,8 +15315,19 @@ class DashboardConfig {
         const esc = (v) => this.dash.escapeHtml(v);
         const time = new Intl.DateTimeFormat(this.dash.settings?.language || undefined,
             { hour: '2-digit', minute: '2-digit' }).format(new Date());
-        return `<p class="config-stats-updated">${esc(this.t('config.statsUpdatedAt', 'Worked out at {time}')
-            .replace('{time}', time))}</p>`;
+        // The two controls sit with the stamp rather than in a tab of their
+        // own. Refresh belongs next to the time it replaces, and the export
+        // covers every tab's figures — offering it only on Overview, which is
+        // where it used to live, hid it from four fifths of the section.
+        return `
+            <div class="config-stats-foot">
+                <p class="config-stats-updated">${esc(this.t('config.statsUpdatedAt', 'Worked out at {time}')
+                    .replace('{time}', time))}</p>
+                <div class="config-stats-foot-actions">
+                    <button type="button" class="config-btn config-btn--small" data-stats-action="refresh">${esc(this.t('config.statsRefresh', 'Refresh'))}</button>
+                    <button type="button" class="config-btn config-btn--small" data-stats-action="export">${esc(this.t('config.statsExportCsv', 'Export as CSV'))}</button>
+                </div>
+            </div>`;
     }
 
     /**
@@ -15355,9 +15366,9 @@ class DashboardConfig {
         // to be adjacent. aria-label names the tile as one thing — "Bookmarks:
         // 102" — and the spans are hidden so it is not then read twice.
         const tile = (label, value, hint) => `
-            <div class="config-tile" role="listitem" aria-label="${esc(label)}: ${esc(String(value))}${hint ? `. ${esc(hint)}` : ''}">
+            <div class="config-tile" role="listitem" aria-label="${esc(label)}: ${esc(this.statsNumber(value))}${hint ? `. ${esc(hint)}` : ''}">
                 <span class="config-tile-label" aria-hidden="true">${esc(label)}</span>
-                <span class="config-tile-value" aria-hidden="true">${esc(String(value))}</span>
+                <span class="config-tile-value" aria-hidden="true">${esc(this.statsNumber(value))}</span>
                 ${hint ? `<p class="config-tile-detail" aria-hidden="true">${esc(hint)}</p>` : ''}
             </div>`;
 
@@ -15383,12 +15394,12 @@ class DashboardConfig {
                     <div class="config-panel">
                         <h3 class="config-panel-title">${esc(this.t('config.statsHealthTitle', 'Link health'))}</h3>
                         <div id="config-stats-health">${this.renderStatsHealth()}</div>
+                        <div class="config-actions">
+                            <button type="button" class="config-btn config-btn--small" data-stats-action="open-health-view">${esc(this.t('config.statsOpenHealthView', 'Open Health'))}</button>
+                        </div>
                     </div>`;
             default:
                 return `
-                    <div class="config-actions" style="margin-bottom:16px">
-                        <button type="button" class="config-btn config-btn--small" data-stats-action="export">${esc(this.t('config.statsExportCsv', 'Export as CSV'))}</button>
-                    </div>
                     <div class="config-tiles config-tiles--overview" role="list">
                         ${tile(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
                         ${tile(this.t('config.statsPages', 'Pages'), s.pages)}
@@ -15409,8 +15420,10 @@ class DashboardConfig {
         host.innerHTML = this.renderStatsBody();
         // The stamp lives outside the body, so it would otherwise keep claiming
         // the time of the first render while the numbers under it were fresh.
-        const stamp = host.parentElement?.querySelector('.config-stats-updated');
-        if (stamp) stamp.outerHTML = this.renderStatsTimestamp();
+        // The whole foot is replaced, not the line inside it: swapping the line
+        // for a foot nested a second copy of the buttons in the first.
+        const foot = host.parentElement?.querySelector('.config-stats-foot');
+        if (foot) foot.outerHTML = this.renderStatsTimestamp();
         const container = document.getElementById('dashboard-layout');
         if (container) this.bindStats(container);
     }
@@ -15464,12 +15477,26 @@ class DashboardConfig {
             return `<button type="button" class="config-choice${on ? ' is-active' : ''}" data-stats-range="${d}" aria-pressed="${on}">${esc(this.statsRangeLabel(d))}</button>`;
         }).join('');
 
-        if (!a.buckets.length) {
+        // A chart of nothing is not a chart. The empty branch used to need the
+        // buckets to be missing entirely, so a library where nothing has been
+        // opened yet — every bucket zero — drew thirty flat bars and an axis
+        // instead of saying so. The range buttons stay: "nothing in this
+        // period" is answered by widening it.
+        const noneInPeriod = !a.buckets.length || a.buckets.every((v) => !v);
+        if (noneInPeriod) {
+            const everOpened = Number(a.totalOpens) > 0;
+            const line = everOpened
+                ? this.t('config.statsNoActivity', 'No bookmarks were used in this period.')
+                : this.t('config.statsNoActivityEver',
+                    'Nothing has been opened yet, so there is nothing to plot. This fills in as you use your bookmarks.');
             return `
                 <div class="config-panel">
                     <h3 class="config-panel-title">${esc(this.t('config.statsActivityTitle', 'Bookmarks used over time'))}</h3>
                     <div class="config-choices" role="group">${ranges}</div>
-                    <p class="config-panel-empty">${esc(this.t('config.statsNoActivity', 'No bookmarks were used in this period.'))}</p>
+                    <p class="config-panel-empty">${esc(line)}</p>
+                    ${everOpened ? `<div class="config-stat-figures">
+                        <span><strong>${esc(this.statsNumber(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityLifetimeOpens', 'opens all-time'))}</span>
+                    </div>` : ''}
                 </div>`;
         }
 
@@ -15508,8 +15535,8 @@ class DashboardConfig {
                 <p class="config-panel-note">${esc(this.t('config.statsActivityNote', 'Each bar counts the bookmarks whose last use falls in that period. A bookmark appears once, on the day you last opened it.'))}</p>
                 <div class="config-choices" role="group">${ranges}</div>
                 <div class="config-stat-figures">
-                    <span><strong>${esc(String(a.activeCount))}</strong> ${esc(this.t('config.statsActivityActive', 'bookmarks used'))}</span>
-                    <span title="${esc(this.t('config.statsActivityLifetimeHint', 'Counted over the whole life of these bookmarks, not only this period — nextDash stores a total per bookmark, not a date for every open.'))}"><strong>${esc(String(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityLifetimeOpens', 'opens all-time'))}</span>
+                    <span><strong>${esc(this.statsNumber(a.activeCount))}</strong> ${esc(this.t('config.statsActivityActive', 'bookmarks used'))}</span>
+                    <span title="${esc(this.t('config.statsActivityLifetimeHint', 'Counted over the whole life of these bookmarks, not only this period — nextDash stores a total per bookmark, not a date for every open.'))}"><strong>${esc(this.statsNumber(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityLifetimeOpens', 'opens all-time'))}</span>
                     ${a.wow !== null ? `<span class="config-stat-trend config-stat-trend--${a.wow >= 0 ? 'up' : 'down'}">${a.wow >= 0 ? '▲' : '▼'} ${esc(String(Math.abs(a.wow)))}% ${esc(this.t('config.statsActivityVsPrev', 'vs previous period'))}</span>` : ''}
                 </div>
                 <div class="config-chart">
@@ -16341,6 +16368,41 @@ class DashboardConfig {
         };
     }
 
+    /**
+     * A URL as duplicate-detection sees it.
+     *
+     * Delegates to the shared canonicaliser (fragment dropped, trailing slash
+     * dropped, host and scheme normalised), which is what handlers.go and the
+     * Health view use. The fallback is the old behaviour, for the case where
+     * the helper has not loaded: a slightly loose count beats none.
+     */
+    /**
+     * A count as a reader reads it: 1.274 rather than 1274.
+     *
+     * Grouping is the locale's own — a Dutch install separates thousands where
+     * an English one does not group the same way — so this goes through Intl
+     * rather than through a hand-rolled regex.
+     */
+    statsNumber(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return String(value ?? '');
+        try {
+            return new Intl.NumberFormat(this.dash.settings?.language || undefined).format(n);
+        } catch {
+            return String(n);
+        }
+    }
+
+    canonicalStatsUrlKey(raw) {
+        const value = String(raw || '').trim();
+        if (!value) return '';
+        const canonical = typeof BookmarkUrlUtils !== 'undefined'
+            && typeof BookmarkUrlUtils.canonicalBookmarkURLKey === 'function'
+            ? BookmarkUrlUtils.canonicalBookmarkURLKey(value)
+            : '';
+        return canonical || value.toLowerCase();
+    }
+
     computeStats() {
         const all = this.dash.allBookmarks || [];
         const pages = this.dash.pages || [];
@@ -16394,7 +16456,12 @@ class DashboardConfig {
             if (!opens && !last) neverOpened += 1;
             if (last > 0 && last < cutoff90) stale90 += 1;
 
-            const url = String(b.url || '').trim().toLowerCase();
+            // The same key Health and the server count duplicates by, rather
+            // than a plain lowercase: that treated a trailing slash or a
+            // fragment as a different link, so this panel and the Health view
+            // reported different numbers for the same library — and the
+            // cleanup score docked points on the looser of the two.
+            const url = this.canonicalStatsUrlKey(b.url);
             if (url) urlCounts.set(url, (urlCounts.get(url) || 0) + 1);
             const sc = String(b.shortcut || '').trim().toLowerCase();
             if (sc) shortcutCounts.set(sc, (shortcutCounts.get(sc) || 0) + 1);
@@ -17153,9 +17220,25 @@ class DashboardConfig {
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-stats-action');
                 if (action === 'export') this.exportStatsCSV();
+                // Recomputed from what is in memory, so this is a repaint
+                // rather than a fetch — except for the two tabs whose figures
+                // come from the server, which are dropped so they are asked for
+                // again.
+                if (action === 'refresh') {
+                    this._statsHealth = undefined;
+                    this._statsInboxItems = undefined;
+                    this._statsInboxAgg = undefined;
+                    this._statsFinders = undefined;
+                    this.loadStatsTabData(this.statsTab);
+                    this.repaintStatsBody();
+                }
                 // Duplicates are the actionable half of this panel, and health
                 // is where they can actually be merged.
                 if (action === 'open-health') this.openViewFromTile('health', 'duplicate');
+                // The whole tab, not only its duplicates: broken links and
+                // monitors down were listed here with no way through to the
+                // view that repairs them.
+                if (action === 'open-health-view') this.openViewFromTile('health');
                 if (action === 'add-bookmark') this.openAddBookmarkModal();
             });
         });
@@ -17207,7 +17290,12 @@ class DashboardConfig {
             ['availability_checked', s.checked],
             ['monitored', s.monitored],
             ['never_opened', s.neverOpened],
-            ['stale_90_days', s.stale90],
+            // The threshold is a setting (7–365 days), so naming the column
+            // after 90 made the export claim something the panel above it did
+            // not: with the setting on 30, both were the same number under two
+            // different names.
+            ['stale_days_threshold', this.bookmarkStaleDays()],
+            ['stale_bookmarks', s.stale90],
             ['duplicate_urls', s.duplicateUrls],
             ['shortcut_conflicts', s.shortcutConflicts],
             ['cleanup_score', s.cleanup.score],
@@ -17232,6 +17320,27 @@ class DashboardConfig {
         // The chart series itself, one row per bar, so the shape is reproducible
         // in a spreadsheet rather than only visible on screen.
         (a.dateLabels || []).forEach((d, i) => rows.push([`bookmarks_last_used:${d}`, a.buckets[i]]));
+
+        // Inbox and Health are two of the five tabs and contributed nothing:
+        // both come from the server rather than from computeStats(), which is
+        // how they were missed. Included when they have been loaded — the tab
+        // fetches on first visit, and an export from Overview should not block
+        // on two requests it may not need.
+        const inbox = this._statsInboxAgg;
+        if (inbox) {
+            rows.push(['inbox_waiting', Number(this._statsInboxItems?.length || 0)]);
+            rows.push(['inbox_added_lifetime', Number(inbox.totalAdded || 0)]);
+            rows.push(['inbox_promoted_lifetime', Number(inbox.totalPromoted || 0)]);
+            rows.push(['inbox_kept_lifetime', Number(inbox.totalKept || 0)]);
+            rows.push(['inbox_deleted_lifetime', Number(inbox.totalDeleted || 0)]);
+        }
+        const health = this._statsHealth;
+        if (health) {
+            rows.push(['health_healthy', Number(health.healthy || 0)]);
+            rows.push(['health_broken', Number(health.broken || 0)]);
+            rows.push(['health_monitors_down', Number(health.monitorDown || 0)]);
+            rows.push(['health_unchecked', Number(health.unchecked || 0)]);
+        }
 
         const esc = (v) => {
             const str = String(v ?? '');

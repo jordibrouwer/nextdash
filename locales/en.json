@@ -4770,7 +4770,9 @@
     "logLevelActivity": "Activity only",
     "logActivityHint": "What was done — bookmarks saved, pages added, checks run — mixed into the same log as the requests. Pick Activity only to read just those, or turn categories on and off with NEXTDASH_ACTIVITY_LOG.",
     "helpSiteProject": "nextdash.cc",
-    "helpSiteAuthor": "jordibrw.nl"
+    "helpSiteAuthor": "jordibrw.nl",
+    "statsOpenHealthView": "Open Health",
+    "statsNoActivityEver": "Nothing has been opened yet, so there is nothing to plot. This fills in as you use your bookmarks."
   },
   "colors": {
     "title": "theme customization",

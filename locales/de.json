@@ -4769,7 +4769,9 @@
     "logLevelActivity": "Nur Aktivität",
     "logActivityHint": "Was getan wurde — Lesezeichen gespeichert, Seiten angelegt, Prüfungen ausgeführt — im selben Log wie die Requests. Wähle Nur Aktivität, um nur diese zu lesen, oder schalte Kategorien mit NEXTDASH_ACTIVITY_LOG an und aus.",
     "helpSiteProject": "nextdash.cc",
-    "helpSiteAuthor": "jordibrw.nl"
+    "helpSiteAuthor": "jordibrw.nl",
+    "statsOpenHealthView": "Health öffnen",
+    "statsNoActivityEver": "Es wurde noch nichts geöffnet, also gibt es nichts zu zeichnen. Das füllt sich, sobald du deine Lesezeichen benutzt."
   },
   "colors": {
     "title": "themenanpassung",
