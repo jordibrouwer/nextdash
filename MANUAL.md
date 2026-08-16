@@ -558,7 +558,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | `Shift + ←` / `Shift + →` | Previous / next page (plain arrows move bookmarks, not pages) |
 | `,` | Page overview modal — `↑`/`↓` or `Tab`/`Shift+Tab` move between pages; `Enter` or `Space` switches page; focus stays trapped inside the panel; closing restores focus to the trigger |
 | `n` | In the page overview: open the **New page** row. Arrowing one stop past the last page reaches it too (**v2026.09.06**) |
-| `c` | Add a category to the page on screen (**v2026.09.06**). Acts on the first press since **v1.1.1**; it used to need a hold of about 300 ms so a tap could still reach the shortcut search |
+| `c` | Add a category to the page on screen (**v2026.09.06**). Acts on the first press since **v1.1.1**; it used to need a hold of about 300 ms so a tap could still reach the shortcut search. It is the one letter that keeps the grid over the search line, so a search cannot begin with `c` — press **`>`** first |
 | `<` | Open **config** (`<` is `Shift+,`). In config, `<` returns to the dashboard — asking to confirm first if there are unsaved changes |
 | `.` | Collapse or expand **all** categories at once (smart toggle — any open → all collapse; state remembered per page) |
 
