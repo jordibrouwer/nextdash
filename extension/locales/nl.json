@@ -68,5 +68,7 @@
   "previewCleared": "Link preview gewist.",
   "previewUntitled": "Naamloos",
   "previewStatusCheck": "···",
-  "moreOptions": "Meer opties"
+  "moreOptions": "Meer opties",
+  "contextMenuInboxPage": "Pagina opslaan in nextDash Inbox",
+  "contextMenuInboxLink": "Link opslaan in nextDash Inbox"
 }

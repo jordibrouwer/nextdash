@@ -68,5 +68,7 @@
   "previewCleared": "Link-Vorschau gelöscht.",
   "previewUntitled": "Ohne Titel",
   "previewStatusCheck": "···",
-  "moreOptions": "Weitere Optionen"
+  "moreOptions": "Weitere Optionen",
+  "contextMenuInboxPage": "Seite in nextDash Inbox speichern",
+  "contextMenuInboxLink": "Link in nextDash Inbox speichern"
 }

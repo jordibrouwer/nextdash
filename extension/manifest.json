@@ -33,6 +33,13 @@
         "mac": "Command+Shift+Y"
       },
       "description": "Quick-save tab to nextDash (defaults + last used page/category)"
+    },
+    "quick-save-inbox": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+U",
+        "mac": "Command+Shift+U"
+      },
+      "description": "Save tab to the nextDash Inbox"
     }
   },
   "icons": {

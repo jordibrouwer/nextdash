@@ -1449,7 +1449,16 @@ Folder: `extension/` (Chrome “Load unpacked”).
 - Optional **shortcut** — leave empty for an auto-suggested key from the bookmark name (first free letter on the chosen page), or type your own single-character shortcut.  
 - **Save to Inbox** — quick capture without choosing a page or category.  
 - Pick page/category, optional tags and note (bookmark save).  
-- Duplicate URL warning; **Save anyway** optional.  
+- Duplicate URL warning; **Save anyway** optional.
+
+### Without opening the popup
+
+Two routes exist to skip the popup entirely, and until now both could only make a bookmark on a page:
+
+- **Right-click** — *Save page / Save link to nextDash* files a bookmark; **Save page / Save link to nextDash Inbox** puts it in the inbox instead. Right-clicking a link is the most common capture gesture there is, and it was the one that could not reach the inbox.
+- **Keyboard** — `Ctrl/Cmd+Shift+Y` saves the tab as a bookmark, `Ctrl/Cmd+Shift+U` saves it to the inbox. Both use the badge on the icon to report: **+** saved, **D** already there, **?** no server configured, **!** failed.
+
+Tags sent with an inbox capture are now stored too — the server has accepted them for a while and the extension dropped them silently.  
 - **409** when the shortcut is already used on that page.  
 - After save: **Open in nextDash** or **Open Inbox in nextDash**.
 
