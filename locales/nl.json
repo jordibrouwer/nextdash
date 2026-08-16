@@ -4794,7 +4794,9 @@
     "backupInAMoment": "zo meteen",
     "backupInMinutes": "over {n} min",
     "backupInHours": "over {n} u",
-    "backupInDays": "over {n} d"
+    "backupInDays": "over {n} d",
+    "sectionAbout": "Over",
+    "aboutIntro": "Wat nextDash is, wat er onlangs veranderde, en waar het vandaan komt."
   },
   "colors": {
     "title": "thema-aanpassing",

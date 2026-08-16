@@ -27,6 +27,7 @@ class DashboardConfigLoader {
         'data-backups',
         'stats',
         'help',
+        'about',
     ];
 
     static VIEW = 'config';

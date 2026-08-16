@@ -32,6 +32,7 @@ class DashboardConfig {
         'data-backups',
         'stats',
         'help',
+        'about',
     ];
 
     /** Device-local last config section (and sub-tab) for Shift+S / `<` return visits. */
@@ -1177,6 +1178,7 @@ class DashboardConfig {
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             stats: ['config.sectionStats', 'Statistics'],
             help: ['config.sectionHelp', 'Help'],
+            about: ['config.sectionAbout', 'About'],
         };
         const [key, fallback] = map[section] || [section, section];
         return this.t(key, fallback);
@@ -1281,6 +1283,10 @@ class DashboardConfig {
             this.loadStatsTabData(this.statsTab);
         } else if (this.section === 'help') {
             this.bindHelp(container);
+        } else if (this.section === 'about') {
+            // The panels moved out of Help but kept their buttons — What's new,
+            // and the Ko-fi block's own links — so the same wiring runs here.
+            this.bindHelpActions(container);
         }
         window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
         this.bindFormKeyboard(container);
@@ -1930,7 +1936,10 @@ class DashboardConfig {
         { tab: 'health', titleKey: 'config.helpInboxTourTitle', fallback: 'The one-time tour' },
         { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
         { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
-        { tab: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
+        // About is a section now, not a help tab, so it carries its own target
+        // rather than a `tab` the help view would fail to open.
+        { section: 'about', titleKey: 'config.helpAboutTitle', fallback: 'About nextDash' },
+        { section: 'about', titleKey: 'config.helpWhatsNewTitle', fallback: 'What’s new' },
     ];
 
     subTabLabel(section, tab) {
@@ -2131,13 +2140,16 @@ class DashboardConfig {
         if (DashboardConfig.HELP_JUMP_PANELS?.length) {
             DashboardConfig.HELP_JUMP_PANELS.forEach((panel, i) => {
                 const title = this.t(panel.titleKey, panel.fallback);
+                const section = panel.section || 'help';
                 entries.push({
-                    id: `help:${panel.tab}:${i}`,
+                    id: `help:${panel.section || panel.tab}:${i}`,
                     kind: 'help',
                     title,
-                    subtitle: `${this.sectionLabel('help')} › ${this.helpTabLabel(panel.tab)}`,
-                    section: 'help',
-                    subTab: panel.tab,
+                    subtitle: panel.section
+                        ? this.sectionLabel(section)
+                        : `${this.sectionLabel('help')} › ${this.helpTabLabel(panel.tab)}`,
+                    section,
+                    subTab: panel.tab || null,
                     helpTitle: title,
                     focusSelector: null,
                 });
@@ -2599,6 +2611,9 @@ class DashboardConfig {
         }
         if (this.section === 'help') {
             return this.renderHelp();
+        }
+        if (this.section === 'about') {
+            return this.renderAbout();
         }
         // Other sections are rewritten in later phases; a placeholder keeps the
         // view navigable meanwhile.
@@ -17616,7 +17631,7 @@ class DashboardConfig {
 
     /* ── Help (native) ─────────────────────────────────────────────────────── */
 
-    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'inbox', 'stats', 'data', 'about'];
+    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'inbox', 'stats', 'data'];
 
     helpTabLabel(tab) {
         const map = {
@@ -17628,7 +17643,6 @@ class DashboardConfig {
             inbox: ['config.helpTabInbox', 'Inbox'],
             stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
-            about: ['config.helpTabAbout', 'About'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -17727,7 +17741,6 @@ class DashboardConfig {
             case 'inbox': return this.renderHelpInbox();
             case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
-            case 'about': return this.renderHelpAbout();
             default: return this.renderHelpStart();
         }
     }
@@ -17895,7 +17908,23 @@ class DashboardConfig {
                 'config.helpSelfHostingBody', '');
     }
 
-    renderHelpAbout() {
+    /**
+     * About: a section of its own, last in the rail.
+     *
+     * It was a tab of Help, which is where a reader looks for how something
+     * works — not for what this thing is, who wrote it, or where the release
+     * notes are. Those are a colophon, so they get their own entry under Help
+     * rather than a ninth tab inside it.
+     */
+    renderAbout() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.aboutIntro',
+                'What nextDash is, what changed recently, and where it comes from.'))}</p>
+            ${this.renderAboutPanels()}`;
+    }
+
+    renderAboutPanels() {
         const esc = (v) => this.dash.escapeHtml(v);
         // No version line: the nextdash-app-version meta is an asset fingerprint
         // for cache-busting (see appVersionToken in html_etag.go), not a release

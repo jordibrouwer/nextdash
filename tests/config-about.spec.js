@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 const { prepareDashboardInteraction } = require('./e2e-helpers');
 
 /**
- * The About tab of config help.
+ * The About section of config.
  *
  * It is the one place in the app that says what nextDash is and where it comes
  * from, and all three of those things — the wordmark, the project site, the
@@ -16,13 +16,12 @@ async function openAbout(page) {
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
     await prepareDashboardInteraction(page);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
-    await page.waitForSelector('[data-help-tab="about"]', { timeout: 15_000 });
-    await page.locator('[data-help-tab="about"]').click();
-    await page.waitForSelector('#config-help-body .config-panel', { timeout: 15_000 });
+    // Its own section since it stopped being a tab of Help.
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('about'));
+    await page.waitForSelector('#config-section-panel .config-panel', { timeout: 15_000 });
 }
 
-test.describe('config help — about', () => {
+test.describe('config about', () => {
     test('shows the wordmark, decoded rather than merely present', async ({ page }) => {
         await openAbout(page);
 
@@ -44,7 +43,7 @@ test.describe('config help — about', () => {
     test('offers both addresses, and each only once', async ({ page }) => {
         await openAbout(page);
 
-        const body = page.locator('#config-help-body');
+        const body = page.locator('#config-section-panel');
         const hrefs = await body.locator('a[href]').evaluateAll((links) =>
             links.map((a) => a.getAttribute('href') || ''));
 
@@ -64,7 +63,7 @@ test.describe('config help — about', () => {
     test('the prose names both sites, in whichever language is loaded', async ({ page }) => {
         await openAbout(page);
 
-        const prose = page.locator('#config-help-body .config-help-prose').first();
+        const prose = page.locator('#config-section-panel .config-help-prose').first();
         await expect(prose).toContainText('nextdash.cc');
         await expect(prose).toContainText('jordibrw.nl');
         // A missing locale key renders as its own name; the tab would still look

@@ -4795,7 +4795,9 @@
     "backupInAMoment": "in a moment",
     "backupInMinutes": "in {n} min",
     "backupInHours": "in {n}h",
-    "backupInDays": "in {n}d"
+    "backupInDays": "in {n}d",
+    "sectionAbout": "About",
+    "aboutIntro": "What nextDash is, what changed recently, and where it comes from."
   },
   "colors": {
     "title": "theme customization",

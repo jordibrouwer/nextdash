@@ -250,7 +250,7 @@ Config is a **view inside the dashboard**, not a separate page — same tab, sam
 | Keyboard-first | Bookmark editor, stats, backups |
 | Live layout and themes | Every setting, grouped by topic |
 
-It has eight sections — **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, and **Help** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
+It has nine sections — **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, **Help**, and **About** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
 
 Most controls **save the moment you change them**, and a short *Saving…* / *Saved* confirmation appears. The bookmark editor is the exception: it collects your edits and writes them when you press **Save**. Config only writes data that actually changed — a small settings edit does not re-upload every page of bookmarks.
 
@@ -1171,7 +1171,8 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 | **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
 | **Data & backups** | Backups & data · Icons & previews · Server log · Trash · Reset |
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
-| **Help** | Getting started · Configuring · Pages & bookmarks · Search & keyboard · Health & inbox · Data & hosting · About |
+| **Help** | Getting started · Configuring · Pages & bookmarks · Search & keyboard · Health & inbox · Data & hosting |
+| **About** | No sub-tabs — the wordmark, what nextDash is, the release notes, and where it comes from |
 
 **Statistics** can be narrowed to **one page**: a *Showing* selector beside the sub-tabs, offered as soon as there is more than one page. Everything worked out on this side narrows with it — counts, coverage, activity, the cleanup score. Two things cannot: the **inbox**, which belongs to no page, and the **health report**, which the server builds for the whole collection. Both say so on screen rather than quietly ignoring the choice, and the export records which scope produced it. The filter is deliberately not remembered between visits — it hides most of the library, and a filter still in force from last week reads as a shrunken collection rather than as a choice.
 
@@ -1179,7 +1180,7 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 
 **Statistics** ends with the time the figures were worked out and two controls beside it, on every sub-tab: **Refresh** — the numbers come from what is in memory, so a tab left open goes stale while the stamp above it keeps its old time — and **Export as CSV**, which carries every sub-tab's figures including the two that come from the server, so visit **Inbox** and **Health** before exporting if you want theirs in the file. Duplicate URLs are counted the way the health view counts them: a trailing slash, a `#fragment` and a differently-cased host are the same link, not three.
 
-**Help → About** (**v1.1.1**) carries the nextDash wordmark and the three addresses worth having: **[nextdash.cc](https://nextdash.cc)** for the project itself, **[GitHub](https://github.com/jordibrouwer/nextDash)** for issues, requests and release notes, and **[jordibrw.nl](https://jordibrw.nl)** for the person who writes it.
+**About** — a section of its own at the foot of the rail, `/#config/about`. It was a tab of Help, which is where you look for *how something works*, not for what this thing is or who wrote it. It carries the nextDash wordmark, **Show what's new**, and the three addresses worth having: **[nextdash.cc](https://nextdash.cc)** for the project itself, **[GitHub](https://github.com/jordibrouwer/nextDash)** for issues, requests and release notes, and **[jordibrw.nl](https://jordibrw.nl)** for the person who writes it.
 
 ### Working with bookmarks
 
