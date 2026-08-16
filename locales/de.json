@@ -1379,7 +1379,8 @@
     "shortcutKeyTakenAlways": "Das Dashboard nutzt {key} — es {use}, dieses Lesezeichen ist also nicht über seinen Buchstaben zu öffnen.",
     "shortcutKeyTakenInGrid": "Das Dashboard nutzt {key}, solange eine Zeile ausgewählt ist — es {use}. Ohne Auswahl erreicht der Buchstabe das Lesezeichen.",
     "shortcutKeysInUse": "Belegt: {keys}",
-    "shortcutKeysInUseMore": "Belegt: {keys} … und {count} weitere"
+    "shortcutKeysInUseMore": "Belegt: {keys} … und {count} weitere",
+    "dashboardKeyCheatSheet": "alle Tasten"
   },
   "health": {
     "pageTitle": "health beta",
@@ -4865,7 +4866,9 @@
     "tipEverydayTyping": "Fang auf dem Dashboard einfach an zu tippen: die Buchstaben landen in der Suchzeile und die Liste wird enger. <code>Enter</code> öffnet den obersten Treffer — vorher passiert nichts.",
     "tipEverydayGridLetters": "Solange eine Zeile ausgewählt ist, gehören Buchstaben dem Raster: <code>j</code>/<code>k</code> bewegen, <code>x</code> markiert, <code>g</code> startet einen Sprung. <code>Esc</code> gibt die Buchstaben an die Suchzeile zurück.",
     "filterByPageTitle": "Nach Seite {name} filtern",
-    "filterByCategoryTitle": "Nach Kategorie {name} filtern"
+    "filterByCategoryTitle": "Nach Kategorie {name} filtern",
+    "gridKeyLegendLabel": "Tastenlegende unter den Lesezeichen anzeigen",
+    "gridKeyLegendHint": "Erscheint, sobald du den Cursor mit der Tastatur bewegst, und verschwindet wieder, wenn du ein Lesezeichen öffnest. ! zeigt jederzeit die vollständige Übersicht."
   },
   "colors": {
     "title": "themenanpassung",

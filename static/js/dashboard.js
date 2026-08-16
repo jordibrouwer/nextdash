@@ -49,6 +49,7 @@ class Dashboard {
             currentPage: 'default',
             theme: 'retro-crt-dark',
             openInNewTab: true,
+            showGridKeyLegend: true,
             columnsPerRow: 3,
             fontSize: 'm',
             showBackgroundDots: true,

@@ -8147,6 +8147,7 @@ class DashboardConfig {
         openInNewTab: { info: ['openLinksInNewTabInfoTitle', 'openLinksInNewTabInfoMessage'], def: true },
         globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'], def: true },
         showShortcutTooltips: { info: ['shortcutTooltipsInfoTitle', 'shortcutTooltipsInfoMessage'], def: true },
+        showGridKeyLegend: { hint: 'gridKeyLegendHint', def: true },
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
@@ -8527,6 +8528,10 @@ class DashboardConfig {
                     bool('openInNewTab', 'config.openInNewTab', 'Open links in a new tab'),
                     bool('globalShortcuts', 'config.globalShortcutsLabel', 'Global keyboard shortcuts'),
                     { ...bool('showShortcutTooltips', 'config.shortcutTooltipsLabel', 'Show shortcut hints on toolbar icons'), special: 'shortcutTooltips' },
+                    // Beside the other two discoverability switches rather than
+                    // under Appearance: what it controls is whether the keyboard
+                    // explains itself, not how the grid looks.
+                    { ...bool('showGridKeyLegend', 'config.gridKeyLegendLabel', 'Show a key legend under the bookmarks'), special: 'render' },
                     bool('allowLocalBookmarks', 'config.allowLocalBookmarks', 'Allow local (non-http) bookmark URLs'),
                     bool('hyprMode', 'config.hyprModeLabel', 'Hypr mode'),
                 ],

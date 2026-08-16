@@ -1379,7 +1379,8 @@
     "shortcutKeyTakenAlways": "Le tableau de bord utilise {key} — elle {use} ; ce favori ne peut donc pas être ouvert par sa lettre.",
     "shortcutKeyTakenInGrid": "Le tableau de bord utilise {key} quand une ligne est sélectionnée — elle {use}. Sans sélection, la lettre atteint bien ce favori.",
     "shortcutKeysInUse": "Déjà pris : {keys}",
-    "shortcutKeysInUseMore": "Déjà pris : {keys} … et {count} de plus"
+    "shortcutKeysInUseMore": "Déjà pris : {keys} … et {count} de plus",
+    "dashboardKeyCheatSheet": "toutes les touches"
   },
   "health": {
     "pageTitle": "health beta",
@@ -4865,7 +4866,9 @@
     "tipEverydayTyping": "Commencez simplement à taper sur le tableau de bord : les lettres vont dans la ligne de recherche et la liste se resserre. <code>Entrée</code> ouvre le premier résultat — rien avant.",
     "tipEverydayGridLetters": "Tant qu’une ligne est sélectionnée, les lettres appartiennent à la grille : <code>j</code>/<code>k</code> déplacent, <code>x</code> coche, <code>g</code> lance un saut. <code>Échap</code> rend les lettres à la recherche.",
     "filterByPageTitle": "Filtrer par page {name}",
-    "filterByCategoryTitle": "Filtrer par catégorie {name}"
+    "filterByCategoryTitle": "Filtrer par catégorie {name}",
+    "gridKeyLegendLabel": "Afficher une légende des touches sous les favoris",
+    "gridKeyLegendHint": "Apparaît dès que vous déplacez le curseur au clavier et disparaît quand vous ouvrez un favori. ! affiche à tout moment l’aide-mémoire complet."
   },
   "colors": {
     "title": "personnalisation du thème",

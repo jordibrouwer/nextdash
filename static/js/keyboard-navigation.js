@@ -1001,6 +1001,9 @@ class KeyboardNavigation {
                     break;
                 }
                 e.preventDefault();
+                // Opening is the end of the trip the legend was there for, so it
+                // goes again — it comes back on the next cursor move.
+                document.body?.removeAttribute('data-grid-keys');
                 this.selectCurrentElement({ newTab: e.ctrlKey || e.metaKey || e.shiftKey });
                 break;
 
@@ -1471,6 +1474,11 @@ class KeyboardNavigation {
                 // to tell those apart — see restoreInlineEditRow().
                 this._selectionFromKeyboard = true;
                 this._announceKeyboardSelection(currentElement);
+                // The legend under the grid, if it is switched on at all, is for
+                // someone who has started using the keyboard — so it appears at
+                // the first move rather than sitting under the bookmarks all
+                // day. See syncBookmarkGridLegend.
+                document.body?.setAttribute('data-grid-keys', 'shown');
             }
             this.syncRovingTabStops({ focus: doFocus });
         } else {

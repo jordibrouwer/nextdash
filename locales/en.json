@@ -1380,7 +1380,8 @@
     "shortcutKeyTakenAlways": "The dashboard uses {key} — it {use}, so this bookmark cannot be opened by its letter.",
     "shortcutKeyTakenInGrid": "The dashboard uses {key} while a row is selected — it {use}. With nothing selected the letter still reaches this bookmark.",
     "shortcutKeysInUse": "In use: {keys}",
-    "shortcutKeysInUseMore": "In use: {keys} … and {count} more"
+    "shortcutKeysInUseMore": "In use: {keys} … and {count} more",
+    "dashboardKeyCheatSheet": "all keys"
   },
   "health": {
     "pageTitle": "health beta",
@@ -4866,7 +4867,9 @@
     "tipEverydayTyping": "Just start typing on the dashboard: the letters go to the search line and the list narrows as you type. <code>Enter</code> opens the top result — nothing opens until you press it.",
     "tipEverydayGridLetters": "While a row is selected, letters belong to the grid: <code>j</code>/<code>k</code> move, <code>x</code> ticks, <code>g</code> starts a jump. <code>Esc</code> gives the letters back to the search line.",
     "filterByPageTitle": "Filter by page {name}",
-    "filterByCategoryTitle": "Filter by category {name}"
+    "filterByCategoryTitle": "Filter by category {name}",
+    "gridKeyLegendLabel": "Show a key legend under the bookmarks",
+    "gridKeyLegendHint": "Appears once you move the cursor with the keyboard and goes again when you open a bookmark. Press ! at any time for the full cheat sheet."
   },
   "colors": {
     "title": "theme customization",

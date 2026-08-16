@@ -1098,9 +1098,14 @@ class DashboardBookmarkRows {
      * The key legend under the grid.
      *
      * Health and inbox have carried one under their feed since they were built.
-     * The dashboard, which is where everyone starts and where the keys were
-     * least obvious — arrows enter the grid, letters go to the search line —
-     * had none, so the only way to learn them was the cheat sheet behind `!`.
+     * The dashboard had none, so the only way to learn the keys was the cheat
+     * sheet behind `!` — but the dashboard is also the shortest view, and a
+     * ten-entry legend under seven bookmarks reads as clutter rather than help.
+     *
+     * So it is off by default, four entries long, and even when switched on it
+     * stays hidden until the keyboard is actually used: KeyboardNavigation
+     * stamps data-grid-keys on <body> at the first cursor move and clears it
+     * again on Enter, when the reader has arrived where they were going.
      *
      * Rebuilt only when the text changes: this runs on every render, and the
      * legend is constant unless the language does.
@@ -1109,6 +1114,12 @@ class DashboardBookmarkRows {
         const d = this.dash ?? this;
         const host = grid?.parentElement;
         if (!grid || !host || !window.KeyboardViewLegends) {
+            return;
+        }
+        // Off unless asked for: on a dashboard with seven bookmarks the legend
+        // was as tall as the grid above it, which is a manual, not a hint.
+        if (d.settings?.showGridKeyLegend !== true) {
+            host.querySelector(':scope > .dashboard-legend')?.remove();
             return;
         }
         const pairs = window.KeyboardViewLegends.toLegendPairs(

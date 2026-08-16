@@ -4953,14 +4953,22 @@ body[data-g-chord="armed"]::after {
    their feeds. Decorative: every key it lists is in the cheat sheet, and the
    rows announce what they do on their own. */
 .dashboard-legend {
-    display: flex;
+    display: none;
     flex-wrap: wrap;
-    gap: 0.35rem 1rem;
-    margin: 1.25rem 0 0.25rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border-secondary);
-    font-size: 0.75rem;
+    justify-content: center;
+    gap: 0.3rem 0.9rem;
+    margin: 1rem 0 0.25rem;
+    font-size: 0.72rem;
     color: var(--text-tertiary);
+    opacity: 0.75;
+}
+
+/* Only once the keyboard is in use: KeyboardNavigation stamps this at the first
+   cursor move and clears it on Enter. Without it the line sat under the grid
+   all day — under seven bookmarks, as tall as the thing it explained. No rule
+   above it either, which is what made it read as a section of its own. */
+body[data-grid-keys="shown"] .dashboard-legend {
+    display: flex;
 }
 
 .dashboard-legend kbd {

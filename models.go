@@ -283,6 +283,7 @@ type Settings struct {
 	AnalyticsOptIn                bool                         `json:"analyticsOptIn"`       // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
 	EnableSessionTips             bool                         `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
 	ShowShortcutTooltips          bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default on, opt-out in Config → Behavior or `:shortcuts off`)
+	ShowGridKeyLegend             bool                         `json:"showGridKeyLegend"`    // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
 	QuickStart                    QuickStartState              `json:"quickStart"`           // First-run quick-start progress (server-side, per-user)
 	// ConfigGeneralLayer is the last Essentials/Advanced/all layer used in
 	// Config → General. Empty means "never chosen", which starts on Essentials.
@@ -686,6 +687,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			AnalyticsOptIn:               false,
 			EnableSessionTips:            true,
 			ShowShortcutTooltips:         true,
+			ShowGridKeyLegend:            true,
 			ColumnsPerRow:                3,
 			FontSize:                     "m",
 			ShowBackgroundDots:           true,
@@ -2422,6 +2424,7 @@ func (fs *FileStore) GetSettings() Settings {
 			AnalyticsOptIn:                 false,
 			EnableSessionTips:              true,
 			ShowShortcutTooltips:           true,
+			ShowGridKeyLegend:              true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,

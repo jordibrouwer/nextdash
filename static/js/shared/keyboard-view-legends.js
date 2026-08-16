@@ -46,6 +46,10 @@
      * since they were built; the dashboard — the view everyone starts in — had
      * none, so the keys were discoverable only through the cheat sheet.
      *
+     * Four rows, not ten. Ten was a paragraph under a grid that can hold seven
+     * bookmarks — as tall as the thing it explained. These are the keys someone
+     * needs to start, and the last one points at the sheet that has the rest.
+     *
      * Arrows lead, because they are how the cursor gets into the grid: on this
      * view a bare letter is a character the search line is listening for, and
      * j/k only move once a row is selected.
@@ -54,15 +58,9 @@
      */
     const DASHBOARD_VIEW = [
         { keys: '↑ ↓ ← →', legendKey: 'dashboardKeyMove', cheatKey: 'dvMove', fallback: 'move' },
-        { keys: 'j / k', legendKey: 'dashboardKeyMoveJK', cheatKey: 'dvMoveJK', fallback: 'move (in the grid)' },
         { keys: 'Enter', legendKey: 'dashboardKeyOpen', cheatKey: 'dvOpen', fallback: 'open' },
         { keys: 'x', legendKey: 'dashboardKeySelect', cheatKey: 'dvSelect', fallback: 'select' },
-        { keys: 'Shift+E', legendKey: 'dashboardKeyEdit', cheatKey: 'dvEdit', fallback: 'edit' },
-        { keys: 'Shift+P', legendKey: 'dashboardKeyPin', cheatKey: 'dvPin', fallback: 'pin' },
-        { keys: 'Delete', legendKey: 'dashboardKeyDelete', cheatKey: 'dvDelete', fallback: 'delete' },
-        { keys: 'g g / G', legendKey: 'dashboardKeyFirstLast', cheatKey: 'dvFirstLast', fallback: 'first / last' },
-        { keys: '>', legendKey: 'dashboardKeySearch', cheatKey: 'dvSearch', fallback: 'search' },
-        { keys: 'Esc', legendKey: 'dashboardKeyEsc', cheatKey: 'dvEsc', fallback: 'clear selection' },
+        { keys: '!', legendKey: 'dashboardKeyCheatSheet', cheatKey: 'dvCheatSheet', fallback: 'all keys' },
     ];
 
     /** @type {LegendRow[]} */

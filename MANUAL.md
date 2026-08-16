@@ -580,7 +580,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 
 **The line you type into names its own key.** The prompt shows the key that starts each mode in front of the mode itself — **`>`** search, **`:`** commands, **`?`** finders, **`@`** everywhere — so the convention is legible without reading the legend under it. Typing a bare letter still searches, and now that is all it does — nothing opens until `Enter`, so `>` is a way to be explicit rather than a way to protect your typing. Once there is a query, an **`×`** beside it clears the line, for touch and for anyone who would rather click than reach for Escape.
 
-**The grid carries a key legend**, under the bookmarks, the way health and inbox have under their feeds.
+**A key legend under the bookmarks.** On for a fresh install and off for everyone who already had a dashboard — an existing `settings.json` has no such key, and appearing under a grid someone already knows is not a welcome. Switch it either way with **Show a key legend under the bookmarks** in **config → behavior → general**, beside the other two discoverability switches, and it stays out of the way even then — four keys (`↑↓←→`, `Enter`, `x`, and `!` for the rest), appearing only once you move the cursor with the keyboard and going again the moment you open a bookmark.
 
 ### 9.3 Bookmark actions
 

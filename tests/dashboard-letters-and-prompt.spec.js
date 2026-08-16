@@ -151,16 +151,41 @@ test.describe('the grid says where a row sits', () => {
         expect(state.groupsWithCount).toBe(0);
     });
 
-    test('the grid carries a key legend, like the other two views', async ({ page }) => {
+    test('the key legend is off until asked for, and then only while typing', async ({ page }) => {
         await dashboard(page);
+        // Ten entries under a grid that can hold seven bookmarks was a manual,
+        // not a hint, so it is a setting now — on for a fresh install, and
+        // switchable off.
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.showGridKeyLegend = false;
+            d.syncBookmarkGridA11y?.();
+        });
+        await expect(page.locator('.dashboard-legend')).toHaveCount(0);
+
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.showGridKeyLegend = true;
+            d.syncBookmarkGridA11y?.();
+        });
         const legend = page.locator('.dashboard-legend');
         await expect(legend).toHaveCount(1);
+        // Switched on but nobody has touched the keyboard: still nothing to see.
+        await expect(legend).toBeHidden();
+
+        await page.keyboard.press('ArrowDown');
+        await expect(legend).toBeVisible({ timeout: 5_000 });
+        const text = await legend.innerText();
+        // Four keys and a pointer at the sheet that has the rest.
+        expect(await legend.locator('kbd').count()).toBe(4);
+        expect(text).toMatch(/!/);
         // Decorative twice over: the keys are in the cheat sheet and the rows
         // announce themselves.
         await expect(legend).toHaveAttribute('aria-hidden', 'true');
-        const text = await legend.innerText();
-        expect(text).toMatch(/j \/ k/);
-        expect(text).toMatch(/>/);
-        expect(await legend.locator('kbd').count()).toBeGreaterThan(6);
+
+        await page.evaluate(() => { window.open = () => null; });
+        await page.keyboard.press('Enter');
+        // Opening is the end of the trip it was there for.
+        await expect(legend).toBeHidden({ timeout: 5_000 });
     });
 });
