@@ -249,8 +249,9 @@ class DashboardConfig {
         if (raw === 'config/behavior/layout') return 'appearance';
         if (raw === 'config/behavior/display') return 'appearance';
         if (raw === 'config') return 'overview';
-        // A trailing /<tab> is optional and handled by subTabFromHash.
-        const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z-]+))?$/);
+        // A trailing /<tab> is optional and handled by subTabFromHash; help
+        // adds a third segment naming one panel, which neither of them reads.
+        const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z0-9-]+))?(?:\/([a-z0-9-]+))?$/);
         if (!match) return null;
         return DashboardConfig.SECTIONS.includes(match[1]) ? match[1] : 'overview';
     }
@@ -267,7 +268,9 @@ class DashboardConfig {
         const raw = hash.replace(/^#/, '');
         if (raw === 'config/behavior/layout') return 'layout';
         if (raw === 'config/behavior/display') return 'display';
-        const match = raw.match(/^config\/([a-z-]+)\/([a-z-]+)$/);
+        // The optional third segment is a help panel, which this ignores — it
+        // must not stop the tab in front of it from being read.
+        const match = raw.match(/^config\/([a-z-]+)\/([a-z-]+)(?:\/[a-z0-9-]+)?$/);
         if (!match || match[1] === 'bookmarks') return null;
         const tabs = DashboardConfig.SUB_TABS[match[1]];
         return tabs && tabs.includes(match[2]) ? match[2] : null;
@@ -396,7 +399,13 @@ class DashboardConfig {
     }
 
     restoreConfigHash() {
-        const wanted = `#${this.hashForSection(this.section)}`;
+        // A help link names a panel in a third segment. Rewriting the hash from
+        // the section and tab alone would drop it the moment anything called
+        // this — which is every move inside config, including the render that
+        // has not scrolled to the panel yet.
+        const panel = DashboardConfig.helpPanelFromHash(window.location.hash);
+        const base = this.hashForSection(this.section);
+        const wanted = `#${panel && this.section === 'help' ? `${base}/${panel}` : base}`;
         if (window.location.hash !== wanted) {
             history.replaceState(
                 history.state,
@@ -1283,6 +1292,9 @@ class DashboardConfig {
             this.loadStatsTabData(this.statsTab);
         } else if (this.section === 'help') {
             this.bindHelp(container);
+            // The body is in the DOM by now, which is what scrolling to a
+            // linked panel needs.
+            this.openHelpPanelFromHash();
         } else if (this.section === 'about') {
             // The panels moved out of Help but kept their buttons — What's new,
             // and the Ko-fi block's own links — so the same wiring runs here.
@@ -1931,9 +1943,13 @@ class DashboardConfig {
         { tab: 'search', titleKey: 'config.helpCommandsTitle', fallback: 'Commands' },
         { tab: 'search', titleKey: 'config.helpKeyboardTitle', fallback: 'Keyboard' },
         { tab: 'health', titleKey: 'config.helpHealthTitle', fallback: 'Availability & health' },
-        { tab: 'health', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
-        { tab: 'health', titleKey: 'config.helpInboxWorkTitle', fallback: 'Working through the inbox' },
-        { tab: 'health', titleKey: 'config.helpInboxTourTitle', fallback: 'The one-time tour' },
+        { tab: 'monitoring', titleKey: 'config.helpHealthStatsTitle', fallback: 'Uptime, trends & statistics' },
+        { tab: 'monitoring', titleKey: 'config.helpNotificationsTitle', fallback: 'Alerts & notifications' },
+        // These three render on the Inbox tab, not on Health — jumping to one
+        // used to land a tab away from the thing it named.
+        { tab: 'inbox', titleKey: 'config.helpInboxTitle', fallback: 'Inbox' },
+        { tab: 'inbox', titleKey: 'config.helpInboxWorkTitle', fallback: 'Working through the inbox' },
+        { tab: 'inbox', titleKey: 'config.helpInboxTourTitle', fallback: 'The one-time tour' },
         { tab: 'data', titleKey: 'config.helpDataTitle', fallback: 'Backups, import & export' },
         { tab: 'data', titleKey: 'config.helpSelfHostingTitle', fallback: 'Self-hosting' },
         // About is a section now, not a help tab, so it carries its own target
@@ -2136,6 +2152,23 @@ class DashboardConfig {
                     });
                 });
             }
+        });
+        // The Tips tab's panels are the catalogue's own groups, so they are read
+        // from it rather than listed a second time here — a hardcoded entry
+        // would name a heading the tab does not have the moment a group is
+        // renamed.
+        (window.ConfigHelpTips?.TIP_GROUPS || []).forEach((group, i) => {
+            const title = this.t(`config.${group.titleKey}`, group.titleFallback);
+            entries.push({
+                id: `help:tips:${i}`,
+                kind: 'help',
+                title,
+                subtitle: `${this.sectionLabel('help')} › ${this.helpTabLabel('tips')}`,
+                section: 'help',
+                subTab: 'tips',
+                helpTitle: title,
+                focusSelector: null,
+            });
         });
         if (DashboardConfig.HELP_JUMP_PANELS?.length) {
             DashboardConfig.HELP_JUMP_PANELS.forEach((panel, i) => {
@@ -17631,7 +17664,17 @@ class DashboardConfig {
 
     /* ── Help (native) ─────────────────────────────────────────────────────── */
 
-    static HELP_TABS = ['start', 'config', 'organizing', 'search', 'health', 'inbox', 'stats', 'data'];
+    /*
+     * Ten tabs, because two of them were doing too much.
+     *
+     * Health carried nine panels and 23,000 characters against three on Data —
+     * a manual inside a tab — so the monitoring half (uptime, expectations,
+     * certificates, drift, maintenance, alerts) is its own. Tips is new: the
+     * catalogue of 51 already existed in the locales and in ConfigHelpTips,
+     * rendered nowhere in this config, while the Start tab showed eleven of
+     * them under "Everyday keys" and the prose promised the rest were here.
+     */
+    static HELP_TABS = ['start', 'tips', 'config', 'organizing', 'search', 'health', 'monitoring', 'inbox', 'stats', 'data'];
 
     helpTabLabel(tab) {
         const map = {
@@ -17639,7 +17682,9 @@ class DashboardConfig {
             config: ['config.helpTabConfig', 'Configuring'],
             organizing: ['config.helpTabOrganizing', 'Pages & bookmarks'],
             search: ['config.helpTabSearch', 'Search & keyboard'],
+            tips: ['config.helpTabTips', 'Tips'],
             health: ['config.helpTabHealth', 'Health'],
+            monitoring: ['config.helpTabMonitoring', 'Monitoring'],
             inbox: ['config.helpTabInbox', 'Inbox'],
             stats: ['config.helpTabStats', 'Statistics'],
             data: ['config.helpTabData', 'Data & hosting'],
@@ -17671,6 +17716,38 @@ class DashboardConfig {
     }
 
     /**
+     * Everywhere help prose lives, as one list.
+     *
+     * The search used to walk HELP_TABS, which was the same thing until About
+     * stopped being a tab — and then "ko-fi" and "nextdash.cc" answered nothing
+     * found, from a search box three centimetres below the panel that says
+     * both. A source is a tab of Help or a section of config; the search reads
+     * them all and each result says where it came from, so moving prose again
+     * means adding a line here rather than discovering the gap by missing it.
+     * tests/config-help.spec.js fails if a source renders no panels.
+     */
+    static HELP_SEARCH_SOURCES() {
+        return [
+            ...DashboardConfig.HELP_TABS.map((tab) => ({ kind: 'tab', id: tab })),
+            { kind: 'section', id: 'about' },
+        ];
+    }
+
+    /** The panels of one search source, as rendered markup. */
+    renderHelpSourceBody(source) {
+        if (source.kind === 'section') {
+            return source.id === 'about' ? this.renderAbout() : '';
+        }
+        return this.renderHelpBodyFor(source.id);
+    }
+
+    helpSourceLabel(source) {
+        return source.kind === 'section'
+            ? this.sectionLabel(source.id)
+            : this.helpTabLabel(source.id);
+    }
+
+    /**
      * Search across every help tab at once.
      *
      * The tabs exist to keep each topic readable, but they also hide it: someone
@@ -17689,13 +17766,13 @@ class DashboardConfig {
         // when a body changes.
         const parse = new DOMParser();
         const hits = [];
-        for (const tab of DashboardConfig.HELP_TABS) {
-            const doc = parse.parseFromString(this.renderHelpBodyFor(tab), 'text/html');
+        for (const source of DashboardConfig.HELP_SEARCH_SOURCES()) {
+            const doc = parse.parseFromString(this.renderHelpSourceBody(source), 'text/html');
             for (const panel of doc.querySelectorAll('.config-panel')) {
                 const title = panel.querySelector('.config-panel-title')?.textContent?.trim() || '';
                 const text = panel.textContent.replace(/\s+/g, ' ').trim();
                 if (!text.toLowerCase().includes(query)) continue;
-                hits.push({ tab, title, panel: panel.outerHTML });
+                hits.push({ source, title, panel: panel.outerHTML });
             }
         }
 
@@ -17706,8 +17783,11 @@ class DashboardConfig {
 
         return hits.map((hit) => `
             <div class="config-help-result">
-                <button type="button" class="config-help-result-tab" data-help-tab-jump="${esc(hit.tab)}">
-                    ${esc(this.helpTabLabel(hit.tab))}
+                <button type="button" class="config-help-result-tab"
+                        ${hit.source.kind === 'section'
+                            ? `data-help-section-jump="${esc(hit.source.id)}"`
+                            : `data-help-tab-jump="${esc(hit.source.id)}"`}>
+                    ${esc(this.helpSourceLabel(hit.source))}
                 </button>
                 ${hit.panel}
             </div>`).join('');
@@ -17737,7 +17817,9 @@ class DashboardConfig {
             case 'config': return this.renderHelpConfig();
             case 'organizing': return this.renderHelpOrganizing();
             case 'search': return this.renderHelpSearch();
+            case 'tips': return this.renderHelpTipsTab();
             case 'health': return this.renderHelpHealth();
+            case 'monitoring': return this.renderHelpMonitoring();
             case 'inbox': return this.renderHelpInbox();
             case 'stats': return this.renderHelpStats();
             case 'data': return this.renderHelpData();
@@ -17745,15 +17827,93 @@ class DashboardConfig {
         }
     }
 
-    /** A help panel whose body is trusted, translator-supplied HTML. */
+    /**
+     * A help panel whose body is trusted, translator-supplied HTML.
+     *
+     * Every panel carries an id taken from its title key, so one topic can be
+     * linked to rather than "open config, Help, the Health tab, scroll". The
+     * link button beside the heading copies #config/help/<tab>/<id>, which
+     * restoreConfigHash writes and openHelpPanelFromHash scrolls to. The state
+     * line, where a panel names a feature that can be switched off, sits under
+     * the heading — see helpFeatureState().
+     */
     helpPanel(titleKey, titleFallback, bodyKey, bodyFallback, extra = '') {
         const esc = (v) => this.dash.escapeHtml(v);
+        const id = DashboardConfig.helpPanelId(titleKey);
         return `
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t(titleKey, titleFallback))}</h3>
+            <div class="config-panel config-help-panel" id="help-panel-${esc(id)}" data-help-panel="${esc(id)}">
+                <div class="config-help-panel-head">
+                    <h3 class="config-panel-title">${esc(this.t(titleKey, titleFallback))}</h3>
+                    <button type="button" class="config-help-panel-link" data-help-panel-link="${esc(id)}"
+                            title="${esc(this.t('config.helpCopyLink', 'Copy a link to this topic'))}"
+                            aria-label="${esc(this.t('config.helpCopyLink', 'Copy a link to this topic'))}">🔗</button>
+                </div>
+                ${this.helpFeatureState(titleKey)}
                 <div class="config-help-prose">${this.t(bodyKey, bodyFallback)}</div>
                 ${extra}
             </div>`;
+    }
+
+    /**
+     * Whether the thing this panel describes is switched on here.
+     *
+     * Help explains features that can be off, and said the same thing either
+     * way — so a reader could follow a page about the inbox with no idea that
+     * theirs is disabled, and no hint where the switch is. Only panels whose
+     * subject is a single setting get a line; the rest get nothing, which is
+     * the honest answer for a panel about how arrow keys work.
+     */
+    helpFeatureState(titleKey) {
+        const feature = DashboardConfig.HELP_PANEL_FEATURES[titleKey];
+        if (!feature) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const on = feature.isOn(this.dash.settings || {}, this.dash);
+        const label = on
+            ? this.t('config.helpFeatureOn', 'Switched on for you.')
+            : this.t('config.helpFeatureOff', 'Switched off for you.');
+        return `
+            <p class="config-help-state${on ? ' is-on' : ' is-off'}">
+                <span class="config-help-state-dot" aria-hidden="true"></span>
+                <span>${esc(label)}</span>
+                <button type="button" class="config-btn config-btn--small"
+                        data-overview-go='${esc(JSON.stringify(feature.go))}'>${esc(
+                    this.t('config.helpFeatureGo', 'Open the setting'))}</button>
+            </p>`;
+    }
+
+    /**
+     * Panels whose subject is one switch, and where that switch lives.
+     *
+     * Deliberately short: a state line is worth having where it answers "is
+     * this on for me", and noise anywhere else. `go` is the shape
+     * handleOverviewGo already understands.
+     */
+    static HELP_PANEL_FEATURES = {
+        'config.helpInboxTitle': {
+            isOn: (s) => s.inboxEnabled !== false,
+            go: { section: 'behavior', behaviorTab: 'search' },
+        },
+        'config.helpHealthTitle': {
+            isOn: (s) => s.showStatus === true || s.healthAutoRecheckEnabled === true,
+            go: { section: 'behavior', behaviorTab: 'status' },
+        },
+        'config.helpNotificationsTitle': {
+            isOn: (s) => s.monitorNotifyEnabled === true,
+            go: { section: 'behavior', behaviorTab: 'status' },
+        },
+        'config.helpPrivacyTitle': {
+            isOn: (s) => s.analyticsOptIn === true,
+            go: { section: 'behavior', behaviorTab: 'privacy' },
+        },
+    };
+
+    /** `config.helpHealthCertTitle` → `health-cert`: short, stable, URL-safe. */
+    static helpPanelId(titleKey) {
+        return String(titleKey)
+            .replace(/^config\.help/, '')
+            .replace(/Title$/, '')
+            .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+            .toLowerCase() || 'panel';
     }
 
     renderHelpStart() {
@@ -17859,8 +18019,21 @@ class DashboardConfig {
             'config.helpHealthBody', '')
             + this.helpPanel('config.helpHealthViewTitle', 'Working through the list',
                 'config.helpHealthViewBody', '')
-            + this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
-                'config.helpHealthStatsBody', '')
+            + this.helpPanel('config.helpHealthWalkthroughTitle', 'Setting up one monitored bookmark, start to finish',
+                'config.helpHealthWalkthroughBody', '');
+    }
+
+    /**
+     * The monitoring half, which is a different question.
+     *
+     * Health answers "what is broken and how do I fix it"; these six answer
+     * "how do I watch something over time". They sat in the same tab, which is
+     * how it came to hold nine panels against three on Data — the longest tab
+     * in help by a factor of seven, and the one people scrolled past.
+     */
+    renderHelpMonitoring() {
+        return this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
+            'config.helpHealthStatsBody', '')
             + this.helpPanel('config.helpHealthExpectTitle', 'When "up" is not good enough',
                 'config.helpHealthExpectBody', '')
             + this.helpPanel('config.helpHealthCertTitle', 'Certificate expiry',
@@ -17870,9 +18043,42 @@ class DashboardConfig {
             + this.helpPanel('config.helpHealthMaintenanceTitle', 'Maintenance windows',
                 'config.helpHealthMaintenanceBody', '')
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
-                'config.helpNotificationsBody', '')
-            + this.helpPanel('config.helpHealthWalkthroughTitle', 'Setting up one monitored bookmark, start to finish',
-                'config.helpHealthWalkthroughBody', '');
+                'config.helpNotificationsBody', '');
+    }
+
+    /**
+     * Every tip, grouped, on a tab of its own.
+     *
+     * The catalogue has lived in the locales and in ConfigHelpTips all along —
+     * the old config rendered it into #help-tips-body, an element this view does
+     * not have, so it rendered nowhere. Meanwhile the Start tab showed eleven
+     * hand-picked keys and the prose promised the full list was here. Built from
+     * the shared groups rather than a second copy, so the rotating tip above the
+     * footer and this page cannot drift apart.
+     */
+    renderHelpTipsTab() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const groups = window.ConfigHelpTips?.TIP_GROUPS || [];
+        if (!groups.length) {
+            return `<div class="config-panel"><p class="config-panel-empty">${
+                esc(this.t('config.helpTipsUnavailable', 'The tips are not available.'))}</p></div>`;
+        }
+        const panels = groups.map((group) => {
+            // Tips are our own markup (they carry <code> keys), never user input.
+            const items = (group.tips || [])
+                .map((key) => this.t(`config.${key}`, ''))
+                .filter((tip) => tip && !tip.startsWith('config.'))
+                .map((tip) => `<li class="config-help-tip">${tip}</li>`)
+                .join('');
+            if (!items) return '';
+            return `
+                <div class="config-panel">
+                    <h3 class="config-panel-title">${esc(this.t(`config.${group.titleKey}`, group.titleFallback))}</h3>
+                    <ul class="config-help-tips">${items}</ul>
+                </div>`;
+        }).join('');
+        return `<p class="config-view-intro">${esc(this.t('config.helpTipsIntro',
+            'Small things that save a keystroke, grouped by what you are doing. The dashboard shows one of these above the buttons when you switch that on.'))}</p>${panels}`;
     }
 
     /**
@@ -18068,7 +18274,60 @@ class DashboardConfig {
     }
 
     /** "Open this tab" on a search result. */
+    /**
+     * Copy a link that reopens this one topic.
+     *
+     * The address is the config hash with the panel appended, so it survives a
+     * paste into a chat window and lands on the panel rather than on the tab it
+     * happens to live in this month.
+     */
+    async copyHelpPanelLink(panelId) {
+        if (!panelId) return;
+        const url = `${window.location.origin}${window.location.pathname}#config/help/${this.helpTab}/${panelId}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            this.notify(this.t('config.helpLinkCopied', 'Link to this topic copied.'), 'success');
+        } catch {
+            // Clipboard access is refused outside a secure context, which is
+            // every plain-http install — so the address goes in the bar instead,
+            // where it can be copied by hand.
+            window.location.hash = `config/help/${this.helpTab}/${panelId}`;
+            this.notify(this.t('config.helpLinkInAddressBar', 'The link is in the address bar.'), 'info');
+        }
+    }
+
+    /**
+     * Scroll to the panel a #config/help/<tab>/<panel> hash names.
+     *
+     * Runs after the body is in the DOM, and flashes the panel rather than only
+     * scrolling: arriving at a wall of prose with no idea which part was linked
+     * to is barely better than arriving at the top.
+     */
+    openHelpPanelFromHash() {
+        const panelId = DashboardConfig.helpPanelFromHash(window.location.hash);
+        if (!panelId) return;
+        const el = document.getElementById(`help-panel-${panelId}`);
+        if (!el) return;
+        el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        el.classList.add('is-linked');
+        setTimeout(() => el.classList.remove('is-linked'), 2000);
+    }
+
+    /** The third segment of #config/help/<tab>/<panel>, if there is one. */
+    static helpPanelFromHash(hash) {
+        if (typeof hash !== 'string') return null;
+        const match = hash.replace(/^#/, '').match(/^config\/help\/[a-z-]+\/([a-z0-9-]+)$/);
+        return match ? match[1] : null;
+    }
+
     bindHelpResultJumps(body) {
+        // A hit from another section leaves Help altogether.
+        body.querySelectorAll('[data-help-section-jump]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.helpQuery = '';
+                void this.openConfigView(btn.getAttribute('data-help-section-jump'));
+            });
+        });
         body.querySelectorAll('[data-help-tab-jump]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 this.helpTab = btn.getAttribute('data-help-tab-jump');
@@ -18082,6 +18341,19 @@ class DashboardConfig {
     }
 
     bindHelpActions(container) {
+        // The state lines carry the same data-overview-go the Overview cards
+        // use, but that handler is bound to the overview body and returns early
+        // anywhere else — so the button would render and do nothing.
+        container.querySelectorAll('[data-overview-go]').forEach((btn) => {
+            if (btn.dataset.helpGoBound === '1') return;
+            btn.dataset.helpGoBound = '1';
+            btn.addEventListener('click', () => this.handleOverviewGo(btn));
+        });
+        container.querySelectorAll('[data-help-panel-link]').forEach((btn) => {
+            if (btn.dataset.helpLinkBound === '1') return;
+            btn.dataset.helpLinkBound = '1';
+            btn.addEventListener('click', () => this.copyHelpPanelLink(btn.getAttribute('data-help-panel-link')));
+        });
         container.querySelectorAll('[data-help-action]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-help-action');

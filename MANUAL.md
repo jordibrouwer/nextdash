@@ -1171,7 +1171,7 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 | **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
 | **Data & backups** | Backups & data · Icons & previews · Server log · Trash · Reset |
 | **Statistics** | Overview · Activity · Content · Inbox · Health |
-| **Help** | Getting started · Configuring · Pages & bookmarks · Search & keyboard · Health & inbox · Data & hosting |
+| **Help** | Getting started · Tips · Configuring · Pages & bookmarks · Search & keyboard · Health · Monitoring · Inbox · Statistics · Data & hosting |
 | **About** | No sub-tabs — the wordmark, what nextDash is, the release notes, and where it comes from |
 
 **Statistics** can be narrowed to **one page**: a *Showing* selector beside the sub-tabs, offered as soon as there is more than one page. Everything worked out on this side narrows with it — counts, coverage, activity, the cleanup score. Two things cannot: the **inbox**, which belongs to no page, and the **health report**, which the server builds for the whole collection. Both say so on screen rather than quietly ignoring the choice, and the export records which scope produced it. The filter is deliberately not remembered between visits — it hides most of the library, and a filter still in force from last week reads as a shrunken collection rather than as a choice.
@@ -1179,6 +1179,10 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 **Health** opens with the **healthy share over time**, drawn from the day-per-day series the server already records for the health view — on a fixed 0–100 axis, with a gap where a day was never recorded, and the change in words beside it (*up 12 points over 30 recorded days*). Below a couple of recorded days it says what it is waiting for instead.
 
 **Statistics** ends with the time the figures were worked out and two controls beside it, on every sub-tab: **Refresh** — the numbers come from what is in memory, so a tab left open goes stale while the stamp above it keeps its old time — and **Export as CSV**, which carries every sub-tab's figures including the two that come from the server, so visit **Inbox** and **Health** before exporting if you want theirs in the file. Duplicate URLs are counted the way the health view counts them: a trailing slash, a `#fragment` and a differently-cased host are the same link, not three.
+
+**Help** carries the guide, and three things worth knowing about it. **Tips** is the whole catalogue of keyboard tips, grouped by what you are doing — the same list the dashboard draws its rotating tip from. Every panel has a **🔗** beside its heading that copies a link straight to that topic (`/#config/help/monitoring/health-cert`), which opens the right tab and lights the panel up on arrival. And where a panel describes something that can be switched off — the inbox, availability checking, alerts, analytics — a line under the heading says whether it is on **for you**, with a button to the setting.
+
+The search box above the tabs covers every tab **and** the About section, so a word that appears only there is still found; each result says where it came from and takes you there.
 
 **About** — a section of its own at the foot of the rail, `/#config/about`. It was a tab of Help, which is where you look for *how something works*, not for what this thing is or who wrote it. It carries the nextDash wordmark, **Show what's new**, and the three addresses worth having: **[nextdash.cc](https://nextdash.cc)** for the project itself, **[GitHub](https://github.com/jordibrouwer/nextDash)** for issues, requests and release notes, and **[jordibrw.nl](https://jordibrw.nl)** for the person who writes it.
 

@@ -44,7 +44,9 @@ class DashboardConfigLoader {
         if (raw === 'config/behavior/layout') return 'appearance';
         if (raw === 'config/behavior/display') return 'appearance';
         if (raw === 'config') return 'overview';
-        const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z-]+))?$/);
+        // Help links carry a third segment naming a panel; the section is
+        // still the first, and the loader only needs that much.
+        const match = raw.match(/^config\/([a-z-]+)(?:\/([a-z0-9-]+))?(?:\/([a-z0-9-]+))?$/);
         if (!match) return null;
         return DashboardConfigLoader.SECTIONS.includes(match[1]) ? match[1] : 'overview';
     }

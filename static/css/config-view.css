@@ -4006,6 +4006,72 @@ body.no-animations .config-new-features-panel-star {
     color: var(--text-muted, #888);
 }
 
+/* A help panel's heading row: the title, and the link that names it. The
+   button stays faint until the panel is hovered or it has focus — a row of
+   chain links down the page would compete with the headings. */
+.config-help-panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.config-help-panel-link {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: calc(var(--font-size-text) * 0.9);
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    color: var(--text-muted, #888);
+}
+
+.config-help-panel:hover .config-help-panel-link,
+.config-help-panel-link:focus-visible {
+    opacity: 0.8;
+}
+
+/* Where a link landed. Fades out on its own — a permanent highlight would
+   still be there the next time the tab is opened. */
+.config-help-panel.is-linked {
+    outline: 2px solid var(--accent-primary, #4a90d9);
+    outline-offset: 4px;
+    border-radius: 8px;
+    transition: outline-color 0.6s ease;
+}
+
+/* Whether the feature this panel describes is on for the reader. */
+.config-help-state {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 10px;
+    font-size: calc(var(--font-size-text) * 0.88);
+    color: var(--text-secondary, #666);
+}
+
+.config-help-state-dot {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: var(--text-muted, #888);
+    flex: none;
+}
+
+.config-help-state.is-on .config-help-state-dot { background: var(--accent-success, #3fa45b); }
+.config-help-state.is-off .config-help-state-dot { background: var(--text-muted, #888); }
+
+/* The full tip catalogue on its own tab. */
+.config-help-tips {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 6px;
+}
+
 /* The wordmark sits on its own plate rather than on the panel background.
    It is bright green on transparency — the colour it is on a terminal — which
    a light theme would leave barely legible, so the plate is dark in both
