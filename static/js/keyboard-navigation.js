@@ -277,6 +277,11 @@ class KeyboardNavigation {
 
             // Plain c — add a category. Shift+C is the availability popover and
             // is handled above, so this branch only ever sees the bare key.
+            // Not gated on the cursor the way g, j and k are: "c adds a category"
+            // is a decision this project already made and pinned — see
+            // create-page-category-from-dashboard.spec.js, which asserts both
+            // that c works with no row focused and that it must not reach the
+            // shortcut search. The cost is that a search cannot begin with c.
             if (e.code === 'KeyC' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -409,6 +414,29 @@ class KeyboardNavigation {
 
     _gridNavActive() {
         return this.currentIndex >= 0;
+    }
+
+    /**
+     * Whether a bare letter may act on the grid rather than be typed.
+     *
+     * The dashboard has a search line that is always listening, so on this view
+     * every letter is a character someone might be typing. The rule that keeps
+     * the two apart is the cursor: a letter acts on the grid once a row is
+     * selected, and types before that. Arrows, Home/End and Tab are the way in,
+     * because none of them is a character.
+     *
+     * x, ; and Delete already worked this way. g, c, j and k did not, which is
+     * why a search for "github" arrived as "ithub" and j moved the cursor and
+     * then typed over its own selection.
+     */
+    _letterMayActOnGrid(key) {
+        // Only letters are in question. The arrows share a case block with j and
+        // k, and they are how the cursor gets into the grid in the first place —
+        // gating them on the cursor already being there locks the grid shut.
+        if (typeof key !== 'string' || key.length !== 1 || !/[a-z]/i.test(key)) {
+            return true;
+        }
+        return this._gridNavActive();
     }
 
     _scrollBehavior() {
@@ -879,19 +907,35 @@ class KeyboardNavigation {
             // try them first and was the one place they did nothing.
             case 'ArrowDown':
             case 'j':
+                // A bare letter belongs to whoever the reader is typing at. The
+                // arrows start grid navigation from anywhere because nothing
+                // else wants them; j and k are letters, so they only move once
+                // the cursor is already in the grid — otherwise "jira" would
+                // lose its j the way "github" used to lose its g.
+                if (!this._letterMayActOnGrid(key)) {
+                    break;
+                }
                 if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
+                // Without this the row is selected and the search line then
+                // types the letter, which clears the selection again: j moved
+                // the cursor and undid itself in the same keystroke.
+                e.stopImmediatePropagation();
                 this.navigateDown();
                 break;
 
             case 'ArrowUp':
             case 'k':
+                if (!this._letterMayActOnGrid(key)) {
+                    break;
+                }
                 if (!this._handleGridArrowKey()) {
                     break;
                 }
                 e.preventDefault();
+                e.stopImmediatePropagation();
                 this.navigateUp();
                 break;
 
@@ -1025,6 +1069,14 @@ class KeyboardNavigation {
 
             case 'g':
             case 'G':
+                // Unguarded, this swallowed the first letter of every search
+                // beginning with g: "github" arrived as "ithub", because the
+                // chord armed itself on an idle dashboard and stopped the key
+                // from reaching the search line. Every other letter on the grid
+                // already asks this question first.
+                if (!this._letterMayActOnGrid(key)) {
+                    break;
+                }
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if (e.repeat) {
@@ -1064,6 +1116,23 @@ class KeyboardNavigation {
     _activateGChordMode() {
         this._gPressed = true;
         this._armGChordTimeout(G_CHORD_MS);
+        this._paintGChordState();
+    }
+
+    /**
+     * Say on screen that g is waiting for its second key.
+     *
+     * For three seconds after g, the next key means something else — a second g
+     * jumps to the top, p to the first pinned row, 1–9 to a category. Nothing
+     * said so, so the only way to find out was to press a key and see what
+     * happened. The pill is the key itself followed by an ellipsis, which needs
+     * no translation.
+     */
+    _paintGChordState() {
+        document.body?.setAttribute('data-g-chord', this._gPressed ? 'armed' : 'idle');
+        if (!this._gPressed) {
+            document.body?.removeAttribute('data-g-chord');
+        }
     }
 
     _performGgJump() {
@@ -1078,6 +1147,7 @@ class KeyboardNavigation {
             clearTimeout(this._gTimeout);
             this._gTimeout = null;
         }
+        this._paintGChordState();
     }
 
     isGChordActive() {

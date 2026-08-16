@@ -219,9 +219,16 @@
     <div id="shortcut-search" class="shortcut-search">
         <div class="search-container">
             <div class="search-prompt">
+                <!-- The key that starts this mode, in front of the mode it starts.
+                     The tabs below name all four, but the line you type into is
+                     where the convention has to be legible: > search, : commands,
+                     ? finders, @ everywhere. -->
+                <span class="search-chevron" data-mode="search" aria-hidden="true">&gt;</span>
                 <span class="search-prefix" data-mode="search">SEARCH</span>
                 <span id="search-query" class="search-query"></span>
                 <span class="search-cursor" data-i18n="dashboard.searchCursor">_</span>
+                <button type="button" id="search-clear" class="search-clear" hidden
+                        data-i18n-aria="dashboard.searchClearAria" aria-label="Clear search">&times;</button>
             </div>
             <input type="text" id="search-input-mobile" class="search-input-mobile" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-aria="dashboard.searchInputAria" aria-label="Search" />
             <div id="search-matches" class="search-matches"></div>

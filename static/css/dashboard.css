@@ -4927,3 +4927,47 @@ body.no-animations .bookmark-move-out {
     /* On a phone the name is the only thing with room. */
     .bookmark-tag-strip { display: none; }
 }
+
+/* g is a chord: for three seconds after it, the next key means "top" (g),
+   "first pinned" (p) or a category number. Nothing said so, so the only way to
+   learn it was to press something and watch. The pill is the key itself, which
+   needs no translation. */
+body[data-g-chord="armed"]::after {
+    content: "g…";
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 60;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--background-secondary));
+    color: var(--accent-primary);
+    font-family: var(--font-family-main);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+}
+
+/* The key legend under the grid, matching the one health and inbox carry under
+   their feeds. Decorative: every key it lists is in the cheat sheet, and the
+   rows announce what they do on their own. */
+.dashboard-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    margin: 1.25rem 0 0.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-secondary);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.dashboard-legend kbd {
+    font-size: 0.7rem;
+    padding: 0.05rem 0.32rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-secondary);
+    background: var(--background-secondary);
+    color: var(--text-secondary);
+}

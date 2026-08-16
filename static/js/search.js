@@ -1641,6 +1641,14 @@ class SearchComponent {
         this.emptyStateExpandedGroups.clear();
         document.dispatchEvent(new CustomEvent('nextdash:launcher-filter', { detail: { active: false, urls: new Set() } }));
         this.resetQuery();
+        // resetQuery clears the state; the prompt is a separate element and used
+        // to keep showing the query that had just been abandoned — so Escape
+        // read as "did nothing" until the next key replaced the text.
+        const queryElement = document.getElementById('search-query');
+        if (queryElement) {
+            queryElement.textContent = '';
+        }
+        this.updateModeIndicator();
         const searchElement = document.getElementById('shortcut-search');
         const mobileInput = document.getElementById('search-input-mobile');
 
@@ -1770,6 +1778,23 @@ class SearchComponent {
         }
         prefix.dataset.mode = mode;
         prefix.textContent = label;
+
+        // The key that starts this mode, in front of the mode itself: > search,
+        // : commands, ? finders, @ everywhere. Typing a bare letter still
+        // searches — this says which key gets you here on purpose, and which one
+        // to press when a single-letter bookmark shortcut would fire instead.
+        const chevron = document.querySelector('.search-chevron');
+        if (chevron) {
+            const KEYS = { search: '>', command: ':', finder: '?', global: '@', fuzzy: '/' };
+            chevron.textContent = KEYS[mode] || '>';
+            chevron.dataset.mode = mode;
+        }
+
+        // A query you can see is a query you can clear.
+        const clear = document.getElementById('search-clear');
+        if (clear) {
+            clear.hidden = q.length === 0;
+        }
 
         // Sync mode tab active state
         document.querySelectorAll('.search-mode-tab').forEach(tab => {

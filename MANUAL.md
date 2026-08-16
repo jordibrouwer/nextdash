@@ -565,16 +565,20 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | Keys | Action |
 |------|--------|
 | `↑` `↓` `←` `→` | Move selection (first arrow key starts navigation if none selected) |
-| `k` / `j` | Same as `↑` / `↓`, matching the lists in config (**v1.1.1**) |
+| `k` / `j` | Same as `↑` / `↓`, matching the lists in config (**v1.1.1**) — but **only once a row is selected**: the dashboard's search line is always listening, so a bare letter typed with no cursor in the grid is a character, not a command. The arrows are the way in |
 | `1`–`9` (page switch) | Also selects the first visible bookmark on the new page |
 | `Tab` / `Shift+Tab` | Linear next/previous bookmark when a row is selected; at the first/last bookmark, Tab exits to the header/FAB |
-| `G` then `1`–`9` | Jump to nth visible category or smart collection, select first bookmark. The first `G` arms the chord straight away; it lapses after three seconds |
+| `G` then `1`–`9` | Jump to nth visible category or smart collection, select first bookmark. The first `G` arms the chord straight away and a **`g…` pill** in the corner says so; it lapses after three seconds. Like `j`/`k`, the chord only arms with a row selected — otherwise `g` is a letter, and a search for *github* would lose it |
 | `G` then `P` | Jump to first pinned bookmark on the page |
 | `GG` | Jump to very first bookmark (second `G` while chord pending) |
 | `Ctrl + Home` / `Ctrl + End` | First / last bookmark on the page (`Cmd` on Mac) |
 | `Shift + Home` | Step up from the list to its category header, where `F2`, `Shift + W`, `Delete` and `Shift + F10` act on the category (**v1.1.1**) |
 | `Enter` / `Space` | Open selected |
-| `Esc` | Clear selection and move focus to the first bookmark; may undo last drag reorder |
+| `Esc` | Clear selection and move focus to the first bookmark; may undo last drag reorder. With something typed it clears the search line, which now empties on screen instead of keeping the abandoned query until the next keystroke |
+
+**The line you type into names its own key.** The prompt shows the key that starts each mode in front of the mode itself — **`>`** search, **`:`** commands, **`?`** finders, **`@`** everywhere — so the convention is legible without reading the legend under it. Typing a bare letter still searches, and now that is all it does — nothing opens until `Enter`, so `>` is a way to be explicit rather than a way to protect your typing. Once there is a query, an **`×`** beside it clears the line, for touch and for anyone who would rather click than reach for Escape.
+
+**The grid carries a key legend**, under the bookmarks, the way health and inbox have under their feeds.
 
 ### 9.3 Bookmark actions
 

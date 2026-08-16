@@ -1059,14 +1059,21 @@ class DashboardBookmarkRows {
         let totalRows = 0;
         rowgroups.forEach((group) => {
             const rows = group.querySelectorAll('.bookmark-link[data-bookmark-url]');
-            group.setAttribute('aria-rowcount', String(rows.length));
+            // aria-rowcount belongs to the grid, not to a rowgroup — the role
+            // does not carry it, so a per-category count was written and then
+            // ignored.
+            group.removeAttribute('aria-rowcount');
             // aria-colindex/colcount are constant — one column, always — so they
             // are stamped once in populateBookmarkRowView instead. Setting them
             // here meant a querySelector per row on every render, every
             // incremental render, every tag-filter change and every keyboard
             // rebuild, to write the same two values back.
+            //
+            // The index counts through the whole grid rather than restarting per
+            // category: it is read against the grid's aria-rowcount, so starting
+            // over made the first row of every category "row 1 of 14".
             rows.forEach((row, idx) => {
-                row.setAttribute('aria-rowindex', String(idx + 1));
+                row.setAttribute('aria-rowindex', String(totalRows + idx + 1));
             });
             totalRows += rows.length;
         });
@@ -1084,6 +1091,46 @@ class DashboardBookmarkRows {
         // Runs on every render, so it is where the live status line can notice
         // the grid changed size. It rewrites nothing when the text is the same.
         d.updateMiniStatusLine?.();
+        this.syncBookmarkGridLegend(grid);
+    }
+
+    /**
+     * The key legend under the grid.
+     *
+     * Health and inbox have carried one under their feed since they were built.
+     * The dashboard, which is where everyone starts and where the keys were
+     * least obvious — arrows enter the grid, letters go to the search line —
+     * had none, so the only way to learn them was the cheat sheet behind `!`.
+     *
+     * Rebuilt only when the text changes: this runs on every render, and the
+     * legend is constant unless the language does.
+     */
+    syncBookmarkGridLegend(grid) {
+        const d = this.dash ?? this;
+        const host = grid?.parentElement;
+        if (!grid || !host || !window.KeyboardViewLegends) {
+            return;
+        }
+        const pairs = window.KeyboardViewLegends.toLegendPairs(
+            window.KeyboardViewLegends.DASHBOARD_VIEW,
+            (key, fallback) => d.formatDashboardLabel?.(key, {}, fallback) ?? fallback,
+        );
+        const html = pairs
+            .map(([keys, label]) => `<span><kbd>${d.escapeHtml(keys)}</kbd> ${d.escapeHtml(label)}</span>`)
+            .join('');
+        let legend = host.querySelector(':scope > .dashboard-legend');
+        if (!legend) {
+            legend = document.createElement('p');
+            legend.className = 'dashboard-legend';
+            // Decorative twice over: every key is in the cheat sheet, and the
+            // rows themselves announce what they do.
+            legend.setAttribute('aria-hidden', 'true');
+            grid.after(legend);
+        }
+        if (legend.dataset.rendered !== html) {
+            legend.innerHTML = html;
+            legend.dataset.rendered = html;
+        }
     }
 
     /**
