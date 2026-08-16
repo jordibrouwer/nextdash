@@ -12939,6 +12939,65 @@ class DashboardConfig {
         return index;
     }
 
+    /**
+     * Where a bookmark lives: page › category, as one pill in two halves.
+     *
+     * It used to be a single underlined button reading "main · Development".
+     * The dot was the only thing separating two different facts, nothing said
+     * which was which, and the underline promised navigation while the click
+     * filters the list. A reader who did not already know their page was called
+     * "main" saw two words and no hierarchy.
+     *
+     * Two halves, each filtering its own thing, split by an arrow that reads as
+     * hierarchy — and bordered rather than underlined, so it is visibly a
+     * different kind of thing from the tag chips above it.
+     *
+     * A bookmark with no category gets the page half alone rather than the
+     * separate footer badge it used to get, so the page sits in the same place
+     * on every row.
+     */
+    renderBookmarkPlaceCrumb(b, key, ctx = {}) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const pageName = typeof ctx.pageName === 'function'
+            ? ctx.pageName(b.pageId)
+            : this.pageLabel(b.pageId);
+        // With a page filter on, every row is on that page: repeating it in
+        // every crumb would be a column of the same word.
+        const showPage = !this.bmPageFilter && !!pageName;
+        const categoryName = b.category ? this.categoryOwnLabel(b) : '';
+        if (!showPage && !categoryName) return '';
+
+        const pageHalf = showPage
+            ? `<button type="button" class="config-bm-crumb-part config-bm-crumb-page"
+                    data-bm-filter-page="${esc(String(b.pageId))}"
+                    title="${esc(this.t('config.filterByPageTitle', 'Filter by page {name}').replace('{name}', pageName))}">${esc(pageName)}</button>`
+            : '';
+        const categoryHalf = categoryName
+            ? `<button type="button" class="config-bm-crumb-part config-bm-crumb-category"
+                    data-bm-row-key="${esc(key)}"
+                    title="${esc(this.t('config.filterByCategoryTitle', 'Filter by category {name}').replace('{name}', categoryName))}">${esc(categoryName)}</button>`
+            : '';
+        const arrow = pageHalf && categoryHalf
+            ? '<span class="config-bm-crumb-sep" aria-hidden="true">›</span>'
+            : '';
+        return `<p class="config-bm-meta-category"><span class="config-bm-crumb">${pageHalf}${arrow}${categoryHalf}</span></p>`;
+    }
+
+    /** The category's own name, without the page prefix the crumb now carries. */
+    categoryOwnLabel(b) {
+        const id = String(b.category || '');
+        if (!id) return '';
+        const labels = this.categoryLabelIndex();
+        if (this.bmPageFilter) return labels.get(id) || id;
+        const composite = DashboardConfig.categoryFilterKey(b.pageId, id);
+        const label = labels.get(composite);
+        if (!label) return id;
+        // The composite label reads "page · category"; the crumb prints the page
+        // itself, so take the tail rather than saying it twice.
+        const tail = label.split(' · ').pop();
+        return tail || label;
+    }
+
     categoryLabelForBookmark(b) {
         const id = String(b.category || '');
         if (!id) return '';
@@ -13318,17 +13377,12 @@ class DashboardConfig {
             ? `<p class="inbox-item-note">${esc(b.note)}</p>`
             : '';
         const iconSrc = this.resolveIconSrc(b.icon);
-        const categoryLine = b.category
-            ? `<p class="config-bm-meta-category"><button type="button" class="config-bm-meta-category-link" data-bm-row-key="${esc(key)}">${esc(this.categoryLabelForBookmark(b))}</button></p>`
-            : '';
-        // The category line above already reads "page · category" whenever no
-        // page filter is on, so repeating the page name in the footer says the
-        // same thing twice. Keep the badge only where that line cannot: on
-        // bookmarks with no category at all.
-        const pageShownInCategoryLine = !!b.category && !this.bmPageFilter;
-        const pageFooter = ctx.showPageBadge && !pageShownInCategoryLine
-            ? `<button type="button" class="config-bm-page-badge config-bm-page-name config-bm-page-name--link" data-bm-filter-page="${esc(String(b.pageId))}">${esc(ctx.pageName(b.pageId))}</button>`
-            : '<span class="config-bm-page-name config-bm-page-name--empty" aria-hidden="true"></span>';
+        const categoryLine = this.renderBookmarkPlaceCrumb(b, key, ctx);
+        // The crumb above carries the page, so the footer no longer needs a
+        // badge for it: the page used to appear there, in the crumb, or in
+        // neither, depending on whether a category and a page filter happened
+        // to be set. One fact, one place.
+        const pageFooter = '<span class="config-bm-page-name config-bm-page-name--empty" aria-hidden="true"></span>';
         const usageTip = esc(this.bookmarkUsageTooltip(b));
         const usageFooter = `
             <div class="config-bm-meta-footer">

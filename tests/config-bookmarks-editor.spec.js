@@ -359,33 +359,38 @@ test.describe('config bookmarks — category options', () => {
         }).toBe(true);
     });
 
-    test('with all pages, a row without a category shows a page badge', async ({ page }) => {
+    test('with all pages, a row without a category still names its page', async ({ page }) => {
         await openBookmarks(page);
         await page.selectOption('#config-bm-page', '');
-        // Rows that have a category already read "page · category" on the line
-        // above, so the badge would repeat the page name; it is kept only where
-        // nothing else names the page.
+        // The page used to live in a footer badge on rows with no category, in
+        // the category line on rows with one, and nowhere under a page filter.
+        // It is one crumb now, in the same place on every row.
         await page.evaluate(() => {
             const cfg = window.dashboardInstance.config;
             const bm = cfg.visibleBookmarks()[0];
             bm.category = '';
             cfg.repaintBookmarksList();
         });
-        await expect(page.locator('.config-bm-page-badge').first()).toBeVisible();
+        const first = page.locator('.config-bm-row').first();
+        await expect(first.locator('.config-bm-crumb-page')).toBeVisible();
+        await expect(first.locator('.config-bm-crumb-category')).toHaveCount(0);
     });
 
-    test('with all pages, a categorised row does not repeat the page name', async ({ page }) => {
+    test('a categorised row reads page then category, and each half filters its own', async ({ page }) => {
         await openBookmarks(page);
         await page.selectOption('#config-bm-page', '');
-        const repeated = await page.evaluate(() => {
-            const cfg = window.dashboardInstance.config;
-            const bm = cfg.visibleBookmarks().find((b) => b.category);
-            if (!bm) return null;
-            const row = document.querySelector(`.config-bm-row[data-bm-key="${CSS.escape(cfg.bookmarkKey(bm))}"]`);
-            return !!row?.querySelector('.config-bm-page-badge');
-        });
-        test.skip(repeated === null, 'needs a categorised bookmark');
-        expect(repeated).toBe(false);
+        const row = page.locator('.config-bm-row').filter({ has: page.locator('.config-bm-crumb-category') }).first();
+        test.skip(!(await row.count()), 'needs a categorised bookmark');
+
+        // Two halves, not one string with a dot in it: the page reads as the
+        // container and the category as the thing inside it.
+        await expect(row.locator('.config-bm-crumb-page')).toBeVisible();
+        await expect(row.locator('.config-bm-crumb-category')).toBeVisible();
+
+        const category = await row.locator('.config-bm-crumb-category').innerText();
+        await row.locator('.config-bm-crumb-category').click();
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.bmCategoryFilter),
+            { timeout: 5_000 }).toContain(category.trim().toLowerCase());
     });
 
     test('#config/bookmarks/<pageId> deep link sets the page filter', async ({ page }) => {

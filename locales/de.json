@@ -4863,7 +4863,9 @@
     "helpArtInboxRoute": "Wohin ein eingefügter Link geht",
     "pasteArtPaste": "URL einfügen",
     "tipEverydayTyping": "Fang auf dem Dashboard einfach an zu tippen: die Buchstaben landen in der Suchzeile und die Liste wird enger. <code>Enter</code> öffnet den obersten Treffer — vorher passiert nichts.",
-    "tipEverydayGridLetters": "Solange eine Zeile ausgewählt ist, gehören Buchstaben dem Raster: <code>j</code>/<code>k</code> bewegen, <code>x</code> markiert, <code>g</code> startet einen Sprung. <code>Esc</code> gibt die Buchstaben an die Suchzeile zurück."
+    "tipEverydayGridLetters": "Solange eine Zeile ausgewählt ist, gehören Buchstaben dem Raster: <code>j</code>/<code>k</code> bewegen, <code>x</code> markiert, <code>g</code> startet einen Sprung. <code>Esc</code> gibt die Buchstaben an die Suchzeile zurück.",
+    "filterByPageTitle": "Nach Seite {name} filtern",
+    "filterByCategoryTitle": "Nach Kategorie {name} filtern"
   },
   "colors": {
     "title": "themenanpassung",

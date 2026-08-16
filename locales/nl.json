@@ -4863,7 +4863,9 @@
     "helpArtInboxRoute": "Waar een geplakte link heen gaat",
     "pasteArtPaste": "Plak een URL",
     "tipEverydayTyping": "Begin gewoon te typen op het dashboard: de letters gaan naar de zoekregel en de lijst wordt smaller terwijl je typt. <code>Enter</code> opent de bovenste treffer — daarvoor gebeurt er niets.",
-    "tipEverydayGridLetters": "Zolang er een rij geselecteerd is horen letters bij het raster: <code>j</code>/<code>k</code> bewegen, <code>x</code> vinkt aan, <code>g</code> start een sprong. Met <code>Esc</code> geef je de letters terug aan de zoekregel."
+    "tipEverydayGridLetters": "Zolang er een rij geselecteerd is horen letters bij het raster: <code>j</code>/<code>k</code> bewegen, <code>x</code> vinkt aan, <code>g</code> start een sprong. Met <code>Esc</code> geef je de letters terug aan de zoekregel.",
+    "filterByPageTitle": "Filter op pagina {name}",
+    "filterByCategoryTitle": "Filter op categorie {name}"
   },
   "colors": {
     "title": "thema-aanpassing",

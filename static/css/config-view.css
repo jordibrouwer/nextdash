@@ -3191,10 +3191,60 @@ body.no-animations .config-new-features-panel-star {
 }
 
 .config-bm-meta-category {
-    margin: 0.15rem 0 0;
-    font-size: 0.78rem;
+    margin: 0.25rem 0 0;
+    /* Larger than the 0.78rem it was: this line answers "where does this live",
+       which is the question the list is most often open for, and it was set
+       smaller than the tag chips beside it. */
+    font-size: 0.86rem;
     color: var(--text-secondary);
     overflow-wrap: anywhere;
+}
+
+/* Page › category as one pill in two halves. Bordered rather than underlined:
+   the click filters the list, and an underline promises navigation. Squarer
+   than the tag chips above it, so the two read as different kinds of fact. */
+.config-bm-crumb {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    max-width: 100%;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+}
+
+.config-bm-crumb-part {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+/* The page is the container, the category the thing inside it: the muted half
+   and the plain half say which is which without a label. */
+.config-bm-crumb-page {
+    color: var(--text-tertiary);
+}
+
+.config-bm-crumb-category {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.config-bm-crumb-part:hover,
+.config-bm-crumb-part:focus-visible {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.14em;
+}
+
+.config-bm-crumb-sep {
+    color: var(--text-tertiary);
+    font-size: 0.9em;
 }
 
 .config-bm-meta-footer {

@@ -4864,7 +4864,9 @@
     "helpArtInboxRoute": "Where a pasted link goes",
     "pasteArtPaste": "Paste a URL",
     "tipEverydayTyping": "Just start typing on the dashboard: the letters go to the search line and the list narrows as you type. <code>Enter</code> opens the top result — nothing opens until you press it.",
-    "tipEverydayGridLetters": "While a row is selected, letters belong to the grid: <code>j</code>/<code>k</code> move, <code>x</code> ticks, <code>g</code> starts a jump. <code>Esc</code> gives the letters back to the search line."
+    "tipEverydayGridLetters": "While a row is selected, letters belong to the grid: <code>j</code>/<code>k</code> move, <code>x</code> ticks, <code>g</code> starts a jump. <code>Esc</code> gives the letters back to the search line.",
+    "filterByPageTitle": "Filter by page {name}",
+    "filterByCategoryTitle": "Filter by category {name}"
   },
   "colors": {
     "title": "theme customization",

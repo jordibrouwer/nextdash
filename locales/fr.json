@@ -4863,7 +4863,9 @@
     "helpArtInboxRoute": "Où va un lien collé",
     "pasteArtPaste": "Coller une URL",
     "tipEverydayTyping": "Commencez simplement à taper sur le tableau de bord : les lettres vont dans la ligne de recherche et la liste se resserre. <code>Entrée</code> ouvre le premier résultat — rien avant.",
-    "tipEverydayGridLetters": "Tant qu’une ligne est sélectionnée, les lettres appartiennent à la grille : <code>j</code>/<code>k</code> déplacent, <code>x</code> coche, <code>g</code> lance un saut. <code>Échap</code> rend les lettres à la recherche."
+    "tipEverydayGridLetters": "Tant qu’une ligne est sélectionnée, les lettres appartiennent à la grille : <code>j</code>/<code>k</code> déplacent, <code>x</code> coche, <code>g</code> lance un saut. <code>Échap</code> rend les lettres à la recherche.",
+    "filterByPageTitle": "Filtrer par page {name}",
+    "filterByCategoryTitle": "Filtrer par catégorie {name}"
   },
   "colors": {
     "title": "personnalisation du thème",
