@@ -60,6 +60,7 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-inbox.css"}}">
     <link rel="stylesheet" href="{{asset "css/inbox-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/spread-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/setting-art.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-multi-select.css"}}">
     <link rel="stylesheet" href="{{asset "css/view-explainers.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
@@ -369,6 +370,9 @@
     <script src="{{asset "js/tag-autocomplete.js"}}" defer></script>
     <script src="{{asset "js/quick-add.js"}}" defer></script>
     <script src="{{asset "js/skeleton-loading.js"}}" defer></script>
+    <!-- Stand-in drawings for settings whose difference is a shape; config and
+         help both read from it, so it loads before either. -->
+    <script src="{{asset "js/shared/setting-art.js"}}" defer></script>
     <script src="{{asset "js/shortcut-format.js"}}" defer></script>
     <script src="{{asset "js/app-notification.js"}}" defer></script>
     <!-- Tip catalogue is shared with Config → Help so the two lists cannot drift. -->

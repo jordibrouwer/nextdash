@@ -951,6 +951,8 @@ Two things worth knowing:
 - **Page margins never move on their own.** *Balanced* is byte-for-byte the margin `.container` has always carried, so an existing dashboard looks identical until you pick something else.
 - **Every option still narrows the margin on a small window**, so the columns are never squeezed before the whitespace is. And the space *Snug* hands back only becomes **wider columns** when **Pack columns tightly** is on (the default) — with packing off the columns are a fixed width and the reclaimed space stays empty.
 
+**Settings that are a shape are drawn.** Columns per row, density, category spacing, page margins, the button-bar position and the layout version each carry a small stand-in drawing beside the control — bars at the proportions of a real grid — and it redraws as you change the value, so the answer to "what will this look like" is on the panel rather than behind a trip to the dashboard. The type-size buttons show the letters at the size they set, the background-dots toggle shows the dots, **Paste destination** draws the route a pasted link takes — forking in two where *Ask each time* forks — and the help pages about layout and the inbox open with the same drawings instead of another paragraph. They are decorative: every one sits beside the label that already names it, so a screen reader hears the setting once.
+
 ### Themes
 
 - **A fresh install starts on Retro CRT** — green phosphor on near-black, with the light variant of the same pair for daytime, since auto dark mode is on out of the box. Existing dashboards keep whatever theme they already have; the default only decides where a brand-new install begins.

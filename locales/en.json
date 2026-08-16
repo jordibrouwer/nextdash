@@ -4835,7 +4835,12 @@
     "settingsFilterLabel": "Filter the settings on this tab",
     "settingsFilterNone": "No setting on this tab matches that.",
     "appearanceBackgroundTitle": "Background",
-    "themeImportInvalid": "That file is not a nextDash theme."
+    "themeImportInvalid": "That file is not a nextDash theme.",
+    "helpArtColumns2": "2 columns",
+    "helpArtColumns3": "3 columns",
+    "helpArtColumns5": "5 columns",
+    "helpArtInboxRoute": "Where a pasted link goes",
+    "pasteArtPaste": "Paste a URL"
   },
   "colors": {
     "title": "theme customization",

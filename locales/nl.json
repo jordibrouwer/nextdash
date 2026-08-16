@@ -4834,7 +4834,12 @@
     "settingsFilterLabel": "Filter de instellingen op dit tabblad",
     "settingsFilterNone": "Geen instelling op dit tabblad komt daarmee overeen.",
     "appearanceBackgroundTitle": "Achtergrond",
-    "themeImportInvalid": "Dat bestand is geen nextDash-thema."
+    "themeImportInvalid": "Dat bestand is geen nextDash-thema.",
+    "helpArtColumns2": "2 kolommen",
+    "helpArtColumns3": "3 kolommen",
+    "helpArtColumns5": "5 kolommen",
+    "helpArtInboxRoute": "Waar een geplakte link heen gaat",
+    "pasteArtPaste": "Plak een URL"
   },
   "colors": {
     "title": "thema-aanpassing",

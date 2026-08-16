@@ -4834,7 +4834,12 @@
     "settingsFilterLabel": "Filtrer les réglages de cet onglet",
     "settingsFilterNone": "Aucun réglage de cet onglet ne correspond.",
     "appearanceBackgroundTitle": "Arrière-plan",
-    "themeImportInvalid": "Ce fichier n’est pas un thème nextDash."
+    "themeImportInvalid": "Ce fichier n’est pas un thème nextDash.",
+    "helpArtColumns2": "2 colonnes",
+    "helpArtColumns3": "3 colonnes",
+    "helpArtColumns5": "5 colonnes",
+    "helpArtInboxRoute": "Où va un lien collé",
+    "pasteArtPaste": "Coller une URL"
   },
   "colors": {
     "title": "personnalisation du thème",

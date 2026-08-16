@@ -4834,7 +4834,12 @@
     "settingsFilterLabel": "Die Einstellungen auf diesem Reiter filtern",
     "settingsFilterNone": "Keine Einstellung auf diesem Reiter passt dazu.",
     "appearanceBackgroundTitle": "Hintergrund",
-    "themeImportInvalid": "Diese Datei ist kein nextDash-Theme."
+    "themeImportInvalid": "Diese Datei ist kein nextDash-Theme.",
+    "helpArtColumns2": "2 Spalten",
+    "helpArtColumns3": "3 Spalten",
+    "helpArtColumns5": "5 Spalten",
+    "helpArtInboxRoute": "Wohin ein eingefügter Link geht",
+    "pasteArtPaste": "URL einfügen"
   },
   "colors": {
     "title": "themenanpassung",

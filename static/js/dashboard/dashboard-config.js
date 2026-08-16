@@ -6032,9 +6032,15 @@ class DashboardConfig {
         const theme = String(s.theme || 'dark').endsWith('-light') || s.theme === 'light' ? 'light' : 'dark';
         const tiles = `<div class="config-tiles config-tiles--text" role="list">${this.appearanceTiles().map((t) => this.renderTile(t)).join('')}</div>`;
 
+        // Small / Medium / Large names a size without showing one, so each
+        // button carries the letters at the size it sets. Hovering still applies
+        // the real thing to the dashboard behind the panel; this is what the
+        // choice looks like before you get that far.
         const fontOptions = DashboardConfig.FONT_SIZES.map((size) => {
             const active = size === this.currentFontSize();
-            return `<button type="button" class="config-choice${active ? ' is-active' : ''}" data-appearance-font="${esc(size)}" aria-pressed="${active ? 'true' : 'false'}">${esc(this.fontSizeLabel(size))}</button>`;
+            return `<button type="button" class="config-choice config-choice--art${active ? ' is-active' : ''}" data-appearance-font="${esc(size)}" aria-pressed="${active ? 'true' : 'false'}">`
+                + `${window.SettingArt?.render?.('fontSize', size) || ''}`
+                + `<span class="config-choice-label">${esc(this.fontSizeLabel(size))}</span></button>`;
         }).join('');
 
         const presets = (window.DashboardFont?.PRESET_IDS) || ['source-code-pro', 'jetbrains-mono', 'ibm-plex-mono', 'inter', 'ibm-plex-sans', 'dm-sans', 'system'];
@@ -6205,6 +6211,9 @@ class DashboardConfig {
                     </label>
                     ${this.appearanceAff('showBackgroundDots')}
                 </div>
+                <div class="config-field-art" data-appearance-art="showBackgroundDots" data-art-kind="dots">${
+                    window.SettingArt?.render?.('dots', s.showBackgroundDots !== false) || ''
+                }</div>
             </div>`);
     }
 
@@ -6263,8 +6272,12 @@ class DashboardConfig {
             ['side-left', this.t('config.buttonBarPositionSideLeftShort', 'Rail left')],
             ['side-right', this.t('config.buttonBarPositionSideRightShort', 'Rail right')],
         ];
+        // Five names for five places on the page, and no page to point at. Each
+        // button draws the dashboard with the bar where that option puts it.
         const barChoices = barPositions.map(([val, label]) =>
-            `<button type="button" class="config-choice${barPosition === val ? ' is-active' : ''}" data-appearance-barpos="${esc(val)}" aria-pressed="${barPosition === val}">${esc(label)}</button>`
+            `<button type="button" class="config-choice config-choice--art${barPosition === val ? ' is-active' : ''}" data-appearance-barpos="${esc(val)}" aria-pressed="${barPosition === val}">`
+            + `${window.SettingArt?.render?.('barPosition', val) || ''}`
+            + `<span class="config-choice-label">${esc(label)}</span></button>`
         ).join('');
 
         // Bookmarks layout first, then the button bar, and the layout version
@@ -6292,8 +6305,11 @@ class DashboardConfig {
                 <div class="config-field">
                     <span class="config-field-label">${esc(this.t('config.appearanceLayoutVersion', 'Layout'))}</span>
                     <div class="config-choices" role="group">
-                        <button type="button" class="config-choice${layout === 'classic' ? ' is-active' : ''}" data-appearance-layout="classic" aria-pressed="${layout === 'classic'}">${esc(this.t('config.layoutClassic', 'Classic'))}</button>
-                        <button type="button" class="config-choice${layout === 'modern' ? ' is-active' : ''}" data-appearance-layout="modern" aria-pressed="${layout === 'modern'}">${esc(this.t('config.layoutModern', 'Modern'))}</button>
+                        ${['classic', 'modern'].map((version) => `
+                        <button type="button" class="config-choice config-choice--art${layout === version ? ' is-active' : ''}" data-appearance-layout="${version}" aria-pressed="${layout === version}">
+                            ${window.SettingArt?.render?.('layoutVersion', version) || ''}
+                            <span class="config-choice-label">${esc(this.t(version === 'classic' ? 'config.layoutClassic' : 'config.layoutModern', version === 'classic' ? 'Classic' : 'Modern'))}</span>
+                        </button>`).join('')}
                     </div>
                     ${this.appearanceAff('layoutVersion')}
                     ${layout === 'modern'
@@ -6708,7 +6724,15 @@ class DashboardConfig {
             btn.addEventListener('click', () => this.setButtonBarPosition(btn.getAttribute('data-appearance-barpos')));
         });
         container.querySelectorAll('[data-appearance-toggle]').forEach((input) => {
-            input.addEventListener('change', () => this.setToggle(input.getAttribute('data-appearance-toggle'), input.checked));
+            input.addEventListener('change', () => {
+                const field = input.getAttribute('data-appearance-toggle');
+                const host = container.querySelector(`[data-appearance-art="${CSS.escape(field)}"]`);
+                if (host) {
+                    host.innerHTML = window.SettingArt?.render?.(
+                        host.getAttribute('data-art-kind') || '', input.checked) || '';
+                }
+                return this.setToggle(field, input.checked);
+            });
         });
         // `select` only: the theme picker shares the data-appearance-select hook
         // so search and the changed-filter still find it, but it is a button with
@@ -8553,13 +8577,13 @@ class DashboardConfig {
                 title: t('config.generalGroupLayout', 'Bookmarks layout'),
                 note: t('config.generalLayoutIntro', 'Grid structure, column count, layout preset, and density.'),
                 controls: [
-                    { field: 'columnsPerRow', type: 'number', label: t('config.columnsLabel', 'Columns'), min: 1, max: 12, special: 'render' },
+                    { field: 'columnsPerRow', type: 'number', label: t('config.columnsLabel', 'Columns'), min: 1, max: 12, special: 'render', art: 'grid' },
                     // The preset drives the grid's `layout-*` class and the
                     // data-layout-preset attribute, so it needs the chrome
                     // reapplied as well as a re-render.
                     { field: 'layoutPreset', type: 'select', label: t('config.layoutPresetLabelShort', 'Layout preset'), special: 'chromeRender',
                         options: layoutPresets.map((p) => opt(p, t(`config.layoutPresetName.${p}`, p))) },
-                    { field: 'densityMode', type: 'select', label: t('config.densityLabel', 'Density'), special: 'render', options: [
+                    { field: 'densityMode', type: 'select', label: t('config.densityLabel', 'Density'), special: 'render', art: 'density', options: [
                         opt('comfortable', t('config.densityComfortable', 'Comfortable')), opt('compact', t('config.densityCompact', 'Compact')),
                         opt('dense', t('config.densityDense', 'Dense')), opt('auto', t('config.densityAuto', 'Auto')),
                     ] },
@@ -8570,12 +8594,12 @@ class DashboardConfig {
                     // Cards rather than a select: three options whose difference
                     // is spatial, so seeing all three at once — and the sentence
                     // under each — beats hiding two of them behind a click.
-                    { field: 'categorySpacing', type: 'cards', label: t('config.categorySpacingLabel', 'Space between categories'), special: 'chromeRender', options: [
+                    { field: 'categorySpacing', type: 'cards', label: t('config.categorySpacingLabel', 'Space between categories'), special: 'chromeRender', art: 'spacing', options: [
                         { value: 'snug', label: t('config.categorySpacingSnug', 'Snug'), body: t('config.categorySpacingSnugBody', 'Rows sit close together.') },
                         { value: 'balanced', label: t('config.categorySpacingBalanced', 'Balanced'), body: t('config.categorySpacingBalancedBody', 'The default.') },
                         { value: 'airy', label: t('config.categorySpacingAiry', 'Airy'), body: t('config.categorySpacingAiryBody', 'Extra room between rows.') },
                     ] },
-                    { field: 'sideMargin', type: 'cards', label: t('config.sideMarginLabel', 'Page margins'), special: 'chromeRender', options: [
+                    { field: 'sideMargin', type: 'cards', label: t('config.sideMarginLabel', 'Page margins'), special: 'chromeRender', art: 'margins', options: [
                         { value: 'snug', label: t('config.sideMarginSnug', 'Snug'), body: t('config.sideMarginSnugBody', 'Narrow edges — more room for columns.') },
                         { value: 'balanced', label: t('config.sideMarginBalanced', 'Balanced'), body: t('config.sideMarginBalancedBody', 'The default.') },
                         { value: 'airy', label: t('config.sideMarginAiry', 'Airy'), body: t('config.sideMarginAiryBody', 'Wide edges — columns pulled together.') },
@@ -8743,7 +8767,7 @@ class DashboardConfig {
                 controls: [
                     bool('pasteUrlQuickAdd', 'config.pasteUrlQuickAdd', 'Quick-add a pasted URL'),
                     bool('inboxEnabled', 'config.inboxEnabledLabel', 'Enable the inbox'),
-                    { field: 'pasteDestination', type: 'select', label: t('config.pasteDestinationLabel', 'Paste destination'), options: [
+                    { field: 'pasteDestination', type: 'select', label: t('config.pasteDestinationLabel', 'Paste destination'), art: 'flow', options: [
                         opt('ask', t('config.pasteDestinationAsk', 'Ask each time')), opt('bookmark', t('config.pasteDestinationBookmark', 'New bookmark')),
                         opt('inbox', t('config.pasteDestinationInbox', 'Inbox')),
                     ] },
@@ -8993,6 +9017,11 @@ class DashboardConfig {
             const aff = this.renderFieldAffordances(c.field, val);
             const hintKey = this.fieldMeta(c.field)?.hint;
             const hint = hintKey ? `<p class="config-field-hint">${esc(this.t(`config.${hintKey}`, ''))}</p>` : '';
+            // A drawing of what the current value does, for the settings whose
+            // difference is a shape rather than a word. It repaints on change
+            // (see bindControlPanels), so it is the answer to "what will this
+            // look like" without leaving the panel to find out.
+            const art = c.art ? this.renderControlArt(c, val, prefix) : '';
             if (c.type === 'checkbox') {
                 return `
                     <div class="config-field-row">
@@ -9001,7 +9030,7 @@ class DashboardConfig {
                             <span>${esc(c.label)}</span>
                         </label>
                         <span class="config-field-affordances">${aff}</span>
-                    </div>${hint}`;
+                    </div>${art}${hint}`;
             }
             // Big labelled choice buttons, for a small set of options where the
             // trade-off needs a sentence each. A <select> hides those sentences
@@ -9009,10 +9038,17 @@ class DashboardConfig {
             if (c.type === 'cards') {
                 const cards = c.options.map((o) => {
                     const on = String(val) === String(o.value);
+                    // Each card draws its own option, so the three are compared
+                    // as shapes at a glance and the sentence under them is a
+                    // confirmation rather than the only evidence.
+                    const cardArt = c.art
+                        ? (window.SettingArt?.render?.(c.art, o.value) || '')
+                        : '';
                     return `
                         <button type="button" class="config-choice-card${on ? ' is-active' : ''}"
                                 ${dataAttrs} data-${prefix}-type="cards" data-${prefix}-value="${esc(o.value)}"
                                 role="radio" aria-checked="${on ? 'true' : 'false'}">
+                            ${cardArt}
                             <span class="config-choice-card-title">${esc(o.label)}</span>
                             <span class="config-choice-card-body">${esc(o.body || '')}</span>
                         </button>`;
@@ -9049,7 +9085,7 @@ class DashboardConfig {
                     <span class="config-field-label">${esc(c.label)}</span>
                     ${control}
                     <span class="config-field-affordances">${aff}</span>
-                </div>${hint}`;
+                </div>${art}${hint}`;
         };
         // `note` explains the panel; `appliesTo` names the availability modes the
         // panel's settings actually affect, because several of them are inert
@@ -9166,6 +9202,53 @@ class DashboardConfig {
             </div>`;
     }
 
+    /**
+     * The drawing under a control, in its own row so the label column above is
+     * left alone.
+     *
+     * Carries the kind on the element rather than in a closure: the panel is
+     * rendered as a string and bound afterwards, so the change handler has only
+     * the DOM to work from when it repaints.
+     */
+    renderControlArt(control, value, prefix) {
+        const art = window.SettingArt?.render?.(control.art, this.artValue(control.field, control.art, value));
+        if (!art) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `<div class="config-field-art" data-${prefix}-art="${esc(control.field)}"`
+            + ` data-art-kind="${esc(control.art)}">${art}</div>`;
+    }
+
+    /** Redraw a control's art for a value it has just been given. */
+    repaintControlArt(container, prefix, field, value) {
+        const host = container.querySelector(`[data-${prefix}-art="${CSS.escape(field)}"]`);
+        if (!host) return;
+        const kind = host.getAttribute('data-art-kind') || '';
+        host.innerHTML = window.SettingArt?.render?.(kind, this.artValue(field, kind, value)) || '';
+    }
+
+    /**
+     * What a drawing is handed, which is not always the stored value.
+     *
+     * The shapes take the value as it is — three columns is three columns. A
+     * route takes words, and words have to be translated, which the art module
+     * has no business knowing how to do. So the mapping from a stored value to
+     * the chips that draw it lives here, beside the labels it borrows.
+     */
+    artValue(field, kind, value) {
+        if (kind !== 'flow') return value;
+        if (field === 'pasteDestination') {
+            const paste = this.t('config.pasteArtPaste', 'Paste a URL');
+            const bookmark = this.t('config.pasteDestinationBookmark', 'New bookmark');
+            const inbox = this.t('config.pasteDestinationInbox', 'Inbox');
+            // "Ask each time" ends in two places, so it is drawn as a fork
+            // rather than as a third single destination.
+            if (String(value) === 'inbox') return [paste, inbox];
+            if (String(value) === 'bookmark') return [paste, bookmark];
+            return [paste, [bookmark, inbox]];
+        }
+        return value;
+    }
+
     /** Bind a rendered schema's controls (and ℹ/↺ affordances) back to setBehavior. */
     bindControlPanels(container, prefix) {
         container.querySelectorAll(`[data-${prefix}-field]`).forEach((el) => {
@@ -9189,11 +9272,25 @@ class DashboardConfig {
                     void this.setBehavior(field, value, special);
                 });
             } else if (type === 'checkbox') {
-                el.addEventListener('change', () => this.setBehavior(field, el.checked, special));
+                el.addEventListener('change', () => {
+                    this.repaintControlArt(container, prefix, field, el.checked);
+                    return this.setBehavior(field, el.checked, special);
+                });
             } else if (type === 'number' || numericSelect) {
-                el.addEventListener('change', () => this.setBehavior(field, Number(el.value), special));
+                el.addEventListener('change', () => {
+                    this.repaintControlArt(container, prefix, field, Number(el.value));
+                    return this.setBehavior(field, Number(el.value), special);
+                });
+                // A number field is typed into, not chosen: waiting for the
+                // change event to redraw means the drawing lags a whole field
+                // behind what the box says.
+                el.addEventListener('input', () =>
+                    this.repaintControlArt(container, prefix, field, Number(el.value)));
             } else {
-                el.addEventListener('change', () => this.setBehavior(field, el.value, special));
+                el.addEventListener('change', () => {
+                    this.repaintControlArt(container, prefix, field, el.value);
+                    return this.setBehavior(field, el.value, special);
+                });
             }
         });
         this.bindPanelBulkActions(container, prefix);
@@ -18140,9 +18237,38 @@ class DashboardConfig {
                             aria-label="${esc(this.t('config.helpCopyLink', 'Copy a link to this topic'))}">🔗</button>
                 </div>
                 ${this.helpFeatureState(titleKey)}
+                ${this.renderHelpArt(titleKey)}
                 <div class="config-help-prose">${this.t(bodyKey, bodyFallback)}</div>
                 ${extra}
             </div>`;
+    }
+
+    /**
+     * The drawings some help panels open with.
+     *
+     * Help is prose by nature, and several of these panels are about shapes —
+     * how a grid is laid out, what density does to a row, where a pasted link
+     * goes. A paragraph describing a shape is read twice: once to decode, once
+     * to picture. The strip puts the picture first and lets the prose confirm
+     * it, the same way the spread-across-columns tour opens each of its steps.
+     *
+     * Only the panels whose subject is genuinely spatial get one. A drawing
+     * bolted onto "Privacy & analytics" would be decoration, and decoration is
+     * what this is meant to replace.
+     */
+    renderHelpArt(titleKey) {
+        const art = DashboardConfig.HELP_PANEL_ART[titleKey];
+        if (!art || typeof window.SettingArt?.render !== 'function') return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const parts = art.map(({ kind, value, captionKey, caption }) => {
+            const drawn = window.SettingArt.render(kind, value);
+            if (!drawn) return '';
+            const label = captionKey ? this.t(captionKey, caption || '') : (caption || '');
+            return `<span class="config-help-art-item">${drawn}`
+                + (label ? `<span class="config-help-art-caption">${esc(label)}</span>` : '')
+                + `</span>`;
+        }).filter(Boolean).join('');
+        return parts ? `<div class="config-help-art">${parts}</div>` : '';
     }
 
     /**
@@ -18171,6 +18297,33 @@ class DashboardConfig {
                     this.t('config.helpFeatureGo', 'Open the setting'))}</button>
             </p>`;
     }
+
+    /**
+     * The drawings that open a help panel, by the panel's title key.
+     *
+     * Kept as data rather than spread through the render methods so the set
+     * stays reviewable: one place says which topics are spatial enough to be
+     * worth a picture, and every drawing comes from the same small vocabulary
+     * as the ones in the config panels — so a reader meets the grid, the
+     * spacing and the margins here in exactly the shape they will meet them
+     * under Appearance.
+     */
+    static HELP_PANEL_ART = {
+        'config.helpWorkspaceTitle': [
+            { kind: 'grid', value: 2, captionKey: 'config.helpArtColumns2', caption: '2 columns' },
+            { kind: 'grid', value: 3, captionKey: 'config.helpArtColumns3', caption: '3 columns' },
+            { kind: 'grid', value: 5, captionKey: 'config.helpArtColumns5', caption: '5 columns' },
+        ],
+        'config.helpAppearanceTitle': [
+            { kind: 'spacing', value: 'snug', captionKey: 'config.categorySpacingSnug', caption: 'Snug' },
+            { kind: 'spacing', value: 'airy', captionKey: 'config.categorySpacingAiry', caption: 'Airy' },
+            { kind: 'margins', value: 'balanced', captionKey: 'config.sideMarginLabel', caption: 'Page margins' },
+            { kind: 'density', value: 'dense', captionKey: 'config.densityDense', caption: 'Dense' },
+        ],
+        'config.helpInboxTitle': [
+            { kind: 'flow', value: ['Ctrl+V', 'Inbox', 'Bookmark'], captionKey: 'config.helpArtInboxRoute', caption: 'Where a pasted link goes' },
+        ],
+    };
 
     /**
      * Panels whose subject is one switch, and where that switch lives.
