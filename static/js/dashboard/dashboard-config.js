@@ -2079,6 +2079,7 @@ class DashboardConfig {
         openInNewTab: ['tab', 'window', 'target'],
         globalShortcuts: ['keyboard', 'shortcut', 'hotkey'],
         enableFuzzySuggestions: ['fuzzy', 'search', 'suggestion'],
+        shortcutOpenMode: ['shortcut', 'enter', 'open', 'typing', 'instant'],
         hyprMode: ['hypr', 'hyprland', 'wayland', 'linux'],
         allowLocalBookmarks: ['local', 'localhost', 'intranet', 'http'],
         enableCustomTitle: ['title', 'branding', 'name'],
@@ -8208,7 +8209,7 @@ class DashboardConfig {
         openInNewTab: { info: ['openLinksInNewTabInfoTitle', 'openLinksInNewTabInfoMessage'], def: true },
         globalShortcuts: { info: ['globalShortcutsInfoTitle', 'globalShortcutsInfoMessage'], def: true },
         showShortcutTooltips: { info: ['shortcutTooltipsInfoTitle', 'shortcutTooltipsInfoMessage'], def: false },
-        showGridKeyLegend: { hint: 'gridKeyLegendHint', def: true },
+        showGridKeyLegend: { info: ['showGridKeyLegendInfoTitle', 'showGridKeyLegendInfoMessage'], hint: 'gridKeyLegendHint', def: true },
         allowLocalBookmarks: { info: ['allowLocalBookmarksInfoTitle', 'allowLocalBookmarksInfoMessage'], def: true },
         enableSessionTips: { info: ['sessionTipsInfoTitle', 'sessionTipsInfoMessage'], hint: 'sessionTipsHint', def: true },
         hyprMode: { info: ['hyprModeInfoTitle', 'hyprModeInfoMessage'], def: false },
@@ -8249,6 +8250,7 @@ class DashboardConfig {
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
         // Search
+        shortcutOpenMode: { info: ['shortcutOpenModeInfoTitle', 'shortcutOpenModeInfoMessage'], def: 'enter' },
         includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: false },
         enableFuzzySuggestions: { info: ['fuzzySuggestionsInfoTitle', 'fuzzySuggestionsInfoMessage'], def: false },
         fuzzySuggestionsStartWith: { info: ['fuzzySuggestionsStartWithInfoTitle', 'fuzzySuggestionsStartWithInfoMessage'], def: false },
@@ -8817,6 +8819,28 @@ class DashboardConfig {
                 title: t('config.generalGroupSearch', 'Search'),
                 note: t('config.generalSearchInputIntro', 'Search overlay behavior and suggestions.'),
                 controls: [
+                    {
+                        field: 'shortcutOpenMode',
+                        type: 'cards',
+                        label: t('config.shortcutOpenModeLabel', 'Typing a bookmark shortcut'),
+                        options: [
+                            {
+                                value: 'enter',
+                                label: t('config.shortcutOpenModeEnter', 'Press Enter to open'),
+                                body: t('config.shortcutOpenModeEnterBody', 'Typing only filters the list. The shortcut you typed leads it, and Enter opens it. Nothing can decide for you that you had finished typing.'),
+                            },
+                            {
+                                value: 'delay',
+                                label: t('config.shortcutOpenModeDelay', 'Open after a short pause'),
+                                body: t('config.shortcutOpenModeDelayBody', 'The shortcut opens on its own once you stop typing for a moment. Keep typing and it stays out of the way.'),
+                            },
+                            {
+                                value: 'instant',
+                                label: t('config.shortcutOpenModeInstant', 'Open the moment it matches'),
+                                body: t('config.shortcutOpenModeInstantBody', 'No Enter, no pause — the fastest, and the one that can swallow an ordinary word that starts with the same letters.'),
+                            },
+                        ],
+                    },
                     bool('includeFindersInSearch', 'config.includeFindersInSearch', 'Include finders in search'),
                     bool('enableFuzzySuggestions', 'config.enableFuzzySuggestions', 'Fuzzy search suggestions'),
                     bool('fuzzySuggestionsStartWith', 'config.fuzzySuggestionsStartWith', 'Prefer matches that start with the query'),
@@ -8826,7 +8850,7 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'search',
+                tab: 'inbox',
                 title: t('config.generalGroupQuickAdd', 'Quick add & inbox'),
                 note: t('config.generalGroupQuickAddNote', 'What happens when you paste a URL onto the dashboard — add it straight away, or collect it in the inbox to sort later.'),
                 controls: [
@@ -10035,7 +10059,7 @@ class DashboardConfig {
         });
     }
 
-    static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'status', 'privacy'];
+    static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'inbox', 'status', 'privacy'];
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -10048,7 +10072,11 @@ class DashboardConfig {
         const map = {
             general: ['config.behaviorTabGeneral', 'General'],
             datetime: ['config.behaviorTabDateTime', 'Date & weather'],
-            search: ['config.behaviorTabSearch', 'Search & inbox'],
+            // Was "Search & inbox": the inbox had four settings living under a
+            // tab named after something else, where nobody looking for the inbox
+            // would think to open them.
+            search: ['config.behaviorTabSearch', 'Search'],
+            inbox: ['config.behaviorTabInbox', 'Inbox'],
             status: ['config.behaviorTabStatus', 'Status & health'],
             privacy: ['config.behaviorTabPrivacy', 'Privacy'],
         };

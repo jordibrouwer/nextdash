@@ -285,6 +285,7 @@ type Settings struct {
 	EnableSessionTips             bool                         `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
 	ShowShortcutTooltips          bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default on, opt-out in Config → Behavior or `:shortcuts off`)
 	ShowGridKeyLegend             bool                         `json:"showGridKeyLegend"`
+	ShortcutOpenMode              string                       `json:"shortcutOpenMode,omitempty"` // What typing a bookmark shortcut does: "enter" (default, Enter opens), "delay" (opens after a short pause with no further key), "instant" (opens the moment it matches). Empty reads as "enter", so no migration
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
@@ -696,6 +697,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			EnableSessionTips:            true,
 			ShowShortcutTooltips:         false,
 			ShowGridKeyLegend:            true,
+			ShortcutOpenMode:             "enter",
 			ColumnsPerRow:                3,
 			FontSize:                     "m",
 			ShowBackgroundDots:           true,
@@ -2477,6 +2479,7 @@ func (fs *FileStore) GetSettings() Settings {
 			EnableSessionTips:              true,
 			ShowShortcutTooltips:           false,
 			ShowGridKeyLegend:              true,
+			ShortcutOpenMode:               "enter",
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,

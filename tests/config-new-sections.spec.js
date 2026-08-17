@@ -229,7 +229,7 @@ test.describe('config: sections restored from the old config', () => {
         await loadDashboard(page);
         await openSection(page, 'behavior');
 
-        for (const tab of ['general', 'datetime', 'search', 'status']) {
+        for (const tab of ['general', 'datetime', 'search', 'inbox', 'status']) {
             await page.locator(`[data-behavior-tab="${tab}"]`).click();
             const panels = await page.locator('.config-panel').count();
             const notes = await page.locator('.config-panel-note').count();

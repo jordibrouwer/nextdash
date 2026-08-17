@@ -105,7 +105,7 @@ test.describe('config info + reset affordances', () => {
     test('behavior is split into sub-tabs', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
-        for (const tab of ['general', 'datetime', 'search', 'privacy', 'status']) {
+        for (const tab of ['general', 'datetime', 'search', 'inbox', 'privacy', 'status']) {
             await expect(page.locator(`[data-behavior-tab="${tab}"]`)).toBeVisible();
         }
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));

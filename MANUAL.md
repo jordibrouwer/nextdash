@@ -238,7 +238,7 @@ Pinned bookmarks stay at the top of their category (manual, A–Z, or recent sor
 - **Select several** — tick rows (click the box, or `x` on the selected row) and a bar offers **Mark read**, **Snooze** and **Delete** for just those items, instead of the toolbar's all-or-nothing bulk. `Esc` clears the selection, switching filter clears it too (so a bulk action cannot reach rows you can no longer see), and deleting names the count and asks first.  
 - Keyboard: `j`/`k` move, `g`/`G` first/last, `Enter` open, `p` promote, `r` mark read, `n` note, `z` snooze, `x` select, `d` delete. Toolbar bulk actions: **Mark all read** and **Clear read**.  
 - **First visit** — a one-time tour walks the whole loop in seven steps, from where links come from to how a backlog gets cleared. **Config → Help → Inbox** covers the same ground in more depth, at any time.
-- Toggle under **Config → Behavior → Search & inbox → Enable Inbox**; set the paste destination there too, to skip the choice dialog.
+- Toggle under **Config → Behavior → Inbox → Enable Inbox**; set the paste destination there too, to skip the choice dialog.
 
 ### 4.5 Config vs dashboard
 
@@ -404,7 +404,7 @@ Since **v2026.09.05.1**, the **Page** and **Category** dropdowns each lead with 
 
 ### 7.3 Paste a URL (`Ctrl+V`)
 
-With the dashboard focused and no text field active, paste a URL. A choice dialog offers **Save to Inbox** or **Add bookmark** (full modal pre-filled). Set a default under **Config → Behavior → Search & inbox** (*Ask each time*, *Always add bookmark*, or *Always save to Inbox*). Paste is ignored while **inline edit** or the **tag word cloud** is open. If paste cannot open the form (no active page, Inbox disabled, or the feature is blocked), a notification explains what to do.
+With the dashboard focused and no text field active, paste a URL. A choice dialog offers **Save to Inbox** or **Add bookmark** (full modal pre-filled). Set a default under **Config → Behavior → Inbox** (*Ask each time*, *Always add bookmark*, or *Always save to Inbox*). Paste is ignored while **inline edit** or the **tag word cloud** is open. If paste cannot open the form (no active page, Inbox disabled, or the feature is blocked), a notification explains what to do.
 
 ### 7.4 Inline edit after long-press
 
@@ -522,7 +522,7 @@ nextDash warns when a URL already exists on the same page (canonical match: trai
 - **Category headers** are keyboard-focusable: **Enter** or **Space** toggles collapse (`aria-expanded` updates).  
 - When you move the **mouse over bookmarks**, the stale keyboard highlight **softens** until your next keyboard move.  
 - **Enter** or **Space** opens the selected row.  
-- If the bookmark has a **shortcut**, type it and press **`Enter`**. Typing filters the list; it never opens anything on its own. Before this, a shortcut fired the moment your query matched it exactly and no longer shortcut shared its letters — so whether your own word survived depended on which *other* bookmarks you owned: on an install with 200 shortcuts, eight of thirteen ordinary words were swallowed mid-word (`invoice` opened something at `in` and left `voice` behind; `github` arrived as `hub`). One extra keystroke buys a keyboard that behaves the same every day.
+- If the bookmark has a **shortcut**, type it and press **`Enter`**. Typing filters the list; it never opens anything on its own. That is the default, and it is a choice: **Config → Behavior → Search → Typing a bookmark shortcut** also offers *Open after a short pause* — the shortcut opens by itself once you stop typing for about half a second, and a word that carries on past it keeps going — and *Open the moment it matches*, which is what the dashboard did before **v1.2.0**. Before this, a shortcut fired the moment your query matched it exactly and no longer shortcut shared its letters — so whether your own word survived depended on which *other* bookmarks you owned: on an install with 200 shortcuts, eight of thirteen ordinary words were swallowed mid-word (`invoice` opened something at `in` and left `voice` behind; `github` arrived as `hub`). One extra keystroke buys a keyboard that behaves the same every day.
 - **While a row is selected the letters belong to the grid** — **`j`** / **`k`** move, **`x`** ticks, **`g`** starts the jump chord, **`t`** filters by the row's tag — and **`Esc`** hands them back to the search line. **`c`** is the exception: it adds a category whether or not a row is selected, so a search cannot begin with `c`; press **`>`** first.
 - **The shortcut field says what a letter costs.** Assigning `c`, `g`, `j`, `k` or `x` now shows what the dashboard does with it and when the bookmark is still reachable, beside the check that another bookmark already has it. Both the inline editor and the bookmark form say it.
 
@@ -1204,7 +1204,7 @@ Six sections divide their content further. Every strip is a proper tab widget: *
 | **Appearance** | Theme · Layout · Display · Toolbar & tabs · Custom themes |
 
 **Branding** — page title and favicon — is the tail of **Display** rather than a tab of its own; `/#config/appearance/branding` still lands on it. Each tab has a **filter** beside *Only changed*, and `Escape` clears it. The theme list answers to **typing**: open it and type the first letters of a name to jump to it among a hundred and fifty. Pointing at a **type size** shows it on the dashboard behind config and moving away puts it back — the same idea as browsing the theme list, which previews its colours. A custom theme has **⤓ Export** on its row and **Import theme…** beside *Add custom theme*, so one palette can move between installs without a whole backup.
-| **Behavior** | General · Date & weather · Search & inbox · Status & health · Privacy |
+| **Behavior** | General · Date & weather · Search · Inbox · Status & health · Privacy |
 
 Every Behavior tab has a **filter field** beside *Only changed*: it narrows the tab to the settings whose label, hint or options match what you type, and `Escape` clears it. That is the other half of `Ctrl/Cmd+Shift+K`, which finds one setting anywhere; this one narrows the eighty-odd in front of you. **Keep settings on this device only** lives here, in *Sync & feedback*, and only here — it used to be offered on Data & backups as well, where it was the copy that worked.
 | **Data & backups** | Backups & data · Icons & previews · Server log · Trash · Reset |
