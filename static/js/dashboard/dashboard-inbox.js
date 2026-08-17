@@ -1418,10 +1418,49 @@ class DashboardInbox {
         await this.loadAndRender();
         this.restoreInboxHash();
         this.syncUrlState();
+        // A link shared from the phone lands here through /share, which can only
+        // answer with a redirect — so the outcome travels in the URL and is
+        // reported once, on arrival.
+        this.reportCaptureOutcome();
         // Not awaited: the view is already usable, and a slow script fetch must
         // not hold up the navigation that asked for it.
         void this.maybeShowTutorial();
         return true;
+    }
+
+    /**
+     * Say what happened to a shared link, then take the marker out of the URL.
+     *
+     * Removed after reporting so a reload — or a bookmark of this address — does
+     * not claim a save that happened once, minutes ago.
+     */
+    reportCaptureOutcome() {
+        let outcome = '';
+        try {
+            outcome = new URL(window.location.href).searchParams.get('captured') || '';
+        } catch {
+            return;
+        }
+        if (!outcome) return;
+
+        const messages = {
+            ok: [this.t('dashboard.inboxCapturedOk', 'Saved to your inbox'), 'success'],
+            duplicate: [this.t('dashboard.inboxCapturedDuplicate', 'That link was already in your inbox'), 'info'],
+            nourl: [this.t('dashboard.inboxCapturedNoUrl', 'No web address was found in what was shared'), 'warning'],
+            full: [this.t('dashboard.inboxCapturedFull', 'Your inbox is full — clear some links first'), 'warning'],
+            denied: [this.t('dashboard.inboxCapturedDenied', 'This nextDash needs a capture token to accept shared links'), 'error'],
+            error: [this.t('dashboard.inboxCapturedError', 'That link could not be saved'), 'error'],
+        };
+        const [message, tone] = messages[outcome] || messages.error;
+        this.dash.showNotification?.(message, tone, { duration: 4000 });
+
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('captured');
+            history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
+        } catch {
+            // A URL we cannot rewrite is not worth failing the view over.
+        }
     }
 
     /**

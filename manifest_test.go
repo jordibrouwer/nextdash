@@ -94,3 +94,49 @@ func TestManifestIconsCustomFavicon(t *testing.T) {
 		t.Fatalf("unexpected first icon: %+v", icons[0])
 	}
 }
+
+// The share target is what puts nextDash in a phone's share sheet, and the
+// shortcuts are the installed icon's long-press menu. Both are pure manifest,
+// so the only thing that can break them is the manifest not carrying them.
+func TestManifestCarriesShareTargetAndShortcuts(t *testing.T) {
+	h, _ := healthTestStore(t, `{"id":1,"name":"Page 1","bookmarks":[]}`)
+
+	rec := httptest.NewRecorder()
+	h.WebAppManifest(rec, httptest.NewRequest(http.MethodGet, "/manifest.json", nil))
+
+	var doc struct {
+		ShareTarget struct {
+			Action string `json:"action"`
+			Method string `json:"method"`
+			Params struct {
+				Title string `json:"title"`
+				Text  string `json:"text"`
+				URL   string `json:"url"`
+			} `json:"params"`
+		} `json:"share_target"`
+		Shortcuts []struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"shortcuts"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
+		t.Fatalf("manifest json: %v", err)
+	}
+
+	if doc.ShareTarget.Action != "/share" {
+		t.Fatalf("share action = %q, want /share", doc.ShareTarget.Action)
+	}
+	// GET rather than POST: POST needs a service worker to catch the form, and
+	// the handler only has to redirect.
+	if doc.ShareTarget.Method != "GET" {
+		t.Fatalf("share method = %q, want GET", doc.ShareTarget.Method)
+	}
+	// All three fields, because a share sheet fills them inconsistently and the
+	// handler reads whichever one holds the address.
+	if doc.ShareTarget.Params.Title == "" || doc.ShareTarget.Params.Text == "" || doc.ShareTarget.Params.URL == "" {
+		t.Fatalf("share params = %+v, want all three named", doc.ShareTarget.Params)
+	}
+	if len(doc.Shortcuts) < 3 {
+		t.Fatalf("shortcuts = %d, want the long-press menu", len(doc.Shortcuts))
+	}
+}

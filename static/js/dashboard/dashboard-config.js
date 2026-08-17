@@ -17433,8 +17433,72 @@ class DashboardConfig {
             // documentation, so what the tour said is a footnote for them. It
             // is here for the reader who skipped or dismissed it and wants to
             // know what they walked past.
+            + this.renderCapturePanel()
             + this.helpPanel('config.helpInboxTourTitle', 'The one-time tour',
                 'config.helpInboxTourBody', '');
+    }
+
+    /**
+     * Saving a link from outside nextDash: the share sheet and the bookmarklet.
+     *
+     * The bookmarklet is built here rather than printed in the manual, because
+     * the useful half of it is this install's own address — and a token, if this
+     * one asks for one. A line someone has to edit before it works is a line
+     * most people never use.
+     */
+    renderCapturePanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const origin = window.location.origin;
+        const token = String(this._captureToken || '').trim();
+        const suffix = token ? `&token=${encodeURIComponent(token)}` : '';
+        const bookmarklet = `javascript:(function(){window.open('${origin}/add?url='`
+            + `+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)`
+            + `+'${suffix}','_blank');})();`;
+
+        return `
+            <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.helpCaptureTitle', 'Saving a link from anywhere'))}</h3>
+                <div class="config-help-prose">${this.t('config.helpCaptureBody', '')}</div>
+                <label class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.helpCaptureTokenLabel', 'Capture token (only if this install has one)'))}</span>
+                    <input type="text" class="config-input" data-capture-token value="${esc(token)}"
+                           autocomplete="off" spellcheck="false"
+                           placeholder="${esc(this.t('config.helpCaptureTokenPlaceholder', 'leave empty when there is none'))}">
+                </label>
+                <label class="config-field">
+                    <span class="config-field-label">${esc(this.t('config.helpCaptureBookmarklet', 'Drag this to your bookmarks bar, or copy it'))}</span>
+                    <textarea class="config-input config-capture-bookmarklet" rows="3" readonly
+                              data-capture-bookmarklet>${esc(bookmarklet)}</textarea>
+                </label>
+                <div class="config-actions">
+                    <a class="config-btn" href="${esc(bookmarklet)}" data-capture-drag
+                       onclick="return false">${esc(this.t('config.helpCaptureDrag', 'Save to nextDash'))}</a>
+                    <button type="button" class="config-btn" data-capture-copy>${esc(this.t('config.helpCaptureCopy', 'Copy the bookmarklet'))}</button>
+                </div>
+            </div>`;
+    }
+
+    /** Rebuild the bookmarklet when the token field changes, and copy on request. */
+    bindCapturePanel(container) {
+        const tokenInput = container.querySelector('[data-capture-token]');
+        tokenInput?.addEventListener('input', () => {
+            this._captureToken = tokenInput.value;
+            const body = document.getElementById('config-view-body');
+            if (body) {
+                body.innerHTML = this.renderSection();
+                this.bindHelp?.(body);
+                // Focus returns to the field being typed in, which the repaint
+                // replaced under the cursor.
+                document.querySelector('[data-capture-token]')?.focus();
+            }
+        });
+        container.querySelector('[data-capture-copy]')?.addEventListener('click', () => {
+            const text = container.querySelector('[data-capture-bookmarklet]')?.value || '';
+            if (!text) return;
+            void navigator.clipboard?.writeText(text)
+                .then(() => this.notify(this.t('config.helpCaptureCopied', 'Bookmarklet copied'), 'success'))
+                .catch(() => this.notify(this.t('config.copyFailed', 'Could not copy'), 'error'));
+        });
     }
 
     renderHelpData() {
@@ -17542,6 +17606,7 @@ class DashboardConfig {
     }
 
     bindHelp(container) {
+        this.bindCapturePanel(container);
         this.bindSubTabStrip(container, 'data-help-tab', (tab) => {
             {
                 if (tab === this.helpTab) return;

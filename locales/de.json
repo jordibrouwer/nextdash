@@ -1456,7 +1456,13 @@
     "multiSelectUnpinned": "{count} Lesezeichen gelöst",
     "multiSelectChecking": "Prüfung",
     "multiSelectCheckingHeader": "Prüfung für {count} Lesezeichen",
-    "multiSelectCheckingDone": "Prüfung bei {count} Lesezeichen geändert"
+    "multiSelectCheckingDone": "Prüfung bei {count} Lesezeichen geändert",
+    "inboxCapturedOk": "Im Eingang gespeichert",
+    "inboxCapturedDuplicate": "Dieser Link war schon im Eingang",
+    "inboxCapturedNoUrl": "In den geteilten Daten war keine Webadresse",
+    "inboxCapturedFull": "Ihr Eingang ist voll — räumen Sie zuerst auf",
+    "inboxCapturedDenied": "Dieses nextDash braucht ein Capture-Token für geteilte Links",
+    "inboxCapturedError": "Dieser Link konnte nicht gespeichert werden"
   },
   "health": {
     "pageTitle": "health beta",
@@ -5014,7 +5020,15 @@
     "bookmarkNameLabel": "Name",
     "bookmarkSaveFailed": "Dieses Lesezeichen konnte nicht gespeichert werden",
     "bookmarkShortcutTaken": "„{key}“ gehört bereits zu {name}",
-    "statsLoading": "Zahlen werden ermittelt…"
+    "statsLoading": "Zahlen werden ermittelt…",
+    "helpCaptureTitle": "Einen Link von überall speichern",
+    "helpCaptureTokenLabel": "Capture-Token (nur wenn diese Installation eines hat)",
+    "helpCaptureTokenPlaceholder": "leer lassen, wenn es keines gibt",
+    "helpCaptureBookmarklet": "Ziehen Sie dies in Ihre Lesezeichenleiste oder kopieren Sie es",
+    "helpCaptureDrag": "In nextDash speichern",
+    "helpCaptureCopy": "Bookmarklet kopieren",
+    "helpCaptureCopied": "Bookmarklet kopiert",
+    "helpCaptureBody": "Die Browser-Erweiterung deckt Chrome und Chromium ab. Überall sonst — Safari, Firefox, ein Telefon, ein Arbeitslaptop ohne Installationsrechte — gibt es zwei Wege, die nichts erfordern.\n\n<strong>Aus dem Teilen-Menü des Telefons.</strong> Installieren Sie nextDash als App (Zum Home-Bildschirm), und es erscheint im Teilen-Menü jeder App. Ein geteilter Link landet im Eingang, und nextDash öffnet sich darauf. Android schickt die Adresse mitunter im Text statt als Link; nextDash findet sie in beiden Fällen.\n\n<strong>Aus jedem Browser.</strong> Das Bookmarklet unten speichert die Seite, die Sie gerade ansehen. Ziehen Sie die Schaltfläche in Ihre Lesezeichenleiste oder kopieren Sie die Zeile.\n\n<strong>Hat diese Installation ein Write-Token</strong>, braucht das Erfassen ein eigenes: Setzen Sie <code>NEXTDASH_CAPTURE_TOKEN</code> auf dem Server und fügen Sie es unten ein. Es öffnet nichts außer diesen beiden Wegen."
   },
   "colors": {
     "title": "themenanpassung",

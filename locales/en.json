@@ -1457,7 +1457,13 @@
     "multiSelectUnpinned": "Unpinned {count} bookmark(s)",
     "multiSelectChecking": "Checking",
     "multiSelectCheckingHeader": "Checking for {count} bookmark(s)",
-    "multiSelectCheckingDone": "Checking changed on {count} bookmark(s)"
+    "multiSelectCheckingDone": "Checking changed on {count} bookmark(s)",
+    "inboxCapturedOk": "Saved to your inbox",
+    "inboxCapturedDuplicate": "That link was already in your inbox",
+    "inboxCapturedNoUrl": "No web address was found in what was shared",
+    "inboxCapturedFull": "Your inbox is full — clear some links first",
+    "inboxCapturedDenied": "This nextDash needs a capture token to accept shared links",
+    "inboxCapturedError": "That link could not be saved"
   },
   "health": {
     "pageTitle": "health beta",
@@ -5015,7 +5021,15 @@
     "bookmarkNameLabel": "Name",
     "bookmarkSaveFailed": "Could not save this bookmark",
     "bookmarkShortcutTaken": "“{key}” is already {name}",
-    "statsLoading": "Working out the numbers…"
+    "statsLoading": "Working out the numbers…",
+    "helpCaptureTitle": "Saving a link from anywhere",
+    "helpCaptureTokenLabel": "Capture token (only if this install has one)",
+    "helpCaptureTokenPlaceholder": "leave empty when there is none",
+    "helpCaptureBookmarklet": "Drag this to your bookmarks bar, or copy it",
+    "helpCaptureDrag": "Save to nextDash",
+    "helpCaptureCopy": "Copy the bookmarklet",
+    "helpCaptureCopied": "Bookmarklet copied",
+    "helpCaptureBody": "The browser extension covers Chrome and Chromium. Everywhere else — Safari, Firefox, a phone, a work laptop you cannot install anything on — there are two routes that need nothing installed.\n\n<strong>From a phone's share sheet.</strong> Install nextDash as an app (Add to Home Screen), and it appears in the share sheet of every app on the device. Sharing a link saves it to the inbox and opens nextDash on it. Android sometimes sends the address inside the text rather than as a link; nextDash picks it out either way.\n\n<strong>From any browser.</strong> The bookmarklet below saves the page you are looking at. Drag the button to your bookmarks bar, or copy the line and make a bookmark of it by hand.\n\n<strong>If this install has a write token</strong>, capture needs a token of its own: set <code>NEXTDASH_CAPTURE_TOKEN</code> on the server and paste it below. It opens nothing but these two routes, so a bookmarklet in someone else's browser history can at worst put a link in your inbox."
   },
   "colors": {
     "title": "theme customization",

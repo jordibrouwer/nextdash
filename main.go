@@ -156,6 +156,11 @@ func main() {
 	r.HandleFunc("/api/health/auto-heal-apply", handlers.AutoHealApply).Methods("POST")
 	r.HandleFunc("/api/health/test-notification", handlers.TestMonitorNotification).Methods("POST")
 	r.HandleFunc("/api/bookmark-preview", handlers.GetBookmarkPreview).Methods("GET")
+	// Capture from outside the dashboard: the PWA share target and the
+	// bookmarklet. Both are GET because neither can set a header — see
+	// share_capture.go.
+	r.HandleFunc("/share", handlers.ShareTargetCapture).Methods("GET")
+	r.HandleFunc("/add", handlers.AddCapture).Methods("GET")
 	r.HandleFunc("/api/inbox", handlers.GetInbox).Methods("GET")
 	r.HandleFunc("/api/inbox", handlers.AddInboxItem).Methods("POST")
 	r.HandleFunc("/api/inbox", handlers.DeleteInboxItem).Methods("DELETE")

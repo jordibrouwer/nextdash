@@ -1456,7 +1456,13 @@
     "multiSelectUnpinned": "{count} favori(s) détaché(s)",
     "multiSelectChecking": "Vérification",
     "multiSelectCheckingHeader": "Vérification pour {count} favori(s)",
-    "multiSelectCheckingDone": "Vérification modifiée sur {count} favori(s)"
+    "multiSelectCheckingDone": "Vérification modifiée sur {count} favori(s)",
+    "inboxCapturedOk": "Enregistré dans votre boîte",
+    "inboxCapturedDuplicate": "Ce lien était déjà dans votre boîte",
+    "inboxCapturedNoUrl": "Aucune adresse web dans ce qui a été partagé",
+    "inboxCapturedFull": "Votre boîte est pleine — videz-en d’abord",
+    "inboxCapturedDenied": "Ce nextDash a besoin d’un jeton de capture pour accepter les liens partagés",
+    "inboxCapturedError": "Ce lien n’a pas pu être enregistré"
   },
   "health": {
     "pageTitle": "health beta",
@@ -5014,7 +5020,15 @@
     "bookmarkNameLabel": "Nom",
     "bookmarkSaveFailed": "Impossible d’enregistrer ce favori",
     "bookmarkShortcutTaken": "« {key} » appartient déjà à {name}",
-    "statsLoading": "Calcul des chiffres…"
+    "statsLoading": "Calcul des chiffres…",
+    "helpCaptureTitle": "Enregistrer un lien depuis n’importe où",
+    "helpCaptureTokenLabel": "Jeton de capture (seulement si cette installation en a un)",
+    "helpCaptureTokenPlaceholder": "laissez vide s’il n’y en a pas",
+    "helpCaptureBookmarklet": "Glissez ceci dans votre barre de favoris, ou copiez-le",
+    "helpCaptureDrag": "Enregistrer dans nextDash",
+    "helpCaptureCopy": "Copier le bookmarklet",
+    "helpCaptureCopied": "Bookmarklet copié",
+    "helpCaptureBody": "L’extension de navigateur couvre Chrome et Chromium. Partout ailleurs — Safari, Firefox, un téléphone, un portable professionnel où l’on ne peut rien installer — deux routes ne demandent aucune installation.\n\n<strong>Depuis la feuille de partage du téléphone.</strong> Installez nextDash comme application (Sur l’écran d’accueil) et il apparaît dans le partage de toutes les apps. Partager un lien l’enregistre dans la boîte et ouvre nextDash dessus. Android envoie parfois l’adresse dans le texte plutôt que comme lien ; nextDash la retrouve dans les deux cas.\n\n<strong>Depuis n’importe quel navigateur.</strong> Le bookmarklet ci-dessous enregistre la page affichée. Faites glisser le bouton dans votre barre de favoris, ou copiez la ligne.\n\n<strong>Si cette installation a un jeton d’écriture</strong>, la capture a besoin du sien : définissez <code>NEXTDASH_CAPTURE_TOKEN</code> sur le serveur et collez-le ci-dessous. Il n’ouvre rien d’autre que ces deux routes."
   },
   "colors": {
     "title": "personnalisation du thème",

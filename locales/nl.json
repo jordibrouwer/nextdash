@@ -1456,7 +1456,13 @@
     "multiSelectUnpinned": "{count} bookmark(s) losgemaakt",
     "multiSelectChecking": "Controle",
     "multiSelectCheckingHeader": "Controle voor {count} bookmark(s)",
-    "multiSelectCheckingDone": "Controle gewijzigd op {count} bookmark(s)"
+    "multiSelectCheckingDone": "Controle gewijzigd op {count} bookmark(s)",
+    "inboxCapturedOk": "Bewaard in je inbox",
+    "inboxCapturedDuplicate": "Die link stond al in je inbox",
+    "inboxCapturedNoUrl": "Geen webadres gevonden in wat er is gedeeld",
+    "inboxCapturedFull": "Je inbox zit vol — ruim eerst wat links op",
+    "inboxCapturedDenied": "Deze nextDash heeft een capture-token nodig om gedeelde links aan te nemen",
+    "inboxCapturedError": "Die link kon niet worden bewaard"
   },
   "health": {
     "pageTitle": "health beta",
@@ -5014,7 +5020,15 @@
     "bookmarkNameLabel": "Naam",
     "bookmarkSaveFailed": "Kon deze bookmark niet opslaan",
     "bookmarkShortcutTaken": "“{key}” is al van {name}",
-    "statsLoading": "Bezig met de cijfers…"
+    "statsLoading": "Bezig met de cijfers…",
+    "helpCaptureTitle": "Een link bewaren vanaf overal",
+    "helpCaptureTokenLabel": "Capture-token (alleen als deze installatie er een heeft)",
+    "helpCaptureTokenPlaceholder": "laat leeg als die er niet is",
+    "helpCaptureBookmarklet": "Sleep dit naar je bladwijzerbalk, of kopieer het",
+    "helpCaptureDrag": "Bewaar in nextDash",
+    "helpCaptureCopy": "Bookmarklet kopiëren",
+    "helpCaptureCopied": "Bookmarklet gekopieerd",
+    "helpCaptureBody": "De browserextensie dekt Chrome en Chromium. Overal daarbuiten — Safari, Firefox, een telefoon, een werklaptop waar je niets op mag installeren — zijn er twee routes waarvoor je niets hoeft te installeren.\n\n<strong>Vanaf het deelblad van je telefoon.</strong> Installeer nextDash als app (Zet op beginscherm) en hij verschijnt in het deelmenu van elke app op het toestel. Een link delen bewaart hem in de inbox en opent nextDash erop. Android stuurt het adres soms in de tekst in plaats van als link; nextDash vist het er hoe dan ook uit.\n\n<strong>Vanuit elke browser.</strong> De bookmarklet hieronder bewaart de pagina waar je op staat. Sleep de knop naar je bladwijzerbalk, of kopieer de regel en maak er zelf een bladwijzer van.\n\n<strong>Heeft deze installatie een write-token</strong>, dan heeft capture een eigen token nodig: zet <code>NEXTDASH_CAPTURE_TOKEN</code> op de server en plak hem hieronder. Die opent niets anders dan deze twee routes, dus een bookmarklet in andermans geschiedenis kan hooguit een link in je inbox zetten."
   },
   "colors": {
     "title": "thema-aanpassing",
