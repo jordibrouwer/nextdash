@@ -2178,6 +2178,14 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 		preview.Icon = h.resolveRelativeURL(preview.URL, preview.Icon)
 	}
 
+	// The page's own feed, if it advertises one. Recorded even when feed polling
+	// is switched off: reading it out of a <head> that has already been fetched
+	// costs nothing, and it means turning Fresh on later does not have to
+	// re-fetch every page before it can say anything.
+	if feedURL := extractFeedFromHTML(htmlBody); feedURL != "" {
+		recordDiscoveredFeed(rawURL, h.resolveRelativeURL(preview.URL, feedURL))
+	}
+
 	if cache != nil {
 		if cache.Cache == nil {
 			cache.Cache = make(map[string]BookmarkPreview)

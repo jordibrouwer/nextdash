@@ -470,6 +470,7 @@ Dynamic bookmark groups that appear automatically:
 - **Most used** — your highest open-count bookmarks
 - **Stale** — bookmarks you haven't visited in a while
 - **Recently added** — what you have just saved, off by default with its own limit and choice of pages; every other collection keys on what you *open*, so this was the one question they could not answer
+- **Fresh** — bookmarks whose page has published something since you last opened it. Turn it on under **Config → Behavior → Status & health → Fresh**: nextDash notes any RSS or Atom feed a page advertises while it fetches previews, polls it on the background re-check interval with a conditional request, and puts a small count on the row. Opening the bookmark clears it. Not a feed reader — no articles are stored, only how many entries are newer than your last visit
 - **Tag collections** — one group per tag, shown when a tag has enough entries
 
 Collections of your own take rules on category, tag, page, URL, name and status, plus **pinned**, **untagged**, **days since last opened** and **days since last changed** — so "my dev links I have not touched in 90 days" is something you can build rather than something only the built-in collections could do.

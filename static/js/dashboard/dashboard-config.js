@@ -2083,6 +2083,7 @@ class DashboardConfig {
         pushNotifyBackup: ['push', 'notification', 'backup'],
         pushNotifySubject: ['push', 'vapid', 'contact', 'email'],
         healthAutoRecheckEnabled: ['uptime', 'monitor', 'health', 'background', 'server'],
+        feedsEnabled: ['feed', 'rss', 'atom', 'fresh', 'new', 'blog'],
         healthAutoRecheckIntervalHours: ['uptime', 'monitor', 'health', 'interval', 'recheck'],
         statusRecheckIntervalMinutes: ['status', 'check', 'interval', 'ping', 'uptime'],
         statusOfflineRetries: ['offline', 'retry', 'retries', 'status'],
@@ -7836,6 +7837,7 @@ class DashboardConfig {
         // Status & health
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
+        feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
@@ -8544,6 +8546,15 @@ class DashboardConfig {
                         opt(60, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '60')),
                         opt(90, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '90')),
                     ] },
+                ],
+            },
+            {
+                section: 'behavior',
+                tab: 'status',
+                title: t('config.feedsTitle', 'Fresh'),
+                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Polled on the background re-check interval with a conditional request, so a quiet blog costs almost nothing. Off by default because it makes outbound requests; the feeds themselves are found while previews are fetched, so switching this on needs no re-fetch.'),
+                controls: [
+                    { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
                 ],
             },
             {
@@ -10030,6 +10041,19 @@ class DashboardConfig {
                 // <body> by setupDOM, so neither alone is enough.
                 this.applyChromeSettings();
                 d.renderDashboard?.({ animate: false });
+                break;
+            case 'feeds':
+                // Switching this on polls once now rather than leaving the
+                // dashboard blank until the scheduler's next wake — turning a
+                // feature on and seeing nothing happen reads as broken. Off
+                // just drops what is painted.
+                if (value) {
+                    void d.feeds?.pollNow().then(() => d.renderDashboard?.({ animate: false }));
+                } else if (d.feeds) {
+                    d.feeds.enabled = false;
+                    d.feeds.byKey = new Map();
+                    d.renderDashboard?.({ animate: false });
+                }
                 break;
             case 'render':
                 d.renderDashboard?.({ animate: false });

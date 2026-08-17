@@ -20,6 +20,10 @@ class DashboardSmartCollections {
         if (d.settings.showSmartMostUsedCollection === true && this._isSmartCollectionPageAllowed(d.settings.smartMostUsedPageIds)) {
             return true;
         }
+        // Opening a fresh bookmark clears its count, which changes the section.
+        if (d.feeds?.enabled && this._isSmartCollectionPageAllowed(d.settings.smartFreshPageIds)) {
+            return true;
+        }
         return false;
     }
 
@@ -33,6 +37,11 @@ class DashboardSmartCollections {
             return [...collection.bookmarks].sort((a, b) => Number(b.openCount || 0) - Number(a.openCount || 0));
         }
         if (collection.id === '__smart_today__') {
+            return [...collection.bookmarks];
+        }
+        // Already ordered by publication, newest first — the one ordering the
+        // dashboard's own sorts cannot reproduce.
+        if (collection.id === '__smart_fresh__') {
             return [...collection.bookmarks];
         }
         return d.sortBookmarks(collection.bookmarks);
@@ -217,6 +226,25 @@ class DashboardSmartCollections {
                 name: mostUsedTitle,
                 icon: '📈',
                 bookmarks: effectiveLimit ? mostUsed.slice(0, effectiveLimit) : mostUsed
+            });
+        }
+
+        // Fresh keys on what changed, where every collection above keys on what
+        // you did. No setting of its own: it exists exactly when feed polling is
+        // on and something has actually published — an empty Fresh would be a
+        // heading explaining that nothing happened.
+        const freshBookmarks = memo(() => d.feeds?.freshBookmarks(normalized) || []);
+        if (d.feeds?.enabled && pageAllowed(d.settings.smartFreshPageIds) && freshBookmarks().length > 0) {
+            const fresh = freshBookmarks();
+            const freshLabel = d.language?.t?.('dashboard.smartFreshCollection');
+            const freshTitle = freshLabel && freshLabel !== 'dashboard.smartFreshCollection'
+                ? freshLabel
+                : 'Fresh';
+            collections.push({
+                id: '__smart_fresh__',
+                name: `${freshTitle} (${fresh.length})`,
+                icon: '✳',
+                bookmarks: fresh,
             });
         }
 

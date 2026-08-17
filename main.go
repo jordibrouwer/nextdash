@@ -135,6 +135,8 @@ func main() {
 	r.HandleFunc("/api/duplicates", handlers.CheckDuplicates).Methods("GET")
 	r.HandleFunc("/api/health", handlers.Health).Methods("GET")
 	r.HandleFunc("/api/bookmark-health", handlers.GetBookmarkHealth).Methods("GET")
+	r.HandleFunc("/api/feeds", handlers.GetFeeds).Methods("GET")
+	r.HandleFunc("/api/feeds/poll", handlers.PollFeedsNow).Methods("POST")
 	r.HandleFunc("/api/health/cache-scan", handlers.CacheScanResult).Methods("POST")
 	r.HandleFunc("/api/health/update-status", handlers.UpdateBookmarkHealthStatus).Methods("POST")
 	r.HandleFunc("/api/health/retest-all", handlers.RetestAll).Methods("POST")
@@ -228,6 +230,9 @@ func main() {
 	handlers.StartHealthRecheckScheduler(schedulerStop)
 	// Uptime monitoring for bookmarks opted into the faster monitor tier.
 	handlers.StartHealthMonitorScheduler(schedulerStop)
+	// Feed polling for bookmarks whose page advertises one (opt-in, same cadence
+	// as the background recheck).
+	handlers.StartFeedPollScheduler(schedulerStop)
 	handlers.StartUpdateCheckScheduler(schedulerStop)
 
 	go func() {

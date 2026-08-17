@@ -80,7 +80,7 @@ type Bookmark struct {
 	// The baseline the drift checks compare against, recorded on the first check
 	// after WatchDrift is switched on. Empty means "no baseline yet", which reads
 	// as unknown rather than as drift.
-	DriftURL         string `json:"driftUrl,omitempty"`
+	DriftURL string `json:"driftUrl,omitempty"`
 	// BrokenSince is when the current run of failures started, kept across
 	// checks so a link that died months ago does not read like one that broke
 	// this morning. Cleared the moment a check succeeds, so it is always "how
@@ -292,13 +292,13 @@ type Settings struct {
 	ShowGridKeyLegend             bool                         `json:"showGridKeyLegend"`
 	ShortcutOpenMode              string                       `json:"shortcutOpenMode,omitempty"`
 	RememberScrollPosition        bool                         `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
-	DetectSoftNotFound            bool                         `json:"detectSoftNotFound"`               // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
-	CertWarnDays                  int                          `json:"certWarnDays,omitempty"`           // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "enter" (default, Enter opens), "delay" (opens after a short pause with no further key), "instant" (opens the moment it matches). Empty reads as "enter", so no migration
+	DetectSoftNotFound            bool                         `json:"detectSoftNotFound"`     // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
+	CertWarnDays                  int                          `json:"certWarnDays,omitempty"` // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "enter" (default, Enter opens), "delay" (opens after a short pause with no further key), "instant" (opens the moment it matches). Empty reads as "enter", so no migration
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
-	HealthCheckTimeoutSeconds     int                          `json:"healthCheckTimeoutSeconds,omitempty"`    // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
-	QuickStart                    QuickStartState              `json:"quickStart"`           // First-run quick-start progress (server-side, per-user)
+	HealthCheckTimeoutSeconds int             `json:"healthCheckTimeoutSeconds,omitempty"` // Short key legend under the bookmark grid. On for a fresh install; an existing settings.json without the key keeps the zero value, so nobody has it appear under a dashboard they already know
+	QuickStart                QuickStartState `json:"quickStart"`                          // First-run quick-start progress (server-side, per-user)
 	// ConfigGeneralLayer is the last Essentials/Advanced/all layer used in
 	// Config → General. Empty means "never chosen", which starts on Essentials.
 	// Stored here rather than localStorage so the choice follows the user across
@@ -321,23 +321,29 @@ type Settings struct {
 	BackgroundGradient             string                           `json:"backgroundGradient"` // preset name used when type="gradient"
 	BackgroundImageUrl             string                           `json:"backgroundImageUrl"` // URL used when type="image"
 	ThemeIconStyling               map[string]ThemeIconStylingEntry `json:"themeIconStyling,omitempty"`
-	PasteUrlQuickAdd               bool                             `json:"pasteUrlQuickAdd"`               // Enable paste URL to quick-add bookmark on dashboard
-	InboxEnabled                   bool                             `json:"inboxEnabled"`                   // Enable inbox page and paste-to-inbox flow
-	PasteDestination               string                           `json:"pasteDestination"`               // ask, bookmark, or inbox when pasting a URL
-	InboxDedupeUrls                bool                             `json:"inboxDedupeUrls"`                // Skip duplicate URLs in inbox
-	InboxMaxItems                  int                              `json:"inboxMaxItems"`                  // Max inbox items (0 = unlimited)
-	InboxShowInPageTabs            bool                             `json:"inboxShowInPageTabs"`            // Show Inbox tab in page navigation
-	InboxDeleteAfterPromote        bool                             `json:"inboxDeleteAfterPromote"`        // Remove inbox item after promote to bookmark
-	AllowLocalBookmarks            bool                             `json:"allowLocalBookmarks"`            // Allow http(s) bookmarks to localhost and private hosts
-	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`              // Automatically create a local backup (keeps the latest few)
+	PasteUrlQuickAdd               bool                             `json:"pasteUrlQuickAdd"`        // Enable paste URL to quick-add bookmark on dashboard
+	InboxEnabled                   bool                             `json:"inboxEnabled"`            // Enable inbox page and paste-to-inbox flow
+	PasteDestination               string                           `json:"pasteDestination"`        // ask, bookmark, or inbox when pasting a URL
+	InboxDedupeUrls                bool                             `json:"inboxDedupeUrls"`         // Skip duplicate URLs in inbox
+	InboxMaxItems                  int                              `json:"inboxMaxItems"`           // Max inbox items (0 = unlimited)
+	InboxShowInPageTabs            bool                             `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
+	InboxDeleteAfterPromote        bool                             `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
+	AllowLocalBookmarks            bool                             `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
+	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`       // Automatically create a local backup (keeps the latest few)
 	// AutoBackupIntervalDays is how often that runs. 0 means the built-in
 	// weekly default, which is what every install carried before this was a
 	// choice — so an absent key keeps the old behaviour rather than reading as
 	// "never".
-	AutoBackupIntervalDays         int                              `json:"autoBackupIntervalDays,omitempty"`
-	HealthAutoRecheckEnabled       bool                             `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
-	HealthAutoRecheckIntervalHours int                              `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
-	ServerLogRetentionHours        int                              `json:"serverLogRetentionHours"`        // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
+	AutoBackupIntervalDays         int  `json:"autoBackupIntervalDays,omitempty"`
+	HealthAutoRecheckEnabled       bool `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
+	HealthAutoRecheckIntervalHours int  `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
+	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
+	// feed can then say when it has published something since you last opened
+	// it. Off by default because it is the only thing here that reaches out to
+	// the internet on a schedule without a bookmark having asked for it —
+	// discovery happens regardless, so switching this on needs no re-fetch.
+	FeedsEnabled            bool `json:"feedsEnabled"`
+	ServerLogRetentionHours int  `json:"serverLogRetentionHours"` // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
 	// Which cap applies: "time" uses ServerLogRetentionHours and ignores the
 	// entry count, "count" uses ServerLogMaxEntries and ignores the age. The
 	// two are deliberately exclusive — a log capped both ways silently drops
@@ -381,16 +387,16 @@ type Settings struct {
 
 	// Config → Bookmarks. The list view had no settings of its own; these are
 	// the choices it used to make on the user's behalf.
-	ConfigBookmarksSort       string `json:"configBookmarksSort"`       // Sort the list opens on: page/name/recent/lastOpened/opens/pinned
-	ConfigBookmarksPageSize   int    `json:"configBookmarksPageSize"`   // Rows added per "load more" step
-	BookmarkDeleteConfirmFrom int    `json:"bookmarkDeleteConfirmFrom"` // Ask before deleting this many rows or more (1 = always)
+	ConfigBookmarksSort       string `json:"configBookmarksSort"`           // Sort the list opens on: page/name/recent/lastOpened/opens/pinned
+	ConfigBookmarksPageSize   int    `json:"configBookmarksPageSize"`       // Rows added per "load more" step
+	BookmarkDeleteConfirmFrom int    `json:"bookmarkDeleteConfirmFrom"`     // Ask before deleting this many rows or more (1 = always)
 	DefaultMonitorIntervalMin int    `json:"defaultMonitorIntervalMinutes"` // Interval a bookmark gets when switched to Monitor
-	NewBookmarkCheckMode      string `json:"newBookmarkCheckMode"`      // Availability a quick-added bookmark starts on: off/periodic/monitor
-	NewBookmarkPinned         bool   `json:"newBookmarkPinned"`         // Quick-add pins by default
-	NewBookmarkCategory       string `json:"newBookmarkCategory"`       // Category id a quick-added bookmark lands in ("" = none)
-	BookmarkStaleDays         int    `json:"bookmarkStaleDays"`         // "Not opened in N days" in the cleanup score and stats
-	BulkFaviconConfirmFrom    int    `json:"bulkFaviconConfirmFrom"`    // Ask before refreshing icons for this many rows (0 = never)
-	BookmarkArchiveUrl        string `json:"bookmarkArchiveUrl"`        // Archive service, {url} replaced with the bookmark's address
+	NewBookmarkCheckMode      string `json:"newBookmarkCheckMode"`          // Availability a quick-added bookmark starts on: off/periodic/monitor
+	NewBookmarkPinned         bool   `json:"newBookmarkPinned"`             // Quick-add pins by default
+	NewBookmarkCategory       string `json:"newBookmarkCategory"`           // Category id a quick-added bookmark lands in ("" = none)
+	BookmarkStaleDays         int    `json:"bookmarkStaleDays"`             // "Not opened in N days" in the cleanup score and stats
+	BulkFaviconConfirmFrom    int    `json:"bulkFaviconConfirmFrom"`        // Ask before refreshing icons for this many rows (0 = never)
+	BookmarkArchiveUrl        string `json:"bookmarkArchiveUrl"`            // Archive service, {url} replaced with the bookmark's address
 }
 
 // SavedSearch is a query the user named and kept from the search bar.
@@ -3454,19 +3460,19 @@ type HealthReason struct {
 }
 
 type HealthIssue struct {
-	Name         string `json:"name"`
-	URL          string `json:"url"`
-	Shortcut     string `json:"shortcut,omitempty"`
-	Category     string `json:"category,omitempty"`
-	PageID       int    `json:"pageId"`
-	PageName     string `json:"pageName,omitempty"`
-	Index        int    `json:"index"`
-	Pinned       bool   `json:"pinned"`
-	CheckStatus  bool   `json:"checkStatus"`
-	OpenCount    int    `json:"openCount"`
-	LastOpened   int64  `json:"lastOpened,omitempty"`
-	LastChecked  int64  `json:"lastChecked,omitempty"`
-	LastError    string `json:"lastError,omitempty"`
+	Name        string `json:"name"`
+	URL         string `json:"url"`
+	Shortcut    string `json:"shortcut,omitempty"`
+	Category    string `json:"category,omitempty"`
+	PageID      int    `json:"pageId"`
+	PageName    string `json:"pageName,omitempty"`
+	Index       int    `json:"index"`
+	Pinned      bool   `json:"pinned"`
+	CheckStatus bool   `json:"checkStatus"`
+	OpenCount   int    `json:"openCount"`
+	LastOpened  int64  `json:"lastOpened,omitempty"`
+	LastChecked int64  `json:"lastChecked,omitempty"`
+	LastError   string `json:"lastError,omitempty"`
 	// BrokenSince is when this run of failures started, so the row can say how
 	// long it has been down rather than only that it is.
 	BrokenSince  int64  `json:"brokenSince,omitempty"`

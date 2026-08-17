@@ -915,8 +915,22 @@ Enabled in **config → pages & tags → collections**:
 | **Recently opened** | Latest activity on allowed pages |
 | **Most used** | Highest open counts |
 | **Stale** | Not opened within threshold days |
+| **Fresh** | Bookmarks whose page has published something since you last opened it — see [Fresh](#fresh-what-changed-since-you-looked) below |
 
 Each can be limited to certain pages and item limits (`0` = unlimited).
+
+### Fresh — what changed since you looked
+
+Every collection above keys on something *you* did. **Fresh** keys on what changed, which is the one question the others cannot answer: what is worth opening right now.
+
+Turn it on in **config → behavior → status → Fresh**. It is off by default because it is the only thing here that reaches out to the internet on a schedule.
+
+- When a bookmark's page advertises an RSS or Atom feed, nextDash notes where the feed is while it fetches previews — so switching Fresh on costs no re-fetch.
+- Feeds are polled on the **background re-check interval** with a conditional request, so a quiet blog costs a few hundred bytes.
+- A bookmark with something new carries a small count on its row: **3** means three entries published since you last opened it. Opening the bookmark clears it — there is no separate read state to keep in order.
+- The **Fresh** collection lists those bookmarks, newest publication first.
+
+This is not a feed reader. No articles are stored and none are shown — only how many entries are newer than your last visit.
 
 Cross-page bookmark data loads at startup only when smart collections, tag collections, or **Use shortcuts from all pages** need it — faster startup when those features are off.
 
@@ -1628,6 +1642,7 @@ When set, protected API calls require header `X-NextDash-Token: your-long-random
 | Health: cache scan result | `POST /api/health/cache-scan` |
 | Health: update bookmark status | `POST /api/health/update-status` |
 | Bookmark link preview | `GET /api/bookmark-preview` |
+| Feeds: poll every known feed now | `POST /api/feeds/poll` |
 | Clear all preview metadata | `POST /api/previews/clear` |
 | Refresh all preview metadata | `POST /api/previews/refresh` |
 | Reset theme colours | `POST /api/colors/reset` |

@@ -3087,6 +3087,20 @@ a.bookmark-open:hover {
     display: none;
 }
 
+/* "3 new" — what this page published since the row was last opened. It borrows
+   the superscript badge's shape and adds only a hint of the accent: it is worth
+   noticing on a scan and never worth reading first. */
+.bookmark-fresh-badge {
+    margin-left: 0.3em;
+    color: var(--accent-primary);
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--border-secondary));
+    background: color-mix(in srgb, var(--accent-primary) 8%, var(--background-secondary));
+}
+
+.bookmark-fresh-badge.is-empty {
+    display: none;
+}
+
 .bookmark-tags {
     display: flex;
     flex-wrap: wrap;

@@ -164,7 +164,9 @@ test('every special in the schema is one setBehavior actually handles', async ({
     });
     // `visual` runs applyVisualSettings, for fields written onto <body> that
     // neither the render nor the chrome pass touches — launcherIconSize.
-    const handled = ['language', 'datetime', 'chrome', 'chromeRender', 'render', 'shortcutTooltips', 'visual'];
+    // `feeds` polls once when Fresh is switched on, so the dashboard is not
+    // blank until the scheduler's next wake.
+    const handled = ['language', 'datetime', 'chrome', 'chromeRender', 'render', 'shortcutTooltips', 'visual', 'feeds'];
     expect(used.length).toBeGreaterThan(3);
     expect(used.filter((s) => !handled.includes(s))).toEqual([]);
 });
