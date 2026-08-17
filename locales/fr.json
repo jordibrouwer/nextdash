@@ -5013,7 +5013,8 @@
     "bookmarkShortcutAdd": "Ajouter un raccourci",
     "bookmarkNameLabel": "Nom",
     "bookmarkSaveFailed": "Impossible d’enregistrer ce favori",
-    "bookmarkShortcutTaken": "« {key} » appartient déjà à {name}"
+    "bookmarkShortcutTaken": "« {key} » appartient déjà à {name}",
+    "statsLoading": "Calcul des chiffres…"
   },
   "colors": {
     "title": "personnalisation du thème",

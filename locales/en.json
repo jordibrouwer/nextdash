@@ -5014,7 +5014,8 @@
     "bookmarkShortcutAdd": "Add a shortcut",
     "bookmarkNameLabel": "Name",
     "bookmarkSaveFailed": "Could not save this bookmark",
-    "bookmarkShortcutTaken": "“{key}” is already {name}"
+    "bookmarkShortcutTaken": "“{key}” is already {name}",
+    "statsLoading": "Working out the numbers…"
   },
   "colors": {
     "title": "theme customization",

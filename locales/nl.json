@@ -5013,7 +5013,8 @@
     "bookmarkShortcutAdd": "Sneltoets toevoegen",
     "bookmarkNameLabel": "Naam",
     "bookmarkSaveFailed": "Kon deze bookmark niet opslaan",
-    "bookmarkShortcutTaken": "“{key}” is al van {name}"
+    "bookmarkShortcutTaken": "“{key}” is al van {name}",
+    "statsLoading": "Bezig met de cijfers…"
   },
   "colors": {
     "title": "thema-aanpassing",

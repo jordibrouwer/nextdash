@@ -5013,7 +5013,8 @@
     "bookmarkShortcutAdd": "Kürzel hinzufügen",
     "bookmarkNameLabel": "Name",
     "bookmarkSaveFailed": "Dieses Lesezeichen konnte nicht gespeichert werden",
-    "bookmarkShortcutTaken": "„{key}“ gehört bereits zu {name}"
+    "bookmarkShortcutTaken": "„{key}“ gehört bereits zu {name}",
+    "statsLoading": "Zahlen werden ermittelt…"
   },
   "colors": {
     "title": "themenanpassung",
