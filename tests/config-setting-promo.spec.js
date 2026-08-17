@@ -98,12 +98,14 @@ test.describe('Config setting promo', () => {
         await openAppearanceFresh(page);
         await expect(page.locator('.config-setting-promo')).toBeVisible({ timeout: 8000 });
 
-        await page.locator('[data-appearance-tab="branding"]').click();
+        // Display, since the branding tab was folded into it: the custom title
+        // toggle moved with it, and that toggle is what proves the tab stayed.
+        await page.locator('[data-appearance-tab="display"]').click();
         await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
 
         // The reveal retries for several seconds; outlast them.
         await page.waitForTimeout(2500);
-        expect(await page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('branding');
+        expect(await page.evaluate(() => window.dashboardInstance.config.appearanceTab)).toBe('display');
         await expect(page.locator('[data-appearance-toggle="enableCustomTitle"]')).toBeVisible();
     });
 

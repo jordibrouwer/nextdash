@@ -381,6 +381,15 @@
 
         onEscape = (e) => {
             if (e.key !== 'Escape' || !activeEl) return;
+            // A field being edited owns Escape: there it means "put back what
+            // was there", and only the field knows what that was. This handler
+            // is on document in the capture phase, so without the guard it
+            // dismissed the balloon and the field never saw the key — the edit
+            // was then torn down by the focus moving, and its blur saved the
+            // half-typed value. The balloon is still one Escape away.
+            const active = document.activeElement;
+            const tag = active?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || active?.isContentEditable) return;
             e.preventDefault();
             e.stopImmediatePropagation();
             dismissActive({ persist: true });
