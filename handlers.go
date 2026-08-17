@@ -453,7 +453,7 @@ const (
 	// Same weight as the other data-integrity faults: the bookmark still works,
 	// but it has fallen out of the category structure the user organised it into.
 	healthPenaltyOrphanedCategory = 15
-	healthPenaltyNeverChecked = 10
+	healthPenaltyNeverChecked     = 10
 	// Usage is not a defect. A link you have never opened is not broken, and the
 	// health view's own advice is to open it and see — an action that used to
 	// improve the row's score by 10 and, under the default worst-first sort, drop
@@ -3113,17 +3113,17 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		PageID         int    `json:"pageId"`
-		Index          int    `json:"index"`
-		NewURL         string `json:"newUrl"`
-		RefreshTitle   bool   `json:"refreshTitle"`
-		OneClick       bool   `json:"oneClick"`
+		PageID       int    `json:"pageId"`
+		Index        int    `json:"index"`
+		NewURL       string `json:"newUrl"`
+		RefreshTitle bool   `json:"refreshTitle"`
+		OneClick     bool   `json:"oneClick"`
 		// KeepOriginalInNote writes the address being replaced into the note.
 		// Used when the replacement is an archived copy: the capture is a
 		// reading of the page, not the page, and the original is what a later
 		// attempt to find it again starts from.
-		KeepOriginalInNote bool `json:"keepOriginalInNote"`
-		SuggestedTitle string `json:"suggestedTitle"`
+		KeepOriginalInNote bool   `json:"keepOriginalInNote"`
+		SuggestedTitle     string `json:"suggestedTitle"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
