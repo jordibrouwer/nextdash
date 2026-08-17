@@ -491,7 +491,9 @@ class DashboardTagFilter {
             const addRes = await dashFetch('/api/bookmarks/add', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkPayload }),
+                // See the forward move: add-then-delete puts the URL on both
+                // pages for as long as it takes to run.
+                body: JSON.stringify({ page: sourcePageId, bookmark: bookmarkPayload, allowDuplicate: true }),
             });
             if (!addRes.ok) {
                 throw new Error('add failed');
@@ -558,7 +560,9 @@ class DashboardTagFilter {
             const addRes = await dashFetch('/api/bookmarks/add', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ page: targetId, bookmark: bookmarkPayload }),
+                // A bulk move is many add-then-delete pairs; each one holds the
+                // URL on two pages until its delete lands.
+                body: JSON.stringify({ page: targetId, bookmark: bookmarkPayload, allowDuplicate: true }),
             });
             if (!addRes.ok) {
                 throw new Error('add failed');

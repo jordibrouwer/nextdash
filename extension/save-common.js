@@ -200,6 +200,10 @@ async function postAddBookmark(serverUrl, pageId, name, url, category, note, tag
     body: JSON.stringify({
       page: parseInt(pageId, 10),
       bookmark,
+      // The server refuses a second copy on the same page outright and asks
+      // about one on another page; this is the answer to the asking, and the
+      // popup only sets it after the message has been shown once.
+      allowDuplicate: extras.allowDuplicate === true,
     })
   });
 }

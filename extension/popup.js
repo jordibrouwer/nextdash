@@ -2,6 +2,10 @@
 
 let confirmationCallback = null;
 let extDraftState = { icon: '', previewTitle: '', previewDesc: '', previewImage: '' };
+// Set once the "already saved elsewhere" message has been shown, so pressing
+// save again means "yes, a second copy". Cleared on a successful save and
+// whenever the popup's draft is reset.
+let extDuplicateAcknowledged = false;
 let extFormPreview = null;
 let extServerUrl = '';
 let extPageBookmarks = [];
@@ -401,6 +405,7 @@ async function loadSaveTab() {
         document.getElementById('bookmark-name').value = tab.title || '';
         document.getElementById('bookmark-url').value = tab.url || '';
         extDraftState = { icon: '', previewTitle: '', previewDesc: '', previewImage: '' };
+        extDuplicateAcknowledged = false;
         updateUrlGuard(tab.url || '');
         await loadPages();
         void autoFetchExtensionUrlMeta();
@@ -750,7 +755,7 @@ async function performSave(serverUrl, pageId, name, url, category, note, tags, s
             previewImage: extDraftState.previewImage || undefined,
             shortcut,
         };
-        const response = await postAddBookmark(serverUrl, pageId, name, url, category, note, tags, extras);
+        let response = await postAddBookmark(serverUrl, pageId, name, url, category, note, tags, extras);
         if (response.status === 409) {
             let body = {};
             try {
@@ -767,8 +772,37 @@ async function performSave(serverUrl, pageId, name, url, category, note, tags, s
                 );
                 return;
             }
+            if (body.error === 'duplicate_url') {
+                const where = [body.conflict?.pageName, body.conflict?.categoryName]
+                    .map((part) => String(part || '').trim())
+                    .filter(Boolean)
+                    .join(' · ');
+                // The popup has no room for a dialog, so the question is asked
+                // as a message and answered by pressing save a second time —
+                // which is the confirmation the dashboard shows a modal for.
+                if (!body.samePage && !extDuplicateAcknowledged) {
+                    extDuplicateAcknowledged = true;
+                    showMessage(
+                        where
+                            ? extT('msgDuplicateElsewhereWhere', 'Already saved on {where}. Save again to add a second copy.', { where })
+                            : extT('msgDuplicateElsewhere', 'Already saved somewhere else. Save again to add a second copy.'),
+                        'info'
+                    );
+                    return;
+                }
+                if (body.samePage) {
+                    showMessage(
+                        extT('msgDuplicateSamePage', 'This page already has this link.'),
+                        'error'
+                    );
+                    return;
+                }
+                response = await postAddBookmark(serverUrl, pageId, name, url, category, note, tags,
+                    { ...extras, allowDuplicate: true });
+            }
         }
         if (!response.ok) throw new Error('Failed to save bookmark');
+        extDuplicateAcknowledged = false;
 
         await persistLastSaveContext(serverUrl, pageId, category);
         const toastMessage = name

@@ -278,15 +278,24 @@ class DashboardInbox {
                     },
                 }),
             });
+            // A link already saved as a bookmark is not a failure of this
+            // promote — it is the reason the inbox entry can go. Counted apart
+            // from real errors below so the message can say which happened.
+            if (res.status === 409) {
+                await this.completePromote(item.id);
+                return { id: item.id, duplicate: true };
+            }
             if (!res.ok) throw new Error(`promote HTTP ${res.status}`);
             // Only clear the inbox entry once its bookmark exists, so a failure
             // leaves the link here to try again rather than losing it.
             await this.completePromote(item.id);
-            return item.id;
+            return { id: item.id, duplicate: false };
         }));
 
-        const promoted = results.filter((r) => r.status === 'fulfilled').length;
-        const failed = results.length - promoted;
+        const settled = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+        const duplicates = settled.filter((r) => r?.duplicate).length;
+        const promoted = settled.length - duplicates;
+        const failed = results.length - settled.length;
         this.clearChecked();
         if (this.isActiveView()) {
             await this.loadAndRender({ refresh: true });
@@ -299,6 +308,14 @@ class DashboardInbox {
                 this.t('dashboard.inboxPromotedCount', 'Promoted {count} links', { count: promoted }),
                 'success',
                 { duration: 3000 }
+            );
+        }
+        if (duplicates) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxPromoteDuplicate', '{count} were already saved as bookmarks',
+                    { count: duplicates }),
+                'info',
+                { duration: 4000 }
             );
         }
         if (failed) {

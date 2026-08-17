@@ -1183,6 +1183,10 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		Page     int      `json:"page"`
 		Bookmark Bookmark `json:"bookmark"`
+		// AllowDuplicate is the answer to the question the 409 asks: the client
+		// showed where the URL already lives and the user said save it anyway.
+		// Never honoured within a single page — see the check below.
+		AllowDuplicate bool `json:"allowDuplicate"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -1196,12 +1200,46 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingBookmarks := h.store.GetBookmarksByPage(request.Page)
+	// Where else this URL already lives.
+	//
+	// Two things were wrong here at once. It looked only at the page being saved
+	// to, so the same link filed on Work and then saved again from Personal went
+	// straight in — and the duplicates report found it afterwards, which is
+	// reporting instead of preventing. And it answered in plain text, where the
+	// shortcut conflict twenty lines below answers with the conflicting
+	// bookmark's name, URL and page; that detail is what lets the form say "you
+	// saved this on Work, under Docs" with a button on it.
+	//
+	// Still a 409, and still a refusal when it is the same page: two identical
+	// URLs on one page are a mistake every time. Across pages it is sometimes
+	// meant — the same document filed with work and with reference — so there
+	// the client asks, and comes back with allowDuplicate. samePage tells it
+	// which of the two it is looking at.
 	newKey := canonicalBookmarkURLKey(request.Bookmark.URL)
-	for _, existingBookmark := range existingBookmarks {
-		if canonicalBookmarkURLKey(existingBookmark.URL) == newKey {
-			http.Error(w, "Duplicate bookmark URL", http.StatusConflict)
-			return
+	if newKey != "" {
+		if existing := findBookmarkByURLKey(h.store, newKey); existing != nil {
+			samePage := existing.PageID == request.Page
+			if samePage || !request.AllowDuplicate {
+				logBookmarkSaveFailed(request.Page, "duplicate_url", r)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusConflict)
+				json.NewEncoder(w).Encode(map[string]any{
+					"error":    "duplicate_url",
+					"message":  "Bookmark URL already exists",
+					"samePage": samePage,
+					"conflict": map[string]any{
+						"name":     existing.Name,
+						"url":      existing.URL,
+						"pageId":   existing.PageID,
+						"pageName": pageNameForID(h.store, existing.PageID),
+						// The name, not only the id: Category holds an id, and the
+						// client cannot resolve one for a page it is not on.
+						"category":     existing.Category,
+						"categoryName": categoryNameForID(h.store, existing.PageID, existing.Category),
+					},
+				})
+				return
+			}
 		}
 	}
 
@@ -3363,4 +3401,45 @@ func (h *Handlers) fetchPageTitleSafeCtx(ctx context.Context, urlStr string) str
 		return ""
 	}
 	return strings.Join(strings.Fields(title), " ")
+}
+
+// findBookmarkByURLKey returns the first bookmark anywhere holding this
+// canonical URL. GetAllBookmarks fills PageID in and is read-cached, which the
+// page-by-page scan this replaced was not.
+func findBookmarkByURLKey(store Store, key string) *Bookmark {
+	if key == "" {
+		return nil
+	}
+	for _, bookmark := range store.GetAllBookmarks() {
+		if canonicalBookmarkURLKey(bookmark.URL) == key {
+			found := bookmark
+			return &found
+		}
+	}
+	return nil
+}
+
+// categoryNameForID is the category's name on that page, or "" when the
+// bookmark has no category or the category has since been removed.
+func categoryNameForID(store Store, pageID int, categoryID string) string {
+	if strings.TrimSpace(categoryID) == "" {
+		return ""
+	}
+	for _, category := range store.GetCategoriesByPage(pageID) {
+		if category.ID == categoryID {
+			return category.Name
+		}
+	}
+	return ""
+}
+
+// pageNameForID is the page's name, or "" when it has gone. The client prints it
+// beside the category, so an id would be no use to it.
+func pageNameForID(store Store, pageID int) string {
+	for _, page := range store.GetPages() {
+		if page.ID == pageID {
+			return page.Name
+		}
+	}
+	return ""
 }

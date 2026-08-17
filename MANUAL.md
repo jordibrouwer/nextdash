@@ -499,7 +499,14 @@ The first visit may show a short intro modal. Replay it from **Config → Behavi
 
 ### ♻️ Duplicate URLs
 
-nextDash warns when a URL already exists on the same page (canonical match: trailing slash, hash, host letter-case, and default ports are ignored — e.g. `https://x` ≡ `https://x:443`). You can still save anyway in the extension or modal when needed. Use **`:duplicate`** in search or the Health view to find duplicates across all pages. Imports **skip** duplicates and show a preview: e.g. **12 new, 3 conflicts (skipped)**.
+nextDash checks for a URL you already have **everywhere**, not only on the page you are saving to (canonical match: trailing slash, hash, host letter-case, and default ports are ignored — e.g. `https://x` ≡ `https://x:443`). The two cases are answered differently, because they are different mistakes:
+
+- **Same page** — refused. Two identical rows on one page are never what anyone meant.
+- **Another page** — you are asked, and told where it already is: *"You already saved this on Work · Docs"*, with the existing bookmark as a link so you can go and look. **Save anyway** files the second copy; the same document filed with work and with reference is a real thing to want. The URL field says so while you type, too, before you have named or filed anything.
+
+Both the add form and quick add ask this. The **extension** says where the link already lives and saves a second copy if you press save again. Moving a bookmark between pages is unaffected — a move is an add and a delete, which is not the same as a duplicate.
+
+Use **`:duplicate`** in search or the Health view to find duplicates already in place across all pages. Imports **skip** duplicates and show a preview: e.g. **12 new, 3 conflicts (skipped)**.
 
 ---
 

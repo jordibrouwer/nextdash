@@ -1636,11 +1636,27 @@ class DashboardInlineEdit {
         }
 
         try {
-            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmarks/add', {
+            const post = (allowDuplicate) => (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmarks/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ page: pageId, bookmark }),
+                body: JSON.stringify({ page: pageId, bookmark, allowDuplicate: Boolean(allowDuplicate) }),
             });
+            let response = await post(false);
+            // Same question the bookmark form and quick add ask: the link is
+            // already filed somewhere else, and a second copy is sometimes the
+            // point. Declining leaves the form as it was rather than erroring.
+            if (response.status === 409) {
+                const raw = await response.text().catch(() => '');
+                const conflict = window.DuplicateBookmarkPrompt?.parse(raw);
+                if (conflict && !conflict.samePage) {
+                    if (!(await window.DuplicateBookmarkPrompt.confirmSecondCopy(conflict.bookmark))) {
+                        d.showNotification(
+                            window.DuplicateBookmarkPrompt.locationMessage(conflict.bookmark), 'info');
+                        return;
+                    }
+                    response = await post(true);
+                }
+            }
             if (!response.ok) {
                 throw new Error(d.formatDashboardLabel('errorCreatingBookmark', {}, 'Could not create bookmark.'));
             }
@@ -2225,7 +2241,10 @@ class DashboardInlineEdit {
             const addRes = await dashFetch('/api/bookmarks/add', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ page: targetPageId, bookmark: { ...bookmarkState } }),
+                // allowDuplicate: a move is an add followed by a delete, so
+                // between the two the URL is on both pages by design. Without
+                // this the cross-page duplicate check would refuse every move.
+                body: JSON.stringify({ page: targetPageId, bookmark: { ...bookmarkState }, allowDuplicate: true }),
             });
             if (!addRes.ok) {
                 let message = 'Failed to save target page bookmarks.';
