@@ -2296,13 +2296,40 @@ class DashboardConfig {
         return [...byId.values()];
     }
 
+    /**
+     * What a field is currently set to, as text — for the search, and as the
+     * line under its title in the results.
+     *
+     * Searching only names and keywords answers "where is the check timeout"
+     * and not "which setting is on 8099" or "what did I set to Monitor", which
+     * is the question you have when something behaves unexpectedly and you do
+     * not know what it is called.
+     */
+    settingsJumpValueText(field) {
+        if (!field) return '';
+        const value = this.dash?.settings?.[field];
+        if (value === undefined || value === null || value === '') return '';
+        if (typeof value === 'boolean') {
+            return value ? this.t('config.on', 'On') : this.t('config.off', 'Off');
+        }
+        if (typeof value === 'number') return String(value);
+        if (typeof value === 'string') return value.length > 60 ? `${value.slice(0, 57)}…` : value;
+        return '';
+    }
+
     filterSettingsJumpEntries(query) {
         const q = String(query || '').trim().toLowerCase();
-        const all = this.getSettingsJumpEntries();
+        const all = this.getSettingsJumpEntries().map((entry) => {
+            const value = entry.kind === 'field' ? this.settingsJumpValueText(entry.field) : '';
+            return value ? { ...entry, value } : entry;
+        });
         if (!q) return all;
         // Keywords are matched but never shown, so a setting is reachable by
-        // the word people look for as well as the one it is labelled with.
-        return all.filter((e) => `${e.title} ${e.subtitle} ${e.keywords || ''}`.toLowerCase().includes(q));
+        // the word people look for as well as the one it is labelled with. The
+        // value is matched *and* shown: finding a setting by what it says is
+        // only useful if the result then confirms it.
+        return all.filter((e) => `${e.title} ${e.subtitle} ${e.keywords || ''} ${e.value || ''}`
+            .toLowerCase().includes(q));
     }
 
     isSettingsJumpOpen() {
@@ -2328,7 +2355,9 @@ class DashboardConfig {
                     role="option" aria-selected="${i === this._settingsJumpSelected ? 'true' : 'false'}"
                     data-settings-jump-index="${i}">
                     <span class="config-settings-jump-result-title">${esc(entry.title)}</span>
-                    <span class="config-settings-jump-result-sub">${esc(entry.subtitle)}</span>
+                    <span class="config-settings-jump-result-sub">${esc(entry.subtitle)}${entry.value
+                        ? ` · ${esc(entry.value)}`
+                        : ''}</span>
                 </li>`).join('')}
         </ul>`;
     }
@@ -9041,11 +9070,42 @@ class DashboardConfig {
         ));
     }
 
+    /**
+     * Which settings do not follow the rule the rest of them follow.
+     *
+     * With "Keep settings on this device only" off, every setting is shared, so
+     * saying so on each row would be noise. With it on, most settings become
+     * local to this browser — but seven of them stay server-wide by design
+     * (see GLOBAL_SERVER_SETTING_KEYS in device-settings-merge.js), and those
+     * are exactly the ones that surprise: the font or the favicon changing on
+     * the other machine when nothing else did. The switch itself is always
+     * local, whichever way it is set.
+     */
+    fieldScopeNote(field) {
+        const deviceMode = window.DeviceSettingsMerge?.isDeviceSpecificEnabled?.() === true;
+        if (field === 'deviceSpecificSettings') {
+            return { label: this.t('config.scopeThisDevice', 'this device'),
+                title: this.t('config.scopeThisDeviceHint', 'Kept in this browser, whichever way it is set.') };
+        }
+        if (!deviceMode) return null;
+        const global = window.DeviceSettingsMerge?.GLOBAL_SERVER_SETTING_KEYS || [];
+        if (!global.includes(field)) return null;
+        return {
+            label: this.t('config.scopeAllDevices', 'all devices'),
+            title: this.t('config.scopeAllDevicesHint',
+                'Stays on the server even while settings are kept per device, so it is the same everywhere.'),
+        };
+    }
+
     /** ℹ + ↺ affordances shown after a control, based on the field's metadata. */
     renderFieldAffordances(field, val) {
         const esc = (v) => this.dash.escapeHtml(v);
         const meta = this.fieldMeta(field);
         let out = '';
+        const scope = this.fieldScopeNote(field);
+        if (scope) {
+            out += `<span class="config-field-scope" title="${esc(scope.title)}">${esc(scope.label)}</span>`;
+        }
         // Only where there is something to say. The button was drawn from the
         // presence of an info *reference*, and ten of those pointed at locale
         // keys nobody had written — so the ℹ opened a dialog with an empty
@@ -11928,6 +11988,7 @@ class DashboardConfig {
                     ${locked ? '' : `
                     <button type="button" class="config-btn config-btn--small" data-page-move="up" data-id="${esc(p.id)}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                     <button type="button" class="config-btn config-btn--small" data-page-move="down" data-id="${esc(p.id)}" ${i === pages.length - 1 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
+                    <button type="button" class="config-btn config-btn--small" data-page-duplicate="${esc(p.id)}" title="${esc(this.t('config.pageDuplicateHint', 'Copy this page — with or without its bookmarks'))}">${esc(this.t('config.pageDuplicate', 'Duplicate'))}</button>
                     <button type="button" class="config-btn config-btn--small config-btn--danger" data-page-delete="${esc(p.id)}" ${isFirst ? 'disabled title="' + esc(this.t('config.pageDeleteFirstBlocked', 'The first page cannot be deleted')) + '"' : ''}>${esc(this.t('config.backupDelete', 'Delete'))}</button>
                 </div>
             </li>`;
@@ -11973,6 +12034,9 @@ class DashboardConfig {
         });
         const addBtn = container.querySelector('[data-page-add]');
         if (addBtn) addBtn.addEventListener('click', () => void this.addPage());
+        container.querySelectorAll('[data-page-duplicate]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.duplicatePage(Number(btn.getAttribute('data-page-duplicate'))));
+        });
         container.querySelectorAll('[data-page-delete]').forEach((btn) => {
             btn.addEventListener('click', () => void this.deletePage(Number(btn.getAttribute('data-page-delete'))));
         });
@@ -12007,6 +12071,158 @@ class DashboardConfig {
         pages.push(newPage);
         await this.savePages();
         this.repaintPtBody();
+    }
+
+    /**
+     * Copy a page: its categories always, its bookmarks if you say so.
+     *
+     * Setting up a page per project or per client meant recreating the same six
+     * categories by hand every time. The categories are the structure and are
+     * always worth copying; the bookmarks are the content, and whether you want
+     * them is the actual question — so it is asked rather than assumed.
+     *
+     * Read from the server rather than from the in-memory mirror: that mirror
+     * belongs to the page on screen, and duplicating a page you are not looking
+     * at would otherwise copy the wrong one.
+     */
+    async duplicatePage(id) {
+        const pageId = Number(id);
+        const source = (this.dash.pages || []).find((p) => Number(p.id) === pageId);
+        if (!source) return;
+
+        // Two questions, in the order they matter: whether to copy at all, and
+        // then whether the content comes with the structure. The modal's confirm
+        // is a yes/no, so a single dialog could not offer three answers without
+        // making Cancel mean "categories only" — which is not what Cancel means.
+        const proceed = await this.confirmAction(
+            this.t('config.pageDuplicateBody',
+                'Copy this page, with its categories? You are asked about the bookmarks next.'),
+            { confirmLabel: this.t('config.pageDuplicate', 'Duplicate') }
+        );
+        if (!proceed) return;
+        const withBookmarks = await this.confirmAction(
+            this.t('config.pageDuplicateAskBookmarks',
+                'Copy the bookmarks too? Choosing no gives you the same categories, empty.'),
+            { confirmLabel: this.t('config.pageDuplicateWith', 'With bookmarks') }
+        ) === true;
+
+        const pages = this.dash.pages || [];
+        const maxId = pages.length ? Math.max(...pages.map((p) => Number(p.id) || 0)) : 0;
+        const newId = maxId + 1;
+        const name = DashboardConfig.uniqueNameFrom(
+            this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
+            pages.map((p) => p.name)
+        );
+        const copy = { ...source, id: newId, name };
+
+        try {
+            const [bmRes, catRes] = await Promise.all([
+                fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`),
+                fetch(`/api/categories?page=${encodeURIComponent(pageId)}`),
+            ]);
+            const sourceBookmarks = bmRes.ok ? await bmRes.json() : [];
+            const sourceCategories = catRes.ok ? await catRes.json() : [];
+
+            pages.push(copy);
+            if (!await this.savePages()) return;
+
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            if (Array.isArray(sourceCategories) && sourceCategories.length) {
+                await fetcher(`/api/categories?page=${encodeURIComponent(newId)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sourceCategories),
+                });
+            }
+            if (withBookmarks && Array.isArray(sourceBookmarks) && sourceBookmarks.length) {
+                // Shortcuts are unique per page in practice but not enforced
+                // across a copy, and a duplicated check history would be a lie
+                // about a URL this copy has never checked itself.
+                const copies = sourceBookmarks.map((bm) => ({
+                    ...bm,
+                    pageId: newId,
+                    lastChecked: 0,
+                    lastError: '',
+                    brokenSince: 0,
+                    openCount: 0,
+                    lastOpened: 0,
+                }));
+                await fetcher(`/api/bookmarks?page=${encodeURIComponent(newId)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(copies),
+                });
+            }
+            this.notify(this.t('config.pageDuplicated', 'Page duplicated'), 'success');
+        } catch {
+            this.notify(this.t('config.pageDuplicateFailed', 'Could not duplicate this page'), 'error');
+        }
+        this.repaintPtBody();
+        void this.dash.data?.fetchAndStoreDataRevision?.();
+    }
+
+    /**
+     * Copy a category on the page being edited, optionally with its bookmarks.
+     *
+     * The settings a category carries — its width, its icon, its sort — are the
+     * thing worth copying; recreating them by hand is how a "same but for
+     * staging" category ends up subtly different from the one it was modelled
+     * on. A fresh id, because two categories sharing one would be the same
+     * category twice over.
+     */
+    async duplicateCategory(index) {
+        const list = this._categories || [];
+        const source = list[Number(index)];
+        if (!source) return;
+
+        const withBookmarks = await this.confirmAction(
+            this.t('config.categoryDuplicateAsk',
+                'Copy this category and its settings. Copy the bookmarks in it as well?'),
+            { confirmLabel: this.t('config.pageDuplicateWith', 'With bookmarks'), danger: false }
+        );
+        if (withBookmarks === null || withBookmarks === undefined) return;
+
+        const id = `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+        const name = DashboardConfig.uniqueNameFrom(
+            this.t('config.pageDuplicateName', '{name} copy').replace('{name}', source.name || ''),
+            list.map((c) => c.name)
+        );
+        list.splice(Number(index) + 1, 0, { ...source, id, name });
+        this.repaintPtBody();
+        if (!await this.saveCategories(this._catPageId)) return;
+
+        if (withBookmarks === true) {
+            const pageId = this._catPageId;
+            try {
+                const res = await fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`);
+                const bookmarks = res.ok ? await res.json() : [];
+                const copies = (bookmarks || [])
+                    .filter((bm) => String(bm.category || '') === String(source.id || ''))
+                    .map((bm) => ({
+                        ...bm,
+                        category: id,
+                        shortcut: '',
+                        lastChecked: 0,
+                        lastError: '',
+                        brokenSince: 0,
+                        openCount: 0,
+                        lastOpened: 0,
+                    }));
+                if (copies.length) {
+                    const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+                    await fetcher(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify([...(bookmarks || []), ...copies]),
+                    });
+                }
+            } catch {
+                this.notify(this.t('config.categoryDuplicateBookmarksFailed',
+                    'The category was copied, but its bookmarks were not'), 'error');
+            }
+        }
+        this.notify(this.t('config.categoryDuplicated', 'Category duplicated'), 'success');
+        void this.dash.data?.fetchAndStoreDataRevision?.();
     }
 
     async deletePage(id) {
@@ -12138,6 +12354,7 @@ class DashboardConfig {
                         ${locked ? '' : `
                         <button type="button" class="config-btn config-btn--small" data-cat-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
                         <button type="button" class="config-btn config-btn--small" data-cat-move="down" data-index="${i}" ${i === last ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>`}
+                        <button type="button" class="config-btn config-btn--small" data-cat-duplicate="${i}" title="${esc(this.t('config.categoryDuplicateHint', 'Copy this category — with or without its bookmarks'))}">${esc(this.t('config.pageDuplicate', 'Duplicate'))}</button>
                         <button type="button" class="config-btn config-btn--small config-btn--danger" data-cat-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
                     </div>
                 </li>`).join('');
@@ -12263,6 +12480,9 @@ class DashboardConfig {
             this._categories.push(spread ? { id, name, spread: true } : { id, name });
             this.repaintPtBody();
             void this.saveCategories(this._catPageId);
+        });
+        container.querySelectorAll('[data-cat-duplicate]').forEach((btn) => {
+            btn.addEventListener('click', () => void this.duplicateCategory(Number(btn.getAttribute('data-cat-duplicate'))));
         });
         container.querySelectorAll('[data-cat-delete]').forEach((btn) => {
             btn.addEventListener('click', async () => {
@@ -13479,7 +13699,14 @@ class DashboardConfig {
         if (b.pinned) {
             metaBits.push(`<span class="config-bm-pin-icon" aria-label="${esc(this.t('config.bookmarkPinnedAria', 'Pinned'))}" title="${esc(this.t('config.pinnedShort', 'Pinned'))}">📌</span>`);
         }
-        if (b.shortcut) metaBits.push(`<span class="config-bm-shortcut-pill">${esc(b.shortcut)}</span>`);
+        // Editable in place, and present even when empty: assigning a shortcut to
+        // fifty rows meant opening fifty modals, and an absent pill gave the
+        // keyboard nothing to aim at.
+        metaBits.push(b.shortcut
+            ? `<button type="button" class="config-bm-shortcut-pill" data-bm-inline="shortcut"
+                    title="${esc(this.t('config.bookmarkInlineHint', 'Double-click to edit'))}">${esc(b.shortcut)}</button>`
+            : `<button type="button" class="config-bm-shortcut-pill config-bm-shortcut-pill--empty" data-bm-inline="shortcut"
+                    title="${esc(this.t('config.bookmarkShortcutAdd', 'Add a shortcut'))}">+</button>`);
         if (ctx.isDuplicate) {
             metaBits.push(`<span class="config-bm-duplicate-badge">${esc(this.t('config.bookmarkDuplicateBadge', 'Duplicate'))}</span>`);
         }
@@ -13524,7 +13751,8 @@ class DashboardConfig {
                 ${feed?.renderIcon?.(iconSrc, esc) || this.renderBookmarkIcon(b)}
                 <div class="health-view-item-body">
                     <div class="health-view-item-head">
-                        <h3 class="health-view-item-title config-bm-title">${esc(title)}</h3>
+                        <h3 class="health-view-item-title config-bm-title" data-bm-inline="name"
+                            title="${esc(this.t('config.bookmarkInlineHint', 'Double-click to edit'))}">${esc(title)}</h3>
                     </div>
                     <p class="health-view-item-meta config-bm-meta-primary">
                         <span>${esc(domain)}</span>
@@ -13973,6 +14201,182 @@ class DashboardConfig {
             return { pageId, index, record: list[index], bookmark };
         } catch {
             return null;
+        }
+    }
+
+    /**
+     * Swap a field on a row for an input, and write it on Enter.
+     *
+     * Deliberately narrow: name and shortcut are single, short values with an
+     * obvious success state. Anything with a picker — category, tags, checking —
+     * already has its own popover or menu, and reimplementing those here would
+     * be a second copy of each.
+     */
+    startInlineBookmarkEdit(el) {
+        if (!el || el.dataset.editing === 'true') return;
+        const field = el.getAttribute('data-bm-inline');
+        const row = el.closest('.config-bm-row');
+        const key = row?.getAttribute('data-bm-key');
+        if (!key || !field) return;
+
+        const bookmark = this.findBookmarkByKey(key);
+        const current = field === 'shortcut'
+            ? String(bookmark?.shortcut || '')
+            : String(bookmark?.name || '');
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = `config-bm-inline-input config-bm-inline-input--${field}`;
+        input.value = current;
+        if (field === 'shortcut') input.maxLength = 5;
+        input.setAttribute('aria-label', field === 'shortcut'
+            ? this.t('config.bookmarkShortcutAdd', 'Add a shortcut')
+            : this.t('config.bookmarkNameLabel', 'Name'));
+
+        const original = el.innerHTML;
+        el.dataset.editing = 'true';
+        el.innerHTML = '';
+        el.appendChild(input);
+        input.focus();
+        input.select();
+
+        // A shortcut belongs to one bookmark; two claiming it is a conflict the
+        // health view already reports and nothing prevented at the point of
+        // typing. Said here, while the field is still open and the old value is
+        // still one Escape away, rather than as a red row found later.
+        let warning = null;
+        const conflictOf = (value) => (field === 'shortcut'
+            ? this.findShortcutOwner(value, key)
+            : null);
+        const showConflict = (owner) => {
+            if (!owner) {
+                warning?.remove();
+                warning = null;
+                input.classList.remove('is-invalid');
+                return;
+            }
+            input.classList.add('is-invalid');
+            if (!warning) {
+                warning = document.createElement('span');
+                warning.className = 'config-bm-inline-conflict';
+                warning.setAttribute('role', 'alert');
+                el.appendChild(warning);
+            }
+            warning.textContent = this.t('config.bookmarkShortcutTaken', '“{key}” is already {name}')
+                .replace('{key}', String(input.value || '').trim().toUpperCase())
+                .replace('{name}', owner.name || owner.url || '');
+        };
+
+        let done = false;
+        const cleanup = () => {
+            warning?.remove();
+            warning = null;
+        };
+        const restore = () => {
+            if (done) return;
+            done = true;
+            cleanup();
+            el.dataset.editing = 'false';
+            el.innerHTML = original;
+        };
+        const commit = async () => {
+            if (done) return;
+            const next = input.value.trim();
+            if (next === current) {
+                done = true;
+                cleanup();
+                el.dataset.editing = 'false';
+                el.innerHTML = original;
+                return;
+            }
+            const owner = conflictOf(next);
+            if (owner) {
+                // Refused rather than saved: two bookmarks sharing a shortcut
+                // means neither is reachable by it, so accepting the edit would
+                // break the one that already worked.
+                showConflict(owner);
+                input.focus();
+                input.select();
+                return;
+            }
+            done = true;
+            cleanup();
+            el.dataset.editing = 'false';
+            const saved = await this.saveInlineBookmarkField(key, field, next);
+            if (!saved) el.innerHTML = original;
+        };
+
+        input.addEventListener('input', () => showConflict(conflictOf(input.value.trim())));
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') { e.preventDefault(); void commit(); }
+            if (e.key === 'Escape') { e.preventDefault(); restore(); }
+        });
+        // Clicking away saves, the way the inline editor on the grid does: an
+        // abandoned edit that silently discarded what you typed is worse than
+        // one that keeps it, and Escape is right there for the other case. A
+        // conflicting value is the exception — it is put back, and said so,
+        // because saving it would break the bookmark that already holds the key.
+        input.addEventListener('blur', () => {
+            const next = input.value.trim();
+            const owner = next !== current ? conflictOf(next) : null;
+            if (owner) {
+                this.notify(this.t('config.bookmarkShortcutTaken', '“{key}” is already {name}')
+                    .replace('{key}', next.toUpperCase())
+                    .replace('{name}', owner.name || owner.url || ''), 'error');
+                restore();
+                return;
+            }
+            void commit();
+        });
+    }
+
+    /**
+     * The bookmark already using a shortcut, or null.
+     *
+     * Across every page, not just this one: the health report counts a conflict
+     * whenever two bookmarks anywhere share a key (shortcutCounts in
+     * handlers.go), and the search resolves a typed shortcut against the whole
+     * collection — so "free on this page" would be a different, wrong rule.
+     */
+    findShortcutOwner(value, exceptKey) {
+        const wanted = String(value || '').trim().toUpperCase();
+        if (!wanted) return null;
+        const all = this.dash.allBookmarks?.length ? this.dash.allBookmarks : (this.dash.bookmarks || []);
+        return all.find((bm) => {
+            if (!bm || String(bm.shortcut || '').trim().toUpperCase() !== wanted) return false;
+            return this.bookmarkKey(bm) !== exceptKey;
+        }) || null;
+    }
+
+    /** Write one field of one bookmark, then repaint the list from the server. */
+    async saveInlineBookmarkField(key, field, value) {
+        const record = await this.findBookmarkRecord(key);
+        if (!record) return false;
+        const { pageId, index } = record;
+        try {
+            const res = await fetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`);
+            const list = res.ok ? await res.json() : null;
+            if (!Array.isArray(list) || !list[index]) throw new Error('bookmark not found');
+            if (field === 'shortcut') {
+                list[index].shortcut = value.toUpperCase();
+            } else {
+                // An empty name would leave the row showing its URL with no way
+                // back to a name, so an emptied field keeps what was there.
+                if (!value) return false;
+                list[index].name = value;
+            }
+            const saved = await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(list),
+            });
+            if (!saved.ok) throw new Error(`HTTP ${saved.status}`);
+            await this.refreshBookmarksAfterWrite();
+            return true;
+        } catch {
+            this.notify(this.t('config.bookmarkSaveFailed', 'Could not save this bookmark'), 'error');
+            return false;
         }
     }
 
@@ -14539,6 +14943,19 @@ class DashboardConfig {
     bindBookmarkRows(root) {
         this.bookmarkContextMenu()?.bindList(root);
         const listRoot = root.querySelector('#config-bm-list') || root;
+        // Name and shortcut, edited where they are read. Going through the full
+        // form for a typo or a two-letter shortcut is four clicks and a dialog
+        // over the list you were reading; here the row stays in place, Enter
+        // saves and Escape puts the old value back.
+        listRoot.querySelectorAll('[data-bm-inline]').forEach((el) => {
+            const start = () => this.startInlineBookmarkEdit(el);
+            el.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); start(); });
+            // A shortcut pill is a button, so a single click is the natural way
+            // in; the title is a heading, where a click means "select the row".
+            if (el.getAttribute('data-bm-inline') === 'shortcut') {
+                el.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); start(); });
+            }
+        });
         listRoot.querySelectorAll('[data-feed-action="open"]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const key = btn.closest('.config-bm-row')?.getAttribute('data-bm-key');
@@ -16408,7 +16825,7 @@ class DashboardConfig {
 
         // axis: [what the rows are, what the bar measures]. The two callers count
         // different things, so neither the label nor the measure can be hardcoded.
-        const rankedList = (title, rows, emptyText, hint, axis, total) => {
+        const rankedList = (title, rows, emptyText, hint, axis, total, goto) => {
             if (!rows.length) {
                 return `
                 <div class="config-panel">
@@ -16421,9 +16838,19 @@ class DashboardConfig {
             const items = rows.map(([label, value]) => {
                 const n = Number(value) || 0;
                 const pct = Math.round((n / max) * 100);
+                // A row that names something the bookmark list can filter by
+                // becomes the way in: reading "dev — 42" and then finding those
+                // 42 by hand was the gap between knowing and doing. `goto` says
+                // which filter reproduces this row; lists without one stay plain
+                // text rather than looking clickable and doing nothing.
+                const target = goto ? `${goto}:${label}` : '';
+                const cell = target
+                    ? `<button type="button" class="config-dist-label config-dist-label--link" data-stats-goto="${esc(target)}"
+                            title="${esc(this.t('config.statsRowShow', 'Show these in Bookmarks'))}">${esc(label)}</button>`
+                    : `<span class="config-dist-label">${esc(label)}</span>`;
                 return `
                     <li class="config-dist-row">
-                        <span class="config-dist-label">${esc(label)}</span>
+                        ${cell}
                         <div class="config-bar config-bar--slim" role="img" aria-label="${esc(label)}: ${esc(String(n))}">
                             <span class="config-bar-fill" style="width:${pct}%"></span>
                         </div>
@@ -16471,7 +16898,7 @@ class DashboardConfig {
             + rankedList(this.t('config.statsTopTags', 'Most used tags'), s.topTags,
                 this.t('config.noTagsYet', 'No tags yet.'), '',
                 [this.t('config.statsAxisTag', 'Tag'), this.t('config.statsAxisBookmarks', 'Bookmarks')],
-                totals.topTags)
+                totals.topTags, 'tag')
             // 'never' is the cleanup filter that reproduces this list in full,
             // so the panel can hand off the rows it could not show.
             + plainList(this.t('config.statsNeverOpenedTitle', 'Never opened'), s.neverOpenedList,
@@ -18137,6 +18564,31 @@ class DashboardConfig {
                 this.openConfigView('bookmarks');
             });
         });
+        // A statistics row that names something the bookmark list can filter by
+        // hands off to it, the way the cleanup panel already does. Same reset of
+        // the other filters, so what lands is the row you clicked and not that
+        // row narrowed by whatever an earlier visit left behind.
+        container.querySelectorAll('[data-stats-goto]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const raw = btn.getAttribute('data-stats-goto') || '';
+                const split = raw.indexOf(':');
+                const kind = split < 0 ? '' : raw.slice(0, split);
+                const value = split < 0 ? '' : raw.slice(split + 1);
+                if (!kind || !value) return;
+
+                this.bmCleanupFilter = '';
+                this.bmQuery = '';
+                this.bmPageFilter = '';
+                this.bmCategoryFilter = '';
+                this.bmTagFilter = kind === 'tag' ? [String(value).toLowerCase()] : [];
+                this.bmSelected.clear();
+                this.resetBookmarkVisibleLimit();
+                this._bmDuplicateUrls = null;
+                this._trackAction('stats-goto', { kind });
+                this.openConfigView('bookmarks');
+            });
+        });
+
         const scopeSelect = container.querySelector('[data-stats-scope]');
         if (scopeSelect) {
             scopeSelect.addEventListener('change', () => {

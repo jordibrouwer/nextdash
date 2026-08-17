@@ -4968,3 +4968,83 @@ body[data-layout-version="modern"] .config-backup-row {
 .config-maint-hint {
     margin-top: 4px;
 }
+
+/* ── Inline edits and scope marks in the bookmark list ──────────────────────
+   Name and shortcut are edited where they are read: the row keeps its place,
+   Enter saves, Escape puts the old value back. The empty shortcut pill is
+   deliberately visible — assigning one to fifty rows used to mean fifty
+   modals, and an absent pill gave the pointer nothing to aim at. */
+.config-bm-inline-input {
+    font: inherit;
+    color: var(--text-primary);
+    background: var(--background-primary);
+    border: 1px solid var(--accent-primary);
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    min-width: 4rem;
+    max-width: 100%;
+}
+
+.config-bm-inline-input--name {
+    width: min(28rem, 100%);
+}
+
+.config-bm-inline-input--shortcut {
+    width: 4.5rem;
+    text-transform: uppercase;
+}
+
+button.config-bm-shortcut-pill {
+    font: inherit;
+    cursor: pointer;
+}
+
+.config-bm-shortcut-pill--empty {
+    opacity: 0.45;
+}
+
+.config-bm-shortcut-pill--empty:hover {
+    opacity: 1;
+}
+
+/* Which settings do not follow the rule the rest follow — see fieldScopeNote. */
+.config-field-scope {
+    margin-left: 0.35rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-secondary);
+    color: var(--text-tertiary);
+    font-size: 0.65rem;
+    white-space: nowrap;
+}
+
+/* A statistics row that hands off to the list it describes. */
+.config-dist-label--link {
+    border: 0;
+    background: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.config-dist-label--link:hover {
+    color: var(--accent-primary);
+    text-decoration: underline;
+}
+
+/* The shortcut a row is trying to take, and who already has it. Shown while the
+   field is open — a conflict found later is a red row in Health; a conflict
+   found here is one Escape away from not happening. */
+.config-bm-inline-input.is-invalid {
+    border-color: var(--accent-error);
+}
+
+.config-bm-inline-conflict {
+    display: inline-block;
+    margin-left: 0.4rem;
+    color: var(--accent-error);
+    font-size: 0.72rem;
+    white-space: nowrap;
+}
