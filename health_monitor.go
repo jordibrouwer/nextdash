@@ -132,6 +132,7 @@ func (h *Handlers) StartHealthMonitorScheduler(stop <-chan struct{}) {
 // any more, without dropping one still in use just because of a redirect.
 func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, known map[string]bool, liveHosts map[string]struct{}) {
 	history := h.readAllHealthHistory()
+	softNotFound := softNotFoundEnabled(h.store.GetSettings())
 	known = map[string]bool{}
 	liveHosts = map[string]struct{}{}
 	seen := map[string]bool{}
@@ -178,7 +179,7 @@ func (h *Handlers) dueMonitorTargets(now time.Time) (targets []monitorTarget, kn
 				name:     bm.Name,
 				pageID:   page.ID,
 				interval: interval,
-				expect:   expectationFor(bm),
+				expect:   expectationFor(bm).withSoftNotFound(softNotFound),
 				muted:    bm.NotifyMuted,
 			})
 		}
@@ -219,7 +220,30 @@ func (h *Handlers) runDueMonitors() {
 		mu       sync.Mutex
 		outcomes = make([]outcome, 0, len(targets))
 		sem      = make(chan struct{}, monitorMaxConcurrentPings)
+		// One in-flight check per host. Twenty bookmarks on one domain used to
+		// arrive as twenty simultaneous requests from the same address, which is
+		// how a well-behaved dashboard looks like a small flood to the server it
+		// is watching — and a rate limiter answering 429 would be recorded as
+		// twenty outages we caused ourselves. The sweep's own cap still bounds
+		// the total; this only keeps one host from being hit by all of it.
+		hostSem   = map[string]chan struct{}{}
+		hostSemMu sync.Mutex
 	)
+
+	hostGate := func(rawURL string) chan struct{} {
+		host := monitorHostKey(rawURL)
+		if host == "" {
+			return nil
+		}
+		hostSemMu.Lock()
+		defer hostSemMu.Unlock()
+		gate, ok := hostSem[host]
+		if !ok {
+			gate = make(chan struct{}, 1)
+			hostSem[host] = gate
+		}
+		return gate
+	}
 
 	for _, target := range targets {
 		wg.Add(1)
@@ -227,6 +251,10 @@ func (h *Handlers) runDueMonitors() {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
+			if gate := hostGate(t.url); gate != nil {
+				gate <- struct{}{}
+				defer func() { <-gate }()
+			}
 
 			result := h.pingURLExpecting(ctx, t.url, t.expect)
 			// A failure is confirmed before it is believed. Same goroutine, so
@@ -360,8 +388,7 @@ func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScan
 				if !ok {
 					continue
 				}
-				current[i].LastChecked = update.LastScanned
-				current[i].LastError = update.Error
+				setBookmarkCheckResult(&current[i], update.LastScanned, update.Error)
 				result := drift[canonicalBookmarkURLKey(current[i].URL)]
 				if result.CertHost != "" {
 					current[i].CertHost = result.CertHost
@@ -374,4 +401,16 @@ func (h *Handlers) mirrorMonitorResultsToBookmarks(updates map[string]HealthScan
 			log.Printf("health-monitor: failed to update bookmarks on page %d: %v", page.ID, err)
 		}
 	}
+}
+
+// monitorHostKey is the host a check will hit, lowercased. Empty when the URL
+// cannot be parsed, which means "no gate" rather than "one shared gate": an
+// unparseable URL is going to fail immediately anyway, and queueing all of them
+// behind each other would serialise the failures for no gain.
+func monitorHostKey(raw string) string {
+	parsed, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || parsed.Hostname() == "" {
+		return ""
+	}
+	return strings.ToLower(parsed.Hostname())
 }

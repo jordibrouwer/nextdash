@@ -82,10 +82,20 @@ async function open(page, body = report(), filter = 'monitored') {
 }
 
 test.describe('collection health trend', () => {
-    test('the header charts the trend and names the change', async ({ page }) => {
+    test('the tile row carries the trend and the header names the change', async ({ page }) => {
         await open(page);
 
-        await expect(page.locator('.health-view-trend-chart')).toBeVisible();
+        // The chart lives in its dialog now; the row shows the shape of it in the
+        // space the tiles already take, so nothing is pushed below the fold.
+        await expect(page.locator('.health-view-tile--trend')).toBeVisible();
+        await expect(page.locator('.health-view-tile-spark')).toBeVisible();
+        await expect(page.locator('.health-view-trend-chart')).toHaveCount(0);
+
+        // Either way in opens the same chart, with its series picker.
+        await page.locator('.health-view-tile--trend').click();
+        await expect(page.locator('.health-trend-modal .health-view-trend-chart')).toBeVisible({ timeout: 10_000 });
+        await page.keyboard.press('Escape');
+
         const delta = page.locator('.health-view-trend-delta');
         await expect(delta).toHaveClass(/is-up/);
         // 60% → 82% across the window.
@@ -106,6 +116,8 @@ test.describe('collection health trend', () => {
 
         await expect(page.locator('.health-view-trend-delta')).toHaveCount(0);
         await expect(page.locator('.health-view-trend-chart')).toHaveCount(0);
+        // Nor the tile: one reading draws nothing, in either place.
+        await expect(page.locator('.health-view-tile--trend')).toHaveCount(0);
     });
 
     test('a report with no recorded history renders the header without a chart', async ({ page }) => {

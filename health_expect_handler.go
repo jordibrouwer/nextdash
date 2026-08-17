@@ -104,6 +104,7 @@ func (h *Handlers) SetBookmarkExpectations(w http.ResponseWriter, r *http.Reques
 		// next check, with no visible reason left to explain it.
 		if text == "" && status == "" && isContentFailure(bm.LastError) {
 			bm.LastError = ""
+			setBookmarkBrokenSince(bm, "", 0)
 		}
 		wasWatching := bm.WatchDrift
 		bm.WatchDrift = req.WatchDrift
@@ -270,6 +271,7 @@ func (h *Handlers) SetBookmarkExpectationsBulk(w http.ResponseWriter, r *http.Re
 				// visible reason left.
 				if bm.ExpectText == "" && bm.ExpectStatus == "" && isContentFailure(bm.LastError) {
 					bm.LastError = ""
+					setBookmarkBrokenSince(bm, "", 0)
 				}
 				changed++
 			}

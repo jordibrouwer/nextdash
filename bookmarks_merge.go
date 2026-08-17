@@ -65,6 +65,10 @@ func mergeOneBookmarkIntoKeeper(keeper *Bookmark, src Bookmark) {
 
 	if strings.TrimSpace(keeper.LastError) == "" && strings.TrimSpace(src.LastError) != "" {
 		keeper.LastError = strings.TrimSpace(src.LastError)
+		// The failure comes across with the age it already had, so merging two
+		// copies of a dead link does not reset how long it has been dead.
+		keeper.BrokenSince = src.BrokenSince
+		setBookmarkBrokenSince(keeper, keeper.LastError, src.LastChecked)
 	}
 }
 

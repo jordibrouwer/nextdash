@@ -81,6 +81,11 @@ type Bookmark struct {
 	// after WatchDrift is switched on. Empty means "no baseline yet", which reads
 	// as unknown rather than as drift.
 	DriftURL         string `json:"driftUrl,omitempty"`
+	// BrokenSince is when the current run of failures started, kept across
+	// checks so a link that died months ago does not read like one that broke
+	// this morning. Cleared the moment a check succeeds, so it is always "how
+	// long has it been failing", never "when did it last fail".
+	BrokenSince      int64  `json:"brokenSince,omitempty"`
 	DriftTitle       string `json:"driftTitle,omitempty"`
 	DriftFingerprint string `json:"driftFingerprint,omitempty"`
 	// DriftNoticed is what the last check found, as one of the kinds in
@@ -285,7 +290,9 @@ type Settings struct {
 	EnableSessionTips             bool                         `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
 	ShowShortcutTooltips          bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default on, opt-out in Config → Behavior or `:shortcuts off`)
 	ShowGridKeyLegend             bool                         `json:"showGridKeyLegend"`
-	ShortcutOpenMode              string                       `json:"shortcutOpenMode,omitempty"` // What typing a bookmark shortcut does: "enter" (default, Enter opens), "delay" (opens after a short pause with no further key), "instant" (opens the moment it matches). Empty reads as "enter", so no migration
+	ShortcutOpenMode              string                       `json:"shortcutOpenMode,omitempty"`
+	DetectSoftNotFound            bool                         `json:"detectSoftNotFound"`               // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
+	CertWarnDays                  int                          `json:"certWarnDays,omitempty"`           // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "enter" (default, Enter opens), "delay" (opens after a short pause with no further key), "instant" (opens the moment it matches). Empty reads as "enter", so no migration
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
 	// 0 means the built-in default (3s), which is what every install had before
 	// this was a choice. Clamped to 2–30 on save.
@@ -698,6 +705,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowShortcutTooltips:         false,
 			ShowGridKeyLegend:            true,
 			ShortcutOpenMode:             "enter",
+			DetectSoftNotFound:           true,
 			ColumnsPerRow:                3,
 			FontSize:                     "m",
 			ShowBackgroundDots:           true,
@@ -2480,6 +2488,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowShortcutTooltips:           false,
 			ShowGridKeyLegend:              true,
 			ShortcutOpenMode:               "enter",
+			DetectSoftNotFound:             true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",
 			ShowBackgroundDots:             true,
@@ -2938,6 +2947,16 @@ func (fs *FileStore) GetSettings() Settings {
 		}
 		if settings.HealthCheckTimeoutSeconds > 30 {
 			settings.HealthCheckTimeoutSeconds = 30
+		}
+	}
+	// Same shape: 0 means the built-in 30 days, anything else is held inside a
+	// range where a renewal reminder is still a reminder.
+	if settings.CertWarnDays != 0 {
+		if settings.CertWarnDays < certWarnDaysMin {
+			settings.CertWarnDays = certWarnDaysMin
+		}
+		if settings.CertWarnDays > certWarnDaysMax {
+			settings.CertWarnDays = certWarnDaysMax
 		}
 	}
 	settings.ServerLogRetentionHours = clampServerLogRetentionHours(settings.ServerLogRetentionHours)
@@ -3445,6 +3464,9 @@ type HealthIssue struct {
 	LastOpened   int64  `json:"lastOpened,omitempty"`
 	LastChecked  int64  `json:"lastChecked,omitempty"`
 	LastError    string `json:"lastError,omitempty"`
+	// BrokenSince is when this run of failures started, so the row can say how
+	// long it has been down rather than only that it is.
+	BrokenSince  int64  `json:"brokenSince,omitempty"`
 	PreviewTitle string `json:"previewTitle,omitempty"`
 	PreviewDesc  string `json:"previewDesc,omitempty"`
 	PreviewImage string `json:"previewImage,omitempty"`
@@ -3621,6 +3643,24 @@ type HealthHistoryFile struct {
 	GeneratedAt int64 `json:"generatedAt"`
 	// Samples maps canonical URL to samples in ascending time order.
 	Samples map[string][]HealthSample `json:"samples"`
+	// Days maps canonical URL to one summary per day, ascending, for the part
+	// of the history whose individual checks have been dropped. Raw samples are
+	// capped per URL — roughly a week on a five-minute monitor — so before this
+	// the "30 days" figure was computed over whatever survived that cap. Folding
+	// each day into a summary before dropping it costs a few bytes a day and
+	// makes the long windows mean what they say.
+	Days map[string][]HealthDay `json:"days,omitempty"`
+}
+
+// HealthDay is one URL's day, kept after its individual samples are gone.
+//
+// Keys are terse for the same reason HealthSample's are: this file is rewritten
+// on every monitor run.
+type HealthDay struct {
+	D int64 `json:"d"`           // Start of the day, Unix milliseconds, UTC
+	N int   `json:"n"`           // Checks counted (maintenance samples excluded, as in uptimeRatio)
+	U int   `json:"u"`           // How many of them succeeded
+	P int   `json:"p,omitempty"` // Mean response time in ms across the successful checks
 }
 
 // HealthTrendPoint is one day's summary of the whole collection.

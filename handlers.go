@@ -470,6 +470,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 
 	// One read serves every monitored row; buildMonitorStats derives the rest.
 	monitorHistory := h.readAllHealthHistory()
+	monitorDays := h.readAllHealthDays()
 	monitorNow := time.Now()
 	// Gathered while walking the bookmarks so the collection-wide view is built
 	// from the same samples, in the same pass.
@@ -760,7 +761,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			if bm.Monitor {
 				if key := canonicalBookmarkURLKey(bm.URL); key != "" {
 					samples := monitorHistory[key]
-					monitorStats = buildMonitorStats(samples, bm.MonitorIntervalMinutes, monitorNow)
+					monitorStats = buildMonitorStatsWithDays(samples, monitorDays[key], bm.MonitorIntervalMinutes, monitorNow)
 					// Collected here rather than re-read later: this loop already
 					// resolved the canonical key and the samples are in hand, so
 					// the collection-wide view costs no extra history read.
@@ -786,6 +787,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				LastOpened:             bm.LastOpened,
 				LastChecked:            bm.LastChecked,
 				LastError:              bm.LastError,
+				BrokenSince:            bm.BrokenSince,
 				PreviewTitle:           bm.PreviewTitle,
 				PreviewDesc:            bm.PreviewDesc,
 				PreviewImage:           bm.PreviewImage,
@@ -860,7 +862,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// Only the ones worth showing. A certificate with three months left is true
 	// but not news, and sending every host would grow the report by an entry per
 	// domain for something the UI would immediately filter out again.
-	report.Certificates = expiringCertificates(h.hostCertificates(), monitorNow)
+	report.Certificates = expiringCertificatesWith(h.hostCertificates(), monitorNow, certThresholdsFor(h.store.GetSettings()))
 
 	return report
 }
@@ -2558,16 +2560,14 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 	}
 
 	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
-		bookmark.LastChecked = time.Now().UnixMilli()
-		if strings.TrimSpace(req.Status) == "online" {
-			bookmark.LastError = ""
-		} else {
-			errMsg := strings.TrimSpace(req.Error)
-			if errMsg == "" {
-				errMsg = "Unreachable"
+		detail := ""
+		if strings.TrimSpace(req.Status) != "online" {
+			detail = strings.TrimSpace(req.Error)
+			if detail == "" {
+				detail = "Unreachable"
 			}
-			bookmark.LastError = errMsg
 		}
+		setBookmarkCheckResult(bookmark, time.Now().UnixMilli(), detail)
 		return nil
 	})
 	if !respondBookmarkMutationError(w, err) {
@@ -2679,7 +2679,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				continue
 			}
 
-			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm))
+			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
 			res.Tested++
 			if result.Status == "online" {
 				res.OnlineCount++
@@ -2749,8 +2749,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				if !ok {
 					continue
 				}
-				current[i].LastChecked = update.lastChecked
-				current[i].LastError = update.lastError
+				setBookmarkCheckResult(&current[i], update.lastChecked, update.lastError)
 				result := driftResults[key]
 				if result.CertHost != "" {
 					current[i].CertHost = result.CertHost
@@ -3084,6 +3083,11 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		NewURL         string `json:"newUrl"`
 		RefreshTitle   bool   `json:"refreshTitle"`
 		OneClick       bool   `json:"oneClick"`
+		// KeepOriginalInNote writes the address being replaced into the note.
+		// Used when the replacement is an archived copy: the capture is a
+		// reading of the page, not the page, and the original is what a later
+		// attempt to find it again starts from.
+		KeepOriginalInNote bool `json:"keepOriginalInNote"`
 		SuggestedTitle string `json:"suggestedTitle"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -3134,11 +3138,14 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	// outside MutateBookmarkAt because that holds the store write lock.
 	verified := PingResult{}
 	if updatedURL != "" && updatedURL != strings.TrimSpace(sourceBookmark.URL) {
-		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark))
+		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
 	}
 
 	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
 		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
+			if req.KeepOriginalInNote {
+				appendBookmarkNote(bookmark, "Was: "+strings.TrimSpace(bookmark.URL))
+			}
 			bookmark.URL = updatedURL
 			appliedURL = true
 		}
@@ -3153,18 +3160,16 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if appliedURL {
-			bookmark.LastChecked = time.Now().UnixMilli()
-			if verified.Status == "online" {
-				bookmark.LastError = ""
-			} else {
+			detail := ""
+			if verified.Status != "online" {
 				// The fix landed but the target still fails: keep the row red and say why,
 				// rather than reporting healthy on an unverified URL.
-				detail := strings.TrimSpace(verified.ErrorDetail)
+				detail = strings.TrimSpace(verified.ErrorDetail)
 				if detail == "" {
 					detail = "Unreachable"
 				}
-				bookmark.LastError = detail
 			}
+			setBookmarkCheckResult(bookmark, time.Now().UnixMilli(), detail)
 			// The URL just changed under this bookmark: whatever drift baseline was
 			// recorded belonged to the old page, so it must not be judged against it.
 			bookmark.DriftURL = ""

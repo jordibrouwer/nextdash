@@ -2049,6 +2049,7 @@ class DashboardConfig {
         language: ['language', 'locale', 'translation', 'nederlands', 'deutsch', 'français'],
         deviceSpecificSettings: ['device', 'sync', 'local'],
         inboxEnabled: ['inbox', 'triage', 'later'],
+        detectSoftNotFound: ['404', 'not found', 'rot', 'gone', 'dead'],
         pasteDestination: ['paste', 'clipboard', 'inbox'],
         pasteUrlQuickAdd: ['paste', 'clipboard', 'quick add'],
         columnsPerRow: ['columns', 'grid', 'layout'],
@@ -8251,6 +8252,8 @@ class DashboardConfig {
         showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
         // Search
         shortcutOpenMode: { info: ['shortcutOpenModeInfoTitle', 'shortcutOpenModeInfoMessage'], def: 'enter' },
+        detectSoftNotFound: { info: ['detectSoftNotFoundInfoTitle', 'detectSoftNotFoundInfoMessage'], def: true },
+        certWarnDays: { info: ['certWarnDaysInfoTitle', 'certWarnDaysInfoMessage'], def: 0 },
         includeFindersInSearch: { info: ['includeFindersInSearchInfoTitle', 'includeFindersInSearchInfoMessage'], def: false },
         enableFuzzySuggestions: { info: ['fuzzySuggestionsInfoTitle', 'fuzzySuggestionsInfoMessage'], def: false },
         fuzzySuggestionsStartWith: { info: ['fuzzySuggestionsStartWithInfoTitle', 'fuzzySuggestionsStartWithInfoMessage'], def: false },
@@ -8954,6 +8957,20 @@ class DashboardConfig {
                         opt(10, t('config.healthCheckTimeoutSeconds', '{n} seconds').replace('{n}', '10')),
                         opt(15, t('config.healthCheckTimeoutSeconds', '{n} seconds').replace('{n}', '15')),
                         opt(30, t('config.healthCheckTimeoutSeconds', '{n} seconds').replace('{n}', '30')),
+                    ] },
+                    // Costs one bounded body read per monitored check, which is
+                    // why it is a switch rather than always on — and why it sits
+                    // beside the timeout rather than among the display options.
+                    bool('detectSoftNotFound', 'config.detectSoftNotFoundLabel', 'Spot pages that answer 200 but say "not found"'),
+                    // One number, not three: "warn me a fortnight out" is
+                    // something people mean. The two tighter marks follow it in
+                    // the same proportion the built-in ladder uses.
+                    { field: 'certWarnDays', type: 'select', label: t('config.certWarnDaysLabel', 'Warn about certificates'), numeric: true, options: [
+                        opt(0, t('config.certWarnDaysDefault', 'Default (30 days ahead)')),
+                        opt(7, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '7')),
+                        opt(14, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '14')),
+                        opt(60, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '60')),
+                        opt(90, t('config.certWarnDaysAhead', '{n} days ahead').replace('{n}', '90')),
                     ] },
                 ],
             },

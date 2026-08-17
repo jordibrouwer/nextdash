@@ -245,10 +245,11 @@ test.describe('health dashboard view', () => {
         await openHealthView(page);
 
         const tiles = page.locator('.health-view-tile');
-        // Total, Healthy, Monitored, Broken, Content, Unchecked, Stale, Unused.
-        // The certificates tile is not here: it only appears when a certificate
-        // is actually near expiry.
-        await expect(tiles).toHaveCount(8);
+        // Total, Healthy, Monitored, Broken, Unchecked, Stale, Unused. Content
+        // has no rows in this fixture, and a backlog tile with nothing behind it
+        // is not drawn — the same rule Drift and Certificates have always
+        // followed.
+        await expect(tiles).toHaveCount(7);
         await expect(page.locator('[data-health-tile="broken"]')).toContainText('1');
         // Broken is the default filter, so its tile starts marked.
         await expect(page.locator('[data-health-tile="broken"]')).toHaveClass(/is-active/);
@@ -455,6 +456,9 @@ test.describe('health dashboard view', () => {
             'Refresh title',
             'Refresh favicon',
             'Find in Web Archive',
+            // The capture itself, and the offer to keep it: the listing above is
+            // for browsing, this is the way out of a link that is gone.
+            'Use the last archived copy…',
             // Same two the dashboard's right-click menu carries: a row here is a
             // bookmark like any other, and copying or sending one should not mean
             // going back to the dashboard first. The second names the copy rather
@@ -1058,30 +1062,37 @@ test.describe('health view — export, persistence and monitor discoverability',
         expect(retestHits).toBe(0);
     });
 
-    test('secondary filters reach through the More overflow menu', async ({ page }) => {
+    test('every filter is a pill in one scrolling row', async ({ page }) => {
         await openHealthView(page);
-        // Not pills of their own — the row wrapped onto a second line once
-        // Stale, Unused, Missing preview and Healthy were all pills alongside
-        // the core set, so they live behind "More" instead.
-        await expect(page.locator('.health-view-filter-group > [data-health-filter="stale"]')).toHaveCount(0);
-        await expect(page.locator('.health-view-filter-group > [data-health-filter="unused"]')).toHaveCount(0);
+        // They used to live behind a "More" menu, because the row wrapped onto a
+        // second line once Stale, Unused, Missing preview and Healthy were pills
+        // too. The row scrolls sideways now, so the menu is gone and nothing is
+        // a click away that could be in view.
+        await expect(page.locator('.health-view-filter-more-btn')).toHaveCount(0);
+        await expect(page.locator('.health-view-filter-group > [data-health-filter="stale"]')).toBeVisible();
+        await expect(page.locator('.health-view-filter-group > [data-health-filter="unused"]')).toBeVisible();
 
-        const moreBtn = page.locator('.health-view-filter-more-btn');
-        await expect(moreBtn).toBeVisible();
-        await moreBtn.click();
-        const overflowMenu = page.locator('.health-view-filter-overflow-menu');
-        await expect(overflowMenu).toBeVisible();
-        await expect(overflowMenu.locator('[data-health-filter="stale"]')).toBeVisible();
-        await expect(overflowMenu.locator('[data-health-filter="unused"]')).toBeVisible();
+        // One line, whatever the width: the strip scrolls rather than wrapping.
+        const rows = await page.locator('.health-view-filter-btn').evaluateAll(
+            (els) => [...new Set(els.map((el) => Math.round(el.getBoundingClientRect().top)))]);
+        expect(rows).toHaveLength(1);
 
-        await overflowMenu.locator('[data-health-filter="stale"]').click();
+        await page.locator('.health-view-filter-group > [data-health-filter="stale"]').click();
         expect(await page.evaluate(() => window.dashboardInstance.health.filter)).toBe('stale');
         await expect(page).toHaveURL(/hv_filter=stale/);
-        // The menu closes on selection (a render rebuilds it hidden), and the
-        // now-active filter gets its own pill outside the menu rather than
-        // staying reachable only behind "More".
-        await expect(page.locator('.health-view-filter-overflow-menu')).toBeHidden();
         await expect(page.locator('.health-view-filter-group > [data-health-filter="stale"].is-active')).toBeVisible();
+    });
+
+    test('a pill carries its count only when there is one', async ({ page }) => {
+        await openHealthView(page);
+        const counted = await page.locator('.health-view-filter-btn').evaluateAll((els) => els.map((el) => ({
+            label: el.textContent.replace(/\s+/g, ' ').trim(),
+            badge: el.querySelector('.health-view-filter-count')?.textContent || '',
+        })));
+        // "Content 0" is three characters wider than "Content" and says the same
+        // thing the missing number says.
+        expect(counted.every((c) => c.badge === '' || Number(c.badge) > 0)).toBe(true);
+        expect(counted.some((c) => c.badge !== '')).toBe(true);
     });
 
     test('Home and End jump to the first and last visible row', async ({ page }) => {
@@ -1229,8 +1240,10 @@ test.describe('health view — monitored tile', () => {
         const labels = await page.locator('.health-view-tile-label').allTextContents();
         // Content sits beside Broken: both are live failures, and it answers the
         // narrower "the host replied, but wrongly".
+        // Content is absent because this fixture has no content failures, not
+        // because it moved: a backlog tile is drawn only when it has rows.
         expect(labels.map((t) => t.trim())).toEqual(
-            ['Total', 'Healthy', 'Monitored', 'Broken', 'Content', 'Unchecked', 'Stale', 'Unused']
+            ['Total', 'Healthy', 'Monitored', 'Broken', 'Unchecked', 'Stale', 'Unused']
         );
     });
 
@@ -1291,6 +1304,40 @@ test.describe('health view — monitored tile', () => {
         await expect(page.locator('.health-view-tile--monitored')).toHaveClass(/health-view-tile--good/);
     });
 
+    test('the Broken tile counts what the Broken filter shows', async ({ page }) => {
+        await openHealthView(page);
+        const tile = Number(await page.locator('[data-health-tile="broken"] .health-view-tile-value').textContent());
+        const pill = await page.evaluate(() =>
+            (window.dashboardInstance.health._module || window.dashboardInstance.health).filterCount('broken'));
+        const rows = await page.evaluate(() => {
+            const h = window.dashboardInstance.health._module || window.dashboardInstance.health;
+            const issues = h.report?.issues || [];
+            return issues.filter((i) => h.matchesFilter(i, 'broken')).length;
+        });
+        // A monitored bookmark that is down carries the broken flag, so it is in
+        // the filter; the report counts it under monitorDownCount instead, which
+        // is why the tile used to read one lower than the pill beside it.
+        expect(tile).toBe(pill);
+        expect(tile).toBe(rows);
+    });
+
+    test('a problem with no rows behind it gets no tile at all', async ({ page }) => {
+        await openHealthView(page);
+        const tiles = await page.locator('.health-view-tile').evaluateAll((els) => els.map((el) => ({
+            label: el.querySelector('.health-view-tile-label')?.textContent?.trim() || '',
+            value: el.querySelector('.health-view-tile-value')?.textContent?.trim() || '',
+        })));
+        // Drift and Certificates have always worked this way; the rest kept
+        // showing a zero, which spent a quarter of the row saying "nothing here".
+        const backlogZeros = tiles.filter((t) => t.value === '0'
+            && !['Total', 'Healthy', 'Monitored', 'Trend'].includes(t.label));
+        expect(backlogZeros).toEqual([]);
+        // Total, Healthy and Monitored describe the collection rather than a
+        // backlog, so they stay whatever their number is.
+        expect(tiles.map((t) => t.label)).toContain('Total');
+        expect(tiles.map((t) => t.label)).toContain('Healthy');
+    });
+
     test('a zero count stays neutral rather than reading as a pass', async ({ page }) => {
         await page.route('**/api/bookmark-health**', async (route) => {
             const r = report();
@@ -1327,7 +1374,7 @@ test.describe('status grouping in the feed', () => {
         const titles = await page.locator('.health-view-status-group-title')
             .evaluateAll((els) => els.map((e) => e.textContent.trim()));
         expect(titles.map((t) => t.replace(/\d+$/, '').trim())).toEqual([
-            'Broken', 'Duplicates', 'Never checked', 'Stale', 'Unused', 'Healthy',
+            'Broken', 'Duplicates', 'Unchecked', 'Stale', 'Unused', 'Healthy',
         ]);
 
         // Counts render alongside the label, and the two "healthy" rows fold

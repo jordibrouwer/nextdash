@@ -54,7 +54,7 @@ func (h *Handlers) PingURL(w http.ResponseWriter, r *http.Request) {
 
 	expect := expectation{}
 	if bm, ok := h.findBookmarkByURL(urlParam); ok {
-		expect = expectationFor(bm)
+		expect = expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings()))
 	}
 	result := h.pingURLExpecting(r.Context(), urlParam, expect)
 	force := strings.EqualFold(r.URL.Query().Get("refresh"), "1") ||

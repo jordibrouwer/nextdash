@@ -62,6 +62,8 @@ class DashboardHealth {
          * filter, sort or search — or reloaded on purpose.
          */
         this._handledAnchors = new Map();
+        /** Group the list by site instead of by status; see groupFilteredIssues. */
+        this.groupByHost = false;
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
         this._loadPromise = null;
@@ -646,6 +648,31 @@ class DashboardHealth {
      * working on the flat array exactly as before.
      */
     groupFilteredIssues(issues) {
+        // One host taking everything behind it down produces a screen of rows
+        // that look like a screen of problems. Grouped by site they read as what
+        // they are — one outage, ten bookmarks — and the group heading carries
+        // the count so the scale is visible without counting rows. Works under
+        // every filter and sort, because "which site is this" does not depend on
+        // either.
+        if (this.groupByHost) {
+            const buckets = new Map();
+            issues.forEach((issue) => {
+                const host = this.formatUrlDisplay(issue?.url) || this.t('dashboard.healthNoHost', 'no address');
+                if (!buckets.has(host)) buckets.set(host, []);
+                buckets.get(host).push(issue);
+            });
+            return [...buckets.entries()]
+                // Worst first, like everything else here: the site with the most
+                // rows behind it is the one worth looking at.
+                .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
+                .map(([host, items]) => ({
+                    key: `host:${host}`,
+                    label: items.length > 1
+                        ? this.t('dashboard.healthHostGroup', '{host} — {count} bookmarks', { host, count: items.length })
+                        : host,
+                    items,
+                }));
+        }
         if (this.sort !== 'status' || (this.filter !== 'all' && this.filter !== 'monitored')) {
             return issues.length ? [{ key: 'flat', label: '', items: issues }] : [];
         }
@@ -1216,6 +1243,29 @@ class DashboardHealth {
     }
 
     /**
+     * How long this bookmark has been failing, for the rows that are.
+     *
+     * A monitor has carried "down for 3h 12m" for a while, read from its own
+     * outage record. Every other checked bookmark had nothing: one that died
+     * four months ago looked exactly like one that broke this morning, which is
+     * the difference between "fix this" and "this is gone". brokenSince is kept
+     * on the bookmark now, so the row can say it whichever mode it is in.
+     */
+    renderBrokenSince(issue) {
+        const since = Number(issue?.brokenSince) || 0;
+        if (!since || !String(issue?.lastError || '').trim()) return '';
+        // A monitor already says it, in its own strip and with its own record.
+        if (Number(issue?.monitorStats?.downSince) > 0) return '';
+        const label = this.t('dashboard.healthBrokenFor', 'failing for {duration}', {
+            duration: this.formatDuration(Date.now() - since),
+        });
+        const title = this.t('dashboard.healthBrokenSinceTitle', 'First failed on {date}', {
+            date: new Date(since).toLocaleString(),
+        });
+        return `<span class="health-view-item-broken-since" title="${this.escape(title)}">${this.escape(label)}</span>`;
+    }
+
+    /**
      * Open the bookmark, and record that it happened.
      *
      * The recording is the point: without it a bookmark opened from here stayed
@@ -1724,6 +1774,84 @@ class DashboardHealth {
         const url = String(issue?.url || '').trim();
         if (!url) return;
         window.open(`https://web.archive.org/web/*/${url}`, '_blank', 'noopener,noreferrer');
+    }
+
+    /**
+     * The last capture that worked, and the choice to keep it.
+     *
+     * "Find in Web Archive" opens a calendar of captures and leaves the reading
+     * to you — fine for browsing, no use to a bookmark that is gone. This asks
+     * the archive for the closest capture, says when it was taken, and offers to
+     * make it the bookmark's URL. What was a dead end becomes a decision.
+     */
+    async recoverFromArchive(issue) {
+        const key = this.issueKey(issue);
+        if (this._busyKeys.has(key)) return;
+        window.nextdashTrack?.('health:archive-recover');
+        this.closeAllMenus();
+        const d = this.dash;
+        const url = String(issue?.url || '').trim();
+        if (!url) return;
+
+        this._busyKeys.add(key);
+        this.syncRowBusy(key, true);
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetch(`/api/health/archive-snapshot?url=${encodeURIComponent(url)}`);
+            if (!res.ok) throw new Error(`archive HTTP ${res.status}`);
+            const snapshot = await res.json();
+            const snapshotUrl = String(snapshot?.url || '').trim();
+            if (!snapshot?.available || !snapshotUrl) {
+                d.showNotification(
+                    this.t('dashboard.healthArchiveNone', 'The Web Archive has no copy of this page'),
+                    'info'
+                );
+                return;
+            }
+
+            const taken = Number(snapshot.timestamp) || 0;
+            const when = taken
+                ? new Date(taken).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+                : this.t('dashboard.healthArchiveUnknownDate', 'an unknown date');
+            const keep = await this.confirm(
+                this.t('dashboard.healthArchiveFoundTitle', 'Use the archived copy?'),
+                this.t(
+                    'dashboard.healthArchiveFoundBody',
+                    'The Web Archive has a copy from {date}. Point this bookmark at it?\n\n{url}\n\nThe original address is kept in the note, so nothing is lost.',
+                    { date: when, url: snapshotUrl }
+                )
+            );
+            // Not keeping it is still an answer, and the capture is worth seeing.
+            if (!keep) {
+                window.open(snapshotUrl, '_blank', 'noopener,noreferrer');
+                return;
+            }
+
+            const applied = await fetcher('/api/health/auto-heal-apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pageId: issue.pageId,
+                    index: issue.index,
+                    newUrl: snapshotUrl,
+                    refreshTitle: false,
+                    keepOriginalInNote: true,
+                }),
+            });
+            if (!applied.ok) throw new Error(`apply HTTP ${applied.status}`);
+            await this.loadAndRender({ refresh: true });
+            d.updateHealthBadge?.();
+            d.showNotification(
+                this.t('dashboard.healthArchiveApplied', 'Now pointing at the archived copy from {date}', { date: when }),
+                'success',
+                { duration: 4000 }
+            );
+        } catch {
+            d.showNotification(this.t('dashboard.healthArchiveFailed', 'Could not reach the Web Archive'), 'error');
+        } finally {
+            this._busyKeys.delete(key);
+            this.syncRowBusy(key, false);
+        }
     }
 
     /**
@@ -2484,7 +2612,7 @@ class DashboardHealth {
             broken: this.t('dashboard.healthFilterBroken', 'Broken'),
             content: this.t('dashboard.healthFilterContent', 'Content'),
             duplicate: this.t('dashboard.healthFilterDuplicates', 'Duplicates'),
-            unchecked: this.t('dashboard.healthFilterUnchecked', 'Never checked'),
+            unchecked: this.t('dashboard.healthFilterUnchecked', 'Unchecked'),
             monitored: this.t('dashboard.healthFilterMonitored', 'Monitored'),
             stale: this.t('dashboard.healthFilterStale', 'Stale'),
             unused: this.t('dashboard.healthFilterUnused', 'Unused'),
@@ -2565,40 +2693,112 @@ class DashboardHealth {
     }
 
     /**
-     * The explanation line under the toolbar, with the trend chart beside it.
+     * The explanation line under the toolbar.
      *
-     * The chart used to sit at the end of the toolbar's button row, where it got
-     * whatever sliver the buttons left over. This row is the whitespace it was
-     * always meant to fill: the note is one or two lines of text and leaves the
-     * right half empty, so the chart takes that half at a readable size instead
-     * of being squeezed between a button and the help icon.
+     * The trend chart used to sit beside it, which cost a row of its own before
+     * the list — worst on a narrow screen, where the two stack and the chart
+     * takes the full width. It lives in the tile row now, as a sparkline in the
+     * space the tiles already occupy, and opens full size when asked. The view is
+     * a work queue; the direction of travel is a glance, not a panel.
      */
     renderFilterNote() {
         const text = this.filterExplanation();
-        const chart = this.renderTrendChart();
-        if (!text && !chart) return null;
+        if (!text) return null;
 
         const row = document.createElement('div');
         row.className = 'health-view-note-row';
+        const note = document.createElement('p');
+        // Shared class styles it; the view-specific one stays as this view's hook.
+        note.className = 'view-filter-note health-view-filter-note';
+        note.textContent = text;
+        row.appendChild(note);
+        return row;
+    }
 
-        if (text) {
-            const note = document.createElement('p');
-            // Shared class styles it; the view-specific one stays as this view's hook.
-            note.className = 'view-filter-note health-view-filter-note';
-            note.textContent = text;
-            row.appendChild(note);
-        }
-        if (chart) {
-            const holder = document.createElement('div');
-            holder.className = 'health-view-trend-holder';
-            holder.innerHTML = chart;
+    /**
+     * The trend as a tile: current reading, and the shape of the last 90 days.
+     *
+     * Deliberately not a filter — there is no "trend" state a bookmark can be in
+     * — so it is a button that opens the full chart rather than one that changes
+     * the list. Returns '' when there is not enough history to draw, in which
+     * case the tile row simply has one fewer cell.
+     */
+    renderTrendTile() {
+        const points = this.trendPoints();
+        if (points.length < 3) return '';
+        const series = this.activeTrendSeries();
+        const values = points.map((p) => this.trendPercent(p, series));
+        const known = values.filter((v) => v !== null);
+        if (known.length < 3) return '';
+
+        const w = 64;
+        const h = 20;
+        const max = series.mode === 'count' ? Math.max(1, ...known) : 100;
+        const step = w / Math.max(1, values.length - 1);
+        // Same treatment as the full chart: a gap in the record breaks the line
+        // rather than being drawn through.
+        const segments = [];
+        let current = [];
+        values.forEach((v, i) => {
+            if (v === null) {
+                if (current.length > 1) segments.push(current);
+                current = [];
+                return;
+            }
+            current.push(`${(i * step).toFixed(1)},${(h - (v / max) * (h - 2) - 1).toFixed(1)}`);
+        });
+        if (current.length > 1) segments.push(current);
+        if (!segments.length) return '';
+        const paths = segments.map((pts) =>
+            `<polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>`
+        ).join('');
+
+        const last = [...values].reverse().find((v) => v !== null);
+        const value = series.mode === 'count' ? String(last) : `${last}%`;
+        const label = this.t('dashboard.healthTileTrend', 'Trend');
+        const hint = this.t('dashboard.healthTileTrendHint', '{days} days of history — open the full chart', { days: points.length });
+
+        return `<button type="button" class="health-view-tile health-view-tile--neutral health-view-tile--trend"
+                    data-health-trend-open tabindex="-1"
+                    title="${this.escape(hint)}"
+                    aria-label="${this.escape(`${label}: ${value} — ${hint}`)}">
+                <span class="health-view-tile-label">${this.escape(label)}</span>
+                <span class="health-view-tile-value">${this.escape(value)}</span>
+                <svg class="health-view-tile-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>
+            </button>`;
+    }
+
+    /**
+     * The full chart, on request.
+     *
+     * Same markup the note row used to hold, including the series picker and the
+     * per-day readout — it is the chart, just somewhere that costs no height
+     * until it is wanted.
+     */
+    showTrendChart() {
+        if (typeof window.AppModal?.show !== 'function') return;
+        const chart = this.renderTrendChart();
+        if (!chart) return;
+        window.nextdashTrack?.('health:trend-open');
+
+        window.AppModal.show({
+            title: this.t('dashboard.healthTrendModalTitle', 'How the collection is doing'),
+            htmlMessage: `<div class="health-trend-modal-body">${chart}</div>`,
+            confirmText: this.t('dashboard.healthExplainClose', 'Got it'),
+            showCancel: false,
+            modalClass: 'view-explain-modal health-trend-modal',
+            modalMaxWidth: 'min(48rem, calc(100vw - 2.5rem))',
+        });
+        // The modal owns its DOM, so the chart is wired after it exists; the
+        // series buttons redraw in place exactly as they did in the note row.
+        requestAnimationFrame(() => {
+            const holder = document.querySelector('.health-trend-modal .health-trend-modal-body');
+            if (!holder) return;
             holder.querySelector('[data-health-trend-help]')?.addEventListener('click', () => {
                 this.showTrendExplainer();
             });
             this.bindTrendChart(holder);
-            row.appendChild(holder);
-        }
-        return row;
+        });
     }
 
     /**
@@ -2657,6 +2857,89 @@ class DashboardHealth {
             // One column of prose: 34rem keeps lines inside the range the eye
             // tracks comfortably, where 38rem ran them long.
             modalMaxWidth: 'min(34rem, calc(100vw - 2.5rem))',
+        });
+    }
+
+    /**
+     * What has rotted, as one page you can read in a minute.
+     *
+     * The view is a work queue: it tells you what to fix now. This is the other
+     * question — what has been happening to the collection — and it is the one
+     * you ask once a month. Everything here is already in the report; what was
+     * missing was somewhere it added up.
+     */
+    showRotReport() {
+        if (typeof window.AppModal?.show !== 'function') return;
+        window.nextdashTrack?.('health:rot-report');
+        const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
+        const esc = (v) => this.escape(v);
+        const now = Date.now();
+        const day = 24 * 3600_000;
+
+        const gone = issues.filter((i) => /does not exist/i.test(String(i.lastError || '')));
+        const moved = issues.filter((i) => String(i.driftNoticed || '').trim());
+        const broken = issues.filter((i) => String(i.lastError || '').trim());
+        const longBroken = broken
+            .filter((i) => Number(i.brokenSince) > 0 && now - Number(i.brokenSince) > 30 * day)
+            .sort((a, b) => Number(a.brokenSince) - Number(b.brokenSince));
+        const brokenAndUnused = broken.filter((i) => !Number(i.lastOpened) && !Number(i.openCount));
+        const newlyBroken = broken.filter((i) => Number(i.brokenSince) > 0 && now - Number(i.brokenSince) <= 7 * day);
+
+        const rows = (list) => list.slice(0, 6).map((i) => {
+            const since = Number(i.brokenSince) > 0
+                ? ` — ${this.t('dashboard.healthBrokenFor', 'failing for {duration}', { duration: this.formatDuration(now - Number(i.brokenSince)) })}`
+                : '';
+            return `<li>${esc(i.name || this.formatUrlDisplay(i.url))}<span class="health-rot-row-meta">${esc(this.formatUrlDisplay(i.url))}${esc(since)}</span></li>`;
+        }).join('');
+
+        const section = (title, count, list, blank) => {
+            if (!count) {
+                return `<div class="view-explain-row health-explain-row"><h4>${esc(title)}</h4><p>${esc(blank)}</p></div>`;
+            }
+            const more = list.length > 6
+                ? `<p class="health-rot-more">${esc(this.t('dashboard.healthRotMore', '…and {count} more', { count: list.length - 6 }))}</p>`
+                : '';
+            return `<div class="view-explain-row health-explain-row">
+                <h4>${esc(title)} <span class="health-rot-count">${esc(count)}</span></h4>
+                <ul class="health-rot-list">${rows(list)}</ul>${more}
+            </div>`;
+        };
+
+        const html = `<div class="health-explain health-rot-report">
+            ${section(
+                this.t('dashboard.healthRotGone', 'Gone without saying so'),
+                gone.length, gone,
+                this.t('dashboard.healthRotGoneNone', 'Nothing is answering 200 with a "page not found". This is only judged on monitored bookmarks, and only while the setting is on.')
+            )}
+            ${section(
+                this.t('dashboard.healthRotMoved', 'Moved or rewritten'),
+                moved.length, moved,
+                this.t('dashboard.healthRotMovedNone', 'No watched page has drifted from the version you saved.')
+            )}
+            ${section(
+                this.t('dashboard.healthRotLong', 'Failing for over a month'),
+                longBroken.length, longBroken,
+                this.t('dashboard.healthRotLongNone', 'Nothing has been failing for longer than a month.')
+            )}
+            ${section(
+                this.t('dashboard.healthRotUnused', 'Broken and never opened'),
+                brokenAndUnused.length, brokenAndUnused,
+                this.t('dashboard.healthRotUnusedNone', 'Every broken bookmark is one you have actually used.')
+            )}
+            ${section(
+                this.t('dashboard.healthRotNew', 'Broke this week'),
+                newlyBroken.length, newlyBroken,
+                this.t('dashboard.healthRotNewNone', 'Nothing new broke in the last seven days.')
+            )}
+        </div>`;
+
+        window.AppModal.show({
+            title: this.t('dashboard.healthRotTitle', 'What has rotted'),
+            htmlMessage: html,
+            confirmText: this.t('dashboard.healthExplainClose', 'Got it'),
+            showCancel: false,
+            modalClass: 'view-explain-modal health-explain-modal health-rot-modal',
+            modalMaxWidth: 'min(38rem, calc(100vw - 2.5rem))',
         });
     }
 
@@ -2912,8 +3195,13 @@ class DashboardHealth {
         const arrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '–');
         const label = this.trendDeltaLabel();
 
-        return `<span class="health-view-trend-delta is-${dir}" aria-label="${this.escape(label)}">`
-            + `<span aria-hidden="true">${arrow}${delta === 0 ? '' : Math.abs(delta)}</span></span>`;
+        // A button rather than a span: this is where the eye already reads the
+        // direction of travel, so it is the natural second way into the chart —
+        // and the one that works when the tile row is scrolled off.
+        return `<button type="button" class="health-view-trend-delta is-${dir}" data-health-trend-open
+                    title="${this.escape(this.t('dashboard.healthTrendOpenHint', 'Show the trend chart'))}"
+                    aria-label="${this.escape(label)}">`
+            + `<span aria-hidden="true">${arrow}${delta === 0 ? '' : Math.abs(delta)}</span></button>`;
     }
 
     /**
@@ -3040,6 +3328,12 @@ class DashboardHealth {
                 <span class="health-view-trend-axis health-view-trend-axis--max">${this.escape(
                     series.mode === 'count' ? String(Math.round(maxValue)) : '100%'
                 )}</span>
+                <span class="health-view-trend-axis health-view-trend-axis--mid">${this.escape(
+                    series.mode === 'count' ? String(Math.round(maxValue / 2)) : '50%'
+                )}</span>
+                <span class="health-view-trend-axis health-view-trend-axis--min">${this.escape(
+                    series.mode === 'count' ? '0' : '0%'
+                )}</span>
                 <svg class="health-view-trend-chart" viewBox="0 0 ${w} ${h}"
                      preserveAspectRatio="none"
                      role="img" aria-label="${this.escape(label)}">
@@ -3049,6 +3343,11 @@ class DashboardHealth {
                 </svg>
                 <div class="health-view-trend-zones">${zones}</div>
                 <span class="health-view-trend-tip" hidden></span>
+            </div>
+            <div class="health-view-trend-xaxis" aria-hidden="true">
+                <span>${this.escape(this.trendPointLabel(points[0]))}</span>
+                <span>${this.escape(this.trendPointLabel(points[Math.floor((points.length - 1) / 2)]))}</span>
+                <span>${this.escape(this.trendPointLabel(points[points.length - 1]))}</span>
             </div>
             <div class="health-view-trend-foot">
                 <span class="health-view-trend-caption">${this.escape(caption)}</span>
@@ -3270,6 +3569,11 @@ class DashboardHealth {
         `;
         window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-text'), this.headerTitleHint());
         window.DashboardSmartWhyPopover?.attach?.(header.querySelector('.health-view-header-meta'), this.headerMetaHint());
+        header.querySelector('[data-health-trend-open]')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.showTrendChart();
+        });
         header.querySelector('.health-view-settings-link')?.addEventListener('click', (e) => {
             e.preventDefault();
             this.openStatusHealthSettings();
@@ -3328,9 +3632,23 @@ class DashboardHealth {
             {
                 key: 'broken',
                 label: this.t('dashboard.healthTileBroken', 'Broken'),
-                value: Number(summary.brokenCount) || 0,
+                // What the Broken filter selects, which is every row carrying the
+                // broken flag — a monitored bookmark that is down carries it too.
+                // The report keeps the two apart in its own counters so the
+                // header can tell a live outage from a dead link, and the tile
+                // used to show only the second: a single monitor down read as
+                // "Broken 0" beside a pill saying "Broken 1", and with zero
+                // tiles now hidden the tile vanished entirely while the filter
+                // still had a row in it. The split stays visible in the
+                // Monitored tile, which names it in full. Read from the filter
+                // itself rather than added up from two counters: then it cannot
+                // drift from what clicking the tile shows.
+                value: this.filterCount('broken'),
                 tone: 'bad',
-                title: this.t('dashboard.healthTileBrokenHint', 'Did not respond when last checked'),
+                title: monitorsDown > 0
+                    ? this.t('dashboard.healthTileBrokenHintMonitors',
+                        'Did not respond when last checked — {count} of them monitored', { count: monitorsDown })
+                    : this.t('dashboard.healthTileBrokenHint', 'Did not respond when last checked'),
             },
             {
                 key: 'content',
@@ -3394,7 +3712,19 @@ class DashboardHealth {
 
         const wrap = document.createElement('div');
         wrap.className = 'health-view-tiles';
-        wrap.innerHTML = tiles.map((tile) => {
+        // The trend closes the row: it is the only cell that is not a count of
+        // something, and reading it last matches how the row is used — the
+        // numbers are the work, the line is the context.
+        const trendTile = this.renderTrendTile();
+        // A problem you do not have is not worth a cell. Drift and Certificates
+        // have worked this way from the start; the rest kept showing a zero,
+        // which spent a quarter of the row on "nothing here" and made the row
+        // wide enough to scroll. Total, Healthy and Monitored always stay: they
+        // describe the collection rather than a backlog, and a zero in them is
+        // itself the answer.
+        const alwaysShown = new Set(['all', 'healthy', 'monitored']);
+        const shown = tiles.filter((tile) => alwaysShown.has(tile.key) || tile.value > 0);
+        wrap.innerHTML = shown.map((tile) => {
             const active = tile.key && this.filter === tile.key ? ' is-active' : '';
             // Zero problems is good news: drop the severity colour so only a real
             // count is tinted red or orange.
@@ -3421,7 +3751,11 @@ class DashboardHealth {
                     aria-label="${this.escape(ariaLabel)}">${body}</span>`;
             }
             return `<button type="button" class="${cls}" data-health-tile="${tile.key}" tabindex="-1"${title} aria-label="${this.escape(ariaLabel)}">${body}</button>`;
-        }).join('');
+        }).join('') + trendTile;
+
+        wrap.querySelector('[data-health-trend-open]')?.addEventListener('click', () => {
+            this.showTrendChart();
+        });
 
         wrap.querySelectorAll('[data-health-tile]').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -3764,7 +4098,7 @@ class DashboardHealth {
             ['broken', this.t('dashboard.healthFilterBroken', 'Broken')],
             ['content', this.t('dashboard.healthFilterContent', 'Content')],
             ['duplicate', this.t('dashboard.healthFilterDuplicates', 'Duplicates')],
-            ['unchecked', this.t('dashboard.healthFilterUnchecked', 'Never checked')],
+            ['unchecked', this.t('dashboard.healthFilterUnchecked', 'Unchecked')],
         ];
         // The monitor pill used to appear only once something was already
         // monitored, which made the feature invisible to exactly the people who
@@ -3778,42 +4112,30 @@ class DashboardHealth {
         }
         filters.push(['all', this.t('dashboard.healthFilterAll', 'All')]);
 
-        // The less-common filters live in an overflow menu rather than as pills
-        // of their own — with the core set above plus all six of these, the row
-        // wrapped onto a second line on anything but a very wide window. A
-        // secondary filter that is currently active stays out of the menu and
-        // gets its own pill instead, so the active state is never hidden behind
-        // a click.
-        const overflow = this.secondaryFilterEntries();
-        const activeOverflow = overflow.find(([key]) => key === this.filter);
-        const menuOverflow = activeOverflow ? overflow.filter(([key]) => key !== this.filter) : overflow;
-        if (activeOverflow) {
-            filters.push(activeOverflow);
-        }
+        // Every filter is a pill, in one row that scrolls sideways when it runs
+        // out of width. They used to live behind a "More" menu because the row
+        // wrapped onto a second line — which made the strip a block, and hid
+        // half the filters behind a click on every window size, including the
+        // wide ones where they would all have fitted.
+        filters.push(...this.secondaryFilterEntries());
 
         const renderPill = ([key, label]) => {
             const count = this.filterCount(key);
             const active = this.filter === key;
+            // A zero count is width spent saying nothing: "Content 0" is three
+            // characters wider than "Content" and tells you the same thing the
+            // absence of a number does.
+            const badge = count > 0
+                ? `<span class="health-view-filter-count">${count}</span>`
+                : '';
             return `<button type="button" class="health-view-filter-btn${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-health-filter="${key}">
-                ${this.escape(label)}<span class="health-view-filter-count">${count}</span>
+                ${this.escape(label)}${badge}
             </button>`;
         };
 
         const toolbar = document.createElement('div');
         toolbar.className = 'health-view-toolbar';
         const pills = filters.map(renderPill).join('');
-        const moreMenu = menuOverflow.length ? `
-            <span class="health-view-menu-wrap health-view-filter-more-wrap">
-                <button type="button" class="health-view-filter-more-btn" aria-haspopup="menu" aria-expanded="false" data-menu-toggle="filter-overflow" data-menu-kind="filter-overflow">
-                    ${this.escape(this.t('dashboard.healthFilterMore', 'More'))} <span class="health-view-filter-more-caret" aria-hidden="true">▾</span>
-                </button>
-                <div class="health-view-menu health-view-filter-overflow-menu" role="menu" data-menu-for="filter-overflow" data-menu-owner="filter-overflow" hidden>
-                    ${menuOverflow.map(([key, label]) => {
-                        const count = this.filterCount(key);
-                        return `<button type="button" class="health-view-menu-item" role="menuitem" data-health-filter="${key}">${this.escape(label)}<span class="health-view-filter-count">${count}</span></button>`;
-                    }).join('')}
-                </div>
-            </span>` : '';
 
         const sortOptions = [
             ['score', this.t('dashboard.healthSortScore', 'score')],
@@ -3826,14 +4148,20 @@ class DashboardHealth {
         ).join('');
 
         toolbar.innerHTML = `
-            <div class="health-view-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.healthFilterLabel', 'Filter health issues'))}">${pills}${moreMenu}</div>
+            <div class="health-view-filter-strip">
+                <div class="health-view-filter-group" role="tablist" aria-label="${this.escape(this.t('dashboard.healthFilterLabel', 'Filter health issues'))}">${pills}</div>
+            </div>
             <div class="health-view-toolbar-search-row">
                 <input type="search" class="health-view-search-input" value="${this.escape(this.searchQuery)}" placeholder="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}" autocomplete="off" spellcheck="false" aria-label="${this.escape(this.t('dashboard.healthSearchPlaceholder', 'Search bookmarks…'))}">
                 <select class="health-view-sort-select" aria-label="${this.escape(this.t('dashboard.healthSortLabel', 'Sort bookmarks'))}">${sortOptions}</select>
+                <button type="button" class="health-view-groupby-btn${this.groupByHost ? ' is-active' : ''}"
+                        aria-pressed="${this.groupByHost ? 'true' : 'false'}"
+                        title="${this.escape(this.t('dashboard.healthGroupByHostHint', 'One host down takes every bookmark on it with it. Grouped by site, that reads as one problem.'))}">${this.escape(this.t('dashboard.healthGroupByHost', 'Group by site'))}</button>
             </div>
             <div class="health-view-toolbar-actions">
                 <button type="button" class="health-view-focus-btn" title="${this.escape(this.t('dashboard.healthFocusHint', 'Work through this list one bookmark at a time'))}">${this.escape(this.t('dashboard.healthFocus', 'Work through'))}<kbd>f</kbd></button>
                 <button type="button" class="health-view-export-btn" title="${this.escape(this.t('dashboard.healthExportHint', 'Download the filtered list as CSV'))}">${this.escape(this.t('dashboard.healthExport', 'Export rows'))}</button>
+                <button type="button" class="health-view-rot-btn" title="${this.escape(this.t('dashboard.healthRotHint', 'What has gone, moved or been failing for a long time'))}">${this.escape(this.t('dashboard.healthRot', 'Rot report'))}</button>
                 ${this.renderHistoryExportButton()}
                 ${this.renderOpenBrokenButton()}
                 ${this.renderMergeDuplicateButton()}
@@ -3857,6 +4185,10 @@ class DashboardHealth {
             this.exportFilteredCsv();
         });
 
+        toolbar.querySelector('.health-view-rot-btn')?.addEventListener('click', () => {
+            this.showRotReport();
+        });
+
         toolbar.querySelector('[data-health-help]')?.addEventListener('click', () => {
             this.showHealthExplainer();
         });
@@ -3874,6 +4206,13 @@ class DashboardHealth {
         const mergeBtn = toolbar.querySelector('.health-view-merge-duplicates-btn');
         mergeBtn?.addEventListener('click', () => {
             void this.startMergeDuplicateFlow(mergeBtn);
+        });
+
+        toolbar.querySelector('.health-view-groupby-btn')?.addEventListener('click', () => {
+            this.groupByHost = !this.groupByHost;
+            this._trackAction('group-by-host', { on: this.groupByHost });
+            this._resetFeedPaging();
+            this.render();
         });
 
         const sortSelect = toolbar.querySelector('.health-view-sort-select');
@@ -3934,22 +4273,12 @@ class DashboardHealth {
             });
         });
 
-        const moreBtn = toolbar.querySelector('.health-view-filter-more-btn');
-        const overflowMenu = toolbar.querySelector('.health-view-filter-overflow-menu');
-        moreBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const opening = overflowMenu.hidden;
-            this.closeAllMenus();
-            if (opening) {
-                overflowMenu.hidden = false;
-                moreBtn.setAttribute('aria-expanded', 'true');
-                overflowMenu.querySelector('.health-view-menu-item')?.focus({ preventScroll: true });
-            }
-        });
-        overflowMenu?.querySelectorAll('[data-health-filter]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                applyFilter(btn.getAttribute('data-health-filter'), 'overflow-menu');
-            });
+        // The row scrolls sideways rather than wrapping, so the active filter has
+        // to be brought back into view after a render — otherwise picking one
+        // from the right-hand end leaves it half off screen.
+        requestAnimationFrame(() => {
+            toolbar.querySelector('.health-view-filter-btn.is-active')
+                ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         });
 
         const searchInput = toolbar.querySelector('.health-view-search-input');
@@ -5337,6 +5666,7 @@ class DashboardHealth {
         }
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="favicon">${this.escape(this.t('dashboard.healthRefreshFavicon', 'Refresh favicon'))}</button>`);
         items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive">${this.escape(this.t('dashboard.healthArchive', 'Find in Web Archive'))}</button>`);
+        items.push(`<button type="button" class="health-view-menu-item" role="menuitem" data-menu-action="archive-recover">${this.escape(this.t('dashboard.healthArchiveRecover', 'Use the last archived copy…'))}</button>`);
         // Same two entries the dashboard's right-click menu carries, under the
         // same labels. A row here is a bookmark like any other, and having to go
         // back to the dashboard to copy or send one is the kind of detour this
@@ -5421,6 +5751,7 @@ class DashboardHealth {
                     </span>
                     <span class="health-view-item-meta-trail">
                         ${this.renderLastOpened(issue)}
+                        ${this.renderBrokenSince(issue)}
                         ${primaryReason ? `<span class="health-view-item-reason">${this.escape(primaryReason)}</span>` : ''}
                         ${extraReasons ? `<span>${this.escape(extraReasons)}</span>` : ''}
                     </span>
@@ -5527,6 +5858,7 @@ class DashboardHealth {
             title: () => void this.refreshTitle(issue),
             favicon: () => void this.refreshFavicon(issue),
             archive: () => this.openArchive(issue),
+            'archive-recover': () => void this.recoverFromArchive(issue),
             'copy-url': () => this.copyIssueUrl(issue),
             share: () => void this.shareIssue(issue),
             delete: () => void this.deleteIssue(issue),

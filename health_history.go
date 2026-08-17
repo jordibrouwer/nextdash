@@ -97,16 +97,65 @@ func pruneHealthHistory(history HealthHistoryFile, known map[string]bool, now ti
 	}
 	cutoff := now.Add(-healthHistoryRetention).UnixMilli()
 	pruned := make(map[string][]HealthSample, len(history.Samples))
+	days := history.Days
+	if days == nil {
+		days = map[string][]HealthDay{}
+	}
 	for url, samples := range history.Samples {
 		if known != nil && !known[url] {
+			delete(days, url)
 			continue
 		}
-		if trimmed := trimSamples(samples, cutoff); len(trimmed) > 0 {
+		trimmed := trimSamples(samples, cutoff)
+		// Whatever the trim dropped is summarised before it goes, so the long
+		// windows keep counting it. Without this the 30-day figure was computed
+		// over whatever the per-URL cap had left — about a week on a five-minute
+		// monitor — and called itself thirty days regardless.
+		if dropped := droppedSamples(samples, trimmed); len(dropped) > 0 {
+			days[url] = foldSamplesIntoDays(days[url], dropped)
+		}
+		if kept := trimDays(days[url], now); len(kept) > 0 {
+			days[url] = kept
+		} else {
+			delete(days, url)
+		}
+		if len(trimmed) > 0 {
 			pruned[url] = trimmed
 		}
 	}
+	// A URL can have summaries left after its last raw sample aged out; that is
+	// the point of keeping them. Only an unknown URL loses them, above.
+	if known != nil {
+		for url := range days {
+			if !known[url] {
+				delete(days, url)
+			}
+		}
+	}
 	history.Samples = pruned
+	if len(days) == 0 {
+		days = nil
+	}
+	history.Days = days
 	return history
+}
+
+// droppedSamples returns the samples that trimSamples removed from the front.
+// Both slices are ascending and `kept` is a suffix of `all` by construction, so
+// the boundary is the first kept timestamp.
+func droppedSamples(all, kept []HealthSample) []HealthSample {
+	if len(all) == 0 || len(kept) == len(all) {
+		return nil
+	}
+	if len(kept) == 0 {
+		return all
+	}
+	first := kept[0].T
+	cut := sort.Search(len(all), func(i int) bool { return all[i].T >= first })
+	if cut <= 0 {
+		return nil
+	}
+	return all[:cut]
 }
 
 // appendHealthSamples adds samples to the history and applies retention in one
@@ -202,6 +251,15 @@ func (h *Handlers) healthHistoryFor(url string) []HealthSample {
 	out := make([]HealthSample, len(samples))
 	copy(out, samples)
 	return out
+}
+
+// readAllHealthDays returns the daily summaries keyed by canonical URL, for the
+// stretch of history whose individual checks have been dropped.
+func (h *Handlers) readAllHealthDays() map[string][]HealthDay {
+	h.healthHistoryMu.Lock()
+	defer h.healthHistoryMu.Unlock()
+
+	return readHealthHistoryFile().Days
 }
 
 // readAllHealthHistory returns the whole history keyed by canonical URL. Used when

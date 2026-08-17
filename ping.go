@@ -144,6 +144,18 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 					return down(fmt.Sprintf("Page is missing %q", expect.Text))
 				}
 			}
+			// Last, so an explicit expectation still wins: someone who spelled
+			// out what the page must contain has said what they mean by "up",
+			// and a heuristic must not overrule it.
+			if expect.SoftNotFound {
+				title := base.Title
+				if title == "" {
+					title = extractHTMLTitle(body)
+				}
+				if reason := softNotFoundReason(title, body); reason != "" {
+					return down(reason)
+				}
+			}
 		}
 
 		base.Status = "online"
@@ -290,6 +302,11 @@ func failureClass(detail string) string {
 		return "tls"
 	case strings.Contains(d, "redirect"):
 		return "redirect"
+	case strings.HasPrefix(d, "page says it does not exist"):
+		// Its own class rather than "content": the page answered, and what it
+		// answered with is a not-found template. Grouping it with a failed
+		// keyword rule would hide the one failure a rot report is looking for.
+		return "gone"
 	case strings.HasPrefix(d, "page is missing"), strings.HasPrefix(d, "page contains"),
 		strings.Contains(d, "unexpected content"):
 		return "content"
@@ -318,6 +335,8 @@ func failureClassReason(class string) string {
 		return "Too many redirects"
 	case "content":
 		return "Content check failed"
+	case "gone":
+		return "Page says it does not exist"
 	case "http":
 		return "HTTP error"
 	case "":

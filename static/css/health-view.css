@@ -89,10 +89,8 @@
 }
 
 /* The note keeps its own top margin from the shared stylesheet; inside this row
-   the flex gap owns the spacing instead.
-   It yields the row's width rather than claiming it: the note is prose that
-   reads fine wrapped over three lines, while the chart stops being a chart once
-   it is squeezed. Hence the note shrinks (1 1 0) and the chart holds its basis. */
+   the flex gap owns the spacing instead. It is the only thing in the row now —
+   the trend chart moved into the tile above and its dialog. */
 .health-view-note-row .view-filter-note {
     flex: 1 1 0;
     min-width: 12rem;
@@ -100,24 +98,8 @@
     align-self: flex-start;
 }
 
-.health-view-trend-holder {
-    /* Just under half the row at the widths this view is used at. `0 0 auto`
-       rather than a shrink factor so the note gives way first; the media query
-       below takes over before this can crowd the text. */
-    flex: 0 0 auto;
-    width: 26rem;
-    max-width: 50%;
-    min-width: 0;
-    display: flex;
-}
-
-.health-view-trend-holder > .health-view-trend {
-    flex: 1 1 auto;
-}
-
-/* Kept to roughly the height of the note beside it. Taller reads as a panel
-   demanding attention, which this is not — it is a glance at the direction of
-   travel next to the sentence explaining the filter. */
+/* The chart itself, as drawn inside its dialog. Kept compact: it is a glance at
+   the direction of travel, not a dashboard of its own. */
 .health-view-trend {
     display: flex;
     flex-direction: column;
@@ -173,10 +155,24 @@
     pointer-events: none;
 }
 
-/* Only the ceiling is labelled. The 50% rule is still drawn as a reference, but
-   naming it added a second number to a chart whose whole point is the shape of
-   the line. */
+/* All three rules are labelled now that the chart has room for them: at the
+   height it had beside the filter note, a second number crowded the plot. */
 .health-view-trend-axis--max { top: 0; }
+.health-view-trend-axis--mid { top: 50%; transform: translateY(-50%); }
+.health-view-trend-axis--min { bottom: 0; }
+
+/* The span the line covers, under the plot. Without it "90 days" was a caption
+   and the reader had to take the dates on trust. */
+.health-view-trend-xaxis {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 2.1rem;
+    margin-top: 0.15rem;
+    font-size: 0.6rem;
+    color: var(--text-tertiary, var(--text-secondary));
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+}
 
 /* One transparent button per day, filling the plot. */
 .health-view-trend-zones {
@@ -266,12 +262,6 @@
         gap: 0.7rem;
     }
 
-    .health-view-trend-holder {
-        flex: 1 1 auto;
-        width: auto;
-        max-width: none;
-        margin-top: 0;
-    }
 }
 
 /* Direction of travel beside the healthy badge. Green for up, red for down —
@@ -281,6 +271,64 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    /* A button now — it opens the chart — but it must still read as the small
+       piece of type it has always been beside the percentage. */
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.health-view-trend-delta:hover {
+    text-decoration: underline;
+}
+
+/* The trend as a tile: the same cell as the counts, with the shape of the last
+   ninety days under the reading instead of a sub-label. Costs no row of its own,
+   which is the whole point — the chart used to sit above the list and pushed the
+   work below the fold, worst on a narrow screen where it took the full width. */
+.health-view-tile--trend {
+    cursor: pointer;
+}
+
+.health-view-tile-spark {
+    display: block;
+    width: 100%;
+    height: 1.1rem;
+    margin-top: 0.1rem;
+    color: var(--accent-primary);
+    opacity: 0.85;
+}
+
+.health-view-tile--trend:hover .health-view-tile-spark {
+    opacity: 1;
+}
+
+/* The chart in its dialog keeps the size it had in the note row rather than
+   stretching to the modal's width, where the line would flatten out. */
+.health-trend-modal .health-view-trend {
+    border: 0;
+    padding: 0;
+}
+
+/* In the dialog the chart is the subject, not a glance beside a sentence: tall
+   enough that a two-point move on a fixed 0–100 axis is visible, and wide
+   enough that ninety days do not sit on top of each other. */
+.health-trend-modal .health-view-trend-chart {
+    height: 15rem;
+}
+
+.health-trend-modal .health-view-trend-axis,
+.health-trend-modal .health-view-trend-xaxis {
+    font-size: 0.68rem;
+    opacity: 0.9;
+}
+
+@media (max-width: 620px) {
+    .health-trend-modal .health-view-trend-chart {
+        height: 11rem;
+    }
 }
 
 .health-view-trend-delta.is-up { color: var(--accent-success); }
@@ -659,25 +707,71 @@ button.health-view-tile:hover {
     flex-basis: 100%;
 }
 
+/* One row, always. It used to wrap, which turned the strip into a block and
+   pushed the list down — and the filters that did not fit lived behind a "More"
+   menu, hidden even on windows wide enough to show them. Now every filter is a
+   pill and the row scrolls sideways when it runs out of width, with a fade at
+   each end saying there is more. */
+.health-view-filter-strip {
+    position: relative;
+    flex-basis: 100%;
+    min-width: 0;
+}
+
 .health-view-filter-group {
     display: flex;
-    flex-basis: 100%;
-    flex-wrap: wrap;
-    gap: 0.25rem;
+    flex-wrap: nowrap;
+    gap: 0.2rem;
     padding: 0.15rem;
     border-radius: 999px;
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* The fade is a mask on the scroller itself, so it follows the strip at any
+       width without a second element painted over the pills. */
+    scroll-snap-type: x proximity;
+}
+
+.health-view-filter-group::-webkit-scrollbar {
+    display: none;
+}
+
+.health-view-filter-strip::before,
+.health-view-filter-strip::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    width: 1.6rem;
+    pointer-events: none;
+    border-radius: 999px;
+    z-index: 1;
+}
+
+.health-view-filter-strip::before {
+    left: 1px;
+    background: linear-gradient(to right, var(--background-secondary), transparent);
+}
+
+.health-view-filter-strip::after {
+    right: 1px;
+    background: linear-gradient(to left, var(--background-secondary), transparent);
 }
 
 .health-view-filter-btn {
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.78rem;
-    padding: 0.25rem 0.65rem;
+    /* Tighter than it was (0.78rem/0.65rem): with every filter in the row, the
+       width each pill costs decides whether the row fits at all. */
+    font-size: 0.72rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 999px;
     cursor: pointer;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
 }
 
 .health-view-filter-btn.is-active {
@@ -764,6 +858,67 @@ button.health-view-tile:hover {
     background: var(--background-primary);
     color: var(--text-primary);
     font-size: 0.82rem;
+}
+
+/* The rot report: a list per finding, tight enough that five of them fit on
+   one screen. */
+.health-rot-list {
+    margin: 0.2rem 0 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.health-rot-list li {
+    font-size: 0.82rem;
+    color: var(--text-primary);
+}
+
+.health-rot-row-meta {
+    display: block;
+    color: var(--text-tertiary);
+    font-size: 0.74rem;
+}
+
+.health-rot-count {
+    display: inline-block;
+    margin-left: 0.3rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    color: var(--accent-primary);
+    font-size: 0.72rem;
+}
+
+.health-rot-more {
+    margin: 0.3rem 0 0;
+    color: var(--text-tertiary);
+    font-size: 0.74rem;
+}
+
+/* Toggles grouping the list by site. Sits beside the sort because it answers
+   the same kind of question — how the list is arranged, not what is in it. */
+.health-view-groupby-btn {
+    padding: 0.3rem 0.55rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.health-view-groupby-btn:hover {
+    color: var(--text-primary);
+}
+
+.health-view-groupby-btn.is-active {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .health-view-sort-select {
@@ -939,6 +1094,13 @@ button.health-view-tile:hover {
     color: var(--text-primary);
     line-height: 1.35;
     overflow-wrap: anywhere;
+}
+
+/* How long a row has been failing, beside the reason. Muted like the other
+   trail items — it is context for the failure, not a second failure. */
+.health-view-item-broken-since {
+    color: var(--text-tertiary);
+    white-space: nowrap;
 }
 
 /* A row you have acted on that no longer matches the filter. It keeps its

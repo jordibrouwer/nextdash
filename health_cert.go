@@ -30,11 +30,79 @@ const (
 	certWarnDays     = 30
 	certUrgentDays   = 7
 	certCriticalDays = 3
+	// A renewal reminder is worth little a year out and nothing an hour out, so
+	// the setting is bounded either side of what it replaces.
+	certWarnDaysMin = 3
+	certWarnDaysMax = 120
 )
 
 // certNotifyThresholds are the day marks an alert fires on, largest first so the
 // first threshold a certificate crosses is the one reported.
 var certNotifyThresholds = []int{certWarnDays, certUrgentDays, certCriticalDays}
+
+// certWarnDaysFor is the first threshold, from settings.
+//
+// One number rather than three: "warn me a fortnight out" is a thing people
+// mean, "warn me at 14, 4 and 2" is not. The two tighter marks are derived from
+// it in the same proportion the built-in marks have, so a shorter lead time
+// still gets its "do it this week" and "this breaks now".
+func certWarnDaysFor(s Settings) int {
+	days := s.CertWarnDays
+	if days <= 0 {
+		return certWarnDays
+	}
+	if days < certWarnDaysMin {
+		return certWarnDaysMin
+	}
+	if days > certWarnDaysMax {
+		return certWarnDaysMax
+	}
+	return days
+}
+
+// certThresholdsFor is the notify ladder for these settings, largest first.
+func certThresholdsFor(s Settings) []int {
+	warn := certWarnDaysFor(s)
+	if warn == certWarnDays {
+		return certNotifyThresholds
+	}
+	urgent := warn * certUrgentDays / certWarnDays
+	if urgent < 1 {
+		urgent = 1
+	}
+	critical := warn * certCriticalDays / certWarnDays
+	if critical < 1 {
+		critical = 1
+	}
+	if urgent <= critical {
+		urgent = critical + 1
+	}
+	if warn <= urgent {
+		warn = urgent + 1
+	}
+	return []int{warn, urgent, critical}
+}
+
+// certSeverityWith is certSeverity against a chosen first threshold.
+func certSeverityWith(expiresAt int64, now time.Time, thresholds []int) string {
+	if expiresAt <= 0 {
+		return ""
+	}
+	if len(thresholds) < 3 {
+		return certSeverity(expiresAt, now)
+	}
+	days := certDaysLeft(expiresAt, now)
+	switch {
+	case days < 0:
+		return "expired"
+	case days <= thresholds[2]:
+		return "urgent"
+	case days <= thresholds[0]:
+		return "warn"
+	default:
+		return "ok"
+	}
+}
 
 // certDaysLeft is whole days from now until expiry. Negative once expired.
 //
@@ -75,8 +143,17 @@ func certSeverity(expiresAt int64, now time.Time) string {
 // Returns the hosts that have newly crossed a warning threshold, so the caller
 // can alert once per threshold rather than on every check for days on end.
 func recordHostCertificates(stored map[string]HostCertificate, seen []PingResult, now time.Time) []HostCertificate {
+	return recordHostCertificatesWith(stored, seen, now, certNotifyThresholds)
+}
+
+// recordHostCertificatesWith is recordHostCertificates against a chosen ladder,
+// so the lead time can be a setting without every caller passing it.
+func recordHostCertificatesWith(stored map[string]HostCertificate, seen []PingResult, now time.Time, thresholds []int) []HostCertificate {
 	if stored == nil {
 		return nil
+	}
+	if len(thresholds) == 0 {
+		thresholds = certNotifyThresholds
 	}
 	var crossed []HostCertificate
 
@@ -101,7 +178,7 @@ func recordHostCertificates(stored map[string]HostCertificate, seen []PingResult
 		// one renewal into a drip of messages.
 		days := certDaysLeft(entry.ExpiresAt, now)
 		reached := 0
-		for _, threshold := range certNotifyThresholds {
+		for _, threshold := range thresholds {
 			if days <= threshold && (reached == 0 || threshold < reached) {
 				reached = threshold
 			}
@@ -110,7 +187,7 @@ func recordHostCertificates(stored map[string]HostCertificate, seen []PingResult
 		// that skips straight past several thresholds does not alert again on
 		// each of them as it keeps expiring.
 		if reached != 0 && !containsInt(entry.NotifiedDays, reached) {
-			for _, threshold := range certNotifyThresholds {
+			for _, threshold := range thresholds {
 				if threshold >= reached && !containsInt(entry.NotifiedDays, threshold) {
 					entry.NotifiedDays = append(entry.NotifiedDays, threshold)
 				}
@@ -181,7 +258,7 @@ func (h *Handlers) recordMonitorCertificates(results []PingResult) []HostCertifi
 	if cache.Certificates == nil {
 		cache.Certificates = map[string]HostCertificate{}
 	}
-	crossed := recordHostCertificates(cache.Certificates, results, time.Now())
+	crossed := recordHostCertificatesWith(cache.Certificates, results, time.Now(), certThresholdsFor(h.store.GetSettings()))
 	if err := writeHealthCacheFile(cache); err != nil {
 		return nil
 	}
@@ -192,12 +269,17 @@ func (h *Handlers) recordMonitorCertificates(results []PingResult) []HostCertifi
 // reporting, so a report does not carry an entry per domain for certificates
 // with months left.
 func expiringCertificates(stored map[string]HostCertificate, now time.Time) map[string]HostCertificate {
+	return expiringCertificatesWith(stored, now, certNotifyThresholds)
+}
+
+// expiringCertificatesWith is expiringCertificates against a chosen ladder.
+func expiringCertificatesWith(stored map[string]HostCertificate, now time.Time, thresholds []int) map[string]HostCertificate {
 	if len(stored) == 0 {
 		return nil
 	}
 	out := make(map[string]HostCertificate)
 	for host, cert := range stored {
-		switch certSeverity(cert.ExpiresAt, now) {
+		switch certSeverityWith(cert.ExpiresAt, now, thresholds) {
 		case "warn", "urgent", "expired":
 			out[host] = cert
 		}
