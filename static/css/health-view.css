@@ -941,6 +941,40 @@ button.health-view-tile:hover {
     overflow-wrap: anywhere;
 }
 
+/* A row you have acted on that no longer matches the filter. It keeps its
+   place in the list until the filter, sort or search changes, or the report is
+   reloaded on purpose — a list you are working through should not close the gap
+   behind you. Dimmed rather than removed, so the position still reads as
+   "done", not as "still to do". */
+.health-view-item--handled {
+    opacity: 0.62;
+}
+
+.health-view-item--handled:hover,
+.health-view-item--handled:focus-within {
+    opacity: 1;
+}
+
+.health-view-item-handled {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary, transparent);
+    color: var(--text-tertiary);
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
+    text-transform: lowercase;
+    white-space: nowrap;
+}
+
+/* Reasons that cost no points sit under their own heading, so a full score with
+   "Never opened" listed under it does not read as broken arithmetic. */
+.health-view-score-intro--notes {
+    margin-top: 0.55rem;
+}
+
 /* Row score doubles as the breakdown disclosure — it is a real <button>. */
 .health-view-item-score {
     flex-shrink: 0;

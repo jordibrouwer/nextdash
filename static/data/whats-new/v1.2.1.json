@@ -1,0 +1,21 @@
+{
+  "tag": "v1.2.1",
+  "date": "17 August 2026",
+  "releasedAt": "2026-08-17",
+  "modalLead": "One fix, in the Health view: the list no longer moves under the row you just opened.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Opening a bookmark no longer sends it down the list.</strong> Health asks you to open a link and see for yourself, and then charged you for it: <em>never opened</em> and <em>not opened in 30 days</em> each cost ten points, so the first open raised the row's score and the worst-first sort carried it away — on a list of two hundred, from tenth place to a hundred and eighty-eighth, while you were still reading it. Usage costs nothing now. It is still counted, under the <strong>Unused</strong> and <strong>Stale</strong> tiles and filters, and it is named on the row; it simply no longer decides where that row sits."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A row you have dealt with stays where it was.</strong> Opening one under <strong>Unused</strong>, or re-checking one under <strong>Broken</strong>, takes it out of what the filter selects — and the list used to close the gap and move everything below it up by one, mid-task. It keeps its place now, dimmed and marked <strong>handled</strong>, until you change the filter, sort or search, or reload the report."
+        }
+      ]
+    }
+  ]
+}

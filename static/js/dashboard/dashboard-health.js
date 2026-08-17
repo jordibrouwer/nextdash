@@ -52,6 +52,16 @@ class DashboardHealth {
          *  the three uptime tiles — a long "All monitors" block otherwise pushes
          *  the row list off screen on a collection with a lot of history. */
         this.fleetDetailsCollapsed = false;
+        /**
+         * Rows you have acted on that no longer match the active filter, keyed
+         * by row with the position they held when you acted. They are put back
+         * at that position and shown as handled instead of vanishing: a list you
+         * are working through should not close the gap behind you.
+         *
+         * Dropped whenever the list is asked a different question — another
+         * filter, sort or search — or reloaded on purpose.
+         */
+        this._handledAnchors = new Map();
         this._searchRenderTimer = null;
         this._searchFocusPending = false;
         this._loadPromise = null;
@@ -377,6 +387,7 @@ class DashboardHealth {
         this.unbindOutsideMenuDismiss();
         this._teardownLoadMoreObserver();
         this.clearKeyboardSelection();
+        this.clearHandledRows();
         this.focusIssueKey = null;
         const restored = d.pageNav?.restoreBookmarksViewForPage?.(d.currentPageId) ?? false;
         if (restored) {
@@ -490,6 +501,40 @@ class DashboardHealth {
         return DashboardHealth.STATUS_RANK[issue?.status] ?? 99;
     }
 
+    /**
+     * The tiebreak for the score sort, with the two usage statuses folded into
+     * healthy.
+     *
+     * Opening a bookmark is what this view asks you to do, and it turns "unused"
+     * into "healthy" (or into whatever milder flag was behind it). Scores no
+     * longer move on an open — the usage penalties are zero — so without this
+     * fold the row would still travel the length of an equal-score band the
+     * moment you acted on it. Under the Status sort the true rank is kept: there
+     * the order *is* the status you asked to sort by.
+     */
+    stableStatusRank(issue) {
+        const rank = DashboardHealth.STATUS_RANK;
+        const flags = Array.isArray(issue?.flags) ? issue.flags : null;
+        if (flags) {
+            // Read from the flags rather than the status, because status is only
+            // the worst condition: opening a never-opened row that also has no
+            // preview turns "unused" into "missing-preview", a *different* rank,
+            // and the row would travel again. The flags are the same set either
+            // way, minus the usage one that just went.
+            const ranks = flags
+                .filter((flag) => flag !== 'unused' && flag !== 'stale')
+                .map((flag) => rank[flag])
+                .filter((value) => typeof value === 'number');
+            return ranks.length ? Math.min(...ranks) : rank.healthy;
+        }
+        // A report cached before flags existed carries status only.
+        const status = issue?.status;
+        if (status === 'unused' || status === 'stale') {
+            return rank.healthy;
+        }
+        return this.statusRank(issue);
+    }
+
     sortIssues(issues) {
         const sorted = [...issues];
         const byName = (a, b) => String(a.name || '').localeCompare(String(b.name || ''));
@@ -505,9 +550,12 @@ class DashboardHealth {
             case 'score':
             default:
                 // Worst score first, then worst status, then name — a stable order
-                // so a re-render never reshuffles rows under the cursor.
+                // so a re-render never reshuffles rows under the cursor. Every
+                // part of the key is something acting on the row cannot change:
+                // the score ignores usage, the rank folds the usage statuses, and
+                // a name is a name.
                 return sorted.sort((a, b) => (a.score || 0) - (b.score || 0)
-                    || this.statusRank(a) - this.statusRank(b)
+                    || this.stableStatusRank(a) - this.stableStatusRank(b)
                     || byName(a, b));
         }
     }
@@ -515,11 +563,63 @@ class DashboardHealth {
     getFilteredIssues() {
         const issues = Array.isArray(this.report?.issues) ? this.report.issues : [];
         const query = String(this.searchQuery || '').trim().toLowerCase();
-        return this.sortIssues(
+        return this.withHandledRows(this.sortIssues(
             issues
                 .filter((issue) => this.matchesFilter(issue, this.filter))
                 .filter((issue) => this.matchesQuery(issue, query))
-        );
+        ), issues);
+    }
+
+    /** True while a row is being kept in a list it no longer belongs to. */
+    isHandledRow(key) {
+        return this._handledAnchors.has(key);
+    }
+
+    /**
+     * Puts the rows you acted on back where they were.
+     *
+     * Re-checking a broken link, or opening one the Unused filter selected, is a
+     * success — and it took the row out of the filter, closing the gap and
+     * moving everything below it up by one, mid-task. Each such row is put back
+     * at the position it held, marked handled, and stays until the list is asked
+     * a different question or reloaded on purpose.
+     */
+    withHandledRows(list, allIssues) {
+        if (!this._handledAnchors.size) return list;
+        const present = new Set(list.map((issue) => this.issueKey(issue)));
+        const byKey = new Map(allIssues.map((issue) => [this.issueKey(issue), issue]));
+        const out = [...list];
+        // Ascending, so an earlier insertion does not push a later anchor off
+        // the position it was recorded at.
+        [...this._handledAnchors.entries()]
+            .sort((a, b) => a[1] - b[1])
+            .forEach(([key, index]) => {
+                if (present.has(key)) return;
+                const issue = byKey.get(key);
+                if (!issue) return;
+                out.splice(Math.min(index, out.length), 0, issue);
+            });
+        return out;
+    }
+
+    /**
+     * Remember where a row sat, in case acting on it takes it out of the filter.
+     * Recorded for every action rather than only the ones that do: whether an
+     * open or a re-check removes the row depends on the filter and on what the
+     * server makes of it, neither of which is known here.
+     */
+    markRowHandled(issue) {
+        const key = this.issueKey(issue);
+        if (!key || this._handledAnchors.has(key)) return;
+        const index = this.getFilteredIssues().findIndex((row) => this.issueKey(row) === key);
+        if (index < 0) return;
+        this._handledAnchors.set(key, index);
+    }
+
+    /** Drop the anchors — the list is about to answer a different question. */
+    clearHandledRows() {
+        if (!this._handledAnchors.size) return;
+        this._handledAnchors.clear();
     }
 
     /**
@@ -1152,6 +1252,7 @@ class DashboardHealth {
             void this.dash?.analytics?.trackBookmarkOpen?.(pageId, index, 'health');
         }
 
+        this.markRowHandled(issue);
         issue.lastOpened = Date.now();
         issue.openCount = (Number(issue.openCount) || 0) + 1;
         this.refreshLastOpenedLabel(issue);
@@ -1352,6 +1453,12 @@ class DashboardHealth {
         const url = String(issue?.url || '').trim();
         if (!url) return;
         window.nextdashTrack?.('health:recheck');
+        // Before the round trip: a re-check that succeeds takes the row out of
+        // Broken, and the position it is holding right now is where it belongs
+        // until you leave this list.
+        if (!silent) {
+            this.markRowHandled(issue);
+        }
         this._busyKeys.add(key);
         this.syncRowBusy(key, true);
         const d = this.dash;
@@ -2069,6 +2176,10 @@ class DashboardHealth {
 
     _resetFeedPaging() {
         this.visibleLimit = 50;
+        // Every caller is a change of question — another filter, sort, tile or
+        // search — and a row held open in the previous list has no place in the
+        // next one.
+        this.clearHandledRows();
     }
 
     _teardownLoadMoreObserver() {
@@ -4050,6 +4161,8 @@ class DashboardHealth {
         if (this._retestRunning) return;
         this._retestRunning = true;
         window.nextdashTrack?.('health:retest-all');
+        // Same as R: a deliberate reload asks for the list as it stands now.
+        this.clearHandledRows();
         if (button) {
             button.disabled = true;
             button.textContent = this.t('dashboard.healthRetesting', 'Retesting…');
@@ -4430,6 +4543,8 @@ class DashboardHealth {
     /** Keyboard R / ?: reload the cached report, not a full retest-all run. */
     async refreshReportFromKeyboard() {
         window.nextdashTrack?.('health:refresh-report');
+        // Reloading on purpose is how you ask for the list as it stands now.
+        this.clearHandledRows();
         await this.loadAndRender({ refresh: true });
         this.dash.updateHealthBadge?.();
     }
@@ -5179,14 +5294,26 @@ class DashboardHealth {
         if (!entries.length) {
             return `<p class="health-view-score-intro">${this.escape(this.t('dashboard.healthScorePerfect', 'No issues found — full score.'))}</p>${incidents}`;
         }
-        const rows = entries.map((entry) => `
+        const item = (entry) => `
             <li class="health-view-score-item">
                 <span>${this.escape(entry.label)}</span>
                 ${entry.penalty > 0 ? `<span class="health-view-score-item-cost">−${this.escape(entry.penalty)}</span>` : ''}
-            </li>`).join('');
-        return `
+            </li>`;
+        // Reasons that cost nothing are worth reading and are not deductions:
+        // listing "Never opened" under "this one loses" while the score stays at
+        // 100 would read as a mistake in the arithmetic.
+        const costly = entries.filter((entry) => entry.penalty > 0);
+        const notes = entries.filter((entry) => entry.penalty <= 0);
+        const deductions = costly.length ? `
             <p class="health-view-score-intro">${this.escape(this.t('dashboard.healthScoreIntro', 'Every bookmark starts at 100. This one loses:'))}</p>
-            <ul class="health-view-score-list">${rows}</ul>
+            <ul class="health-view-score-list">${costly.map(item).join('')}</ul>` : `
+            <p class="health-view-score-intro">${this.escape(this.t('dashboard.healthScorePerfect', 'No issues found — full score.'))}</p>`;
+        const notesBlock = notes.length ? `
+            <p class="health-view-score-intro health-view-score-intro--notes">${this.escape(this.t('dashboard.healthScoreNotes', 'Worth knowing, at no cost to the score:'))}</p>
+            <ul class="health-view-score-list health-view-score-list--notes">${notes.map(item).join('')}</ul>` : '';
+        return `
+            ${deductions}
+            ${notesBlock}
             <p class="health-view-score-total">
                 <span>${this.escape(this.t('dashboard.healthScoreTotal', 'Score'))}</span>
                 <span class="health-view-score-total-value">${this.escape(issue.score)}</span>
@@ -5246,6 +5373,12 @@ class DashboardHealth {
         row.dataset.healthKey = key;
         row.tabIndex = -1;
         row.setAttribute('aria-selected', 'false');
+        // Acted on, and no longer part of what the filter selects: kept in place
+        // and dimmed rather than removed from under the cursor.
+        const handled = this.isHandledRow(key);
+        if (handled) {
+            row.classList.add('health-view-item--handled');
+        }
 
         const title = issue.name || issue.previewTitle || this.formatUrlDisplay(issue.url);
         const domain = this.formatUrlDisplay(issue.url);
@@ -5270,6 +5403,7 @@ class DashboardHealth {
             <div class="health-view-item-body">
                 <div class="health-view-item-head">
                     <h3 class="health-view-item-title">${this.escape(title)}</h3>
+                    ${handled ? `<span class="health-view-item-handled" title="${this.escape(this.t('dashboard.healthHandledHint', 'You have acted on this one. It stays where it was until you change the filter or reload the report.'))}">${this.escape(this.t('dashboard.healthHandledBadge', 'handled'))}</span>` : ''}
                     <button type="button" class="health-view-item-score" aria-expanded="${expanded ? 'true' : 'false'}" aria-label="${this.escape(this.t('dashboard.healthScoreToggle', 'Score {score} — show breakdown', { score: issue.score }))}">
                         ${this.escape(issue.score)}<span class="health-view-item-score-caret" aria-hidden="true">▸</span>
                     </button>
