@@ -4978,7 +4978,10 @@
     "certWarnDaysDefault": "Par défaut (30 jours à l’avance)",
     "certWarnDaysAhead": "{n} jours à l’avance",
     "certWarnDaysInfoTitle": "Avertissements de certificat",
-    "certWarnDaysInfoMessage": "Chaque vérification HTTPS effectue de toute façon une poignée de main : lire la date d’expiration ne coûte rien. Ceci décide combien de temps à l’avance apparaît le premier avertissement.\n\nUn nombre plutôt que trois : deux seuils plus serrés en découlent dans la même proportion que l’échelle intégrée — un mois à l’avance avertit aussi à une semaine et à trois jours, quinze jours à l’avance à trois jours et à un. Un certificat appartient à un hôte : dix favoris sur un domaine avertissent une fois, et un seul renouvellement les efface tous."
+    "certWarnDaysInfoMessage": "Chaque vérification HTTPS effectue de toute façon une poignée de main : lire la date d’expiration ne coûte rien. Ceci décide combien de temps à l’avance apparaît le premier avertissement.\n\nUn nombre plutôt que trois : deux seuils plus serrés en découlent dans la même proportion que l’échelle intégrée — un mois à l’avance avertit aussi à une semaine et à trois jours, quinze jours à l’avance à trois jours et à un. Un certificat appartient à un hôte : dix favoris sur un domaine avertissent une fois, et un seul renouvellement les efface tous.",
+    "rememberScrollPositionLabel": "Revenir là où vous en étiez sur une page",
+    "rememberScrollPositionInfoTitle": "Là où vous en étiez sur la page",
+    "rememberScrollPositionInfoMessage": "Une longue page est un endroit où l’on se trouve, pas un document que l’on lit toujours depuis le haut. Avec ce réglage, changer de page — ou revenir de Santé, de la boîte ou de la configuration — vous replace là où vous étiez, et un rechargement aussi, tant que l’onglet reste ouvert.\n\nUne page devenue plus courte se limite simplement à sa nouvelle fin. Désactivé, chaque arrivée commence en haut."
   },
   "colors": {
     "title": "personnalisation du thème",

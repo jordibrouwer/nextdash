@@ -4978,7 +4978,10 @@
     "certWarnDaysDefault": "Standard (30 Tage im Voraus)",
     "certWarnDaysAhead": "{n} Tage im Voraus",
     "certWarnDaysInfoTitle": "Zertifikatswarnungen",
-    "certWarnDaysInfoMessage": "Jede HTTPS-Prüfung führt ohnehin einen Handshake durch, das Ablaufdatum zu lesen kostet also nichts. Dies legt fest, wie weit im Voraus die erste Warnung erscheint.\n\nEine Zahl statt drei: zwei engere Marken folgen daraus im selben Verhältnis wie die eingebaute Staffel — ein Monat im Voraus warnt auch bei einer Woche und bei drei Tagen, zwei Wochen im Voraus bei drei Tagen und bei einem. Ein Zertifikat gehört zu einem Host, also warnen zehn Lesezeichen auf einer Domain einmal, und eine Erneuerung räumt sie alle ab."
+    "certWarnDaysInfoMessage": "Jede HTTPS-Prüfung führt ohnehin einen Handshake durch, das Ablaufdatum zu lesen kostet also nichts. Dies legt fest, wie weit im Voraus die erste Warnung erscheint.\n\nEine Zahl statt drei: zwei engere Marken folgen daraus im selben Verhältnis wie die eingebaute Staffel — ein Monat im Voraus warnt auch bei einer Woche und bei drei Tagen, zwei Wochen im Voraus bei drei Tagen und bei einem. Ein Zertifikat gehört zu einem Host, also warnen zehn Lesezeichen auf einer Domain einmal, und eine Erneuerung räumt sie alle ab.",
+    "rememberScrollPositionLabel": "Dorthin zurückkehren, wo Sie auf einer Seite waren",
+    "rememberScrollPositionInfoTitle": "Wo Sie auf der Seite waren",
+    "rememberScrollPositionInfoMessage": "Eine lange Seite ist ein Ort, an dem Sie sich irgendwo befinden, kein Dokument, das man immer von oben liest. Ist dies aktiv, landen Sie beim Seitenwechsel — oder bei der Rückkehr aus Health, Eingang oder Konfiguration — wieder an der verlassenen Stelle, und nach einem Neuladen ebenso, solange der Tab offen bleibt.\n\nEine inzwischen kürzere Seite begrenzt sich einfach auf ihr neues Ende. Ausgeschaltet beginnt jede Ankunft oben."
   },
   "colors": {
     "title": "themenanpassung",

@@ -291,6 +291,7 @@ type Settings struct {
 	ShowShortcutTooltips          bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default on, opt-out in Config → Behavior or `:shortcuts off`)
 	ShowGridKeyLegend             bool                         `json:"showGridKeyLegend"`
 	ShortcutOpenMode              string                       `json:"shortcutOpenMode,omitempty"`
+	RememberScrollPosition        bool                         `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
 	DetectSoftNotFound            bool                         `json:"detectSoftNotFound"`               // Judge whether a monitored page answering 200 is really a "page not found" template. Costs one bounded body read per check, which is why it is a choice
 	CertWarnDays                  int                          `json:"certWarnDays,omitempty"`           // How many days before expiry a certificate starts warning. 0 means the built-in 30; clamped to 3–120 on save. The two tighter marks follow it // What typing a bookmark shortcut does: "enter" (default, Enter opens), "delay" (opens after a short pause with no further key), "instant" (opens the moment it matches). Empty reads as "enter", so no migration
 	// HealthCheckTimeoutSeconds is how long one availability check may take.
@@ -705,6 +706,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowShortcutTooltips:         false,
 			ShowGridKeyLegend:            true,
 			ShortcutOpenMode:             "enter",
+			RememberScrollPosition:       true,
 			DetectSoftNotFound:           true,
 			ColumnsPerRow:                3,
 			FontSize:                     "m",
@@ -2488,6 +2490,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowShortcutTooltips:           false,
 			ShowGridKeyLegend:              true,
 			ShortcutOpenMode:               "enter",
+			RememberScrollPosition:         true,
 			DetectSoftNotFound:             true,
 			ColumnsPerRow:                  3,
 			FontSize:                       "m",

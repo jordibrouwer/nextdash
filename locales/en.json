@@ -4979,7 +4979,10 @@
     "certWarnDaysDefault": "Default (30 days ahead)",
     "certWarnDaysAhead": "{n} days ahead",
     "certWarnDaysInfoTitle": "Certificate warnings",
-    "certWarnDaysInfoMessage": "Every HTTPS check completes a handshake anyway, so the expiry date costs nothing to read. This is how far ahead the first warning appears.\n\nOne number rather than three: two tighter marks follow it in the same proportion the built-in ladder uses — a month ahead also warns at a week and at three days, a fortnight ahead at three days and at one. A certificate belongs to a host, so ten bookmarks on one domain warn once and a single renewal clears them all."
+    "certWarnDaysInfoMessage": "Every HTTPS check completes a handshake anyway, so the expiry date costs nothing to read. This is how far ahead the first warning appears.\n\nOne number rather than three: two tighter marks follow it in the same proportion the built-in ladder uses — a month ahead also warns at a week and at three days, a fortnight ahead at three days and at one. A certificate belongs to a host, so ten bookmarks on one domain warn once and a single renewal clears them all.",
+    "rememberScrollPositionLabel": "Come back to where you were on a page",
+    "rememberScrollPositionInfoTitle": "Where you were on the page",
+    "rememberScrollPositionInfoMessage": "A long page is a place you are somewhere in, not a document you always read from the top. With this on, switching pages — or opening Health, Inbox or config and coming back — puts you back at the offset you left, and so does a reload, for as long as the browser tab is open.\n\nA page that has since grown shorter simply clamps to its new end. Switch it off and every arrival lands at the top."
   },
   "colors": {
     "title": "theme customization",

@@ -887,6 +887,13 @@ class Dashboard {
         if (previous === 'config') {
             this.config?.instance?.saveLastConfigLocation?.();
         }
+        // Leaving the grid for a view: where you were on the page is worth
+        // keeping, and this is the only moment the offset still belongs to the
+        // bookmarks layout. Coming back restores it — see
+        // restoreBookmarksViewForPage.
+        if (previous === 'bookmarks' && view !== 'bookmarks') {
+            this.data?.rememberScrollForPage?.(Number(this.currentPageId));
+        }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);
         }
