@@ -13,12 +13,37 @@ read, so a bookmarklet or a Shortcut can simply open it.
 That is the whole contract. Anything that can open a URL or run `curl` is an
 integration; the files here are the ones worth keeping around.
 
+The other half of the surface is the share target — `GET /share?title=…&text=…&url=…`
+— which is what the installed app declares to a phone's share sheet, and which
+accepts the same token. Everything else nextDash does is behind `/api/`, needs
+the write token in a header, and is not what these are for: the point of a
+capture route is that it is the one thing you can reach from a place that cannot
+set headers.
+
 | | |
 |---|---|
 | [`shell/nextdash-add`](shell/nextdash-add) | The one-line saver. Quick Actions, Keyboard Maestro, cron, an alias — anything that runs a command. |
 | [`raycast/save-to-nextdash.sh`](raycast/save-to-nextdash.sh) | Raycast: type a URL, save it. |
 | [`raycast/save-current-tab.sh`](raycast/save-current-tab.sh) | Raycast: save the front tab of Safari, Chrome, Arc, Brave or Edge. |
 | [`shortcuts/README.md`](shortcuts/README.md) | Apple Shortcuts, for the macOS and iOS share sheets. |
+| [`alfred/README.md`](alfred/README.md) | Alfred: a keyword workflow, and a hotkey for the front tab. |
+| [`dropzone/nextDash.dzbundle.rb`](dropzone/nextDash.dzbundle.rb) | Dropzone: drop a link on the target, or click it to save the clipboard. |
+| [`ulauncher/`](ulauncher/) | Ulauncher, on Linux: `nd <url>`. |
+
+## The one-liner
+
+Nothing to install, and the thing to paste when someone asks how to save from a
+script:
+
+```sh
+curl -s --get --data-urlencode "url=https://example.com/article" \
+     --data-urlencode "title=An article" \
+     https://nextdash.example.com/add >/dev/null
+```
+
+Add `--data-urlencode "token=…"` when the install has a capture token. Use
+`--data-urlencode` rather than building the query by hand: an address carrying
+its own `?x=1&y=2`, or a title with an ampersand, is exactly what breaks that.
 
 ## Configuration
 
@@ -54,4 +79,7 @@ one.
 
 `raycast/save-current-tab.sh` reads the front tab through AppleScript, which
 needs a browser, a desktop session and macOS automation permission; it has not
-been run here. The Shortcuts steps cannot be tested from a repository at all.
+been run here. The Dropzone action and the Ulauncher extension are syntax-checked
+but not run — each needs its host app — and the Alfred and Shortcuts steps cannot
+be tested from a repository at all. Where a file could not be exercised, it says
+so rather than implying otherwise.

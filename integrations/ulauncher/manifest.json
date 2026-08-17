@@ -1,0 +1,31 @@
+{
+  "required_api_version": "^2.0.0",
+  "name": "nextDash",
+  "description": "Save a link to your nextDash inbox",
+  "developer_name": "nextDash",
+  "icon": "images/icon.png",
+  "options": { "query_debounce": 0.1 },
+  "preferences": [
+    {
+      "id": "nd_keyword",
+      "type": "keyword",
+      "name": "nextDash",
+      "description": "Save a link to the inbox",
+      "default_value": "nd"
+    },
+    {
+      "id": "nd_url",
+      "type": "input",
+      "name": "nextDash address",
+      "description": "e.g. http://nextdash.local:8080",
+      "default_value": "http://localhost:8080"
+    },
+    {
+      "id": "nd_token",
+      "type": "input",
+      "name": "Capture token",
+      "description": "Only needed when this install runs with a write token",
+      "default_value": ""
+    }
+  ]
+}
