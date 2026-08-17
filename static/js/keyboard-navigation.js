@@ -270,6 +270,22 @@ class KeyboardNavigation {
                 }
             }
 
+            // Shift+Alt+← / Shift+Alt+→ — move the focused bookmark into the
+            // category beside it. Alt alone moves the category itself and the
+            // plain arrows move the cursor, so the third gesture is the third
+            // modifier. Without it, re-filing a row from the keyboard meant
+            // Shift+M and a popover — fine once, tedious for the twenty rows a
+            // tidy-up actually touches.
+            if (e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey
+                && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                if (this.moveCurrentBookmarkToAdjacentCategory(e.key === 'ArrowLeft' ? -1 : 1)) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
             // Alt+↑ / Alt+↓ — move the focused bookmark. Alt keeps it clear of
             // the plain arrows, which move the cursor.
             if (e.altKey && !e.ctrlKey && !e.metaKey
@@ -1928,6 +1944,49 @@ class KeyboardNavigation {
         this.updateNavigableElements?.();
         this.currentIndex = this.navigableElements.indexOf(row);
         this.highlightCurrentElement({ keyboardNav: true });
+        return true;
+    }
+
+    /**
+     * Move the focused bookmark into the category before or after its own.
+     *
+     * The categories are taken in the order they are rendered, so "the one
+     * beside it" means what it looks like on screen rather than what the stored
+     * order happens to be. Smart collections are skipped: they are a query, not
+     * a place a bookmark can be put.
+     */
+    moveCurrentBookmarkToAdjacentCategory(direction) {
+        const row = this._resolveActionPopoverRow();
+        if (!row) return false;
+        const list = row.closest('[data-category-id]');
+        if (!list) return false;
+
+        const d = this.dashboard;
+        const lists = [...document.querySelectorAll('#dashboard-layout [data-category-id]')]
+            .filter((el) => el.getAttribute('data-smart-collection') !== 'true');
+        const here = lists.indexOf(list);
+        const target = lists[here + (direction < 0 ? -1 : 1)];
+        if (here < 0 || !target) return false;
+
+        const bookmark = this.getSelectedBookmark();
+        const ref = d?.renderCore?.resolveBookmarkReference?.(bookmark);
+        if (!ref?.bookmark) return false;
+
+        const categoryId = target.getAttribute('data-category-id') || '';
+        const moved = d?.bookmarkRows?.applyBookmarkCategoryMove?.(ref, categoryId)
+            ?? d?.applyBookmarkCategoryMove?.(ref, categoryId);
+        if (moved === false) return false;
+        window.nextdashTrack?.('bookmark:move-category-keyboard');
+        // The row is rebuilt by the move's own render, so the cursor is put back
+        // on the bookmark rather than on the element that used to hold it.
+        requestAnimationFrame(() => {
+            this.updateNavigableElements?.();
+            const again = this.navigableElements.findIndex((el) => el.getAttribute?.('href') === row.getAttribute('href'));
+            if (again >= 0) {
+                this.currentIndex = again;
+                this.highlightCurrentElement({ keyboardNav: true });
+            }
+        });
         return true;
     }
 
