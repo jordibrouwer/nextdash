@@ -3021,6 +3021,19 @@ class DashboardConfig {
     overviewNewFeatures() {
         return [
             {
+                titleKey: 'config.overviewNewFeatureHealthStableListTitle',
+                titleFallback: 'The health list stays still while you work through it',
+                whatKey: 'config.overviewNewFeatureHealthStableListWhat',
+                whatFallback: 'Health asks you to open a link and see for yourself, and then charged you for it: never opened and not opened in 30 days each cost ten points, so the first open raised the row\u2019s score and the worst-first order carried it away. On a list of two hundred that meant tenth place became a hundred and eighty-eighth, while you were still reading it.',
+                howKey: 'config.overviewNewFeatureHealthStableListHow',
+                howFallback: 'Usage costs nothing now — it is still counted under the Unused and Stale tiles, still named on the row, it simply no longer decides where the row sits — and nothing else in the order changes when you act on a row either. Where a filter does stop selecting it, opening one under Unused or re-checking one under Broken, the row keeps its place, dimmed and marked handled, until you change the filter, sort or search, or reload the report.',
+                enableKey: 'config.overviewNewFeatureHealthStableListEnable',
+                enableFallback: 'Nothing to switch on. The score breakdown behind the badge now separates what costs points from what is only worth knowing.',
+                ctaKey: 'config.overviewNewFeatureHealthStableListCta',
+                ctaFallback: 'Open Health \u2192',
+                go: { view: 'health' },
+            },
+            {
                 titleKey: 'config.overviewNewFeatureTypeThenEnterTitle',
                 titleFallback: 'Typing filters; Enter opens',
                 whatKey: 'config.overviewNewFeatureTypeThenEnterWhat',

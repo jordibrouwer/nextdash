@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.2.1 — 17 August 2026](#v121--17-august-2026)
 - [v1.2.0 — 16 August 2026](#v120--16-august-2026)
 - [v1.1.2 — 15 August 2026](#v112--15-august-2026)
 - [v1.1.1 — 15 August 2026](#v111--15-august-2026)
@@ -168,6 +169,24 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.2.1 — 17 August 2026
+
+One fix, in the Health view. Flagged `hideFromModal` in the index: it counts toward the version number and shows in **Config → Overview → Latest update**, but does not reopen the What's new modal, which still leads with v1.2.0. `DASHBOARD_RELEASE` and `NEXTDASH_WHATS_NEW_DATA_VERSION` are deliberately unchanged — those two tokens are what re-show the modal, and a one-fix release should not push a feature release off the front of it for everyone who has already read it.
+
+### What's new
+
+- **fix** — usage no longer decides where a row sits. `never_opened` and `not_opened_30_days` cost 10 points each, so opening a bookmark — the action the Broken filter's own note asks for — raised its score, and under the default worst-first sort carried the row away: measured on a 200-bookmark install, position 10 of 200 became position 188 while the reader was still working through the list. Both penalties are 0 now; the flags, the **Unused** and **Stale** tiles and filters, and the reason text on the row are unchanged.
+- **fix** — the score sort's tiebreak reads the flags with the two usage ones removed (`stableStatusRank`) rather than the status. Status alone was not enough: opening a never-opened row that also has no preview turns `unused` into `missing-preview`, a different rank, and the row travels on that instead.
+- **fix** — a row you have acted on keeps its position. Opening one under **Unused**, or re-checking one under **Broken**, takes it out of what the filter selects, and the list used to close the gap under the cursor. It stays at the position it held, dimmed and marked **handled**, until the list is asked a different question (filter, sort, search) or reloaded on purpose with `R` or **Retest all** — and when the view is left.
+- **new** — the score breakdown separates deductions from context: reasons that cost nothing are listed under *worth knowing, at no cost to the score*, because a full score with a deduction printed beneath it reads as broken arithmetic.
+
+### Docs
+
+- `static/data/whats-new/v1.2.1.json`, and the index entry ahead of v1.2.0 carrying `hideFromModal: true`.
+- `tests/health-list-stability.spec.js` pins both halves against the real UI path — the row's own Open — and compares positions against the rows whose own score did not move, so a startup check landing mid-test cannot pass for a re-ranking. Both halves were falsified: restoring the penalties fails the score assertion, removing the anchoring fails the position one.
+- `tests/whats-new-hidden-release.spec.js`: the real-index case flips to asserting v1.2.1 is hidden and that v1.2.0 still leads the modal; the constants case now asserts the two tokens are *unchanged*, and says why that is right here where bumping was right for v1.2.0. The four fixture-driven cases are untouched.
+- `MANUAL.md` and `README.md`: the score breakdown no longer lists the two usage penalties, and both describe the handled row and the sort key nothing can move.
 
 ## v1.2.0 — 16 August 2026
 
