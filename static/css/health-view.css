@@ -953,6 +953,7 @@ button.health-view-tile:hover {
    the button this toolbar exists for. */
 .health-view-export-btn,
 .health-view-history-export-btn,
+.health-view-rot-btn,
 .health-view-checkoff-btn {
     padding: 0.35rem 0.7rem;
     border-radius: 0.4rem;
@@ -964,7 +965,8 @@ button.health-view-tile:hover {
 }
 
 .health-view-export-btn:hover,
-.health-view-history-export-btn:hover {
+.health-view-history-export-btn:hover,
+.health-view-rot-btn:hover {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
     color: var(--accent-primary);
 }
@@ -2364,6 +2366,7 @@ body[data-layout-version="modern"] .health-view-filter-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-action-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-export-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-history-export-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-rot-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-checkoff-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-retest-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-search-input:focus-visible,
@@ -2436,9 +2439,10 @@ body[data-layout-version="modern"] .health-view-filter-btn.is-active {
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 24%, transparent);
 }
 
-/* The three toolbar buttons share one shape in classic (0.4rem); keep them
-   sharing one shape here rather than pinning each to its own radius. */
+/* The toolbar buttons share one shape in classic (0.4rem); keep them sharing
+   one shape here rather than pinning each to its own radius. */
 body[data-layout-version="modern"] .health-view-export-btn,
+body[data-layout-version="modern"] .health-view-rot-btn,
 body[data-layout-version="modern"] .health-view-checkoff-btn,
 body[data-layout-version="modern"] .health-view-bulk-monitor-btn,
 body[data-layout-version="modern"] .health-view-bulk-periodic-btn {
@@ -2451,6 +2455,7 @@ body[data-layout-version="modern"] .health-view-bulk-periodic-btn {
 }
 
 body[data-layout-version="modern"] .health-view-export-btn:hover,
+body[data-layout-version="modern"] .health-view-rot-btn:hover,
 body[data-layout-version="modern"] .health-view-bulk-monitor-btn:hover,
 body[data-layout-version="modern"] .health-view-bulk-periodic-btn:hover {
     background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
