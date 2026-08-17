@@ -596,6 +596,7 @@ Shows bookmarks you opened recently **on the current page** (not global). Each r
 | Keys | Action |
 |------|--------|
 | `Shift + Alt + ←` / `→` | Move the selected bookmark into the category beside it, in the order the page shows them. `Alt` alone moves the category, the plain arrows move the cursor, so the third gesture takes the third modifier. Smart collections are skipped — they are a query, not a place a bookmark can be put |
+| `Shift + F` | Filter the page you are on: a slim bar above the grid hides every row that does not match, and any category left with nothing in it. Matches what the row shows — name, shortcut, address, tags. `Escape` clears the query, a second `Escape` closes the bar. Different from search (`>`), which is an overlay over every page and takes you somewhere |
 | `Shift + E` | Inline-edit selected row (page switches confirm before discarding unsaved edits). Was `;`, which still works but is no longer listed (**v1.1.1**) |
 | `Shift + M` | Move to… (category or another page); popover receives focus — use arrows and `Enter` inside it |
 | `Shift + T` | Quick-tag selected row (popover receives focus — `↑`/`↓` navigate; `Enter`/`Space` toggle tag and advance to next; `✓` on tags already applied) |

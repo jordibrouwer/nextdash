@@ -196,6 +196,10 @@ class Dashboard {
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
         this.multiSelect = new DashboardMultiSelect(this);
+        // Narrowing the page you are on, as opposed to searching everything.
+        this.gridFilter = typeof DashboardGridFilter === 'function'
+            ? new DashboardGridFilter(this)
+            : null;
         this.structureCreate = new DashboardStructureCreate(this);
         this.categoryAdd = new DashboardCategoryAdd(this);
         this.categoryMenu = new DashboardCategoryMenu(this);
@@ -1597,7 +1601,11 @@ class Dashboard {
     }
 
     renderDashboard(options = {}) {
-        return this.renderCore.renderDashboard(...arguments);
+        const out = this.renderCore.renderDashboard(...arguments);
+        // A render rebuilds every row, so an active page filter has to be laid
+        // over the new ones or the bar would claim to be filtering nothing.
+        this.gridFilter?.reapply?.();
+        return out;
     }
 
     groupBookmarksByCategory() {

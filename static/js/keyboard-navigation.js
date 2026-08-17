@@ -297,6 +297,17 @@ class KeyboardNavigation {
                 return;
             }
 
+            // Shift+F — filter the page you are on. Search (>) is an overlay over
+            // everything; this narrows the grid in place and keeps the
+            // categories around what is left, which is what a tidy-up needs.
+            if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && e.code === 'KeyF') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                this.dashboard?.gridFilter?.toggle?.();
+                return;
+            }
+
             // Filter to the tag on the focused row. The row already carries its
             // tags as a data attribute, but acting on the tag you can see meant
             // opening the tag cloud and finding it among all the others.
