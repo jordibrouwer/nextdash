@@ -36,16 +36,29 @@ class ConfigLanguage {
      * Load translations for a specific language
      * @param {string} lang - Language code
      */
+    /** The URL for one scope of one language, with the deploy fingerprint. */
+    static localeUrl(lang, scope) {
+        const version = ConfigLanguage.assetVersion();
+        const params = [];
+        if (scope) params.push(`scope=${encodeURIComponent(scope)}`);
+        if (version) params.push(`v=${encodeURIComponent(version)}`);
+        return `/locales/${lang}.json${params.length ? `?${params.join('&')}` : ''}`;
+    }
+
+    /**
+     * Load the translations the dashboard needs to draw itself.
+     *
+     * Not the whole file: a third of it is the Help tab's prose — 182 KB of the
+     * 570 KB in English — read only by the config module, which is itself loaded
+     * on demand. Those keys arrive with it, through ensureHelpTranslations.
+     */
     async loadTranslations(lang) {
         try {
-            const version = ConfigLanguage.assetVersion();
-            const url = version
-                ? `/locales/${lang}.json?v=${encodeURIComponent(version)}`
-                : `/locales/${lang}.json`;
-            const response = await fetch(url);
+            const response = await fetch(ConfigLanguage.localeUrl(lang, 'core'));
             if (response.ok) {
                 this.translations = await response.json();
                 this.currentLanguage = lang;
+                this._helpLoadedFor = null;
                 this.applyTranslations();
             } else {
                 console.error(`Failed to load translations for ${lang}`);
@@ -53,6 +66,35 @@ class ConfigLanguage {
         } catch (error) {
             console.error('Error loading translations:', error);
         }
+    }
+
+    /**
+     * Fetch the Help tab's strings and fold them in, once per language.
+     *
+     * Called before config renders. Failure is not fatal: t() falls back to the
+     * key's own fallback text, which is the English wording — worse than a
+     * translation, better than a blank panel.
+     */
+    async ensureHelpTranslations(lang) {
+        const language = lang || this.currentLanguage;
+        if (!language || this._helpLoadedFor === language) return;
+        if (this._helpLoading) return this._helpLoading;
+        this._helpLoading = (async () => {
+            try {
+                const res = await fetch(ConfigLanguage.localeUrl(language, 'help'));
+                if (!res.ok) return;
+                const extra = await res.json();
+                const help = extra?.config || {};
+                this.translations = this.translations || {};
+                this.translations.config = { ...(this.translations.config || {}), ...help };
+                this._helpLoadedFor = language;
+            } catch {
+                // Left for the next attempt; the fallbacks carry the panel.
+            } finally {
+                this._helpLoading = null;
+            }
+        })();
+        return this._helpLoading;
     }
 
     /**

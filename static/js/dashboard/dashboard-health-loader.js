@@ -86,6 +86,10 @@ class DashboardHealthLoader {
     }
 
     async openHealthView(...args) {
+        // The view stylesheets ride in one bundle nothing requests until a view
+        // is actually opened — the module itself may load earlier, for a badge
+        // that paints nothing. Awaited, so the view does not paint unstyled.
+        await window.ViewStyles?.ensureViewStyles?.();
         if (!this.isEnabled()) {
             return false;
         }

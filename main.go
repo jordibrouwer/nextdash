@@ -96,6 +96,9 @@ func main() {
 	r.HandleFunc("/api/pages", handlers.GetPages).Methods("GET")
 	r.HandleFunc("/api/pages", handlers.SavePages).Methods("POST")
 	r.HandleFunc("/api/data-revision", handlers.GetDataRevision).Methods("GET")
+	r.HandleFunc("/static/bundle/dashboard.js", handlers.ServeAssetBundle).Methods("GET")
+	r.HandleFunc("/static/bundle/dashboard.css", handlers.ServeAssetBundle).Methods("GET")
+	r.HandleFunc("/static/bundle/views.css", handlers.ServeAssetBundle).Methods("GET")
 	r.HandleFunc("/api/app-version", handlers.AppVersion).Methods("GET")
 	r.HandleFunc("/api/update-status", handlers.GetUpdateStatus).Methods("GET")
 	r.HandleFunc("/api/pages/{id:[0-9]+}", handlers.DeletePage).Methods("DELETE")
@@ -174,11 +177,11 @@ func main() {
 	// Locales: prefer on-disk files in dev/Docker mounts, fall back to embed.
 	if info, err := os.Stat("locales"); err == nil && info.IsDir() {
 		log.Printf("Serving /locales/ from disk (./locales)")
-		r.PathPrefix("/locales/").Handler(http.StripPrefix("/locales/", http.FileServer(http.Dir("locales"))))
-	} else {
-		localesFS, _ := fs.Sub(embeddedFiles, "locales")
-		r.PathPrefix("/locales/").Handler(http.StripPrefix("/locales/", http.FileServer(http.FS(localesFS))))
 	}
+	// One handler for both sources: it reads from disk when there is a disk copy
+	// and from the embedded set otherwise, and it can narrow the file to a scope
+	// so the dashboard does not fetch the Help tab's prose to draw a label.
+	r.PathPrefix("/locales/").HandlerFunc(handlers.LocaleFile)
 
 	// Static: prefer on-disk files so container/dev picks up JS/CSS without rebuild.
 	var staticHandler http.Handler

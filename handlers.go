@@ -203,6 +203,21 @@ var pageTemplateFuncs = template.FuncMap{
 	"lazyAssets": lazyAssetMapJSON,
 }
 
+// pageTemplateFuncsFor adds the funcs that need the store. The theme block is
+// generated from colors.json, so it cannot be a package-level function — and it
+// is inlined rather than linked because /api/theme.css is served no-store: as a
+// link it was an uncacheable blocking request before every first paint.
+func (h *Handlers) pageTemplateFuncsFor() template.FuncMap {
+	funcs := template.FuncMap{}
+	for k, v := range pageTemplateFuncs {
+		funcs[k] = v
+	}
+	funcs["themeCSS"] = func() template.CSS {
+		return template.CSS(h.customThemeCSS())
+	}
+	return funcs
+}
+
 func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Template, error) {
 	key := strings.Join(templateFiles, "|")
 
@@ -217,16 +232,28 @@ func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Templa
 
 	var tmpl *template.Template
 	var err error
-	if info, statErr := os.Stat("templates"); statErr == nil && info.IsDir() {
-		diskFiles := make([]string, len(templateFiles))
-		for i, name := range templateFiles {
-			diskFiles[i] = filepath.FromSlash(name)
+	// A single template is read as source so the bundle markers can be folded
+	// out before parsing — see applyAssetBundles. Anything else is parsed the
+	// way it always was.
+	if len(templateFiles) == 1 {
+		source := readTemplateSource(h.files, templateFiles[0])
+		if source != "" {
+			name := path.Base(templateFiles[0])
+			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).Parse(applyAssetBundles(h.files, source))
 		}
-		name := filepath.Base(diskFiles[0])
-		tmpl, err = template.New(name).Funcs(pageTemplateFuncs).ParseFiles(diskFiles...)
-	} else {
-		name := path.Base(templateFiles[0])
-		tmpl, err = template.New(name).Funcs(pageTemplateFuncs).ParseFS(h.files, templateFiles...)
+	}
+	if tmpl == nil && err == nil {
+		if info, statErr := os.Stat("templates"); statErr == nil && info.IsDir() {
+			diskFiles := make([]string, len(templateFiles))
+			for i, name := range templateFiles {
+				diskFiles[i] = filepath.FromSlash(name)
+			}
+			name := filepath.Base(diskFiles[0])
+			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).ParseFiles(diskFiles...)
+		} else {
+			name := path.Base(templateFiles[0])
+			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).ParseFS(h.files, templateFiles...)
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -1926,10 +1953,18 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 }
 
 func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
-	colors := h.store.GetColors()
-
 	w.Header().Set("Content-Type", "text/css")
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Write([]byte(h.customThemeCSS()))
+}
+
+// customThemeCSS is the same stylesheet the endpoint serves. Split out so the
+// page can carry it inline — it is generated per install and served no-store,
+// so as a link it was one uncacheable blocking request before every first paint.
+// The endpoint stays: switching a theme reloads it, and it is the one path that
+// must not depend on a page render.
+func (h *Handlers) customThemeCSS() string {
+	colors := h.store.GetColors()
 
 	css := "/* Custom Theme Variables - Loaded from colors.json */\n\n"
 	css += "/* Light Theme Variables */\n" + renderThemeCSSBlock("light", colors.Light) + "\n"
@@ -1958,7 +1993,7 @@ func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 		css += "/* Built-in Theme: " + safeID + " */\n" + renderThemeCSSBlock(safeID, colors.BuiltIn[themeID]) + "\n"
 	}
 
-	w.Write([]byte(css))
+	return css
 }
 
 func (h *Handlers) Health(w http.ResponseWriter, r *http.Request) {

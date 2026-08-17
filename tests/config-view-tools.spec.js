@@ -135,20 +135,32 @@ test.describe('editing a bookmark where you read it', () => {
 
     test('the shortcut pill turns into an input and Escape restores it', async ({ page }) => {
         await config(page, 'bookmarks');
-        const pill = page.locator('.config-bm-row [data-bm-inline="shortcut"]').first();
+        // A key nothing in the fixture holds, so this test is about Escape and
+        // not about the conflict path the test above covers.
+        const free = await page.evaluate(() => {
+            const used = new Set((window.dashboardInstance.allBookmarks || [])
+                .map((b) => String(b.shortcut || '').trim().toUpperCase()).filter(Boolean));
+            for (const c of 'QXYZJKVW') {
+                const candidate = `${c}9`;
+                if (!used.has(candidate)) return candidate;
+            }
+            return 'Q9';
+        });
+
+        const row = page.locator('.config-bm-row').first();
+        const pill = row.locator('[data-bm-inline="shortcut"]');
         await expect(pill).toBeVisible({ timeout: 10_000 });
         const before = (await pill.textContent()).trim();
 
         await pill.click();
-        const input = page.locator('.config-bm-inline-input--shortcut').first();
+        const input = row.locator('.config-bm-inline-input--shortcut');
         await expect(input).toBeVisible({ timeout: 5_000 });
         // Typed rather than filled: fill() can take focus away, and blur saves —
         // which is the behaviour, not a bug, but it is not what this test is about.
-        await input.type('ZZ');
+        await input.type(free);
         await input.press('Escape');
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(400);
         // Escape puts back exactly what was there, including the empty pill's +.
-        expect((await page.locator('.config-bm-row [data-bm-inline="shortcut"]').first().textContent()).trim())
-            .toBe(before);
+        expect((await row.locator('[data-bm-inline="shortcut"]').textContent()).trim()).toBe(before);
     });
 });

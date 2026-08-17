@@ -631,6 +631,11 @@ test.describe('config help coverage', () => {
 
     test('reusing the old prose did not repoint the old config’s own titles', async ({ page }) => {
         await loadDashboard(page);
+        // The Help tab's strings are a third of the translation file and are
+        // fetched with the config module that reads them, so they are asked for
+        // here the way the app asks for them.
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
+        await page.waitForTimeout(800);
         // templates/config.html still renders these keys; the new config uses
         // its own help*Title keys so retitling one page cannot degrade the other.
         const shared = await page.evaluate(() => {

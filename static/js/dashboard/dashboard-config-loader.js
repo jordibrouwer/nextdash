@@ -207,7 +207,15 @@ class DashboardConfigLoader {
     async openConfigView(section) {
         let mod;
         try {
-            mod = await this.load();
+            // The Help tab's strings are not in the startup payload — a third of
+            // the file, read nowhere else — so they are fetched alongside the
+            // module that reads them. In parallel: neither waits on the other.
+            const [loaded] = await Promise.all([
+                this.load(),
+                this.dash?.language?.ensureHelpTranslations?.(),
+                window.ViewStyles?.ensureViewStyles?.(),
+            ]);
+            mod = loaded;
         } catch (err) {
             const msg = this.dash?.language?.t?.('config.loadFailed');
             const text = (typeof msg === 'string' && msg !== 'config.loadFailed')

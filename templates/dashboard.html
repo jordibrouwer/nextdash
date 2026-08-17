@@ -31,7 +31,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}">
-    <link rel="stylesheet" href="/api/theme.css">
+    <!-- Inline rather than linked: this stylesheet is generated per install and
+         served no-store, so as a link it was an uncacheable blocking request
+         between the HTML and the first paint on every load. The endpoint stays
+         for the theme switch, which reloads it — see reloadThemeCSS. -->
+    <style id="nextdash-theme-css">{{themeCSS}}</style>
+    <!-- bundle:css -->
     <link rel="stylesheet" href="{{asset "css/theme.css"}}">
     <!-- Modern design tokens load ahead of every view stylesheet, so view CSS
          that carries its own modern rules can read --layout-* directly. The
@@ -57,16 +62,12 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-quickstart.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-tag-cloud.css"}}">
     <link rel="stylesheet" href="{{asset "css/feed-row.css"}}">
-    <link rel="stylesheet" href="{{asset "css/dashboard-inbox.css"}}">
-    <link rel="stylesheet" href="{{asset "css/inbox-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/spread-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/setting-art.css"}}">
     <link rel="stylesheet" href="{{asset "css/dashboard-multi-select.css"}}">
     <link rel="stylesheet" href="{{asset "css/view-explainers.css"}}">
-    <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-tutorial.css"}}">
     <link rel="stylesheet" href="{{asset "css/health-focus.css"}}">
-    <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
     <link rel="stylesheet" href="{{asset "css/config-setting-promo.css"}}">
     <link rel="stylesheet" href="{{asset "css/colors.css"}}">
         <link rel="stylesheet" href="{{asset "css/enhanced-features.css"}}">
@@ -83,6 +84,13 @@
          twice and warn that the preload went unused. Both sides must agree. -->
     <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{asset "css/fonts.css"}}">
+    <!-- /bundle:css -->
+    <!-- bundle:css-views -->
+    <link rel="stylesheet" href="{{asset "css/dashboard-inbox.css"}}">
+    <link rel="stylesheet" href="{{asset "css/inbox-tutorial.css"}}">
+    <link rel="stylesheet" href="{{asset "css/health-view.css"}}">
+    <link rel="stylesheet" href="{{asset "css/config-view.css"}}">
+    <!-- /bundle:css-views -->
     <noscript>
         <style>
             /* Without JS the `loading` class never clears, so the skeleton would
@@ -334,6 +342,8 @@
         <span class="whats-new-btn-update-dot" aria-hidden="true"></span>
     </button>
 
+    <script src="{{asset "js/view-styles.js"}}" defer></script>
+    <!-- bundle:js -->
     <script src="{{asset "js/dashboard-feature-flags.js"}}" defer></script>
     <script src="{{asset "js/theme-icon-styling.js"}}" defer></script>
     <!-- Before modal.js and every other overlay: they all take scroll locks. -->
@@ -447,5 +457,6 @@
          moves it into place and instantiates the existing ColorsEditor against it. -->
     <script src="{{asset "js/shared/config-custom-themes.js"}}" defer></script>
     <script src="{{asset "js/color-value-utils.js"}}" defer></script>
+    <!-- /bundle:js -->
 </body>
 </html>

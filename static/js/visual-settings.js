@@ -283,6 +283,17 @@
     }
 
     function reloadThemeCSS() {
+        // The page carries the generated theme inline now, so a refresh replaces
+        // that block; the link form is still handled for a page rendered before
+        // this change and left open in another tab.
+        const inline = document.getElementById('nextdash-theme-css');
+        if (inline) {
+            fetch(`/api/theme.css?t=${Date.now()}`)
+                .then((res) => (res.ok ? res.text() : null))
+                .then((css) => { if (css) inline.textContent = css; })
+                .catch(() => { /* the old variables stay, which is the safe half */ });
+            return;
+        }
         const link = document.querySelector('link[href^="/api/theme.css"]');
         if (!link || !link.parentNode) {
             return;
