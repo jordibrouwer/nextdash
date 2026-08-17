@@ -426,11 +426,16 @@ const (
 	// Same weight as the other data-integrity faults: the bookmark still works,
 	// but it has fallen out of the category structure the user organised it into.
 	healthPenaltyOrphanedCategory = 15
-	healthPenaltyNeverChecked     = 10
-	healthPenaltyNotOpened30Days  = 10
-	healthPenaltyNeverOpened      = 10
-	healthPenaltyStaleCheck       = 5
-	healthPenaltyNoPreview        = 5
+	healthPenaltyNeverChecked = 10
+	// Usage is not a defect. A link you have never opened is not broken, and the
+	// health view's own advice is to open it and see — an action that used to
+	// improve the row's score by 10 and, under the default worst-first sort, drop
+	// it hundreds of places down the list the user was working through. Both stay
+	// as flags, tiles, filters and reasons; neither costs a point.
+	healthPenaltyNotOpened30Days = 0
+	healthPenaltyNeverOpened     = 0
+	healthPenaltyStaleCheck      = 5
+	healthPenaltyNoPreview       = 5
 )
 
 func appendHealthReason(details *[]HealthReason, legacy *[]string, reason HealthReason) {
@@ -662,13 +667,15 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "status_stale", Penalty: healthPenaltyStaleCheck})
 				score -= healthPenaltyStaleCheck
 			}
+			// Status and flags still record it — the Stale and Unused tiles and
+			// filters are how a tidy-up starts — but the score is left alone, so
+			// opening the bookmark does not re-rank the list around it.
 			if isStale {
 				if status == "healthy" {
 					status = "stale"
 				}
 				flags = append(flags, "stale")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "not_opened_30_days", Penalty: healthPenaltyNotOpened30Days})
-				score -= healthPenaltyNotOpened30Days
 			}
 			if isUnused {
 				if status == "healthy" {
@@ -676,7 +683,6 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				}
 				flags = append(flags, "unused")
 				appendHealthReason(&reasonDetails, &reasons, HealthReason{Code: "never_opened", Penalty: healthPenaltyNeverOpened})
-				score -= healthPenaltyNeverOpened
 			}
 			if isMissingPreview {
 				if status == "healthy" {
