@@ -1446,7 +1446,17 @@
     "healthTileTrendHint": "{days} jours d’historique — ouvrir le graphique complet",
     "healthTrendModalTitle": "Où en est la collection",
     "healthTrendOpenHint": "Afficher le graphique de tendance",
-    "healthTileBrokenHintMonitors": "N’a pas répondu à la dernière vérification — dont {count} surveillés"
+    "healthTileBrokenHintMonitors": "N’a pas répondu à la dernière vérification — dont {count} surveillés",
+    "gridFilterPlaceholder": "Filtrer cette page…",
+    "gridFilterClear": "Effacer le filtre",
+    "gridFilterCount": "{count} sur {total}",
+    "multiSelectPin": "Épingler",
+    "multiSelectUnpin": "Détacher",
+    "multiSelectPinned": "{count} favori(s) épinglé(s)",
+    "multiSelectUnpinned": "{count} favori(s) détaché(s)",
+    "multiSelectChecking": "Vérification",
+    "multiSelectCheckingHeader": "Vérification pour {count} favori(s)",
+    "multiSelectCheckingDone": "Vérification modifiée sur {count} favori(s)"
   },
   "health": {
     "pageTitle": "health beta",

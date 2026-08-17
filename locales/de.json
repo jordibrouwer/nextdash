@@ -1446,7 +1446,17 @@
     "healthTileTrendHint": "{days} Tage Historie — vollständiges Diagramm öffnen",
     "healthTrendModalTitle": "Wie es um die Sammlung steht",
     "healthTrendOpenHint": "Verlaufsdiagramm anzeigen",
-    "healthTileBrokenHintMonitors": "Antwortete bei der letzten Prüfung nicht — davon {count} überwacht"
+    "healthTileBrokenHintMonitors": "Antwortete bei der letzten Prüfung nicht — davon {count} überwacht",
+    "gridFilterPlaceholder": "Diese Seite filtern…",
+    "gridFilterClear": "Filter löschen",
+    "gridFilterCount": "{count} von {total}",
+    "multiSelectPin": "Anheften",
+    "multiSelectUnpin": "Lösen",
+    "multiSelectPinned": "{count} Lesezeichen angeheftet",
+    "multiSelectUnpinned": "{count} Lesezeichen gelöst",
+    "multiSelectChecking": "Prüfung",
+    "multiSelectCheckingHeader": "Prüfung für {count} Lesezeichen",
+    "multiSelectCheckingDone": "Prüfung bei {count} Lesezeichen geändert"
   },
   "health": {
     "pageTitle": "health beta",

@@ -1447,7 +1447,17 @@
     "healthTileTrendHint": "{days} days of history — open the full chart",
     "healthTrendModalTitle": "How the collection is doing",
     "healthTrendOpenHint": "Show the trend chart",
-    "healthTileBrokenHintMonitors": "Did not respond when last checked — {count} of them monitored"
+    "healthTileBrokenHintMonitors": "Did not respond when last checked — {count} of them monitored",
+    "gridFilterPlaceholder": "Filter this page…",
+    "gridFilterClear": "Clear the filter",
+    "gridFilterCount": "{count} of {total}",
+    "multiSelectPin": "Pin",
+    "multiSelectUnpin": "Unpin",
+    "multiSelectPinned": "Pinned {count} bookmark(s)",
+    "multiSelectUnpinned": "Unpinned {count} bookmark(s)",
+    "multiSelectChecking": "Checking",
+    "multiSelectCheckingHeader": "Checking for {count} bookmark(s)",
+    "multiSelectCheckingDone": "Checking changed on {count} bookmark(s)"
   },
   "health": {
     "pageTitle": "health beta",

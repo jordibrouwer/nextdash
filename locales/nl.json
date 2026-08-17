@@ -1446,7 +1446,17 @@
     "healthTileTrendHint": "{days} dagen historie — open het volledige diagram",
     "healthTrendModalTitle": "Hoe de verzameling ervoor staat",
     "healthTrendOpenHint": "Toon het trenddiagram",
-    "healthTileBrokenHintMonitors": "Reageerde niet bij de laatste controle — waarvan {count} gemonitord"
+    "healthTileBrokenHintMonitors": "Reageerde niet bij de laatste controle — waarvan {count} gemonitord",
+    "gridFilterPlaceholder": "Filter deze pagina…",
+    "gridFilterClear": "Filter wissen",
+    "gridFilterCount": "{count} van {total}",
+    "multiSelectPin": "Vastzetten",
+    "multiSelectUnpin": "Losmaken",
+    "multiSelectPinned": "{count} bookmark(s) vastgezet",
+    "multiSelectUnpinned": "{count} bookmark(s) losgemaakt",
+    "multiSelectChecking": "Controle",
+    "multiSelectCheckingHeader": "Controle voor {count} bookmark(s)",
+    "multiSelectCheckingDone": "Controle gewijzigd op {count} bookmark(s)"
   },
   "health": {
     "pageTitle": "health beta",
