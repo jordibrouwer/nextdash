@@ -75,6 +75,18 @@ body.has-custom-background.bg-image::after {
 .icon-themed--tinted {
     background-color: color-mix(in srgb, var(--accent-primary) var(--icon-theme-intensity, 0.12), transparent);
 }
+/* A glyph is its own host — there is no <img> inside a category header's emoji
+   — so the variants above, which reach for img/.preview-icon, would leave it at
+   full colour beside harmonised favicons. Tinted deliberately skips the multiply
+   blend the image rule uses: on text it eats the glyph rather than colouring it. */
+.icon-themed--muted.icon-themed-glyph {
+    filter: grayscale(calc(var(--icon-theme-intensity, 0.6)));
+    opacity: calc(1 - (var(--icon-theme-intensity, 0.25) * 0.8));
+}
+.icon-themed--tinted.icon-themed-glyph {
+    filter: saturate(calc(0.6 + var(--icon-theme-intensity, 0.4)));
+}
+
 .icon-themed--overlay {
     padding: 3px;
     display: inline-flex;

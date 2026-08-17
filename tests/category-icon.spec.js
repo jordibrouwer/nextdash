@@ -130,3 +130,48 @@ test.describe('setting a category icon', () => {
             (window.dashboardInstance.categories || []).find((c) => String(c.id) === catId)?.icon || '', id)).toBe(before);
     });
 });
+
+/**
+ * Favicon harmonisation is a whole-dashboard setting, and a category header's
+ * emoji is an icon like any other. It was left at full colour beside harmonised
+ * favicons, because the variant rules in theme.css reach for <img> and a glyph
+ * has none — so the header stood out exactly where the setting exists to stop
+ * things standing out.
+ */
+test.describe('the category glyph follows favicon harmonisation', () => {
+    test('it is styled while harmonisation is on, and plain again when it is off', async ({ page }) => {
+        await dashboard(page);
+        const glyph = '#dashboard-layout .category-title .category-title-icon';
+        await expect(page.locator(glyph).first()).toBeVisible({ timeout: 10_000 });
+
+        const on = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const key = window.ThemeIconStyling.getThemeIconStylingThemeKey(d.settings);
+            d.settings.themeIconStyling = {
+                ...(d.settings.themeIconStyling || {}),
+                [key]: { enabled: true, style: 'muted', intensity: 0.8 },
+            };
+            // The same call the theme switch makes, so this is the live path and
+            // not a fresh render that happens to read the setting.
+            window.ThemeIconStyling.applyThemeIconStylingToDocument(d.settings);
+            const el = document.querySelector('#dashboard-layout .category-title .category-title-icon');
+            return { cls: el.className, filter: getComputedStyle(el).filter };
+        });
+        expect(on.cls).toContain('icon-themed--muted');
+        expect(on.filter).toContain('grayscale');
+
+        const off = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const key = window.ThemeIconStyling.getThemeIconStylingThemeKey(d.settings);
+            d.settings.themeIconStyling = {
+                ...(d.settings.themeIconStyling || {}),
+                [key]: { enabled: false },
+            };
+            window.ThemeIconStyling.applyThemeIconStylingToDocument(d.settings);
+            const el = document.querySelector('#dashboard-layout .category-title .category-title-icon');
+            return { cls: el.className, filter: getComputedStyle(el).filter };
+        });
+        expect(off.cls).not.toContain('icon-themed--muted');
+        expect(off.filter).toBe('none');
+    });
+});

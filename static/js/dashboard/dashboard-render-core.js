@@ -1623,8 +1623,16 @@ class DashboardRenderCore {
             // what you type by writing into this element, and a text node
             // between two others is not something anything can address.
             const textIcon = document.createElement('span');
-            textIcon.className = 'category-title-icon';
+            // icon-themed-glyph is what lets favicon harmonisation reach a glyph:
+            // the variant rules in theme.css are written for <img>, and an emoji
+            // in a category header is the same kind of thing to the eye — leaving
+            // it at full colour beside harmonised favicons is what looked wrong.
+            textIcon.className = 'category-title-icon icon-themed-glyph';
             textIcon.textContent = `${categoryIcon || '▣'} `;
+            window.ThemeIconStyling.applyThemeIconStylingToElement(
+                textIcon,
+                window.ThemeIconStyling.getThemeIconStylingEntry(d.settings)
+            );
             labelWrap.appendChild(textIcon);
         }
         labelWrap.appendChild(nameSpan);
