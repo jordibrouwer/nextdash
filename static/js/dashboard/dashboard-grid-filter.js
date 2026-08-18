@@ -102,10 +102,22 @@
             bar.appendChild(input);
             bar.appendChild(count);
             bar.appendChild(clear);
-            // Inside the layout, above the first category: the layout element is
-            // the grid itself, so a sibling before it would sit outside the
-            // padding everything else lines up with.
-            container.insertBefore(bar, container.firstChild);
+            // Above the layout, not inside it.
+            //
+            // It used to be the layout's first child, which is fine while the
+            // layout is a grid — and wrong in every other mode. Packed columns
+            // make it `display: flex; flex-wrap: nowrap; justify-content: center`,
+            // so the bar became a column of its own in that row: squeezed to a
+            // fraction of its width and pushed off the left edge of the window
+            // (measured at x = -21 on a three-column page). Masonry reads the
+            // layout's own children, and the layout is `role="grid"`, where a
+            // search field is not a row.
+            //
+            // As the layout's previous sibling it spans the same container the
+            // grid does, sits under the page title where the eye already is, and
+            // survives a re-render of the grid without being rebuilt.
+            const host = container.parentElement || container;
+            host.insertBefore(bar, container);
             return bar;
         }
 

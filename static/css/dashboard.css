@@ -5048,6 +5048,10 @@ body[data-grid-keys="shown"] .dashboard-legend {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    /* It sits above the grid rather than in it, so it takes the container's
+       width whatever shape the grid itself is in. */
+    width: 100%;
+    box-sizing: border-box;
     margin: 0 0 0.6rem;
     padding: 0.3rem 0.5rem;
     border: 1px solid var(--border-primary);
