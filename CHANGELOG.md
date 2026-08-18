@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.3.0 — 18 August 2026](#v130--18-august-2026)
 - [v1.2.1 — 17 August 2026](#v121--17-august-2026)
 - [v1.2.0 — 16 August 2026](#v120--16-august-2026)
 - [v1.1.2 — 15 August 2026](#v112--15-august-2026)
@@ -169,6 +170,75 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.3.0 — 18 August 2026
+
+The biggest release since 1.0: nineteen changes across 114 files, +10,847 / −2,320 lines. One subject runs through all of it — **the life of a link**. How it gets in when you are not at the desktop that has the extension; how you find out it has rotted; how the tidying becomes something you can finish rather than a number you learn to ignore; and how a page you saved tells you it has published something. The fourth strand is speed: the dashboard's first load is about five times lighter than it was.
+
+### What's new
+
+**Capture — from wherever you are**
+
+- **new** — **PWA share target**. Installed as an app, nextDash appears in the phone's share sheet; a shared link lands in the Inbox and the app opens on it. Android often puts the address inside the shared *text* rather than in the URL field, so the first `http(s)` address in either is used, with trailing sentence punctuation left to the sentence.
+- **new** — **`GET /add?url=…&title=…`**, and a bookmarklet built for you in **Config → Help → Inbox** carrying this install's origin. Both routes are plain GETs because neither a share sheet nor a bookmarklet can set a header; on an install with a write token, `NEXTDASH_CAPTURE_TOKEN` opens these two routes and nothing else.
+- **new** — **[`integrations/`](integrations/)**: a shell script, two Raycast commands (one for a URL, one for the frontmost tab in five browsers), a Dropzone action, a Ulauncher extension, and Alfred and Apple Shortcuts recipes. No binary bundles — steps you can read instead.
+- **new** — **manifest shortcuts** for Inbox, Health and Config, so a long-press on the installed app opens the view rather than the dashboard.
+- **fix** — duplicate detection looks **everywhere**, not only at the page being saved to, and answers with the conflicting bookmark's name, page and category rather than a bare 409. Same page is refused; another page asks, with the existing bookmark as a link and **Save anyway** to file a second copy. Moves send `allowDuplicate`, since a move is an add followed by a delete.
+
+**Link rot**
+
+- **new** — **broken since**: the first failure of a run is recorded, so a row can say *failing for three weeks* rather than only *broken*. Carried into the filters, the row, the export and the report.
+- **new** — **soft 404 detection**: a monitored check can spot a page that answers 200 while saying *not found*. One bounded body read per check, which is why it is a switch beside the check timeout rather than always on.
+- **new** — **group by site**: one host down reads as one problem instead of forty.
+- **new** — **archive fallback**: point a dead link at its last Web Archive capture, keeping the original address in the note.
+- **new** — **history days**: the trend can be read over a longer window, and a window the samples cannot fill says so rather than pretending.
+- **new** — **Rot report** in the toolbar: what has gone, moved or been rewritten, has been failing for over a month, is broken and never opened, and what broke this week. Everything in it was already in the report; what was missing was somewhere it added up.
+- **fix** — the Rot report button was never styled, and rendered as a bare user-agent button between four styled ones.
+
+**Cleaning as a ritual**
+
+- **new** — a **card in the corner of the dashboard** names what is waiting — *“10 links to review: 4 broken, 3 never opened, 3 not opened in a year”* — and starts a bounded session over the worst ten in the health view's Work through. Below five waiting links it stays quiet.
+- **new** — the session **ends**: a count of what was dealt with, **Another ten** while more are waiting, and **Done for today** which puts the offer away until the next local day. Skipping is not handling, so the count is honest.
+
+**Fresh**
+
+- **new** — a page's `<link rel="alternate">` feed is noted while previews are fetched, polled on the background re-check interval with a conditional request, and a bookmark carries a count of what has been published since you last opened it. A **Fresh** smart collection lists them newest publication first.
+- **new** — opening the bookmark clears the count; `lastOpened` is the whole of the read state. No article list, no titles, no OPML — deliberately not a feed reader.
+- **new** — off by default, under **Behavior → Status & health → Fresh**; switching it on polls once immediately rather than waiting for the scheduler.
+
+**The dashboard, in place**
+
+- **new** — **`Shift + F`** filters the page you are on: a slim bar narrows the rows, hides the categories left empty, and keeps the layout, the cursor and any selection.
+- **new** — **the scroll offset is remembered per page**, across a view change and a reload, for as long as the tab is open. Switch it off under **Behavior → General**.
+- **new** — a selection can be **pinned** and **switched to Periodic or Monitor** in one action, and a bulk tag change can be **undone** for eight seconds.
+- **new** — **`Shift + Alt + ← / →`** moves the focused bookmark into the category beside it; smart collections are skipped, being a query rather than a place.
+- **new** — **what typing a bookmark shortcut does is a setting**: press Enter (default), open after a short pause, or open the moment it matches. Inbox settings moved to a tab of their own, and Search gained the three-card control with an interactive **ℹ**.
+- **fix** — the category header's glyph follows the favicon harmonisation setting, instead of staying at full saturation beside recoloured icons.
+- **fix** — the filter bar is placed above the grid rather than inside it. As the layout's first child it was fine while the layout was a CSS grid and wrong in every other shape: packed columns lay it out as a flex row that does not wrap, so the bar became a column of its own — squeezed to a fraction of its width and pushed off the left edge of the window (x = −21 on a three-column page). It also kept a search field inside `role="grid"` and gave masonry a child that is not a category.
+
+**Config**
+
+- **new** — the settings search matches a setting's **current value** as well as its name, and shows it after the location, with switches read as On/Off.
+- **new** — settings that stay server-wide while *Keep settings on this device only* is on carry an **all devices** mark; the switch itself is marked **this device**.
+- **new** — **Duplicate** a page (with its categories, and optionally its bookmarks) or a category (with its width, icon and sort). Copies start with empty check and open history, and without the original's shortcut.
+- **new** — **edit a name or shortcut in the row**: double-click the title or click the shortcut pill — including the faint **+** on a bookmark that has none. A shortcut already in use is named as you type it and refused on Enter, checked across every page.
+- **new** — a tag in **Most used tags** opens Config → Bookmarks filtered to it.
+
+**Speed**
+
+- **new** — 99 scripts and 42 stylesheets are served as two bundles, the generated theme is inlined, Help's translations load with Help, and each view's stylesheet arrives when the view is opened. First load: **169 requests and 915 KB → 30 requests and 685 KB**. `NEXTDASH_BUNDLE=off` restores the individual tags.
+- **new** — config's cold open is **74 ms → 55 ms**, the bookmark list draws **2757 → 1762** nodes, and the module is 1000 KB → 884 KB with the statistics renderers loading beside their own section.
+
+### Docs
+
+- `static/data/whats-new/v1.3.0.json` and the index entry ahead of v1.2.1. `DASHBOARD_RELEASE` and `NEXTDASH_WHATS_NEW_DATA_VERSION` are bumped, which is what reopens the modal for everyone — right for a feature release, where v1.2.1 deliberately left both alone.
+- `tests/whats-new-hidden-release.spec.js`: the shipped-index case now asserts v1.3.0 leads the index and the modal, that v1.2.1 is still recorded and still hidden behind it, and that the two constants name v1.3.0. The four fixture-driven cases that prove the mechanism are untouched.
+- **Config → Help** gained the release's subjects in every tab that owns one — the shortcut modes, the cross-page duplicate question, coming back where you were, Fresh, the review session and the Rot report, finding a setting by value, and the capture routes — plus eleven new **Tips**, in four languages.
+- The **cheat sheet** gained `Shift + F` and `Shift + Alt + ← / →`. Both stay out of the printable A4, which is at its 70-row budget.
+- **Config → Overview → New features** carries the five headline items of this release, newest first.
+- `MANUAL.md` and `README.md` cover every feature above; the Help version panel names 1.3.0.
+- `tests/help-current-features.spec.js` pins the help prose, the tips and the two cheat-sheet keys against the rendered UI, so the next release cannot quietly leave them behind.
+- `tests/config-help-health.spec.js` was stale from the Health/Monitoring tab split — nine of its fifteen cases failed before this release. Expectations follow the tabs now, and its translation case waits for Help's own scoped strings rather than racing them.
 
 ## v1.2.1 — 17 August 2026
 

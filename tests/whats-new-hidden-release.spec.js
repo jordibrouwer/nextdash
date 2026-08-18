@@ -131,17 +131,19 @@ test.describe('a release flagged hideFromModal', () => {
     // what the shipped files do with it, which is the part a release gets wrong:
     // a flag left on hides a release nobody meant to hide, and a flag taken off
     // without bumping the tokens announces it to nobody.
-    test('v1.2.1 is recorded but hidden, and the modal leads with v1.2.0', async ({ page }) => {
+    test('v1.3.0 leads the index and the modal, with v1.2.1 still hidden behind it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
         // The newest entry is the one the release tag and Config → Overview →
         // Latest update read, flag or no flag.
-        expect(index[0].tag).toBe('v1.2.1');
-        expect(index[0].hideFromModal).toBe(true);
-        expect(index[1].tag).toBe('v1.2.0');
-        expect(index[1].hideFromModal).toBeUndefined();
+        expect(index[0].tag).toBe('v1.3.0');
+        expect(index[0].hideFromModal).toBeUndefined();
+        // And the hidden one below it stays hidden: a release recorded but not
+        // announced does not become announced because a later one shipped.
+        expect(index[1].tag).toBe('v1.2.1');
+        expect(index[1].hideFromModal).toBe(true);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -154,30 +156,32 @@ test.describe('a release flagged hideFromModal', () => {
                 .map((e) => e.textContent.trim())
                 .filter((t) => /^v\d+\.\d+\.\d+$/.test(t)),
         )]);
-        // A one-fix release should not push a feature release off the front of
-        // the modal for everyone who has already read it, so v1.2.1 is skipped
-        // here and v1.2.0 still leads.
-        expect(await shownTags()).toContain('v1.2.0');
+        // v1.3.0 leads; v1.2.1 is skipped wherever the reader scrolls, which is
+        // the whole of what hideFromModal promises.
+        expect(await shownTags()).toContain('v1.3.0');
         expect(await shownTags()).not.toContain('v1.2.1');
 
-        // Releases load one at a time as you scroll, and v1.2.0 fills the panel
-        // on its own — where v1.1.2 and v1.1.1 were short enough to arrive
-        // together. The next release down is a scroll away, not missing.
-        await modal.evaluate((m) => {
-            const body = m.querySelector('.modal-body') || m;
-            body.scrollTop = body.scrollHeight;
-        });
-        await expect.poll(shownTags, { timeout: 10_000 }).toContain('v1.1.2');
+        // Releases load one at a time as you scroll, and this one fills the
+        // panel several times over. The next announced release down is a scroll
+        // away, not missing — and it is v1.2.0, the hidden one having been
+        // stepped over.
+        await expect.poll(async () => {
+            await modal.evaluate((m) => {
+                const body = m.querySelector('.modal-body') || m;
+                body.scrollTop = body.scrollHeight;
+            });
+            return shownTags();
+        }, { timeout: 20_000 }).toContain('v1.2.0');
+        expect(await shownTags()).not.toContain('v1.2.1');
     });
 
-    // Left alone on purpose: these two tokens are what reopens the modal for
-    // everyone, so a release that is deliberately not announced must not touch
-    // them. They still read v1.2.0 — the release the modal leads with — which is
-    // the other half of hiding v1.2.1.
-    test('the release constants still name v1.2.0, the last announced release', async ({ page }) => {
+    // These two tokens are what reopens the modal for everyone, so they follow
+    // the newest *announced* release: bumped here, where v1.2.1 deliberately
+    // left them alone. A feature release nobody is shown is not a release.
+    test('the release constants name v1.3.0, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.2.0'");
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v245'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.3.0'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v246'");
     });
 });
