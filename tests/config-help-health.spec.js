@@ -25,18 +25,23 @@ async function openHealthHelp(page) {
     await openHelpTab(page, 'health');
 }
 
+async function openMonitoringHelp(page) {
+    await openHelpTab(page, 'monitoring');
+}
+
 async function openInboxHelp(page) {
     await openHelpTab(page, 'inbox');
 }
 
 test.describe('config help — health', () => {
-    test('splits into nine panels, each with real prose', async ({ page }) => {
+    test('splits into three panels, each with real prose', async ({ page }) => {
         await openHealthHelp(page);
 
         const body = page.locator('#config-help-body');
-        // Availability, the list, the numbers, expectations, certificates,
-        // drift, maintenance windows, notifications, and the walkthrough.
-        await expect(body.locator('.config-panel')).toHaveCount(9);
+        // Availability, working the list, and the walkthrough. The monitoring
+        // half — uptime, expectations, certificates, drift, maintenance windows
+        // and alerts — is its own tab, asserted below.
+        await expect(body.locator('.config-panel')).toHaveCount(3);
 
         // A missing key renders as the key itself; nothing here may look like one.
         await expect(body).not.toContainText('config.help');
@@ -49,8 +54,11 @@ test.describe('config help — health', () => {
         }
     });
 
+    // Split with the tabs: the fleet numbers and the trend are the monitoring
+    // half, while the interval picker and the tiles belong to the row and the
+    // list — which is what Health still covers.
     test('covers the collection-wide statistics, not just per-row ones', async ({ page }) => {
-        await openHealthHelp(page);
+        await openMonitoringHelp(page);
         const body = page.locator('#config-help-body');
 
         // The panel above the Monitored list.
@@ -62,17 +70,19 @@ test.describe('config help — health', () => {
         // The trend, and the reason its axis is fixed.
         await expect(body).toContainText(/0–100/);
         await expect(body).toContainText(/90 days/i);
+    });
 
-        // The interval picker on the row.
+    test('covers the interval picker and the tiles that sound alike', async ({ page }) => {
+        await openHealthHelp(page);
+        const body = page.locator('#config-help-body');
+
         await expect(body).toContainText(/Check interval/i);
-
-        // The tiles that sound alike are told apart.
         await expect(body).toContainText(/Stale/i);
         await expect(body).toContainText(/Unused/i);
     });
 
     test('covers drift detection: all three kinds, and how a baseline is set', async ({ page }) => {
-        await openHealthHelp(page);
+        await openMonitoringHelp(page);
         const body = page.locator('#config-help-body');
 
         await expect(body).toContainText(/Watch for redirects, retitling and rewrites/i);
@@ -99,7 +109,7 @@ test.describe('config help — health', () => {
     });
 
     test('covers accepting drift: what it clears and what it asserts', async ({ page }) => {
-        await openHealthHelp(page);
+        await openMonitoringHelp(page);
         const body = page.locator('#config-help-body');
 
         await expect(body).toContainText(/Accept drift/);
@@ -110,7 +120,7 @@ test.describe('config help — health', () => {
     });
 
     test('covers per-bookmark muting and the burst digest', async ({ page }) => {
-        await openHealthHelp(page);
+        await openMonitoringHelp(page);
         const body = page.locator('#config-help-body');
 
         await expect(body).toContainText(/Do not alert me about this bookmark/);
@@ -127,7 +137,7 @@ test.describe('config help — health', () => {
     });
 
     test('covers maintenance windows: what they exclude and what they do not', async ({ page }) => {
-        await openHealthHelp(page);
+        await openMonitoringHelp(page);
         const body = page.locator('#config-help-body');
 
         await expect(body).toContainText(/Maintenance windows/i);
@@ -137,7 +147,7 @@ test.describe('config help — health', () => {
     });
 
     test('covers every notification preset and the test-send button', async ({ page }) => {
-        await openHealthHelp(page);
+        await openMonitoringHelp(page);
         const body = page.locator('#config-help-body');
 
         for (const service of ['Slack', 'Discord', 'Telegram', 'Pushover', 'ntfy', 'Raw JSON']) {
@@ -173,13 +183,13 @@ test.describe('config help — health', () => {
 });
 
 test.describe('config help — inbox', () => {
-    test('splits into five panels, each with real prose', async ({ page }) => {
+    test('splits into six panels, each with real prose', async ({ page }) => {
         await openInboxHelp(page);
 
         const body = page.locator('#config-help-body');
-        // Capture, working the backlog, triage mode, the settings with no UI,
-        // and the one-time tour.
-        await expect(body.locator('.config-panel')).toHaveCount(5);
+        // Inbox, working the backlog, triage mode, the settings with no UI,
+        // saving a link from anywhere, and the one-time tour.
+        await expect(body.locator('.config-panel')).toHaveCount(6);
 
         await expect(body).not.toContainText('config.help');
 
@@ -251,11 +261,15 @@ test.describe('config help — translations', () => {
         // Dutch, so asserting it is gone would fail on a correct nl translation.
         const tabs = {
             health: {
-                count: 9,
-                english: ['Availability & health', 'Working through the list', 'Uptime, trends & statistics'],
+                count: 3,
+                english: ['Availability & health', 'Working through the list'],
+            },
+            monitoring: {
+                count: 6,
+                english: ['Uptime, trends & statistics', 'Certificate expiry', 'Maintenance windows'],
             },
             inbox: {
-                count: 5,
+                count: 6,
                 english: ['Working through the inbox', 'Triage mode', 'Settings behind the scenes',
                     'The one-time tour'],
             },
@@ -267,6 +281,18 @@ test.describe('config help — translations', () => {
                 await d.language.loadTranslations(code);
                 d.config.openConfigView('help');
             }, lang);
+            // Help's own strings load in a second, scoped fetch
+            // (ensureHelpTranslations), so loadTranslations resolving is not the
+            // same as the help panels being translatable — render before that
+            // lands and every title falls back to its English wording, which is
+            // what this test used to flake on. Wait for the fold-in.
+            await page.evaluate((code) =>
+                window.dashboardInstance.language.ensureHelpTranslations?.(code), lang);
+            await page.waitForFunction((code) => {
+                const language = window.dashboardInstance?.language;
+                return language?.currentLanguage === code && language?._helpLoadedFor === code;
+            }, lang, { timeout: 10_000 });
+            await page.evaluate(() => window.dashboardInstance.config.render?.());
 
             for (const [tab, { count, english }] of Object.entries(tabs)) {
                 await page.evaluate((t) => {

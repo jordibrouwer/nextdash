@@ -77,6 +77,10 @@
                 { keys: 'G + 1–9', cheatKey: 'navGotoCategory', fallback: 'Jump to first bookmark in nth category or smart collection' },
                 { keys: 'G + P', cheatKey: 'navGotoPinned', fallback: 'Jump to first pinned bookmark on the page' },
                 { keys: 'Enter / Space', cheatKey: 'navOpenFocused', fallback: 'Open focused bookmark', print: true },
+                // Not printed: the A4 sheet is at its 70-row budget, and taking
+                // a row off it to make space is a choice about the printed sheet
+                // rather than about this key.
+                { keys: 'Shift + F', cheatKey: 'navGridFilter', fallback: 'Filter the page you are on in place — the layout, the cursor and any selection stay put, and empty categories are hidden while it is open' },
                 { keys: 'Esc', cheatKey: 'navEscClear', fallback: 'Clear selection / close overlay; undo unsaved drag reorder', print: true, printFallback: 'Clear selection / close overlay' },
             ],
         },
@@ -110,6 +114,7 @@
                 { keys: 'Shift + P', cheatKey: 'bmTogglePin', fallback: 'Pin or unpin the focused bookmark', print: true },
                 { keys: 'Ctrl/Cmd + Enter', cheatKey: 'bmOpenNewTab', fallback: 'Open the focused bookmark — or the highlighted search result — in a new tab, whatever the open-in-new-tab setting says', print: true },
                 { keys: 'Alt + ↑ / ↓', cheatKey: 'bmMoveRow', fallback: 'Move the focused bookmark within its category (manual order only)' },
+                { keys: 'Shift + Alt + ← / →', cheatKey: 'bmMoveToCategory', fallback: 'Move the focused bookmark into the category beside it, in the order the page shows them (smart collections are skipped)' },
                 { keys: 'Alt + ← / → on category', cheatKey: 'bmMoveCategory', fallback: 'Move the focused category one place left or right', print: true, printFallback: 'Move category' },
                 { keys: 'F2 on category', cheatKey: 'bmRenameCategoryKey', fallback: 'Rename the focused category header' },
                 {
