@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureButtonBarTabTitle",
+      "titleFallback": "The button bar is one tab, not two",
+      "whatKey": "config.overviewNewFeatureButtonBarTabWhat",
+      "whatFallback": "Where the bar sits was a panel on Layout; which buttons it carries were two panels on Toolbar & tabs, two tabs further along. Moving the bar and hiding a button on it were separate errands, and the second one was usually found by accident.",
+      "howKey": "config.overviewNewFeatureButtonBarTabHow",
+      "howFallback": "Appearance → Button bar holds both halves: the five positions, each drawn as the page with the bar in it, and under them the main buttons and the extras with Show all, Hide all and a count. Toolbar & tabs keeps the header row, which is a different strip.",
+      "enableKey": "config.overviewNewFeatureButtonBarTabEnable",
+      "enableFallback": "Nothing moved on screen — only where the settings live. Hiding a button still leaves its keyboard shortcut working, and :buttonbar moves the bar without opening config at all.",
+      "ctaKey": "config.overviewNewFeatureButtonBarTabCta",
+      "ctaFallback": "Open the button bar →",
+      "go": {
+        "view": "config",
+        "section": "appearance",
+        "appearanceTab": "buttonbar"
+      }
+    },
+    {
       "titleKey": "config.overviewNewFeatureCaptureTitle",
       "titleFallback": "Save a link from your phone, or from any browser",
       "whatKey": "config.overviewNewFeatureCaptureWhat",

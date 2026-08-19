@@ -8,7 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
-- [v1.3.0 — 18 August 2026](#v130--18-august-2026)
+- [v1.3.0 — 19 August 2026](#v130--19-august-2026)
 - [v1.2.1 — 17 August 2026](#v121--17-august-2026)
 - [v1.2.0 — 16 August 2026](#v120--16-august-2026)
 - [v1.1.2 — 15 August 2026](#v112--15-august-2026)
@@ -171,9 +171,9 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ---
 
-## v1.3.0 — 18 August 2026
+## v1.3.0 — 19 August 2026
 
-The biggest release since 1.0: nineteen changes across 114 files, +10,847 / −2,320 lines. One subject runs through all of it — **the life of a link**. How it gets in when you are not at the desktop that has the extension; how you find out it has rotted; how the tidying becomes something you can finish rather than a number you learn to ignore; and how a page you saved tells you it has published something. The fourth strand is speed: the dashboard's first load is about five times lighter than it was.
+Twenty-one changes across 145 files, +14,235 / −2,983 lines, and one subject running through all of it — **the life of a link**. How it gets in when you are not at the desktop that has the extension; how you find out it has rotted; how the tidying becomes something you can finish rather than a number you learn to ignore; and how a page you saved tells you it has published something. The fourth strand is speed: the dashboard's first load is about five times lighter than it was.
 
 ### What's new
 
@@ -220,6 +220,7 @@ The biggest release since 1.0: nineteen changes across 114 files, +10,847 / −2
 
 **Config**
 
+- **fix** — **Help opened with empty panels** when its prose did not arrive. That text is a locale scope of its own — a third of the translation file, fetched beside the config module — and every panel falls back to nothing, so a page of headings with no text under them was the failure mode. A core locale load replaces the whole bundle, so one landing after the help scope had merged (a reload onto a `#config/help` link, a settings sync while config is open) wiped it, and switching help tabs repainted from the same empty bundle. The core load now keeps the help keys when the language has not changed, and every help repaint asks the bundle whether the prose is really there rather than trusting a flag.
 - **new** — **Appearance → Button bar** is one tab for one object: where the bar sits (the five positions, each drawn) and what it carries (*main buttons* and *extras*, with Show all / Hide all and a count). The position was a panel on **Layout** and the twelve toggles were two panels on **Toolbar & tabs**, two tabs further along, so moving the bar and hiding a button on it were separate errands. Toolbar & tabs keeps the **Header** group, which is a different strip. Everything that pointed at the old homes now points here: the settings search, the side-rail card's *Open button bar settings*, both Overview → New features entries, Help → Appearance, the manual and the README.
 - **new** — the settings search matches a setting's **current value** as well as its name, and shows it after the location, with switches read as On/Off.
 - **new** — settings that stay server-wide while *Keep settings on this device only* is on carry an **all devices** mark; the switch itself is marked **this device**.
@@ -240,8 +241,9 @@ The biggest release since 1.0: nineteen changes across 114 files, +10,847 / −2
 - The **cheat sheet** gained `Shift + F` and `Shift + Alt + ← / →`, and the **printable sheet now carries every key the modal does** — 12 sections, 164 rows, three A4 pages in two columns, with 32 one-off palette commands left off and counted. It was a curated subset policed by a 70-row one-page budget, which made the paper a smaller product than the app: a key added to the modal was not on the sheet, and which keys made the cut was decided by whoever ran out of page first. The short `printFallback` wording stays, because a printed row that reads in one line is still the point; the registry check is coverage now rather than a ceiling, and it compares row by row within a section — the same chord means different things in different views, and a key-only index answered for the wrong row.
 - Every **Help** article now opens with a drawing of its own subject rather than only the panels whose topic was a shape: the three search prefixes in the field they are typed into, the health tiles in the colours the rows wear, a certificate meter with the day the warning starts marked on it, a maintenance window shaded into a day, the boundary the statistics never cross. Thirteen new shapes joined the `SettingArt` vocabulary — steps, keycaps, state legends, a typed query, bars, a trend line, a meter, a day strip, switches, swatches, colour plates, a bookmark row and config's own rail — so config, help and the tours keep drawing the same things the same way. Labels inside a drawing go through `t()`; `200 OK`, `Shift + H` and `data/*.json` do not. Seventy-one caption strings, in four languages.
 - `tests/config-setting-art.spec.js` checks coverage rather than a hand-counted number: every prose panel on every Help tab must open with a drawing. Its paste-route case was stale — the setting moved to Behavior → Quick add & inbox — and had been failing since.
-- **Config → Overview → New features** carries the five headline items of this release, newest first.
+- **Config → Overview → New features** carries the six headline items of this release, newest first — Capture, the cross-page duplicate question, the Rot report, the review session, Fresh, and the Button bar tab.
 - `MANUAL.md` and `README.md` cover every feature above; the Help version panel names 1.3.0.
+- `tests/config-help-prose-loads.spec.js` covers the empty-help failure from both ends: prose that goes missing while the view is open comes back on the next repaint, and a core locale load no longer drops the help scope out from under it.
 - `tests/help-current-features.spec.js` pins the help prose, the tips and the two cheat-sheet keys against the rendered UI, so the next release cannot quietly leave them behind.
 - `tests/config-help-health.spec.js` was stale from the Health/Monitoring tab split — nine of its fifteen cases failed before this release. Expectations follow the tabs now, and its translation case waits for Help's own scoped strings rather than racing them.
 

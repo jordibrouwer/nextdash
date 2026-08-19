@@ -1,8 +1,8 @@
 {
   "tag": "v1.3.0",
-  "date": "18 August 2026",
-  "releasedAt": "2026-08-18",
-  "modalLead": "The biggest release since 1.0, and a long run of work: nineteen changes across a hundred and fourteen files. All of it is about one thing — the life of a link. How it gets in from wherever you are, how you find out it has rotted, how the tidying becomes something you can finish in two minutes, and how a page you saved tells you it has something new. The dashboard also arrives about five times lighter.",
+  "date": "19 August 2026",
+  "releasedAt": "2026-08-19",
+  "modalLead": "Twenty-one changes across a hundred and forty-five files, and every one of them about the same thing — the life of a link. How it gets in from wherever you are, how you find out it has rotted, how the tidying becomes something you can finish in two minutes, and how a page you saved tells you it has something new. The dashboard also arrives about five times lighter.",
   "sections": [
     {
       "title": "Getting a link in",
@@ -131,6 +131,10 @@
         {
           "badge": "new",
           "text": "<strong>The button bar has a tab of its own.</strong> <strong>Appearance → Button bar</strong> now holds both halves of the question: where the bar sits — center-bottom, either corner, or a rail down an edge — and which buttons it carries. The position used to be on <strong>Layout</strong> and the buttons on <strong>Toolbar &amp; tabs</strong>, two tabs apart. <strong>Toolbar &amp; tabs</strong> keeps the header row."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Help sometimes opened with empty panels.</strong> Its text travels separately from the rest of the interface, and when that arrived late — or was overwritten by the rest catching up — you were left with headings and nothing under them, for as long as you stayed in the view. It now notices and fetches the text again."
         }
       ]
     },
