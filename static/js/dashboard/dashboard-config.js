@@ -7822,7 +7822,7 @@ class DashboardConfig {
         showTitle: { info: ['showDashboardTitleInfoTitle', 'showDashboardTitleInfoMessage'], def: true },
         showTagCloudButton: { info: ['showTagCloudButtonInfoTitle', 'showTagCloudButtonInfoMessage'], def: true },
         // Search
-        shortcutOpenMode: { info: ['shortcutOpenModeInfoTitle', 'shortcutOpenModeInfoMessage'], def: 'enter' },
+        shortcutOpenMode: { info: ['shortcutOpenModeInfoTitle', 'shortcutOpenModeInfoMessage'], def: 'instant' },
         rememberScrollPosition: { info: ['rememberScrollPositionInfoTitle', 'rememberScrollPositionInfoMessage'], def: true },
         detectSoftNotFound: { info: ['detectSoftNotFoundInfoTitle', 'detectSoftNotFoundInfoMessage'], def: true },
         certWarnDays: { info: ['certWarnDaysInfoTitle', 'certWarnDaysInfoMessage'], def: 0 },
@@ -8400,11 +8400,14 @@ class DashboardConfig {
                         field: 'shortcutOpenMode',
                         type: 'cards',
                         label: t('config.shortcutOpenModeLabel', 'Typing a bookmark shortcut'),
+                        // The default leads, and it is the fast one again: a
+                        // shortcut that needs a second key to finish is not
+                        // much of a shortcut. The other two are the ways out.
                         options: [
                             {
-                                value: 'enter',
-                                label: t('config.shortcutOpenModeEnter', 'Press Enter to open'),
-                                body: t('config.shortcutOpenModeEnterBody', 'Typing only filters the list. The shortcut you typed leads it, and Enter opens it. Nothing can decide for you that you had finished typing.'),
+                                value: 'instant',
+                                label: t('config.shortcutOpenModeInstant', 'Open the moment it matches'),
+                                body: t('config.shortcutOpenModeInstantBody', 'No Enter, no pause — the fastest, and the one that can swallow an ordinary word that starts with the same letters.'),
                             },
                             {
                                 value: 'delay',
@@ -8412,9 +8415,9 @@ class DashboardConfig {
                                 body: t('config.shortcutOpenModeDelayBody', 'The shortcut opens on its own once you stop typing for a moment. Keep typing and it stays out of the way.'),
                             },
                             {
-                                value: 'instant',
-                                label: t('config.shortcutOpenModeInstant', 'Open the moment it matches'),
-                                body: t('config.shortcutOpenModeInstantBody', 'No Enter, no pause — the fastest, and the one that can swallow an ordinary word that starts with the same letters.'),
+                                value: 'enter',
+                                label: t('config.shortcutOpenModeEnter', 'Press Enter to open'),
+                                body: t('config.shortcutOpenModeEnterBody', 'Typing only filters the list. The shortcut you typed leads it, and Enter opens it. Nothing can decide for you that you had finished typing.'),
                             },
                         ],
                     },

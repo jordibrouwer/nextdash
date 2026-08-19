@@ -783,10 +783,10 @@ class SearchComponent {
     /** Milliseconds of quiet before "delay" mode opens an exact shortcut. */
     static SHORTCUT_OPEN_DELAY_MS = 400;
 
-    /** enter | delay | instant — an unknown or absent value reads as enter. */
+    /** instant | delay | enter — an unknown or absent value reads as instant. */
     shortcutOpenMode() {
         const mode = String(this.settings?.shortcutOpenMode || '').toLowerCase();
-        return (mode === 'delay' || mode === 'instant') ? mode : 'enter';
+        return (mode === 'delay' || mode === 'enter') ? mode : 'instant';
     }
 
     cancelPendingShortcutOpen() {

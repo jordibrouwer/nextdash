@@ -96,8 +96,12 @@
           "text": "<strong>Move a bookmark to the category beside it</strong> with <strong>Shift + Alt + ← / →</strong>, without opening anything."
         },
         {
+          "badge": "fix",
+          "text": "<strong>A shortcut opens the moment it matches again — and we should not have changed that.</strong> v1.2.0 made <strong>Enter</strong> the default because an instant shortcut can swallow an ordinary word that starts with the same letters. That does happen, and it is the rare case; what the change did was charge every shortcut a second keystroke on every use to prevent it, which is most of the reason to have a shortcut gone. The default is back, and existing dashboards are moved with it. Both other ways are still under <strong>Behavior → Search</strong>: open after a short pause, or press Enter — and a shortcut that keeps eating a word you type can also just be renamed."
+        },
+        {
           "badge": "new",
-          "text": "<strong>What typing a shortcut does is now your choice</strong> — press <strong>Enter</strong>, open after a short pause, or open the moment it matches — under <strong>Behavior → Search</strong>, with the trade-offs spelled out beside it."
+          "text": "<strong>The printable cheat sheet carries every shortcut.</strong> It was one A4 with a curated selection, so a key could be in the app and not on the paper. It now runs to as many pages as the app has keys — the live sheet behind <strong>!</strong> is unchanged."
         }
       ]
     },
