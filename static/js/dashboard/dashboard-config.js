@@ -8410,8 +8410,9 @@ class DashboardConfig {
                     chrome('showCheatSheetButton', 'config.showCheatSheetButtonLabel', 'Show the cheat-sheet button'),
                     chrome('showCollapseAllButton', 'config.showCollapseAllButtonLabel', 'Show the fold-all button'),
                     chrome('showTagCloudButton', 'config.showTagCloudButtonLabel', 'Show the tag-cloud button'),
-                    // Button bar position lives on the Layout tab, as a button
-                    // group beside the other two layout choices.
+                    // The position control sits above these, at the top of
+                    // this tab: where the bar is and what it carries are the
+                    // same errand.
                 ],
             },
             {
@@ -17026,7 +17027,42 @@ class DashboardConfig {
         return this.t(key, fallback);
     }
 
+    /**
+     * The prose is a locale scope of its own, so check it is actually here.
+     *
+     * Help's text is a third of the translation file and travels separately,
+     * fetched beside the config module. Every panel passes '' as its fallback,
+     * so a fetch that failed, or landed and was then overwritten by a core load
+     * finishing later, leaves a page of headings with nothing under them — and
+     * switching help tabs repaints from the same empty bundle, so it stays that
+     * way for as long as the view is open. Asking the bundle rather than a flag
+     * catches every route into that state; the repaint is what gets the reader
+     * out of it.
+     */
+    ensureHelpProse() {
+        const lang = this.dash?.language;
+        if (typeof lang?.ensureHelpTranslations !== 'function') return;
+        if (this._helpProsePending) return;
+        // One key that only ever ships in the help scope. Present means the
+        // scope is in; absent means it is not, whatever the flag says.
+        if (typeof lang.translations?.config?.helpStartBody === 'string') return;
+        this._helpProsePending = true;
+        lang._helpLoadedFor = null;
+        Promise.resolve(lang.ensureHelpTranslations(lang.currentLanguage))
+            .catch(() => {})
+            .finally(() => {
+                this._helpProsePending = false;
+                if (this.section !== 'help') return;
+                if (typeof lang.translations?.config?.helpStartBody !== 'string') return;
+                const body = document.getElementById('config-help-body');
+                if (!body) { this.render(); return; }
+                body.innerHTML = this.renderHelpBody();
+                this.bindHelpActions(body);
+            });
+    }
+
     renderHelp() {
+        this.ensureHelpProse();
         const esc = (v) => this.dash.escapeHtml(v);
         const tabs = DashboardConfig.HELP_TABS.map((tab) => {
             const active = tab === this.helpTab;
@@ -17146,6 +17182,7 @@ class DashboardConfig {
      * the old behaviour would send people looking for controls that do not exist.
      */
     renderHelpBody() {
+        this.ensureHelpProse();
         switch (this.helpTab) {
             case 'config': return this.renderHelpConfig();
             case 'organizing': return this.renderHelpOrganizing();

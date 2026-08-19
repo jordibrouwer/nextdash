@@ -56,9 +56,24 @@ class ConfigLanguage {
         try {
             const response = await fetch(ConfigLanguage.localeUrl(lang, 'core'));
             if (response.ok) {
+                // Keep the Help scope if it is already in and still the right
+                // language. This assignment replaces the whole bundle, so a core
+                // load that lands after ensureHelpTranslations — a reload onto a
+                // #config/help link, or a settings sync while config is open —
+                // used to wipe the prose it had just merged in, and nothing
+                // re-fetched it while the view stayed open. What the reader saw
+                // was a help page of headings with no text under them.
+                const keptHelp = this._helpLoadedFor === lang
+                    ? Object.fromEntries(Object.entries(this.translations?.config || {})
+                        .filter(([k]) => k.startsWith('help')))
+                    : null;
                 this.translations = await response.json();
                 this.currentLanguage = lang;
-                this._helpLoadedFor = null;
+                if (keptHelp && Object.keys(keptHelp).length) {
+                    this.translations.config = { ...(this.translations.config || {}), ...keptHelp };
+                } else {
+                    this._helpLoadedFor = null;
+                }
                 this.applyTranslations();
             } else {
                 console.error(`Failed to load translations for ${lang}`);
