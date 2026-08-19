@@ -17218,13 +17218,13 @@ class DashboardConfig {
      * line, where a panel names a feature that can be switched off, sits under
      * the heading — see helpFeatureState().
      */
-    helpPanel(titleKey, titleFallback, bodyKey, bodyFallback, extra = '') {
+    helpPanel(titleKey, titleFallback, bodyKey, bodyFallback, extra = '', titleOverride = '') {
         const esc = (v) => this.dash.escapeHtml(v);
         const id = DashboardConfig.helpPanelId(titleKey);
         return `
             <div class="config-panel config-help-panel" id="help-panel-${esc(id)}" data-help-panel="${esc(id)}">
                 <div class="config-help-panel-head">
-                    <h3 class="config-panel-title">${esc(this.t(titleKey, titleFallback))}</h3>
+                    <h3 class="config-panel-title">${esc(titleOverride || this.t(titleKey, titleFallback))}</h3>
                     <button type="button" class="config-help-panel-link" data-help-panel-link="${esc(id)}"
                             title="${esc(this.t('config.helpCopyLink', 'Copy a link to this topic'))}"
                             aria-label="${esc(this.t('config.helpCopyLink', 'Copy a link to this topic'))}">🔗</button>
@@ -17233,8 +17233,68 @@ class DashboardConfig {
                 ${this.renderHelpArt(titleKey)}
                 <div class="config-help-prose">${this.t(bodyKey, bodyFallback)}</div>
                 ${extra}
+                ${this.renderHelpSeeAlso(titleKey)}
             </div>`;
     }
+
+    /**
+     * Where a topic is continued, when that is another tab.
+     *
+     * Health and Monitoring answer different questions — what is broken now
+     * against how something behaves over time — and splitting them was right.
+     * But the split left no thread: a reader who arrives at "working through the
+     * list" has no way of knowing that certificates, drift and maintenance
+     * windows are a tab further along, and the tab strip does not say so. Only
+     * pairs that genuinely continue each other get a line; a list of related
+     * reading on every panel is a table of contents nobody asked for.
+     */
+    renderHelpSeeAlso(titleKey) {
+        const links = DashboardConfig.HELP_PANEL_SEE_ALSO[titleKey];
+        if (!Array.isArray(links) || !links.length) return '';
+        const esc = (v) => this.dash.escapeHtml(v);
+        const buttons = links.map((link) => {
+            const label = this.t(link.labelKey, link.label || '');
+            return `<button type="button" class="config-help-see-also-link"
+                    data-help-goto-tab="${esc(link.tab)}" data-help-goto-panel="${esc(link.panel)}">${esc(label)}</button>`;
+        }).join('');
+        return `
+            <p class="config-help-see-also">
+                <span class="config-help-see-also-label">${esc(this.t('config.helpSeeAlso', 'Continues in'))}</span>
+                ${buttons}
+            </p>`;
+    }
+
+    /**
+     * The pairs worth threading, by the panel the reader is on.
+     *
+     * `panel` is the target's own id — the one its link button copies — so a
+     * jump lands on the panel rather than on the top of its tab.
+     */
+    static HELP_PANEL_SEE_ALSO = {
+        'config.helpHealthTitle': [
+            { tab: 'monitoring', panel: 'health-stats', labelKey: 'config.helpHealthStatsTitle', label: 'Uptime, trends & statistics' },
+            { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
+        ],
+        'config.helpHealthViewTitle': [
+            { tab: 'monitoring', panel: 'health-drift', labelKey: 'config.helpHealthDriftTitle', label: 'Redirect, title & content drift' },
+        ],
+        'config.helpHealthWalkthroughTitle': [
+            { tab: 'monitoring', panel: 'health-expect', labelKey: 'config.helpHealthExpectTitle', label: 'When "up" is not good enough' },
+            { tab: 'monitoring', panel: 'health-maintenance', labelKey: 'config.helpHealthMaintenanceTitle', label: 'Maintenance windows' },
+        ],
+        'config.helpHealthStatsTitle': [
+            { tab: 'health', panel: 'health-view', labelKey: 'config.helpHealthViewTitle', label: 'Working through the list' },
+        ],
+        'config.helpHealthCertTitle': [
+            { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
+        ],
+        'config.helpHealthMaintenanceTitle': [
+            { tab: 'monitoring', panel: 'notifications', labelKey: 'config.helpNotificationsTitle', label: 'Alerts & notifications' },
+        ],
+        'config.helpNotificationsTitle': [
+            { tab: 'health', panel: 'health', labelKey: 'config.helpHealthTitle', label: 'Availability & health' },
+        ],
+    };
 
     /**
      * The drawings some help panels open with.
@@ -17716,6 +17776,15 @@ class DashboardConfig {
             isOn: (s) => s.analyticsOptIn === true,
             go: { section: 'behavior', behaviorTab: 'privacy' },
         },
+        // Off on a fresh install, which is exactly when a reader is most likely
+        // to follow the prose and find nothing where it says. Fresh has no
+        // panel of its own to hang a line on — it is a paragraph inside the
+        // monitoring prose — so it is not listed here rather than being
+        // attached to a panel about something else.
+        'config.helpServerLogTitle': {
+            isOn: (s) => s.serverLogEnabled === true,
+            go: { section: 'data-backups', dbTab: 'logs' },
+        },
     };
 
     /** `config.helpHealthCertTitle` → `health-cert`: short, stable, URL-safe. */
@@ -17727,14 +17796,49 @@ class DashboardConfig {
             .toLowerCase() || 'panel';
     }
 
+    /**
+     * The version panel's heading, from the release index rather than by hand.
+     *
+     * It was a translated string carrying the number — four files to edit every
+     * release, and it read "nextDash 1.1.0" for two releases after 1.1.0 because
+     * nobody remembered the fourth. The tag comes from the same index the ★
+     * modal and Overview → Latest update read, so all three agree by
+     * construction; the plain product name is what shows if that has not
+     * loaded, which is never wrong, only less specific.
+     */
+    helpVersionHeading() {
+        const tag = String(this._latestRelease?.tag || '').trim().replace(/^v/i, '');
+        if (!tag) {
+            // Not loaded yet on a first visit that opened straight into Help.
+            this.ensureLatestReleaseForHelp();
+            return '';
+        }
+        return `nextDash ${tag}`;
+    }
+
+    /** Fetch the release index once, then repaint Help so the heading fills in. */
+    ensureLatestReleaseForHelp() {
+        if (this._latestRelease || this._latestReleaseForHelpPending) return;
+        this._latestReleaseForHelpPending = true;
+        void this.loadLatestRelease().finally(() => {
+            this._latestReleaseForHelpPending = false;
+            if (this.section !== 'help' || this.helpTab !== 'start' || !this._latestRelease) return;
+            const body = document.getElementById('config-help-body');
+            if (!body) return;
+            body.innerHTML = this.renderHelpBody();
+            this.bindHelpActions(body);
+        });
+    }
+
     renderHelpStart() {
         const esc = (v) => this.dash.escapeHtml(v);
         const tips = this.helpTips().map((tip) => `<li class="config-help-tip">${tip}</li>`).join('');
-        return this.helpPanel('config.helpVersionTitle', 'nextDash 1.1.0',
+        return this.helpPanel('config.helpVersionTitle', 'nextDash',
             'config.helpVersionBody', '',
             `<div class="config-actions">
                 <button type="button" class="config-btn" data-help-action="whats-new">${esc(this.t('config.helpVersionWhatsNew', "See what's new"))}</button>
-            </div>`)
+            </div>`,
+            this.helpVersionHeading())
             + this.helpPanel('config.helpStartTitle', 'Getting started',
             'config.helpStartBody', '',
             `<div class="config-actions">
@@ -17879,17 +17983,30 @@ class DashboardConfig {
             const items = (group.tips || [])
                 .map((key) => this.t(`config.${key}`, ''))
                 .filter((tip) => tip && !tip.startsWith('config.'))
-                .map((tip) => `<li class="config-help-tip">${tip}</li>`)
+                .map((tip) => `<li class="config-help-tip" data-tip-row>${tip}</li>`)
                 .join('');
             if (!items) return '';
             return `
-                <div class="config-panel">
+                <div class="config-panel" data-tip-group>
                     <h3 class="config-panel-title">${esc(this.t(`config.${group.titleKey}`, group.titleFallback))}</h3>
                     <ul class="config-help-tips">${items}</ul>
                 </div>`;
         }).join('');
+        // A filter of its own, beside the one in the header: help's search
+        // returns whole panels, and a panel here is a group of up to eight tips
+        // — which is the wrong grain when you are looking for the one key that
+        // does the thing. This narrows to the line.
+        const filter = `
+            <div class="config-help-tips-filter">
+                <input type="search" class="config-text" id="config-tips-filter"
+                       placeholder="${esc(this.t('config.helpTipsFilterPlaceholder', 'Filter tips…'))}"
+                       aria-label="${esc(this.t('config.helpTipsFilterLabel', 'Filter tips'))}"
+                       value="${esc(this.tipsQuery || '')}">
+                <span class="config-help-tips-count" data-tips-count aria-live="polite"></span>
+            </div>`;
         return `<p class="config-view-intro">${esc(this.t('config.helpTipsIntro',
-            'Small things that save a keystroke, grouped by what you are doing. The dashboard shows one of these above the buttons when you switch that on.'))}</p>${panels}`;
+            'Small things that save a keystroke, grouped by what you are doing. The dashboard shows one of these above the buttons when you switch that on.'))}</p>${filter}${panels}
+            <p class="config-panel-empty" data-tips-empty hidden>${esc(this.t('config.helpTipsFilterNone', 'No tip matches that.'))}</p>`;
     }
 
     /**
@@ -18110,6 +18227,51 @@ class DashboardConfig {
         this.bindHelpActions(container);
     }
 
+    /**
+     * The Tips tab's own filter.
+     *
+     * Hides rows rather than re-rendering: the tips carry markup we wrote, the
+     * list is short enough to filter in the DOM, and keeping the nodes means the
+     * field never loses focus mid-word. A group with nothing left goes with its
+     * rows, so the page does not fill with empty headings.
+     */
+    bindTipsFilter(container) {
+        const field = container.querySelector('#config-tips-filter');
+        if (!field || field.dataset.tipsFilterBound === '1') return;
+        field.dataset.tipsFilterBound = '1';
+
+        const apply = () => {
+            const query = String(field.value || '').trim().toLowerCase();
+            this.tipsQuery = field.value;
+            let shown = 0;
+            let total = 0;
+            container.querySelectorAll('[data-tip-group]').forEach((group) => {
+                let visible = 0;
+                group.querySelectorAll('[data-tip-row]').forEach((row) => {
+                    total += 1;
+                    const hit = !query || row.textContent.toLowerCase().includes(query);
+                    row.hidden = !hit;
+                    if (hit) visible += 1;
+                });
+                group.hidden = visible === 0;
+                shown += visible;
+            });
+            const count = container.querySelector('[data-tips-count]');
+            if (count) {
+                count.textContent = query
+                    ? this.t('config.helpTipsFilterCount', '{shown} of {total}')
+                        .replace('{shown}', String(shown)).replace('{total}', String(total))
+                    : '';
+            }
+            const empty = container.querySelector('[data-tips-empty]');
+            if (empty) empty.hidden = !(query && shown === 0);
+        };
+
+        field.addEventListener('input', apply);
+        field.addEventListener('search', apply);
+        if (this.tipsQuery) apply();
+    }
+
     /** The help search field, and the tab buttons on each result. */
     bindHelpSearch(container) {
         const field = container.querySelector('#config-help-search');
@@ -18217,6 +18379,7 @@ class DashboardConfig {
     }
 
     bindHelpActions(container) {
+        this.bindTipsFilter(container);
         // The state lines carry the same data-overview-go the Overview cards
         // use, but that handler is bound to the overview body and returns early
         // anywhere else — so the button would render and do nothing.
@@ -18229,6 +18392,22 @@ class DashboardConfig {
             if (btn.dataset.helpLinkBound === '1') return;
             btn.dataset.helpLinkBound = '1';
             btn.addEventListener('click', () => this.copyHelpPanelLink(btn.getAttribute('data-help-panel-link')));
+        });
+        // "Continues in": the hash carries the destination, so arriving by the
+        // link and arriving by the button land in exactly the same place.
+        container.querySelectorAll('[data-help-goto-tab]').forEach((btn) => {
+            if (btn.dataset.helpGotoBound === '1') return;
+            btn.dataset.helpGotoBound = '1';
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-help-goto-tab');
+                const panel = btn.getAttribute('data-help-goto-panel');
+                this.helpQuery = '';
+                this.helpTab = tab;
+                window.location.hash = `config/help/${tab}/${panel}`;
+                this.render();
+                // After the body is in the DOM, or there is nothing to scroll to.
+                setTimeout(() => this.openHelpPanelFromHash(), 60);
+            });
         });
         container.querySelectorAll('[data-help-action]').forEach((btn) => {
             btn.addEventListener('click', () => {

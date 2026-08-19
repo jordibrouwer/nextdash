@@ -5048,3 +5048,65 @@ button.config-bm-shortcut-pill {
     font-size: 0.72rem;
     white-space: nowrap;
 }
+
+/* The Tips tab filters itself, at the grain of one tip: help's own search
+   returns whole panels, and a panel here is a group of up to eight lines. */
+.config-help-tips-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0.8rem;
+}
+
+.config-help-tips-filter .config-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.config-help-tips-count {
+    flex: 0 0 auto;
+    font-size: 0.8rem;
+    color: var(--text-muted, #777);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Where a topic is continued on another tab. Reads as a footnote to the panel,
+   not as a call to action — the reader is mid-article. */
+.config-help-see-also {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin: 0.9rem 0 0;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border-secondary, rgba(128, 128, 128, 0.2));
+    font-size: 0.85rem;
+}
+
+.config-help-see-also-label {
+    color: var(--text-muted, #777);
+}
+
+.config-help-see-also-link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent-primary);
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.config-help-see-also-link:hover,
+.config-help-see-also-link:focus-visible {
+    text-decoration-thickness: 2px;
+}
+
+.config-help-see-also-link + .config-help-see-also-link::before {
+    content: "·";
+    margin-right: 0.4rem;
+    color: var(--text-muted, #777);
+    text-decoration: none;
+    display: inline-block;
+}

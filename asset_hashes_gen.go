@@ -8,7 +8,7 @@ var precomputedAssetHashes = map[string]string{
 	"css/check-mode-control.css": "5ed785b907e9",
 	"css/colors.css": "fa3aef53d2b4",
 	"css/config-setting-promo.css": "f6e40b306023",
-	"css/config-view.css": "14ea6d7c5678",
+	"css/config-view.css": "4b15309633a4",
 	"css/dashboard-bookmark-row.css": "6682c0ec3191",
 	"css/dashboard-enhancements.css": "3d57ba08bbca",
 	"css/dashboard-inbox.css": "7c3398989924",
