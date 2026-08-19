@@ -817,19 +817,30 @@ class DashboardConfig {
      * wide screen the rail is a column that does not scroll and this is a
      * no-op, so it is not worth a width check of its own.
      *
-     * `nearest` rather than `center`: it only scrolls when the button is
-     * actually out of view, which leaves the strip alone in the common case.
+     * It only scrolls when the button is actually out of view, which leaves the
+     * strip alone in the common case — and it scrolls the strip itself rather
+     * than asking scrollIntoView to find a scrollport, which could move the
+     * panel behind it instead.
+     *
+     * Aligned to the start, not to whatever is nearest: the strip carries
+     * `scroll-snap-type: x proximity` with `scroll-snap-align: start` on each
+     * button, so a nearest-fit scroll is re-snapped to the closest button
+     * boundary afterwards and can leave the target hanging over the edge. That
+     * is what happened to Help — eighth of nine, and left 36px past the right
+     * edge with 112px of scroll still available.
      */
     scrollActiveNavIntoView() {
         const nav = document.querySelector('.config-nav');
         const btn = nav?.querySelector('.config-nav-item.is-active');
         if (!nav || !btn) return;
-        // Nothing to scroll on the desktop column, and calling this there would
-        // scroll the panel behind it instead.
+        // Nothing to scroll on the desktop column.
         if (nav.scrollWidth <= nav.clientWidth) return;
-        btn.scrollIntoView({
-            block: 'nearest',
-            inline: 'nearest',
+        const navRect = nav.getBoundingClientRect();
+        const btnRect = btn.getBoundingClientRect();
+        if (btnRect.left >= navRect.left - 1 && btnRect.right <= navRect.right + 1) return;
+        const target = Math.max(0, nav.scrollLeft + (btnRect.left - navRect.left));
+        nav.scrollTo({
+            left: target,
             behavior: document.body?.classList.contains('no-animations') ? 'instant' : 'smooth',
         });
     }
