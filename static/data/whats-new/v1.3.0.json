@@ -2,7 +2,7 @@
   "tag": "v1.3.0",
   "date": "19 August 2026",
   "releasedAt": "2026-08-19",
-  "modalLead": "Twenty-one changes across a hundred and forty-five files, and every one of them about the same thing — the life of a link. How it gets in from wherever you are, how you find out it has rotted, how the tidying becomes something you can finish in two minutes, and how a page you saved tells you it has something new. The dashboard also arrives about five times lighter.",
+  "modalLead": "Twenty-four changes across a hundred and forty-eight files, and every one of them about the same thing — the life of a link. How it gets in from wherever you are, how you find out it has rotted, how the tidying becomes something you can finish in two minutes, and how a page you saved tells you it has something new. The dashboard also arrives about five times lighter.",
   "sections": [
     {
       "title": "Getting a link in",
@@ -135,6 +135,18 @@
         {
           "badge": "fix",
           "text": "<strong>Help sometimes opened with empty panels.</strong> Its text travels separately from the rest of the interface, and when that arrived late — or was overwritten by the rest catching up — you were left with headings and nothing under them, for as long as you stayed in the view. It now notices and fetches the text again."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tips filters itself.</strong> Fifty-three tips in nine groups, and now a field that narrows them to the line you are after, with a count of what is left. The search at the top of Help finds whole topics; this one finds the key."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help says where a topic continues.</strong> Availability and monitoring are separate tabs on purpose — what is broken now, against how something behaves over time — so the panels that carry on into the other one now link straight to the right place in it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The version panel reads the release.</strong> It used to carry the number as text in four languages, and once sat two releases out of date. It now shows whatever the latest release actually is."
         }
       ]
     },
@@ -148,6 +160,10 @@
         {
           "badge": "new",
           "text": "<strong>Config opens quicker and weighs less.</strong> A cold open is about a third faster, and the bookmark list draws a third fewer elements — most noticeable on a long list and a slow machine."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help's text travels lighter.</strong> A third of the translation file was prose for the config that was replaced two versions ago — 408 KB across four languages, read by nothing. It is gone, which the Help tab notices on every open."
         }
       ]
     }
