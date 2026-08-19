@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 // The help texts are a third of the translation file and nobody reads them until
@@ -32,10 +34,32 @@ var localeHelpAlways = map[string]bool{
 	"helpSupportKofi": true,
 }
 
+// A cached narrowing, with what the file looked like when it was made. Splitting
+// the JSON costs a parse and a marshal per language and scope, which is worth
+// caching — but caching it for the life of the process meant an edit to a locale
+// file was invisible until the server was restarted, which is exactly the
+// feedback loop you want while writing those files.
+type localeScopeEntry struct {
+	data    []byte
+	modTime time.Time
+	size    int64
+}
+
 var (
 	localeScopeMu    sync.RWMutex
-	localeScopeCache = map[string][]byte{}
+	localeScopeCache = map[string]localeScopeEntry{}
 )
+
+// localeFileStamp is the modification time and size of the locale file on disk,
+// or the zero value when it is served from the embedded copy — which cannot
+// change under a running process, so a zero stamp caches forever by design.
+func localeFileStamp(name string) (time.Time, int64) {
+	info, err := os.Stat(filepath.Join("locales", filepath.Base(name)))
+	if err != nil {
+		return time.Time{}, 0
+	}
+	return info.ModTime(), info.Size()
+}
 
 // LocaleFile serves /locales/<lang>.json, optionally narrowed to a scope.
 func (h *Handlers) LocaleFile(w http.ResponseWriter, r *http.Request) {
@@ -56,18 +80,39 @@ func (h *Handlers) LocaleFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	// Same policy the static files get: the client appends the app version, so a
-	// deploy busts it and nothing in between does.
-	w.Header().Set("Cache-Control", "public, max-age=86400")
+	// A binary serves these from its embedded copy, where they cannot change
+	// under a running process: cache them for a day, as the client appends the
+	// app version and a deploy busts it. A checkout serves them off disk, where
+	// they change every time someone edits a translation — revalidating costs one
+	// conditional request and saves an hour of wondering why the text is stale.
+	if modTime, _ := localeFileStamp(name); modTime.IsZero() {
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+	} else {
+		etag := localeETag(name, scope)
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("ETag", etag)
+		if r.Header.Get("If-None-Match") == etag {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+	}
 	_, _ = w.Write(data)
+}
+
+// localeETag identifies one narrowing of one file version, so a revalidating
+// client gets a 304 rather than the bytes it already has.
+func localeETag(name, scope string) string {
+	modTime, size := localeFileStamp(name)
+	return fmt.Sprintf(`W/"%s-%s-%d-%d"`, name, scope, modTime.UnixNano(), size)
 }
 
 func localeScopedBytes(files fs.FS, name, scope string) ([]byte, error) {
 	key := name + "|" + scope
+	modTime, size := localeFileStamp(name)
 	localeScopeMu.RLock()
-	if cached, ok := localeScopeCache[key]; ok {
+	if cached, ok := localeScopeCache[key]; ok && cached.modTime.Equal(modTime) && cached.size == size {
 		localeScopeMu.RUnlock()
-		return cached, nil
+		return cached.data, nil
 	}
 	localeScopeMu.RUnlock()
 
@@ -83,7 +128,7 @@ func localeScopedBytes(files fs.FS, name, scope string) ([]byte, error) {
 	}
 
 	localeScopeMu.Lock()
-	localeScopeCache[key] = out
+	localeScopeCache[key] = localeScopeEntry{data: out, modTime: modTime, size: size}
 	localeScopeMu.Unlock()
 	return out, nil
 }
