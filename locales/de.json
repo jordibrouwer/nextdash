@@ -4693,7 +4693,7 @@
     "tipAddCapture": "Installiere nextDash als App und es erscheint im Teilen-Menü deines Telefons; im Desktop-Browser speichert das Bookmarklet unter Hilfe → Posteingang die Seite, die du gerade ansiehst.",
     "tipAddDuplicate": "Einen Link zu speichern, den du schon auf einer anderen Seite hast, sagt dir, wo er liegt, und bietet an, ihn zu öffnen — <em>Trotzdem speichern</em> behält die zweite Kopie, wenn du sie wolltest.",
     "cheatsheetPdfLink": "Kürzel-PDF",
-    "cheatsheetPdfHint": "Einseitige Tastaturübersicht (öffnet in einem neuen Tab)",
+    "cheatsheetPdfHint": "Alle Tastenkürzel, druckfertig (öffnet in einem neuen Tab)",
     "bookmarksTagCloudTitle": "Tags",
     "bookmarksTagCloudHint": "Nach einem oder mehreren Tags filtern",
     "bookmarksTagCloudActive": "{count} ausgewählt",

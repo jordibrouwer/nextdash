@@ -4693,7 +4693,7 @@
     "tipAddCapture": "Installez nextDash comme application et il apparaît dans la feuille de partage de votre téléphone ; sur un navigateur de bureau, le bookmarklet sous Aide → Boîte de réception enregistre la page affichée.",
     "tipAddDuplicate": "Enregistrer un lien que vous avez déjà sur une autre page vous dit où il est et propose de l'ouvrir — <em>Enregistrer quand même</em> garde la seconde copie si c'était voulu.",
     "cheatsheetPdfLink": "PDF des raccourcis",
-    "cheatsheetPdfHint": "Aide-mémoire clavier d'une page (s'ouvre dans un nouvel onglet)",
+    "cheatsheetPdfHint": "Tous les raccourcis clavier, prêts à imprimer (s'ouvre dans un nouvel onglet)",
     "bookmarksTagCloudTitle": "Tags",
     "bookmarksTagCloudHint": "Filtrer par un ou plusieurs tags",
     "bookmarksTagCloudActive": "{count} sélectionnés",
