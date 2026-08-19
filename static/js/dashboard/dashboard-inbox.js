@@ -278,15 +278,24 @@ class DashboardInbox {
                     },
                 }),
             });
+            // A link already saved as a bookmark is not a failure of this
+            // promote — it is the reason the inbox entry can go. Counted apart
+            // from real errors below so the message can say which happened.
+            if (res.status === 409) {
+                await this.completePromote(item.id);
+                return { id: item.id, duplicate: true };
+            }
             if (!res.ok) throw new Error(`promote HTTP ${res.status}`);
             // Only clear the inbox entry once its bookmark exists, so a failure
             // leaves the link here to try again rather than losing it.
             await this.completePromote(item.id);
-            return item.id;
+            return { id: item.id, duplicate: false };
         }));
 
-        const promoted = results.filter((r) => r.status === 'fulfilled').length;
-        const failed = results.length - promoted;
+        const settled = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+        const duplicates = settled.filter((r) => r?.duplicate).length;
+        const promoted = settled.length - duplicates;
+        const failed = results.length - settled.length;
         this.clearChecked();
         if (this.isActiveView()) {
             await this.loadAndRender({ refresh: true });
@@ -299,6 +308,14 @@ class DashboardInbox {
                 this.t('dashboard.inboxPromotedCount', 'Promoted {count} links', { count: promoted }),
                 'success',
                 { duration: 3000 }
+            );
+        }
+        if (duplicates) {
+            this.dash.showNotification?.(
+                this.t('dashboard.inboxPromoteDuplicate', '{count} were already saved as bookmarks',
+                    { count: duplicates }),
+                'info',
+                { duration: 4000 }
             );
         }
         if (failed) {
@@ -1418,10 +1435,49 @@ class DashboardInbox {
         await this.loadAndRender();
         this.restoreInboxHash();
         this.syncUrlState();
+        // A link shared from the phone lands here through /share, which can only
+        // answer with a redirect — so the outcome travels in the URL and is
+        // reported once, on arrival.
+        this.reportCaptureOutcome();
         // Not awaited: the view is already usable, and a slow script fetch must
         // not hold up the navigation that asked for it.
         void this.maybeShowTutorial();
         return true;
+    }
+
+    /**
+     * Say what happened to a shared link, then take the marker out of the URL.
+     *
+     * Removed after reporting so a reload — or a bookmark of this address — does
+     * not claim a save that happened once, minutes ago.
+     */
+    reportCaptureOutcome() {
+        let outcome = '';
+        try {
+            outcome = new URL(window.location.href).searchParams.get('captured') || '';
+        } catch {
+            return;
+        }
+        if (!outcome) return;
+
+        const messages = {
+            ok: [this.t('dashboard.inboxCapturedOk', 'Saved to your inbox'), 'success'],
+            duplicate: [this.t('dashboard.inboxCapturedDuplicate', 'That link was already in your inbox'), 'info'],
+            nourl: [this.t('dashboard.inboxCapturedNoUrl', 'No web address was found in what was shared'), 'warning'],
+            full: [this.t('dashboard.inboxCapturedFull', 'Your inbox is full — clear some links first'), 'warning'],
+            denied: [this.t('dashboard.inboxCapturedDenied', 'This nextDash needs a capture token to accept shared links'), 'error'],
+            error: [this.t('dashboard.inboxCapturedError', 'That link could not be saved'), 'error'],
+        };
+        const [message, tone] = messages[outcome] || messages.error;
+        this.dash.showNotification?.(message, tone, { duration: 4000 });
+
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('captured');
+            history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
+        } catch {
+            // A URL we cannot rewrite is not worth failing the view over.
+        }
     }
 
     /**

@@ -196,6 +196,10 @@ class Dashboard {
         this.pageNav = new DashboardPageNav(this);
         this.tagFilter = new DashboardTagFilter(this);
         this.multiSelect = new DashboardMultiSelect(this);
+        // Narrowing the page you are on, as opposed to searching everything.
+        this.gridFilter = typeof DashboardGridFilter === 'function'
+            ? new DashboardGridFilter(this)
+            : null;
         this.structureCreate = new DashboardStructureCreate(this);
         this.categoryAdd = new DashboardCategoryAdd(this);
         this.categoryMenu = new DashboardCategoryMenu(this);
@@ -204,6 +208,7 @@ class Dashboard {
             : new DashboardInlineEdit(this);
         this.toolbar = new DashboardToolbar(this);
         this.smartCollections = new DashboardSmartCollections(this);
+        this.feeds = typeof DashboardFeeds === 'function' ? new DashboardFeeds(this) : null;
         this.bookmarkRows = new DashboardBookmarkRows(this);
         this.renderCore = new DashboardRenderCore(this);
         this.renderIncremental = new DashboardRenderIncremental(this);
@@ -289,6 +294,15 @@ class Dashboard {
                 this.pageNav?.updateInboxTabBadge?.();
             });
             this.renderDashboard({ animate: true });
+            // Freshness arrives after the first paint on purpose: it is a small
+            // count on a row and a collection that is empty on most installs,
+            // and neither is worth holding the grid for. Rows are repainted only
+            // when something actually came back.
+            void this.feeds?.load().then((ok) => {
+                if (ok && this.feeds.enabled && this.feeds.byKey.size) {
+                    this.renderDashboard();
+                }
+            });
             // After the grid exists, not during loadData(). A deep link resolves
             // against the DOM — a category element, a bookmark row — so running
             // it before the first render could only ever fail, and did: it
@@ -886,6 +900,13 @@ class Dashboard {
         // than from your last click inside it.
         if (previous === 'config') {
             this.config?.instance?.saveLastConfigLocation?.();
+        }
+        // Leaving the grid for a view: where you were on the page is worth
+        // keeping, and this is the only moment the offset still belongs to the
+        // bookmarks layout. Coming back restores it — see
+        // restoreBookmarksViewForPage.
+        if (previous === 'bookmarks' && view !== 'bookmarks') {
+            this.data?.rememberScrollForPage?.(Number(this.currentPageId));
         }
         if (!options.silent) {
             this.visual?.onActiveViewChanged?.(previous, view);
@@ -1590,7 +1611,11 @@ class Dashboard {
     }
 
     renderDashboard(options = {}) {
-        return this.renderCore.renderDashboard(...arguments);
+        const out = this.renderCore.renderDashboard(...arguments);
+        // A render rebuilds every row, so an active page filter has to be laid
+        // over the new ones or the bar would claim to be filtering nothing.
+        this.gridFilter?.reapply?.();
+        return out;
     }
 
     groupBookmarksByCategory() {

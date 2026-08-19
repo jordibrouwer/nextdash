@@ -53,15 +53,15 @@
         global.DiscoverabilityState?.markSettingPromoSeen?.(PROMO_ID);
     }
 
-    function openLayoutSettings(card) {
+    function openButtonBarSettings(card) {
         const d = dash();
         card.close();
         if (d?.config?.openConfigView) {
-            d.config.appearanceTab = 'layout';
+            d.config.appearanceTab = 'buttonbar';
             void d.config.openConfigView('appearance');
             return;
         }
-        global.location.hash = 'config/appearance/layout';
+        global.location.hash = 'config/appearance/buttonbar';
     }
 
     /**
@@ -79,15 +79,15 @@
         const body = el.querySelector('.notice-card-text');
         if (body) {
             body.textContent = t('dashboard.sideRailNoticeAppliedBody',
-                'The buttons now sit in a rail down the left edge. Not for you? Switch back under Config → Appearance → Layout, where you can pick any of the five positions.');
+                'The buttons now sit in a rail down the left edge. Not for you? Switch back under Config → Appearance → Button bar, where you can pick any of the five positions.');
         }
         const actions = el.querySelector('.notice-card-actions');
         if (actions) {
             actions.innerHTML = `
                 <p class="side-rail-notice-hint">${escape(t('dashboard.sideRailNoticeCommandHint', 'Or switch position any time with'))} <kbd>:buttonbar</kbd></p>
-                <button type="button" class="quickstart-btn quickstart-btn-ghost" data-sr-action="open-layout">${escape(t('dashboard.sideRailNoticeOpenLayout', 'Open Layout settings'))}</button>
+                <button type="button" class="quickstart-btn quickstart-btn-ghost" data-sr-action="open-buttonbar">${escape(t('dashboard.sideRailNoticeOpenLayout', 'Open button bar settings'))}</button>
                 <button type="button" class="quickstart-btn quickstart-btn-primary" data-sr-action="done">${escape(t('dashboard.sideRailNoticeDone', 'Got it'))}</button>`;
-            actions.querySelector('[data-sr-action="open-layout"]')?.addEventListener('click', () => openLayoutSettings(card));
+            actions.querySelector('[data-sr-action="open-buttonbar"]')?.addEventListener('click', () => openButtonBarSettings(card));
             actions.querySelector('[data-sr-action="done"]')?.addEventListener('click', () => card.close());
         }
     }
@@ -97,7 +97,7 @@
      *
      * setupDOM writes the position onto <body> as data-button-position and the
      * rest is CSS, so the bar moves without a reload — the same path Config →
-     * Appearance → Layout and `:buttonbar` use.
+     * Appearance → Button bar and `:buttonbar` use.
      */
     function tryIt(card) {
         const d = dash();

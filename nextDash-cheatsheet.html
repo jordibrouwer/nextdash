@@ -32,8 +32,8 @@
     background: var(--bg);
     color: var(--text);
     font-family: "Source Code Pro", ui-monospace, monospace;
-    font-size: 9.5pt;
-    line-height: 1.45;
+    font-size: 8pt;
+    line-height: 1.3;
   }
 
   body::before {
@@ -54,14 +54,14 @@
 
   .brand {
     text-align: center;
-    margin: 0 0 1.1rem;
-    padding-bottom: 0.85rem;
+    margin: 0 0 0.8rem;
+    padding-bottom: 0.6rem;
     border-bottom: 1px solid var(--border);
   }
 
   .brand img {
     display: block;
-    width: min(24rem, 92vw);
+    width: min(17rem, 70vw);
     height: auto;
     margin: 0 auto 0.55rem;
     filter: drop-shadow(0 0 22px rgba(57, 255, 20, 0.28));
@@ -81,15 +81,22 @@
     background: color-mix(in srgb, var(--bg-card) 92%, #000 8%);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 0.95rem 1.05rem 0.75rem;
+    padding: 0.85rem 0.95rem 0.6rem;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(57, 255, 20, 0.06);
+    /* Two columns: half the line length, twice the rows per page, and a
+       shortcut line is short enough that nothing has to wrap for it. */
+    column-count: 2;
+    column-gap: 1.1rem;
+    column-rule: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   }
 
   .lead {
-    margin: 0 0 0.85rem;
+    margin: 0 0 0.7rem;
     color: var(--text-muted);
-    font-size: 0.82rem;
-    line-height: 1.5;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    /* Across both columns: it is one sentence about the sheet, not a section. */
+    column-span: all;
   }
 
   .lead strong, .lead code {
@@ -107,8 +114,20 @@
 
   .cheat-group {
     margin: 0;
-    padding: 0.85rem 0 0.45rem;
+    padding: 0.5rem 0 0.3rem;
     border-top: 1px solid var(--border);
+    /* A section may flow across a column or a page — with 32 rows under
+       Bookmarks it has to — but never so that its heading is stranded at the
+       foot of one, and never with a row split down the middle. */
+    break-inside: auto;
+  }
+
+  h2 {
+    break-after: avoid;
+  }
+
+  tr {
+    break-inside: avoid;
   }
 
   .cheat-group:first-of-type {
@@ -117,8 +136,8 @@
   }
 
   h2 {
-    margin: 0 0 0.55rem;
-    font-size: 1.2rem;
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: lowercase;
@@ -135,29 +154,39 @@
 
   td {
     vertical-align: top;
-    padding: 0.18rem 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
-    line-height: 1.35;
+    padding: 0.1rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    line-height: 1.28;
   }
 
   tr:last-child td { border-bottom: none; }
 
   td.keys {
-    width: 38%;
-    padding-right: 0.65rem;
+    width: 36%;
+    padding-right: 0.45rem;
     white-space: normal;
-    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   td.desc {
-    width: 62%;
+    width: 64%;
     color: var(--text-muted);
-    font-size: 0.84rem;
+    font-size: 0.9rem;
   }
 
+  /* Chips wrap rather than overflow.
+     Not every "key" here is a chord: the sheet also carries Right-click
+     bookmark, Long-press category (~500 ms), Drag // in category title and the
+     palette's :buttonbar bottom. With nowrap those ran straight out of the key
+     column and printed on top of the description beside them. A chord is
+     unaffected — Ctrl + C is two chips of one token each, and neither has
+     anywhere to break. (No backticks in this comment: the stylesheet lives
+     inside a template literal.) */
   kbd {
     display: inline-block;
-    padding: 0.04em 0.32em;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    padding: 0.03em 0.28em;
     border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
     border-radius: 0.28em;
     background: color-mix(in srgb, var(--accent-soft) 80%, #111 20%);
@@ -166,7 +195,6 @@
     font-size: 0.78rem;
     font-weight: 700;
     line-height: 1.25;
-    white-space: nowrap;
   }
 
   .kbd-sep, .kbd-plus {
@@ -218,35 +246,128 @@
     
         <tr><td class="keys"><kbd>!</kbd><span class="kbd-sep">/</span><kbd>F1</kbd></td><td class="desc">Keyboard cheat sheet</td></tr>
     
+        <tr><td class="keys"><kbd>n</kbd></td><td class="desc">Create a new page from the page overview</td></tr>
+    
+        <tr><td class="keys"><kbd>&lt;</kbd></td><td class="desc">Open config (&lt; is Shift+</td></tr>
+    
+        <tr><td class="keys"><kbd>.</kbd></td><td class="desc">Collapse or expand all categories</td></tr>
+    
+        <tr><td class="keys"><kbd>c</kbd></td><td class="desc">Add a category to the current page</td></tr>
+    
         <tr><td class="keys"><kbd>↑ ↓ ← →  ·  k j</kbd></td><td class="desc">Move focus</td></tr>
     
-        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>Home</kbd></td><td class="desc">Focus the category header (F2, Shift+W, Delete act there)</td></tr>
+        <tr><td class="keys"><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→</kbd></td><td class="desc">Move focus left / right in grid</td></tr>
+    
+        <tr><td class="keys"><kbd>Home</kbd><span class="kbd-sep">/</span><kbd>End</kbd></td><td class="desc">First / last bookmark in the focused category</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>Home</kbd></td><td class="desc">Focus the category header</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-plus">+</span><kbd>Home</kbd><span class="kbd-sep">/</span><kbd>End</kbd></td><td class="desc">First / last bookmark on the page</td></tr>
+    
+        <tr><td class="keys"><kbd>Page Up</kbd><span class="kbd-sep">/</span><kbd>Page Down</kbd></td><td class="desc">Jump one screen up / down through bookmarks</td></tr>
+    
+        <tr><td class="keys"><kbd>Tab</kbd><span class="kbd-sep">/</span><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>Tab</kbd></td><td class="desc">Step linearly through all bookmarks</td></tr>
+    
+        <tr><td class="keys"><kbd>G</kbd><span class="kbd-plus">+</span><kbd>1–9</kbd></td><td class="desc">Jump to first bookmark in nth category or smart…</td></tr>
+    
+        <tr><td class="keys"><kbd>G</kbd><span class="kbd-plus">+</span><kbd>P</kbd></td><td class="desc">Jump to first pinned bookmark on the page</td></tr>
     
         <tr><td class="keys"><kbd>Enter</kbd><span class="kbd-sep">/</span><kbd>Space</kbd></td><td class="desc">Open focused bookmark</td></tr>
     
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>F</kbd></td><td class="desc">Filter the page you are on in place</td></tr>
+    
         <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Clear selection / close overlay</td></tr>
     </table></section>
+<section class="cheat-group"><h2>Layout (side rail)</h2><table>
+        <tr><td class="keys"><kbd>Tab</kbd></td><td class="desc">Toolbar is first in tab order</td></tr>
+    
+        <tr><td class="keys"><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→</kbd></td><td class="desc">Scroll page tabs horizontally when many pages</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:buttonbar bottom</kbd></td><td class="desc">Return button bar to bottom</td></tr>
+    </table></section>
 <section class="cheat-group"><h2>Bookmarks</h2><table>
+        <tr><td class="keys"><kbd>&amp;</kbd></td><td class="desc">Quick-add — type name | url | shortcut in one line</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-plus">+</span><kbd>V</kbd></td><td class="desc">Paste a URL to open the new-bookmark modal pre-filled</td></tr>
+    
+        <tr><td class="keys"><kbd>+</kbd></td><td class="desc">Open full new-bookmark modal on the dashboard</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>B</kbd></td><td class="desc">Open full new-bookmark modal from anywhere</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-plus">+</span><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>A</kbd></td><td class="desc">Open full new-bookmark modal from anywhere</td></tr>
+    
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>E</kbd></td><td class="desc">Inline-edit focused bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>M</kbd></td><td class="desc">Quick-move focused bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>D</kbd></td><td class="desc">Quick-delete focused bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>T</kbd></td><td class="desc">Quick-tag focused bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>C</kbd></td><td class="desc">Availability checking for focused bookmark</td></tr>
     
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>P</kbd></td><td class="desc">Pin or unpin the focused bookmark</td></tr>
     
-        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-sep">/</span><kbd>Cmd</kbd><span class="kbd-plus">+</span><kbd>Enter</kbd></td><td class="desc">Open the focused bookmark — or the highlighted search result — in a new tab, whatever the open-in-new-tab setting says</td></tr>
+        <tr><td class="keys"><kbd>Ctrl/Cmd</kbd><span class="kbd-plus">+</span><kbd>Enter</kbd></td><td class="desc">Open the focused bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Alt</kbd><span class="kbd-plus">+</span><kbd>↑</kbd><span class="kbd-sep">/</span><kbd>↓</kbd></td><td class="desc">Move the focused bookmark within its category</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>Alt</kbd><span class="kbd-plus">+</span><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→</kbd></td><td class="desc">Move bookmark to the next category</td></tr>
     
         <tr><td class="keys"><kbd>Alt</kbd><span class="kbd-plus">+</span><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→ on category</kbd></td><td class="desc">Move category</td></tr>
     
+        <tr><td class="keys"><kbd>F2 on category</kbd></td><td class="desc">Rename the focused category header</td></tr>
+    
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>W</kbd></td><td class="desc">Spread category across columns</td></tr>
     
-        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>L</kbd></td><td class="desc">Share the focused bookmark — copies name + URL where there is no share sheet</td></tr>
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>F10 on category</kbd></td><td class="desc">Open the category menu</td></tr>
+    
+        <tr><td class="keys"><kbd>Delete on category</kbd></td><td class="desc">Delete the focused category</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>L</kbd></td><td class="desc">Share the focused bookmark</td></tr>
     
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>R</kbd></td><td class="desc">Open the focused bookmark on its own row in Health</td></tr>
     
-        <tr><td class="keys"><kbd>t</kbd></td><td class="desc">Filter the grid to the focused bookmark’s tag; several tags open the picker</td></tr>
+        <tr><td class="keys"><kbd>t</kbd></td><td class="desc">Filter the grid to the focused bookmark’s tag</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-plus">+</span><kbd>C</kbd></td><td class="desc">Copy URL of focused bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>V</kbd></td><td class="desc">Toggle hover preview card on focused bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Enter on &quot;</kbd><span class="kbd-plus">+</span><kbd>N more&quot;</kbd></td><td class="desc">Expand or collapse a long category</td></tr>
+    
+        <tr><td class="keys"><kbd>Delete</kbd></td><td class="desc">Delete focused bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Right-click bookmark</kbd></td><td class="desc">Row menu: open, copy, edit, tags, move, delete</td></tr>
+    
+        <tr><td class="keys"><kbd>Double-click page tab</kbd></td><td class="desc">Rename page tab</td></tr>
+    
+        <tr><td class="keys"><kbd>Long-press category (~500 ms)</kbd></td><td class="desc">Long-press category header (~500 ms) to rename</td></tr>
+    
+        <tr><td class="keys"><kbd>Right-click category</kbd></td><td class="desc">Right-click a category header to rename, add, or delete…</td></tr>
+    
+        <tr><td class="keys"><kbd>Drag left strip</kbd></td><td class="desc">Reorder a bookmark within or across categories</td></tr>
+    
+        <tr><td class="keys"><kbd>Drag // in category title</kbd></td><td class="desc">Reorder categories (grab the // prefix in the header)</td></tr>
     </table></section>
 <section class="cheat-group"><h2>Selecting several bookmarks</h2><table>
         <tr><td class="keys"><kbd>x</kbd></td><td class="desc">Tick bookmark and advance</td></tr>
     
         <tr><td class="keys"><kbd>X</kbd></td><td class="desc">Tick whole category</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>↑</kbd><span class="kbd-sep">/</span><kbd>↓</kbd></td><td class="desc">Extend the selection a row at a time</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl/Cmd</kbd><span class="kbd-plus">+</span><kbd>A</kbd></td><td class="desc">Tick every bookmark currently on screen</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl/Cmd</kbd><span class="kbd-plus">+</span><kbd>click</kbd></td><td class="desc">Add or remove a single bookmark with the mouse</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>click</kbd></td><td class="desc">Extend the selection to the clicked bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>Click</kbd></td><td class="desc">With a selection open, a plain click clears it instead…</td></tr>
+    
+        <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Clear the selection</td></tr>
+    
+        <tr><td class="keys"><kbd>Delete</kbd></td><td class="desc">Delete everything selected</td></tr>
     </table></section>
 <section class="cheat-group"><h2>Health view</h2><table>
         <tr><td class="keys"><kbd>j</kbd><span class="kbd-sep">/</span><kbd>k</kbd></td><td class="desc">Move between rows (↑ / ↓ work too)</td></tr>
@@ -257,11 +378,11 @@
     
         <tr><td class="keys"><kbd>p</kbd></td><td class="desc">Re-check the selected bookmark now</td></tr>
     
-        <tr><td class="keys"><kbd>f</kbd></td><td class="desc">Work through the filtered list one bookmark at a time, starting at the selected row</td></tr>
+        <tr><td class="keys"><kbd>f</kbd></td><td class="desc">Work through the list one row at a time</td></tr>
     
         <tr><td class="keys"><kbd>R</kbd><span class="kbd-sep">/</span><kbd>?</kbd></td><td class="desc">Refresh the cached health report</td></tr>
     
-        <tr><td class="keys"><kbd>c</kbd></td><td class="desc">Change availability checking — off, periodic or monitor</td></tr>
+        <tr><td class="keys"><kbd>c</kbd></td><td class="desc">Change availability checking</td></tr>
     
         <tr><td class="keys"><kbd>m</kbd></td><td class="desc">Row menu — redirect, title, favicon, archive, delete</td></tr>
     
@@ -272,6 +393,21 @@
         <tr><td class="keys"><kbd>g</kbd><span class="kbd-sep">/</span><kbd>G</kbd><span class="kbd-sep">/</span><kbd>Home</kbd><span class="kbd-sep">/</span><kbd>End</kbd></td><td class="desc">Jump to the first / last row</td></tr>
     
         <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Close a menu, or leave the view</td></tr>
+    </table></section>
+<section class="cheat-group"><h2>Selecting several health rows</h2><table>
+        <tr><td class="keys"><kbd>x</kbd></td><td class="desc">Tick the focused row and move to the next</td></tr>
+    
+        <tr><td class="keys"><kbd>X</kbd></td><td class="desc">Tick every row the current filter shows</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl/Cmd</kbd><span class="kbd-plus">+</span><kbd>A</kbd></td><td class="desc">Tick every row the current filter shows</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl/Cmd</kbd><span class="kbd-plus">+</span><kbd>click</kbd></td><td class="desc">Add or remove a single row with the mouse</td></tr>
+    
+        <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>click</kbd></td><td class="desc">Extend the selection to the clicked row</td></tr>
+    
+        <tr><td class="keys"><kbd>Click</kbd></td><td class="desc">With a selection open, a plain click clears it</td></tr>
+    
+        <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Clear the selection</td></tr>
     </table></section>
 <section class="cheat-group"><h2>Inbox view</h2><table>
         <tr><td class="keys"><kbd>j</kbd><span class="kbd-sep">/</span><kbd>k</kbd></td><td class="desc">Move between rows (↑ / ↓ work too)</td></tr>
@@ -290,7 +426,7 @@
     
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>↑</kbd><span class="kbd-sep">/</span><kbd>↓</kbd></td><td class="desc">Extend the selection to the next or previous row</td></tr>
     
-        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-sep">/</span><kbd>Cmd</kbd><span class="kbd-plus">+</span><kbd>A</kbd></td><td class="desc">Select every link currently shown</td></tr>
+        <tr><td class="keys"><kbd>Ctrl/Cmd</kbd><span class="kbd-plus">+</span><kbd>A</kbd></td><td class="desc">Select every link currently shown</td></tr>
     
         <tr><td class="keys"><kbd>d</kbd></td><td class="desc">Delete the selected item</td></tr>
     
@@ -320,11 +456,41 @@
         <tr><td class="keys"><kbd>Esc</kbd></td><td class="desc">Close triage</td></tr>
     </table></section>
 <section class="cheat-group"><h2>Config view</h2><table>
+        <tr><td class="keys"><kbd>0–9</kbd></td><td class="desc">Switch to Inbox (0) or a bookmark page</td></tr>
+    
         <tr><td class="keys"><kbd>j</kbd><span class="kbd-sep">/</span><kbd>k</kbd></td><td class="desc">Previous / next section</td></tr>
+    
+        <tr><td class="keys"><kbd>g</kbd><span class="kbd-sep">/</span><kbd>G</kbd></td><td class="desc">Jump to the first / last section</td></tr>
+    
+        <tr><td class="keys"><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→ (section rail)</kbd></td><td class="desc">Move between sections when the section rail is focused</td></tr>
+    
+        <tr><td class="keys"><kbd>Alt</kbd><span class="kbd-plus">+</span><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→</kbd></td><td class="desc">Previous / next sub-tab in the current section</td></tr>
     
         <tr><td class="keys"><kbd>[</kbd><span class="kbd-sep">/</span><kbd>]</kbd></td><td class="desc">Previous / next sub-tab</td></tr>
     
-        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-sep">/</span><kbd>Cmd</kbd><span class="kbd-plus">+</span><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>K</kbd></td><td class="desc">Find a setting</td></tr>
+        <tr><td class="keys"><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→ (sub-tabs)</kbd></td><td class="desc">Move between sub-tabs when a sub-tab strip is focused</td></tr>
+    
+        <tr><td class="keys"><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→ (choice row)</kbd></td><td class="desc">Move between options in a choice group</td></tr>
+    
+        <tr><td class="keys"><kbd>Home</kbd><span class="kbd-sep">/</span><kbd>End (slider)</kbd></td><td class="desc">Jump to min or max on a focused opacity or intensity…</td></tr>
+    
+        <tr><td class="keys"><kbd>↑</kbd><span class="kbd-sep">/</span><kbd>↓ (Pages &amp; tags lists)</kbd></td><td class="desc">Move between rows when focus is in the list panel</td></tr>
+    
+        <tr><td class="keys"><kbd>Enter</kbd><span class="kbd-sep">/</span><kbd>Space (list row)</kbd></td><td class="desc">Focus the first field in the selected list row</td></tr>
+    
+        <tr><td class="keys"><kbd>g</kbd><span class="kbd-sep">/</span><kbd>G (list row)</kbd></td><td class="desc">Jump to the first / last row in a Pages &amp; tags list</td></tr>
+    
+        <tr><td class="keys"><kbd>/ (Tags tab)</kbd></td><td class="desc">Focus the tag filter while on the Tags sub-tab</td></tr>
+    
+        <tr><td class="keys"><kbd>j</kbd><span class="kbd-sep">/</span><kbd>k (Bookmarks list)</kbd></td><td class="desc">Move between bookmark rows when focus is in the list…</td></tr>
+    
+        <tr><td class="keys"><kbd>Enter</kbd><span class="kbd-sep">/</span><kbd>Space (bookmark row)</kbd></td><td class="desc">Open the inline editor for the selected bookmark</td></tr>
+    
+        <tr><td class="keys"><kbd>g</kbd><span class="kbd-sep">/</span><kbd>G (Bookmarks list)</kbd></td><td class="desc">Jump to the first / last bookmark row</td></tr>
+    
+        <tr><td class="keys"><kbd>/ (Bookmarks)</kbd></td><td class="desc">Focus the bookmark search field</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl/Cmd</kbd><span class="kbd-plus">+</span><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>K</kbd></td><td class="desc">Find a setting</td></tr>
     
         <tr><td class="keys"><kbd>Shift</kbd><span class="kbd-plus">+</span><kbd>S</kbd><span class="kbd-sep">/</span><kbd>&lt;</kbd></td><td class="desc">Return to dashboard</td></tr>
     
@@ -337,24 +503,76 @@
     
         <tr><td class="keys"><kbd>&gt;</kbd></td><td class="desc">Search</td></tr>
     
-        <tr><td class="keys"><kbd>:</kbd></td><td class="desc">Commands</td></tr>
+        <tr><td class="keys"><kbd>/</kbd></td><td class="desc">Open tag word cloud (desktop)</td></tr>
+    
+        <tr><td class="keys"><kbd>@</kbd></td><td class="desc">Global search</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:</kbd></td><td class="desc">Commands</td></tr>
     
         <tr><td class="keys"><kbd>?</kbd></td><td class="desc">Finders</td></tr>
     
         <tr><td class="keys"><kbd>*</kbd></td><td class="desc">Recent bookmarks</td></tr>
-    </table></section>
-<section class="cheat-group"><h2>Commands — navigation</h2><table>
-        <tr><td class="keys"><kbd>:inbox</kbd></td><td class="desc">Open Inbox (Shift + I)</td></tr>
     
-        <tr><td class="keys"><kbd>:cheat</kbd><span class="kbd-sep">/</span><kbd>:help</kbd></td><td class="desc">Open cheat sheet</td></tr>
+        <tr><td class="keys"><kbd>mode chips</kbd></td><td class="desc">Click › search · : commands · ? finders to switch mode</td></tr>
     
-        <tr><td class="keys"><kbd>:config</kbd></td><td class="desc">Open config</td></tr>
+        <tr><td class="keys"><kbd>←</kbd><span class="kbd-sep">/</span><kbd>→ (chip row)</kbd></td><td class="desc">Empty overlay</td></tr>
+    
+        <tr><td class="keys"><kbd>category:</kbd><span class="kbd-sep">/</span><kbd>tag:</kbd><span class="kbd-sep">/</span><kbd>page:</kbd><span class="kbd-sep">/</span><kbd>status:</kbd></td><td class="desc">Filter results by field directly in the search bar</td></tr>
+    
+        <tr><td class="keys"><kbd>-tag:</kbd><span class="kbd-sep">/</span><kbd>-category:</kbd><span class="kbd-sep">/</span><kbd>-status:</kbd></td><td class="desc">A leading minus excludes instead of selects, on every…</td></tr>
     </table></section>
-<section class="cheat-group"><h2>Commands — tools</h2><table>
-        <tr><td class="keys"><kbd>:trash</kbd></td><td class="desc">Open the trash</td></tr>
+<section class="cheat-group"><h2>Command palette  ( : )</h2><table>
+        <tr><td class="keys keys-command"><kbd>:new</kbd><span class="kbd-sep">/</span><kbd>:add</kbd></td><td class="desc">Open new-bookmark modal</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:move</kbd><span class="kbd-sep">/</span><kbd>:edit</kbd><span class="kbd-sep">/</span><kbd>:copy</kbd></td><td class="desc">Move, inline-edit, or copy URL of the keyboard-selected…</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:tag</kbd></td><td class="desc">List all tags in the command palette</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:category</kbd><span class="kbd-sep">/</span><kbd>:cat</kbd></td><td class="desc">Jump to a category or smart collection by number or name</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:filter &lt;tag&gt;</kbd><span class="kbd-sep">/</span><kbd>:filter clear</kbd></td><td class="desc">Apply or clear dashboard tag filter</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:find &lt;text&gt;</kbd><span class="kbd-sep">/</span><kbd>:find clear</kbd></td><td class="desc">Filter bookmark tiles on the current page</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:open all</kbd><span class="kbd-sep">/</span><kbd>:open pinned</kbd></td><td class="desc">Open every bookmark on the current page in new tabs…</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:goto &lt;url or domain&gt;</kbd></td><td class="desc">Navigate directly</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:duplicate</kbd><span class="kbd-sep">/</span><kbd>:duplicates</kbd></td><td class="desc">Find duplicate URLs across all pages</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:health [filter]</kbd></td><td class="desc">Open health view</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:page</kbd></td><td class="desc">Switch page by name or number</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:inbox</kbd></td><td class="desc">Open Inbox (Shift + I)</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:recent</kbd></td><td class="desc">Open recent bookmarks modal</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:cheat</kbd><span class="kbd-sep">/</span><kbd>:help</kbd></td><td class="desc">Open cheat sheet</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:config</kbd></td><td class="desc">Open config</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:layout &lt;preset&gt;</kbd></td><td class="desc">Switch layout</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:theme &lt;name&gt;</kbd></td><td class="desc">Switch colour theme</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:columns &lt;n&gt;</kbd></td><td class="desc">Set number of columns</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:favicons on/off</kbd></td><td class="desc">Toggle favicons on/off</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:backup</kbd><span class="kbd-sep">/</span><kbd>:export</kbd></td><td class="desc">Open config backups or download a ZIP backup immediately</td></tr>
+    
+        <tr><td class="keys keys-command"><kbd>:trash</kbd></td><td class="desc">Open the trash</td></tr>
+    </table></section>
+<section class="cheat-group"><h2>Other</h2><table>
+        <tr><td class="keys"><kbd>★ (corner button)</kbd></td><td class="desc">Open what's new release notes</td></tr>
+    
+        <tr><td class="keys"><kbd>Ctrl</kbd><span class="kbd-plus">+</span><kbd>V (dashboard)</kbd></td><td class="desc">Paste URL anywhere on the dashboard to quick-add a…</td></tr>
+    
+        <tr><td class="keys"><kbd>config → Help → Keyboard</kbd></td><td class="desc">Open the keyboard cheat sheet</td></tr>
     </table></section>
   </div>
-  <p class="footer">nextdash.cc · generated 2026-08-16 · <code>npm run generate:cheatsheet</code></p>
+  <p class="footer">nextdash.cc · generated 2026-08-18 · <code>npm run generate:cheatsheet</code></p>
 </div>
 </body>
 </html>

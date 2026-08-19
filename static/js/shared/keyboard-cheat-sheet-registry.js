@@ -77,6 +77,7 @@
                 { keys: 'G + 1–9', cheatKey: 'navGotoCategory', fallback: 'Jump to first bookmark in nth category or smart collection' },
                 { keys: 'G + P', cheatKey: 'navGotoPinned', fallback: 'Jump to first pinned bookmark on the page' },
                 { keys: 'Enter / Space', cheatKey: 'navOpenFocused', fallback: 'Open focused bookmark', print: true },
+                { keys: 'Shift + F', cheatKey: 'navGridFilter', fallback: 'Filter the page you are on in place — the layout, the cursor and any selection stay put, and empty categories are hidden while it is open' },
                 { keys: 'Esc', cheatKey: 'navEscClear', fallback: 'Clear selection / close overlay; undo unsaved drag reorder', print: true, printFallback: 'Clear selection / close overlay' },
             ],
         },
@@ -110,6 +111,7 @@
                 { keys: 'Shift + P', cheatKey: 'bmTogglePin', fallback: 'Pin or unpin the focused bookmark', print: true },
                 { keys: 'Ctrl/Cmd + Enter', cheatKey: 'bmOpenNewTab', fallback: 'Open the focused bookmark — or the highlighted search result — in a new tab, whatever the open-in-new-tab setting says', print: true },
                 { keys: 'Alt + ↑ / ↓', cheatKey: 'bmMoveRow', fallback: 'Move the focused bookmark within its category (manual order only)' },
+                { keys: 'Shift + Alt + ← / →', cheatKey: 'bmMoveToCategory', fallback: 'Move the focused bookmark into the category beside it, in the order the page shows them (smart collections are skipped)', printFallback: 'Move bookmark to the next category' },
                 { keys: 'Alt + ← / → on category', cheatKey: 'bmMoveCategory', fallback: 'Move the focused category one place left or right', print: true, printFallback: 'Move category' },
                 { keys: 'F2 on category', cheatKey: 'bmRenameCategoryKey', fallback: 'Rename the focused category header' },
                 {
@@ -128,7 +130,7 @@
                 { keys: 'Shift + V', cheatKey: 'bmTogglePreview', fallback: 'Toggle hover preview card on focused bookmark' },
                 { keys: 'Enter on "+ N more"', cheatKey: 'bmShowMoreToggle', fallback: 'Expand or collapse a long category — selection returns to the last bookmark above the toggle' },
                 { keys: 'Delete', cheatKey: 'bmDelete', fallback: 'Delete focused bookmark — confirm in the popover beside it; with a selection open, deletes everything selected' },
-                { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, share, edit, pin, tags, move, checking, Show in Health, select, delete (Shift + right-click for the browser menu)' },
+                { keys: 'Right-click bookmark', cheatKey: 'bmContextMenu', fallback: 'Menu with open in new tab, copy URL, share, edit, pin, tags, move, checking, Show in Health, select, delete (Shift + right-click for the browser menu)', printFallback: 'Row menu: open, copy, edit, tags, move, delete' },
                 { keys: 'Double-click page tab', cheatKey: 'bmRenamePageTab', fallback: 'Rename page tab — also set emoji icon and colour dot' },
                 { keys: 'Long-press category (~500 ms)', cheatKey: 'bmRenameCategory', fallback: 'Rename category header (not on sort buttons)' },
                 { keys: 'Right-click category', cheatKey: 'bmCategoryMenu', fallback: 'Right-click a category header to rename, add, or delete it' },
@@ -272,7 +274,7 @@
                 { keys: ':', cheatKey: 'smCommandPalette', fallback: 'Command palette — 5 collapsible groups at lone : ; recent commands at top; toggles stay open after Enter', print: true, printFallback: 'Commands' },
                 { keys: '?', cheatKey: 'smFinders', fallback: 'Finders — e.g. ?g query to search Google', print: true, printFallback: 'Finders' },
                 { keys: '*', cheatKey: 'smRecentPanel', fallback: 'Recent bookmarks panel', print: true, printFallback: 'Recent bookmarks' },
-                { keys: 'mode chips', cheatKey: 'smModeChips', fallback: 'Click › search · : commands · ? finders at the top of the overlay to switch mode instantly' },
+                { keys: 'mode chips', cheatKey: 'smModeChips', fallback: 'Click › search · : commands · ? finders at the top of the overlay to switch mode instantly', printFallback: 'Click › search · : commands · ? finders to switch mode' },
                 { keys: '← / → (chip row)', cheatKey: 'smEmptyStateChips', fallback: 'Empty overlay — with a recent-search or recent-command chip row highlighted, cycle chips and Enter applies' },
                 { keys: 'category: / tag: / page: / status:', cheatKey: 'smFieldFilters', fallback: 'Filter results by field directly in the search bar — status: also takes untagged, tagged, noted, unnoted' },
                 { keys: '-tag: / -category: / -status:', cheatKey: 'smNegatedFilters', fallback: 'A leading minus excludes instead of selects, on every filter key' },
@@ -280,83 +282,89 @@
         },
         {
             id: 'sectionCommandsBookmarks',
+            // On paper the four command groups are one list: a heading for every
+            // three rows costs more page than the rows do.
+            printTitle: 'Command palette  ( : )',
             titleKey: 'sectionCommandsBookmarks',
             titleFallback: 'Commands — bookmarks',
             rows: [
                 { keys: ':new / :add', cheatKey: 'cbNew', fallback: 'Open new-bookmark modal (+ / Shift+B / Ctrl+Shift+A) or quick-add omnibox (&)' },
-                { keys: ':note', cheatKey: 'cbNote', fallback: 'Edit note on the focused bookmark' },
+                { keys: ':note', printOmit: true, cheatKey: 'cbNote', fallback: 'Edit note on the focused bookmark' },
                 { keys: ':move / :edit / :copy', cheatKey: 'cbMoveEditCopy', fallback: 'Move, inline-edit, or copy URL of the keyboard-selected bookmark' },
-                { keys: ':pin / :unpin', cheatKey: 'cbPin', fallback: 'Toggle pin flag on the focused bookmark' },
+                { keys: ':pin / :unpin', printOmit: true, cheatKey: 'cbPin', fallback: 'Toggle pin flag on the focused bookmark' },
                 { keys: ':tag', cheatKey: 'cbTagList', fallback: 'List all tags in the command palette (dashboard layout unchanged)' },
-                { keys: ':tag <name>', cheatKey: 'cbTagBrowse', fallback: 'Browse bookmarks by tag in the palette — :tag work or :tag:work' },
-                { keys: ':tag +name / :tag -name', cheatKey: 'cbTagMutate', fallback: 'Add or remove a tag on the focused bookmark — :tag +name / :tag -name' },
+                { keys: ':tag <name>', printOmit: true, cheatKey: 'cbTagBrowse', fallback: 'Browse bookmarks by tag in the palette — :tag work or :tag:work' },
+                { keys: ':tag +name / :tag -name', printOmit: true, cheatKey: 'cbTagMutate', fallback: 'Add or remove a tag on the focused bookmark — :tag +name / :tag -name' },
                 { keys: ':category / :cat', cheatKey: 'cbCategory', fallback: 'Jump to a category or smart collection by number or name' },
-                { keys: ':category new <name>', cheatKey: 'cbCategoryNew', fallback: 'Create a category on the current page (c does the same)' },
+                { keys: ':category new <name>', printOmit: true, cheatKey: 'cbCategoryNew', fallback: 'Create a category on the current page (c does the same)' },
                 { keys: ':filter <tag> / :filter clear', cheatKey: 'cbFilter', fallback: 'Apply or clear dashboard tag filter (OR logic, same as tag cloud)' },
-                { keys: ':remove', cheatKey: 'cbRemove', fallback: 'Delete the focused bookmark' },
+                { keys: ':remove', printOmit: true, cheatKey: 'cbRemove', fallback: 'Delete the focused bookmark' },
                 { keys: ':find <text> / :find clear', cheatKey: 'cbFind', fallback: 'Filter bookmark tiles on the current page — :find clear removes the filter' },
                 { keys: ':open all / :open pinned', cheatKey: 'cbOpenAll', fallback: 'Open every bookmark or pinned bookmarks on the current page (capped at 15)' },
-                { keys: ':open tag <name> / :open category <name>', cheatKey: 'cbOpenTagCat', fallback: 'Open bookmarks matching a tag or category on the current page' },
-                { keys: ':open last [n]', cheatKey: 'cbOpenLast', fallback: 'Open the N most recently opened bookmarks on this page (default 5, max 50; tab batch capped at 15; :open recent is an alias)' },
+                { keys: ':open tag <name> / :open category <name>', printOmit: true, cheatKey: 'cbOpenTagCat', fallback: 'Open bookmarks matching a tag or category on the current page' },
+                { keys: ':open last [n]', printOmit: true, cheatKey: 'cbOpenLast', fallback: 'Open the N most recently opened bookmarks on this page (default 5, max 50; tab batch capped at 15; :open recent is an alias)' },
                 { keys: ':goto <url or domain>', cheatKey: 'cbGoto', fallback: 'Navigate directly — full URLs open as-is, bare domains get https:// prepended' },
-                { keys: ':goto config / stats / health', cheatKey: 'cbGotoNav', fallback: 'Quick navigation to config, stats, or health view' },
-                { keys: ':duplicate / :duplicates', cheatKey: 'cbDuplicates', fallback: 'Find bookmarks with duplicate URLs across all pages (opens Health duplicates view)' },
-                { keys: ':history / :history clear', cheatKey: 'cbHistory', fallback: 'Browse recent searches from the command bar / wipe all search history' },
-                { keys: ':stale <days>', cheatKey: 'cbStale', fallback: 'Show bookmarks not opened in <days> days (default 30)' },
+                { keys: ':goto config / stats / health', printOmit: true, cheatKey: 'cbGotoNav', fallback: 'Quick navigation to config, stats, or health view' },
+                { keys: ':duplicate / :duplicates', cheatKey: 'cbDuplicates', fallback: 'Find bookmarks with duplicate URLs across all pages (opens Health duplicates view)', printFallback: 'Find duplicate URLs across all pages' },
+                { keys: ':history / :history clear', printOmit: true, cheatKey: 'cbHistory', fallback: 'Browse recent searches from the command bar / wipe all search history' },
+                { keys: ':stale <days>', printOmit: true, cheatKey: 'cbStale', fallback: 'Show bookmarks not opened in <days> days (default 30)' },
                 { keys: ':health [filter]', cheatKey: 'caHealth', fallback: 'Open health view — broken / duplicate / stale / refresh' },
-                { keys: ':health page [n]', cheatKey: 'cbHealthPage', fallback: 'Open health view with a specific page context' },
-                { keys: ':save / :saved', cheatKey: 'cbSave', fallback: 'Save the current search query / show saved searches' },
+                { keys: ':health page [n]', printOmit: true, cheatKey: 'cbHealthPage', fallback: 'Open health view with a specific page context' },
+                { keys: ':save / :saved', printOmit: true, cheatKey: 'cbSave', fallback: 'Save the current search query / show saved searches' },
             ],
         },
         {
             id: 'sectionCommandsNavigation',
+            printMergeInto: 'sectionCommandsBookmarks',
             titleKey: 'sectionCommandsNavigation',
             titleFallback: 'Commands — navigation',
             rows: [
                 { keys: ':page', cheatKey: 'cnPage', fallback: 'Switch page by name or number — palette stays open, ✓ on current page' },
-                { keys: ':page new <name>', cheatKey: 'cnPageNew', fallback: 'Create a page and go to it (n in the page overview does the same)' },
+                { keys: ':page new <name>', printOmit: true, cheatKey: 'cnPageNew', fallback: 'Create a page and go to it (n in the page overview does the same)' },
                 { keys: ':inbox', cheatKey: 'cnInbox', fallback: 'Open Inbox (Shift + I)', print: true },
-                { keys: ':inbox triage', cheatKey: 'cnInboxTriage', fallback: 'Triage inbox items one by one' },
+                { keys: ':inbox triage', printOmit: true, cheatKey: 'cnInboxTriage', fallback: 'Triage inbox items one by one' },
                 { keys: ':recent', cheatKey: 'cnRecent', fallback: 'Open recent bookmarks modal (same as *)' },
-                { keys: ':overview', cheatKey: 'cnOverview', fallback: 'Open page overview with bookmark counts (same as ,)' },
+                { keys: ':overview', printOmit: true, cheatKey: 'cnOverview', fallback: 'Open page overview with bookmark counts (same as ,)' },
                 { keys: ':cheat / :help', cheatKey: 'cnCheat', fallback: 'Open keyboard cheat sheet (same as ! or F1)', print: true, printFallback: 'Open cheat sheet' },
-                { keys: ':whatsnew', cheatKey: 'cnWhatsnew', fallback: "Open what's new release notes" },
-                { keys: ':reload', cheatKey: 'cnReload', fallback: 'Reload the dashboard' },
+                { keys: ':whatsnew', printOmit: true, cheatKey: 'cnWhatsnew', fallback: "Open what's new release notes" },
+                { keys: ':reload', printOmit: true, cheatKey: 'cnReload', fallback: 'Reload the dashboard' },
                 { keys: ':config [section]', cheatKey: 'cnConfig', fallback: 'Open config or a tab — bookmarks, backups, stats, …', print: true, printKeys: ':config', printFallback: 'Open config' },
             ],
         },
         {
             id: 'sectionCommandsAppearance',
+            printMergeInto: 'sectionCommandsBookmarks',
             titleKey: 'sectionCommandsAppearance',
             titleFallback: 'Commands — appearance',
             rows: [
                 { keys: ':layout <preset>', cheatKey: 'caLayout', fallback: 'Switch layout — default / compact / cards / masonry / list / launcher' },
-                { keys: ':layoutversion <mode>', cheatKey: 'caLayoutversion', fallback: 'Switch layout version — classic / modern / toggle (not the same as :layout presets)' },
+                { keys: ':layoutversion <mode>', printOmit: true, cheatKey: 'caLayoutversion', fallback: 'Switch layout version — classic / modern / toggle (not the same as :layout presets)' },
                 { keys: ':theme <name>', cheatKey: 'caTheme', fallback: 'Switch colour theme' },
-                { keys: ':density <mode>', cheatKey: 'caDensity', fallback: 'Change density — comfortable / compact / dense' },
+                { keys: ':density <mode>', printOmit: true, cheatKey: 'caDensity', fallback: 'Change density — comfortable / compact / dense' },
                 { keys: ':columns <n>', cheatKey: 'caColumns', fallback: 'Set number of columns (1–6)' },
-                { keys: ':fontsize <size>', cheatKey: 'caFontsize', fallback: 'Change font size' },
+                { keys: ':fontsize <size>', printOmit: true, cheatKey: 'caFontsize', fallback: 'Change font size' },
                 { keys: ':favicons on/off', cheatKey: 'caFavicons', fallback: 'Toggle favicons on/off' },
-                { keys: ':favicons fetch', cheatKey: 'caFaviconsFetch', fallback: 'Re-download every bookmark icon across all pages (replaces existing icons)' },
-                { keys: ':preview on/off', cheatKey: 'caPreview', fallback: 'Toggle hover preview cards' },
-                { keys: ':packed on/off', cheatKey: 'caPacked', fallback: 'Toggle packed (variable-width) columns' },
-                { keys: ':buttonbar <position>', cheatKey: 'caButtonbar', fallback: 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left / side-right' },
-                { keys: ':sort <method>', cheatKey: 'caSort', fallback: 'Sort focused category (shows category name) — order / az / recent' },
-                { keys: ':dark / :title / :lang', cheatKey: 'caDisplayToggles', fallback: 'Toggle dark mode, dashboard title visibility, or UI language' },
-                { keys: ':animations / :status / :opacity', cheatKey: 'caDisplayMore', fallback: 'Toggle animations, status monitor, or background opacity' },
-                { keys: ':collections', cheatKey: 'caCollections', fallback: 'Toggle smart collections (today, recent, stale, most used)' },
+                { keys: ':favicons fetch', printOmit: true, cheatKey: 'caFaviconsFetch', fallback: 'Re-download every bookmark icon across all pages (replaces existing icons)' },
+                { keys: ':preview on/off', printOmit: true, cheatKey: 'caPreview', fallback: 'Toggle hover preview cards' },
+                { keys: ':packed on/off', printOmit: true, cheatKey: 'caPacked', fallback: 'Toggle packed (variable-width) columns' },
+                { keys: ':buttonbar <position>', printOmit: true, cheatKey: 'caButtonbar', fallback: 'Move the button bar — bottom (default) / bottom-left / bottom-right / side-left / side-right' },
+                { keys: ':sort <method>', printOmit: true, cheatKey: 'caSort', fallback: 'Sort focused category (shows category name) — order / az / recent' },
+                { keys: ':dark / :title / :lang', printOmit: true, cheatKey: 'caDisplayToggles', fallback: 'Toggle dark mode, dashboard title visibility, or UI language' },
+                { keys: ':animations / :status / :opacity', printOmit: true, cheatKey: 'caDisplayMore', fallback: 'Toggle animations, status monitor, or background opacity' },
+                { keys: ':collections', printOmit: true, cheatKey: 'caCollections', fallback: 'Toggle smart collections (today, recent, stale, most used)' },
             ],
         },
         {
             id: 'sectionCommandsTools',
+            printMergeInto: 'sectionCommandsBookmarks',
             titleKey: 'sectionCommandsTools',
             titleFallback: 'Commands — tools',
             rows: [
                 { keys: ':backup / :export', cheatKey: 'ctBackup', fallback: 'Open config backups or download a ZIP backup immediately' },
                 { keys: ':trash', cheatKey: 'ctTrash', fallback: 'Open the trash — deleted bookmarks, pages and categories wait 30 days', print: true, printFallback: 'Open the trash' },
-                { keys: ':metadata', cheatKey: 'ctMetadata', fallback: 'Open health missing previews or config bookmarks metadata view' },
-                { keys: ':monitor off', cheatKey: 'ctMonitor', fallback: 'Turn availability checking off for every bookmark at once (asks for confirmation first)' },
-                { keys: ':telemetry on / off', cheatKey: 'ctTelemetry', fallback: 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)' },
+                { keys: ':metadata', printOmit: true, cheatKey: 'ctMetadata', fallback: 'Open health missing previews or config bookmarks metadata view' },
+                { keys: ':monitor off', printOmit: true, cheatKey: 'ctMonitor', fallback: 'Turn availability checking off for every bookmark at once (asks for confirmation first)' },
+                { keys: ':telemetry on / off', printOmit: true, cheatKey: 'ctTelemetry', fallback: 'Turn privacy-friendly analytics on or off (same as Config → General → Advanced → Privacy; reloads the page)' },
             ],
         },
         {
@@ -458,17 +466,29 @@
     }
 
     /**
-     * Rows marked for the printable one-pager, which stays a curated subset:
-     * the PDF is A4 and meant to be readable at a glance, so it carries short
-     * labels (printFallback) rather than the modal's full sentences.
+     * The printed sheet carries every key the modal does — and, of the command
+     * palette, only what earns its space.
      *
-     * A printFallback is the label, not a fallback for one — which is why it is
-     * used directly rather than handed to `label()`. Passed through, it lost
-     * every time: the callers resolve a cheatKey against the locale first, that
-     * key is always present (the i18n check requires it), and so the sheet
-     * printed the modal's full sentences and ran to three pages. The short
-     * wording is English-only, which the sheet already is: it is generated from
-     * locales/en.json alone.
+     * It used to be a curated subset — rows marked `print: true` — because it
+     * had to fit one A4, and the budget was policed at 70 rows. That made the
+     * sheet a second, smaller product: a key added to the app was in the modal
+     * and not on the paper, and which keys made the cut was decided by whoever
+     * ran out of page first. The sheet runs to as many pages as the app has
+     * keys now, and `print` no longer gates anything.
+     *
+     * The one exception is `printOmit`, and it is deliberately narrow: the
+     * palette has fifty-odd entries, most of them a one-off toggle or a variant
+     * of a command already on the list, and a page of those crowds out the keys
+     * someone printed the sheet for. Every omission is written on the row it
+     * omits, so it can be argued with. Keyboard shortcuts are never omitted.
+     *
+     * `printFallback` and `printKeys` survive as what they always were: the
+     * short wording for paper, where a row has one. A printFallback is the
+     * label, not a fallback for one — which is why it is used directly rather
+     * than handed to `label()`. Passed through, it lost every time: the callers
+     * resolve a cheatKey against the locale first, and that key is always
+     * present. The short wording is English-only, which the sheet already is —
+     * it is generated from locales/en.json alone.
      */
     /** A printed row's own short wording, or the translated one where it has none. */
     function printLabel(label, row) {
@@ -482,30 +502,43 @@
         for (const section of SECTIONS) {
             let items = [];
             if (section.legend) {
-                if (!section.print) continue;
+                // A legend row may carry print wording of its own, for the same
+                // reason a registry row can: the modal's sentence is written to
+                // be read once, and on paper it costs three lines.
                 items = legendRowsFor(section.legend).map((row) => ({
                     keys: row.keys,
-                    description: label(row.cheatKey, row.fallback),
+                    description: printLabel(label, row),
                 }));
             } else {
                 items = (section.rows || [])
-                    .filter((row) => row.print && !row.printSection)
+                    .filter((row) => !row.printSection && !row.printOmit)
                     .map((row) => ({
                         keys: row.printKeys || row.keys,
                         description: printLabel(label, row),
                     }));
             }
             if (!items.length) continue;
-            out.push({ id: section.id, title: label(section.titleKey, section.titleFallback), items });
+            const target = section.printMergeInto
+                ? out.find((candidate) => candidate.id === section.printMergeInto)
+                : null;
+            if (target) {
+                target.items.push(...items);
+                continue;
+            }
+            out.push({
+                id: section.id,
+                title: section.printTitle || label(section.titleKey, section.titleFallback),
+                items,
+            });
         }
 
-        // A few rows print under a different heading than they live in — the cheat
-        // sheet key belongs with Navigation on a one-pager even though the modal
+        // A few rows print under a different heading than they live in — the
+        // cheat sheet key reads better with Navigation even though the modal
         // files it under Other. `printAt` keeps it in its usual reading position
         // rather than stranding it at the end of the section.
         for (const section of SECTIONS) {
             for (const row of section.rows || []) {
-                if (!row.print || !row.printSection) continue;
+                if (!row.printSection) continue;
                 const target = out.find((s) => s.id === row.printSection);
                 if (!target) continue;
                 const item = {

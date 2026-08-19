@@ -1,0 +1,751 @@
+{
+  "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
+  "features": [
+    {
+      "titleKey": "config.overviewNewFeatureButtonBarTabTitle",
+      "titleFallback": "The button bar is one tab, not two",
+      "whatKey": "config.overviewNewFeatureButtonBarTabWhat",
+      "whatFallback": "Where the bar sits was a panel on Layout; which buttons it carries were two panels on Toolbar & tabs, two tabs further along. Moving the bar and hiding a button on it were separate errands, and the second one was usually found by accident.",
+      "howKey": "config.overviewNewFeatureButtonBarTabHow",
+      "howFallback": "Appearance → Button bar holds both halves: the five positions, each drawn as the page with the bar in it, and under them the main buttons and the extras with Show all, Hide all and a count. Toolbar & tabs keeps the header row, which is a different strip.",
+      "enableKey": "config.overviewNewFeatureButtonBarTabEnable",
+      "enableFallback": "Nothing moved on screen — only where the settings live. Hiding a button still leaves its keyboard shortcut working, and :buttonbar moves the bar without opening config at all.",
+      "ctaKey": "config.overviewNewFeatureButtonBarTabCta",
+      "ctaFallback": "Open the button bar →",
+      "go": {
+        "view": "config",
+        "section": "appearance",
+        "appearanceTab": "buttonbar"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureCaptureTitle",
+      "titleFallback": "Save a link from your phone, or from any browser",
+      "whatKey": "config.overviewNewFeatureCaptureWhat",
+      "whatFallback": "Saving a link meant being at a desktop with the extension installed. On a phone, or in Safari or Firefox, there was no way in at all — you mailed yourself the link and dealt with it later, which is how links get lost.",
+      "howKey": "config.overviewNewFeatureCaptureHow",
+      "howFallback": "Install nextDash as an app and it appears in your phone’s share sheet: share a link and it lands in the Inbox. On a desktop browser, Config → Help → Inbox builds a bookmarklet carrying this install’s own address. The same route takes a plain web address, so a launcher, a script or a hotkey can save to it too — the integrations folder has ready-made pieces for Raycast, Dropzone, Ulauncher, Alfred and Apple Shortcuts.",
+      "enableKey": "config.overviewNewFeatureCaptureEnable",
+      "enableFallback": "Nothing to switch on. If this install asks for a password, set a capture key on the server and paste it into the panel — it opens these two routes and nothing else.",
+      "ctaKey": "config.overviewNewFeatureCaptureCta",
+      "ctaFallback": "Open Help → Inbox →",
+      "go": {
+        "view": "config",
+        "section": "help",
+        "subTab": "inbox"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureDuplicateWhereTitle",
+      "titleFallback": "A link you already have is found wherever it is",
+      "whatKey": "config.overviewNewFeatureDuplicateWhereWhat",
+      "whatFallback": "The duplicate check looked only at the page you were saving to. The same link filed on Work went straight in again from Personal, and the duplicates report found it weeks later — which is reporting a problem rather than preventing it.",
+      "howKey": "config.overviewNewFeatureDuplicateWhereHow",
+      "howFallback": "The check looks everywhere now. Two copies on one page are still refused; a copy on another page is a question instead — “You already saved this on Work · Docs”, with the existing bookmark one click away and Save anyway if you meant it. The same document filed with work and with reference is a real thing to want, so the choice stays yours.",
+      "enableKey": "config.overviewNewFeatureDuplicateWhereEnable",
+      "enableFallback": "Nothing to switch on. The add form, quick add and the browser extension all ask it the same way.",
+      "ctaKey": "config.overviewNewFeatureDuplicateWhereCta",
+      "ctaFallback": "Back to the dashboard →",
+      "go": {
+        "view": "dashboard"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureRotReportTitle",
+      "titleFallback": "Link rot, as something you can watch happen",
+      "whatKey": "config.overviewNewFeatureRotReportWhat",
+      "whatFallback": "A broken link was only ever broken — not broken since May, not broken and never opened, not one of forty on the same dead host. And a page that answers 200 while saying “not found” read as perfectly healthy.",
+      "howKey": "config.overviewNewFeatureRotReportHow",
+      "howFallback": "A row now says how long it has been failing, the list can be grouped by site so one host down reads as one problem, a monitored check can spot the polite kind of disappearance, and a dead link can be pointed at its last archived copy with the original address kept in the note. Rot report in the toolbar adds it up: what has gone, what has moved, what has been failing for over a month, and what broke this week.",
+      "enableKey": "config.overviewNewFeatureRotReportEnable",
+      "enableFallback": "Spotting a page that says “not found” costs one bounded read per check, so it is a switch under Behavior → Status & health. The rest is on.",
+      "ctaKey": "config.overviewNewFeatureRotReportCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureReviewSessionTitle",
+      "titleFallback": "Ten links, two minutes — cleaning that ends",
+      "whatKey": "config.overviewNewFeatureReviewSessionWhat",
+      "whatFallback": "Work through is the best thing in the health view, and it was reachable only from a health filter, by someone who had already decided to do maintenance. Deciding is the hard part, and a filter holding forty-seven rows is a number people learn to ignore.",
+      "howKey": "config.overviewNewFeatureReviewSessionHow",
+      "howFallback": "When enough links want attention, a card in the corner of the dashboard names what is waiting — “10 links to review: 4 broken, 3 never opened, 3 not opened in a year” — and Start runs a session over the worst ten. It ends: it says how many you dealt with, offers another ten while more are waiting, and Done for today puts the offer away until tomorrow. Skipping is not handling, so the count is honest.",
+      "enableKey": "config.overviewNewFeatureReviewSessionEnable",
+      "enableFallback": "Nothing to switch on. Below five waiting links the card stays quiet.",
+      "ctaKey": "config.overviewNewFeatureReviewSessionCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureFreshTitle",
+      "titleFallback": "Fresh — the bookmarks that have something new",
+      "whatKey": "config.overviewNewFeatureFreshWhat",
+      "whatFallback": "Today, Recently opened, Most used and Stale all answer a question about what you did. None of them could answer the one you actually have in front of a wall of links: which of these is worth opening right now?",
+      "howKey": "config.overviewNewFeatureFreshHow",
+      "howFallback": "When a page you saved offers a feed, nextDash notes where it is while fetching previews and checks it on the background re-check interval. A bookmark then carries a small count of what has been published since you last opened it, and a Fresh collection lists those newest first. Opening the bookmark clears it — that is the whole of the read state. No article list, no titles: this is not a feed reader.",
+      "enableKey": "config.overviewNewFeatureFreshEnable",
+      "enableFallback": "Off by default, under Behavior → Status & health → Fresh. Switching it on checks once immediately; the feeds themselves were already found while previews were fetched, so nothing has to be re-fetched.",
+      "ctaKey": "config.overviewNewFeatureFreshCta",
+      "ctaFallback": "Open the setting →",
+      "go": {
+        "view": "config",
+        "section": "behavior",
+        "subTab": "status"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHealthStableListTitle",
+      "titleFallback": "The health list stays still while you work through it",
+      "whatKey": "config.overviewNewFeatureHealthStableListWhat",
+      "whatFallback": "Health asks you to open a link and see for yourself, and then charged you for it: never opened and not opened in 30 days each cost ten points, so the first open raised the row’s score and the worst-first order carried it away. On a list of two hundred that meant tenth place became a hundred and eighty-eighth, while you were still reading it.",
+      "howKey": "config.overviewNewFeatureHealthStableListHow",
+      "howFallback": "Usage costs nothing now — it is still counted under the Unused and Stale tiles, still named on the row, it simply no longer decides where the row sits — and nothing else in the order changes when you act on a row either. Where a filter does stop selecting it, opening one under Unused or re-checking one under Broken, the row keeps its place, dimmed and marked handled, until you change the filter, sort or search, or reload the report.",
+      "enableKey": "config.overviewNewFeatureHealthStableListEnable",
+      "enableFallback": "Nothing to switch on. The score breakdown behind the badge now separates what costs points from what is only worth knowing.",
+      "ctaKey": "config.overviewNewFeatureHealthStableListCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTypeThenEnterTitle",
+      "titleFallback": "Typing filters; Enter opens",
+      "whatKey": "config.overviewNewFeatureTypeThenEnterWhat",
+      "whatFallback": "A bookmark shortcut fired the moment what you had typed matched it exactly, so an ordinary word was swallowed halfway through: \"invoice\" opened something at \"in\" and left \"voice\" behind. Words starting with g, j or k lost their first letter to the grid keys instead. Which of your words survived depended on which other bookmarks you happened to own, and changed every time you added one.",
+      "howKey": "config.overviewNewFeatureTypeThenEnterHow",
+      "howFallback": "Nothing opens by itself any more. The list narrows as you type and Enter opens the top result, with an exact shortcut match leading the list — so a shortcut costs one keystroke more and behaves the same tomorrow as today. Letters only reach the grid once a row is selected, and the line you type into now shows the key that started it: > for search, : for commands, ? for the finders, with an × to clear.",
+      "enableKey": "config.overviewNewFeatureTypeThenEnterEnable",
+      "enableFallback": "Nothing to switch on. A short key legend appears under the bookmarks after your first keystroke and goes again when you open something — switch it off under Behavior → General, where shortcut hints on the toolbar icons now start off as well.",
+      "ctaKey": "config.overviewNewFeatureTypeThenEnterCta",
+      "ctaFallback": "Open General →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "general"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureFailureReasonTitle",
+      "titleFallback": "A failed check says why, and one miss is not an outage",
+      "whatKey": "config.overviewNewFeatureFailureReasonWhat",
+      "whatFallback": "A name that would not resolve, a connection that timed out and one that was refused were all stored the same way — not up, no code — so the outage list, the timeline and the export showed no cause at all for anything that was not an HTTP error. And a single dropped check counted as downtime for a month afterwards.",
+      "howKey": "config.overviewNewFeatureFailureReasonHow",
+      "howFallback": "Every failure records what went wrong — DNS, timeout, refused, TLS, content — and shows it wherever the outage appears. A failed check is tried once more five seconds later and only written down if it fails again. A recovery says how long it was down, a 30-day figure says how much history is actually behind it, and certificate warnings now come from every check rather than only from bookmarks set to Monitor.",
+      "enableKey": "config.overviewNewFeatureFailureReasonEnable",
+      "enableFallback": "Nothing to switch on. The trend chart can draw broken, stale, unchecked or the score instead of only healthy, a whole selection can be muted at once, and the three-second limit on a check is now a setting under Behavior → Status & health.",
+      "ctaKey": "config.overviewNewFeatureFailureReasonCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureInboxCountsTitle",
+      "titleFallback": "The inbox counts what you can see",
+      "whatKey": "config.overviewNewFeatureInboxCountsWhat",
+      "whatFallback": "A search or a site filter narrowed the list and left the tiles, the pills and the badge counting everything, so the numbers on screen described a different set of links than the one in front of you. Mark all read reached links you could not see, and a sleeping link was invisible until the day it came back.",
+      "howKey": "config.overviewNewFeatureInboxCountsHow",
+      "howFallback": "Every count follows the filter, the button becomes Mark shown read while something is narrowing the view, and a line under the list says how many links are asleep and when the first one wakes. A link you marked read by mistake can go back to unread, and the page description sits under the title.",
+      "enableKey": "config.overviewNewFeatureInboxCountsEnable",
+      "enableFallback": "Nothing to switch on. Import now sits beside the CSV and JSON exports: it skips links that are already there and says afterwards how many arrived, how many were already in and how many did not fit.",
+      "ctaKey": "config.overviewNewFeatureInboxCountsCta",
+      "ctaFallback": "Open the inbox →",
+      "go": {
+        "view": "inbox"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSpreadTitle",
+      "titleFallback": "A category can span several columns",
+      "whatKey": "config.overviewNewFeatureSpreadWhat",
+      "whatFallback": "A category with forty bookmarks in it towered over everything beside it, and everything past the items-per-category limit sat behind a \"+ N more\" you had to click every visit. One long category was enough to make a page feel lopsided.",
+      "howKey": "config.overviewNewFeatureSpreadHow",
+      "howFallback": "Let a category spread and its bookmarks run across two or three columns instead of down one, at the same height as the blocks around it. How many columns it takes is not something you set: it follows from the items-per-category limit and how many bookmarks are in it, so it grows and shrinks with the category and never goes wider than the grid.",
+      "enableKey": "config.overviewNewFeatureSpreadEnable",
+      "enableFallback": "Right-click a category header and pick Spread across columns, or press Shift+W on it. Pages & tags → Categories has the same switch on every row. It needs an items-per-category limit — spreading is unavailable while that is set to Unlimited.",
+      "ctaKey": "config.overviewNewFeatureSpreadCta",
+      "ctaFallback": "Open Layout →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "layout"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBulkUndoTitle",
+      "titleFallback": "A way back out of a bulk delete",
+      "whatKey": "config.overviewNewFeatureBulkUndoWhat",
+      "whatFallback": "Removing fifteen bookmarks at once had no way back except digging them out of the trash one at a time. And if the save did not go through, the rows disappeared from the screen anyway with nothing to tell you they were still there.",
+      "howKey": "config.overviewNewFeatureBulkUndoHow",
+      "howFallback": "The toast now offers Undo for eight seconds and puts every bookmark back in the position it held. A delete that fails puts them back on its own and says so. The trash still catches everything for 30 days after that.",
+      "enableKey": "config.overviewNewFeatureBulkUndoEnable",
+      "enableFallback": "Nothing to switch on. Tick some rows with x, or Ctrl-click them, and Delete asks once for the whole set.",
+      "ctaKey": "config.overviewNewFeatureBulkUndoCta",
+      "ctaFallback": "Open the trash →",
+      "go": {
+        "section": "data-backups",
+        "dbTab": "trash"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBookmarksMenuTitle",
+      "titleFallback": "Right-click a row in Bookmarks",
+      "whatKey": "config.overviewNewFeatureBookmarksMenuWhat",
+      "whatFallback": "Everything you can do to a bookmark here was spread across the buttons on the row and the toolbar above the list, and which of them applied to the row you were pointing at was not always obvious.",
+      "howKey": "config.overviewNewFeatureBookmarksMenuHow",
+      "howFallback": "Right-click any row for one menu on that row: open it, copy the address, edit, move it to another page or category, change how often it is checked, pin it, or delete it. Right-click a row that is part of a selection and the menu switches to the whole selection, with the count named.",
+      "enableKey": "config.overviewNewFeatureBookmarksMenuEnable",
+      "enableFallback": "Nothing to switch on. Shift and right-click still gives you the browser menu.",
+      "ctaKey": "config.overviewNewFeatureBookmarksMenuCta",
+      "ctaFallback": "Open Bookmarks →",
+      "go": {
+        "section": "bookmarks"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBookmarkSettingsTitle",
+      "titleFallback": "Config → Bookmarks finally has settings",
+      "whatKey": "config.overviewNewFeatureBookmarkSettingsWhat",
+      "whatFallback": "Every choice this section made was made for you and could not be changed: the sort reset on every visit, fifty rows loaded at a time whatever your screen, and a quick-added bookmark always arrived unchecked, unpinned and without a category.",
+      "howKey": "config.overviewNewFeatureBookmarkSettingsHow",
+      "howFallback": "Ten settings of its own, including what a quick-added bookmark starts with, the interval a bookmark gets when you switch it to Monitor, how many rows a delete has to touch before it asks, what counts as \"not opened in a while\", and which archive service the archive links point at.",
+      "enableKey": "config.overviewNewFeatureBookmarkSettingsEnable",
+      "enableFallback": "Nothing to switch on. Every setting starts at exactly the value that used to be fixed, so nothing changes until you change it.",
+      "ctaKey": "config.overviewNewFeatureBookmarkSettingsCta",
+      "ctaFallback": "Open Bookmarks →",
+      "go": {
+        "section": "bookmarks"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureUsageDataTitle",
+      "titleFallback": "Ask when you added something, or last opened it",
+      "whatKey": "config.overviewNewFeatureUsageDataWhat",
+      "whatFallback": "nextDash records when you add a bookmark, when you last opened it and how often — and none of it could be reached from the search bar or from a collection of your own. \"Added this month and never opened since\" was not a question you could ask.",
+      "howKey": "config.overviewNewFeatureUsageDataHow",
+      "howFallback": "Search takes added: and opened: with today, week, month or year — and opened:never. Your own collections can now use pinned, untagged, days since last opened and days since last changed, and a Recently added collection answers the one question the others never could.",
+      "enableKey": "config.overviewNewFeatureUsageDataEnable",
+      "enableFallback": "The search filters work straight away. Recently added is off until you switch it on, and takes its own limit and pages.",
+      "ctaKey": "config.overviewNewFeatureUsageDataCta",
+      "ctaFallback": "Open Collections →",
+      "go": {
+        "section": "pages-tags",
+        "ptTab": "collections"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureRowKeysTitle",
+      "titleFallback": "Four more things you can do without the mouse",
+      "whatKey": "config.overviewNewFeatureRowKeysWhat",
+      "whatFallback": "Pinning, sharing, opening a bookmark in Health and filtering to a tag you can see all needed the mouse or the command palette, in an app where everything else on a row has a key.",
+      "howKey": "config.overviewNewFeatureRowKeysHow",
+      "howFallback": "Shift + P pins, Shift + S shares, Shift + R opens the row in Health, and t filters to its tag. Ctrl/Cmd + Enter opens a bookmark in a new tab for that press alone, whatever your standing preference says. Pin also has a right-click entry now.",
+      "enableKey": "config.overviewNewFeatureRowKeysEnable",
+      "enableFallback": "Nothing to switch on. Press ! or F1 for the full list, which is also on the printable cheat sheet.",
+      "ctaKey": "config.overviewNewFeatureRowKeysCta",
+      "ctaFallback": "Open Keyboard help →",
+      "go": {
+        "section": "help",
+        "helpTab": "search"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureRowTagsTitle",
+      "titleFallback": "Tags on the bookmark rows themselves",
+      "whatKey": "config.overviewNewFeatureRowTagsWhat",
+      "whatFallback": "Every row already carried its tags and showed none of them, so the one place you could not act on a bookmark’s tag was the row in front of you.",
+      "howKey": "config.overviewNewFeatureRowTagsHow",
+      "howFallback": "Switch on tags in the grid and the first two appear on the row, with the rest collapsing into a count. They give way before the bookmark name does, and stay out of the way on a phone.",
+      "enableKey": "config.overviewNewFeatureRowTagsEnable",
+      "enableFallback": "Off by default, under Appearance → Display. Category headers also give back their width: the sort in use stays in front and the rest move behind a ⋯.",
+      "ctaKey": "config.overviewNewFeatureRowTagsCta",
+      "ctaFallback": "Open Display →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "display"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureInboxTagsTitle",
+      "titleFallback": "Tags on inbox links, at last",
+      "whatKey": "config.overviewNewFeatureInboxTagsWhat",
+      "whatFallback": "Links saved with tags — from the browser extension, or captured with a tag already on them — kept those tags and showed you none of them. You could not see them, change them, or search for them.",
+      "howKey": "config.overviewNewFeatureInboxTagsHow",
+      "howFallback": "Tags now sit on the row. Click one to see only that tag, and click it again to go back. Right-click a link and choose Tags to edit them, search matches them along with the title and note, and both the CSV and JSON exports carry them.",
+      "enableKey": "config.overviewNewFeatureInboxTagsEnable",
+      "enableFallback": "Nothing to switch on. Any link that already had tags shows them from now on.",
+      "ctaKey": "config.overviewNewFeatureInboxTagsCta",
+      "ctaFallback": "Open the Inbox →",
+      "go": {
+        "view": "inbox"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureInboxStatsTitle",
+      "titleFallback": "How much of the Inbox you actually use",
+      "whatKey": "config.overviewNewFeatureInboxStatsWhat",
+      "whatFallback": "An inbox is easy to fill and easy to stop emptying. Whether the links you save become bookmarks or quietly pile up was not something the view could tell you.",
+      "howKey": "config.overviewNewFeatureInboxStatsHow",
+      "howFallback": "The Stats button in the Inbox toolbar shows how many links you have added, promoted and deleted, what share of the ones you decided on became bookmarks, and how long a link sits there before you deal with it.",
+      "enableKey": "config.overviewNewFeatureInboxStatsEnable",
+      "enableFallback": "Nothing to switch on. The figures cover the whole life of your inbox.",
+      "ctaKey": "config.overviewNewFeatureInboxStatsCta",
+      "ctaFallback": "Open the Inbox →",
+      "go": {
+        "view": "inbox"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureMonitoringTitle",
+      "titleFallback": "Watch a bookmark, not just check it",
+      "whatKey": "config.overviewNewFeatureMonitoringWhat",
+      "whatFallback": "A status check told you a link was broken the next time you happened to look. It could not tell you a site had been down all night, how often it goes down, or that its certificate expires on Friday.",
+      "howKey": "config.overviewNewFeatureMonitoringHow",
+      "howFallback": "Press c on a row in Health and choose Monitor. The server then checks it on its own interval, whether or not you have the dashboard open, and the row grows a heartbeat, an uptime percentage and an outage history. Say what \"up\" means for that page with a keyword or specific status codes, watch for it quietly turning into a different page, and get an alert on Slack, Telegram, Pushover and others when it goes down.",
+      "enableKey": "config.overviewNewFeatureMonitoringEnable",
+      "enableFallback": "Per bookmark, from the Health view. Alerts, check cadence and maintenance windows live on this tab.",
+      "ctaKey": "config.overviewNewFeatureMonitoringCta",
+      "ctaFallback": "Open Status & health →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "status"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureWorkThroughTitle",
+      "titleFallback": "Clear the Health list one bookmark at a time",
+      "whatKey": "config.overviewNewFeatureWorkThroughWhat",
+      "whatFallback": "Filtering to Broken tells you what is wrong and then leaves every fix costing the same three moves: find the row again after the list redraws, aim at its action, decide.",
+      "howKey": "config.overviewNewFeatureWorkThroughHow",
+      "howFallback": "Open Health and press f, or use the Work through button. One bookmark fills the screen with its actions large — re-check, open, delete, skip — and j and k move between them. Esc leaves you on the row you had reached, so dipping in for three fixes and back out is not a mode switch.",
+      "enableKey": "config.overviewNewFeatureWorkThroughEnable",
+      "enableFallback": "Nothing to switch on. It works on whatever the current filter shows.",
+      "ctaKey": "config.overviewNewFeatureWorkThroughCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureThemePreviewTitle",
+      "titleFallback": "Try a theme on before you keep it",
+      "whatKey": "config.overviewNewFeatureThemePreviewWhat",
+      "whatFallback": "Finding out what a theme looked like meant switching to it, then switching back if you did not like it — and doing that again for the next one.",
+      "howKey": "config.overviewNewFeatureThemePreviewHow",
+      "howFallback": "Open the Theme list under Appearance and move through it: the dashboard behind takes on each theme as you go. Press Esc or click away and you are back where you started. There are 23 new themes to look through as well.",
+      "enableKey": "config.overviewNewFeatureThemePreviewEnable",
+      "enableFallback": "Nothing to switch on. Your choice is only saved once you pick one.",
+      "ctaKey": "config.overviewNewFeatureThemePreviewCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "general"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureServerLogTitle",
+      "titleFallback": "Read the server log without leaving nextDash",
+      "whatKey": "config.overviewNewFeatureServerLogWhat",
+      "whatFallback": "When something went wrong there was nothing to look at. Finding out why an import failed or a link check never ran meant reaching the machine nextDash runs on.",
+      "howKey": "config.overviewNewFeatureServerLogHow",
+      "howFallback": "Data & backups › Server log lists what the server has been doing, keeps itself up to date every few seconds if you want, and colours warnings and errors so they are easy to spot. Search looks through everything kept.",
+      "enableKey": "config.overviewNewFeatureServerLogEnable",
+      "enableFallback": "Nothing to switch on. Limit it by age or by number of entries, and clear the whole lot whenever you like.",
+      "ctaKey": "config.overviewNewFeatureServerLogCta",
+      "ctaFallback": "Open Server log →",
+      "go": {
+        "section": "data-backups",
+        "dbTab": "logs"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSettingsSearchTitle",
+      "titleFallback": "Search finds every setting, not just the ones you have seen",
+      "whatKey": "config.overviewNewFeatureSettingsSearchWhat",
+      "whatFallback": "Looking for “webhook” found nothing at all unless you happened to have opened that tab before, which is the opposite of what a search is for.",
+      "howKey": "config.overviewNewFeatureSettingsSearchHow",
+      "howFallback": "Every setting is searchable the moment you open Config, and settings answer to more than their exact label — “uptime”, “wallpaper” and “hotkey” each find the right one even though those words are nowhere on screen.",
+      "enableKey": "config.overviewNewFeatureSettingsSearchEnable",
+      "enableFallback": "Nothing to switch on. Press Ctrl/Cmd + Shift + K anywhere in Config, or use Find settings under the section list.",
+      "ctaKey": "config.overviewNewFeatureSettingsSearchCta",
+      "ctaFallback": "Find a setting →",
+      "go": {
+        "section": "help",
+        "helpTab": "config"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureChangedSettingsTitle",
+      "titleFallback": "See what you have changed from the standard",
+      "whatKey": "config.overviewNewFeatureChangedSettingsWhat",
+      "whatFallback": "Working out why your dashboard behaves differently from the guide meant opening every tab and looking for a ↺ beside each setting.",
+      "howKey": "config.overviewNewFeatureChangedSettingsHow",
+      "howFallback": "At a glance now says how many settings differ from the standard and takes you to them. Each tab of settings gained Only changed, and each group a Reset panel that puts the whole lot back at once.",
+      "enableKey": "config.overviewNewFeatureChangedSettingsEnable",
+      "enableFallback": "Nothing to switch on. The line stays out of the way while everything is still standard.",
+      "ctaKey": "config.overviewNewFeatureChangedSettingsCta",
+      "ctaFallback": "Open Behavior →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "general"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureToolbarGroupsTitle",
+      "titleFallback": "Every “show this button” box sits with the thing it controls",
+      "whatKey": "config.overviewNewFeatureToolbarGroupsWhat",
+      "whatFallback": "Thirteen near-identical “Show the … button” tick boxes in a row, with no way to tell which meant the strip at the top and which the bar at the bottom.",
+      "howKey": "config.overviewNewFeatureToolbarGroupsHow",
+      "howFallback": "The header strip keeps its group under Toolbar & tabs; the two halves of the button bar sit on the Button bar tab, under the control that says where the bar goes. Each group has Show all and Hide all with a count of what is showing.",
+      "enableKey": "config.overviewNewFeatureToolbarGroupsEnable",
+      "enableFallback": "Nothing to switch on — the settings themselves are unchanged, only how they are arranged.",
+      "ctaKey": "config.overviewNewFeatureToolbarGroupsCta",
+      "ctaFallback": "Open the button bar →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "buttonbar"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureInboxExplainTitle",
+      "titleFallback": "The inbox explains itself, and its numbers add up",
+      "whatKey": "config.overviewNewFeatureInboxExplainWhat",
+      "whatFallback": "A snoozed link is hidden from the list but was still counted above it, so a tile reading 12 could open a list of 9 with nothing explaining the gap.",
+      "howKey": "config.overviewNewFeatureInboxExplainHow",
+      "howFallback": "Every count now means what you can act on right now, every pill carries its own, and a sentence under the toolbar says what the active filter selects. The ℹ beside Triage covers snoozing, promoting and the rest.",
+      "enableKey": "config.overviewNewFeatureInboxExplainEnable",
+      "enableFallback": "Nothing to switch on. An empty list now says which kind of empty it is, and long inboxes load as you scroll rather than a page per click.",
+      "ctaKey": "config.overviewNewFeatureInboxExplainCta",
+      "ctaFallback": "Open the inbox →",
+      "go": {
+        "view": "inbox"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHealthStatsTitle",
+      "titleFallback": "See how the whole collection is doing",
+      "whatKey": "config.overviewNewFeatureHealthStatsWhat",
+      "whatFallback": "The health view could describe one bookmark in detail and the whole set barely at all: twenty monitors meant twenty heartbeats and no answer to how the week went.",
+      "howKey": "config.overviewNewFeatureHealthStatsHow",
+      "howFallback": "The Monitored filter now opens with pooled uptime across every monitor, the least available ones, anything slower than last week, and every outage. The header draws the share of healthy bookmarks over the last 90 days.",
+      "enableKey": "config.overviewNewFeatureHealthStatsEnable",
+      "enableFallback": "Nothing to switch on, though the panel needs something monitored to describe. The trend line starts once you have opened the health view on two separate days.",
+      "ctaKey": "config.overviewNewFeatureHealthStatsCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health",
+        "filter": "monitored"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSpacingTitle",
+      "titleFallback": "Decide how much room the grid gives away",
+      "whatKey": "config.overviewNewFeatureSpacingWhat",
+      "whatFallback": "The gap between category rows and the empty band down both edges were both fixed, and on a wide screen they added up to a lot of nothing.",
+      "howKey": "config.overviewNewFeatureSpacingHow",
+      "howFallback": "Config → Appearance → Layout now has Category spacing and Page margins, each with Snug, Balanced and Airy.",
+      "enableKey": "config.overviewNewFeatureSpacingEnable",
+      "enableFallback": "Page margins start exactly where they always were. Category spacing is a little tighter than before — pick Airy for the old gap.",
+      "ctaKey": "config.overviewNewFeatureSpacingCta",
+      "ctaFallback": "Open Layout →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "layout"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureStructureTrashTitle",
+      "titleFallback": "Deleted pages and categories come back",
+      "whatKey": "config.overviewNewFeatureStructureTrashWhat",
+      "whatFallback": "Deleting a page took its bookmarks with it and kept nothing anywhere, so the more one click destroyed, the less you could recover.",
+      "howKey": "config.overviewNewFeatureStructureTrashHow",
+      "howFallback": "Both now go to the trash for 30 days. A page is one entry — listed as “Page · 12 bookmarks” — and restoring brings the page, its categories and its bookmarks back in a single action.",
+      "enableKey": "config.overviewNewFeatureStructureTrashEnable",
+      "enableFallback": "Nothing to switch on. The delete toast also offers Undo for eight seconds, and a page returns to its original slot rather than as a copy nothing points at.",
+      "ctaKey": "config.overviewNewFeatureStructureTrashCta",
+      "ctaFallback": "Open the trash →",
+      "go": {
+        "section": "data-backups",
+        "dbTab": "trash"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureCategoryGridTitle",
+      "titleFallback": "Add a category from the grid itself",
+      "whatKey": "config.overviewNewFeatureCategoryGridWhat",
+      "whatFallback": "Making a category meant going into Config or through the bookmark form — both things you did on the way to something else.",
+      "howKey": "config.overviewNewFeatureCategoryGridHow",
+      "howFallback": "A + sits beside the A–Z / Rec chips in a category header, and holding c does the same from the keyboard. Both act on the page on screen, so neither asks which page you meant.",
+      "enableKey": "config.overviewNewFeatureCategoryGridEnable",
+      "enableFallback": "Nothing to switch on. Right-click a category header to rename or delete it, and a category you just made stays visible even with “hide empty categories” on.",
+      "ctaKey": "config.overviewNewFeatureCategoryGridCta",
+      "ctaFallback": "Try it on the dashboard →",
+      "go": {
+        "closeConfig": true
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeaturePageOverviewTitle",
+      "titleFallback": "Make a page from the pages overview",
+      "whatKey": "config.overviewNewFeaturePageOverviewWhat",
+      "whatFallback": "Adding a page lived in Config, away from the list of pages you were already looking at.",
+      "howKey": "config.overviewNewFeaturePageOverviewHow",
+      "howFallback": "Press , for the overview and use the New page row under the list — by click, by n, or by arrowing one stop past the last page.",
+      "enableKey": "config.overviewNewFeaturePageOverviewEnable",
+      "enableFallback": "Nothing to switch on. Creating takes you straight to the new page, which is where its first category gets added anyway.",
+      "ctaKey": "config.overviewNewFeaturePageOverviewCta",
+      "ctaFallback": "Try it on the dashboard →",
+      "go": {
+        "closeConfig": true
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHealthBulkTitle",
+      "titleFallback": "Fix a whole list of broken links at once",
+      "whatKey": "config.overviewNewFeatureHealthBulkWhat",
+      "whatFallback": "Health lists exactly what a clear-out starts from — broken, duplicate, stale — and then made you repair them one row at a time.",
+      "howKey": "config.overviewNewFeatureHealthBulkHow",
+      "howFallback": "Tick the box on any row, or press x to tick the one under the cursor and move on, X for everything the filter shows. A bar appears above the list with Set checking, Re-check, Open, Copy links and Delete.",
+      "enableKey": "config.overviewNewFeatureHealthBulkEnable",
+      "enableFallback": "Nothing to switch on. Deletes go to the trash, and a row that changed since the report was built is skipped rather than deleted.",
+      "ctaKey": "config.overviewNewFeatureHealthBulkCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBulkTagsTitle",
+      "titleFallback": "Tag several bookmarks at once",
+      "whatKey": "config.overviewNewFeatureBulkTagsWhat",
+      "whatFallback": "Tagging worked one bookmark at a time, so putting the same tag on eight rows meant eight rounds.",
+      "howKey": "config.overviewNewFeatureBulkTagsHow",
+      "howFallback": "Select some rows and press the toolbar’s Tags button. Every tag you already use is listed, with a tick when the whole selection has it and “on 2 of 3” when only some do.",
+      "enableKey": "config.overviewNewFeatureBulkTagsEnable",
+      "enableFallback": "Nothing to switch on. Clicking a tag the whole selection already has takes it off instead; setting a category lives in the Move button beside it.",
+      "ctaKey": "config.overviewNewFeatureBulkTagsCta",
+      "ctaFallback": "Try it on the dashboard →",
+      "go": {
+        "closeConfig": true
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureFormCreateTitle",
+      "titleFallback": "Make a page or category while adding a bookmark",
+      "whatKey": "config.overviewNewFeatureFormCreateWhat",
+      "whatFallback": "Filing a bookmark somewhere that did not exist yet meant leaving the half-filled form, making the page or category in Config, and starting over.",
+      "howKey": "config.overviewNewFeatureFormCreateHow",
+      "howFallback": "Both dropdowns in the bookmark form lead with ➕ New page… and ➕ New category…. Picking one swaps the dropdown for a name box, and the new page or category is selected when you come back.",
+      "enableKey": "config.overviewNewFeatureFormCreateEnable",
+      "enableFallback": "Nothing to switch on. A category is made on whichever page the form is pointing at, including one you created moments earlier.",
+      "ctaKey": "config.overviewNewFeatureFormCreateCta",
+      "ctaFallback": "Add a bookmark →",
+      "go": {
+        "openBookmarkForm": true
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureMultiSelectTitle",
+      "titleFallback": "Select several bookmarks with x and X",
+      "whatKey": "config.overviewNewFeatureMultiSelectWhat",
+      "whatFallback": "Bulk move and bulk delete used to live in the tag filter, so acting on several bookmarks meant they had to share a tag. Any rows will do now — x ticks one, X takes a whole category.",
+      "howKey": "config.overviewNewFeatureMultiSelectHow",
+      "howFallback": "Press x to tick the row under the cursor, X for the whole category, Shift+↑/↓ for a range, Ctrl/Cmd+A for everything on screen — or Ctrl+click and Shift+click with the mouse. Select is in the right-click menu too.",
+      "enableKey": "config.overviewNewFeatureMultiSelectEnable",
+      "enableFallback": "Nothing to switch on. A toolbar appears with Move, Open, Copy links and Delete; Escape clears the selection.",
+      "ctaKey": "config.overviewNewFeatureMultiSelectCta",
+      "ctaFallback": "Try it on the dashboard →",
+      "go": {
+        "closeConfig": true
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureTrashTitle",
+      "titleFallback": "Deleted bookmarks are recoverable",
+      "whatKey": "config.overviewNewFeatureTrashWhat",
+      "whatFallback": "Deleting a bookmark used to be final. It now goes to a trash and stays there for 30 days before going for good.",
+      "howKey": "config.overviewNewFeatureTrashHow",
+      "howFallback": "Restore puts a bookmark back on its own page at its old position. Delete forever and Empty trash clear it early.",
+      "enableKey": "config.overviewNewFeatureTrashEnable",
+      "enableFallback": "On by default, and it covers every delete — including a bulk delete of twenty rows at once. Under Config → Data & backups → Trash.",
+      "ctaKey": "config.overviewNewFeatureTrashCta",
+      "ctaFallback": "Open the trash →",
+      "go": {
+        "section": "data-backups",
+        "dbTab": "trash"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureHealthContextMenuTitle",
+      "titleFallback": "Right-click a health row",
+      "whatKey": "config.overviewNewFeatureHealthContextMenuWhat",
+      "whatFallback": "The nine actions behind a health row’s More button were reachable only by hovering the row and finding the button.",
+      "howKey": "config.overviewNewFeatureHealthContextMenuHow",
+      "howFallback": "Right-click any row in the Health view to open that same menu at the cursor, the way a bookmark on the dashboard already did. Shift and right-click still gives you the browser’s own menu.",
+      "enableKey": "config.overviewNewFeatureHealthContextMenuEnable",
+      "enableFallback": "Nothing to switch on — it is simply there. The ⋯ button and the m key keep working as before.",
+      "ctaKey": "config.overviewNewFeatureHealthContextMenuCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureMonitorEmphasisTitle",
+      "titleFallback": "Monitored bookmarks stand out",
+      "whatKey": "config.overviewNewFeatureMonitorEmphasisWhat",
+      "whatFallback": "A bookmark set to Monitor now shows its status on the dashboard, the way a Periodic one always did — and you can say how much it should stand out.",
+      "howKey": "config.overviewNewFeatureMonitorEmphasisHow",
+      "howFallback": "Right-click a bookmark and pick Show in Health to jump straight to its row, from the dashboard or from Config → Bookmarks.",
+      "enableKey": "config.overviewNewFeatureMonitorEmphasisEnable",
+      "enableFallback": "Set to draw the eye only when something is down. Choose Always or Never under Config → Behavior → Status & health.",
+      "ctaKey": "config.overviewNewFeatureMonitorEmphasisCta",
+      "ctaFallback": "Open Status & health →",
+      "go": {
+        "section": "behavior",
+        "behaviorTab": "status"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSideRailTitle",
+      "titleFallback": "Button bar position",
+      "whatKey": "config.overviewNewFeatureSideRailWhat",
+      "whatFallback": "The add, search, commands, and finders buttons can float center-bottom, dock into either bottom corner, or stand as a vertical rail down the left edge.",
+      "howKey": "config.overviewNewFeatureSideRailHow",
+      "howFallback": "Pick a position under Config → Appearance → Button bar, or run :buttonbar from the command palette. The bar moves as you choose — no reload.",
+      "enableKey": "config.overviewNewFeatureSideRailEnable",
+      "enableFallback": "The side rail keeps the space under your bookmarks clear, which pays off on wide screens.",
+      "ctaKey": "config.overviewNewFeatureSideRailCta",
+      "ctaFallback": "Open the button bar →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "buttonbar"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBookmarkFormTitle",
+      "titleFallback": "Shared bookmark form",
+      "whatKey": "config.overviewNewFeatureBookmarkFormWhat",
+      "whatFallback": "Add and edit bookmarks in one centered modal — from the dashboard, Health, Inbox, Config, and search.",
+      "howKey": "config.overviewNewFeatureBookmarkFormHow",
+      "howFallback": "Press +, Shift+B, or Ctrl+Shift+A to open the form. Use Create + New to save and immediately add another; the grid updates behind the modal.",
+      "enableKey": "config.overviewNewFeatureBookmarkFormEnable",
+      "enableFallback": "Press ! for the full cheat sheet. Edit a row with ; or from Health and Inbox action bars.",
+      "ctaKey": "config.overviewNewFeatureBookmarkFormCta",
+      "ctaFallback": "Add a bookmark →",
+      "go": {
+        "openBookmarkForm": true
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureUpdateCheckTitle",
+      "titleFallback": "GitHub update check",
+      "whatKey": "config.overviewNewFeatureUpdateCheckWhat",
+      "whatFallback": "nextDash can compare your running version with GitHub once a day — a dot on ★, a toast while you are actively using the app, and a manual check in the ★ modal and Config → Overview.",
+      "howKey": "config.overviewNewFeatureUpdateCheckHow",
+      "howFallback": "Press Check for updates in the ★ modal header or on Config → Overview. When a newer release exists, open GitHub from the notice or dismiss it until the next version.",
+      "enableKey": "config.overviewNewFeatureUpdateCheckEnable",
+      "enableFallback": "On by default under Config → Behavior → Privacy. Turn off Check GitHub for new releases if you prefer no outbound request.",
+      "ctaKey": "config.overviewNewFeatureUpdateCheckCta",
+      "ctaFallback": "Open Privacy →",
+      "go": {
+        "section": "behavior"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBookmarksFiltersTitle",
+      "titleFallback": "Bookmarks filters & search",
+      "whatKey": "config.overviewNewFeatureBookmarksFiltersWhat",
+      "whatFallback": "Search, filter, and sort the full bookmark library from one list — with chips that show what is active and summary tiles that follow your filters.",
+      "howKey": "config.overviewNewFeatureBookmarksFiltersHow",
+      "howFallback": "Type in the search box (shortcuts match too), pick page or category from the dropdowns, or click a page, category, or tag on a row. Sort by last opened, most opened, or pinned first. Tick rows for bulk favicon refresh or CSV export.",
+      "enableKey": "config.overviewNewFeatureBookmarksFiltersEnable",
+      "enableFallback": "Open Config → Bookmarks. Scroll to load more rows; press o or double-click a row to open its URL.",
+      "ctaKey": "config.overviewNewFeatureBookmarksFiltersCta",
+      "ctaFallback": "Open Bookmarks →",
+      "go": {
+        "section": "bookmarks"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeaturePagesTagsTabsTitle",
+      "titleFallback": "Categories & tags first",
+      "whatKey": "config.overviewNewFeaturePagesTagsTabsWhat",
+      "whatFallback": "Pages & tags now opens on Categories, with Tags right beside it — the two lists you reach for most often.",
+      "howKey": "config.overviewNewFeaturePagesTagsTabsHow",
+      "howFallback": "Use [ and ] to cycle sub-tabs from anywhere in config, or click Categories or Tags in the strip. Pages, Finders, and Collections follow after.",
+      "enableKey": "config.overviewNewFeaturePagesTagsTabsEnable",
+      "enableFallback": "Open Config → Pages & tags — Categories is selected by default.",
+      "ctaKey": "config.overviewNewFeaturePagesTagsTabsCta",
+      "ctaFallback": "Open Pages & tags →",
+      "go": {
+        "section": "pages-tags"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureKeyboardTitle",
+      "titleFallback": "Config keyboard navigation",
+      "whatKey": "config.overviewNewFeatureKeyboardWhat",
+      "whatFallback": "Move through every config section, sub-tab, and list from the keyboard — no mouse required.",
+      "howKey": "config.overviewNewFeatureKeyboardHow",
+      "howFallback": "Use j/k or arrow keys on the section rail, [ and ] for sub-tabs, and list keys on Pages & tags and Bookmarks. Ctrl/Cmd+Shift+K opens Find settings.",
+      "enableKey": "config.overviewNewFeatureKeyboardEnable",
+      "enableFallback": "Press ! for the full cheat sheet, or open Help → Config navigation.",
+      "ctaKey": "config.overviewNewFeatureKeyboardCta",
+      "ctaFallback": "Open Help →",
+      "go": {
+        "section": "help",
+        "helpTab": "config"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureFindSettingsTitle",
+      "titleFallback": "Find settings",
+      "whatKey": "config.overviewNewFeatureFindSettingsWhat",
+      "whatFallback": "Jump straight to any config section, sub-tab, help topic, or field you have visited.",
+      "howKey": "config.overviewNewFeatureFindSettingsHow",
+      "howFallback": "Press Ctrl/Cmd+Shift+K anywhere in config, or click Find settings below Help in the left nav. Type to filter, then Enter to go.",
+      "enableKey": "config.overviewNewFeatureFindSettingsEnable",
+      "enableFallback": "The shortcut works on every config section; the nav button is always below Help.",
+      "ctaKey": "config.overviewNewFeatureFindSettingsCta",
+      "ctaFallback": "Try Find settings →",
+      "go": {
+        "section": "overview"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureBookmarkPagesTitle",
+      "titleFallback": "Page-scoped bookmark categories",
+      "whatKey": "config.overviewNewFeatureBookmarkPagesWhat",
+      "whatFallback": "Each page keeps its own category list. The Bookmarks filter shows only categories for the page you pick.",
+      "howKey": "config.overviewNewFeatureBookmarkPagesHow",
+      "howFallback": "Choose a page in the filter dropdown to scope categories and deep-link with #config/bookmarks/<pageId>. With All pages, categories show as Page · Category.",
+      "enableKey": "config.overviewNewFeatureBookmarkPagesEnable",
+      "enableFallback": "Open Config → Bookmarks and use the page filter at the top of the list.",
+      "ctaKey": "config.overviewNewFeatureBookmarkPagesCta",
+      "ctaFallback": "Open Bookmarks →",
+      "go": {
+        "section": "bookmarks"
+      }
+    },
+    {
+      "titleKey": "config.overviewNewFeatureRandomThemeTitle",
+      "titleFallback": "Random theme",
+      "whatKey": "config.overviewNewFeatureRandomThemeWhat",
+      "whatFallback": "Let nextDash pick a different built-in theme from the pool instead of always showing your saved choice. Your saved theme remains the default whenever random is off.",
+      "howKey": "config.overviewNewFeatureRandomThemeHow",
+      "howFallback": "Choose Off (always your saved theme), On page refresh (new pick on each reload), or On view change (new pick when switching between bookmarks, config, inbox, health, or dashboard pages). With auto dark mode, only matching light or dark variants are eligible. While random is on, a Currently showing hint names the active theme.",
+      "enableKey": "config.overviewNewFeatureRandomThemeEnable",
+      "enableFallback": "Open Config → Appearance → Theme and set Random theme to the mode you want.",
+      "ctaKey": "config.overviewNewFeatureRandomThemeCta",
+      "ctaFallback": "Open Appearance →",
+      "go": {
+        "section": "appearance",
+        "appearanceTab": "general"
+      }
+    }
+  ]
+}

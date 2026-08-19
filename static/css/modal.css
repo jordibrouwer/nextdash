@@ -1022,6 +1022,23 @@ body.no-animations .wn-kofi-star {
     display: block;
 }
 
+/* The existing bookmark inside the "already saved" dialog: a link, because
+   knowing where a copy is only helps if you can go there from here. */
+.duplicate-existing {
+    margin-top: 0.6rem;
+}
+
+.duplicate-existing a {
+    color: var(--accent-primary);
+    word-break: break-word;
+}
+
+.duplicate-existing-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
 .danger {
     color: var(--accent-error);
     font-weight: var(--font-weight-bold);

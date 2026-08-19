@@ -202,3 +202,30 @@
     font-size: 0.66rem;
     opacity: 0.75;
 }
+
+/* The end of a review session. Same card, no row on it — what is left to show
+   is a count and a decision about tomorrow. */
+.health-focus-card--done {
+    text-align: center;
+}
+
+.health-focus-done-count {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+
+.health-focus-done-rest {
+    margin: 0 0 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.health-focus-card--done .health-focus-actions {
+    justify-content: center;
+}
+
+.health-focus-done-primary {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}

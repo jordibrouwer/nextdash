@@ -16,6 +16,32 @@ type webManifest struct {
 	BackgroundColor string         `json:"background_color"`
 	ThemeColor      string         `json:"theme_color"`
 	Icons           []manifestIcon `json:"icons"`
+	// ShareTarget puts nextDash in the phone's share sheet. GET rather than
+	// POST: POST needs a service worker to catch the form, and a redirect is
+	// the whole of what this needs to do.
+	ShareTarget *manifestShareTarget `json:"share_target,omitempty"`
+	// Shortcuts are the long-press menu on the installed icon.
+	Shortcuts []manifestShortcut `json:"shortcuts,omitempty"`
+}
+
+type manifestShareTarget struct {
+	Action string              `json:"action"`
+	Method string              `json:"method"`
+	Params manifestShareParams `json:"params"`
+}
+
+// The three fields a share sheet sends. Android fills them inconsistently —
+// often the URL arrives inside `text` — which the handler sorts out.
+type manifestShareParams struct {
+	Title string `json:"title"`
+	Text  string `json:"text"`
+	URL   string `json:"url"`
+}
+
+type manifestShortcut struct {
+	Name  string         `json:"name"`
+	URL   string         `json:"url"`
+	Icons []manifestIcon `json:"icons,omitempty"`
 }
 
 type manifestIcon struct {
@@ -71,6 +97,24 @@ func manifestIcons(settings Settings) []manifestIcon {
 	}
 }
 
+// manifestShortcuts is the installed icon's long-press menu. The inbox entry is
+// left out when the inbox is switched off, so the menu cannot offer a view that
+// is not there.
+func manifestShortcuts(settings Settings) []manifestShortcut {
+	shortcuts := make([]manifestShortcut, 0, 4)
+	if settings.InboxEnabled {
+		shortcuts = append(shortcuts, manifestShortcut{Name: "Inbox", URL: "/#inbox"})
+	}
+	// Only destinations the app already knows how to open from a URL. A
+	// long-press entry that lands on the plain dashboard because nothing reads
+	// its query parameter is worse than one entry fewer.
+	shortcuts = append(shortcuts,
+		manifestShortcut{Name: "Health", URL: "/#health"},
+		manifestShortcut{Name: "Config", URL: "/#config"},
+	)
+	return shortcuts
+}
+
 func (h *Handlers) WebAppManifest(w http.ResponseWriter, r *http.Request) {
 	settings := h.store.GetSettings()
 	colors := h.store.GetColors()
@@ -87,6 +131,12 @@ func (h *Handlers) WebAppManifest(w http.ResponseWriter, r *http.Request) {
 		BackgroundColor: themeColor,
 		ThemeColor:      themeColor,
 		Icons:           manifestIcons(settings),
+		ShareTarget: &manifestShareTarget{
+			Action: "/share",
+			Method: "GET",
+			Params: manifestShareParams{Title: "title", Text: "text", URL: "url"},
+		},
+		Shortcuts: manifestShortcuts(settings),
 	}
 
 	w.Header().Set("Content-Type", "application/manifest+json; charset=utf-8")

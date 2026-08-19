@@ -34,6 +34,15 @@ class DashboardHealthFocus {
         this._busy = false;
         this._onKeydown = null;
         this.scrollLockToken = null;
+        /**
+         * A review session: the same cards, bounded and countable.
+         *
+         * Null for the ordinary "work through this filter" open. When set it
+         * holds how many the session started with and how many were actually
+         * dealt with, so the end of the queue can be an ending — a count and a
+         * "done for today" — rather than a toast saying the list ran out.
+         */
+        this.session = null;
     }
 
     get dash() {
@@ -84,6 +93,56 @@ class DashboardHealthFocus {
     }
 
     /**
+     * Open a bounded review session: at most `limit` rows, worst first.
+     *
+     * The difference from open() is the shape, not the mechanics. Work through
+     * takes whatever the filter holds, which is 47 rows as often as 4, and 47
+     * is a number people learn to ignore. A session takes ten, says so, ends,
+     * and can be declared done for the day — bounded and finishable is what
+     * makes a backlog something someone clears.
+     */
+    openSession({ limit = 10 } = {}) {
+        const candidates = this.reviewCandidates();
+        if (!candidates.length) {
+            this.dash.showNotification?.(
+                this.t('dashboard.healthFocusNothingToReview', 'Nothing needs reviewing right now.'),
+                'info'
+            );
+            return false;
+        }
+
+        const queue = candidates.slice(0, Math.max(1, limit));
+        this.queue = queue.map((issue) => this.health.issueKey(issue));
+        this.position = 0;
+        this.active = true;
+        this.session = { started: this.queue.length, handled: 0, remaining: candidates.length, limit };
+
+        window.nextdashTrack?.('health:review-session', { count: this.queue.length });
+        this.scrollLockToken = window.ScrollLock?.acquire('health-focus');
+        this.bindKeys();
+        this.render();
+        return true;
+    }
+
+    /**
+     * What a review session is made of, worst first.
+     *
+     * Only conditions a person can act on from a card: a dead link, a page that
+     * stopped meeting its own expectation, and links never opened or long
+     * unopened. Deliberately not duplicates (they are resolved between rows,
+     * not on one) and not monitors (they resolve themselves).
+     */
+    reviewCandidates() {
+        const issues = Array.isArray(this.health.report?.issues) ? this.health.report.issues : [];
+        return issues
+            .filter((issue) => {
+                const flags = Array.isArray(issue.flags) ? issue.flags : [issue.status];
+                return DashboardHealthFocus.REVIEW_FLAGS.some((flag) => flags.includes(flag));
+            })
+            .sort((a, b) => (Number(a.score) || 0) - (Number(b.score) || 0));
+    }
+
+    /**
      * Close, leaving the list's cursor on the card that was showing.
      *
      * Deliberately not "the row we started from": someone who worked five rows
@@ -93,6 +152,7 @@ class DashboardHealthFocus {
     close() {
         if (!this.active) return;
         this.active = false;
+        this.session = null;
         const landingKey = this.queue[this.position] || null;
 
         window.ScrollLock?.release(this.scrollLockToken);
@@ -138,9 +198,13 @@ class DashboardHealthFocus {
         for (let i = 0; i < total; i += 1) {
             next += delta;
             if (next < 0 || next >= total) {
-                // Deliberately clamped rather than wrapped: hitting the end of
-                // a cleanup queue is information, and silently starting over
-                // would hide that the work is done.
+                // A session ends; a filter run just stops. Both refuse to wrap
+                // — hitting the end of a cleanup queue is information, and
+                // silently starting over would hide that the work is done.
+                if (this.session && delta > 0) {
+                    this.renderSessionDone();
+                    return;
+                }
                 this.dash.showNotification?.(
                     delta > 0
                         ? this.t('dashboard.healthFocusAtEnd', 'That was the last one.')
@@ -222,7 +286,18 @@ class DashboardHealthFocus {
      */
     dropCurrentFromQueue() {
         this.queue.splice(this.position, 1);
+        if (this.session) {
+            // Counted here rather than per action: a row leaves the queue when
+            // it stops being an issue, which is the only thing worth counting.
+            // Skipping is not handling, and a re-check that changed nothing
+            // leaves the row where it was.
+            this.session.handled += 1;
+        }
         if (!this.queue.length) {
+            if (this.session) {
+                this.renderSessionDone();
+                return;
+            }
             this.close();
             this.dash.showNotification?.(
                 this.t('dashboard.healthFocusDone', 'Nothing left in this list.'),
@@ -301,6 +376,70 @@ class DashboardHealthFocus {
         this.host?.classList.toggle('is-busy', Boolean(busy));
     }
 
+    /**
+     * The end of a session: what was dealt with, and what to do about the rest.
+     *
+     * The count is the point. "You handled 6 of 10" is a finished piece of work;
+     * a list that silently ran out is not. "Done for today" is the other half —
+     * declaring an end is what makes it a ritual rather than a backlog that
+     * follows you around.
+     */
+    renderSessionDone() {
+        const session = this.session;
+        if (!session) return;
+        const host = this.ensureHost();
+        const left = Math.max(0, this.reviewCandidates().length);
+        const moreAvailable = left > 0;
+
+        host.innerHTML = `
+            <div class="health-focus-card health-focus-card--done">
+                <h2 class="health-focus-title">${this.esc(this.t(
+                    'dashboard.healthReviewDoneTitle', 'That is the session'))}</h2>
+                <p class="health-focus-done-count">${this.esc(this.t(
+                    'dashboard.healthReviewDoneCount',
+                    'You dealt with {handled} of {total}.',
+                    { handled: session.handled, total: session.started }
+                ))}</p>
+                <p class="health-focus-done-rest">${this.esc(moreAvailable
+                    ? this.t('dashboard.healthReviewDoneRest', '{count} still want a look, another day.',
+                        { count: left })
+                    : this.t('dashboard.healthReviewDoneClear', 'Nothing else is waiting.'))}</p>
+
+                <div class="health-focus-actions">
+                    ${moreAvailable ? `<button type="button" class="config-btn" data-focus="again">${this.esc(
+                        this.t('dashboard.healthReviewAgain', 'Another ten'))}</button>` : ''}
+                    <button type="button" class="config-btn health-focus-done-primary" data-focus="done-today">${this.esc(
+                        this.t('dashboard.healthReviewDoneToday', 'Done for today'))}</button>
+                </div>
+            </div>`;
+
+        const actions = {
+            again: () => {
+                const limit = session.limit;
+                this.close();
+                this.openSession({ limit });
+            },
+            'done-today': () => {
+                window.HealthReviewSession?.markDoneToday?.();
+                this.close();
+                this.dash.showNotification?.(
+                    this.t('dashboard.healthReviewSeeYouTomorrow', 'Nothing more today.'),
+                    'success'
+                );
+            },
+        };
+        host.querySelectorAll('[data-focus]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                actions[btn.getAttribute('data-focus')]?.();
+            });
+        });
+        host.addEventListener('mousedown', (e) => {
+            if (e.target === host) this.close();
+        });
+    }
+
     render() {
         if (!this.active) return;
         const issue = this.currentIssue();
@@ -320,11 +459,11 @@ class DashboardHealthFocus {
         host.innerHTML = `
             <div class="health-focus-card">
                 <div class="health-focus-head">
-                    <span class="health-focus-progress">${this.esc(this.t(
-                        'dashboard.healthFocusProgress',
-                        '{position} of {total}',
-                        { position: this.position + 1, total: this.queue.length }
-                    ))}</span>
+                    <span class="health-focus-progress">${this.esc(this.session
+                        ? this.t('dashboard.healthReviewProgress', 'Review · {position} of {total}',
+                            { position: this.position + 1, total: this.queue.length })
+                        : this.t('dashboard.healthFocusProgress', '{position} of {total}',
+                            { position: this.position + 1, total: this.queue.length }))}</span>
                     <button type="button" class="health-focus-close" data-focus="close"
                         aria-label="${this.esc(this.t('dashboard.healthFocusClose', 'Close'))}">×</button>
                 </div>
@@ -377,5 +516,13 @@ class DashboardHealthFocus {
         });
     }
 }
+
+/**
+ * What a review session is allowed to contain. Flags rather than status, for the
+ * same reason the filters read flags: status is only the worst condition, and a
+ * link that is both never opened and missing a preview belongs in a review under
+ * either name.
+ */
+DashboardHealthFocus.REVIEW_FLAGS = ['broken', 'content', 'unused', 'stale'];
 
 window.DashboardHealthFocus = DashboardHealthFocus;

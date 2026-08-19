@@ -153,6 +153,7 @@ var lazyLoadedAssets = []string{
 	"js/whats-new-modal.js",
 	"js/dashboard/dashboard-config.js",
 	"js/dashboard/dashboard-config-context-menu.js",
+	"js/dashboard/dashboard-config-stats.js",
 	"js/health-reason-utils.js",
 	"js/shared/last-opened-format.js",
 	"js/health-tutorial.js",

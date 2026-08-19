@@ -640,6 +640,27 @@ class DashboardBookmarkRows {
         }
         row.appendChild(openCountBadge);
 
+        // What the page has published since this row was last opened. Quiet by
+        // design: a count, no colour of its own, and absent entirely when there
+        // is nothing new or when feed polling is off.
+        const freshBadge = document.createElement('span');
+        freshBadge.className = 'bookmark-fresh-badge bookmark-superscript-badge';
+        const fresh = d.feeds?.freshFor(bookmark) || null;
+        if (fresh) {
+            const count = Number(fresh.newCount) || 0;
+            freshBadge.textContent = count > 99 ? '99+' : String(count);
+            const label = count === 1
+                ? d.formatDashboardLabel('feedOneNew', {}, '1 new since you last opened this')
+                : d.formatDashboardLabel('feedManyNew', { count }, `${count} new since you last opened this`);
+            freshBadge.title = label;
+            freshBadge.setAttribute('aria-label', label);
+            freshBadge.setAttribute('role', 'img');
+        } else {
+            freshBadge.classList.add('is-empty');
+            freshBadge.setAttribute('aria-hidden', 'true');
+        }
+        openLink.appendChild(freshBadge);
+
         const noteBadge = document.createElement('span');
         noteBadge.className = 'bookmark-note-badge bookmark-superscript-badge';
         const hasNote = bookmark && String(bookmark.note || '').trim();
@@ -701,6 +722,10 @@ class DashboardBookmarkRows {
             String(bookmark.note || '').trim(),
             (bookmark.tags || []).join(','),
             String(bookmark.openCount || 0),
+            // The count on the row is part of what was drawn, so a row whose
+            // feed reported something new — or whose badge was cleared by
+            // opening it — has to be redrawn by the incremental renderer.
+            String(this.dash.feeds?.freshFor(bookmark)?.newCount || 0),
             showIcons,
             iconStylingKey,
         ].join('\u0001');

@@ -76,7 +76,16 @@ class DashboardPageNav {
         }
         d.updateDocumentTitle();
         d.setActivePageNavButton(targetPageId);
+        // Where you were before you opened Health, Inbox or config. The render
+        // has to happen first — there is nothing tall enough to scroll to yet —
+        // and a page that has since grown shorter clamps itself.
+        const restoreTo = d.data?.takeRememberedScroll?.(targetPageId) || 0;
         d.renderDashboard({ animate: false });
+        if (restoreTo > 0) {
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: restoreTo, behavior: 'instant' });
+            });
+        }
         window.ThemeIconStyling?.applyThemeIconStylingToDocument?.(d.settings);
         d.keyboardNavigation?.clearSelection?.();
         d.keyboardNavigation?.scheduleUpdate?.();

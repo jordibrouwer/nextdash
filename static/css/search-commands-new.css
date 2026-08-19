@@ -192,6 +192,21 @@
     margin-top: 0.35rem;
 }
 
+/* Not a conflict: the same link on another page is allowed, and this only says
+   where it is. Muted rather than red for exactly that reason. */
+.nbm-elsewhere-hint {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nbm-elsewhere-hint[hidden] {
+    display: none !important;
+}
+
 .nbm-file-label {
     cursor: pointer;
 }

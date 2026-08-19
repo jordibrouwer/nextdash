@@ -6,6 +6,9 @@ function dashFetch(url, init) {
 }
 
 class DashboardData {
+    /** sessionStorage key prefix for the per-page scroll offset. */
+    static SCROLL_KEY_PREFIX = 'nextdash:page-scroll:';
+
     constructor(dashboard) {
         this.dash = dashboard;
     }
@@ -770,7 +773,22 @@ class DashboardData {
         if (!d._pageScrollPositions) {
             d._pageScrollPositions = new Map();
         }
-        d._pageScrollPositions.set(pageId, window.scrollY || 0);
+        const offset = window.scrollY || 0;
+        d._pageScrollPositions.set(pageId, offset);
+        // Also in sessionStorage, so the position survives a reload and a return
+        // from Health, Inbox or config — the memory in the Map only ever lasted
+        // as long as the page object did.
+        if (!this.rememberScrollEnabled()) return;
+        try {
+            sessionStorage.setItem(`${DashboardData.SCROLL_KEY_PREFIX}${pageId}`, String(Math.round(offset)));
+        } catch {
+            // Private mode, or a full quota: losing the offset is not worth an error.
+        }
+    }
+
+    /** Off puts the grid back to landing at the top on every arrival. */
+    rememberScrollEnabled() {
+        return this.dash.settings?.rememberScrollPosition !== false;
     }
 
     /**
@@ -782,9 +800,23 @@ class DashboardData {
      */
     takeRememberedScroll(pageId) {
         const key = Number(pageId);
+        if (!this.rememberScrollEnabled()) {
+            this.dash._pageScrollPositions?.delete(key);
+            return 0;
+        }
         const stored = this.dash._pageScrollPositions?.get(key);
-        this.dash._pageScrollPositions?.delete(key);
-        return Number.isFinite(stored) ? stored : 0;
+        if (Number.isFinite(stored)) {
+            return stored;
+        }
+        // The Map is the fast path within one session; sessionStorage is what
+        // survives a reload or a trip through another view.
+        try {
+            const raw = sessionStorage.getItem(`${DashboardData.SCROLL_KEY_PREFIX}${key}`);
+            const parsed = Number(raw);
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+        } catch {
+            return 0;
+        }
     }
 
     _applyLoadedPageData(targetPageId, bookmarks, categories, options = {}) {

@@ -733,10 +733,11 @@ class DashboardUiHelpers {
             status.textContent = t('dashboard.quickAddAdding');
 
             try {
-                const response = await dashFetch('/api/bookmarks/add', {
+                const postQuickAdd = (allowDuplicate) => dashFetch('/api/bookmarks/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        allowDuplicate: Boolean(allowDuplicate),
                         page: d.currentPageId,
                         bookmark: {
                             name,
@@ -762,6 +763,26 @@ class DashboardUiHelpers {
                         }
                     })
                 });
+
+                let response = await postQuickAdd(false);
+                // A copy on another page is a question, not a failure — quick add
+                // asks it with the same dialog the bookmark form uses, so the
+                // answer is the same wherever the link came from.
+                if (response.status === 409) {
+                    const raw = await response.text().catch(() => '');
+                    const conflict = window.DuplicateBookmarkPrompt?.parse(raw);
+                    if (conflict && !conflict.samePage) {
+                        if (!(await window.DuplicateBookmarkPrompt.confirmSecondCopy(conflict.bookmark))) {
+                            status.textContent = window.DuplicateBookmarkPrompt.locationMessage(conflict.bookmark);
+                            status.classList.add('is-error');
+                            input.disabled = false;
+                            input.focus();
+                            return;
+                        }
+                        response = await postQuickAdd(true);
+                    }
+                }
+
                 if (response.ok) {
                     close();
                     if (d.data?.refreshAfterBookmarkAdded) {

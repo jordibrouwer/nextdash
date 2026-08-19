@@ -354,6 +354,10 @@ class DashboardRecent {
 
         bookmark.openCount = Number(bookmark.openCount || 0) + 1;
         bookmark.lastOpened = Date.now();
+        // Opening is what clears a fresh count, on the server and here: the
+        // server recomputes it against lastOpened, and this keeps the row you
+        // just read from still claiming three new until a reload.
+        d.feeds?.markOpened(bookmark);
         d.syncBookmarkMetadataAcrossViews(bookmark, pageId);
         d.refreshSmartCollectionsAfterOpen(bookmark.url);
 

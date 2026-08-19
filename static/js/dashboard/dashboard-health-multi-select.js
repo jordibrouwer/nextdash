@@ -286,6 +286,13 @@ class DashboardHealthMultiSelect {
                     <button type="button" class="config-btn config-btn--small" data-bulk="recheck">${esc(
                         this.t('dashboard.healthBulkRecheck', 'Re-check')
                     )}</button>
+                    <!-- A domain move breaks twenty bookmarks at once, and the
+                         redirect that fixes them is the same one. Detecting and
+                         applying it per row meant twenty round trips through a
+                         menu. -->
+                    <button type="button" class="config-btn config-btn--small" data-bulk="heal">${esc(
+                        this.t('dashboard.healthBulkHeal', 'Follow redirects')
+                    )}</button>
                     ${acceptDriftBtn}
                     <!-- Muting is per-bookmark alert policy and was the one
                          health setting you most want to set on a group — twelve
@@ -323,6 +330,7 @@ class DashboardHealthMultiSelect {
                 if (mode) void this.bulkSetCheckMode(mode);
             },
             recheck: () => void this.bulkRecheck(),
+            heal: () => void this.bulkFollowRedirects(),
             mute: () => void this.bulkSetMuted(true),
             unmute: () => void this.bulkSetMuted(false),
             'accept-drift': () => void this.bulkAcceptDrift(),
@@ -504,6 +512,99 @@ class DashboardHealthMultiSelect {
      * through the single-bookmark endpoint — where every field replaces what is
      * stored — would have done.
      */
+    /**
+     * Ask every selected bookmark where it now redirects to, and apply the
+     * answers in one go.
+     *
+     * The suggestion is fetched per row because that is what the endpoint
+     * offers, but the *decision* is made once, over a list: seeing "14 of 18
+     * moved to docs.example.org" is what makes a domain migration one action
+     * instead of eighteen. Nothing is written before that confirmation, and the
+     * server still pings each replacement before storing it — so a row that is
+     * still broken afterwards is reported as such rather than as a fix.
+     */
+    async bulkFollowRedirects() {
+        const issues = this.selectedIssues();
+        if (!issues.length) return;
+        window.nextdashTrack?.('health:bulk-heal', { count: issues.length });
+
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const health = this.health;
+        this.dash.showNotification(
+            this.t('dashboard.healthBulkHealScanning', 'Looking for redirects on {count} bookmark(s)…', { count: issues.length }),
+            'info',
+            { duration: 2500 }
+        );
+
+        const found = [];
+        for (const issue of issues) {
+            const pageId = Number(issue.pageId ?? issue.pageID ?? 0);
+            const index = Number(issue.index ?? -1);
+            if (!(pageId > 0) || index < 0) continue;
+            try {
+                const res = await fetch(
+                    `/api/health/auto-heal-suggest?pageId=${encodeURIComponent(pageId)}&index=${encodeURIComponent(index)}&redirectOnly=1`
+                );
+                if (!res.ok) continue;
+                const suggestion = await res.json();
+                const redirectUrl = String(suggestion?.redirectUrl || '').trim();
+                if (redirectUrl && redirectUrl !== issue.url) {
+                    found.push({ pageId, index, name: issue.name || issue.url, from: issue.url, to: redirectUrl });
+                }
+            } catch {
+                // One unreachable row must not end the sweep: the others are
+                // exactly what a bulk action is for.
+            }
+        }
+
+        if (!found.length) {
+            this.dash.showNotification(
+                this.t('dashboard.healthBulkHealNone', 'No redirects found on the selected bookmarks'),
+                'info'
+            );
+            return;
+        }
+
+        const preview = found.slice(0, 8).map((f) => `${f.name}\n  → ${f.to}`).join('\n');
+        const more = found.length > 8
+            ? `\n\n${this.t('dashboard.healthBulkHealMore', '…and {count} more', { count: found.length - 8 })}`
+            : '';
+        const ok = await health.confirm(
+            this.t('dashboard.healthBulkHealTitle', 'Apply {count} redirect(s)?', { count: found.length }),
+            `${preview}${more}`
+        );
+        if (!ok) return;
+
+        let applied = 0;
+        let stillBroken = 0;
+        for (const fix of found) {
+            try {
+                const res = await fetcher('/api/health/auto-heal-apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pageId: fix.pageId, index: fix.index, newUrl: fix.to, refreshTitle: false }),
+                });
+                if (!res.ok) continue;
+                const body = await res.json().catch(() => ({}));
+                applied += 1;
+                if (String(body?.lastError || '').trim()) stillBroken += 1;
+            } catch {
+                // Counted by omission: the summary reports what landed.
+            }
+        }
+
+        await health.loadAndRender({ refresh: true });
+        this.dash.updateHealthBadge?.();
+        this.clear();
+        this.dash.showNotification(
+            stillBroken > 0
+                ? this.t('dashboard.healthBulkHealPartial', 'Updated {count} bookmark(s); {broken} still fail', { count: applied, broken: stillBroken })
+                : this.t('dashboard.healthBulkHealDone', 'Updated {count} bookmark(s)', { count: applied }),
+            stillBroken > 0 ? 'warning' : 'success',
+            { duration: 5000 }
+        );
+    }
+
     async bulkSetMuted(muted) {
         const issues = this.selectedIssues();
         if (!issues.length) return;

@@ -1,0 +1,171 @@
+{
+  "tag": "v1.3.0",
+  "date": "19 August 2026",
+  "releasedAt": "2026-08-19",
+  "modalLead": "Twenty-four changes across a hundred and forty-eight files, and every one of them about the same thing — the life of a link. How it gets in from wherever you are, how you find out it has rotted, how the tidying becomes something you can finish in two minutes, and how a page you saved tells you it has something new. The dashboard also arrives about five times lighter.",
+  "sections": [
+    {
+      "title": "Getting a link in",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Save from your phone's share sheet.</strong> Install nextDash as an app and it appears wherever you share a link — the link lands in the Inbox and nextDash opens on it. Android sometimes hands over the address inside the text rather than as a link; it is picked out either way."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>And from any browser, with a bookmarklet.</strong> <strong>Config → Help → Inbox</strong> builds one for you, carrying this install's own address — so it works in Safari, Firefox and everywhere else the extension will never reach. On an install with a password, capture gets a key of its own that opens nothing else."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Ready-made pieces for the launcher you already use.</strong> A shell script, two Raycast commands, a Dropzone action, a Ulauncher extension, and recipes for Alfred and Apple Shortcuts — all saving through the same one-line route."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A link you already have is found wherever it is.</strong> The check used to look only at the page you were saving to, so the same link filed on Work went straight in again from Personal. Saving a second copy on one page is refused, as before; a copy on another page is a question — <em>“You already saved this on Work · Docs”</em>, with the existing bookmark one click away and <strong>Save anyway</strong> if you meant it."
+        }
+      ]
+    },
+    {
+      "title": "Links rot, and now you can watch it happen",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A broken link says how long it has been broken.</strong> <em>Failing for three weeks</em> is a different problem from <em>failing since this morning</em>, and the list now tells them apart — on the row, in the filters and in the export."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A page that answers 200 while saying “not found” is caught.</strong> The polite kind of disappearance — a shop that removed the product, a docs site that swallowed a page — used to read as perfectly healthy."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>One host down reads as one problem.</strong> Group the list by site and forty rows from the same server stop looking like forty separate emergencies."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A dead link can be pointed at its last archived copy</strong>, with the original address kept in the note — the capture is a reading of the page, not the page, and the address is where a later attempt to find it again starts."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Rot report</strong> in the toolbar answers the once-a-month question: what has gone, what has moved or been rewritten, what has been failing for over a month, what is broken and was never opened, and what broke this week. The list is the work queue; this is the read."
+        }
+      ]
+    },
+    {
+      "title": "Tidying that ends",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Ten links, two minutes.</strong> When enough links want attention, a card in the corner names what is waiting — <em>“10 links to review: 4 broken, 3 never opened, 3 not opened in a year”</em> — and starts a session over the worst ten, one card at a time."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The session ends.</strong> It says how many you actually dealt with, offers another ten while more are waiting, and <strong>Done for today</strong> puts the offer away until tomorrow. Skipping is not handling, so the count at the end is honest — and a number that never ends is a number people learn to ignore."
+        }
+      ]
+    },
+    {
+      "title": "What changed while you were away",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Fresh.</strong> When a page you saved offers a feed, the bookmark can carry a small count of what it has published since you last opened it, and a <strong>Fresh</strong> collection lists those bookmarks newest first. Every other collection keys on what you did; this one keys on what changed, which is the one question they cannot answer."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Opening the bookmark clears it</strong>, and that is the whole of it. No article list, no read state to keep in order — this is not a feed reader, only a bookmark that can say <em>3</em>."
+        }
+      ]
+    },
+    {
+      "title": "Working where you already are",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Filter the page you are on</strong> with <strong>Shift + F</strong>: a slim bar narrows the rows in place, hides the categories left empty, and keeps the layout, the cursor and any selection. Search still takes you anywhere; this stays here."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>You come back where you were.</strong> A long page is a place you are somewhere in. Switching pages, dipping into Health or config, even a reload — you land at the offset you left."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A selection can be pinned and set to a checking mode</strong> in one action, and a bulk tag change can be taken back. A mixed selection pins rather than flipping each row into the opposite of its neighbour."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Move a bookmark to the category beside it</strong> with <strong>Shift + Alt + ← / →</strong>, without opening anything."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A shortcut opens the moment it matches again — and we should not have changed that.</strong> v1.2.0 made <strong>Enter</strong> the default because an instant shortcut can swallow an ordinary word that starts with the same letters. That does happen, and it is the rare case; what the change did was charge every shortcut a second keystroke on every use to prevent it, which is most of the reason to have a shortcut gone. The default is back, and existing dashboards are moved with it. Both other ways are still under <strong>Behavior → Search</strong>: open after a short pause, or press Enter — and a shortcut that keeps eating a word you type can also just be renamed."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The printable cheat sheet carries every shortcut.</strong> It was one A4 with a curated selection, so a key could be in the app and not on the paper. It now runs to as many pages as the app has keys — the live sheet behind <strong>!</strong> is unchanged."
+        }
+      ]
+    },
+    {
+      "title": "Config that answers back",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Find a setting by what it is set to.</strong> “Which one is on 8099”, “what did I set to Monitor” — the question you have when something behaves oddly and you cannot name the setting. The value is matched and shown beside the location."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The settings that do not follow the device rule say so.</strong> With <em>Keep settings on this device only</em> on, a handful stay shared by design — those carry an <strong>all devices</strong> mark, because they are the ones that surprise you on the other machine."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Duplicate a page or a category</strong>, with or without the bookmarks in it. Copies start with a clean check history, since a copied uptime would be a claim about a link this copy has never checked."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Edit a name or a shortcut where you read it.</strong> Double-click the title, or click the shortcut pill — including the faint <strong>+</strong> on a bookmark that has none. A key already in use is named as you type it and refused, rather than quietly breaking the bookmark that had it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help draws what it describes.</strong> Every article in <strong>Config → Help</strong> now opens with a small picture of its own subject: the three search prefixes in the box you type them into, the health tiles in the colours the rows wear, a certificate meter with the day the warning starts marked on it, a maintenance window shaded into a day. The words inside them follow your language."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The button bar has a tab of its own.</strong> <strong>Appearance → Button bar</strong> now holds both halves of the question: where the bar sits — center-bottom, either corner, or a rail down an edge — and which buttons it carries. The position used to be on <strong>Layout</strong> and the buttons on <strong>Toolbar &amp; tabs</strong>, two tabs apart. <strong>Toolbar &amp; tabs</strong> keeps the header row."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Help sometimes opened with empty panels.</strong> Its text travels separately from the rest of the interface, and when that arrived late — or was overwritten by the rest catching up — you were left with headings and nothing under them, for as long as you stayed in the view. It now notices and fetches the text again."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tips filters itself.</strong> Fifty-three tips in nine groups, and now a field that narrows them to the line you are after, with a count of what is left. The search at the top of Help finds whole topics; this one finds the key."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help says where a topic continues.</strong> Availability and monitoring are separate tabs on purpose — what is broken now, against how something behaves over time — so the panels that carry on into the other one now link straight to the right place in it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The version panel reads the release.</strong> It used to carry the number as text in four languages, and once sat two releases out of date. It now shows whatever the latest release actually is."
+        }
+      ]
+    },
+    {
+      "title": "Faster, on the same machine",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The dashboard arrives in one piece.</strong> First load went from <strong>169 requests and 915 KB to 30 requests and 685 KB</strong> — same page, same files, served as bundles, with each view's styles arriving when you open that view."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Config opens quicker and weighs less.</strong> A cold open is about a third faster, and the bookmark list draws a third fewer elements — most noticeable on a long list and a slow machine."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help's text travels lighter.</strong> A third of the translation file was prose for the config that was replaced two versions ago — 408 KB across four languages, read by nothing. It is gone, which the Help tab notices on every open."
+        }
+      ]
+    }
+  ]
+}

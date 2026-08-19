@@ -176,6 +176,11 @@ func isContentFailure(detail string) bool {
 	if strings.HasPrefix(detail, "Page is missing ") || strings.HasPrefix(detail, "Page contains ") {
 		return true
 	}
+	// Deliberately not a content failure: a soft 404 comes from the page, not
+	// from a rule the user set, so clearing the rule must not clear it.
+	if strings.HasPrefix(detail, "Page says it does not exist") {
+		return false
+	}
 	// "HTTP 404, expected 200" is a content failure; a bare "HTTP 503" is not.
 	return strings.HasPrefix(detail, "HTTP ") && strings.Contains(detail, ", expected ")
 }
@@ -190,11 +195,18 @@ type expectation struct {
 	// title and wording against the stored baseline. Shares the single bounded
 	// read with the keyword check, so a bookmark using both pays for one.
 	WatchDrift bool
+	// SoftNotFound asks the check to judge whether a 200 is really a "page not
+	// found" template. Shares the same single body read as the two above.
+	SoftNotFound bool
+	// Monitored records that this expectation came from a monitored bookmark.
+	// The per-bookmark fields can all be empty on one — that is the ordinary
+	// case — so "did anything ask for a check" cannot stand in for it.
+	Monitored bool
 }
 
 // wantsBody reports whether this check needs the response body read.
 func (e expectation) wantsBody() bool {
-	return strings.TrimSpace(e.Text) != "" || e.WatchDrift
+	return strings.TrimSpace(e.Text) != "" || e.WatchDrift || e.SoftNotFound
 }
 
 // isZero reports whether a bookmark asked for nothing beyond the default rule.
@@ -232,5 +244,18 @@ func expectationFor(b Bookmark) expectation {
 		TextAbsent: b.ExpectTextAbsent,
 		Status:     normalizeExpectStatus(b.ExpectStatus),
 		WatchDrift: b.WatchDrift,
+		Monitored:  true,
 	}
+}
+
+// withSoftNotFound layers the one expectation that is a setting rather than a
+// per-bookmark field. The Monitor gate in expectationFor still decides whether
+// anything is evaluated: a bookmark that is not monitored is not read for a soft
+// 404 either, since it is not read at all.
+func (e expectation) withSoftNotFound(on bool) expectation {
+	if !on || !e.Monitored {
+		return e
+	}
+	e.SoftNotFound = true
+	return e
 }

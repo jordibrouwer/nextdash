@@ -159,6 +159,13 @@
             }
         });
 
+        // A category header can carry an emoji instead of an uploaded icon; it is
+        // its own host, since there is no <img> inside it to style.
+        document.querySelectorAll('#dashboard-layout .category-title .icon-themed-glyph').forEach((el) => {
+            applyThemeIconStylingToElement(el, entry);
+            count += 1;
+        });
+
         document.querySelectorAll('#search-matches .search-match-favicon-slot').forEach((el) => {
             applyThemeIconStylingToElement(el, entry);
             count += 1;

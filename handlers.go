@@ -203,6 +203,21 @@ var pageTemplateFuncs = template.FuncMap{
 	"lazyAssets": lazyAssetMapJSON,
 }
 
+// pageTemplateFuncsFor adds the funcs that need the store. The theme block is
+// generated from colors.json, so it cannot be a package-level function — and it
+// is inlined rather than linked because /api/theme.css is served no-store: as a
+// link it was an uncacheable blocking request before every first paint.
+func (h *Handlers) pageTemplateFuncsFor() template.FuncMap {
+	funcs := template.FuncMap{}
+	for k, v := range pageTemplateFuncs {
+		funcs[k] = v
+	}
+	funcs["themeCSS"] = func() template.CSS {
+		return template.CSS(h.customThemeCSS())
+	}
+	return funcs
+}
+
 func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Template, error) {
 	key := strings.Join(templateFiles, "|")
 
@@ -217,16 +232,28 @@ func (h *Handlers) parsePageTemplates(templateFiles ...string) (*template.Templa
 
 	var tmpl *template.Template
 	var err error
-	if info, statErr := os.Stat("templates"); statErr == nil && info.IsDir() {
-		diskFiles := make([]string, len(templateFiles))
-		for i, name := range templateFiles {
-			diskFiles[i] = filepath.FromSlash(name)
+	// A single template is read as source so the bundle markers can be folded
+	// out before parsing — see applyAssetBundles. Anything else is parsed the
+	// way it always was.
+	if len(templateFiles) == 1 {
+		source := readTemplateSource(h.files, templateFiles[0])
+		if source != "" {
+			name := path.Base(templateFiles[0])
+			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).Parse(applyAssetBundles(h.files, source))
 		}
-		name := filepath.Base(diskFiles[0])
-		tmpl, err = template.New(name).Funcs(pageTemplateFuncs).ParseFiles(diskFiles...)
-	} else {
-		name := path.Base(templateFiles[0])
-		tmpl, err = template.New(name).Funcs(pageTemplateFuncs).ParseFS(h.files, templateFiles...)
+	}
+	if tmpl == nil && err == nil {
+		if info, statErr := os.Stat("templates"); statErr == nil && info.IsDir() {
+			diskFiles := make([]string, len(templateFiles))
+			for i, name := range templateFiles {
+				diskFiles[i] = filepath.FromSlash(name)
+			}
+			name := filepath.Base(diskFiles[0])
+			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).ParseFiles(diskFiles...)
+		} else {
+			name := path.Base(templateFiles[0])
+			tmpl, err = template.New(name).Funcs(h.pageTemplateFuncsFor()).ParseFS(h.files, templateFiles...)
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -426,7 +453,7 @@ const (
 	// Same weight as the other data-integrity faults: the bookmark still works,
 	// but it has fallen out of the category structure the user organised it into.
 	healthPenaltyOrphanedCategory = 15
-	healthPenaltyNeverChecked = 10
+	healthPenaltyNeverChecked     = 10
 	// Usage is not a defect. A link you have never opened is not broken, and the
 	// health view's own advice is to open it and see — an action that used to
 	// improve the row's score by 10 and, under the default worst-first sort, drop
@@ -470,6 +497,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 
 	// One read serves every monitored row; buildMonitorStats derives the rest.
 	monitorHistory := h.readAllHealthHistory()
+	monitorDays := h.readAllHealthDays()
 	monitorNow := time.Now()
 	// Gathered while walking the bookmarks so the collection-wide view is built
 	// from the same samples, in the same pass.
@@ -760,7 +788,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 			if bm.Monitor {
 				if key := canonicalBookmarkURLKey(bm.URL); key != "" {
 					samples := monitorHistory[key]
-					monitorStats = buildMonitorStats(samples, bm.MonitorIntervalMinutes, monitorNow)
+					monitorStats = buildMonitorStatsWithDays(samples, monitorDays[key], bm.MonitorIntervalMinutes, monitorNow)
 					// Collected here rather than re-read later: this loop already
 					// resolved the canonical key and the samples are in hand, so
 					// the collection-wide view costs no extra history read.
@@ -786,6 +814,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				LastOpened:             bm.LastOpened,
 				LastChecked:            bm.LastChecked,
 				LastError:              bm.LastError,
+				BrokenSince:            bm.BrokenSince,
 				PreviewTitle:           bm.PreviewTitle,
 				PreviewDesc:            bm.PreviewDesc,
 				PreviewImage:           bm.PreviewImage,
@@ -860,7 +889,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 	// Only the ones worth showing. A certificate with three months left is true
 	// but not news, and sending every host would grow the report by an entry per
 	// domain for something the UI would immediately filter out again.
-	report.Certificates = expiringCertificates(h.hostCertificates(), monitorNow)
+	report.Certificates = expiringCertificatesWith(h.hostCertificates(), monitorNow, certThresholdsFor(h.store.GetSettings()))
 
 	return report
 }
@@ -1154,6 +1183,10 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		Page     int      `json:"page"`
 		Bookmark Bookmark `json:"bookmark"`
+		// AllowDuplicate is the answer to the question the 409 asks: the client
+		// showed where the URL already lives and the user said save it anyway.
+		// Never honoured within a single page — see the check below.
+		AllowDuplicate bool `json:"allowDuplicate"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -1167,12 +1200,46 @@ func (h *Handlers) AddBookmark(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingBookmarks := h.store.GetBookmarksByPage(request.Page)
+	// Where else this URL already lives.
+	//
+	// Two things were wrong here at once. It looked only at the page being saved
+	// to, so the same link filed on Work and then saved again from Personal went
+	// straight in — and the duplicates report found it afterwards, which is
+	// reporting instead of preventing. And it answered in plain text, where the
+	// shortcut conflict twenty lines below answers with the conflicting
+	// bookmark's name, URL and page; that detail is what lets the form say "you
+	// saved this on Work, under Docs" with a button on it.
+	//
+	// Still a 409, and still a refusal when it is the same page: two identical
+	// URLs on one page are a mistake every time. Across pages it is sometimes
+	// meant — the same document filed with work and with reference — so there
+	// the client asks, and comes back with allowDuplicate. samePage tells it
+	// which of the two it is looking at.
 	newKey := canonicalBookmarkURLKey(request.Bookmark.URL)
-	for _, existingBookmark := range existingBookmarks {
-		if canonicalBookmarkURLKey(existingBookmark.URL) == newKey {
-			http.Error(w, "Duplicate bookmark URL", http.StatusConflict)
-			return
+	if newKey != "" {
+		if existing := findBookmarkByURLKey(h.store, newKey); existing != nil {
+			samePage := existing.PageID == request.Page
+			if samePage || !request.AllowDuplicate {
+				logBookmarkSaveFailed(request.Page, "duplicate_url", r)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusConflict)
+				json.NewEncoder(w).Encode(map[string]any{
+					"error":    "duplicate_url",
+					"message":  "Bookmark URL already exists",
+					"samePage": samePage,
+					"conflict": map[string]any{
+						"name":     existing.Name,
+						"url":      existing.URL,
+						"pageId":   existing.PageID,
+						"pageName": pageNameForID(h.store, existing.PageID),
+						// The name, not only the id: Category holds an id, and the
+						// client cannot resolve one for a page it is not on.
+						"category":     existing.Category,
+						"categoryName": categoryNameForID(h.store, existing.PageID, existing.Category),
+					},
+				})
+				return
+			}
 		}
 	}
 
@@ -1924,10 +1991,18 @@ func renderThemeCSSBlock(selector string, tc ThemeColors) string {
 }
 
 func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
-	colors := h.store.GetColors()
-
 	w.Header().Set("Content-Type", "text/css")
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Write([]byte(h.customThemeCSS()))
+}
+
+// customThemeCSS is the same stylesheet the endpoint serves. Split out so the
+// page can carry it inline — it is generated per install and served no-store,
+// so as a link it was one uncacheable blocking request before every first paint.
+// The endpoint stays: switching a theme reloads it, and it is the one path that
+// must not depend on a page render.
+func (h *Handlers) customThemeCSS() string {
+	colors := h.store.GetColors()
 
 	css := "/* Custom Theme Variables - Loaded from colors.json */\n\n"
 	css += "/* Light Theme Variables */\n" + renderThemeCSSBlock("light", colors.Light) + "\n"
@@ -1956,7 +2031,7 @@ func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 		css += "/* Built-in Theme: " + safeID + " */\n" + renderThemeCSSBlock(safeID, colors.BuiltIn[themeID]) + "\n"
 	}
 
-	w.Write([]byte(css))
+	return css
 }
 
 func (h *Handlers) Health(w http.ResponseWriter, r *http.Request) {
@@ -2101,6 +2176,14 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	preview.Icon = h.extractIconFromHTML(htmlBody)
 	if preview.Icon != "" {
 		preview.Icon = h.resolveRelativeURL(preview.URL, preview.Icon)
+	}
+
+	// The page's own feed, if it advertises one. Recorded even when feed polling
+	// is switched off: reading it out of a <head> that has already been fetched
+	// costs nothing, and it means turning Fresh on later does not have to
+	// re-fetch every page before it can say anything.
+	if feedURL := extractFeedFromHTML(htmlBody); feedURL != "" {
+		recordDiscoveredFeed(rawURL, h.resolveRelativeURL(preview.URL, feedURL))
 	}
 
 	if cache != nil {
@@ -2558,16 +2641,14 @@ func (h *Handlers) UpdateBookmarkHealthStatus(w http.ResponseWriter, r *http.Req
 	}
 
 	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
-		bookmark.LastChecked = time.Now().UnixMilli()
-		if strings.TrimSpace(req.Status) == "online" {
-			bookmark.LastError = ""
-		} else {
-			errMsg := strings.TrimSpace(req.Error)
-			if errMsg == "" {
-				errMsg = "Unreachable"
+		detail := ""
+		if strings.TrimSpace(req.Status) != "online" {
+			detail = strings.TrimSpace(req.Error)
+			if detail == "" {
+				detail = "Unreachable"
 			}
-			bookmark.LastError = errMsg
 		}
+		setBookmarkCheckResult(bookmark, time.Now().UnixMilli(), detail)
 		return nil
 	})
 	if !respondBookmarkMutationError(w, err) {
@@ -2679,7 +2760,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				continue
 			}
 
-			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm))
+			result := h.pingURLExpecting(ctx, bm.URL, expectationFor(bm).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
 			res.Tested++
 			if result.Status == "online" {
 				res.OnlineCount++
@@ -2749,8 +2830,7 @@ func (h *Handlers) runHealthRetest(ctx context.Context, includeFlagged bool, act
 				if !ok {
 					continue
 				}
-				current[i].LastChecked = update.lastChecked
-				current[i].LastError = update.lastError
+				setBookmarkCheckResult(&current[i], update.lastChecked, update.lastError)
 				result := driftResults[key]
 				if result.CertHost != "" {
 					current[i].CertHost = result.CertHost
@@ -3079,12 +3159,17 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		PageID         int    `json:"pageId"`
-		Index          int    `json:"index"`
-		NewURL         string `json:"newUrl"`
-		RefreshTitle   bool   `json:"refreshTitle"`
-		OneClick       bool   `json:"oneClick"`
-		SuggestedTitle string `json:"suggestedTitle"`
+		PageID       int    `json:"pageId"`
+		Index        int    `json:"index"`
+		NewURL       string `json:"newUrl"`
+		RefreshTitle bool   `json:"refreshTitle"`
+		OneClick     bool   `json:"oneClick"`
+		// KeepOriginalInNote writes the address being replaced into the note.
+		// Used when the replacement is an archived copy: the capture is a
+		// reading of the page, not the page, and the original is what a later
+		// attempt to find it again starts from.
+		KeepOriginalInNote bool   `json:"keepOriginalInNote"`
+		SuggestedTitle     string `json:"suggestedTitle"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -3134,11 +3219,14 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 	// outside MutateBookmarkAt because that holds the store write lock.
 	verified := PingResult{}
 	if updatedURL != "" && updatedURL != strings.TrimSpace(sourceBookmark.URL) {
-		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark))
+		verified = h.pingURLExpecting(r.Context(), updatedURL, expectationFor(sourceBookmark).withSoftNotFound(softNotFoundEnabled(h.store.GetSettings())))
 	}
 
 	err := h.store.MutateBookmarkAt(req.PageID, req.Index, func(bookmark *Bookmark) error {
 		if updatedURL != "" && updatedURL != strings.TrimSpace(bookmark.URL) {
+			if req.KeepOriginalInNote {
+				appendBookmarkNote(bookmark, "Was: "+strings.TrimSpace(bookmark.URL))
+			}
 			bookmark.URL = updatedURL
 			appliedURL = true
 		}
@@ -3153,18 +3241,16 @@ func (h *Handlers) AutoHealApply(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if appliedURL {
-			bookmark.LastChecked = time.Now().UnixMilli()
-			if verified.Status == "online" {
-				bookmark.LastError = ""
-			} else {
+			detail := ""
+			if verified.Status != "online" {
 				// The fix landed but the target still fails: keep the row red and say why,
 				// rather than reporting healthy on an unverified URL.
-				detail := strings.TrimSpace(verified.ErrorDetail)
+				detail = strings.TrimSpace(verified.ErrorDetail)
 				if detail == "" {
 					detail = "Unreachable"
 				}
-				bookmark.LastError = detail
 			}
+			setBookmarkCheckResult(bookmark, time.Now().UnixMilli(), detail)
 			// The URL just changed under this bookmark: whatever drift baseline was
 			// recorded belonged to the old page, so it must not be judged against it.
 			bookmark.DriftURL = ""
@@ -3323,4 +3409,45 @@ func (h *Handlers) fetchPageTitleSafeCtx(ctx context.Context, urlStr string) str
 		return ""
 	}
 	return strings.Join(strings.Fields(title), " ")
+}
+
+// findBookmarkByURLKey returns the first bookmark anywhere holding this
+// canonical URL. GetAllBookmarks fills PageID in and is read-cached, which the
+// page-by-page scan this replaced was not.
+func findBookmarkByURLKey(store Store, key string) *Bookmark {
+	if key == "" {
+		return nil
+	}
+	for _, bookmark := range store.GetAllBookmarks() {
+		if canonicalBookmarkURLKey(bookmark.URL) == key {
+			found := bookmark
+			return &found
+		}
+	}
+	return nil
+}
+
+// categoryNameForID is the category's name on that page, or "" when the
+// bookmark has no category or the category has since been removed.
+func categoryNameForID(store Store, pageID int, categoryID string) string {
+	if strings.TrimSpace(categoryID) == "" {
+		return ""
+	}
+	for _, category := range store.GetCategoriesByPage(pageID) {
+		if category.ID == categoryID {
+			return category.Name
+		}
+	}
+	return ""
+}
+
+// pageNameForID is the page's name, or "" when it has gone. The client prints it
+// beside the category, so an id would be no use to it.
+func pageNameForID(store Store, pageID int) string {
+	for _, page := range store.GetPages() {
+		if page.ID == pageID {
+			return page.Name
+		}
+	}
+	return ""
 }

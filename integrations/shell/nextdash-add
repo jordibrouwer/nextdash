@@ -1,0 +1,46 @@
+#!/bin/sh
+# Save a link to the nextDash inbox.
+#
+#   nextdash-add <url> [title]
+#
+# The whole integration surface is one GET, so anything that can run a command
+# can use this: a Quick Action, Keyboard Maestro, a cron job, a shell alias.
+#
+#   NEXTDASH_URL    where nextDash lives, e.g. http://nextdash.local:8080
+#   NEXTDASH_TOKEN  only needed when that install has a write token set; use its
+#                   NEXTDASH_CAPTURE_TOKEN, which opens capture and nothing else
+set -eu
+
+base="${NEXTDASH_URL:-http://localhost:8080}"
+url="${1:-}"
+title="${2:-}"
+
+if [ -z "$url" ]; then
+    echo "usage: nextdash-add <url> [title]" >&2
+    exit 2
+fi
+
+# --data-urlencode with --get, so a title with spaces or an ampersand in the URL
+# survives the trip; building the query by hand is where these scripts usually
+# break.
+set -- --silent --show-error --get \
+    --data-urlencode "url=$url" \
+    --data-urlencode "title=$title"
+if [ -n "${NEXTDASH_TOKEN:-}" ]; then
+    set -- "$@" --data-urlencode "token=$NEXTDASH_TOKEN"
+fi
+
+# The route answers with a page for a human; a script only needs to know whether
+# it landed, so the body is reduced to its heading.
+response=$(curl "$@" "$base/add" || true)
+heading=$(printf '%s' "$response" | sed -n 's:.*<h1>\(.*\)</h1>.*:\1:p')
+
+if [ -z "$heading" ]; then
+    echo "nextDash did not answer — is $base reachable?" >&2
+    exit 1
+fi
+echo "$heading"
+case "$heading" in
+    Saved*|Already*) exit 0 ;;
+    *) exit 1 ;;
+esac

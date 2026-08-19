@@ -92,6 +92,68 @@ class SearchCommandNew {
         return this.t('config.duplicateBookmarkUrl', 'This bookmark URL already exists on this page.');
     }
 
+    /**
+     * The same URL anywhere else in the install, not only on the page being
+     * saved to. Same-page duplicates are a mistake and are refused; a copy on
+     * another page is sometimes deliberate — a document filed both with work
+     * and with reference — so this is what lets the form say where it already
+     * is and let you decide, rather than either refusing or silently allowing.
+     */
+    findDuplicateElsewhere(url, pageId = null) {
+        const key = this.canonicalBookmarkURLKey(url);
+        if (!key) return null;
+        const pid = pageId ?? this.getSelectedPageId();
+        const all = window.dashboardInstance?.allBookmarks;
+        if (!Array.isArray(all)) return null;
+        const match = all.find((b) => this.canonicalBookmarkURLKey(b?.url) === key
+            && Number(b?.pageId) !== Number(pid)
+            && !this.isEditingSelf(b, Number(b?.pageId)));
+        return match || null;
+    }
+
+    /**
+     * A bookmark from the local list with its page and category named. The
+     * server's 409 already carries both; a match found here carries ids, and an
+     * id on screen is no use to anyone.
+     */
+    namedLocation(bookmark) {
+        const pageId = Number(bookmark?.pageId);
+        const page = (this.pages || []).find((p) => Number(p?.id) === pageId)
+            || (window.dashboardInstance?.pages || []).find((p) => Number(p?.id) === pageId);
+        const categoryId = String(bookmark?.category || '').trim();
+        // Only the current page's categories are held client-side, so a match on
+        // another page shows the page alone rather than a wrong name.
+        const onCurrentPage = Number(window.dashboardInstance?.currentPageId) === pageId;
+        const categories = onCurrentPage ? (window.dashboardInstance?.categories || []) : [];
+        const category = categoryId
+            ? (Array.isArray(categories) ? categories : []).find((c) => String(c?.id) === categoryId)
+            : null;
+        return {
+            ...bookmark,
+            pageName: String(page?.name || ''),
+            categoryName: String(category?.name || ''),
+        };
+    }
+
+    /** The duplicate-URL 409, read by the shared prompt. */
+    parseDuplicateConflict(raw) {
+        return window.DuplicateBookmarkPrompt?.parse(raw) || null;
+    }
+
+    /** Where a bookmark lives, as "Work · Docs". */
+    describeBookmarkLocation(bookmark) {
+        return window.DuplicateBookmarkPrompt?.describe(bookmark) || '';
+    }
+
+    /**
+     * Ask before a second copy on another page. Nothing is saved on a decline —
+     * the retry that follows a yes is what carries allowDuplicate.
+     */
+    async confirmDuplicateElsewhere(conflict) {
+        if (typeof window.DuplicateBookmarkPrompt?.confirmSecondCopy !== 'function') return false;
+        return window.DuplicateBookmarkPrompt.confirmSecondCopy(conflict);
+    }
+
     /** Fallback label when a bookmark has no stored name (matches the dashboard row title). */
     defaultBookmarkDisplayName(bookmarkOrUrl) {
         const bm = bookmarkOrUrl && typeof bookmarkOrUrl === 'object' ? bookmarkOrUrl : null;
@@ -414,6 +476,21 @@ class SearchCommandNew {
         const duplicate = Boolean(normalized) && this.hasUrlDuplicateOnPage(normalized);
         urlDuplicateHint.hidden = !duplicate;
         urlInput.classList.toggle('field-conflict', Boolean(duplicate));
+
+        // A copy on another page is not a conflict, so it does not colour the
+        // field — it is worth knowing before you type a name and a category for
+        // a second one, which is why it is said here rather than only on save.
+        const elsewhereHint = document.getElementById('new-bookmark-url-elsewhere');
+        if (!elsewhereHint) return;
+        const elsewhere = !duplicate && normalized ? this.findDuplicateElsewhere(normalized) : null;
+        if (!elsewhere) {
+            elsewhereHint.hidden = true;
+            elsewhereHint.textContent = '';
+            return;
+        }
+        elsewhereHint.textContent = window.DuplicateBookmarkPrompt?.locationMessage(
+            this.namedLocation(elsewhere)) || '';
+        elsewhereHint.hidden = !elsewhereHint.textContent;
     }
 
     hasShortcutConflictOnPage(shortcut, pageId = null) {
@@ -502,6 +579,7 @@ class SearchCommandNew {
                                 <button type="button" class="nbm-btn" id="new-bookmark-icon-fetch">${this.t('config.fetchFaviconRetry', 'Retry')}</button>
                             </div>
                             <p id="new-bookmark-url-duplicate" class="nbm-conflict-hint nbm-url-conflict-hint" hidden>${urlDuplicateLabel}</p>
+                            <p id="new-bookmark-url-elsewhere" class="nbm-elsewhere-hint" hidden></p>
                         </div>
                         <div class="nbm-section nbm-wizard-step-1-panel">
                             <label class="nbm-label" for="new-bookmark-name">${this.t('config.bookmarkNamePlaceholder', 'Name')}</label>
@@ -1585,11 +1663,28 @@ class SearchCommandNew {
         }
 
         try {
-            const response = await (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmarks/add', {
+            const post = (allowDuplicate) => (typeof nextDashFetch === 'function' ? nextDashFetch : fetch)('/api/bookmarks/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ page: pageId, bookmark })
+                body: JSON.stringify({ page: pageId, bookmark, allowDuplicate: Boolean(allowDuplicate) })
             });
+
+            let response = await post(false);
+            // The body can only be read once, and the error branch below reads
+            // it too, so it is read here and handed on.
+            let conflictRaw = response.status === 409 ? await response.text().catch(() => '') : '';
+            const conflict = this.parseDuplicateConflict(conflictRaw);
+            if (conflict && !conflict.samePage) {
+                // Deliberate copies exist — the same document filed with work and
+                // with reference — so the server asks instead of refusing, and
+                // this is the asking. Declining is a normal outcome, not an error.
+                if (!(await this.confirmDuplicateElsewhere(conflict.bookmark))) {
+                    window.nextdashTrack?.('bookmark-created', { result: 'duplicate-declined' });
+                    return { ok: false };
+                }
+                response = await post(true);
+                conflictRaw = response.status === 409 ? await response.text().catch(() => '') : '';
+            }
 
             if (response.ok) {
                 // "Create + New" keeps the modal open and clears the form (page and
@@ -1640,7 +1735,7 @@ class SearchCommandNew {
                 return { ok: true, pageId, bookmark: { ...bookmark, pageId } };
             } else if (response.status === 409) {
                 let conflictMessage = this.duplicateBookmarkUrlMessage();
-                const raw = await response.text();
+                const raw = conflictRaw;
                 if (raw) {
                     try {
                         const errorBody = JSON.parse(raw);

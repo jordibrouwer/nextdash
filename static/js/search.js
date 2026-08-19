@@ -71,6 +71,8 @@ class SearchComponent {
         this.lastNonCommandQuery = '';
         this._debounceTimer = null;
         this._openBookmarkTimer = null;
+        /** Armed only in "delay" shortcut mode; see _maybeAutoOpenShortcut. */
+        this._shortcutOpenTimer = null;
 
         this.commandsComponent = new window.SearchCommandsComponent(this.language, this.currentBookmarks, this.allBookmarks, (newQuery) => {
             this.currentQuery = newQuery;
@@ -771,20 +773,102 @@ class SearchComponent {
 
         this.commandsComponent.resetState();
 
-        // Typing never opens anything; Enter does.
-        //
-        // A shortcut used to fire the moment the query matched it exactly and no
-        // longer shortcut shared the prefix — so whether your own typing
-        // survived depended on which other bookmarks you happened to own, and
-        // changed every time you added one. On an install with 200 shortcuts,
-        // eight of thirteen ordinary words were swallowed mid-word: "invoice"
-        // opened a bookmark at "in" and left "voice" behind, "github" arrived as
-        // "hub".
-        //
-        // The exact match still leads the list (see updateSearch), so a shortcut
-        // is one key longer than it was — type it and press Enter — and nothing
-        // can decide on your behalf that you had finished typing.
+        // What typing does with a shortcut is a setting: Enter opens (the
+        // default), a short pause opens, or the match opens on the spot. See
+        // _maybeAutoOpenShortcut.
+        this._maybeAutoOpenShortcut();
         this._scheduleUpdateSearch();
+    }
+
+    /** Milliseconds of quiet before "delay" mode opens an exact shortcut. */
+    static SHORTCUT_OPEN_DELAY_MS = 400;
+
+    /** instant | delay | enter — an unknown or absent value reads as instant. */
+    shortcutOpenMode() {
+        const mode = String(this.settings?.shortcutOpenMode || '').toLowerCase();
+        return (mode === 'delay' || mode === 'enter') ? mode : 'instant';
+    }
+
+    cancelPendingShortcutOpen() {
+        if (this._shortcutOpenTimer) {
+            clearTimeout(this._shortcutOpenTimer);
+            this._shortcutOpenTimer = null;
+        }
+    }
+
+    /**
+     * The bookmark a bare query names outright, or null.
+     *
+     * Both guards are the ones the original had. A longer shortcut sharing the
+     * prefix means the typing may not be finished — "gh" cannot open while
+     * "ghi" exists — and a finder sharing it would be shadowed by a bookmark
+     * that opened first.
+     */
+    exactShortcutMatch() {
+        const query = this.currentQuery.startsWith('/') ? this.currentQuery.slice(1) : this.currentQuery;
+        const isShortcutMode = (this.currentQuery.startsWith('/') && this.interleaveMode)
+            || (!this.currentQuery.startsWith('/') && !this.interleaveMode);
+        if (!isShortcutMode || !query) return null;
+
+        const key = query.toLowerCase();
+        const match = this.shortcuts.get(key);
+        if (!match) return null;
+
+        const hasLongerMatch = Array.from(this.shortcuts.keys())
+            .some((shortcut) => shortcut !== key && shortcut.startsWith(key));
+        if (hasLongerMatch) return null;
+
+        const hasFinder = this.settings.includeFindersInSearch && (
+            this.findersComponent.shortcuts.has(key)
+            || Array.from(this.findersComponent.shortcuts.keys()).some((f) => f.startsWith(key))
+        );
+        if (hasFinder) return null;
+
+        return match;
+    }
+
+    /**
+     * Open on typing alone, in the two modes that ask for it.
+     *
+     * Instant is what the dashboard did before v1.2.0, and what it costs is
+     * measurable: on an install with 200 shortcuts, eight of thirteen ordinary
+     * search words were swallowed mid-word, because a shortcut fired the moment
+     * the query matched it and nothing longer shared its letters — "invoice"
+     * opened something at "in" and left "voice" behind. Which of your words
+     * survive depends on which other bookmarks you own, and changes every time
+     * you add one.
+     *
+     * Delay is the middle: the same open, held back until you stop typing, so a
+     * word that carries on past the shortcut keeps going. It cannot rescue a
+     * word typed slowly enough to fall through the pause — which is why Enter,
+     * where nothing decides for you, stays the default.
+     */
+    _maybeAutoOpenShortcut() {
+        this.cancelPendingShortcutOpen();
+        const mode = this.shortcutOpenMode();
+        if (mode === 'enter') return;
+
+        const match = this.exactShortcutMatch();
+        if (!match) return;
+
+        if (mode === 'instant') {
+            this.openBookmark(match);
+            this.resetQuery();
+            return;
+        }
+
+        const query = this.currentQuery;
+        this._shortcutOpenTimer = setTimeout(() => {
+            this._shortcutOpenTimer = null;
+            // The query has to be the one the timer was armed for: another key,
+            // a backspace or a closed panel all mean this is no longer what the
+            // user is asking for.
+            if (!this.searchActive || this.currentQuery !== query) return;
+            const stillMatching = this.exactShortcutMatch();
+            if (!stillMatching) return;
+            this.openBookmark(stillMatching);
+            this.resetQuery();
+        }, SearchComponent.SHORTCUT_OPEN_DELAY_MS);
     }
 
     _scheduleUpdateSearch() {
@@ -1677,6 +1761,9 @@ class SearchComponent {
             clearTimeout(this._debounceTimer);
             this._debounceTimer = null;
         }
+        // A pending "open after a pause" belongs to the query that is being
+        // abandoned here.
+        this.cancelPendingShortcutOpen();
         this.searchActive = false;
         // Reset so reopening the same mode counts as a new open.
         this._lastTrackedMode = null;
@@ -1789,6 +1876,7 @@ class SearchComponent {
     }
 
     resetQuery() {
+        this.cancelPendingShortcutOpen();
         this.currentQuery = '';
         this.searchMatches = [];
         this.selectedMatchIndex = 0;
