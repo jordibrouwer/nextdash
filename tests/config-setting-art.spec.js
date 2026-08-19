@@ -92,15 +92,15 @@ test.describe('a choice you can see before you make it', () => {
     });
 });
 
-test.describe('help opens with a picture where the topic is a shape', () => {
-    test('the panels that earn one have one, and the rest do not', async ({ page }) => {
+test.describe('help opens with a picture', () => {
+    test('every article opens with one, on every tab', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
-        const withArt = async (tab) => {
+        const countsFor = async (tab) => {
             await page.evaluate((t) => {
                 const c = window.dashboardInstance.config;
                 c.openConfigView('help');
@@ -110,14 +110,52 @@ test.describe('help opens with a picture where the topic is a shape', () => {
             // render() repaints the shell asynchronously; counting in the same
             // evaluate reads the body the previous tab left behind.
             await page.waitForTimeout(700);
-            return page.locator('#config-help-body .config-help-art').count();
+            return page.evaluate(() => {
+                const body = document.getElementById('config-help-body');
+                const panels = [...body.querySelectorAll('.config-panel')]
+                    // The tips tab is a list of keys, not an article, and the
+                    // "Everyday keys" panel under Getting started is the same
+                    // list — a drawing above a column of <kbd> says nothing.
+                    .filter((p) => p.querySelector('.config-help-prose'));
+                return {
+                    panels: panels.length,
+                    drawn: panels.filter((p) => p.querySelector('.config-help-art')).length,
+                };
+            });
         };
 
-        expect(await withArt('organizing')).toBe(1);
-        expect(await withArt('inbox')).toBe(1);
-        // Not everywhere: a drawing bolted onto a page about privacy is the
-        // decoration this is meant to replace.
-        expect(await withArt('stats')).toBe(0);
+        // Every prose panel, on every tab that has them: an article that opens
+        // with a paragraph describing a shape is the thing this replaces.
+        for (const tab of ['start', 'config', 'organizing', 'search', 'health',
+            'monitoring', 'inbox', 'stats', 'data']) {
+            const { panels, drawn } = await countsFor(tab);
+            expect(panels, `${tab} has articles`).toBeGreaterThan(0);
+            expect(drawn, `${tab}: ${drawn}/${panels} articles drawn`).toBe(panels);
+        }
+    });
+
+    test('a drawing is drawn in the reader’s language', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        // The chips carry words, so they are the reader's words — a `{ k, d }`
+        // label goes through t(), while `200 OK` and `Shift + H` do not.
+        const labels = await page.evaluate(() => {
+            const c = window.dashboardInstance.config;
+            return c.resolveArtLabels([
+                { k: 'config.helpArtYourServer', d: 'Your server' },
+                '200 OK',
+                { inside: [{ k: 'config.helpArtCounts', d: 'Counts' }], out: null },
+            ]);
+        });
+        expect(labels[0]).toBeTruthy();
+        expect(labels[0].startsWith('config.')).toBe(false);
+        expect(labels[1]).toBe('200 OK');
+        expect(labels[2].inside[0].startsWith('config.')).toBe(false);
+        expect(labels[2].out).toBe(null);
     });
 
     test('a drawing is never read out twice', async ({ page }) => {
@@ -133,7 +171,8 @@ test.describe('help opens with a picture where the topic is a shape', () => {
 
 test.describe('the settings that are a place, not a size', () => {
     test('each button-bar position draws the page with the bar in it', async ({ page }) => {
-        await openAppearance(page, 'layout');
+        // Its own tab since v1.3.0: where the bar sits and what it carries.
+        await openAppearance(page, 'buttonbar');
         const buttons = page.locator('[data-appearance-barpos]');
         await expect(buttons).toHaveCount(5);
         await expect(buttons.locator('.setting-art-screen')).toHaveCount(5);
@@ -162,7 +201,9 @@ test.describe('the settings that are a place, not a size', () => {
         await page.evaluate(() => {
             const c = window.dashboardInstance.config;
             c.openConfigView('behavior');
-            c.behaviorTab = 'search';
+            // Quick add & inbox, where the paste destination lives — it moved
+            // off the Search tab when the inbox settings were grouped.
+            c.behaviorTab = 'inbox';
             c.render();
         });
         await page.waitForTimeout(800);

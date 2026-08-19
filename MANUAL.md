@@ -252,6 +252,8 @@ Config is a **view inside the dashboard**, not a separate page — same tab, sam
 
 It has nine sections — **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, **Help**, and **About** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
 
+**Help** is prose with a drawing over every article since **v1.3.0**: the three search prefixes in the field you type them into, the health tiles in the colours the rows wear, a certificate meter with the day the warning starts marked on it, a maintenance window shaded into a day, the boundary the statistics never cross. Same small drawings the choice cards under Appearance use, so a grid, a spacing and a margin look the same wherever nextDash shows one. Every word inside them is translated.
+
 Most controls **save the moment you change them**, and a short *Saving…* / *Saved* confirmation appears. The bookmark editor is the exception: it collects your edits and writes them when you press **Save**. Config only writes data that actually changed — a small settings edit does not re-upload every page of bookmarks.
 
 ---

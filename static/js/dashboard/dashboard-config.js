@@ -17176,7 +17176,7 @@ class DashboardConfig {
         if (!art || typeof window.SettingArt?.render !== 'function') return '';
         const esc = (v) => this.dash.escapeHtml(v);
         const parts = art.map(({ kind, value, captionKey, caption }) => {
-            const drawn = window.SettingArt.render(kind, value);
+            const drawn = window.SettingArt.render(kind, this.resolveArtLabels(value));
             if (!drawn) return '';
             const label = captionKey ? this.t(captionKey, caption || '') : (caption || '');
             return `<span class="config-help-art-item">${drawn}`
@@ -17184,6 +17184,27 @@ class DashboardConfig {
                 + `</span>`;
         }).filter(Boolean).join('');
         return parts ? `<div class="config-help-art">${parts}</div>` : '';
+    }
+
+    /**
+     * The words inside a drawing, in the reader's language.
+     *
+     * A chip reading "Bookmark" beside Dutch prose is worse than no chip: it
+     * reads as the name of something rather than as the word. So a label in
+     * HELP_PANEL_ART is written as `{ k, d }` — key and fallback — and resolved
+     * here, beside the other places this view translates. Anything that is not
+     * a word stays as it is: `200 OK`, `Shift + H`, `data/*.json` and the
+     * numbers a meter is drawn from are the same in every language.
+     */
+    resolveArtLabels(value) {
+        if (Array.isArray(value)) return value.map((v) => this.resolveArtLabels(v));
+        if (value && typeof value === 'object') {
+            if (typeof value.k === 'string') return this.t(value.k, value.d || '');
+            const out = {};
+            Object.keys(value).forEach((key) => { out[key] = this.resolveArtLabels(value[key]); });
+            return out;
+        }
+        return value;
     }
 
     /**
@@ -17224,10 +17245,103 @@ class DashboardConfig {
      * under Appearance.
      */
     static HELP_PANEL_ART = {
-        'config.helpWorkspaceTitle': [
-            { kind: 'grid', value: 2, captionKey: 'config.helpArtColumns2', caption: '2 columns' },
-            { kind: 'grid', value: 3, captionKey: 'config.helpArtColumns3', caption: '3 columns' },
-            { kind: 'grid', value: 5, captionKey: 'config.helpArtColumns5', caption: '5 columns' },
+        // ── Getting started ────────────────────────────────────────────────
+        'config.helpVersionTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtLifeCapture', d: 'Capture' },
+                    { k: 'config.helpArtLifeCheck', d: 'Check' },
+                    { k: 'config.helpArtLifeTidy', d: 'Tidy' },
+                    { k: 'config.feedsTitle', d: 'Fresh' },
+                ],
+                captionKey: 'config.helpArtLifeOfLink', caption: 'The life of a link',
+            },
+        ],
+        'config.helpStartTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.page', d: 'Page' },
+                    { k: 'config.category', d: 'Category' },
+                    { k: 'config.detailBookmarkFallback', d: 'Bookmark' },
+                ],
+                captionKey: 'config.helpArtStack', caption: 'How it is stacked',
+            },
+            { kind: 'keys', value: ['>', '+', '/'], captionKey: 'config.helpArtStartKeys', caption: 'Search, add, tags' },
+        ],
+        'config.helpFirstHourTitle': [
+            {
+                kind: 'steps',
+                value: [
+                    { k: 'config.helpArtStepImport', d: 'Import' },
+                    { k: 'config.helpArtStepPages', d: 'Split across pages' },
+                    { k: 'config.helpArtStepShortcuts', d: 'Give shortcuts' },
+                    { k: 'config.helpArtStepChecks', d: 'Turn on checks' },
+                ],
+            },
+        ],
+        'config.helpStartDailyTitle': [
+            {
+                kind: 'keys', value: ['>', 'Ctrl + V', '?', 'Shift + E'],
+                captionKey: 'config.helpArtDailyKeys', caption: 'A day in four keys',
+            },
+        ],
+
+        // ── Statistics ─────────────────────────────────────────────────────
+        'config.helpStatsTitle': [
+            {
+                kind: 'bars', value: { values: [0.5, 0.95, 0.4, 0.7, 0.3, 0.55], mark: 1 },
+                captionKey: 'config.helpArtStatsBars', caption: 'What you open, ranked',
+            },
+        ],
+        'config.helpStatsReadingTitle': [
+            {
+                kind: 'meter', value: { fill: 0.78 },
+                captionKey: 'config.helpArtConcentration', caption: 'Concentration',
+            },
+            {
+                kind: 'spark', value: [0.3, 0.42, 0.35, 0.6, 0.55, 0.8],
+                captionKey: 'config.helpArtTrend', caption: 'The direction it moved',
+            },
+        ],
+        'config.helpStatsUsageTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtOpenBookmark', d: 'Open a bookmark' },
+                    '+1',
+                    { k: 'config.helpArtTimestamp', d: 'Time stamped' },
+                ],
+                captionKey: 'config.helpArtCountMechanism', caption: 'The whole mechanism',
+            },
+        ],
+        'config.helpStatsPrivacyTitle': [
+            {
+                kind: 'boundary',
+                value: {
+                    label: { k: 'config.helpArtYourServer', d: 'Your server' },
+                    inside: [
+                        { k: 'config.statsBookmarks', d: 'Bookmarks' },
+                        { k: 'config.helpArtCounts', d: 'Counts' },
+                    ],
+                    out: null,
+                },
+                captionKey: 'config.helpArtNothingLeaves', caption: 'None of it is sent anywhere',
+            },
+        ],
+
+        // ── Configuring ────────────────────────────────────────────────────
+        'config.helpConfigTitle': [
+            { kind: 'panelMap', value: 'rail', captionKey: 'config.helpArtConfigRail', caption: 'Sections down the left' },
+            { kind: 'keys', value: ['Shift + S', 'Esc'], captionKey: 'config.helpArtConfigKeys', caption: 'In and out' },
+        ],
+        'config.helpBehaviorTitle': [
+            { kind: 'panelMap', value: 'tabs', captionKey: 'config.helpArtBehaviorTabs', caption: 'Five sub-tabs' },
+            {
+                kind: 'toggles', value: [true, false, true],
+                captionKey: 'config.helpArtSavesInstantly', caption: 'Saved the moment you change it',
+            },
         ],
         'config.helpAppearanceTitle': [
             { kind: 'spacing', value: 'snug', captionKey: 'config.categorySpacingSnug', caption: 'Snug' },
@@ -17235,8 +17349,268 @@ class DashboardConfig {
             { kind: 'margins', value: 'balanced', captionKey: 'config.sideMarginLabel', caption: 'Page margins' },
             { kind: 'density', value: 'dense', captionKey: 'config.densityDense', caption: 'Dense' },
         ],
+        'config.helpThemesTitle': [
+            {
+                kind: 'swatches', value: ['light', 'dark'],
+                captionKey: 'config.helpArtThemePair', caption: 'A light and a dark half',
+            },
+            {
+                kind: 'swatches', value: ['accent', 'light', 'dark'],
+                captionKey: 'config.helpArtThemeEditor', caption: 'Or recolour any of them',
+            },
+        ],
+
+        // ── Pages & bookmarks ──────────────────────────────────────────────
+        'config.helpWorkspaceTitle': [
+            { kind: 'grid', value: 2, captionKey: 'config.helpArtColumns2', caption: '2 columns' },
+            { kind: 'grid', value: 3, captionKey: 'config.helpArtColumns3', caption: '3 columns' },
+            { kind: 'grid', value: 5, captionKey: 'config.helpArtColumns5', caption: '5 columns' },
+        ],
+        'config.helpBookmarksTitle': [
+            {
+                kind: 'bookmarkRow', value: ['icon', 'tag', 'key', 'dot'],
+                captionKey: 'config.helpArtRowCarries', caption: 'Icon, name, tags, shortcut, availability',
+            },
+        ],
+        'config.helpTagsTitle': [
+            {
+                kind: 'query', value: [['token', 'tag:'], ['text', 'work']],
+                captionKey: 'config.helpArtTagFilter', caption: 'Filters without rearranging the grid',
+            },
+            { kind: 'keys', value: ['/'], captionKey: 'config.helpArtTagCloud', caption: 'The tag cloud' },
+        ],
+
+        // ── Search & keyboard ──────────────────────────────────────────────
+        'config.helpSearchTitle': [
+            { kind: 'keys', value: ['>', ':', '?'], captionKey: 'config.helpArtThreeModes', caption: 'Three modes, one overlay' },
+            {
+                kind: 'query',
+                value: [['prefix', '>'], ['text', { k: 'config.helpArtSearchQuery', d: 'status page' }]],
+            },
+        ],
+        'config.helpFindersTitle': [
+            {
+                kind: 'query', value: [['prefix', '?'], ['token', 'g'], ['text', 'nextdash']],
+                captionKey: 'config.helpArtFinderExample', caption: 'Google, without opening Google first',
+            },
+        ],
+        'config.helpCommandsTitle': [
+            {
+                kind: 'query', value: [['prefix', ':'], ['text', 'layout modern']],
+                captionKey: 'config.helpArtCommandExample', caption: 'Actions, not destinations',
+            },
+        ],
+        'config.helpKeyboardTitle': [
+            {
+                kind: 'keys', value: ['>', '?', ':', '+', '!', '/'],
+                captionKey: 'config.helpArtOverlayKeys', caption: 'The overlays',
+            },
+            {
+                kind: 'keys', value: ['Shift + H', 'Shift + I', 'Shift + S'],
+                captionKey: 'config.helpArtViewKeys', caption: 'The views',
+            },
+            {
+                kind: 'keys', value: ['j', 'k', 'g', 'G'],
+                captionKey: 'config.helpArtMoveKeys', caption: 'Moving around',
+            },
+        ],
+        'config.helpConfigKeyboardTitle': [
+            { kind: 'panelMap', value: 'body', captionKey: 'config.helpArtConfigLayer', caption: 'Its own keyboard layer' },
+            { kind: 'keys', value: ['j', 'k', 'g', 'G', '!'] },
+        ],
+
+        // ── Health ─────────────────────────────────────────────────────────
+        'config.helpHealthTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['off', { k: 'config.checkModeOff', d: 'Off' }],
+                    ['idle', { k: 'config.checkModePeriodic', d: 'Periodic' }],
+                    ['ok', { k: 'config.checkModeMonitor', d: 'Monitor' }],
+                ],
+                captionKey: 'config.helpArtCheckModes', caption: 'Three availability modes',
+            },
+        ],
+        'config.helpHealthViewTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['bad', { k: 'config.statsBroken', d: 'Broken' }],
+                    ['warn', { k: 'config.statsDuplicates', d: 'Duplicates' }],
+                    ['idle', { k: 'config.statsStale', d: 'Stale' }],
+                    ['off', { k: 'config.statsUnchecked', d: 'Unchecked' }],
+                ],
+                captionKey: 'config.helpArtHealthTiles', caption: 'The tiles that filter the list',
+            },
+            { kind: 'keys', value: ['Shift + H'] },
+        ],
+        'config.helpHealthWalkthroughTitle': [
+            {
+                kind: 'steps',
+                value: [
+                    { k: 'config.checkModeMonitor', d: 'Monitor' },
+                    { k: 'config.monitorInterval', d: 'Check every' },
+                    { k: 'config.helpArtStepExpected', d: 'Expected response' },
+                    { k: 'config.maintenanceTitle', d: 'Maintenance windows' },
+                ],
+            },
+        ],
+
+        // ── Monitoring ─────────────────────────────────────────────────────
+        'config.helpHealthStatsTitle': [
+            {
+                kind: 'bars', value: { values: [1, 1, 1, 0.25, 1, 1, 1], mark: 3, tone: 'bad' },
+                captionKey: 'config.helpArtHeartbeat', caption: 'The last checks, one bar each',
+            },
+            {
+                kind: 'spark', value: [0.35, 0.4, 0.38, 0.5, 0.45, 0.42],
+                captionKey: 'config.helpArtResponseTime', caption: 'Response time',
+            },
+            {
+                kind: 'meter', value: { fill: 0.99, tone: 'ok' },
+                captionKey: 'config.helpArtUptime', caption: 'Uptime over 24 hours',
+            },
+        ],
+        'config.helpHealthExpectTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    '200 OK',
+                    { k: 'config.helpArtExpectText', d: 'Contains “Login”' },
+                    { k: 'config.statsHealthy', d: 'Healthy' },
+                ],
+                captionKey: 'config.helpArtExpectTwoTests', caption: 'Answering is not the same as working',
+            },
+        ],
+        'config.helpHealthCertTitle': [
+            {
+                kind: 'meter', value: { fill: 0.86, mark: 0.72, tone: 'warn' },
+                captionKey: 'config.helpArtCertMeter', caption: 'Warned before it expires, not after',
+            },
+        ],
+        'config.helpHealthDriftTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    '200 OK',
+                    { k: 'config.helpArtDriftChanged', d: 'Title changed' },
+                    { k: 'config.helpArtDriftFlagged', d: 'Flagged' },
+                ],
+                captionKey: 'config.helpArtDrift', caption: 'Answering fine, no longer your page',
+            },
+        ],
+        'config.helpHealthMaintenanceTitle': [
+            {
+                kind: 'dayWindow', value: { from: 3, to: 4 },
+                captionKey: 'config.helpArtWindowNightly', caption: 'A nightly window is not an incident',
+            },
+        ],
+        'config.helpNotificationsTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtDown', d: 'Down' },
+                    { k: 'config.helpArtAlert', d: 'Push or webhook' },
+                    { k: 'config.helpArtYourDevices', d: 'Your devices' },
+                ],
+            },
+        ],
+
+        // ── Inbox ──────────────────────────────────────────────────────────
         'config.helpInboxTitle': [
-            { kind: 'flow', value: ['Ctrl+V', 'Inbox', 'Bookmark'], captionKey: 'config.helpArtInboxRoute', caption: 'Where a pasted link goes' },
+            {
+                kind: 'flow',
+                value: [
+                    'Ctrl + V',
+                    { k: 'config.helpTabInbox', d: 'Inbox' },
+                    { k: 'config.detailBookmarkFallback', d: 'Bookmark' },
+                ],
+                captionKey: 'config.helpArtInboxRoute', caption: 'Where a pasted link goes',
+            },
+            { kind: 'keys', value: ['Shift + I', '0'] },
+        ],
+        'config.helpInboxWorkTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['idle', { k: 'config.statsInboxUnread', d: 'Unread' }],
+                    ['off', { k: 'config.helpArtSnoozed', d: 'Snoozed' }],
+                    ['ok', { k: 'config.statsInboxWithNote', d: 'With note' }],
+                ],
+                captionKey: 'config.helpArtInboxFilters', caption: 'The filters, each with its count',
+            },
+        ],
+        'config.helpInboxTriageTitle': [
+            {
+                kind: 'keys', value: ['j', 'k', 't', 'z'],
+                captionKey: 'config.helpArtTriageKeys', caption: 'One link at a time, no mouse',
+            },
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtTriageOne', d: 'One link' },
+                    { k: 'config.helpArtTriageDecide', d: 'Keep or drop' },
+                    { k: 'config.helpArtTriageNext', d: 'Next' },
+                ],
+            },
+        ],
+        'config.helpInboxSettingsTitle': [
+            {
+                kind: 'toggles', value: [true, false],
+                captionKey: 'config.helpArtInboxSwitch', caption: 'One switch turns the whole inbox off',
+            },
+        ],
+        'config.helpInboxTourTitle': [
+            {
+                kind: 'steps', value: ['', '', '', '', '', '', ''],
+                captionKey: 'config.helpArtTourSteps', caption: 'Seven steps, shown once',
+            },
+        ],
+        'config.helpCaptureTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtShareSheet', d: 'Share sheet' },
+                    '/add',
+                    { k: 'config.helpTabInbox', d: 'Inbox' },
+                ],
+                captionKey: 'config.helpArtCaptureRoute', caption: 'From a phone, with nothing installed',
+            },
+        ],
+
+        // ── Data & hosting ─────────────────────────────────────────────────
+        'config.helpDataTitle': [
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtBackup', d: 'Backup' },
+                    'ZIP',
+                    { k: 'config.trashRestore', d: 'Restore' },
+                ],
+                captionKey: 'config.helpArtRestoreSafety', caption: 'A restore copies what is there first',
+            },
+        ],
+        'config.helpServerLogTitle': [
+            {
+                kind: 'states',
+                value: [
+                    ['off', { k: 'config.helpArtLogOff', d: 'Off by default' }],
+                    ['idle', { k: 'config.helpArtLogInfo', d: 'Info' }],
+                    ['warn', { k: 'config.helpArtLogWarn', d: 'Warning' }],
+                    ['bad', { k: 'config.helpArtLogError', d: 'Error' }],
+                ],
+            },
+        ],
+        'config.helpSelfHostingTitle': [
+            {
+                kind: 'boundary',
+                value: {
+                    label: { k: 'config.helpArtYourServer', d: 'Your server' },
+                    inside: [{ k: 'config.helpArtSingleBinary', d: 'One binary' }, 'data/*.json'],
+                    out: null,
+                },
+                captionKey: 'config.helpArtNoDatabase', caption: 'Plain files, no database',
+            },
         ],
     };
 
@@ -17485,6 +17859,7 @@ class DashboardConfig {
         return `
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.helpCaptureTitle', 'Saving a link from anywhere'))}</h3>
+                ${this.renderHelpArt('config.helpCaptureTitle')}
                 <div class="config-help-prose">${this.t('config.helpCaptureBody', '')}</div>
                 <label class="config-field">
                     <span class="config-field-label">${esc(this.t('config.helpCaptureTokenLabel', 'Capture token (only if this install has one)'))}</span>

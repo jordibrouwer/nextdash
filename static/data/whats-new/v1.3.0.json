@@ -123,6 +123,10 @@
         {
           "badge": "new",
           "text": "<strong>Edit a name or a shortcut where you read it.</strong> Double-click the title, or click the shortcut pill — including the faint <strong>+</strong> on a bookmark that has none. A key already in use is named as you type it and refused, rather than quietly breaking the bookmark that had it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Help draws what it describes.</strong> Every article in <strong>Config → Help</strong> now opens with a small picture of its own subject: the three search prefixes in the box you type them into, the health tiles in the colours the rows wear, a certificate meter with the day the warning starts marked on it, a maintenance window shaded into a day. The words inside them follow your language."
         }
       ]
     },

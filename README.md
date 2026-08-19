@@ -399,7 +399,7 @@ The settings a self-hoster reaches for most: **Behavior → General** (localhost
 
 **Branding & PWA** — Custom title and favicon under Advanced → Branding apply to the browser tab, the web app manifest (`/manifest.webmanifest`), and “Add to Home Screen” / installed PWA name and icon. **Advanced → HyprMode** includes an **Add to home screen** panel with platform steps and a browser install button when available.
 
-In-app help: Config → Help tab → *General settings* (same content, translated).
+In-app help: Config → Help tab → *General settings* (same content, translated). Since **v1.3.0** every help article opens with a small drawing of its own subject — the search prefixes in a field, the health tiles in their own colours, a certificate meter, a maintenance window — rather than a paragraph describing a shape.
 
 ### Search filters
 

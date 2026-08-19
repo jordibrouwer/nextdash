@@ -333,3 +333,397 @@
     flex-direction: column;
     gap: 0.15rem;
 }
+
+/* ─── The drawings help opens with ─────────────────────────────────────────
+   Help is prose about a program, and half of what it describes is a shape, a
+   route, a state or a key. These are the vocabulary for the other half: the
+   same blank-bar grammar as above, extended so every help panel can open with
+   the picture its own subject has, rather than with a paragraph that has to be
+   decoded into one. Same rules as the rest of this file — markup and CSS only,
+   theme tokens throughout, aria-hidden because the sentence beside each one
+   already says it. */
+
+/* Steps: the number carries the order, which is the whole claim. */
+.setting-art-steps {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.setting-art-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.setting-art-step-n {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-primary) 22%, var(--background-secondary));
+    color: var(--text-secondary);
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1;
+}
+
+.setting-art-step-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Keycaps, drawn the way the cheat sheet draws them so a key looks like a key
+   wherever nextDash prints one. */
+.setting-art-keys {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.setting-art-key {
+    min-width: 1.05rem;
+    padding: 0.08rem 0.32rem;
+    border: 1px solid var(--border-primary);
+    border-bottom-width: 2px;
+    border-radius: 0.25rem;
+    background: var(--background-primary);
+    color: var(--text-secondary);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.68rem;
+    line-height: 1.25;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* A legend, in the colours the rows themselves wear. */
+.setting-art-states {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.setting-art-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.setting-art-state-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.setting-art-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--text-tertiary);
+    flex: 0 0 auto;
+}
+
+.setting-art-dot.is-ok { background: var(--accent-success); }
+.setting-art-dot.is-warn { background: var(--accent-warning); }
+.setting-art-dot.is-bad { background: var(--accent-error); }
+.setting-art-dot.is-idle { background: color-mix(in srgb, var(--accent-primary) 55%, transparent); }
+/* Off is drawn as a ring rather than a pale dot: nothing is being reported,
+   which is not the same as a reading that happens to be quiet. */
+.setting-art-dot.is-off {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--text-tertiary);
+}
+
+/* The overlay with something typed in it. */
+.setting-art-frame--field { padding: 0.22rem 0.35rem; }
+
+.setting-art-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    min-width: 6.5rem;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.72rem;
+    line-height: 1.3;
+}
+
+.setting-art-q.is-prefix {
+    padding: 0 0.2rem;
+    border-radius: 0.2rem;
+    background: color-mix(in srgb, var(--accent-primary) 28%, transparent);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.setting-art-q.is-token {
+    padding: 0 0.2rem;
+    border-radius: 0.2rem;
+    background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    color: var(--text-secondary);
+}
+
+.setting-art-q.is-text { color: var(--text-secondary); }
+
+.setting-art-caret {
+    width: 1px;
+    height: 0.8rem;
+    margin-left: 0.1rem;
+    background: var(--accent-primary);
+}
+
+/* Counts, with the one being talked about picked out. */
+.setting-art-frame--bars { align-items: flex-end; }
+
+.setting-art-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.18rem;
+    height: 1.5rem;
+}
+
+.setting-art-bar-col {
+    width: 0.32rem;
+    border-radius: 0.1rem 0.1rem 0 0;
+    background: color-mix(in srgb, var(--accent-primary) 30%, var(--border-primary));
+}
+
+.setting-art-bar-col.is-mark { background: var(--accent-primary); }
+.setting-art-bar-col.is-mark.is-bad { background: var(--accent-error); }
+.setting-art-bar-col.is-mark.is-warn { background: var(--accent-warning); }
+
+/* A trend, drawn as the line the real row draws. */
+.setting-art-spark {
+    display: block;
+    width: 3.4rem;
+    height: 1.2rem;
+    color: var(--accent-primary);
+    overflow: visible;
+}
+
+/* How far along, and where it starts to matter. */
+.setting-art-meter {
+    position: relative;
+    display: block;
+    width: 4.2rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-tertiary) 22%, transparent);
+    overflow: hidden;
+}
+
+.setting-art-meter-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 999px;
+    background: var(--accent-primary);
+}
+
+.setting-art-meter-fill.is-warn { background: var(--accent-warning); }
+.setting-art-meter-fill.is-bad { background: var(--accent-error); }
+
+.setting-art-meter-mark {
+    position: absolute;
+    top: -0.1rem;
+    bottom: -0.1rem;
+    width: 1px;
+    background: var(--text-secondary);
+}
+
+/* A day, with the hours you expect to be down shaded. */
+.setting-art-day {
+    display: flex;
+    gap: 1px;
+}
+
+.setting-art-hour {
+    width: 0.11rem;
+    height: 0.85rem;
+    border-radius: 0.05rem;
+    background: color-mix(in srgb, var(--text-tertiary) 25%, transparent);
+}
+
+.setting-art-hour.is-window {
+    background: var(--accent-warning);
+}
+
+/* Switches: some on, some off, which is what a settings tab looks like. */
+.setting-art-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.setting-art-toggle {
+    position: relative;
+    display: block;
+    width: 1.35rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-tertiary) 28%, transparent);
+}
+
+.setting-art-toggle.is-on {
+    background: color-mix(in srgb, var(--accent-primary) 70%, transparent);
+}
+
+.setting-art-knob {
+    position: absolute;
+    top: 0.08rem;
+    left: 0.08rem;
+    width: 0.39rem;
+    height: 0.39rem;
+    border-radius: 999px;
+    background: var(--background-primary);
+}
+
+.setting-art-toggle.is-on .setting-art-knob {
+    left: auto;
+    right: 0.08rem;
+}
+
+/* Colour plates. Light and dark are halves of one theme, so they are drawn
+   touching rather than as two separate chips. */
+.setting-art-swatches {
+    display: inline-flex;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.3rem;
+    overflow: hidden;
+}
+
+.setting-art-swatch {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.setting-art-swatch.is-light { background: #f4f4f5; }
+.setting-art-swatch.is-dark { background: #1f2024; }
+.setting-art-swatch.is-accent { background: var(--accent-primary); }
+
+/* The line your data does not cross. */
+.setting-art-boundary-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.setting-art-boundary {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.25rem 0.35rem;
+    border: 1px dashed var(--border-primary);
+    border-radius: 0.35rem;
+    background: var(--background-primary);
+}
+
+.setting-art-boundary-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.setting-art-boundary-body {
+    display: inline-flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.setting-art-blocked {
+    font-size: 0.85rem;
+    line-height: 1;
+    color: var(--accent-error);
+}
+
+/* One row, with the parts it can carry. */
+.setting-art-bmrow {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 8rem;
+}
+
+.setting-art-bm-icon {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 0.12rem;
+    background: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+    flex: 0 0 auto;
+}
+
+.setting-art-bm-name {
+    flex: 1 1 auto;
+    height: 0.28rem;
+    border-radius: 0.12rem;
+    background: color-mix(in srgb, var(--accent-primary) 30%, var(--border-primary));
+}
+
+.setting-art-bm-tag {
+    width: 0.85rem;
+    height: 0.35rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-primary) 18%, var(--border-primary));
+    flex: 0 0 auto;
+}
+
+/* Config drawn as itself: rail, tabs, panel — the three places a sentence
+   about "where the setting is" can mean. */
+.setting-art-config {
+    display: flex;
+    gap: 0.2rem;
+    width: 4.6rem;
+    height: 2.2rem;
+}
+
+.setting-art-rail {
+    width: 0.6rem;
+    border-radius: 0.15rem;
+    background: color-mix(in srgb, var(--text-tertiary) 22%, transparent);
+}
+
+.setting-art-config-main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.setting-art-tabs {
+    height: 0.3rem;
+    border-radius: 0.15rem;
+    background: color-mix(in srgb, var(--text-tertiary) 22%, transparent);
+}
+
+.setting-art-config-body {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 0.2rem;
+    padding: 0.12rem;
+    border-radius: 0.15rem;
+    background: color-mix(in srgb, var(--text-tertiary) 12%, transparent);
+}
+
+.setting-art-config-body .setting-art-col { width: auto; flex: 1 1 0; }
+
+.setting-art-rail.is-active,
+.setting-art-tabs.is-active { background: var(--accent-primary); }
+
+.setting-art-config-body.is-active {
+    background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+
+/* Help stacks several drawings per panel now, so the strip wraps rather than
+   running off the panel on a narrow window, and each drawing keeps its caption
+   under it rather than beside the next drawing's. */
+.config-help-art-item {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+}
