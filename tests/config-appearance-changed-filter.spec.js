@@ -57,7 +57,7 @@ const toggle = '#config-appearance-body [data-config-action="toggle-changed"]';
 test.describe('appearance only-changed filter', () => {
     // Branding is not a tab: one toggle, a text field and an upload live on
     // Display rather than owning a tab of their own.
-    for (const tab of ['general', 'layout', 'display', 'toolbar']) {
+    for (const tab of ['general', 'layout', 'buttonbar', 'display', 'toolbar']) {
         test(`the ${tab} tab offers the filter`, async ({ page }) => {
             await openAppearance(page, tab);
             await expect(page.locator(bar)).toBeVisible();
@@ -66,7 +66,7 @@ test.describe('appearance only-changed filter', () => {
     }
 
     test('the count covers hand-written controls, not just schema panels', async ({ page }) => {
-        await openAppearance(page, 'layout', [['buttonBarPosition', 'bottom']]);
+        await openAppearance(page, 'buttonbar', [['buttonBarPosition', 'bottom']]);
 
         const before = await page.locator('.config-changed-count').innerText();
 
@@ -81,9 +81,9 @@ test.describe('appearance only-changed filter', () => {
     });
 
     test('turning it on hides the unchanged hand-written rows', async ({ page }) => {
-        await openAppearance(page, 'layout', [
+        await openAppearance(page, 'buttonbar', [
             ['buttonBarPosition', 'bottom'],
-            ['layoutVersion', 'classic'],
+            ['showSearchButton', true],
         ]);
 
         // Change exactly one hand-written setting, then filter.
@@ -91,14 +91,14 @@ test.describe('appearance only-changed filter', () => {
         await expect(page.locator(toggle)).toBeEnabled();
         await page.locator(toggle).click();
 
-        // The one that changed survives; the layout-version panel beside it,
-        // which is still stock, goes.
+        // The one that changed survives; the toggle panels beside it, which
+        // are still stock, go.
         await expect(page.locator('[data-appearance-barpos="side-left"]')).toBeVisible();
-        await expect(page.locator('[data-appearance-layout="modern"]')).toBeHidden();
+        await expect(page.locator('[data-behavior-field="showSearchButton"]')).toBeHidden();
 
         // Turning it back off brings everything back.
         await page.locator(toggle).click();
-        await expect(page.locator('[data-appearance-layout="modern"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="showSearchButton"]')).toBeVisible();
 
         await resetField(page, 'buttonBarPosition', 'bottom');
     });
@@ -151,14 +151,14 @@ test.describe('appearance only-changed filter', () => {
     });
 
     test('the filter survives a tab switch and still hides the right rows', async ({ page }) => {
-        await openAppearance(page, 'layout', [
+        await openAppearance(page, 'buttonbar', [
             ['buttonBarPosition', 'bottom'],
             ['showIcons', true],
         ]);
 
         await page.locator('[data-appearance-barpos="side-left"]').click();
         await page.locator(toggle).click();
-        await expect(page.locator('[data-appearance-layout="modern"]')).toBeHidden();
+        await expect(page.locator('[data-behavior-field="showSearchButton"]')).toBeHidden();
 
         // Display has nothing changed, so arriving there with the filter still
         // on must explain the empty tab rather than just look broken. Its
@@ -169,7 +169,7 @@ test.describe('appearance only-changed filter', () => {
         await expect(page.locator('#config-appearance-body .config-panel-empty').first()).toBeVisible();
         await expect(page.locator('#config-appearance-body .config-panel:visible')).toHaveCount(0);
 
-        await page.locator('[data-appearance-tab="layout"]').click();
+        await page.locator('[data-appearance-tab="buttonbar"]').click();
         await expect(page.locator('[data-appearance-barpos="side-left"]')).toBeVisible();
 
         await resetField(page, 'buttonBarPosition', 'bottom');

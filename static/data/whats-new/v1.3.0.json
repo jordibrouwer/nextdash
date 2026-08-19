@@ -127,6 +127,10 @@
         {
           "badge": "new",
           "text": "<strong>Help draws what it describes.</strong> Every article in <strong>Config → Help</strong> now opens with a small picture of its own subject: the three search prefixes in the box you type them into, the health tiles in the colours the rows wear, a certificate meter with the day the warning starts marked on it, a maintenance window shaded into a day. The words inside them follow your language."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The button bar has a tab of its own.</strong> <strong>Appearance → Button bar</strong> now holds both halves of the question: where the bar sits — center-bottom, either corner, or a rail down an edge — and which buttons it carries. The position used to be on <strong>Layout</strong> and the buttons on <strong>Toolbar &amp; tabs</strong>, two tabs apart. <strong>Toolbar &amp; tabs</strong> keeps the header row."
         }
       ]
     },

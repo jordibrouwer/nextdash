@@ -9,9 +9,10 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady 
  * It used to open on Layout version — a one-off beta switch — with Bookmarks
  * layout and Button bar below it, and the icon size stranded up in that same
  * version panel even though it only bites in the Launcher preset chosen two
- * controls further down. Bookmarks layout now leads, Button bar follows, and
- * Layout version closes; the icon size moved into Bookmarks layout as the last
- * control above "Start with categories collapsed".
+ * controls further down. Bookmarks layout now leads and Layout version closes;
+ * the icon size moved into Bookmarks layout as the last control above "Start
+ * with categories collapsed". The button bar left for a tab of its own in
+ * v1.3.0, so this tab is the grid and nothing else.
  */
 async function openLayoutTab(page) {
     await page.goto('/');
@@ -30,20 +31,20 @@ function panelTitles(page) {
 }
 
 test.describe('appearance layout tab ordering', () => {
-    test('Layout version sits below the button bar, not above it', async ({ page }) => {
+    test('Layout version closes the tab, and the button bar is not on it', async ({ page }) => {
         await openLayoutTab(page);
 
         const titles = (await panelTitles(page)).map((t) => t.trim());
         const bookmarks = titles.findIndex((t) => t.startsWith('Bookmarks layout'));
-        const buttonBar = titles.findIndex((t) => t.startsWith('Button bar'));
         const version = titles.findIndex((t) => t.startsWith('Layout version'));
 
         expect(bookmarks, 'Bookmarks layout panel missing').toBeGreaterThanOrEqual(0);
-        expect(buttonBar, 'Button bar panel missing').toBeGreaterThanOrEqual(0);
         expect(version, 'Layout version panel missing').toBeGreaterThanOrEqual(0);
+        expect(bookmarks).toBeLessThan(version);
 
-        expect(bookmarks).toBeLessThan(buttonBar);
-        expect(buttonBar).toBeLessThan(version);
+        // The bar and its buttons are one errand on one tab now.
+        expect(titles.some((t) => t.startsWith('Button bar'))).toBe(false);
+        await expect(page.locator('[data-appearance-barpos]')).toHaveCount(0);
     });
 
     test('Launcher icon size is the last control above "start collapsed"', async ({ page }) => {

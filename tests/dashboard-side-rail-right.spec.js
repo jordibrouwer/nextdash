@@ -104,7 +104,7 @@ test('the server keeps side-right instead of resetting it', async ({ page }) => 
 test('config offers it and applies it without a reload', async ({ page }) => {
     await setPosition(page, 'bottom');
     await page.evaluate(() => window.dashboardInstance.config.openConfigView('appearance'));
-    await page.locator('[data-appearance-tab="layout"]').click();
+    await page.locator('[data-appearance-tab="buttonbar"]').click();
 
     const choice = page.locator('[data-appearance-barpos="side-right"]');
     await expect(choice).toBeVisible();

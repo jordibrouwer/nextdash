@@ -9,7 +9,10 @@ const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady 
  *
  * It is now three panels matching how the dashboard is actually built — the
  * header, and the two `.btn-group`s of the button bar — each with a Show all /
- * Hide all pair and a count of what is currently on.
+ * Hide all pair and a count of what is currently on. Since v1.3.0 the two
+ * button-bar panels sit on the Button bar tab, beside the control that says
+ * where that bar goes; Toolbar & tabs keeps the header, which is a different
+ * strip.
  */
 
 async function openToolbarTab(page) {
@@ -25,15 +28,30 @@ async function openToolbarTab(page) {
     await expect(page.locator('.config-panel-bulk').first()).toBeVisible();
 }
 
+async function openButtonBarTab(page) {
+    await openToolbarTab(page);
+    await page.locator('[data-appearance-tab="buttonbar"]').click();
+    await expect(page.locator('[data-appearance-tab="buttonbar"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.config-panel-bulk').first()).toBeVisible();
+}
+
 test.describe('the chrome toggles are grouped', () => {
     test('three panels, and every toggle kept', async ({ page }) => {
         await openToolbarTab(page);
 
-        const panels = await page.evaluate(() => window.dashboardInstance.config
-            .panelsFor('appearance', 'toolbar')
-            .map((p) => ({ title: p.title, fields: p.controls.map((c) => c.field) })));
+        const panels = await page.evaluate(() => [
+            ...window.dashboardInstance.config.panelsFor('appearance', 'toolbar'),
+            ...window.dashboardInstance.config.panelsFor('appearance', 'buttonbar'),
+        ].map((p) => ({ title: p.title, fields: p.controls.map((c) => c.field) })));
 
         expect(panels).toHaveLength(3);
+        // One header panel where the header lives, and both halves of the bar
+        // on the tab that also says where the bar sits.
+        const perTab = await page.evaluate(() => ({
+            toolbar: window.dashboardInstance.config.panelsFor('appearance', 'toolbar').length,
+            buttonbar: window.dashboardInstance.config.panelsFor('appearance', 'buttonbar').length,
+        }));
+        expect(perTab).toEqual({ toolbar: 1, buttonbar: 2 });
         // Not one setting lost or duplicated in the split.
         const all = panels.flatMap((p) => p.fields);
         expect(all).toHaveLength(13);
@@ -47,11 +65,24 @@ test.describe('the chrome toggles are grouped', () => {
 
     test('each panel renders its own bulk pair and count', async ({ page }) => {
         await openToolbarTab(page);
-        await expect(page.locator('.config-panel-bulk')).toHaveCount(3);
-        await expect(page.locator('[data-behavior-bulk="show"]')).toHaveCount(3);
-        await expect(page.locator('[data-behavior-bulk="hide"]')).toHaveCount(3);
+        await expect(page.locator('.config-panel-bulk')).toHaveCount(1);
         // The count reads as "N of M shown" in every language.
         await expect(page.locator('[data-behavior-bulk-count]').first()).toHaveText(/\d+\D+\d+/);
+
+        await page.locator('[data-appearance-tab="buttonbar"]').click();
+        await expect(page.locator('.config-panel-bulk')).toHaveCount(2);
+        await expect(page.locator('[data-behavior-bulk="show"]')).toHaveCount(2);
+        await expect(page.locator('[data-behavior-bulk="hide"]')).toHaveCount(2);
+    });
+
+    test('the bar tab carries the position control and both toggle groups', async ({ page }) => {
+        await openButtonBarTab(page);
+        // Where it sits and what it carries, in the order you decide them.
+        await expect(page.locator('[data-appearance-barpos]')).toHaveCount(5);
+        await expect(page.locator('[data-behavior-field="showSearchButton"]')).toBeVisible();
+        await expect(page.locator('[data-behavior-field="showRecentButton"]')).toBeVisible();
+        // The header group stayed behind on Toolbar & tabs.
+        await expect(page.locator('[data-behavior-field="showPageTabs"]')).toHaveCount(0);
     });
 });
 

@@ -167,12 +167,13 @@ test.describe('the settings schema declares its section', () => {
         expect(missing, `panels with no section: ${missing.map((p) => p.title).join(', ')}`).toEqual([]);
 
         // The tabs that belong to Appearance rather than Behavior. Compared as
-        // a set: Toolbar & tabs is three panels, one per chrome group, and how
-        // many panels a tab is split into is not this test's business.
+        // a set: the chrome toggles are three panels — the header on Toolbar &
+        // tabs, both halves of the bar on Button bar — and how many panels a tab
+        // is split into is not this test's business.
         const appearance = [...new Set(
             panels.filter((p) => p.section === 'appearance').map((p) => p.tab)
         )].sort();
-        expect(appearance).toEqual(['display', 'layout', 'toolbar']);
+        expect(appearance).toEqual(['buttonbar', 'display', 'layout', 'toolbar']);
     });
 
     test('panelsFor keeps a shared tab name in its own section', async ({ page }) => {

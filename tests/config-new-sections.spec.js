@@ -241,7 +241,7 @@ test.describe('config: sections restored from the old config', () => {
         await expect(page.locator('.config-field-hint').first()).toBeVisible();
 
         await openSection(page, 'appearance');
-        for (const tab of ['layout', 'display']) {
+        for (const tab of ['layout', 'buttonbar', 'display']) {
             await page.locator(`[data-appearance-tab="${tab}"]`).click();
             const panels = await page.locator('.config-panel').count();
             const notes = await page.locator('.config-panel-note').count();
@@ -381,8 +381,9 @@ test.describe('config: sections restored from the old config', () => {
             }
         });
         await loadDashboard(page);
-        // A button group on the Layout tab now, beside the other layout choices.
-        await openAppearanceTab(page, 'layout');
+        // A button group at the top of the Button bar tab, above the toggles
+        // that say what the bar carries.
+        await openAppearanceTab(page, 'buttonbar');
 
         expect(await page.locator('[data-appearance-barpos]')
             .evaluateAll((els) => els.map((e) => e.getAttribute('data-appearance-barpos'))))

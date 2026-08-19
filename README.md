@@ -486,7 +486,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - **Show favicons** — toggle bookmark favicons in **Config → Appearance → Display** or with `:favicons on/off` on the dashboard
 - Launcher layout preset — switch via **Config → Appearance → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default), corner dock (bottom-left / bottom-right), or a vertical side rail on either edge (side-left / side-right) via Config or `:buttonbar`
-- **Config → Appearance → Toolbar & tabs** groups the chrome toggles as the dashboard is built — **Header**, **Button bar — main buttons**, **Button bar — extras** — each with **Show all** / **Hide all** and a count of what is showing (v2026.09.07). Hiding a button leaves its keyboard shortcut working
+- **Config → Appearance → Button bar** holds the whole bar since **v1.3.0**: the five positions and the two groups of toggles — **Button bar — main buttons** and **Button bar — extras** — each with **Show all** / **Hide all** and a count of what is showing. **Toolbar & tabs** keeps the **Header** group. Hiding a button leaves its keyboard shortcut working
 - ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **50 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density

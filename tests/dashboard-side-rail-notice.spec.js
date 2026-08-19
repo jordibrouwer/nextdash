@@ -42,8 +42,8 @@ test.describe('side rail invitation', () => {
 
         // The card stays up to say where to switch it back off.
         await expect(card).toBeVisible();
-        await expect(card.locator('.side-rail-notice-text')).toContainText(/Layout/i);
-        await expect(card.locator('[data-sr-action="open-layout"]')).toBeVisible();
+        await expect(card.locator('.side-rail-notice-text')).toContainText(/Button bar/i);
+        await expect(card.locator('[data-sr-action="open-buttonbar"]')).toBeVisible();
     });
 
     test('the follow-up names the :buttonbar command, but not before', async ({ page }) => {
@@ -61,16 +61,16 @@ test.describe('side rail invitation', () => {
         await expect(hint).not.toContainText('dashboard.sideRailNotice');
     });
 
-    test('the follow-up opens Appearance → Layout', async ({ page }) => {
+    test('the follow-up opens Appearance → Button bar', async ({ page }) => {
         await loadWithCardPending(page);
         await page.evaluate(() => window.DashboardSideRailNotice.render());
         await page.locator('.side-rail-notice-card [data-sr-action="try"]').click();
-        await page.locator('.side-rail-notice-card [data-sr-action="open-layout"]').click();
+        await page.locator('.side-rail-notice-card [data-sr-action="open-buttonbar"]').click();
 
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.section), { timeout: 5000 }).toBe('appearance');
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.config.appearanceTab)).toBe('layout');
+            window.dashboardInstance.config.appearanceTab)).toBe('buttonbar');
         // And the control it points at is really there.
         await expect(page.locator('[data-appearance-barpos="side-left"]')).toBeVisible();
     });
@@ -123,6 +123,6 @@ test.describe('side rail invitation', () => {
 
         await spotlight.locator('[data-overview-go]').click();
         await expect.poll(() => page.evaluate(() =>
-            window.dashboardInstance.config.appearanceTab), { timeout: 5000 }).toBe('layout');
+            window.dashboardInstance.config.appearanceTab), { timeout: 5000 }).toBe('buttonbar');
     });
 });

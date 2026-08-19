@@ -2053,7 +2053,7 @@ class DashboardConfig {
         { field: 'backgroundOpacity', labelKey: 'backgroundOpacityLabel', fallback: 'Opacity', section: 'appearance', subTab: 'general' },
         { field: 'showBackgroundDots', labelKey: 'showBackgroundDots', fallback: 'Show background dots', section: 'appearance', subTab: 'general' },
         { field: 'layoutVersion', labelKey: 'appearanceLayoutVersion', fallback: 'Layout', section: 'appearance', subTab: 'layout' },
-        { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'layout' },
+        { field: 'buttonBarPosition', labelKey: 'buttonBarPositionLabel', fallback: 'Button bar position', section: 'appearance', subTab: 'buttonbar' },
         { field: 'showIcons', labelKey: 'showIcons', fallback: 'Show bookmark icons', section: 'appearance', subTab: 'display' },
         { field: 'colorizeStatus', labelKey: 'colorizeStatus', fallback: 'Colour status on bookmark rows', section: 'appearance', subTab: 'display' },
         { field: 'animationsEnabled', labelKey: 'enableAnimations', fallback: 'Enable animations', section: 'appearance', subTab: 'display' },
@@ -5753,6 +5753,9 @@ class DashboardConfig {
         if (this.appearanceTab === 'layout') {
             return shell(this.renderAppearanceLayoutBody());
         }
+        if (this.appearanceTab === 'buttonbar') {
+            return shell(this.renderAppearanceButtonBarBody());
+        }
         if (this.appearanceTab === 'display') {
             return shell(this.renderAppearanceDisplayBody());
         }
@@ -5887,10 +5890,18 @@ class DashboardConfig {
             </div>`;
     }
 
-    renderAppearanceLayoutBody() {
+    /**
+     * The whole button bar on one tab: where it sits, and what is on it.
+     *
+     * The position was a panel on Layout and the twelve toggles were two panels
+     * on Toolbar & tabs, two tabs further along — so hiding a button and moving
+     * the bar that carries it were separate errands, and the second one was
+     * usually found by accident. Toolbar & tabs keeps the header strip, which
+     * is a different object.
+     */
+    renderAppearanceButtonBarBody() {
         const esc = (v) => this.dash.escapeHtml(v);
         const s = this.dash.settings || {};
-        const layout = s.layoutVersion === 'modern' ? 'modern' : 'classic';
 
         // These five are the only values the server accepts; it silently
         // rewrites anything else to 'bottom'. See models.go.
@@ -5913,13 +5924,10 @@ class DashboardConfig {
             + `<span class="config-choice-label">${esc(label)}</span></button>`
         ).join('');
 
-        // Bookmarks layout first, then the button bar, and the layout version
-        // last: the first two are what people come here to change, while the
-        // version switch is a one-off that mostly wants to be found rather than
-        // stepped over on the way down the tab.
+        // Where first, then what is on it: the position is the one choice that
+        // changes the shape of the thing the toggles below are describing.
         return `
-            ${this.renderChangedFilterBar('appearance', 'layout')}
-            ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
+            ${this.renderChangedFilterBar('appearance', 'buttonbar')}
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.buttonBarPositionTitle', 'Button bar'))}</h3>
@@ -5931,6 +5939,21 @@ class DashboardConfig {
                     <p class="config-field-hint">${esc(this.t(`config.buttonBarPositionDesc.${barPosition}`, ''))}</p>
                 </div>
             </div>
+
+            ${this.renderControlPanels(this.panelsFor('appearance', 'buttonbar'), 'behavior')}`;
+    }
+
+    renderAppearanceLayoutBody() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const s = this.dash.settings || {};
+        const layout = s.layoutVersion === 'modern' ? 'modern' : 'classic';
+        // Bookmarks layout first and the layout version last: the grid is what
+        // people come here to change, while the version switch is a one-off
+        // that mostly wants to be found rather than stepped over on the way
+        // down the tab. The button bar left for a tab of its own.
+        return `
+            ${this.renderChangedFilterBar('appearance', 'layout')}
+            ${this.renderControlPanels(this.panelsFor('appearance', 'layout'), 'behavior')}
 
             <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.appearanceLayoutVersionTitle', 'Layout version'))}</h3>
@@ -6452,7 +6475,7 @@ class DashboardConfig {
         // live setter (via applyAppearanceField), which repaints the section so
         // the ↺ visibility refreshes.
         this.bindAffordances(container, null, (field, def) => this.applyAppearanceField(field, def));
-        if (['layout', 'display', 'toolbar'].includes(this.appearanceTab)) {
+        if (['layout', 'buttonbar', 'display', 'toolbar'].includes(this.appearanceTab)) {
             this.bindControlPanels(container, 'behavior');
         } else {
             // bindControlPanels brings the toggle with it; the tabs without
@@ -6564,6 +6587,7 @@ class DashboardConfig {
         const map = {
             general: ['config.appearanceTabGeneral', 'Theme'],
             layout: ['config.appearanceTabLayout', 'Layout'],
+            buttonbar: ['config.appearanceTabButtonBar', 'Button bar'],
             display: ['config.appearanceTabDisplay', 'Display'],
             toolbar: ['config.appearanceTabToolbar', 'Toolbar & tabs'],
             'custom-themes': ['config.appearanceTabCustomThemes', 'Custom themes'],
@@ -8364,7 +8388,7 @@ class DashboardConfig {
             },
             {
                 section: 'appearance',
-                tab: 'toolbar',
+                tab: 'buttonbar',
                 title: t('config.chromeGroupPrimary', 'Button bar — main buttons'),
                 note: t('config.chromeGroupPrimaryNote', 'The four everyday actions. Hiding one leaves its keyboard shortcut working.'),
                 bulk: 'chrome',
@@ -8377,7 +8401,7 @@ class DashboardConfig {
             },
             {
                 section: 'appearance',
-                tab: 'toolbar',
+                tab: 'buttonbar',
                 title: t('config.chromeGroupSecondary', 'Button bar — extras'),
                 note: t('config.chromeGroupSecondaryNote', 'The second group, beside the main buttons. With all of these off the group disappears entirely.'),
                 bulk: 'chrome',
@@ -10262,6 +10286,7 @@ class DashboardConfig {
             const render = {
                 toolbar: () => this.renderAppearanceToolbarBody(),
                 layout: () => this.renderAppearanceLayoutBody(),
+                buttonbar: () => this.renderAppearanceButtonBarBody(),
                 display: () => this.renderAppearanceDisplayBody(),
                 branding: () => this.renderAppearanceBrandingBody(),
             }[this.appearanceTab];
@@ -10316,7 +10341,12 @@ class DashboardConfig {
     // Branding was a tab holding one panel with one toggle, a text field and an
     // upload — a tab click for a single setting. It sits at the end of Display,
     // which is already about what the page shows of itself.
-    static APPEARANCE_TABS = ['general', 'layout', 'display', 'toolbar', 'custom-themes'];
+    // Button bar is a tab of its own rather than half a panel on Layout and two
+    // panels on Toolbar & tabs. It is one object on the screen, and the three
+    // questions people ask about it — where it sits, which of the four main
+    // buttons it carries, which extras — were answered two tabs apart, so
+    // changing the bar meant finding it twice.
+    static APPEARANCE_TABS = ['general', 'layout', 'buttonbar', 'display', 'toolbar', 'custom-themes'];
 
     static STATS_TABS = ['overview', 'activity', 'content', 'inbox', 'health'];
 

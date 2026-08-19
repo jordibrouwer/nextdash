@@ -378,18 +378,18 @@
     },
     {
       "titleKey": "config.overviewNewFeatureToolbarGroupsTitle",
-      "titleFallback": "Toolbar & tabs is three groups, not one long list",
+      "titleFallback": "Every “show this button” box sits with the thing it controls",
       "whatKey": "config.overviewNewFeatureToolbarGroupsWhat",
       "whatFallback": "Thirteen near-identical “Show the … button” tick boxes in a row, with no way to tell which meant the strip at the top and which the bar at the bottom.",
       "howKey": "config.overviewNewFeatureToolbarGroupsHow",
-      "howFallback": "They are split into the header and the two halves of the button bar, so the group a setting sits in tells you where to look for it on screen. Each group has Show all and Hide all with a count of what is showing.",
+      "howFallback": "The header strip keeps its group under Toolbar & tabs; the two halves of the button bar sit on the Button bar tab, under the control that says where the bar goes. Each group has Show all and Hide all with a count of what is showing.",
       "enableKey": "config.overviewNewFeatureToolbarGroupsEnable",
       "enableFallback": "Nothing to switch on — the settings themselves are unchanged, only how they are arranged.",
       "ctaKey": "config.overviewNewFeatureToolbarGroupsCta",
-      "ctaFallback": "Open Toolbar & tabs →",
+      "ctaFallback": "Open the button bar →",
       "go": {
         "section": "appearance",
-        "appearanceTab": "toolbar"
+        "appearanceTab": "buttonbar"
       }
     },
     {
@@ -598,14 +598,14 @@
       "whatKey": "config.overviewNewFeatureSideRailWhat",
       "whatFallback": "The add, search, commands, and finders buttons can float center-bottom, dock into either bottom corner, or stand as a vertical rail down the left edge.",
       "howKey": "config.overviewNewFeatureSideRailHow",
-      "howFallback": "Pick a position under Config → Appearance → Layout, or run :buttonbar from the command palette. The bar moves as you choose — no reload.",
+      "howFallback": "Pick a position under Config → Appearance → Button bar, or run :buttonbar from the command palette. The bar moves as you choose — no reload.",
       "enableKey": "config.overviewNewFeatureSideRailEnable",
       "enableFallback": "The side rail keeps the space under your bookmarks clear, which pays off on wide screens.",
       "ctaKey": "config.overviewNewFeatureSideRailCta",
-      "ctaFallback": "Open Layout →",
+      "ctaFallback": "Open the button bar →",
       "go": {
         "section": "appearance",
-        "appearanceTab": "layout"
+        "appearanceTab": "buttonbar"
       }
     },
     {

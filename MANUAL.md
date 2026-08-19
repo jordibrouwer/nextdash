@@ -273,7 +273,7 @@ Most controls **save the moment you change them**, and a short *Saving…* / *Sa
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Side rail layout (optional — **Config → Appearance → Layout → Button bar position → Rail left** or **Rail right**):
+Side rail layout (optional — **Config → Appearance → Button bar → Button bar position → Rail left** or **Rail right**):
 
 ```
 ┌──┬─────────────────────────────────────────────────────────┐
@@ -304,7 +304,7 @@ Side rail layout (optional — **Config → Appearance → Layout → Button bar
 
 ### 🎛️ Button bar / side rail
 
-The button bar can appear as a **floating bottom bar** (default), a **corner dock**, or a **44 px vertical side rail on either edge** — set via **Config → Appearance → Layout → Button bar position** or the `:buttonbar` command.
+The button bar can appear as a **floating bottom bar** (default), a **corner dock**, or a **44 px vertical side rail on either edge** — set via **Config → Appearance → Button bar** or the `:buttonbar` command.
 
 **Bottom bar** — buttons float centred at the bottom of the viewport.
 
@@ -318,7 +318,7 @@ The button bar can appear as a **floating bottom bar** (default), a **corner doc
 | `!` | `!` / `F1` | Keyboard cheat sheet |
 | `.` | `.` | Fold or unfold every category |
 
-Each button can be shown or hidden individually under **Config → Appearance → Toolbar & tabs**. `*` recent, `!` cheat sheet and `.` fold-all share one group, and it disappears only when all three are switched off. **A fresh install starts without the fold-all button** — the key still works, and it is one switch away — while a dashboard that already had it keeps it: an existing `settings.json` with no such key reads as an upgrade, not as a new install.
+Each button can be shown or hidden individually under **Config → Appearance → Button bar**, under the position control (**v1.3.0** — it was two tabs away, on Toolbar & tabs). `*` recent, `!` cheat sheet and `.` fold-all share one group, and it disappears only when all three are switched off. **A fresh install starts without the fold-all button** — the key still works, and it is one switch away — while a dashboard that already had it keeps it: an existing `settings.json` with no such key reads as an upgrade, not as a new install.
 
 **Side rail** — 44×44 px square cells stacked vertically against one edge; the dashboard grid shifts by 44 px to clear it. Available on the **left** (`side-left`) or the **right** (`side-right`); the two are mirror images, so the divider faces the content and tooltips open inward. On mobile (≤768 px) the rail automatically reverts to a centred bottom bar.
 
@@ -1293,7 +1293,7 @@ Its **settings** — what a quick-added bookmark starts with, the sort the list 
 
 **Display** holds bookmark-row toggles — icons, status colour, animations, shortcut letters, ping times, link preview cards.
 
-**Toolbar & tabs** holds the visibility of everything in the dashboard chrome. Since **v2026.09.07** it is three groups matching how the dashboard is built — **Header** (page tabs, page names, title, and the health and config icons), **Button bar — main buttons** (add, search, commands, finders) and **Button bar — extras** (recent, cheat sheet, fold-all, tag cloud) — so the group a setting sits in tells you where on screen to look. Each group has **Show all** / **Hide all** with a count of what is currently showing. Hiding a button leaves its keyboard shortcut working.
+**Button bar** is one tab for one object (**v1.3.0**): where the bar sits — the five positions, each drawn — and what it carries, as **Button bar — main buttons** (add, search, commands, finders) and **Button bar — extras** (recent, cheat sheet, fold-all, tag cloud). The position used to live on Layout and the toggles on Toolbar & tabs, so moving the bar and hiding a button on it were two errands two tabs apart. **Toolbar & tabs** keeps the **Header** group (page tabs, page names, title, and the health and config icons), which is a different strip. Each group has **Show all** / **Hide all** with a count of what is currently showing (v2026.09.07). Hiding a button leaves its keyboard shortcut working.
 
 **Branding** holds the custom page title and favicon.
 
