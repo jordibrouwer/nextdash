@@ -5099,3 +5099,13 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .category.grid-filter-empty {
     display: none !important;
 }
+
+/* "Publishes, but nothing new" — the quiet half of Fresh, off unless asked for.
+   A dot rather than a number, and dimmer than a count: it says this row takes
+   part, which is worth a glance and never worth reading. */
+.bookmark-fresh-badge.is-quiet {
+    color: color-mix(in srgb, var(--accent-primary) 55%, var(--text-tertiary));
+    border-color: var(--border-secondary);
+    background: transparent;
+    letter-spacing: 0;
+}

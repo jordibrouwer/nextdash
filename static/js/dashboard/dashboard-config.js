@@ -7873,6 +7873,7 @@ class DashboardConfig {
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
         feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
+        feedsMarkQuiet: { def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
@@ -8589,11 +8590,22 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'status',
+                tab: 'fresh',
                 title: t('config.feedsTitle', 'Fresh'),
-                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Polled on the background re-check interval with a conditional request, so a quiet blog costs almost nothing. Off by default because it makes outbound requests; the feeds themselves are found while previews are fetched, so switching this on needs no re-fetch.'),
+                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
                 controls: [
                     { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
+                    // Off by default on purpose: most rows with a feed are
+                    // silent most of the time, and a mark on twenty of them is
+                    // the noise Fresh exists to avoid. For the reader who would
+                    // rather see who is taking part than ask one row at a time.
+                    { ...bool('feedsMarkQuiet', 'config.feedsMarkQuietLabel', 'Mark rows that publish, even when nothing is new'), special: 'render' },
+                    // Most bookmarks have no feed, so an empty Fresh is the
+                    // normal state and looks exactly like a broken feature.
+                    // This line is the difference: it says how many pages have
+                    // been asked and how many of them publish anything at all.
+                    { type: 'action', label: t('config.feedsCoverageLabel', 'Feeds found'),
+                      button: t('config.feedsFindNow', 'Find feeds now'), action: 'findFeeds' },
                 ],
             },
             {
@@ -9500,6 +9512,24 @@ class DashboardConfig {
      * a number is easier to read where the button that produced it is.
      */
     bindPanelActions(container) {
+        // Fresh: look for feeds now, and say what the round found.
+        const findFeeds = container.querySelector('[data-config-action="findFeeds"]');
+        if (findFeeds) {
+            this.paintFeedCoverage();
+            findFeeds.addEventListener('click', async () => {
+                findFeeds.disabled = true;
+                const status = container.querySelector('[data-config-action-status="findFeeds"]');
+                if (status) status.textContent = this.t('config.feedsFindingNow', 'Looking…');
+                try {
+                    const round = await this.dash.feeds?.pollNow();
+                    this.paintFeedCoverage(round);
+                    this.dash.renderDashboard?.({ animate: false });
+                } finally {
+                    findFeeds.disabled = false;
+                }
+            });
+        }
+
         container.querySelectorAll('[data-config-action]').forEach((btn) => {
             const action = btn.getAttribute('data-config-action');
             if (action !== 'resetCategorySpreads') {
@@ -9538,6 +9568,41 @@ class DashboardConfig {
                 }
             });
         });
+    }
+
+    /**
+     * What the last look for feeds found, beside the button that repeats it.
+     *
+     * Fresh spent a release looking broken on installs where it was working
+     * perfectly: most pages carry no feed, so the honest result is an empty
+     * dashboard, and an empty dashboard is indistinguishable from a feature
+     * that does nothing. Three numbers fix that — how many bookmarks there are,
+     * how many have been asked, and how many publish anything at all.
+     */
+    paintFeedCoverage(round = null) {
+        const status = document.querySelector('[data-config-action-status="findFeeds"]');
+        if (!status) return;
+        const feeds = this.dash?.feeds;
+        if (!feeds) return;
+        if (feeds.enabled !== true) {
+            status.textContent = this.t('config.feedsCoverageOff', 'Switched off — nothing is being asked.');
+            return;
+        }
+        const coverage = round || feeds.coverage || {};
+        const bookmarks = Number(coverage.bookmarks) || 0;
+        const checked = Number(coverage.checked) || 0;
+        const withFeed = Number(coverage.withFeed) || 0;
+        const text = this.t('config.feedsCoverageCount', '{checked} of {bookmarks} bookmarks asked · {withFeed} publish a feed')
+            .replace('{checked}', String(checked))
+            .replace('{bookmarks}', String(bookmarks))
+            .replace('{withFeed}', String(withFeed));
+        // The "and none of them publishes anything" case is the one worth a
+        // sentence rather than a number: it is the answer to "why is my
+        // dashboard not changing", and it is not a fault.
+        const none = checked > 0 && withFeed === 0
+            ? ` ${this.t('config.feedsCoverageNone', 'None of them publishes a feed, so there is nothing for Fresh to count.')}`
+            : '';
+        status.textContent = text + none;
     }
 
     bindMonitorNotifyTest(container) {
@@ -9729,7 +9794,12 @@ class DashboardConfig {
         });
     }
 
-    static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'inbox', 'status', 'privacy'];
+    // Fresh has a tab rather than a panel at the foot of Status & health. It is
+    // not link checking: that tab answers "is this still there", Fresh answers
+    // "has this moved on", and the two were only neighbours because both talk to
+    // the internet on a schedule. Four panels down a tab named after something
+    // else is also where a reader stops looking.
+    static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'inbox', 'fresh', 'status', 'privacy'];
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -9747,6 +9817,9 @@ class DashboardConfig {
             // would think to open them.
             search: ['config.behaviorTabSearch', 'Search'],
             inbox: ['config.behaviorTabInbox', 'Inbox'],
+            // The tab and the panel on it are the same subject, so they share
+            // the name rather than carrying two translations of one word.
+            fresh: ['config.feedsTitle', 'Fresh'],
             status: ['config.behaviorTabStatus', 'Status & health'],
             privacy: ['config.behaviorTabPrivacy', 'Privacy'],
         };
@@ -10082,12 +10155,15 @@ class DashboardConfig {
                 d.renderDashboard?.({ animate: false });
                 break;
             case 'feeds':
-                // Switching this on polls once now rather than leaving the
-                // dashboard blank until the scheduler's next wake — turning a
-                // feature on and seeing nothing happen reads as broken. Off
-                // just drops what is painted.
+                // Switching this on looks for feeds and polls once now, rather
+                // than leaving the dashboard blank until the scheduler's next
+                // wake — turning a feature on and seeing nothing happen reads
+                // as broken. Off just drops what is painted.
                 if (value) {
-                    void d.feeds?.pollNow().then(() => d.renderDashboard?.({ animate: false }));
+                    void d.feeds?.pollNow().then((round) => {
+                        this.paintFeedCoverage(round);
+                        d.renderDashboard?.({ animate: false });
+                    });
                 } else if (d.feeds) {
                     d.feeds.enabled = false;
                     d.feeds.byKey = new Map();
@@ -17637,6 +17713,21 @@ class DashboardConfig {
                 captionKey: 'config.helpArtDrift', caption: 'Answering fine, no longer your page',
             },
         ],
+        'config.helpFreshTitle': [
+            {
+                kind: 'bookmarkRow', value: ['icon', 'key'],
+                captionKey: 'config.helpArtFreshRow', caption: 'A count on the row',
+            },
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtFreshPreview', d: 'Link preview' },
+                    { k: 'config.helpArtFreshFeed', d: 'Feed address' },
+                    '304',
+                ],
+                captionKey: 'config.helpArtFreshCost', caption: 'Found once, then asked cheaply',
+            },
+        ],
         'config.helpHealthMaintenanceTitle': [
             {
                 kind: 'dayWindow', value: { from: 3, to: 4 },
@@ -17776,14 +17867,15 @@ class DashboardConfig {
             isOn: (s) => s.analyticsOptIn === true,
             go: { section: 'behavior', behaviorTab: 'privacy' },
         },
-        // Off on a fresh install, which is exactly when a reader is most likely
-        // to follow the prose and find nothing where it says. Fresh has no
-        // panel of its own to hang a line on — it is a paragraph inside the
-        // monitoring prose — so it is not listed here rather than being
-        // attached to a panel about something else.
+        // Both are off on a fresh install, which is exactly when a reader is
+        // most likely to follow the prose and find nothing where it says.
         'config.helpServerLogTitle': {
             isOn: (s) => s.serverLogEnabled === true,
             go: { section: 'data-backups', dbTab: 'logs' },
+        },
+        'config.helpFreshTitle': {
+            isOn: (s) => s.feedsEnabled === true,
+            go: { section: 'behavior', behaviorTab: 'fresh' },
         },
     };
 
@@ -17947,6 +18039,7 @@ class DashboardConfig {
      * in help by a factor of seven, and the one people scrolled past.
      */
     renderHelpMonitoring() {
+        const esc = (v) => this.dash.escapeHtml(v);
         return this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
             'config.helpHealthStatsBody', '')
             + this.helpPanel('config.helpHealthExpectTitle', 'When "up" is not good enough',
@@ -17957,6 +18050,14 @@ class DashboardConfig {
                 'config.helpHealthDriftBody', '')
             + this.helpPanel('config.helpHealthMaintenanceTitle', 'Maintenance windows',
                 'config.helpHealthMaintenanceBody', '')
+            // Fresh sat in a paragraph of the Behavior article, which is where
+            // its switch is rather than where its subject is: it is a thing the
+            // dashboard does with a bookmark, like everything else on this tab.
+            + this.helpPanel('config.helpFreshTitle', 'Fresh',
+                'config.helpFreshBody', '',
+                `<div class="config-actions">
+                    <button type="button" class="config-btn" data-help-action="fresh-tour">${esc(this.t('config.helpFreshTour', 'Walk me through Fresh'))}</button>
+                </div>`)
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '');
     }
@@ -18419,6 +18520,8 @@ class DashboardConfig {
                     // view first or it would open behind it.
                     this.closeConfigView();
                     this.dash.showKeyboardCheatSheet?.();
+                } else if (action === 'fresh-tour') {
+                    window.FreshTutorial?.open?.();
                 } else if (action === 'spread-tour') {
                     // Config is a view on this same page and the walkthrough is
                     // a modal over it, so this one can stay where it is — the

@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.3.1 — 20 August 2026](#v131--20-august-2026)
 - [v1.3.0 — 19 August 2026](#v130--19-august-2026)
 - [v1.2.1 — 17 August 2026](#v121--17-august-2026)
 - [v1.2.0 — 16 August 2026](#v120--16-august-2026)
@@ -170,6 +171,29 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.3.1 — 20 August 2026
+
+Fresh, made to work. It shipped in 1.3.0 depending on a setting most installs have switched off — link previews — so it could never find a feed, and a reader who turned it on watched a dashboard that never changed. This release makes it look for its own feeds, say what it found, and answer which bookmarks take part at all. Plus the modifier click every browser honours, given back.
+
+### What's new
+
+**Fresh**
+
+- **new** — **which bookmarks take part in Fresh, three ways.** A row with a feed and nothing new was identical to a row with no feed, and the count on the tab said how many there were without saying which. The **bookmark editor** now shows a *Feed* line with the address when there is one — the place to look when a bookmark never says anything. **`status:feed`** (and `-status:feed`) narrows a search to the ones taking part. And **Behavior → Fresh → mark rows that publish** puts a quiet dot on those rows even when nothing is new; **off by default**, because a mark on twenty rows that are silent most of the time is the noise Fresh exists to avoid. A real count still wins over the dot.
+- **new** — **Fresh is a tab of its own** under Behavior, between Inbox and Status & health. It was the fourth panel down a tab about link checking, which answers a different question — *is this still there* against *has this moved on* — and is where a reader stops looking. Behavior is seven sub-tabs now.
+- **fix** — **Fresh looks for its own feeds.** It learned where a feed lived only as a side effect of fetching a link preview, so an install with link previews switched off never fetched a page, never discovered anything, and answered “nothing new” forever — which is exactly what the reader who reported this saw, with the feature on and `feeds.json` empty. Switching it on now reads the head of each saved page itself, records the pages that have no feed so they are not asked again for a month, and polls what it found. The panel says what came of it — *7 of 7 bookmarks asked · 0 publish a feed*, and in that case a sentence saying so is not a fault — with **Find feeds now** beside it to repeat the round.
+- **fix** — Fresh polls on an hour of its own instead of borrowing the health recheck interval, which can be switched off entirely while Fresh is on — and was, on that same install — and runs as slowly as once a day. Every request is conditional, so an hour is unremarkable for the site on the other end.
+- **new** — **Fresh is offered rather than hidden.** It is off by default and its switch sits four panels down a tab called Status & health, so the people it was built for never met it. A corner card now offers it once — skipped only on an all-but-empty page, and never shown to someone who already has it on — and hands over to a four-step walkthrough rather than switching anything on: what the count means, the collection it gathers into, why polling costs almost nothing (the feed was already found while a preview was fetched, and every request is conditional), and what it deliberately is not. The last step is the switch itself, because a walkthrough that ends in “now go and find the setting” wastes the one moment the reader is convinced. It is offered before those two, since it is the one thing here nobody has had the chance to meet. Same shape as the side-rail and spread-across-columns cards, and the same walkthrough is one button away in **Config → Help → Monitoring**, where Fresh now has a panel of its own with a state line saying whether it is on for you. No article list, no titles, no OPML — deliberately not a feed reader.
+
+**The dashboard**
+
+- **fix** — **`Ctrl/Cmd`+click on a bookmark opens it in a new tab**, as it does on every other link on the web. It used to tick the row for a bulk action, with `preventDefault` — so the one modifier every browser honours did the opposite of what it does everywhere else, and on a Mac it came with the row menu on top of that, `Ctrl`+click being the platform's secondary click. The mouse route into a selection is **`Alt`+click** now, on the grid and in the health view alike; `Shift`+click still extends a range, `x` still ticks the row under the cursor, and *Select* is still in the right-click menu. The open is recorded by the row itself, since letting the browser have the click means the anchor's own handler never runs — without that, opening this way would not have counted, and Fresh reads the same timestamp.
+
+### Docs
+
+- **new** — the Fresh walkthrough and its help article answer the question every reader actually arrives with. The last step is *If nothing shows up* — an empty dashboard is the usual answer and not a fault, because most saved pages publish nothing — and both now name the count on the tab (*12 of 40 bookmarks asked · 2 publish a feed*) as the way to tell that apart from a broken feature. The article also says plainly that a row carries no mark for *publishes, but nothing new*: a badge on twenty silent rows would be the noise Fresh exists to avoid.
+- **Help describes the config that exists.** Behavior said five sub-tabs and has six — Search and Inbox are separate now, and its Status & health section had grown from three panels to seven without the prose noticing Fresh, downtime alerts, browser notifications or maintenance windows. Appearance sent readers to *Behavior → Layout* for the grid, a tab that no longer exists, and to *Date & time*, which is *Date & weather*. Data & backups described a single *Maintenance* panel where there are now Icons & previews, Server log and Reset. The section rail listed eight sections in the wrong order and omitted About; Bookmarks never mentioned its Settings tab. Four languages, plus the drawing caption that still counted five sub-tabs.
 
 ## v1.3.0 — 19 August 2026
 

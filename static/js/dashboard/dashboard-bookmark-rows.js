@@ -646,12 +646,25 @@ class DashboardBookmarkRows {
         const freshBadge = document.createElement('span');
         freshBadge.className = 'bookmark-fresh-badge bookmark-superscript-badge';
         const fresh = d.feeds?.freshFor(bookmark) || null;
+        // A row whose page publishes but has nothing new, when the reader has
+        // asked to see those: a dot rather than a number, because there is
+        // nothing to count. Off by default — see feedsMarkQuiet.
+        const quiet = !fresh && d.settings?.feedsMarkQuiet === true
+            && d.feeds?.hasFeed?.(bookmark) === true;
         if (fresh) {
             const count = Number(fresh.newCount) || 0;
             freshBadge.textContent = count > 99 ? '99+' : String(count);
             const label = count === 1
                 ? d.formatDashboardLabel('feedOneNew', {}, '1 new since you last opened this')
                 : d.formatDashboardLabel('feedManyNew', { count }, `${count} new since you last opened this`);
+            freshBadge.title = label;
+            freshBadge.setAttribute('aria-label', label);
+            freshBadge.setAttribute('role', 'img');
+        } else if (quiet) {
+            freshBadge.classList.add('is-quiet');
+            freshBadge.textContent = '·';
+            const label = d.formatDashboardLabel('feedQuietMark', {},
+                'Publishes a feed — nothing new since you last opened this');
             freshBadge.title = label;
             freshBadge.setAttribute('aria-label', label);
             freshBadge.setAttribute('role', 'img');
@@ -726,6 +739,7 @@ class DashboardBookmarkRows {
             // feed reported something new — or whose badge was cleared by
             // opening it — has to be redrawn by the incremental renderer.
             String(this.dash.feeds?.freshFor(bookmark)?.newCount || 0),
+            this.dash.settings?.feedsMarkQuiet === true && this.dash.feeds?.hasFeed?.(bookmark) ? 'q' : '',
             showIcons,
             iconStylingKey,
         ].join('\u0001');
@@ -2145,12 +2159,29 @@ class DashboardBookmarkRows {
             if (!hit) return;
             const { row, safeHref } = hit;
 
-            // Ctrl/Cmd+click ticks the row, Shift+click extends from the anchor.
-            // Both must win over opening the link — and over the browser's own
-            // "open in new tab" on Ctrl+click, which is why preventDefault comes
-            // before anything else.
             const multi = d.multiSelect;
-            if (multi && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+
+            // Cmd+click on a Mac, Ctrl+click everywhere else: the browser's own
+            // "open in a new tab", and a gesture people use without thinking.
+            // This used to tick the row instead, with preventDefault — so the
+            // one modifier every link on the web honours did the opposite of
+            // what it does everywhere else, and on a Mac Ctrl+click opened our
+            // row menu on top of it, since that is the platform's secondary
+            // click. The open is recorded here, because letting the default
+            // through means the anchor's own handler never runs.
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+                if (!safeHref) {
+                    e.preventDefault();
+                    return;
+                }
+                recordOpen(row);
+                return;
+            }
+
+            // Alt+click ticks a row, Shift+click extends from the anchor. Alt
+            // took over from Cmd/Ctrl: it is the one modifier no browser and
+            // neither platform has already spoken for on a link.
+            if (multi && (e.altKey || e.shiftKey)) {
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.shiftKey) {

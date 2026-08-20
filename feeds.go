@@ -52,6 +52,30 @@ const (
 	// feedMaxFailures is when polling gives up on a feed until it is rediscovered.
 	// A feed that has answered badly this many times in a row is gone, not slow.
 	feedMaxFailures = 5
+	// feedPollInterval is how often a known feed is asked whether it has
+	// anything new.
+	//
+	// Its own number rather than the health recheck interval it used to borrow.
+	// That setting can be switched off entirely while Fresh is on — and was, on
+	// the install that reported this — so Fresh was pacing itself by a control
+	// the reader had told to stop, at a cadence (up to 24 hours) far too slow
+	// for something that answers "what is new". Every request is conditional, so
+	// an hour is unremarkable for the site on the other end.
+	feedPollInterval = time.Hour
+	// feedDiscoverTimeout bounds one page fetch while looking for a feed link,
+	// and feedDiscoverMaxBytes caps how much of the page is read: the <link> is
+	// in the head, and a page that has not declared one in this much never will.
+	feedDiscoverTimeout  = 8 * time.Second
+	feedDiscoverMaxBytes = 512 << 10
+	// feedDiscoverRetryAfter is how long a bookmark that turned out to have no
+	// feed is left alone. Most pages will never have one; a few gain one when
+	// the site is rebuilt, and a month is soon enough to notice that without
+	// asking every page every hour.
+	feedDiscoverRetryAfter = 30 * 24 * time.Hour
+	// feedDiscoverMaxPerRound bounds one discovery round. A collection larger
+	// than this is walked over several rounds rather than in one long burst of
+	// outbound requests.
+	feedDiscoverMaxPerRound = 60
 )
 
 // FeedState is everything remembered about one bookmark's feed.
@@ -75,12 +99,20 @@ type FeedState struct {
 	// Failures counts consecutive failed polls, so a dead feed stops being
 	// polled without being forgotten.
 	Failures int `json:"failures,omitempty"`
+	// DiscoveredAt is when this bookmark's page was last read looking for a feed
+	// link. Recorded even when nothing was found — a FeedURL of "" with a stamp
+	// means "asked, and this page has none", which is what stops every page
+	// being fetched again on the next round.
+	DiscoveredAt int64 `json:"discoveredAt,omitempty"`
 }
 
 // FeedStateFile is the whole of what feeds remember, on disk.
 type FeedStateFile struct {
 	Feeds    map[string]FeedState `json:"feeds"`
 	LastPoll int64                `json:"lastPoll,omitempty"`
+	// LastDiscovery is when the last look for new feed links finished, so the
+	// panel can say when it last asked rather than only what it found.
+	LastDiscovery int64 `json:"lastDiscovery,omitempty"`
 }
 
 var feedStateMu sync.Mutex
@@ -137,6 +169,145 @@ func recordDiscoveredFeed(bookmarkURL, feedURL string) {
 	existing.FeedURL = feedURL
 	state.Feeds[key] = existing
 	_ = writeFeedStateFile(state)
+}
+
+// DiscoverFeeds looks for a feed link on the bookmarks that have no known one.
+//
+// Fresh used to learn where a feed lives only as a side effect of fetching a
+// link preview, which made it unusable in the obvious case: an install with
+// link previews switched off never fetched a page, so nothing was ever
+// discovered, and turning Fresh on produced a dashboard that never changed. The
+// reader is told the feature will say what is new; whether it can say anything
+// should not depend on an unrelated setting they may never have touched.
+//
+// So Fresh asks for itself. One GET per bookmark that has never been looked at,
+// the head read and the rest dropped, the answer recorded either way — a stamp
+// with no feed URL means "asked, and this page has none", which is most pages.
+// Returns how many were looked at and how many turned out to have a feed.
+func (h *Handlers) DiscoverFeeds(ctx context.Context) (checked int, found int) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	feedStateMu.Lock()
+	state := readFeedStateFile()
+	if state.Feeds == nil {
+		state.Feeds = map[string]FeedState{}
+	}
+	known := make(map[string]FeedState, len(state.Feeds))
+	for key, feed := range state.Feeds {
+		known[key] = feed
+	}
+	feedStateMu.Unlock()
+
+	now := time.Now()
+	type target struct{ key, url string }
+	targets := make([]target, 0, feedDiscoverMaxPerRound)
+	seen := map[string]struct{}{}
+	for _, bookmark := range h.store.GetAllBookmarks() {
+		key := canonicalBookmarkURLKey(bookmark.URL)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		if feed, ok := known[key]; ok {
+			// A feed we already know about, or a page we asked recently enough.
+			if feed.FeedURL != "" {
+				continue
+			}
+			if feed.DiscoveredAt > 0 && now.Sub(time.UnixMilli(feed.DiscoveredAt)) < feedDiscoverRetryAfter {
+				continue
+			}
+		}
+		targets = append(targets, target{key: key, url: bookmark.URL})
+		if len(targets) >= feedDiscoverMaxPerRound {
+			break
+		}
+	}
+
+	results := make(map[string]string, len(targets))
+	for _, t := range targets {
+		select {
+		case <-ctx.Done():
+			// Whatever was answered before the deadline is still worth keeping.
+			goto persist
+		default:
+		}
+		checked++
+		feedURL := h.discoverFeedForURL(ctx, t.url)
+		results[t.key] = feedURL
+		if feedURL != "" {
+			found++
+		}
+	}
+
+persist:
+	if len(results) == 0 {
+		feedStateMu.Lock()
+		state = readFeedStateFile()
+		state.LastDiscovery = now.UnixMilli()
+		_ = writeFeedStateFile(state)
+		feedStateMu.Unlock()
+		return checked, found
+	}
+
+	feedStateMu.Lock()
+	defer feedStateMu.Unlock()
+	current := readFeedStateFile()
+	if current.Feeds == nil {
+		current.Feeds = map[string]FeedState{}
+	}
+	stamp := now.UnixMilli()
+	for key, feedURL := range results {
+		entry := current.Feeds[key]
+		// A different feed at the same bookmark drops the validators and the
+		// item timestamps: they belong to the old feed and would make the new
+		// one look already read.
+		if feedURL != "" && entry.FeedURL != feedURL {
+			entry = FeedState{FeedURL: feedURL}
+		}
+		entry.DiscoveredAt = stamp
+		current.Feeds[key] = entry
+	}
+	current.LastDiscovery = stamp
+	_ = writeFeedStateFile(current)
+	return checked, found
+}
+
+// discoverFeedForURL fetches one page and returns the feed it advertises, if any.
+func (h *Handlers) discoverFeedForURL(ctx context.Context, rawURL string) string {
+	if err := validateHTTPURL(rawURL, h.allowLocalBookmarks()); err != nil {
+		return ""
+	}
+	fetchCtx, cancel := context.WithTimeout(ctx, feedDiscoverTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(fetchCtx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return ""
+	}
+	req.Header.Set("User-Agent", "nextDash FeedFinder/1.0")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml")
+
+	resp, err := h.outboundHTTPClient(feedDiscoverTimeout, 5).Do(req)
+	if err != nil || resp == nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return ""
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, feedDiscoverMaxBytes))
+	if err != nil && len(body) == 0 {
+		return ""
+	}
+	feedURL := extractFeedFromHTML(string(body))
+	if feedURL == "" {
+		return ""
+	}
+	return h.resolveRelativeURL(resp.Request.URL.String(), feedURL)
 }
 
 // extractFeedFromHTML finds the page's own feed link.
@@ -351,7 +522,7 @@ func (h *Handlers) feedPollDue() bool {
 	if last <= 0 {
 		return true
 	}
-	return time.Since(time.UnixMilli(last)) >= h.healthAutoRecheckInterval()
+	return time.Since(time.UnixMilli(last)) >= feedPollInterval
 }
 
 // StartFeedPollScheduler polls known feeds until stop is closed.
@@ -381,6 +552,9 @@ func (h *Handlers) maybePollFeeds() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
+	// Look for feeds first: a bookmark added since the last round has never
+	// been asked, and polling before asking would skip it for a whole interval.
+	h.DiscoverFeeds(ctx)
 	h.PollAllFeeds(ctx)
 }
 
@@ -495,11 +669,49 @@ func (h *Handlers) GetFeeds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	state := readFeedStateFile()
+	bookmarks := h.store.GetAllBookmarks()
+	checked, withFeed := feedCoverage(state, bookmarks)
 	json.NewEncoder(w).Encode(map[string]any{
-		"enabled":  true,
-		"lastPoll": state.LastPoll,
-		"feeds":    freshnessForBookmarks(state, h.store.GetAllBookmarks()),
+		"enabled":       true,
+		"lastPoll":      state.LastPoll,
+		"lastDiscovery": state.LastDiscovery,
+		// What the reader needs to tell "nothing new" from "nothing to look at":
+		// how many of their bookmarks have been asked, and how many turned out
+		// to publish anything at all.
+		"bookmarks": len(bookmarks),
+		"checked":   checked,
+		"withFeed":  withFeed,
+		"feeds":     freshnessForBookmarks(state, bookmarks),
 	})
+}
+
+// feedCoverage counts how many bookmarks have been looked at, and how many of
+// those advertise a feed.
+func feedCoverage(state FeedStateFile, bookmarks []Bookmark) (checked int, withFeed int) {
+	seen := map[string]struct{}{}
+	for _, bookmark := range bookmarks {
+		key := canonicalBookmarkURLKey(bookmark.URL)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		feed, ok := state.Feeds[key]
+		if !ok {
+			continue
+		}
+		if feed.FeedURL != "" {
+			checked++
+			withFeed++
+			continue
+		}
+		if feed.DiscoveredAt > 0 {
+			checked++
+		}
+	}
+	return checked, withFeed
 }
 
 // PollFeedsNow runs a round on demand — the config panel's "check now".
@@ -509,13 +721,24 @@ func (h *Handlers) PollFeedsNow(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
 	defer cancel()
+	// Ask before counting: on the install that reported Fresh as broken, every
+	// bookmark was unknown, so polling alone had nothing to poll.
+	discovered, found := h.DiscoverFeeds(ctx)
 	polled := h.PollAllFeeds(ctx)
 
 	w.Header().Set("Content-Type", "application/json")
 	state := readFeedStateFile()
+	bookmarks := h.store.GetAllBookmarks()
+	checked, withFeed := feedCoverage(state, bookmarks)
 	json.NewEncoder(w).Encode(map[string]any{
-		"polled":   polled,
-		"lastPoll": state.LastPoll,
-		"feeds":    freshnessForBookmarks(state, h.store.GetAllBookmarks()),
+		"polled":        polled,
+		"discovered":    discovered,
+		"found":         found,
+		"lastPoll":      state.LastPoll,
+		"lastDiscovery": state.LastDiscovery,
+		"bookmarks":     len(bookmarks),
+		"checked":       checked,
+		"withFeed":      withFeed,
+		"feeds":         freshnessForBookmarks(state, bookmarks),
 	})
 }
