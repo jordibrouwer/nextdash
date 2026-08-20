@@ -70,10 +70,10 @@ test.describe('bookmark clicks are delegated', () => {
             row.appendChild(link);
             grid.appendChild(row);
 
-            // Ctrl+click, which the handler answers by ticking rather than
+            // Alt+click, which the handler answers by ticking rather than
             // opening — observable without navigating anywhere.
             const before = d.multiSelect.count();
-            link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
+            link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }));
             await new Promise((resolve) => setTimeout(resolve, 100));
             const after = d.multiSelect.count();
 
@@ -86,17 +86,16 @@ test.describe('bookmark clicks are delegated', () => {
         expect(handled.after).toBe(1);
     });
 
-    test('Ctrl+click still ticks the row instead of opening it', async ({ page }) => {
+    test('Alt+click still ticks the row instead of opening it', async ({ page }) => {
         await openDashboard(page);
 
         const link = page.locator('#dashboard-layout .bookmark-link[data-bookmark-index] a.bookmark-open').first();
-        await link.click({ modifiers: ['ControlOrMeta'] });
+        await link.click({ modifiers: ['Alt'] });
 
         await expect
             .poll(() => page.evaluate(() => window.dashboardInstance.multiSelect.count()))
             .toBe(1);
-        // Still on the dashboard: the browser's own "open in new tab" was
-        // stopped as well.
+        // Still on the dashboard: nothing was opened.
         expect(await page.evaluate(() => window.dashboardInstance.activeView)).toBe('bookmarks');
     });
 

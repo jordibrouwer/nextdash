@@ -5885,9 +5885,11 @@ class DashboardHealth {
         row.addEventListener('click', (e) => {
             if (e.target.closest('button')) return;
             if (e.target.closest('.health-view-select')) return;
-            // Ctrl/Cmd+click ticks one row, Shift+click extends from the anchor —
-            // the same two modifiers the dashboard grid uses.
-            if (e.ctrlKey || e.metaKey) {
+            // Alt+click ticks one row, Shift+click extends from the anchor —
+            // the same two modifiers the dashboard grid uses. Cmd/Ctrl is left
+            // to the browser and to the platform: on a Mac it is the secondary
+            // click, and on a link it opens a new tab.
+            if (e.altKey) {
                 e.preventDefault();
                 this.multiSelect?.toggle(key);
                 return;

@@ -2145,12 +2145,29 @@ class DashboardBookmarkRows {
             if (!hit) return;
             const { row, safeHref } = hit;
 
-            // Ctrl/Cmd+click ticks the row, Shift+click extends from the anchor.
-            // Both must win over opening the link — and over the browser's own
-            // "open in new tab" on Ctrl+click, which is why preventDefault comes
-            // before anything else.
             const multi = d.multiSelect;
-            if (multi && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+
+            // Cmd+click on a Mac, Ctrl+click everywhere else: the browser's own
+            // "open in a new tab", and a gesture people use without thinking.
+            // This used to tick the row instead, with preventDefault — so the
+            // one modifier every link on the web honours did the opposite of
+            // what it does everywhere else, and on a Mac Ctrl+click opened our
+            // row menu on top of it, since that is the platform's secondary
+            // click. The open is recorded here, because letting the default
+            // through means the anchor's own handler never runs.
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+                if (!safeHref) {
+                    e.preventDefault();
+                    return;
+                }
+                recordOpen(row);
+                return;
+            }
+
+            // Alt+click ticks a row, Shift+click extends from the anchor. Alt
+            // took over from Cmd/Ctrl: it is the one modifier no browser and
+            // neither platform has already spoken for on a link.
+            if (multi && (e.altKey || e.shiftKey)) {
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.shiftKey) {

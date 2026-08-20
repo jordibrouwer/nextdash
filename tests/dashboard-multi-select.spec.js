@@ -153,22 +153,46 @@ test.describe('multi-select', () => {
         )).toBe(bookmarkCount);
     });
 
-    test('Ctrl+click ticks a row without opening it', async ({ page }) => {
+    test('Alt+click ticks a row without opening it', async ({ page }) => {
         await openDashboard(page);
 
         const firstRow = page.locator('.bookmark-link[data-bookmark-index]').first();
-        await firstRow.locator('a.bookmark-open').click({ modifiers: ['ControlOrMeta'] });
+        await firstRow.locator('a.bookmark-open').click({ modifiers: ['Alt'] });
 
         expect(await selectionCount(page)).toBe(1);
         // Still on the dashboard: the click did not follow the link.
         await expect(page.locator('#dashboard-layout')).toBeVisible();
     });
 
+    /**
+     * Cmd/Ctrl+click belongs to the browser.
+     *
+     * It used to tick the row, with preventDefault — so the one modifier every
+     * link on the web honours did the opposite of what it does everywhere else,
+     * and on a Mac it came with the row menu on top, Ctrl+click being the
+     * platform's secondary click.
+     */
+    test('Cmd/Ctrl+click opens the bookmark instead of ticking it', async ({ page, context }) => {
+        await openDashboard(page);
+
+        const firstRow = page.locator('.bookmark-link[data-bookmark-index]').first();
+        const opened = context.waitForEvent('page', { timeout: 10_000 });
+        await firstRow.locator('a.bookmark-open').click({ modifiers: ['ControlOrMeta'] });
+
+        const tab = await opened;
+        await tab.close();
+        expect(await selectionCount(page)).toBe(0);
+        // And the open is still counted: letting the default through means the
+        // anchor's own handler never runs, so the row records it itself.
+        await expect.poll(() => page.evaluate(() =>
+            (window.dashboardInstance.bookmarks[0].openCount || 0) > 0), { timeout: 5_000 }).toBe(true);
+    });
+
     test('Shift+click extends from the ticked row', async ({ page }) => {
         await openDashboard(page);
 
         const rows = page.locator('.bookmark-link[data-bookmark-index]');
-        await rows.nth(0).locator('a.bookmark-open').click({ modifiers: ['ControlOrMeta'] });
+        await rows.nth(0).locator('a.bookmark-open').click({ modifiers: ['Alt'] });
         await rows.nth(2).locator('a.bookmark-open').click({ modifiers: ['Shift'] });
 
         expect(await selectionCount(page)).toBe(3);
@@ -178,7 +202,7 @@ test.describe('multi-select', () => {
         await openDashboard(page);
 
         const rows = page.locator('.bookmark-link[data-bookmark-index]');
-        await rows.nth(0).locator('a.bookmark-open').click({ modifiers: ['ControlOrMeta'] });
+        await rows.nth(0).locator('a.bookmark-open').click({ modifiers: ['Alt'] });
         expect(await selectionCount(page)).toBe(1);
 
         await rows.nth(3).locator('a.bookmark-open').click();

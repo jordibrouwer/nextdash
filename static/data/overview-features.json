@@ -182,7 +182,7 @@
       "howKey": "config.overviewNewFeatureBulkUndoHow",
       "howFallback": "The toast now offers Undo for eight seconds and puts every bookmark back in the position it held. A delete that fails puts them back on its own and says so. The trash still catches everything for 30 days after that.",
       "enableKey": "config.overviewNewFeatureBulkUndoEnable",
-      "enableFallback": "Nothing to switch on. Tick some rows with x, or Ctrl-click them, and Delete asks once for the whole set.",
+      "enableFallback": "Nothing to switch on. Tick some rows with x, or Alt-click them, and Delete asks once for the whole set.",
       "ctaKey": "config.overviewNewFeatureBulkUndoCta",
       "ctaFallback": "Open the trash →",
       "go": {
@@ -553,7 +553,7 @@
       "whatKey": "config.overviewNewFeatureMultiSelectWhat",
       "whatFallback": "Bulk move and bulk delete used to live in the tag filter, so acting on several bookmarks meant they had to share a tag. Any rows will do now — x ticks one, X takes a whole category.",
       "howKey": "config.overviewNewFeatureMultiSelectHow",
-      "howFallback": "Press x to tick the row under the cursor, X for the whole category, Shift+↑/↓ for a range, Ctrl/Cmd+A for everything on screen — or Ctrl+click and Shift+click with the mouse. Select is in the right-click menu too.",
+      "howFallback": "Press x to tick the row under the cursor, X for the whole category, Shift+↑/↓ for a range, Ctrl/Cmd+A for everything on screen — or Alt+click and Shift+click with the mouse. Select is in the right-click menu too.",
       "enableKey": "config.overviewNewFeatureMultiSelectEnable",
       "enableFallback": "Nothing to switch on. A toolbar appears with Move, Open, Copy links and Delete; Escape clears the selection.",
       "ctaKey": "config.overviewNewFeatureMultiSelectCta",
