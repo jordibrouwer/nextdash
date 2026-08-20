@@ -73,6 +73,10 @@
         {
           "badge": "new",
           "text": "<strong>Opening the bookmark clears it</strong>, and that is the whole of it. No article list, no read state to keep in order — this is not a feed reader, only a bookmark that can say <em>3</em>."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Fresh introduces itself.</strong> A card in the corner offers it once, with a short walkthrough: what the count on a row means, the collection it gathers into, why it costs almost nothing, and what it is not — no articles, no reading list. The last step turns it on if you want it. It is also explained in full under <strong>Config → Help → Monitoring</strong>."
         }
       ]
     },

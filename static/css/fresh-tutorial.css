@@ -1,0 +1,178 @@
+/**
+ * The Fresh walkthrough.
+ *
+ * Same shape as spread-tutorial.css, inbox-tutorial.css and health-tutorial.css:
+ * the app's modal chrome carries the title and the buttons, and only the reading
+ * column between them is styled here. Its own sheet, so no tour's visuals drift
+ * into another's.
+ *
+ * The visuals are stand-in bookmark rows rather than diagrams, because what
+ * Fresh changes is a row you already know the look of — one small count on the
+ * right of it, and a collection made of the same rows.
+ */
+body:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tutorial-modal) .modal {
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+body:has(#dashboard-layout) #app-modal.modal-overlay.show:has(.fresh-tutorial-modal) .modal {
+    transform: translateY(0) scale(1);
+    transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+
+body.no-animations:has(#dashboard-layout) #app-modal.modal-overlay:has(.fresh-tutorial-modal) .modal {
+    transform: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
+.fresh-tutorial-progress {
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin: 0 0 0.4rem;
+}
+
+.fresh-tutorial-step-title {
+    margin: 0 0 0.7rem;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.fresh-tutorial-step-body p {
+    margin: 0 0 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.fresh-tutorial-step-body p:last-child {
+    margin-bottom: 0;
+}
+
+.fresh-tutorial-visual {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    margin: 0 0 0.9rem;
+    border: 1px dashed var(--border-secondary);
+    border-radius: 0.5rem;
+    background: var(--background-secondary);
+}
+
+.fresh-tutorial-visual--flow {
+    justify-content: center;
+}
+
+.fresh-tutorial-stack,
+.fresh-tutorial-collection {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.4rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 0.35rem;
+    background: var(--background-primary);
+}
+
+.fresh-tutorial-collection-title {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.15rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.fresh-tutorial-count {
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* A stand-in row: icon, name, and the one thing Fresh adds on the right. */
+.fresh-tutorial-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.25rem 0.35rem;
+    border-radius: 0.25rem;
+    background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+}
+
+.fresh-tutorial-icon {
+    width: 0.7rem;
+    height: 0.7rem;
+    flex: 0 0 auto;
+    border-radius: 0.18rem;
+    background: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+}
+
+.fresh-tutorial-name {
+    flex: 1 1 auto;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* The count itself, drawn as the row draws it: small, quiet, on the right. */
+.fresh-tutorial-badge {
+    flex: 0 0 auto;
+    min-width: 1.15rem;
+    padding: 0.05rem 0.3rem;
+    border-radius: 999px;
+    background: var(--accent-primary);
+    color: var(--background-primary);
+    font-size: 0.68rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.4;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.fresh-tutorial-arrow {
+    color: var(--text-tertiary);
+    font-size: 0.95rem;
+}
+
+.fresh-tutorial-chip {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* The conditional request's answer: the cheap end of the route, so it is drawn
+   as the quiet one. */
+.fresh-tutorial-chip--quiet {
+    border-style: dashed;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.fresh-tutorial-note {
+    flex: 1 1 auto;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.fresh-tutorial-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-top: 0.9rem;
+}
+
+.fresh-tutorial-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--border-primary);
+}
+
+.fresh-tutorial-dot.is-active {
+    background: var(--accent-primary);
+}

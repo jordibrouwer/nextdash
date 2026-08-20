@@ -17637,6 +17637,21 @@ class DashboardConfig {
                 captionKey: 'config.helpArtDrift', caption: 'Answering fine, no longer your page',
             },
         ],
+        'config.helpFreshTitle': [
+            {
+                kind: 'bookmarkRow', value: ['icon', 'key'],
+                captionKey: 'config.helpArtFreshRow', caption: 'A count on the row',
+            },
+            {
+                kind: 'flow',
+                value: [
+                    { k: 'config.helpArtFreshPreview', d: 'Link preview' },
+                    { k: 'config.helpArtFreshFeed', d: 'Feed address' },
+                    '304',
+                ],
+                captionKey: 'config.helpArtFreshCost', caption: 'Found once, then asked cheaply',
+            },
+        ],
         'config.helpHealthMaintenanceTitle': [
             {
                 kind: 'dayWindow', value: { from: 3, to: 4 },
@@ -17776,14 +17791,15 @@ class DashboardConfig {
             isOn: (s) => s.analyticsOptIn === true,
             go: { section: 'behavior', behaviorTab: 'privacy' },
         },
-        // Off on a fresh install, which is exactly when a reader is most likely
-        // to follow the prose and find nothing where it says. Fresh has no
-        // panel of its own to hang a line on — it is a paragraph inside the
-        // monitoring prose — so it is not listed here rather than being
-        // attached to a panel about something else.
+        // Both are off on a fresh install, which is exactly when a reader is
+        // most likely to follow the prose and find nothing where it says.
         'config.helpServerLogTitle': {
             isOn: (s) => s.serverLogEnabled === true,
             go: { section: 'data-backups', dbTab: 'logs' },
+        },
+        'config.helpFreshTitle': {
+            isOn: (s) => s.feedsEnabled === true,
+            go: { section: 'behavior', behaviorTab: 'status' },
         },
     };
 
@@ -17947,6 +17963,7 @@ class DashboardConfig {
      * in help by a factor of seven, and the one people scrolled past.
      */
     renderHelpMonitoring() {
+        const esc = (v) => this.dash.escapeHtml(v);
         return this.helpPanel('config.helpHealthStatsTitle', 'Uptime, trends & statistics',
             'config.helpHealthStatsBody', '')
             + this.helpPanel('config.helpHealthExpectTitle', 'When "up" is not good enough',
@@ -17957,6 +17974,14 @@ class DashboardConfig {
                 'config.helpHealthDriftBody', '')
             + this.helpPanel('config.helpHealthMaintenanceTitle', 'Maintenance windows',
                 'config.helpHealthMaintenanceBody', '')
+            // Fresh sat in a paragraph of the Behavior article, which is where
+            // its switch is rather than where its subject is: it is a thing the
+            // dashboard does with a bookmark, like everything else on this tab.
+            + this.helpPanel('config.helpFreshTitle', 'Fresh',
+                'config.helpFreshBody', '',
+                `<div class="config-actions">
+                    <button type="button" class="config-btn" data-help-action="fresh-tour">${esc(this.t('config.helpFreshTour', 'Walk me through Fresh'))}</button>
+                </div>`)
             + this.helpPanel('config.helpNotificationsTitle', 'Alerts & notifications',
                 'config.helpNotificationsBody', '');
     }
@@ -18419,6 +18444,8 @@ class DashboardConfig {
                     // view first or it would open behind it.
                     this.closeConfigView();
                     this.dash.showKeyboardCheatSheet?.();
+                } else if (action === 'fresh-tour') {
+                    window.FreshTutorial?.open?.();
                 } else if (action === 'spread-tour') {
                     // Config is a view on this same page and the walkthrough is
                     // a modal over it, so this one can stay where it is — the

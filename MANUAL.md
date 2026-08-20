@@ -927,7 +927,7 @@ Each can be limited to certain pages and item limits (`0` = unlimited).
 
 Every collection above keys on something *you* did. **Fresh** keys on what changed, which is the one question the others cannot answer: what is worth opening right now.
 
-Turn it on in **config → behavior → status → Fresh**. It is off by default because it is the only thing here that reaches out to the internet on a schedule.
+Turn it on in **config → behavior → status → Fresh**. It is off by default because it is the only thing here that reaches out to the internet on a schedule. A card in the corner offers it once on a dashboard that has more than the starter bookmarks on it, and opens a four-step walkthrough — the count on a row, the collection it gathers into, what the polling actually costs, and what it deliberately is not — ending on the switch. **Config → Help → Monitoring → Fresh** carries the same walkthrough on a button, with a line saying whether it is on for you.
 
 - When a bookmark's page advertises an RSS or Atom feed, nextDash notes where the feed is while it fetches previews — so switching Fresh on costs no re-fetch.
 - Feeds are polled on the **background re-check interval** with a conditional request, so a quiet blog costs a few hundred bytes.
