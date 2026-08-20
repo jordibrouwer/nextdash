@@ -5110,3 +5110,53 @@ button.config-bm-shortcut-pill {
     text-decoration: none;
     display: inline-block;
 }
+
+/* What the figures say, in three sentences, each with the button that acts on
+   it. A number you cannot act on is trivia; this panel is the difference. */
+.config-stats-summary-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.config-stats-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.config-stats-summary-text {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+/* Which way a count moved this week, beside the count itself. Quiet: the
+   number is the fact, the direction is the footnote. */
+.config-tile-delta {
+    margin-left: 0.35rem;
+    font-size: 0.62em;
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+}
+
+.config-tile-delta--up { color: var(--accent-success, #2e7d32); }
+.config-tile-delta--down { color: var(--text-muted, #777); }
+
+.config-tile-delta-period {
+    font-weight: 400;
+    opacity: 0.75;
+}
+
+/* The chart in a sentence, above the bars: the shape a table of thirty numbers
+   cannot give, and the peak a sighted reader would otherwise have to hover for. */
+.config-chart-summary {
+    margin: 0 0 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-muted, #777);
+}

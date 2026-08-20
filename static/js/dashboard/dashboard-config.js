@@ -470,10 +470,69 @@ class DashboardConfig {
      * was missing from three of them and so was fetched eagerly on every visit
      * instead; keeping the rule in one place is what stops that recurring.
      */
-    loadStatsTabData(tab) {
-        if (tab === 'inbox' && this._statsInboxItems === undefined) void this.loadStatsInbox();
-        if (tab === 'activity' && this._statsFinders === undefined) void this.loadStatsFinders();
-        if (tab === 'health' && this._statsHealth === undefined) void this.loadStatsHealth();
+    /**
+     * The figures a tab needs from the server.
+     *
+     * `all` loads every tab's, which is what the section wants on the way in:
+     * Health and Inbox are two of the five tabs, and until they had been
+     * *visited* they contributed nothing to the export and nothing to the
+     * summary — a difference in where a number comes from, leaking out as a
+     * difference in what the reader gets.
+     */
+    /**
+     * The daily points, without the report they usually ride with.
+     *
+     * Statistics showed every figure as a number and none as a direction, and
+     * the history that answers "is this going up" was already on disk — it just
+     * arrived attached to a full health report, which is far too much to build
+     * on the way into a section. This is a file read of a few dozen points.
+     */
+    async loadStatsTrend() {
+        if (this._statsTrend !== undefined) return this._statsTrend;
+        this._statsTrend = null;
+        try {
+            const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await fetcher('/api/health/trend');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            this._statsTrend = Array.isArray(data?.points) ? data.points : [];
+        } catch {
+            // No history is not an error: a fresh install has none, and a
+            // section that cannot say which way a number moved still says what
+            // the number is.
+            this._statsTrend = [];
+        }
+        if (this.isActiveView() && this.section === 'stats') this.repaintStatsBody();
+        return this._statsTrend;
+    }
+
+    /**
+     * The point from about `days` ago, or null when history does not reach back
+     * that far. Nearest match rather than exact: a day with no report recorded
+     * no point, and the answer to "roughly a week ago" is the nearest day there
+     * is, not nothing.
+     */
+    statsTrendPointDaysAgo(days) {
+        const points = Array.isArray(this._statsTrend) ? this._statsTrend : [];
+        if (points.length < 2) return null;
+        const target = Date.now() - days * 86400000;
+        // Anything more recent than half the window is "now", not "then".
+        const cutoff = Date.now() - (days / 2) * 86400000;
+        let best = null;
+        for (const p of points) {
+            const t = Number(p?.t) || 0;
+            if (!t || t > cutoff) continue;
+            if (!best || Math.abs(t - target) < Math.abs((Number(best.t) || 0) - target)) best = p;
+        }
+        return best;
+    }
+
+    loadStatsTabData(tab, { all = false } = {}) {
+        // History is cheap and every tab can use it, so it is not gated on one.
+        if (this._statsTrend === undefined) void this.loadStatsTrend();
+        if ((all || tab === 'inbox') && this._statsInboxItems === undefined) void this.loadStatsInbox();
+        if ((all || tab === 'activity') && this._statsFinders === undefined) void this.loadStatsFinders();
+        if ((all || tab === 'health') && this._statsHealth === undefined) void this.loadStatsHealth();
     }
 
     /**
@@ -16158,6 +16217,7 @@ class DashboardConfig {
      * collection is made of, and what needs fixing.
      */
     renderStats() {
+        this.invalidateStatsCache();
         // The renderers for this section live in dashboard-config-stats.js and
         // arrive with the first visit to it; the shell below is drawn either way
         // and renderStatsBody fills in once they are here.
@@ -16185,6 +16245,7 @@ class DashboardConfig {
             <p class="config-view-intro">${esc(this.t('config.statsIntroView', 'What is in your dashboard right now. These numbers update as you change things.'))}</p>
             <div class="config-stats-head">
                 <div class="config-subtabs" role="tablist">${tabs}</div>
+                ${typeof this.statsPanelLink === 'function' ? this.statsPanelLink(this.statsTab) : ''}
                 ${scope}
             </div>
             <div id="config-stats-body" role="tabpanel" tabindex="0">${this.renderStatsBodySafe()}</div>
@@ -16253,6 +16314,7 @@ class DashboardConfig {
     }
 
     repaintStatsBody() {
+        this.invalidateStatsCache();
         const host = document.getElementById('config-stats-body');
         if (!host) { this.render(); return; }
         host.innerHTML = this.renderStatsBodySafe();
@@ -16388,7 +16450,51 @@ class DashboardConfig {
         return page ? [page] : (this.dash.pages || []);
     }
 
+    /**
+     * The figures, computed once per state rather than once per paint.
+     *
+     * This walks every bookmark five times over — tags, categories, opens,
+     * shortcuts, URLs — and it ran on every render: a tab switch, a scope
+     * change, the Overview cards, the export. On a large collection that is the
+     * most expensive thing config does, repeated for a set of numbers that
+     * cannot have changed between two paints of the same data.
+     *
+     * The memo lives for one paint, not for the session. A bookmark's own fields
+     * are edited in place all over the app — an open bumps a count, a check
+     * writes a timestamp — and no key derived from the collection would notice
+     * that reliably. So every render of the section drops it first: within one
+     * paint the six callers share one computation, and the next paint starts
+     * again from the data as it now is. That is where the cost was.
+     */
     computeStats() {
+        const scope = this.statsScopePage();
+        const key = [
+            (this.dash.allBookmarks || []).length,
+            scope ? scope.id : '',
+            this.bookmarkStaleDays(),
+            // The activity buckets are computed in here too, and they are cut
+            // by the chosen range: without it, switching 30 days to 7 handed
+            // back the same chart.
+            this.statsRange || 30,
+            this.dash.dataRevision ?? this.dash.data?.revision ?? '',
+            this._statsCacheStamp || 0,
+        ].join('|');
+        if (this._statsCache && this._statsCacheKey === key) return this._statsCache;
+
+        const computed = this.computeStatsUncached();
+        this._statsCacheKey = key;
+        this._statsCache = computed;
+        return computed;
+    }
+
+    /** Drop the memoised figures — anything that edits bookmarks calls this. */
+    invalidateStatsCache() {
+        this._statsCache = null;
+        this._statsCacheKey = '';
+        this._statsCacheStamp = (this._statsCacheStamp || 0) + 1;
+    }
+
+    computeStatsUncached() {
         const all = this.statsScopedBookmarks();
         const pages = this.statsScopedPages();
         const total = all.length;
@@ -16915,16 +17021,22 @@ class DashboardConfig {
         container.querySelectorAll('[data-stats-action]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-stats-action');
-                if (action === 'export') this.exportStatsCSV();
+                if (action === 'export') void this.exportStatsCSV();
                 // Recomputed from what is in memory, so this is a repaint
                 // rather than a fetch — except for the two tabs whose figures
                 // come from the server, which are dropped so they are asked for
                 // again.
                 if (action === 'refresh') {
+                    this._statsTrend = undefined;
                     this._statsHealth = undefined;
                     this._statsInboxItems = undefined;
                     this._statsInboxAgg = undefined;
                     this._statsFinders = undefined;
+                    // Refresh means "work them out again", so the memo goes too
+                    // — otherwise the button would only re-fetch the two
+                    // server-side tabs and hand back the same cached arithmetic
+                    // for the other three.
+                    this.invalidateStatsCache();
                     this.loadStatsTabData(this.statsTab);
                     this.repaintStatsBody();
                 }
@@ -16936,6 +17048,15 @@ class DashboardConfig {
                 // view that repairs them.
                 if (action === 'open-health-view') this.openViewFromTile('health');
                 if (action === 'add-bookmark') this.openAddBookmarkModal();
+                // The summary's own way through: the shortcut panel it names
+                // lives on Activity, a tab away from where the line is read.
+                if (action === 'shortcuts') {
+                    this.statsTab = 'activity';
+                    this.restoreConfigHash();
+                    this.render();
+                    setTimeout(() => document.getElementById('config-stats-shortcuts')
+                        ?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 80);
+                }
             });
         });
         // Cleanup candidates hand off to the bookmarks list, which is where the
@@ -16973,11 +17094,29 @@ class DashboardConfig {
                 this.bmPageFilter = '';
                 this.bmCategoryFilter = '';
                 this.bmTagFilter = kind === 'tag' ? [String(value).toLowerCase()] : [];
+                // A bookmark or a category names a row rather than a tag, so it
+                // arrives as the list's own search — the filter that reproduces
+                // "this row, in the list where I can act on it".
+                if (kind === 'bookmark' || kind === 'category') this.bmQuery = String(value);
+                if (kind === 'category') this.bmCategoryFilter = String(value);
                 this.bmSelected.clear();
                 this.resetBookmarkVisibleLimit();
                 this._bmDuplicateUrls = null;
                 this._trackAction('stats-goto', { kind });
                 this.openConfigView('bookmarks');
+            });
+        });
+
+        // The 🔗 beside a tab's heading, same clipboard path as Help's.
+        container.querySelectorAll('[data-stats-panel-link]').forEach((btn) => {
+            if (btn.dataset.statsLinkBound === '1') return;
+            btn.dataset.statsLinkBound = '1';
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-stats-panel-link') || this.statsTab;
+                const url = `${window.location.origin}${window.location.pathname}#config/stats/${tab}`;
+                void navigator.clipboard?.writeText(url)
+                    .then(() => this.notify(this.t('config.helpLinkCopied', 'Link copied'), 'success'))
+                    .catch(() => this.notify(this.t('config.copyFailed', 'Could not copy'), 'error'));
             });
         });
 
@@ -17002,7 +17141,25 @@ class DashboardConfig {
     }
 
     /** The report as a flat CSV, so it can be worked through in a spreadsheet. */
-    exportStatsCSV() {
+    /**
+     * Every tab's figures, including the two that are not on screen.
+     *
+     * Health and Inbox come from the server and load when their tab is opened —
+     * deliberately, so opening Statistics does not fetch what nobody asked to
+     * see. That left the export carrying three tabs out of five, dressed as a
+     * complete file. It waits for them here instead: the cost lands on the
+     * button that wants them rather than on every visit, and the file says
+     * `inbox_included,0` if a fetch failed rather than quietly dropping rows.
+     */
+    async exportStatsCSV() {
+        await Promise.all([
+            this._statsInboxAgg === undefined ? this.loadStatsInbox() : null,
+            this._statsHealth === undefined ? this.loadStatsHealth() : null,
+        ].filter(Boolean)).catch(() => {});
+        return this.buildAndDownloadStatsCSV();
+    }
+
+    buildAndDownloadStatsCSV() {
         const s = this.computeStats();
         const a = s.activity;
         const scopePage = this.statsScopePage();
@@ -17053,12 +17210,15 @@ class DashboardConfig {
         // in a spreadsheet rather than only visible on screen.
         (a.dateLabels || []).forEach((d, i) => rows.push([`bookmarks_last_used:${d}`, a.buckets[i]]));
 
-        // Inbox and Health are two of the five tabs and contributed nothing:
-        // both come from the server rather than from computeStats(), which is
-        // how they were missed. Included when they have been loaded — the tab
-        // fetches on first visit, and an export from Overview should not block
-        // on two requests it may not need.
+        // Inbox and Health are two of the five tabs and come from the server
+        // rather than from computeStats(). The section loads both on the way in
+        // now, so an export normally carries them — but a download fired before
+        // those answered would otherwise be a complete-looking file with two
+        // tabs silently missing. So the file says which it is: `included,0`
+        // reads as "asked, and it is not in here".
         const inbox = this._statsInboxAgg;
+        rows.push(['inbox_included', inbox ? 1 : 0]);
+        rows.push(['health_included', this._statsHealth ? 1 : 0]);
         if (inbox) {
             rows.push(['inbox_waiting', Number(this._statsInboxItems?.length || 0)]);
             rows.push(['inbox_added_lifetime', Number(inbox.totalAdded || 0)]);

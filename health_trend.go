@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"net/http"
 	"os"
 	"sort"
 	"time"
@@ -74,8 +75,17 @@ func trimTrendPoints(points []HealthTrendPoint, cutoff int64) []HealthTrendPoint
 }
 
 // trendPointFromSummary turns a report summary into the day's point.
-func trendPointFromSummary(s HealthSummary, averageScore int, at time.Time) HealthTrendPoint {
+func trendPointFromSummary(s HealthSummary, averageScore int, at time.Time, bookmarks []Bookmark) HealthTrendPoint {
+	untagged, opens := 0, 0
+	for _, b := range bookmarks {
+		if len(b.Tags) == 0 {
+			untagged++
+		}
+		opens += b.OpenCount
+	}
 	return HealthTrendPoint{
+		Untagged:  untagged,
+		Opens:     opens,
 		T:         dayStart(at),
 		Total:     s.TotalBookmarks,
 		Healthy:   s.HealthyCount,
@@ -132,7 +142,13 @@ func (h *Handlers) recordHealthTrend(report BookmarkHealthReport) {
 
 	now := time.Now()
 	trend := readHealthTrendFile()
-	point := trendPointFromSummary(report.Summary, averageHealthScore(report.Issues), now)
+	// The store is absent in tests that exercise the file round-trip alone, and
+	// the two collection counts are worth having only when it is there.
+	var bookmarks []Bookmark
+	if h.store != nil {
+		bookmarks = h.store.GetAllBookmarks()
+	}
+	point := trendPointFromSummary(report.Summary, averageHealthScore(report.Issues), now, bookmarks)
 	trend.Points = upsertTrendPoint(trend.Points, point)
 	trend.Points = trimTrendPoints(trend.Points, now.Add(-healthTrendRetention).UnixMilli())
 	trend.GeneratedAt = now.UnixMilli()
@@ -151,4 +167,23 @@ func (h *Handlers) readHealthTrend() []HealthTrendPoint {
 
 	trend := readHealthTrendFile()
 	return trimTrendPoints(trend.Points, time.Now().Add(-healthTrendRetention).UnixMilli())
+}
+
+// GetHealthTrend serves the recorded daily points on their own.
+//
+// The same points ride along with /api/bookmark-health, but that endpoint
+// builds a full report — every issue, every score — which is far too much to
+// ask for on the way into Statistics. Overview wants one thing from history:
+// whether a number is going up or down. This is a file read of a few dozen
+// points, so the section can show a direction without the report behind it.
+func (h *Handlers) GetHealthTrend(w http.ResponseWriter, r *http.Request) {
+	points := h.readHealthTrend()
+	if points == nil {
+		points = []HealthTrendPoint{}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"points":      points,
+		"generatedAt": time.Now().UnixMilli(),
+	})
 }

@@ -3751,6 +3751,14 @@ type HealthTrendPoint struct {
 	Stale     int   `json:"s,omitempty"`
 	Unused    int   `json:"x,omitempty"`
 	Duplicate int   `json:"p,omitempty"`
+	// Untagged and Opens make this a record of the collection rather than only
+	// of its health. Statistics could show every figure it has as a number and
+	// none of them as a direction: "102 bookmarks" says nothing about whether
+	// that is ten more than last week. These two are the ones that move on
+	// their own — tagging is the tidying people actually do, and opens are what
+	// the library is for — and both were already counted on every report build.
+	Untagged int `json:"g,omitempty"`
+	Opens    int `json:"o,omitempty"`
 	// Score is the average health score across the collection, 0..100. Stored
 	// alongside the counts because the header badge shows a percentage healthy
 	// while the rows carry scores, and a trend of one cannot be derived from the

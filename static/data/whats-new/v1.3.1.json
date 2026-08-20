@@ -26,11 +26,36 @@
       ]
     },
     {
+      "title": "Statistics that say something",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>What this says.</strong> Statistics opens with the three things its figures actually mean — where your opening lands, what is going unread, what is not answering — each with the button that acts on it. Nothing to report means nothing shown."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The tiles say which way a count moved.</strong> nextDash has been recording a point a day all along; the overview reads it now. <em>+7 this week</em> when it moved, and silence when it did not."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Rows hand off, tabs can be linked.</strong> A most-opened bookmark or a category now takes you to the list where you can act on it, and every tab carries a link you can copy."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The export carries every tab.</strong> Downloading from Overview used to leave the Inbox and Health figures out of a complete-looking file."
+        }
+      ]
+    },
+    {
       "title": "On the grid",
       "items": [
         {
           "badge": "fix",
           "text": "<strong>Ctrl/Cmd+click opens a bookmark in a new tab again.</strong> It used to tick the row for a bulk action instead — the one modifier every link on the web honours, doing the opposite of what it does everywhere else, and on a Mac with the row menu on top. Ticking a row with the mouse is <strong>Alt+click</strong> now."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The row menu in Health shows all of itself.</strong> It used to cap at a fixed height and scroll inside, which hid whatever was at the bottom of the list."
         }
       ]
     },
@@ -49,7 +74,3 @@
     }
   ]
 }
-        },
-        {
-          "badge": "fix",
-          "text": "<strong>The row menu in Health shows all of itself.</strong> It used to cap at a fixed height and scroll inside, which hid whatever was at the bottom of the list."

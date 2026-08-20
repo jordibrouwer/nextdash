@@ -61,6 +61,20 @@
                 </div>`;
         },
 
+        /**
+         * A copyable link to one panel, as Help offers on its articles.
+         *
+         * Statistics is deep-linkable — #config/stats/activity has worked all
+         * along — but nothing on the page said so, so sharing "look at the
+         * concentration figure" meant describing where to click.
+         */
+        statsPanelLink(id) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const label = this.t('config.statsCopyLink', 'Copy a link to this tab');
+            return `<button type="button" class="config-help-panel-link" data-stats-panel-link="${esc(id)}"
+                    title="${esc(label)}" aria-label="${esc(label)}">🔗</button>`;
+        },
+
         renderStatsBody() {
             const esc = (v) => this.dash.escapeHtml(v);
             const s = this.computeStats();
@@ -74,12 +88,31 @@
             // them as two loose strings that only made sense because they happened
             // to be adjacent. aria-label names the tile as one thing — "Bookmarks:
             // 102" — and the spans are hidden so it is not then read twice.
-            const tile = (label, value, hint) => `
-                <div class="config-tile" role="listitem" aria-label="${esc(label)}: ${esc(this.statsNumber(value))}${hint ? `. ${esc(hint)}` : ''}">
+            // `was` is the same figure a week ago, when history reaches back
+            // that far: a count says what you have, a direction says what you
+            // are doing. Only shown when it actually moved — "+0 this week" is
+            // noise dressed as information.
+            const tile = (label, value, hint, was = null) => {
+                const delta = (was === null || was === undefined) ? null : Number(value) - Number(was);
+                const trend = delta ? `
+                    <span class="config-tile-delta config-tile-delta--${delta > 0 ? 'up' : 'down'}">
+                        ${delta > 0 ? '+' : '−'}${esc(this.statsNumber(Math.abs(delta)))}
+                        <span class="config-tile-delta-period">${esc(this.t('config.statsDeltaWeek', 'this week'))}</span>
+                    </span>` : '';
+                const spoken = delta
+                    ? `${esc(label)}: ${esc(this.statsNumber(value))}, ${delta > 0 ? '+' : '−'}${esc(this.statsNumber(Math.abs(delta)))} ${esc(this.t('config.statsDeltaWeek', 'this week'))}`
+                    : `${esc(label)}: ${esc(this.statsNumber(value))}`;
+                return `
+                <div class="config-tile" role="listitem" aria-label="${spoken}${hint ? `. ${esc(hint)}` : ''}">
                     <span class="config-tile-label" aria-hidden="true">${esc(label)}</span>
-                    <span class="config-tile-value" aria-hidden="true">${esc(this.statsNumber(value))}</span>
+                    <span class="config-tile-value" aria-hidden="true">${esc(this.statsNumber(value))}${trend}</span>
                     ${hint ? `<p class="config-tile-detail" aria-hidden="true">${esc(hint)}</p>` : ''}
                 </div>`;
+            };
+            // A week back, from the daily points the health report records.
+            // Narrowed to one page, the figures no longer describe what history
+            // recorded, so the comparison is dropped rather than made up.
+            const ago = this.statsScopePage() ? null : this.statsTrendPointDaysAgo(7);
 
             switch (this.statsTab) {
                 case 'activity':
@@ -110,17 +143,93 @@
                 default:
                     return `
                         <div class="config-tiles config-tiles--overview" role="list">
-                            ${tile(this.t('config.statsBookmarks', 'Bookmarks'), s.total)}
+                            ${tile(this.t('config.statsBookmarks', 'Bookmarks'), s.total, '', ago?.n)}
                             ${tile(this.t('config.statsPages', 'Pages'), s.pages)}
                             ${tile(this.t('config.statsCategoryCount', 'Categories'), s.categories)}
                             ${tile(this.t('config.statsTagCount', 'Distinct tags'), s.tagCount)}
                             ${tile(this.t('config.statsWithShortcut', 'With a shortcut'), s.withShortcut)}
                             ${tile(this.t('config.statsMonitored', 'Monitored'), s.monitored)}
                         </div>
+                        ${this.renderStatsSummary(s, ago)}
                         ${this.renderStatsHeadline(s)}
                         ${this.renderStatsInsights(s)}
                         ${this.renderStatsScore(s)}`;
             }
+        },
+
+        /**
+         * What these numbers mean, in three sentences.
+         *
+         * Statistics is five tabs of counting and the reader is left to work
+         * out what follows from it. These are the three things that do follow —
+         * how concentrated your opening is, how much is going unread, and what
+         * is broken — each with the button that acts on it, because a figure
+         * you cannot act on is trivia.
+         *
+         * Every line states a fact this section already knows. None is shown
+         * when its number is zero: an install with nothing neglected should not
+         * be told so in a panel about what needs doing.
+         */
+        renderStatsSummary(s, ago = null) {
+            const esc = (v) => this.dash.escapeHtml(v);
+            const lines = [];
+
+            const share = Number(s.concentration?.share) || 0;
+            const used = Number(s.concentration?.usedCount) || 0;
+            if (share >= 40 && used > 0) {
+                lines.push({
+                    text: this.t('config.statsSummaryConcentration',
+                        '{share}% of your opening lands on ten bookmarks. Those are the ones worth a shortcut.')
+                        .replace('{share}', String(share)),
+                    action: 'shortcuts',
+                    label: this.t('config.statsSummarySeeShortcuts', 'See shortcuts'),
+                });
+            }
+
+            const neglected = Number(s.stale90) || 0;
+            if (neglected > 0) {
+                lines.push({
+                    text: this.t('config.statsSummaryStale',
+                        '{n} bookmarks have not been opened in {days} days.')
+                        .replace('{n}', this.statsNumber(neglected))
+                        .replace('{days}', String(this.bookmarkStaleDays())),
+                    goto: 'never',
+                    label: this.t('config.statsSummaryTidy', 'Work through them'),
+                });
+            }
+
+            const broken = Number(this._statsHealth?.broken || 0) + Number(this._statsHealth?.monitorDown || 0);
+            if (broken > 0) {
+                lines.push({
+                    text: this.t('config.statsSummaryBroken', '{n} links are not answering.')
+                        .replace('{n}', this.statsNumber(broken)),
+                    action: 'open-health-view',
+                    label: this.t('config.statsOpenHealthView', 'Open Health'),
+                });
+            }
+
+            // Growth is a fact rather than a call to action, so it closes the
+            // list and carries no button.
+            const grew = ago && Number.isFinite(Number(ago.n)) ? Number(s.total) - Number(ago.n) : 0;
+            if (grew > 0) {
+                lines.push({
+                    text: this.t('config.statsSummaryGrew', 'You saved {n} new bookmarks this week.')
+                        .replace('{n}', this.statsNumber(grew)),
+                });
+            }
+
+            if (!lines.length) return '';
+            const rows = lines.map((line) => `
+                <li class="config-stats-summary-row">
+                    <span class="config-stats-summary-text">${esc(line.text)}</span>
+                    ${line.action ? `<button type="button" class="config-btn config-btn--small" data-stats-action="${esc(line.action)}">${esc(line.label)}</button>` : ''}
+                    ${line.goto ? `<button type="button" class="config-btn config-btn--small" data-cleanup-goto="${esc(line.goto)}">${esc(line.label)}</button>` : ''}
+                </li>`).join('');
+            return `
+                <div class="config-panel config-stats-summary">
+                    <h3 class="config-panel-title">${esc(this.t('config.statsSummaryTitle', 'What this says'))}</h3>
+                    <ul class="config-stats-summary-list">${rows}</ul>
+                </div>`;
         },
 
         renderStatsScore(s) {
@@ -230,6 +339,7 @@
                         <span title="${esc(this.t('config.statsActivityLifetimeHint', 'Counted over the whole life of these bookmarks, not only this period — nextDash stores a total per bookmark, not a date for every open.'))}"><strong>${esc(this.statsNumber(a.totalOpens))}</strong> ${esc(this.t('config.statsActivityLifetimeOpens', 'opens all-time'))}</span>
                         ${a.wow !== null ? `<span class="config-stat-trend config-stat-trend--${a.wow >= 0 ? 'up' : 'down'}">${a.wow >= 0 ? '▲' : '▼'} ${esc(String(Math.abs(a.wow)))}% ${esc(this.t('config.statsActivityVsPrev', 'vs previous period'))}</span>` : ''}
                     </div>
+                    <p class="config-chart-summary">${esc(this.statsActivityShape(a))}</p>
                     <div class="config-chart">
                         <div class="config-chart-plot">
                             <span class="config-chart-axis-y" aria-hidden="true">
@@ -253,6 +363,29 @@
                         <tbody>${srRows}</tbody>
                     </table>
                 </div>`;
+        },
+
+        /**
+         * The chart in a sentence.
+         *
+         * A screen reader had thirty numbers in a table and no shape; a sighted
+         * reader had the shape and had to hover for the peak. One line carries
+         * both: how long the window is, where the busiest point sits, and how
+         * many bookmarks it accounts for.
+         */
+        statsActivityShape(a) {
+            const buckets = Array.isArray(a?.buckets) ? a.buckets : [];
+            if (!buckets.length) return '';
+            let peak = 0;
+            buckets.forEach((v, i) => { if (Number(v) > Number(buckets[peak])) peak = i; });
+            const label = a.dateLabels?.[peak] || a.labels?.[peak] || '';
+            const total = buckets.reduce((sum, v) => sum + (Number(v) || 0), 0);
+            return this.t('config.statsActivityShape',
+                '{range}: {total} bookmarks used, busiest on {peak} with {n}.')
+                .replace('{range}', this.statsRangeLabel(this.statsRange || 30))
+                .replace('{total}', this.statsNumber(total))
+                .replace('{peak}', label)
+                .replace('{n}', this.statsNumber(Number(buckets[peak]) || 0));
         },
 
         statsRangeLabel(days) {
@@ -437,7 +570,10 @@
             return rankedList(this.t('config.statsTopOpened', 'Most opened'), s.topOpened,
                     this.t('config.statsNoOpens', 'Nothing has been opened yet.'), '',
                     [this.t('config.statsAxisBookmark', 'Bookmark'), this.t('config.statsAxisOpens', 'Opens')],
-                    totals.topOpened)
+                    // Every row here names a bookmark, and the list is where you
+                    // can act on one: reading "this is your most-opened link" and
+                    // then finding it by hand was the gap between knowing and doing.
+                    totals.topOpened, 'bookmark')
                 + rankedList(this.t('config.statsTopTags', 'Most used tags'), s.topTags,
                     this.t('config.noTagsYet', 'No tags yet.'), '',
                     [this.t('config.statsAxisTag', 'Tag'), this.t('config.statsAxisBookmarks', 'Bookmarks')],
@@ -581,7 +717,8 @@
                     .replace('{count}', String(c.count));
                 return `
                     <li class="config-dist-row">
-                        <span class="config-dist-label" title="${esc(detail)}">${esc(c.label)}</span>
+                        <button type="button" class="config-dist-label config-dist-label--link"
+                                data-stats-goto="category:${esc(c.label)}" title="${esc(detail)}">${esc(c.label)}</button>
                         <div class="config-bar config-bar--slim" role="img" aria-label="${esc(c.label)}: ${esc(ratio)}">
                             <span class="config-bar-fill" style="width:${pct}%"></span>
                         </div>
@@ -868,7 +1005,7 @@
                     </tr>`).join('');
 
             return `
-                <div class="config-panel">
+                <div class="config-panel" id="config-stats-shortcuts">
                     <h3 class="config-panel-title">${esc(this.t('config.statsShortcutsTitle', 'Shortcuts'))}</h3>
                     <p class="config-panel-note">${esc(this.t('config.statsShortcutCoverage', '{count} of {total} bookmarks have a shortcut ({pct}%)')
                         .replace('{count}', String(s.withShortcut))
@@ -1051,6 +1188,9 @@
         statsScopeNote() {
             const page = this.statsScopePage();
             if (!page) return '';
+            // On a single-page install there is no narrowing to explain: the
+            // note would answer a question the reader has no way to ask.
+            if ((this.dash.pages || []).length < 2) return '';
             const esc = (v) => this.dash.escapeHtml(v);
             return `<p class="config-panel-note config-stats-scope-note">${esc(
                 this.t('config.statsScopeWholeLibrary', 'These figures cover the whole library, not just {page}.')

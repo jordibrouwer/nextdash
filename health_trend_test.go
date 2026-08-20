@@ -129,3 +129,30 @@ func TestRecordHealthTrendRoundTrip(t *testing.T) {
 		t.Errorf("Score = %d, want 70 (the mean of 80 and 60)", points[0].Score)
 	}
 }
+
+// The daily point carries the collection, not only its health.
+//
+// Statistics could show every figure as a number and none as a direction:
+// "102 bookmarks" says nothing about whether that is ten more than last week.
+// Untagged and opens are the two that move on their own — tagging is the
+// tidying people actually do, opens are what the library is for — and both are
+// already counted when a report is built.
+func TestTrendPointCarriesUntaggedAndOpens(t *testing.T) {
+	bookmarks := []Bookmark{
+		{URL: "https://a.example", Tags: []string{"dev"}, OpenCount: 4},
+		{URL: "https://b.example", OpenCount: 6},
+		{URL: "https://c.example"},
+	}
+
+	point := trendPointFromSummary(HealthSummary{TotalBookmarks: 3}, 90, time.Now(), bookmarks)
+
+	if point.Untagged != 2 {
+		t.Fatalf("untagged = %d, want 2", point.Untagged)
+	}
+	if point.Opens != 10 {
+		t.Fatalf("opens = %d, want 10", point.Opens)
+	}
+	if point.Total != 3 {
+		t.Fatalf("total = %d, want 3 — the summary still drives the rest", point.Total)
+	}
+}

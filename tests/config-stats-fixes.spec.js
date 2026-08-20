@@ -58,13 +58,13 @@ test.describe('statistics counts the same things as the rest of the app', () => 
         const rows = await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
             c.dash.settings.bookmarkStaleDays = 30;
-            // triggerDownload is synchronous, so the blob is captured here and
-            // read after: awaiting inside the stub would resolve long after
-            // exportStatsCSV() has returned.
+            // The export waits for the two server-side tabs before it writes
+            // the file, so this awaits it; triggerDownload itself is still
+            // synchronous, which is why the blob can be captured this way.
             let captured = null;
             const real = c.triggerDownload.bind(c);
             c.triggerDownload = (blob) => { captured = blob; };
-            c.exportStatsCSV();
+            await c.exportStatsCSV();
             c.triggerDownload = real;
             return (await captured.text()).split('\n');
         });
@@ -93,7 +93,7 @@ test.describe('statistics counts the same things as the rest of the app', () => 
             let captured = null;
             const real = c.triggerDownload.bind(c);
             c.triggerDownload = (blob) => { captured = blob; };
-            c.exportStatsCSV();
+            await c.exportStatsCSV();
             c.triggerDownload = real;
             return captured.text();
         });

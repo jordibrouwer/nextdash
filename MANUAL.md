@@ -1192,7 +1192,7 @@ Permission is granted **per browser**, so every device you want alerts on is ask
 
 ### Stats (`config#stats`)
 
-Read-only analytics (desktop). Filter toolbar sits above a fused **split surface**: chip navigation and sidebar index share the left column; stats blocks fill the content pane — same split-shell pattern as Help. Sidebar index jumps to sections; on phone, horizontal **chip-nav** replaces the sidebar. Content stays on the Stats tab only — it does not overlay other config tabs.
+Read-only analytics (desktop). Filter toolbar sits above a fused **split surface**: chip navigation and sidebar index share the left column; stats blocks fill the content pane — same split-shell pattern as Help. Sidebar index jumps to sections; on phone, horizontal **chip-nav** replaces the sidebar. Content stays on the Stats tab only — it does not overlay other config tabs. Since **v1.3.1** the Overview opens with **What this says** — the three things that follow from the figures, each with the button that acts on it — the tiles carry a week-over-week direction from the daily points the health report records, the activity chart is summarised in a sentence above the bars, and every tab has a 🔗 that copies a link to it. The CSV export waits for the Inbox and Health figures rather than leaving them out.
 
 - **Insights** — automated highlights (busiest page, top bookmark, never-opened share, status coverage, recent activity) with links to sections.
 - **Overview & activity** — bookmark totals, period filters (7 / 30 / 90 days / all time), sparklines, and **week-over-week** active-bookmark comparison when the **week** period is selected. Open counts describe **lifetime** `openCount` for bookmarks active in the selected period (labels update when a period is active).

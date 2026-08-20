@@ -45,7 +45,7 @@ const exportCsv = (page) => page.evaluate(async () => {
     const original = c.triggerDownload;
     c.triggerDownload = async (blob) => { csv = await blob.text(); };
     try {
-        c.exportStatsCSV();
+        await c.exportStatsCSV();
         await new Promise((r) => setTimeout(r, 250));
     } finally {
         c.triggerDownload = original;

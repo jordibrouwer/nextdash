@@ -157,7 +157,7 @@ test.describe('the figures can be narrowed to one page', () => {
             let captured = null;
             const real = c.triggerDownload.bind(c);
             c.triggerDownload = (blob) => { captured = blob; };
-            c.exportStatsCSV();
+            await c.exportStatsCSV();
             c.triggerDownload = real;
             return captured.text();
         });
