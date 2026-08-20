@@ -49,3 +49,7 @@
     }
   ]
 }
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The row menu in Health shows all of itself.</strong> It used to cap at a fixed height and scroll inside, which hid whatever was at the bottom of the list."

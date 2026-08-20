@@ -190,6 +190,10 @@ Fresh, made to work. It shipped in 1.3.0 depending on a setting most installs ha
 
 - **fix** — **`Ctrl/Cmd`+click on a bookmark opens it in a new tab**, as it does on every other link on the web. It used to tick the row for a bulk action, with `preventDefault` — so the one modifier every browser honours did the opposite of what it does everywhere else, and on a Mac it came with the row menu on top of that, `Ctrl`+click being the platform's secondary click. The mouse route into a selection is **`Alt`+click** now, on the grid and in the health view alike; `Shift`+click still extends a range, `x` still ticks the row under the cursor, and *Select* is still in the right-click menu. The open is recorded by the row itself, since letting the browser have the click means the anchor's own handler never runs — without that, opening this way would not have counted, and Fresh reads the same timestamp.
 
+**Health**
+
+- **fix** — the row menu is **as tall as its contents**. It capped at `min(70vh, 24rem)` — 384px on any window — so a row whose repair options ran long put a scrollbar inside a context menu, and a menu you have to scroll is a menu whose last item nobody finds. Sprawl was the reason for the cap, and placement answers that better: the menu flips above its trigger when there is no room below, and the cursor path clamps it inside the viewport. The window is the only cap left.
+
 ### Docs
 
 - **new** — the Fresh walkthrough and its help article answer the question every reader actually arrives with. The last step is *If nothing shows up* — an empty dashboard is the usual answer and not a fault, because most saved pages publish nothing — and both now name the count on the tab (*12 of 40 bookmarks asked · 2 publish a feed*) as the way to tell that apart from a broken feature. The article also says plainly that a row carries no mark for *publishes, but nothing new*: a badge on twenty silent rows would be the noise Fresh exists to avoid.

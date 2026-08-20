@@ -2092,14 +2092,17 @@ button.health-view-tile:hover {
     color: var(--text-primary);
     font-family: var(--font-family-main);
     box-shadow: 0 4px 18px color-mix(in srgb, var(--text-primary) 14%, transparent);
-    /* Capped and scrollable, matching .move-popover: the check-mode menu now
-       carries mode + interval + expectations + drift, tall enough on a
-       monitored row to flip above the trigger (.health-view-menu--up) and
-       sprawl over unrelated panels several rows away. Safari has a documented
-       hit-test bug on this exact shape of floating panel — see the
-       backdrop-filter removal below — and an unbounded height made it flip
-       and stray far more often than a capped one would. */
-    max-height: min(70vh, 24rem);
+    /* Tall enough for its own contents. This used to cap at min(70vh, 24rem),
+       which put a scrollbar inside a context menu on any row whose repair
+       options ran long — and a menu you have to scroll is a menu whose last
+       item nobody finds. Sprawl was the reason for the cap, and placement
+       answers that better than a scrollbar does: toggleMenu flips the menu
+       above its trigger when there is no room below, and positionMenuAtPoint
+       clamps it inside the viewport on both axes.
+       The viewport cap stays as a floor under the whole thing: a menu taller
+       than the window has to scroll, because there is nowhere else for it to
+       go. Everything short of that now shows in full. */
+    max-height: calc(100vh - 1rem);
     overflow-y: auto;
 }
 
