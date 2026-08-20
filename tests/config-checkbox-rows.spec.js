@@ -43,7 +43,7 @@ test.describe('checkboxes use one row shape', () => {
         const offenders = [];
         for (const [section, tabs, attr] of [
             ['appearance', ['general', 'layout', 'display', 'toolbar'], 'data-appearance-tab'],
-            ['behavior', ['general', 'datetime', 'search', 'inbox', 'status', 'privacy'], 'data-behavior-tab'],
+            ['behavior', ['general', 'datetime', 'search', 'inbox', 'fresh', 'status', 'privacy'], 'data-behavior-tab'],
         ]) {
             await page.evaluate((s) => window.dashboardInstance.config.openConfigView(s), section);
             for (const tab of tabs) {

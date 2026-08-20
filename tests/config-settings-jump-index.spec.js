@@ -93,7 +93,7 @@ test.describe('the settings index does not depend on what you have visited', () 
 
         // Walk the schema-driven tabs and confirm nothing on screen is missing
         // from the declared index.
-        for (const tab of ['general', 'datetime', 'search', 'inbox', 'status', 'privacy']) {
+        for (const tab of ['general', 'datetime', 'search', 'inbox', 'fresh', 'status', 'privacy']) {
             await page.evaluate((t) => {
                 const c = window.dashboardInstance.config;
                 c.behaviorTab = t;

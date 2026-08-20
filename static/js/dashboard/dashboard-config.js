@@ -8589,11 +8589,16 @@ class DashboardConfig {
             },
             {
                 section: 'behavior',
-                tab: 'status',
+                tab: 'fresh',
                 title: t('config.feedsTitle', 'Fresh'),
                 note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
                 controls: [
                     { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
+                    // Off by default on purpose: most rows with a feed are
+                    // silent most of the time, and a mark on twenty of them is
+                    // the noise Fresh exists to avoid. For the reader who would
+                    // rather see who is taking part than ask one row at a time.
+                    { ...bool('feedsMarkQuiet', 'config.feedsMarkQuietLabel', 'Mark rows that publish, even when nothing is new'), special: 'render' },
                     // Most bookmarks have no feed, so an empty Fresh is the
                     // normal state and looks exactly like a broken feature.
                     // This line is the difference: it says how many pages have
@@ -9788,7 +9793,12 @@ class DashboardConfig {
         });
     }
 
-    static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'inbox', 'status', 'privacy'];
+    // Fresh has a tab rather than a panel at the foot of Status & health. It is
+    // not link checking: that tab answers "is this still there", Fresh answers
+    // "has this moved on", and the two were only neighbours because both talk to
+    // the internet on a schedule. Four panels down a tab named after something
+    // else is also where a reader stops looking.
+    static BEHAVIOR_TABS = ['general', 'datetime', 'search', 'inbox', 'fresh', 'status', 'privacy'];
 
     /**
      * Date & weather fields that need a fresh fetch rather than a redraw: each
@@ -9806,6 +9816,9 @@ class DashboardConfig {
             // would think to open them.
             search: ['config.behaviorTabSearch', 'Search'],
             inbox: ['config.behaviorTabInbox', 'Inbox'],
+            // The tab and the panel on it are the same subject, so they share
+            // the name rather than carrying two translations of one word.
+            fresh: ['config.feedsTitle', 'Fresh'],
             status: ['config.behaviorTabStatus', 'Status & health'],
             privacy: ['config.behaviorTabPrivacy', 'Privacy'],
         };
@@ -17861,7 +17874,7 @@ class DashboardConfig {
         },
         'config.helpFreshTitle': {
             isOn: (s) => s.feedsEnabled === true,
-            go: { section: 'behavior', behaviorTab: 'status' },
+            go: { section: 'behavior', behaviorTab: 'fresh' },
         },
     };
 
