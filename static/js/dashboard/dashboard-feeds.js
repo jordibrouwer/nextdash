@@ -22,6 +22,10 @@ class DashboardFeeds {
         /** canonical URL key -> { feedUrl, newCount, lastItemAt, checkedAt } */
         this.byKey = new Map();
         this.lastPoll = 0;
+        // What the last look for feeds found, so config can tell "nothing new"
+        // from "nothing to look at" — the difference a reader cannot see on a
+        // dashboard that simply never changes.
+        this.coverage = { bookmarks: 0, checked: 0, withFeed: 0, lastDiscovery: 0 };
         this._loading = null;
     }
 
@@ -47,6 +51,12 @@ class DashboardFeeds {
                 this.enabled = data?.enabled === true;
                 this.lastPoll = Number(data?.lastPoll) || 0;
                 this.byKey = new Map(Object.entries(data?.feeds || {}));
+                this.coverage = {
+                    bookmarks: Number(data?.bookmarks) || 0,
+                    checked: Number(data?.checked) || 0,
+                    withFeed: Number(data?.withFeed) || 0,
+                    lastDiscovery: Number(data?.lastDiscovery) || 0,
+                };
                 return true;
             } catch {
                 // A failed fetch means no badges this page view, which is the
@@ -93,16 +103,34 @@ class DashboardFeeds {
         this.byKey.set(key, { ...entry, newCount: 0 });
     }
 
-    /** Ask the server to poll every known feed now. Config's "Check now". */
+    /**
+     * Look for feeds and poll the ones we know, now. Config's "Find feeds now".
+     *
+     * Returns what the round did rather than a bare true, because the useful
+     * answer on most collections is "asked 40 pages, 2 of them publish
+     * anything" — a panel that cannot say that leaves an empty dashboard
+     * looking like a broken feature.
+     */
     async pollNow() {
         const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
         const res = await fetcher('/api/feeds/poll', { method: 'POST' });
-        if (!res.ok) return false;
+        if (!res.ok) return null;
         const data = await res.json();
         this.enabled = true;
         this.lastPoll = Number(data?.lastPoll) || 0;
         this.byKey = new Map(Object.entries(data?.feeds || {}));
-        return true;
+        this.coverage = {
+            bookmarks: Number(data?.bookmarks) || 0,
+            checked: Number(data?.checked) || 0,
+            withFeed: Number(data?.withFeed) || 0,
+            lastDiscovery: Number(data?.lastDiscovery) || 0,
+        };
+        return {
+            ...this.coverage,
+            discovered: Number(data?.discovered) || 0,
+            found: Number(data?.found) || 0,
+            polled: Number(data?.polled) || 0,
+        };
     }
 }
 

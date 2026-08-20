@@ -8591,9 +8591,15 @@ class DashboardConfig {
                 section: 'behavior',
                 tab: 'status',
                 title: t('config.feedsTitle', 'Fresh'),
-                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Polled on the background re-check interval with a conditional request, so a quiet blog costs almost nothing. Off by default because it makes outbound requests; the feeds themselves are found while previews are fetched, so switching this on needs no re-fetch.'),
+                note: t('config.feedsNote', 'A bookmark whose page advertises a feed can say how much it has published since you last opened it — a small count on the row, and a Fresh collection. Switching it on looks for feeds on the pages you have saved, then asks each one, hourly, with a conditional request a quiet site answers in a few hundred bytes. Off by default, because it is the one feature here that talks to other people\'s servers on your behalf.'),
                 controls: [
                     { ...bool('feedsEnabled', 'config.feedsEnabledLabel', 'Show what is new since you last looked'), special: 'feeds' },
+                    // Most bookmarks have no feed, so an empty Fresh is the
+                    // normal state and looks exactly like a broken feature.
+                    // This line is the difference: it says how many pages have
+                    // been asked and how many of them publish anything at all.
+                    { type: 'action', label: t('config.feedsCoverageLabel', 'Feeds found'),
+                      button: t('config.feedsFindNow', 'Find feeds now'), action: 'findFeeds' },
                 ],
             },
             {
@@ -9500,6 +9506,24 @@ class DashboardConfig {
      * a number is easier to read where the button that produced it is.
      */
     bindPanelActions(container) {
+        // Fresh: look for feeds now, and say what the round found.
+        const findFeeds = container.querySelector('[data-config-action="findFeeds"]');
+        if (findFeeds) {
+            this.paintFeedCoverage();
+            findFeeds.addEventListener('click', async () => {
+                findFeeds.disabled = true;
+                const status = container.querySelector('[data-config-action-status="findFeeds"]');
+                if (status) status.textContent = this.t('config.feedsFindingNow', 'Looking…');
+                try {
+                    const round = await this.dash.feeds?.pollNow();
+                    this.paintFeedCoverage(round);
+                    this.dash.renderDashboard?.({ animate: false });
+                } finally {
+                    findFeeds.disabled = false;
+                }
+            });
+        }
+
         container.querySelectorAll('[data-config-action]').forEach((btn) => {
             const action = btn.getAttribute('data-config-action');
             if (action !== 'resetCategorySpreads') {
@@ -9538,6 +9562,41 @@ class DashboardConfig {
                 }
             });
         });
+    }
+
+    /**
+     * What the last look for feeds found, beside the button that repeats it.
+     *
+     * Fresh spent a release looking broken on installs where it was working
+     * perfectly: most pages carry no feed, so the honest result is an empty
+     * dashboard, and an empty dashboard is indistinguishable from a feature
+     * that does nothing. Three numbers fix that — how many bookmarks there are,
+     * how many have been asked, and how many publish anything at all.
+     */
+    paintFeedCoverage(round = null) {
+        const status = document.querySelector('[data-config-action-status="findFeeds"]');
+        if (!status) return;
+        const feeds = this.dash?.feeds;
+        if (!feeds) return;
+        if (feeds.enabled !== true) {
+            status.textContent = this.t('config.feedsCoverageOff', 'Switched off — nothing is being asked.');
+            return;
+        }
+        const coverage = round || feeds.coverage || {};
+        const bookmarks = Number(coverage.bookmarks) || 0;
+        const checked = Number(coverage.checked) || 0;
+        const withFeed = Number(coverage.withFeed) || 0;
+        const text = this.t('config.feedsCoverageCount', '{checked} of {bookmarks} bookmarks asked · {withFeed} publish a feed')
+            .replace('{checked}', String(checked))
+            .replace('{bookmarks}', String(bookmarks))
+            .replace('{withFeed}', String(withFeed));
+        // The "and none of them publishes anything" case is the one worth a
+        // sentence rather than a number: it is the answer to "why is my
+        // dashboard not changing", and it is not a fault.
+        const none = checked > 0 && withFeed === 0
+            ? ` ${this.t('config.feedsCoverageNone', 'None of them publishes a feed, so there is nothing for Fresh to count.')}`
+            : '';
+        status.textContent = text + none;
     }
 
     bindMonitorNotifyTest(container) {
@@ -10082,12 +10141,15 @@ class DashboardConfig {
                 d.renderDashboard?.({ animate: false });
                 break;
             case 'feeds':
-                // Switching this on polls once now rather than leaving the
-                // dashboard blank until the scheduler's next wake — turning a
-                // feature on and seeing nothing happen reads as broken. Off
-                // just drops what is painted.
+                // Switching this on looks for feeds and polls once now, rather
+                // than leaving the dashboard blank until the scheduler's next
+                // wake — turning a feature on and seeing nothing happen reads
+                // as broken. Off just drops what is painted.
                 if (value) {
-                    void d.feeds?.pollNow().then(() => d.renderDashboard?.({ animate: false }));
+                    void d.feeds?.pollNow().then((round) => {
+                        this.paintFeedCoverage(round);
+                        d.renderDashboard?.({ animate: false });
+                    });
                 } else if (d.feeds) {
                     d.feeds.enabled = false;
                     d.feeds.byKey = new Map();

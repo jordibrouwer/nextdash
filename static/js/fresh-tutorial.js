@@ -97,14 +97,14 @@
                 // The route, drawn as chips: nothing here is a new fetch of the
                 // page itself, which is the objection this step answers.
                 visual: `<div class="fresh-tutorial-visual fresh-tutorial-visual--flow">
-                    <span class="fresh-tutorial-chip">${esc(t('freshTutorialChipPreview', 'Link preview'))}</span>
+                    <span class="fresh-tutorial-chip">${esc(t('freshTutorialChipPage', 'Your bookmark'))}</span>
                     <span class="fresh-tutorial-arrow" aria-hidden="true">→</span>
                     <span class="fresh-tutorial-chip">${esc(t('freshTutorialChipFeed', 'Feed address'))}</span>
                     <span class="fresh-tutorial-arrow" aria-hidden="true">→</span>
                     <span class="fresh-tutorial-chip fresh-tutorial-chip--quiet">304</span>
                 </div>`,
                 body: `<p>${esc(t('freshTutorialStep3Body1',
-                    'nextDash already reads the head of a page when it fetches a link preview, so it notes any feed the page advertises there and then. Switching Fresh on does not have to re-fetch anything.'))}</p>
+                    'Switching Fresh on looks for feeds: it reads the head of each page you have saved, notes any feed advertised there, and remembers the pages that have none so it does not ask them again for a month. That is one request per bookmark, once.'))}</p>
                 <p>${esc(t('freshTutorialStep3Body2',
                     'Polling runs on the same interval as your background link checks, and each request asks only whether anything changed — a quiet site answers "no" and costs a few hundred bytes. A feed that keeps failing is left alone.'))}</p>`,
             },

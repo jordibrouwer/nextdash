@@ -77,6 +77,10 @@
         {
           "badge": "new",
           "text": "<strong>Fresh introduces itself.</strong> A card in the corner offers it once, with a short walkthrough: what the count on a row means, the collection it gathers into, why it costs almost nothing, and what it is not — no articles, no reading list. The last step turns it on if you want it. It is also explained in full under <strong>Config → Help → Monitoring</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Fresh finds its own feeds.</strong> It used to learn where a feed lived only when a link preview happened to be fetched — so with previews switched off it could never find anything, and sat there saying nothing was new. Switching it on now checks your saved pages itself, and the setting says what it found: how many were asked, and how many publish a feed at all."
         }
       ]
     },
