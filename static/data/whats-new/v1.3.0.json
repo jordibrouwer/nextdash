@@ -2,7 +2,7 @@
   "tag": "v1.3.0",
   "date": "19 August 2026",
   "releasedAt": "2026-08-19",
-  "modalLead": "Twenty-five changes across a hundred and fifty-one files, and every one of them about the same thing — the life of a link. How it gets in from wherever you are, how you find out it has rotted, how the tidying becomes something you can finish in two minutes, and how a page you saved tells you it has something new. The dashboard also arrives about five times lighter.",
+  "modalLead": "Twenty-four changes across a hundred and forty-eight files, and every one of them about the same thing — the life of a link. How it gets in from wherever you are, how you find out it has rotted, how the tidying becomes something you can finish in two minutes, and how a page you saved tells you it has something new. The dashboard also arrives about five times lighter.",
   "sections": [
     {
       "title": "Getting a link in",
@@ -73,14 +73,6 @@
         {
           "badge": "new",
           "text": "<strong>Opening the bookmark clears it</strong>, and that is the whole of it. No article list, no read state to keep in order — this is not a feed reader, only a bookmark that can say <em>3</em>."
-        },
-        {
-          "badge": "new",
-          "text": "<strong>Fresh introduces itself.</strong> A card in the corner offers it once, with a short walkthrough: what the count on a row means, the collection it gathers into, why it costs almost nothing, and what it is not — no articles, no reading list. The last step turns it on if you want it. It is also explained in full under <strong>Config → Help → Monitoring</strong>."
-        },
-        {
-          "badge": "fix",
-          "text": "<strong>Fresh finds its own feeds.</strong> It used to learn where a feed lived only when a link preview happened to be fetched — so with previews switched off it could never find anything, and sat there saying nothing was new. Switching it on now checks your saved pages itself, and the setting says what it found: how many were asked, and how many publish a feed at all."
         }
       ]
     },
@@ -110,10 +102,6 @@
         {
           "badge": "new",
           "text": "<strong>The printable cheat sheet carries every shortcut.</strong> It was one A4 with a curated selection, so a key could be in the app and not on the paper. It now runs to as many pages as the app has keys — the live sheet behind <strong>!</strong> is unchanged."
-        },
-        {
-          "badge": "fix",
-          "text": "<strong>Ctrl/Cmd+click opens a bookmark in a new tab again.</strong> It used to tick the row for a bulk action instead — the one modifier every link on the web honours, doing the opposite of what it does everywhere else, and on a Mac with the row menu on top. Ticking a row with the mouse is <strong>Alt+click</strong> now."
         }
       ]
     },

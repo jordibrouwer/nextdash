@@ -1,0 +1,51 @@
+{
+  "tag": "v1.3.1",
+  "date": "20 August 2026",
+  "releasedAt": "2026-08-20",
+  "modalLead": "Fresh, made to work. It shipped depending on a setting most installs have switched off — link previews — so it could never find a feed and sat there saying nothing was new. It looks for its own feeds now, says what it found, and can tell you which of your bookmarks take part at all. Plus the modifier click every browser honours, given back.",
+  "sections": [
+    {
+      "title": "Fresh, made to work",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Fresh introduces itself.</strong> A card in the corner offers it once, with a short walkthrough: what the count on a row means, the collection it gathers into, why it costs almost nothing, and what it is not — no articles, no reading list. The last step turns it on if you want it. It is also explained in full under <strong>Config → Help → Monitoring</strong>."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Fresh finds its own feeds.</strong> It used to learn where a feed lived only when a link preview happened to be fetched — so with previews switched off it could never find anything, and sat there saying nothing was new. Switching it on now checks your saved pages itself, and the setting says what it found: how many were asked, and how many publish a feed at all."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Fresh has its own tab</strong> under <strong>Behavior</strong>, between Inbox and Status &amp; health — it used to be the fourth panel down a tab about link checking, which asks a different question."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>See which bookmarks can tell you anything.</strong> The bookmark editor names the feed behind a link when there is one, <code>status:feed</code> finds them all in one search, and — if you want it — a switch on the Fresh tab marks those rows even when nothing is new. That last one is off by default: a mark on twenty quiet rows is the noise Fresh is meant to spare you."
+        }
+      ]
+    },
+    {
+      "title": "On the grid",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Ctrl/Cmd+click opens a bookmark in a new tab again.</strong> It used to tick the row for a bulk action instead — the one modifier every link on the web honours, doing the opposite of what it does everywhere else, and on a Mac with the row menu on top. Ticking a row with the mouse is <strong>Alt+click</strong> now."
+        }
+      ]
+    },
+    {
+      "title": "Help",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Help describes the config you actually have.</strong> Behavior said five sub-tabs and has seven; the grid settings were said to live on a tab that no longer exists; Data &amp; backups described one Maintenance panel where there are now three tabs; the section list left out About. All four corrected, in every language."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Tips has its own filter</strong>, narrowing to the single tip rather than the group, and a help topic that continues on another tab now links straight to the panel it continues in."
+        }
+      ]
+    }
+  ]
+}

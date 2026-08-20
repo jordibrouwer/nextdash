@@ -325,7 +325,7 @@ environment:
 - `Ctrl + C` / `Cmd + C` — copy the URL of the focused bookmark (row flashes green)
 - `Shift + V` — toggle the hover preview card on the focused bookmark (`[` still works, undocumented)
 - `Delete` — delete the focused bookmark
-- `x` / `X` — tick the focused bookmark and advance / tick its whole category. `Shift + ↑`/`↓` extends a range, `Ctrl/Cmd + A` takes everything on screen, and `Alt+click` / `Shift+click` do the same with the mouse — `Ctrl/Cmd + click` is left to the browser, where it opens the bookmark in a new tab (**v1.3.0**; it used to tick the row). A toolbar appears with **Move**, **Open**, **Copy links** and **Delete**, matching the entries the right-click menu gains; `Esc` clears the selection. A plain click with a selection open clears it rather than opening a bookmark
+- `x` / `X` — tick the focused bookmark and advance / tick its whole category. `Shift + ↑`/`↓` extends a range, `Ctrl/Cmd + A` takes everything on screen, and `Alt+click` / `Shift+click` do the same with the mouse — `Ctrl/Cmd + click` is left to the browser, where it opens the bookmark in a new tab (**v1.3.1**; it used to tick the row). A toolbar appears with **Move**, **Open**, **Copy links** and **Delete**, matching the entries the right-click menu gains; `Esc` clears the selection. A plain click with a selection open clears it rather than opening a bookmark
 
 **Search & commands**
 - `>` — open search; empty state shows recent queries and saved searches as chips; `←`/`→` select a chip, `Enter` applies it
@@ -471,7 +471,7 @@ Dynamic bookmark groups that appear automatically:
 - **Most used** — your highest open-count bookmarks
 - **Stale** — bookmarks you haven't visited in a while
 - **Recently added** — what you have just saved, off by default with its own limit and choice of pages; every other collection keys on what you *open*, so this was the one question they could not answer
-- **Fresh** (**v1.3.0**) — bookmarks whose page has published something since you last opened it. Turn it on under **Config → Behavior → Status & health → Fresh**: nextDash notes any RSS or Atom feed a page advertises while it fetches previews, polls it on the background re-check interval with a conditional request, and puts a small count on the row. Opening the bookmark clears it. Not a feed reader — no articles are stored, only how many entries are newer than your last visit
+- **Fresh** (**v1.3.0**) — bookmarks whose page has published something since you last opened it. Turn it on under **Config → Behavior → Fresh**, a tab of its own: switching it on reads the head of every page you have saved, notes any RSS or Atom feed advertised there, polls what it found hourly with a conditional request, and puts a small count on the row. The tab says how many bookmarks were asked and how many publish a feed at all. Opening the bookmark clears it. Not a feed reader — no articles are stored, only how many entries are newer than your last visit
 - **Tag collections** — one group per tag, shown when a tag has enough entries
 
 Collections of your own take rules on category, tag, page, URL, name and status, plus **pinned**, **untagged**, **days since last opened** and **days since last changed** — so "my dev links I have not touched in 90 days" is something you can build rather than something only the built-in collections could do.

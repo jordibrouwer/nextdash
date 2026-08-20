@@ -632,7 +632,7 @@ Bulk actions used to live only in the tag filter, so acting on several bookmarks
 | `X` | Tick every row in the selected row's category |
 | `Shift + ↑` / `Shift + ↓` | Extend the selection a row at a time |
 | `Ctrl/Cmd + A` | Tick everything currently on screen |
-| `Alt + click` | Add or remove a single row with the mouse (**v1.3.0** — it was `Ctrl/Cmd + click`, which the browser and macOS had already spoken for) |
+| `Alt + click` | Add or remove a single row with the mouse (**v1.3.1** — it was `Ctrl/Cmd + click`, which the browser and macOS had already spoken for) |
 | `Shift + click` | Extend the selection to the clicked row |
 | `Esc` | Clear the selection |
 | `Delete` | Delete everything selected (one confirmation for the whole set) |

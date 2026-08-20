@@ -3482,7 +3482,7 @@
     "helpFindersTitle": "Finders",
     "helpStartTitle": "Prise en main",
     "helpVersionTitle": "nextDash",
-    "helpVersionBody": "Voici la version 1.3.0, et tout y tourne autour de la vie d'un lien : en enregistrer un depuis un téléphone ou n'importe quel navigateur, voir quand il s'est abîmé, ranger en deux minutes plutôt qu'en un long après-midi, et savoir quand une page enregistrée a publié quelque chose. Le tableau de bord se charge aussi environ cinq fois plus léger.",
+    "helpVersionBody": "<p>Voici la version 1.3.1, une suite à 1.3.0 qui fait faire à <strong>Nouveau</strong> ce qu’il promettait. Il ne trouvait des flux que comme effet secondaire des aperçus de liens — désactivés sur la plupart des installations — il ne pouvait donc jamais en trouver, et qui l’activait regardait un tableau de bord qui ne changeait jamais. Il cherche désormais lui-même, dit ce qu’il a trouvé (<em>12 favoris sur 40 interrogés · 2 avec un flux</em>), a son propre onglet, et montre quels favoris participent. <code>Ctrl/Cmd</code>+clic rouvre aussi un favori dans un nouvel onglet, comme sur n’importe quel lien.</p>",
     "helpVersionWhatsNew": "Voir les nouveautés",
     "helpConfigTitle": "S'orienter dans la configuration",
     "showTagCollections": "Smart : Collections par tag (une par tag)",

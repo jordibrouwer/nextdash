@@ -3501,7 +3501,7 @@
     "helpFindersTitle": "Finders",
     "helpStartTitle": "Getting started",
     "helpVersionTitle": "nextDash",
-    "helpVersionBody": "This is version 1.3.0, and all of it is about the life of a link: getting one in from a phone or any browser, seeing when it has rotted, tidying in two minutes rather than one long afternoon, and hearing when a page you saved has published something. The dashboard also loads about five times lighter.",
+    "helpVersionBody": "<p>This is version 1.3.1, a follow-up to 1.3.0 that makes <strong>Fresh</strong> do what it promised. It shipped finding feeds only as a side effect of link previews — off on most installs — so it could never find one, and a reader who switched it on watched a dashboard that never changed. It looks for its own feeds now, says what it found (<em>12 of 40 bookmarks asked · 2 publish a feed</em>), has a tab of its own, and can tell you which bookmarks take part. <code>Ctrl/Cmd</code>+click also opens a bookmark in a new tab again, as it does on every other link.</p>",
     "helpVersionWhatsNew": "See what's new",
     "helpConfigTitle": "Finding your way around config",
     "showTagCollections": "Smart: Tag collections (one per tag)",

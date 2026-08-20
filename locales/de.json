@@ -3482,7 +3482,7 @@
     "helpFindersTitle": "Finder",
     "helpStartTitle": "Erste Schritte",
     "helpVersionTitle": "nextDash",
-    "helpVersionBody": "Das ist Version 1.3.0, und es geht durchweg um das Leben eines Links: einen vom Telefon oder aus jedem Browser hineinbekommen, sehen, wann er verfallen ist, in zwei Minuten aufräumen statt an einem langen Nachmittag, und hören, wenn eine gespeicherte Seite etwas veröffentlicht hat. Das Dashboard lädt außerdem etwa fünfmal leichter.",
+    "helpVersionBody": "<p>Das ist Version 1.3.1, ein Nachtrag zu 1.3.0, der <strong>Neu</strong> tun lässt, was es versprochen hat. Feeds wurden nur als Nebeneffekt von Linkvorschauen gefunden — bei den meisten Installationen aus — also konnte es nie einen finden, und wer es einschaltete, sah ein Dashboard, das sich nie änderte. Jetzt sucht es selbst, sagt, was es gefunden hat (<em>12 von 40 Lesezeichen geprüft · 2 mit Feed</em>), hat einen eigenen Tab, und zeigt, welche Lesezeichen teilnehmen. <code>Ctrl/Cmd</code>+Klick öffnet ein Lesezeichen außerdem wieder in einem neuen Tab, wie bei jedem anderen Link.</p>",
     "helpVersionWhatsNew": "Neuerungen ansehen",
     "helpConfigTitle": "Zurechtfinden in der Konfiguration",
     "showTagCollections": "Smart: Tag-Sammlungen (eine pro Tag)",
