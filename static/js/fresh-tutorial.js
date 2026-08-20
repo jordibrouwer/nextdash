@@ -106,17 +106,17 @@
                 body: `<p>${esc(t('freshTutorialStep3Body1',
                     'Switching Fresh on looks for feeds: it reads the head of each page you have saved, notes any feed advertised there, and remembers the pages that have none so it does not ask them again for a month. That is one request per bookmark, once.'))}</p>
                 <p>${esc(t('freshTutorialStep3Body2',
-                    'Polling runs on the same interval as your background link checks, and each request asks only whether anything changed — a quiet site answers "no" and costs a few hundred bytes. A feed that keeps failing is left alone.'))}</p>`,
+                    'Known feeds are then asked once an hour, and each request only asks whether anything changed — a quiet site answers “no” in a few hundred bytes. A feed that keeps failing is retired rather than retried forever.'))}</p>`,
             },
             {
-                title: t('freshTutorialStep4Title', 'What it is not'),
+                title: t('freshTutorialStep4Title', 'If nothing shows up'),
                 visual: `<div class="fresh-tutorial-visual">
-                    <span class="fresh-tutorial-note">${esc(t('freshTutorialNotReader', 'No articles, no titles, no reading list — only how many are newer than your last visit.'))}</span>
+                    <span class="fresh-tutorial-note">${esc(t('freshTutorialNotReader', 'Most saved pages carry no feed at all. Config → Behavior → Fresh says how many of yours do.'))}</span>
                 </div>`,
                 body: `<p>${esc(t('freshTutorialStep4Body1',
-                    'Fresh is not a feed reader. Nothing is stored from the feed itself: no article list, no headlines, no unread state of its own. The count is the difference between when the page last published and when you last opened the bookmark.'))}</p>
+                    'An empty dashboard is the usual answer, and it is not a fault: a shop, a wiki page, a login screen publishes nothing. The Fresh tab counts it out for you — “12 of 40 bookmarks asked · 2 publish a feed” — with Find feeds now to look again after you have saved something new.'))}</p>
                 <p>${esc(t('freshTutorialStep4Body2',
-                    'You will find the switch under Config → Behavior → Status & health → Fresh, beside the other background checks.'))}</p>`,
+                    'And Fresh is not a feed reader: no articles, no headlines, no read state of its own — only how many entries are newer than your last visit. The switch is under Config → Behavior → Fresh, a tab of its own between Inbox and Status & health.'))}</p>`,
             },
         ];
     }

@@ -113,7 +113,7 @@ var precomputedAssetHashes = map[string]string{
 	"js/focus-trap-utils.js": "1474484ce134",
 	"js/font-presets.js": "ddef18ce1d03",
 	"js/fresh-notice.js": "253ad974932b",
-	"js/fresh-tutorial.js": "3d2d752bc079",
+	"js/fresh-tutorial.js": "11601260d5f6",
 	"js/fuzzy-search.js": "89bbcc8d7f20",
 	"js/health-badge-utils.js": "46b0c4cf45d4",
 	"js/health-reason-utils.js": "dcc6a1581a2f",
