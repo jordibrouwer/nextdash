@@ -646,12 +646,25 @@ class DashboardBookmarkRows {
         const freshBadge = document.createElement('span');
         freshBadge.className = 'bookmark-fresh-badge bookmark-superscript-badge';
         const fresh = d.feeds?.freshFor(bookmark) || null;
+        // A row whose page publishes but has nothing new, when the reader has
+        // asked to see those: a dot rather than a number, because there is
+        // nothing to count. Off by default — see feedsMarkQuiet.
+        const quiet = !fresh && d.settings?.feedsMarkQuiet === true
+            && d.feeds?.hasFeed?.(bookmark) === true;
         if (fresh) {
             const count = Number(fresh.newCount) || 0;
             freshBadge.textContent = count > 99 ? '99+' : String(count);
             const label = count === 1
                 ? d.formatDashboardLabel('feedOneNew', {}, '1 new since you last opened this')
                 : d.formatDashboardLabel('feedManyNew', { count }, `${count} new since you last opened this`);
+            freshBadge.title = label;
+            freshBadge.setAttribute('aria-label', label);
+            freshBadge.setAttribute('role', 'img');
+        } else if (quiet) {
+            freshBadge.classList.add('is-quiet');
+            freshBadge.textContent = '·';
+            const label = d.formatDashboardLabel('feedQuietMark', {},
+                'Publishes a feed — nothing new since you last opened this');
             freshBadge.title = label;
             freshBadge.setAttribute('aria-label', label);
             freshBadge.setAttribute('role', 'img');
@@ -726,6 +739,7 @@ class DashboardBookmarkRows {
             // feed reported something new — or whose badge was cleared by
             // opening it — has to be redrawn by the incremental renderer.
             String(this.dash.feeds?.freshFor(bookmark)?.newCount || 0),
+            this.dash.settings?.feedsMarkQuiet === true && this.dash.feeds?.hasFeed?.(bookmark) ? 'q' : '',
             showIcons,
             iconStylingKey,
         ].join('\u0001');

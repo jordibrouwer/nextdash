@@ -359,3 +359,31 @@
 .ext-preview-section .bookmark-form-preview-block-header {
     margin-top: 0.35rem;
 }
+
+/* The feed behind this bookmark, when Fresh knows of one.
+   A quiet line under the preview: it answers "why does this one never say
+   anything", which is a question asked once, not a fact to read every time. */
+.bookmark-form-feed-line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #666);
+    overflow: hidden;
+}
+
+.bookmark-form-feed-label {
+    flex: 0 0 auto;
+    color: var(--text-tertiary, #888);
+}
+
+.bookmark-form-feed-url {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
+}

@@ -28,6 +28,11 @@ class SearchComponent {
         // filter, and was the one tidy-up question the search bar could not ask.
         // noted is its twin: a note is the thing you left to explain the link.
         'untagged', 'tagged', 'noted', 'unnoted',
+        // feed answers "which of these can ever tell me something is new". A row
+        // with a feed and nothing new looks exactly like a row with no feed, so
+        // without this the only way to find out was to read the count on the
+        // Fresh tab and guess which bookmarks it meant.
+        'feed', 'unfed',
     ]);
 
     /**
@@ -1179,7 +1184,7 @@ class SearchComponent {
 
         const filterTypeHints = () => ([
             toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')),
-            toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)')),
+            toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok/feed)')),
             toCompletion('page:', t('filterByPage', 'Filter by page (current/all/number)')),
             toCompletion('tag:', t('filterByTag', 'Filter by tag (example: tag:work)')),
             toCompletion('opened:', t('filterByOpened', 'Filter by when it was last opened (never/today/week/month/year)')),
@@ -1219,7 +1224,7 @@ class SearchComponent {
                 partialHints.push(toCompletion('category:', t('filterByCategory', 'Filter by category (example: category:work)')));
             }
             if ('status'.startsWith(currentToken) && currentToken.length >= 2) {
-                partialHints.push(toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok)')));
+                partialHints.push(toCompletion('status:', t('filterByStatusFull', 'Filter by status (online/offline/checked/unchecked/pinned/unpinned/broken/ok/feed)')));
             }
             if ('page'.startsWith(currentToken) && currentToken.length >= 2) {
                 partialHints.push(toCompletion('page:', t('filterByPage', 'Filter by page (current/all/number)')));
@@ -1265,6 +1270,8 @@ class SearchComponent {
                 ['unpinned', t('filterStatusUnpinned', 'Not pinned')],
                 ['checked', t('filterStatusChecked', 'Status check enabled')],
                 ['unchecked', t('filterStatusUnchecked', 'Status check disabled')],
+                ['feed', t('filterStatusFeed', 'Publishes a feed Fresh can read')],
+                ['unfed', t('filterStatusUnfed', 'No feed behind it')],
             ];
             return statusEntries
                 .filter(([status]) => status.startsWith(value))
@@ -1393,6 +1400,12 @@ class SearchComponent {
             const isBroken = Boolean(String(bookmark.lastError || '').trim());
             const tagCount = (bookmark.tags || []).filter((tag) => String(tag).trim()).length;
             const hasNote = Boolean(String(bookmark.note || '').trim());
+            // Known only while Fresh is on: with it off the server answers with
+            // an empty map, and every bookmark would read as "no feed" — an
+            // answer about the setting rather than about the bookmark.
+            const feeds = window.dashboardInstance?.feeds;
+            const hasFeed = feeds?.enabled === true
+                && Boolean(feeds.byKey?.get(feeds.key(bookmark.url))?.feedUrl);
             const monitor = window.dashboardInstance?.statusMonitor;
             const reachability = typeof monitor?.getBookmarkReachability === 'function'
                 ? monitor.getBookmarkReachability(bookmark)
@@ -1411,6 +1424,8 @@ class SearchComponent {
                 case 'tagged': return tagCount > 0;
                 case 'noted': return hasNote;
                 case 'unnoted': return !hasNote;
+                case 'feed': return hasFeed;
+                case 'unfed': return !hasFeed;
                 default: return true;
             }
         }

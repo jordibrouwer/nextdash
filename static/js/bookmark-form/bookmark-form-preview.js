@@ -54,6 +54,7 @@
                     </div>
                     <p id="${prefix}-link-preview-empty" class="bookmark-form-preview-empty">${tr('config.bookmarkLinkPreviewEmpty', 'No preview metadata yet — refresh to fetch title, description and image.')}</p>
                     <div id="${prefix}-link-preview-card" class="config-link-preview-card" hidden></div>
+                    <p id="${prefix}-feed-line" class="bookmark-form-feed-line" hidden></p>
                 </div>
             </div>
         `;
@@ -81,6 +82,7 @@
                 dashboardCompact: `${p}-dashboard-preview`,
                 dashboardPopover: `${p}-dashboard-preview-popover`,
                 linkCard: `${p}-link-preview-card`,
+                feedLine: `${p}-feed-line`,
                 linkEmpty: `${p}-link-preview-empty`,
                 linkRefresh: `${p}-link-preview-refresh-btn`,
                 linkClear: `${p}-link-preview-clear-btn`,
@@ -233,6 +235,8 @@
             card.hidden = !hasMeta;
             if (clearBtn) clearBtn.disabled = !hasMeta;
 
+            this.renderFeedLine(bookmark);
+
             if (!hasMeta) {
                 card.innerHTML = '';
                 return;
@@ -253,6 +257,40 @@
                     ${domain ? `<div class="config-link-preview-card-domain">${escHtml(domain)}</div>` : ''}
                 </div>
             `;
+        }
+
+        /**
+         * The feed behind this bookmark, when Fresh knows of one.
+         *
+         * The one question the dashboard cannot answer: a bookmark that
+         * publishes but has nothing new looks exactly like a bookmark that
+         * publishes nothing, and the count on the Fresh tab says how many there
+         * are without saying which. This is where someone looks when they are
+         * wondering why this bookmark never says anything.
+         *
+         * Only while Fresh is on: with it off the server sends an empty map, so
+         * every bookmark would read as "no feed" — an answer about the setting
+         * rather than about the bookmark.
+         */
+        renderFeedLine(bookmark) {
+            const line = document.getElementById(this.ids().feedLine);
+            if (!line) return;
+            const feeds = global.dashboardInstance?.feeds;
+            const url = String(bookmark?.url || '').trim();
+            const entry = feeds?.enabled === true && url
+                ? feeds.byKey?.get(feeds.key(url))
+                : null;
+            const feedURL = String(entry?.feedUrl || '').trim();
+            if (!feedURL) {
+                line.hidden = true;
+                line.textContent = '';
+                return;
+            }
+            line.hidden = false;
+            line.innerHTML = `<span class="bookmark-form-feed-label">${escHtml(this.t('config.bookmarkFeedLabel', 'Feed'))}</span>`
+                + `<code class="bookmark-form-feed-url">${escHtml(feedURL)}</code>`;
+            line.title = this.t('config.bookmarkFeedHint',
+                'Fresh reads this feed to count what has been published since you last opened the bookmark.');
         }
 
         async refreshLinkPreview(bookmark) {

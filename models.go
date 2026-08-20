@@ -343,7 +343,13 @@ type Settings struct {
 	// it. Off by default because it is the only thing here that reaches out to
 	// the internet on a schedule without a bookmark having asked for it —
 	// discovery happens regardless, so switching this on needs no re-fetch.
-	FeedsEnabled            bool `json:"feedsEnabled"`
+	FeedsEnabled bool `json:"feedsEnabled"`
+	// FeedsMarkQuiet puts a mark on a row whose page publishes but has nothing
+	// new. Off by default and deliberately so: most of those rows are silent
+	// most of the time, and a mark on twenty of them is the noise Fresh exists
+	// to avoid. It is here for the reader who wants to see which bookmarks are
+	// taking part at a glance rather than one at a time in the editor.
+	FeedsMarkQuiet          bool `json:"feedsMarkQuiet"`
 	ServerLogRetentionHours int  `json:"serverLogRetentionHours"` // Hours of server log to keep in "time" mode (0 = until cleared, max 90 days)
 	// Which cap applies: "time" uses ServerLogRetentionHours and ignores the
 	// entry count, "count" uses ServerLogMaxEntries and ignores the age. The

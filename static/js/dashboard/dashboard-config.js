@@ -7873,6 +7873,7 @@ class DashboardConfig {
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
         feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
+        feedsMarkQuiet: { def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },

@@ -77,6 +77,18 @@ class DashboardFeeds {
         return entry;
     }
 
+    /**
+     * Whether this bookmark's page publishes at all, new or not.
+     *
+     * The quiet mark and the `status:feed` filter both need the question the
+     * count cannot answer: a row with a feed and nothing new is identical to a
+     * row with no feed.
+     */
+    hasFeed(bookmark) {
+        if (!this.enabled) return false;
+        return Boolean(this.byKey.get(this.key(bookmark?.url))?.feedUrl);
+    }
+
     /** Bookmarks with something new, newest publication first. */
     freshBookmarks(bookmarks) {
         if (!this.enabled || !this.byKey.size) return [];
