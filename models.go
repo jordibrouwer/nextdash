@@ -788,7 +788,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowIcons:                    true,
 			ShowLinkPreviewCards:         true,
 			LinkPreviewMode:              "hover",
-			LinkPreviewHoverDelayMs:      150,
+			LinkPreviewHoverDelayMs:      250,
 			ShowShortcuts:                true,
 			ShowPinIcon:                  false,
 			ShowNoteIcon:                 true,
@@ -2639,7 +2639,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowIcons:                      true,
 			ShowLinkPreviewCards:           true,
 			LinkPreviewMode:                "hover",
-			LinkPreviewHoverDelayMs:        150,
+			LinkPreviewHoverDelayMs:        250,
 			ShowShortcuts:                  true,
 			ShowPinIcon:                    false,
 			ShowNoteIcon:                   true,
@@ -2758,13 +2758,13 @@ func (fs *FileStore) GetSettings() Settings {
 			settings.ShowLinkPreviewCards = true
 		}
 		if _, ok := rawSettings["linkPreviewHoverDelayMs"]; !ok {
-			settings.LinkPreviewHoverDelayMs = 150
+			settings.LinkPreviewHoverDelayMs = 250
 		}
 		settings.LinkPreviewMode = normalizeLinkPreviewMode(settings.LinkPreviewMode, settings.ShowLinkPreviewCards)
 		settings.ShowLinkPreviewCards = settings.LinkPreviewMode != "off"
 		settings.LinkPreviewParts = normalizeLinkPreviewParts(settings.LinkPreviewParts)
 		if settings.LinkPreviewHoverDelayMs != 100 && settings.LinkPreviewHoverDelayMs != 150 && settings.LinkPreviewHoverDelayMs != 250 {
-			settings.LinkPreviewHoverDelayMs = 150
+			settings.LinkPreviewHoverDelayMs = 250
 		}
 		if _, ok := rawSettings["showPinIcon"]; !ok {
 			settings.ShowPinIcon = false

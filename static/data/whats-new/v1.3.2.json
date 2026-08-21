@@ -42,7 +42,28 @@
         },
         {
           "badge": "fix",
-          "text": "<strong>The hover delay offered delays it did not use.</strong> The list read Instant, 200 ms, 400 ms, 700 ms and 1 s; four of those five did nothing at all. It offers the three that work: Fast, Balanced and Calm."
+          "text": "<strong>The hover delay is calmer, and honest.</strong> The card waits a quarter of a second now, so it stops appearing on rows you were only passing over. The list used to read Instant, 200 ms, 400 ms, 700 ms and 1 s — four of those five did nothing at all; it offers Fast, Balanced and Calm, and starts on Calm. If you have already picked a delay, it stays as you set it."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Editing a bookmark no longer wipes its statistics.</strong> Opening a bookmark and then editing anything on that page set its open count back to zero, and took the last check, the fetched preview text and the certificate along with it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Show in Health opens the row you picked.</strong> It landed on whichever row happened to appear under your pointer instead."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Safari: the bookmark editor takes your clicks again.</strong> Opened from Health, its fields would not respond — the dimmed column beside it was quietly catching them."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The dashboard loads lighter.</strong> The health icon was downloading the entire health report on every visit to read three numbers off it; on a real library that is 8 KB down to under half a kilobyte."
         }
       ]
     }

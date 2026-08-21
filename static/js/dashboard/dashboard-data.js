@@ -230,7 +230,7 @@ class DashboardData {
                 d.settings.showLinkPreviewCards = true;
             }
             if (![100, 150, 250].includes(Number(d.settings.linkPreviewHoverDelayMs))) {
-                d.settings.linkPreviewHoverDelayMs = 150;
+                d.settings.linkPreviewHoverDelayMs = 250;
             }
             // The mode is what the card reads; the boolean is kept in step so
             // everything still holding it — the command palette toggle, the

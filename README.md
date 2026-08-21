@@ -490,7 +490,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **50 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
-- Link preview cards — **on hover by default**, with **keyboard only** and **off** as the other two answers in **Config → Appearance → Display**; hover delay and a checklist of the rows the card draws
+- Link preview cards — **on hover by default**, with **keyboard only** and **off** as the other two answers in **Config → Appearance → Display**; hover delay (Fast, Balanced or Calm — Calm by default) and a checklist of the rows the card draws
 - Background image or gradient support
 - Clickable date/time header showing a week-overview popover; optional calendar URL link
 

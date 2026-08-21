@@ -39,7 +39,7 @@ test.describe('the link preview setting', () => {
         expect(await page.evaluate(() => window.dashboardInstance.settings.showLinkPreviewCards)).toBe(true);
     });
 
-    test('the delays offered are the delays honoured', async ({ page }) => {
+    test('the delays offered are the delays honoured, and Calm is the default', async ({ page }) => {
         await openDisplayTab(page);
         const values = await page.locator('[data-behavior-field="linkPreviewHoverDelayMs"] option')
             .evaluateAll((els) => els.map((e) => Number(e.value)));
@@ -66,3 +66,18 @@ test.describe('the link preview setting', () => {
             .toBe(true);
     });
 });
+
+        // A card that opens the moment the pointer crosses a row opens on rows
+        // you were only passing over, so the calm end is where it starts.
+        const meta = await page.evaluate(() =>
+            window.dashboardInstance.config.fieldMeta('linkPreviewHoverDelayMs')?.def);
+        expect(meta).toBe(250);
+        const unset = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const kept = d.settings.linkPreviewHoverDelayMs;
+            delete d.settings.linkPreviewHoverDelayMs;
+            const used = d.preview.previewHoverDelay();
+            d.settings.linkPreviewHoverDelayMs = kept;
+            return used;
+        });
+        expect(unset).toBe(250);

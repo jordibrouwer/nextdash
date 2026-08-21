@@ -3731,7 +3731,7 @@
     "showLinkPreviewCardsInfoTitle": "Aperçus de lien",
     "showLinkPreviewCardsInfoMessage": "Carte d’aperçu au survol ou au focus.",
     "linkPreviewHoverDelayInfoTitle": "Délai d’aperçu",
-    "linkPreviewHoverDelayInfoMessage": "Délai avant l’aperçu.\n\n• Rapide / Équilibré / Calme",
+    "linkPreviewHoverDelayInfoMessage": "Le temps d'attente avant l'affichage de la carte d'aperçu.\n\n• Rapide (100ms), Équilibré (150ms), Doux (250ms — par défaut)",
     "bookmarkSortingInfoTitle": "Tri",
     "bookmarkSortingInfoMessage": "Ordre par défaut par page.\n\n• Manuel, A–Z, Récent, Épinglés d’abord",
     "openLinksInNewTabInfoTitle": "Ouvrir dans un nouvel onglet",

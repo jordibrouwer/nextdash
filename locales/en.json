@@ -3750,7 +3750,7 @@
     "showLinkPreviewCardsInfoTitle": "Link preview cards",
     "showLinkPreviewCardsInfoMessage": "Hover card with title/description preview for a bookmark.\n\n• Only on keyboard focus or hover\n• Delay setting avoids accidental popups",
     "linkPreviewHoverDelayInfoTitle": "Preview hover delay",
-    "linkPreviewHoverDelayInfoMessage": "How long to wait before showing the preview card.\n\n• Fast (100ms), Balanced (150ms), Calm (250ms)",
+    "linkPreviewHoverDelayInfoMessage": "How long to wait before showing the preview card.\n\n• Fast (100ms), Balanced (150ms), Calm (250ms — the default)",
     "bookmarkSortingInfoTitle": "Bookmark sorting",
     "bookmarkSortingInfoMessage": "Default order for bookmarks on each page.\n\n• Manual: drag order\n• A–Z, Recently used, Pinned first",
     "openLinksInNewTabInfoTitle": "Open in new tab",

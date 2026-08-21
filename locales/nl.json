@@ -3741,7 +3741,7 @@
     "showLinkPreviewCardsInfoTitle": "Linkvoorbeelden",
     "showLinkPreviewCardsInfoMessage": "Kaartje met titel/beschrijving bij hover of focus.\n\n• Vertraging voorkomt onbedoelde pop-ups",
     "linkPreviewHoverDelayInfoTitle": "Vertraging voorbeeld",
-    "linkPreviewHoverDelayInfoMessage": "Wachttijd voordat het voorbeeld verschijnt.\n\n• Snel (100 ms), Gebalanceerd (150 ms), Rustig (250 ms)",
+    "linkPreviewHoverDelayInfoMessage": "Hoe lang gewacht wordt voordat de voorbeeldkaart verschijnt.\n\n• Snel (100ms), Gemiddeld (150ms), Rustig (250ms — standaard)",
     "bookmarkSortingInfoTitle": "Sortering",
     "bookmarkSortingInfoMessage": "Standaardvolgorde per pagina.\n\n• Handmatig, A–Z, Recent, Vastgezet eerst",
     "openLinksInNewTabInfoTitle": "Openen in nieuw tabblad",

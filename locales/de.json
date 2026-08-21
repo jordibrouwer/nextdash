@@ -3731,7 +3731,7 @@
     "showLinkPreviewCardsInfoTitle": "Link-Vorschaukarten",
     "showLinkPreviewCardsInfoMessage": "Vorschaukarte bei Hover oder Fokus.",
     "linkPreviewHoverDelayInfoTitle": "Vorschau-Verzögerung",
-    "linkPreviewHoverDelayInfoMessage": "Wartezeit vor der Vorschau.\n\n• Schnell / Ausgewogen / Ruhig",
+    "linkPreviewHoverDelayInfoMessage": "Wie lange gewartet wird, bevor die Vorschaukarte erscheint.\n\n• Schnell (100ms), Ausgewogen (150ms), Ruhig (250ms — Standard)",
     "bookmarkSortingInfoTitle": "Sortierung",
     "bookmarkSortingInfoMessage": "Standardreihenfolge pro Seite.\n\n• Manuell, A–Z, Zuletzt, Angeheftet zuerst",
     "openLinksInNewTabInfoTitle": "In neuem Tab öffnen",

@@ -38,6 +38,17 @@ class DashboardPreview {
         return this.dash.settings?.showLinkPreviewCards === true ? 'hover' : 'off';
     }
 
+    /**
+     * How long the pointer has to rest on a row before the card opens.
+     *
+     * Calm by default: a card that opens the moment the pointer crosses a row
+     * opens on rows you were only passing over on the way somewhere else.
+     */
+    previewHoverDelay() {
+        const stored = Number(this.dash.settings?.linkPreviewHoverDelayMs);
+        return [100, 150, 250].includes(stored) ? stored : 250;
+    }
+
     /** Cards at all — by hover or by key. */
     cardsEnabled() {
         return this.previewMode() !== 'off';
@@ -87,9 +98,7 @@ class DashboardPreview {
             if (openLink._previewHoverTimer) {
                 clearTimeout(openLink._previewHoverTimer);
             }
-            const hoverDelay = [100, 150, 250].includes(Number(d.settings.linkPreviewHoverDelayMs))
-                ? Number(d.settings.linkPreviewHoverDelayMs)
-                : 150;
+            const hoverDelay = this.previewHoverDelay();
             openLink._previewHoverTimer = setTimeout(async () => {
                 if (!openLink._previewHoverActive || this.previewMode() !== 'hover') {
                     return;

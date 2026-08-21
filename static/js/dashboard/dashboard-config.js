@@ -8139,7 +8139,7 @@ class DashboardConfig {
         // Link previews
         linkPreviewMode: { info: ['linkPreviewModeInfoTitle', 'linkPreviewModeInfoMessage'], def: 'hover' },
         linkPreviewParts: { info: ['linkPreviewPartsInfoTitle', 'linkPreviewPartsInfoMessage'], def: null },
-        linkPreviewHoverDelayMs: { info: ['linkPreviewHoverDelayInfoTitle', 'linkPreviewHoverDelayInfoMessage'], def: 150 },
+        linkPreviewHoverDelayMs: { info: ['linkPreviewHoverDelayInfoTitle', 'linkPreviewHoverDelayInfoMessage'], def: 250 },
         // Sync
         faviconRefreshPolicy: { info: ['faviconRefreshPolicyInfoTitle', 'faviconRefreshPolicyInfoMessage'], def: 'on-save' },
         // Privacy
