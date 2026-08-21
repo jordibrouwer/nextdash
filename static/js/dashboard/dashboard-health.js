@@ -220,6 +220,11 @@ class DashboardHealth {
             })
             .then((data) => {
                 this.report = data || null;
+                // The dashboard's preview cards read health facts from the
+                // badge's index; a report fetched here is fresher, so it
+                // replaces what the badge left — otherwise a refresh in this
+                // view would leave the cards quoting the older figures.
+                window.HealthFacts?.remember?.(this.report);
                 return this.report;
             })
             .finally(() => {

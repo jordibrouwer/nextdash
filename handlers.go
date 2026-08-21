@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"html/template"
 	"io"
 	"log"
@@ -2437,6 +2438,10 @@ func (h *Handlers) extractMetaFromHTML(htmlBody, attrName, attrValue string) str
 		return ""
 	}
 	value := h.extractQuotedAttribute(tag[contentPos+8:])
+	// An attribute's value is escaped in the source, so a page whose title
+	// contains an apostrophe arrives as "GitHub&#39;s" — and the card, which
+	// sets text rather than markup, would print the entity as written.
+	value = html.UnescapeString(value)
 	return strings.TrimSpace(strings.Join(strings.Fields(value), " "))
 }
 

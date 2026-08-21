@@ -8061,7 +8061,7 @@ class DashboardConfig {
         showShortcuts: { info: ['showShortcutsInfoTitle', 'showShortcutsInfoMessage'], def: true },
         showStatus: { info: ['showBookmarkStatusInfoTitle', 'showBookmarkStatusInfoMessage'], def: true },
         showPing: { info: ['showPingTimesInfoTitle', 'showPingTimesInfoMessage'], def: true },
-        showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: false },
+        showLinkPreviewCards: { info: ['showLinkPreviewCardsInfoTitle', 'showLinkPreviewCardsInfoMessage'], def: true },
         colorizeStatus: { info: ['colorizeStatusInfoTitle', 'colorizeStatusInfoMessage'], def: true },
         showIcons: { info: ['showIconsInfoTitle', 'showIconsInfoMessage'], def: true },
         // Toolbar & tabs
@@ -8137,6 +8137,8 @@ class DashboardConfig {
         weatherRefreshMinutes: { info: ['weatherRefreshInfoTitle', 'weatherRefreshInfoMessage'], def: 30 },
         calendarUrl: { info: ['calendarUrlInfoTitle', 'calendarUrlInfoMessage'] },
         // Link previews
+        linkPreviewMode: { info: ['linkPreviewModeInfoTitle', 'linkPreviewModeInfoMessage'], def: 'hover' },
+        linkPreviewParts: { info: ['linkPreviewPartsInfoTitle', 'linkPreviewPartsInfoMessage'], def: null },
         linkPreviewHoverDelayMs: { info: ['linkPreviewHoverDelayInfoTitle', 'linkPreviewHoverDelayInfoMessage'], def: 150 },
         // Sync
         faviconRefreshPolicy: { info: ['faviconRefreshPolicyInfoTitle', 'faviconRefreshPolicyInfoMessage'], def: 'on-save' },
@@ -8182,6 +8184,11 @@ class DashboardConfig {
         const meta = this.fieldMeta(field);
         if (!meta || meta.def === undefined) return true; // no known default → hide reset
         const d = meta.def;
+        // A field whose default is "nothing stored" — the preview card's row
+        // list, where absent means all of them. Compared as a value rather than
+        // through String(), which turns null into "null" and never matches.
+        if (d === null) return value === null || value === undefined;
+        if (Array.isArray(d)) return JSON.stringify(value ?? null) === JSON.stringify(d);
         if (typeof d === 'boolean') return Boolean(value) === d;
         if (typeof d === 'number') return Number(value) === d;
         return String(value ?? '') === String(d);
@@ -8567,15 +8574,54 @@ class DashboardConfig {
                     bool('showStatus', 'config.showStatusLabel', 'Show online/offline status'),
                     bool('showStatusLoading', 'config.showStatusLoadingLabel', 'Show a loading state while checking'),
                     bool('showPing', 'config.showPingLabel', 'Show ping times'),
-                    bool('showLinkPreviewCards', 'config.showLinkPreviewCardsLabel', 'Show link preview cards'),
-                    { field: 'linkPreviewHoverDelayMs', type: 'select', label: t('config.linkPreviewHoverDelayLabel', 'Preview hover delay'), options: [
-                        opt(0, t('config.linkPreviewDelayInstant', 'Instant')), opt(200, '200 ms'), opt(400, '400 ms'),
-                        opt(700, '700 ms'), opt(1000, '1 s'),
-                    ] },
                     bool('showPageInTitle', 'config.showPageInTitleLabel', 'Show the page name in the browser title'),
                     { ...bool('showRowTags', 'config.showRowTagsLabel', 'Show tags on bookmark rows'), special: 'render' },
                     { field: 'rowTagsMax', type: 'number', min: 1, max: 5, step: 1, special: 'render',
                         label: t('config.rowTagsMaxLabel', 'Tags shown before “+N”') },
+                ],
+            },
+            {
+                section: 'appearance',
+                tab: 'display',
+                title: t('config.linkPreviewGroup', 'Link preview cards'),
+                note: t('config.linkPreviewGroupNote',
+                    'A card beside a bookmark with what the page says and what nextDash knows about it.'),
+                controls: [
+                    // Three ways rather than a switch: wanting what the card
+                    // says and not wanting a panel to appear under the pointer
+                    // are different objections, and "off" used to be the only
+                    // answer to either.
+                    { field: 'linkPreviewMode', type: 'cards', special: 'previewCard',
+                        label: t('config.linkPreviewModeLabel', 'Link preview cards'), options: [
+                            { value: 'off', label: t('config.linkPreviewModeOff', 'Off'),
+                                body: t('config.linkPreviewModeOffBody', 'The row keeps its ordinary tooltip.') },
+                            { value: 'hover', label: t('config.linkPreviewModeHover', 'On hover'),
+                                body: t('config.linkPreviewModeHoverBody', 'Appears beside the row after the delay below.') },
+                            { value: 'keyboard', label: t('config.linkPreviewModeKeyboard', 'Keyboard only'),
+                                body: t('config.linkPreviewModeKeyboardBody', 'Never appears on its own; Shift + V opens it for the selected row.') },
+                        ] },
+                    { field: 'linkPreviewHoverDelayMs', type: 'select', special: 'previewCard',
+                        label: t('config.linkPreviewHoverDelayLabel', 'Preview hover delay'), options: [
+                            opt(100, t('config.linkPreviewDelayFast', 'Fast (100ms)')),
+                            opt(150, t('config.linkPreviewDelayBalanced', 'Balanced (150ms)')),
+                            opt(250, t('config.linkPreviewDelaySlow', 'Calm (250ms)')),
+                        ] },
+                    // Someone who writes no notes should never see a note row,
+                    // and someone who monitors nothing never a status row.
+                    { field: 'linkPreviewParts', type: 'checkset', special: 'previewCard',
+                        label: t('config.linkPreviewPartsLabel', 'What the card shows'), options: [
+                            { value: 'image', label: t('config.linkPreviewPartImage', 'Image') },
+                            { value: 'description', label: t('config.linkPreviewPartDescription', 'Description') },
+                            { value: 'note', label: t('config.linkPreviewPartNote', 'Your note') },
+                            { value: 'tags', label: t('config.linkPreviewPartTags', 'Tags') },
+                            { value: 'status', label: t('config.linkPreviewPartStatus', 'Status & uptime') },
+                            { value: 'opens', label: t('config.linkPreviewPartOpens', 'Opens & last opened') },
+                            { value: 'fresh', label: t('config.linkPreviewPartFresh', 'Fresh count') },
+                            { value: 'location', label: t('config.linkPreviewPartLocation', 'Shortcut & location') },
+                        ] },
+                    { type: 'previewSample' },
+                    { type: 'note', text: t('config.linkPreviewElsewhere',
+                        'The fetched text and images are managed under Bookmarks → Link preview, and Health lists the bookmarks that have none.') },
                 ],
             },
             /*
@@ -8963,6 +9009,39 @@ class DashboardConfig {
             if (c.type === 'note') {
                 return `<p class="config-field-hint">${esc(c.text)}</p>`;
             }
+            // A live card built from a real bookmark, redrawn as the checklist
+            // beside it is flipped. Appearance previews its settings; this was
+            // the one you had to leave the screen and hover something to see.
+            if (c.type === 'previewSample') {
+                return `
+                    <div class="config-preview-sample">
+                        <div class="config-preview-sample-card" data-preview-sample></div>
+                    </div>`;
+            }
+            // A set of names rather than one value: eight checkboxes writing one
+            // array, so the card's rows are chosen the way a list is chosen.
+            if (c.type === 'checkset') {
+                const current = Array.isArray(s[c.field])
+                    ? s[c.field].map((v) => String(v))
+                    // Absent means all of them, which is what the card has
+                    // always drawn — an empty list is a deliberate choice and
+                    // reads as one.
+                    : c.options.map((o) => String(o.value));
+                const boxes = c.options.map((o) => `
+                    <label class="config-toggle config-checkset-item">
+                        <input type="checkbox" data-${prefix}-field="${esc(c.field)}"
+                               data-${prefix}-type="checkset" data-${prefix}-special="${esc(c.special || '')}"
+                               data-${prefix}-value="${esc(o.value)}"
+                               ${current.includes(String(o.value)) ? 'checked' : ''}>
+                        <span>${esc(o.label)}</span>
+                    </label>`).join('');
+                return `
+                    <div class="config-field">
+                        <span class="config-field-label">${esc(c.label)}</span>
+                        <span class="config-field-affordances">${this.renderFieldAffordances(c.field, s[c.field])}</span>
+                    </div>
+                    <div class="config-checkset" role="group" aria-label="${esc(c.label)}">${boxes}</div>`;
+            }
             // Per-device push controls. Permission is granted per browser, so this
             // cannot be a synced setting like the toggles around it — the state is
             // read from the browser after render.
@@ -9246,6 +9325,59 @@ class DashboardConfig {
     }
 
     /** Bind a rendered schema's controls (and ℹ/↺ affordances) back to setBehavior. */
+    /**
+     * Draw the sample card in the Link preview panel.
+     *
+     * Built by the card's own code from a real bookmark — the one with the most
+     * to say, so the rows the checklist governs are actually in it — rather than
+     * a drawing of a card, which would be free to drift from the card.
+     */
+    paintPreviewSample(container) {
+        const host = container.querySelector('[data-preview-sample]');
+        if (!host) return;
+        const d = this.dash;
+        const preview = d.preview;
+        if (!preview || typeof preview.paintPreviewCard !== 'function') {
+            host.remove();
+            return;
+        }
+        const pool = (d.allBookmarks?.length ? d.allBookmarks : d.bookmarks) || [];
+        // Whichever bookmark can fill the most rows: a sample with no note and
+        // no description would say nothing about the boxes beside it.
+        const sample = [...pool].sort((a, b) => this.previewSampleScore(b) - this.previewSampleScore(a))[0] || null;
+        const bookmark = sample || {
+            name: 'nextDash',
+            url: 'https://example.com/docs',
+            note: this.t('config.linkPreviewSampleNote', 'The note you wrote about this page.'),
+            tags: ['docs'],
+            openCount: 42,
+            lastOpened: Date.now() - 3 * 86400000,
+        };
+        host.className = 'bookmark-preview-card config-preview-sample-card is-visible';
+        host.innerHTML = window.DashboardPreview.cardMarkup();
+        const payload = preview.buildPreviewPayload(
+            bookmark,
+            {
+                title: bookmark.previewTitle || bookmark.name,
+                description: bookmark.previewDesc
+                    || this.t('config.linkPreviewSampleDesc', 'What the page itself says about the page.'),
+                image: bookmark.previewImage || '',
+                url: bookmark.url,
+            }
+        );
+        preview.paintPreviewCard(host, payload, { mode: 'peek' });
+    }
+
+    /** How much a bookmark would fill a sample card. */
+    previewSampleScore(bookmark) {
+        if (!bookmark) return -1;
+        return (String(bookmark.note || '').trim() ? 2 : 0)
+            + ((bookmark.tags || []).length ? 1 : 0)
+            + (String(bookmark.previewDesc || '').trim() ? 1 : 0)
+            + (String(bookmark.previewImage || '').trim() ? 1 : 0)
+            + (Number(bookmark.openCount || 0) > 0 ? 1 : 0);
+    }
+
     bindControlPanels(container, prefix) {
         container.querySelectorAll(`[data-${prefix}-field]`).forEach((el) => {
             const field = el.getAttribute(`data-${prefix}-field`);
@@ -9266,6 +9398,16 @@ class DashboardConfig {
                         card.setAttribute('aria-checked', on ? 'true' : 'false');
                     });
                     void this.setBehavior(field, value, special);
+                });
+            } else if (type === 'checkset') {
+                el.addEventListener('change', () => {
+                    const boxes = [...container.querySelectorAll(
+                        `[data-${prefix}-field="${CSS.escape(field)}"][data-${prefix}-type="checkset"]`
+                    )];
+                    const value = boxes
+                        .filter((box) => box.checked)
+                        .map((box) => box.getAttribute(`data-${prefix}-value`));
+                    return this.setBehavior(field, value, special);
                 });
             } else if (type === 'checkbox') {
                 el.addEventListener('change', () => {
@@ -9289,6 +9431,7 @@ class DashboardConfig {
                 });
             }
         });
+        this.paintPreviewSample(container);
         this.bindPanelBulkActions(container, prefix);
         this.bindChangedFilter(container);
         this.bindPanelResetActions(container);
@@ -10329,6 +10472,16 @@ class DashboardConfig {
         // than a bespoke show/hide toggle for this one field.
         if (field === 'monitorNotifyPreset') {
             this.repaintActiveControlPanels();
+        }
+        // The card is bound to each row as the grid is drawn, so a mode change
+        // only takes effect on the next render — and the sample beside the
+        // checklist has to show what was just ticked.
+        if (field === 'linkPreviewMode') {
+            d.settings.showLinkPreviewCards = value !== 'off';
+        }
+        if (special === 'previewCard') {
+            const panels = document.getElementById('config-appearance-body');
+            if (panels) this.paintPreviewSample(panels);
         }
         switch (special) {
             case 'language':

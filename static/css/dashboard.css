@@ -1888,11 +1888,33 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
     color: var(--text-primary);
 }
 
-/* Preview card note snippet */
+/*
+ * Your own note, which is the one line on the card nobody else could have
+ * written — and which used to be the faintest thing on it, in the same grey as
+ * the site's marketing description.
+ */
 .bookmark-preview-card-note {
-    margin-top: 0.35rem;
-    color: var(--text-tertiary);
-    font-size: 0.85rem;
+    margin: 0.6rem 0.8rem 0;
+    padding: 0.38rem 0.55rem;
+    border-left: 2px solid var(--accent-primary, var(--text-secondary));
+    border-radius: 0 5px 5px 0;
+    background: color-mix(in srgb, var(--accent-primary, var(--text-secondary)) 8%, transparent);
+    color: var(--text-primary);
+    font-size: calc(var(--font-size-controls) * 0.88);
+    line-height: 1.4;
+}
+
+.bookmark-preview-card-note-label {
+    display: block;
+    margin-bottom: 3px;
+    font-family: var(--font-family-mono, monospace);
+    font-size: calc(var(--font-size-controls) * 0.66);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-primary, var(--text-secondary));
+}
+
+.bookmark-preview-card-note-text {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
@@ -1937,10 +1959,10 @@ body.no-animations .health-link.is-health-alert .health-link-anchor {
 
 /* Preview card tags */
 .bookmark-preview-card-tags {
-    display: none;
+    display: flex;
     flex-wrap: wrap;
-    gap: 0.2rem;
-    margin-top: 0.4rem;
+    gap: 4px;
+    padding: 0.55rem 0.8rem 0;
 }
 
 .dashboard-grid.layout-terminal .category-title-label::before {
@@ -4028,71 +4050,151 @@ body.no-animations .bookmarks-list.reorder-container::after {
     line-height: 1.2;
 }
 
+/*
+ * The link preview card.
+ *
+ * Three bands in a fixed order — what it is, what it says, what I know about it
+ * — each one absent rather than blank when it has nothing to carry. No card-level
+ * max-height: the blocks clamp themselves, so nothing disappears without the
+ * card being visibly shorter for it.
+ */
 .bookmark-preview-card {
     position: fixed;
     z-index: 2000;
     display: none;
     width: min(360px, calc(100vw - 24px));
-    max-height: min(360px, calc(100vh - 24px));
-    overflow: hidden;
     border-radius: 12px;
     border: 1px solid var(--border-primary);
     background: var(--background-secondary);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+    /* Peek is something to read, not something to reach: it takes no pointer
+       events, so it never has to move out of the way of its own cursor. */
     pointer-events: none;
+    overflow: hidden;
+}
+
+/* `display: flex` and `display: grid` both beat the hidden attribute, and the
+   card's bands are laid out with both — so a band that says it is absent has to
+   be made absent here, or it draws as an empty stripe. */
+.bookmark-preview-card [hidden] {
+    display: none !important;
 }
 
 .bookmark-preview-card.is-visible {
     display: block;
-    pointer-events: auto;
 }
 
-.bookmark-preview-card-refresh {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    z-index: 3;
+.bookmark-preview-card.is-pinned {
+    pointer-events: auto;
+    border-color: var(--text-secondary);
+}
+
+.bookmark-preview-card:focus-visible {
+    outline: 2px solid var(--accent-primary, var(--text-secondary));
+    outline-offset: 2px;
+}
+
+.bookmark-preview-card-head {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    padding: 0.7rem 0.8rem 0.5rem;
+}
+
+.bookmark-preview-card-fav {
+    flex: none;
+    width: 17px;
+    height: 17px;
+    margin-top: 2px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--background-primary);
+}
+
+.bookmark-preview-card-fav img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.bookmark-preview-card-headtext {
+    flex: 1;
+    min-width: 0;
+}
+
+.bookmark-preview-card-title {
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+
+/* One address, not two: the old card printed the full URL in mono and then its
+   hostname on the next line, and neither could be clicked or copied. */
+.bookmark-preview-card-domain {
+    margin-top: 2px;
+    font-family: var(--font-family-mono, monospace);
+    font-size: calc(var(--font-size-controls) * 0.8);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* "Is this link still alive" is the question the rest of the app exists to
+   answer, so it is the first thing on the card. */
+.bookmark-preview-card-pill {
+    flex: none;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    border: 1px solid color-mix(in srgb, var(--border-primary) 80%, transparent);
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--background-secondary) 88%, transparent);
+    gap: 5px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border-secondary);
+    background: rgba(255, 255, 255, 0.03);
     color: var(--text-secondary);
-    cursor: pointer;
-    backdrop-filter: blur(6px);
-    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+    font-size: calc(var(--font-size-controls) * 0.72);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
 }
 
-.bookmark-preview-card-refresh:hover,
-.bookmark-preview-card-refresh:focus-visible {
-    color: var(--text-primary);
-    border-color: var(--text-secondary);
-    background: var(--background-primary);
-    outline: none;
+.bookmark-preview-card-pill::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
 }
 
-.bookmark-preview-card-refresh:disabled {
-    opacity: 0.65;
-    cursor: wait;
+.bookmark-preview-card-pill.is-ok {
+    color: var(--accent-success, #10B981);
+    border-color: color-mix(in srgb, var(--accent-success, #10B981) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-success, #10B981) 12%, transparent);
 }
 
-.bookmark-preview-card-refresh.is-loading svg {
-    animation: bookmark-preview-refresh-spin 0.8s linear infinite;
+.bookmark-preview-card-pill.is-warn {
+    color: var(--accent-warning, #F59E0B);
+    border-color: color-mix(in srgb, var(--accent-warning, #F59E0B) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-warning, #F59E0B) 12%, transparent);
 }
 
-@keyframes bookmark-preview-refresh-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+.bookmark-preview-card-pill.is-bad {
+    color: var(--accent-error, #EF4444);
+    border-color: color-mix(in srgb, var(--accent-error, #EF4444) 40%, transparent);
+    background: color-mix(in srgb, var(--accent-error, #EF4444) 12%, transparent);
 }
 
 .bookmark-preview-card-image-wrap {
-    display: none;
     width: 100%;
-    height: 150px;
+    aspect-ratio: 16 / 9;
+    max-height: 158px;
+    border-top: 1px solid var(--border-secondary);
+    border-bottom: 1px solid var(--border-secondary);
     background: var(--background-primary);
 }
 
@@ -4103,54 +4205,115 @@ body.no-animations .bookmarks-list.reorder-container::after {
     display: block;
 }
 
-.bookmark-preview-card-content {
-    padding: 0.7rem 0.8rem;
-}
-
-.bookmark-preview-card-title {
-    font-size: var(--font-size-controls);
-    font-weight: var(--font-weight-bold);
-    color: var(--text-primary);
-    line-height: 1.25;
-}
-
 .bookmark-preview-card-description {
-    margin-top: 0.35rem;
-    font-size: calc(var(--font-size-controls) * 0.95);
+    padding: 0.55rem 0.8rem 0;
+    font-size: calc(var(--font-size-controls) * 0.92);
     color: var(--text-secondary);
-    line-height: 1.35;
-    max-height: 5.5em;
+    line-height: 1.42;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
     overflow: hidden;
 }
 
-.bookmark-preview-card-url {
-    margin-top: 0.45rem;
-    font-size: calc(var(--font-size-controls) * 0.82);
+.bookmark-preview-card-empty {
+    margin: 0;
+    padding: 0.55rem 0.8rem 0;
+    font-size: calc(var(--font-size-controls) * 0.88);
+    font-style: italic;
     color: var(--text-tertiary);
-    opacity: 0.75;
+}
+
+.bookmark-preview-card-facts {
+    margin: 0.7rem 0 0;
+    padding: 0.5rem 0.8rem 0.6rem;
+    border-top: 1px solid var(--border-secondary);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3px 12px;
+    font-size: calc(var(--font-size-controls) * 0.86);
+}
+
+.bookmark-preview-card-facts dt {
     font-family: var(--font-family-mono, monospace);
-    text-overflow: ellipsis;
-    overflow: hidden;
+    font-size: calc(var(--font-size-controls) * 0.74);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
     white-space: nowrap;
+    line-height: 1.6;
 }
 
-.bookmark-preview-card-domain {
-    margin-top: 0.25rem;
-    font-size: calc(var(--font-size-controls) * 0.9);
-    color: var(--text-tertiary);
-    text-overflow: ellipsis;
+.bookmark-preview-card-facts dd {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    min-width: 0;
     overflow: hidden;
-    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
-.bookmark-preview-card-usage {
-    margin-top: 0.3rem;
-    font-size: calc(var(--font-size-controls) * 0.85);
+.bookmark-preview-card-facts dd b {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.bookmark-preview-card-facts dd.is-good b { color: var(--accent-success, #10B981); }
+.bookmark-preview-card-facts dd.is-warn b { color: var(--accent-warning, #F59E0B); }
+.bookmark-preview-card-facts dd.is-bad b { color: var(--accent-error, #EF4444); }
+
+.bookmark-preview-card-facts dd kbd {
+    font-family: var(--font-family-mono, monospace);
+    font-size: calc(var(--font-size-controls) * 0.78);
+    border: 1px solid var(--border-primary);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--text-primary);
+}
+
+.bookmark-preview-card-muted {
     color: var(--text-tertiary);
-    opacity: 0.75;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+/* Only a pinned card has actions, so there is nothing on a peek to aim at. */
+.bookmark-preview-card-foot {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 0.45rem 0.55rem;
+    border-top: 1px solid var(--border-secondary);
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.bookmark-preview-card-action {
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 5px 8px;
+    background: none;
+    color: var(--text-secondary);
+    font-size: calc(var(--font-size-controls) * 0.8);
+    cursor: pointer;
+}
+
+.bookmark-preview-card-action:hover,
+.bookmark-preview-card-action:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--border-secondary);
+    background: rgba(255, 255, 255, 0.04);
+    outline: none;
+}
+
+.bookmark-preview-card-action:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.bookmark-preview-card-esc {
+    margin-left: auto;
+    font-family: var(--font-family-mono, monospace);
+    font-size: calc(var(--font-size-controls) * 0.72);
+    color: var(--text-tertiary);
 }
 
 /* Bookmark open flash animation */

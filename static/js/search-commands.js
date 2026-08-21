@@ -2581,6 +2581,10 @@ class SearchCommandsComponent {
 
     setPreviewCardsVisibility(dashboard, enabled) {
         dashboard.settings.showLinkPreviewCards = enabled;
+        // The mode is what the card reads. `:preview off` has to write it, or
+        // the palette says off while every row still opens a card; `on` restores
+        // hovering, which is what the command has always meant.
+        dashboard.settings.linkPreviewMode = enabled ? 'hover' : 'off';
         if (!enabled && typeof dashboard.dismissBookmarkPreviewInteractions === 'function') {
             dashboard.dismissBookmarkPreviewInteractions();
         }

@@ -87,10 +87,76 @@
         return counts;
     }
 
+    /**
+     * What the health report knows about one bookmark, kept per URL.
+     *
+     * The report carries a row for every bookmark, not only the broken ones,
+     * and the dashboard has always fetched the whole thing for the badge and
+     * then read twelve counts out of it. Uptime, a certificate about to expire
+     * and how long something has been failing were in that payload all along
+     * and were thrown away — so the preview card had to ask for them again, or
+     * go without. This keeps the four facts worth carrying and drops the rest.
+     */
+    const healthFacts = new Map();
+    let healthFactsAt = 0;
+
+    function factsKey(url) {
+        const raw = String(url || '').trim();
+        if (!raw) return '';
+        const utils = window.BookmarkUrlUtils;
+        if (typeof utils?.canonicalBookmarkURLKey === 'function') {
+            return utils.canonicalBookmarkURLKey(raw);
+        }
+        // Same shape as status.js falls back to, so a browser without the
+        // shared helper still matches rows to facts rather than silently
+        // matching none of them.
+        let t = raw.toLowerCase();
+        const hash = t.indexOf('#');
+        if (hash >= 0) t = t.slice(0, hash);
+        return t.replace(/\/+$/, '');
+    }
+
+    /**
+     * Index one report. Rows with nothing to report are skipped: a healthy
+     * bookmark that is not monitored has no uptime, no certificate and no
+     * failure, so storing it would be a map the size of the collection saying
+     * nothing.
+     */
+    function rememberHealthFacts(report) {
+        const issues = Array.isArray(report?.issues) ? report.issues : [];
+        const certificates = report?.certificates || {};
+        healthFacts.clear();
+        issues.forEach((issue) => {
+            const key = factsKey(issue?.url);
+            if (!key) return;
+            const uptime = issue?.monitorStats?.uptime30d;
+            const cert = issue?.certHost ? certificates[issue.certHost] : null;
+            const facts = {
+                monitor: Boolean(issue?.monitor),
+                uptime30d: Number(uptime?.samples) > 0 ? Number(uptime.ratio) : null,
+                uptimeSamples: Number(uptime?.samples || 0) || 0,
+                certExpiresAt: Number(cert?.expiresAt || 0) || 0,
+                brokenSince: Number(issue?.brokenSince || 0) || 0,
+                lastError: String(issue?.lastError || '').trim(),
+            };
+            if (facts.uptime30d === null && !facts.certExpiresAt && !facts.brokenSince) return;
+            healthFacts.set(key, facts);
+        });
+        healthFactsAt = Date.now();
+    }
+
+    function getHealthFacts(url) {
+        const key = factsKey(url);
+        return key ? healthFacts.get(key) || null : null;
+    }
+
     async function fetchBookmarkHealthSummary() {
         const response = await fetch('/api/bookmark-health');
         if (!response.ok) return null;
         const data = await response.json();
+        // The badge only ever wanted the counts; the rest of the answer is
+        // already paid for, so it is kept rather than dropped on the floor.
+        rememberHealthFacts(data);
         return data?.summary || {};
     }
 
@@ -100,5 +166,14 @@
         createHealthCountBadge,
         applyHealthBadgeToAnchor,
         fetchBookmarkHealthSummary,
+    };
+
+    /** Read by the preview card, and by anything else on the dashboard that
+     *  wants what health knows without asking the server for it again. */
+    window.HealthFacts = {
+        get: getHealthFacts,
+        remember: rememberHealthFacts,
+        get size() { return healthFacts.size; },
+        get updatedAt() { return healthFactsAt; },
     };
 })();

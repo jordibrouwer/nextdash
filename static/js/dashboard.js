@@ -82,7 +82,9 @@ class Dashboard {
             fuzzySuggestionsStartWith: false,
             keepSearchOpenWhenEmpty: false,
             showIcons: true,
-            showLinkPreviewCards: false,
+            showLinkPreviewCards: true,
+            linkPreviewMode: 'hover',
+            linkPreviewParts: null,
             linkPreviewHoverDelayMs: 150,
             categorySortModesMigrated: true,
             layoutPreset: 'default',
@@ -639,8 +641,12 @@ class Dashboard {
         return this.preview.showBookmarkPreviewCard(...arguments);
     }
 
-    positionBookmarkPreviewCard(clientX, clientY) {
+    positionBookmarkPreviewCard(anchor, event = null) {
         return this.preview.positionBookmarkPreviewCard(...arguments);
+    }
+
+    buildPreviewPayload(bookmark, preview = null) {
+        return this.preview.buildPreviewPayload(...arguments);
     }
 
     hideBookmarkPreviewCard() {
