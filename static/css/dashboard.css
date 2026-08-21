@@ -5280,3 +5280,17 @@ body[data-grid-keys="shown"] .dashboard-legend {
     background: transparent;
     letter-spacing: 0;
 }
+
+/*
+ * A drawn menu icon sits on the text baseline of a row whose other icons are
+ * glyphs, so it is centred as a box rather than laid out as a letter.
+ */
+.move-popover-check--drawn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.move-popover-check--drawn svg {
+    display: block;
+}

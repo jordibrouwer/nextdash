@@ -237,7 +237,7 @@ class DashboardContextMenu {
                 label: bookmarkRef.bookmark?.pinned
                     ? this.t('dashboard.contextMenuUnpin', 'Unpin')
                     : this.t('dashboard.contextMenuPin', 'Pin'),
-                icon: '📌',
+                icon: 'pin',
                 key: 'Shift+P',
             },
             { id: 'tags', label: this.t('dashboard.contextMenuTags', 'Tags…'), icon: '#', key: 'Shift+T' },
@@ -291,7 +291,11 @@ class DashboardContextMenu {
 
             const check = document.createElement('span');
             check.className = 'move-popover-check';
-            check.textContent = action.icon;
+            // Most icons are a glyph; a named one is drawn, so that Pin is a
+            // mark in the theme's colour rather than a red-and-yellow emoji.
+            window.MenuIcons?.apply
+                ? window.MenuIcons.apply(check, action.icon)
+                : (check.textContent = action.icon);
             item.appendChild(check);
 
             const label = document.createElement('span');
