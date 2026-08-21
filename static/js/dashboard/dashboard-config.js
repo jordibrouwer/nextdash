@@ -751,13 +751,10 @@ class DashboardConfig {
         this.clearListKeyboardSelection();
         this.clearBookmarkKeyboardSelection();
         this.section = targetSection;
-        // Straight into Bookmarks — from a link, or from the last visit — waits
-        // for the list's renderers rather than flashing a placeholder.
-        if (targetSection === 'bookmarks' && typeof this.renderBookmarksList !== 'function') {
-            await this.ensureBookmarkRenderers();
-        } else {
-            void this.ensureBookmarkRenderers();
-        }
+        // Started here and awaited at the render, not before it: the section's
+        // own data load runs in the meantime, and awaiting up here delayed it
+        // enough that a refresh could land after the first paint.
+        void this.ensureBookmarkRenderers();
         this.applyBookmarksPageFromHash(window.location.hash);
         // A shared link carries the filters as well as the page, so opening
         // config from one lands on the list that link describes.
@@ -807,6 +804,14 @@ class DashboardConfig {
     }
 
     async loadAndRender() {
+        // The bookmark list's renderers arrive on demand, and waiting for them
+        // is better than drawing a placeholder and repainting over it — the
+        // second paint tears down whatever the reader had already reached for.
+        // The fetch was started when config opened, so this is normally already
+        // resolved.
+        if (this.section === 'bookmarks' && typeof this.renderBookmarksList !== 'function') {
+            await this.ensureBookmarkRenderers();
+        }
         // Phase 1 has no async data of its own yet; kept async so later phases can
         // fetch settings/stats here without touching the shell wiring.
         this.render();
@@ -1901,6 +1906,11 @@ class DashboardConfig {
     }
 
     moveBookmarkKeyboardSelection(delta, rows) {
+        // With the list windowed, the DOM holds a screenful and walking it would
+        // wrap at the edge of the window rather than carrying on down the list.
+        // So when a window is in force the movement is over the data, and the
+        // window is dragged to wherever the selection lands.
+        if (this.moveBookmarkKeyboardSelectionWindowed(delta)) return;
         const list = Array.isArray(rows) && rows.length ? rows : this.getBookmarkKeyboardRows();
         if (!list.length) return;
         let index = this._bmKeyboardKey
@@ -1915,6 +1925,65 @@ class DashboardConfig {
         }
         this._bmKeyboardKey = this.bookmarkRowKey(list[index]);
         this.applyBookmarkKeyboardSelection(list);
+    }
+
+    /**
+     * Move the keyboard selection through the loaded rows, window or no window.
+     *
+     * Returns false when there is no window, so the DOM walk above stays the
+     * path for a short list — it is the one that knows about rows the data does
+     * not, such as a row mid-animation.
+     */
+    moveBookmarkKeyboardSelectionWindowed(delta) {
+        const all = this.visibleBookmarks();
+        const shown = this.bookmarkVisibleLimit(all.length);
+        if (!this.bookmarkRowWindow(shown)) return false;
+
+        const rows = all.slice(0, shown);
+        if (!rows.length) return false;
+        const keys = rows.map((b) => this.bookmarkKey(b));
+        let index = this._bmKeyboardKey ? keys.indexOf(this._bmKeyboardKey) : -1;
+        if (index < 0) index = delta > 0 ? 0 : keys.length - 1;
+        else {
+            index += delta;
+            if (index < 0) index = keys.length - 1;
+            else if (index >= keys.length) index = 0;
+        }
+        this._bmKeyboardKey = keys[index];
+        this.scrollBookmarkRowIntoWindow(index, keys.length);
+        this.applyBookmarkKeyboardSelection(this.getBookmarkKeyboardRows());
+        return true;
+    }
+
+    /**
+     * Put row `index` on screen, drawing the window around it if it is outside.
+     *
+     * A third of the way down rather than at the very edge: landing a selection
+     * on the last visible pixel is the reason "the next one" feels like a jump.
+     */
+    scrollBookmarkRowIntoWindow(index, total) {
+        const list = document.getElementById('config-bm-list');
+        if (!list) return;
+        const host = this.bookmarkListScrollHost();
+        const rowHeight = this.bookmarkRowHeight();
+        const box = list.getBoundingClientRect();
+        const viewport = host ? host.clientHeight : window.innerHeight;
+        const listTop = host
+            ? host.scrollTop + (box.top - host.getBoundingClientRect().top)
+            : window.scrollY + box.top;
+        const rowTop = listTop + index * rowHeight;
+        const current = host ? host.scrollTop : window.scrollY;
+        const above = rowTop < current + rowHeight;
+        const below = rowTop > current + viewport - rowHeight * 2;
+        if (!above && !below) return;
+        const target = Math.max(0, Math.round(rowTop - viewport / 3));
+        if (host) host.scrollTop = target;
+        else window.scrollTo(0, target);
+        // The scroll listener repaints on the next frame; the selection has to
+        // land on rows that exist now, so the window is drawn here as well.
+        const next = this.bookmarkRowWindow(total);
+        this._bmWindowKey = next ? `${next.start}-${next.end}` : 'all';
+        this.repaintBookmarkRowsOnly();
     }
 
     focusBookmarkEditor() {
@@ -12763,6 +12832,138 @@ class DashboardConfig {
      * here. Kicked off when config opens rather than when this section does, so
      * in practice it has landed before anyone clicks Bookmarks.
      */
+    /**
+     * How tall one row is, measured rather than assumed.
+     *
+     * The spacers above and below the window are this times a row count, so a
+     * wrong number shows up as a scrollbar that lies. Measured from the rows on
+     * screen the first time there are any, and kept: rows differ by a few pixels
+     * (a second line of tags), and the average is what the spacers want.
+     */
+    bookmarkRowHeight() {
+        if (this._bmRowHeight) return this._bmRowHeight;
+        const rows = document.querySelectorAll('#config-bm-list .config-bm-row');
+        if (rows.length >= 2) {
+            const first = rows[0].getBoundingClientRect();
+            const last = rows[rows.length - 1].getBoundingClientRect();
+            const span = last.bottom - first.top;
+            const measured = span / rows.length;
+            if (measured > 20 && measured < 400) {
+                this._bmRowHeight = measured;
+                return measured;
+            }
+        }
+        // Until there is something to measure: the row's own min-height plus its
+        // gap, which is what the stylesheet asks for.
+        return 56;
+    }
+
+    /**
+     * Which slice of the loaded rows to draw, or null for all of them.
+     *
+     * Null below the threshold — a short list costs nothing to draw whole, and
+     * spacers on it would be arithmetic in exchange for nothing — and null while
+     * a row is expanded into its editor, whose height the spacers cannot know.
+     */
+    bookmarkRowWindow(total) {
+        const MIN_TO_WINDOW = 120;
+        const OVERSCAN = 25;
+        if (!Number.isFinite(total) || total <= MIN_TO_WINDOW) return null;
+        if (this.bmEditing) return null;
+
+        const host = this.bookmarkListScrollHost();
+        const rowHeight = this.bookmarkRowHeight();
+        const list = document.getElementById('config-bm-list');
+        // Where the list starts relative to whatever scrolls: the page, or a
+        // pane inside it.
+        let offset = 0;
+        let viewport = window.innerHeight;
+        if (list) {
+            const box = list.getBoundingClientRect();
+            if (host) {
+                const hostBox = host.getBoundingClientRect();
+                offset = host.scrollTop + (box.top - hostBox.top);
+                viewport = host.clientHeight;
+            } else {
+                offset = window.scrollY + box.top;
+            }
+        }
+        const scrollTop = host ? host.scrollTop : window.scrollY;
+        const first = Math.floor(Math.max(0, scrollTop - offset) / rowHeight);
+        const rowsInView = Math.ceil(viewport / rowHeight);
+        const start = Math.max(0, first - OVERSCAN);
+        const end = Math.min(total, first + rowsInView + OVERSCAN);
+        // A window that would cover almost everything is not worth its spacers.
+        if (start === 0 && end >= total) return null;
+        return { start, end };
+    }
+
+    /**
+     * Redraw the window as the reader scrolls past its edge.
+     *
+     * Throttled to a frame, and only when the window actually moved: a repaint
+     * per scroll event would cost more than the nodes it saves.
+     */
+    bindBookmarkWindowScroll() {
+        const list = document.getElementById('config-bm-list');
+        if (!list) return;
+        const host = this.bookmarkListScrollHost() || window;
+        if (this._bmWindowScrollTarget === host && this._bmWindowScrollBound) return;
+        if (this._bmWindowScrollTarget && this._bmWindowScrollHandler) {
+            this._bmWindowScrollTarget.removeEventListener('scroll', this._bmWindowScrollHandler);
+        }
+        let frame = 0;
+        this._bmWindowScrollHandler = () => {
+            if (frame) return;
+            frame = requestAnimationFrame(() => {
+                frame = 0;
+                if (this.section !== 'bookmarks' || !this.isActiveView()) return;
+                const rows = this.visibleBookmarks();
+                const shown = this.bookmarkVisibleLimit(rows.length);
+                const next = this.bookmarkRowWindow(shown);
+                const key = next ? `${next.start}-${next.end}` : 'all';
+                if (key === this._bmWindowKey) return;
+                this._bmWindowKey = key;
+                this.repaintBookmarkRowsOnly();
+            });
+        };
+        this._bmWindowScrollTarget = host;
+        this._bmWindowScrollBound = true;
+        host.addEventListener('scroll', this._bmWindowScrollHandler, { passive: true });
+    }
+
+    /**
+     * Redraw the rows without touching the scroll position.
+     *
+     * repaintBookmarksList restores the offset it saved, which is right when
+     * something changed and wrong here: the reader is mid-scroll, and the
+     * spacers mean the offset has not moved at all.
+     */
+    repaintBookmarkRowsOnly() {
+        const host = document.getElementById('config-bm-list');
+        if (!host || typeof this.renderBookmarksList !== 'function') return;
+        // A menu hangs off a row; replacing the rows under it would leave the
+        // menu pointing at an element that is no longer in the document.
+        if (document.querySelector('.move-popover, .config-bm-context-menu')) return;
+        // Focus lives on a row, and this replaces every row. Without putting it
+        // back, closing a menu or finishing an edit drops the list's j/k
+        // navigation on the floor.
+        const focusedKey = document.activeElement?.classList?.contains('config-bm-row')
+            ? this.bookmarkRowKey(document.activeElement)
+            : null;
+        this._bmLoadMoreObserver?.disconnect?.();
+        this._bmLoadMoreObserver = null;
+        host.innerHTML = this.renderBookmarksList();
+        this.bindBookmarkRows(host);
+        this.bindBookmarkKeyboard(host);
+        this.setupBookmarkLoadMore(host);
+        if (focusedKey) {
+            const again = [...host.querySelectorAll('.config-bm-row')]
+                .find((row) => this.bookmarkRowKey(row) === focusedKey);
+            again?.focus({ preventScroll: true });
+        }
+    }
+
     renderBookmarksListSafe() {
         void this.ensureBookmarkRenderers();
         if (typeof this.renderBookmarksList === 'function') return this.renderBookmarksList();
@@ -14405,6 +14606,9 @@ class DashboardConfig {
             search.addEventListener('input', () => {
                 this.bmQuery = search.value;
                 this.scheduleBookmarkSearchRepaint();
+        // The window follows the scroll, so it has to be watched from the moment
+        // the list is on screen — not only after a repaint.
+        this.bindBookmarkWindowScroll();
             });
         }
         container.querySelectorAll('[data-bm-sort-chip]').forEach((chip) => {
@@ -15561,6 +15765,7 @@ class DashboardConfig {
     repaintBulkToolbar() {
         const host = document.getElementById('config-bm-bulk');
         if (!host) return;
+        this.bindBookmarkWindowScroll();
         host.innerHTML = this.renderBulkToolbarSafe();
         this.bindBulkToolbar(host);
     }
@@ -16456,7 +16661,9 @@ class DashboardConfig {
             if (String(b.icon || '').trim()) withIcon += 1;
             if (b.checkStatus === true || b.monitor === true) checked += 1;
 
-            const opens = Number(b.openCount || 0);
+            // Counted through the same predicates the list filters by, so the
+            // panel's "never opened" and the cleanup filter of that name cannot
+            // mean two different things.
             const last = Number(b.lastOpened || 0);
             if (!opens && !last) neverOpened += 1;
             if (last > 0 && last < cutoff90) stale90 += 1;

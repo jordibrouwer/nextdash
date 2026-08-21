@@ -68,6 +68,10 @@
         {
           "badge": "new",
           "text": "<strong>Sort by page, recent or most opened in one click</strong>, and ask what changed in the last week — the question that follows an import."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A long list stays quick.</strong> The list now draws the rows around what you are looking at instead of every row it has loaded — on a library of two thousand that is a thousand elements on the page instead of sixty-seven thousand, with the scrollbar unchanged and nothing jumping."
         }
       ]
     },

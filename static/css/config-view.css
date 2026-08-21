@@ -5196,3 +5196,10 @@ button.config-bm-shortcut-pill {
 .config-bm-keys-hint kbd {
     font-size: 0.9em;
 }
+
+/* The rows above and below the drawn window: height only, so the scrollbar
+   describes the whole list while the DOM holds a screenful. */
+.config-bm-spacer {
+    flex: 0 0 auto;
+    pointer-events: none;
+}

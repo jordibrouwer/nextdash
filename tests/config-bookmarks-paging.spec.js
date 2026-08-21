@@ -24,6 +24,17 @@ async function openSeededBookmarks(page, total = TOTAL) {
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
     await page.waitForFunction(() => !window.dashboardInstance._deferredAllBookmarksLoadInFlight);
+    // Seeded after the section is open: opening it loads the real bookmarks,
+    // which would land on top of the seed and leave this measuring the seven
+    // rows a fresh install ships with.
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
+    await expect(page.locator('#config-bm-list')).toBeVisible();
+    // Opening the section starts its own load of every bookmark, which lands a
+    // second later and would replace the seed with the seven a fresh install
+    // ships with. Waited for here rather than before opening: it is that open
+    // which starts it.
+    await page.waitForFunction(() => !window.dashboardInstance._deferredAllBookmarksLoadInFlight);
+    await page.waitForTimeout(1200);
     await page.evaluate((n) => {
         const d = window.dashboardInstance;
         const pageId = d.pages[0].id;
@@ -33,13 +44,22 @@ async function openSeededBookmarks(page, total = TOTAL) {
             pageId, category: '', tags: [],
         }));
     }, total);
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('bookmarks'));
-    await expect(page.locator('#config-bm-list')).toBeVisible();
     await page.evaluate(() => window.dashboardInstance.config.repaintBookmarksList());
     await expect(page.locator('.config-bm-row')).toHaveCount(PAGE);
 }
 
 const rowCount = (page) => page.locator('.config-bm-row').count();
+
+/**
+ * How many rows are *loaded*, which is what paging is about.
+ *
+ * Since the list windows itself, the number painted is a screenful whatever the
+ * page size — so counting DOM rows would be measuring the other feature.
+ */
+const loadedCount = (page) => page.evaluate(() => {
+    const c = window.dashboardInstance.config;
+    return Math.min(c.visibleBookmarks().length, c.bookmarkVisibleLimit(c.visibleBookmarks().length));
+});
 
 async function scrollToBottom(page) {
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -72,17 +92,19 @@ test.describe('config bookmark list paging', () => {
 
         await scrollToBottom(page);
 
-        await expect.poll(() => rowCount(page), { timeout: 5_000 }).toBe(PAGE * 2);
+        await expect.poll(() => loadedCount(page), { timeout: 5_000 }).toBe(PAGE * 2);
+        // And rows really are on screen — a windowed list still draws some.
+        expect(await rowCount(page)).toBeGreaterThan(0);
     });
 
     test('repeated scrolling reaches the end of the list', async ({ page }) => {
         await openSeededBookmarks(page);
 
         await scrollToBottom(page);
-        await expect.poll(() => rowCount(page), { timeout: 5_000 }).toBe(PAGE * 2);
+        await expect.poll(() => loadedCount(page), { timeout: 5_000 }).toBe(PAGE * 2);
 
         await scrollToBottom(page);
-        await expect.poll(() => rowCount(page), { timeout: 5_000 }).toBe(TOTAL);
+        await expect.poll(() => loadedCount(page), { timeout: 5_000 }).toBe(TOTAL);
 
         // Everything is in, so the sentinel and its hint are gone.
         await expect(page.locator('[data-bm-load-more]')).toHaveCount(0);

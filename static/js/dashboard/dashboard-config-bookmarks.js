@@ -447,21 +447,40 @@
             const url = String(b.url || '').trim().toLowerCase();
             return url && dupes.has(url);
         } };
+        // Only the rows near the viewport are drawn. Infinite scroll answered
+        // how much is fetched and nothing about how much is painted: a row is
+        // thirty-four elements, so a thousand of them is thirty-three thousand
+        // nodes and four megabytes of markup, and five thousand is a third of a
+        // second of layout on every repaint — a tag added, a row ticked.
+        //
+        // The rows above and below the window are two spacers of the right
+        // height, so the scrollbar still describes the whole list and nothing
+        // jumps. Windowing is off while a row is expanded into its editor: that
+        // row is several times the height of the others, which is exactly what
+        // spacer arithmetic cannot survive, and nobody scrolls thousands of rows
+        // with an editor open.
+        const window_ = this.bookmarkRowWindow(rows.length);
+        const visible = window_ ? rows.slice(window_.start, window_.end) : rows;
         // Position is passed down so each row can carry aria-posinset: with
         // paging the DOM holds only part of the list, and without setsize a
         // screen reader would announce "3 of 50" on a library of 500.
-        const items = rows.map((b, i) => this.renderBookmarkRow(b, {
+        const items = visible.map((b, i) => this.renderBookmarkRow(b, {
             ...ctx,
             isDuplicate: ctx.isDuplicate(b),
-            posInSet: i + 1,
+            posInSet: (window_ ? window_.start : 0) + i + 1,
             setSize: allRows.length,
         })).join('');
+        const spacer = (n) => (n > 0
+            ? `<div class="config-bm-spacer" aria-hidden="true" style="height:${Math.round(n * this.bookmarkRowHeight())}px"></div>`
+            : '');
+        const above = window_ ? spacer(window_.start) : '';
+        const below = window_ ? spacer(rows.length - window_.end) : '';
         const more = allRows.length > rows.length
             ? `<div class="config-bm-load-sentinel" data-bm-load-more hidden aria-hidden="true"></div>
                <p class="config-bm-load-hint">${esc(this.t('config.bookmarksLoadMoreHint', '{shown} of {total} shown — scroll for more')
                    .replace('{shown}', String(rows.length)).replace('{total}', String(allRows.length)))}</p>`
             : '';
-        return `<div class="feed-list health-view-feed config-bm-feed" role="list">${items}${more}</div>`;
+        return `<div class="feed-list health-view-feed config-bm-feed" role="list" data-bm-rows="${rows.length}">${above}${items}${below}${more}</div>`;
     },
 
     renderBookmarkRowActions(b, key, open) {
