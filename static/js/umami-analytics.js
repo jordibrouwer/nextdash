@@ -55,15 +55,60 @@
         }
     }
 
+    /**
+     * Property names that carry "how many", and are therefore bucketed.
+     *
+     * The setting promises every number is rounded into a band, and the two
+     * snapshots kept that promise while the action events did not: a bulk
+     * recheck reported `count: 37` and a health export `rows: 1274`, which on a
+     * small install is a fingerprint and on any install is more than the
+     * question needs. Bucketing here rather than at each call site means a new
+     * event cannot quietly reintroduce it.
+     *
+     * `index` and `step` are deliberately not in this list: a page position and
+     * a walkthrough step are small, fixed ranges that answer nothing about size.
+     */
+    const COUNT_PROPS = ['count', 'rows', 'fields', 'items', 'size', 'total'];
+    const COUNT_STEPS = [0, 1, 2, 5, 10, 25, 50, 100];
+
+    /**
+     * A count as the band it falls in: 0, 1, 2, 5, 10, 25, 50, 100, or `100+`.
+     *
+     * Small numbers keep their own band because "one row" and "five rows" are
+     * different answers about how people work, and neither says anything about
+     * the size of a collection.
+     */
+    function bucketCount(value) {
+        return bucket(value, COUNT_STEPS);
+    }
+
+    /** Bucket the count-ish properties; leave enums and indices alone. */
+    function sanitizeProps(props) {
+        if (!props || typeof props !== 'object') return props;
+        let out = null;
+        for (const key of Object.keys(props)) {
+            const value = props[key];
+            if (!COUNT_PROPS.includes(key)) continue;
+            if (typeof value !== 'number' && !(typeof value === 'string' && /^\d+$/.test(value))) continue;
+            out = out || { ...props };
+            out[key] = bucketCount(value);
+        }
+        return out || props;
+    }
+
     // Public helper. No-op (but always callable) when disabled.
     window.nextdashTrack = function (name, props) {
         if (!enabled || !name) return;
+        const safe = sanitizeProps(props);
         if (umamiReady) {
-            rawTrack(name, props);
+            rawTrack(name, safe);
         } else {
-            queue.push([name, props]);
+            queue.push([name, safe]);
         }
     };
+
+    // Exposed for the tests that pin the promise the setting makes.
+    window.nextdashBucketCount = bucketCount;
 
     /**
      * Umami accepts at most 50 properties per event and silently drops the

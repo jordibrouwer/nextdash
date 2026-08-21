@@ -218,21 +218,29 @@ These statistics exist to answer exactly that — **which features get used, and
 
 #### What is measured
 
+Everything below is an event name plus a small set of properties. Names come from a fixed list in the code; nothing you type is ever a property value.
+
 - **Page views** — the dashboard, config, health, and colors pages.
-- **Views and navigation** — opening the health and inbox views, switching dashboard pages (by position, never by name), which config tab you land on, and use of the `<` dashboard↔config shortcut. Within config, which of the eight **sections** you open, which **sub-tab** you land on and whether you got there by click or by arrow key, and whether an overview *needs attention* row was followed.
-- **Settings changes** — the **name** of the setting you changed, never what you typed into it. Toggles also report `true`/`false`, since on/off is the whole point of measuring one and cannot identify anyone. Free-text fields — dashboard title, webhook URL, custom text — report the name alone, and search boxes are not reported at all.
+- **Views and navigation** — opening the health and inbox views, switching dashboard pages (by position, never by name), which config tab you land on, and use of the `<` dashboard↔config shortcut. Within config, which of the eight **sections** you open, which **sub-tab** you land on and whether you got there by click or by arrow key, whether an overview *needs attention* row was followed, whether a summary tile handed off to another view, and whether the **Only changed** filter is on.
+- **Settings changes** — the **name** of the setting you changed, never what you typed into it. Toggles also report `true`/`false`, since on/off is the whole point of measuring one and cannot identify anyone. Free-text fields — dashboard title, webhook URL, custom text — report the name alone, and search boxes are not reported at all. A panel's **Reset** and its **Show all / Hide all** report how many fields they touched.
 - **List shape in health and inbox** — which filter or sort you picked, and whether you used a summary tile or a filter pill. The search box in either view is never reported.
 - **Overlays** — opening search, commands, finders, the cheat sheet, the tag cloud, what's-new, and the add-bookmark form.
-- **Bookmark opens** — the fact that one was opened and where from (`dashboard`, `search`, or `recent`).
+- **Bookmark opens** — the fact that one was opened and where from (`dashboard`, `search`, `recent`, or `health`).
 - **Commands** — which command palette command was run, by its name (`theme`, `config`, `density`, …). Only names from the built-in command list are recorded; anything else you typed is discarded.
-- **Bookmark maintenance** — starting an edit and saving it (with whether that was on the dashboard or in config), deleting, moving to another category (with a bucketed count, so a bulk move counts once), and reordering by drag.
-- **Outcomes** — whether adding a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, or failure. This shows where the form trips people up.
-- **Inbox and health actions** — snooze, mark-read, wake, promote, delete, and bulk clean-ups; health rechecks, retest-all, redirect detection, title refresh, and delete.
-- **A settings snapshot** — once per page load, which features you have switched on (theme, layout preset, columns, packed columns, inbox, health view, status checks, smart collections, weather, and similar), as plain booleans and small enums. It carries the **release you are running** (`v2026.09.2`), so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
+- **Bookmark maintenance** — starting an edit and saving it (with whether that was on the dashboard or in config), deleting, moving to another category (with a bucketed count, so a bulk move counts once), reordering by drag or by keyboard, changing a bookmark's checking mode, and which entry you picked from a right-click menu — on a bookmark or on a category header.
+- **Outcomes** — whether adding or editing a bookmark succeeded, or hit a duplicate, shortcut conflict, validation error, stale edit, or failure. This shows where the form trips people up.
+- **Inbox and health actions** — snooze, mark-read, wake, promote, delete, and bulk clean-ups; rechecks, retest-all, redirect detection, title refresh, delete, muting alerts, accepting drift, auto-heal, recovering from the archive, opening the expectations or monitor-stats panels, stepping through a review session, reading the trend chart, and exporting history. Bulk actions and exports also report **how many rows they touched**, rounded into a band (`1`, `2`, `5`, `10`, `25`, `50`, `100`, `100+`).
+- **Category width** — switching a category to spread across columns, or back.
+- **Fresh** — turning it on from its walkthrough, and opening the card that offers it.
+- **First-run help** — a tour or walkthrough being shown, and whether it was finished or abandoned, with the step you left on: the spread, inbox, health and Fresh walkthroughs, and which session **tip** was shown.
+- **A settings snapshot** — once per page load, which features you have switched on: theme (built-in id, or just `custom`), layout, density, spacing, font, background, button-bar position, columns, the row toggles, search options, inbox and health settings, smart collections, and a dozen more, as plain booleans and small enums with numbers bucketed. It carries the **release you are running**, so adoption can be read per version — without it a default that changed between releases looks like a gradual drift rather than the switch it was. The version is the published release tag, not your hostname, install or machine.
+- **A content snapshot** — once per page load, **how much** is in the install: bookmarks, pages, categories, tags, finders, your own smart collections, how many bookmarks are monitored and how many merely checked, and four inbox figures (waiting now, plus lifetime added, promoted and deleted). Every one is bucketed before it leaves the browser — `500+`, never `1274` — because an exact total is distinctive enough to follow one install across releases. Counted on the server, since the page you have open only knows about itself.
+
+Both snapshots are capped at Umami's 50 properties per event and say so (`truncated: true`) rather than letting the tail be dropped in silence.
 
 #### What is never measured
 
-No bookmark names, URLs, search queries, page or category names, notes, or tags. No cookies are set, no personal profile is built, and there is no tracking across other websites. Counts that could identify a specific setup are bucketed (for example `2-5` rather than an exact number), and the instance is self-hosted, so nothing is shared with an advertising network.
+No bookmark names, URLs, search queries, page or category names, notes, or tags. No personal profile is built, and there is no tracking across other websites. Every number is rounded into a band before it leaves the browser — `500+` rather than `1274`, `25` rather than `23` — and the rounding sits in the one function all events pass through, so a new event cannot reintroduce an exact figure by forgetting to round it. The two exceptions are a page position and a walkthrough step, which are small fixed ranges that describe nothing about your collection. No cookies are set, and the instance is self-hosted, so nothing is shared with an advertising network.
 
 The tracker loads from `stats.nextdash.cc`, which is allow-listed in the CSP (`script-src` and `connect-src`).
 
@@ -323,7 +331,7 @@ environment:
 - `t` — filter the grid to the focused bookmark's tag; several tags open the picker
 - `Ctrl/Cmd + Enter` — open the focused bookmark in a new tab for that press alone, whatever **open in new tab** is set to
 - `Ctrl + C` / `Cmd + C` — copy the URL of the focused bookmark (row flashes green)
-- `Shift + V` — toggle the hover preview card on the focused bookmark (`[` still works, undocumented)
+- `Shift + V` — open the preview card on the focused bookmark and keep it open, with **Copy**, **Refresh** and **Edit** in its footer; `Esc` closes it and hands focus back to the row. Works whatever the card's mode is, so it is the whole of the feature on **keyboard only** (`[` still works, undocumented)
 - `Delete` — delete the focused bookmark
 - `x` / `X` — tick the focused bookmark and advance / tick its whole category. `Shift + ↑`/`↓` extends a range, `Ctrl/Cmd + A` takes everything on screen, and `Alt+click` / `Shift+click` do the same with the mouse — `Ctrl/Cmd + click` is left to the browser, where it opens the bookmark in a new tab (**v1.3.1**; it used to tick the row). A toolbar appears with **Move**, **Open**, **Copy links** and **Delete**, matching the entries the right-click menu gains; `Esc` clears the selection. A plain click with a selection open clears it rather than opening a bookmark
 
@@ -409,6 +417,7 @@ Type these directly in the search bar (`>` mode, or after opening search). Expan
 - `status:online` / `status:offline` / `status:broken` / `status:ok`
 - `status:pinned` / `status:unpinned` / `status:checked` / `status:unchecked`
 - `status:untagged` / `status:tagged` / `status:noted` / `status:unnoted` (**v1.2.0**)
+- `status:feed` / `status:unfed` (**v1.3.1**) — bookmarks whose page publishes something Fresh can read, and the rest
 - `-` before any filter excludes instead of selects (**v1.2.0**) — `tag:dev -status:pinned` is "dev links I have not pinned"; a half-typed `-tag:` excludes nothing
 - `page:current` / `page:all` / `page:2`
 - `tag:name` — filter by tag
@@ -430,13 +439,15 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 - **Category icons and `Alt+←/→`** (**v1.2.0**) — right-click a category header for **Icon…** with a live preview in the heading; `Alt` with the arrows moves the category itself
 - **Read the activity log in config** (**v1.1.1**) — **Data & backups → Server log → Show → Activity only**
 - **Config → Bookmarks has two sub-tabs** (**v1.1.0**) — **List** and **Settings**; the settings used to sit under a list of fifty to five hundred rows
+- **A filtered list is a link** (**v1.3.1**) — what you searched, the page, the category, the tag and the sort all ride in the address, so "the 41 untagged on Work" survives a reload and can be sent to someone. An empty list says which filter emptied it, a selection survives a filter change (the bar says how many are hidden by it), and bulk tags, pins and availability can be undone from the same toast delete uses
+- **A long list stays quick** (**v1.3.1**) — the rows near the viewport are drawn and the rest are two spacers of the right height, so a library of two thousand costs about a thousand elements instead of sixty-seven thousand, with the scrollbar unchanged
 - **Spread a category across columns** (**v1.1.0**) — a long category can run across several grid columns instead of towering over its neighbours, its bookmarks flowing across them. A switch, not a width: how many columns it takes follows from **items per category** and how many bookmarks it holds, so it grows and shrinks with the category and never exceeds the column count. Right-click the header, **Shift+W**, `:width`, or a ↔ button per row in **Config → Pages & tags → Categories**
 - **Per-category sort** — sort by name, by when you last opened a bookmark, by when you added it, or by how often you open it. The sort in use sits in the category header as a single chip and the rest are behind a **⋯**; click the active chip again for manual order. Also `:sort` in the command palette
 - **Tags on the rows** — off by default (**Config → Appearance → Display**); the first two show and the rest collapse into a count. Click one to filter the grid to it
 - **Config → pages** and **config → categories** — drag or **↑/↓** to reorder; auto-save after ~600 ms with a localized sync toast; **Usage** column with popularity bar + bookmark count (Tags-style tier styling)
 - **Config → tags** (desktop) — popularity-scaled word cloud (dashboard-style), structured list with usage bars, sorted by bookmark count; scrolls with the page; global rename/merge/delete; drill-down with **Open**; filter + clear; auto-save with undo; **↑/↓** moves focus between tag rows
 - **Config → finders** (desktop) — filter list; drag or **↑/↓** reorder with auto-save; usage stats on tab open; stable ids + duplicate shortcut guard
-- Long-press a bookmark row (~500 ms) to open inline edit — nearly opaque panel with a full-page blur behind it (including the launcher preset); **Save** / **Ctrl+Enter** persists immediately on the dashboard; **Esc** cancels; edits and deletes from **smart-collection** rows sync to the category column and global bookmark store; page switches confirm before discarding unsaved edits; swipe and **Ctrl+V** paste are blocked while the editor is open
+- Long-press a bookmark row (~500 ms) to open inline edit — nearly opaque panel with the rest of the page dimmed behind it (the blur was dropped in **v1.3.2**: it gave each column its own compositing layer, and in Safari that layer swallowed clicks meant for the form); **Save** / **Ctrl+Enter** persists immediately on the dashboard; **Esc** cancels; edits and deletes from **smart-collection** rows sync to the category column and global bookmark store; page switches confirm before discarding unsaved edits; swipe and **Ctrl+V** paste are blocked while the editor is open
 - Press and hold a category header (~500 ms, not on sort buttons) to rename it — double-click still works
 - Double-click a page tab to rename it — also set an emoji icon and a colour dot per page
 - Collapsible categories with optional always-collapsed default
@@ -526,6 +537,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - Favicon display and refresh from the health view (per row)
 - **Find a setting by what it is set to** (**v1.3.0**) — `Ctrl/Cmd + Shift + K` matches the current value as well as the name (*8099*, *Monitor*), shows it after the location, and marks the settings that stay server-wide while *Keep settings on this device only* is on
 - **Config → stats** (desktop) — insights block, finder usage, period filters with honest lifetime-open labels, **week-over-week** comparison on Activity when the week period is selected, **Refresh** / **Export CSV**, global table filter, row click opens bookmark editor, mobile chip-nav, formatted **Last backup** on overview; conflicts link to health
+- **Statistics says what its figures mean** (**v1.3.1**) — the tab opens with the three things that follow from them: where your opening lands, what is going unread, and what is not answering, each with the button that acts on it, and nothing shown when there is nothing to report. Tiles carry the direction a count moved over the week, read from the daily points the health report has been recording all along, and the CSV export waits for the Health and Inbox tabs so it is not silently missing two of its five sections.
 
 ### Bookmarks
 
