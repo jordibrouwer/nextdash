@@ -12556,7 +12556,7 @@ class DashboardConfig {
         let monitored = 0;
         const categoryKeys = new Set();
         all.forEach((b) => {
-            if ((b.tags || []).length) tagged += 1;
+            if (window.BookmarkPredicates.match('tagged', b)) tagged += 1;
             if (b.shortcut) withShortcut += 1;
             if (b.monitor === true) monitored += 1;
             if (b.category) categoryKeys.add(`${b.pageId}::${b.category}`);
@@ -13411,12 +13411,20 @@ class DashboardConfig {
         return Number.isFinite(n) && n >= 10 ? Math.min(500, Math.round(n)) : DashboardConfig.BM_PAGE_SIZE;
     }
 
+    /**
+     * The cleanup filters, in terms of the shared predicates.
+     *
+     * These were written out here and again in the search bar, which is how
+     * "Without tags" and `status:untagged` came to disagree about a tag made of
+     * spaces. Only `duplicate` stays local: it is the one question that needs
+     * every other bookmark's URL rather than this one's fields.
+     */
     static CLEANUP_FILTERS = {
-        never: (b) => !Number(b.openCount || 0) && !Number(b.lastOpened || 0),
-        once: (b) => Number(b.openCount || 0) === 1,
-        untagged: (b) => !(Array.isArray(b.tags) && b.tags.length),
-        insecure: (b) => /^http:\/\//i.test(String(b.url || '')),
-        noicon: (b) => !String(b.icon || '').trim(),
+        never: (b) => window.BookmarkPredicates.match('never', b),
+        once: (b) => window.BookmarkPredicates.match('once', b),
+        untagged: (b) => window.BookmarkPredicates.match('untagged', b),
+        insecure: (b) => window.BookmarkPredicates.match('insecure', b),
+        noicon: (b) => window.BookmarkPredicates.match('noicon', b),
         duplicate: (b, dupes) => {
             const url = String(b.url || '').trim().toLowerCase();
             return url && dupes && dupes.has(url);
@@ -13426,10 +13434,7 @@ class DashboardConfig {
         // it was added, with nothing able to ask for it. Seven days rather than
         // a setting: this is "recently", and a number nobody can see is a number
         // nobody can misread.
-        changed: (b) => {
-            const at = Number(b.updatedAt || 0) || Number(b.createdAt || 0);
-            return at > 0 && Date.now() - at <= 7 * 86400000;
-        },
+        changed: (b) => window.BookmarkPredicates.match('changed', b),
     };
 
     /** Page id → position, built once so sort comparators can look up in O(1). */
@@ -14601,14 +14606,14 @@ class DashboardConfig {
     }
 
     bindBookmarksListTab(container) {
+        // The window follows the scroll, so it has to be watched from the moment
+        // the list is on screen — not only after a repaint.
+        this.bindBookmarkWindowScroll();
         const search = container.querySelector('#config-bm-search');
         if (search) {
             search.addEventListener('input', () => {
                 this.bmQuery = search.value;
                 this.scheduleBookmarkSearchRepaint();
-        // The window follows the scroll, so it has to be watched from the moment
-        // the list is on screen — not only after a repaint.
-        this.bindBookmarkWindowScroll();
             });
         }
         container.querySelectorAll('[data-bm-sort-chip]').forEach((chip) => {
@@ -15760,12 +15765,12 @@ class DashboardConfig {
         if (scrollHost) scrollHost.scrollTop = scrollTop;
         else window.scrollTo(0, scrollTop);
         this.setupBookmarkLoadMore(host);
+        this.bindBookmarkWindowScroll();
     }
 
     repaintBulkToolbar() {
         const host = document.getElementById('config-bm-bulk');
         if (!host) return;
-        this.bindBookmarkWindowScroll();
         host.innerHTML = this.renderBulkToolbarSafe();
         this.bindBulkToolbar(host);
     }
@@ -16642,7 +16647,7 @@ class DashboardConfig {
         all.forEach((b) => {
             const tags = Array.isArray(b.tags) ? b.tags : [];
             tags.forEach((t) => tagCounts.set(t, (tagCounts.get(t) || 0) + 1));
-            if (tags.length) tagged += 1;
+            if (window.BookmarkPredicates.match('tagged', b)) tagged += 1;
             if (b.category) {
                 // Key on page::category, not on the bare category name. The
                 // Categories tile already counted that way, so keying the panels
@@ -16657,15 +16662,15 @@ class DashboardConfig {
             }
             if (b.shortcut) withShortcut += 1;
             if (b.monitor === true) monitored += 1;
-            if (String(b.note || '').trim()) withNote += 1;
-            if (String(b.icon || '').trim()) withIcon += 1;
+            if (window.BookmarkPredicates.match('noted', b)) withNote += 1;
+            if (!window.BookmarkPredicates.match('noicon', b)) withIcon += 1;
             if (b.checkStatus === true || b.monitor === true) checked += 1;
 
             // Counted through the same predicates the list filters by, so the
             // panel's "never opened" and the cleanup filter of that name cannot
             // mean two different things.
             const last = Number(b.lastOpened || 0);
-            if (!opens && !last) neverOpened += 1;
+            if (window.BookmarkPredicates.match('never', b)) neverOpened += 1;
             if (last > 0 && last < cutoff90) stale90 += 1;
 
             // The same key Health and the server count duplicates by, rather
@@ -16748,7 +16753,7 @@ class DashboardConfig {
         };
 
         // Cleanup candidates, each a filter the bookmarks list can reproduce.
-        const openedOnce = all.filter((b) => Number(b.openCount || 0) === 1).length;
+        const openedOnce = all.filter((b) => window.BookmarkPredicates.match('once', b)).length;
         const untagged = all.filter((b) => !(Array.isArray(b.tags) && b.tags.length)).length;
         const insecure = all.filter((b) => /^http:\/\//i.test(String(b.url || ''))).length;
         const missingIcon = all.filter((b) => !String(b.icon || '').trim()).length;

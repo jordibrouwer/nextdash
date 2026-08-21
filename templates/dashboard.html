@@ -370,6 +370,9 @@
     <script src="{{asset "js/search-finders.js"}}" defer></script>
     <script src="{{asset "js/fuzzy-search.js"}}" defer></script>
     <script src="{{asset "js/dashboard-promo-placement.js"}}" defer></script>
+    <!-- One answer to "which bookmarks", shared by the search bar, the
+         config list and the statistics panel. Loaded before all three. -->
+    <script src="{{asset "js/shared/bookmark-predicates.js"}}" defer></script>
     <script src="{{asset "js/search.js"}}" defer></script>
     <script src="{{asset "js/status.js"}}" defer></script>
     <!-- Before the health view and the context menu: both read window.CheckMode. -->

@@ -72,6 +72,10 @@
         {
           "badge": "new",
           "text": "<strong>A long list stays quick.</strong> The list now draws the rows around what you are looking at instead of every row it has loaded — on a library of two thousand that is a thousand elements on the page instead of sixty-seven thousand, with the scrollbar unchanged and nothing jumping."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The search bar and the cleanup filters agree.</strong> <code>status:untagged</code> in the search bar and <em>Without tags</em> in the list are the same question, and they were answered separately — a tag made of nothing but spaces counted in one place and not the other. Fourteen of those questions come from one place now, and the search bar gained <code>status:feed</code> along the way."
         }
       ]
     },

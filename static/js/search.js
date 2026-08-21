@@ -1411,6 +1411,15 @@ class SearchComponent {
                 ? monitor.getBookmarkReachability(bookmark)
                 : null;
 
+            // The questions that are only about the bookmark come from the
+            // shared registry, so `status:untagged` here and the config list's
+            // "Without tags" cannot drift apart — they used to disagree over a
+            // tag that is nothing but spaces.
+            if (window.BookmarkPredicates?.has?.(wanted)
+                && !['checked', 'unchecked', 'pinned', 'unpinned'].includes(wanted)) {
+                return window.BookmarkPredicates.match(wanted, bookmark);
+            }
+
             switch (wanted) {
                 case 'checked': return hasStatus;
                 case 'unchecked': return !hasStatus;
