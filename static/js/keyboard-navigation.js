@@ -1595,7 +1595,9 @@ class KeyboardNavigation {
             return;
         }
 
-        if (dash.settings && dash.settings.showLinkPreviewCards !== true) return;
+        // Off means off; "keyboard only" is exactly this path, so it is the one
+        // mode that must not be turned away here.
+        if (dash.preview?.cardsEnabled?.() === false) return;
 
         const row = this.navigableElements[this.currentIndex];
         const openLink = row && row.querySelector('a.bookmark-open');
@@ -1616,25 +1618,25 @@ class KeyboardNavigation {
         }
         if (!bookmark) return;
 
-        // Use cached preview data if available, otherwise fetch
-        const rect = row.getBoundingClientRect();
-        const fakeX = rect.right + 16;
-        const fakeY = rect.top + rect.height / 2;
+        // Asked for, so it is pinned: focusable, with its actions, closing on
+        // Escape. The card anchors itself to the row.
+        const show = (preview) => dash.showBookmarkPreviewCard(
+            dash.preview.buildPreviewPayload(bookmark, preview),
+            null,
+            { openLink, bookmark, mode: 'pinned' }
+        );
 
         if (openLink._previewData) {
-            const preview = { ...openLink._previewData, note: bookmark.note || '', tags: bookmark.tags || [], openCount: bookmark.openCount || 0, lastOpened: bookmark.lastOpened || null };
-            dash.showBookmarkPreviewCard(preview, { clientX: fakeX, clientY: fakeY }, { openLink, bookmark, promoSource: 'keyboard' });
-        } else {
-            dash.fetchBookmarkPreviewData(openLink, bookmark).then(preview => {
-                if (!preview) return;
-                const enriched = { ...preview, note: bookmark.note || '', tags: bookmark.tags || [], openCount: bookmark.openCount || 0, lastOpened: bookmark.lastOpened || null };
-                // Only show if the same row is still selected
-                if (this.currentIndex >= 0 && this.navigableElements[this.currentIndex] === row) {
-                    const r = row.getBoundingClientRect();
-                    dash.showBookmarkPreviewCard(enriched, { clientX: r.right + 16, clientY: r.top + r.height / 2 }, { openLink, bookmark, promoSource: 'keyboard' });
-                }
-            });
+            show(openLink._previewData);
+            return;
         }
+        dash.fetchBookmarkPreviewData(openLink, bookmark).then((preview) => {
+            if (!preview) return;
+            // Only show if the same row is still selected
+            if (this.currentIndex >= 0 && this.navigableElements[this.currentIndex] === row) {
+                show(preview);
+            }
+        });
     }
 
     copyUrlForCurrent() {

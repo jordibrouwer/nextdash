@@ -490,7 +490,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **50 recent versions** (each loads on demand)
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
-- Optional hover preview cards (off by default) — enable in **Config → Appearance → Display**; configurable hover delay
+- Link preview cards — **on hover by default**, with **keyboard only** and **off** as the other two answers in **Config → Appearance → Display**; hover delay (Fast, Balanced or Calm — Calm by default) and a checklist of the rows the card draws
 - Background image or gradient support
 - Clickable date/time header showing a week-overview popover; optional calendar URL link
 
@@ -530,7 +530,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 ### Bookmarks
 
 - Metadata auto-fetch (title, description, preview image) when adding a URL
-- Hover preview card (opt-in) shows full URL, open count, and last-opened date when enabled in config
+- The preview card answers three questions in a fixed order: what the page is (favicon, title, one address, a status pill), what it says (image, description, your note, tags), and what you know about it (last check and ping, uptime, certificate expiry, Fresh count, opens and last opened, shortcut and location). Rows with nothing to say are left out, and none of it costs a request — the health figures come from the report the health icon already fetched
 - Flash animation on bookmark open — subtle ripple confirms the action was registered
 - Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
 - Open-count badge tracking usage per bookmark
@@ -561,7 +561,7 @@ Full UI translations available for English, Dutch, German, and French.
 | Right-click a bookmark | Actions in one place: open in new tab, copy URL, **share**, edit, tags, move, availability checking, **select** / **select all in category**, delete (`Shift` + right-click gives the browser's own menu). Right-clicking a bookmark inside an open selection switches the menu to the whole selection, with the count named |
 | Drag the left strip of a bookmark | Reorder within category or move to another category |
 | Long press a bookmark row (~500 ms) | Open inline edit (save with **Save** or **Ctrl+Enter**) |
-| Hover over a bookmark | Show preview card when enabled (Config → Appearance → Display) |
+| Hover over a bookmark | Show the preview card (unless set to keyboard only or off in Config → Appearance → Display) |
 | Long press a category header (~500 ms) | Rename the category (not on sort buttons; double-click still works) |
 | `Shift + W` on a category | Spread it across columns, or put it back to one |
 | Double-click a page tab | Rename the page |

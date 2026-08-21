@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"html/template"
 	"io"
 	"log"
@@ -336,6 +337,14 @@ func (h *Handlers) GetBookmarkHealth(w http.ResponseWriter, r *http.Request) {
 	report := h.loadBookmarkHealthReport(forceRefresh)
 
 	w.WriteHeader(http.StatusOK)
+	// `view=facts` is the counts plus the bookmarks that have something to
+	// report — what the health badge and the preview card actually read. The
+	// full report is a row per bookmark and grows with the collection; only the
+	// health view draws that.
+	if r.URL.Query().Get("view") == "facts" {
+		json.NewEncoder(w).Encode(buildHealthFactsReport(report))
+		return
+	}
 	json.NewEncoder(w).Encode(report)
 }
 
@@ -1164,6 +1173,11 @@ func (h *Handlers) SaveBookmarks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	beforeBookmarks := h.store.GetBookmarksByPage(pageID)
+	// This request replaces the page, and the list it carries was built in a
+	// browser that cannot see what the server has written since: opens, the
+	// last check, the fetched preview. Without this, opening a bookmark and
+	// then editing any bookmark on the page set the count back to zero.
+	carryServerOwnedBookmarkFields(bookmarks, beforeBookmarks)
 	if !respondStorePersistError(w, h.store.SaveBookmarksByPage(pageID, bookmarks)) {
 		return
 	}
@@ -2437,6 +2451,10 @@ func (h *Handlers) extractMetaFromHTML(htmlBody, attrName, attrValue string) str
 		return ""
 	}
 	value := h.extractQuotedAttribute(tag[contentPos+8:])
+	// An attribute's value is escaped in the source, so a page whose title
+	// contains an apostrophe arrives as "GitHub&#39;s" — and the card, which
+	// sets text rather than markup, would print the entity as written.
+	value = html.UnescapeString(value)
 	return strings.TrimSpace(strings.Join(strings.Fields(value), " "))
 }
 

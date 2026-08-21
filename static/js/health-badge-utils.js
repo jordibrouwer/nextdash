@@ -87,10 +87,89 @@
         return counts;
     }
 
+    /**
+     * What the health report knows about one bookmark, kept per URL.
+     *
+     * The report carries a row for every bookmark, not only the broken ones,
+     * and the dashboard has always fetched the whole thing for the badge and
+     * then read twelve counts out of it. Uptime, a certificate about to expire
+     * and how long something has been failing were in that payload all along
+     * and were thrown away — so the preview card had to ask for them again, or
+     * go without. This keeps the four facts worth carrying and drops the rest.
+     */
+    const healthFacts = new Map();
+    let healthFactsAt = 0;
+
+    function factsKey(url) {
+        const raw = String(url || '').trim();
+        if (!raw) return '';
+        const utils = window.BookmarkUrlUtils;
+        if (typeof utils?.canonicalBookmarkURLKey === 'function') {
+            return utils.canonicalBookmarkURLKey(raw);
+        }
+        // Same shape as status.js falls back to, so a browser without the
+        // shared helper still matches rows to facts rather than silently
+        // matching none of them.
+        let t = raw.toLowerCase();
+        const hash = t.indexOf('#');
+        if (hash >= 0) t = t.slice(0, hash);
+        return t.replace(/\/+$/, '');
+    }
+
+    /**
+     * Index one report. Rows with nothing to report are skipped: a healthy
+     * bookmark that is not monitored has no uptime, no certificate and no
+     * failure, so storing it would be a map the size of the collection saying
+     * nothing.
+     */
+    function rememberHealthFacts(report) {
+        // Two shapes, one index: `rows` is the compact view the badge asks for,
+        // `issues` the full report the health view loads. Whichever arrives
+        // last is the freshest, and both say the same four things.
+        const rows = Array.isArray(report?.rows) ? report.rows : null;
+        const issues = Array.isArray(report?.issues) ? report.issues : [];
+        const certificates = report?.certificates || {};
+        healthFacts.clear();
+        (rows || issues).forEach((entry) => {
+            const key = factsKey(entry?.url);
+            if (!key) return;
+            const samples = rows
+                ? Number(entry?.uptime30dSamples || 0)
+                : Number(entry?.monitorStats?.uptime30d?.samples || 0);
+            const ratio = rows
+                ? Number(entry?.uptime30d || 0)
+                : Number(entry?.monitorStats?.uptime30d?.ratio || 0);
+            const cert = entry?.certHost ? certificates[entry.certHost] : null;
+            const facts = {
+                monitor: Boolean(entry?.monitor),
+                uptime30d: samples > 0 ? ratio : null,
+                uptimeSamples: samples,
+                certExpiresAt: Number(cert?.expiresAt || 0) || 0,
+                brokenSince: Number(entry?.brokenSince || 0) || 0,
+                lastError: String(entry?.lastError || '').trim(),
+            };
+            if (facts.uptime30d === null && !facts.certExpiresAt && !facts.brokenSince) return;
+            healthFacts.set(key, facts);
+        });
+        healthFactsAt = Date.now();
+    }
+
+    function getHealthFacts(url) {
+        const key = factsKey(url);
+        return key ? healthFacts.get(key) || null : null;
+    }
+
     async function fetchBookmarkHealthSummary() {
-        const response = await fetch('/api/bookmark-health');
+        // The counts, plus the few bookmarks with something to report. The full
+        // report is a row per bookmark — name, tags, score, reasons — and this
+        // runs on every dashboard load, so on a large collection it was
+        // hundreds of kilobytes fetched to read twelve numbers.
+        const response = await fetch('/api/bookmark-health?view=facts');
         if (!response.ok) return null;
         const data = await response.json();
+        // What it does carry is kept rather than dropped on the floor: the
+        // preview card reads uptime and certificate expiry from here.
+        rememberHealthFacts(data);
         return data?.summary || {};
     }
 
@@ -100,5 +179,14 @@
         createHealthCountBadge,
         applyHealthBadgeToAnchor,
         fetchBookmarkHealthSummary,
+    };
+
+    /** Read by the preview card, and by anything else on the dashboard that
+     *  wants what health knows without asking the server for it again. */
+    window.HealthFacts = {
+        get: getHealthFacts,
+        remember: rememberHealthFacts,
+        get size() { return healthFacts.size; },
+        get updatedAt() { return healthFactsAt; },
     };
 })();

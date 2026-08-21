@@ -1,0 +1,71 @@
+{
+  "tag": "v1.3.2",
+  "date": "21 August 2026",
+  "releasedAt": "2026-08-21",
+  "modalLead": "The card you get when you hover a bookmark, rebuilt. It repeated the address, hid the one thing worth acting on, cut itself off without saying so, and slid away as you moved toward it — while the row underneath showed more than the card explaining it. It now answers what this is, what it says, and what you already know about it, and you decide whether it appears at all.",
+  "sections": [
+    {
+      "title": "The preview card",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The card answers three questions</strong> in a fixed order: what this is, what it says, and what you already know about it — whether the link answered and how quickly, how available it has been, a certificate about to expire, whether the page has published anything new, how often you open it and when you last did, its shortcut and the page it lives on. A line with nothing to say is left out, so a bare link is a short card instead of empty space."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Availability and an expiring certificate show while you hover</strong>, alongside the check that just ran. You had to open <strong>Health</strong> to find out either."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>It holds still.</strong> The card moved with your pointer, so it slid across the rows underneath and drifted away as you read it. It now sits beside the bookmark it describes. Hovering gives you something to read; <code>Shift + V</code> keeps it open with <em>Copy</em>, <em>Refresh</em> and <em>Edit</em>, and <code>Esc</code> closes it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Never opened</strong> is something the card says now — the state most worth acting on was the one it left out entirely."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The card no longer hides its last lines.</strong> A bookmark with a picture, a description, a note and tags ran past the card's height and the rest simply was not drawn. Your note also reads as yours — labelled, instead of set in the same grey as the website's own blurb — and a picture that has since disappeared leaves no gap where it used to be."
+        }
+      ]
+    },
+    {
+      "title": "Where you set it",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>Off, on hover, or keyboard only.</strong> Under <strong>Appearance → Display</strong> the card now has three answers instead of a switch — the middle one is the default. Keyboard only is for when you want what the card says without a panel appearing under the pointer: nothing opens on its own, and <code>Shift + V</code> shows it for the row you have selected."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>You pick the rows.</strong> Eight checkboxes — image, description, your note, tags, status and uptime, opens and last opened, the Fresh count, the shortcut and where the bookmark lives — with the card itself beside them, drawn from one of your own bookmarks and redrawn as you tick."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The hover delay is calmer, and honest.</strong> The card waits a quarter of a second now, so it stops appearing on rows you were only passing over. The list used to read Instant, 200 ms, 400 ms, 700 ms and 1 s — four of those five did nothing at all; it offers Fast, Balanced and Calm, and starts on Calm. If you have already picked a delay, it stays as you set it."
+        }
+      ]
+    },
+    {
+      "title": "Fixes",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Editing a bookmark no longer wipes its statistics.</strong> Opening a bookmark and then editing anything on that page set its open count back to zero, and took the last check, the fetched preview text and the certificate along with it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Show in Health opens the row you picked.</strong> It landed on whichever row happened to appear under your pointer instead."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Safari: the bookmark editor takes your clicks again.</strong> Opened from Health, its fields would not respond — the dimmed column beside it was quietly catching them."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The dashboard loads lighter.</strong> The health icon was downloading the entire health report on every visit to read three numbers off it; on a real library that is 8 KB down to under half a kilobyte."
+        }
+      ]
+    }
+  ]
+}

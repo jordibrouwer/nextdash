@@ -135,6 +135,8 @@ func main() {
 	r.HandleFunc("/api/duplicates", handlers.CheckDuplicates).Methods("GET")
 	r.HandleFunc("/api/health", handlers.Health).Methods("GET")
 	r.HandleFunc("/api/bookmark-health", handlers.GetBookmarkHealth).Methods("GET")
+	// The daily points alone, without building a report for them.
+	r.HandleFunc("/api/health/trend", handlers.GetHealthTrend).Methods("GET")
 	r.HandleFunc("/api/feeds", handlers.GetFeeds).Methods("GET")
 	r.HandleFunc("/api/feeds/poll", handlers.PollFeedsNow).Methods("POST")
 	r.HandleFunc("/api/health/cache-scan", handlers.CacheScanResult).Methods("POST")

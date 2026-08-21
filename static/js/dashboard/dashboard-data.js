@@ -227,11 +227,18 @@ class DashboardData {
                 d.settings.showAddBookmarkButton = true;
             }
             if (typeof d.settings.showLinkPreviewCards === 'undefined') {
-                d.settings.showLinkPreviewCards = false;
+                d.settings.showLinkPreviewCards = true;
             }
             if (![100, 150, 250].includes(Number(d.settings.linkPreviewHoverDelayMs))) {
-                d.settings.linkPreviewHoverDelayMs = 150;
+                d.settings.linkPreviewHoverDelayMs = 250;
             }
+            // The mode is what the card reads; the boolean is kept in step so
+            // everything still holding it — the command palette toggle, the
+            // analytics flag — agrees with what the reader chose.
+            if (!['off', 'hover', 'keyboard'].includes(String(d.settings.linkPreviewMode || ''))) {
+                d.settings.linkPreviewMode = d.settings.showLinkPreviewCards === true ? 'hover' : 'off';
+            }
+            d.settings.showLinkPreviewCards = d.settings.linkPreviewMode !== 'off';
             if (typeof d.settings.updateCheckEnabled === 'undefined') {
                 d.settings.updateCheckEnabled = true;
             }

@@ -26,11 +26,69 @@
       ]
     },
     {
+      "title": "Statistics that say something",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>What this says.</strong> Statistics opens with the three things its figures actually mean — where your opening lands, what is going unread, what is not answering — each with the button that acts on it. Nothing to report means nothing shown."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The tiles say which way a count moved.</strong> nextDash has been recording a point a day all along; the overview reads it now. <em>+7 this week</em> when it moved, and silence when it did not."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Rows hand off, tabs can be linked.</strong> A most-opened bookmark or a category now takes you to the list where you can act on it, and every tab carries a link you can copy."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The export carries every tab.</strong> Downloading from Overview used to leave the Inbox and Health figures out of a complete-looking file."
+        }
+      ]
+    },
+    {
+      "title": "The bookmark list, sharper",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A filtered list is a link now.</strong> What you searched, the page, the category, the tag and the sort all live in the address bar — so “the 41 untagged on Work” is something you can bookmark or send to yourself, and a reload keeps it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>An empty list says why.</strong> It used to blame your search whatever was actually narrowing it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A selection survives a filter change</strong>, so you can tick the untagged and then add the duplicates. The bar says how many of them the current filter is hiding."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Undo for bulk tags, pins and availability</strong>, in the same eight-second toast delete already had."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Sort by page, recent or most opened in one click</strong>, and ask what changed in the last week — the question that follows an import."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A long list stays quick.</strong> The list now draws the rows around what you are looking at instead of every row it has loaded — on a library of two thousand that is a thousand elements on the page instead of sixty-seven thousand, with the scrollbar unchanged and nothing jumping."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The search bar and the cleanup filters agree.</strong> <code>status:untagged</code> in the search bar and <em>Without tags</em> in the list are the same question, and they were answered separately — a tag made of nothing but spaces counted in one place and not the other. Fourteen of those questions come from one place now, and the search bar gained <code>status:feed</code> along the way."
+        }
+      ]
+    },
+    {
       "title": "On the grid",
       "items": [
         {
           "badge": "fix",
           "text": "<strong>Ctrl/Cmd+click opens a bookmark in a new tab again.</strong> It used to tick the row for a bulk action instead — the one modifier every link on the web honours, doing the opposite of what it does everywhere else, and on a Mac with the row menu on top. Ticking a row with the mouse is <strong>Alt+click</strong> now."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The row menu in Health shows all of itself.</strong> It used to cap at a fixed height and scroll inside, which hid whatever was at the bottom of the list."
         }
       ]
     },

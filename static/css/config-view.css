@@ -5110,3 +5110,127 @@ button.config-bm-shortcut-pill {
     text-decoration: none;
     display: inline-block;
 }
+
+/* What the figures say, in three sentences, each with the button that acts on
+   it. A number you cannot act on is trivia; this panel is the difference. */
+.config-stats-summary-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.config-stats-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.config-stats-summary-text {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+/* Which way a count moved this week, beside the count itself. Quiet: the
+   number is the fact, the direction is the footnote. */
+.config-tile-delta {
+    margin-left: 0.35rem;
+    font-size: 0.62em;
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+}
+
+.config-tile-delta--up { color: var(--accent-success, #2e7d32); }
+.config-tile-delta--down { color: var(--text-muted, #777); }
+
+.config-tile-delta-period {
+    font-weight: 400;
+    opacity: 0.75;
+}
+
+/* The chart in a sentence, above the bars: the shape a table of thirty numbers
+   cannot give, and the peak a sighted reader would otherwise have to hover for. */
+.config-chart-summary {
+    margin: 0 0 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-muted, #777);
+}
+
+/* The three orders people use, and the filter that answers "what did I touch".
+   A row of chips above the list: a select shows one option and hides the rest,
+   which is where "most opened" went to be never found. */
+.config-bm-quickbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.6rem;
+}
+
+.config-bm-quickbar-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-muted, #777);
+    margin-right: 0.15rem;
+}
+
+.config-choice--small {
+    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+}
+
+/* The keys the list answers to, said once under the toolbar rather than left
+   to be discovered. */
+.config-bm-keys-hint {
+    margin: 0 0 0.6rem;
+    font-size: 0.75rem;
+    color: var(--text-muted, #777);
+}
+
+.config-bm-keys-hint kbd {
+    font-size: 0.9em;
+}
+
+/* The rows above and below the drawn window: height only, so the scrollbar
+   describes the whole list while the DOM holds a screenful. */
+.config-bm-spacer {
+    flex: 0 0 auto;
+    pointer-events: none;
+}
+
+/*
+ * The link preview panel: eight boxes choosing the card's rows, and the card
+ * itself drawn beside them from a real bookmark.
+ */
+.config-checkset {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.4rem 1rem;
+    margin: 0.2rem 0 0.6rem;
+}
+
+.config-checkset-item {
+    margin: 0;
+}
+
+.config-preview-sample {
+    display: flex;
+    justify-content: flex-start;
+    margin: 0.4rem 0 0.2rem;
+}
+
+/* The sample is the card, so it inherits every rule the card has — it only has
+   to stop being a fixed, floating one. */
+.config-preview-sample-card.bookmark-preview-card {
+    position: static;
+    z-index: auto;
+    pointer-events: none;
+    width: min(340px, 100%);
+    box-shadow: none;
+}
