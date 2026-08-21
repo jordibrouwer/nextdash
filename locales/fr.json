@@ -4085,6 +4085,8 @@
     "bookmarksTilesFilteredHint": "Vue filtrée — les totaux ci-dessous correspondent à vos filtres",
     "bookmarksFilterPage": "Page : {name}",
     "bookmarksFilterCategory": "Catégorie : {name}",
+    "bookmarksLoading": "Chargement des favoris…",
+    "bookmarksKeysHint": "<kbd>j</kbd>/<kbd>k</kbd> déplacent · <kbd>x</kbd> coche une ligne · <kbd>Entrée</kbd> ouvre l’éditeur · <kbd>Échap</kbd> efface la sélection",
     "bookmarksFilterTag": "Tag : {tag}",
     "bookmarksFilterSearch": "Recherche : {q}",
     "bookmarksClearAllFilters": "Tout effacer",

@@ -4085,6 +4085,8 @@
     "bookmarksTilesFilteredHint": "Gefilterde weergave — aantallen hieronder passen bij je filters",
     "bookmarksFilterPage": "Pagina: {name}",
     "bookmarksFilterCategory": "Categorie: {name}",
+    "bookmarksLoading": "Bladwijzers laden…",
+    "bookmarksKeysHint": "<kbd>j</kbd>/<kbd>k</kbd> bewegen · <kbd>x</kbd> vinkt een rij aan · <kbd>Enter</kbd> opent de editor · <kbd>Esc</kbd> wist de selectie",
     "bookmarksFilterTag": "Tag: {tag}",
     "bookmarksFilterSearch": "Zoeken: {q}",
     "bookmarksClearAllFilters": "Alles wissen",

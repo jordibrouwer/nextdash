@@ -4085,6 +4085,8 @@
     "bookmarksTilesFilteredHint": "Filtered view — counts below match your filters",
     "bookmarksFilterPage": "Page: {name}",
     "bookmarksFilterCategory": "Category: {name}",
+    "bookmarksLoading": "Loading your bookmarks…",
+    "bookmarksKeysHint": "<kbd>j</kbd>/<kbd>k</kbd> move · <kbd>x</kbd> ticks a row · <kbd>Enter</kbd> opens the editor · <kbd>Esc</kbd> clears the selection",
     "bookmarksFilterTag": "Tag: {tag}",
     "bookmarksFilterSearch": "Search: {q}",
     "bookmarksClearAllFilters": "Clear all",

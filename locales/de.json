@@ -4085,6 +4085,8 @@
     "bookmarksTilesFilteredHint": "Gefilterte Ansicht — die Zahlen unten passen zu deinen Filtern",
     "bookmarksFilterPage": "Seite: {name}",
     "bookmarksFilterCategory": "Kategorie: {name}",
+    "bookmarksLoading": "Lesezeichen werden geladen…",
+    "bookmarksKeysHint": "<kbd>j</kbd>/<kbd>k</kbd> bewegen · <kbd>x</kbd> hakt eine Zeile an · <kbd>Enter</kbd> öffnet den Editor · <kbd>Esc</kbd> leert die Auswahl",
     "bookmarksFilterTag": "Tag: {tag}",
     "bookmarksFilterSearch": "Suche: {q}",
     "bookmarksClearAllFilters": "Alle löschen",
