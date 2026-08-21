@@ -47,6 +47,31 @@
       ]
     },
     {
+      "title": "The bookmark list, sharper",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>A filtered list is a link now.</strong> What you searched, the page, the category, the tag and the sort all live in the address bar — so “the 41 untagged on Work” is something you can bookmark or send to yourself, and a reload keeps it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>An empty list says why.</strong> It used to blame your search whatever was actually narrowing it."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A selection survives a filter change</strong>, so you can tick the untagged and then add the duplicates. The bar says how many of them the current filter is hiding."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Undo for bulk tags, pins and availability</strong>, in the same eight-second toast delete already had."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Sort by page, recent or most opened in one click</strong>, and ask what changed in the last week — the question that follows an import."
+        }
+      ]
+    },
+    {
       "title": "On the grid",
       "items": [
         {

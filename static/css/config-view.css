@@ -5160,3 +5160,39 @@ button.config-bm-shortcut-pill {
     font-size: 0.82rem;
     color: var(--text-muted, #777);
 }
+
+/* The three orders people use, and the filter that answers "what did I touch".
+   A row of chips above the list: a select shows one option and hides the rest,
+   which is where "most opened" went to be never found. */
+.config-bm-quickbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.6rem;
+}
+
+.config-bm-quickbar-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-muted, #777);
+    margin-right: 0.15rem;
+}
+
+.config-choice--small {
+    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+}
+
+/* The keys the list answers to, said once under the toolbar rather than left
+   to be discovered. */
+.config-bm-keys-hint {
+    margin: 0 0 0.6rem;
+    font-size: 0.75rem;
+    color: var(--text-muted, #777);
+}
+
+.config-bm-keys-hint kbd {
+    font-size: 0.9em;
+}

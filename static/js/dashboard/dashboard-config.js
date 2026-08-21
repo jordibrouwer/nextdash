@@ -286,7 +286,9 @@ class DashboardConfig {
     /** Page filter encoded as `#config/bookmarks/<pageId>`. */
     static bookmarksPageFromHash(hash) {
         if (typeof hash !== 'string') return null;
-        const match = hash.replace(/^#/, '').match(/^config\/bookmarks\/([^/]+)$/);
+        // The filters ride in a query string after the path, so the page id
+        // stops at the first `?` as well as at the end.
+        const match = hash.replace(/^#/, '').match(/^config\/bookmarks\/([^/?]+)/);
         return match ? decodeURIComponent(match[1]) : null;
     }
 
@@ -389,10 +391,70 @@ class DashboardConfig {
         return true;
     }
 
+    /**
+     * What the bookmark list is currently narrowed to, as a query string.
+     *
+     * The list could be filtered five ways and the address bar said only which
+     * page — so "the 41 untagged on Work" was a thing you could see and not
+     * hand to anyone, and a reload threw it away. Only what is actually set is
+     * written, so an unfiltered list keeps the short hash it always had.
+     */
+    bookmarksFilterQuery() {
+        const params = [];
+        const add = (key, value) => {
+            const v = String(value ?? '').trim();
+            if (v) params.push(`${key}=${encodeURIComponent(v)}`);
+        };
+        add('q', this.bmQuery);
+        add('cat', this.bmCategoryFilter);
+        add('filter', this.bmCleanupFilter);
+        const tags = this.bookmarkTagFilters();
+        if (tags.length) add('tag', tags.join(','));
+        const sort = this.bmSort ?? this.defaultBookmarksSort();
+        if (sort && sort !== this.defaultBookmarksSort()) add('sort', sort);
+        return params.length ? `?${params.join('&')}` : '';
+    }
+
+    /**
+     * Read those filters back off a hash, and say whether anything moved.
+     *
+     * Absent keys clear rather than keep: a link to "everything on Work" must
+     * not inherit the tag filter the reader happened to have on, or it would
+     * describe a different list for every person who clicked it.
+     */
+    applyBookmarksFiltersFromHash(hash) {
+        if (typeof hash !== 'string') return false;
+        const raw = hash.replace(/^#/, '');
+        if (!raw.startsWith('config/bookmarks')) return false;
+        const at = raw.indexOf('?');
+        const params = new URLSearchParams(at < 0 ? '' : raw.slice(at + 1));
+        const before = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
+            this.bmCleanupFilter, this.bookmarkTagFilters(), this.bmSort]);
+
+        this.bmQuery = params.get('q') || '';
+        this.bmCategoryFilter = params.get('cat') || '';
+        const filter = params.get('filter') || '';
+        this.bmCleanupFilter = DashboardConfig.CLEANUP_FILTERS[filter] ? filter : '';
+        const tags = (params.get('tag') || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+        this.bmTagFilter = tags;
+        const sort = params.get('sort') || '';
+        if (sort) this.bmSort = sort;
+
+        const after = JSON.stringify([this.bmQuery, this.bmCategoryFilter,
+            this.bmCleanupFilter, this.bookmarkTagFilters(), this.bmSort]);
+        if (before === after) return false;
+        this._bmDuplicateUrls = null;
+        this.resetBookmarkVisibleLimit();
+        this.invalidateVisibleBookmarks();
+        return true;
+    }
+
     hashForSection(section) {
         if (!section || section === 'overview') return 'config';
-        if (section === 'bookmarks' && this.bmPageFilter) {
-            return `config/bookmarks/${encodeURIComponent(this.bmPageFilter)}`;
+        if (section === 'bookmarks') {
+            const page = this.bmPageFilter ? `/${encodeURIComponent(this.bmPageFilter)}` : '';
+            const query = this.bookmarksFilterQuery();
+            if (page || query) return `config/bookmarks${page}${query}`;
         }
         // Keep the sub-tab in the URL so the address bar is a link you can
         // actually hand to someone.
@@ -649,7 +711,8 @@ class DashboardConfig {
         }
         const section = DashboardConfig.sectionFromHash(hash);
         const tabChanged = this.applySubTabFromHash(window.location.hash);
-        const pageChanged = this.applyBookmarksPageFromHash(hash);
+        const pageChanged = this.applyBookmarksPageFromHash(hash)
+            | this.applyBookmarksFiltersFromHash(hash);
         if (section && section !== this.section) {
             this.section = section;
             this.render();
@@ -12906,30 +12969,11 @@ class DashboardConfig {
             insecure: ['config.cleanupFilterInsecure', 'Not using HTTPS'],
             noicon: ['config.cleanupFilterNoIcon', 'Without an icon'],
             duplicate: ['config.cleanupFilterDuplicate', 'Duplicate URLs'],
+            changed: ['config.cleanupFilterChanged', 'Changed in the last week'],
         }[key];
         return map ? this.t(map[0], map[1]) : '';
     }
 
-    /**
-     * A banner naming the cleanup filter the list arrived with.
-     *
-     * Without it the user lands on a list that is silently hiding most of their
-     * bookmarks, with nothing on screen to say why or how to get back — the
-     * search box is empty and both dropdowns read "all".
-     */
-    renderCleanupFilterBanner() {
-        const esc = (v) => this.dash.escapeHtml(v);
-        const key = this.bmCleanupFilter;
-        if (!key || !DashboardConfig.CLEANUP_FILTERS[key]) return '';
-        const shown = this.visibleBookmarks().length;
-        const label = this.cleanupFilterLabel(key);
-        const count = this.t('config.cleanupFilterCount', '{n} shown').replace('{n}', String(shown));
-        return `
-            <div class="config-cleanup-banner" role="status">
-                <span class="config-cleanup-banner-text">${esc(label)} · ${esc(count)}</span>
-                <button type="button" class="config-btn config-btn--small" data-cleanup-clear="1">${esc(this.t('config.cleanupFilterClear', 'Show all bookmarks'))}</button>
-            </div>`;
-    }
 
     /** Every category name in use, across all pages, de-duplicated and sorted. */
     /**
@@ -13175,6 +13219,15 @@ class DashboardConfig {
         duplicate: (b, dupes) => {
             const url = String(b.url || '').trim().toLowerCase();
             return url && dupes && dupes.has(url);
+        },
+        // What did I touch? The question after an import, a bulk retag, or an
+        // afternoon of tidying — and every bookmark has carried updatedAt since
+        // it was added, with nothing able to ask for it. Seven days rather than
+        // a setting: this is "recently", and a number nobody can see is a number
+        // nobody can misread.
+        changed: (b) => {
+            const at = Number(b.updatedAt || 0) || Number(b.createdAt || 0);
+            return at > 0 && Date.now() - at <= 7 * 86400000;
         },
     };
 
@@ -14354,6 +14407,21 @@ class DashboardConfig {
                 this.scheduleBookmarkSearchRepaint();
             });
         }
+        container.querySelectorAll('[data-bm-sort-chip]').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                this.bmSort = chip.getAttribute('data-bm-sort-chip');
+                this.resetBookmarkVisibleLimit();
+                this.render();
+                this.restoreConfigHash();
+            });
+        });
+        container.querySelector('[data-bm-changed-toggle]')?.addEventListener('click', () => {
+            this.bmCleanupFilter = this.bmCleanupFilter === 'changed' ? '' : 'changed';
+            this.resetBookmarkVisibleLimit();
+            this._bmDuplicateUrls = null;
+            this.render();
+            this.restoreConfigHash();
+        });
         this.bindBookmarkFilterChips(container.querySelector('#config-bm-filter-chips'));
         this.bindBookmarkTagCloud(container);
         container.querySelector('[data-cleanup-clear]')?.addEventListener('click', () => {
@@ -14368,6 +14436,9 @@ class DashboardConfig {
             if (!el) return;
             el.addEventListener('change', () => {
                 this[prop] = el.value;
+                // The selection is deliberately kept: narrowing to a second
+                // filter and adding to what you already ticked is the point.
+                // The bulk bar says how many are behind the filter.
                 this.resetBookmarkVisibleLimit();
                 this._bmDuplicateUrls = null;
                 this.repaintBookmarksList();
@@ -15377,7 +15448,7 @@ class DashboardConfig {
      */
     selectAllBookmarksLabel() {
         const total = this.visibleBookmarks().length;
-        const shown = Math.min(total, Math.max(this.bmPageSize(), Number(this.bmVisibleLimit) || this.bmPageSize()));
+        const shown = Math.min(total, this.bookmarkVisibleLimit(total));
         if (total > shown) {
             return this.t('config.selectAllBookmarksCount', 'Select all {n}').replace('{n}', String(total));
         }
@@ -15749,13 +15820,57 @@ class DashboardConfig {
      * Apply a mutation to every ticked bookmark, grouped per page so each page
      * is written exactly once rather than once per bookmark.
      */
+    /**
+     * Apply a change to the selection, and hand back the way to undo it.
+     *
+     * A bulk edit is the one action here with no natural second chance: forty
+     * rows retagged, or pinned, cannot be picked apart by hand afterwards, and
+     * only the delete path offered an undo. The snapshot is the pages as they
+     * were before the write — the same shape the delete undo restores — so
+     * putting it back is one POST per page rather than a reverse of the edit,
+     * which would have to be written for each kind of change and would be wrong
+     * for `replace`.
+     */
     async mutateSelected(picked, mutate) {
+        const snapshots = new Map();
         for (const [pageId, targets] of this.selectionTargetsByPage(picked)) {
+            const before = (this.dash.allBookmarks || [])
+                .filter((b) => String(b.pageId) === String(pageId))
+                .map((b) => ({ ...b }));
+            snapshots.set(pageId, before);
             await this.writePageBookmarks(pageId, (list) => DashboardConfig.withOccurrence(list)
                 .map(({ bookmark, target }) => (targets.has(target) ? mutate({ ...bookmark }) : bookmark)));
         }
         this.bmSelected.clear();
         await this.refreshBookmarksAfterWrite();
+        return snapshots;
+    }
+
+    /**
+     * The undo a bulk edit hands to its toast.
+     *
+     * Restores each page as it was before the write. The rows are sent whole
+     * rather than diffed: the pages are already in memory, and a diff would
+     * have to reason about what "remove these tags" meant on a row that did not
+     * carry them.
+     */
+    bulkUndo(snapshots, doneKey, doneFallback, failKey, failFallback) {
+        if (!snapshots || !snapshots.size) return null;
+        return async () => {
+            try {
+                for (const [pageId, rows] of snapshots) {
+                    await this.writeFetch(`/api/bookmarks?page=${encodeURIComponent(pageId)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(rows),
+                    });
+                }
+                await this.refreshBookmarksAfterWrite();
+                this.notify(this.t(doneKey, doneFallback), 'success');
+            } catch {
+                this.notify(this.t(failKey, failFallback), 'error');
+            }
+        };
     }
 
     async bulkMove(picked) {
@@ -15818,7 +15933,7 @@ class DashboardConfig {
         const mode = document.getElementById('config-bulk-tags-mode')?.value || 'add';
         const tags = raw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
         if (!tags.length) return;
-        await this.mutateSelected(picked, (b) => {
+        const snapshots = await this.mutateSelected(picked, (b) => {
             const current = Array.isArray(b.tags) ? b.tags.map((t) => String(t).toLowerCase()) : [];
             let next;
             if (mode === 'replace') next = [...tags];
@@ -15826,12 +15941,16 @@ class DashboardConfig {
             else next = [...new Set([...current, ...tags])];
             return { ...b, tags: next };
         });
-        this.notify(this.t('config.bulkTagsDone', 'Tags updated.'), 'success');
+        this.notify(this.t('config.bulkTagsDone', 'Tags updated.'), 'success', {
+            undoCallback: this.bulkUndo(snapshots, 'config.bulkTagsUndone', 'Tags put back.',
+                'config.bulkUndoFailed', 'Could not undo that.'),
+            duration: 8000,
+        });
     }
 
     async bulkStatus(picked) {
         const mode = document.getElementById('config-bulk-status')?.value || 'off';
-        await this.mutateSelected(picked, (b) => {
+        const snapshots = await this.mutateSelected(picked, (b) => {
             const next = { ...b };
             if (window.CheckMode) {
                 next.monitorIntervalMinutes = window.CheckMode.intervalOf?.(b)
@@ -15840,15 +15959,23 @@ class DashboardConfig {
             }
             return next;
         });
-        this.notify(this.t('config.bulkStatusDone', 'Availability checking updated.'), 'success');
+        this.notify(this.t('config.bulkStatusDone', 'Availability checking updated.'), 'success', {
+            undoCallback: this.bulkUndo(snapshots, 'config.bulkStatusUndone', 'Availability checking put back.',
+                'config.bulkUndoFailed', 'Could not undo that.'),
+            duration: 8000,
+        });
     }
 
     async bulkPin(picked) {
         // Mixed selections pin everything rather than flipping each: a toggle
         // that leaves half pinned is not what "toggle pin" is asked to do.
         const allPinned = picked.every((b) => b.pinned === true);
-        await this.mutateSelected(picked, (b) => ({ ...b, pinned: !allPinned }));
-        this.notify(this.t('config.bulkPinDone', 'Pins updated.'), 'success');
+        const snapshots = await this.mutateSelected(picked, (b) => ({ ...b, pinned: !allPinned }));
+        this.notify(this.t('config.bulkPinDone', 'Pins updated.'), 'success', {
+            undoCallback: this.bulkUndo(snapshots, 'config.bulkPinUndone', 'Pins put back.',
+                'config.bulkUndoFailed', 'Could not undo that.'),
+            duration: 8000,
+        });
     }
 
     async bulkDelete(picked) {
