@@ -1650,6 +1650,7 @@ When set, protected API calls require header `X-NextDash-Token: your-long-random
 | Health: cache scan result | `POST /api/health/cache-scan` |
 | Health: update bookmark status | `POST /api/health/update-status` |
 | Bookmark link preview | `GET /api/bookmark-preview` |
+| Health report | `GET /api/bookmark-health` — add `?view=facts` for the counts plus only the bookmarks with something to report, which is what the health badge and the preview cards read |
 | Feeds: poll every known feed now | `POST /api/feeds/poll` |
 | Clear all preview metadata | `POST /api/previews/clear` |
 | Refresh all preview metadata | `POST /api/previews/refresh` |

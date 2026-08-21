@@ -123,21 +123,30 @@
      * nothing.
      */
     function rememberHealthFacts(report) {
+        // Two shapes, one index: `rows` is the compact view the badge asks for,
+        // `issues` the full report the health view loads. Whichever arrives
+        // last is the freshest, and both say the same four things.
+        const rows = Array.isArray(report?.rows) ? report.rows : null;
         const issues = Array.isArray(report?.issues) ? report.issues : [];
         const certificates = report?.certificates || {};
         healthFacts.clear();
-        issues.forEach((issue) => {
-            const key = factsKey(issue?.url);
+        (rows || issues).forEach((entry) => {
+            const key = factsKey(entry?.url);
             if (!key) return;
-            const uptime = issue?.monitorStats?.uptime30d;
-            const cert = issue?.certHost ? certificates[issue.certHost] : null;
+            const samples = rows
+                ? Number(entry?.uptime30dSamples || 0)
+                : Number(entry?.monitorStats?.uptime30d?.samples || 0);
+            const ratio = rows
+                ? Number(entry?.uptime30d || 0)
+                : Number(entry?.monitorStats?.uptime30d?.ratio || 0);
+            const cert = entry?.certHost ? certificates[entry.certHost] : null;
             const facts = {
-                monitor: Boolean(issue?.monitor),
-                uptime30d: Number(uptime?.samples) > 0 ? Number(uptime.ratio) : null,
-                uptimeSamples: Number(uptime?.samples || 0) || 0,
+                monitor: Boolean(entry?.monitor),
+                uptime30d: samples > 0 ? ratio : null,
+                uptimeSamples: samples,
                 certExpiresAt: Number(cert?.expiresAt || 0) || 0,
-                brokenSince: Number(issue?.brokenSince || 0) || 0,
-                lastError: String(issue?.lastError || '').trim(),
+                brokenSince: Number(entry?.brokenSince || 0) || 0,
+                lastError: String(entry?.lastError || '').trim(),
             };
             if (facts.uptime30d === null && !facts.certExpiresAt && !facts.brokenSince) return;
             healthFacts.set(key, facts);
@@ -151,11 +160,15 @@
     }
 
     async function fetchBookmarkHealthSummary() {
-        const response = await fetch('/api/bookmark-health');
+        // The counts, plus the few bookmarks with something to report. The full
+        // report is a row per bookmark — name, tags, score, reasons — and this
+        // runs on every dashboard load, so on a large collection it was
+        // hundreds of kilobytes fetched to read twelve numbers.
+        const response = await fetch('/api/bookmark-health?view=facts');
         if (!response.ok) return null;
         const data = await response.json();
-        // The badge only ever wanted the counts; the rest of the answer is
-        // already paid for, so it is kept rather than dropped on the floor.
+        // What it does carry is kept rather than dropped on the floor: the
+        // preview card reads uptime and certificate expiry from here.
         rememberHealthFacts(data);
         return data?.summary || {};
     }

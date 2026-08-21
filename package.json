@@ -9,7 +9,8 @@
     "validate:cheatsheet-registry": "node scripts/validate-cheatsheet-registry.cjs",
     "validate:cheatsheet": "npm run validate:cheatsheet-registry && npm run validate:cheatsheet-i18n",
     "validate:cheatsheet-i18n": "node scripts/validate-cheatsheet-i18n.cjs",
-    "validate:help-i18n": "node scripts/validate-help-i18n.cjs"
+    "validate:help-i18n": "node scripts/validate-help-i18n.cjs",
+    "validate:locale-duplicates": "node scripts/validate-locale-duplicates.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",

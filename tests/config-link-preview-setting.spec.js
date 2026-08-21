@@ -24,6 +24,31 @@ async function openDisplayTab(page) {
     await page.waitForSelector('[data-behavior-field="linkPreviewMode"]', { timeout: 15_000 });
 }
 
+test.describe('the command palette and the mode', () => {
+    test(':preview off and on again keeps keyboard-only', async ({ page }) => {
+        await openDisplayTab(page);
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            d.settings.linkPreviewMode = 'keyboard';
+            d.settings.showLinkPreviewCards = true;
+        });
+
+        // `:preview` is a switch, and a switch has to put back what it took
+        // away — flipping off and on used to move someone who wanted the card
+        // only on Shift + V onto hover.
+        const commands = page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const search = d.searchComponent || d.search;
+            const sc = search.commandsComponent;
+            sc.setPreviewCardsVisibility(d, false);
+            const off = d.settings.linkPreviewMode;
+            sc.setPreviewCardsVisibility(d, true);
+            return { off, on: d.settings.linkPreviewMode };
+        });
+        expect(await commands).toEqual({ off: 'off', on: 'keyboard' });
+    });
+});
+
 test.describe('the link preview setting', () => {
     test('offers three ways, not a switch', async ({ page }) => {
         await openDisplayTab(page);
@@ -44,6 +69,21 @@ test.describe('the link preview setting', () => {
         const values = await page.locator('[data-behavior-field="linkPreviewHoverDelayMs"] option')
             .evaluateAll((els) => els.map((e) => Number(e.value)));
         expect(values).toEqual([100, 150, 250]);
+
+        // A card that opens the moment the pointer crosses a row opens on rows
+        // you were only passing over, so the calm end is where it starts.
+        const meta = await page.evaluate(() =>
+            window.dashboardInstance.config.fieldMeta('linkPreviewHoverDelayMs')?.def);
+        expect(meta).toBe(250);
+        const unset = await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const kept = d.settings.linkPreviewHoverDelayMs;
+            delete d.settings.linkPreviewHoverDelayMs;
+            const used = d.preview.previewHoverDelay();
+            d.settings.linkPreviewHoverDelayMs = kept;
+            return used;
+        });
+        expect(unset).toBe(250);
     });
 
     test('the checklist writes the card’s rows, and the sample follows', async ({ page }) => {
@@ -66,18 +106,3 @@ test.describe('the link preview setting', () => {
             .toBe(true);
     });
 });
-
-        // A card that opens the moment the pointer crosses a row opens on rows
-        // you were only passing over, so the calm end is where it starts.
-        const meta = await page.evaluate(() =>
-            window.dashboardInstance.config.fieldMeta('linkPreviewHoverDelayMs')?.def);
-        expect(meta).toBe(250);
-        const unset = await page.evaluate(() => {
-            const d = window.dashboardInstance;
-            const kept = d.settings.linkPreviewHoverDelayMs;
-            delete d.settings.linkPreviewHoverDelayMs;
-            const used = d.preview.previewHoverDelay();
-            d.settings.linkPreviewHoverDelayMs = kept;
-            return used;
-        });
-        expect(unset).toBe(250);

@@ -2581,10 +2581,19 @@ class SearchCommandsComponent {
 
     setPreviewCardsVisibility(dashboard, enabled) {
         dashboard.settings.showLinkPreviewCards = enabled;
-        // The mode is what the card reads. `:preview off` has to write it, or
-        // the palette says off while every row still opens a card; `on` restores
-        // hovering, which is what the command has always meant.
-        dashboard.settings.linkPreviewMode = enabled ? 'hover' : 'off';
+        // The mode is what the card reads, so `:preview off` has to write it —
+        // otherwise the palette says off while every row still opens a card.
+        // Switching back on restores the way it was reached before, which for
+        // someone who chose keyboard-only is keyboard-only: `on` means "not
+        // off", not "on hover".
+        if (!enabled) {
+            dashboard._previewModeBeforeOff = dashboard.settings.linkPreviewMode || 'hover';
+            dashboard.settings.linkPreviewMode = 'off';
+        } else {
+            const restored = dashboard._previewModeBeforeOff;
+            dashboard.settings.linkPreviewMode =
+                restored && restored !== 'off' ? restored : 'hover';
+        }
         if (!enabled && typeof dashboard.dismissBookmarkPreviewInteractions === 'function') {
             dashboard.dismissBookmarkPreviewInteractions();
         }

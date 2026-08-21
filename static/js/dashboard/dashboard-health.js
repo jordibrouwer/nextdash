@@ -44,6 +44,14 @@ class DashboardHealth {
         this.selectedKey = null;
         /** Deep-link target from `?hv_id=` — applied after the feed renders. */
         this.focusIssueKey = null;
+        /**
+         * Whether hovering may take the selection.
+         *
+         * Disarmed whenever a row is focused by name — "Show in Health", a
+         * `?hv_id=` link — because the list then draws under a cursor that has
+         * not moved, and the browser reports that as a hover.
+         */
+        this._pointerSelectArmed = true;
         this.expandedScores = new Set();
         // Rows whose expectations panel is open, keyed the same way as
         // expandedScores so both survive a re-render identically.
@@ -1037,20 +1045,33 @@ class DashboardHealth {
         this._pointerHandler = (e) => {
             if (!this.isActiveView()) return;
             if (e.pointerType && e.pointerType !== 'mouse') return;
+            // A row arriving under a cursor that never moved is not a hover.
+            // "Show in Health" leaves the pointer wherever the menu item was,
+            // and the list then draws under it — the browser fires pointerover
+            // for that, and the row you asked for lost its selection to
+            // whichever row happened to land there.
+            if (!this._pointerSelectArmed) return;
             const row = e.target.closest?.('.health-view-item');
             const key = row?.dataset?.healthKey;
             if (!key || key === this.selectedKey) return;
             this.selectRowByKey(key);
         };
+        // Only a real movement arms it; pointerover alone never does.
+        this._pointerMoveHandler = () => { this._pointerSelectArmed = true; };
         container.addEventListener('pointerover', this._pointerHandler, true);
+        container.addEventListener('pointermove', this._pointerMoveHandler, true);
     }
 
     unbindPointerNavigation() {
         if (this._pointerContainer && this._pointerHandler) {
             this._pointerContainer.removeEventListener('pointerover', this._pointerHandler, true);
         }
+        if (this._pointerContainer && this._pointerMoveHandler) {
+            this._pointerContainer.removeEventListener('pointermove', this._pointerMoveHandler, true);
+        }
         this._pointerContainer = null;
         this._pointerHandler = null;
+        this._pointerMoveHandler = null;
     }
 
     /* ── Score panel ───────────────────────────────────────────────────── */
@@ -2405,6 +2426,9 @@ class DashboardHealth {
 
         this.focusIssueKey = id;
         this.selectedKey = id;
+        // The row was asked for by name, so hovering has to be earned again:
+        // the list is about to draw under a cursor that has not moved.
+        this._pointerSelectArmed = false;
         return true;
     }
 

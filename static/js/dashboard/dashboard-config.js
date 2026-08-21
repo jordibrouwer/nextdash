@@ -45,9 +45,12 @@ class DashboardConfig {
      * literals scattered through the render methods. Moving the mark then meant
      * finding all of them, and a half-moved trail points at nothing.
      *
-     * Cleared (set to `{}`) once the setting is no longer new.
+     * Cleared (set to `{}`) once the setting is no longer new — which is where
+     * it stands: the trail pointed at Appearance → Layout for the categories
+     * -across-columns setting of v1.3.0, two releases ago, and a mark that
+     * outlives its release trains people to ignore the mark.
      */
-    static NEW_THIS_RELEASE = { section: 'appearance', tab: 'layout' };
+    static NEW_THIS_RELEASE = {};
 
     static CONFIG_LAST_KEY = 'nextdash:config-last-location-v1';
 
@@ -8540,7 +8543,6 @@ class DashboardConfig {
                 section: 'appearance',
                 tab: 'layout',
                 title: t('config.generalGroupCategoryWidth', 'Categories across columns'),
-                highlight: true,
                 note: t('config.generalCategoryWidthIntro',
                     'How tall a category gets, and how wide it may be. Width needs two things: a limit below (not Unlimited) and at least two columns. Then set a category with Shift+W on the dashboard, right-click → Width, or per row in Pages & tags → Categories — the settings here only decide what a new category starts at and how far the reset reaches.'),
                 controls: [

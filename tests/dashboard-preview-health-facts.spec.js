@@ -115,3 +115,50 @@ test.describe('what health already knows, on the dashboard', () => {
             .toBeGreaterThan(0);
     });
 });
+
+test.describe('the badge fetches the counts, not the whole report', () => {
+    test('the compact view carries the same four facts', async ({ page }) => {
+        await openDashboard(page);
+
+        const answer = await page.evaluate(async () => {
+            const res = await fetch('/api/bookmark-health?view=facts');
+            const facts = await res.json();
+            const full = await (await fetch('/api/bookmark-health')).json();
+            return {
+                hasSummary: Boolean(facts?.summary),
+                sameCounts: JSON.stringify(facts?.summary) === JSON.stringify(full?.summary),
+                // A row per bookmark is what the full report is for; this view
+                // keeps only the bookmarks with something to report.
+                rows: (facts?.rows || []).length,
+                issues: (full?.issues || []).length,
+                // The weight of the thing is the point.
+                factsBytes: JSON.stringify(facts).length,
+                fullBytes: JSON.stringify(full).length,
+                carriesNoTrend: facts?.trend === undefined && facts?.duplicateGroups === undefined,
+            };
+        });
+
+        expect(answer.hasSummary).toBe(true);
+        expect(answer.sameCounts).toBe(true);
+        expect(answer.rows).toBeLessThanOrEqual(answer.issues);
+        expect(answer.carriesNoTrend).toBe(true);
+        expect(answer.factsBytes).toBeLessThan(answer.fullBytes);
+    });
+
+    test('the health view still gets the full report', async ({ page }) => {
+        await openDashboard(page);
+        const full = await page.evaluate(async () => {
+            const d = window.dashboardInstance;
+            await d.health.openHealthView();
+            const report = d.health.instance?.report;
+            return {
+                issues: (report?.issues || []).length,
+                // Rows carry what the view draws — names and scores — which the
+                // compact answer deliberately leaves out.
+                named: (report?.issues || []).every((i) => typeof i.name === 'string'),
+            };
+        });
+        expect(full.issues).toBeGreaterThan(0);
+        expect(full.named).toBe(true);
+    });
+});

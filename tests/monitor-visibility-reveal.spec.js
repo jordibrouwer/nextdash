@@ -247,7 +247,7 @@ test.describe('the overview announces the feature', () => {
 });
 
 test.describe('the new setting is marked as new', () => {
-    test('the Status tab and the monitor panel twinkle, and nothing else does', async ({ page }) => {
+    test('no tab or panel claims to be new once the release has passed', async ({ page }) => {
         await load(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('behavior'));
         await page.waitForFunction(() =>
@@ -257,27 +257,23 @@ test.describe('the new setting is marked as new', () => {
             c.behaviorTab = 'status';
             c.render?.();
         });
+        await page.waitForSelector('[data-behavior-tab="status"]', { timeout: 15_000 });
 
-        // Same keyframes as the overview's New features panel — one mark, not
-        // three inventions.
-        const tab = page.locator('[data-behavior-tab="status"]');
-        await expect(tab).toHaveClass(/config-subtab--animated/);
-        expect(await tab.evaluate((el) => getComputedStyle(el).animationName))
-            .toBe('config-new-features-panel-glow');
-        // The label still reads normally with the stars alongside it.
-        await expect(tab).toContainText(/status/i);
+        // The monitor-emphasis setting carried the twinkle when it was new;
+        // Appearance → Layout took it over in v1.3.0, and now nothing holds it.
+        // A mark that outlives its release teaches people to ignore the mark,
+        // so the check is that the trail is empty rather than that it moved.
+        const marked = await page.evaluate(() => ({
+            tabs: document.querySelectorAll('.config-subtab--animated').length,
+            panels: document.querySelectorAll('.config-panel--animated').length,
+            sections: document.querySelectorAll('.config-nav-item--animated').length,
+            status: getComputedStyle(document.querySelector('[data-behavior-tab="status"]')).animationName,
+        }));
+        expect(marked).toEqual({ tabs: 0, panels: 0, sections: 0, status: 'none' });
 
-        // Exactly one panel is marked, and it is the right one.
-        const panel = page.locator('.config-panel--animated');
-        await expect(panel).toHaveCount(1);
-        await expect(panel.locator('[data-behavior-field="monitorEmphasis"]')).toHaveCount(3);
-        expect(await panel.locator('.config-new-features-panel-star').first()
-            .evaluate((el) => getComputedStyle(el).animationName))
-            .toBe('config-new-features-panel-star-twinkle');
-
-        // The mark means "new", so it must not spread to every tab.
-        expect(await page.locator('[data-behavior-tab="general"]')
-            .evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+        // The setting itself is still there — it is the mark that went, not the
+        // panel it pointed at.
+        await expect(page.locator('[data-behavior-field="monitorEmphasis"]')).toHaveCount(3);
     });
 });
 

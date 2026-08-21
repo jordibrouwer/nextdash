@@ -41,6 +41,16 @@ test.describe('statistics: the activity range is remembered', () => {
 
     test('the stored range drives the chart, not just the state', async ({ page }) => {
         await loadDashboard(page);
+        // The chart needs something to plot: a library where nothing has ever
+        // been opened says so instead of drawing thirty flat bars, so without
+        // this the axis under test is simply not on the page. Recorded through
+        // the same call a click on a bookmark makes.
+        await page.evaluate(() => {
+            const d = window.dashboardInstance;
+            const bookmark = d.bookmarks[0];
+            d.recordBookmarkOpened(bookmark, d.resolveBookmarkIndex(bookmark));
+        });
+        await page.waitForTimeout(600);
         await page.evaluate((k) => localStorage.setItem(k, '7'), RANGE_KEY);
         await page.reload();
         await loadDashboard(page);

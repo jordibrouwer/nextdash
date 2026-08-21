@@ -627,7 +627,7 @@ test.describe('the category menu shows its keys', () => {
 });
 
 test.describe('config points the way to the new setting', () => {
-    test('the section, the sub-tab and the panel all carry the twinkle', async ({ page }) => {
+    test('no trail is left once the setting is no longer new', async ({ page }) => {
         await openDashboard(page);
         await page.evaluate(async () => {
             const c = window.dashboardInstance.config;
@@ -637,37 +637,13 @@ test.describe('config points the way to the new setting', () => {
         });
         await page.waitForSelector('[data-behavior-field="categoryItemLimit"]', { timeout: 15_000 });
 
-        // Three steps, because the panel is three clicks deep and nobody goes
-        // looking for a setting they have not heard of. Same mark as the
-        // overview's New features panel and the Ko-fi button — one "look here"
-        // in this app, not three inventions.
-        expect(await page.evaluate(() => ({
-            nav: [...document.querySelectorAll('.config-nav-item--animated')].map((el) => el.textContent.trim()),
-            tab: [...document.querySelectorAll('.config-subtab--animated')].map((el) => el.textContent.trim()),
-            panel: [...document.querySelectorAll('.config-panel--animated')]
-                .map((el) => el.querySelector('.config-panel-title')?.firstChild?.textContent?.trim()),
-            stars: document.querySelectorAll('.config-nav-item--animated .config-new-features-panel-star').length,
-        }))).toEqual({
-            nav: ['Appearance'],
-            tab: ['Layout'],
-            panel: ['Categories across columns'],
-            stars: 8,
-        });
-    });
-
-    test('the previous release keeps no trail of its own', async ({ page }) => {
-        await openDashboard(page);
-        await page.evaluate(async () => {
-            const c = window.dashboardInstance.config;
-            await c.openConfigView('behavior');
-            c.render();
-        });
-        await page.waitForSelector('.config-subtab', { timeout: 15_000 });
-
-        // Behaviour → Status carried the mark last time. Two trails at once is
-        // no trail: the point of the twinkle is that there is one of it.
-        expect(await page.evaluate(() =>
-            document.querySelectorAll('.config-subtab--animated, .config-panel--animated').length)).toBe(0);
+        // The twinkle marked the way to categories across columns when that was
+        // new, in v1.3.0. A mark that outlives its release teaches people to
+        // ignore the mark, so Appearance, Layout and the panel are quiet again —
+        // and nothing else has taken the trail over.
+        expect(await page.evaluate(() => document.querySelectorAll(
+            '.config-nav-item--animated, .config-subtab--animated, .config-panel--animated',
+        ).length)).toBe(0);
     });
 });
 
