@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeaturePreviewCardTitle",
+      "titleFallback": "The hover card says what you know about a link",
+      "whatKey": "config.overviewNewFeaturePreviewCardWhat",
+      "whatFallback": "It printed the address twice, left out whether you had ever opened the bookmark, and slid away as you moved toward it. It now answers three things in the same order every time: what the page is, what it says, and what you already know about it — whether it answered and how quickly, how available it has been, a certificate about to expire, anything newly published, how often you open it, its shortcut and where it lives.",
+      "howKey": "config.overviewNewFeaturePreviewCardHow",
+      "howFallback": "Hover a bookmark. Shift + V keeps the card open with Copy, Refresh and Edit, and Esc closes it. A line with nothing to say is left out, so a bare link is a short card rather than empty space.",
+      "enableKey": "config.overviewNewFeaturePreviewCardEnable",
+      "enableFallback": "On hover is the new default. Appearance → Display → Link preview cards offers off and keyboard only as well, a hover delay, and a checklist of the lines the card may draw — with the card itself beside it, drawn from one of your own bookmarks.",
+      "ctaKey": "config.overviewNewFeaturePreviewCardCta",
+      "ctaFallback": "Set up the preview card →",
+      "go": {
+        "view": "config",
+        "section": "appearance",
+        "appearanceTab": "display"
+      }
+    },
+    {
       "titleKey": "config.overviewNewFeatureButtonBarTabTitle",
       "titleFallback": "The button bar is one tab, not two",
       "whatKey": "config.overviewNewFeatureButtonBarTabWhat",

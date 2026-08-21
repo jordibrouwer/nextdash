@@ -551,7 +551,7 @@ Health opens were the exception until **v2026.07.25.1**: they opened the link bu
 
 - **Config → Bookmarks → Edit** — a statistics block with when it was added, when it was last modified, how often it has been opened, when that last happened, and the result of the last availability check. The collapsed rows carry the short version (`35× · 2d ago`) so you can scan for dead weight without opening each one.
 - **Hovering a bookmark** on the dashboard — the tooltip adds the open count and last opened. Screen readers deliberately keep the short label, since it is announced on every row while you move through the grid.
-- **The link preview card**, if you have preview cards switched on.
+- **The link preview card**, which carries an *Opens* row whether or not the bookmark has ever been opened — *Never opened* is the state most worth acting on, and until **v1.3.2** it was the one state the card hid.
 
 **Last modified** is recorded from v2026.07.25.2 onward. It tracks changes you make — name, URL, category, tags, shortcut, icon, note, pin, availability mode — and deliberately ignores background activity: a health check writing its result, or you opening the link, is not an edit. Bookmarks that existed before this release have no edit date until you next change one, and show `—` rather than a made-up date.
 
@@ -1293,7 +1293,11 @@ Its **settings** — what a quick-added bookmark starts with, the sort the list 
 
 **Layout** holds layout version (Classic / Modern), launcher icon size, column count, layout preset, and density.
 
-**Display** holds bookmark-row toggles — icons, status colour, animations, shortcut letters, ping times, link preview cards.
+**Display** holds bookmark-row toggles — icons, status colour, animations, shortcut letters, ping times — and the **Link preview cards** panel.
+
+The card's facts strip is free: status and ping come from the check cache, the Fresh count from the feed poller, and uptime, certificate expiry and "failing since" from the health report the health icon already fetches on every load — hovering a bookmark never asks the server for anything. If you hide the health icon, a card you pin with `Shift + V` fetches that report once instead.
+
+**Link preview cards** (**v1.3.2**) is three settings and a live example. *How it is reached*: **Off** (the row keeps its ordinary tooltip), **On hover** (the default) or **Keyboard only**, for people who want what the card says without a panel appearing under the pointer — until this release their only answer was off, which threw away the feature to avoid one behaviour of it. *Hover delay*: Fast 100 ms, Balanced 150 ms, Calm 250 ms — the three the code has always accepted; the older list offered five, four of which were silently rewritten to 150. *What the card shows*: eight checkboxes, one per row — image, description, your note, tags, status & uptime, opens & last opened, Fresh count, shortcut & location. Beside them the card itself, drawn from one of your own bookmarks and redrawn as you tick. The fetched text and images are managed in **Config → Bookmarks → Link preview**, and **Health** lists the bookmarks that have none.
 
 **Button bar** is one tab for one object (**v1.3.0**): where the bar sits — the five positions, each drawn — and what it carries, as **Button bar — main buttons** (add, search, commands, finders) and **Button bar — extras** (recent, cheat sheet, fold-all, tag cloud). The position used to live on Layout and the toggles on Toolbar & tabs, so moving the bar and hiding a button on it were two errands two tabs apart. **Toolbar & tabs** keeps the **Header** group (page tabs, page names, title, and the health and config icons), which is a different strip. Each group has **Show all** / **Hide all** with a count of what is currently showing (v2026.09.07). Hiding a button leaves its keyboard shortcut working.
 
@@ -1552,7 +1556,7 @@ nextDash uses **phone layout** (≤768px width) for the reduced dashboard footer
 | **Page tabs in header** | Scrollable tab strip with scroll-snap; active tab auto-scrolls into view; on **Modern** layout many tabs scroll inside the header without widening the page (**v2026.07.26.1**); `← →` swipe hint on multi-page dashboards | Tab strip + keys `1`–`9` |
 | **Health badge** | Hidden — fix links in config on desktop | Header link |
 | **Config** | All eight sections; content stacks to the narrower width | All eight sections side by side |
-| **Link preview on hover** | Off | When enabled in settings |
+| **Link preview on hover** | Off | On, unless set to keyboard only or off |
 | **Quick-start card** | Skipped / hidden | Optional on first visit |
 
 ### Touch gestures

@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.3.2 — 21 August 2026](#v132--21-august-2026)
 - [v1.3.1 — 20 August 2026](#v131--20-august-2026)
 - [v1.3.0 — 19 August 2026](#v130--19-august-2026)
 - [v1.2.1 — 17 August 2026](#v121--17-august-2026)
@@ -171,6 +172,36 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.3.2 — 21 August 2026
+
+The hover card, rebuilt. It was seven stacked divs that printed the address twice, hid the one state worth acting on, cut itself off at 360 pixels without saying so, and chased the cursor while claiming to be reachable — on a dashboard where the row underneath already showed more than the card explaining it. It is three bands now, in a fixed order, each absent rather than blank; it knows what the rest of the app knows about the link; and how it is reached is a choice rather than a switch.
+
+### Link preview cards
+
+- **new** — **the card is rebuilt around three questions**: what this is, what it says, and what you know about it — a header with the favicon, the title, one address and a status pill; then the picture, the fetched description, your note and the tags; then a facts strip. Every band is absent rather than blank when it has nothing to carry, so a bare link is a short card instead of eighty percent empty space. The address is stated once: the old card printed the full URL in mono and then its hostname on the next line, two of seven rows saying the same thing, neither clickable.
+- **new** — **the card knows about nextDash.** Last check and ping, uptime over thirty days, a certificate about to expire, the Fresh count, opens and last opened, the shortcut and the page it lives on. All of it read from what the app already holds in memory — hovering a row still makes no request; only a card you asked for may fetch the health figures, once.
+- **new** — **peek and pinned are separate.** Hovering gives you something to read: the card takes no pointer events and carries no buttons, so there is nothing to aim at and no reason for it to move. `Shift + V` pins it — focusable, with Copy, Refresh and Edit in a footer, closing on `Escape` and handing focus back to the row.
+- **new** — **three ways to reach it, not a switch.** *Off*, *On hover* (the new default) and *Keyboard only*, for people who want what the card says without a panel appearing under the pointer — their only answer used to be off, which throws away the whole feature to avoid one behaviour of it. Beside it a checklist of the eight rows the card may draw, and the card itself, drawn from one of your own bookmarks and redrawn as you tick.
+- **new** — **uptime and an expiring certificate show on hover**, not only on a card you pinned. The dashboard already fetches the whole health report on every load to put a number on the health icon — a row per bookmark, carrying monitor stats and certificate expiries — and read twelve counts out of it before dropping the rest. The badge keeps the four facts worth carrying now (uptime over thirty days, certificate expiry, how long something has been failing, and the error), keyed by canonical URL, and the card reads them. No new request: a hover still costs nothing, and the pinned-mode fetch is left as the fallback for a dashboard with the health icon switched off. The health view's own report wins when it is open, since it is the fresher of the two, and a refresh there updates what the cards quote.
+- **fix** — **the card no longer chases the cursor.** It was repositioned on every pixel of `mousemove` while claiming to be reachable, so moving toward the refresh button moved the card away, and on a dense grid it slid across the rows underneath. It is anchored to the row it describes, which is what the keyboard path always did.
+- **fix** — **"never opened" is a row.** `if (openCount > 0)` hid the usage line, so the most interesting state a bookmark can be in — you saved it and never went back — rendered as nothing at all.
+- **fix** — **a dead thumbnail leaves no gap.** The image was hot-linked with no `onerror` and its wrapper shown before it loaded, so a rotted og:image drew the broken-image glyph in a 150-pixel band — in the one app that exists to notice rot.
+- **fix** — **nothing is cut off silently.** The card was `max-height: min(360px, …)` with `overflow: hidden`: a picture, a title, a description, a note, tags and three more rows passed that easily and the last rows simply were not there. The blocks clamp themselves now, so the card is only ever shorter for a reason you can see.
+- **fix** — **the note is your note.** It was rendered in the same tertiary grey as the site's marketing copy and truncated twice — cut at 140 characters in JavaScript, mid-word, then clamped to three lines in CSS. It is labelled, marked with a rule in the accent colour, and clamped once.
+- **fix** — **the hover delay offered delays it would not accept.** The list read *Instant, 200 ms, 400 ms, 700 ms, 1 s* while the code took 100, 150 or 250 and quietly rewrote everything else to 150: four of the five options did nothing. It offers the three that work.
+- **fix** — **turning cards on no longer takes the description away from screen readers.** The card removes the row's `title` so the browser tooltip does not sit on top of it, and hovering is mouse-only — so assistive tech was left with nothing. The text moves to a hidden element the row points at with `aria-describedby`, and a pinned card is a real dialog.
+- **fix** — the payload the card draws was assembled by hand in three places — hover, the keyboard toggle and the refresh button — so every new field meant three edits, which is why there were none. One `buildPreviewPayload()` now, and the sample in the setting is drawn by the card's own code rather than a mock-up free to drift from it.
+
+### Config
+
+- **new** — **Appearance → Display → Link preview cards** is a panel of its own: the mode as three labelled choices, the hover delay, the eight-row checklist, and a live card drawn from one of your own bookmarks — the setting you otherwise had to leave the screen and hover something to understand. It names **Bookmarks → Link preview** and **Health**, where the fetched text and the bookmarks without one are managed, so a reader landing on any of the three finds the other two.
+- **new** — **Config → Overview** carries the card as this release's spotlight, with what it is, how to reach it and the way through to the setting.
+
+### Docs
+
+- **new** — the Appearance help article gains a **Link preview cards** section: the three bands, the three modes, `Shift + V`, and the checklist — in English, Dutch, German and French. The README's line about a card that "shows full URL, open count, and last-opened date" described a card that no longer exists, and the MANUAL's compatibility table said link previews were off by default.
+- **fix** — `linkPreviewDelayInstant` and `showLinkPreviewCardsLabel` were locale strings for controls that no longer exist; both are gone from all four languages. Three delay labels were added and then dropped again when it turned out the file already carried them a few lines further down — a duplicate key in the same object, where the later one silently wins.
 
 ## v1.3.1 — 20 August 2026
 
