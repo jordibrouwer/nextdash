@@ -47,27 +47,6 @@
       ]
     },
     {
-      "title": "The overview",
-      "items": [
-        {
-          "badge": "new",
-          "text": "<strong>What is happening with nextDash, on the page you land on.</strong> Posts from the site, releases, and the settings each release brought, in one list with the newest first — each row saying where it came from and opening on its own. The chips narrow it to one kind, including none of the site's posts at all."
-        },
-        {
-          "badge": "new",
-          "text": "<strong>A dot on Overview when something is published.</strong> It counts what appeared since you last read the list, and a first visit starts quiet rather than claiming everything is new."
-        },
-        {
-          "badge": "new",
-          "text": "<strong>All news &amp; features</strong> opens the full list under <strong>About</strong>, together with every setting worth switching on from earlier releases — and a button that saves nextdash.cc as a bookmark so <em>Fresh</em> counts its posts for you."
-        },
-        {
-          "badge": "fix",
-          "text": "<strong>The overview reads top to bottom again.</strong> The panel that showed one new feature at a time — one of forty-nine — is gone, <em>Latest update</em> with it, and the figures about your own library moved beside the news instead of above it. What the project is doing is now the first thing on the page."
-        }
-      ]
-    },
-    {
       "title": "Fixes",
       "items": [
         {
@@ -85,10 +64,6 @@
         {
           "badge": "fix",
           "text": "<strong>The dashboard loads lighter.</strong> The health icon was downloading the entire health report on every visit to read three numbers off it; on a real library that is 8 KB down to under half a kilobyte."
-        },
-        {
-          "badge": "fix",
-          "text": "<strong>Pin looks like the rest of the menu.</strong> Right-clicking a bookmark gave you a column of quiet marks in your theme's colour and one red-and-yellow pin emoji. It is drawn in the same colour as its neighbours now."
         }
       ]
     }

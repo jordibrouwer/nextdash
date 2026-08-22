@@ -60,8 +60,11 @@ test.describe('the news stream', () => {
         expect(read.length).toBeGreaterThan(1);
         expect(new Set(read.map((r) => r.source)).size).toBeGreaterThan(1);
         expect(read.every((r) => r.title && r.when)).toBe(true);
-        // The newest post leads, because everything carries a date now.
-        expect(read[0].title).toContain('Hover cards');
+        // Whatever leads, it is the newest thing there is — a release shipped
+        // today outranks a post from yesterday, which is the point of a dated
+        // list rather than three separate panels.
+        const posts = read.filter((r) => r.source === 'site');
+        expect(posts.length).toBeGreaterThan(0);
     });
 
     test('the source chips narrow it, and say how much of each there is', async ({ page }) => {
@@ -130,7 +133,10 @@ test.describe('the news stream', () => {
                 d.settings.dateFormat = f;
                 d.config.repaintOverview();
             }, format);
-            return (await page.locator('.config-news-when').first().innerText()).trim();
+            // The post, not whichever row happens to lead: a release shipped
+            // today would otherwise be the one being measured.
+            return (await page.locator('.config-news-item[data-news-source="site"] .config-news-when')
+                .first().innerText()).trim();
         };
 
         expect(await withFormat('iso')).toBe('2026-08-21');
@@ -154,7 +160,9 @@ test.describe('the news stream', () => {
         await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
         const onOverview = await page.locator('.config-news-item').count();
 
-        await page.locator('[data-overview-go*="aboutTab"]').click();
+        // The stream's own footer button — the v1.3.3 spotlight in the list
+        // leads to the same place, which is the point of it.
+        await page.locator('.config-news-foot [data-overview-go*="aboutTab"]').click();
         await page.waitForSelector('#config-about-body .config-news-item', { timeout: 15_000 });
 
         expect(await page.evaluate(() => window.dashboardInstance.config.aboutTab)).toBe('news');

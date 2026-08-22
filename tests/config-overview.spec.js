@@ -243,9 +243,10 @@ test.describe('config overview', () => {
     });
 
     // The stream takes the wide column directly under the act zone; the side
-    // column carries About, then the figures about your own install. That
-    // order is the whole point of the rebuild: what the project is doing sits
-    // above the fold, and what your library contains is beside it, not on top.
+    // column carries the figures about your own install, with About signing
+    // its foot. That order is the whole point of the rebuild: what the project
+    // is doing sits above the fold, and what your library contains is beside
+    // it, not on top.
     test('the stream leads, with About and the figures beside it', async ({ page }) => {
         await loadOverview(page);
 
@@ -280,7 +281,7 @@ test.describe('config overview', () => {
         expect(box.news.w).toBeGreaterThan(box.about.w);
         // At a glance sits under About, in that column.
         expect(box.glance.x).toBe(box.about.x);
-        expect(box.glance.y).toBeGreaterThan(box.about.y);
+        expect(box.glance.y).toBeLessThan(box.about.y);
         // Tips still closes the page.
         expect(box.tips.y).toBeGreaterThan(box.news.y);
     });

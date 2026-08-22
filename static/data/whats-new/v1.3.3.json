@@ -1,0 +1,46 @@
+{
+  "tag": "v1.3.3",
+  "date": "22 August 2026",
+  "releasedAt": "2026-08-22",
+  "modalLead": "The overview, rebuilt. It answered \"what is new\" in three places at once — a panel showing one feature at a time out of forty-nine, a release summary repeating the line directly above it, and the project's own posts below both, out of sight on most screens. It is one list now, newest first, saying where each thing came from; what is in your own collection sits beside it.",
+  "sections": [
+    {
+      "title": "The overview",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>What is happening with nextDash, on the page you land on.</strong> Posts from the site, releases, and the settings each release brought, in one list with the newest first — each row saying where it came from and opening on its own. The chips narrow it to one kind, including none of the site's posts at all."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A dot on Overview when something is published.</strong> It counts what appeared since you last read the list, and a first visit starts quiet rather than claiming everything is new."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>All news &amp; features</strong> opens the full list under <strong>About</strong>, together with every setting worth switching on from earlier releases — and a button that saves nextdash.cc as a bookmark so <em>Fresh</em> counts its posts for you."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The overview reads top to bottom again.</strong> The panel that showed one new feature at a time — one of forty-nine — is gone, <em>Latest update</em> with it, and the figures about your own library moved beside the news instead of above it. What the project is doing is now the first thing on the page."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Everything on one line, in order.</strong> Posts, releases and the settings each release brought share a single dated list — with the source labels in a column of one width, so the titles line up down the page instead of starting somewhere new on every row."
+        }
+      ]
+    },
+    {
+      "title": "Elsewhere",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Pin looks like the rest of the menu.</strong> Right-clicking a bookmark gave you a column of quiet marks in your theme's colour and one red-and-yellow pin emoji. It is drawn in the same colour as its neighbours now."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Usage statistics round every number they send.</strong> The privacy setting has always promised that; the counts on bulk actions were going out exactly. They are rounded into bands now, in the one place every measurement passes through."
+        }
+      ]
+    }
+  ]
+}
