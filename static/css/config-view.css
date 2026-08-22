@@ -1873,6 +1873,7 @@
     gap: 18px;
 }
 
+/* The zone line heads its own column, so it lines up with the one beside it. */
 .config-overview-side .config-zone-rule {
     margin: 0;
 }

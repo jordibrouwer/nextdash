@@ -279,7 +279,7 @@ test.describe('config overview', () => {
         // Side column to the right, and wider on the left where the list is.
         expect(box.about.x).toBeGreaterThan(box.news.x);
         expect(box.news.w).toBeGreaterThan(box.about.w);
-        // At a glance sits under About, in that column.
+        // The figures head that column and About signs the foot of it.
         expect(box.glance.x).toBe(box.about.x);
         expect(box.glance.y).toBeLessThan(box.about.y);
         // Tips still closes the page.

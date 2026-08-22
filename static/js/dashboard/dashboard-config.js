@@ -3034,11 +3034,13 @@ class DashboardConfig {
      *                  blocks: a border here means "this wants you".
      *   from nextDash — one dated stream of posts, releases and new settings,
      *                  taking the wide column directly under the act zone.
-     *   your install — a side column: About as the identity card, then At a
-     *                  glance and what differs from the defaults. Figures about
-     *                  your own library are things you look up, not things that
-     *                  need to be met on the way in — and putting them here is
-     *                  what lifts the stream above the fold.
+     *   your install — the side column: At a glance and what differs from the
+     *                  defaults, with About the developer signing the foot of
+     *                  it. Figures about your own library are things you look
+     *                  up rather than meet on the way in, so they sit beside
+     *                  the stream instead of above it — which is what lifts the
+     *                  stream above the fold — and the two zone rules read
+     *                  across the page as one line.
      *   tips         — a single line, not a panel.
      *
      * The zones used to be named after what the reader should do with a block
@@ -3071,9 +3073,9 @@ class DashboardConfig {
                         ${this.renderZoneRule('install', this.t('config.overviewZoneInstall', 'Your install'))}
                         ${this.renderOverviewStats()}
                         ${this.renderOverviewChangedPanel()}
+                        ${this.renderOverviewAbout()}
                     </div>
                 </div>
-                        ${this.renderOverviewAbout()}
                 ${this.renderOverviewTips()}
             </div>
         `;
