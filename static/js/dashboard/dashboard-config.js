@@ -86,6 +86,7 @@ class DashboardConfig {
     constructor(dashboard) {
         this.dash = dashboard;
         this.section = 'overview';
+        this.aboutTab = 'colophon';
         this.loading = false;
         this._loadPromise = null;
         // Pages & tags sub-tab (finders/tags/collections native; pages/categories embedded).
@@ -178,11 +179,11 @@ class DashboardConfig {
         this._statsFinders = undefined;
         // Latest release for the overview: undefined until fetched, null on failure.
         this._latestRelease = undefined;
-        /** Which spotlight is showing in the overview New features carousel. */
         /** The news stream: undefined until fetched, [] when there is nothing. */
         this._newsStream = undefined;
         /** Which source the stream is narrowed to, or 'all'. */
         this.newsFilter = 'all';
+        /** Which spotlight is showing in the overview New features carousel. */
         // Pages & tags CRUD list row highlighted via ↑/↓ (health/inbox feed pattern).
         this._listKeyboardKey = null;
         // Bookmarks master list row highlighted via j/k.
@@ -332,8 +333,11 @@ class DashboardConfig {
     }
 
     /** Which sub-tab list belongs to which section, and where it is stored. */
+    static ABOUT_TABS = ['colophon', 'news'];
+
     static SUB_TAB_STATE = {
         behavior: 'behaviorTab',
+        about: 'aboutTab',
         'pages-tags': 'ptTab',
         appearance: 'appearanceTab',
         stats: 'statsTab',
@@ -1505,6 +1509,7 @@ class DashboardConfig {
             // The panels moved out of Help but kept their buttons — What's new,
             // and the Ko-fi block's own links — so the same wiring runs here.
             this.bindHelpActions(container);
+            this.bindAboutTabs(container);
         }
         window.ConfigSettingPromo?.scheduleForSection?.(this.section, { config: this });
         this.bindFormKeyboard(container);
@@ -3075,11 +3080,6 @@ class DashboardConfig {
     }
 
     /**
-     * Who makes nextDash, with the two links that follow from it.
-     *
-     * Sits beside the latest-update panel at half width — reference material
-     * you go looking for rather than read on the way past.
-    /**
      * The line that names a zone.
      *
      * A rule with a word on it, not a panel heading: the zones group what is
@@ -3095,6 +3095,11 @@ class DashboardConfig {
             </div>`;
     }
 
+    /**
+     * Who makes nextDash, with the two links that follow from it.
+     *
+     * Sits beside the latest-update panel at half width — reference material
+     * you go looking for rather than read on the way past.
      *
      * The Ko-fi button reuses the shared .wn-kofi-* set from modal.css — the
      * same markup the what's-new modal uses, including the twinkling stars — so
@@ -3110,7 +3115,6 @@ class DashboardConfig {
                 <h3 class="config-panel-title">${esc(this.t('config.overviewAboutTitle', 'About the developer'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.overviewAboutBodyShort',
                     'Hi, I’m Jordi, a developer from the Netherlands. I build nextDash in my spare time: a bookmark dashboard that is fast, keyboard-first, and stores everything in plain files you own. Free and open-source, and it stays that way.'))}</p>
-                <div class="config-about-actions">
                 <!-- One address per line rather than two buttons side by side:
                      the column is narrower than the row this used to sit in,
                      and a list of four is easier to scan than a wrapped pair.
@@ -3122,6 +3126,7 @@ class DashboardConfig {
                     <li><a href="https://github.com/jordibrouwer/nextdash" target="_blank" rel="noopener noreferrer"><span>GitHub</span><span>${esc(this.t('config.overviewAboutIssues', 'issues ↗'))}</span></a></li>
                     <li><a href="https://jordibrw.nl" target="_blank" rel="noopener noreferrer"><span>jordibrw.nl</span><span>${esc(this.t('config.overviewAboutWriting', 'writing ↗'))}</span></a></li>
                 </ul>
+                <div class="config-about-actions">
                     <a class="wn-kofi-btn wn-kofi-btn--animated" href="https://ko-fi.com/jordibrw" target="_blank" rel="noopener noreferrer">
                         <span class="wn-kofi-stars" aria-hidden="true">${stars}</span>
                         <svg class="wn-kofi-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 5.702 0 8.732c.483 4.918 3.919 5.023 6.782 5.139 2.81.114 3.325.12 3.325.12s.747.468 1.5.654a7.5 7.5 0 0 0 3.56-.468s5.698-1.094 7.035-5.7c.222-.778.35-1.574.35-2.373 0-.888-.098-1.83-.715-2.309zm-3.585 2.39c-.583 2.4-3.11 2.947-3.11 2.947l-1.8-.434c-.016-.003-.033.003-.043.016l-.847 1.067a.15.15 0 0 1-.265-.046l-.522-1.947a.15.15 0 0 0-.102-.107l-1.956-.517a.15.15 0 0 1-.046-.267l3.184-2.304c.016-.011.026-.03.024-.049l-.098-.832a2.617 2.617 0 0 1 2.602-2.944c1.444 0 2.618 1.174 2.618 2.618 0 .295-.049.582-.14.854l.501-.068s.564 1.006-.0 2.013z"/></svg>
@@ -3169,15 +3174,15 @@ class DashboardConfig {
                 <div class="config-update-actions config-actions">
                     ${desc.releaseUrl ? `<a class="config-btn config-btn--small" href="${esc(desc.releaseUrl)}" target="_blank" rel="noopener noreferrer">${esc(this.t('config.overviewUpdateAvailableCta', 'View release on GitHub →'))}</a>` : ''}
                     ${showDismiss ? `<button type="button" class="config-btn config-btn--small" data-overview-action="dismiss-update">${esc(this.t('config.overviewUpdateDismiss', 'Dismiss'))}</button>` : ''}
+                    <!-- Beside the release this bar already names, which is
+                         where it belongs; it used to sit in a panel further
+                         down that repeated the same version. -->
+                    <button type="button" class="config-btn config-btn--small" data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
                     <button type="button" class="config-btn config-btn--small"
                             data-overview-action="check-update"
                             ${statusHidden ? '' : 'aria-describedby="config-overview-update-status" '}
                             aria-busy="${this._updateStatusChecking ? 'true' : 'false'}"
                             ${this._updateStatusChecking ? 'disabled' : ''}>${esc(this._updateStatusChecking
-                    <!-- Beside the release this bar already names, which is
-                         where it belongs; it used to sit in a panel further
-                         down that repeated the same version. -->
-                    <button type="button" class="config-btn config-btn--small" data-overview-action="whats-new">${esc(this.t('config.showWhatsNew', 'Show what’s new'))}</button>
                                 ? this.t('config.updateCheckChecking', 'Checking GitHub…')
                                 : this.t('config.updateCheckNow', 'Check for updates'))}</button>
                 </div>
@@ -3513,6 +3518,108 @@ class DashboardConfig {
             </div>`;
     }
 
+    /** How much is shown, and where the rest is. */
+    renderNewsFoot() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const stream = this._newsStream;
+        if (stream === undefined) return '';
+        const filter = this.newsFilter || 'all';
+        const matching = stream.filter((item) => filter === 'all' || item.source === filter).length;
+        const limit = window.DashboardNewsStream?.OVERVIEW_LIMIT || 6;
+        const shown = Math.min(matching, limit);
+        const offline = this._siteNewsEnabled === false
+            ? this.t('config.overviewNewsSiteOff', 'Site news is switched off.')
+            : (this._siteNewsFailed
+                ? this.t('config.overviewNewsSiteUnavailable', 'Site news is unavailable.')
+                : '');
+
+        return `
+            <div class="config-news-foot">
+                <button type="button" class="config-btn config-btn--small"
+                        data-overview-go='{"section":"about","aboutTab":"news"}'>${esc(this.t('config.overviewNewsAll', 'All news & features →'))}</button>
+                <span class="config-field-hint">${esc(this.t('config.overviewNewsShown', '{shown} of {total} shown')
+                    .replace('{shown}', String(shown)).replace('{total}', String(matching)))}${offline ? ` · ${esc(offline)}` : ''}</span>
+            </div>`;
+    }
+
+    /** A post's date in the format the reader picked for the dashboard clock. */
+    formatNewsDate(publishedAt) {
+        const at = Number(publishedAt || 0);
+        if (!at) return '';
+        const date = new Date(at);
+        const formatted = this.dash.formatDateLine?.(date);
+        if (formatted) return formatted;
+        // Without the dashboard's formatter — a config view opened before the
+        // date module loaded — the ISO day is the one shape nobody misreads.
+        return date.toISOString().slice(0, 10);
+    }
+
+    /**
+     * Fetch the three sources once per config session, merge, and repaint.
+     *
+     * Deliberately not awaited by the render: the overview is the landing
+     * section, and it must not wait on a request to another website however
+     * well the server caches it. The stream draws as "loading" and fills in.
+     */
+    loadNewsStream() {
+        if (this._newsStreamPromise) return this._newsStreamPromise;
+        const news = window.DashboardNewsStream;
+        if (!news) {
+            this._newsStream = [];
+            return Promise.resolve([]);
+        }
+        this._newsSeenAt = news.readSeenAt();
+
+        const site = this.dash.settings?.showSiteNews === false
+            ? Promise.resolve({ enabled: false, items: [] })
+            : news.fetchSiteNews();
+
+        this._newsStreamPromise = Promise.all([
+            site,
+            news.fetchReleases().catch(() => []),
+            this.loadOverviewFeatures(),
+        ]).then(([siteNews, releases, features]) => {
+            this._siteNewsEnabled = siteNews.enabled !== false;
+            this._siteNewsFailed = siteNews.failed === true;
+            this._newsStream = news.buildStream({ site: siteNews, releases, features });
+            this._newsUnread = news.unreadCount(this._newsStream, this._newsSeenAt);
+            if (this.isActiveView() && this.section === 'overview') {
+                this.repaintOverview();
+                // Read is read: the dot and the rail count clear once the
+                // stream has actually been drawn for someone to look at.
+                news.markSeen(Date.now());
+            }
+            this.syncNewsBadge();
+            return this._newsStream;
+        }).catch(() => {
+            this._newsStream = [];
+            return [];
+        });
+        return this._newsStreamPromise;
+    }
+
+    /** The unread count on Overview in the section rail. */
+    syncNewsBadge() {
+        const rail = document.querySelector('[data-config-section="overview"]');
+        if (!rail) return;
+        rail.querySelector('.config-nav-count')?.remove();
+        const n = Number(this._newsUnread || 0);
+        if (!n) return;
+        const badge = document.createElement('span');
+        badge.className = 'config-nav-count';
+        badge.textContent = n > 9 ? '9+' : String(n);
+        badge.setAttribute('aria-label', this.t('config.overviewNewsUnreadAria', '{n} new items')
+            .replace('{n}', String(n)));
+        rail.appendChild(badge);
+    }
+
+    /** Narrow the stream to one source, or back to all of them. */
+    setNewsFilter(source) {
+        const next = window.DashboardNewsStream?.SOURCES?.includes(source) ? source : 'all';
+        this.newsFilter = this.newsFilter === next ? 'all' : next;
+        this.repaintOverview();
+    }
+
     /**
      * A rotating handful of tips. Rotating rather than fixed so the row is worth
      * glancing at more than once; seeded by the day so it does not shuffle on
@@ -3570,6 +3677,12 @@ class DashboardConfig {
         }
         if (this._latestRelease === undefined) {
             jobs.push(this.loadLatestRelease());
+        }
+        // Not awaited with the rest: the overview must not wait on a request to
+        // another website, however cached the server keeps it. The stream draws
+        // as "loading" and fills itself in.
+        if (this._newsStream === undefined) {
+            void this.loadNewsStream();
         }
         if (d.settings?.updateCheckEnabled !== false && !document.querySelector('meta[name="nextdash-update-check-locked"]')) {
             jobs.push(this.loadUpdateStatus());
@@ -3674,12 +3787,6 @@ class DashboardConfig {
                 this.openChangedSettings();
                 return;
             }
-        // Not awaited with the rest: the overview must not wait on a request to
-        // another website, however cached the server keeps it. The stream draws
-        // as "loading" and fills itself in.
-        if (this._newsStream === undefined) {
-            void this.loadNewsStream();
-        }
             const chip = e.target.closest('[data-news-filter]');
             if (chip) {
                 this.setNewsFilter(chip.getAttribute('data-news-filter'));
@@ -3718,6 +3825,11 @@ class DashboardConfig {
             }
             if (target.helpTab && target.section === 'help') {
                 this.helpTab = target.helpTab;
+            }
+            // Same rule as Help: set the tab before the section renders, since
+            // the strip reads the field rather than being told.
+            if (target.aboutTab && target.section === 'about') {
+                this.aboutTab = target.aboutTab;
             }
             if (target.appearanceTab && target.section === 'appearance') {
                 if (this.section !== 'appearance') {
@@ -8199,6 +8311,7 @@ class DashboardConfig {
         // Privacy
         analyticsOptIn: { info: ['usageAnalyticsInfoTitle', 'usageAnalyticsInfoMessage'], hint: 'usageAnalyticsHint', def: false },
         updateCheckEnabled: { info: ['updateCheckInfoTitle', 'updateCheckInfoMessage'], hint: 'updateCheckHint', def: true },
+        showSiteNews: { info: ['showSiteNewsInfoTitle', 'showSiteNewsInfoMessage'], def: true },
         // Appearance
         autoDarkMode: { info: ['autoDarkModeInfoTitle', 'autoDarkModeInfoMessage'], def: true },
         randomThemeMode: { info: ['randomThemeModeInfoTitle', 'randomThemeModeInfoMessage'], def: 'off' },
@@ -8311,7 +8424,6 @@ class DashboardConfig {
         const meta = this.fieldMeta(field);
         if (!meta?.info || !window.AppModal?.alert) return;
         const [titleKey, msgKey] = meta.info;
-        showSiteNews: { info: ['showSiteNewsInfoTitle', 'showSiteNewsInfoMessage'], def: true },
         window.AppModal.alert({
             title: this.t(`config.${titleKey}`, ''),
             htmlMessage: this.dash.escapeHtml(this.t(`config.${msgKey}`, '')).replace(/\n/g, '<br>'),
@@ -8968,6 +9080,10 @@ class DashboardConfig {
                 controls: [
                     { field: 'analyticsOptIn', type: 'checkbox', label: t('config.usageAnalyticsLabel', 'Share anonymous usage analytics'), disabled: this.dash.telemetryLockedOff === true },
                     { field: 'updateCheckEnabled', type: 'checkbox', label: t('config.updateCheckLabel', 'Check GitHub for new releases'), disabled: !!document.querySelector('meta[name="nextdash-update-check-locked"]') },
+                    // Beside the other two outbound requests, because that is
+                    // what it is: the panel on the overview is drawn from a
+                    // feed the server fetches from nextdash.cc.
+                    { field: 'showSiteNews', type: 'checkbox', special: 'siteNews', label: t('config.showSiteNewsLabel', 'Show posts from nextdash.cc on the overview') },
                 ],
             },
         ];
@@ -9080,10 +9196,6 @@ class DashboardConfig {
                     // Absent means all of them, which is what the card has
                     // always drawn — an empty list is a deliberate choice and
                     // reads as one.
-                    // Beside the other two outbound requests, because that is
-                    // what it is: the panel on the overview is drawn from a
-                    // feed the server fetches from nextdash.cc.
-                    { field: 'showSiteNews', type: 'checkbox', special: 'siteNews', label: t('config.showSiteNewsLabel', 'Show posts from nextdash.cc on the overview') },
                     : c.options.map((o) => String(o.value));
                 const boxes = c.options.map((o) => `
                     <label class="config-toggle config-checkset-item">
@@ -10578,6 +10690,15 @@ class DashboardConfig {
                 this.applyChromeSettings();
                 d.renderDashboard?.({ animate: false });
                 break;
+            case 'siteNews':
+                // Both directions rebuild the stream: off drops the site's
+                // posts from it, on fetches them back. Without forgetting the
+                // promise, turning it back on would leave the overview saying
+                // there are no posts until config was reopened.
+                this._newsStreamPromise = null;
+                this._newsStream = undefined;
+                void this.loadNewsStream().then(() => this.repaintOverview());
+                break;
             case 'feeds':
                 // Switching this on looks for feeds and polls once now, rather
                 // than leaving the dashboard blank until the scheduler's next
@@ -10690,15 +10811,6 @@ class DashboardConfig {
                     el.textContent = '';
                     el.classList.remove('is-saved');
                 }
-            case 'siteNews':
-                // Both directions rebuild the stream: off drops the site's
-                // posts from it, on fetches them back. Without forgetting the
-                // promise, turning it back on would leave the overview saying
-                // there are no posts until config was reopened.
-                this._newsStreamPromise = null;
-                this._newsStream = undefined;
-                void this.loadNewsStream().then(() => this.repaintOverview());
-                break;
             }, 2500);
             return;
         }
@@ -18722,12 +18834,178 @@ class DashboardConfig {
      * notes are. Those are a colophon, so they get their own entry under Help
      * rather than a ninth tab inside it.
      */
+    /**
+     * About, in two tabs: the colophon, and everything the overview's stream
+     * only had room for six of.
+     *
+     * The drill-in lives here rather than as a ninth section because it is the
+     * same subject as the colophon — what this project is and what it has been
+     * doing — and because a section nobody opens twice does not earn a place in
+     * the rail.
+     */
     renderAbout() {
         const esc = (v) => this.dash.escapeHtml(v);
+        const tabs = DashboardConfig.ABOUT_TABS.map((tab) => {
+            const active = tab === this.aboutTab;
+            return `<button type="button" class="config-subtab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" aria-controls="config-about-body" data-about-tab="${esc(tab)}">${esc(this.aboutTabLabel(tab))}</button>`;
+        }).join('');
         return `
             <p class="config-view-intro">${esc(this.t('config.aboutIntro',
                 'What nextDash is, what changed recently, and where it comes from.'))}</p>
-            ${this.renderAboutPanels()}`;
+            <div class="config-subtabs" role="tablist">${tabs}</div>
+            <div id="config-about-body" role="tabpanel" tabindex="0">${this.renderAboutBody()}</div>`;
+    }
+
+    /** The two About tabs, plus the buttons the news tab carries. */
+    bindAboutTabs(container) {
+        const body = container.querySelector('#config-view-body') || container;
+        if (body.dataset.aboutBound === '1') return;
+        body.dataset.aboutBound = '1';
+        body.addEventListener('click', (e) => {
+            if (this.section !== 'about') return;
+            const tab = e.target.closest('[data-about-tab]');
+            if (tab) {
+                this.aboutTab = tab.getAttribute('data-about-tab');
+                this._trackAction('subtab', { section: 'about', tab: this.aboutTab, via: 'click' });
+                this.render();
+                this.restoreConfigHash();
+                return;
+            }
+            const chip = e.target.closest('[data-news-filter]');
+            if (chip) {
+                const next = window.DashboardNewsStream?.SOURCES?.includes(chip.getAttribute('data-news-filter'))
+                    ? chip.getAttribute('data-news-filter')
+                    : 'all';
+                this.newsFilter = this.newsFilter === next ? 'all' : next;
+                this.render();
+                return;
+            }
+            if (e.target.closest('[data-about-action="track-fresh"]')) {
+                void this.trackSiteInFresh();
+                return;
+            }
+            const go = e.target.closest('[data-overview-go]');
+            if (go) this.handleOverviewGo(go);
+        });
+    }
+
+    /**
+     * Save nextdash.cc as a bookmark, so Fresh can count its posts.
+     *
+     * Added through the same endpoint the add-bookmark form uses, on the page
+     * you are looking at, and it says where it went — a button that silently
+     * writes a bookmark somewhere is worse than one that does nothing.
+     */
+    async trackSiteInFresh() {
+        const d = this.dash;
+        const pageId = Number(d.currentPageId) || 1;
+        try {
+            const res = await this.writeFetch('/api/bookmarks/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page: pageId,
+                    bookmark: {
+                        name: 'nextDash',
+                        url: 'https://nextdash.cc/',
+                        category: '',
+                        tags: [],
+                        note: '',
+                        icon: '',
+                        shortcut: '',
+                        createdAt: Date.now(),
+                    },
+                }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [pageId] });
+            this.notify(this.t('config.aboutTrackAdded',
+                'nextdash.cc is on your dashboard. Turn Fresh on under Behavior → Fresh to see what it publishes.'), 'success');
+            this.render();
+        } catch (_error) {
+            this.notify(this.t('config.aboutTrackFailed', 'Could not add the bookmark.'), 'error');
+        }
+    }
+
+    aboutTabLabel(tab) {
+        return tab === 'news'
+            ? this.t('config.aboutTabNews', 'News & features')
+            : this.t('config.aboutTabColophon', 'About nextDash');
+    }
+
+    renderAboutBody() {
+        return this.aboutTab === 'news' ? this.renderAboutNews() : this.renderAboutPanels();
+    }
+
+    /**
+     * The whole stream, plus the feature catalogue the overview leaves out.
+     *
+     * Same rows and the same source chips as the overview, without the limit —
+     * this is where "All news & features →" lands, and where the forty-two
+     * undated features from before the catalogue was dated still live.
+     */
+    renderAboutNews() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const stream = this._newsStream;
+        const filter = this.newsFilter || 'all';
+
+        if (stream === undefined) {
+            void this.loadNewsStream();
+            return `<div class="config-panel config-panel--plain"><p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p></div>`;
+        }
+
+        const shown = stream.filter((item) => filter === 'all' || item.source === filter);
+        const catalogue = (this._overviewFeatures || [])
+            .filter((feature) => !stream.some((item) => item.titleKey === feature.titleKey));
+
+        return `
+            <div class="config-panel config-panel--plain config-news-panel">
+                ${this.renderNewsChips()}
+                ${shown.length
+                    ? `<ul class="config-news-stream">${shown.map((item) => this.renderNewsItem(item)).join('')}</ul>`
+                    : `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmptyFilter', 'Nothing from this source yet.'))}</p>`}
+            </div>
+            ${(filter === 'all' || filter === 'feature') && catalogue.length ? `
+            <div class="config-panel config-panel--plain">
+                <h3 class="config-panel-title">${esc(this.t('config.aboutFeatureCatalogue', 'Everything else you can switch on'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.aboutFeatureCatalogueNote',
+                    'Settings from earlier releases, in the order they were written down.'))}</p>
+                <ul class="config-news-stream">${catalogue.map((feature) => this.renderNewsItem({
+                    source: 'feature',
+                    title: feature.titleFallback,
+                    titleKey: feature.titleKey,
+                    summary: feature.whatFallback,
+                    summaryKey: feature.whatKey,
+                    ctaKey: feature.ctaKey,
+                    ctaFallback: feature.ctaFallback,
+                    go: feature.go,
+                    at: 0,
+                })).join('')}</ul>
+            </div>` : ''}
+            ${this.renderTrackInFresh()}`;
+    }
+
+    /**
+     * Follow the project's own feed with the product's own feature.
+     *
+     * Fresh polls the pages you have saved and counts what they published
+     * since you last looked. Pointing it at nextdash.cc is both the shortest
+     * way to keep up and the clearest demonstration of what Fresh is for.
+     */
+    renderTrackInFresh() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const already = (this.dash.allBookmarks || [])
+            .some((b) => String(b?.url || '').includes('nextdash.cc'));
+        return `
+            <div class="config-panel config-panel--plain">
+                <h3 class="config-panel-title">${esc(this.t('config.aboutTrackTitle', 'Follow it from your own dashboard'))}</h3>
+                <p class="config-panel-note">${esc(already
+                    ? this.t('config.aboutTrackDone', 'nextdash.cc is already one of your bookmarks — Fresh will count new posts on it like any other page.')
+                    : this.t('config.aboutTrackNote', 'Save nextdash.cc as a bookmark and Fresh counts what it publishes, the same way it does for every other page you keep.'))}</p>
+                ${already ? '' : `<div class="config-actions">
+                    <button type="button" class="config-btn config-btn--small" data-about-action="track-fresh">${esc(this.t('config.aboutTrackCta', 'Add nextdash.cc to my bookmarks'))}</button>
+                </div>`}
+            </div>`;
     }
 
     renderAboutPanels() {
@@ -18834,15 +19112,6 @@ class DashboardConfig {
         this.bindHelpActions(container);
     }
 
-    /**
-     * About, in two tabs: the colophon, and everything the overview's stream
-     * only had room for six of.
-     *
-     * The drill-in lives here rather than as a ninth section because it is the
-     * same subject as the colophon — what this project is and what it has been
-     * doing — and because a section nobody opens twice does not earn a place in
-     * the rail.
-     */
     /**
      * The Tips tab's own filter.
      *
