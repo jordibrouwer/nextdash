@@ -16,7 +16,8 @@
         "view": "config",
         "section": "appearance",
         "appearanceTab": "display"
-      }
+      },
+      "since": "v1.3.2"
     },
     {
       "titleKey": "config.overviewNewFeatureButtonBarTabTitle",
@@ -33,7 +34,8 @@
         "view": "config",
         "section": "appearance",
         "appearanceTab": "buttonbar"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureCaptureTitle",
@@ -50,7 +52,8 @@
         "view": "config",
         "section": "help",
         "subTab": "inbox"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureDuplicateWhereTitle",
@@ -65,7 +68,8 @@
       "ctaFallback": "Back to the dashboard →",
       "go": {
         "view": "dashboard"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureRotReportTitle",
@@ -80,7 +84,8 @@
       "ctaFallback": "Open Health →",
       "go": {
         "view": "health"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureReviewSessionTitle",
@@ -95,7 +100,8 @@
       "ctaFallback": "Open Health →",
       "go": {
         "view": "health"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureFreshTitle",
@@ -112,7 +118,8 @@
         "view": "config",
         "section": "behavior",
         "subTab": "status"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureHealthStableListTitle",

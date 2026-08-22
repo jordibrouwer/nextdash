@@ -239,6 +239,10 @@ type Settings struct {
 	// appearing under the pointer, and their only answer used to be off —
 	// throwing away the whole feature to avoid one behaviour of it.
 	LinkPreviewMode string `json:"linkPreviewMode"`
+	// ShowSiteNews draws the five most recent nextdash.cc posts on the config
+	// overview. On by default; off means the server never fetches the feed at
+	// all, rather than fetching and hiding it.
+	ShowSiteNews bool `json:"showSiteNews"`
 	// LinkPreviewParts names the rows the card may draw, from the set in
 	// normalizeLinkPreviewParts. Absent means all of them; someone who writes
 	// no notes never needs the note row.
@@ -788,6 +792,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowIcons:                    true,
 			ShowLinkPreviewCards:         true,
 			LinkPreviewMode:              "hover",
+			ShowSiteNews:                 true,
 			LinkPreviewHoverDelayMs:      250,
 			ShowShortcuts:                true,
 			ShowPinIcon:                  false,
@@ -2639,6 +2644,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowIcons:                      true,
 			ShowLinkPreviewCards:           true,
 			LinkPreviewMode:                "hover",
+			ShowSiteNews:                   true,
 			LinkPreviewHoverDelayMs:        250,
 			ShowShortcuts:                  true,
 			ShowPinIcon:                    false,
@@ -2763,6 +2769,9 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.LinkPreviewMode = normalizeLinkPreviewMode(settings.LinkPreviewMode, settings.ShowLinkPreviewCards)
 		settings.ShowLinkPreviewCards = settings.LinkPreviewMode != "off"
 		settings.LinkPreviewParts = normalizeLinkPreviewParts(settings.LinkPreviewParts)
+		if _, ok := rawSettings["showSiteNews"]; !ok {
+			settings.ShowSiteNews = true
+		}
 		if settings.LinkPreviewHoverDelayMs != 100 && settings.LinkPreviewHoverDelayMs != 150 && settings.LinkPreviewHoverDelayMs != 250 {
 			settings.LinkPreviewHoverDelayMs = 250
 		}

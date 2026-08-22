@@ -11,7 +11,9 @@
     "validate:cheatsheet-i18n": "node scripts/validate-cheatsheet-i18n.cjs",
     "validate:help-i18n": "node scripts/validate-help-i18n.cjs",
     "validate:locale-duplicates": "node scripts/validate-locale-duplicates.cjs",
-    "test:analytics-buckets": "node tests/analytics-count-buckets.test.cjs"
+    "test:analytics-buckets": "node tests/analytics-count-buckets.test.cjs",
+    "validate:overview-features": "node scripts/validate-overview-features.cjs",
+    "test:news-stream": "node tests/news-stream-model.test.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",

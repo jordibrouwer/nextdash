@@ -49,7 +49,7 @@ test.describe('a release flagged hideFromModal', () => {
         expect(index[0].hideFromModal).toBe(true);
     });
 
-    test('shows in Config → Overview → Latest update', async ({ page }) => {
+    test('names the release in Config → Help', async ({ page }) => {
         await page.route('**/static/data/whats-new/index.json*', (route) => route.fulfill({
             contentType: 'application/json',
             body: JSON.stringify([
@@ -84,11 +84,19 @@ test.describe('a release flagged hideFromModal', () => {
         }));
 
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        await page.waitForFunction(() => typeof window.DashboardConfig === 'function', null, { timeout: 10_000 });
-        const tag = page.locator('.config-release-tag');
-        await expect(tag).toBeVisible({ timeout: 10_000 });
-        await expect(tag).toContainText('v2026.09.9');
+        // Help's version heading reads the same index, and is where the release
+        // number lives now that the overview's Latest update panel is gone —
+        // it said what the update bar above it already said, with the site's
+        // own post about the release a click away in its place.
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.openConfigView('help');
+            c.helpTab = 'start';
+            c.render();
+        });
+        await expect.poll(() => page.evaluate(() =>
+            document.getElementById('config-help-body')?.innerText || ''), { timeout: 15_000 })
+            .toContain('2026.09.9');
     });
 
     test('does not appear in the What\'s new modal', async ({ page }) => {

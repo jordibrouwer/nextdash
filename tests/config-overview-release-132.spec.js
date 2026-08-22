@@ -20,24 +20,28 @@ async function openOverview(page) {
 }
 
 test.describe('v1.3.2 as the reader meets it', () => {
-    test('Latest update reports the new release', async ({ page }) => {
+    test('the release number is on the page, once', async ({ page }) => {
         await openOverview(page);
-        // The panel fetches the index, so it is a poll rather than a read.
-        await expect.poll(() => page.locator('.config-overview-layout').innerText(), { timeout: 15_000 })
-            .toContain('v1.3.2');
+        // The Latest update panel is gone: it repeated the update bar above it
+        // and stripped the release notes down to a lead. The version itself is
+        // still here, in the update bar, and Help carries the full heading.
+        await expect.poll(() => page.locator('.config-overview-act').innerText(), { timeout: 15_000 })
+            .toMatch(/1\.3\.2/);
+        await expect(page.locator('.config-overview-layout')).not.toContainText('Latest update');
     });
 
-    test('the spotlight leads with the preview card and lands on its setting', async ({ page }) => {
+    test('the stream leads with the release and its new setting', async ({ page }) => {
         await openOverview(page);
-        const panel = page.locator('.config-new-features-panel');
-        await expect(panel).toBeVisible({ timeout: 15_000 });
-        // Newest first: the release's own feature is the one a reader arriving
-        // at the overview is shown.
-        await expect(panel.locator('.config-feature-spotlight-title')).toContainText(/hover card/i);
-        // Copy, not locale keys.
-        await expect(panel).not.toContainText('config.overviewNewFeature');
+        const stream = page.locator('.config-news-stream');
+        await expect(stream).toBeVisible({ timeout: 15_000 });
+        // The carousel is gone: what was one of forty-nine spotlights is now a
+        // dated row beside the release it shipped in.
+        await expect(page.locator('.config-new-features-panel')).toHaveCount(0);
+        await expect(stream).toContainText('v1.3.2');
+        await expect(stream).toContainText(/hover card/i);
 
-        await panel.locator('[data-overview-go]').click();
+        // And it still leads where it always did.
+        await page.locator('.config-news-item[data-news-source="feature"] .config-news-go').first().click();
         await expect.poll(() => page.evaluate(() => {
             const c = window.dashboardInstance.config;
             return `${c.section}/${c.appearanceTab}`;
