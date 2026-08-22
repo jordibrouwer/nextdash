@@ -1650,6 +1650,7 @@ When set, protected API calls require header `X-NextDash-Token: your-long-random
 | Health: cache scan result | `POST /api/health/cache-scan` |
 | Health: update bookmark status | `POST /api/health/update-status` |
 | Bookmark link preview | `GET /api/bookmark-preview` |
+| Posts from nextdash.cc | `GET /api/site-news` — the ten most recent with a one-line summary, fetched server-side every six hours (conditionally, and mirrored to disk) and off entirely when **Behavior → Privacy → Show posts from nextdash.cc** is cleared or `DISABLE_NEWS_FEED` is set |
 | Health report | `GET /api/bookmark-health` — add `?view=facts` for the counts plus only the bookmarks with something to report, which is what the health badge and the preview cards read |
 | Feeds: poll every known feed now | `POST /api/feeds/poll` |
 | Clear all preview metadata | `POST /api/previews/clear` |
@@ -1702,6 +1703,8 @@ HTML pages send a restrictive CSP by default. Set `NEXTDASH_CSP=off` only when r
 Since **v2026.08.04**, nextDash can compare your running release tag with the latest on GitHub once a day. When a newer version exists, Config → Overview shows a compact notice above Tips, the ★ button gets a dot, and a toast appears once per release while you are actively using the app. Press **Check for updates** on Overview to compare manually; since **v2026.08.08.2** the ★ modal header only reports the result, with a link to the release and **Dismiss**.
 
 Go to **Config → Behavior → Privacy** and tick or clear **Check GitHub for new releases** (on by default). When off, the dot, toast, and update bars disappear everywhere. Only a public GET to the GitHub Releases API is sent — no bookmarks or settings.
+
+**Posts from nextdash.cc.** Separate from analytics, and on the same **Privacy** tab: *Show posts from nextdash.cc on the overview* puts the project's own posts into the news stream on **Config → Overview**. Your server fetches that feed — once every six hours for the whole install, conditionally, mirrored to `site-news.json` so a restart does not fetch again, and carrying nothing about you — and your browser never contacts the site. Clear the box and the request is not made at all; tick it again and the stream fills straight away. `DISABLE_NEWS_FEED=true` in the environment switches it off for everyone on the server, the way `DISABLE_TELEMETRY` and `DISABLE_UPDATE_CHECK` do.
 
 **For the whole server (self-hosting).** Set **`DISABLE_UPDATE_CHECK=true`** to turn update checks off for every user; the Privacy toggle then appears greyed out with a note that the operator disabled it.
 
