@@ -208,6 +208,10 @@ The page answered "what is new" in three places at once — a carousel showing o
 - **fix** — a post's summary was **unescaped twice**, so a post about `&amp;lt;script&amp;gt;` showed `<script>` — the text it quoted rather than the text it wrote. The unused `encoded` field went with it.
 - **fix** — the carousel left **78 lines of CSS** and seven locale strings behind, and the preview card a `wants()` nobody called.
 
+### Locales
+
+- **fix** — **964 unreachable strings removed from all four locale files**, out of about 5,500: everything left behind by panels, buttons and whole views that had been rewritten. Found with a new `npm run validate:locale-unused`, which is deliberately conservative — a key counts as reachable when its name appears anywhere in the source, when it fits a template a call site builds (`t(\`config.${field}Label\`)`), or when it belongs to a family looked up by a value, like a theme id or a layout preset. Two more checks keep it that way: `validate:locale-parity` fails if the four files stop carrying the same keys, and a spec walks every config section and sub-tab, plus health and inbox, failing on any text that reads as an identifier rather than a sentence.
+
 ### Menus
 
 - **fix** — **the Pin entry in the context menus is drawn, not typed.** Every other entry is a glyph tinted with the accent colour — `⧉`, `✎`, `→`, `◉` — and Pin was 📌, painted by the system font in its own red and yellow on every theme, and deaf to the red a destructive row is given. It is a small SVG in `currentColor` now, shared by the grid's menu and the config list's through `js/shared/menu-icons.js`, which is also the only place markup is ever assigned into a menu's icon slot. The pin on a config row and the paste-choice card still carry the emoji: they are labels rather than menu entries, and are left for a separate pass.
