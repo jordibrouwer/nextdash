@@ -104,7 +104,6 @@ type siteNewsFeed struct {
 		PubDate     string `xml:"pubDate"`
 		Date        string `xml:"date"`
 		Description string `xml:"description"`
-		Encoded     string `xml:"encoded"`
 	} `xml:"channel>item"`
 }
 
@@ -137,8 +136,11 @@ var siteNewsSpacePattern = regexp.MustCompile(`\s+`)
 // otherwise be printed as written. Cut on a word boundary: a summary that ends
 // mid-word reads as broken rather than as shortened.
 func summariseSiteNews(raw string) string {
+	// Unescaped once, not twice: a post about `&amp;lt;script&amp;gt;` means to
+	// show `&lt;script&gt;`, and decoding a second time turns the text it wrote
+	// into the thing it was quoting.
 	text := html.UnescapeString(siteNewsTagPattern.ReplaceAllString(raw, " "))
-	text = strings.TrimSpace(siteNewsSpacePattern.ReplaceAllString(html.UnescapeString(text), " "))
+	text = strings.TrimSpace(siteNewsSpacePattern.ReplaceAllString(text, " "))
 	if text == "" {
 		return ""
 	}

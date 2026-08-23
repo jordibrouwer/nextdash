@@ -2180,15 +2180,7 @@
     align-items: center;
     gap: 8px;
     margin-left: auto;
-}
-
-.config-feature-spotlights {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.config-new-features-head {
+}.config-new-features-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2198,61 +2190,7 @@
 
 .config-new-features-head .config-panel-title {
     margin: 0;
-}
-
-.config-new-features-nav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-}
-
-.config-new-features-nav-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    padding: 0;
-    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
-    border-radius: 6px;
-    background: var(--surface-primary, transparent);
-    color: var(--text-color, inherit);
-    font-size: 1.15rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.config-new-features-nav-btn:hover {
-    border-color: color-mix(in srgb, var(--accent-primary, #4a7038) 40%, var(--border-primary, rgba(128, 128, 128, 0.25)));
-    background: color-mix(in srgb, var(--accent-primary, #4a7038) 8%, transparent);
-}
-
-.config-new-features-counter {
-    min-width: 3.2rem;
-    text-align: center;
-    font-size: calc(var(--font-size-text) * 0.857);
-    color: var(--text-muted, rgba(128, 128, 128, 0.85));
-    font-variant-numeric: tabular-nums;
-}
-
-.config-new-features-carousel {
-    outline: none;
-}
-
-.config-new-features-carousel:focus-visible {
-    border-radius: 8px;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, #4a7038) 35%, transparent);
-}
-
-.config-feature-spotlight {
-    padding: 10px 12px;
-    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
-    border-radius: 10px;
-    background: color-mix(in srgb, #fff 14%, var(--surface-secondary, rgba(128, 128, 128, 0.04)) 86%);
-}
-
-.config-new-features-panel {
+}.config-new-features-panel {
     position: relative;
     isolation: isolate;
     overflow: visible;
@@ -2368,23 +2306,7 @@ body.no-animations .config-new-features-panel-star {
         opacity: 0.78;
         transform: scale(1);
     }
-}
-
-.config-feature-spotlight-title {
-    margin: 0 0 6px;
-    font-size: calc(var(--font-size-text) * 1.05);
-    font-weight: 650;
-}
-
-.config-feature-spotlight .config-panel-note {
-    margin-bottom: 6px;
-}
-
-.config-feature-spotlight-enable {
-    margin-bottom: 8px;
-}
-
-/* "Needs attention" rows: count, what it is, and the way to deal with it. */
+}/* "Needs attention" rows: count, what it is, and the way to deal with it. */
 .config-attention-list {
     list-style: none;
     margin: 0;

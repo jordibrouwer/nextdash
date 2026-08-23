@@ -329,6 +329,11 @@ class DashboardConfig {
             'data-backups': DashboardConfig.DB_TABS,
             help: DashboardConfig.HELP_TABS,
             bookmarks: DashboardConfig.BM_TABS,
+            // About grew a second tab with the news stream; without it here the
+            // tab was in SUB_TAB_STATE but not addressable, so `#config/about/
+            // news` opened the colophon and choosing the tab never reached the
+            // address bar.
+            about: DashboardConfig.ABOUT_TABS,
         };
     }
 
@@ -3445,12 +3450,36 @@ class DashboardConfig {
                     'Nothing from this source yet.'))}</p>`;
         }
 
+        this.markNewsRead();
+
         return `
             <div class="config-panel config-panel--plain config-news-panel">
                 ${this.renderNewsChips()}
                 ${body}
                 ${this.renderNewsFoot()}
             </div>`;
+    }
+
+    /**
+     * Reading the stream is what marks it read.
+     *
+     * Not the fetch: the stream is also loaded from Behavior when the site-news
+     * switch changes, and from About, and marking it there cleared the dots for
+     * a page nobody had looked at. Not synchronously either — the render that
+     * calls this is the one drawing the dots, so the marker moves after it,
+     * leaving them visible until the next repaint.
+     */
+    markNewsRead() {
+        if (!Array.isArray(this._newsStream) || !this._newsStream.length) return;
+        if (!this._newsUnread) return;
+        const news = window.DashboardNewsStream;
+        setTimeout(() => {
+            const now = Date.now();
+            news?.markSeen?.(now);
+            this._newsSeenAt = now;
+            this._newsUnread = 0;
+            this.syncNewsBadge();
+        }, 0);
     }
 
     /** One row: where it came from, what it is, and when. */
@@ -3587,11 +3616,14 @@ class DashboardConfig {
             this._newsUnread = news.unreadCount(this._newsStream, this._newsSeenAt);
             if (this.isActiveView() && this.section === 'overview') {
                 this.repaintOverview();
-                // Read is read: the dot and the rail count clear once the
-                // stream has actually been drawn for someone to look at.
-                news.markSeen(Date.now());
             }
             this.syncNewsBadge();
+            if (this.isActiveView() && this.section === 'about') {
+                // About → News & features draws the same stream, and without
+                // this it sat on "Loading…" until some other render happened to
+                // come along and redraw it.
+                this.render();
+            }
             return this._newsStream;
         }).catch(() => {
             this._newsStream = [];

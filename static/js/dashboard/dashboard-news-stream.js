@@ -54,7 +54,10 @@
     async function fetchSiteNews() {
         try {
             const res = await fetch('/api/site-news');
-            if (!res.ok) return { enabled: false, items: [] };
+            // A failing server is not a cleared setting. Both used to come back
+            // as `enabled: false`, so a 500 told the reader they had switched
+            // the site's posts off themselves.
+            if (!res.ok) return { enabled: true, items: [], failed: true };
             const doc = await res.json();
             return {
                 enabled: doc?.enabled !== false,

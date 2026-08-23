@@ -155,6 +155,80 @@ test.describe('the news stream', () => {
         expect(sources.length).toBeGreaterThan(0);
     });
 
+    test('a server error says so, rather than blaming the setting', async ({ page }) => {
+        await page.route('**/api/site-news*', (route) => route.fulfill({ status: 500, body: 'boom' }));
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.setBehavior('showSiteNews', true, 'siteNews'));
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        await page.waitForSelector('.config-news-foot', { timeout: 15_000 });
+
+        // A failing server used to come back in the same shape as a cleared
+        // setting, so a 500 told the reader they had switched the posts off.
+        await expect(page.locator('.config-news-foot')).toContainText(/unavailable/i);
+        await expect(page.locator('.config-news-foot')).not.toContainText(/switched off/i);
+    });
+
+    test('reading the stream clears the dots and the count, there and then', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('nextdash:news-seen-v1', String(Date.now() - 7 * 86400000));
+        });
+        await openOverviewWith(page, POSTS);
+        await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });
+
+        // Marking it read used to write localStorage only, so the dots came
+        // back on every repaint and the rail badge kept its first number until
+        // the page was reloaded.
+        await page.locator('[data-news-filter="all"]').click();
+        await page.waitForTimeout(400);
+        expect(await page.locator('.config-news-dot').count()).toBe(0);
+        expect(await page.evaluate(() => window.dashboardInstance.config._newsUnread)).toBe(0);
+    });
+
+    test('the drill-in fills itself when opened directly', async ({ page }) => {
+        await page.route('**/api/site-news*', (route) => route.fulfill({
+            contentType: 'application/json',
+            body: JSON.stringify({ enabled: true, items: POSTS }),
+        }));
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        // Straight to About → News, never opening the overview: the stream is
+        // fetched there too, and used to sit on "Loading…" until some unrelated
+        // render happened along.
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.openConfigView('about');
+            c.aboutTab = 'news';
+            c.render();
+        });
+        await expect(page.locator('#config-about-body .config-news-item').first())
+            .toBeVisible({ timeout: 10_000 });
+    });
+
+    test('the News tab is addressable, like every other sub-tab', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/#config/about/news');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+
+        // It was in the sub-tab state map but not in the addressable list, so
+        // the link opened the colophon and the hash was rewritten behind it.
+        await expect.poll(() => page.evaluate(() => window.dashboardInstance.config.aboutTab), { timeout: 15_000 })
+            .toBe('news');
+        expect(await page.evaluate(() => location.hash)).toBe('#config/about/news');
+
+        await page.locator('[data-about-tab="colophon"]').click();
+        await expect.poll(() => page.evaluate(() => location.hash)).toBe('#config/about');
+    });
+
     test('the drill-in carries everything the overview left out', async ({ page }) => {
         await openOverviewWith(page, POSTS);
         await expect(page.locator('.config-news-item').first()).toBeVisible({ timeout: 15_000 });

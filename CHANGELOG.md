@@ -199,6 +199,15 @@ The page answered "what is new" in three places at once — a carousel showing o
 
 - **new** — **a new version shows its release notes once, by itself.** The machinery has been in place for a long time — a release token in the stub, a "seen" stamp written when the modal closes, a prompt scheduled after onboarding — but nothing pinned it, and the manual said the opposite: *release notes never open by themselves*. It is a contract now, with a test: an install that last read an older release gets the notes on its next visit, closing them records the release, and no later visit reopens them. A browser meeting nextDash for the first time is exempt on purpose — quick start is running, and notes for a version that reader never used would be noise.
 
+### Fixes to the rebuild
+
+- **fix** — a **failing feed request now says so**. `/api/site-news` answering 500 came back in the same shape as a cleared setting, so the stream reported *Site news is switched off* to someone who had switched nothing off.
+- **fix** — **reading the stream marks it read.** The marker was written to storage but not to the page, so the green dots came back on every repaint and the count on Overview kept its first number until a reload. It is now set where the stream is drawn rather than where it is fetched — loading it from the Privacy switch or from About no longer clears dots for a page nobody looked at — and it moves after the render, so the dots stay visible on the pass that draws them.
+- **fix** — **About → News & features is addressable.** The tab was in the sub-tab state map but not in the list of tabs that can appear in the address, so `#config/about/news` opened the colophon and choosing the tab never reached the hash — the one sub-tab in config that could not be linked to or remembered.
+- **fix** — the drill-in **fills itself when opened directly.** The stream repaints the overview when it lands; About had no such repaint, so going straight there left "Loading…" on screen until an unrelated render happened along.
+- **fix** — a post's summary was **unescaped twice**, so a post about `&amp;lt;script&amp;gt;` showed `<script>` — the text it quoted rather than the text it wrote. The unused `encoded` field went with it.
+- **fix** — the carousel left **78 lines of CSS** and seven locale strings behind, and the preview card a `wants()` nobody called.
+
 ### Menus
 
 - **fix** — **the Pin entry in the context menus is drawn, not typed.** Every other entry is a glyph tinted with the accent colour — `⧉`, `✎`, `→`, `◉` — and Pin was 📌, painted by the system font in its own red and yellow on every theme, and deaf to the red a destructive row is given. It is a small SVG in `currentColor` now, shared by the grid's menu and the config list's through `js/shared/menu-icons.js`, which is also the only place markup is ever assigned into a menu's icon slot. The pin on a config row and the paste-choice card still carry the emoji: they are labels rather than menu entries, and are left for a separate pass.
