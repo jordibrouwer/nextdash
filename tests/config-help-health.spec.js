@@ -265,7 +265,9 @@ test.describe('config help — translations', () => {
                 english: ['Availability & health', 'Working through the list'],
             },
             monitoring: {
-                count: 6,
+                // Seven since Fresh was given a panel of its own here: stats,
+                // expectations, certificates, drift, maintenance, Fresh, alerts.
+                count: 7,
                 english: ['Uptime, trends & statistics', 'Certificate expiry', 'Maintenance windows'],
             },
             inbox: {

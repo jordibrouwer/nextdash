@@ -100,28 +100,29 @@ test.describe('side rail invitation', () => {
         expect(await page.evaluate(() => window.DashboardSideRailNotice.shouldShow())).toBe(false);
     });
 
-    test('the feature is listed in the config overview carousel', async ({ page }) => {
+    /*
+     * The carousel this stepped through is gone (v1.3.3). The catalogue it drew
+     * from is now a list under About → News & features, so the claim is the
+     * same and simply reads a row instead of a slide: the entry is there, it
+     * reads as copy, and its button lands on the tab that holds the setting.
+     */
+    test('the feature is listed under About → News & features', async ({ page }) => {
         await loadWithCardPending(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.openConfigView('about');
+            c.aboutTab = 'news';
+            c.render();
+        });
+        await page.waitForSelector('.config-news-stream', { timeout: 15_000 });
 
-        const spotlight = page.locator('.config-feature-spotlight');
-        await expect(spotlight).toBeVisible();
-
-        // Step to its slide rather than assuming it leads: the carousel is a
-        // catalog that newer features join at the front, so pinning this to
-        // position would break every time one is added.
         const title = /button bar|knoppenbalk|barre de boutons|schaltflächenleiste/i;
-        const total = await page.evaluate(() =>
-            window.dashboardInstance.config.overviewNewFeatures().length);
-        for (let i = 0; i < total; i += 1) {
-            if (title.test(await spotlight.locator('.config-feature-spotlight-title').innerText())) break;
-            await page.evaluate(() => window.dashboardInstance.config.stepOverviewFeature(1));
-        }
-        await expect(spotlight.locator('.config-feature-spotlight-title')).toHaveText(title);
+        const row = page.locator('.config-news-item').filter({ hasText: title }).first();
+        await expect(row).toBeVisible();
         // Reads as copy rather than locale keys.
-        await expect(spotlight).not.toContainText('config.overviewNewFeature');
+        await expect(row).not.toContainText('config.overviewNewFeature');
 
-        await spotlight.locator('[data-overview-go]').click();
+        await row.locator('[data-overview-go]').click();
         await expect.poll(() => page.evaluate(() =>
             window.dashboardInstance.config.appearanceTab), { timeout: 5000 }).toBe('buttonbar');
     });

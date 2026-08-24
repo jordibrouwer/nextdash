@@ -67,7 +67,10 @@ test.describe('uptime history export', () => {
         expect(res.headers()['content-disposition']).toMatch(/nextdash-uptime-\d{4}-\d{2}-\d{2}\.csv/);
 
         const rows = parseCsv(await res.text());
-        expect(rows[0]).toEqual(['name', 'url', 'page', 'timestamp', 'up', 'pingMs', 'httpStatus', 'maint']);
+        // `reason` joined the row in 4a536e05: a failed check works out its
+        // cause on every run and used to throw it away, so a DNS failure and a
+        // refused connection both exported as up:false with no cause at all.
+        expect(rows[0]).toEqual(['name', 'url', 'page', 'timestamp', 'up', 'pingMs', 'httpStatus', 'maint', 'reason']);
     });
 
     test('the body starts with a UTF-8 BOM so Excel reads it correctly', async ({ page }) => {

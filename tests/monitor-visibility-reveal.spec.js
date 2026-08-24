@@ -204,35 +204,37 @@ test.describe('monitor emphasis setting', () => {
     });
 });
 
-test.describe('the overview announces the feature', () => {
-    test('it is in the New features carousel and its CTA opens Status & health', async ({ page }) => {
+test.describe('the feature catalogue announces it', () => {
+    /*
+     * This used to step a carousel on the overview. That carousel is gone
+     * (v1.3.3) -- one of forty-nine spotlights at a time, and forty-eight clicks
+     * to see what it held. The catalogue it drew from lives under About → News
+     * & features, where every entry is a row with its own way in, so the claim
+     * is the same one: the entry is still there, it reads as prose in every
+     * language, and its button lands on the setting it promises.
+     */
+    test('it is listed under About, and its CTA opens Status & health', async ({ page }) => {
         await load(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.openConfigView('about');
+            c.aboutTab = 'news';
+            c.render();
+        });
+        await page.waitForSelector('.config-news-stream', { timeout: 15_000 });
 
-        const spotlight = page.locator('.config-feature-spotlight');
-        await expect(spotlight).toBeVisible();
-
-        // The carousel is newest-first, so this feature stops leading it the moment
-        // a later release adds one. Step to its own slide rather than asserting a
-        // position: what matters is that the entry is still there and still points
-        // at the right setting, not that it happens to be first this month.
-        const index = await page.evaluate(() => window.dashboardInstance.config
+        const entry = await page.evaluate(() => window.dashboardInstance.config
             .overviewNewFeatures()
-            .findIndex((f) => f.titleKey === 'config.overviewNewFeatureMonitorEmphasisTitle'));
-        expect(index, 'the monitor spotlight is still in the catalog').toBeGreaterThanOrEqual(0);
+            .find((f) => f.titleKey === 'config.overviewNewFeatureMonitorEmphasisTitle'));
+        expect(entry, 'the monitor entry is still in the catalogue').toBeTruthy();
 
-        await page.evaluate((target) => {
-            const config = window.dashboardInstance.config;
-            config.overviewFeatureIndex = target;
-            config.repaintOverviewNewFeatures();
-        }, index);
-
-        await expect(spotlight.locator('.config-feature-spotlight-title'))
-            .toHaveText(/monitored|gemonitorde|überwachte|surveillés/i);
+        const row = page.locator('.config-news-item')
+            .filter({ hasText: /monitored|gemonitorde|überwachte|surveillés/i }).first();
+        await expect(row).toBeVisible();
         // Real copy in every locale, not a bare key.
-        await expect(spotlight).not.toContainText('config.overviewNewFeature');
+        await expect(row).not.toContainText('config.overviewNewFeature');
 
-        await spotlight.locator('[data-overview-go]').click();
+        await row.locator('[data-overview-go]').click();
 
         // Behavior has no switchAppearanceTab equivalent, so landing on the
         // right sub-tab is its own step rather than a side effect of the

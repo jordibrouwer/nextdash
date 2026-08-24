@@ -196,20 +196,23 @@ test.describe('config dashboard view (scaffold)', () => {
         expect(row.sameRow).toBe(true);
     });
 
-    test('the new features carousel shows one spotlight and steps with arrows', async ({ page }) => {
+    /*
+     * The carousel this used to describe is gone (v1.3.3). It showed one of
+     * forty-nine spotlights at a time — 498px of a 1451px page for a single
+     * item, needing forty-eight clicks to show what it had — and the overview
+     * answers "what is new" as one dated stream instead. What replaced it is
+     * pinned in config-overview-news.spec.js; what matters here is that the
+     * stepper and its counter are not on the page for anyone to click.
+     */
+    test('the overview has no feature carousel to step through', async ({ page }) => {
         await loadDashboard(page);
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
 
-        await expect(page.locator('.config-feature-spotlight')).toHaveCount(1);
-        await expect(page.locator('.config-new-features-nav')).toBeVisible();
-        const firstTitle = await page.locator('.config-feature-spotlight-title').textContent();
-
-        await page.locator('[data-overview-feature="next"]').click();
-        await expect(page.locator('.config-feature-spotlight-title')).not.toHaveText(firstTitle || '');
-        await expect(page.locator('.config-new-features-counter')).toContainText('2 /');
-
-        await page.locator('[data-overview-feature="prev"]').click();
-        await expect(page.locator('.config-feature-spotlight-title')).toHaveText(firstTitle || '');
+        await expect(page.locator('.config-news-panel')).toBeVisible();
+        for (const gone of ['.config-feature-spotlight', '.config-new-features-nav',
+            '.config-new-features-counter', '[data-overview-feature]']) {
+            await expect(page.locator(gone)).toHaveCount(0);
+        }
     });
 
     test('clicking a section nav item switches section and hash', async ({ page }) => {
@@ -682,6 +685,10 @@ test.describe('config dashboard view (scaffold)', () => {
         await page.locator('[data-behavior-tab="datetime"]').click();
         await expect(page.locator('[data-behavior-field="dateFormat"]')).toBeVisible();
         await page.locator('[data-behavior-tab="search"]').click();
+        await expect(page.locator('[data-behavior-field="enableFuzzySuggestions"]')).toBeVisible();
+        // Pasting a URL is an inbox errand — where it lands is decided beside
+        // the inbox switch, not among the search settings.
+        await page.locator('[data-behavior-tab="inbox"]').click();
         await expect(page.locator('[data-behavior-field="pasteDestination"]')).toBeVisible();
     });
 

@@ -24,6 +24,18 @@ async function openDashboard(page) {
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
     await dismissBlockingOverlays(page);
+    // The hints ship off since 63ef3566, so nothing is bound on a default
+    // install and this file has nothing to measure until they are switched on —
+    // which is what the setting's own spec does too. The layout is on screen
+    // before the instance is assigned, so wait for the object itself first.
+    await page.waitForFunction(() => window.dashboardInstance?.toolbar != null,
+        null, { timeout: 20_000 });
+    await page.evaluate(async () => {
+        const d = window.dashboardInstance;
+        d.settings.showShortcutTooltips = true;
+        await d.saveSettings();
+        d.setupToolbarKbdTooltips();
+    });
     await page.waitForFunction(
         () => typeof window.dashboardInstance?._toolbarKbdTooltipSync === 'function',
         null,

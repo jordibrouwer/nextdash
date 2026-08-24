@@ -168,6 +168,19 @@ test.describe('statistics: the inbox trend chart', () => {
 
     test('the trend chart does not steal the activity chart binding', async ({ page }) => {
         await openStats(page);
+        // The activity chart plots bookmarks by their last use, so on an install
+        // where nothing has ever been opened it draws its empty state and there
+        // is no bar to hover. Seeded here rather than borrowed from whatever
+        // another spec left in the shared data directory.
+        await page.evaluate(() => {
+            const DAY = 86400000;
+            const now = Date.now();
+            window.dashboardInstance.allBookmarks.forEach((b, i) => {
+                b.openCount = [12, 30, 5, 8, 2][i % 5];
+                b.lastOpened = now - (i % 12) * DAY;
+            });
+            window.dashboardInstance.config.render();
+        });
         await settleOverlays(page);
         // Both tabs own a chart; binding only the first would leave one inert.
         await page.locator('[data-stats-tab="activity"]').click();

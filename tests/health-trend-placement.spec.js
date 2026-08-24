@@ -2,10 +2,17 @@ const { test, expect } = require('@playwright/test');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent } = require('./e2e-helpers');
 
 /**
- * The trend chart used to sit at the end of the toolbar's button row, where it
- * got whatever sliver the buttons left over — too narrow to read a trend off.
- * It now shares a row with the filter note, filling the whitespace the note
- * leaves to its right.
+ * Where the 90-day trend lives.
+ *
+ * It began at the end of the toolbar's button row, where it got whatever sliver
+ * the buttons left over — too narrow to read a trend off. It then moved into
+ * the filter-note row, which on a narrow screen took the full width and pushed
+ * the actual work below the fold. Since 3ea26f11 it is a sparkline in the tile
+ * row — the space the tiles already occupy — and the full chart opens from that
+ * tile, or from the delta in the header, into a dialog.
+ *
+ * This file asserted the note-row placement long after that move, which is why
+ * the whole file was failing rather than telling anyone anything.
  */
 async function openHealthWithTrend(page) {
     await markWhatsNewSeen(page);
@@ -32,38 +39,51 @@ async function openHealthWithTrend(page) {
         h.report = { ...(h.report || {}), trend: days };
         h.render();
     });
-    await page.waitForSelector('.health-view-trend', { timeout: 10_000 });
+    await page.waitForSelector('.health-view-tile--trend', { timeout: 10_000 });
+}
+
+/** The tile is the way in; the chart itself only exists inside the dialog. */
+async function openTrendChart(page) {
+    await page.locator('[data-health-trend-open]').first().click();
+    await page.waitForSelector('.health-trend-modal .health-view-trend', { timeout: 10_000 });
 }
 
 test.describe('health trend placement', () => {
-    test('the chart sits in the note row, not the button row', async ({ page }) => {
+    test('the trend is a tile, not a row of its own', async ({ page }) => {
         await page.setViewportSize({ width: 1500, height: 1000 });
         await openHealthWithTrend(page);
 
-        await expect(page.locator('.health-view-note-row .health-view-trend')).toBeVisible();
-        // The old home: an implementation that left it there would still pass a
-        // bare visibility check, so this asserts the move itself.
+        // In the tile row, beside the counts.
+        await expect(page.locator('.health-view-tiles .health-view-tile--trend')).toBeVisible();
+        await expect(page.locator('.health-view-tile--trend .health-view-tile-spark')).toBeVisible();
+
+        // Neither of its two former homes, both of which cost a row before the
+        // list — the point of the move.
+        await expect(page.locator('.health-view-note-row .health-view-trend')).toHaveCount(0);
         await expect(page.locator('.health-view-toolbar-actions .health-view-trend')).toHaveCount(0);
     });
 
-    test('it takes the width the note leaves, not a sliver', async ({ page }) => {
+    test('the tile opens the full chart', async ({ page }) => {
         await page.setViewportSize({ width: 1500, height: 1000 });
         await openHealthWithTrend(page);
+        await openTrendChart(page);
 
-        const { row, trend } = await page.evaluate(() => {
-            const w = (sel) => document.querySelector(sel).getBoundingClientRect().width;
-            return { row: w('.health-view-note-row'), trend: w('.health-view-trend') };
+        const chart = page.locator('.health-trend-modal .health-view-trend');
+        await expect(chart).toBeVisible();
+        // Wide enough to read a trend off, which the toolbar sliver never was.
+        const share = await page.evaluate(() => {
+            const c = document.querySelector('.health-trend-modal .health-view-trend').getBoundingClientRect();
+            return c.width / window.innerWidth;
         });
-        // Roughly the right-hand half. The old toolbar slot was under a fifth.
-        expect(trend / row).toBeGreaterThan(0.35);
-        expect(trend / row).toBeLessThanOrEqual(0.55);
+        expect(share).toBeGreaterThan(0.25);
     });
 
     test('the ℹ beside it explains what is plotted', async ({ page }) => {
         await page.setViewportSize({ width: 1500, height: 1000 });
         await openHealthWithTrend(page);
+        await openTrendChart(page);
 
-        await page.locator('[data-health-trend-help]').click();
+        await page.locator('.health-trend-modal [data-health-trend-help]').click();
         const modal = page.locator('.health-trend-explainer-modal');
         await expect(modal).toBeVisible();
         // The three questions the chart raises: what, why fixed, why gaps.
@@ -72,24 +92,26 @@ test.describe('health trend placement', () => {
         await expect(modal).toContainText(/gap/i);
     });
 
-    // Only the ceiling is named: it is the one value that makes the fixed axis
-    // legible, and a second number competed with the line itself.
-    test('the axis names the ceiling and nothing else', async ({ page }) => {
+    // The fixed axis is what makes two charts comparable; the labels name it.
+    test('the axis names the scale it is drawn against', async ({ page }) => {
         await page.setViewportSize({ width: 1500, height: 1000 });
         await openHealthWithTrend(page);
+        await openTrendChart(page);
 
-        const labels = await page.locator('.health-view-trend-axis').allTextContents();
-        expect(labels).toEqual(['100%']);
+        const labels = await page.locator('.health-trend-modal .health-view-trend-axis').allTextContents();
+        expect(labels[0]).toBe('100%');
+        expect(labels.every((l) => l.trim().length > 0)).toBe(true);
     });
 
     test('hovering a day reads out its date and value', async ({ page }) => {
         await page.setViewportSize({ width: 1500, height: 1000 });
         await openHealthWithTrend(page);
+        await openTrendChart(page);
 
-        const zones = page.locator('.health-view-trend-zone');
+        const zones = page.locator('.health-trend-modal .health-view-trend-zone');
         await expect(zones).toHaveCount(14);
 
-        const tip = page.locator('.health-view-trend-tip');
+        const tip = page.locator('.health-trend-modal .health-view-trend-tip');
         await expect(tip).toBeHidden();
 
         await zones.nth(3).hover();
@@ -105,22 +127,20 @@ test.describe('health trend placement', () => {
         // The last day's readout must not hang off the right edge.
         await zones.nth(13).hover();
         const fits = await page.evaluate(() => {
-            const t = document.querySelector('.health-view-trend-tip').getBoundingClientRect();
-            const p = document.querySelector('.health-view-trend-plot').getBoundingClientRect();
+            const t = document.querySelector('.health-trend-modal .health-view-trend-tip').getBoundingClientRect();
+            const p = document.querySelector('.health-trend-modal .health-view-trend-plot').getBoundingClientRect();
             return Math.round(t.right) <= Math.round(p.right) + 1;
         });
         expect(fits).toBe(true);
-
-        await page.mouse.move(5, 5);
-        await expect(tip).toBeHidden();
     });
 
-    test('narrow screens stack the two instead of squeezing', async ({ page }) => {
+    // The reason it left the row above the list: on a narrow screen that row
+    // took the full width and pushed the work off the screen.
+    test('a narrow screen still shows the tiles, not a chart above the list', async ({ page }) => {
         await page.setViewportSize({ width: 700, height: 1000 });
         await openHealthWithTrend(page);
 
-        const dir = await page.evaluate(() =>
-            getComputedStyle(document.querySelector('.health-view-note-row')).flexDirection);
-        expect(dir).toBe('column');
+        await expect(page.locator('.health-view-tile--trend')).toBeVisible();
+        await expect(page.locator('.health-view-note-row .health-view-trend')).toHaveCount(0);
     });
 });

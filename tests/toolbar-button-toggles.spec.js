@@ -38,6 +38,10 @@ test.describe('toolbar button visibility', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
         await page.waitForSelector('#dashboard-layout', { timeout: 15_000 });
+        // The layout is in the document before the instance is assigned, and
+        // every helper here reads settings off it.
+        await page.waitForFunction(() => window.dashboardInstance?.settings != null,
+            null, { timeout: 15_000 });
         await prepareDashboardInteraction(page);
     });
 
@@ -82,26 +86,30 @@ test.describe('toolbar button visibility', () => {
 
     test('the setting is offered in Appearance and applies without a reload', async ({ page }) => {
         await page.evaluate(() => { window.location.hash = '#config/appearance'; });
-        await expect(page.locator('[data-appearance-tab="toolbar"]')).toBeVisible({ timeout: 15_000 });
-        await page.locator('[data-appearance-tab="toolbar"]').click();
+        // The button-bar toggles were given their own tab when the bar became
+        // one tab rather than two (v1.3.0); Toolbar & tabs keeps the header.
+        await expect(page.locator('[data-appearance-tab="buttonbar"]')).toBeVisible({ timeout: 15_000 });
+        await page.locator('[data-appearance-tab="buttonbar"]').click();
 
         const toggle = page.locator('[data-behavior-field="showCollapseAllButton"]');
         await expect(toggle).toHaveCount(1);
-        await expect(toggle).toBeChecked();
+        // The button ships off, and the specs above this one set it either way,
+        // so what it starts as is not this test's business — the flip is.
+        const startedOn = await toggle.isChecked();
 
         await toggle.click();
         // A body attribute, so it needs the chrome branch of setBehavior —
         // `render` would redraw the grid and never rewrite <body>.
         await expect
             .poll(() => page.evaluate(() => document.body.getAttribute('data-show-collapse-all-button')))
-            .toBe('false');
+            .toBe(String(!startedOn));
 
         // Put it back: the settings file is shared with every other spec in the
-        // run, and leaving this off would hide the button from anything that
-        // asserts on the toolbar afterwards.
+        // run, and leaving this changed would move the toolbar under anything
+        // that asserts on it afterwards.
         await toggle.click();
         await expect
             .poll(() => page.evaluate(() => document.body.getAttribute('data-show-collapse-all-button')))
-            .toBe('true');
+            .toBe(String(startedOn));
     });
 });

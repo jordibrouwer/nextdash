@@ -114,6 +114,12 @@ test.describe('checkboxes use one row shape', () => {
      *
      * Read on Display, whose panels carry three and six boxes: the theme panel
      * has a single checkbox, where a spread is zero however it is rendered.
+     *
+     * A `.config-checkset` is exempt from the panel-wide rule and measured on
+     * its own: it is a deliberate grid — eight short labels choosing the rows of
+     * the preview card — where one column would be a long thin run. The rule
+     * still holds inside it, one column at a time, so a stray box there is
+     * caught as readily as anywhere else.
      */
     test('checkbox rows in one panel share a left edge', async ({ page }) => {
         await openAppearance(page, 'display');
@@ -123,14 +129,37 @@ test.describe('checkboxes use one row shape', () => {
                 .map((p) => ({
                     title: p.querySelector('.config-panel-title')?.textContent?.trim() || '?',
                     lefts: [...p.querySelectorAll('input[type="checkbox"]')]
+                        .filter((b) => !b.closest('.config-checkset'))
                         .map((b) => Math.round(b.getBoundingClientRect().left)),
+                    // Grouped by row, so each column is checked against itself.
+                    checksetRows: [...p.querySelectorAll('.config-checkset')].map((set) => {
+                        const byTop = new Map();
+                        [...set.querySelectorAll('input[type="checkbox"]')].forEach((b) => {
+                            const r = b.getBoundingClientRect();
+                            const top = Math.round(r.top);
+                            if (!byTop.has(top)) byTop.set(top, []);
+                            byTop.get(top).push(Math.round(r.left));
+                        });
+                        return [...byTop.values()];
+                    }).flat(),
                 }))
-                .filter((p) => p.lefts.length > 1));
+                .filter((p) => p.lefts.length > 1 || p.checksetRows.length));
 
         expect(panels.length, 'no panel with several checkboxes was found').toBeGreaterThan(0);
         for (const p of panels) {
-            const spread = Math.max(...p.lefts) - Math.min(...p.lefts);
-            expect(spread, `"${p.title}" starts its boxes at ${p.lefts.join(', ')}`).toBeLessThanOrEqual(1);
+            if (p.lefts.length > 1) {
+                const spread = Math.max(...p.lefts) - Math.min(...p.lefts);
+                expect(spread, `"${p.title}" starts its boxes at ${p.lefts.join(', ')}`).toBeLessThanOrEqual(1);
+            }
+            // Within a checkset, every row starts its columns at the same places.
+            const columnSets = p.checksetRows.filter((row) => row.length > 1);
+            for (let i = 1; i < columnSets.length; i += 1) {
+                if (columnSets[i].length !== columnSets[0].length) continue;
+                columnSets[i].forEach((left, col) => {
+                    expect(Math.abs(left - columnSets[0][col]),
+                        `"${p.title}" checkset column ${col} moves between rows`).toBeLessThanOrEqual(1);
+                });
+            }
         }
     });
 

@@ -41,7 +41,12 @@ test.describe('the spotlight catalogue is data', () => {
         });
         expect(state.count).toBeGreaterThan(30);
         expect(state.complete).toBe(true);
-        await expect(page.locator('.config-feature-spotlight')).toBeVisible({ timeout: 10_000 });
+        // The carousel that used to draw one of these at a time is gone
+        // (v1.3.3); the overview draws the recent ones as rows in the news
+        // stream and the rest live under About → News & features. What this
+        // file is about is the catalogue being fetched data rather than 42
+        // entries compiled into the config module, which is asserted above.
+        await expect(page.locator('.config-news-panel')).toBeVisible({ timeout: 10_000 });
     });
 });
 

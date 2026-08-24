@@ -347,21 +347,30 @@ test.describe('per-bookmark alert muting', () => {
     });
 });
 
-test.describe('overflow filter counts', () => {
-    test('each hidden filter states its count inside the menu', async ({ page }) => {
+test.describe('filter counts', () => {
+    /*
+     * There is no overflow menu any more. Every filter is a pill again, in one
+     * row that scrolls sideways (3ea26f11) — the More menu it used to hide
+     * behind was itself the thing being complained about. What survives from
+     * the old test is the claim worth keeping: a filter states its count, and
+     * states it legibly.
+     */
+    test('each filter states its count on the pill', async ({ page }) => {
         await openHealthView(page);
 
-        await page.locator('.health-view-filter-more-btn').click();
-        const menu = page.locator('.health-view-filter-overflow-menu');
-        await expect(menu).toBeVisible();
+        await expect(page.locator('.health-view-filter-more-btn')).toHaveCount(0);
 
-        // The count is the reason the menu is worth opening, so it has to be
-        // rendered rather than implied by the label alone.
-        const stale = menu.locator('[data-health-filter="stale"] .health-view-filter-count');
-        await expect(stale).toHaveText('1');
+        const stale = page.locator('[data-health-filter="stale"] .health-view-filter-count');
+        await expect(stale).toBeVisible();
+        await expect(stale).toHaveText(/^\d+$/);
 
-        // And it must be legible rather than a faded suffix: full opacity is
-        // what separates it from the inline pills' subordinate styling.
-        expect(await stale.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+        // The whole row is reachable without a menu: it scrolls rather than
+        // hiding what does not fit.
+        const scrolls = await page.evaluate(() => {
+            const row = document.querySelector('.health-view-filter-group');
+            if (!row) return null;
+            return getComputedStyle(row).overflowX;
+        });
+        expect(['auto', 'scroll']).toContain(scrolls);
     });
 });

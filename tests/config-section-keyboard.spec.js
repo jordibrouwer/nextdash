@@ -21,8 +21,11 @@ test.describe('config section rail follows the ARIA tabs pattern', () => {
         await openSection(page, 'overview');
         const tabs = page.locator('[data-config-section]');
         const searchJump = page.locator('[data-config-action="settings-jump"]');
+        // Overview, Bookmarks, Pages & tags, Appearance, Behavior, Data &
+        // backups, Statistics, Help — and About, which the overview rebuild gave
+        // the rail (v1.3.3).
         const count = await tabs.count();
-        expect(count).toBe(8);
+        expect(count).toBe(9);
 
         await tabs.first().focus();
         await page.keyboard.press('ArrowDown');

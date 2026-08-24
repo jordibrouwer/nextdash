@@ -107,12 +107,11 @@ test.describe('statistics: what the activity chart counts', () => {
     });
 
     test('the panel says what a bar means, and the title matches', async ({ page }) => {
-        await page.goto('/');
-        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
-        await dismissOnboardingIfPresent(page);
-        await dismissBlockingOverlays(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('stats'));
-        await page.locator('[data-stats-tab="activity"]').click();
+        // Through openStatsTab, which seeds opens: with nothing ever opened the
+        // panel draws its empty state instead, and has no note to read. It
+        // passed only while another spec had left opens behind in the shared
+        // data directory — which is not a thing to depend on.
+        await openStatsTab(page, 'activity');
 
         const panel = page.locator('.config-panel').first();
         // The old title promised a series the data cannot support.

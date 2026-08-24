@@ -164,14 +164,13 @@ test.describe('the health view surfaces orphaned categories', () => {
     test('the filter narrows to exactly the orphaned rows', async ({ page }) => {
         await openHealthWithOrphan(page);
 
-        // It is a secondary filter, so it lives behind the overflow menu — the
-        // same place shortcut conflicts sit. Driven through the real menu
-        // rather than by setting state, so this also covers the pill appearing
-        // there at all.
-        const moreBtn = page.locator('.health-view-filter-more-btn');
-        await expect(moreBtn).toBeVisible();
-        await moreBtn.click();
-        await page.click('.health-view-filter-overflow-menu [data-health-filter="orphaned-category"]');
+        // It used to live behind an overflow menu; every filter is a pill in one
+        // scrolling row now (3ea26f11). Driven through the real pill rather than
+        // by setting state, so this still covers it appearing at all.
+        const pill = page.locator('.health-view-filter-group [data-health-filter="orphaned-category"]');
+        await expect(pill).toHaveCount(1);
+        await pill.scrollIntoViewIfNeeded();
+        await pill.click();
         await page.waitForSelector('#dashboard-layout.health-layout .health-view-item', { timeout: 15_000 });
 
         await expect(page.locator('.health-view-item', { hasText: 'Orphaned row' })).toHaveCount(1);

@@ -185,7 +185,11 @@ test.describe('Appearance → Layout panel order', () => {
         await expect.poll(() => page.evaluate(() =>
             [...document.querySelectorAll('.config-panel-title')]
                 .map((h) => (h.firstChild?.textContent || '').trim())
-        )).toEqual(['Bookmarks layout', 'Categories across columns', 'Button bar', 'Layout version']);
+        //
+        // Button bar left this tab when it was given one of its own (v1.3.0):
+        // where the bar sits and which buttons it carries are the same errand,
+        // and they now sit together under Button bar.
+        )).toEqual(['Bookmarks layout', 'Categories across columns', 'Layout version']);
     });
 
     test('the moved controls are still bound', async ({ page }) => {

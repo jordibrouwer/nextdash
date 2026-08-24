@@ -75,16 +75,24 @@ test.describe('a section is more than a panel', () => {
         await expect(page.locator('#config-section-panel .wn-kofi-btn')).toBeVisible();
     });
 
-    test('the settings jump points at the section, not at a tab that is gone', async ({ page }) => {
+    test('the settings jump points at the section and at its own tabs', async ({ page }) => {
         await openConfig(page, 'overview');
-        const entries = await page.evaluate(() =>
-            window.dashboardInstance.config.buildSettingsJumpNavEntries()
+        const { entries, aboutTabs } = await page.evaluate(() => ({
+            entries: window.dashboardInstance.config.buildSettingsJumpNavEntries()
                 .filter((e) => e.section === 'about')
-                .map((e) => ({ title: e.title, subTab: e.subTab })));
+                .map((e) => ({ title: e.title, subTab: e.subTab })),
+            aboutTabs: window.DashboardConfig.ABOUT_TABS,
+        }));
 
         expect(entries.length).toBeGreaterThanOrEqual(1);
-        // A leftover subTab would try to open a help tab that no longer exists.
-        expect(entries.every((e) => !e.subTab)).toBe(true);
+        // The original rule was that no entry carried a subTab at all, because
+        // About had just stopped being a help tab and a leftover one would try
+        // to open a tab that no longer existed. About has tabs of its own now —
+        // the colophon and News & features — so the rule is that a subTab is one
+        // of those, never a help tab it cannot open.
+        for (const e of entries) {
+            if (e.subTab) expect(aboutTabs).toContain(e.subTab);
+        }
         expect(entries.map((e) => e.title).join(' ')).toMatch(/About nextDash/);
     });
 });

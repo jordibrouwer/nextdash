@@ -214,7 +214,10 @@ test.describe('the switch is reachable from both places', () => {
         // Without a token the browser may serve its stored copy indefinitely,
         // which is what left a new key resolving to nothing.
         for (const url of localeRequests) {
-            expect(url, `${url} should carry a version token`).toMatch(/\?v=/);
+            // `?v=` or `&v=`: the scoped fetch puts scope first, so the token is
+            // the second parameter — a locale is now asked for as
+            // `en.json?scope=core&v=<hash>`.
+            expect(url, `${url} should carry a version token`).toMatch(/[?&]v=/);
         }
     });
 

@@ -196,14 +196,24 @@ test.describe('config: sections restored from the old config', () => {
     });
 
     /**
-     * These live on Appearance → Toolbar & tabs, which they were given in
-     * 561c8cbd; the tab is itself split into three panels (header, and the two
-     * button-bar groups) so thirteen identical toggles are not one flat run.
+     * Two tabs, not one: **Toolbar & tabs** carries the strip along the top —
+     * page tabs, title, and the two icons on the right — and **Button bar** the
+     * buttons themselves, in a main group and an extras group. They were one
+     * flat run of thirteen identical toggles until the button bar was given its
+     * own tab (v1.3.0).
      */
-    test('toolbar button toggles live on the toolbar tab', async ({ page }) => {
+    test('the header toggles live on the toolbar tab', async ({ page }) => {
         await loadDashboard(page);
         await openAppearanceTab(page, 'toolbar');
-        for (const f of ['showRecentButton', 'showCheatSheetButton', 'showConfigButton', 'showHealthDashboard']) {
+        for (const f of ['showPageTabs', 'showTitle', 'showConfigButton', 'showHealthDashboard']) {
+            await expect(page.locator(`[data-behavior-field="${f}"]`)).toBeVisible();
+        }
+    });
+
+    test('the button toggles live on the button-bar tab', async ({ page }) => {
+        await loadDashboard(page);
+        await openAppearanceTab(page, 'buttonbar');
+        for (const f of ['showAddBookmarkButton', 'showSearchButton', 'showRecentButton', 'showCheatSheetButton']) {
             await expect(page.locator(`[data-behavior-field="${f}"]`)).toBeVisible();
         }
     });
@@ -328,20 +338,22 @@ test.describe('config: sections restored from the old config', () => {
 
     test('toolbar toggles apply immediately, without a reload', async ({ page }) => {
         await loadDashboard(page);
-        await openAppearanceTab(page, 'toolbar');
 
+        // Tab per setting: the button bar has its own since v1.3.0, and a
+        // toggle that is not on screen cannot be clicked.
         const pairs = [
-            ['showAddBookmarkButton', 'data-show-add-bookmark-button'],
-            ['showSearchButton', 'data-show-search-button'],
-            ['showFindersButton', 'data-show-finders-button'],
-            ['showCommandsButton', 'data-show-commands-button'],
-            ['showRecentButton', 'data-show-recent-button'],
-            ['showCheatSheetButton', 'data-show-cheatsheet-button'],
-            ['showConfigButton', 'data-show-config-button'],
-            ['showHealthDashboard', 'data-show-health-dashboard'],
-            ['showTitle', 'data-show-title'],
+            ['buttonbar', 'showAddBookmarkButton', 'data-show-add-bookmark-button'],
+            ['buttonbar', 'showSearchButton', 'data-show-search-button'],
+            ['buttonbar', 'showFindersButton', 'data-show-finders-button'],
+            ['buttonbar', 'showCommandsButton', 'data-show-commands-button'],
+            ['buttonbar', 'showRecentButton', 'data-show-recent-button'],
+            ['buttonbar', 'showCheatSheetButton', 'data-show-cheatsheet-button'],
+            ['toolbar', 'showConfigButton', 'data-show-config-button'],
+            ['toolbar', 'showHealthDashboard', 'data-show-health-dashboard'],
+            ['toolbar', 'showTitle', 'data-show-title'],
         ];
-        for (const [field, attr] of pairs) {
+        for (const [tab, field, attr] of pairs) {
+            await openAppearanceTab(page, tab);
             await page.locator(`[data-behavior-field="${field}"]`).click();
             await expect.poll(() => page.evaluate(({ field, attr }) => {
                 const setting = window.dashboardInstance.settings[field];
@@ -562,6 +574,12 @@ test.describe('config: font size applies live', () => {
         await loadDashboard(page);
         await openSection(page, 'appearance');
         await page.locator('[data-appearance-font="l"]').click();
+        // The class swap is what changes the size, and it lands a recalc after
+        // the click — measuring straight away read the size the view still had,
+        // which was whatever the previous test left behind (xs). Same race the
+        // shrink test above documents.
+        await expect.poll(() => page.evaluate(() =>
+            document.body.classList.contains('font-size-l'))).toBe(true);
         const applied = await sizeOf(page, '.config-view-section-title');
 
         await openSection(page, 'overview');
@@ -630,24 +648,24 @@ test.describe('config help coverage', () => {
         // eslint-disable-next-line no-unused-expressions
     });
 
-    test('reusing the old prose did not repoint the old config’s own titles', async ({ page }) => {
+    /*
+     * This used to guard the *other* config — templates/config.html — against
+     * the new one retitling the prose they shared. That page was deleted and
+     * its help*PageTitle keys went with it in 80f49c03, so the test was asking
+     * the translator for keys nothing renders and getting their own names back.
+     *
+     * What is worth keeping from it is the weaker, still-true claim: Help's
+     * prose arrives with the config module and reads as prose. That a section
+     * shows sentences rather than key names is pinned across every section by
+     * locale-keys-not-on-screen.spec.js.
+     */
+    test('the help prose arrives with the section', async ({ page }) => {
         await loadDashboard(page);
-        // The Help tab's strings are a third of the translation file and are
-        // fetched with the config module that reads them, so they are asked for
-        // here the way the app asks for them.
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('help'));
-        await page.waitForTimeout(800);
-        // templates/config.html still renders these keys; the new config uses
-        // its own help*Title keys so retitling one page cannot degrade the other.
-        const shared = await page.evaluate(() => {
-            const t = window.dashboardInstance.language.t.bind(window.dashboardInstance.language);
-            return {
-                workspace: t('config.helpPageWorkspaceTitle'),
-                organizing: t('config.helpPageOrganizingTitle'),
-            };
-        });
-        expect(shared.workspace).toMatch(/bulk/i);
-        expect(shared.organizing).toMatch(/organizing/i);
+        const body = page.locator('#config-help-body');
+        await expect(body).toBeVisible();
+        await expect(body).not.toHaveText(/^config\.[A-Za-z]+$/);
+        await expect(body).toContainText(/\w+\s+\w+\s+\w+/);
     });
 });
 
@@ -748,11 +766,13 @@ test.describe('statistics tabs', () => {
         });
         await openSection(page, 'stats');
         const body = page.locator('#config-stats-body');
-        // The overview opens with the headline summary, then the insights panel.
-        // (Before the Statistics rework the insights panel came first, and this
-        // matched its title on .first().)
-        await expect(body.locator('.config-panel-title').first())
-            .toContainText(/How you use this collection/i);
+        // The Statistics rework put the plain-language summary first and the
+        // insights panel under it; before it, the insights led. Both are
+        // asserted, in that order, so a future swap is a failure rather than a
+        // silent change.
+        const titles = body.locator('.config-panel-title');
+        await expect(titles.first()).toContainText(/What this says/i);
+        await expect(body).toContainText(/How you use this collection/i);
         // Each insight reads a number already on the page back as a sentence,
         // with somewhere to go next.
         await expect(body).toContainText(/Most activity happens on/);

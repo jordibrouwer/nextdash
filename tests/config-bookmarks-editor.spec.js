@@ -54,7 +54,17 @@ async function applyBookmarkStats(page, stats) {
 async function openFirstEditor(page, stats = null) {
     await page.evaluate((s) => {
         const cfg = window.dashboardInstance.config;
-        const bm = cfg.visibleBookmarks()[0];
+        // The row that is about to be clicked, not visibleBookmarks()[0]: the
+        // two are the same bookmark only while the list is in its default
+        // order, and the order is a setting. Seeding one and editing the other
+        // left the assertion reading a bookmark nothing had been done to.
+        const key = document.querySelector('#config-bm-list .config-bm-row[data-bm-key]')
+            ?.getAttribute('data-bm-key');
+        const parsed = key ? cfg.parseBookmarkKey(key) : null;
+        const bm = parsed
+            ? window.dashboardInstance.allBookmarks.find(
+                (b) => String(b.pageId) === String(parsed.pageId) && b.url === parsed.url)
+            : cfg.visibleBookmarks()[0];
         if (!bm) throw new Error('no visible bookmark');
         if (s) Object.assign(bm, s);
         cfg.repaintBookmarksList();
