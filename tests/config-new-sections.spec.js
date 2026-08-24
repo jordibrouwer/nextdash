@@ -52,11 +52,18 @@ test.describe('config: sections restored from the old config', () => {
         await loadDashboard(page);
         await openSection(page, 'bookmarks');
         await expect(page.locator('#config-bm-list .config-bm-row').first()).toBeVisible();
-        const row = page.locator('.config-bm-row').first();
-        expect(await row.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(240);
-        const title = row.locator('.health-view-item-title');
-        await expect(title).toBeVisible();
-        expect(await title.evaluate((el) => el.scrollWidth)).toBeGreaterThan(0);
+        // Polled, and the element looked up inside the poll: the list repaints
+        // on its own (repaintBookmarksList), and a handle taken before one
+        // measures a detached node as 0 wide. Reported as a flaky "expected
+        // > 240, received 0" that passed on retry.
+        await expect.poll(() => page.evaluate(() => {
+            const el = document.querySelector('#config-bm-list .config-bm-row');
+            return el ? el.getBoundingClientRect().width : 0;
+        })).toBeGreaterThan(240);
+        await expect.poll(() => page.evaluate(() => {
+            const el = document.querySelector('#config-bm-list .config-bm-row .health-view-item-title');
+            return el ? el.scrollWidth : 0;
+        })).toBeGreaterThan(0);
 
         // Measured against the body's own content edge, not the viewport.
         // documentElement.scrollWidth cannot see this: `html` reserves a

@@ -76,9 +76,19 @@ async function openFirstEditor(page, stats = null) {
         if (s) Object.assign(bm, s);
         cfg.repaintBookmarksList();
     }, stats);
-    const editBtn = page.locator('#config-bm-list [data-feed-action="edit"]').first();
-    await editBtn.scrollIntoViewIfNeeded();
-    await editBtn.evaluate((el) => el.click());
+    // Look the button up and click it inside one evaluate, rather than holding
+    // a locator across two calls. The list repaints itself, and a handle taken
+    // before a repaint is detached by the time scrollIntoViewIfNeeded() runs --
+    // which is the "Element is not attached to the DOM" this helper failed with
+    // in roughly one run in three. Retried, because the repaint can land
+    // between the lookup and the click too.
+    await expect.poll(async () => page.evaluate(() => {
+        const btn = document.querySelector('#config-bm-list [data-feed-action="edit"]');
+        if (!btn) return 'no edit button yet';
+        btn.scrollIntoView({ block: 'center' });
+        btn.click();
+        return 'clicked';
+    }), { timeout: 10_000 }).toBe('clicked');
     await expect(page.locator('#bookmark-form-modal.show')).toBeVisible();
     await applyBookmarkStats(page, stats);
 }
