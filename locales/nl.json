@@ -2311,6 +2311,8 @@
     "healthRecheckInfoTitle": "Health-hercontroles op de achtergrond",
     "feedsTitle": "Nieuw",
     "feedsMarkQuietLabel": "Markeer rijen die publiceren, ook als er niets nieuw is",
+    "feedsMarkQuietInfoTitle": "Rijen die publiceren, gemarkeerd",
+    "feedsMarkQuietInfoMessage": "Een bladwijzer waarvan de pagina een feed heeft, krijgt een klein stipje wanneer Fresh er niets nieuws voor heeft.\n\n• Standaard uit: een stipje op elke feedrij wordt ruis zodra je er veel hebt\n• Een rij met iets nieuws toont een aantal, geen stipje\n• Er wordt hierdoor niets extra opgehaald — het markeert wat Fresh al weet",
     "filterStatusFeed": "Publiceert een feed die Nieuw kan lezen",
     "filterStatusUnfed": "Geen feed erachter",
     "bookmarkFeedLabel": "Feed",

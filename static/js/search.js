@@ -770,6 +770,22 @@ class SearchComponent {
     addToQuery(key) {
         this.currentQuery += key;
 
+        // A query exists, so search is active -- say so now rather than after the
+        // debounce.
+        //
+        // The flag was set by showSearch(), which runs from updateSearch(), which
+        // is debounced. Typing therefore left `isActive()` false for the first
+        // characters while the query was already collecting them, and every guard
+        // that reads it -- the grid's c/g/j/k/t, the `,` `+` `&` `0` launchers,
+        // the tag cloud -- let a key through that belonged to the query.
+        // `:buttons cheatsheet` was the visible case: the `c` opened "add a
+        // category" instead of reaching the palette, so no command taking an
+        // argument that contains one of those letters could be typed at all.
+        //
+        // Only the flag and its bookkeeping: the overlay still appears when the
+        // debounce fires, so what is on screen is unchanged.
+        this._beginSearchSession();
+
         // Auto-convert to finder mode if space is pressed after a finder shortcut
         if (key === ' ' && this.settings.includeFindersInSearch) {
             const trimmed = this.currentQuery.trim();
@@ -910,10 +926,35 @@ class SearchComponent {
             if (e.key !== 'Enter' && e.key !== ' ') {
                 return;
             }
+            // Space belongs to the query while one is being typed.
+            //
+            // The highlighted row takes focus, and a focused row is a button, so
+            // Space ran the command instead of separating two words: `:buttons`
+            // then a space applied the first row rather than letting the reader
+            // reach `:buttons cheatsheet`. Every command that takes an argument
+            // was unreachable by typing -- the same for a finder query (`?g some
+            // phrase`) and a filter (`tag: two words`). Enter still activates,
+            // which is the deliberate way in and the one the rest of the view
+            // documents.
+            if (e.key === ' ' && this._queryTakesSpace()) {
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
             this._activateMatchAt(index);
         });
+    }
+
+    /**
+     * Whether a space typed now is text rather than an activation.
+     *
+     * Command, finder and global modes are all "type an argument" modes, and a
+     * normal search takes spaces too — a title is words. The exception is an
+     * empty query, where there is nothing being typed and Space on a focused row
+     * can only have meant "open this".
+     */
+    _queryTakesSpace() {
+        return this.searchActive && this.currentQuery.length > 0;
     }
 
     _isNormalSearchMode() {
@@ -1735,13 +1776,26 @@ class SearchComponent {
         }
     }
 
+    /**
+     * Mark a search session open: the flag, the element to hand focus back to,
+     * and the grid cursor released.
+     *
+     * Separate from showSearch() because the two moments are not the same one.
+     * A query starts on the first keystroke; the overlay is drawn a debounce
+     * later. Everything that asks "is the reader typing a query" has to be told
+     * at the first moment, or it answers for the state before it.
+     */
+    _beginSearchSession() {
+        if (this.searchActive) return;
+        this._searchOpenerElement = document.activeElement;
+        window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
+        // The open event is fired from _trackModeOpen(), which knows whether this
+        // is a plain search, commands, or finders — see updateSearch().
+        this.searchActive = true;
+    }
+
     showSearch() {
-        if (!this.searchActive) {
-            this._searchOpenerElement = document.activeElement;
-            window.dashboardInstance?.keyboardNavigation?.clearSelection?.({ restoreFocus: false });
-            // The open event is fired from _trackModeOpen(), which knows whether this
-            // is a plain search, commands, or finders — see updateSearch().
-        }
+        this._beginSearchSession();
         this.searchActive = true;
         const searchElement = document.getElementById('shortcut-search');
         const queryElement = document.getElementById('search-query');

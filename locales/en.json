@@ -2315,6 +2315,8 @@
     "healthRecheckInfoTitle": "Background health rechecks",
     "feedsTitle": "Fresh",
     "feedsMarkQuietLabel": "Mark rows that publish, even when nothing is new",
+    "feedsMarkQuietInfoTitle": "Rows that publish, marked",
+    "feedsMarkQuietInfoMessage": "A bookmark whose page offers a feed gets a small dot when Fresh has nothing new to report for it.\n\n• Off by default: a dot on every feed row is noise once you have a lot of them\n• A row with something new shows a count instead, not a dot\n• Nothing is fetched because of this — it marks what Fresh already knows",
     "filterStatusFeed": "Publishes a feed Fresh can read",
     "filterStatusUnfed": "No feed behind it",
     "bookmarkFeedLabel": "Feed",

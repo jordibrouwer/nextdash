@@ -2306,6 +2306,8 @@
     "healthRecheckInfoTitle": "Revérifications d'état en arrière-plan",
     "feedsTitle": "Nouveau",
     "feedsMarkQuietLabel": "Marquer les lignes qui publient, même sans nouveauté",
+    "feedsMarkQuietInfoTitle": "Lignes qui publient, marquées",
+    "feedsMarkQuietInfoMessage": "Un favori dont la page propose un flux reçoit un petit point quand Fresh n’a rien de neuf à signaler pour lui.\n\n• Désactivé par défaut : un point sur chaque ligne à flux devient du bruit dès qu’elles sont nombreuses\n• Une ligne avec du neuf affiche un nombre plutôt qu’un point\n• Rien n’est récupéré en plus — cela marque ce que Fresh sait déjà",
     "filterStatusFeed": "Publie un flux que Nouveau peut lire",
     "filterStatusUnfed": "Aucun flux derrière",
     "bookmarkFeedLabel": "Flux",

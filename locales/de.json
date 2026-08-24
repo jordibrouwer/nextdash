@@ -2306,6 +2306,8 @@
     "healthRecheckInfoTitle": "Health-Prüfungen im Hintergrund",
     "feedsTitle": "Neu",
     "feedsMarkQuietLabel": "Zeilen markieren, die veröffentlichen — auch ohne Neues",
+    "feedsMarkQuietInfoTitle": "Zeilen, die veröffentlichen, markiert",
+    "feedsMarkQuietInfoMessage": "Ein Lesezeichen, dessen Seite einen Feed anbietet, bekommt einen kleinen Punkt, wenn Fresh nichts Neues dazu hat.\n\n• Standardmäßig aus: ein Punkt auf jeder Feedzeile wird zu Rauschen, sobald es viele sind\n• Eine Zeile mit etwas Neuem zeigt eine Zahl statt eines Punktes\n• Dadurch wird nichts zusätzlich abgerufen — es markiert, was Fresh ohnehin weiß",
     "filterStatusFeed": "Veröffentlicht einen Feed, den Neu lesen kann",
     "filterStatusUnfed": "Kein Feed dahinter",
     "bookmarkFeedLabel": "Feed",
