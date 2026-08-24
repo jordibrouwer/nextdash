@@ -1281,7 +1281,13 @@ class KeyboardNavigation {
         if (!target) return;
 
         const isSmartCollection = target.getAttribute('data-smart-collection') === 'true';
-        const firstRow = target.querySelector('.bookmark-link[data-bookmark-index]');
+        // The first *navigable* row, not the first row in DOM order.
+        // navigableElements excludes rows hidden by the grid or launcher filter,
+        // so taking querySelector's answer meant the shortcut aborted silently
+        // whenever the category's first bookmark happened to be filtered out.
+        const firstRow = this.navigableElements.find(
+            (row) => target.contains(row) && row.matches?.('.bookmark-link[data-bookmark-index]')
+        ) || target.querySelector('.bookmark-link[data-bookmark-index]');
 
         if (firstRow) {
             const idx = this.navigableElements.indexOf(firstRow);

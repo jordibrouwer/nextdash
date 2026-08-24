@@ -18,7 +18,18 @@
             if (el.disabled) {
                 return false;
             }
-            return el.getAttribute('aria-hidden') !== 'true';
+            if (el.getAttribute('aria-hidden') === 'true') {
+                return false;
+            }
+            // An element that is not rendered cannot take focus, and focus() on
+            // it is a silent no-op -- after trapTabKey has already called
+            // preventDefault(). One [hidden] button in the list (the search
+            // overlay's clear button, hidden while the query is empty) was
+            // enough to make Tab stop working entirely at the wrap-around.
+            if (el.hasAttribute('hidden') || el.closest('[hidden]')) {
+                return false;
+            }
+            return el.getClientRects().length > 0;
         });
     }
 
