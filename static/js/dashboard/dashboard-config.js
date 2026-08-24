@@ -3075,10 +3075,10 @@ class DashboardConfig {
                 <div class="config-overview-about-row">
                     ${this.renderOverviewNews()}
                     <div class="config-overview-side">
+                        ${this.renderOverviewAbout()}
                         ${this.renderZoneRule('install', this.t('config.overviewZoneInstall', 'Your install'))}
                         ${this.renderOverviewStats()}
                         ${this.renderOverviewChangedPanel()}
-                        ${this.renderOverviewAbout()}
                     </div>
                 </div>
                 ${this.renderOverviewTips()}

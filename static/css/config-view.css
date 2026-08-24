@@ -1866,6 +1866,12 @@
  * The figures used to lead the page, which put the stream below the fold on a
  * 900px screen. They are reference — you look them up — so they sit beside the
  * stream rather than above it.
+ *
+ * About leads the column, above the "Your install" line rather than under it.
+ * It belongs to the zone the page opens with — what the project is — so it sits
+ * with the stream, and the line below it then heads exactly the two blocks that
+ * describe your own install. At the foot it was the last thing on a column
+ * nobody scrolls to the end of.
  */
 .config-overview-side {
     display: flex;
@@ -1873,9 +1879,24 @@
     gap: 18px;
 }
 
-/* The zone line heads its own column, so it lines up with the one beside it. */
+/* A panel's own top margin is for a panel following something. About now opens
+   the column, so it starts level with the stream beside it rather than 20px
+   lower -- the two columns are read as a pair. */
+.config-overview-side > .config-panel:first-child {
+    margin-top: 0;
+}
+
+/*
+ * The install line heads what is under it, not the column.
+ *
+ * It used to sit at the top so it lined up with the project line across the
+ * page. About moved above it -- it is the project's, not your install's -- so
+ * the two lines no longer share a baseline, and this one gets air above it
+ * instead, which is what makes it read as a divider rather than a heading that
+ * has slipped.
+ */
 .config-overview-side .config-zone-rule {
-    margin: 0;
+    margin: 6px 0 0;
 }
 
 /*

@@ -243,10 +243,16 @@ test.describe('config overview', () => {
     });
 
     // The stream takes the wide column directly under the act zone; the side
-    // column carries the figures about your own install, with About signing
-    // its foot. That order is the whole point of the rebuild: what the project
-    // is doing sits above the fold, and what your library contains is beside
-    // it, not on top.
+    // column carries the figures about your own install. That order is the
+    // whole point of the rebuild: what the project is doing sits above the
+    // fold, and what your library contains is beside it, not on top.
+    //
+    // Within that column: About, then the "Your install" line, then the figures
+    // and the settings that differ from stock. About belongs to the zone the
+    // page opens with — what the project is — so it sits level with the stream,
+    // and the line under it heads exactly the two blocks that describe your own
+    // install. At the foot it was the last thing on a column nobody scrolls to
+    // the end of.
     test('the stream leads, with About and the figures beside it', async ({ page }) => {
         await loadOverview(page);
 
@@ -262,6 +268,9 @@ test.describe('config overview', () => {
                 news: measure(document.querySelector('.config-news-panel')),
                 about: measure(document.querySelector('.config-about-panel')),
                 glance: measure(find('At a glance')),
+                changed: measure(document.querySelector('.config-overview-changed')
+                    || find('Not stock')),
+                installRule: measure(document.querySelector('.config-overview-side .config-zone-rule')),
                 act: measure(document.querySelector('.config-overview-act')),
                 tips: measure(document.querySelector('.config-overview-tips-row')),
                 viewport: window.innerHeight,
@@ -279,9 +288,15 @@ test.describe('config overview', () => {
         // Side column to the right, and wider on the left where the list is.
         expect(box.about.x).toBeGreaterThan(box.news.x);
         expect(box.news.w).toBeGreaterThan(box.about.w);
-        // The figures head that column and About signs the foot of it.
+        // About leads that column, and the two blocks about your own install
+        // follow it in order.
         expect(box.glance.x).toBe(box.about.x);
-        expect(box.glance.y).toBeLessThan(box.about.y);
+        expect(box.about.y).toBeLessThan(box.glance.y);
+        expect(box.changed.x).toBe(box.about.x);
+        expect(box.glance.y).toBeLessThan(box.changed.y);
+        // The install line sits between them, heading only what it covers.
+        expect(box.installRule.y).toBeGreaterThan(box.about.y);
+        expect(box.installRule.y).toBeLessThan(box.glance.y);
         // Tips still closes the page.
         expect(box.tips.y).toBeGreaterThan(box.news.y);
     });
