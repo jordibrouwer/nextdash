@@ -25,6 +25,13 @@ func (h *Handlers) CheckBookmarkHealthURL(w http.ResponseWriter, r *http.Request
 	if !h.requireWriteAccess(w, r) {
 		return
 	}
+	// Same guard every other endpoint that fetches a caller-supplied URL uses.
+	// Without it this was the one unrated outbound-fetch path, and
+	// requireWriteAccess waves everything through when NEXTDASH_WRITE_TOKEN is
+	// unset -- which is the default.
+	if !h.requireSSRFAPIRateLimit(w, r) {
+		return
+	}
 
 	var req struct {
 		URL string `json:"url"`

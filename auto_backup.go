@@ -320,6 +320,12 @@ func (h *Handlers) maybeRunAutoBackup() {
 // ListAutoBackups returns the stored automatic backups as JSON, newest first,
 // along with whether automatic backups are enabled and when the next one is due.
 func (h *Handlers) ListAutoBackups(w http.ResponseWriter, r *http.Request) {
+	// Same gate as the run/restore/delete siblings: this lists what the archive
+	// store holds. The client fetches it through nextDashFetch, so the token
+	// travels with it.
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	names, err := listAutoBackupFiles()
 	if err != nil {
 		http.Error(w, "Failed to list backups", http.StatusInternalServerError)
@@ -365,6 +371,12 @@ func (h *Handlers) ListAutoBackups(w http.ResponseWriter, r *http.Request) {
 
 // DownloadAutoBackup streams a stored automatic backup by name.
 func (h *Handlers) DownloadAutoBackup(w http.ResponseWriter, r *http.Request) {
+	// This hands over a full copy of the data directory -- the same content
+	// /api/backup refuses without a token. The client downloads it via
+	// downloadViaBlob -> writeFetch, which carries the token.
+	if !h.requireWriteAccess(w, r) {
+		return
+	}
 	name := r.URL.Query().Get("name")
 	path, ok := resolveAutoBackupPath(name)
 	if !ok {

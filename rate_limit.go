@@ -86,9 +86,14 @@ func statusPingRequestsPerMinute() int {
 }
 
 func clientIP(r *http.Request) string {
+	// X-Forwarded-For is caller-controlled, so it is used only when it parses as
+	// an address. That does not make it trustworthy -- a client that sends a
+	// fresh valid IP per request still gets a fresh bucket -- but it does stop
+	// arbitrary strings from becoming limiter keys. Deciding whether to trust the
+	// header at all belongs in a trusted-proxy setting.
 	if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
 		parts := strings.Split(xff, ",")
-		if ip := strings.TrimSpace(parts[0]); ip != "" {
+		if ip := strings.TrimSpace(parts[0]); ip != "" && net.ParseIP(ip) != nil {
 			return ip
 		}
 	}

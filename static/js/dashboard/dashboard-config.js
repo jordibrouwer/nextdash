@@ -9972,7 +9972,10 @@ class DashboardConfig {
             btn.disabled = true;
             if (status) status.textContent = this.t('config.monitorNotifyTestSending', 'Sending…');
             try {
-                const res = await fetch('/api/health/test-notification', { method: 'POST' });
+                // Through writeFetch: /api/health/test-notification is behind
+                // requireWriteAccess, so a bare fetch got a flat 401 on every
+                // install that sets NEXTDASH_WRITE_TOKEN.
+                const res = await this.writeFetch('/api/health/test-notification', { method: 'POST' });
                 if (!res.ok) {
                     const detail = (await res.text().catch(() => '')).trim();
                     throw new Error(detail || `HTTP ${res.status}`);

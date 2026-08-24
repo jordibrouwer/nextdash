@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -75,6 +76,21 @@ func (h *Handlers) AddTrashItems(w http.ResponseWriter, r *http.Request) {
 		if trashKindOf(item) == TrashKindCategory && item.TrashedCategory == nil {
 			http.Error(w, "Category entry is missing its category data", http.StatusBadRequest)
 			return
+		}
+		// A bookmark recorded here is stored verbatim and spliced straight back
+		// onto the page by RestoreTrashItem, so it has to clear the same bar as
+		// the add path -- the same hole PutInboxItem closed for the inbox.
+		// Without this, trash-then-restore is the one route that can store a
+		// javascript: URL, a private address under allowLocalBookmarks:false, or
+		// a client-chosen Icon path.
+		if trashKindOf(item) == TrashKindBookmark {
+			trimmedURL := strings.TrimSpace(item.Bookmark.URL)
+			if err := h.validateBookmarkURL(trimmedURL); err != nil {
+				http.Error(w, fmt.Sprintf("Invalid URL: %v", err), http.StatusBadRequest)
+				return
+			}
+			item.Bookmark.URL = trimmedURL
+			item.Bookmark.Icon = sanitizeBookmarkIcon(item.Bookmark.Icon)
 		}
 		entries = append(entries, item)
 	}

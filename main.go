@@ -180,8 +180,37 @@ func main() {
 	r.HandleFunc("/api/track-open", handlers.TrackBookmarkOpen).Methods("POST")
 
 	// Data files (for uploaded favicons, etc.)
+	//
+	// Narrowed to the three things the UI actually links: data/icons/*, and the
+	// uploaded favicon/font at the data root. A bare FileServer over the whole
+	// data directory also served settings.json, every bookmarks-N.json,
+	// inbox.json, trash.json and the auto-backup ZIPs -- ungated, with directory
+	// listings, while /api/backup returns the same content only behind
+	// requireWriteAccess.
 	dataDir := ResolveDataDir()
-	r.PathPrefix("/data/").Handler(http.StripPrefix("/data/", http.FileServer(http.Dir(dataDir))))
+	dataFileServer := http.StripPrefix("/data/", http.FileServer(http.Dir(dataDir)))
+	r.PathPrefix("/data/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rel := strings.TrimPrefix(r.URL.Path, "/data/")
+		if rel == "" || strings.Contains(rel, "..") {
+			http.NotFound(w, r)
+			return
+		}
+		switch {
+		case strings.HasPrefix(rel, "icons/") && !strings.Contains(strings.TrimPrefix(rel, "icons/"), "/"):
+			// Icon filenames carry 8 random bytes and are never rewritten in
+			// place, so they can be frozen. These are the most numerous requests
+			// on the dashboard -- one per bookmark -- and had no Cache-Control at
+			// all, costing a conditional round trip each on every load.
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		case strings.HasPrefix(rel, "favicon.") || strings.HasPrefix(rel, "font."):
+			// Overwritten in place by the upload handlers, so it must revalidate.
+			w.Header().Set("Cache-Control", "public, max-age=300")
+		default:
+			http.NotFound(w, r)
+			return
+		}
+		dataFileServer.ServeHTTP(w, r)
+	})
 
 	// Locales: prefer on-disk files in dev/Docker mounts, fall back to embed.
 	if info, err := os.Stat("locales"); err == nil && info.IsDir() {
