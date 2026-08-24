@@ -17,9 +17,38 @@ const { markWhatsNewSeen, dismissOnboardingIfPresent, dismissBlockingOverlays } 
  * comment says must not happen.
  */
 
+/**
+ * Turn the tooltips on server-side before the dashboard is measured.
+ *
+ * showShortcutTooltips defaults to false on a fresh install and is forced to
+ * false on an existing one (models.go:1002, pinned by
+ * settings_shortcut_tooltips_test.go). setupToolbarKbdTooltips returns before
+ * it binds anything when the setting is off, so without this the throttling
+ * this file is about is never installed and every test here waits 20 seconds
+ * for a _toolbarKbdTooltipSync that will not appear.
+ */
+async function enableShortcutTooltips(page) {
+    await page.goto('/');
+    await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0,
+        null, { timeout: 20_000 });
+    const ok = await page.evaluate(async () => {
+        const api = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        const current = await (await api('/api/settings')).json();
+        current.showShortcutTooltips = true;
+        const res = await api('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(current),
+        });
+        return res.ok;
+    });
+    expect(ok, 'enabling shortcut tooltips should succeed').toBe(true);
+}
+
 async function openDashboard(page) {
     await page.setViewportSize({ width: 1400, height: 900 });
     await markWhatsNewSeen(page);
+    await enableShortcutTooltips(page);
     await page.goto('/');
     await page.waitForSelector('#dashboard-layout', { timeout: 20_000 });
     await dismissOnboardingIfPresent(page);
