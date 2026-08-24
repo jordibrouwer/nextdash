@@ -6004,6 +6004,46 @@ class DashboardConfig {
 
     static FONT_SIZES = ['xs', 's', 'sm', 'm', 'lg', 'l', 'xl'];
 
+    /** Everything a body.font-size-* rule sets (font-size.css). */
+    static FONT_SCALE_VARS = [
+        '--font-size-title', '--font-size-date', '--font-size-category',
+        '--font-size-bookmark', '--font-size-controls', '--font-size-text',
+    ];
+
+    /**
+     * Hold the config panel at the size it is while a font preview runs.
+     *
+     * The preview is meant to show the choice on the dashboard behind the
+     * panel. applyFontSize() puts the class on <body>, and the panel reads the
+     * same variables, so the panel resized too — including the button under the
+     * pointer. It moved out from under the cursor, which fired pointerleave,
+     * which reverted, which moved it back, which fired pointerenter: an
+     * enter/leave loop the click never got through. Verified with an event log:
+     * ten enter/leave pairs and no click at all.
+     *
+     * Copying the current values onto .config-view pins the panel while <body>
+     * changes underneath it. Read before the class is swapped, or the values
+     * are the preview's own.
+     */
+    holdConfigTypeScale() {
+        const view = document.querySelector('.config-view');
+        if (!view || view.dataset.fontScaleHeld === '1') return;
+        const computed = getComputedStyle(document.body);
+        DashboardConfig.FONT_SCALE_VARS.forEach((name) => {
+            const value = computed.getPropertyValue(name).trim();
+            if (value) view.style.setProperty(name, value);
+        });
+        view.dataset.fontScaleHeld = '1';
+    }
+
+    /** Let the panel follow the body again. */
+    releaseConfigTypeScale() {
+        const view = document.querySelector('.config-view');
+        if (!view) return;
+        DashboardConfig.FONT_SCALE_VARS.forEach((name) => view.style.removeProperty(name));
+        delete view.dataset.fontScaleHeld;
+    }
+
     fontSizeLabel(size) {
         const map = {
             xs: ['config.fontSizeXS', 'XS'], s: ['config.fontSizeS', 'S'],
@@ -6787,12 +6827,15 @@ class DashboardConfig {
                 if (this._fontSizeBeforePreview == null) {
                     this._fontSizeBeforePreview = this.currentFontSize();
                 }
+                // Before the class changes: the panel must keep the size it has.
+                this.holdConfigTypeScale();
                 this.dash.settings.fontSize = size;
                 this.dash.applyFontSize?.();
             };
             const revert = () => {
                 const previous = this._fontSizeBeforePreview;
                 this._fontSizeBeforePreview = null;
+                this.releaseConfigTypeScale();
                 if (previous == null) return;
                 this.dash.settings.fontSize = previous;
                 this.dash.applyFontSize?.();
@@ -6802,8 +6845,10 @@ class DashboardConfig {
             btn.addEventListener('pointerleave', revert);
             btn.addEventListener('blur', revert);
             btn.addEventListener('click', () => {
-                // Taken, so there is nothing to put back.
+                // Taken, so there is nothing to put back — and the panel takes
+                // the new size with everything else.
                 this._fontSizeBeforePreview = null;
+                this.releaseConfigTypeScale();
                 this.setFontSize(size);
             });
         });
