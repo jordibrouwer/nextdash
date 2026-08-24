@@ -73,38 +73,60 @@ func (h *Handlers) ImportBookmarksHTML(w http.ResponseWriter, r *http.Request) {
 	// parse that will do the work rather than from a second one in the browser
 	// -- and it can say how many are already here, which a total never could.
 	if r.URL.Query().Get("dryRun") == "1" {
-		existing := h.store.GetBookmarksByPage(pageID)
-		known := make(map[string]struct{}, len(existing))
-		for _, b := range existing {
-			known[canonicalBookmarkURLKey(b.URL)] = struct{}{}
-		}
-		newCount, dupCount := 0, 0
-		folders := map[string]struct{}{}
-		for _, row := range rows {
-			key := canonicalBookmarkURLKey(row.URL)
-			if _, dup := known[key]; dup {
-				dupCount++
-				continue
-			}
-			// Counted as new only once: a file listing the same address twice
-			// imports it once, so the preview must say so too.
-			known[key] = struct{}{}
-			newCount++
-			if row.Category != "" {
-				folders[row.Category] = struct{}{}
-			}
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]int{
-			"new":        newCount,
-			"duplicates": dupCount,
-			"folders":    len(folders),
-			"total":      len(rows),
-		})
+		writeJSON(w, h.previewImport(pageID, rows))
 		return
 	}
 
 	h.importRows(w, r, pageID, rows)
+}
+
+// ImportPreview is what a dry run answers: what would happen, and nothing done.
+type ImportPreview struct {
+	New        int `json:"new"`
+	Duplicates int `json:"duplicates"`
+	Folders    int `json:"folders"`
+	Total      int `json:"total"`
+}
+
+/*
+previewImport counts a set of rows against what a page already holds.
+
+Shared rather than inlined in the HTML handler, because every source in cluster A
+owes the reader the same sentence before it writes anything -- and a second
+implementation of "already here" is a second definition of it. Dedupe is on
+canonicalBookmarkURLKey, the key the duplicate detection and the extension
+already use, so "already here" means one thing everywhere.
+*/
+func (h *Handlers) previewImport(pageID int, rows []ImportedRow) ImportPreview {
+	existing := h.store.GetBookmarksByPage(pageID)
+	known := make(map[string]struct{}, len(existing))
+	for _, b := range existing {
+		known[canonicalBookmarkURLKey(b.URL)] = struct{}{}
+	}
+
+	preview := ImportPreview{Total: len(rows)}
+	folders := map[string]struct{}{}
+	for _, row := range rows {
+		key := canonicalBookmarkURLKey(row.URL)
+		if _, dup := known[key]; dup {
+			preview.Duplicates++
+			continue
+		}
+		// Counted as new only once: a file listing the same address twice
+		// imports it once, so the preview must say so too.
+		known[key] = struct{}{}
+		preview.New++
+		if row.Category != "" {
+			folders[row.Category] = struct{}{}
+		}
+	}
+	return preview
+}
+
+// writeJSON is the one-liner every handler here ends with.
+func writeJSON(w http.ResponseWriter, payload any) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(payload)
 }
 
 // ExportBookmarksHTML writes the whole collection back out in the same format.

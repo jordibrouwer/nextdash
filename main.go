@@ -91,6 +91,14 @@ func main() {
 	// keeps the tags, notes and dates every export has always carried.
 	r.HandleFunc("/api/bookmarks/import-html", handlers.ImportBookmarksHTML).Methods("POST")
 	r.HandleFunc("/api/bookmarks/export-html", handlers.ExportBookmarksHTML).Methods("GET")
+	// The source register: where bookmarks come from, and what the last round
+	// did. Every route is behind the write token -- a source can hold one.
+	r.HandleFunc("/api/sources", handlers.ListSourcesHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/sources/{id}", handlers.SaveSourceHandler).Methods("PUT", "OPTIONS")
+	r.HandleFunc("/api/sources/{id}", handlers.DeleteSourceHandler).Methods("DELETE", "OPTIONS")
+	// GET previews, POST imports. Two calls on purpose: a source that writes on
+	// the first click is one nobody clicks twice.
+	r.HandleFunc("/api/sources/{id}/run", handlers.RunSourceHandler).Methods("GET", "POST", "OPTIONS")
 	r.HandleFunc("/api/bookmarks/prefetch-icons", handlers.PrefetchBookmarkIcons).Methods("POST")
 	r.HandleFunc("/api/bookmarks/delete-all", handlers.DeleteAllBookmarks).Methods("POST")
 	r.HandleFunc("/api/finders", handlers.GetFinders).Methods("GET")
