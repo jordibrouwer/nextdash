@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.3.3.4 — 25 August 2026](#v1334--25-august-2026)
 - [v1.3.3.3 — 25 August 2026](#v1333--25-august-2026)
 - [v1.3.3.2 — 24 August 2026](#v1332--24-august-2026)
 - [v1.3.3.1 — 24 August 2026](#v1331--24-august-2026)
@@ -176,6 +177,14 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.3.3.4 — 25 August 2026
+
+Three buttons that had never been styled, and were only ever on screen while nobody was looking for them.
+
+### Health
+
+- **fix** — **the filter-specific buttons carry the toolbar's own shape.** *Fetch previews*, *Open broken links* and *Merge duplicate group* had no CSS rule at all, so each rendered as the browser's default: square, `2px outset`, grey, in a row of buttons with a 1px border and a 0.4rem radius. They appear only while their own filter is on screen, which is why it survived — and why a visibility check would never have caught it, since the button *is* there. All three join the secondary set beside **Export rows** and **Rot report**, in classic and in modern, with the hover, the focus ring and the disabled state that set already had; *Fetch previews* and *Open broken links* both disable themselves while they run, so the dimming is load-bearing. The spec reads the computed padding, border, radius and font size off Rot report and asserts the fetch button matches, rather than asserting it is visible.
 
 ## v1.3.3.3 — 25 August 2026
 
