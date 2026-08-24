@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.3.3.2 — 24 August 2026](#v1332--24-august-2026)
 - [v1.3.3.1 — 24 August 2026](#v1331--24-august-2026)
 - [v1.3.3 — 22 August 2026](#v133--22-august-2026)
 - [v1.3.2 — 21 August 2026](#v132--21-august-2026)
@@ -174,6 +175,30 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.3.3.2 — 24 August 2026
+
+A font size that could not be chosen with a mouse, a template drawing itself without an icon, and a test suite that stopped needing six machines.
+
+### Appearance
+
+- **fix** — **choosing a font size works with a mouse.** Hovering a size previews it on the dashboard behind the panel, which is what it is for — but `applyFontSize()` puts the class on `<body>` and the config panel reads the same six `--font-size-*` variables, so the panel resized too, including the button under the pointer. That is a loop rather than a cosmetic fault: the button grows, slides out from under the cursor, fires `pointerleave`, which reverts, which slides it back under the cursor, which fires `pointerenter`. Logged at the document with capture on: ten enter/leave pairs in a row and no `click` at all. `holdConfigTypeScale()` copies those six values onto `.config-view` before the class is swapped, so the panel stays put while `<body>` changes under it; the click and the revert both release it, so taking a size still resizes everything. The keyboard and touch never entered the loop, which is why it went unnoticed.
+
+### Config → Overview
+
+- **fix** — **the project's own posts keep their place in the six rows.** The stream is in date order, which is right for the list and wrong for a six-row window: two hotfixes shipped in one afternoon carry two release rows and the settings they introduced, all stamped that day, and between them they fill it — so the posts, the one source that is not about a version number, fell off the page the day after they went up. Up to two of the newest keep a slot; the window is still six rows and still in date order, and a source filter reserves nothing, since the reader has already said which kind they want.
+- **fix** — **a release that brings no features no longer spends the window.** Features from the two most recent releases join the stream; counted in releases, two hotfixes emptied it of everything a reader could act on. It counts the two most recent releases that actually introduced a setting instead.
+- **new** — **the font-size choice is in the stream**, with a way through to Appearance.
+
+### Unraid
+
+- **fix** — **the Community Applications template draws its icon.** It pointed at `favicon.png` in the repository root, which is not there, so the entry appeared blank. It is `static/nextdash-logo.png` now. **Project** links to nextdash.cc rather than to the source — Support and ReadMe still point at GitHub, where an issue and the readme actually live — and the fifth screenshot joins the four that were listed.
+
+### Tests
+
+- **new** — **the suite runs a server per worker.** `workers: 1` was not a property of the tests but of the harness: one `go run .` and one data directory meant a second worker would delete the first one's bookmarks mid-test. Each worker now gets its own port (`18080 + workerIndex`), its own data directory and its own server, started from a binary the global setup builds once — so nothing is shared and nothing can interfere. A full run took about an hour and a half and needed six CI machines to come in under twenty minutes.
+- **fix** — **22 specs lost their fixtures import in a merge** and silently went back to sharing whatever the previous file left behind — invisible while everything ran against one server, and an immediate `ERR_CONNECTION_REFUSED` once each worker had its own.
+- **fix** — three tests took a handle on a row in the bookmarks list and used it after the list had repainted itself, failing about one run in three with *Element is not attached to the DOM*. And `config-bookmarks-editor` never marked what's-new as seen, so the promo card landed mid-test and shifted the Save button a few pixels — five tests in that file were passing only on retry. One of its assertions was also asking for something the app does not promise: `openCount` seeded into the browser's copy of a bookmark, expected back after a save the dashboard does not send it in.
 
 ## v1.3.3.1 — 24 August 2026
 
