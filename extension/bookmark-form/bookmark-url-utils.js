@@ -17,10 +17,14 @@
         if (!port) {
             return host;
         }
-        if (host.includes(':')) {
-            return `[${host}]:${port}`;
+        // u.hostname already returns an IPv6 literal *with* brackets, so the
+        // old version produced [[::1]]:8080 and no longer matched the server's
+        // canonicalBookmarkURLKey for any bracketed host with a port.
+        const bare = host.replace(/^\[|\]$/g, '');
+        if (bare.includes(':')) {
+            return `[${bare}]:${port}`;
         }
-        return `${host}:${port}`;
+        return `${bare}:${port}`;
     }
 
     /** Same rules as server canonicalBookmarkURLKey (handlers.go). */

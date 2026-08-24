@@ -671,22 +671,26 @@ class SearchComponent {
             return;
         }
 
-        // , opens the page overview overlay (never feeds into search)
-        if (e.key === ',') {
+        // , opens the page overview overlay. Guarded on !searchActive like the 0
+        // shortcut below: these three sit above the printable-character branches,
+        // so without the guard they were unreachable as characters -- ",", "+"
+        // and "&" simply could not be typed into a search, a filter or a
+        // ":new https://…?a=1&b=2" command.
+        if (e.key === ',' && !this.searchActive) {
             e.preventDefault();
             window.dashboardInstance?.showPageOverlay?.();
             return;
         }
 
-        // + opens the full new-bookmark modal (never feeds into search)
-        if (e.key === '+') {
+        // + opens the full new-bookmark modal
+        if (e.key === '+' && !this.searchActive) {
             e.preventDefault();
             window.dashboardInstance?.quickAddWidget?.toggle?.();
             return;
         }
 
-        // & opens the quick-add omnibox (never feeds into search)
-        if (e.key === '&') {
+        // & opens the quick-add omnibox
+        if (e.key === '&' && !this.searchActive) {
             e.preventDefault();
             window.dashboardInstance?.showOmnibox?.();
             return;

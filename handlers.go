@@ -2018,9 +2018,18 @@ func (h *Handlers) CustomThemeCSS(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) customThemeCSS() string {
 	colors := h.store.GetColors()
 
-	css := "/* Custom Theme Variables - Loaded from colors.json */\n\n"
-	css += "/* Light Theme Variables */\n" + renderThemeCSSBlock("light", colors.Light) + "\n"
-	css += "/* Dark Theme Variables */\n" + renderThemeCSSBlock("dark", colors.Dark) + "\n"
+	// Built with a Builder: this renders ~150 theme blocks and the += version
+	// reallocated and copied the whole (76 KB) string on every one of them, on
+	// every dashboard load.
+	var b strings.Builder
+	b.Grow(96 << 10)
+	b.WriteString("/* Custom Theme Variables - Loaded from colors.json */\n\n")
+	b.WriteString("/* Light Theme Variables */\n")
+	b.WriteString(renderThemeCSSBlock("light", colors.Light))
+	b.WriteString("\n")
+	b.WriteString("/* Dark Theme Variables */\n")
+	b.WriteString(renderThemeCSSBlock("dark", colors.Dark))
+	b.WriteString("\n")
 
 	// Add custom themes CSS
 	for themeID, themeColors := range colors.Custom {
@@ -2028,7 +2037,11 @@ func (h *Handlers) customThemeCSS() string {
 		if safeID == "" {
 			continue
 		}
-		css += "/* Custom Theme: " + safeID + " */\n" + renderThemeCSSBlock(safeID, themeColors) + "\n"
+		b.WriteString("/* Custom Theme: ")
+		b.WriteString(safeID)
+		b.WriteString(" */\n")
+		b.WriteString(renderThemeCSSBlock(safeID, themeColors))
+		b.WriteString("\n")
 	}
 
 	// Add built-in themes CSS
@@ -2042,10 +2055,14 @@ func (h *Handlers) customThemeCSS() string {
 		if safeID == "" {
 			continue
 		}
-		css += "/* Built-in Theme: " + safeID + " */\n" + renderThemeCSSBlock(safeID, colors.BuiltIn[themeID]) + "\n"
+		b.WriteString("/* Built-in Theme: ")
+		b.WriteString(safeID)
+		b.WriteString(" */\n")
+		b.WriteString(renderThemeCSSBlock(safeID, colors.BuiltIn[themeID]))
+		b.WriteString("\n")
 	}
 
-	return css
+	return b.String()
 }
 
 func (h *Handlers) Health(w http.ResponseWriter, r *http.Request) {
@@ -2996,12 +3013,22 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 
 	sources := make([]Bookmark, 0, len(req.SourcePageIDs))
 	deletes := make([]mergeDeleteRef, 0, len(req.SourcePageIDs))
+	// Every ref below is validated against the pre-merge snapshot, so the same
+	// (page, index) pair listed twice would pass twice and then be deleted twice
+	// from a slice that has already shifted -- taking an innocent neighbour with
+	// it, and double-counting the source's open count into the keeper.
+	seenSources := make(map[mergeDeleteRef]bool, len(req.SourcePageIDs))
 	for i := 0; i < len(req.SourcePageIDs); i++ {
 		pageID := req.SourcePageIDs[i]
 		index := req.SourceIndices[i]
 		if pageID == req.TargetPageID && index == req.TargetIndex {
 			continue
 		}
+		ref := mergeDeleteRef{pageID: pageID, index: index}
+		if seenSources[ref] {
+			continue
+		}
+		seenSources[ref] = true
 		bookmarks := h.store.GetBookmarksByPage(pageID)
 		if index < 0 || index >= len(bookmarks) {
 			http.Error(w, "Invalid source index", http.StatusBadRequest)
@@ -3013,7 +3040,7 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sources = append(sources, src)
-		deletes = append(deletes, mergeDeleteRef{pageID: pageID, index: index})
+		deletes = append(deletes, ref)
 	}
 
 	merged := keeper

@@ -239,6 +239,10 @@ type Settings struct {
 	// appearing under the pointer, and their only answer used to be off —
 	// throwing away the whole feature to avoid one behaviour of it.
 	LinkPreviewMode string `json:"linkPreviewMode"`
+	// ShowSiteNews draws the five most recent nextdash.cc posts on the config
+	// overview. On by default; off means the server never fetches the feed at
+	// all, rather than fetching and hiding it.
+	ShowSiteNews bool `json:"showSiteNews"`
 	// LinkPreviewParts names the rows the card may draw, from the set in
 	// normalizeLinkPreviewParts. Absent means all of them; someone who writes
 	// no notes never needs the note row.
@@ -702,6 +706,13 @@ func (fs *FileStore) initializeDefaultFiles() {
 				{ID: "utilities", Name: "Utilities"},
 			},
 			Bookmarks: []Bookmark{
+				// The project's own site, in the seed rather than only behind the
+				// "follow it from your own dashboard" button in About: it is the
+				// place a new install finds out what changed, it publishes a feed
+				// so Fresh has something to count on day one, and a bookmark
+				// dashboard whose own site is not on the dashboard is an odd
+				// advertisement for itself. Deletable like any other starter row.
+				{Name: "nextDash", URL: "https://nextdash.cc/", Shortcut: "N", Category: "development", CheckStatus: false, Tags: []string{"dev", "bookmarks", "self-hosted"}},
 				{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: true, Tags: []string{"dev", "code"}},
 				{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
 				{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
@@ -788,6 +799,7 @@ func (fs *FileStore) initializeDefaultFiles() {
 			ShowIcons:                    true,
 			ShowLinkPreviewCards:         true,
 			LinkPreviewMode:              "hover",
+			ShowSiteNews:                 true,
 			LinkPreviewHoverDelayMs:      250,
 			ShowShortcuts:                true,
 			ShowPinIcon:                  false,
@@ -2639,6 +2651,7 @@ func (fs *FileStore) GetSettings() Settings {
 			ShowIcons:                      true,
 			ShowLinkPreviewCards:           true,
 			LinkPreviewMode:                "hover",
+			ShowSiteNews:                   true,
 			LinkPreviewHoverDelayMs:        250,
 			ShowShortcuts:                  true,
 			ShowPinIcon:                    false,
@@ -2763,6 +2776,9 @@ func (fs *FileStore) GetSettings() Settings {
 		settings.LinkPreviewMode = normalizeLinkPreviewMode(settings.LinkPreviewMode, settings.ShowLinkPreviewCards)
 		settings.ShowLinkPreviewCards = settings.LinkPreviewMode != "off"
 		settings.LinkPreviewParts = normalizeLinkPreviewParts(settings.LinkPreviewParts)
+		if _, ok := rawSettings["showSiteNews"]; !ok {
+			settings.ShowSiteNews = true
+		}
 		if settings.LinkPreviewHoverDelayMs != 100 && settings.LinkPreviewHoverDelayMs != 150 && settings.LinkPreviewHoverDelayMs != 250 {
 			settings.LinkPreviewHoverDelayMs = 250
 		}

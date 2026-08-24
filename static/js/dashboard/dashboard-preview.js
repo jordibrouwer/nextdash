@@ -64,10 +64,6 @@ class DashboardPreview {
         return new Set(wanted.filter((p) => DashboardPreview.PARTS.includes(p)));
     }
 
-    wants(part) {
-        return this.previewParts().has(part);
-    }
-
     attachBookmarkPreviewBehavior(openLink, bookmark) {
         const d = this.dash;
         const initialTitle = bookmark.previewTitle || bookmark.name || '';

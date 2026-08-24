@@ -178,6 +178,15 @@ class DashboardConfigLoader {
                 'dashboardConfigContextMenu',
                 () => typeof window.DashboardConfigContextMenu === 'function'
             ).catch(() => {})
+        )).then(() => (
+            // The overview's news stream, same bargain: nothing outside config
+            // reads it, and config without it is an overview with no stream
+            // rather than no config.
+            window.LazyScript.loadScriptOnce(
+                'js/dashboard/dashboard-news-stream.js',
+                'dashboardNewsStream',
+                () => typeof window.DashboardNewsStream === 'object'
+            ).catch(() => {})
         )).then(() => {
             if (typeof window.DashboardConfig !== 'function') {
                 throw new Error('config module loaded without defining DashboardConfig');

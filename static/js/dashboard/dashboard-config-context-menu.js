@@ -126,7 +126,7 @@ class DashboardConfigContextMenu {
             return [
                 { id: 'bulk-move', label: this.t('config.contextMoveSelected', 'Move {count} selected…', { count }), icon: '→' },
                 { id: 'bulk-tags', label: this.t('config.contextTagSelected', 'Tag {count} selected…', { count }), icon: '#' },
-                { id: 'bulk-pin', label: this.t('config.contextPinSelected', 'Pin or unpin {count} selected', { count }), icon: '📌' },
+                { id: 'bulk-pin', label: this.t('config.contextPinSelected', 'Pin or unpin {count} selected', { count }), icon: 'pin' },
                 { id: 'bulk-status', label: this.t('config.contextStatusSelected', 'Checking for {count} selected…', { count }), icon: '◉' },
                 { id: 'bulk-export', label: this.t('config.contextExportSelected', 'Export {count} as CSV', { count }), icon: '⤓' },
                 { id: 'clear', label: this.t('config.contextClearSelection', 'Clear selection'), icon: '✕' },
@@ -144,7 +144,7 @@ class DashboardConfigContextMenu {
                 label: bookmark.pinned
                     ? this.t('dashboard.contextMenuUnpin', 'Unpin')
                     : this.t('dashboard.contextMenuPin', 'Pin'),
-                icon: '📌',
+                icon: 'pin',
             },
             { id: 'check-mode', label: this.checkModeLabel(bookmark), icon: '◉', submenu: true },
             // Where Config differs from the grid: this list is the one you
@@ -212,7 +212,11 @@ class DashboardConfigContextMenu {
 
             const icon = document.createElement('span');
             icon.className = 'move-popover-check';
-            icon.textContent = action.icon;
+            // Same rule as the grid's menu: a named icon is drawn in the
+            // theme's colour, everything else is the glyph it says it is.
+            window.MenuIcons?.apply
+                ? window.MenuIcons.apply(icon, action.icon)
+                : (icon.textContent = action.icon);
             item.appendChild(icon);
 
             const label = document.createElement('span');

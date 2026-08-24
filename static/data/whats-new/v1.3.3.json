@@ -1,0 +1,108 @@
+{
+  "tag": "v1.3.3",
+  "date": "22 August 2026",
+  "releasedAt": "2026-08-22",
+  "modalLead": "The overview, rebuilt. It answered \"what is new\" in three places at once — a panel showing one feature at a time out of forty-nine, a release summary repeating the line directly above it, and the project's own posts below both, out of sight on most screens. It is one list now, newest first, saying where each thing came from; what is in your own collection sits beside it. The form for adding a bookmark was rebuilt for the same reason: it was taller than most screens, and now it fits.",
+  "sections": [
+    {
+      "title": "The overview",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>What is happening with nextDash, on the page you land on.</strong> Posts from the site, releases, and the settings each release brought, in one list with the newest first — each row saying where it came from and opening on its own. The chips narrow it to one kind, including none of the site's posts at all."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>A dot on Overview when something is published.</strong> It counts what appeared since you last read the list, and a first visit starts quiet rather than claiming everything is new."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>All news &amp; features</strong> opens the full list under <strong>About</strong>, together with every setting worth switching on from earlier releases — and a button that saves nextdash.cc as a bookmark so <em>Fresh</em> counts its posts for you."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The overview reads top to bottom again.</strong> The panel that showed one new feature at a time — one of forty-nine — is gone, <em>Latest update</em> with it, and the figures about your own library moved beside the news instead of above it. What the project is doing is now the first thing on the page."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Everything on one line, in order.</strong> Posts, releases and the settings each release brought share a single dated list — with the source labels in a column of one width, so the titles line up down the page instead of starting somewhere new on every row."
+        }
+      ]
+    },
+    {
+      "title": "Adding a bookmark",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The form fits on the screen.</strong> Eleven fields under each other made the dialog taller than a laptop browser leaves, so it scrolled and the save button sat out of sight. On a wide window they now sit in two columns — what the bookmark is on the left, where it goes and whether it is watched on the right — and the whole form is about 450 pixels tall."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The controls explain themselves when you ask.</strong> Pinned and the three availability buttons were an icon and a single word, with the explanation in a tooltip you cannot reach on a touch screen. Point at one — or tap it, or reach it with the keyboard — and a small bubble says what it does; the availability one describes the setting you have chosen."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Warnings no longer push the form around.</strong> A shortcut already in use, a missing name, an address that is not one — each appeared under its field while you typed and moved everything below it. They are a bubble on the field now, and they wait until you have used the field rather than greeting you with what you have not filled in yet."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Adding starts in the address box.</strong> That is the one thing only you can supply — the name usually comes from the page itself."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>On a phone the form is shorter.</strong> The icon buttons and the note are left out — the favicon comes from the page anyway, and a note is not what a thumb is for. Editing a bookmark on a phone keeps the note and icon it already had."
+        }
+      ]
+    },
+    {
+      "title": "Your bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A backup with no bookmarks in it no longer clears the ones you have.</strong> Restoring a file like that emptied every page it did not mention, and said it had worked. It is refused now, before anything is replaced."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Merging two duplicates could take a third bookmark with it</strong> — one that was never part of the merge — and count the opens of the one you kept twice."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A delete that failed used to leave the bookmark on the page twice.</strong> The same went for deleting from the editor: it said <em>deleted</em>, offered an undo, and the undo made a second copy."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>How long a link has been down survives an edit.</strong> Saving from a tab you had open since before it broke reset that history to nothing."
+        }
+      ]
+    },
+    {
+      "title": "Elsewhere",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Pin looks like the rest of the menu.</strong> Right-clicking a bookmark gave you a column of quiet marks in your theme's colour and one red-and-yellow pin emoji. It is drawn in the same colour as its neighbours now."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Usage statistics round every number they send.</strong> The privacy setting has always promised that; the counts on bulk actions were going out exactly. They are rounded into bands now, in the one place every measurement passes through."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Outage alerts reach Pushover and your browser again.</strong> If you picked Pushover — which asks for two tokens instead of a web address — or only switched browser notifications on, no alert ever left, however long something stayed down. <strong>Send test alert</strong> took a different route, so the setup looked right."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Your data folder is not readable over the web.</strong> Only bookmark icons and a favicon or font you uploaded are served from it; your settings, bookmarks, inbox, trash and stored backups now come out only through the routes a write token can guard."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><code>,</code>, <code>+</code> and <code>&amp;</code> can be typed again.</strong> All three opened their own panel instead of reaching the search box, a filter, or a command you were part-way through typing."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The dashboard paints sooner and scrolls more evenly</strong> — the font arrives with the page rather than after it, favicons no longer stall the paint, and resizing the window stops re-laying out the grid on every pixel."
+        }
+      ]
+    }
+  ]
+}

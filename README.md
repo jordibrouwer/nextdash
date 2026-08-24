@@ -119,11 +119,13 @@ Set environment variable `NEXTDASH_WRITE_TOKEN` to a long random string. Protect
 
 The two capture routes — `GET /share` (the PWA share target) and `GET /add` (the bookmarklet) — cannot send a header: a phone's share sheet and a `javascript:` bookmark have no way to set one. On an install with a write token they therefore need a token in the address. Set `NEXTDASH_CAPTURE_TOKEN` to a second long random string and use that one: it opens capture and nothing else, so a bookmarklet sitting in a browser's history can at worst add a link to your inbox. The write token is accepted there too, for a script that already carries it.
 
-Protected actions include: **reset all data** (also requires `{"confirm":true}`), **download or import backup**, **delete page**, **bookmark preview fetch**, **bookmark ping** (`/api/ping`), **health delete / retest / merge / auto-heal / open-broken / cache-scan / update-status**, **clear or refresh all bookmark previews**, **bookmark/page/category/finder/settings saves**, **uploads** (favicon, font, icon), and **reset theme colours**.
+Protected actions include: **reset all data** (also requires `{"confirm":true}`), **download or import backup**, **list, download, run, restore or delete an automatic backup**, **delete page**, **bookmark preview fetch**, **bookmark ping** (`/api/ping`), **health delete / retest / merge / auto-heal / open-broken / cache-scan / update-status**, **clear or refresh all bookmark previews**, **bookmark/page/category/finder/settings saves**, **uploads** (favicon, font, icon), and **reset theme colours**.
 
 When the token is **not** set, behaviour is unchanged — everything stays open for local dev. When it **is** set, the dashboard injects the token automatically so normal browser use is unaffected. The browser extension can store the same write token in **Settings → Write token**.
 
-Outbound fetches (preview, ping, icons, auto-heal) use dial-time IP validation to block DNS-rebinding to private networks unless **allow localhost bookmarks** is enabled in settings.
+Outbound fetches (preview, ping, icons, auto-heal, the health view's check-a-URL) use dial-time IP validation to block DNS-rebinding to private networks unless **allow localhost bookmarks** is enabled in settings, and each is rate-limited (`NEXTDASH_SSRF_API_RATE_PER_MIN`).
+
+**The data directory is not served** (**v1.3.3**). `/data/` publishes `data/icons/` and an uploaded favicon or font, and nothing else — `settings.json`, the bookmark files, `inbox.json`, `trash.json`, the monitoring history and the automatic backup ZIPs are reachable only through the APIs above, which the write token guards. Icons are content-named and never reused, so they are served `immutable`. Bookmarks put into the **trash** are validated on the way in — URL scheme, private addresses, icon path — because a restore puts them straight back on their page.
 
 ### Optional CORS allowlist (LAN / VPS / extension)
 
@@ -243,6 +245,8 @@ Both snapshots are capped at Umami's 50 properties per event and say so (`trunca
 No bookmark names, URLs, search queries, page or category names, notes, or tags. No personal profile is built, and there is no tracking across other websites. Every number is rounded into a band before it leaves the browser — `500+` rather than `1274`, `25` rather than `23` — and the rounding sits in the one function all events pass through, so a new event cannot reintroduce an exact figure by forgetting to round it. The two exceptions are a page position and a walkthrough step, which are small fixed ranges that describe nothing about your collection. No cookies are set, and the instance is self-hosted, so nothing is shared with an advertising network.
 
 The tracker loads from `stats.nextdash.cc`, which is allow-listed in the CSP (`script-src` and `connect-src`).
+
+Separately from analytics, the config overview shows the latest posts from **nextdash.cc**. That feed is fetched by your server, not your browser: one request every six hours for the whole install, carrying no query, no identifier and nothing about you. **Behavior → Privacy → Show posts from nextdash.cc** switches it off, and off means the request is never made.
 
 ### DNS rebinding (IP pinning)
 
@@ -455,6 +459,9 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 
 ### Config
 
+- **The overview is a news stream** (**v1.3.3**) — posts from nextdash.cc, releases, and the settings each release introduced, in one dated list with the newest first, every row labelled with its source and opening on its own. Source chips narrow it to one kind or hide the site's posts entirely. A green dot and a count on **Overview** in the rail mark anything published since you last read it; *All news & features* opens the full list under **About**, with the older settings catalogue and a button that saves nextdash.cc as a bookmark so **Fresh** counts its posts. Beside the stream: **About the developer** level with the top of the list, and under a *Your install* line the figures — **At a glance** and what differs from the defaults — which you look up rather than meet on the way in, and which is what puts the stream above the fold. It replaced a carousel that showed one of forty-nine features at a time and a *Latest update* panel repeating the release named directly above it.
+- **The site feed is fetched by your server** (**v1.3.3**, `/api/site-news`) and held for six hours, with conditional requests and a mirror in the data directory so a nightly reboot does not fetch again. The page never contacts another host and nothing about you goes out with it. **Behavior → Privacy → Show posts from nextdash.cc** switches it off — the request is then never made — and `DISABLE_NEWS_FEED=true` does the same for a whole server.
+- **About has two tabs** (**v1.3.3**) — the colophon, and **News & features**: the whole stream with its source filters, every setting worth switching on including the ones from earlier releases, and a button that saves nextdash.cc as a bookmark so **Fresh** counts its posts.
 - **Config is a view inside the dashboard** (`Shift + S`, `<`, the gear icon, or `/#config`) across eight sections; deep-link a section or sub-tab with `/#config/appearance/layout`. Most settings save the moment you change them
 - **Find a setting** — `Ctrl/Cmd + Shift + K`, or **Find settings** below the section list. Since **v2026.09.07** every setting is indexed from the moment config opens rather than only the tabs you have already visited, and settings also match related words that are not in their label (*uptime*, *wallpaper*, *telemetry*, *hotkey*)
 - **See what you have changed** (v2026.09.07) — **Overview → At a glance** says how many settings differ from their default and links to them; **Only changed** above each settings tab hides the rest; **Reset panel** puts a whole group back at once, beside the per-setting **↺**
@@ -498,7 +505,8 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - Launcher layout preset — switch via **Config → Appearance → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default), corner dock (bottom-left / bottom-right), or a vertical side rail on either edge (side-left / side-right) via Config or `:buttonbar`
 - **Config → Appearance → Button bar** holds the whole bar since **v1.3.0**: the five positions and the two groups of toggles — **Button bar — main buttons** and **Button bar — extras** — each with **Show all** / **Hide all** and a count of what is showing. **Toolbar & tabs** keeps the **Header** group. Hiding a button leaves its keyboard shortcut working
-- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **50 recent versions** (each loads on demand)
+- **A new version shows its release notes once**, on the first visit after the upgrade; closing them marks that release read. A brand-new install is left alone — quick start comes first.
+- ★ What's New star button in the corner opposite the button bar
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Link preview cards — **on hover by default**, with **keyboard only** and **off** as the other two answers in **Config → Appearance → Display**; hover delay (Fast, Balanced or Calm — Calm by default) and a checklist of the rows the card draws
@@ -542,6 +550,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 ### Bookmarks
 
 - Metadata auto-fetch (title, description, preview image) when adding a URL
+- **The add/edit form is two columns** (**v1.3.3**) on a window wide enough for them — name, address, icon and note on one side, page, category, tags, shortcut, pinned and availability on the other. Stacked it was 735 px tall, more than a 1366×768 laptop leaves; side by side it is about 435. Pinned, the availability pills and every warning explain themselves in a bubble on the control instead of a line under it, so a shortcut clash no longer pushes the fields down as you type. On a phone the fields stay in one column and **Icon** and **Note** are hidden — hidden, not dropped, so editing there keeps what the bookmark already had
 - The preview card answers three questions in a fixed order: what the page is (favicon, title, one address, a status pill), what it says (image, description, your note, tags), and what you know about it (last check and ping, uptime, certificate expiry, Fresh count, opens and last opened, shortcut and location). Rows with nothing to say are left out, and none of it costs a request — the health figures come from the report the health icon already fetched
 - Flash animation on bookmark open — subtle ripple confirms the action was registered
 - Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
@@ -551,7 +560,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - **A link you already have is found wherever it is** (**v1.3.0**) — saving a URL that is already on the *same* page is refused, and a copy on *another* page is a question instead: nextDash names the page and category it is already filed under, offers to open it, and **Save anyway** keeps the second copy. The add form, quick add and the extension all ask it the same way
 - Import from browser HTML export (Chrome, Firefox, Edge) — folders become categories, duplicate URLs skipped; **missing icons are batch-fetched with a progress bar**
 - Export all bookmarks to CSV (localized headers: Name, URL, Category, Page, Shortcut, Tags, Notes), and **import that CSV back** onto the current page — tidy hundreds of rows in a spreadsheet and return the result; unlike the browser-HTML import this route carries **tags and notes**
-- Full ZIP backup and restore (pages, bookmarks, categories, **finders**, settings, themes, `data/icons/`, custom favicon/font); atomic import with orphan cleanup — **finders preserved** when omitted from ZIP; **last backup date** shown in Config → Backups; after restore, missing bookmark icons are prefetched the same way
+- Full ZIP backup and restore (pages, bookmarks, categories, **finders**, settings, themes, `data/icons/`, custom favicon/font); atomic import with orphan cleanup — **finders preserved** when omitted from ZIP; **last backup date** shown in Config → Backups; after restore, missing bookmark icons are prefetched the same way. An archive that carries **no bookmark page at all is refused** (**v1.3.3**) — committing an import removes the pages the archive does not name, so such a file used to empty the library and report success
 - Settings-only **export/import** of `settings.json` (migration-safe) from Config → Backups
 - Bookmark icons: upload, URL fetch, link-preview fetch; re-upload **overwrites** same filename
 

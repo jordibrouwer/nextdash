@@ -36,6 +36,15 @@
          between the HTML and the first paint on every load. The endpoint stays
          for the theme switch, which reloads it — see reloadThemeCSS. -->
     <style id="nextdash-theme-css">{{themeCSS}}</style>
+    <!-- Deliberately unversioned: fonts.css requests this exact URL from a static
+         stylesheet, which is served as-is and so cannot render the asset helper.
+         A hashed URL here would not match it, making the browser fetch the font
+         twice and warn that the preload went unused. Both sides must agree. -->
+    <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Kept OUTSIDE the bundle block: replaceBundleBlock swaps the whole block
+         for a single <link>, so a literal URL in there is discarded. Inside it,
+         this preload never reached the browser and the font was only discovered
+         after the CSS bundle had downloaded and parsed. -->
     <!-- bundle:css -->
     <link rel="stylesheet" href="{{asset "css/theme.css"}}">
     <!-- Modern design tokens load ahead of every view stylesheet, so view CSS
@@ -79,11 +88,6 @@
     <link rel="stylesheet" href="{{asset "css/dashboard-inline-edit-surface.css"}}">
     <!-- Last: overrides the !important animation rules the sheets above declare. -->
     <link rel="stylesheet" href="{{asset "css/reduced-motion.css"}}">
-    <!-- Deliberately unversioned: fonts.css requests this exact URL from a static
-         stylesheet, which is served as-is and so cannot render the asset helper.
-         A hashed URL here would not match it, making the browser fetch the font
-         twice and warn that the preload went unused. Both sides must agree. -->
-    <link rel="preload" href="/static/fonts/source-code-pro-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{asset "css/fonts.css"}}">
     <!-- /bundle:css -->
     <!-- bundle:css-views -->
@@ -373,6 +377,10 @@
     <!-- One answer to "which bookmarks", shared by the search bar, the
          config list and the statistics panel. Loaded before all three. -->
     <script src="{{asset "js/shared/bookmark-predicates.js"}}" defer></script>
+    <!-- Drawn icons for the context menus, so Pin is a mark in the theme's
+         colour rather than an emoji the system paints its own way. -->
+    <script src="{{asset "js/shared/menu-icons.js"}}" defer></script>
+    <script src="{{asset "js/shared/field-popover.js"}}" defer></script>
     <script src="{{asset "js/search.js"}}" defer></script>
     <script src="{{asset "js/status.js"}}" defer></script>
     <!-- Before the health view and the context menu: both read window.CheckMode. -->

@@ -1611,6 +1611,7 @@ class DashboardRenderCore {
             iconImage.src = `/data/icons/${encodeURIComponent(categoryIcon)}`;
             iconImage.alt = '';
             iconImage.loading = 'lazy';
+            iconImage.decoding = 'async';
             iconImage.className = 'bookmark-icon';
             labelWrap.appendChild(iconImage);
             window.ThemeIconStyling.applyThemeIconStylingToElement(

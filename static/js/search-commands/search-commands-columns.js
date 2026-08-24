@@ -87,10 +87,23 @@ class SearchCommandColumns {
         // Add the new column class
         document.body.classList.add(`columns-${columns}`);
 
-        // Update the dashboard grid
-        const grid = document.getElementById('dashboard-layout');
-        if (grid) {
-            grid.className = `dashboard-grid columns-${columns}`;
+        // Update the dashboard grid through the guarded path. Assigning
+        // grid.className here directly was a replace: it stripped the inbox /
+        // health / config layout class when the command ran over one of those
+        // views, and dropped density-*, layout-* and the packed/masonry classes
+        // in the grid itself. syncDashboardGridLayout() rebuilds the class list
+        // from settings and no-ops outside the bookmarks view.
+        const dash = window.dashboardInstance;
+        if (dash?.settings) {
+            dash.settings.columnsPerRow = parseInt(columns, 10);
+        }
+        if (typeof dash?.syncDashboardGridLayout === 'function') {
+            dash.syncDashboardGridLayout();
+        } else {
+            const grid = document.getElementById('dashboard-layout');
+            if (grid) {
+                grid.className = `dashboard-grid columns-${columns}`;
+            }
         }
 
         // Update settings

@@ -50,6 +50,14 @@ func carryServerOwnedBookmarkFields(next []Bookmark, stored []Bookmark) {
 		if next[i].LastError == "" && !reportsACheck {
 			next[i].LastError = previous.LastError
 		}
+		// BrokenSince is written by the server in the same breath as LastError
+		// (setBookmarkCheckResult), so a payload that is not reporting a check
+		// cannot know it either. Carrying the error without it left the row
+		// reading as broken with no start date, throwing away the "down since"
+		// history the field exists for.
+		if next[i].BrokenSince == 0 && !reportsACheck {
+			next[i].BrokenSince = previous.BrokenSince
+		}
 		if next[i].PreviewTitle == "" {
 			next[i].PreviewTitle = previous.PreviewTitle
 		}

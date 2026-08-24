@@ -224,6 +224,37 @@ body[data-side-margin="airy"] {
 }
 
 /* ─── Move popover ───────────────────────────────────────────── */
+/* One sentence about one control, only while it is asked for.
+   Fixed rather than absolute: the bookmark form scrolls its own body, and an
+   absolutely-placed bubble would be clipped by it. Above .bookmark-form-modal
+   (10050) and its confirm dialogs, since it can be opened from either. */
+.field-popover {
+    position: fixed;
+    z-index: 10160;
+    max-width: min(19rem, calc(100vw - 1rem));
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-primary);
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: calc(var(--font-size-controls) * 0.85);
+    line-height: 1.4;
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--text-primary) 16%, transparent);
+    pointer-events: none;
+}
+
+.field-popover[hidden] {
+    display: none;
+}
+
+/* A warning is not a description: same bubble, the colour of the field's own
+   error state, so a shortcut clash cannot be mistaken for a hint. */
+.field-popover.field-popover-warning {
+    border-color: var(--accent-error);
+    color: var(--accent-error);
+}
+
 .move-popover {
     position: fixed;
     z-index: 9000;
@@ -5279,4 +5310,18 @@ body[data-grid-keys="shown"] .dashboard-legend {
     border-color: var(--border-secondary);
     background: transparent;
     letter-spacing: 0;
+}
+
+/*
+ * A drawn menu icon sits on the text baseline of a row whose other icons are
+ * glyphs, so it is centred as a box rather than laid out as a letter.
+ */
+.move-popover-check--drawn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.move-popover-check--drawn svg {
+    display: block;
 }

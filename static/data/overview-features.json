@@ -2,6 +2,24 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureNewsStreamTitle",
+      "titleFallback": "One list for what the project is doing",
+      "whatKey": "config.overviewNewFeatureNewsStreamWhat",
+      "whatFallback": "The overview used to answer \"what is new\" three times over: a panel showing one feature at a time out of forty-nine, a release summary repeating the line above it, and the project's posts below both — out of sight on most screens. It is one dated list now: posts from nextdash.cc, releases, and the settings each release introduced, newest first, every row saying where it came from.",
+      "howKey": "config.overviewNewFeatureNewsStreamHow",
+      "howFallback": "The chips above the list narrow it to one source, or hide the site's posts entirely. A green dot marks what arrived since you last read it, and All news & features opens the whole list under About.",
+      "enableKey": "config.overviewNewFeatureNewsStreamEnable",
+      "enableFallback": "On by default. Your server fetches the site's feed a few times a day and your browser never contacts it; Behavior → Privacy switches that half off, and the rest of the list still works with no network at all.",
+      "ctaKey": "config.overviewNewFeatureNewsStreamCta",
+      "ctaFallback": "Open News & features →",
+      "go": {
+        "view": "config",
+        "section": "about",
+        "aboutTab": "news"
+      },
+      "since": "v1.3.3"
+    },
+    {
       "titleKey": "config.overviewNewFeaturePreviewCardTitle",
       "titleFallback": "The hover card says what you know about a link",
       "whatKey": "config.overviewNewFeaturePreviewCardWhat",
@@ -16,7 +34,8 @@
         "view": "config",
         "section": "appearance",
         "appearanceTab": "display"
-      }
+      },
+      "since": "v1.3.2"
     },
     {
       "titleKey": "config.overviewNewFeatureButtonBarTabTitle",
@@ -33,7 +52,8 @@
         "view": "config",
         "section": "appearance",
         "appearanceTab": "buttonbar"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureCaptureTitle",
@@ -50,7 +70,8 @@
         "view": "config",
         "section": "help",
         "subTab": "inbox"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureDuplicateWhereTitle",
@@ -65,7 +86,8 @@
       "ctaFallback": "Back to the dashboard →",
       "go": {
         "view": "dashboard"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureRotReportTitle",
@@ -80,7 +102,8 @@
       "ctaFallback": "Open Health →",
       "go": {
         "view": "health"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureReviewSessionTitle",
@@ -95,7 +118,8 @@
       "ctaFallback": "Open Health →",
       "go": {
         "view": "health"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureFreshTitle",
@@ -112,7 +136,8 @@
         "view": "config",
         "section": "behavior",
         "subTab": "status"
-      }
+      },
+      "since": "v1.3.0"
     },
     {
       "titleKey": "config.overviewNewFeatureHealthStableListTitle",

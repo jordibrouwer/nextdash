@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.3.3 — 22 August 2026](#v133--22-august-2026)
 - [v1.3.2 — 21 August 2026](#v132--21-august-2026)
 - [v1.3.1 — 20 August 2026](#v131--20-august-2026)
 - [v1.3.0 — 19 August 2026](#v130--19-august-2026)
@@ -172,6 +173,115 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.3.3 — 22 August 2026
+
+The overview, rebuilt around one question: what is happening with nextDash, and what is happening in your install. It used to answer "what is new" in three places at once — a carousel showing one of forty-nine feature spotlights, a Latest update panel repeating the release named directly above it, and the project's own posts below both, starting below the fold on a 900-pixel screen. It is one dated stream now, and the figures about your own library sit beside it rather than on top of it.
+
+Behind it, an audit of the whole tree: three paths that could lose bookmarks, a data directory that was readable without the write token, outage alerts that never left an install configured for Pushover or browser push, four keyboard paths that did not do what they promised, and a first paint carrying a preload the page never received.
+
+### Overview, rebuilt
+
+The page answered "what is new" in three places at once — a carousel showing one of forty-nine feature spotlights, a Latest update panel repeating the release the bar above it had already named, and the site's own posts below both — while the figures about your own library took the top of the page. On a 1440×900 screen the carousel was 498 pixels of a 1451-pixel page for one item of forty-nine, and the site's posts started at 936, which is to say below the fold. It is two zones now, grouped by where things come from.
+
+- **new** — **one dated stream, three sources.** Posts from nextdash.cc, releases, and the settings each release introduced, in one list, newest first, every row carrying a source label and its own way in: read the post, show what's new, or open the setting. Six rows fit where one sixty-word spotlight used to, which is the whole gain — not more space, six times the number of things you can act on. Source chips narrow it to one kind and back; that they can hide the site's posts is what keeps a news block in a self-hosted tool from reading as an advert. `dashboard-news-stream.js`, fetched with config.
+- **new** — **the stream leads the page.** The act zone still comes first — nothing displaces "this wants you" — and then the stream, in the wide column directly under it. The side column beside it opens with **About the developer** — the project's site, its feed, GitHub and the author's own site as four addresses rather than two buttons — level with the top of the stream, since it belongs to the same zone. Under it a **Your install** line heads the two blocks that describe your own: **At a glance**, and what differs from the defaults. Figures about your own library are looked up, not met on the way in, and moving them is what lifts the stream above the fold: it now starts at 474 pixels rather than 936.
+- **new** — **a green dot and a count on Overview** in the section rail, for anything published since you last read the stream. A first visit stamps the moment rather than counting everything ever published, or the badge would read 156 on day one and be ignored from then on.
+- **new** — **the drill-in**: *All news & features* opens **About → News & features**, which carries the stream in full, the same chips, and the forty-two features from before the catalogue was dated. Under it, **Follow it from your own dashboard** saves nextdash.cc as a bookmark so Fresh counts its posts — the product following its own feed, which is also the shortest demonstration of what Fresh is for.
+- **new** — **the site feed carries a summary** and ten items rather than five: the WordPress description, stripped of its markup and cut to 160 characters on a word boundary. Fetches are conditional now (`ETag` / `If-Modified-Since`) and the result is mirrored to `site-news.json` in the data directory, so a machine that reboots nightly does not go back out to the site every morning. `DISABLE_NEWS_FEED=true` switches it off server-wide, beside `DISABLE_TELEMETRY` and `DISABLE_UPDATE_CHECK`.
+- **new** — features carry the release they landed in (`since` in `overview-features.json`), which is what lets them take their place in a dated list. Seven are dated from the file's own history; the forty-two imported in one go stay undated on purpose rather than being guessed at, and sort to the drill-in. `npm run validate:overview-features` fails on a broken entry and reports the undated ones.
+- **fix** — the source labels sit in a column of one width. Every row is its own grid, so an `auto` first column sized itself per row — `nextdash.cc` is twice the width of `release` — and the titles started at a different place on almost every line. One fixed width, the label filling it, and a longer source name added later is clipped rather than shifting the list.
+- **fix** — the carousel is gone, and with it `stepOverviewFeature`, `repaintOverviewNewFeatures` and its keyboard handlers: a control that needed forty-eight clicks to show what it had was never going to be used, and nothing measured whether anyone tried.
+
+### Analytics
+
+- **fix** — **every number an event carries is now rounded into a band.** The privacy setting promises exactly that, and the two snapshots kept the promise while the action events did not: a bulk recheck reported `count: 37`, a health export `rows: 1274` — a figure more precise than the question needs, and on a small install a fingerprint. The rounding sits in `nextdashTrack()` itself, the one function every event passes through, so a new event cannot reintroduce an exact figure by forgetting to bucket it. Bands are 0, 1, 2, 5, 10, 25, 50, 100, `100+`; a page position and a walkthrough step are deliberately exempt, being small fixed ranges that describe nothing about a collection. Pinned by `npm run test:analytics-buckets`.
+
+### What's new
+
+- **new** — **a new version shows its release notes once, by itself.** The machinery has been in place for a long time — a release token in the stub, a "seen" stamp written when the modal closes, a prompt scheduled after onboarding — but nothing pinned it, and the manual said the opposite: *release notes never open by themselves*. It is a contract now, with a test: an install that last read an older release gets the notes on its next visit, closing them records the release, and no later visit reopens them. A browser meeting nextDash for the first time is exempt on purpose — quick start is running, and notes for a version that reader never used would be noise.
+
+### Fixes to the rebuild
+
+- **fix** — a **failing feed request now says so**. `/api/site-news` answering 500 came back in the same shape as a cleared setting, so the stream reported *Site news is switched off* to someone who had switched nothing off.
+- **fix** — **reading the stream marks it read.** The marker was written to storage but not to the page, so the green dots came back on every repaint and the count on Overview kept its first number until a reload. It is now set where the stream is drawn rather than where it is fetched — loading it from the Privacy switch or from About no longer clears dots for a page nobody looked at — and it moves after the render, so the dots stay visible on the pass that draws them.
+- **fix** — **About → News & features is addressable.** The tab was in the sub-tab state map but not in the list of tabs that can appear in the address, so `#config/about/news` opened the colophon and choosing the tab never reached the hash — the one sub-tab in config that could not be linked to or remembered.
+- **fix** — the drill-in **fills itself when opened directly.** The stream repaints the overview when it lands; About had no such repaint, so going straight there left "Loading…" on screen until an unrelated render happened along.
+- **fix** — a post's summary was **unescaped twice**, so a post about `&amp;lt;script&amp;gt;` showed `<script>` — the text it quoted rather than the text it wrote. The unused `encoded` field went with it.
+- **fix** — the carousel left **78 lines of CSS** and seven locale strings behind, and the preview card a `wants()` nobody called.
+
+### Locales
+
+- **fix** — **765 unreachable strings removed from all four locale files**, out of about 5,500: everything left behind by panels, buttons and whole views that had been rewritten. Found with a new `npm run validate:locale-unused`, which is deliberately conservative — a key counts as reachable when its name appears anywhere in the source, when it fits a template a call site builds (`t(\`config.${field}Label\`)`), or when it belongs to a family looked up by a value, like a theme id or a layout preset. Two more checks keep it that way: `validate:locale-parity` fails if the four files stop carrying the same keys, and a spec walks every config section and sub-tab, plus health and inbox, failing on any text that reads as an identifier rather than a sentence.
+- **fix** — **the 199 strings the feature catalogue reaches came back.** The scanner skipped every directory called `data` — meant for the runtime one, which says nothing about the source — and took `static/data` with it, where `overview-features.json` names four locale keys per feature and is the only place they appear. They were reported as unreachable and removed, which left **About → News & features** drawing all fifty features from their English fallbacks in Dutch, German and French. The skip is by path now, and the three checks that would have caught it — the catalogue, locale parity, duplicate keys — run in CI rather than only when someone remembers them.
+
+### Menus
+
+- **fix** — **the Pin entry in the context menus is drawn, not typed.** Every other entry is a glyph tinted with the accent colour — `⧉`, `✎`, `→`, `◉` — and Pin was 📌, painted by the system font in its own red and yellow on every theme, and deaf to the red a destructive row is given. It is a small SVG in `currentColor` now, shared by the grid's menu and the config list's through `js/shared/menu-icons.js`, which is also the only place markup is ever assigned into a menu's icon slot. The pin on a config row and the paste-choice card still carry the emoji: they are labels rather than menu entries, and are left for a separate pass.
+
+### The bookmark form
+
+- **new** — **the add/edit form is two columns on a window wide enough for them.** Eleven fields stacked at full width made it 735 pixels tall to add and 763 to edit; a 1366×768 laptop leaves about 660 once the browser has taken its share, so the form scrolled and the save row sat below the fold on the machine most people use. The fields fall into two groups of nearly equal height — what the bookmark is (name, address, icon, note) and where it goes and how it is watched (page, category, tags, shortcut, pinned, availability) — and side by side the dialog comes to **435 pixels**, adding or editing alike, which fits a 640-pixel window with room over. The columns are real elements, so Tab still runs down one and then the other; below 860 pixels of window they dissolve and the single column returns unchanged.
+- **new** — **the form explains itself without printing the explanations.** Pinned and the three availability pills say what they are, not what they do, and their descriptions lived in a hover title and behind an info button — no use at all on a touch screen. Each now opens a bubble on hover, on focus and on tap: Pinned says what pinning does, a mode pill describes that mode, and the **i** names the choice and describes the mode currently set. A screen reader gets the same sentence whether or not the bubble is open.
+- **fix** — **a warning no longer moves the form.** Every message the form could show — a shortcut already in use, a letter the grid also claims, *Name is required*, *Valid URL required* — appeared under its field as you typed and pushed everything below it down. On an empty Add form one keystroke in the name was enough to make the address complain and shift the column by nineteen pixels. They are all the same bubble now, in the error colour, with the field keeping its red border, and they open only once a field has been used or a save has been refused — the form no longer greets you by pointing out that you have not filled it in yet. Each message is a live region, so a screen reader still hears it as it appears.
+- **new** — **a phone gets the short form.** Icon and Note are hidden below a fine pointer: four buttons for a favicon that is fetched from the page anyway, and a textarea under a keyboard that covers half the screen. They are hidden rather than dropped, so editing a bookmark on a phone leaves the note and the icon it already had exactly as they were. The two columns are a fine-pointer layout too — a landscape phone is nearly 950 pixels wide and is still a phone, where one column you scroll beats two you pinch at.
+- **fix** — adding a bookmark starts in the **address** field rather than the name. The address is the one thing only you can supply; the name usually arrives with the page title. Editing still starts on the name, which is what is nearly always being changed.
+
+### Your data
+
+- **fix** — **an import that carried no bookmark page emptied the library.** Committing an import deletes every bookmark page the archive does not name, so a ZIP of unrelated-but-valid files — settings, themes, icons — cleared `data/` and still answered `200`. An archive with no `bookmarks-*.json` in it is refused now, before anything is replaced.
+- **fix** — **merging duplicates could delete a bookmark that was not part of the merge.** Two identical source refs were both validated against the pre-merge snapshot and then removed one after the other from a slice that had already shifted, so the second delete took an innocent neighbour — and the keeper's open count was added twice.
+- **fix** — **a failed delete left the page holding every removed bookmark twice.** The error path re-inserted bookmarks that the save had already rolled back; it restores the pre-delete copy instead. The inline editor had the same gap the comment above it already promised was closed: a write that failed still recorded a trash entry, still said *deleted*, and offered an undo that made a real duplicate. The tag filter's rollback repairs `allBookmarks` too, having no snapshot of its own.
+- **fix** — a save from a tab that was open before a bookmark started failing no longer erases the **down since** history: `BrokenSince` is carried across the save beside `LastError`.
+
+### Access
+
+- **fix** — **the data directory is no longer served whole.** `/data/` was a plain file server over the data directory, directory listings included: `settings.json`, every `bookmarks-N.json`, `inbox.json`, `trash.json`, `health-history.json` and the automatic backup ZIPs could be read without the write token, while `/api/backup` hands out that same content only behind it. Only `data/icons/` and an uploaded favicon or font are served now. Icons are content-named and never reused, so they go out `immutable` on the way past — they had no cache header at all, and there is one per bookmark.
+- **fix** — **the trash validates what it takes in.** A restore splices the stored bookmark straight back onto its page, so trash-then-restore was the one route that could keep a `javascript:` URL, a private address with *allow localhost bookmarks* off, or a client-chosen icon path — the hole the inbox closed for itself a release ago.
+- **fix** — **listing and downloading an automatic backup need the write token**, the way running, restoring and deleting one already did. Both client paths already carried it.
+- **fix** — `/api/health/check-url` applies the SSRF rate limit every sibling that fetches a caller-supplied URL applies. On the default install there is no write token, so that limit was the only thing in front of it.
+- **fix** — an `X-Forwarded-For` value that is not an address can no longer become a rate-limiter key.
+- **fix** — **Send test alert worked on an install with a write token.** The button did not go through the token-carrying fetch, so its handler answered a flat `401` — on exactly the installs most likely to be alerting on something.
+
+### Monitoring
+
+- **fix** — **outage alerts went silent on Pushover and browser push.** Alerts were dropped whenever no webhook URL was set, before a single transition was looked at — but Pushover is configured with an application token and a user key against a fixed endpoint and never sets that URL, and browser push is an independent sink reached before the webhook target is read at all. So an operator who picked the preset for which the config UI does not even render a URL field, or who only switched push on, got no alert for an outage of any length. **Send test alert** does not pass through that gate, so the setup looked correct. It is gated on the sinks that actually resolve now.
+
+### Keyboard
+
+- **fix** — **`,`, `+` and `&` can be typed again.** The three shortcuts sat above the printable-character branches without the *not while searching* guard the key right below them already had, so they could never reach a search field, a filter, or a `:new https://x/?a=1&b=2` command — where `&` opened the quick-add omnibox on top of the command palette.
+- **fix** — **`:columns` no longer strips a view of its layout.** It assigned the grid's class list outright, and that element is shared with inbox, health and config: running the command over one of those took its layout class with it, and on the grid it dropped the density, layout and packed/masonry classes. It goes through the sync helper that guards exactly this.
+- **fix** — **Tab no longer stops at the wrap-around.** The focus trap tried to focus the search overlay's clear button, which carries `[hidden]` while the query is empty — a silent no-op, after the trap had already swallowed the key.
+- **fix** — **`g` + a digit lands on the first row that is really there.** It jumped to the first row in document order, so with a category's first bookmark filtered out the jump aborted without a word.
+
+### Browser extension
+
+- **fix** — a duplicate lookup that rejected — a proxy error page, an auth redirect — surfaced as an unhandled rejection in the service worker, and neither the keyboard command nor the context-menu entry awaits it. Both routes have the badge as their only feedback, so a save that failed said nothing at all.
+- **fix** — one shared hide timer for the popup's message. Each message set its own without cancelling the last, so a *saved* shown five seconds after an error vanished a tenth of a second later.
+- **fix** — an IPv6 host was bracketed twice — `[[::1]]:8080` — so the extension's duplicate key never matched the server's, which is what the comment above it says it does.
+- **fix** — the shared bookmark form's preview module is back in step with the dashboard copy; the two are required to be identical and the extension's had stayed behind by a feed line.
+
+### Speed
+
+- **fix** — **the font preload never reached the page.** It sat inside the block the CSS bundle replaces with a single `<link>`, so `rel="preload"` appeared zero times in the served HTML and the font was discovered only after the stylesheet had downloaded and parsed.
+- **fix** — **packed masonry reads every height, then writes every span.** Interleaving the two forced a full grid re-layout per category on every render — and continuously while the window was being dragged. The measurements are unchanged; only their order is.
+- **fix** — bookmark and category icons decode off the main thread. One synchronous favicon decode per row during paint is visible jank on a large page; the preview card already did this.
+- **fix** — the generated theme stylesheet is built in a buffer. Around 150 blocks appended one at a time reallocated and copied the whole 76 KB string on every append, on every dashboard load.
+
+### Under the hood
+
+- **fix** — **the inbox's newest-first order is stable**, with insertion order as the tiebreak. Timestamps have millisecond resolution, so items written in the same millisecond — a seeded inbox, an import, a batch the extension replays — sorted differently from one read to the next, and at capacity the trim evicted whichever tied item happened to fall last rather than the one added first.
+- **fix** — two leaks: the rate limiter kept an entry for every client address seen since boot, and a host looked up once and never revisited kept its pinned IP for the life of the process. Both are swept opportunistically, under a lock that is already held.
+- **fix** — a capture that pushed the inbox past its cap stranded one favicon in `data/icons/` per capture. The evicted items are returned precisely so the caller can clean up their icons, and the caller was dropping the list.
+- **fix** — naming an automatic backup is bounded. A permission or I/O error made every candidate name look taken, and the loop only ended on *file does not exist* — spinning forever while holding the lock restore and delete also need.
+- **fix** — the first update check runs inside its own goroutine, where every other scheduler in the tree already runs it. Called before the listener started, it held boot for the full ten-second timeout whenever egress to `api.github.com` is blocked — long enough to fail a container health check.
+- **fix** — `Vary` is added rather than set, so the `Accept-Encoding` the compression middleware had just written survives. The ETag is computed over the uncompressed body, so a shared cache in front could otherwise hand gzipped bytes to a client that never asked for them.
+- **fix** — the asset-hash generator writes formatted Go, and the twelve assets these fixes touched carry their new hash. On a production build the map is read from the embed rather than recomputed, so a returning browser would have been handed the URL it already had cached and gone on running the old JavaScript.
+
+### Docs
+
+- **new** — **the audit is written down where someone would look for it.** The protected-endpoint table names the automatic-backup routes and the health view's check-a-URL; the self-hosting section says what `/data/` publishes and what it no longer does; Data & backups says an archive with no bookmark page in it is refused, and the trash section says what is checked on the way in. Config → **Help** carries the same three points, in all four languages.
+- **new** — **README and MANUAL describe what is actually measured.** The analytics section had been written before the content snapshot, the walkthrough and tip events, Fresh, category spreading, right-click menus, and two thirds of what Health reports; all of it is listed now, alongside the fact that a bookmark can also be opened from the health view. The claim that counts are bucketed is true again — see above. The inline-editor passages in both files described a full-page blur that no longer exists, the search filters left out `status:feed`, `Shift + V` was still documented as a toggle rather than the pinned card it opens, and Config → Statistics was described as it stood before v1.3.1.
 
 ## v1.3.2 — 21 August 2026
 

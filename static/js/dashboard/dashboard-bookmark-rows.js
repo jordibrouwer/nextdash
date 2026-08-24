@@ -515,6 +515,10 @@ class DashboardBookmarkRows {
                 iconImg.className = 'bookmark-icon';
                 iconImg.alt = '';
                 iconImg.loading = 'lazy';
+                // Off the main thread: one synchronous decode per favicon during
+                // paint is visible jank on a page with hundreds of rows. The
+                // preview card already does this.
+                iconImg.decoding = 'async';
                 iconImg.draggable = false;
                 iconImg.addEventListener('load', () => placeholder.remove());
                 iconImg.addEventListener('error', () => {

@@ -47,13 +47,28 @@ func pinHostAddrs(host string, addrs []netip.Addr) {
 	if host == "" || len(addrs) == 0 {
 		return
 	}
+	now := time.Now()
 	globalHostIPPin.mu.Lock()
 	defer globalHostIPPin.mu.Unlock()
+	// Entries were only ever dropped when the same host was looked up again, so
+	// a host resolved once and never revisited stayed pinned for the process
+	// lifetime. Swept here, under the lock we already hold.
+	if len(globalHostIPPin.entries) > hostIPPinSweepThreshold {
+		for pinned, entry := range globalHostIPPin.entries {
+			if pinned != host && now.After(entry.expires) {
+				delete(globalHostIPPin.entries, pinned)
+			}
+		}
+	}
 	globalHostIPPin.entries[host] = hostIPPinEntry{
 		addrs:   append([]netip.Addr(nil), addrs...),
-		expires: time.Now().Add(hostIPPinTTL),
+		expires: now.Add(hostIPPinTTL),
 	}
 }
+
+// hostIPPinSweepThreshold is the entry count above which pinHostAddrs drops
+// expired pins. High enough that a normal instance never sweeps.
+const hostIPPinSweepThreshold = 512
 
 func pinnedHostAddrs(host string) ([]netip.Addr, bool) {
 	host = normalizePinHost(host)

@@ -128,11 +128,19 @@ func (h *Handlers) captureToInbox(rawURL, title, source string) (InboxLink, erro
 	if maxItems <= 0 {
 		maxItems = 500
 	}
-	created, _, err := h.store.AddInboxLink(InboxLink{
+	created, evicted, err := h.store.AddInboxLink(InboxLink{
 		URL:    rawURL,
 		Title:  title,
 		Source: source,
 	}, settings.InboxDedupeUrls, maxItems)
+	// AddInboxLink hands back what the capacity trim dropped instead of cleaning
+	// up itself, because removeUnusedIconFile needs the store lock AddInboxLink
+	// still holds. Discarding the slice here stranded one favicon per capture
+	// once the inbox was at its cap -- exactly the leak the return value exists
+	// to prevent, and which AddInboxItem already handles.
+	for _, item := range evicted {
+		h.store.removeUnusedIconFile(item.Icon)
+	}
 	return created, err
 }
 

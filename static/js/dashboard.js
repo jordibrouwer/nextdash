@@ -86,6 +86,7 @@ class Dashboard {
             linkPreviewMode: 'hover',
             linkPreviewParts: null,
             linkPreviewHoverDelayMs: 250,
+            showSiteNews: true,
             categorySortModesMigrated: true,
             layoutPreset: 'default',
             layoutVersion: 'classic',

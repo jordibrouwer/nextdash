@@ -45,6 +45,20 @@ func (l *slidingWindowLimiter) allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	// Nothing ever removed a key, so every distinct client IP seen since boot
+	// kept a permanent map entry. Swept opportunistically while the lock is
+	// already held rather than from a goroutine, so an idle instance stays idle.
+	if len(l.events) > limiterSweepThreshold {
+		for k, v := range l.events {
+			if k == key {
+				continue
+			}
+			if len(v) == 0 || !v[len(v)-1].After(cutoff) {
+				delete(l.events, k)
+			}
+		}
+	}
+
 	list := l.events[key]
 	kept := list[:0]
 	for _, ts := range list {
@@ -60,6 +74,10 @@ func (l *slidingWindowLimiter) allow(key string) bool {
 	l.events[key] = kept
 	return true
 }
+
+// limiterSweepThreshold is the map size above which allow() drops keys whose
+// whole window has expired. High enough that a normal instance never sweeps.
+const limiterSweepThreshold = 1024
 
 func envIntPositive(name string, fallback int) int {
 	raw := strings.TrimSpace(os.Getenv(name))
@@ -86,9 +104,14 @@ func statusPingRequestsPerMinute() int {
 }
 
 func clientIP(r *http.Request) string {
+	// X-Forwarded-For is caller-controlled, so it is used only when it parses as
+	// an address. That does not make it trustworthy -- a client that sends a
+	// fresh valid IP per request still gets a fresh bucket -- but it does stop
+	// arbitrary strings from becoming limiter keys. Deciding whether to trust the
+	// header at all belongs in a trusted-proxy setting.
 	if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
 		parts := strings.Split(xff, ",")
-		if ip := strings.TrimSpace(parts[0]); ip != "" {
+		if ip := strings.TrimSpace(parts[0]); ip != "" && net.ParseIP(ip) != nil {
 			return ip
 		}
 	}

@@ -242,6 +242,9 @@ class DashboardData {
             if (typeof d.settings.updateCheckEnabled === 'undefined') {
                 d.settings.updateCheckEnabled = true;
             }
+            if (typeof d.settings.showSiteNews === 'undefined') {
+                d.settings.showSiteNews = true;
+            }
             if (typeof d.settings.packedColumns === 'undefined') {
                 d.settings.packedColumns = true;
             }

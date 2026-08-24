@@ -94,13 +94,18 @@ async function quickSaveBookmark(name, url) {
     return { ok: false, reason: 'resolve' };
   }
 
-  const dup = await findDuplicateBookmark(serverUrl, pageId, saveUrl);
-  if (dup) {
-    flashBadge('D', '#FFD600');
-    return { ok: false, reason: 'duplicate' };
-  }
+  try {
+    // Inside the try: findDuplicateBookmark can reject on a non-JSON body (a
+    // proxy error page, an auth redirect), and neither the command nor the
+    // context-menu caller awaits this promise -- so the failure surfaced as an
+    // unhandled rejection in the service worker and the user got no badge at
+    // all, which is the only feedback those two paths have.
+    const dup = await findDuplicateBookmark(serverUrl, pageId, saveUrl);
+    if (dup) {
+      flashBadge('D', '#FFD600');
+      return { ok: false, reason: 'duplicate' };
+    }
 
-    try {
     const { icon, previewTitle, previewDesc, previewImage } = extras;
     const res = await postAddBookmark(serverUrl, pageId, name, saveUrl, category, '', [], {
       icon,
