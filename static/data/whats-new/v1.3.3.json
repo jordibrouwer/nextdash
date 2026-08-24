@@ -30,6 +30,31 @@
       ]
     },
     {
+      "title": "Adding a bookmark",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The form fits on the screen.</strong> Eleven fields under each other made the dialog taller than a laptop browser leaves, so it scrolled and the save button sat out of sight. On a wide window they now sit in two columns — what the bookmark is on the left, where it goes and whether it is watched on the right — and the whole form is about 450 pixels tall."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>The controls explain themselves when you ask.</strong> Pinned and the three availability buttons were an icon and a single word, with the explanation in a tooltip you cannot reach on a touch screen. Point at one — or tap it, or reach it with the keyboard — and a small bubble says what it does; the availability one describes the setting you have chosen."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Warnings no longer push the form around.</strong> A shortcut already in use, a missing name, an address that is not one — each appeared under its field while you typed and moved everything below it. They are a bubble on the field now, and they wait until you have used the field rather than greeting you with what you have not filled in yet."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Adding starts in the address box.</strong> That is the one thing only you can supply — the name usually comes from the page itself."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>On a phone the form is shorter.</strong> The icon buttons and the note are left out — the favicon comes from the page anyway, and a note is not what a thumb is for. Editing a bookmark on a phone keeps the note and icon it already had."
+        }
+      ]
+    },
+    {
       "title": "Your bookmarks",
       "items": [
         {
