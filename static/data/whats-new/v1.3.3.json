@@ -2,7 +2,7 @@
   "tag": "v1.3.3",
   "date": "22 August 2026",
   "releasedAt": "2026-08-22",
-  "modalLead": "The overview, rebuilt. It answered \"what is new\" in three places at once — a panel showing one feature at a time out of forty-nine, a release summary repeating the line directly above it, and the project's own posts below both, out of sight on most screens. It is one list now, newest first, saying where each thing came from; what is in your own collection sits beside it.",
+  "modalLead": "The overview, rebuilt. It answered \"what is new\" in three places at once — a panel showing one feature at a time out of forty-nine, a release summary repeating the line directly above it, and the project's own posts below both, out of sight on most screens. It is one list now, newest first, saying where each thing came from; what is in your own collection sits beside it. The form for adding a bookmark was rebuilt for the same reason: it was taller than most screens, and now it fits.",
   "sections": [
     {
       "title": "The overview",

@@ -550,6 +550,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 ### Bookmarks
 
 - Metadata auto-fetch (title, description, preview image) when adding a URL
+- **The add/edit form is two columns** (**v1.3.3**) on a window wide enough for them — name, address, icon and note on one side, page, category, tags, shortcut, pinned and availability on the other. Stacked it was 735 px tall, more than a 1366×768 laptop leaves; side by side it is about 435. Pinned, the availability pills and every warning explain themselves in a bubble on the control instead of a line under it, so a shortcut clash no longer pushes the fields down as you type. On a phone the fields stay in one column and **Icon** and **Note** are hidden — hidden, not dropped, so editing there keeps what the bookmark already had
 - The preview card answers three questions in a fixed order: what the page is (favicon, title, one address, a status pill), what it says (image, description, your note, tags), and what you know about it (last check and ping, uptime, certificate expiry, Fresh count, opens and last opened, shortcut and location). Rows with nothing to say are left out, and none of it costs a request — the health figures come from the report the health icon already fetched
 - Flash animation on bookmark open — subtle ripple confirms the action was registered
 - Plain-text notes per bookmark — visible on the dashboard, in hover previews, and editable via command bar (`:note`), inline edit, or the config detail panel
