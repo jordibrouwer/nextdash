@@ -1343,12 +1343,20 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Tags, note and shortcut are part of the request because the CSV import
+	// sends them and always has. They were not part of this struct, so
+	// encoding/json dropped them on the floor: a spreadsheet round-trip lost
+	// every tag and every note it was meant to carry -- which is the reason
+	// MANUAL gives for using the CSV route over the browser file at all.
 	var request struct {
 		PageID    int `json:"pageId"`
 		Bookmarks []struct {
-			Name     string `json:"name"`
-			URL      string `json:"url"`
-			Category string `json:"category"`
+			Name     string   `json:"name"`
+			URL      string   `json:"url"`
+			Category string   `json:"category"`
+			Shortcut string   `json:"shortcut"`
+			Note     string   `json:"note"`
+			Tags     []string `json:"tags"`
 		} `json:"bookmarks"`
 	}
 
@@ -1425,6 +1433,11 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 			URL:      bm.URL,
 			Category: catID,
 			PageID:   request.PageID,
+			// Through the same normalisers every other write uses, so an
+			// imported row cannot hold a shape a typed one could not.
+			Shortcut: normalizeShortcut(bm.Shortcut),
+			Note:     strings.TrimSpace(bm.Note),
+			Tags:     normalizeTags(bm.Tags),
 		})) {
 			return
 		}
