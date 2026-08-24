@@ -2,6 +2,77 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureBookmarkFormColumnsTitle",
+      "titleFallback": "The add-bookmark form fits on the screen",
+      "whatKey": "config.overviewNewFeatureBookmarkFormColumnsWhat",
+      "whatFallback": "Eleven fields under each other made the form 735 pixels tall, more than a laptop browser leaves below its tabs — so it scrolled and the save button sat under the fold. On a wide window the fields sit in two columns now: what the bookmark is on the left, where it goes and whether it is watched on the right, about 435 pixels in all.",
+      "howKey": "config.overviewNewFeatureBookmarkFormColumnsHow",
+      "howFallback": "Add a bookmark with + or Shift+B. Pinned, the availability buttons and every warning explain themselves in a small bubble on the control, on hover, on focus or on tap — so a clashing shortcut no longer pushes the fields down as you type.",
+      "enableKey": "config.overviewNewFeatureBookmarkFormColumnsEnable",
+      "enableFallback": "Nothing to switch on. On a phone the fields stay in one column and Icon and Note are left out, keeping whatever the bookmark already had.",
+      "ctaKey": "config.overviewNewFeatureBookmarkFormColumnsCta",
+      "ctaFallback": "Open Bookmarks →",
+      "go": {
+        "view": "config",
+        "section": "bookmarks"
+      },
+      "since": "v1.3.3"
+    },
+    {
+      "titleKey": "config.overviewNewFeatureSiteNewsFeedTitle",
+      "titleFallback": "Posts from nextdash.cc, on your overview",
+      "whatKey": "config.overviewNewFeatureSiteNewsFeedWhat",
+      "whatFallback": "The project writes about what it ships. Those posts now sit in the overview's news stream beside the releases, so a dashboard you already open tells you what changed instead of you going to look.",
+      "howKey": "config.overviewNewFeatureSiteNewsFeedHow",
+      "howFallback": "Your server fetches the feed — the page never contacts another host, and nothing about you goes out with it. The chips above the stream hide the site's posts with one click if you would rather not see them.",
+      "enableKey": "config.overviewNewFeatureSiteNewsFeedEnable",
+      "enableFallback": "On by default, and Behavior → Privacy → Show posts from nextdash.cc switches it off entirely: the request is then never made. DISABLE_NEWS_FEED=true does the same for a whole server.",
+      "ctaKey": "config.overviewNewFeatureSiteNewsFeedCta",
+      "ctaFallback": "Open Privacy →",
+      "go": {
+        "view": "config",
+        "section": "behavior",
+        "behaviorTab": "privacy"
+      },
+      "since": "v1.3.3"
+    },
+    {
+      "titleKey": "config.overviewNewFeaturePreviewCardHealthTitle",
+      "titleFallback": "The hover card knows what nextDash knows",
+      "whatKey": "config.overviewNewFeaturePreviewCardHealthWhat",
+      "whatFallback": "A preview used to be the page's own title and description — the same thing any browser could show you. The card now adds what only this dashboard knows: when the link was last checked and how fast it answered, uptime over thirty days, a certificate about to expire, how many times you have opened it and when.",
+      "howKey": "config.overviewNewFeaturePreviewCardHealthHow",
+      "howFallback": "Hover a bookmark. Uptime and an expiring certificate show on hover, not only on a card you pinned with Shift+V — the health report is already loaded, so it costs no request.",
+      "enableKey": "config.overviewNewFeaturePreviewCardHealthEnable",
+      "enableFallback": "Appearance → Display → Link preview cards. A checklist decides which rows the card carries, so a reader who monitors nothing never sees a status row.",
+      "ctaKey": "config.overviewNewFeaturePreviewCardHealthCta",
+      "ctaFallback": "Open Link preview cards →",
+      "go": {
+        "view": "config",
+        "section": "appearance",
+        "appearanceTab": "display"
+      },
+      "since": "v1.3.2"
+    },
+    {
+      "titleKey": "config.overviewNewFeaturePreviewCardModesTitle",
+      "titleFallback": "Peek, pin, or turn the card off",
+      "whatKey": "config.overviewNewFeaturePreviewCardModesWhat",
+      "whatFallback": "Hovering gives you something to read: the card takes no pointer events and carries no buttons, so it never has to be chased. Shift+V pins one instead — it takes focus, carries Copy, Refresh and Edit, and closes on Escape.",
+      "howKey": "config.overviewNewFeaturePreviewCardModesHow",
+      "howFallback": "Three modes rather than a switch: Off, On hover, and Keyboard only for people who want what the card says without one appearing under the pointer. The hover delay starts calm at 250 ms, so a card does not open on rows you were only passing over.",
+      "enableKey": "config.overviewNewFeaturePreviewCardModesEnable",
+      "enableFallback": "Appearance → Display → Link preview cards, where the mode, the delay and the checklist sit together with a live sample.",
+      "ctaKey": "config.overviewNewFeaturePreviewCardModesCta",
+      "ctaFallback": "Open Link preview cards →",
+      "go": {
+        "view": "config",
+        "section": "appearance",
+        "appearanceTab": "display"
+      },
+      "since": "v1.3.2"
+    },
+    {
       "titleKey": "config.overviewNewFeatureNewsStreamTitle",
       "titleFallback": "One list for what the project is doing",
       "whatKey": "config.overviewNewFeatureNewsStreamWhat",

@@ -37,9 +37,16 @@ const (
 	// it. Read enough for the first handful of items and stop.
 	siteNewsMaxBytes = 512 << 10
 	siteNewsTimeout  = 8 * time.Second
-	// Posts appear a few times a month, so an hourly fetch would be almost all
-	// waste; six hours is fresh enough for a release announcement.
-	siteNewsTTL = 6 * time.Hour
+	// How long a fetched copy is served without asking again.
+	//
+	// Six hours was chosen against how often posts appear -- a few times a month
+	// -- and it made the overview lag a release announcement by most of a day.
+	// What it costs to ask is the thing that actually matters: the request is
+	// conditional, so the common answer is a 304 with no body, and it is made
+	// once per server rather than once per reader. Ninety minutes reads as
+	// "current" to someone opening config after lunch, and still asks fewer
+	// than twenty times a day.
+	siteNewsTTL = 90 * time.Minute
 	// A failed fetch is not retried immediately: a site that is down should not
 	// be hit on every config open.
 	siteNewsRetryAfter = 15 * time.Minute

@@ -196,8 +196,12 @@ class DashboardToolbar {
     /**
      * Whether the shortcut popovers may appear at all.
      *
-     * Default on: they are how the keys get discovered. Absent means never
-     * chosen, which is on — only an explicit false switches them off.
+     * Off unless switched on. They shipped on, were written into every stored
+     * settings file, and were turned off for everyone in 63ef3566 by migration
+     * rather than by changing a default — so what decides this is the stored
+     * value, and an install that has never chosen has `false` written in it.
+     * The `!== false` shape is kept for the one case it still covers: a
+     * settings file written before the key existed.
      */
     shortcutTooltipsEnabled() {
         return this.dash.settings?.showShortcutTooltips !== false;

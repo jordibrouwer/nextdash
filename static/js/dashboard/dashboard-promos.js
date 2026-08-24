@@ -66,6 +66,17 @@ class DashboardPromos {
         let delay = 900;
         if (options.afterOnboarding) delay = 600;
         else if (Number.isFinite(options.delay)) delay = options.delay;
+        else if (this.shouldShowWhatsNewPrompt()) {
+            // A release the reader has not seen: show it now rather than after
+            // the better part of a second. The 900ms was chosen for a prompt
+            // that might not appear at all, and on an upgraded install it read
+            // as the dashboard settling and then interrupting.
+            //
+            // The modal's own code is fetched on first open, so it is asked for
+            // here: the request overlaps the short wait instead of following it.
+            window.ensureWhatsNewLoaded?.();
+            delay = 120;
+        }
         if (options.resetAttempts === true) {
             d._postOnboardingPromptsAttempts = 0;
         }

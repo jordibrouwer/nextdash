@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.3.3.1 — 24 August 2026](#v1331--24-august-2026)
 - [v1.3.3 — 22 August 2026](#v133--22-august-2026)
 - [v1.3.2 — 21 August 2026](#v132--21-august-2026)
 - [v1.3.1 — 20 August 2026](#v131--20-august-2026)
@@ -173,6 +174,32 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.3.3.1 — 24 August 2026
+
+A hotfix. Four things that only worked with a mouse or did not work at all, and the overview's news arriving while it is still news.
+
+### Keyboard
+
+- **fix** — **a command with an argument could not be typed.** `searchActive` was set by `showSearch()`, which runs from the debounced `updateSearch()`, so for the first characters of a query the app still believed nothing was open — and every guard that reads it let a key through that belonged to the palette. In `:buttons cheatsheet` the `c` opened *add a category* and the `h` went into the name field it had just created, leaving `:buttons eatsheet`. The session is marked open at the first keystroke now, with the overlay still drawn at the debounce, so nothing on screen changes.
+- **fix** — **a space ran the highlighted row** instead of separating two words. The row takes focus and a focused row is a button, so `:buttons` + space applied the first entry. Space is text while a query is being typed; Enter still activates, which is the deliberate way in.
+- **fix** — **a category's ⋯ menu opens with the keyboard.** The button carries `aria-haspopup="menu"` and a handler for ArrowDown, but a bare arrow starts grid navigation from anywhere and that handler runs first, in capture — so the key moved the cursor into the bookmarks and took focus off the button on the way. The grid leaves the sort controls alone now.
+
+### Fixed
+
+- **fix** — **a page no longer jumps to where you once were.** `takeRememberedScroll` is named for consuming the offset and its comment says so; it only ever read it, leaving the entry in the Map and in `sessionStorage`. Every later visit to that page — from a tab, a shortcut, anywhere — landed halfway down with nothing on screen to explain it. It is taken from both stores now.
+- **fix** — **a release that changes only wording reaches the browser.** `/locales/` is requested with the app-version fingerprint appended precisely so a deploy makes the URL new — and `assetFingerprint()` hashed CSS and JS only. A release that rewrote text and added a key therefore served the old file from cache until something else happened to change: the rewritten line stayed as it was, and the new key came back empty. The translations are part of the fingerprint now, read from disk-then-embed the way they are served, with a test that fails if a wording-only edit leaves the token where it was.
+- **fix** — **the setting that marks rows which publish carries its ℹ.** It sat in the field map with a default and no explainer, so the panel offered to restore a default it never named. Four languages.
+
+### The overview's news
+
+- **new** — **the stream is refreshed while it is still news.** The server held its copy for six hours and the browser kept whatever it had for the whole session, so a post could go up and a dashboard that was open all day would not show it until a reload. The server's window is **90 minutes** and the browser refetches after **30**; the two are deliberately out of step, so a browser that asks halfway through still gets what the server has. Asking is nearly free — the fetch is conditional, so the common answer is a `304` with no body, once per server rather than once per reader.
+- **new** — **release notes open the moment a new version does.** The prompt was scheduled 900 ms after boot, chosen for a prompt that might not appear at all; on an upgraded install that read as the dashboard settling and then interrupting. When the release is unread the modal's own code is fetched at once and the notes open on the next tick.
+- **new** — **four more of what v1.3.2 and v1.3.3 added are in the stream**, each with a way straight to the setting: the rebuilt hover card and what it knows about a link, its three modes and the calm hover delay, the site's posts on the overview, and the two-column add form.
+
+### Tests
+
+- **fix** — **the suite was red on every shard, and most of it was the tests being behind.** Six files described a trend chart that moved into the tile row, three a feature carousel that no longer exists, three a button bar that was given its own tab, plus an overflow filter menu that went, a `templates/config.html` that was deleted, a CSV that gained a `reason` column, and an About that became a ninth section. Four specs depended on data another spec happened to leave behind, three raced the dashboard's own construction, and one seeded statistics onto a different row than it edited. All of them now pin what the product actually does — the five failures above are the ones that were pointing at something real.
 
 ## v1.3.3 — 22 August 2026
 

@@ -338,6 +338,16 @@ class DashboardConfig {
     }
 
     /** Which sub-tab list belongs to which section, and where it is stored. */
+    /**
+     * How long a loaded stream is reused before it is fetched again.
+     *
+     * Shorter than the server's ninety minutes on purpose: the two are not in
+     * step, so a browser that asks halfway through the server's window still
+     * gets what the server has, and picks up a new post at most half an hour
+     * after the server does.
+     */
+    static NEWS_STREAM_MAX_AGE_MS = 30 * 60 * 1000;
+
     static ABOUT_TABS = ['colophon', 'news'];
 
     static SUB_TAB_STATE = {
@@ -3592,8 +3602,25 @@ class DashboardConfig {
      * section, and it must not wait on a request to another website however
      * well the server caches it. The stream draws as "loading" and fills in.
      */
-    loadNewsStream() {
+    /**
+     * The stream, fetched once and then only when it has gone stale.
+     *
+     * Kept for the session was too long: config is opened and closed all day in
+     * the same tab, and the stream a reader saw at nine was still the one they
+     * saw at five — a release could ship and the overview would go on saying
+     * nothing had. The server holds its own copy for ninety minutes and answers
+     * conditionally, so asking again here is cheap and usually a 304.
+     *
+     * `force` is for the moments where the answer is known to have changed:
+     * switching the site's posts on or off.
+     */
+    loadNewsStream({ force = false } = {}) {
+        const age = Date.now() - (this._newsStreamLoadedAt || 0);
+        if (force || age > DashboardConfig.NEWS_STREAM_MAX_AGE_MS) {
+            this._newsStreamPromise = null;
+        }
         if (this._newsStreamPromise) return this._newsStreamPromise;
+        this._newsStreamLoadedAt = Date.now();
         const news = window.DashboardNewsStream;
         if (!news) {
             this._newsStream = [];
@@ -8286,7 +8313,7 @@ class DashboardConfig {
         statusRecheckIntervalMinutes: { info: ['statusRecheckIntervalInfoTitle', 'statusRecheckIntervalInfoMessage'], def: 5 },
         healthAutoRecheckEnabled: { info: ['healthRecheckInfoTitle', 'healthRecheckInfoMessage'], def: false },
         feedsEnabled: { info: ['feedsInfoTitle', 'feedsInfoMessage'], def: false },
-        feedsMarkQuiet: { def: false },
+        feedsMarkQuiet: { info: ['feedsMarkQuietInfoTitle', 'feedsMarkQuietInfoMessage'], def: false },
         healthAutoRecheckIntervalHours: { info: ['healthRecheckIntervalInfoTitle', 'healthRecheckIntervalInfoMessage'], def: 24 },
         skipFastPing: { info: ['skipFastPingInfoTitle', 'skipFastPingInfoMessage'], def: false },
         statusOfflineRetries: { info: ['statusOfflineRetriesInfoTitle', 'statusOfflineRetriesInfoMessage'], def: 3 },
@@ -10732,9 +10759,8 @@ class DashboardConfig {
                 // posts from it, on fetches them back. Without forgetting the
                 // promise, turning it back on would leave the overview saying
                 // there are no posts until config was reopened.
-                this._newsStreamPromise = null;
                 this._newsStream = undefined;
-                void this.loadNewsStream().then(() => this.repaintOverview());
+                void this.loadNewsStream({ force: true }).then(() => this.repaintOverview());
                 break;
             case 'feeds':
                 // Switching this on looks for feeds and polls once now, rather

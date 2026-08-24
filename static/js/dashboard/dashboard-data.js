@@ -814,19 +814,25 @@ class DashboardData {
             this.dash._pageScrollPositions?.delete(key);
             return 0;
         }
+        // Consumed from both stores, whichever one answered. The comment above
+        // has always said this and the code never did it: the offset stayed in
+        // the Map and in sessionStorage, so every later visit to that page --
+        // deliberate, from a tab, from a shortcut -- jumped to where you once
+        // left it, with nothing on screen explaining why.
         const stored = this.dash._pageScrollPositions?.get(key);
-        if (Number.isFinite(stored)) {
-            return stored;
-        }
-        // The Map is the fast path within one session; sessionStorage is what
-        // survives a reload or a trip through another view.
+        this.dash._pageScrollPositions?.delete(key);
+        let fromStorage = 0;
         try {
             const raw = sessionStorage.getItem(`${DashboardData.SCROLL_KEY_PREFIX}${key}`);
             const parsed = Number(raw);
-            return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+            fromStorage = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+            sessionStorage.removeItem(`${DashboardData.SCROLL_KEY_PREFIX}${key}`);
         } catch {
-            return 0;
+            fromStorage = 0;
         }
+        // The Map is the fast path within one session; sessionStorage is what
+        // survives a reload or a trip through another view.
+        return Number.isFinite(stored) ? stored : fromStorage;
     }
 
     _applyLoadedPageData(targetPageId, bookmarks, categories, options = {}) {

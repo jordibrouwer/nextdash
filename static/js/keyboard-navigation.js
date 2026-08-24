@@ -122,6 +122,18 @@ class KeyboardNavigation {
                 return;
             }
 
+            // A category's sort controls handle their own keys.
+            //
+            // The ⋯ button says `aria-haspopup="menu"`, which promises ArrowDown
+            // opens it, and it has a listener that does exactly that — but a bare
+            // arrow starts grid navigation from anywhere, and this handler runs
+            // first, in capture. So the key moved the cursor to the first
+            // bookmark and took focus off the button with it, and the listener
+            // never ran: the menu could only ever be opened by mouse.
+            if (e.target?.closest?.('.category-sort-controls')) {
+                return;
+            }
+
             if (typeof this.dashboard.isModalOpen === 'function' && this.dashboard.isModalOpen()) {
                 return;
             }
