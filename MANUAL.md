@@ -982,6 +982,8 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 
 ### Layout presets
 
+**A deploy is noticed by a fingerprint** of the app's own files, appended to every `/locales/` request so a release makes the URL new. Until **v1.3.3.1** it hashed CSS and JavaScript only, so a release that changed nothing but wording was served from the browser cache: rewritten text stayed as it was and a newly added line came back empty. The translations count towards it now.
+
 | Preset | Character |
 |--------|-----------|
 | **Default** | Classic multi-column grid |

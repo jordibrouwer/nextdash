@@ -188,6 +188,7 @@ A hotfix. Four things that only worked with a mouse or did not work at all, and 
 ### Fixed
 
 - **fix** — **a page no longer jumps to where you once were.** `takeRememberedScroll` is named for consuming the offset and its comment says so; it only ever read it, leaving the entry in the Map and in `sessionStorage`. Every later visit to that page — from a tab, a shortcut, anywhere — landed halfway down with nothing on screen to explain it. It is taken from both stores now.
+- **fix** — **a release that changes only wording reaches the browser.** `/locales/` is requested with the app-version fingerprint appended precisely so a deploy makes the URL new — and `assetFingerprint()` hashed CSS and JS only. A release that rewrote text and added a key therefore served the old file from cache until something else happened to change: the rewritten line stayed as it was, and the new key came back empty. The translations are part of the fingerprint now, read from disk-then-embed the way they are served, with a test that fails if a wording-only edit leaves the token where it was.
 - **fix** — **the setting that marks rows which publish carries its ℹ.** It sat in the field map with a default and no explainer, so the panel offered to restore a default it never named. Four languages.
 
 ### The overview's news

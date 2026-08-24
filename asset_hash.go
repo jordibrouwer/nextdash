@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -188,6 +189,13 @@ func lazyAssetMapJSON() string {
 // assetFingerprint is a single hash over every static asset the pages load. It
 // replaces the hand-maintained sharedAssetVersions struct as the input to the
 // app-version token, so a running page still detects that a deploy happened.
+//
+// The translations are part of it. ConfigLanguage appends this token to every
+// /locales/ request precisely so a deploy makes the URL new, and its comment
+// says the fingerprint changes whenever any asset does -- but it was CSS and JS
+// only, so a release that changed nothing but wording served the old strings
+// from the browser cache for a day: a new key came back empty, and text that
+// had been rewritten stayed as it was.
 func assetFingerprint() string {
 	paths := hashedAssetPaths()
 	h := sha256.New()
@@ -197,7 +205,50 @@ func assetFingerprint() string {
 		io.WriteString(h, assetHash(p))
 		io.WriteString(h, "\n")
 	}
+	for _, name := range localeFingerprintFiles() {
+		io.WriteString(h, name)
+		io.WriteString(h, ":")
+		io.WriteString(h, localeFileHash(name))
+		io.WriteString(h, "\n")
+	}
 	return hex.EncodeToString(h.Sum(nil)[:8])
+}
+
+// localeFingerprintFiles lists the translation files, sorted, from wherever they
+// are actually served -- the same disk-then-embed order LocaleFile uses.
+func localeFingerprintFiles() []string {
+	var names []string
+	if entries, err := os.ReadDir("locales"); err == nil {
+		for _, e := range entries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+				names = append(names, e.Name())
+			}
+		}
+	}
+	if len(names) == 0 && assetHashSources.embedded != nil {
+		if entries, err := fs.ReadDir(assetHashSources.embedded, "locales"); err == nil {
+			for _, e := range entries {
+				if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+					names = append(names, e.Name())
+				}
+			}
+		}
+	}
+	sort.Strings(names)
+	return names
+}
+
+// localeFileHash is the content hash of one translation file, read the same way.
+func localeFileHash(name string) string {
+	data, err := os.ReadFile(filepath.Join("locales", filepath.Base(name)))
+	if err != nil && assetHashSources.embedded != nil {
+		data, err = fs.ReadFile(assetHashSources.embedded, path.Join("locales", name))
+	}
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:6])
 }
 
 // hashedAssetPaths lists every css/js asset under static/, sorted so the

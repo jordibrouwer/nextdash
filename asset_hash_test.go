@@ -115,6 +115,33 @@ func TestAssetFingerprintTracksAnyAsset(t *testing.T) {
 	}
 }
 
+// The translations are asked for with this token appended, so a release that
+// changes nothing but wording has to move it -- otherwise the browser serves
+// yesterday's strings and a key added today comes back empty.
+func TestAssetFingerprintTracksTranslations(t *testing.T) {
+	withDiskAssets(t, map[string]string{"js/a.js": "a"})
+
+	if err := os.MkdirAll("locales", 0755); err != nil {
+		t.Fatalf("mkdir locales: %v", err)
+	}
+	localeFile := filepath.Join("locales", "en.json")
+	if err := os.WriteFile(localeFile, []byte(`{"config":{"a":"one"}}`), 0644); err != nil {
+		t.Fatalf("seed locale: %v", err)
+	}
+
+	before := assetFingerprint()
+	if before == "" {
+		t.Fatal("fingerprint is empty")
+	}
+
+	if err := os.WriteFile(localeFile, []byte(`{"config":{"a":"two"}}`), 0644); err != nil {
+		t.Fatalf("rewrite locale: %v", err)
+	}
+	if after := assetFingerprint(); after == before {
+		t.Fatal("fingerprint unchanged after a translation edit; the browser would keep the old strings")
+	}
+}
+
 // Every lazily-loaded script must exist, or its loader silently falls back to an
 // unversioned URL — the exact staleness this system removes.
 func TestLazyLoadedAssetsExist(t *testing.T) {
