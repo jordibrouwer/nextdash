@@ -1,0 +1,34 @@
+{
+  "tag": "v1.3.3.2",
+  "date": "24 August 2026",
+  "releasedAt": "2026-08-24",
+  "modalLead": "A font size you could not pick with a mouse, and the Unraid template pointing at an icon that was not there.",
+  "sections": [
+    {
+      "title": "Fixed",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Choosing a font size works with a mouse again.</strong> Hovering a size shows it on the dashboard behind the panel — but the panel was reading the same size, so the button grew, slid out from under the pointer, reverted, and slid back: ten enter-and-leave pairs in a row and never a click. The panel now holds its own scale while you are trying the sizes out, and takes the new one when you choose. The keyboard and touch were never caught by it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The Unraid template shows its icon.</strong> It pointed at a file that is not in the repository, so Community Applications drew the entry blank. It also links to nextdash.cc now rather than to the source, and carries the fifth screenshot."
+        }
+      ]
+    },
+    {
+      "title": "The overview's news",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Posts from the site keep their place.</strong> The list is in date order, so a day with two releases in it filled all six rows with version news and pushed the project's own posts off the page — the day after they went up, which is when you would look. Two of the six are kept for them now."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Trying a font size is in the list</strong>, with a way straight to Appearance."
+        }
+      ]
+    }
+  ]
+}
