@@ -25,13 +25,13 @@ func TestHealthPageRedirectsToHash(t *testing.T) {
 func TestHealthPageRedirectMapsLegacyQueryParams(t *testing.T) {
 	t.Parallel()
 	cases := map[string]string{
-		"/health?filter=broken":           "/?hv_filter=broken#health",
-		"/health?q=example":               "/?hv_q=example#health",
-		"/health?sort=name":               "/?hv_sort=name#health",
-		"/health?refresh=1":               "/?hv_refresh=1#health",
-		"/health?page=2":                  "/?page=2#health",
-		"/health?id=1%3A4":                "/?hv_id=1%3A4#health",
-		"/health?filter=stale&id=1%3A0":   "/?hv_filter=stale&hv_id=1%3A0#health",
+		"/health?filter=broken":         "/?hv_filter=broken#health",
+		"/health?q=example":             "/?hv_q=example#health",
+		"/health?sort=name":             "/?hv_sort=name#health",
+		"/health?refresh=1":             "/?hv_refresh=1#health",
+		"/health?page=2":                "/?page=2#health",
+		"/health?id=1%3A4":              "/?hv_id=1%3A4#health",
+		"/health?filter=stale&id=1%3A0": "/?hv_filter=stale&hv_id=1%3A0#health",
 	}
 	for path, want := range cases {
 		path, want := path, want

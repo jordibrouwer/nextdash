@@ -100,10 +100,10 @@ func TestNormalizeRandomThemeMode(t *testing.T) {
 
 func TestNormalizeLegacyThemeID(t *testing.T) {
 	cases := map[string]string{
-		"forest":      "forest-moss-dark",
-		"forest-moss": "forest-moss-dark",
-		"neon-grid":   "neon-grid-dark",
-		"":            "dark",
+		"forest":          "forest-moss-dark",
+		"forest-moss":     "forest-moss-dark",
+		"neon-grid":       "neon-grid-dark",
+		"":                "dark",
 		"moss-stone-dark": "moss-stone-dark",
 	}
 	for in, want := range cases {

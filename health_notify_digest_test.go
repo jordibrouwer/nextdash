@@ -22,7 +22,7 @@ func downNotifications(n int) []monitorNotification {
 	out := make([]monitorNotification, 0, n)
 	for i := 0; i < n; i++ {
 		out = append(out, monitorNotification{
-			Event: "down", Name: string(rune('A'+i)), URL: "https://x.example",
+			Event: "down", Name: string(rune('A' + i)), URL: "https://x.example",
 			Status: "offline", Error: "HTTP 503", At: 1, Failures: 3,
 		})
 	}

@@ -13,9 +13,9 @@ import (
 // send.
 func TestFirstHTTPURLReadsEveryShareShape(t *testing.T) {
 	cases := []struct {
-		name              string
-		url, text, title  string
-		want              string
+		name             string
+		url, text, title string
+		want             string
 	}{
 		{"url field", "https://example.com/a", "", "", "https://example.com/a"},
 		{"url in text", "", "https://example.com/b", "", "https://example.com/b"},
