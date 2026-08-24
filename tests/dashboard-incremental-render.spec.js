@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 
 test.describe('dashboard incremental DOM', () => {
     test.beforeEach(async ({ page }) => {

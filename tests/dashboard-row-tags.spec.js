@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, dismissBlockingOverlays, dismissOnboardingIfPresent, resetDashboardData } = require('./e2e-helpers');
 
 /**

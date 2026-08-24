@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 
 test.describe('dashboard side rail discoverability (D7)', () => {
     test('shows legend and beside-rail hints when side-left is active', async ({ page }) => {

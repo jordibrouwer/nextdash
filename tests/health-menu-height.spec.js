@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, prepareDashboardInteraction } = require('./e2e-helpers');
 
 /** The icon-prefetch overlay covers the view while a fresh install seeds icons. */

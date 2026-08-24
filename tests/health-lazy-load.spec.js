@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 
 /**
  * dashboard-health.js and its helpers are fetched on first open rather than on

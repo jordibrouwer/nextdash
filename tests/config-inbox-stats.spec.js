@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays } = require('./e2e-helpers');
 
 // Verifies the config view's Statistics → Inbox tab: snapshot counts from

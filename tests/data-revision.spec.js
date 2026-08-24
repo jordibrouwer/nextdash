@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 
 test.describe('data revision API', () => {
     test('revision changes after bookmark write and dashboard picks it up', async ({ page }) => {

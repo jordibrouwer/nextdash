@@ -1,7 +1,7 @@
 // @ts-check
 const fs = require('fs');
 const path = require('path');
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const { dismissOnboardingIfPresent, dismissBlockingOverlays, waitForConfigReady } = require('./e2e-helpers');
 
 /**

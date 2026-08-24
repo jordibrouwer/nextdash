@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const { markWhatsNewSeen, prepareDashboardInteraction, WRITE_TOKEN } = require('./e2e-helpers');
 
 const writeHeaders = { 'X-NextDash-Token': WRITE_TOKEN };
