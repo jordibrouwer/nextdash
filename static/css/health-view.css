@@ -944,16 +944,26 @@ button.health-view-tile:hover {
     cursor: pointer;
 }
 
-.health-view-retest-btn[disabled] {
+.health-view-retest-btn[disabled],
+.health-view-fetch-previews-btn[disabled],
+.health-view-open-broken-btn[disabled] {
     opacity: 0.55;
     cursor: default;
 }
 
 /* Secondary weight: exporting is a side errand next to "Retest all", which is
-   the button this toolbar exists for. */
+   the button this toolbar exists for.
+   The three that appear on one filter only -- open the broken links, merge a
+   duplicate group, fetch the missing previews -- belong to this set too. They
+   had no rule at all, so each rendered as the browser's default grey button:
+   square, 2px outset, in a row of soft-cornered ones. Easy to miss, because
+   they are only on screen while their own filter is. */
 .health-view-export-btn,
 .health-view-history-export-btn,
 .health-view-rot-btn,
+.health-view-open-broken-btn,
+.health-view-merge-duplicates-btn,
+.health-view-fetch-previews-btn,
 .health-view-checkoff-btn {
     padding: 0.35rem 0.7rem;
     border-radius: 0.4rem;
@@ -966,7 +976,10 @@ button.health-view-tile:hover {
 
 .health-view-export-btn:hover,
 .health-view-history-export-btn:hover,
-.health-view-rot-btn:hover {
+.health-view-rot-btn:hover,
+.health-view-open-broken-btn:hover:not([disabled]),
+.health-view-merge-duplicates-btn:hover,
+.health-view-fetch-previews-btn:hover:not([disabled]) {
     border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
     color: var(--accent-primary);
 }
@@ -2370,6 +2383,9 @@ body[data-layout-version="modern"] .health-view-action-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-export-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-history-export-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-rot-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-open-broken-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-merge-duplicates-btn:focus-visible,
+body[data-layout-version="modern"] .health-view-fetch-previews-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-checkoff-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-retest-btn:focus-visible,
 body[data-layout-version="modern"] .health-view-search-input:focus-visible,
@@ -2446,6 +2462,9 @@ body[data-layout-version="modern"] .health-view-filter-btn.is-active {
    one shape here rather than pinning each to its own radius. */
 body[data-layout-version="modern"] .health-view-export-btn,
 body[data-layout-version="modern"] .health-view-rot-btn,
+body[data-layout-version="modern"] .health-view-open-broken-btn,
+body[data-layout-version="modern"] .health-view-merge-duplicates-btn,
+body[data-layout-version="modern"] .health-view-fetch-previews-btn,
 body[data-layout-version="modern"] .health-view-checkoff-btn,
 body[data-layout-version="modern"] .health-view-bulk-monitor-btn,
 body[data-layout-version="modern"] .health-view-bulk-periodic-btn {
@@ -2459,6 +2478,9 @@ body[data-layout-version="modern"] .health-view-bulk-periodic-btn {
 
 body[data-layout-version="modern"] .health-view-export-btn:hover,
 body[data-layout-version="modern"] .health-view-rot-btn:hover,
+body[data-layout-version="modern"] .health-view-open-broken-btn:hover:not([disabled]),
+body[data-layout-version="modern"] .health-view-merge-duplicates-btn:hover,
+body[data-layout-version="modern"] .health-view-fetch-previews-btn:hover:not([disabled]),
 body[data-layout-version="modern"] .health-view-bulk-monitor-btn:hover,
 body[data-layout-version="modern"] .health-view-bulk-periodic-btn:hover {
     background: color-mix(in srgb, var(--accent-primary) 8%, transparent);

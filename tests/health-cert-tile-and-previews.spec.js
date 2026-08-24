@@ -66,6 +66,36 @@ test.describe('the certificates tile', () => {
     });
 });
 
+/*
+ * The three buttons that appear on one filter only had no CSS rule at all, so
+ * each rendered as the browser's default grey button -- square, 2px outset --
+ * in a row of soft-cornered ones. Nobody saw it because they are on screen only
+ * while their own filter is, which is also why a visibility check would not
+ * have caught it: the button was there, it just did not look like a button of
+ * this toolbar.
+ */
+test.describe('the filter-specific buttons', () => {
+    test('look like the toolbar buttons beside them', async ({ page }) => {
+        await openHealth(page);
+
+        const shapeOf = (selector) => page.evaluate((sel) => {
+            const el = document.querySelector(sel);
+            if (!el) return null;
+            const c = getComputedStyle(el);
+            return [c.paddingTop, c.paddingLeft, c.borderTopWidth, c.borderTopStyle,
+                c.borderTopLeftRadius, c.fontSize].join('|');
+        }, selector);
+
+        // Rot report is a plain member of the secondary set; it is the yardstick.
+        const reference = await shapeOf('.health-view-rot-btn');
+        expect(reference).not.toBeNull();
+
+        await page.click('[data-health-filter="missing-preview"]');
+        await expect(page.locator('.health-view-fetch-previews-btn')).toBeVisible();
+        expect(await shapeOf('.health-view-fetch-previews-btn')).toBe(reference);
+    });
+});
+
 test.describe('the missing-preview filter', () => {
     test('offers the one action that can empty it', async ({ page }) => {
         let refreshCalls = 0;
