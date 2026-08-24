@@ -4352,6 +4352,28 @@ class DashboardConfig {
             </div>
 
             <div class="config-panel">
+                <h3 class="config-panel-title">${esc(this.t('config.starsSectionTitle', 'GitHub stars'))}</h3>
+                <p class="config-panel-note">${esc(this.t('config.starsDescription', 'Import the repositories you starred, with their description and language. Needs a personal access token; nextDash only ever reads.'))}</p>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-stars-token">${esc(this.t('config.starsTokenLabel', 'Personal access token'))}</label>
+                    <input type="password" id="config-stars-token" class="config-text" autocomplete="off" spellcheck="false"
+                        placeholder="${esc(this.t('config.starsTokenPlaceholder', 'ghp_…'))}">
+                    <p class="config-field-hint" id="config-stars-token-note"></p>
+                </div>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-stars-category">${esc(this.t('config.starsCategoryLabel', 'Category for imported stars'))}</label>
+                    <input type="text" id="config-stars-category" class="config-text" autocomplete="off"
+                        placeholder="${esc(this.t('config.starsCategoryPlaceholder', 'GitHub'))}">
+                </div>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-backup-action="stars-save">${esc(this.t('config.starsSaveBtn', 'Save token'))}</button>
+                    <button type="button" class="config-btn" data-backup-action="stars-run">${esc(this.t('config.starsRunBtn', 'Import stars…'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-backup-action="stars-forget">${esc(this.t('config.starsForgetBtn', 'Forget token'))}</button>
+                </div>
+                <p class="config-panel-note" id="config-stars-status"></p>
+            </div>
+
+            <div class="config-panel">
                 <h3 class="config-panel-title">${esc(this.t('config.settingsSection', 'Settings'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.settingsExportDescription', 'Move just your settings between instances as a JSON file.'))}</p>
                 <div class="config-actions">
@@ -5410,6 +5432,12 @@ class DashboardConfig {
         bindFileInput('#config-csv-import-input', this.importBookmarksCSV);
         bindFileInput('#config-settings-import-input', this.importSettings);
 
+        // Whether a token is saved, and what the last round did. Read here
+        // rather than rendered into the panel, because the panel is built from
+        // settings the browser already has and this is the one thing on it that
+        // only the server knows.
+        if (container.querySelector('#config-stars-token-note')) void this.loadStarsSource();
+
         container.querySelectorAll('[data-backup-toggle]').forEach((input) => {
             input.addEventListener('change', () => this.setBackupToggle(input.getAttribute('data-backup-toggle'), input.checked));
         });
@@ -5427,6 +5455,9 @@ class DashboardConfig {
             case 'download': this.downloadFullBackup(); break;
             case 'run': void this.runBackupNow(); break;
             case 'import': document.getElementById('config-import-input')?.click(); break;
+            case 'stars-save': void this.saveStarsSource(); break;
+            case 'stars-run': void this.runStarsSource(); break;
+            case 'stars-forget': void this.forgetStarsSource(); break;
             case 'html-export': void this.exportBookmarksHTML(); break;
             case 'csv-export': void this.exportBookmarksCSV(); break;
             case 'browser-import': document.getElementById('config-browser-import-input')?.click(); break;
@@ -5781,6 +5812,141 @@ class DashboardConfig {
      * so the number the reader agrees to is the number that will be written,
      * and it can say how many are already here — which a total never could.
      */
+    /*
+     * GitHub stars: a token, a category, and a round that asks before it writes.
+     *
+     * The token field is write-only by design. The server answers with hasToken
+     * rather than the token itself, so there is nothing to prefill and an empty
+     * field means "leave it as it is" -- which is why saving a category cannot
+     * silently sign the reader out of their own source.
+     */
+    get starsSourceId() { return 'github:stars'; }
+
+    async loadStarsSource() {
+        const note = document.getElementById('config-stars-token-note');
+        const category = document.getElementById('config-stars-category');
+        if (!note) return;
+        try {
+            const res = await this.writeFetch('/api/sources');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const sources = await res.json();
+            const stars = (Array.isArray(sources) ? sources : []).find((s) => s.id === this.starsSourceId);
+            if (category && stars?.targetCategory) category.value = stars.targetCategory;
+            note.textContent = stars?.hasToken
+                ? this.t('config.starsTokenSet', 'A token is saved. Leave this empty to keep it.')
+                : this.t('config.starsTokenMissing', 'No token saved yet.');
+            this.renderStarsStatus(stars);
+        } catch {
+            note.textContent = '';
+        }
+    }
+
+    renderStarsStatus(source) {
+        const status = document.getElementById('config-stars-status');
+        if (!status) return;
+        if (source?.lastError) {
+            status.textContent = this.t('config.starsLastError', 'Last attempt failed: {e}')
+                .replace('{e}', source.lastError);
+            return;
+        }
+        if (source?.lastResult) {
+            status.textContent = this.t('config.starsLastRun', 'Last import: {r}')
+                .replace('{r}', source.lastResult);
+            return;
+        }
+        status.textContent = '';
+    }
+
+    async saveStarsSource() {
+        const token = document.getElementById('config-stars-token');
+        const category = document.getElementById('config-stars-category');
+        const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
+        try {
+            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(this.starsSourceId)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    kind: 'github-stars',
+                    label: 'GitHub stars',
+                    token: token?.value || '',
+                    targetPage: pageId,
+                    targetCategory: category?.value?.trim() || '',
+                    enabled: true,
+                }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // Cleared rather than left standing: a token sitting in a form field
+            // after it has been saved is one screenshot away from being shared.
+            if (token) token.value = '';
+            this.notify(this.t('config.starsSaved', 'GitHub source saved.'), 'success');
+            void this.loadStarsSource();
+        } catch {
+            this.notify(this.t('config.starsSaveError', 'Could not save the GitHub source.'), 'error');
+        }
+    }
+
+    async runStarsSource() {
+        const url = `/api/sources/${encodeURIComponent(this.starsSourceId)}/run`;
+
+        let preview;
+        try {
+            const res = await this.writeFetch(url);
+            if (res.status === 401) {
+                this.notify(this.t('config.starsTokenRejected', 'GitHub rejected that token.'), 'error');
+                void this.loadStarsSource();
+                return;
+            }
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            preview = await res.json();
+        } catch {
+            this.notify(this.t('config.starsRunError', 'Could not reach GitHub.'), 'error');
+            void this.loadStarsSource();
+            return;
+        }
+
+        if (!Number(preview.new)) {
+            this.notify(this.t('config.starsNothingNew', 'No new stars to import.'), 'info');
+            void this.loadStarsSource();
+            return;
+        }
+
+        const question = Number(preview.duplicates) > 0
+            ? this.t('config.starsConfirmDetail', 'Import {n} starred repositories? {d} are already here and will be skipped.')
+                .replace('{n}', String(preview.new)).replace('{d}', String(preview.duplicates))
+            : this.t('config.starsConfirm', 'Import {n} starred repositories?')
+                .replace('{n}', String(preview.new));
+        const ok = await this.confirmAction(question,
+            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false });
+        if (!ok) return;
+
+        try {
+            const res = await this.writeFetch(url, { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const result = await res.json();
+            this.notify(this.t('config.starsImported', 'Imported {n} repositories.')
+                .replace('{n}', String(result.imported ?? preview.new)), 'success');
+            await this.dash.loadBookmarks?.();
+        } catch {
+            this.notify(this.t('config.starsRunError', 'Could not reach GitHub.'), 'error');
+        }
+        void this.loadStarsSource();
+    }
+
+    async forgetStarsSource() {
+        const ok = await this.confirmAction(
+            this.t('config.starsForgetConfirm', 'Forget the GitHub token? Imported bookmarks stay where they are.'),
+            { confirmLabel: this.t('config.starsForgetBtn', 'Forget token'), danger: true });
+        if (!ok) return;
+        try {
+            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(this.starsSourceId)}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            this.notify(this.t('config.starsForgotten', 'GitHub token forgotten.'), 'success');
+            void this.loadStarsSource();
+        } catch {
+            this.notify(this.t('config.starsSaveError', 'Could not save the GitHub source.'), 'error');
+        }
+    }
+
     async importBrowserBookmarks(file) {
         if (!/\.(html?|htm)$/i.test(file.name)) {
             this.notify(this.t('config.browserImportInvalidFile', 'Please choose an HTML bookmarks file.'), 'error');
