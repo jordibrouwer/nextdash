@@ -36,6 +36,9 @@ const features = [
     { titleKey: 'a', titleFallback: 'Preview card', whatFallback: '…', since: 'v1.3.2', go: {} },
     { titleKey: 'b', titleFallback: 'Fresh', whatFallback: '…', since: 'v1.3.0', go: {} },
     { titleKey: 'c', titleFallback: 'Side rail', whatFallback: '…', go: {} },
+    // A third release that brought features: past the window, so it stays in
+    // the drill-in however recent it is.
+    { titleKey: 'd', titleFallback: 'Older still', whatFallback: '…', since: 'v1.2.0', go: {} },
 ];
 const site = {
     enabled: true,
@@ -59,13 +62,61 @@ assert.strictEqual(releaseRows.length, 5, `expected five releases, got ${release
 
 // A feature belongs to the release it landed in — both for its place in the
 // order and for whether it is recent enough to be news at all.
+//
+// The window counts releases that actually brought a feature, not releases:
+// v1.3.1 brought none, so v1.3.0's feature is still one of the two most recent
+// rather than being pushed out by a release with nothing in it. Two hotfixes in
+// an afternoon would otherwise empty the overview of features the day after a
+// release landed.
 const featureRows = stream.filter((i) => i.source === 'feature');
-assert.deepStrictEqual(featureRows.map((i) => i.titleKey), ['a'],
-    'only features from the current releases belong in the stream');
+assert.deepStrictEqual(featureRows.map((i) => i.titleKey), ['a', 'b'],
+    'the window should hold the two most recent releases that brought features');
+assert.ok(!stream.some((i) => i.titleKey === 'd'),
+    'a third feature-bearing release reached the stream');
 assert.strictEqual(featureRows[0].at, Date.parse('2026-08-21T12:00:00Z'));
 
 // Undated features — the back catalogue imported in one go — stay out.
 assert.ok(!stream.some((i) => i.titleKey === 'c'), 'an undated feature reached the stream');
+
+// The overview window keeps room for the project's own posts.
+//
+// Two hotfixes in one afternoon carry two release rows and their features, all
+// stamped that day, and between them they fill six rows -- so the posts, which
+// are the one source not about a version number, would fall off the page the
+// day after they went up.
+{
+    const today = Date.UTC(2026, 7, 24, 12);
+    const busy = news.buildStream({
+        site,
+        releases: [
+            { tag: 'v1.9.1', releasedAt: '2026-08-24', date: '24 August 2026' },
+            { tag: 'v1.9.0', releasedAt: '2026-08-24', date: '24 August 2026' },
+            ...releases,
+        ],
+        features: [
+            { titleKey: 'f1', titleFallback: 'One', whatFallback: '…', since: 'v1.9.1', go: {} },
+            { titleKey: 'f2', titleFallback: 'Two', whatFallback: '…', since: 'v1.9.1', go: {} },
+            { titleKey: 'f3', titleFallback: 'Three', whatFallback: '…', since: 'v1.9.0', go: {} },
+            { titleKey: 'f4', titleFallback: 'Four', whatFallback: '…', since: 'v1.9.0', go: {} },
+        ],
+    });
+    assert.ok(busy.slice(0, 6).every((i) => i.source !== 'site'),
+        'the fixture no longer reproduces a window with no posts in it');
+    assert.ok(today > 0);
+
+    const rows = news.overviewRows(busy, { limit: 6 });
+    assert.strictEqual(rows.length, 6, 'the window is still six rows');
+    const posts = rows.filter((i) => i.source === 'site');
+    assert.strictEqual(posts.length, 2, 'two of the newest posts keep their place');
+    const at = rows.map((i) => i.at);
+    assert.deepStrictEqual(at, [...at].sort((a, b) => b - a), 'the window is still in date order');
+
+    // A source filter is the reader saying which kind they want; nothing is
+    // reserved against that.
+    const onlyReleases = news.overviewRows(busy, { limit: 6, filter: 'release' });
+    assert.ok(onlyReleases.every((i) => i.source === 'release'),
+        'a filtered window reserved a slot it was not asked to');
+}
 
 // A first visit stamps "now": everything ever published counting as unread
 // would put a badge of 156 on Overview and teach the reader to ignore it.

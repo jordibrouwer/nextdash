@@ -3451,9 +3451,9 @@ class DashboardConfig {
             body = `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmpty',
                 'No posts to show right now.'))}</p>`;
         } else {
-            const shown = stream
-                .filter((item) => filter === 'all' || item.source === filter)
-                .slice(0, limit);
+            const shown = window.DashboardNewsStream?.overviewRows
+                ? window.DashboardNewsStream.overviewRows(stream, { limit, filter })
+                : stream.filter((item) => filter === 'all' || item.source === filter).slice(0, limit);
             body = shown.length
                 ? `<ul class="config-news-stream">${shown.map((item) => this.renderNewsItem(item)).join('')}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.overviewNewsEmptyFilter',
