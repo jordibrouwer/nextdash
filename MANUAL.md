@@ -978,7 +978,7 @@ nextDash has two **layout versions** — same bookmark grid and categories, diff
 - **Dashboard command mode** — `:layoutversion` lists options; `:layoutversion modern` / `:layoutversion classic` applies one; `:layoutversion toggle` switches between them.  
   (This is **not** the same as `:layout`, which switches **presets** like launcher or compact — see below.)
 
-**Post-onboarding prompts** — On desktop, the **first config open** may show a one-time keyboard intro toast (**v2026.08.01**); an unread **What's new** release can surface a hint in search for seven days — the release modal never opens by itself (see [What's new](#whats-new)). Last-seen release syncs via **`settings.discoverabilityState`** in `settings.json` across browsers. The quick-start card and its checklist are the only other first-run prompts (see [Quick-start card](#quick-start-card-doesnt-appear)) — the tours, spotlights, and discoverability promo balloons this section used to describe were all removed in **v2026.07.17**.
+**Post-onboarding prompts** — On desktop, the **first config open** may show a one-time keyboard intro toast (**v2026.08.01**); an unread **What's new** release can surface a hint in search for seven days, and the release modal **opens by itself once** on the first visit after an upgrade (**v1.3.3**), immediately rather than after the dashboard settles (**v1.3.3.1**) — closing it records the release and no later visit reopens it. A browser meeting nextDash for the first time is exempt: quick start is running, and notes for a version that reader never used would be noise (see [What's new](#whats-new)). Last-seen release syncs via **`settings.discoverabilityState`** in `settings.json` across browsers. The quick-start card and its checklist are the only other first-run prompts (see [Quick-start card](#quick-start-card-doesnt-appear)) — the tours, spotlights, and discoverability promo balloons this section used to describe were all removed in **v2026.07.17**.
 
 ### Layout presets
 
@@ -1663,7 +1663,7 @@ When set, protected API calls require header `X-NextDash-Token: your-long-random
 | Health: cache scan result | `POST /api/health/cache-scan` |
 | Health: update bookmark status | `POST /api/health/update-status` |
 | Bookmark link preview | `GET /api/bookmark-preview` |
-| Posts from nextdash.cc | `GET /api/site-news` — the ten most recent with a one-line summary, fetched server-side every six hours (conditionally, and mirrored to disk) and off entirely when **Behavior → Privacy → Show posts from nextdash.cc** is cleared or `DISABLE_NEWS_FEED` is set |
+| Posts from nextdash.cc | `GET /api/site-news` — the ten most recent with a one-line summary, fetched server-side every **90 minutes** (**v1.3.3.1**; conditionally, and mirrored to disk) and off entirely when **Behavior → Privacy → Show posts from nextdash.cc** is cleared or `DISABLE_NEWS_FEED` is set |
 | Health report | `GET /api/bookmark-health` — add `?view=facts` for the counts plus only the bookmarks with something to report, which is what the health badge and the preview cards read |
 | Feeds: poll every known feed now | `POST /api/feeds/poll` |
 | Clear all preview metadata | `POST /api/previews/clear` |
@@ -1719,7 +1719,7 @@ Since **v2026.08.04**, nextDash can compare your running release tag with the la
 
 Go to **Config → Behavior → Privacy** and tick or clear **Check GitHub for new releases** (on by default). When off, the dot, toast, and update bars disappear everywhere. Only a public GET to the GitHub Releases API is sent — no bookmarks or settings.
 
-**Posts from nextdash.cc.** Separate from analytics, and on the same **Privacy** tab: *Show posts from nextdash.cc on the overview* puts the project's own posts into the news stream on **Config → Overview**. Your server fetches that feed — once every six hours for the whole install, conditionally, mirrored to `site-news.json` so a restart does not fetch again, and carrying nothing about you — and your browser never contacts the site. Clear the box and the request is not made at all; tick it again and the stream fills straight away. `DISABLE_NEWS_FEED=true` in the environment switches it off for everyone on the server, the way `DISABLE_TELEMETRY` and `DISABLE_UPDATE_CHECK` do.
+**Posts from nextdash.cc.** Separate from analytics, and on the same **Privacy** tab: *Show posts from nextdash.cc on the overview* puts the project's own posts into the news stream on **Config → Overview**. Your server fetches that feed — once every **90 minutes** for the whole install (**v1.3.3.1**, six hours before that), conditionally, mirrored to `site-news.json` so a restart does not fetch again, and carrying nothing about you — and your browser never contacts the site. The open config view refetches the stream after 30 minutes rather than keeping the copy it opened with, so a dashboard left open all day still shows what went up at lunchtime. Clear the box and the request is not made at all; tick it again and the stream fills straight away. `DISABLE_NEWS_FEED=true` in the environment switches it off for everyone on the server, the way `DISABLE_TELEMETRY` and `DISABLE_UPDATE_CHECK` do.
 
 **For the whole server (self-hosting).** Set **`DISABLE_UPDATE_CHECK=true`** to turn update checks off for every user; the Privacy toggle then appears greyed out with a note that the operator disabled it.
 

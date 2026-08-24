@@ -1,0 +1,46 @@
+{
+  "tag": "v1.3.3.1",
+  "date": "24 August 2026",
+  "releasedAt": "2026-08-24",
+  "modalLead": "A hotfix on v1.3.3. Four things that only ever worked with a mouse or did not work at all — a command you could not finish typing, a menu the keyboard could not open, a page that kept jumping back to where you once were — and the overview's news now arrives while it is still news.",
+  "sections": [
+    {
+      "title": "Fixed",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>Commands with a second word can be typed again.</strong> <code>:buttons cheatsheet</code> and its like lost letters on the way in — a <code>c</code> opened “add a category” instead of reaching the palette, and a space ran the highlighted line rather than separating two words. Every command that takes an argument was affected."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A category's ⋯ menu opens from the keyboard.</strong> The button said it would and had nothing but the mouse to offer: the arrow key moved the cursor into the bookmarks instead and took the focus with it."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A page stops jumping to where you once were.</strong> Coming back to a page you had scrolled restored that position — and then kept restoring it, on every later visit, for as long as the tab stayed open. It is used once now, as it was always meant to be."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The setting that marks rows which publish explains itself.</strong> It offered to restore a default it never described."
+        }
+      ]
+    },
+    {
+      "title": "News on the overview",
+      "items": [
+        {
+          "badge": "new",
+          "text": "<strong>The news arrives while it is still news.</strong> The overview held its copy of the project's posts for six hours and your browser kept whatever it had for the whole session — so a release could ship and the overview would go on saying nothing had. It is refreshed far more often now, and asking costs almost nothing because the answer is usually “nothing changed”."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Release notes open the moment a new version does.</strong> They waited for the dashboard to settle first, which read as being interrupted; now they are the first thing you see, once."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>More of what recent releases added is in the list.</strong> The rebuilt hover card, the three ways to reach it, the posts from the site and the two-column add form each have a row of their own, with a way straight to the setting."
+        }
+      ]
+    }
+  ]
+}
