@@ -45,3 +45,13 @@ if orphans:
     sys.exit(1)
 print(f"  ok index.json ({len(manifest)} releases)")
 PY
+
+# The checks above prove the files parse. These three prove they agree with the
+# code: the feature catalogue names a locale key per field, and a key removed
+# from under it renders as an English fallback in every language rather than as
+# an error. That is exactly how 199 catalogue strings were pruned unnoticed --
+# these ran only when someone remembered to, and CI never did.
+echo "Validating feature catalogue and locale key sets…"
+node scripts/validate-overview-features.cjs
+node scripts/validate-locale-parity.cjs
+node scripts/validate-locale-duplicates.cjs

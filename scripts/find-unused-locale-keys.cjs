@@ -28,13 +28,21 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const LOCALES = path.join(root, 'locales');
 const SKIP_DIRS = new Set(['node_modules', '.git', '.claude', 'test-results', 'locales',
-    'playwright-report', 'data']);
+    'playwright-report']);
+// Skipped by path, not by name: the runtime data directory holds a copy of
+// whatever the reader saved and says nothing about the source. `static/data`
+// is a different thing entirely -- the feature catalogue and the release notes
+// live there, and the catalogue names 200 locale keys nothing else mentions.
+// Skipping every directory called `data` took it with it, and the keys it
+// alone reaches were reported as unreachable.
+const SKIP_PATHS = new Set([path.join(root, 'data')]);
 
 function walk(dir, out = []) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         if (entry.name.startsWith('.') && entry.name !== '.github') continue;
         if (SKIP_DIRS.has(entry.name)) continue;
         const full = path.join(dir, entry.name);
+        if (SKIP_PATHS.has(full)) continue;
         if (entry.isDirectory()) walk(full, out);
         else if (/\.(js|cjs|go|html|json|md)$/.test(entry.name)) out.push(full);
     }
