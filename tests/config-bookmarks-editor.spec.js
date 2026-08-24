@@ -1,8 +1,15 @@
 // @ts-check
 const { test, expect } = require('./fixtures');
-const { dismissOnboardingIfPresent, dismissBlockingOverlays, resetDashboardData } = require('./e2e-helpers');
+const {
+    dismissOnboardingIfPresent, dismissBlockingOverlays, resetDashboardData, markWhatsNewSeen, WRITE_TOKEN,
+} = require('./e2e-helpers');
 
 async function loadDashboard(page) {
+    // Before the first navigation: the promo cards and the What's new modal
+    // are decided on load. Without this the config-setting promo lands on the
+    // page mid-test, moves the modal's Save button a few pixels, and Playwright
+    // waits for an element that never settles.
+    await markWhatsNewSeen(page);
     await page.goto('/');
     await page.waitForFunction(() => window.dashboardInstance?.allBookmarks?.length > 0, null, { timeout: 15_000 });
     await dismissOnboardingIfPresent(page);
@@ -575,10 +582,12 @@ test.describe('bookmark statistics', () => {
 
     test('saving an edit does not clear the statistics', async ({ page }) => {
         await openBookmarks(page);
-        // Read from the rendered row, the way applyBookmarkStats seeds it.
-        // visibleBookmarks()[0] and the first DOM row are the same bookmark only
-        // while the list is in its default order — and the order is a setting
-        // now, so a spec that changed it made these two disagree.
+
+        // Seed the count on the *server*, the way an open does. Seeding it into
+        // the browser's copy proves nothing: the dashboard does not send
+        // openCount when it saves a page, so the value never reaches the
+        // server, and carryServerOwnedBookmarkFields then puts the stored one
+        // back — which is exactly the protection this test is here to check.
         const target = await page.evaluate(() => {
             const cfg = window.dashboardInstance.config;
             const key = document.querySelector('#config-bm-list .config-bm-row[data-bm-key]')
@@ -588,10 +597,29 @@ test.describe('bookmark statistics', () => {
                 ? window.dashboardInstance.allBookmarks.find(
                     (b) => String(b.pageId) === String(parsed.pageId) && b.url === parsed.url)
                 : cfg.visibleBookmarks()[0];
-            return { pageId: bm.pageId, url: bm.url };
+            const onPage = window.dashboardInstance.allBookmarks
+                .filter((b) => String(b.pageId) === String(bm.pageId));
+            return { pageId: bm.pageId, url: bm.url, index: onPage.findIndex((b) => b.url === bm.url) };
         });
-        await openFirstEditor(page, { openCount: 33, lastOpened: Date.now() - 3 * 60 * 60 * 1000 });
+        expect(target.index).toBeGreaterThanOrEqual(0);
 
+        const OPENS = 3;
+        for (let i = 0; i < OPENS; i += 1) {
+            const response = await page.request.post('/api/track-open', {
+                headers: { 'X-NextDash-Token': WRITE_TOKEN },
+                data: { pageId: target.pageId, index: target.index },
+            });
+            expect(response.ok()).toBe(true);
+        }
+
+        const readStoredCount = async () => {
+            const response = await page.request.get(`/api/bookmarks?page=${target.pageId}`);
+            const list = await response.json();
+            return (list.find((b) => b.url === target.url) || {}).openCount;
+        };
+        expect(await readStoredCount()).toBe(OPENS);
+
+        await openFirstEditor(page);
         await bookmarkModalForm(page).locator('.bookmark-inline-textarea').fill('stats must survive');
         // The modal animates in, so Playwright's stability check on Save can
         // outlast its own timeout while the transition settles.
@@ -601,11 +629,14 @@ test.describe('bookmark statistics', () => {
         await modalSaveBtn(page).click();
         await expect(page.locator('#bookmark-form-modal')).not.toHaveClass(/show/);
 
-        await expect.poll(() => page.evaluate(({ pageId, url }) => {
-            return window.dashboardInstance.allBookmarks.find(
-                (b) => String(b.pageId) === String(pageId) && b.url === url,
-            )?.openCount;
-        }, target)).toBe(33);
+        // The note landed, so the save really happened...
+        await expect.poll(async () => {
+            const response = await page.request.get(`/api/bookmarks?page=${target.pageId}`);
+            const list = await response.json();
+            return (list.find((b) => b.url === target.url) || {}).note;
+        }).toBe('stats must survive');
+        // ...and it did not take the count with it.
+        expect(await readStoredCount()).toBe(OPENS);
     });
 });
 
