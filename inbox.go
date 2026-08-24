@@ -88,8 +88,22 @@ func inboxDomainFromURL(raw string) string {
 }
 
 func sortInboxItemsNewestFirst(items []InboxLink) {
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].AddedAt > items[j].AddedAt
+	// Stable, with insertion order as the tiebreak. AddedAt has millisecond
+	// resolution, so items saved in the same millisecond -- a seeded inbox, an
+	// import, an extension replaying a queued batch -- carry the same value, and
+	// sort.Slice is not stable: their order came out differently from one call
+	// to the next. That made the list reshuffle between reads, and at capacity
+	// it made trimInboxItems drop an arbitrary one of the tied items rather than
+	// the one that was added first.
+	pos := make(map[string]int, len(items))
+	for i := range items {
+		pos[items[i].ID] = i
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].AddedAt != items[j].AddedAt {
+			return items[i].AddedAt > items[j].AddedAt
+		}
+		return pos[items[i].ID] > pos[items[j].ID]
 	})
 }
 
