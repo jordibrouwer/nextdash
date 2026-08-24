@@ -69,13 +69,20 @@
         if (!categories.length) {
             return false;
         }
-        categories.forEach((el) => {
+        // Read every height first, then write every span. Interleaving the two
+        // forced a full grid re-layout per category, on every render and on
+        // every ResizeObserver fire -- i.e. continuously while dragging the
+        // window. The comment below still holds: all reads happen before any
+        // write, so no span is in place while a height is being measured.
+        const spans = categories.map((el) => {
             // Measured without the span in place, or the previous value would
             // be measured back: the element is only as tall as its content, so
             // the row track it currently occupies must not constrain it.
             const height = el.getBoundingClientRect().height;
-            const span = Math.max(1, Math.ceil((height + gap) / ROW_PX));
-            el.style.setProperty('--masonry-span', String(span));
+            return Math.max(1, Math.ceil((height + gap) / ROW_PX));
+        });
+        categories.forEach((el, i) => {
+            el.style.setProperty('--masonry-span', String(spans[i]));
         });
         return true;
     }
