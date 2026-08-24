@@ -19,7 +19,17 @@ const isCI = Boolean(process.env.CI);
 module.exports = defineConfig({
     testDir: 'tests',
     timeout: 30_000,
-    fullyParallel: true,
+    // Deliberately false, and it is not about parallelism -- `workers: 1` below
+    // already rules that out. It decides how `--shard` divides the suite: with
+    // fullyParallel Playwright shards by individual test, so one spec file can
+    // be split across several shards. tests/fixtures.js resets the store at
+    // every *file* boundary, and specs build state across the tests within a
+    // file, so a split file would reset in the middle of itself and throw away
+    // what its earlier tests set up. False shards by file, which is the same
+    // boundary the reset uses. It costs a little balance -- measured over the
+    // 254 spec files, the heaviest of six shards runs about 8% over the mean --
+    // and buys shards that cannot cut a file in half.
+    fullyParallel: false,
     forbidOnly: isCI,
     retries: isCI ? 2 : 1,
     workers: 1,
