@@ -87,6 +87,10 @@ func main() {
 	r.HandleFunc("/api/bookmarks", handlers.DeleteBookmark).Methods("DELETE")
 	r.HandleFunc("/api/bookmarks/add", handlers.AddBookmark).Methods("POST")
 	r.HandleFunc("/api/bookmarks/import-browser", handlers.ImportBrowserBookmarks).Methods("POST")
+	// The file itself rather than the browser's reading of it, so an import
+	// keeps the tags, notes and dates every export has always carried.
+	r.HandleFunc("/api/bookmarks/import-html", handlers.ImportBookmarksHTML).Methods("POST")
+	r.HandleFunc("/api/bookmarks/export-html", handlers.ExportBookmarksHTML).Methods("GET")
 	r.HandleFunc("/api/bookmarks/prefetch-icons", handlers.PrefetchBookmarkIcons).Methods("POST")
 	r.HandleFunc("/api/bookmarks/delete-all", handlers.DeleteAllBookmarks).Methods("POST")
 	r.HandleFunc("/api/finders", handlers.GetFinders).Methods("GET")

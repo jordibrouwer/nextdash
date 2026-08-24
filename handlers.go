@@ -1349,15 +1349,8 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 	// every tag and every note it was meant to carry -- which is the reason
 	// MANUAL gives for using the CSV route over the browser file at all.
 	var request struct {
-		PageID    int `json:"pageId"`
-		Bookmarks []struct {
-			Name     string   `json:"name"`
-			URL      string   `json:"url"`
-			Category string   `json:"category"`
-			Shortcut string   `json:"shortcut"`
-			Note     string   `json:"note"`
-			Tags     []string `json:"tags"`
-		} `json:"bookmarks"`
+		PageID    int           `json:"pageId"`
+		Bookmarks []ImportedRow `json:"bookmarks"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -1369,6 +1362,36 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Invalid page ID", http.StatusBadRequest)
 		return
 	}
+
+	h.importRows(w, r, request.PageID, request.Bookmarks)
+}
+
+// ImportedRow is one bookmark on its way in, from any importer.
+//
+// The JSON tags are the shape the browser has posted since the CSV import
+// existed; the HTML importer fills the same struct from a parsed file, so both
+// routes get the same category creation, the same de-duplication and the same
+// normalisers rather than a second implementation of each.
+type ImportedRow struct {
+	Name     string   `json:"name"`
+	URL      string   `json:"url"`
+	Category string   `json:"category"`
+	Shortcut string   `json:"shortcut"`
+	Note     string   `json:"note"`
+	Tags     []string `json:"tags"`
+	// CreatedAt and UpdatedAt are milliseconds, and are only ever set by an
+	// importer that read them from a file. A row without them is stamped by the
+	// store, as a typed bookmark is.
+	CreatedAt int64 `json:"createdAt,omitempty"`
+	UpdatedAt int64 `json:"updatedAt,omitempty"`
+}
+
+// importRows writes a batch onto a page and answers with the tally.
+func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int, rows []ImportedRow) {
+	request := struct {
+		PageID    int
+		Bookmarks []ImportedRow
+	}{PageID: pageID, Bookmarks: rows}
 
 	for _, bm := range request.Bookmarks {
 		if err := h.validateBookmarkURL(bm.URL); err != nil {
@@ -1438,6 +1461,11 @@ func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request
 			Shortcut: normalizeShortcut(bm.Shortcut),
 			Note:     strings.TrimSpace(bm.Note),
 			Tags:     normalizeTags(bm.Tags),
+			// Only what a file actually carried. Zero leaves the store to stamp
+			// it, so a bookmark with no ADD_DATE is dated on arrival rather than
+			// in 1970.
+			CreatedAt: bm.CreatedAt,
+			UpdatedAt: bm.UpdatedAt,
 		})) {
 			return
 		}
