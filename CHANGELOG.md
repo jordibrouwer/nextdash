@@ -8,6 +8,7 @@ For install and security, see the [README](README.md). For how to use features, 
 
 ## Table of contents
 
+- [v1.3.3.3 — 25 August 2026](#v1333--25-august-2026)
 - [v1.3.3.2 — 24 August 2026](#v1332--24-august-2026)
 - [v1.3.3.1 — 24 August 2026](#v1331--24-august-2026)
 - [v1.3.3 — 22 August 2026](#v133--22-august-2026)
@@ -175,6 +176,24 @@ For install and security, see the [README](README.md). For how to use features, 
 - [v2026.01 and earlier — Foundation](#v202601-and-earlier--foundation)
 
 ---
+
+## v1.3.3.3 — 25 August 2026
+
+Two tiles in the health view that looked like the ones beside them and could not do what those do.
+
+### Health
+
+- **fix** — **the Certificates tile is a filter.** It was drawn with no key on purpose: certificates are counted per host rather than per bookmark, so the comment above it reasoned there was nothing to filter on and that clicking would appear to do nothing. It sits in a row of six tiles that are all filters and looks exactly like them, so "deliberate" reads as broken — and the rows were reachable all along, since `certFor()` already maps a row to its host's certificate to draw the badge. The count still reads in hosts; the list it opens is the bookmarks on them, which is what someone clicking a warning is after.
+- **new** — **Missing preview carries the one action that can empty it.** *Re-check* and *Retest all* run the availability check — `update-status` and `cache-scan`, not one preview call — and the flag is read from what is stored on the bookmark rather than from the preview cache. So eighty-seven rows sat under two buttons that could not move the number above them however often they were pressed, and nothing on screen said so. **Fetch previews** calls `/api/previews/refresh`, the same route Config → Data & backups → Icons & previews offers, behind a confirm that says it is one request per bookmark; afterwards the bookmarks and the report are both re-read, since the flag comes from the stored field. Fetching itself was never broken — a server against `9to5google.com` and `ad.nl`, two of the rows reported as stuck, returns a title and description for both.
+
+### Config → Overview
+
+- **new** — both are in the news stream and under **About → News & features**, with a way straight to the Missing preview filter.
+- **fix** — **a release published today could not be marked read.** A release carries a date rather than a moment, and the stream stamps it at noon UTC so the day sorts sensibly wherever the reader is — which puts a release published this morning, or read from a timezone ahead of UTC, in the future by its own clock. Reading the stream marked it seen at `now`, so the dot and the count on Overview stayed until noon UTC whatever the reader did. It marks past the newest row instead.
+
+### Docs
+
+- **new** — **Config → Help describes both.** The health article now says that every tile narrows the list, Certificates included, and that Re-check asks only whether a link answers — which is why Missing preview has a fetch of its own. In four languages, and the version note it carries was two hotfixes behind.
 
 ## v1.3.3.2 — 24 August 2026
 

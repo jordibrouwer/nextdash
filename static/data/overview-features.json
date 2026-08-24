@@ -2,6 +2,23 @@
   "_comment": "The New features carousel on Config → Overview, newest first. Moved out of dashboard-config.js, where the same English text also lived as fallbacks beside the locale files — 48 KB of the module, loaded to draw a panel most visits never reach. Keys are unchanged, so every translation still applies.",
   "features": [
     {
+      "titleKey": "config.overviewNewFeatureHealthTilesTitle",
+      "titleFallback": "Every health tile leads somewhere",
+      "whatKey": "config.overviewNewFeatureHealthTilesWhat",
+      "whatFallback": "Certificates sat in a row of tiles that all narrow the list and was the one that did nothing when clicked — the count is hosts rather than bookmarks, which is a reason a reader cannot see. It opens the bookmarks on those hosts now.",
+      "howKey": "config.overviewNewFeatureHealthTilesHow",
+      "howFallback": "And Missing preview has a button that can empty it: Re-check and Retest all ask whether a link still answers, never what its page says, so the number could not move. Fetch previews asks every page for its title, description and image.",
+      "enableKey": "config.overviewNewFeatureHealthTilesEnable",
+      "enableFallback": "Nothing to switch on. Fetching is one request per bookmark, so it asks before it starts.",
+      "ctaKey": "config.overviewNewFeatureHealthTilesCta",
+      "ctaFallback": "Open Health →",
+      "go": {
+        "view": "health",
+        "filter": "missing-preview"
+      },
+      "since": "v1.3.3.3"
+    },
+    {
       "titleKey": "config.overviewNewFeatureFontSizeTitle",
       "titleFallback": "Try a font size before you take it",
       "whatKey": "config.overviewNewFeatureFontSizeWhat",
