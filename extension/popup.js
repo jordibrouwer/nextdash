@@ -120,21 +120,35 @@ async function autoFetchExtensionUrlMeta() {
     extFormPreview?.updateAll(getExtDraftBookmark());
 }
 
+// One shared #message element, so one shared timer: an earlier message's
+// timeout used to hide whatever was on screen when it fired, wiping a "saved"
+// confirmation that had only just replaced an error.
+let messageHideTimer = null;
+
 function showMessage(text, type = 'info') {
     const messageEl = document.getElementById('message');
+    if (messageHideTimer) {
+        clearTimeout(messageHideTimer);
+        messageHideTimer = null;
+    }
     messageEl.textContent = text;
     messageEl.className = `message ${type}`;
     messageEl.style.display = 'block';
-    
+
     // Auto-hide after 5 seconds for success/error, keep for info
     if (type !== 'info') {
-        setTimeout(() => {
+        messageHideTimer = setTimeout(() => {
+            messageHideTimer = null;
             messageEl.style.display = 'none';
         }, 5000);
     }
 }
 
 function hideMessage() {
+    if (messageHideTimer) {
+        clearTimeout(messageHideTimer);
+        messageHideTimer = null;
+    }
     document.getElementById('message').style.display = 'none';
 }
 
