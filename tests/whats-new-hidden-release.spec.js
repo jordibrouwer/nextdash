@@ -193,6 +193,6 @@ test.describe('a release flagged hideFromModal', () => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
         expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.3.3.1'");
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v250'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v251'");
     });
 });

@@ -2,7 +2,7 @@
   "tag": "v1.3.3.1",
   "date": "24 August 2026",
   "releasedAt": "2026-08-24",
-  "modalLead": "A hotfix on v1.3.3. Four things that only ever worked with a mouse or did not work at all — a command you could not finish typing, a menu the keyboard could not open, a page that kept jumping back to where you once were — and the overview's news now arrives while it is still news.",
+  "modalLead": "A hotfix on v1.3.3. Three things that only ever worked with a mouse or did not work at all — a command you could not finish typing, a menu the keyboard could not open, a page that kept jumping back to where you once were — and the overview's news now arrives while it is still news.",
   "sections": [
     {
       "title": "Fixed",
@@ -22,6 +22,10 @@
         {
           "badge": "fix",
           "text": "<strong>The setting that marks rows which publish explains itself.</strong> It offered to restore a default it never described."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A release that changes only wording reaches you.</strong> Your browser is told a new version is out by a fingerprint taken from the app's own files — and the translations were not counted in it, so text rewritten in a release could sit unchanged for a day and a newly added line could come out blank."
         }
       ]
     },
