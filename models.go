@@ -706,6 +706,13 @@ func (fs *FileStore) initializeDefaultFiles() {
 				{ID: "utilities", Name: "Utilities"},
 			},
 			Bookmarks: []Bookmark{
+				// The project's own site, in the seed rather than only behind the
+				// "follow it from your own dashboard" button in About: it is the
+				// place a new install finds out what changed, it publishes a feed
+				// so Fresh has something to count on day one, and a bookmark
+				// dashboard whose own site is not on the dashboard is an odd
+				// advertisement for itself. Deletable like any other starter row.
+				{Name: "nextDash", URL: "https://nextdash.cc/", Shortcut: "N", Category: "development", CheckStatus: false, Tags: []string{"dev", "bookmarks", "self-hosted"}},
 				{Name: "GitHub", URL: "https://github.com", Shortcut: "G", Category: "development", CheckStatus: true, Tags: []string{"dev", "code"}},
 				{Name: "GitHub Issues", URL: "https://github.com/issues", Shortcut: "GI", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
 				{Name: "GitHub Pull Requests", URL: "https://github.com/pulls", Shortcut: "GP", Category: "development", CheckStatus: false, Tags: []string{"dev", "github"}},
