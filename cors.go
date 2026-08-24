@@ -58,6 +58,9 @@ func applyCORSHeaders(w http.ResponseWriter, r *http.Request) {
 	}
 	if _, ok := corsOrigins[origin]; ok {
 		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Vary", "Origin")
+		// Add, not Set: the gzip middleware has already put Accept-Encoding in
+		// Vary on the same header map, and replacing it let a shared cache serve
+		// gzipped bytes to a client that did not ask for them.
+		w.Header().Add("Vary", "Origin")
 	}
 }

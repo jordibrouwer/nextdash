@@ -327,10 +327,14 @@ func (h *Handlers) StartUpdateCheckScheduler(stop <-chan struct{}) {
 		_ = h.buildUpdateStatus(true)
 	}
 
-	run()
 	ticker := time.NewTicker(updateCheckCacheTTL)
 	go func() {
 		defer ticker.Stop()
+		// Inside the goroutine, like every other scheduler here. Called from
+		// main before ListenAndServe it blocked startup for the full 10s GitHub
+		// timeout whenever egress to api.github.com is blocked -- long enough to
+		// fail a container healthcheck on boot.
+		run()
 		for {
 			select {
 			case <-stop:

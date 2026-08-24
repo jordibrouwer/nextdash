@@ -48,12 +48,16 @@ var autoBackupNameRe = regexp.MustCompile(`^nextdash-auto-backup-\d{4}-\d{2}-\d{
 func uniqueAutoBackupName(dir string) string {
 	stamp := autoBackupPrefix + time.Now().UTC().Format(autoBackupTimeLayout)
 	name := stamp + ".zip"
-	for i := 2; ; i++ {
-		if _, err := os.Stat(filepath.Join(dir, name)); os.IsNotExist(err) {
+	// Bounded, and any stat error that is not "missing" counts as free. The
+	// unbounded version spun forever on a permission or I/O error -- while
+	// holding autoBackupMu, which also blocks restore and delete.
+	for i := 2; i < 1000; i++ {
+		if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
 			return name
 		}
 		name = fmt.Sprintf("%s-%d.zip", stamp, i)
 	}
+	return name
 }
 
 // autoBackupDir returns the directory holding automatic backups.
