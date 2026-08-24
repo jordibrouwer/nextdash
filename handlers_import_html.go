@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -65,6 +66,42 @@ func (h *Handlers) ImportBookmarksHTML(w http.ResponseWriter, r *http.Request) {
 			row.Tags = append(row.Tags, "toread")
 		}
 		rows = append(rows, row)
+	}
+
+	// A dry run answers what would happen and writes nothing. The confirm the
+	// reader sees is built from this, so the number in it comes from the same
+	// parse that will do the work rather than from a second one in the browser
+	// -- and it can say how many are already here, which a total never could.
+	if r.URL.Query().Get("dryRun") == "1" {
+		existing := h.store.GetBookmarksByPage(pageID)
+		known := make(map[string]struct{}, len(existing))
+		for _, b := range existing {
+			known[canonicalBookmarkURLKey(b.URL)] = struct{}{}
+		}
+		newCount, dupCount := 0, 0
+		folders := map[string]struct{}{}
+		for _, row := range rows {
+			key := canonicalBookmarkURLKey(row.URL)
+			if _, dup := known[key]; dup {
+				dupCount++
+				continue
+			}
+			// Counted as new only once: a file listing the same address twice
+			// imports it once, so the preview must say so too.
+			known[key] = struct{}{}
+			newCount++
+			if row.Category != "" {
+				folders[row.Category] = struct{}{}
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]int{
+			"new":        newCount,
+			"duplicates": dupCount,
+			"folders":    len(folders),
+			"total":      len(rows),
+		})
+		return
 	}
 
 	h.importRows(w, r, pageID, rows)

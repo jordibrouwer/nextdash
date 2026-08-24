@@ -5748,68 +5748,52 @@ class DashboardConfig {
         }
     }
 
-    /** Parse a browser-exported Netscape bookmark file into {name,url,category}[]. */
-    parseBrowserBookmarks(html) {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const bookmarks = [];
-        const walk = (container, folderName) => {
-            const els = Array.from(container.children);
-            for (let i = 0; i < els.length; i++) {
-                const el = els[i];
-                if (el.tagName === 'DT') {
-                    const h3 = el.querySelector('h3');
-                    const a = el.querySelector('a[href]');
-                    if (h3 && !a) {
-                        const name = h3.textContent.trim();
-                        if (i + 1 < els.length && els[i + 1].tagName === 'DL') {
-                            walk(els[i + 1], name);
-                            i++;
-                        }
-                    } else if (a) {
-                        const href = a.getAttribute('href');
-                        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
-                            bookmarks.push({ name: a.textContent.trim() || href, url: href, category: folderName });
-                        }
-                    }
-                } else if (el.tagName === 'DL' || el.tagName === 'P') {
-                    walk(el, folderName);
-                }
-            }
-        };
-        const topDl = doc.querySelector('dl');
-        if (topDl) walk(topDl, '');
-        return bookmarks;
-    }
-
+    /**
+     * Import an exported bookmark file.
+     *
+     * The file goes to the server whole. It used to be parsed here with
+     * DOMParser and posted as {name, url, category}, which meant an export
+     * carrying tags, notes and dates arrived stripped to three fields — the
+     * parser is in Go now (netscape.go) and reads all of them.
+     *
+     * The count in the confirm comes from a dry run against that same parser,
+     * so the number the reader agrees to is the number that will be written,
+     * and it can say how many are already here — which a total never could.
+     */
     async importBrowserBookmarks(file) {
         if (!/\.(html?|htm)$/i.test(file.name)) {
             this.notify(this.t('config.browserImportInvalidFile', 'Please choose an HTML bookmarks file.'), 'error');
             return;
         }
-        let bookmarks;
+        const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
+        const url = `/api/bookmarks/import-html?page=${encodeURIComponent(pageId)}`;
+
+        let preview;
         try {
-            bookmarks = this.parseBrowserBookmarks(await file.text());
+            const res = await this.writeFetch(`${url}&dryRun=1`, { method: 'POST', body: file });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            preview = await res.json();
         } catch {
             this.notify(this.t('config.browserImportError', 'Could not read that bookmarks file.'), 'error');
             return;
         }
-        if (bookmarks.length === 0) {
+        if (!Number(preview.total)) {
             this.notify(this.t('config.browserImportEmpty', 'No bookmarks found in that file.'), 'error');
             return;
         }
-        // Import onto the current page; the server dedups against existing URLs.
-        const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
-        const ok = await this.confirmAction(
-            this.t('config.browserImportConfirm', 'Import {n} bookmarks onto the current page?').replace('{n}', String(bookmarks.length)),
-            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false }
-        );
+
+        const question = Number(preview.duplicates) > 0
+            ? this.t('config.browserImportConfirmDetail',
+                'Import {n} bookmarks onto the current page? {d} are already here and will be skipped.')
+                .replace('{n}', String(preview.new)).replace('{d}', String(preview.duplicates))
+            : this.t('config.browserImportConfirm', 'Import {n} bookmarks onto the current page?')
+                .replace('{n}', String(preview.new));
+        const ok = await this.confirmAction(question,
+            { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false });
         if (!ok) return;
+
         try {
-            const res = await this.writeFetch('/api/bookmarks/import-browser', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pageId, bookmarks }),
-            });
+            const res = await this.writeFetch(url, { method: 'POST', body: file });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json().catch(() => ({}));
             const imported = Number(result.imported) || 0;
