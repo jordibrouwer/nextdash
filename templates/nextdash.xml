@@ -3,11 +3,11 @@
   <Name>NextDash</Name>
   <Repository>ghcr.io/jordibrouwer/nextdash:latest</Repository>
   <Registry>https://github.com/jordibrouwer/nextdash</Registry>
-  <Project>https://github.com/jordibrouwer/nextdash</Project>
+  <Project>https://www.nextdash.cc</Project>
   <Support>https://github.com/jordibrouwer/nextdash/issues</Support>
   <ReadMe>https://raw.githubusercontent.com/jordibrouwer/nextdash/main/README.md</ReadMe>
   <TemplateURL>https://raw.githubusercontent.com/jordibrouwer/unraid_templates/main/nextdash.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/jordibrouwer/nextdash/main/favicon.png</Icon>
+  <Icon>https://github.com/jordibrouwer/nextdash/blob/main/static/nextdash-logo.png?raw=true</Icon>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
   <WebUI>http://[IP]:[PORT:8080]</WebUI>
@@ -39,4 +39,5 @@
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-2.png</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-3.png</Screenshot>
   <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-4.png</Screenshot>
+  <Screenshot>https://github.com/jordibrouwer/nextdash/raw/main/screenshots/nextdash-5.png</Screenshot>
 </Container>
