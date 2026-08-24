@@ -252,6 +252,10 @@ Config is a **view inside the dashboard**, not a separate page — same tab, sam
 
 It has nine sections — **Overview**, **Pages & tags**, **Bookmarks**, **Appearance**, **Behavior**, **Data & backups**, **Statistics**, **Help**, and **About** — each deep-linkable as `/#config/<section>` (for example `/#config/appearance`).
 
+**The overview is a news stream** (**v1.3.3**). Under the act zone sits one dated list mixing three sources — posts from **nextdash.cc**, **releases**, and the **settings** each release introduced — newest first, each row carrying a source label, a one-line summary, its date in your own date format, and its own way in: read the post, show what's new, or open the setting. The chips above it narrow the list to one source, and pressing the active chip again widens it back; hiding the site's posts entirely is one click. A green dot marks anything published since you last read the stream, with a count on **Overview** in the section rail — a first visit starts quiet rather than declaring everything unread. Six rows fit on the overview; **All news & features** opens the rest under **About → News & features**, together with every setting worth switching on from earlier releases and a button that saves nextdash.cc as a bookmark so **Fresh** counts its posts.
+
+It replaced three answers to the same question: a **New features** carousel that showed one of forty-nine spotlights at a time, a **Latest update** panel that repeated the release named directly above it, and a separate list of the site's posts. The figures about your own install moved beside the stream rather than above it, which is what brought the news above the fold.
+
 Two ways through it, both **v1.3.0**: **Tips** has its own filter that narrows to the single tip (the search at the top of Help returns whole topics), and a panel whose subject carries on in another tab ends with a **Continues in** line that jumps to that panel rather than to the top of its tab. The version heading reads the release index, so it cannot go stale.
 
 **Help** is prose with a drawing over every article since **v1.3.0**: the three search prefixes in the field you type them into, the health tiles in the colours the rows wear, a certificate meter with the day the warning starts marked on it, a maintenance window shaded into a day, the boundary the statistics never cross. Same small drawings the choice cards under Appearance use, so a grid, a spacing and a margin look the same wherever nextDash shows one. Every word inside them is translated.
@@ -1029,7 +1033,7 @@ Desktop list tabs (**pages**, **categories**, **tags**, **finders**, **collectio
 
 ### What’s new
 
-**Release notes never open by themselves.** A new version does not pop a modal in front of you on load — you open it with **★** or from **Config → Overview → Show what's new**. If a release seems not to have arrived at all, it is usually the browser cache: an already-open tab keeps the files it loaded, so a hard refresh (`Cmd/Ctrl+Shift+R`) settles it.
+**A new version shows its notes once.** After an upgrade, the first visit that is not a first-run tour opens the release notes by itself; closing them records that release as read and it never opens again for that version. Everything after that is on your terms: **★**, or **Config → Overview → Show what's new**. A browser meeting nextDash for the first time is left alone — quick start is running, and notes for a version that reader never used would be noise. If a release seems not to have arrived at all, it is usually the browser cache: an already-open tab keeps the files it loaded, so reload once.
 
 **Not every release is in the modal.** A small presentation hotfix can ship without release notes of its own — **v2026.07.23.4**, which repaired the health view's see-through **More** menu, is one. The [changelog](CHANGELOG.md) carries the complete history either way.
 
@@ -1231,7 +1235,7 @@ Below **Help**, separated by a gap, **Find settings** opens the settings-jump ov
 
 | Section | What lives there |
 |---------|------------------|
-| **Overview** | Six headline tiles (including **Monitored**), anything needing attention, a **New features** carousel, **Latest update**, optional **GitHub update check** (since **v2026.08.04**), tips, and about-the-developer panels |
+| **Overview** | Anything needing attention and the optional **GitHub update check** (since **v2026.08.04**) at the top, then — since **v1.3.3** — one dated news stream: posts from nextdash.cc, releases, and the settings each release introduced, with source filters and a green dot for anything published since you last read it. Beside it: **At a glance** and *what differs from the defaults*, with **About the developer** at the foot of that column. Tips close the page |
 | **Pages & tags** | Categories, tags, pages, finders, and custom collections — five sub-tabs (**Categories** opens first since **v2026.08.06**) |
 | **Bookmarks** | The bookmark list and its editor, with bulk actions and a page filter (`/#config/bookmarks/<pageId>`) — two sub-tabs since **v1.1.0** |
 | **Appearance** | Theme, layout, display, and custom themes — four sub-tabs |
@@ -1311,7 +1315,7 @@ Many controls carry an **ℹ** button explaining what the setting does, and a **
 
 Config can tell you how far the install has drifted from a stock one, which is the quickest answer to *why does my dashboard behave differently from this manual*:
 
-- **Overview → At a glance** carries a line — *N settings differ from the default* — naming the sections involved and linking to the tab that holds the most of them. On an untouched install the line is absent rather than reading zero.
+- **Overview → Not stock** carries a line — *N settings differ from the default* — naming the sections involved and linking to the tab that holds the most of them. On an untouched install it says so instead of reading zero. It was a line at the foot of **At a glance** until **v1.3.3**, where a figure about your choices sat under six figures about your bookmarks.
 - **Only changed**, above each tab of settings, hides everything still on its default and says how many differ before you press it. It is not remembered between visits.
 - **Reset panel**, beside a panel's title, puts that whole group back at once instead of one **↺** at a time. It appears only when something in the group has been changed, and asks first.
 
@@ -1650,6 +1654,7 @@ When set, protected API calls require header `X-NextDash-Token: your-long-random
 | Health: cache scan result | `POST /api/health/cache-scan` |
 | Health: update bookmark status | `POST /api/health/update-status` |
 | Bookmark link preview | `GET /api/bookmark-preview` |
+| Posts from nextdash.cc | `GET /api/site-news` — the ten most recent with a one-line summary, fetched server-side every six hours (conditionally, and mirrored to disk) and off entirely when **Behavior → Privacy → Show posts from nextdash.cc** is cleared or `DISABLE_NEWS_FEED` is set |
 | Health report | `GET /api/bookmark-health` — add `?view=facts` for the counts plus only the bookmarks with something to report, which is what the health badge and the preview cards read |
 | Feeds: poll every known feed now | `POST /api/feeds/poll` |
 | Clear all preview metadata | `POST /api/previews/clear` |
@@ -1702,6 +1707,8 @@ HTML pages send a restrictive CSP by default. Set `NEXTDASH_CSP=off` only when r
 Since **v2026.08.04**, nextDash can compare your running release tag with the latest on GitHub once a day. When a newer version exists, Config → Overview shows a compact notice above Tips, the ★ button gets a dot, and a toast appears once per release while you are actively using the app. Press **Check for updates** on Overview to compare manually; since **v2026.08.08.2** the ★ modal header only reports the result, with a link to the release and **Dismiss**.
 
 Go to **Config → Behavior → Privacy** and tick or clear **Check GitHub for new releases** (on by default). When off, the dot, toast, and update bars disappear everywhere. Only a public GET to the GitHub Releases API is sent — no bookmarks or settings.
+
+**Posts from nextdash.cc.** Separate from analytics, and on the same **Privacy** tab: *Show posts from nextdash.cc on the overview* puts the project's own posts into the news stream on **Config → Overview**. Your server fetches that feed — once every six hours for the whole install, conditionally, mirrored to `site-news.json` so a restart does not fetch again, and carrying nothing about you — and your browser never contacts the site. Clear the box and the request is not made at all; tick it again and the stream fills straight away. `DISABLE_NEWS_FEED=true` in the environment switches it off for everyone on the server, the way `DISABLE_TELEMETRY` and `DISABLE_UPDATE_CHECK` do.
 
 **For the whole server (self-hosting).** Set **`DISABLE_UPDATE_CHECK=true`** to turn update checks off for every user; the Privacy toggle then appears greyed out with a note that the operator disabled it.
 

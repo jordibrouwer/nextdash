@@ -244,6 +244,8 @@ No bookmark names, URLs, search queries, page or category names, notes, or tags.
 
 The tracker loads from `stats.nextdash.cc`, which is allow-listed in the CSP (`script-src` and `connect-src`).
 
+Separately from analytics, the config overview shows the latest posts from **nextdash.cc**. That feed is fetched by your server, not your browser: one request every six hours for the whole install, carrying no query, no identifier and nothing about you. **Behavior → Privacy → Show posts from nextdash.cc** switches it off, and off means the request is never made.
+
 ### DNS rebinding (IP pinning)
 
 Outbound HTTP(S) dials pin resolved public IPs for ~2 minutes so a hostname cannot switch to a private address between the safety check and the connection (unless **allow localhost bookmarks** is enabled).
@@ -455,6 +457,9 @@ Partial values (e.g. `status:on`) keep showing suggestions until the filter is c
 
 ### Config
 
+- **The overview is a news stream** (**v1.3.3**) — posts from nextdash.cc, releases, and the settings each release introduced, in one dated list with the newest first, every row labelled with its source and opening on its own. Source chips narrow it to one kind or hide the site's posts entirely. A green dot and a count on **Overview** in the rail mark anything published since you last read it; *All news & features* opens the full list under **About**, with the older settings catalogue and a button that saves nextdash.cc as a bookmark so **Fresh** counts its posts. Beside the stream: **About the developer**, then **At a glance** and what differs from the defaults — figures you look up rather than meet on the way in, which is what puts the stream above the fold. It replaced a carousel that showed one of forty-nine features at a time and a *Latest update* panel repeating the release named directly above it.
+- **The site feed is fetched by your server** (**v1.3.3**, `/api/site-news`) and held for six hours, with conditional requests and a mirror in the data directory so a nightly reboot does not fetch again. The page never contacts another host and nothing about you goes out with it. **Behavior → Privacy → Show posts from nextdash.cc** switches it off — the request is then never made — and `DISABLE_NEWS_FEED=true` does the same for a whole server.
+- **About has two tabs** (**v1.3.3**) — the colophon, and **News & features**: the whole stream with its source filters, every setting worth switching on including the ones from earlier releases, and a button that saves nextdash.cc as a bookmark so **Fresh** counts its posts.
 - **Config is a view inside the dashboard** (`Shift + S`, `<`, the gear icon, or `/#config`) across eight sections; deep-link a section or sub-tab with `/#config/appearance/layout`. Most settings save the moment you change them
 - **Find a setting** — `Ctrl/Cmd + Shift + K`, or **Find settings** below the section list. Since **v2026.09.07** every setting is indexed from the moment config opens rather than only the tabs you have already visited, and settings also match related words that are not in their label (*uptime*, *wallpaper*, *telemetry*, *hotkey*)
 - **See what you have changed** (v2026.09.07) — **Overview → At a glance** says how many settings differ from their default and links to them; **Only changed** above each settings tab hides the rest; **Reset panel** puts a whole group back at once, beside the per-setting **↺**
@@ -498,7 +503,8 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - Launcher layout preset — switch via **Config → Appearance → Layout** or `:layout launcher` in search; icon size configurable (small / normal / large)
 - Button bar position: center-bottom (default), corner dock (bottom-left / bottom-right), or a vertical side rail on either edge (side-left / side-right) via Config or `:buttonbar`
 - **Config → Appearance → Button bar** holds the whole bar since **v1.3.0**: the five positions and the two groups of toggles — **Button bar — main buttons** and **Button bar — extras** — each with **Show all** / **Hide all** and a count of what is showing. **Toolbar & tabs** keeps the **Header** group. Hiding a button leaves its keyboard shortcut working
-- ★ What's New star button in the corner opposite the button bar — always visible; latest release loads first; scroll for up to **50 recent versions** (each loads on demand)
+- **A new version shows its release notes once**, on the first visit after the upgrade; closing them marks that release read. A brand-new install is left alone — quick start comes first.
+- ★ What's New star button in the corner opposite the button bar
 - Font presets: Source Code Pro, JetBrains Mono, IBM Plex Mono, Inter, IBM Plex Sans, DM Sans, System UI
 - Adjustable columns (1–6), font size, font weight, background opacity, and density
 - Link preview cards — **on hover by default**, with **keyboard only** and **off** as the other two answers in **Config → Appearance → Display**; hover delay (Fast, Balanced or Calm — Calm by default) and a checklist of the rows the card draws

@@ -113,13 +113,19 @@ test.describe('config overview', () => {
         await expect(page.locator('.config-overview-act > .config-update-bar')).toHaveCount(1);
     });
 
-    test('new features carousel shows translated copy, not locale keys', async ({ page }) => {
+    test('the stream shows translated copy, not locale keys', async ({ page }) => {
         await openOverview(page);
-        const spotlight = page.locator('.config-feature-spotlight');
-        await expect(spotlight).toBeVisible();
-        const text = await spotlight.innerText();
-        expect(text).not.toMatch(/config\.overviewNewFeature/);
-        await expect(spotlight.locator('.config-feature-spotlight-title')).not.toHaveText(/config\./);
+        const stream = page.locator('.config-news-stream');
+        await expect(stream).toBeVisible({ timeout: 15_000 });
+        // A feature's words live in the locale files; a post's come from the
+        // feed. Neither may render as a key.
+        await expect(stream).not.toContainText('config.overviewNewFeature');
+        await expect(stream).not.toContainText('config.overviewNews');
+        // Every row says where it came from.
+        const sources = await page.locator('.config-src-chip').evaluateAll((els) =>
+            [...new Set(els.map((el) => el.textContent.trim().toLowerCase()))]);
+        expect(sources.length).toBeGreaterThan(0);
+        expect(sources.every((s) => s.length > 0)).toBe(true);
     });
 
     test('problems are listed with a way to act on each', async ({ page }) => {
@@ -159,17 +165,14 @@ test.describe('config overview', () => {
             window.dashboardInstance.config.section)).toBe('stats');
     });
 
-    test('the latest release is summarised with a link to the notes', async ({ page }) => {
+    test('the posts from the site lead the read row', async ({ page }) => {
         await openOverview(page);
-        const tag = page.locator('.config-release-tag');
-        await expect(tag).toBeVisible();
-        await expect(tag).toContainText(/^v\d/);
-        // The summary is plain text, not the authored HTML.
-        const panel = page.locator('.config-panel').filter({ has: tag });
-        await expect(panel.locator('.config-panel-note')).not.toContainText('<strong>');
-        await expect(page.locator('[data-overview-action="whats-new"]')).toBeVisible();
+        // The Latest update panel used to sit here and said what the update bar
+        // above it already said, with the notes a button away in What's new.
+        // The site's posts are what it could not say.
+        await expect(page.locator('.config-news-panel')).toBeVisible();
+        await expect(page.locator('.config-overview-layout')).not.toContainText('Latest update');
     });
-
 
     /**
      * The loader only logged failures to the console, so a stub that had not
@@ -178,7 +181,11 @@ test.describe('config overview', () => {
      */
     test('the whats-new button actually opens the modal', async ({ page }) => {
         await openOverview(page);
-        await page.locator('[data-overview-action="whats-new"]').click();
+        // It moved into the update bar with the release number it belongs to,
+        // when the panel that used to carry it was removed.
+        // It sits in the update bar beside the version it belongs to, and on
+        // every release row in the stream — so the first one is the bar's.
+        await page.locator('[data-overview-action="whats-new"]').first().click();
         await expect(page.locator('.whats-new-modal')).toBeVisible();
     });
 
@@ -212,7 +219,9 @@ test.describe('config overview', () => {
         const panel = page.locator('.config-about-panel');
         await expect(panel).toBeVisible();
 
-        const github = panel.locator('.config-about-github');
+        // GitHub is one of the four addresses in the list now, not a button of
+        // its own: the side column is too narrow for a row of two.
+        const github = panel.locator('.config-about-links a[href*="github.com"]');
         await expect(github).toHaveAttribute('href', 'https://github.com/jordibrouwer/nextdash');
         await expect(github).toHaveAttribute('rel', /noopener/);
 
@@ -233,63 +242,74 @@ test.describe('config overview', () => {
         expect(glow).not.toBe('none');
     });
 
-    // Developer and latest update share one row at half width each; tips sit
-    // full width underneath.
-    test('the overview places developer beside latest update with tips below', async ({ page }) => {
+    // The stream takes the wide column directly under the act zone; the side
+    // column carries the figures about your own install, with About signing
+    // its foot. That order is the whole point of the rebuild: what the project
+    // is doing sits above the fold, and what your library contains is beside
+    // it, not on top.
+    test('the stream leads, with About and the figures beside it', async ({ page }) => {
         await loadOverview(page);
 
-        const inAboutRow = await page.evaluate(() =>
-            !!document.querySelector('.config-overview-about-row .config-about-panel'));
-        expect(inAboutRow).toBe(true);
-
         const box = await page.evaluate(() => {
-            const find = (text) => [...document.querySelectorAll('.config-overview-layout .config-panel')]
-                .find((el) => el.textContent.includes(text));
             const measure = (el) => {
                 if (!el) return null;
                 const r = el.getBoundingClientRect();
-                return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width) };
+                return { x: Math.round(r.x), y: Math.round(r.y + window.scrollY), w: Math.round(r.width) };
             };
-            const rect = (text) => measure(find(text));
+            const find = (text) => [...document.querySelectorAll('.config-overview-layout .config-panel')]
+                .find((el) => el.textContent.includes(text));
             return {
-                about: rect('About the developer'),
-                latest: rect('Latest update'),
-                // Tips is a footer row now, not a panel.
+                news: measure(document.querySelector('.config-news-panel')),
+                about: measure(document.querySelector('.config-about-panel')),
+                glance: measure(find('At a glance')),
+                act: measure(document.querySelector('.config-overview-act')),
                 tips: measure(document.querySelector('.config-overview-tips-row')),
-                glance: rect('At a glance'),
+                viewport: window.innerHeight,
             };
         });
 
         for (const [name, r] of Object.entries(box)) {
+            if (name === 'viewport') continue;
             expect(r, `${name} should be on the overview`).not.toBeNull();
         }
-        // Developer and latest update side by side at roughly half width each.
-        expect(Math.abs(box.about.y - box.latest.y)).toBeLessThan(20);
-        expect(box.latest.x).toBeGreaterThan(box.about.x);
-        expect(box.about.w).toBeGreaterThan(200);
-        expect(Math.abs(box.about.w - box.latest.w)).toBeLessThan(40);
-        // Tips sits below that row, not beside it.
-        expect(box.tips.y).toBeGreaterThan(box.about.y + 40);
-        expect(box.tips.y).toBeGreaterThan(box.latest.y + 40);
-        // At a glance stays in the top row above developer.
-        expect(box.glance.y).toBeLessThan(box.about.y - 20);
+        // The stream starts within a screen of the top: it used to begin at
+        // 936px on a 900px window, which is the definition of not being seen.
+        expect(box.news.y).toBeLessThan(box.viewport);
+        expect(box.news.y).toBeGreaterThan(box.act.y);
+        // Side column to the right, and wider on the left where the list is.
+        expect(box.about.x).toBeGreaterThan(box.news.x);
+        expect(box.news.w).toBeGreaterThan(box.about.w);
+        // The figures head that column and About signs the foot of it.
+        expect(box.glance.x).toBe(box.about.x);
+        expect(box.glance.y).toBeLessThan(box.about.y);
+        // Tips still closes the page.
+        expect(box.tips.y).toBeGreaterThan(box.news.y);
     });
 
-    test('the about buttons stay on one line beside each other', async ({ page }) => {
+    test('about lists its addresses one per line, with Ko-fi across the card', async ({ page }) => {
         await loadOverview(page);
 
-        const row = await page.evaluate(() => {
-            const el = document.querySelector('.config-about-actions');
-            const [gh, kofi] = el.children;
-            const g = gh.getBoundingClientRect();
-            const k = kofi.getBoundingClientRect();
-            return {
-                sameLine: Math.abs(g.y - k.y) < 3,
-                withinPanel: k.right <= el.getBoundingClientRect().right + 1,
-            };
+        // The pair of buttons became a list when About moved into the narrower
+        // side column: four addresses read better stacked than wrapped, and
+        // nextdash.cc and its feed appeared nowhere in the product before.
+        const links = page.locator('.config-about-links a');
+        await expect(links).toHaveCount(4);
+        await expect(links.nth(0)).toHaveAttribute('href', /nextdash\.cc\/$/);
+        await expect(links.nth(1)).toHaveAttribute('href', /nextdash\.cc\/feed/);
+
+        const stacked = await page.locator('.config-about-links').evaluate((list) => {
+            const tops = [...list.querySelectorAll('a')].map((a) => Math.round(a.getBoundingClientRect().top));
+            return new Set(tops).size === tops.length;
         });
-        expect(row.sameLine).toBe(true);
-        expect(row.withinPanel).toBe(true);
+        expect(stacked).toBe(true);
+
+        // The one thing on the page that asks for something spans the card.
+        const kofi = await page.locator('.config-about-panel .wn-kofi-btn').evaluate((btn) => {
+            const panel = btn.closest('.config-panel').getBoundingClientRect();
+            const box = btn.getBoundingClientRect();
+            return box.width > panel.width * 0.8;
+        });
+        expect(kofi).toBe(true);
     });
 
     // Opening #config directly renders config before the bookmark grid has ever

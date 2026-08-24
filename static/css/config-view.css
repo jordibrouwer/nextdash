@@ -1784,13 +1784,15 @@
     opacity: 0.7;
 }
 
+/*
+ * No rule above the first zone: the zone line right below it already draws
+ * one, and two horizontal lines a few pixels apart read as a mistake.
+ */
 .config-overview-layout {
     display: flex;
     flex-direction: column;
     gap: 26px;
-    margin-top: 22px;
-    padding-top: 22px;
-    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+    margin-top: 10px;
 }
 
 /*
@@ -1844,12 +1846,295 @@
     align-items: start;
 }
 
-/* About the developer beside latest update — half width each. */
+/*
+ * The news stream beside About the developer.
+ *
+ * Not an even split: the stream is a list that has to stay readable before it
+ * is clipped, while About is a fixed paragraph that does not grow — and it
+ * signs the zone rather than competing with it.
+ */
 .config-overview-about-row {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
     gap: 34px;
     align-items: start;
+}
+
+/*
+ * The side column: who made this, then what is in your install.
+ *
+ * The figures used to lead the page, which put the stream below the fold on a
+ * 900px screen. They are reference — you look them up — so they sit beside the
+ * stream rather than above it.
+ */
+.config-overview-side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* The zone line heads its own column, so it lines up with the one beside it. */
+.config-overview-side .config-zone-rule {
+    margin: 0;
+}
+
+/*
+ * A zone is a line with a word on it, not another panel.
+ *
+ * The page had seven boxes and no order; two named rules group what is already
+ * there — your install against the project — without adding two more frames.
+ */
+.config-zone-rule {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 30px 0 16px;
+}
+
+.config-zone-rule:first-child {
+    margin-top: 6px;
+}
+
+.config-zone-rule > span {
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.config-zone-rule > i {
+    flex: 1;
+    height: 1px;
+    background: var(--border-primary, rgba(128, 128, 128, 0.2));
+}
+
+.config-zone-rule > a {
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.72rem;
+    color: var(--accent-primary);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.config-zone-rule > a:hover,
+.config-zone-rule > a:focus-visible {
+    text-decoration: underline;
+}
+
+/* The source filters above the stream. */
+.config-news-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 12px;
+}
+
+.config-src-filter {
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.config-src-filter b {
+    font-weight: 500;
+    opacity: 0.65;
+    margin-left: 5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.config-src-filter[aria-pressed="true"] {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    color: var(--background-primary);
+}
+
+.config-src-filter--site[aria-pressed="true"] {
+    background: var(--accent-warning);
+    border-color: var(--accent-warning);
+    color: var(--background-primary);
+}
+
+.config-src-filter--release[aria-pressed="true"] {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--background-primary);
+}
+
+.config-src-filter--feature[aria-pressed="true"] {
+    background: var(--accent-info, #60A5FA);
+    border-color: var(--accent-info, #60A5FA);
+    color: var(--background-primary);
+}
+
+/*
+ * One dated list, three sources.
+ *
+ * Source label in its own column so the rows line up down the left, the date
+ * on the right where every row can be compared at a glance, and the summary
+ * under the title rather than beside it — six one-line entries fit where one
+ * sixty-word spotlight used to.
+ */
+.config-news-stream {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/*
+ * A fixed first column, not `auto`.
+ *
+ * Each row is its own grid, so an auto column sized itself per row: nextdash.cc
+ * is twice the width of release, and every title started at a different place
+ * down the list. One width for the label column lines the titles up, and the
+ * chip fills it rather than floating in it.
+ */
+.config-news-item {
+    display: grid;
+    grid-template-columns: 5.6rem minmax(0, 1fr) auto;
+    gap: 3px 11px;
+    padding: 11px 0;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+    align-items: baseline;
+}
+
+.config-news-item:first-child {
+    border-top: 0;
+    padding-top: 2px;
+}
+
+.config-src-chip {
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+    grid-row: span 3;
+    align-self: start;
+    margin-top: 3px;
+    /* Fills its column and stays on one line: a longer source name added later
+       is clipped rather than pushing every title along with it. */
+    display: block;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 720px) {
+    .config-news-item {
+        grid-template-columns: 4.6rem minmax(0, 1fr) auto;
+    }
+}
+
+.config-src-chip--site {
+    background: color-mix(in srgb, var(--accent-warning) 16%, transparent);
+    color: var(--accent-warning);
+}
+
+.config-src-chip--release {
+    background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+    color: var(--accent-primary);
+}
+
+.config-src-chip--feature {
+    background: color-mix(in srgb, var(--accent-info, #60A5FA) 16%, transparent);
+    color: var(--accent-info, #60A5FA);
+}
+
+.config-news-title {
+    margin: 0;
+    font-size: var(--font-size-controls);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+/* What "new" means here: published since you last read the stream. */
+.config-news-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    background: var(--accent-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 16%, transparent);
+}
+
+.config-news-when {
+    grid-row: span 2;
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.config-news-summary {
+    grid-column: 2;
+    margin: 0;
+    font-size: calc(var(--font-size-controls) * 0.88);
+    color: var(--text-secondary);
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+
+.config-news-action {
+    grid-column: 2;
+    margin-top: 3px;
+}
+
+.config-news-go {
+    font-size: calc(var(--font-size-controls) * 0.8);
+    color: var(--text-secondary);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.config-news-go:hover,
+.config-news-go:focus-visible {
+    color: var(--accent-primary);
+    text-decoration: underline;
+}
+
+.config-news-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+}
+
+/* The unread count on Overview in the section rail. */
+.config-nav-count {
+    margin-left: auto;
+    font-family: var(--font-family-mono, monospace);
+    font-size: 0.64rem;
+    font-weight: var(--font-weight-semibold);
+    background: var(--accent-primary);
+    color: var(--background-primary);
+    border-radius: 999px;
+    padding: 1px 6px;
+    line-height: 1.5;
 }
 
 @media (max-width: 720px) {
@@ -1895,15 +2180,7 @@
     align-items: center;
     gap: 8px;
     margin-left: auto;
-}
-
-.config-feature-spotlights {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.config-new-features-head {
+}.config-new-features-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1913,61 +2190,7 @@
 
 .config-new-features-head .config-panel-title {
     margin: 0;
-}
-
-.config-new-features-nav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-}
-
-.config-new-features-nav-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    padding: 0;
-    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.25));
-    border-radius: 6px;
-    background: var(--surface-primary, transparent);
-    color: var(--text-color, inherit);
-    font-size: 1.15rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.config-new-features-nav-btn:hover {
-    border-color: color-mix(in srgb, var(--accent-primary, #4a7038) 40%, var(--border-primary, rgba(128, 128, 128, 0.25)));
-    background: color-mix(in srgb, var(--accent-primary, #4a7038) 8%, transparent);
-}
-
-.config-new-features-counter {
-    min-width: 3.2rem;
-    text-align: center;
-    font-size: calc(var(--font-size-text) * 0.857);
-    color: var(--text-muted, rgba(128, 128, 128, 0.85));
-    font-variant-numeric: tabular-nums;
-}
-
-.config-new-features-carousel {
-    outline: none;
-}
-
-.config-new-features-carousel:focus-visible {
-    border-radius: 8px;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary, #4a7038) 35%, transparent);
-}
-
-.config-feature-spotlight {
-    padding: 10px 12px;
-    border: 1px solid var(--border-primary, rgba(128, 128, 128, 0.2));
-    border-radius: 10px;
-    background: color-mix(in srgb, #fff 14%, var(--surface-secondary, rgba(128, 128, 128, 0.04)) 86%);
-}
-
-.config-new-features-panel {
+}.config-new-features-panel {
     position: relative;
     isolation: isolate;
     overflow: visible;
@@ -2083,23 +2306,7 @@ body.no-animations .config-new-features-panel-star {
         opacity: 0.78;
         transform: scale(1);
     }
-}
-
-.config-feature-spotlight-title {
-    margin: 0 0 6px;
-    font-size: calc(var(--font-size-text) * 1.05);
-    font-weight: 650;
-}
-
-.config-feature-spotlight .config-panel-note {
-    margin-bottom: 6px;
-}
-
-.config-feature-spotlight-enable {
-    margin-bottom: 8px;
-}
-
-/* "Needs attention" rows: count, what it is, and the way to deal with it. */
+}/* "Needs attention" rows: count, what it is, and the way to deal with it. */
 .config-attention-list {
     list-style: none;
     margin: 0;
@@ -5233,4 +5440,43 @@ button.config-bm-shortcut-pill {
     pointer-events: none;
     width: min(340px, 100%);
     box-shadow: none;
+}
+
+
+
+/* About's addresses, one per line: the side column is too narrow for a row. */
+.config-about-links {
+    list-style: none;
+    margin: 0.6rem 0 0.8rem;
+    padding: 0.6rem 0 0;
+    border-top: 1px solid var(--border-primary, rgba(128, 128, 128, 0.15));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.config-about-links a {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-family: var(--font-family-mono, monospace);
+    font-size: calc(var(--font-size-controls) * 0.85);
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.config-about-links a:hover,
+.config-about-links a:focus-visible {
+    color: var(--accent-primary);
+}
+
+.config-about-links a span:last-child {
+    color: var(--text-tertiary);
+}
+
+/* The one thing on the page that asks for something: full width, not a chip. */
+.config-about-panel .wn-kofi-btn {
+    width: 100%;
+    justify-content: center;
 }

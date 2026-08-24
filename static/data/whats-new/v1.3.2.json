@@ -64,10 +64,6 @@
         {
           "badge": "fix",
           "text": "<strong>The dashboard loads lighter.</strong> The health icon was downloading the entire health report on every visit to read three numbers off it; on a real library that is 8 KB down to under half a kilobyte."
-        },
-        {
-          "badge": "fix",
-          "text": "<strong>Pin looks like the rest of the menu.</strong> Right-clicking a bookmark gave you a column of quiet marks in your theme's colour and one red-and-yellow pin emoji. It is drawn in the same colour as its neighbours now."
         }
       ]
     }

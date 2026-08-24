@@ -49,7 +49,7 @@ test.describe('a release flagged hideFromModal', () => {
         expect(index[0].hideFromModal).toBe(true);
     });
 
-    test('shows in Config → Overview → Latest update', async ({ page }) => {
+    test('names the release in Config → Help', async ({ page }) => {
         await page.route('**/static/data/whats-new/index.json*', (route) => route.fulfill({
             contentType: 'application/json',
             body: JSON.stringify([
@@ -84,11 +84,19 @@ test.describe('a release flagged hideFromModal', () => {
         }));
 
         await loadDashboard(page);
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('overview'));
-        await page.waitForFunction(() => typeof window.DashboardConfig === 'function', null, { timeout: 10_000 });
-        const tag = page.locator('.config-release-tag');
-        await expect(tag).toBeVisible({ timeout: 10_000 });
-        await expect(tag).toContainText('v2026.09.9');
+        // Help's version heading reads the same index, and is where the release
+        // number lives now that the overview's Latest update panel is gone —
+        // it said what the update bar above it already said, with the site's
+        // own post about the release a click away in its place.
+        await page.evaluate(async () => {
+            const c = window.dashboardInstance.config;
+            await c.openConfigView('help');
+            c.helpTab = 'start';
+            c.render();
+        });
+        await expect.poll(() => page.evaluate(() =>
+            document.getElementById('config-help-body')?.innerText || ''), { timeout: 15_000 })
+            .toContain('2026.09.9');
     });
 
     test('does not appear in the What\'s new modal', async ({ page }) => {
@@ -131,21 +139,21 @@ test.describe('a release flagged hideFromModal', () => {
     // what the shipped files do with it, which is the part a release gets wrong:
     // a flag left on hides a release nobody meant to hide, and a flag taken off
     // without bumping the tokens announces it to nobody.
-    test('v1.3.2 leads the index and the modal, with v1.2.1 still hidden behind it', async ({ page }) => {
+    test('v1.3.3 leads the index and the modal, with v1.2.1 still hidden behind it', async ({ page }) => {
         await loadDashboard(page);
 
         const index = await page.evaluate(async () =>
             (await fetch('/static/data/whats-new/index.json')).json());
         // The newest entry is the one the release tag and Config → Overview →
         // Latest update read, flag or no flag.
-        expect(index[0].tag).toBe('v1.3.2');
+        expect(index[0].tag).toBe('v1.3.3');
         expect(index[0].hideFromModal).toBeUndefined();
-        expect(index[1].tag).toBe('v1.3.1');
-        expect(index[2].tag).toBe('v1.3.0');
+        expect(index[1].tag).toBe('v1.3.2');
+        expect(index[2].tag).toBe('v1.3.1');
         // And the hidden one further down stays hidden: a release recorded but
         // not announced does not become announced because a later one shipped.
-        expect(index[3].tag).toBe('v1.2.1');
-        expect(index[3].hideFromModal).toBe(true);
+        expect(index[4].tag).toBe('v1.2.1');
+        expect(index[4].hideFromModal).toBe(true);
 
         await page.evaluate(() => window.dashboardInstance.config.openWhatsNew());
         const modal = page.locator('.whats-new-modal');
@@ -158,9 +166,9 @@ test.describe('a release flagged hideFromModal', () => {
                 .map((e) => e.textContent.trim())
                 .filter((t) => /^v\d+\.\d+\.\d+$/.test(t)),
         )]);
-        // v1.3.2 leads; v1.2.1 is skipped wherever the reader scrolls, which is
+        // v1.3.3 leads; v1.2.1 is skipped wherever the reader scrolls, which is
         // the whole of what hideFromModal promises.
-        expect(await shownTags()).toContain('v1.3.2');
+        expect(await shownTags()).toContain('v1.3.3');
         expect(await shownTags()).not.toContain('v1.2.1');
 
         // Releases load one at a time as you scroll, and this one fills the
@@ -180,10 +188,10 @@ test.describe('a release flagged hideFromModal', () => {
     // These two tokens are what reopens the modal for everyone, so they follow
     // the newest *announced* release: bumped here, where v1.2.1 deliberately
     // left them alone. A feature release nobody is shown is not a release.
-    test('the release constants name v1.3.2, the release the modal leads with', async ({ page }) => {
+    test('the release constants name v1.3.3, the release the modal leads with', async ({ page }) => {
         const stub = await page.request.get('/static/js/whats-new-stub.js');
         const src = await stub.text();
-        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.3.2'");
-        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v248'");
+        expect(src).toContain("DASHBOARD_RELEASE = '2026.08-dashboard-release-v1.3.3'");
+        expect(src).toContain("NEXTDASH_WHATS_NEW_DATA_VERSION = 'whats-new-v249'");
     });
 });
