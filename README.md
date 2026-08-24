@@ -20,7 +20,7 @@ Self-host on any machine or container. Open it in your browser, organise bookmar
 
 📰 **Developer Blog & Updates:** [jordibrw.cc](https://jordibrw.cc)
 
-🍏 **macOS Dropzone 5 Integration:** Send URLs straight to your dashboard or Inbox from any app or browser using the [Dropzone 5 script for nextDash](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
+🧩 **Save a link from anywhere:** [`integrations/`](integrations/) holds a shell one-liner, two Raycast commands, a **Dropzone 5** action, a Ulauncher extension for Linux, and recipes for Alfred and Apple Shortcuts — every one of them a few lines on top of the same `GET /add` route, so anything that can open a URL or run `curl` can save to your **Inbox**. The [Dropzone 5 script](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos) also has a repository of its own.
 
 ---
 
@@ -525,7 +525,7 @@ Collections of your own take rules on category, tag, page, URL, name and status,
 - **Ten links, two minutes** (**v1.3.0**) — when enough links want attention, a card in the corner of the dashboard names what is waiting (*"10 links to review: 4 broken, 3 never opened, 3 not opened in a year"*) and runs the health view's **Work through** over the worst ten. The session ends: it counts what you dealt with, offers another ten, and **Done for today** puts the offer away until tomorrow
 - **A failure says why** (**v1.2.0**) — DNS, timeout, refused, TLS, redirect or content, on the outage list, the timeline and the CSV export, where anything that was not an HTTP error used to show no cause at all. A failed check is re-probed five seconds later and only recorded if it fails again, so one dropped check no longer dents a month of uptime, and a recovery names how long the service was down
 - **Honest windows and wider coverage** (**v1.2.0**) — a 30-day figure says how much history is actually behind it instead of labelling a week "30 days", certificate expiry now comes from every check rather than only from monitored bookmarks, the trend chart can draw broken, stale, unchecked or the score, a whole selection can be muted at once, and the three-second limit per check is a setting under **Config → Behavior → Status & health**
-- **[`integrations/`](integrations/)** — a shell script, two Raycast commands, a Dropzone action, a Ulauncher extension, and Alfred and Apple Shortcuts recipes, all on top of the same one-line `/add` route
+- **[`integrations/`](integrations/)** — a shell script, two Raycast commands, a Dropzone action, a Ulauncher extension, and Alfred and Apple Shortcuts recipes, all on top of the same one-line `/add` route ([Integrations](#integrations))
 - **Save a link from anywhere** — install nextDash as an app and it appears in your phone's share sheet, saving straight to the Inbox; or use the bookmarklet **Config → Help → Inbox** generates for you, which works in Safari, Firefox and anything else the extension will never reach. Same route for scripts: `GET /add?url=…&title=…`. On an install with a write token, set `NEXTDASH_CAPTURE_TOKEN` and pass it — it opens capture and nothing else
 - **Filter the page you are on** (`Shift + F`) — a slim bar above the grid narrows the rows in place and hides the categories left empty, keeping the layout, the cursor and any selection. Search (`>`) is still the overlay that takes you anywhere
 - **`Shift + Alt + ←/→`** — move the selected bookmark into the category beside it, without a popover
@@ -621,6 +621,55 @@ The **nextDash Bookmark Saver** extension (`extension/`) lets you save the curre
 When you restrict CORS with `NEXTDASH_CORS_ORIGINS`, include your extension origin (`chrome-extension://…` from `chrome://extensions`).
 
 See `extension/README.md` for full usage and development notes.
+
+---
+
+## Integrations
+
+The extension covers Chrome and its relatives. [`integrations/`](integrations/)
+covers everything else, and it is all one route:
+
+```
+GET /add?url=<address>&title=<optional title>[&token=<capture token>]
+```
+
+It saves to the **Inbox** — the same place the extension and the share sheet
+save to, with the same duplicate handling — and answers with a page a person can
+read, so a bookmarklet or a Shortcut can simply open it. Anything that can open
+a URL or run `curl` is therefore an integration; these are the ones worth
+keeping around.
+
+| | |
+|---|---|
+| [`shell/nextdash-add`](integrations/shell/nextdash-add) | The one-line saver. Quick Actions, Keyboard Maestro, cron, an alias — anything that runs a command |
+| [`raycast/save-to-nextdash.sh`](integrations/raycast/save-to-nextdash.sh) | Raycast: type a URL, save it |
+| [`raycast/save-current-tab.sh`](integrations/raycast/save-current-tab.sh) | Raycast: save the front tab of Safari, Chrome, Arc, Brave or Edge |
+| [`dropzone/nextDash.dzbundle.rb`](integrations/dropzone/nextDash.dzbundle.rb) | **Dropzone 5**: drop a link on the target, or click it to save the clipboard |
+| [`alfred/README.md`](integrations/alfred/README.md) | Alfred: a keyword workflow, and a hotkey for the front tab |
+| [`shortcuts/README.md`](integrations/shortcuts/README.md) | Apple Shortcuts, for the macOS and iOS share sheets — the route that works on iOS, where Safari does not implement the web share target |
+| [`ulauncher/`](integrations/ulauncher/) | Ulauncher, on Linux: `nd <url>` |
+
+Two environment variables configure all of them: **`NEXTDASH_URL`** (default
+`http://localhost:8080`) and **`NEXTDASH_TOKEN`**, which is only needed when the
+install runs with a write token. Give it the `NEXTDASH_CAPTURE_TOKEN` rather
+than the write token: that one opens the two capture routes and nothing else, so
+a copy sitting in a script or a browser's history can at worst add a link to
+your inbox.
+
+```sh
+curl -s --get --data-urlencode "url=https://example.com/article" \
+     --data-urlencode "title=An article" \
+     https://nextdash.example.com/add >/dev/null
+```
+
+Use `--data-urlencode` rather than building the query by hand — an address
+carrying its own `?x=1&y=2`, or a title with an ampersand, is exactly what
+breaks that. [`integrations/README.md`](integrations/README.md) has the rest,
+including which scripts were run against a live install and which could only be
+syntax-checked, since several of them need a host app to exercise at all.
+
+The **Dropzone 5** action also has [a repository of its
+own](https://github.com/jordibrouwer/dropzone-script-for-nextdash-on-macos).
 
 ---
 
