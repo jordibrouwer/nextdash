@@ -151,7 +151,15 @@ func (h *Handlers) pendingMonitorNotifications(transitions []monitorTransition) 
 		return nil
 	}
 	settings := h.store.GetSettings()
-	if strings.TrimSpace(settings.MonitorNotifyURL) == "" {
+	// Gate on the sinks dispatchMonitorNotifications actually uses, not on the
+	// webhook URL. Pushover is configured with a token and user key against a
+	// fixed endpoint and never sets MonitorNotifyURL, and browser push is an
+	// independent sink -- so the old check silently produced no notifications at
+	// all for either, while "send test alert" (which bypasses this) still worked
+	// and made the setup look correct.
+	_, webhookConfigured := monitorNotifyTarget(settings)
+	pushConfigured := settings.PushNotifyEnabled && settings.PushNotifyMonitor
+	if !webhookConfigured && !pushConfigured {
 		return nil
 	}
 	threshold := clampMonitorNotifyRetries(settings.MonitorNotifyRetries)
