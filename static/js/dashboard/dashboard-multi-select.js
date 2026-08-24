@@ -949,6 +949,12 @@ class DashboardMultiSelect {
         }));
 
         d.ensureBookmarkMutationSnapshot();
+        // The page list as it was before the splices below. saveBookmarkOrder
+        // clears d.pendingReorderSnapshot on both outcomes, so the rollback path
+        // needs its own copy.
+        const beforeDelete = d.pendingReorderSnapshot
+            ? d.pendingReorderSnapshot.map((bm) => ({ ...bm }))
+            : null;
         [...refs].sort((a, b) => b.index - a.index).forEach((ref) => {
             d.removeBookmarkFromAllBookmarks(ref);
             d.bookmarks.splice(ref.index, 1);
@@ -963,10 +969,18 @@ class DashboardMultiSelect {
         if (!saved) {
             // The rows are already spliced out and the selection already
             // cleared, so a silent return left the user watching bookmarks
-            // vanish with no sign the write failed. Put them back in the order
-            // they came from and say so.
+            // vanish with no sign the write failed. Put them back and say so.
+            //
+            // Restored from the pre-delete copy rather than by re-splicing:
+            // saveBookmarkOrder's own error path has usually already rolled
+            // d.bookmarks back to that same state, so splicing the deleted rows
+            // in again inserted every one of them a second time -- and the next
+            // write of any kind then persisted the duplicates.
+            if (beforeDelete) {
+                d.bookmarks = beforeDelete.map((bm) => ({ ...bm }));
+            }
+            // allBookmarks has no snapshot of its own, so it is repaired here.
             [...trashed].sort((a, b) => a.index - b.index).forEach((entry) => {
-                d.bookmarks.splice(entry.index, 0, entry.bookmark);
                 d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
             });
             d.pendingReorderSnapshot = null;

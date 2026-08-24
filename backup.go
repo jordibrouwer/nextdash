@@ -628,6 +628,16 @@ func (h *Handlers) applyStagedImport(dataDir string, staged []stagedImportFile) 
 
 	prepared, importedCategoriesByPage = mergeImportCategoriesIntoPrepared(prepared, importedCategoriesByPage)
 
+	// Refuse an archive that carries no bookmark page at all. commitPreparedImport
+	// treats every bookmarks-*.json that the archive does not name as an orphan and
+	// deletes it, so a payload of unrelated-but-valid files (a stray settings.json,
+	// a ZIP whose entries all failed the filename check) would silently wipe the
+	// whole library and still answer 200. An import that replaces everything must
+	// at least contain the everything it replaces.
+	if len(importBookmarkFilenames(prepared)) == 0 {
+		return 0, &importError{msg: "archive contains no bookmark pages", code: http.StatusBadRequest}
+	}
+
 	if err := commitPreparedImport(dataDir, prepared); err != nil {
 		return 0, &importError{msg: fmt.Sprintf("commit failed: %v", err), code: http.StatusInternalServerError}
 	}

@@ -2996,12 +2996,22 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 
 	sources := make([]Bookmark, 0, len(req.SourcePageIDs))
 	deletes := make([]mergeDeleteRef, 0, len(req.SourcePageIDs))
+	// Every ref below is validated against the pre-merge snapshot, so the same
+	// (page, index) pair listed twice would pass twice and then be deleted twice
+	// from a slice that has already shifted -- taking an innocent neighbour with
+	// it, and double-counting the source's open count into the keeper.
+	seenSources := make(map[mergeDeleteRef]bool, len(req.SourcePageIDs))
 	for i := 0; i < len(req.SourcePageIDs); i++ {
 		pageID := req.SourcePageIDs[i]
 		index := req.SourceIndices[i]
 		if pageID == req.TargetPageID && index == req.TargetIndex {
 			continue
 		}
+		ref := mergeDeleteRef{pageID: pageID, index: index}
+		if seenSources[ref] {
+			continue
+		}
+		seenSources[ref] = true
 		bookmarks := h.store.GetBookmarksByPage(pageID)
 		if index < 0 || index >= len(bookmarks) {
 			http.Error(w, "Invalid source index", http.StatusBadRequest)
@@ -3013,7 +3023,7 @@ func (h *Handlers) MergeDuplicates(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sources = append(sources, src)
-		deletes = append(deletes, mergeDeleteRef{pageID: pageID, index: index})
+		deletes = append(deletes, ref)
 	}
 
 	merged := keeper

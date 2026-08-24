@@ -427,6 +427,12 @@ class DashboardTagFilter {
 
         const saved = await d.saveBookmarkOrder();
         if (!saved) {
+            // saveBookmarkOrder rolls d.bookmarks back, but allBookmarks has no
+            // snapshot of its own -- without this the global-shortcut list stayed
+            // missing the rows the failed delete had removed.
+            [...trashed].sort((a, b) => a.index - b.index).forEach((entry) => {
+                d.restoreBookmarkInAllBookmarks(entry.bookmark, entry.pageId);
+            });
             return;
         }
         // Recorded after the save so a delete that did not persist cannot leave

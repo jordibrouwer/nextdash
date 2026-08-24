@@ -2060,7 +2060,17 @@ class DashboardInlineEdit {
         d.bookmarks.splice(deleteIndex, 1);
         this.finishInlineEditCommit(d._inlineEditContext?.row);
 
-        await d.saveBookmarkOrder();
+        const saved = await d.saveBookmarkOrder();
+        if (!saved) {
+            // The guard the comment below already promised. Without it a failed
+            // write -- which saveBookmarkOrder rolls back, leaving the bookmark
+            // on the page -- still recorded a trash entry, still claimed the
+            // bookmark was deleted, and offered an Undo that spliced the
+            // still-present bookmark back in as a duplicate.
+            d.restoreBookmarkInAllBookmarks(deletedBookmark, deleteRef.pageId);
+            d.renderDashboard();
+            return;
+        }
         await d.data?.refreshAfterBookmarkMutation?.({ pageIds: [deleteRef.pageId] });
 
         // Recorded after the page save so a delete that did not persist cannot
