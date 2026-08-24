@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const { prepareDashboardInteraction } = require('./e2e-helpers');
 
 function largeReport(count) {

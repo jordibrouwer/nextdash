@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 
 const PROMO_KEYS = [
     'nextdash:dashboard-search-promo-search-v2',

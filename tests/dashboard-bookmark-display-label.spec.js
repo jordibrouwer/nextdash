@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 
 test.describe('dashboard bookmark display label', () => {
     test('nameless bookmarks strip www from hostname label', async ({ page }) => {

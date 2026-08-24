@@ -1,6 +1,6 @@
 // @ts-check
 const path = require('path');
-const { test, expect, chromium } = require('@playwright/test');
+const { test, expect, chromium } = require('./fixtures');
 const { WRITE_TOKEN } = require('./e2e-helpers');
 
 const extensionPath = path.join(__dirname, '..', 'extension');

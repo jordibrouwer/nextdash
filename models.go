@@ -302,7 +302,7 @@ type Settings struct {
 	OnboardingCompleted         bool                         `json:"onboardingCompleted"`
 	AnalyticsOptIn              bool                         `json:"analyticsOptIn"`       // Privacy-friendly Umami analytics — opt-in, off until the user turns it on in Config → General
 	EnableSessionTips           bool                         `json:"enableSessionTips"`    // Occasional cheat-sheet tip toast, rate-limited by discoverabilityState.tipsNotBefore (default on, opt-out in Config → General)
-	ShowShortcutTooltips        bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default on, opt-out in Config → Behavior or `:shortcuts off`)
+	ShowShortcutTooltips        bool                         `json:"showShortcutTooltips"` // Keyboard-shortcut popovers on toolbar and header icons (default OFF since the shortcutTooltipsOffMigrated migration; opt-in in Config → Behavior or `:shortcuts on`)
 	ShowGridKeyLegend           bool                         `json:"showGridKeyLegend"`
 	ShortcutOpenMode            string                       `json:"shortcutOpenMode,omitempty"`
 	RememberScrollPosition      bool                         `json:"rememberScrollPosition"` // Return to where you were on a page instead of the top, after a page switch or a trip through Health, Inbox or config
