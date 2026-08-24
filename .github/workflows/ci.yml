@@ -33,6 +33,15 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    # Six runners, each with its own machine, its own `go run .` and its own
+    # data directory -- which is also why sharding is safe here while raising
+    # `workers` inside one runner is not: every spec in a run shares one server.
+    # 1770 tests serially is ~1.4 h; split six ways it lands well under 20 min.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    name: e2e (${{ matrix.shard }}/6)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -44,4 +53,11 @@ jobs:
       - name: Install Playwright
         run: npm ci && npx playwright install chromium --with-deps
       - name: Run Playwright tests
-        run: xvfb-run npm run test:e2e
+        run: xvfb-run npx playwright test --shard=${{ matrix.shard }}/6
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 7
