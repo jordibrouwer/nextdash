@@ -25,7 +25,16 @@
  */
 
 const base = require('@playwright/test');
-const { WRITE_TOKEN } = require('./e2e-helpers');
+const { WRITE_TOKEN, E2E_WEB_SERVER_ENV } = require('./e2e-helpers');
+const { startWorkerServer } = require('./worker-server');
+
+/**
+ * More than one worker means one server per worker (see worker-server.js).
+ * Without it nothing changes: the config's webServer block starts the single
+ * server it always did, and this file behaves exactly as before.
+ */
+const workersRequested = Number(process.env.PW_WORKERS || 1);
+const perWorkerServer = workersRequested > 1;
 
 /** Last spec file each worker ran, so the reset fires once per file. */
 const lastFileByWorker = new Map();
@@ -48,6 +57,29 @@ async function resetStore(request) {
 }
 
 const test = base.test.extend({
+    /**
+     * The server this worker talks to. Worker-scoped: started once when the
+     * worker begins and stopped when it ends, not per test.
+     */
+    workerServer: [async ({}, use, workerInfo) => {
+        if (!perWorkerServer) {
+            await use(null);
+            return;
+        }
+        const server = await startWorkerServer(workerInfo.workerIndex, E2E_WEB_SERVER_ENV);
+        await use(server);
+        await server.stop();
+    }, { scope: 'worker' }],
+
+    /**
+     * Point every relative page.goto() and request at this worker's own server.
+     * Falls through to whatever the config set when running single-worker.
+     */
+    baseURL: async ({ workerServer }, use) => {
+        await use(workerServer ? workerServer.baseURL : (process.env.PLAYWRIGHT_BASE_URL
+            || `http://localhost:${process.env.PORT || '18080'}`));
+    },
+
     /**
      * Auto fixture: resets the store when the worker moves to a new spec file.
      *

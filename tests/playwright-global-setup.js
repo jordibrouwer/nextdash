@@ -1,4 +1,5 @@
 // @ts-check
+const { binaryPath } = require('./worker-server');
 /**
  * Validates a reused dev server before Playwright skips webServer startup.
  * Playwright-managed runs (default) start a fresh `go run .` process instead.
@@ -30,8 +31,29 @@ async function assertNextDashServerHealthy(baseURL) {
     );
 }
 
+/**
+ * Build the server once, for the per-worker servers to spawn.
+ *
+ * `go run .` compiles into a temp directory and would do it per worker; one
+ * `go build` up front costs a few seconds and saves that every time.
+ * @returns {Promise<void>}
+ */
+async function buildServerBinary() {
+    const { execFile } = require('child_process');
+    const { promisify } = require('util');
+    const target = binaryPath();
+    await promisify(execFile)('go', ['build', '-o', target, '.'], {
+        cwd: require('path').join(__dirname, '..'),
+        timeout: 600_000,
+    });
+}
+
 /** @returns {Promise<void>} */
 module.exports = async function globalSetup() {
+    if (Number(process.env.PW_WORKERS || 1) > 1) {
+        await buildServerBinary();
+        return;
+    }
     if (process.env.PLAYWRIGHT_SKIP_SERVER) {
         return;
     }

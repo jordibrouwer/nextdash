@@ -32,7 +32,10 @@ module.exports = defineConfig({
     fullyParallel: false,
     forbidOnly: isCI,
     retries: isCI ? 2 : 1,
-    workers: 1,
+    // One worker unless PW_WORKERS says otherwise. Above one, tests/fixtures.js
+    // gives each worker its own server and data directory, which is what makes
+    // more than one safe -- see worker-server.js.
+    workers: Number(process.env.PW_WORKERS || 1),
     reporter: isCI ? [['github'], ['line']] : 'line',
     globalSetup: require.resolve('./tests/playwright-global-setup.js'),
     globalTeardown: require.resolve('./tests/playwright-global-teardown.js'),
@@ -41,7 +44,7 @@ module.exports = defineConfig({
         headless: true,
         trace: 'on-first-retry',
     },
-    webServer: skipServer
+    webServer: (skipServer || Number(process.env.PW_WORKERS || 1) > 1)
         ? undefined
         : {
             command: 'go run .',
