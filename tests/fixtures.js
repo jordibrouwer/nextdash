@@ -33,7 +33,7 @@ const { startWorkerServer } = require('./worker-server');
  * Without it nothing changes: the config's webServer block starts the single
  * server it always did, and this file behaves exactly as before.
  */
-const workersRequested = Number(process.env.PW_WORKERS || 1);
+const workersRequested = Number(process.env.PW_WORKERS || 4);
 const perWorkerServer = workersRequested > 1;
 
 /** Last spec file each worker ran, so the reset fires once per file. */
@@ -75,9 +75,15 @@ const test = base.test.extend({
      * Point every relative page.goto() and request at this worker's own server.
      * Falls through to whatever the config set when running single-worker.
      */
-    baseURL: async ({ workerServer }, use) => {
-        await use(workerServer ? workerServer.baseURL : (process.env.PLAYWRIGHT_BASE_URL
-            || `http://localhost:${process.env.PORT || '18080'}`));
+    baseURL: async ({ workerServer }, use, testInfo) => {
+        if (workerServer) {
+            await use(workerServer.baseURL);
+            return;
+        }
+        // Single-worker: whatever the config's webServer block is serving.
+        await use(testInfo.project.use.baseURL
+            || process.env.PLAYWRIGHT_BASE_URL
+            || `http://localhost:${process.env.PORT || '18080'}`);
     },
 
     /**

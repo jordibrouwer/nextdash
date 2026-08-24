@@ -12,7 +12,7 @@
  * Giving every worker its own server and its own data directory removes the
  * reason for the cap. A worker gets:
  *
- *   - its own port, 18080 + workerIndex
+ *   - its own port, whichever one the OS hands out
  *   - its own data directory, removed when the worker exits
  *   - its own process, started from a binary built once in global setup
  *
@@ -22,10 +22,31 @@
 
 const { spawn } = require('child_process');
 const fs = require('fs');
+const net = require('net');
 const os = require('os');
 const path = require('path');
 
-const BASE_PORT = Number(process.env.E2E_BASE_PORT || 18080);
+/**
+ * A port nothing else is on.
+ *
+ * An offset from a fixed base (18080 + workerIndex) looks tidy and is wrong:
+ * a stale server from an interrupted run still holds that port, and the worker
+ * either fails to start or -- worse -- talks to the old process against its own
+ * data directory, which reads as hundreds of unrelated failures. Asking the OS
+ * for a free port cannot collide.
+ * @returns {Promise<number>}
+ */
+function freePort() {
+    return new Promise((resolve, reject) => {
+        const server = net.createServer();
+        server.unref();
+        server.on('error', reject);
+        server.listen(0, '127.0.0.1', () => {
+            const { port } = /** @type {import('net').AddressInfo} */ (server.address());
+            server.close(() => resolve(port));
+        });
+    });
+}
 
 /** Where global setup leaves the compiled server. */
 function binaryPath() {
@@ -63,7 +84,7 @@ async function waitForServer(baseURL, timeoutMs = 60_000) {
  * @returns {Promise<{ baseURL: string, stop: () => Promise<void> }>}
  */
 async function startWorkerServer(workerIndex, env) {
-    const port = BASE_PORT + workerIndex;
+    const port = await freePort();
     const baseURL = `http://localhost:${port}`;
     const dataDir = path.join(os.tmpdir(), `nextdash-e2e-w${workerIndex}-${process.pid}`);
 

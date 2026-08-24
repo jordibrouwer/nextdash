@@ -50,7 +50,7 @@ async function buildServerBinary() {
 
 /** @returns {Promise<void>} */
 module.exports = async function globalSetup() {
-    if (Number(process.env.PW_WORKERS || 1) > 1) {
+    if (Number(process.env.PW_WORKERS || 4) > 1) {
         await buildServerBinary();
         return;
     }
