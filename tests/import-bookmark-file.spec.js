@@ -83,6 +83,46 @@ test.describe('importing a bookmark file', () => {
         expect(stored['javascript:void(0)']).toBeUndefined();
     });
 
+    /*
+     * Export is half of why the parser moved to Go: a local-first project that
+     * cannot hand its collection back in a standard format is asking for trust
+     * it has not earned. The proof is that what comes out goes back in.
+     */
+    test('exports a file the import can read again', async ({ page }) => {
+        await openBackups(page);
+        await (await chooseFile(page)).locator('[data-confirm="ok"]').click();
+        await expect.poll(async () => page.evaluate(async () => {
+            const rows = await (await fetch('/api/bookmarks?page=1')).json();
+            return rows.filter((b) => b.url.includes('e2e-import')).length;
+        }), { timeout: 15_000 }).toBe(2);
+
+        const download = page.waitForEvent('download', { timeout: 15_000 });
+        await page.click('[data-backup-action="html-export"]');
+        const file = await download;
+        expect(file.suggestedFilename()).toMatch(/^nextdash-bookmarks-\d{4}-\d{2}-\d{2}\.html$/);
+
+        const fs = require('fs');
+        const body = fs.readFileSync(await file.path(), 'utf8');
+        expect(body).toContain('NETSCAPE-Bookmark-file-1');
+        // The row that was imported comes back out with what it arrived with.
+        expect(body).toContain('https://e2e-import.example.com/one');
+        expect(body).toContain('ADD_DATE="1610000000"');
+        expect(body).toContain('TAGS="go,weekly"');
+        expect(body).toContain('A note from the file');
+
+        // And the server can read its own output: this is the round trip that
+        // makes the writer trustworthy rather than merely plausible.
+        const reread = await page.evaluate(async (html) => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const res = await f('/api/bookmarks/import-html?page=1&dryRun=1', { method: 'POST', body: html });
+            return res.json();
+        }, body);
+        // Everything in the file is already on the page, which is exactly what
+        // a faithful export of that page should say.
+        expect(reread.new).toBe(0);
+        expect(reread.duplicates).toBeGreaterThanOrEqual(2);
+    });
+
     test('the confirm says how many are already here', async ({ page }) => {
         await openBackups(page);
         await (await chooseFile(page)).locator('[data-confirm="ok"]').click();

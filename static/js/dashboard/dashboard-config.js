@@ -4342,6 +4342,7 @@ class DashboardConfig {
                 <h3 class="config-panel-title">${esc(this.t('config.backupsImportExportSectionTitle', 'Import & export bookmarks'))}</h3>
                 <p class="config-panel-note">${esc(this.t('config.csvExportDescription', 'Export every bookmark as a CSV file, or import bookmarks exported from a browser.'))}</p>
                 <div class="config-actions">
+                    <button type="button" class="config-btn" data-backup-action="html-export">${esc(this.t('config.htmlExportBtn', 'Export bookmarks (HTML)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="csv-export">${esc(this.t('config.csvExportBtn', 'Export bookmarks (CSV)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="csv-import">${esc(this.t('config.csvImportBtn', 'Import bookmarks (CSV)'))}</button>
                     <button type="button" class="config-btn" data-backup-action="browser-import">${esc(this.t('config.browserImportBtn', 'Import browser bookmarks…'))}</button>
@@ -5426,6 +5427,7 @@ class DashboardConfig {
             case 'download': this.downloadFullBackup(); break;
             case 'run': void this.runBackupNow(); break;
             case 'import': document.getElementById('config-import-input')?.click(); break;
+            case 'html-export': void this.exportBookmarksHTML(); break;
             case 'csv-export': void this.exportBookmarksCSV(); break;
             case 'browser-import': document.getElementById('config-browser-import-input')?.click(); break;
             case 'csv-import': document.getElementById('config-csv-import-input')?.click(); break;
@@ -5715,6 +5717,25 @@ class DashboardConfig {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Download the collection as a bookmark file every browser can read.
+     *
+     * Through writeFetch rather than a plain link: the route is behind the
+     * write token, and an <a> cannot carry a header — on an install that has
+     * one set, a link would download a 401 page named like a bookmark file.
+     */
+    async exportBookmarksHTML() {
+        try {
+            const res = await this.writeFetch('/api/bookmarks/export-html');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const date = new Date().toISOString().slice(0, 10);
+            this.triggerDownload(await res.blob(), `nextdash-bookmarks-${date}.html`);
+            this.notify(this.t('config.htmlExportSuccess', 'Bookmarks exported.'), 'success');
+        } catch {
+            this.notify(this.t('config.htmlExportError', 'Could not export the bookmarks.'), 'error');
+        }
     }
 
     async exportBookmarksCSV() {
