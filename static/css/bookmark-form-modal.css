@@ -91,6 +91,81 @@
     box-shadow: none;
 }
 
+/*
+ * A phone gets the short form.
+ *
+ * Icon and Note are the two fields a phone is worst at and needs least: the
+ * icon row is a preview plus four buttons for a favicon that is fetched from
+ * the page anyway, and the note is a textarea on a keyboard that covers half
+ * the screen. Between them they are about 200px of a form someone is filling in
+ * with a thumb.
+ *
+ * `display: none`, not removed from the form: the inputs keep whatever the
+ * bookmark already had, so editing one on a phone leaves its note and its icon
+ * exactly as they were. Both are there in full on any desktop.
+ */
+@media (pointer: coarse) {
+    .bookmark-form-modal-body [data-field-block="icon"],
+    .bookmark-form-modal-body [data-field-block="note"] {
+        display: none;
+    }
+}
+
+/*
+ * One column or two.
+ *
+ * The columns are real elements so Tab runs down one and then the other; here
+ * they are dissolved, which leaves the form exactly the flex column it always
+ * was. The wide layout below is the only place they become boxes.
+ */
+.bookmark-inline-col {
+    display: contents;
+}
+
+/*
+ * Two columns once the window can hold them.
+ *
+ * 860px is where two columns of about 410 still hold a select, the icon row and
+ * the availability control without wrapping; the dialog itself is capped at 900
+ * and simply uses what the window gives it below that. Under the breakpoint
+ * nothing changes at all.
+ *
+ * `pointer: fine` keeps a phone or tablet on the single column whatever its
+ * width says: a landscape phone is nearly 950px wide and is still a phone,
+ * where one column you scroll beats two you pinch at. It reports the primary
+ * pointer, so a desktop that happens to have a touchscreen still gets both
+ * columns.
+ *
+ * Height is the point, not width: eleven full-width fields made the form 735px
+ * tall for adding and 763px for editing, and a laptop browser with tabs open
+ * leaves around 660px. Side by side the two groups come to roughly 350px, so
+ * the dialog lands near 480px and the actions stay on screen.
+ */
+@media (min-width: 860px) and (pointer: fine) {
+    .bookmark-form-modal-dialog {
+        width: min(900px, 100%);
+    }
+
+    .bookmark-form-modal-body .bookmark-inline-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 20px;
+        align-items: start;
+    }
+
+    .bookmark-form-modal-body .bookmark-inline-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        min-width: 0;
+    }
+
+    /* The buttons belong to the whole form, not to the column they follow. */
+    .bookmark-form-modal-body .bookmark-inline-actions {
+        grid-column: 1 / -1;
+    }
+}
+
 body.bookmark-form-modal-open .bookmark-inline-form,
 body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-input,
 body.bookmark-form-modal-open .bookmark-inline-form .bookmark-inline-select,

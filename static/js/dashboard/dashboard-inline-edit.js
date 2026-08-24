@@ -591,6 +591,27 @@ class DashboardInlineEdit {
         const form = document.createElement('div');
         form.className = 'bookmark-inline-form';
 
+        /*
+         * Two columns, not eleven stacked rows.
+         *
+         * Every field was full width in a 520px dialog, which made the form
+         * 735px tall for adding and 763px for editing -- more than a laptop
+         * browser leaves below its tabs, so the Save button sat under the fold
+         * and the dialog scrolled. The fields fall into two groups of almost
+         * equal height: what the bookmark is, and where it goes and how it is
+         * watched. Side by side they come to about 350px.
+         *
+         * Real elements rather than grid areas, so Tab runs down one column and
+         * then the other. On a narrow window CSS gives them `display: contents`
+         * and the single column returns exactly as it was.
+         */
+        const colWhat = document.createElement('div');
+        colWhat.className = 'bookmark-inline-col bookmark-inline-col-what';
+        const colWhere = document.createElement('div');
+        colWhere.className = 'bookmark-inline-col bookmark-inline-col-where';
+        form.appendChild(colWhat);
+        form.appendChild(colWhere);
+
         const cfg = (key, fallback) => d.configLabel(key, fallback);
 
         const mkField = (labelText, inputEl, errorEl) => {
@@ -605,27 +626,37 @@ class DashboardInlineEdit {
             return wrap;
         };
 
+        // Same treatment as the shortcut warning: the message is a bubble on the
+        // field, and the span behind it is the screen-reader copy. Printed under
+        // the field it appeared while you were typing in it and pushed the rest
+        // of the column down -- and on an empty Add form, typing anywhere at all
+        // was enough to make the address complain and move everything.
         const nameError = document.createElement('span');
-        nameError.className = 'bookmark-inline-conflict';
-        nameError.hidden = true;
-        nameError.textContent = cfg('nameRequired', 'Name is required');
+        nameError.className = 'bookmark-inline-conflict sr-only';
+        nameError.setAttribute('role', 'status');
+        nameError.setAttribute('aria-live', 'polite');
 
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
         nameInput.className = 'bookmark-inline-input';
+        // A field is found by name, not by its place in the form: the order here
+        // is a layout decision and has been changed before.
+        nameInput.dataset.field = 'name';
         nameInput.value = bookmark.name || '';
-        form.appendChild(mkField(cfg('bookmarkName', 'Name'), nameInput, nameError));
+        const nameField = mkField(cfg('bookmarkName', 'Name'), nameInput, nameError);
 
         const urlError = document.createElement('span');
-        urlError.className = 'bookmark-inline-conflict';
-        urlError.hidden = true;
-        urlError.textContent = cfg('urlRequired', 'Valid URL required (e.g. https://example.com)');
+        urlError.className = 'bookmark-inline-conflict sr-only';
+        urlError.setAttribute('role', 'status');
+        urlError.setAttribute('aria-live', 'polite');
 
         const urlInput = document.createElement('input');
         urlInput.type = 'url';
         urlInput.className = 'bookmark-inline-input';
+        urlInput.dataset.field = 'url';
         urlInput.value = bookmark.url || '';
-        form.appendChild(mkField(cfg('urlLabelShort', 'URL'), urlInput, urlError));
+        colWhat.appendChild(nameField);
+        colWhat.appendChild(mkField(cfg('urlLabelShort', 'URL'), urlInput, urlError));
 
         let pendingIcon = String(bookmark.icon || '').trim();
         const iconPreview = document.createElement('div');
@@ -808,16 +839,22 @@ class DashboardInlineEdit {
         iconActions.appendChild(iconState);
         iconActions.appendChild(iconFetchState);
         const iconWrap = mkField(cfg('iconUrlOptional', 'Icon URL (opt)'), iconUrlInput);
+        // Named so the stylesheet can put it away on a phone, where a row of
+        // four icon buttons is most of a screen for a favicon that is fetched
+        // for you anyway. Hidden, never removed: the input keeps the value, so
+        // editing a bookmark on a phone cannot silently drop its icon.
+        iconWrap.dataset.fieldBlock = 'icon';
         iconWrap.appendChild(iconPreview);
         iconWrap.appendChild(iconFileInput);
         iconWrap.appendChild(iconActions);
-        form.appendChild(iconWrap);
+        colWhat.appendChild(iconWrap);
         syncIconState();
 
         let noteInput = document.createElement('textarea');
         noteInput.className = 'bookmark-inline-textarea';
         noteInput.value = bookmark.note || '';
         const noteField = mkField(d.language.t('bookmark.noteLabel') || 'Note', noteInput);
+        noteField.dataset.fieldBlock = 'note';
 
         const tagsInput = document.createElement('input');
         tagsInput.type = 'text';
@@ -842,27 +879,48 @@ class DashboardInlineEdit {
         shortcutInput.className = 'bookmark-inline-input';
         shortcutInput.maxLength = 5;
         shortcutInput.value = (bookmark.shortcut || '').toUpperCase();
+        // The warning about a letter appeared under the field as you typed and
+        // pushed everything below it down — a form moving under the hands of the
+        // person filling it in. It is a bubble on the field now, and the field
+        // keeps its red border, so the signal is still immediate without the
+        // layout shifting. The span stays as the screen-reader copy: a live
+        // region, because the message appears while typing rather than on open.
         const shortcutConflictHint = document.createElement('span');
-        shortcutConflictHint.className = 'bookmark-inline-conflict';
-        shortcutConflictHint.hidden = true;
-        shortcutConflictHint.textContent = d.language?.t('config.shortcutConflict') || 'Shortcut already in use';
+        shortcutConflictHint.className = 'bookmark-inline-conflict sr-only';
+        shortcutConflictHint.setAttribute('role', 'status');
+        shortcutConflictHint.setAttribute('aria-live', 'polite');
+        let shortcutMessage = '';
+        let shortcutIsConflict = false;
         const syncShortcutConflict = (value) => {
             const normalized = String(value || '').trim();
             const conflict = Boolean(normalized) && this.hasShortcutConflict(normalized, bookmarkRef);
             shortcutInput.classList.toggle('field-conflict', conflict);
-            if (conflict) {
-                shortcutConflictHint.textContent = d.language?.t('config.shortcutConflict') || 'Shortcut already in use';
-                shortcutConflictHint.hidden = false;
-                return;
-            }
+            shortcutIsConflict = conflict;
             // Not a conflict but worth knowing: with a row selected the grid
             // claims c, g, j, k and x, so a bookmark on one of them answers only
             // part of the time — and on c, never.
-            const note = window.ShortcutKeys?.gridKeyNote?.(
-                normalized, (key, fallback) => d.language?.t(key) || fallback) || '';
-            shortcutConflictHint.textContent = note;
-            shortcutConflictHint.hidden = !note;
+            shortcutMessage = conflict
+                ? (d.language?.t('config.shortcutConflict') || 'Shortcut already in use')
+                : (window.ShortcutKeys?.gridKeyNote?.(
+                    normalized, (key, fallback) => d.language?.t(key) || fallback) || '');
+            shortcutConflictHint.textContent = shortcutMessage;
+            if (!shortcutMessage) {
+                window.FieldPopover?.hide(shortcutInput);
+            } else if (document.activeElement === shortcutInput) {
+                // Only while the field is being used: a message that opened on a
+                // form the reader had not reached yet would be a bubble over
+                // whatever they were actually looking at.
+                window.FieldPopover?.show(shortcutInput, shortcutMessage, {
+                    variant: conflict ? 'warning' : '',
+                });
+            }
         };
+        window.FieldPopover?.attach(shortcutInput, () => shortcutMessage, {
+            variant: () => (shortcutIsConflict ? 'warning' : ''),
+            // The live region above is already the screen-reader copy; a second
+            // description would say the same thing twice.
+            describe: false,
+        });
         shortcutInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
             syncShortcutConflict(e.target.value);
@@ -940,16 +998,19 @@ class DashboardInlineEdit {
         fillPageSelect(d.pages, sourcePageId);
         const pageField = mkField(cfg('page', 'Page'), pageSelect);
 
-        // Field order: Upload → Shortcut → flags → Page → Category → Tags → Note.
+        // Left: URL → Name → Icon → Note, everything that says what this is.
+        // Right: Page → Category → Tags → Shortcut → flags → availability, every
+        // choice about where it goes and whether it is watched.
+        //
         // The flag row is created further down (it needs `cfg` and the bookmark
         // state), so reserve its slot here and fill it in place.
         const togglesSlot = document.createComment('bookmark-inline-toggles');
-        form.appendChild(shortcutField);
-        form.appendChild(togglesSlot);
-        form.appendChild(pageField);
-        form.appendChild(catField);
-        form.appendChild(tagsField);
-        form.appendChild(noteField);
+        colWhat.appendChild(noteField);
+        colWhere.appendChild(pageField);
+        colWhere.appendChild(catField);
+        colWhere.appendChild(tagsField);
+        colWhere.appendChild(shortcutField);
+        colWhere.appendChild(togglesSlot);
 
         const loadCategoriesForPage = async (pageId) => (
             Number(pageId) === currentPageId
@@ -1126,6 +1187,9 @@ class DashboardInlineEdit {
             label.appendChild(text);
             toggleRow.appendChild(input);
             toggleRow.appendChild(label);
+            // The label is the visible control -- the checkbox itself is offscreen
+            // -- so anything anchored to this pill has to hang off the label.
+            input._toggleLabel = label;
             return input;
         };
 
@@ -1135,6 +1199,17 @@ class DashboardInlineEdit {
             bookmark.pinned,
             'M8 3h8l-1 5 3 3v1H6v-1l3-3-1-5zm4 10v8h-1v-8h1z'
         );
+        const pinLabel = pinInput._toggleLabel;
+        // What the pill does is a sentence people read once. On screen for good
+        // it is clutter in a form of eleven fields; on hover, on focus and on tap
+        // it is there when it is wanted. `attach` also leaves an sr-only copy
+        // behind, so nothing is lost for a screen reader.
+        window.FieldPopover?.attach(
+            pinLabel,
+            () => cfg('pinnedToggleHint', 'Pin this bookmark to the top of its category'),
+            { describes: pinInput }
+        );
+
         // Availability checking is one choice of three, not two overlapping flags.
         // Monitor does everything Status check does and more, so offering both as
         // independent checkboxes invited a meaningless "both on" state and left
@@ -1164,7 +1239,10 @@ class DashboardInlineEdit {
             label.className = 'bookmark-inline-checkmode-option';
             label.htmlFor = input.id;
             label.textContent = labelText;
-            label.title = hint;
+            // A bubble rather than a native title: the same sentence, but it
+            // also opens on focus and on tap, and it is styled like the rest of
+            // the form instead of by the operating system.
+            window.FieldPopover?.attach(label, () => hint, { describes: input });
 
             checkModeRow.appendChild(input);
             checkModeRow.appendChild(label);
@@ -1181,6 +1259,12 @@ class DashboardInlineEdit {
         // never disagree with each other.
         const statusInput = { get checked() { return readCheckMode() === 'periodic'; } };
         const monitorInput = { get checked() { return readCheckMode() === 'monitor'; } };
+
+        const checkModeGroupLabel = cfg('checkModeLabel', 'Availability check');
+        const checkModeDescription = () => {
+            const def = modeDefs.find(([value]) => value === readCheckMode());
+            return def ? `${checkModeGroupLabel} — ${def[1]}: ${def[2]}` : checkModeGroupLabel;
+        };
 
         const monitorIntervalInput = document.createElement('select');
         monitorIntervalInput.id = `bookmark-inline-monitor-interval-${suffix}`;
@@ -1216,6 +1300,10 @@ class DashboardInlineEdit {
         checkModeInfo.textContent = 'i';
         checkModeInfo.title = cfg('checkModeExplainTitle', 'How availability checking works');
         checkModeInfo.setAttribute('aria-label', cfg('checkModeExplainTitle', 'How availability checking works'));
+        // Hovering the i says what the choice is and what the chosen mode does --
+        // the label and the line that used to sit above and below these pills.
+        // Clicking it still opens the full explanation.
+        window.FieldPopover?.attach(checkModeInfo, checkModeDescription);
         checkModeInfo.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1226,6 +1314,7 @@ class DashboardInlineEdit {
         Object.values(modeInputs).forEach((input) => {
             input.addEventListener('change', () => {
                 monitorIntervalInput.hidden = !monitorInput.checked;
+                checkModeInfo._fieldPopoverSyncDescription?.();
                 // Give a freshly-chosen monitor an explicit interval, so the stored
                 // bookmark states its cadence rather than relying on the default.
                 if (monitorInput.checked && !Number(monitorIntervalInput.value)) {
@@ -1234,8 +1323,8 @@ class DashboardInlineEdit {
             });
         });
 
-        form.insertBefore(toggleRow, togglesSlot);
-        form.insertBefore(checkModeRow, togglesSlot);
+        colWhere.insertBefore(toggleRow, togglesSlot);
+        colWhere.insertBefore(checkModeRow, togglesSlot);
 
         const actions = document.createElement('div');
         actions.className = 'bookmark-inline-actions';
@@ -1245,16 +1334,58 @@ class DashboardInlineEdit {
             try { const u = new URL(val); return u.protocol === 'http:' || u.protocol === 'https:'; } catch { return false; }
         };
 
+        /**
+         * Show or clear one field's message.
+         *
+         * The bubble opens by itself only for the field being used, or when a
+         * save was refused -- otherwise pressing a key in the name would put a
+         * bubble over the address, which nobody was looking at. Hovering or
+         * focusing the field brings it back at any time, through `attach`.
+         */
+        const setFieldMessage = (input, host, message, { open = false } = {}) => {
+            host.textContent = message;
+            if (!message) {
+                window.FieldPopover?.hide(input);
+                return;
+            }
+            if (open || document.activeElement === input) {
+                window.FieldPopover?.show(input, message, { variant: 'warning' });
+            }
+        };
+
+        const nameErrorText = () => (nameInput.value.trim() ? '' : cfg('nameRequired', 'Name is required'));
+        const urlErrorText = () => (isValidURL(urlInput.value.trim())
+            ? '' : cfg('urlRequired', 'Valid URL required (e.g. https://example.com)'));
+
+        // Only once the field has been used, or a save has been refused. The form
+        // opens with the address focused and empty, and greeting someone with
+        // "Valid URL required" before they have typed anything is scolding them
+        // for not having started yet.
+        let saveWasRefused = false;
+        const askedFor = (input) => Boolean(input.dataset.touched) || saveWasRefused;
+        window.FieldPopover?.attach(
+            nameInput, () => (askedFor(nameInput) ? nameErrorText() : ''),
+            { variant: 'warning', describe: false }
+        );
+        window.FieldPopover?.attach(
+            urlInput, () => (askedFor(urlInput) ? urlErrorText() : ''),
+            { variant: 'warning', describe: false }
+        );
+
         const validateForm = (showErrors = false) => {
             const nameOk = Boolean(nameInput.value.trim());
             const urlOk = isValidURL(urlInput.value.trim());
+            if (showErrors) saveWasRefused = true;
             if (showErrors || nameInput.dataset.touched) {
                 nameInput.classList.toggle('input-error', !nameOk);
-                nameError.hidden = nameOk;
+                setFieldMessage(nameInput, nameError, nameErrorText(), { open: showErrors && !nameOk });
             }
             if (showErrors || urlInput.dataset.touched) {
                 urlInput.classList.toggle('input-error', !urlOk);
-                urlError.hidden = urlOk;
+                // A refused save opens the address's bubble only when the name is
+                // fine: two bubbles cannot show at once, and the first empty field
+                // is the one to answer first.
+                setFieldMessage(urlInput, urlError, urlErrorText(), { open: showErrors && nameOk && !urlOk });
             }
             return nameOk && urlOk;
         };
@@ -1439,7 +1570,10 @@ class DashboardInlineEdit {
             },
         };
         this.refreshInlineEditBaseline(bookmarkRef, d._inlineEditContext.fields);
-        nameInput.focus({ preventScroll: true });
+        // Adding starts on the address -- that is the one thing only you can
+        // supply, and the name usually arrives with the page title. Editing
+        // starts on the name, which is what is nearly always being changed.
+        (isCreate ? urlInput : nameInput).focus({ preventScroll: true });
 
         const onGlobalEsc = async (e) => {
             if (e.key !== 'Escape') return;
