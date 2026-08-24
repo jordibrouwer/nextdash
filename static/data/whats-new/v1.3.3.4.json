@@ -1,0 +1,17 @@
+{
+  "tag": "v1.3.3.4",
+  "date": "25 August 2026",
+  "releasedAt": "2026-08-25",
+  "modalLead": "Three buttons in the health view that were drawn as plain grey rectangles, in a row of buttons that are not.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The buttons that belong to one filter look like the rest of the toolbar.</strong> <em>Fetch previews</em>, <em>Open broken links</em> and <em>Merge duplicate group</em> were drawn as the browser's own grey squares beside softer, quieter neighbours. They only appear while their own filter is on screen, which is how it went unnoticed for so long."
+        }
+      ]
+    }
+  ]
+}
