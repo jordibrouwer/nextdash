@@ -196,14 +196,22 @@ test.describe('config: sections restored from the old config', () => {
     });
 
     /**
-     * These live on Appearance → Toolbar & tabs, which they were given in
-     * 561c8cbd; the tab is itself split into three panels (header, and the two
-     * button-bar groups) so thirteen identical toggles are not one flat run.
+     * These live under Appearance, split across two tabs rather than the one
+     * they started on: "Toolbar & tabs" carries the header itself, and
+     * "Button bar" carries the two button groups. Thirteen identical toggles
+     * in one flat run was the thing being avoided, and splitting the tab is
+     * how that ended up.
      */
-    test('toolbar button toggles live on the toolbar tab', async ({ page }) => {
+    test('toolbar button toggles live on the appearance tabs that own them', async ({ page }) => {
         await loadDashboard(page);
+
         await openAppearanceTab(page, 'toolbar');
-        for (const f of ['showRecentButton', 'showCheatSheetButton', 'showConfigButton', 'showHealthDashboard']) {
+        for (const f of ['showPageTabs', 'showTitle', 'showConfigButton', 'showHealthDashboard']) {
+            await expect(page.locator(`[data-behavior-field="${f}"]`)).toBeVisible();
+        }
+
+        await openAppearanceTab(page, 'buttonbar');
+        for (const f of ['showAddBookmarkButton', 'showSearchButton', 'showRecentButton', 'showCheatSheetButton']) {
             await expect(page.locator(`[data-behavior-field="${f}"]`)).toBeVisible();
         }
     });
@@ -328,20 +336,27 @@ test.describe('config: sections restored from the old config', () => {
 
     test('toolbar toggles apply immediately, without a reload', async ({ page }) => {
         await loadDashboard(page);
-        await openAppearanceTab(page, 'toolbar');
 
+        // Each toggle names the tab it sits on: the button-bar groups moved off
+        // the toolbar tab, and clicking a field that is not on screen would
+        // just time out without saying why.
         const pairs = [
-            ['showAddBookmarkButton', 'data-show-add-bookmark-button'],
-            ['showSearchButton', 'data-show-search-button'],
-            ['showFindersButton', 'data-show-finders-button'],
-            ['showCommandsButton', 'data-show-commands-button'],
-            ['showRecentButton', 'data-show-recent-button'],
-            ['showCheatSheetButton', 'data-show-cheatsheet-button'],
-            ['showConfigButton', 'data-show-config-button'],
-            ['showHealthDashboard', 'data-show-health-dashboard'],
-            ['showTitle', 'data-show-title'],
+            ['buttonbar', 'showAddBookmarkButton', 'data-show-add-bookmark-button'],
+            ['buttonbar', 'showSearchButton', 'data-show-search-button'],
+            ['buttonbar', 'showFindersButton', 'data-show-finders-button'],
+            ['buttonbar', 'showCommandsButton', 'data-show-commands-button'],
+            ['buttonbar', 'showRecentButton', 'data-show-recent-button'],
+            ['buttonbar', 'showCheatSheetButton', 'data-show-cheatsheet-button'],
+            ['toolbar', 'showConfigButton', 'data-show-config-button'],
+            ['toolbar', 'showHealthDashboard', 'data-show-health-dashboard'],
+            ['toolbar', 'showTitle', 'data-show-title'],
         ];
-        for (const [field, attr] of pairs) {
+        let openTab = null;
+        for (const [tab, field, attr] of pairs) {
+            if (tab !== openTab) {
+                await openAppearanceTab(page, tab);
+                openTab = tab;
+            }
             await page.locator(`[data-behavior-field="${field}"]`).click();
             await expect.poll(() => page.evaluate(({ field, attr }) => {
                 const setting = window.dashboardInstance.settings[field];
