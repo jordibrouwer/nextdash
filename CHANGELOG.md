@@ -178,6 +178,8 @@ For install and security, see the [README](README.md). For how to use features, 
 
 The overview, rebuilt around one question: what is happening with nextDash, and what is happening in your install. It used to answer "what is new" in three places at once — a carousel showing one of forty-nine feature spotlights, a Latest update panel repeating the release named directly above it, and the project's own posts below both, starting below the fold on a 900-pixel screen. It is one dated stream now, and the figures about your own library sit beside it rather than on top of it.
 
+Behind it, an audit of the whole tree: three paths that could lose bookmarks, a data directory that was readable without the write token, outage alerts that never left an install configured for Pushover or browser push, four keyboard paths that did not do what they promised, and a first paint carrying a preload the page never received.
+
 ### Overview, rebuilt
 
 The page answered "what is new" in three places at once — a carousel showing one of forty-nine feature spotlights, a Latest update panel repeating the release the bar above it had already named, and the site's own posts below both — while the figures about your own library took the top of the page. On a 1440×900 screen the carousel was 498 pixels of a 1451-pixel page for one item of forty-nine, and the site's posts started at 936, which is to say below the fold. It is two zones now, grouped by where things come from.
@@ -217,8 +219,60 @@ The page answered "what is new" in three places at once — a carousel showing o
 - **fix** — **the Pin entry in the context menus is drawn, not typed.** Every other entry is a glyph tinted with the accent colour — `⧉`, `✎`, `→`, `◉` — and Pin was 📌, painted by the system font in its own red and yellow on every theme, and deaf to the red a destructive row is given. It is a small SVG in `currentColor` now, shared by the grid's menu and the config list's through `js/shared/menu-icons.js`, which is also the only place markup is ever assigned into a menu's icon slot. The pin on a config row and the paste-choice card still carry the emoji: they are labels rather than menu entries, and are left for a separate pass.
 
 ### Docs
+### Your data
+
+- **fix** — **an import that carried no bookmark page emptied the library.** Committing an import deletes every bookmark page the archive does not name, so a ZIP of unrelated-but-valid files — settings, themes, icons — cleared `data/` and still answered `200`. An archive with no `bookmarks-*.json` in it is refused now, before anything is replaced.
+- **fix** — **merging duplicates could delete a bookmark that was not part of the merge.** Two identical source refs were both validated against the pre-merge snapshot and then removed one after the other from a slice that had already shifted, so the second delete took an innocent neighbour — and the keeper's open count was added twice.
+- **fix** — **a failed delete left the page holding every removed bookmark twice.** The error path re-inserted bookmarks that the save had already rolled back; it restores the pre-delete copy instead. The inline editor had the same gap the comment above it already promised was closed: a write that failed still recorded a trash entry, still said *deleted*, and offered an undo that made a real duplicate. The tag filter's rollback repairs `allBookmarks` too, having no snapshot of its own.
+- **fix** — a save from a tab that was open before a bookmark started failing no longer erases the **down since** history: `BrokenSince` is carried across the save beside `LastError`.
+
+### Access
+
+- **fix** — **the data directory is no longer served whole.** `/data/` was a plain file server over the data directory, directory listings included: `settings.json`, every `bookmarks-N.json`, `inbox.json`, `trash.json`, `health-history.json` and the automatic backup ZIPs could be read without the write token, while `/api/backup` hands out that same content only behind it. Only `data/icons/` and an uploaded favicon or font are served now. Icons are content-named and never reused, so they go out `immutable` on the way past — they had no cache header at all, and there is one per bookmark.
+- **fix** — **the trash validates what it takes in.** A restore splices the stored bookmark straight back onto its page, so trash-then-restore was the one route that could keep a `javascript:` URL, a private address with *allow localhost bookmarks* off, or a client-chosen icon path — the hole the inbox closed for itself a release ago.
+- **fix** — **listing and downloading an automatic backup need the write token**, the way running, restoring and deleting one already did. Both client paths already carried it.
+- **fix** — `/api/health/check-url` applies the SSRF rate limit every sibling that fetches a caller-supplied URL applies. On the default install there is no write token, so that limit was the only thing in front of it.
+- **fix** — an `X-Forwarded-For` value that is not an address can no longer become a rate-limiter key.
+- **fix** — **Send test alert worked on an install with a write token.** The button did not go through the token-carrying fetch, so its handler answered a flat `401` — on exactly the installs most likely to be alerting on something.
+
+### Monitoring
+
+- **fix** — **outage alerts went silent on Pushover and browser push.** Alerts were dropped whenever no webhook URL was set, before a single transition was looked at — but Pushover is configured with an application token and a user key against a fixed endpoint and never sets that URL, and browser push is an independent sink reached before the webhook target is read at all. So an operator who picked the preset for which the config UI does not even render a URL field, or who only switched push on, got no alert for an outage of any length. **Send test alert** does not pass through that gate, so the setup looked correct. It is gated on the sinks that actually resolve now.
+
+### Keyboard
+
+- **fix** — **`,`, `+` and `&` can be typed again.** The three shortcuts sat above the printable-character branches without the *not while searching* guard the key right below them already had, so they could never reach a search field, a filter, or a `:new https://x/?a=1&b=2` command — where `&` opened the quick-add omnibox on top of the command palette.
+- **fix** — **`:columns` no longer strips a view of its layout.** It assigned the grid's class list outright, and that element is shared with inbox, health and config: running the command over one of those took its layout class with it, and on the grid it dropped the density, layout and packed/masonry classes. It goes through the sync helper that guards exactly this.
+- **fix** — **Tab no longer stops at the wrap-around.** The focus trap tried to focus the search overlay's clear button, which carries `[hidden]` while the query is empty — a silent no-op, after the trap had already swallowed the key.
+- **fix** — **`g` + a digit lands on the first row that is really there.** It jumped to the first row in document order, so with a category's first bookmark filtered out the jump aborted without a word.
+
+### Browser extension
+
+- **fix** — a duplicate lookup that rejected — a proxy error page, an auth redirect — surfaced as an unhandled rejection in the service worker, and neither the keyboard command nor the context-menu entry awaits it. Both routes have the badge as their only feedback, so a save that failed said nothing at all.
+- **fix** — one shared hide timer for the popup's message. Each message set its own without cancelling the last, so a *saved* shown five seconds after an error vanished a tenth of a second later.
+- **fix** — an IPv6 host was bracketed twice — `[[::1]]:8080` — so the extension's duplicate key never matched the server's, which is what the comment above it says it does.
+- **fix** — the shared bookmark form's preview module is back in step with the dashboard copy; the two are required to be identical and the extension's had stayed behind by a feed line.
+
+### Speed
+
+- **fix** — **the font preload never reached the page.** It sat inside the block the CSS bundle replaces with a single `<link>`, so `rel="preload"` appeared zero times in the served HTML and the font was discovered only after the stylesheet had downloaded and parsed.
+- **fix** — **packed masonry reads every height, then writes every span.** Interleaving the two forced a full grid re-layout per category on every render — and continuously while the window was being dragged. The measurements are unchanged; only their order is.
+- **fix** — bookmark and category icons decode off the main thread. One synchronous favicon decode per row during paint is visible jank on a large page; the preview card already did this.
+- **fix** — the generated theme stylesheet is built in a buffer. Around 150 blocks appended one at a time reallocated and copied the whole 76 KB string on every append, on every dashboard load.
+
+### Under the hood
+
+- **fix** — **the inbox's newest-first order is stable**, with insertion order as the tiebreak. Timestamps have millisecond resolution, so items written in the same millisecond — a seeded inbox, an import, a batch the extension replays — sorted differently from one read to the next, and at capacity the trim evicted whichever tied item happened to fall last rather than the one added first.
+- **fix** — two leaks: the rate limiter kept an entry for every client address seen since boot, and a host looked up once and never revisited kept its pinned IP for the life of the process. Both are swept opportunistically, under a lock that is already held.
+- **fix** — a capture that pushed the inbox past its cap stranded one favicon in `data/icons/` per capture. The evicted items are returned precisely so the caller can clean up their icons, and the caller was dropping the list.
+- **fix** — naming an automatic backup is bounded. A permission or I/O error made every candidate name look taken, and the loop only ended on *file does not exist* — spinning forever while holding the lock restore and delete also need.
+- **fix** — the first update check runs inside its own goroutine, where every other scheduler in the tree already runs it. Called before the listener started, it held boot for the full ten-second timeout whenever egress to `api.github.com` is blocked — long enough to fail a container health check.
+- **fix** — `Vary` is added rather than set, so the `Accept-Encoding` the compression middleware had just written survives. The ETag is computed over the uncompressed body, so a shared cache in front could otherwise hand gzipped bytes to a client that never asked for them.
+- **fix** — the asset-hash generator writes formatted Go, and the twelve assets these fixes touched carry their new hash. On a production build the map is read from the embed rather than recomputed, so a returning browser would have been handed the URL it already had cached and gone on running the old JavaScript.
+
 
 - **new** — **README and MANUAL describe what is actually measured.** The analytics section had been written before the content snapshot, the walkthrough and tip events, Fresh, category spreading, right-click menus, and two thirds of what Health reports; all of it is listed now, alongside the fact that a bookmark can also be opened from the health view. The claim that counts are bucketed is true again — see above. The inline-editor passages in both files described a full-page blur that no longer exists, the search filters left out `status:feed`, `Shift + V` was still documented as a toggle rather than the pinned card it opens, and Config → Statistics was described as it stood before v1.3.1.
+- **new** — **the audit is written down where someone would look for it.** The protected-endpoint table names the automatic-backup routes and the health view's check-a-URL; the self-hosting section says what `/data/` publishes and what it no longer does; Data & backups says an archive with no bookmark page in it is refused, and the trash section says what is checked on the way in. Config → **Help** carries the same three points, in all four languages.
 
 ## v1.3.2 — 21 August 2026
 

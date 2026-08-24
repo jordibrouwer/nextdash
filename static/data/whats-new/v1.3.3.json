@@ -30,6 +30,27 @@
       ]
     },
     {
+      "title": "Your bookmarks",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>A backup with no bookmarks in it no longer clears the ones you have.</strong> Restoring a file like that emptied every page it did not mention, and said it had worked. It is refused now, before anything is replaced."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Merging two duplicates could take a third bookmark with it</strong> — one that was never part of the merge — and count the opens of the one you kept twice."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>A delete that failed used to leave the bookmark on the page twice.</strong> The same went for deleting from the editor: it said <em>deleted</em>, offered an undo, and the undo made a second copy."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>How long a link has been down survives an edit.</strong> Saving from a tab you had open since before it broke reset that history to nothing."
+        }
+      ]
+    },
+    {
       "title": "Elsewhere",
       "items": [
         {
@@ -39,6 +60,22 @@
         {
           "badge": "fix",
           "text": "<strong>Usage statistics round every number they send.</strong> The privacy setting has always promised that; the counts on bulk actions were going out exactly. They are rounded into bands now, in the one place every measurement passes through."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Outage alerts reach Pushover and your browser again.</strong> If you picked Pushover — which asks for two tokens instead of a web address — or only switched browser notifications on, no alert ever left, however long something stayed down. <strong>Send test alert</strong> took a different route, so the setup looked right."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>Your data folder is not readable over the web.</strong> Only bookmark icons and a favicon or font you uploaded are served from it; your settings, bookmarks, inbox, trash and stored backups now come out only through the routes a write token can guard."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong><code>,</code>, <code>+</code> and <code>&amp;</code> can be typed again.</strong> All three opened their own panel instead of reaching the search box, a filter, or a command you were part-way through typing."
+        },
+        {
+          "badge": "fix",
+          "text": "<strong>The dashboard paints sooner and scrolls more evenly</strong> — the font arrives with the page rather than after it, favicons no longer stall the paint, and resizing the window stops re-laying out the grid on every pixel."
         }
       ]
     }
