@@ -1,0 +1,21 @@
+{
+  "tag": "v1.3.3.3",
+  "date": "25 August 2026",
+  "releasedAt": "2026-08-25",
+  "modalLead": "Two tiles in the health view that looked like the ones beside them and could not do what those do: one that did nothing when clicked, and one whose list no button on the page could shorten.",
+  "sections": [
+    {
+      "title": "Health",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The Certificates tile opens the bookmarks behind it.</strong> It sat in a row of tiles that all filter the list and was the one that did nothing — the count is hosts, so clicking it now shows the bookmarks on them."
+        },
+        {
+          "badge": "new",
+          "text": "<strong>Missing preview has a button that can empty it.</strong> <em>Re-check</em> and <em>Retest all</em> ask whether a link still answers; neither asks its page for a title or an image, so the number never moved however often they were pressed. <strong>Fetch previews</strong> does exactly that, and says first that it is one request per bookmark."
+        }
+      ]
+    }
+  ]
+}

@@ -490,6 +490,10 @@ class DashboardHealth {
     matchesFilter(issue, filter) {
         if (filter === 'all') return true;
         if (filter === 'monitored') return issue.monitor === true;
+        // Certificates are stored per host rather than per bookmark, so this one
+        // is answered from the report's certificate map instead of from the
+        // row's own flags -- certFor() already does that lookup for the badge.
+        if (filter === 'certificates') return Boolean(this.certFor(issue));
 
         const flags = Array.isArray(issue?.flags) ? issue.flags : null;
         if (flags) return flags.includes(filter);
@@ -2648,6 +2652,7 @@ class DashboardHealth {
             'shortcut-conflict': this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts'),
             'orphaned-category': this.t('dashboard.healthFilterOrphanedCategory', 'Missing category'),
             'missing-preview': this.t('dashboard.healthFilterMissingPreview', 'Missing preview'),
+            certificates: this.t('dashboard.healthFilterCertificates', 'Certificates'),
             healthy: this.t('dashboard.healthFilterHealthy', 'Healthy'),
             all: this.t('dashboard.healthFilterAll', 'All'),
             // Monitor-group headings, distinct from the link-hygiene labels
@@ -2715,6 +2720,7 @@ class DashboardHealth {
             'shortcut-conflict': this.t('dashboard.healthNoteShortcutConflict', 'More than one bookmark claims the same keyboard shortcut, so pressing it is a coin toss between them.'),
             'orphaned-category': this.t('dashboard.healthNoteOrphanedCategory', 'These point at a category that no longer exists on their page, usually because it was deleted without moving them first. They still work, but on the dashboard they sit with the uncategorized ones — edit a row to file it somewhere that exists.'),
             'missing-preview': this.t('dashboard.healthNoteMissingPreview', 'No title, description or image has been fetched yet, so these rows have little to show beyond their address.'),
+            certificates: this.t('dashboard.healthNoteCertificates', 'These sit on a host whose TLS certificate expires soon. The count above is hosts; this list is the bookmarks on them.'),
             healthy: this.t('dashboard.healthNoteHealthy', 'Nothing is wrong with these: reachable if they are checked, opened recently enough, and not clashing with anything.'),
             all: this.t('dashboard.healthNoteAll', 'Every bookmark, whatever its state. Sort by score to bring the ones needing attention to the top.'),
         };
@@ -3724,14 +3730,17 @@ class DashboardHealth {
             });
         }
 
-        // Certificates count hosts, not bookmarks, so this one cannot become a
-        // filter the way the others do: there is no per-issue flag to filter on,
-        // and clicking it would appear to do nothing. Shown only when there is
-        // something to say, since a zero here is the normal state.
+        // Certificates count hosts, not bookmarks, which is why this tile had no
+        // key and did nothing when clicked -- indistinguishable from the six
+        // beside it that do. The rows are reachable after all: certFor() maps a
+        // row to its host's certificate for the badge, so the filter asks the
+        // same question. The count stays the number of hosts, and the list it
+        // opens is the bookmarks on them, which is what someone clicking a
+        // warning is looking for.
         const certCount = this.certWarningCount();
         if (certCount > 0) {
             tiles.push({
-                key: '',
+                key: 'certificates',
                 label: this.t('dashboard.healthTileCerts', 'Certificates'),
                 value: certCount,
                 tone: 'warn',
@@ -3867,6 +3876,78 @@ class DashboardHealth {
         return `<button type="button" class="health-view-open-broken-btn" title="${this.escape(
             this.t('dashboard.openBrokenTitle', 'Open all broken bookmarks in new tabs')
         )}">${this.escape(this.t('dashboard.openBrokenLinks', 'Open broken links'))}</button>`;
+    }
+
+    /**
+     * Fetch previews, on the filter that is about their absence.
+     *
+     * Missing preview is the one filter whose rows the toolbar could not act
+     * on: Re-check and Retest all run the availability check, which never asks
+     * a page for its title, description or image -- so eighty-seven rows sat
+     * under two buttons that could not, by design, change the number above
+     * them, and nothing said so. The route that does it lives in Config → Data
+     * & backups → Icons & previews; this is the same call, offered where the
+     * question is asked.
+     */
+    renderFetchPreviewsButton() {
+        if (this.filter !== 'missing-preview' || this.filterCount('missing-preview') <= 0) {
+            return '';
+        }
+        return `<button type="button" class="health-view-fetch-previews-btn" title="${this.escape(
+            this.t('dashboard.healthFetchPreviewsHint', 'Ask every bookmark\u2019s page for its title, description and image')
+        )}">${this.escape(this.t('dashboard.healthFetchPreviews', 'Fetch previews'))}</button>`;
+    }
+
+    /**
+     * Ask every bookmark's page for its preview again, then redraw.
+     *
+     * Every bookmark rather than only the filtered rows: the endpoint is the
+     * one Config offers and it walks the whole collection. It is a slow call --
+     * one request per bookmark -- so the button says what it is doing and the
+     * report is reloaded rather than guessed at afterwards.
+     */
+    async fetchMissingPreviews(button) {
+        if (this._fetchPreviewsRunning) return;
+        const missing = this.filterCount('missing-preview');
+        if (!missing) return;
+
+        const ok = await this.confirm(
+            this.t('dashboard.healthFetchPreviews', 'Fetch previews'),
+            this.t('dashboard.healthFetchPreviewsConfirm',
+                'Ask every bookmark\u2019s page for its title, description and image? {count} row(s) have none. This is one request per bookmark, so it takes a while.',
+                { count: missing }),
+            { confirmText: this.t('dashboard.healthFetchPreviews', 'Fetch previews') }
+        );
+        if (!ok) return;
+
+        this._fetchPreviewsRunning = true;
+        const label = button?.textContent;
+        if (button) {
+            button.disabled = true;
+            button.textContent = this.t('dashboard.healthFetchPreviewsRunning', 'Fetching\u2026');
+        }
+        window.nextdashTrack?.('health:fetch-previews');
+        const fetcher = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+        try {
+            const res = await fetcher('/api/previews/refresh', { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            // The flag is read from what is stored on the bookmark, not from the
+            // preview cache, so both have to be re-read before the count means
+            // anything.
+            await this.dash.loadAllBookmarks?.();
+            await this.loadAndRender({ refresh: true });
+            this.dash.showNotification?.(
+                this.t('dashboard.healthFetchPreviewsDone', 'Previews fetched.'), 'success');
+        } catch {
+            this.dash.showNotification?.(
+                this.t('dashboard.healthFetchPreviewsError', 'Could not fetch the previews.'), 'error');
+        } finally {
+            this._fetchPreviewsRunning = false;
+            if (button && button.isConnected) {
+                button.disabled = false;
+                if (label) button.textContent = label;
+            }
+        }
     }
 
     renderMergeDuplicateButton() {
@@ -4116,6 +4197,7 @@ class DashboardHealth {
             ['shortcut-conflict', this.t('dashboard.healthFilterShortcutConflict', 'Shortcut conflicts')],
             ['orphaned-category', this.t('dashboard.healthFilterOrphanedCategory', 'Missing category')],
             ['missing-preview', this.t('dashboard.healthFilterMissingPreview', 'Missing preview')],
+            ['certificates', this.t('dashboard.healthFilterCertificates', 'Certificates')],
             ['healthy', this.t('dashboard.healthFilterHealthy', 'Healthy')],
         ];
         return secondary.filter(([key]) => this.filterCount(key) > 0 || this.filter === key);
@@ -4194,6 +4276,7 @@ class DashboardHealth {
                 ${this.renderHistoryExportButton()}
                 ${this.renderOpenBrokenButton()}
                 ${this.renderMergeDuplicateButton()}
+                ${this.renderFetchPreviewsButton()}
                 <button type="button" class="health-view-retest-btn">${this.escape(this.t('dashboard.healthRetest', 'Retest all'))}</button>
                 <button type="button" class="health-view-checkoff-btn"${checkedCount ? '' : ' disabled'} title="${this.escape(checkedCount
                     ? this.t('dashboard.healthCheckOffHint', 'Turn off periodic checks and monitoring for all {count} bookmarks', { count: checkedCount })
@@ -4230,6 +4313,11 @@ class DashboardHealth {
         const openBrokenBtn = toolbar.querySelector('.health-view-open-broken-btn');
         openBrokenBtn?.addEventListener('click', () => {
             void this.openBrokenLinks(openBrokenBtn);
+        });
+
+        const previewsBtn = toolbar.querySelector('.health-view-fetch-previews-btn');
+        previewsBtn?.addEventListener('click', () => {
+            void this.fetchMissingPreviews(previewsBtn);
         });
 
         const mergeBtn = toolbar.querySelector('.health-view-merge-duplicates-btn');
@@ -4803,7 +4891,7 @@ class DashboardHealth {
     static STATE_KEY = 'nextdash:health-view-state';
     static PERSISTED_FILTERS = new Set([
         'all', 'broken', 'content', 'duplicate', 'shortcut-conflict', 'orphaned-category',
-        'unchecked', 'stale', 'unused', 'missing-preview', 'healthy', 'monitored',
+        'unchecked', 'stale', 'unused', 'missing-preview', 'certificates', 'healthy', 'monitored',
     ]);
     static PERSISTED_SORTS = new Set(['score', 'status', 'last-checked', 'last-checked-desc', 'name']);
 

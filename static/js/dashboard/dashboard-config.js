@@ -3483,10 +3483,19 @@ class DashboardConfig {
         if (!Array.isArray(this._newsStream) || !this._newsStream.length) return;
         if (!this._newsUnread) return;
         const news = window.DashboardNewsStream;
+        // Past the newest row, not merely "now".
+        //
+        // A release carries a date rather than a moment, and the stream stamps
+        // it at noon UTC so the day sorts sensibly wherever the reader is. A
+        // release published this morning -- or read from a timezone ahead of
+        // UTC -- is therefore in the future by its own clock, and marking the
+        // list read at `now` left it unread: the dot and the count on Overview
+        // stayed until noon UTC, whatever the reader did.
+        const newest = this._newsStream.reduce((max, item) => Math.max(max, Number(item.at) || 0), 0);
         setTimeout(() => {
-            const now = Date.now();
-            news?.markSeen?.(now);
-            this._newsSeenAt = now;
+            const seenAt = Math.max(Date.now(), newest);
+            news?.markSeen?.(seenAt);
+            this._newsSeenAt = seenAt;
             this._newsUnread = 0;
             this.syncNewsBadge();
         }, 0);
