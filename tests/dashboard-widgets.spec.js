@@ -236,8 +236,7 @@ test.describe('the widgets tab', () => {
                 body: JSON.stringify({ widgets: [{ type: 'health', title: 'Status' }] }),
             });
         });
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
-        await page.click('[data-pt-tab="widgets"]');
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
         await expect(page.locator('[data-widget-add]')).toBeVisible({ timeout: 15_000 });
     });
 

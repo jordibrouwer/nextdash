@@ -1259,6 +1259,9 @@ class DashboardConfig {
                 break;
             }
             case 'stats':
+            case 'widgets':
+                this.repaintWidgetsBody();
+                break;
                 this.loadStatsTabData(tab);
                 this.repaintStatsBody();
                 break;
@@ -1374,6 +1377,7 @@ class DashboardConfig {
             behavior: ['config.sectionBehavior', 'Behavior'],
             'data-backups': ['config.sectionDataBackups', 'Data & backups'],
             stats: ['config.sectionStats', 'Statistics'],
+            widgets: ['config.sectionWidgets', 'Widgets'],
             help: ['config.sectionHelp', 'Help'],
             about: ['config.sectionAbout', 'About'],
         };
@@ -1486,6 +1490,12 @@ class DashboardConfig {
             this.bindDataBackupsActions(container);
             void this.loadBackupData();
         } else if (this.section === 'appearance') {
+        } else if (this.section === 'widgets') {
+            this.bindWidgetsEditor(container);
+            void this.loadWidgetsEditor();
+            // The custom widget offers a credential by name; the names are two
+            // dozen bytes and cheaper to have than to wait for.
+            void this.loadCredentialNames();
             this.bindAppearanceControls(container);
             void this.loadThemeList();
             // The custom-themes tile counts what is in the colour document, so
@@ -2961,6 +2971,9 @@ class DashboardConfig {
         }
         if (this.section === 'stats') {
             return this.renderStats();
+        if (this.section === 'widgets') {
+            return this.renderWidgetsSection();
+        }
         }
         if (this.section === 'help') {
             return this.renderHelp();
@@ -12202,7 +12215,14 @@ class DashboardConfig {
      * are blocks on a page, arranged in one order. Its own tab rather than rows
      * mixed into Categories, so a list of categories stays a list of categories.
      */
-    static PT_TABS = ['categories', 'widgets', 'tags', 'pages', 'finders', 'collections'];
+    /*
+     * Widgets is not here any more: it is a section of its own in the rail,
+     * under Data & backups. It sat among categories and tags because a widget
+     * is a block beside them, but the tab had grown a settings panel per type
+     * and stopped being a list of names — and the thing it is arranged with,
+     * the block order, lives on the categories tab regardless.
+     */
+    static PT_TABS = ['categories', 'tags', 'pages', 'finders', 'collections'];
 
     /**
      * Data & backups keeps its destructive actions on a separate tab, and icon
@@ -12253,7 +12273,6 @@ class DashboardConfig {
             collections: ['config.collectionsTab', 'Collections'],
             pages: ['config.pagesTab', 'Pages'],
             categories: ['config.categoriesTab', 'Categories'],
-            widgets: ['config.widgetsTab', 'Widgets'],
         };
         const [key, fallback] = map[tab] || [tab, tab];
         return this.t(key, fallback);
@@ -12316,7 +12335,6 @@ class DashboardConfig {
         else if (this.ptTab === 'collections') { this.bindCollections(container); }
         else if (this.ptTab === 'pages') { this.bindPagesEditor(container); }
         else if (this.ptTab === 'categories') { this.bindCategoriesEditor(container); void this.loadCategoriesEditor(); }
-        else if (this.ptTab === 'widgets') { this.bindWidgetsEditor(container); void this.loadWidgetsEditor(); }
         this.bindPtToolbar(container);
         this.bindListKeyboard(container);
     }
@@ -12392,6 +12410,33 @@ class DashboardConfig {
      * For categories and pages that order is not a display preference — it is
      * the order they appear in on the dashboard, and the ↑ ↓ buttons are how
      * you set it. So sorting here is a way of looking at the list, never a way
+    /**
+     * Widgets, as a section rather than a tab.
+     *
+     * The editor is the one that was under Pages & tags; what it gains here is
+     * room and a heading of its own. Where a widget *sits* is still arranged on
+     * the categories tab, together with the categories it sits between — one
+     * order, one place to change it — so that is said here rather than left for
+     * someone to discover.
+     */
+    renderWidgetsSection() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        return `
+            <p class="config-view-intro">${esc(this.t('config.widgetsSectionIntro',
+                'Blocks on a page that hold something other than bookmarks — what is broken, what is waiting, what has gone quiet.'))}</p>
+            <div id="config-widgets-body" tabindex="0">${this.renderWidgetsEditor()}</div>
+        `;
+    }
+
+    /** Redraw the widgets section without refetching what it already has. */
+    repaintWidgetsBody() {
+        const body = document.getElementById('config-widgets-body');
+        if (!body) { this.render(); return; }
+        body.innerHTML = this.renderWidgetsEditor();
+        const container = document.getElementById('dashboard-layout');
+        if (container) this.bindWidgetsEditor(container);
+    }
+
      * of changing it: nothing is written, and the move buttons come off the
      * rows entirely while it is on. Hidden rather than disabled, because a
      * greyed-out arrow beside a row still says "this row is here, in this
@@ -13889,7 +13934,7 @@ class DashboardConfig {
 
         return `
             <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
-                'Widgets are blocks on a page that hold something other than bookmarks. Where each one sits is arranged under Categories, together with the categories it sits between.'))}</p>
+                'Where each one sits is arranged under Pages & tags → categories, together with the categories it sits between.'))}</p>
             <div class="config-widget-add">
                 <div class="config-widget-add-fields">
                     <label class="config-widget-add-field">
@@ -14508,7 +14553,7 @@ class DashboardConfig {
 
         [order[from], order[to]] = [order[to], order[from]];
         this._catBlockOrder = order;
-        this.repaintPtBody();
+        this.repaintWidgetsBody();
 
         try {
             const res = await this.writeFetch(`/api/pages/${this._catPageId}/blocks`, {
@@ -14571,7 +14616,33 @@ class DashboardConfig {
             pageSelect.addEventListener('change', () => {
                 this._catPageId = Number(pageSelect.value);
                 this._categories = null;
-                this.repaintPtBody();
+                this.repaintWidgetsBody();
+            });
+        });
+
+        // The custom widget's fields[] — its own rows, because a list of objects
+        // is not something the settings table can describe.
+        container.querySelectorAll('[data-custom-add]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.addCustomWidgetField(Number(btn.getAttribute('data-custom-add')));
+            });
+        });
+        container.querySelectorAll('[data-custom-remove]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.removeCustomWidgetField(
+                    Number(btn.getAttribute('data-custom-index')),
+                    Number(btn.getAttribute('data-custom-remove')));
+            });
+        });
+        container.querySelectorAll('[data-custom-field]').forEach((input) => {
+            // change, not input: a path typed character by character would be a
+            // write per character, and every intermediate value names nothing.
+            input.addEventListener('change', () => {
+                void this.setCustomWidgetField(
+                    Number(input.getAttribute('data-custom-index')),
+                    Number(input.getAttribute('data-custom-row')),
+                    input.getAttribute('data-custom-field'),
+                    input.value);
                 void this.loadCategoriesEditor();
             });
         }
@@ -14637,7 +14708,7 @@ class DashboardConfig {
             // off the object entirely when it is the plain single column.
             const spread = this.dash.settings?.defaultCategorySpread === true;
             this._categories.push(spread ? { id, name, spread: true } : { id, name });
-            this.repaintPtBody();
+            this.repaintWidgetsBody();
             void this.saveCategories(this._catPageId);
         });
         container.querySelectorAll('[data-cat-duplicate]').forEach((btn) => {
@@ -14657,6 +14728,55 @@ class DashboardConfig {
                 const message = n > 0
                     ? this.t('config.categoryDeleteWithBookmarks',
                         'Delete “{name}”? Its {n} bookmarks are kept but lose their category.')
+    /** The fields a custom widget reads, as stored. */
+    customFieldsOf(index) {
+        const config = (this._widgetBlocks || [])[index]?.config || {};
+        return Array.isArray(config.fields) ? config.fields.map((field) => ({ ...field })) : [];
+    }
+
+    async addCustomWidgetField(index) {
+        const fields = this.customFieldsOf(index);
+        if (fields.length >= 8) return;
+        /*
+         * Added empty rather than with a guess.
+         *
+         * The server drops a field with no path — a row that named nothing
+         * would be an empty figure on the tile — so this row exists only in the
+         * editor until it has one. That is why the panel is redrawn from local
+         * state rather than from what came back.
+         */
+        fields.push({ path: '', label: '', format: 'text' });
+        this.setCustomFieldsLocally(index, fields);
+        this.repaintWidgetsBody();
+    }
+
+    async removeCustomWidgetField(index, row) {
+        const fields = this.customFieldsOf(index).filter((_, i) => i !== row);
+        this.setCustomFieldsLocally(index, fields);
+        await this.setWidgetConfig(index, { fields: fields.length ? fields : undefined });
+        this.repaintWidgetsBody();
+    }
+
+    async setCustomWidgetField(index, row, key, value) {
+        const fields = this.customFieldsOf(index);
+        if (!fields[row]) return;
+        fields[row] = { ...fields[row], [key]: String(value || '').trim() };
+        this.setCustomFieldsLocally(index, fields);
+        // Only worth storing once a row names something; until then the server
+        // would drop it and the editor would lose the row being typed into.
+        if (fields.some((field) => String(field.path || '').trim())) {
+            await this.setWidgetConfig(index, { fields });
+        }
+    }
+
+    /** Keep the editor's copy in step, including rows the server would drop. */
+    setCustomFieldsLocally(index, fields) {
+        const blocks = [...(this._widgetBlocks || [])];
+        if (!blocks[index]?.isWidget) return;
+        blocks[index] = { ...blocks[index], config: { ...(blocks[index].config || {}), fields } };
+        this._widgetBlocks = blocks;
+    }
+
                         .replace('{name}', String(cat.name || cat.id || ''))
                         .replace('{n}', String(n))
                     : this.t('config.categoryDeleteConfirm', 'Delete “{name}”?')
@@ -14724,10 +14844,9 @@ class DashboardConfig {
         container.querySelectorAll('[data-block-configure]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 // Straight to where a widget is set up, rather than repeating
-                // its settings in a list that is about arrangement.
-                this.ptTab = 'widgets';
-                this.restoreConfigHash();
-                this.repaintPtBody();
+                // its settings in a list that is about arrangement. That is its
+                // own section now, not a tab beside this one.
+                this.openConfigView('widgets');
             });
         });
 
