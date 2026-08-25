@@ -13728,7 +13728,6 @@ class DashboardConfig {
                 const rows = widgets.map((widget) => {
                     const index = this._widgetBlocks.indexOf(widget);
                     const enabled = widget.config?.enabled !== false;
-                    const scope = widget.config?.scope === 'page' ? 'page' : 'all';
                     return `
                 <li class="config-crud-row" data-widget-row="${index}">
                     <div class="config-crud-fields">
@@ -13742,11 +13741,6 @@ class DashboardConfig {
                             <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}>
                             <span>${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
                         </label>
-                        <select class="config-select config-select--small" data-widget-scope="${index}"
-                            aria-label="${esc(this.t('config.widgetsScopeLabel', 'What it counts'))}">
-                            <option value="all" ${scope === 'all' ? 'selected' : ''}>${esc(this.t('config.widgetsScopeAll', 'All pages'))}</option>
-                            <option value="page" ${scope === 'page' ? 'selected' : ''}>${esc(this.t('config.widgetsScopePage', 'This page'))}</option>
-                        </select>
                         <button type="button" class="config-btn config-btn--small config-btn--danger" data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
                     </div>
                 </li>`;
@@ -13850,12 +13844,6 @@ class DashboardConfig {
         container.querySelectorAll('[data-widget-enabled]').forEach((box) => {
             box.addEventListener('change', () => {
                 void this.setWidgetConfig(Number(box.getAttribute('data-widget-enabled')), { enabled: box.checked });
-            });
-        });
-
-        container.querySelectorAll('[data-widget-scope]').forEach((select) => {
-            select.addEventListener('change', () => {
-                void this.setWidgetConfig(Number(select.getAttribute('data-widget-scope')), { scope: select.value });
             });
         });
 

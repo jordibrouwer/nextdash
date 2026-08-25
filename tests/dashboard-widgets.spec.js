@@ -279,13 +279,85 @@ test.describe('the widgets tab', () => {
 });
 
 test.describe('the health widget', () => {
-    test('it reports the same figures as the header badge', async ({ page }) => {
+    /*
+     * It must say what the health view says.
+     *
+     * It shipped reading `summary.rows` for a per-page count -- but `rows` sits
+     * beside `summary`, not in it, and those rows carry only a url and an error,
+     * with no page and no status. So the per-page setting silently returned the
+     * whole collection's figures under a label claiming otherwise. The setting
+     * is gone; the widget reads the summary the header badge already fetched,
+     * which is the same report the view reads.
+     */
+    test('it reports the same figures as the health view', async ({ page }) => {
         await markWhatsNewSeen(page);
         await page.goto('/');
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
 
+        /*
+         * Bookmarks that really fail, so the comparison is between two non-zero
+         * numbers. Port 9 refuses every connection, which means the failure
+         * survives the dashboard's own status ping -- a URL that answers has its
+         * lastError cleared within seconds, and then both sides read zero and
+         * agree about nothing.
+         */
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            for (const n of [1, 2, 3]) {
+                await f('/api/bookmarks/add', {
+                    method: 'POST', headers: h,
+                    body: JSON.stringify({ page: 1, bookmark: {
+                        name: `Dead ${n}`, url: `http://127.0.0.1:9/${n}`,
+                        lastError: 'Connection refused', lastChecked: 1787600000000, checkStatus: true,
+                    } }),
+                });
+            }
+            await f('/api/pages/1/blocks', {
+                method: 'PUT', headers: h,
+                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Status' }] }),
+            });
+        });
+
+        await page.reload({ waitUntil: 'networkidle' });
+        await expect.poll(async () =>
+            page.locator('.dashboard-widget-health-row').count(), { timeout: 20_000 }).toBeGreaterThan(0);
+
+        const widget = await page.evaluate(() => {
+            const rows = {};
+            document.querySelectorAll('.dashboard-widget-health-row').forEach((r) => {
+                rows[r.dataset.healthFilter] = Number(r.querySelector('.dashboard-widget-health-value')?.textContent);
+            });
+            return rows;
+        });
+        // A comparison of two zeroes proves nothing, so this insists the
+        // scenario really produced failures.
+        expect(widget.broken, 'the dead links were not counted as broken').toBeGreaterThan(0);
+
+        await page.goto('/#health', { waitUntil: 'networkidle' });
+        await expect.poll(async () => page.evaluate(() =>
+            window.dashboardInstance.health?.report?.summary?.brokenCount ?? null),
+        { timeout: 20_000 }).not.toBeNull();
+
+        const view = await page.evaluate(() => {
+            const s = window.dashboardInstance.health.report.summary;
+            return { broken: s.brokenCount, healthy: s.healthyCount, content: s.contentCount, down: s.monitorDownCount };
+        });
+
+        expect(widget.broken).toBe(view.broken);
+        expect(widget.content).toBe(view.content);
+        expect(widget.monitored).toBe(view.down);
+        expect(widget.all).toBe(view.healthy);
+    });
+
+    test('every figure is a way into the rows behind it', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
         await page.evaluate(async () => {
             const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
@@ -295,22 +367,10 @@ test.describe('the health widget', () => {
             });
         });
         await page.reload({ waitUntil: 'networkidle' });
-        await page.waitForFunction(() => window.dashboardInstance?.widgets?.length > 0, null, { timeout: 15_000 });
-
-        // Filled in from the report the badge already fetched, so the two cannot
-        // disagree about how many links are broken while sharing a screen.
         await expect.poll(async () =>
-            page.locator('.dashboard-widget-health-row').count(), { timeout: 15_000 }).toBeGreaterThan(0);
+            page.locator('.dashboard-widget-health-row').count(), { timeout: 20_000 }).toBeGreaterThan(0);
 
-        const agreed = await page.evaluate(() => {
-            const summary = window.dashboardInstance.healthSummary || {};
-            const row = document.querySelector('[data-health-filter="broken"] .dashboard-widget-health-value');
-            return { widget: row?.textContent, badge: String(summary.brokenCount ?? '') };
-        });
-        expect(agreed.widget).toBe(agreed.badge);
-
-        // Every figure is a way into the rows behind it: a count you cannot act
-        // on is a decoration.
+        // A count you cannot act on is a decoration.
         const filters = await page.evaluate(() =>
             [...document.querySelectorAll('.dashboard-widget-health-row')].map((r) => r.dataset.healthFilter));
         expect(filters).toContain('broken');

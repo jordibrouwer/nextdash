@@ -26,57 +26,31 @@
     }
 
     /*
-     * Which page the figures describe.
+     * The numbers the header badge already fetched.
      *
-     * Per page by default, because a widget sits on a page and the reader is
-     * looking at that page. "All pages" is the other honest answer and is a
-     * setting rather than a guess.
+     * `?view=facts` runs on every dashboard load for the badge, so the figures
+     * are here for free -- and taking them from the same place is what stops the
+     * widget and the badge disagreeing about how many links are broken while
+     * sitting on the same screen.
+     *
+     * Whole collection, always. A per-page count was offered first and could
+     * not work: the facts response carries a row per bookmark with something to
+     * report, and those rows hold only a url and an error -- no page, no status.
+     * The code read them off `summary.rows`, which does not exist either
+     * (`rows` sits beside `summary`, not in it), so the per-page setting
+     * silently returned the collection's figures under a label that said
+     * otherwise. Counting them here from the full report would mean a second,
+     * far heavier request per dashboard load, and a second tally that can drift
+     * from the one the header shows.
      */
-    function summaryFor(dash, widget) {
-        /*
-         * The numbers the header badge already fetched.
-         *
-         * `?view=facts` runs on every dashboard load for the badge, so the
-         * figures are here for free -- and taking them from the same place is
-         * what stops the widget and the badge disagreeing about how many links
-         * are broken while sitting on the same screen.
-         */
-        const summary = dash?.healthSummary;
-        if (!summary) return null;
-
-        // "All pages" is the default the config tab offers, so only an explicit
-        // per-page setting narrows it.
-        if (widget?.config?.scope !== 'page') return summary;
-
-        /*
-         * Per page, when asked for.
-         *
-         * The compact report carries a row per bookmark that has something to
-         * report, each with its page, so this is a filter rather than a second
-         * count. Bookmarks with nothing to report are not in it -- which is why
-         * healthy is derived from the page's total rather than counted.
-         */
-        const rows = Array.isArray(summary.rows) ? summary.rows : null;
-        if (!rows) return summary;
-
-        const pageId = Number(dash.currentPageId);
-        const mine = rows.filter((row) => Number(row.pageId) === pageId);
-        const total = (dash.allBookmarks || []).filter((bm) => Number(bm.pageId) === pageId).length;
-        const counts = {
-            totalBookmarks: total,
-            brokenCount: mine.filter((r) => r.status === 'broken').length,
-            monitorDownCount: mine.filter((r) => r.status === 'down').length,
-            contentCount: mine.filter((r) => r.status === 'content').length,
-        };
-        counts.healthyCount = Math.max(0,
-            total - counts.brokenCount - counts.monitorDownCount - counts.contentCount);
-        return counts;
+    function summaryFor(dash) {
+        return dash?.healthSummary || null;
     }
 
     function render(body, widget, dash) {
         body.replaceChildren();
 
-        const summary = summaryFor(dash, widget);
+        const summary = summaryFor(dash);
         if (!summary) {
             // Not an error: the report arrives with the header badge, and the
             // widget fills in when it does.
