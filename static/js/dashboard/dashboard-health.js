@@ -2039,11 +2039,37 @@ class DashboardHealth {
         try {
             const res = await fetch(`/api/health/archive-snapshot?url=${encodeURIComponent(url)}`);
             if (!res.ok) throw new Error(`archive HTTP ${res.status}`);
-            const snapshot = await res.json();
-            const snapshotUrl = String(snapshot?.url || '').trim();
+            let snapshot = await res.json();
+            let snapshotUrl = String(snapshot?.url || '').trim();
+            let source = this.t('dashboard.healthArchiveSourceWayback', 'the Web Archive');
+
+            /*
+             * The second archive, when the first has nothing.
+             *
+             * These two disagree by design: the Web Archive honours a
+             * robots.txt that turns it away and drops what a site later
+             * withdraws, while archive.today captures on request and keeps what
+             * it captured. So "no copy" from one is not "no copy" -- and for a
+             * link that died behind a paywall or a takedown it is usually the
+             * second one that has it. Asked only on the way to an empty answer,
+             * so a page the first archive holds costs no extra request.
+             */
+            if (!snapshot?.available || !snapshotUrl) {
+                const second = await fetch(`/api/health/archive-today?url=${encodeURIComponent(url)}`);
+                if (second.ok) {
+                    const other = await second.json();
+                    const otherUrl = String(other?.url || '').trim();
+                    if (other?.available && otherUrl) {
+                        snapshot = other;
+                        snapshotUrl = otherUrl;
+                        source = this.t('dashboard.healthArchiveSourceToday', 'archive.today');
+                    }
+                }
+            }
+
             if (!snapshot?.available || !snapshotUrl) {
                 d.showNotification(
-                    this.t('dashboard.healthArchiveNone', 'The Web Archive has no copy of this page'),
+                    this.t('dashboard.healthArchiveNone', 'Neither archive has a copy of this page'),
                     'info'
                 );
                 return;
@@ -2057,8 +2083,8 @@ class DashboardHealth {
                 this.t('dashboard.healthArchiveFoundTitle', 'Use the archived copy?'),
                 this.t(
                     'dashboard.healthArchiveFoundBody',
-                    'The Web Archive has a copy from {date}. Point this bookmark at it?\n\n{url}\n\nThe original address is kept in the note, so nothing is lost.',
-                    { date: when, url: snapshotUrl }
+                    '{source} has a copy from {date}. Point this bookmark at it?\n\n{url}\n\nThe original address is kept in the note, so nothing is lost.',
+                    { date: when, url: snapshotUrl, source }
                 )
             );
             // Not keeping it is still an answer, and the capture is worth seeing.
@@ -2082,12 +2108,13 @@ class DashboardHealth {
             await this.loadAndRender({ refresh: true });
             d.updateHealthBadge?.();
             d.showNotification(
-                this.t('dashboard.healthArchiveApplied', 'Now pointing at the archived copy from {date}', { date: when }),
+                this.t('dashboard.healthArchiveApplied', 'Now pointing at the copy {source} took on {date}',
+                    { date: when, source }),
                 'success',
                 { duration: 4000 }
             );
         } catch {
-            d.showNotification(this.t('dashboard.healthArchiveFailed', 'Could not reach the Web Archive'), 'error');
+            d.showNotification(this.t('dashboard.healthArchiveFailed', 'Could not reach either archive'), 'error');
         } finally {
             this._busyKeys.delete(key);
             this.syncRowBusy(key, false);

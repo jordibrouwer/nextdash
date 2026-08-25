@@ -181,6 +181,8 @@ func main() {
 	r.HandleFunc("/api/health/archive-snapshot", handlers.ArchiveSnapshot).Methods("GET")
 	// Asking the archive to keep a copy, rather than hoping someone already
 	// did. Behind the write token: it spends a shared daily budget.
+	// The second archive, which keeps what the first was not allowed to.
+	r.HandleFunc("/api/health/archive-today", handlers.ArchiveTodayHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/health/archive-save", handlers.SaveArchiveCapture).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/archive-save-status", handlers.ArchiveCaptureStatusHandler).Methods("GET", "OPTIONS")
 	// The keys, on a route that never hands them back.
