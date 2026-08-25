@@ -14333,6 +14333,13 @@ class DashboardConfig {
     async refreshDashboardBlocks() {
         const d = this.dash;
         const pageId = Number(d.currentPageId);
+        /*
+         * Editing another page's widgets leaves this page alone — but the
+         * cached answers are the dashboard's, not the page's, so they go either
+         * way. Otherwise switching to the page that was edited draws its new
+         * tiles from data fetched before the edit.
+         */
+        d.renderCore?.forgetWidgetCaches?.();
         if (!Number.isFinite(pageId) || pageId !== Number(this._widgetPageId)) return;
         try {
             const res = await this.writeFetch(`/api/pages/${pageId}/blocks`);
@@ -14342,13 +14349,6 @@ class DashboardConfig {
             d.blockOrder = blocks.order || [];
             d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
             d.renderDashboard?.({ animate: false, forceFull: true });
-        /*
-         * Editing another page's widgets leaves this page alone — but the
-         * cached answers are the dashboard's, not the page's, so they go either
-         * way. Otherwise switching to the page that was edited draws its new
-         * tiles from data fetched before the edit.
-         */
-        d.renderCore?.forgetWidgetCaches?.();
         } catch {
             // The dashboard keeps what it had; the next load corrects it.
         }
