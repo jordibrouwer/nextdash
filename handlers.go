@@ -1334,6 +1334,91 @@ func slugify(s string) string {
 	return strings.Trim(result.String(), "-")
 }
 
+/*
+resolveImportCategories decides which category each imported name belongs to.
+
+Every importer funnels through here -- the browser file, the CSV, the extension
+and every source on the register -- so this is the one place that decides what a
+category name coming from outside becomes.
+
+Two things it must get right, both learned from real collections:
+
+A name that slugifies to nothing still needs a category. slugify keeps only
+a-z0-9, so a folder called "📚" or "读书" or "Ünïcode" produced an empty id, and
+the old code skipped it: no category was created and every bookmark in it landed
+uncategorised, with the name it came with gone for good. The name is kept as the
+display name and the id falls back to a generated one, because an id is a key
+and a name is what the reader reads -- they were never required to match.
+
+Two different names must not collapse into one category. Raindrop allows the
+same collection name under different parents, and any two names differing only
+in punctuation slugify identically. Those get a numbered id -- reading,
+reading-2 -- so both survive as separate, editable categories rather than
+merging silently.
+
+An existing category is reused when its id matches and it is plainly the same
+one, so importing "Development" into a page that already has Development adds to
+it rather than making a second.
+*/
+func resolveImportCategories(existing []Category, rows []ImportedRow) (map[string]string, []Category) {
+	byID := make(map[string]Category, len(existing))
+	for _, c := range existing {
+		byID[c.ID] = c
+	}
+	taken := make(map[string]struct{}, len(existing))
+	for id := range byID {
+		taken[id] = struct{}{}
+	}
+
+	nameToID := map[string]string{}
+	var created []Category
+
+	for _, row := range rows {
+		name := strings.TrimSpace(row.Category)
+		if name == "" {
+			continue
+		}
+		if _, done := nameToID[name]; done {
+			continue
+		}
+
+		base := slugify(name)
+		if base == "" {
+			// A name with nothing sluggable in it. "category" rather than a
+			// hash: the reader sees the name, and the id only has to be stable
+			// and unique.
+			base = "category"
+		}
+
+		// Reuse an existing category when the id matches and the name agrees --
+		// case and surrounding space are not a different category.
+		if found, ok := byID[base]; ok && strings.EqualFold(strings.TrimSpace(found.Name), name) {
+			nameToID[name] = base
+			continue
+		}
+
+		id := base
+		for n := 2; ; n++ {
+			if _, clash := taken[id]; !clash {
+				break
+			}
+			if found, ok := byID[id]; ok && strings.EqualFold(strings.TrimSpace(found.Name), name) {
+				// A numbered id that is already this very category.
+				break
+			}
+			id = fmt.Sprintf("%s-%d", base, n)
+		}
+
+		nameToID[name] = id
+		if _, exists := byID[id]; !exists {
+			created = append(created, Category{ID: id, Name: name})
+		}
+		taken[id] = struct{}{}
+	}
+
+	return nameToID, created
+}
+
 func (h *Handlers) ImportBrowserBookmarks(w http.ResponseWriter, r *http.Request) {
 	h.setCORSHeaders(w, r)
 	if r.Method == "OPTIONS" {
@@ -1412,28 +1497,11 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 		knownCatIDs[c.ID] = struct{}{}
 	}
 
-	newCatNames := make(map[string]string)
-	var newCatOrder []string
-	for _, bm := range request.Bookmarks {
-		if bm.Category == "" {
-			continue
-		}
-		id := slugify(bm.Category)
-		if id == "" {
-			continue
-		}
-		if _, exists := knownCatIDs[id]; !exists {
-			if _, already := newCatNames[bm.Category]; !already {
-				newCatNames[bm.Category] = id
-				newCatOrder = append(newCatOrder, bm.Category)
-				knownCatIDs[id] = struct{}{}
-			}
-		}
-	}
-	if len(newCatOrder) > 0 {
-		for _, name := range newCatOrder {
-			categories = append(categories, Category{ID: newCatNames[name], Name: name})
-		}
+	// Every distinct category name an import carries gets a real category on
+	// the page, and the id it is written under.
+	nameToID, newCategories := resolveImportCategories(categories, request.Bookmarks)
+	if len(newCategories) > 0 {
+		categories = append(categories, newCategories...)
 		if !respondCategoriesSaveError(w, h.store.SaveCategoriesByPage(request.PageID, categories)) {
 			return
 		}
@@ -1447,10 +1515,7 @@ func (h *Handlers) importRows(w http.ResponseWriter, r *http.Request, pageID int
 			skipped++
 			continue
 		}
-		catID := ""
-		if bm.Category != "" {
-			catID = slugify(bm.Category)
-		}
+		catID := nameToID[strings.TrimSpace(bm.Category)]
 		if !respondStorePersistError(w, h.store.AddBookmarkToPage(request.PageID, Bookmark{
 			Name:     bm.Name,
 			URL:      bm.URL,
