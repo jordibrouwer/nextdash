@@ -380,6 +380,27 @@ class DashboardRenderCore {
         block.dataset.widgetType = widget.type || '';
 
         /*
+         * How wide this widget is drawn.
+         *
+         * Two at most: a widget is a summary, and one wide enough to need three
+         * columns is a view that has not admitted it yet. The block already
+         * carries the `category` class, so it reuses the span rule the grid has
+         * for a wide category rather than growing a second way to be wide.
+         *
+         * A dashboard showing one column has nothing to spread into, so the
+         * widget falls back to that one column rather than disappearing —
+         * which is what a category does in the same situation, and the setting
+         * lives on a screen nobody opens on the phone where it would bite.
+         */
+        const span = this.widgetColumnSpan(widget);
+        block.classList.toggle('category--wide', span > 1);
+        if (span > 1) {
+            block.style.setProperty('--category-span', String(span));
+        } else {
+            block.style.removeProperty('--category-span');
+        }
+
+        /*
          * The header, built exactly as a category's is.
          *
          * Not approximately: an h2.category-title holding a
@@ -470,6 +491,19 @@ class DashboardRenderCore {
                 body.classList.remove('dashboard-widget-body--empty');
                 renderer(body, widget, d);
             });
+    }
+
+    /**
+     * The columns this widget may occupy, bounded by what the grid has.
+     *
+     * Never more than two, and never more than the dashboard is showing: at one
+     * column the answer is one, so the widget narrows instead of vanishing.
+     */
+    widgetColumnSpan(widget) {
+        const asked = Number(widget?.config?.columns);
+        if (!Number.isFinite(asked) || asked <= 1) return 1;
+        const available = Number(this.getEffectiveColumnsPerRow?.()) || 1;
+        return Math.max(1, Math.min(2, Math.trunc(asked), available));
     }
 
     /** A readable name for a type, for a widget with no title of its own. */

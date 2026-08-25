@@ -33,10 +33,22 @@ test.describe('uptime, trend, inbox and neglected', () => {
                 settings: Object.keys(Config?.WIDGET_SETTINGS || {}).sort(),
             };
         });
-        const expected = ['certs', 'feeds', 'health', 'inbox', 'neglected', 'sources', 'trend', 'uptime'];
-        expect(state.renderers).toEqual(expected);
-        expect(state.offered).toEqual(expected);
-        expect(state.settings).toEqual(expected);
+        /*
+         * The ring 0 eight, checked as a floor rather than as the whole list.
+         *
+         * Spelled out, this failed the day the custom widget arrived — on the
+         * count, not on anything being wrong. What it is really about is that
+         * every offered type can be drawn and can be configured, which is a
+         * property of the lists agreeing rather than of their length.
+         */
+        const ringZero = ['certs', 'feeds', 'health', 'inbox', 'neglected', 'sources', 'trend', 'uptime'];
+        for (const type of ringZero) {
+            expect(state.renderers, `${type} has a renderer`).toContain(type);
+            expect(state.offered, `${type} is offered`).toContain(type);
+        }
+        // No type is offered without something to draw it or settings to give it.
+        expect(state.offered.filter((t) => !state.renderers.includes(t))).toEqual([]);
+        expect(state.offered.filter((t) => !state.settings.includes(t))).toEqual([]);
     });
 
     test('uptime puts what is down first and says when it has no samples', async ({ page }) => {
@@ -220,8 +232,7 @@ test.describe('widgets update as they are configured', () => {
 
         const before = await page.locator('.dashboard-widget').count();
 
-        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
-        await page.click('[data-pt-tab="widgets"]');
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
         await page.waitForSelector('[data-widget-add]', { timeout: 15_000 });
         await page.selectOption('[data-widget-type]', 'inbox');
         await page.click('[data-widget-add]');
@@ -414,8 +425,7 @@ test('deleting a widget removes that widget', async ({ page }) => {
         });
     });
 
-    await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
-    await page.click('[data-pt-tab="widgets"]');
+    await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
     await page.waitForSelector('[data-widget-delete]', { timeout: 15_000 });
     await expect(page.locator('.config-widget-row')).toHaveCount(2);
 
@@ -504,5 +514,188 @@ test.describe('a figure on a tile opens the rows behind it', () => {
         // A key the view does not accept lands on the default, and the click
         // then reads as having gone to the wrong place.
         expect(accepted).not.toContain(false);
+    });
+});
+
+/*
+ * How wide a widget is drawn.
+ *
+ * Two at most: a widget is a summary, and one needing three columns is a view
+ * that has not admitted it yet. A dashboard showing one column has nothing to
+ * spread into, so the widget narrows rather than disappearing — the same thing
+ * a category does, and the setting lives on a screen nobody opens on the phone
+ * where a vanishing tile would bite.
+ */
+test.describe('widget width', () => {
+    async function withWidget(page, config) {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        return page.evaluate(async (config) => {
+            const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await send('/api/pages/1/blocks', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ widgets: [{ type: 'inbox', title: 'Wide', config }] }),
+            });
+            const blocks = await (await send('/api/pages/1/blocks')).json();
+            const d = window.dashboardInstance;
+            d.widgets = blocks.widgets;
+            d.blockOrder = blocks.order;
+            d.renderDashboard?.({ animate: false, forceFull: true });
+            return blocks.widgets?.[0]?.config || {};
+        }, config);
+    }
+
+    test('two columns is drawn across two columns', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 900 });
+        const stored = await withWidget(page, { columns: 2 });
+        expect(stored.columns).toBe(2);
+
+        await expect.poll(async () => page.evaluate(() => {
+            const el = document.querySelector('.dashboard-widget');
+            return el ? getComputedStyle(el).gridColumn : null;
+        }), { timeout: 15_000 }).toContain('span 2');
+    });
+
+    test('a one-column dashboard narrows the widget instead of dropping it', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 900 });
+        await withWidget(page, { columns: 2 });
+
+        await page.setViewportSize({ width: 420, height: 900 });
+        await page.evaluate(() => window.dashboardInstance.renderDashboard?.({ animate: false, forceFull: true }));
+
+        await expect.poll(async () => page.evaluate(() => {
+            const el = document.querySelector('.dashboard-widget');
+            return {
+                columns: window.dashboardInstance.renderCore?.getEffectiveColumnsPerRow?.(),
+                present: !!el,
+                wide: !!el?.classList.contains('category--wide'),
+            };
+        }), { timeout: 15_000 }).toEqual({ columns: 1, present: true, wide: false });
+    });
+
+    // Two is the ceiling wherever it is asked for: in storage, and again when
+    // the block is drawn.
+    test('more than two columns is refused', async ({ page }) => {
+        await page.setViewportSize({ width: 1600, height: 900 });
+        const stored = await withWidget(page, { columns: 5 });
+        expect(stored).not.toHaveProperty('columns');
+
+        const span = await page.evaluate(() => window.dashboardInstance.renderCore
+            .widgetColumnSpan({ config: { columns: 5 } }));
+        expect(span).toBeLessThanOrEqual(2);
+    });
+
+    /*
+     * A widget keeps its width when the category sweep runs.
+     *
+     * refreshAllCategorySpans walks '.category[data-category-id]', and a widget
+     * block carries both — it is a block in the same grid. So every pass reset
+     * a two-column widget to one column, whatever its setting said, and the
+     * fallback at one column appeared to work for entirely the wrong reason.
+     */
+    test('the category sweep leaves widget widths alone', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 900 });
+        await withWidget(page, { columns: 2 });
+
+        const after = await page.evaluate(() => {
+            window.DashboardCategorySpan?.refreshAllCategorySpans?.(window.dashboardInstance, document);
+            const el = document.querySelector('.dashboard-widget');
+            return {
+                wide: !!el?.classList.contains('category--wide'),
+                span: el?.style.getPropertyValue('--category-span') || '',
+            };
+        });
+        expect(after).toEqual({ wide: true, span: '2' });
+    });
+
+    test('the width can be set from the widgets tab', async ({ page }) => {
+        await page.setViewportSize({ width: 1400, height: 900 });
+        await withWidget(page, {});
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+        await page.waitForSelector('[data-widget-settings]', { timeout: 15_000 });
+        await page.locator('[data-widget-settings]').first().click();
+        await page.waitForSelector('[data-widget-setting="columns"]', { timeout: 15_000 });
+
+        await page.selectOption('[data-widget-setting="columns"]', '2');
+
+        await expect.poll(async () => page.evaluate(async () => {
+            const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const blocks = await (await send('/api/pages/1/blocks')).json();
+            return blocks.widgets?.[0]?.config?.columns;
+        }), { timeout: 15_000 }).toBe(2);
+    });
+});
+
+/*
+ * Widgets has a place in the rail rather than a tab under Pages & tags.
+ *
+ * It sat there because a widget is a block beside the categories, but the tab
+ * had grown a settings panel per type and stopped being a list of names — and
+ * the thing it is genuinely arranged with, the block order, lives on the
+ * categories tab either way.
+ */
+test.describe('widgets as a section', () => {
+    test('it sits in the rail under Data & backups', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('widgets'));
+
+        const rail = await page.evaluate(() =>
+            [...document.querySelectorAll('[data-config-section]')].map((b) => b.textContent.trim()));
+        const backups = rail.indexOf('Data & backups');
+        const widgets = rail.indexOf('Widgets');
+        expect(backups).toBeGreaterThan(-1);
+        // Capitalised like every other section, and directly below backups.
+        expect(widgets).toBe(backups + 1);
+
+        // The editor is here, and it is the same one.
+        await expect(page.locator('[data-widget-add]')).toBeVisible({ timeout: 15_000 });
+    });
+
+    test('it is no longer a tab under Pages & tags', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+
+        await expect(page.locator('[data-pt-tab="categories"]')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-pt-tab="widgets"]')).toHaveCount(0);
+    });
+
+    // The categories list offers a way to a widget's settings; that moved too.
+    test('configuring a widget from the categories list lands in the section', async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(async () => {
+            const send = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            await send('/api/pages/1/blocks', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Health' }] }),
+            });
+        });
+
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.click('[data-pt-tab="categories"]');
+        const configure = page.locator('[data-block-configure]').first();
+        await expect(configure).toBeVisible({ timeout: 15_000 });
+        await configure.click();
+
+        await expect.poll(async () => page.evaluate(() =>
+            (window.dashboardInstance.config?.instance || window.dashboardInstance.config)?.section),
+        { timeout: 15_000 }).toBe('widgets');
     });
 });

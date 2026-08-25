@@ -40,6 +40,8 @@ const (
 	// widgetMaxDays bounds a "within N days" or "over N days" window. Two years
 	// is past every useful reading and short of anything absurd.
 	widgetMaxDays = 730
+	// widgetMaxColumns is how wide a widget may ever be drawn.
+	widgetMaxColumns = 2
 )
 
 /*
@@ -133,6 +135,22 @@ func sanitizeWidgetConfig(widgetType WidgetType, config map[string]any) map[stri
 	if raw, ok := config["enabled"]; ok {
 		if enabled, isBool := raw.(bool); isBool {
 			clean["enabled"] = enabled
+		}
+	}
+
+	/*
+	 * columns is shared for the same reason enabled is: every type can be one
+	 * or two columns wide, and declaring it eight times would be eight copies
+	 * of one line.
+	 *
+	 * Two is the ceiling. A widget is a summary; one that needs three columns
+	 * is a view that has not admitted it yet. What the grid actually has is
+	 * decided when it is drawn -- a dashboard showing one column narrows the
+	 * widget rather than dropping it.
+	 */
+	if raw, ok := config["columns"]; ok {
+		if columns, valid := widgetConfigInt(raw); valid && columns >= 1 && columns <= widgetMaxColumns {
+			clean["columns"] = columns
 		}
 	}
 

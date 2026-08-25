@@ -14078,7 +14078,59 @@ class DashboardConfig {
                     <div class="config-widget-checkset">${boxes}</div>
                 </div>`;
         }).join('');
-        return `<div class="config-widget-settings-body">${rows}</div>`;
+        if (widget.type === 'custom') {
+            /*
+             * Two groups rather than one grid of six unrelated boxes.
+             *
+             * Where to read from and what to show are different questions, and
+             * a flat panel made the address, the credential and a dotted path
+             * read as equally weighted neighbours. The figures need the full
+             * width regardless: their rows are four controls wide, and in a
+             * third of the panel they overlapped each other.
+             */
+            return `<div class="config-widget-settings-body is-custom">
+                <div class="config-custom-group">
+                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomSource',
+                        'Where to read from'))}</h4>
+                    <div class="config-custom-grid">${rows}</div>
+                </div>
+                ${this.renderCustomWidgetFields(widget, index)}
+                <div class="config-custom-group">
+                    <h4 class="config-custom-group-title">${esc(this.t('config.widgetCustomOnTheGrid',
+                        'On the dashboard'))}</h4>
+                    <div class="config-custom-grid">${this.renderWidgetWidth(widget, index)}</div>
+                </div>
+            </div>`;
+        }
+        return `<div class="config-widget-settings-body">${
+            this.renderWidgetWidth(widget, index)}${rows}</div>`;
+    }
+
+    /**
+     * How wide the widget is drawn, for every type.
+     *
+     * Outside WIDGET_SETTINGS for the same reason the shown toggle is: it
+     * belongs to every widget, and declaring it eight times would be eight
+     * copies of one line. Two is the ceiling — a widget is a summary, and one
+     * needing three columns is a view that has not admitted it yet.
+     */
+    renderWidgetWidth(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const current = Number(widget?.config?.columns) === 2 ? 2 : 1;
+        const id = `widget-${index}-columns`;
+        const option = (value, key, fallback) =>
+            `<option value="${value}" ${current === value ? 'selected' : ''}>${esc(this.t(key, fallback))}</option>`;
+        return `
+            <div class="config-widget-field">
+                <label for="${id}">${esc(this.t('config.widgetColumns', 'Width'))}</label>
+                <select id="${id}" class="config-select" data-widget-setting="columns"
+                    data-widget-index="${index}" data-widget-kind="int">
+                    ${option(1, 'config.widgetColumnsOne', 'One column')}
+                    ${option(2, 'config.widgetColumnsTwo', 'Two columns')}
+                </select>
+                <span class="config-widget-note">${esc(this.t('config.widgetColumnsNote',
+                    'A dashboard showing one column draws the widget in that one column.'))}</span>
+            </div>`;
     }
 
     /**

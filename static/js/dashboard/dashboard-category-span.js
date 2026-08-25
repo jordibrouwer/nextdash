@@ -365,7 +365,14 @@
     function refreshAllCategorySpans(dash, root = document) {
         const scope = root?.querySelectorAll ? root : document;
         const changed = [];
-        scope.querySelectorAll('.category[data-category-id]:not([data-tag-filter-chunk="true"])').forEach((el) => {
+        /*
+         * Categories only. A widget block carries the `category` class and a
+         * data-category-id of its own — it is a block in the same grid — so it
+         * matched this sweep and had its width reset to one column on every
+         * pass, whatever its own setting said. Its width is the widget
+         * builder's to decide, and this has no category to decide it from.
+         */
+        scope.querySelectorAll('.category[data-category-id]:not([data-tag-filter-chunk="true"]):not([data-widget-id])').forEach((el) => {
             const before = effectiveSpanFromElement(el);
             const after = applyCategorySpan(dash, el, categoryFromEl(dash, el), countFromElement(el));
             if (before !== after) {
