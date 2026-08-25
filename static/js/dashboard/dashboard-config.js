@@ -10015,6 +10015,8 @@ class DashboardConfig {
                     { field: 'linkPreviewParts', type: 'checkset', special: 'previewCard',
                         label: t('config.linkPreviewPartsLabel', 'What the card shows'), options: [
                             { value: 'image', label: t('config.linkPreviewPartImage', 'Image') },
+                            { value: 'byline', label: t('config.linkPreviewPartByline', 'Site, author & date') },
+                            { value: 'embed', label: t('config.linkPreviewPartEmbed', 'Video player') },
                             { value: 'description', label: t('config.linkPreviewPartDescription', 'Description') },
                             { value: 'note', label: t('config.linkPreviewPartNote', 'Your note') },
                             { value: 'tags', label: t('config.linkPreviewPartTags', 'Tags') },

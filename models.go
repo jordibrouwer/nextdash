@@ -3950,7 +3950,34 @@ type BookmarkPreview struct {
 	Image       string `json:"image"`
 	Domain      string `json:"domain"`
 	Icon        string `json:"icon"`
-	FetchedAt   int64  `json:"fetchedAt"`
+	/*
+	 * SiteName is og:site_name -- what the publisher calls itself.
+	 *
+	 * Worth its own field because a domain is not a name: "arstechnica.com"
+	 * beside "Ars Technica" reads as an address beside a masthead, and on a card
+	 * the second one is what a reader recognises. Absent on most pages, so every
+	 * caller has to treat it as optional rather than as the domain's replacement.
+	 */
+	SiteName string `json:"siteName,omitempty"`
+	/*
+	 * ContentLength is how much readable text the page carried, from
+	 * go-readability.
+	 *
+	 * Kept because it is the second, independent soft-404 signal: a page that
+	 * still answers 200 but has shrunk from four thousand characters to two
+	 * hundred has been replaced by something that is not the article. The
+	 * phrase-matching in health_soft404.go only sees pages that say so in
+	 * words; this sees the ones that do not.
+	 */
+	ContentLength int `json:"contentLength,omitempty"`
+	// Author and PublishedAt, when the page states them. Both are common in
+	// Open Graph and in article markup, and both are things a reader looking at
+	// a saved page wants without opening it.
+	Author      string `json:"author,omitempty"`
+	PublishedAt int64  `json:"publishedAt,omitempty"`
+	// EmbedHTML is an oEmbed player, for the providers that offer one.
+	EmbedHTML string `json:"embedHtml,omitempty"`
+	FetchedAt int64  `json:"fetchedAt"`
 }
 
 // GetDataRevision fingerprints bookmark, category, finder, page, and settings files.

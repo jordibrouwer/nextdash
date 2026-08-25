@@ -182,6 +182,21 @@ func contentSecurityPolicy() string {
 		"connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://stats.nextdash.cc",
 		"manifest-src 'self'",
 		"child-src 'self' blob:",
+		/*
+		 * The oEmbed players, and nothing else.
+		 *
+		 * child-src alone would block every one of them, which is why a video
+		 * card drew a black rectangle. Rather than open framing to https: at
+		 * large, this names the providers that actually answer an oEmbed
+		 * discovery request with a player. A page that is not on this list still
+		 * gets its title, byline and thumbnail -- only the player is withheld.
+		 *
+		 * The frames are sandboxed without allow-same-origin on top of this, so
+		 * a provider that turned hostile still has no reach into the dashboard.
+		 */
+		"frame-src 'self' blob: https://www.youtube.com https://www.youtube-nocookie.com " +
+			"https://player.vimeo.com https://w.soundcloud.com https://open.spotify.com " +
+			"https://embed.music.apple.com https://platform.twitter.com",
 		"worker-src 'self' blob:",
 	}, "; ")
 }

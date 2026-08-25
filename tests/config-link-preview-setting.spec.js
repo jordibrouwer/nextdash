@@ -89,7 +89,14 @@ test.describe('the link preview setting', () => {
     test('the checklist writes the card’s rows, and the sample follows', async ({ page }) => {
         await openDisplayTab(page);
         const boxes = page.locator('[data-behavior-field="linkPreviewParts"]');
-        await expect(boxes).toHaveCount(8);
+        // Counted from the card's own list rather than written out here: the
+        // point of this test is that every part is offered and starts ticked,
+        // and a literal turns each new part into a failure of this assertion
+        // instead of a check of the behaviour.
+        const partCount = await page.evaluate(() => window.DashboardPreview?.PARTS?.length
+            || window.dashboardInstance?.preview?.constructor?.PARTS?.length || 0);
+        expect(partCount).toBeGreaterThan(0);
+        await expect(boxes).toHaveCount(partCount);
         // Absent means all, so every box starts ticked.
         expect(await boxes.evaluateAll((els) => els.every((e) => e.checked))).toBe(true);
 

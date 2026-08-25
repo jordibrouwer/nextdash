@@ -2304,12 +2304,19 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 		preview.Domain = extractDomain(preview.URL)
 	}
 
-	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
+	/*
+	 * Read to </head> rather than to a fixed byte count. Metadata lives in the
+	 * head, and where that ends varies by three orders of magnitude across real
+	 * pages -- see readDocumentHead. A further previewBodySample is taken for
+	 * ContentLength, which measures prose rather than tags.
+	 */
+	headBytes, err := readDocumentHead(resp.Body, previewMaxHead)
 	if err != nil {
 		return preview
 	}
+	bodySample, _ := io.ReadAll(io.LimitReader(resp.Body, previewBodySample))
 
-	htmlBody := string(bodyBytes)
+	htmlBody := string(headBytes)
 	preview.Title = h.extractTitleFromHTML(htmlBody)
 	if preview.Title == "" {
 		preview.Title = h.extractMetaFromHTML(htmlBody, "property", "og:title")
@@ -2333,6 +2340,33 @@ func (h *Handlers) fetchBookmarkPreview(ctx context.Context, rawURL string, cach
 	// re-fetch every page before it can say anything.
 	if feedURL := extractFeedFromHTML(htmlBody); feedURL != "" {
 		recordDiscoveredFeed(rawURL, h.resolveRelativeURL(preview.URL, feedURL))
+	}
+
+	/*
+	 * What else the page says about itself.
+	 *
+	 * All of it read from the document already in hand: no extra request, no
+	 * extra host contacted. The publisher's own name rather than its domain,
+	 * a byline and a date where the page states them, and the length of the
+	 * readable text -- which is not for display but is the second soft-404
+	 * signal, the one that sees pages that lost their article without saying so.
+	 */
+	preview.SiteName = extractSiteName(htmlBody, preview.Title)
+	preview.Author = extractAuthor(htmlBody)
+	preview.PublishedAt = extractPublishedAt(htmlBody)
+	preview.ContentLength = readableTextLength(string(bodySample))
+
+	/*
+	 * oEmbed, when the page advertises it.
+	 *
+	 * One more request, and only for the pages that offer one -- which is the
+	 * providers with a player worth showing. Discovered from the document
+	 * rather than matched against a bundled provider list; see preview_oembed.go.
+	 */
+	if endpoint := discoverOEmbedURL(htmlBody, preview.URL); endpoint != "" {
+		if data, ok := h.fetchOEmbed(ctx, endpoint); ok {
+			applyOEmbed(&preview, data)
+		}
 	}
 
 	if cache != nil {

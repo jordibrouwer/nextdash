@@ -155,6 +155,23 @@ func (h *Handlers) pingURLExpecting(ctx context.Context, urlStr string, expect e
 				if reason := softNotFoundReason(title, body); reason != "" {
 					return down(reason)
 				}
+				/*
+				 * The control-URL test, for the pages that do not say so.
+				 *
+				 * Second, because the phrase check costs no request at all and
+				 * catches the pages that announce themselves. This one asks the
+				 * host what it does with an address that cannot exist: if that
+				 * also answers 200, its 200 proves nothing, and a page whose
+				 * text matches that not-found page in length is that page.
+				 *
+				 * Cached per host, so a site with fifty bookmarks is asked once
+				 * rather than fifty times.
+				 */
+				if verdict := h.hostSoftNotFound(ctx, urlStr); verdict.SoftNotFound {
+					if softNotFoundByComparison(verdict, readableTextLength(body)) {
+						return down("Page says it does not exist")
+					}
+				}
 			}
 		}
 

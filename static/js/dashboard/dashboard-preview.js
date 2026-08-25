@@ -19,7 +19,7 @@ class DashboardPreview {
      * monitors nothing should never see a status row — the checklist under
      * Appearance is stored as a subset of these names.
      */
-    static PARTS = ['image', 'description', 'note', 'tags', 'status', 'opens', 'fresh', 'location'];
+    static PARTS = ['image', 'byline', 'embed', 'description', 'note', 'tags', 'status', 'opens', 'fresh', 'location'];
 
     constructor(dashboard) {
         this.dash = dashboard;
@@ -176,14 +176,40 @@ class DashboardPreview {
         try {
             let preview = null;
             if (!forceRefresh && (bookmark.previewTitle || bookmark.previewDesc || bookmark.previewImage)) {
+                /*
+                 * The shortcut that skips the server, for a bookmark whose
+                 * preview is already in hand.
+                 *
+                 * Every field the card can draw has to be listed here, or it
+                 * silently never arrives: a bookmark fetched before a field
+                 * existed has the older ones stored, takes this branch, and the
+                 * newer ones read as empty forever. That is what happened to the
+                 * byline and the player -- they worked only behind Refresh,
+                 * which is the one path that skips this branch.
+                 */
                 preview = {
                     title: bookmark.previewTitle || bookmark.name || '',
                     description: bookmark.previewDesc || '',
                     image: bookmark.previewImage || '',
+                    siteName: bookmark.previewSiteName || '',
+                    author: bookmark.previewAuthor || '',
+                    publishedAt: Number(bookmark.previewPublishedAt || 0) || 0,
+                    embedHtml: bookmark.previewEmbedHtml || '',
+                    contentLength: Number(bookmark.previewContentLength || 0) || 0,
                     domain: this.extractDomainFromUrl(bookmark.url),
                     url: bookmark.url
                 };
-            } else {
+                /*
+                 * A bookmark stored before these fields existed has none of
+                 * them, and nothing on the card would ever fill them in. Ask the
+                 * server once instead of leaving the card permanently thinner
+                 * than the one beside it.
+                 */
+                if (!bookmark.previewEnriched) {
+                    preview = null;
+                }
+            }
+            if (!preview) {
                 const refreshParam = forceRefresh ? '&refresh=1' : '';
                 const response = await dashFetch(`/api/bookmark-preview?url=${encodeURIComponent(bookmark.url)}${refreshParam}`);
                 if (!response.ok) return null;
@@ -191,6 +217,14 @@ class DashboardPreview {
                 bookmark.previewTitle = preview.title || bookmark.previewTitle || '';
                 bookmark.previewDesc = preview.description || bookmark.previewDesc || '';
                 bookmark.previewImage = preview.image || bookmark.previewImage || '';
+                bookmark.previewSiteName = preview.siteName || '';
+                bookmark.previewAuthor = preview.author || '';
+                bookmark.previewPublishedAt = Number(preview.publishedAt || 0) || 0;
+                bookmark.previewEmbedHtml = preview.embedHtml || '';
+                bookmark.previewContentLength = Number(preview.contentLength || 0) || 0;
+                // Marks the record as one the server has answered for since the
+                // fields above existed, so the shortcut above can trust it.
+                bookmark.previewEnriched = true;
                 if (forceRefresh) {
                     this.persistBookmarkPreviewMetadata(bookmark);
                 }
@@ -241,6 +275,10 @@ class DashboardPreview {
             openCount: Number(bookmark?.openCount || 0),
             lastOpened: bookmark?.lastOpened || null,
             createdAt: Number(bookmark?.createdAt || 0) || 0,
+            siteName: this.decodeEntities(preview?.siteName || '').trim(),
+            author: this.decodeEntities(preview?.author || '').trim(),
+            publishedAt: Number(preview?.publishedAt || 0) || 0,
+            embedHtml: String(preview?.embedHtml || ''),
             checked: this.bookmarkCheckState(bookmark),
             fresh: this.bookmarkFreshState(bookmark),
             health: this.bookmarkHealthState(bookmark),
@@ -399,6 +437,12 @@ class DashboardPreview {
                 bm.previewTitle = bookmark.previewTitle || '';
                 bm.previewDesc = bookmark.previewDesc || '';
                 bm.previewImage = bookmark.previewImage || '';
+                bm.previewSiteName = bookmark.previewSiteName || '';
+                bm.previewAuthor = bookmark.previewAuthor || '';
+                bm.previewPublishedAt = Number(bookmark.previewPublishedAt || 0) || 0;
+                bm.previewEmbedHtml = bookmark.previewEmbedHtml || '';
+                bm.previewContentLength = Number(bookmark.previewContentLength || 0) || 0;
+                bm.previewEnriched = !!bookmark.previewEnriched;
             }
         });
         (d.allBookmarks || []).forEach((bm) => {
@@ -406,6 +450,12 @@ class DashboardPreview {
                 bm.previewTitle = bookmark.previewTitle || '';
                 bm.previewDesc = bookmark.previewDesc || '';
                 bm.previewImage = bookmark.previewImage || '';
+                bm.previewSiteName = bookmark.previewSiteName || '';
+                bm.previewAuthor = bookmark.previewAuthor || '';
+                bm.previewPublishedAt = Number(bookmark.previewPublishedAt || 0) || 0;
+                bm.previewEmbedHtml = bookmark.previewEmbedHtml || '';
+                bm.previewContentLength = Number(bookmark.previewContentLength || 0) || 0;
+                bm.previewEnriched = !!bookmark.previewEnriched;
             }
         });
 
@@ -615,9 +665,11 @@ class DashboardPreview {
                 <div class="bookmark-preview-card-headtext">
                     <div class="bookmark-preview-card-title"></div>
                     <div class="bookmark-preview-card-domain"></div>
+                    <div class="bookmark-preview-card-byline" hidden></div>
                 </div>
                 <span class="bookmark-preview-card-pill" hidden></span>
             </div>
+            <div class="bookmark-preview-card-embed" hidden></div>
             <div class="bookmark-preview-card-image-wrap" hidden><img class="bookmark-preview-card-image" alt="" loading="lazy" decoding="async" /></div>
             <div class="bookmark-preview-card-description" hidden></div>
             <p class="bookmark-preview-card-empty" hidden></p>
@@ -754,6 +806,147 @@ class DashboardPreview {
      * real bookmark as the checklist is flipped — the one setting you otherwise
      * have to leave the screen and hover something to understand.
      */
+    /**
+     * Who published it, who wrote it, and when.
+     *
+     * One line under the address rather than three rows in the facts list: a
+     * byline is read as a sentence, and splitting it into labelled fields makes
+     * three lines out of what a reader takes in at a glance. Any of the three
+     * may be missing, so the separators are drawn between what is actually
+     * there.
+     */
+    paintPreviewByline(card, preview, want) {
+        const el = card.querySelector('.bookmark-preview-card-byline');
+        if (!el) return;
+        const d = this.dash;
+        const bits = [];
+        if (want.has('byline')) {
+            const site = String(preview?.siteName || '').trim();
+            const author = String(preview?.author || '').trim();
+            const published = Number(preview?.publishedAt || 0) || 0;
+            /*
+             * A site name earns its place by saying something the address does
+             * not. "example.com · Example" is a stutter; "arstechnica.com · Ars
+             * Technica" is not, because the name carries the spacing and capitals
+             * the domain had to drop. So the name is kept whenever it differs
+             * from the bare domain as written -- and only skipped when it is the
+             * same string in the same shape.
+             */
+            const bare = String(preview?.domain || '').toLowerCase()
+                .replace(/^www\./, '').split('.')[0] || '';
+            if (site && site.toLowerCase() !== bare) {
+                bits.push(site);
+            }
+            if (author) {
+                bits.push(d.formatDashboardLabel('previewByAuthor', { author }, `By ${author}`));
+            }
+            if (published) {
+                const when = new Date(published);
+                if (!Number.isNaN(when.getTime())) {
+                    bits.push(when.toLocaleDateString(undefined,
+                        { year: 'numeric', month: 'short', day: 'numeric' }));
+                }
+            }
+        }
+        el.textContent = bits.join(' · ');
+        el.hidden = bits.length === 0;
+    }
+
+    /**
+     * The provider's own player, for the handful of sites that offer one.
+     *
+     * This is markup written by someone else, so it never touches the page's
+     * DOM: it goes into a sandboxed iframe through srcdoc, which gives it its
+     * own origin and no access to the dashboard around it. allow-scripts and
+     * allow-same-origin are deliberately not combined -- together they let the
+     * frame reach back out and undo the sandbox.
+     *
+     * Only opened on a pinned card. A player that starts loading because the
+     * pointer crossed a link would have every hover talking to YouTube.
+     */
+    /** Remove the player and end whatever it was doing. */
+    clearPreviewEmbed(card) {
+        const el = card?.querySelector?.('.bookmark-preview-card-embed');
+        if (!el) return;
+        el.innerHTML = '';
+        delete el.dataset.embedKey;
+        el.hidden = true;
+    }
+
+    paintPreviewEmbed(card, preview, want, title, mode) {
+        const el = card.querySelector('.bookmark-preview-card-embed');
+        if (!el) return;
+        const html = want.has('embed') ? String(preview?.embedHtml || '') : '';
+        const pinned = mode === 'pinned';
+        if (!html || !pinned) {
+            this.clearPreviewEmbed(card);
+            return;
+        }
+        /*
+         * Rebuilding an identical frame would restart the video on every
+         * repaint -- and the card repaints for reasons that have nothing to do
+         * with the player, such as a health figure arriving.
+         */
+        if (el.dataset.embedKey === html && el.querySelector('iframe')) {
+            el.hidden = false;
+            return;
+        }
+        /*
+         * Take the player's address out of the provider's markup and build the
+         * frame here, rather than putting their HTML into the page.
+         *
+         * The first attempt wrapped their markup in a sandboxed srcdoc frame,
+         * which drew a black rectangle: measured against the real player,
+         * allow-scripts without allow-same-origin gives the frame a null origin,
+         * and YouTube's player will not initialise without storage. The three
+         * variants side by side -- no same-origin: no video, no thumbnail;
+         * with same-origin: plays; unsandboxed: plays.
+         *
+         * So the wrapper is gone and only the src survives the trip. What
+         * actually confines this frame is frame-src in the CSP, which admits a
+         * named list of providers and nothing else -- a stronger boundary than
+         * a sandbox attribute, because the page cannot talk it out of the way.
+         * Nothing the provider wrote is executed as markup: an href that is not
+         * https, or points somewhere frame-src does not allow, yields no frame.
+         */
+        const src = this.embedPlayerSource(html);
+        if (!src) {
+            this.clearPreviewEmbed(card);
+            return;
+        }
+        const frame = document.createElement('iframe');
+        frame.className = 'bookmark-preview-card-embed-frame';
+        frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+        frame.setAttribute('loading', 'lazy');
+        frame.setAttribute('allowfullscreen', '');
+        frame.setAttribute('allow', 'accelerometer; encrypted-media; picture-in-picture; fullscreen');
+        frame.title = String(title || '');
+        frame.src = src;
+        el.innerHTML = '';
+        el.appendChild(frame);
+        el.dataset.embedKey = html;
+        el.hidden = false;
+    }
+
+    /**
+     * The player's address, from the provider's markup.
+     *
+     * Parsed rather than inserted: the markup is written by whichever site the
+     * bookmark points at, and this is the one value taken from it. Anything that
+     * is not an https iframe source is refused, so a provider that answered with
+     * something other than a player gets no frame at all.
+     */
+    embedPlayerSource(html) {
+        const parsed = new DOMParser().parseFromString(String(html || ''), 'text/html');
+        const src = parsed.querySelector('iframe[src]')?.getAttribute('src') || '';
+        try {
+            const url = new URL(src, window.location.href);
+            return url.protocol === 'https:' ? url.href : '';
+        } catch (_error) {
+            return '';
+        }
+    }
+
     paintPreviewCard(card, preview, { mode = 'peek', parts = null } = {}) {
         const d = this.dash;
         const want = parts || this.previewParts();
@@ -800,6 +993,9 @@ class DashboardPreview {
             imageEl.alt = '';
             imageWrap.hidden = true;
         }
+
+        this.paintPreviewByline(card, preview, want);
+        this.paintPreviewEmbed(card, preview, want, title, mode);
 
         const description = want.has('description') ? String(preview?.description || '').trim() : '';
         text('.bookmark-preview-card-description', description);
@@ -1126,6 +1322,13 @@ class DashboardPreview {
     hideBookmarkPreviewCard() {
         const d = this.dash;
         if (!d.previewCardElement) return;
+        /*
+         * Tear the player down rather than hide it. display:none stops a frame
+         * being drawn, not being alive: it keeps its connection to the provider
+         * and keeps playing, so a card dismissed during a video goes on making
+         * sound from nowhere. Emptying the container is what actually ends it.
+         */
+        this.clearPreviewEmbed(d.previewCardElement);
         d.previewCardElement.classList.remove('is-visible', 'is-pinned');
         d.previewCardElement.dataset.previewMode = '';
         d.previewCardElement._previewContext = null;
