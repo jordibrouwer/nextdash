@@ -44,6 +44,8 @@
         const summary = dash?.healthSummary;
         if (!summary) return null;
 
+        // "All pages" is the default the config tab offers, so only an explicit
+        // per-page setting narrows it.
         if (widget?.config?.scope !== 'page') return summary;
 
         /*

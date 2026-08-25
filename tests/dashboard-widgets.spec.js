@@ -151,6 +151,76 @@ test.describe('dashboard widgets', () => {
 /*
  * The Widgets tab in Config, and the health widget itself.
  */
+/*
+ * Config: one list arranges the page, one tab configures the widgets.
+ *
+ * They were split the wrong way at first. The Widgets tab had its own arrows
+ * and the Categories tab had arrows that wrote the category array -- which
+ * nothing reads for placement any more, so pressing them moved a row on screen
+ * and changed nothing on the dashboard.
+ */
+test.describe('arranging blocks in config', () => {
+    async function order(page) {
+        return page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            return (await (await f('/api/pages/1/blocks')).json()).order;
+        });
+    }
+
+    test.beforeEach(async ({ page }) => {
+        await markWhatsNewSeen(page);
+        await page.goto('/');
+        await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
+        await dismissOnboardingIfPresent(page);
+        await dismissBlockingOverlays(page);
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            await f('/api/pages/1/blocks', {
+                method: 'PUT', headers: h,
+                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Status' }] }),
+            });
+        });
+        await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
+        await page.click('[data-pt-tab="categories"]');
+        await expect(page.locator('.config-crud-list')).toBeVisible({ timeout: 15_000 });
+    });
+
+    test('Categories shows the widgets among the categories', async ({ page }) => {
+        // One list, because this is where the page's order is arranged and an
+        // arrow that steps past only half the blocks cannot express "after
+        // Media".
+        await expect(page.locator('.config-crud-row--widget')).toHaveCount(1, { timeout: 10_000 });
+        await expect(page.locator('.config-crud-row:not(.config-crud-row--widget)').first()).toBeVisible();
+    });
+
+    test('moving a category writes the order the dashboard draws from', async ({ page }) => {
+        const before = await order(page);
+        const firstCategory = before.find((id) => !String(id).startsWith('w_'));
+
+        const arrows = page.locator('[data-cat-move="down"]');
+        await arrows.first().click();
+
+        // The category array is no longer consulted for placement, so this has
+        // to move in blockOrder or the click did nothing visible.
+        await expect.poll(async () => (await order(page))[0], { timeout: 15_000 }).not.toBe(firstCategory);
+    });
+
+    test('moving a widget from the same list moves it too', async ({ page }) => {
+        const before = await order(page);
+        const widgetId = before.find((id) => String(id).startsWith('w_'));
+        const from = before.indexOf(widgetId);
+        test.skip(from === 0, 'already first');
+
+        await page.locator('[data-block-move="up"]').first().click();
+        await expect.poll(async () => (await order(page)).indexOf(widgetId), { timeout: 15_000 })
+            .toBe(from - 1);
+    });
+});
+
+/*
+ * The Widgets tab is where a widget is set up, not where it is placed.
+ */
 test.describe('the widgets tab', () => {
     test.beforeEach(async ({ page }) => {
         await markWhatsNewSeen(page);
@@ -158,66 +228,53 @@ test.describe('the widgets tab', () => {
         await page.waitForFunction(() => window.dashboardInstance?.pages?.length > 0, null, { timeout: 15_000 });
         await dismissOnboardingIfPresent(page);
         await dismissBlockingOverlays(page);
+        await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
+            await f('/api/pages/1/blocks', {
+                method: 'PUT', headers: h,
+                body: JSON.stringify({ widgets: [{ type: 'health', title: 'Status' }] }),
+            });
+        });
         await page.evaluate(() => window.dashboardInstance.config.openConfigView('pages-tags'));
         await page.click('[data-pt-tab="widgets"]');
         await expect(page.locator('[data-widget-add]')).toBeVisible({ timeout: 15_000 });
     });
 
-    test('adding a widget lists it among the categories', async ({ page }) => {
-        /*
-         * Cleared first: the store is reset per spec file, not per test, so an
-         * earlier test's widget would still be here and the empty state would
-         * be a claim about running order rather than about this code.
-         */
-        await page.evaluate(async () => {
-            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-            const h = { 'Content-Type': 'application/json', ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}) };
-            await f('/api/pages/1/blocks', { method: 'PUT', headers: h, body: JSON.stringify({ widgets: [] }) });
-        });
-        await page.evaluate(() => {
-            const c = window.dashboardInstance.config;
-            c._widgetLoadedFor = null;
-            c._widgetBlocks = null;
-            return c.loadWidgetsEditor();
-        });
-        await expect(page.locator('.config-panel-empty')).toContainText(/No widgets/i, { timeout: 10_000 });
-
-        await page.click('[data-widget-add]');
-        await expect(page.locator('[data-widget-row]').first()).toBeVisible({ timeout: 15_000 });
-
-        const rows = await page.evaluate(() => [...document.querySelectorAll('[data-widget-row]')].map((r) => ({
-            isCategory: r.classList.contains('config-widget-row--category'),
-        })));
-        // Categories are listed too, so a widget can be moved between them --
-        // "move up" is meaningless in a list of widgets alone.
-        expect(rows.some((r) => r.isCategory)).toBe(true);
-        expect(rows.some((r) => !r.isCategory)).toBe(true);
-
-        // Only the widget can be deleted here; renaming a category belongs on
-        // the Categories tab, and offering it twice is two places to keep right.
-        expect(await page.locator('[data-widget-delete]').count()).toBe(1);
+    test('it offers settings, not arrows', async ({ page }) => {
+        await expect(page.locator('[data-widget-enabled]')).toHaveCount(1, { timeout: 10_000 });
+        await expect(page.locator('[data-widget-scope]')).toHaveCount(1);
+        // An order editable in two places is two places that disagree -- which
+        // is the bug this split was made to end.
+        await expect(page.locator('[data-widget-move]')).toHaveCount(0);
     });
 
-    test('moving a widget here moves it on the dashboard', async ({ page }) => {
-        await page.click('[data-widget-add]');
-        await expect(page.locator('[data-widget-delete]')).toHaveCount(1, { timeout: 15_000 });
-
-        const before = await page.evaluate(async () => {
+    test('switching a widget off takes it off the grid but keeps its place', async ({ page }) => {
+        const orderBefore = await page.evaluate(async () => {
             const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
             return (await (await f('/api/pages/1/blocks')).json()).order;
         });
-        const widgetIndex = before.findIndex((id) => String(id).startsWith('w_'));
-        expect(widgetIndex).toBeGreaterThan(0);
 
-        await page.click(`[data-widget-row="${widgetIndex}"] [data-widget-move="up"]`);
-
-        // The same blockOrder the dashboard draws from: one order, not two that
-        // agree until they do not.
+        await page.locator('[data-widget-enabled]').first().uncheck();
         await expect.poll(async () => page.evaluate(async () => {
             const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
-            const order = (await (await f('/api/pages/1/blocks')).json()).order;
-            return order.findIndex((id) => String(id).startsWith('w_'));
-        }), { timeout: 15_000 }).toBe(widgetIndex - 1);
+            const blocks = await (await f('/api/pages/1/blocks')).json();
+            return blocks.widgets[0]?.config?.enabled;
+        }), { timeout: 15_000 }).toBe(false);
+
+        // Still in the order: turning it back on returns it to where the reader
+        // put it rather than to the end.
+        const orderAfter = await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            return (await (await f('/api/pages/1/blocks')).json()).order;
+        });
+        expect(orderAfter).toEqual(orderBefore);
+
+        // And off the grid.
+        await page.evaluate(() => window.dashboardInstance.config.closeConfigView());
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.waitForTimeout(2000);
+        await expect(page.locator('.dashboard-widget')).toHaveCount(0);
     });
 });
 

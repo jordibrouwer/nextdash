@@ -13700,6 +13700,14 @@ class DashboardConfig {
      * "move up" means something: a widget between two categories has to be able
      * to be put there without dragging on the dashboard.
      */
+    /*
+     * The widgets on a page: which there are, and how each is set up.
+     *
+     * Deliberately no arrows here. Where a widget sits is arranged on the
+     * Categories tab, in one list with the categories it sits between -- an
+     * order that could be edited in two places is two places that disagree, and
+     * that is the bug this tab was split away from.
+     */
     renderWidgetsEditor() {
         const esc = (v) => this.dash.escapeHtml(v);
         const pages = Array.isArray(this.dash.pages) ? this.dash.pages : [];
@@ -13712,40 +13720,34 @@ class DashboardConfig {
         if (this._widgetBlocks == null) {
             body = `<p class="config-view-loading">${esc(this.t('config.backupLoading', 'Loading…'))}</p>`;
         } else {
-            const blocks = this._widgetBlocks;
-            if (!blocks.some((b) => b.isWidget)) {
+            const widgets = this._widgetBlocks.filter((b) => b.isWidget);
+            if (!widgets.length) {
                 body = `<p class="config-panel-empty">${esc(this.t('config.widgetsEmpty',
                     'No widgets on this page yet. Add one to put a block beside your categories.'))}</p>`;
             } else {
-                const last = blocks.length - 1;
-                const rows = blocks.map((block, i) => {
-                    const label = block.isWidget
-                        ? (block.title || this.widgetTypeName(block.type))
-                        : block.name;
-                    /*
-                     * Categories are listed but greyed: they are here to be
-                     * moved past, not edited. Renaming and deleting them belongs
-                     * on the Categories tab, and offering it twice is two places
-                     * to keep in step.
-                     */
+                const rows = widgets.map((widget) => {
+                    const index = this._widgetBlocks.indexOf(widget);
+                    const enabled = widget.config?.enabled !== false;
+                    const scope = widget.config?.scope === 'page' ? 'page' : 'all';
                     return `
-                <li class="config-crud-row${block.isWidget ? '' : ' config-widget-row--category'}" data-widget-row="${i}">
+                <li class="config-crud-row" data-widget-row="${index}">
                     <div class="config-crud-fields">
-                        ${block.isWidget
-                            ? `<input type="text" class="config-text" data-widget="title" data-index="${i}"
-                                   value="${esc(block.title || '')}"
-                                   placeholder="${esc(this.widgetTypeName(block.type))}">`
-                            : `<span class="config-widget-category-name">${esc(label)}</span>`}
-                        <span class="config-widget-kind">${esc(block.isWidget
-                            ? this.widgetTypeName(block.type)
-                            : this.t('config.widgetsRowCategory', 'category'))}</span>
+                        <input type="text" class="config-text" data-widget="title" data-index="${index}"
+                            value="${esc(widget.title || '')}"
+                            placeholder="${esc(this.widgetTypeName(widget.type))}">
+                        <span class="config-widget-kind">${esc(this.widgetTypeName(widget.type))}</span>
                     </div>
                     <div class="config-crud-row-actions">
-                        <button type="button" class="config-btn config-btn--small" data-widget-move="up" data-index="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
-                        <button type="button" class="config-btn config-btn--small" data-widget-move="down" data-index="${i}" ${i === last ? 'disabled' : ''} aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
-                        ${block.isWidget
-                            ? `<button type="button" class="config-btn config-btn--small config-btn--danger" data-widget-delete="${i}">${esc(this.t('config.backupDelete', 'Delete'))}</button>`
-                            : ''}
+                        <label class="config-toggle config-toggle--inline" title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
+                            <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}>
+                            <span>${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
+                        </label>
+                        <select class="config-select config-select--small" data-widget-scope="${index}"
+                            aria-label="${esc(this.t('config.widgetsScopeLabel', 'What it counts'))}">
+                            <option value="all" ${scope === 'all' ? 'selected' : ''}>${esc(this.t('config.widgetsScopeAll', 'All pages'))}</option>
+                            <option value="page" ${scope === 'page' ? 'selected' : ''}>${esc(this.t('config.widgetsScopePage', 'This page'))}</option>
+                        </select>
+                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
                     </div>
                 </li>`;
                 }).join('');
@@ -13758,7 +13760,7 @@ class DashboardConfig {
 
         return `
             <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
-                'Widgets are blocks on a page that hold something other than bookmarks. Your categories are listed too, so a widget can be moved between them.'))}</p>
+                'Widgets are blocks on a page that hold something other than bookmarks. Where each one sits is arranged under Categories, together with the categories it sits between.'))}</p>
             <div class="config-crud-toolbar">
                 <select class="config-select" data-widget-page aria-label="${esc(this.t('config.categoriesPageLabel', 'Page'))}">${pageOptions}</select>
                 <select class="config-select" data-widget-type aria-label="${esc(this.t('config.widgetsTypeLabel', 'Widget type'))}">${typeOptions}</select>
@@ -13843,11 +13845,17 @@ class DashboardConfig {
             void this.addWidget(type);
         });
 
-        container.querySelectorAll('[data-widget-move]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const index = Number(btn.getAttribute('data-index'));
-                const direction = btn.getAttribute('data-widget-move') === 'up' ? -1 : 1;
-                void this.moveWidgetBlock(index, direction);
+        // Whether a widget is drawn at all, and what it counts. Where it sits is
+        // the Categories tab's business.
+        container.querySelectorAll('[data-widget-enabled]').forEach((box) => {
+            box.addEventListener('change', () => {
+                void this.setWidgetConfig(Number(box.getAttribute('data-widget-enabled')), { enabled: box.checked });
+            });
+        });
+
+        container.querySelectorAll('[data-widget-scope]').forEach((select) => {
+            select.addEventListener('change', () => {
+                void this.setWidgetConfig(Number(select.getAttribute('data-widget-scope')), { scope: select.value });
             });
         });
 
@@ -13906,15 +13914,20 @@ class DashboardConfig {
         await this.refreshDashboardBlocks();
     }
 
-    async moveWidgetBlock(index, direction) {
+    /*
+     * Change one widget's settings.
+     *
+     * Merged into whatever config it already has rather than replaced, so
+     * switching a widget off does not also forget what it was counting.
+     */
+    async setWidgetConfig(index, patch) {
         const blocks = [...(this._widgetBlocks || [])];
-        const target = index + direction;
-        if (index < 0 || target < 0 || index >= blocks.length || target >= blocks.length) return;
-        [blocks[index], blocks[target]] = [blocks[target], blocks[index]];
+        if (!blocks[index]?.isWidget) return;
+        blocks[index] = {
+            ...blocks[index],
+            config: { ...(blocks[index].config || {}), ...patch },
+        };
         this._widgetBlocks = blocks;
-        // Repaint first: the reader sees the move land rather than waiting on a
-        // round trip to find out whether their click did anything.
-        this.repaintPtBody();
         if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
         await this.refreshDashboardBlocks();
     }
@@ -14014,8 +14027,21 @@ class DashboardConfig {
                 [this._categories.length, this.t('config.categoriesStatTotal', 'categories')],
                 [catCounts.reduce((sum, n) => sum + n, 0), this.t('config.categoriesStatBookmarks', 'bookmarks on this page')],
             ]);
+            /*
+             * The widgets that live between these categories.
+             *
+             * Interleaved here rather than listed apart, because this is the
+             * one place the page's order is arranged and an arrow that can only
+             * step past half the blocks cannot express "put it after Media".
+             * Under a search or a sort the arrows are hidden anyway, so the
+             * widgets are left out of that view rather than floating loose in a
+             * filtered list.
+             */
+            const withWidgets = locked || visible.length !== this._categories.length
+                ? rows
+                : this.interleaveWidgetRows(rows);
             body = `${summary}${this.renderPtCountLabel('categories', visible.length, this._categories.length)}${rows
-                ? `<ul class="config-crud-list">${rows}</ul>`
+                ? `<ul class="config-crud-list">${withWidgets}</ul>`
                 : `<p class="config-panel-empty">${esc(this.t('config.categoriesNoMatch', 'No categories match your search.'))}</p>`}`;
         }
         const pagePicker = `
@@ -14035,6 +14061,96 @@ class DashboardConfig {
         `;
     }
 
+    /*
+     * Put the widget rows where the page's order says they belong.
+     *
+     * The category rows are already built and carry their own indices; this
+     * splices the widgets between them by reading blockOrder, so one list shows
+     * the whole page. A widget row is deliberately thinner than a category row:
+     * it can be moved and opened, and everything else about it -- what it shows,
+     * whether it is on -- lives on the Widgets tab, which is where a reader goes
+     * to configure one.
+     */
+    interleaveWidgetRows(categoryRowsHtml) {
+        const widgets = this._catWidgets || [];
+        if (!widgets.length) return categoryRowsHtml;
+
+        const esc = (v) => this.dash.escapeHtml(v);
+        const order = this._catBlockOrder || [];
+        const widgetById = new Map(widgets.map((w) => [w.id, w]));
+        const categoryIds = (this._categories || []).map((c) => String(c.id));
+
+        // The category rows in the order they were rendered, so a widget can be
+        // dropped between the right two.
+        const rows = String(categoryRowsHtml).split('</li>').filter((chunk) => chunk.trim());
+        const out = [];
+        let categoryCursor = 0;
+
+        order.forEach((id) => {
+            const widget = widgetById.get(id);
+            if (widget) {
+                out.push(this.renderCategoryTabWidgetRow(widget, esc));
+                return;
+            }
+            if (categoryIds.includes(String(id)) && categoryCursor < rows.length) {
+                out.push(`${rows[categoryCursor++]}</li>`);
+            }
+        });
+        // Anything the order did not name keeps its place at the end rather
+        // than disappearing from the list.
+        while (categoryCursor < rows.length) out.push(`${rows[categoryCursor++]}</li>`);
+        return out.join('');
+    }
+
+    renderCategoryTabWidgetRow(widget, esc) {
+        const label = widget.title || this.widgetTypeName(widget.type);
+        return `
+                <li class="config-crud-row config-crud-row--widget" data-block-row="${esc(widget.id)}">
+                    <div class="config-crud-fields">
+                        <span class="config-widget-category-name">${esc(label)}</span>
+                        <span class="config-widget-kind">${esc(this.t('config.categoriesRowWidget', 'widget'))}</span>
+                    </div>
+                    <div class="config-crud-row-actions">
+                        <button type="button" class="config-btn config-btn--small" data-block-move="up" data-block-id="${esc(widget.id)}" aria-label="${esc(this.t('config.moveUp', 'Move up'))}">↑</button>
+                        <button type="button" class="config-btn config-btn--small" data-block-move="down" data-block-id="${esc(widget.id)}" aria-label="${esc(this.t('config.moveDown', 'Move down'))}">↓</button>
+                        <button type="button" class="config-btn config-btn--small" data-block-configure="${esc(widget.id)}">${esc(this.t('config.categoriesWidgetConfigure', 'Configure'))}</button>
+                    </div>
+                </li>`;
+    }
+
+    /*
+     * Move one block one place in the page's order.
+     *
+     * Writes blockOrder, the single list the dashboard draws from -- the arrows
+     * on this tab used to reorder the category array instead, which nothing
+     * reads for placement any more, so they moved a row on screen and changed
+     * nothing on the dashboard.
+     */
+    async moveBlockOnCategoriesTab(id, direction) {
+        const order = [...(this._catBlockOrder || [])];
+        const from = order.indexOf(String(id));
+        if (from < 0) return;
+        const to = from + (direction === 'up' ? -1 : 1);
+        if (to < 0 || to >= order.length) return;
+
+        [order[from], order[to]] = [order[to], order[from]];
+        this._catBlockOrder = order;
+        this.repaintPtBody();
+
+        try {
+            const res = await this.writeFetch(`/api/pages/${this._catPageId}/blocks`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } catch {
+            this.notify(this.t('config.categoriesOrderError', 'Could not save the order.'), 'error');
+            return;
+        }
+        await this.refreshDashboardBlocks();
+    }
+
     async loadCategoriesEditor() {
         const pages = this.dash.pages || [];
         const pageId = this._catPageId != null ? this._catPageId : (this.dash.currentPageId ?? pages[0]?.id);
@@ -14042,17 +14158,35 @@ class DashboardConfig {
         // Already loaded for this page — don't refetch/repaint and detach controls.
         if (this._categories != null && this._catLoadedFor === pageId) return;
         try {
-            const res = await fetch(`/api/categories?page=${encodeURIComponent(pageId)}`);
+            /*
+             * Categories and the page's blocks together.
+             *
+             * The blocks answer carries the order every block is drawn in --
+             * widgets and categories in one list -- which is what this editor
+             * arranges. Fetched in the same round rather than after it, so the
+             * list is never painted once without its widgets and again with.
+             */
+            const [res, blocksRes] = await Promise.all([
+                fetch(`/api/categories?page=${encodeURIComponent(pageId)}`),
+                this.writeFetch(`/api/pages/${encodeURIComponent(pageId)}/blocks`),
+            ]);
             if (!res || !res.ok) throw new Error(`HTTP ${res?.status ?? 'network'}`);
             const data = await res.json();
             if (!Array.isArray(data)) throw new Error('categories: unexpected payload');
             this._categories = data;
             this._categoriesLoadFailed = false;
+            // A blocks failure is not a categories failure: the list still
+            // works, it just cannot show the widgets until the next load.
+            const blocks = blocksRes?.ok ? await blocksRes.json().catch(() => null) : null;
+            this._catWidgets = blocks?.widgets || [];
+            this._catBlockOrder = blocks?.order || [];
         } catch {
             // See loadFinders: an empty list here is a write instruction, so a
             // failed read has to be remembered rather than rendered as "none".
             this._categories = [];
             this._categoriesLoadFailed = true;
+            this._catWidgets = [];
+            this._catBlockOrder = [];
         }
         this._catLoadedFor = pageId;
         if (this.ptTab === 'categories') this.repaintPtBody();
@@ -14207,6 +14341,23 @@ class DashboardConfig {
                 });
             });
         });
+        container.querySelectorAll('[data-block-move]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                void this.moveBlockOnCategoriesTab(
+                    btn.getAttribute('data-block-id'), btn.getAttribute('data-block-move'));
+            });
+        });
+
+        container.querySelectorAll('[data-block-configure]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                // Straight to where a widget is set up, rather than repeating
+                // its settings in a list that is about arrangement.
+                this.ptTab = 'widgets';
+                this.restoreConfigHash();
+                this.repaintPtBody();
+            });
+        });
+
         container.querySelectorAll('[data-cat-move]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 // The buttons are not rendered under a sort or search, so this
@@ -14216,11 +14367,18 @@ class DashboardConfig {
                 if (this.ptListReordered('categories')) return;
                 const i = Number(btn.getAttribute('data-index'));
                 const dir = btn.getAttribute('data-cat-move');
-                const swap = dir === 'up' ? i - 1 : i + 1;
-                if (!this._categories || swap < 0 || swap >= this._categories.length) return;
-                [this._categories[i], this._categories[swap]] = [this._categories[swap], this._categories[i]];
-                this.repaintPtBody();
-                void this.saveCategories(this._catPageId);
+                const category = this._categories?.[i];
+                if (!category) return;
+                /*
+                 * Through blockOrder, the one list the dashboard draws from.
+                 *
+                 * These arrows used to swap two entries in the category array
+                 * and post that -- which nothing reads for placement any more,
+                 * so the row moved here and nothing moved on the dashboard. One
+                 * step in the page's order moves past whatever is next, widget
+                 * or category.
+                 */
+                void this.moveBlockOnCategoriesTab(String(category.id), dir);
             });
         });
     }

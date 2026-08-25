@@ -284,6 +284,10 @@ class DashboardRenderCore {
          * ever". Anything not in the order keeps the position it is pushed in.
          */
         (d.widgets || []).forEach((widget) => {
+            // Switched off: kept in the order and out of the grid, so turning it
+            // back on returns it to the place the reader put it rather than to
+            // the end.
+            if (widget?.config?.enabled === false) return;
             columnBlocks.push({
                 widget,
                 category: {
