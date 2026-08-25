@@ -497,6 +497,19 @@ type Settings struct {
 	// (api.pushover.net) and delivery is keyed on these two values instead.
 	MonitorNotifyPushoverToken   string `json:"monitorNotifyPushoverToken,omitempty"`
 	MonitorNotifyPushoverUserKey string `json:"monitorNotifyPushoverUserKey,omitempty"`
+	/*
+	 * MonitorNotifyDashboardURL is where this install can be reached from a
+	 * phone, for the buttons an ntfy notification carries.
+	 *
+	 * Nothing else needs it: every other notification says what happened and
+	 * stops there. A button has to lead somewhere, and a server has no reliable
+	 * way to know its own public address -- behind a proxy the Host header is
+	 * whatever the proxy was told, and on a LAN it is one of several. So it is
+	 * asked for, and when it is absent the buttons that would need it are left
+	 * off rather than pointing somewhere wrong.
+	 */
+	MonitorNotifyDashboardURL string `json:"monitorNotifyDashboardUrl,omitempty"`
+
 	// Archiving a bookmark the day it is saved, rather than looking for a copy
 	// the day it dies. The keys are archive.org's S3-style pair from
 	// archive.org/account/s3.php; without them the archive still accepts

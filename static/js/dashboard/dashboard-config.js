@@ -2328,6 +2328,7 @@ class DashboardConfig {
      */
     static FIELD_KEYWORDS = {
         monitorNotifyUrl: ['webhook', 'alert', 'notify', 'notification', 'discord', 'slack'],
+        monitorNotifyDashboardUrl: ['ntfy', 'button', 'notification', 'address', 'alert'],
         monitorNotifyRetries: ['webhook', 'alert', 'notify', 'retries'],
         pushNotifyEnabled: ['push', 'notification', 'alert', 'browser'],
         pushNotifyMonitor: ['push', 'notification', 'downtime', 'uptime'],
@@ -9882,6 +9883,11 @@ class DashboardConfig {
                 field: 'monitorNotifyUrl', type: 'text',
                 label: urlLabelByPreset[preset] || t('config.monitorNotifyUrlLabel', 'Alert webhook URL'),
             });
+        }
+        if (forIndex || preset === 'ntfy') {
+            // Only ntfy carries buttons, and a button has to lead somewhere.
+            controls.push({ field: 'monitorNotifyDashboardUrl', type: 'text',
+                label: t('config.monitorNotifyDashboardUrlLabel', 'Address of this dashboard (for notification buttons)') });
         }
         if (forIndex || preset === 'telegram') {
             controls.push({ field: 'monitorNotifyTelegramChatId', type: 'text', label: t('config.monitorNotifyTelegramChatIdLabel', 'Chat ID') });

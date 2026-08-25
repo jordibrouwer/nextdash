@@ -2835,6 +2835,7 @@
     "checkModeExplainWhich": "Monitor bevat alles wat Periodiek doet, dus beide aanzetten heeft nooit zin. Periodiek past bij je gewone links; Monitor bij je eigen servers en dashboards. Alles monitoren zou veel netwerkverkeer en een groot historiebestand opleveren voor weinig winst.",
     "checkModeExplainClose": "Duidelijk",
     "monitorNotifyUrlLabel": "Webhook voor uptime-meldingen:",
+    "monitorNotifyDashboardUrlLabel": "Adres van dit dashboard (voor knoppen in meldingen)",
     "monitorNotifyUrlLabelTelegram": "Bot-API-URL (https://api.telegram.org/bot<token>/sendMessage)",
     "monitorNotifyRetriesLabel": "Melden na:",
     "monitorNotifyPresetLabel": "Dienst",

@@ -2830,6 +2830,7 @@
     "checkModeExplainWhich": "Monitor enthält alles, was Periodisch tut, es gibt also nie einen Grund für beides. Periodisch passt zu gewöhnlichen Links; Monitor zu deinen eigenen Servern und Dashboards. Alles zu überwachen würde viele Netzwerkanfragen und eine große Verlaufsdatei für wenig Nutzen bedeuten.",
     "checkModeExplainClose": "Verstanden",
     "monitorNotifyUrlLabel": "Webhook für Uptime-Warnungen:",
+    "monitorNotifyDashboardUrlLabel": "Adresse dieses Dashboards (für Knöpfe in Benachrichtigungen)",
     "monitorNotifyUrlLabelTelegram": "Bot-API-URL (https://api.telegram.org/bot<token>/sendMessage)",
     "monitorNotifyRetriesLabel": "Warnen nach:",
     "monitorNotifyPresetLabel": "Dienst",

@@ -2830,6 +2830,7 @@
     "checkModeExplainWhich": "Surveillance inclut tout ce que fait Périodique : il n'y a donc jamais de raison de vouloir les deux. Périodique convient à vos liens ordinaires ; Surveillance à vos propres serveurs et tableaux de bord. Tout surveiller générerait beaucoup de requêtes réseau et un gros fichier d'historique pour peu de bénéfice.",
     "checkModeExplainClose": "Compris",
     "monitorNotifyUrlLabel": "Webhook d'alerte de disponibilité :",
+    "monitorNotifyDashboardUrlLabel": "Adresse de ce tableau de bord (pour les boutons des notifications)",
     "monitorNotifyUrlLabelTelegram": "URL de l'API Bot (https://api.telegram.org/bot<token>/sendMessage)",
     "monitorNotifyRetriesLabel": "Alerter après :",
     "monitorNotifyPresetLabel": "Service",

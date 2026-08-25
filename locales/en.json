@@ -2842,6 +2842,7 @@
     "checkModeExplainWhich": "Monitor includes everything Periodic does, so there is never a reason to want both. Periodic suits your ordinary links; Monitor suits your own servers and dashboards. Monitoring everything would make a lot of network requests and a large history file for little benefit.",
     "checkModeExplainClose": "Got it",
     "monitorNotifyUrlLabel": "Uptime alert webhook:",
+    "monitorNotifyDashboardUrlLabel": "Address of this dashboard (for notification buttons)",
     "monitorNotifyUrlLabelTelegram": "Bot API URL (https://api.telegram.org/bot<token>/sendMessage)",
     "monitorNotifyRetriesLabel": "Alert after:",
     "monitorNotifyPresetLabel": "Service",
