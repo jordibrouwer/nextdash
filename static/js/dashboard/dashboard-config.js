@@ -13863,8 +13863,13 @@ class DashboardConfig {
                             <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}>
                             <span>${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
                         </label>
+                        <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
+                            aria-expanded="${this._widgetSettingsOpen === index ? 'true' : 'false'}">${esc(
+                            this.t('config.widgetsConfigure', 'Settings'))}</button>
                         <button type="button" class="config-btn config-btn--small config-btn--danger" data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
                     </div>
+                    <div class="config-widget-settings" ${this._widgetSettingsOpen === index ? '' : 'hidden'}>${
+                        this._widgetSettingsOpen === index ? this.renderWidgetSettings(widget, index) : ''}</div>
                 </li>`;
                 }).join('');
                 body = `<ul class="config-crud-list">${rows}</ul>`;
@@ -13887,7 +13892,129 @@ class DashboardConfig {
     }
 
     /** The types a reader may add. Mirrors the server's register. */
-    static WIDGET_TYPES = ['health'];
+    static WIDGET_TYPES = ['health', 'uptime', 'certs', 'trend', 'inbox', 'feeds', 'sources', 'neglected'];
+
+    /*
+     * What each type may be told, mirroring widgetFields in widgets_config.go.
+     *
+     * A table rather than a form per type: the panel is generated from this, and
+     * the server narrows a stored config to the same shape. A field declared in
+     * one and not the other is then a mismatch that shows immediately, instead
+     * of a setting that silently does nothing — which is what happened to the
+     * health widget's own `show`, read since the day it shipped and never
+     * settable until now.
+     *
+     * `rows`, `days` and the other numbers carry the same bounds the server
+     * enforces; the input simply refuses out of range rather than having the
+     * value dropped on save without explanation.
+     */
+    static WIDGET_SETTINGS = {
+        health: [
+            { key: 'show', kind: 'checkset', label: ['config.widgetShow', 'Figures to show'],
+              options: [
+                  ['broken', ['config.widgetShowBroken', 'Broken']],
+                  ['down', ['config.widgetShowDown', 'Down now']],
+                  ['content', ['config.widgetShowContent', 'Content changed']],
+                  ['healthy', ['config.widgetShowHealthy', 'Healthy']],
+              ] },
+        ],
+        uptime: [
+            { key: 'downOnly', kind: 'bool', label: ['config.widgetDownOnly', 'Only what is down now'] },
+            { key: 'sparkline', kind: 'bool', label: ['config.widgetSparkline', 'Show a sparkline per row'] },
+            { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        certs: [
+            { key: 'withinDays', kind: 'int', min: 1, max: 730,
+              label: ['config.widgetWithinDays', 'Expiring within (days)'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        trend: [
+            { key: 'days', kind: 'int', min: 7, max: 90, label: ['config.widgetTrendDays', 'Days to plot'] },
+        ],
+        inbox: [
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+            { key: 'showSource', kind: 'bool', label: ['config.widgetShowSource', 'Show where each link came from'] },
+        ],
+        feeds: [
+            { key: 'freshOnly', kind: 'bool', label: ['config.widgetFreshOnly', 'Only feeds with fresh items'] },
+            { key: 'showRetired', kind: 'bool', label: ['config.widgetShowRetired', 'Show feeds that stopped after repeated failures'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+        sources: [
+            { key: 'errorsOnly', kind: 'bool', label: ['config.widgetErrorsOnly', 'Only sources that failed'] },
+        ],
+        neglected: [
+            { key: 'sinceDays', kind: 'int', min: 7, max: 730,
+              label: ['config.widgetSinceDays', 'Not opened for (days)'] },
+            { key: 'includeNeverOpened', kind: 'bool',
+              label: ['config.widgetNeverOpened', 'Count bookmarks never opened'] },
+            { key: 'tags', kind: 'tags', label: ['config.widgetTags', 'Only bookmarks with these tags'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
+        ],
+    };
+
+    /** The settings panel for one widget, drawn from WIDGET_SETTINGS. */
+    renderWidgetSettings(widget, index) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const fields = DashboardConfig.WIDGET_SETTINGS[widget.type] || [];
+        if (!fields.length) {
+            return `<p class="config-widget-settings-empty">${esc(this.t(
+                'config.widgetNoSettings', 'This widget has nothing to set.'))}</p>`;
+        }
+        const config = widget.config || {};
+        const rows = fields.map((field) => {
+            const label = esc(this.t(field.label[0], field.label[1]));
+            const id = `widget-${index}-${esc(field.key)}`;
+            if (field.kind === 'bool') {
+                return `
+                    <label class="config-toggle config-toggle--inline">
+                        <input type="checkbox" id="${id}" data-widget-setting="${esc(field.key)}"
+                            data-widget-index="${index}" data-widget-kind="bool"
+                            ${config[field.key] ? 'checked' : ''}>
+                        <span>${label}</span>
+                    </label>`;
+            }
+            if (field.kind === 'int') {
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <input type="number" id="${id}" class="config-text config-text--number"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="int" min="${field.min}" max="${field.max}"
+                            value="${esc(config[field.key] ?? '')}"
+                            placeholder="${esc(this.t('config.widgetDefault', 'Default'))}">
+                    </div>`;
+            }
+            if (field.kind === 'tags') {
+                const value = Array.isArray(config[field.key]) ? config[field.key].join(', ') : '';
+                return `
+                    <div class="config-widget-field">
+                        <label for="${id}">${label}</label>
+                        <input type="text" id="${id}" class="config-text"
+                            data-widget-setting="${esc(field.key)}" data-widget-index="${index}"
+                            data-widget-kind="tags" maxlength="400" value="${esc(value)}"
+                            placeholder="${esc(this.t('config.widgetTagsPlaceholder', 'Any tag'))}">
+                    </div>`;
+            }
+            // checkset: an absent list means all, which is the default for the
+            // health widget's figures and reads better than every box ticked.
+            const chosen = Array.isArray(config[field.key]) ? config[field.key] : null;
+            const boxes = (field.options || []).map(([value, text]) => `
+                <label class="config-toggle config-toggle--inline">
+                    <input type="checkbox" data-widget-setting="${esc(field.key)}"
+                        data-widget-index="${index}" data-widget-kind="checkset"
+                        value="${esc(value)}" ${!chosen || chosen.includes(value) ? 'checked' : ''}>
+                    <span>${esc(this.t(text[0], text[1]))}</span>
+                </label>`).join('');
+            return `
+                <div class="config-widget-field">
+                    <span class="config-widget-field-label">${label}</span>
+                    <div class="config-widget-checkset">${boxes}</div>
+                </div>`;
+        }).join('');
+        return `<div class="config-widget-settings-body">${rows}</div>`;
+    }
 
     widgetTypeName(type) {
         const key = `dashboard.widgetType.${type}`;
@@ -13975,6 +14102,38 @@ class DashboardConfig {
             });
         });
 
+        // Opening the settings redraws the tab, so which row is open is state
+        // rather than a class toggle: a rename or a save elsewhere must not
+        // close a panel someone is working in.
+        container.querySelectorAll('[data-widget-settings]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const index = Number(btn.getAttribute('data-widget-settings'));
+                this._widgetSettingsOpen = this._widgetSettingsOpen === index ? null : index;
+                /*
+                 * Repaint, not reload.
+                 *
+                 * loadWidgetsEditor refetches and is guarded against being
+                 * called from its own repaint -- clearing _widgetLoadedFor to
+                 * force it through that guard is exactly the endless loop the
+                 * guard exists to stop, and it detaches every control on the
+                 * tab before a click can land. The blocks are already in hand;
+                 * only the markup has to change.
+                 */
+                this.repaintPtBody();
+            });
+        });
+
+        container.querySelectorAll('[data-widget-setting]').forEach((input) => {
+            const kind = input.getAttribute('data-widget-kind');
+            const key = input.getAttribute('data-widget-setting');
+            const index = Number(input.getAttribute('data-widget-index'));
+            // change, not input: a number typed digit by digit would write once
+            // per digit, and 5 on the way to 15 is a value the server accepts.
+            input.addEventListener('change', () => {
+                void this.saveWidgetSetting(index, key, kind, input);
+            });
+        });
+
         container.querySelectorAll('[data-widget="title"]').forEach((input) => {
             // On change rather than on every keystroke: a title is a whole
             // thought, and a write per character would be a write per character.
@@ -14033,13 +14192,50 @@ class DashboardConfig {
     async setWidgetConfig(index, patch) {
         const blocks = [...(this._widgetBlocks || [])];
         if (!blocks[index]?.isWidget) return;
-        blocks[index] = {
-            ...blocks[index],
-            config: { ...(blocks[index].config || {}), ...patch },
-        };
+        const merged = { ...(blocks[index].config || {}), ...patch };
+        // undefined means "use the default", and the default is the key being
+        // absent — JSON.stringify would drop it anyway, so this makes the local
+        // copy agree with what the server will store.
+        Object.keys(patch).forEach((key) => {
+            if (patch[key] === undefined) delete merged[key];
+        });
+        blocks[index] = { ...blocks[index], config: merged };
         this._widgetBlocks = blocks;
         if (!await this.saveWidgetBlocks(this.widgetPayloadFromBlocks())) return;
         await this.refreshDashboardBlocks();
+    }
+
+    /**
+     * One setting, read off the control that changed.
+     *
+     * An empty number means "use the default", which is stored as the field
+     * being absent — the same thing the server does with a value it cannot
+     * accept, and what every renderer already reads as the default.
+     */
+    async saveWidgetSetting(index, key, kind, input) {
+        const container = input.closest('.config-widget-settings') || document;
+        let value;
+        if (kind === 'bool') {
+            value = input.checked;
+        } else if (kind === 'int') {
+            const raw = String(input.value || '').trim();
+            const parsed = Number.parseInt(raw, 10);
+            value = raw === '' || Number.isNaN(parsed) ? undefined : parsed;
+        } else if (kind === 'tags') {
+            const list = String(input.value || '').split(',')
+                .map((tag) => tag.trim()).filter(Boolean);
+            value = list.length ? list : undefined;
+        } else {
+            // checkset: every box for this key, so unticking one sends the rest
+            // rather than sending the one that changed.
+            const boxes = [...container.querySelectorAll(
+                `[data-widget-setting="${CSS.escape(key)}"][data-widget-kind="checkset"]`)];
+            const chosen = boxes.filter((box) => box.checked).map((box) => box.value);
+            // All ticked is the same as saying nothing, and storing nothing
+            // keeps a later addition to the list included by default.
+            value = chosen.length === boxes.length ? undefined : chosen;
+        }
+        await this.setWidgetConfig(index, { [key]: value });
     }
 
     async renameWidget(index, title) {

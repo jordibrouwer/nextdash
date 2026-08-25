@@ -243,7 +243,19 @@ test.describe('the widgets tab', () => {
 
     test('it offers settings, not arrows', async ({ page }) => {
         await expect(page.locator('[data-widget-enabled]')).toHaveCount(1, { timeout: 10_000 });
-        await expect(page.locator('[data-widget-scope]')).toHaveCount(1);
+        /*
+         * A Settings button per row, which opens that type's own fields.
+         *
+         * This asserted `[data-widget-scope]` — a control that was never built,
+         * so the test had been failing on a promise rather than on a
+         * regression. The settings panel replaces it: the health widget's own
+         * `show` was read by the renderer from the day it shipped and could not
+         * be written until that panel existed.
+         */
+        await expect(page.locator('[data-widget-settings]')).toHaveCount(1);
+        await page.locator('[data-widget-settings]').first().click();
+        await expect(page.locator('[data-widget-setting]').first()).toBeVisible({ timeout: 10_000 });
+
         // An order editable in two places is two places that disagree -- which
         // is the bug this split was made to end.
         await expect(page.locator('[data-widget-move]')).toHaveCount(0);

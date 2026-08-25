@@ -33,13 +33,43 @@ type WidgetType string
 const (
 	// WidgetTypeHealth reports what the health view would report, in a block.
 	WidgetTypeHealth WidgetType = "health"
+	// WidgetTypeUptime lists monitored bookmarks by how well they have been
+	// answering -- what is down now, uptime over a window, the longest outage.
+	WidgetTypeUptime WidgetType = "uptime"
+	// WidgetTypeCerts lists certificates about to expire, grouped by host: ten
+	// bookmarks on one domain are one line, because expiry is a property of the
+	// host and not of any one bookmark.
+	WidgetTypeCerts WidgetType = "certs"
+	// WidgetTypeTrend draws broken links over time. One number cannot say
+	// whether things are getting better; the line can.
+	WidgetTypeTrend WidgetType = "trend"
+	// WidgetTypeInbox reports what is waiting to be filed, and how long it has
+	// been waiting.
+	WidgetTypeInbox WidgetType = "inbox"
+	// WidgetTypeFeeds reports feeds with fresh items, and -- the part nobody
+	// sees today -- the feeds that retired themselves after repeated failures.
+	WidgetTypeFeeds WidgetType = "feeds"
+	// WidgetTypeSources reports what each import source last did. An import that
+	// failed is visible only in config today, so it is found by wondering why
+	// nothing new arrived.
+	WidgetTypeSources WidgetType = "sources"
+	// WidgetTypeNeglected asks the graveyard question in reverse: not which link
+	// died, but which one you stopped opening.
+	WidgetTypeNeglected WidgetType = "neglected"
 )
 
 // knownWidgetTypes is the register. A type not in here is refused rather than
 // stored: a widget whose type nothing renders is an invisible block that still
 // takes a place in the order.
 var knownWidgetTypes = map[WidgetType]struct{}{
-	WidgetTypeHealth: {},
+	WidgetTypeHealth:    {},
+	WidgetTypeUptime:    {},
+	WidgetTypeCerts:     {},
+	WidgetTypeTrend:     {},
+	WidgetTypeInbox:     {},
+	WidgetTypeFeeds:     {},
+	WidgetTypeSources:   {},
+	WidgetTypeNeglected: {},
 }
 
 var errUnknownWidgetType = errors.New("unknown widget type")
@@ -106,9 +136,9 @@ func normalizeWidget(widget Widget) (Widget, error) {
 	if len(widget.Title) > 80 {
 		widget.Title = widget.Title[:80]
 	}
-	if widget.Config == nil {
-		widget.Config = map[string]any{}
-	}
+	// Config is the client's, so it is narrowed to what this type declares
+	// before it reaches storage -- see sanitizeWidgetConfig.
+	widget.Config = sanitizeWidgetConfig(widget.Type, widget.Config)
 	return widget, nil
 }
 
