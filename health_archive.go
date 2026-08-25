@@ -94,11 +94,13 @@ func (h *Handlers) ArchiveSnapshot(w http.ResponseWriter, r *http.Request) {
 	// still counted what it saw, and "captured 12 times, never successfully" is
 	// worth more than an empty answer.
 	if err == nil {
-		history.Snapshot = snapshot
+		history.setSnapshot(snapshot)
 		_ = json.NewEncoder(w).Encode(history)
 		return
 	}
-	_ = json.NewEncoder(w).Encode(ArchiveHistory{Snapshot: snapshot})
+	fallback := ArchiveHistory{}
+	fallback.setSnapshot(snapshot)
+	_ = json.NewEncoder(w).Encode(fallback)
 }
 
 func (h *Handlers) lookupArchiveSnapshot(ctx context.Context, target string) (archiveSnapshot, error) {

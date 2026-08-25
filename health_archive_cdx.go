@@ -71,6 +71,20 @@ whenever that cannot be established -- no captures, still working, or the
 archive simply has not looked since.
 */
 type ArchiveHistory struct {
+	/*
+	 * The capture itself is inlined, not nested.
+	 *
+	 * This route answered a bare archiveSnapshot for several releases and the
+	 * health view reads `url`, `timestamp` and `available` straight off the
+	 * top level. Nesting them under `snapshot` silently broke "recover from
+	 * archive" -- the call still succeeded, the fields were simply not where
+	 * the caller looked. Embedding keeps both shapes true at once: old readers
+	 * find the fields where they always were, new ones get the history beside
+	 * them.
+	 */
+	archiveSnapshot
+	// Snapshot repeats the capture as a nested object, so a caller written
+	// against the history shape does not have to know it was ever flat.
 	Snapshot archiveSnapshot `json:"snapshot"`
 	// FirstSeen is the oldest capture in the tail read, not necessarily the
 	// oldest capture there is: it says "at least this long", never "since".
@@ -147,11 +161,11 @@ func (h *Handlers) lookupArchiveHistory(ctx context.Context, target string) (Arc
 		history.FirstSeen = oldest
 	}
 	if url := waybackCaptureURL(newestGood); url != "" {
-		history.Snapshot = archiveSnapshot{
+		history.setSnapshot(archiveSnapshot{
 			URL:       url,
 			Timestamp: waybackTimestampToMillis(newestGood.Timestamp),
 			Available: true,
-		}
+		})
 	}
 
 	/*
@@ -281,4 +295,11 @@ func waybackTimestampToMillis(stamp string) int64 {
 		return 0
 	}
 	return at.UnixMilli()
+}
+
+// setSnapshot writes the capture to both the inlined fields and the nested
+// object, so the two can never disagree about what was found.
+func (h *ArchiveHistory) setSnapshot(snapshot archiveSnapshot) {
+	h.archiveSnapshot = snapshot
+	h.Snapshot = snapshot
 }

@@ -239,3 +239,51 @@ func TestWaybackTimestampToMillisRefusesJunk(t *testing.T) {
 		}
 	}
 }
+
+/*
+The capture stays where callers already look for it.
+
+This route answered a bare archiveSnapshot for several releases, and the health
+view reads url/timestamp/available straight off the top level. Nesting them
+under `snapshot` broke "recover from archive" without failing anything: the
+request still succeeded, the fields were simply somewhere else. Both shapes are
+answered now, and this is here so a future tidy-up cannot quietly drop the flat
+one again.
+*/
+func TestArchiveHistoryKeepsTheFlatSnapshotFields(t *testing.T) {
+	h := newTestHandlers(t)
+	withCDXQueries(t,
+		[][]string{{"20240301120000", "http://example.com/x", "404", "d2"}},
+		[][]string{{"20190315120000", "http://example.com/x", "200", "d1"}},
+		http.StatusOK)
+
+	got, err := h.lookupArchiveHistory(context.Background(), "http://example.com/x")
+	if err != nil {
+		t.Fatalf("lookup: %v", err)
+	}
+
+	payload, err := json.Marshal(got)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	// What the health view reads.
+	if decoded["available"] != true {
+		t.Errorf("top-level available = %v, want true", decoded["available"])
+	}
+	if url, _ := decoded["url"].(string); url == "" {
+		t.Error("top-level url is missing; the health view has nothing to open")
+	}
+	// And what a reader of the history shape reads.
+	nested, _ := decoded["snapshot"].(map[string]any)
+	if nested == nil || nested["url"] != decoded["url"] {
+		t.Errorf("nested snapshot = %v, want the same capture", nested)
+	}
+	if decoded["diedAt"] == nil {
+		t.Error("the history is gone from the answer")
+	}
+}
