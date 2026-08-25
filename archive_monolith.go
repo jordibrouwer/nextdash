@@ -110,10 +110,14 @@ func MonolithAvailable() bool {
 	return err == nil && strings.TrimSpace(path) != ""
 }
 
+// archiveDirName is the directory captures live in, under the data directory.
+// Named rather than spelled out twice, because the backup has to know it too.
+const archiveDirName = "archives"
+
 // localArchiveDir is where captures live: inside the data directory, so a
 // backup of data/ is a backup of the archive too.
 func localArchiveDir() string {
-	return filepath.Join(ResolveDataDir(), "archives")
+	return filepath.Join(ResolveDataDir(), archiveDirName)
 }
 
 /*

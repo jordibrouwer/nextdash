@@ -2311,6 +2311,8 @@ class DashboardConfig {
         { field: 'faviconRefreshPolicy', labelKey: 'faviconRefreshPolicyLabel', fallback: 'Refresh favicons', section: 'data-backups', subTab: 'icons' },
         { field: 'autoBackupEnabled', labelKey: 'autoBackupLabel', fallback: 'Automatic backups', section: 'data-backups', subTab: 'backups' },
     ];
+        { field: 'backupExcludeArchives', labelKey: 'backupIncludeArchivesLabel', fallback: 'Local copies of pages', section: 'data-backups', subTab: 'backups' },
+        { field: 'backupExcludeSecrets', labelKey: 'backupIncludeSecretsLabel', fallback: 'Tokens and passwords', section: 'data-backups', subTab: 'backups' },
 
     /**
      * Extra words a setting should be findable by, beyond its visible label.
@@ -5911,6 +5913,22 @@ class DashboardConfig {
         let total = 0;
         let refreshed = 0;
         try {
+        /*
+         * The two content switches read as "include" and are stored as
+         * "exclude".
+         *
+         * A settings file written before these existed has neither key, and an
+         * absent boolean is false — which on the exclude spelling means the
+         * fuller backup, exactly what that install already made. Spelling them
+         * as "include" would have every older install quietly start writing
+         * thinner backups the day it upgraded.
+         */
+        if (name === 'backupIncludeArchives' || name === 'backupIncludeSecrets') {
+            const field = name === 'backupIncludeArchives' ? 'backupExcludeArchives' : 'backupExcludeSecrets';
+            d.settings[field] = !value;
+            void this.saveSettingsWithFeedback();
+            return;
+        }
             // Walks until the server says it is done rather than counting
             // rounds here: the collection can change under a long run, and the
             // server's own position is the only one that stays true.

@@ -433,7 +433,30 @@ type Settings struct {
 	// weekly default, which is what every install carried before this was a
 	// choice — so an absent key keeps the old behaviour rather than reading as
 	// "never".
-	AutoBackupIntervalDays         int  `json:"autoBackupIntervalDays,omitempty"`
+	AutoBackupIntervalDays int `json:"autoBackupIntervalDays,omitempty"`
+	/*
+	 * What a backup carries beyond the bookmarks themselves.
+	 *
+	 * Both are inverted -- "exclude" rather than "include" -- so that an absent
+	 * key means the fuller backup. A settings file written before these existed
+	 * therefore keeps carrying everything, which is what it already did; the
+	 * alternative would have every older install quietly start writing thinner
+	 * backups the day it upgraded.
+	 *
+	 * Archives are local captures: a page as it was, which may be the only copy
+	 * left. They are also by far the largest thing in the data directory --
+	 * measured on one install, two captures took a 24 KB backup to 13.7 MB --
+	 * so someone moving backups over a slow link has a real reason to leave
+	 * them out.
+	 *
+	 * Secrets are the import tokens in sources.json and the API keys and
+	 * passwords in health-credentials.json. Including them makes a restore
+	 * complete; it also makes every backup file a secret in its own right,
+	 * since a ZIP carries no permissions and travels to a NAS, a laptop, a
+	 * Downloads folder.
+	 */
+	BackupExcludeArchives          bool `json:"backupExcludeArchives,omitempty"`
+	BackupExcludeSecrets           bool `json:"backupExcludeSecrets,omitempty"`
 	HealthAutoRecheckEnabled       bool `json:"healthAutoRecheckEnabled"`       // Periodically re-ping status-checked bookmarks in the background
 	HealthAutoRecheckIntervalHours int  `json:"healthAutoRecheckIntervalHours"` // Hours between background rechecks (min 1, default 24)
 	// FeedsEnabled turns on feed polling: a bookmark whose page advertises a
