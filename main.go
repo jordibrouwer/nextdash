@@ -175,6 +175,9 @@ func main() {
 	r.HandleFunc("/api/health/credentials", handlers.HealthCredentialsHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/webhooks", handlers.WebhooksHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 	r.HandleFunc("/api/webhooks/test", handlers.TestWebhookHandler).Methods("POST", "OPTIONS")
+	// Not under /api: an MCP endpoint is a published address that goes into a
+	// client's config file, and /mcp is where every client looks first.
+	r.HandleFunc("/mcp", handlers.MCPHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/health/expectations", handlers.SetBookmarkExpectations).Methods("POST")
 	// The same fields for a list of bookmarks, so muting a dozen during a known
 	// outage is one request rather than a dozen dialogs.

@@ -428,7 +428,16 @@ type Settings struct {
 	InboxShowInPageTabs            bool                             `json:"inboxShowInPageTabs"`     // Show Inbox tab in page navigation
 	InboxDeleteAfterPromote        bool                             `json:"inboxDeleteAfterPromote"` // Remove inbox item after promote to bookmark
 	AllowLocalBookmarks            bool                             `json:"allowLocalBookmarks"`     // Allow http(s) bookmarks to localhost and private hosts
-	AutoBackupEnabled              bool                             `json:"autoBackupEnabled"`       // Automatically create a local backup (keeps the latest few)
+	/*
+	 * MCPEnabled opens the /mcp endpoint an assistant talks to.
+	 *
+	 * Off unless switched on, and deliberately so: that endpoint answers
+	 * questions about every bookmark in the install, and "anyone who can reach
+	 * this server can read the whole dashboard" is not a thing to add to a
+	 * default install quietly.
+	 */
+	MCPEnabled        bool `json:"mcpEnabled"`
+	AutoBackupEnabled bool `json:"autoBackupEnabled"` // Automatically create a local backup (keeps the latest few)
 	// AutoBackupIntervalDays is how often that runs. 0 means the built-in
 	// weekly default, which is what every install carried before this was a
 	// choice — so an absent key keeps the old behaviour rather than reading as

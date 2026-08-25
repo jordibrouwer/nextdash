@@ -6043,3 +6043,12 @@ button.config-bm-shortcut-pill {
     word-break: break-all;
     user-select: all;
 }
+
+/* The MCP endpoint's address, which exists to be copied into a client's config
+   file. Monospaced and selectable for the same reason the signing key above
+   is. */
+.config-mcp-address {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    word-break: break-all;
+    user-select: all;
+}

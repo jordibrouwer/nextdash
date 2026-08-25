@@ -4425,6 +4425,7 @@ class DashboardConfig {
             <p class="config-view-intro">${esc(this.t('config.webhooksIntro',
                 'Push an event to another program the moment it happens here — a bookmark added, changed or removed, a monitored bookmark going down or coming back. Every delivery is signed, so the receiver can tell it came from this install.'))}</p>
             <div class="config-webhook-list">${rows || empty}</div>
+            ${this.renderMCPPanel()}
             <details class="config-panel config-source-panel"
                 data-fold="webhook-new" ${this.foldIsOpen('webhook-new') ? 'open' : ''}>
                 <summary class="config-source-summary">
@@ -4435,6 +4436,42 @@ class DashboardConfig {
                     </span>
                 </summary>
                 ${this.renderWebhookForm(null)}
+            </details>
+        `;
+    }
+
+    /*
+     * The other direction a program can talk to this install: an assistant
+     * reading and adding bookmarks over MCP.
+     *
+     * On this tab rather than a settings panel of its own because the question
+     * it answers is the same one the webhooks above answer -- how does another
+     * program reach this -- and splitting the two would mean looking in two
+     * places for it.
+     */
+    renderMCPPanel() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const on = this.dash.settings?.mcpEnabled === true;
+        const address = `${window.location.origin}/mcp`;
+        return `
+            <details class="config-panel config-source-panel"
+                data-fold="mcp" ${this.foldIsOpen('mcp') ? 'open' : ''}>
+                <summary class="config-source-summary">
+                    <span class="config-source-summary-text">
+                        <span class="config-panel-title">${esc(this.t('config.mcpTitle', 'Assistant access'))}</span>
+                        <span class="config-source-summary-note">${esc(this.t('config.mcpSummary',
+                            'Let an AI assistant search your bookmarks and add new ones.'))}</span>
+                    </span>
+                </summary>
+                <p class="config-panel-note">${esc(this.t('config.mcpNote',
+                    'An assistant that speaks MCP can search this collection, look one bookmark up and add another. It reads everything you have filed here, so it is off until you turn it on.'))}</p>
+                <label class="config-toggle">
+                    <input type="checkbox" data-backup-toggle="mcpEnabled" ${on ? 'checked' : ''}>
+                    <span>${esc(this.t('config.mcpEnabledLabel', 'Answer assistants at this address'))}</span>
+                </label>
+                ${on ? `
+                    <p class="config-field-note">${esc(this.t('config.mcpAddressLabel', 'Give the assistant this address:'))}</p>
+                    <p class="config-field-note config-mcp-address">${esc(address)}</p>` : ''}
             </details>
         `;
     }
@@ -6180,6 +6217,15 @@ class DashboardConfig {
             const field = name === 'backupIncludeArchives' ? 'backupExcludeArchives' : 'backupExcludeSecrets';
             d.settings[field] = !value;
             void this.saveSettingsWithFeedback();
+            return;
+        }
+        // The MCP endpoint stays shut until this is ticked: it answers
+        // questions about every bookmark there is, so opening it has to be a
+        // decision somebody made.
+        if (name === 'mcpEnabled') {
+            d.settings.mcpEnabled = value;
+            void this.saveSettingsWithFeedback();
+            this.repaintWebhooks();
             return;
         }
         if (name === 'autoBackupEnabled' || name === 'healthAutoRecheckEnabled') {
