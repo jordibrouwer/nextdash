@@ -5325,3 +5325,101 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .move-popover-check--drawn svg {
     display: block;
 }
+
+/* ─── Paste choice modal ─────────────────────────────────────────────────── */
+/* Lived in dashboard-inbox.css, which rides in the views bundle and is only
+   fetched when Inbox, Health or Config is opened. This modal appears on the
+   dashboard itself, on paste, so none of its rules had loaded yet and it drew
+   as unstyled markup: the URL overlapping the question, both options collapsed
+   into one line. It belongs with the view that shows it. */
+.paste-choice-overlay {
+    z-index: 12050;
+}
+
+.paste-choice-modal {
+    max-width: 34rem;
+}
+
+.paste-choice-url {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    word-break: break-all;
+    margin-bottom: 0.65rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: 0.35rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-secondary);
+}
+
+.paste-choice-lead {
+    margin: 0 0 0.75rem;
+    color: var(--text-primary);
+}
+
+.paste-choice-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+}
+
+.paste-choice-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    padding: 0.75rem 0.8rem 0.8rem;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--layout-radius-sm, 8px);
+    background: var(--background-secondary);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.paste-choice-card:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
+    transform: translateY(-1px);
+}
+
+.paste-choice-card-icon {
+    font-size: 1.1rem;
+}
+
+.paste-choice-card-title {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.paste-choice-card-hint {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+.paste-choice-kbd {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    font-size: 0.68rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-secondary);
+    color: var(--text-tertiary);
+}
+
+.paste-choice-remember {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.85rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+@media (max-width: 520px) {
+    .paste-choice-options {
+        grid-template-columns: 1fr;
+    }
+}
