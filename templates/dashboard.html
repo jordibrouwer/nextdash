@@ -25,6 +25,10 @@
     <script src="{{asset "js/theme-loader.js"}}"></script>
     <link rel="icon" type="image/x-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/favicon.ico{{end}}">
     <link rel="manifest" href="/manifest.webmanifest">
+    <!-- Offers this install to the browser as a search engine, so the address
+         bar can search your bookmarks. See opensearch.go. -->
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="{{if and .EnableCustomTitle .CustomTitle}}{{.CustomTitle}}{{else}}nextDash{{end}}" href="/opensearch.xml">
     <link rel="apple-touch-icon" href="{{if and .EnableCustomFavicon .CustomFaviconPath}}{{.CustomFaviconPath}}{{else}}/static/nextdash-logo.png{{end}}">
     <!-- First-paint fallback only; theme-loader.js syncs this to the resolved --background-primary for every theme. -->
     <meta name="theme-color" content="{{.ThemeColorMeta}}">

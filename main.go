@@ -79,6 +79,8 @@ func main() {
 	// Routes
 	r.HandleFunc("/version", Version).Methods("GET")
 	r.HandleFunc("/manifest.webmanifest", handlers.WebAppManifest).Methods("GET")
+	// The address bar as a search box; see opensearch.go.
+	r.HandleFunc("/opensearch.xml", handlers.OpenSearchDescription).Methods("GET")
 	// Served from the root because a service worker's scope cannot rise above its
 	// own path; from /static/ it could not control the dashboard.
 	r.HandleFunc("/push-service-worker.js", handlers.PushServiceWorker).Methods("GET")

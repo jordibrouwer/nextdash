@@ -1,3 +1,23 @@
+/*
+ * The query someone arrived with, taken before anything can overwrite it.
+ *
+ * Restoring the bookmarks view replaces the hash with the page number, and that
+ * happens during bootstrap -- so a search arrived at from the address bar is
+ * gone by the time the router runs. Read once here, acted on once the shell is
+ * up.
+ */
+(function captureBootSearch() {
+    try {
+        const hash = window.location.hash.substring(1);
+        if (hash === 'search' || hash.startsWith('search?')) {
+            window.__nextdashBootSearch = new URLSearchParams(
+                hash.slice('search'.length).replace(/^\?/, '')).get('q') || '';
+        }
+    } catch (_error) {
+        // An address that cannot be parsed is not a search.
+    }
+})();
+
 // Dashboard JavaScript
 
 // Animation timing constants — adjust here to change the overall animation tempo.
@@ -342,6 +362,21 @@ class Dashboard {
                     }
                     return;
                 }
+                /*
+                 * A search is a place you can be sent to.
+                 *
+                 * Every other view has an address -- #inbox, #health, #config --
+                 * and search did not, so a query could not be shared, bookmarked
+                 * or reached from outside the page. That last one is what makes
+                 * the browser's address bar usable as a nextDash search box; see
+                 * opensearch.xml.
+                 */
+                if (hash === 'search' || hash.startsWith('search?')) {
+                    const query = new URLSearchParams(hash.slice('search'.length).replace(/^\?/, ''))
+                        .get('q') || '';
+                    this.searchComponent?.openSearchWithQuery?.(query);
+                    return;
+                }
                 if (hash === 'health') {
                     if (this.activeView !== 'health') {
                         void this.health?.openHealthView?.();
@@ -392,6 +427,22 @@ class Dashboard {
             // the navigation target is /#config, so a stored Shift+H/I location must
             // be applied here once the shell (and lazy config module) are ready.
             const bootHash = window.location.hash.substring(1);
+            /*
+             * A search arrived at from outside is always a fresh page.
+             *
+             * hashchange fires on a change, never on the way in -- and the
+             * address bar, a shared link and a bookmarked query are all
+             * arrivals. Read from the copy taken at load rather than from the
+             * address bar: restoring the bookmarks view rewrites the hash to
+             * the page number long before this runs, so by now the query is
+             * gone. Acted on here because only now are the bookmarks loaded and
+             * the palette has something to search.
+             */
+            if (window.__nextdashBootSearch !== undefined) {
+                const query = window.__nextdashBootSearch;
+                delete window.__nextdashBootSearch;
+                this.searchComponent?.openSearchWithQuery?.(query);
+            }
             if (this.config?.isEnabled?.()
                 && (bootHash === 'config' || bootHash.startsWith('config/'))) {
                 if (this.activeView !== 'config') {
