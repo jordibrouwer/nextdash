@@ -108,6 +108,13 @@ var sourceImporters = map[string]sourceImporter{
 		}
 		return result.Bookmarks, result.NewestStarredAt, result.Truncated, nil
 	},
+	"raindrop": func(ctx context.Context, source SourceState) ([]ImportedRow, string, bool, error) {
+		result, err := FetchRaindrops(ctx, source.Token, source.Cursor, source.TargetCategory)
+		if err != nil {
+			return nil, "", false, err
+		}
+		return result.Bookmarks, result.NewestCreated, result.Truncated, nil
+	},
 }
 
 /*
@@ -156,7 +163,9 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 		RecordSourceRun(id, "", "", err)
 		message := "Could not read from that source"
 		status := http.StatusBadGateway
-		if errors.Is(err, errGitHubUnauthorized) {
+		// Every source reports a rejected credential the same way, because it is
+		// the one failure the reader can actually act on.
+		if errors.Is(err, errGitHubUnauthorized) || errors.Is(err, errRaindropUnauthorized) {
 			message = "That token was rejected"
 			status = http.StatusUnauthorized
 		}
@@ -170,10 +179,15 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 		// A preview is not a round: it moves no cursor and claims no result,
 		// or a reader who previewed and thought better of it would never see
 		// those stars again.
+		// The page is part of the answer, not just the counts: a source keeps
+		// the page it was configured with, so an import can land somewhere the
+		// reader is not looking. The caller needs it to refresh the right page,
+		// and the confirm can say where the bookmarks are going.
 		writeJSON(w, struct {
 			ImportPreview
 			Truncated bool `json:"truncated"`
-		}{ImportPreview: preview, Truncated: truncated})
+			Page      int  `json:"page"`
+		}{ImportPreview: preview, Truncated: truncated, Page: pageID})
 		return
 	}
 

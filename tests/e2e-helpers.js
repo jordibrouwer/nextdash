@@ -36,10 +36,14 @@ const DEFAULT_DISCOVERABILITY_KEYS = [
  */
 const GITHUB_STUB_PORT = 18077;
 
+/** Same idea for Raindrop's API. */
+const RAINDROP_STUB_PORT = 18076;
+
 const E2E_WEB_SERVER_ENV = {
     NEXTDASH_WRITE_TOKEN: WRITE_TOKEN,
     NEXTDASH_DISABLE_PREFETCH: '1',
     NEXTDASH_GITHUB_API_BASE: `http://127.0.0.1:${GITHUB_STUB_PORT}`,
+    NEXTDASH_RAINDROP_API_BASE: `http://127.0.0.1:${RAINDROP_STUB_PORT}`,
     ...(process.env.NEXTDASH_DATA_DIR ? { NEXTDASH_DATA_DIR: process.env.NEXTDASH_DATA_DIR } : {}),
 };
 
@@ -484,6 +488,7 @@ async function resetDashboardData(page) {
 
 module.exports = {
     GITHUB_STUB_PORT,
+    RAINDROP_STUB_PORT,
     resetDashboardData,
     WRITE_TOKEN,
     DASHBOARD_WHATS_NEW_RELEASE,

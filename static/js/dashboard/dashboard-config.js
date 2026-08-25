@@ -4245,6 +4245,94 @@ class DashboardConfig {
         `;
     }
 
+    /*
+     * The services nextDash can pull bookmarks from.
+     *
+     * One descriptor per source rather than a hand-written panel each: cluster A
+     * is a dozen of these, and every one of them asks the same four questions --
+     * what is your token, where should they land, import now, forget it. Written
+     * out twelve times that is twelve places to fix the next bug in; written
+     * once it is a row in this list.
+     *
+     * `id` is the key in sources.json, `kind` selects the importer server-side.
+     * `tokenHelp` is where the reader gets the token, because "personal access
+     * token" is not an instruction if you have never made one.
+     */
+    static SOURCE_DEFS = [
+        {
+            id: 'github:stars',
+            kind: 'github-stars',
+            slug: 'stars',
+            titleKey: 'starsSectionTitle',
+            titleFallback: 'GitHub stars',
+            descKey: 'starsDescription',
+            descFallback: 'Import the repositories you starred, with their description and language. Needs a personal access token; nextDash only ever reads.',
+            tokenHelpKey: 'starsTokenHelp',
+            tokenHelpFallback: 'Create one at github.com/settings/tokens — no scopes needed for public stars.',
+            tokenPlaceholder: 'ghp_…',
+            categoryFallback: 'GitHub',
+        },
+        {
+            id: 'raindrop:all',
+            kind: 'raindrop',
+            slug: 'raindrop',
+            titleKey: 'raindropSectionTitle',
+            titleFallback: 'Raindrop.io',
+            descKey: 'raindropDescription',
+            descFallback: 'Import your Raindrop collections, with their tags, notes and the date you saved each one. Needs a test token; nextDash only ever reads.',
+            tokenHelpKey: 'raindropTokenHelp',
+            tokenHelpFallback: 'app.raindrop.io/settings/integrations — create an app, then copy its test token.',
+            tokenPlaceholder: '…',
+            categoryFallback: 'Raindrop',
+        },
+    ];
+
+    /** Everything nextDash can pull bookmarks in from, on repeat. */
+    renderDataSources() {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const panels = DashboardConfig.SOURCE_DEFS.map((def) => this.renderSourcePanel(def)).join('');
+        return `
+            <p class="config-view-intro">${esc(this.t('config.sourcesIntro',
+                'Services you can bring bookmarks in from. Every import previews what it would do before it writes, and can be run again later to pick up what is new.'))}</p>
+            ${panels}
+        `;
+    }
+
+    /** One source's panel, built from its descriptor. */
+    renderSourcePanel(def) {
+        const esc = (v) => this.dash.escapeHtml(v);
+        const slug = def.slug;
+        return `
+            <div class="config-panel" data-source-panel="${esc(def.id)}">
+                <h3 class="config-panel-title">${esc(this.t(`config.${def.titleKey}`, def.titleFallback))}</h3>
+                <p class="config-panel-note">${esc(this.t(`config.${def.descKey}`, def.descFallback))}</p>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-${esc(slug)}-token">${esc(this.t('config.sourceTokenLabel', 'Access token'))}</label>
+                    <input type="password" id="config-${esc(slug)}-token" class="config-text" autocomplete="off" spellcheck="false"
+                        placeholder="${esc(def.tokenPlaceholder)}">
+                    <p class="config-field-hint">${esc(this.t(`config.${def.tokenHelpKey}`, def.tokenHelpFallback))}</p>
+                    <p class="config-field-hint" id="config-${esc(slug)}-token-note"></p>
+                </div>
+                <div class="config-field" data-source-page-field="${esc(def.id)}">
+                    <label class="config-field-label" for="config-${esc(slug)}-page">${esc(this.t('config.sourcePageLabel', 'Page to import onto'))}</label>
+                    <select id="config-${esc(slug)}-page" class="config-select" data-source-page="${esc(def.id)}"></select>
+                </div>
+                <div class="config-field">
+                    <label class="config-field-label" for="config-${esc(slug)}-category">${esc(this.t('config.sourceCategoryLabel', 'Category for imported bookmarks'))}</label>
+                    <input type="text" id="config-${esc(slug)}-category" class="config-text" autocomplete="off"
+                        placeholder="${esc(def.categoryFallback)}">
+                    <p class="config-field-hint">${esc(this.t('config.sourceCategoryHint', 'Used only for bookmarks the service files nowhere — folders and collections keep their own names.'))}</p>
+                </div>
+                <div class="config-actions">
+                    <button type="button" class="config-btn" data-source-action="save" data-source-id="${esc(def.id)}">${esc(this.t('config.sourceSaveBtn', 'Save token'))}</button>
+                    <button type="button" class="config-btn" data-source-action="run" data-source-id="${esc(def.id)}">${esc(this.t('config.sourceRunBtn', 'Import…'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-source-action="forget" data-source-id="${esc(def.id)}">${esc(this.t('config.sourceForgetBtn', 'Forget token'))}</button>
+                </div>
+                <p class="config-panel-note" id="config-${esc(slug)}-status"></p>
+            </div>
+        `;
+    }
+
     /** Which sub-tab of Data & backups is showing. */
     renderDbTab() {
         if (this.dbTab === 'reset') {
@@ -4252,6 +4340,9 @@ class DashboardConfig {
         }
         if (this.dbTab === 'trash') {
             return this.renderDataTrash();
+        }
+        if (this.dbTab === 'sources') {
+            return this.renderDataSources();
         }
         if (this.dbTab === 'icons') {
             return this.renderDataIcons();
@@ -4274,6 +4365,7 @@ class DashboardConfig {
     dbTabLabel(tab) {
         const map = {
             backups: ['config.dbTabBackups', 'Backups & data'],
+            sources: ['config.dbTabSources', 'Sources'],
             icons: ['config.dbTabIcons', 'Icons & previews'],
             logs: ['config.dbTabLogs', 'Server log'],
             trash: ['config.dbTabTrash', 'Trash'],
@@ -4349,28 +4441,6 @@ class DashboardConfig {
                 </div>
                 <input type="file" id="config-browser-import-input" accept=".html,.htm" hidden>
                 <input type="file" id="config-csv-import-input" accept=".csv,text/csv" hidden>
-            </div>
-
-            <div class="config-panel">
-                <h3 class="config-panel-title">${esc(this.t('config.starsSectionTitle', 'GitHub stars'))}</h3>
-                <p class="config-panel-note">${esc(this.t('config.starsDescription', 'Import the repositories you starred, with their description and language. Needs a personal access token; nextDash only ever reads.'))}</p>
-                <div class="config-field">
-                    <label class="config-field-label" for="config-stars-token">${esc(this.t('config.starsTokenLabel', 'Personal access token'))}</label>
-                    <input type="password" id="config-stars-token" class="config-text" autocomplete="off" spellcheck="false"
-                        placeholder="${esc(this.t('config.starsTokenPlaceholder', 'ghp_…'))}">
-                    <p class="config-field-hint" id="config-stars-token-note"></p>
-                </div>
-                <div class="config-field">
-                    <label class="config-field-label" for="config-stars-category">${esc(this.t('config.starsCategoryLabel', 'Category for imported stars'))}</label>
-                    <input type="text" id="config-stars-category" class="config-text" autocomplete="off"
-                        placeholder="${esc(this.t('config.starsCategoryPlaceholder', 'GitHub'))}">
-                </div>
-                <div class="config-actions">
-                    <button type="button" class="config-btn" data-backup-action="stars-save">${esc(this.t('config.starsSaveBtn', 'Save token'))}</button>
-                    <button type="button" class="config-btn" data-backup-action="stars-run">${esc(this.t('config.starsRunBtn', 'Import stars…'))}</button>
-                    <button type="button" class="config-btn config-btn--danger" data-backup-action="stars-forget">${esc(this.t('config.starsForgetBtn', 'Forget token'))}</button>
-                </div>
-                <p class="config-panel-note" id="config-stars-status"></p>
             </div>
 
             <div class="config-panel">
@@ -5433,10 +5503,29 @@ class DashboardConfig {
         bindFileInput('#config-settings-import-input', this.importSettings);
 
         // Whether a token is saved, and what the last round did. Read here
-        // rather than rendered into the panel, because the panel is built from
-        // settings the browser already has and this is the one thing on it that
-        // only the server knows.
-        if (container.querySelector('#config-stars-token-note')) void this.loadStarsSource();
+        // rather than rendered into the panels, because they are built from
+        // settings the browser already has and this is the one thing on them
+        // that only the server knows.
+        if (container.querySelector('[data-source-panel]')) {
+            this.bindSourceTokenDrafts(container);
+            this.bindSourcePageSelects(container);
+            void this.loadSourceStates();
+        }
+
+        // Every source panel is built from the same descriptor, so its buttons
+        // carry which source they belong to rather than having an action name
+        // each -- one more service is a row in SOURCE_DEFS, not three cases.
+        container.querySelectorAll('[data-source-action]').forEach((btn) => {
+            const id = btn.getAttribute('data-source-id');
+            btn.addEventListener('click', () => {
+                switch (btn.getAttribute('data-source-action')) {
+                    case 'save': void this.saveSource(id); break;
+                    case 'run': void this.runSource(id); break;
+                    case 'forget': void this.forgetSource(id); break;
+                    default: break;
+                }
+            });
+        });
 
         container.querySelectorAll('[data-backup-toggle]').forEach((input) => {
             input.addEventListener('change', () => this.setBackupToggle(input.getAttribute('data-backup-toggle'), input.checked));
@@ -5455,9 +5544,6 @@ class DashboardConfig {
             case 'download': this.downloadFullBackup(); break;
             case 'run': void this.runBackupNow(); break;
             case 'import': document.getElementById('config-import-input')?.click(); break;
-            case 'stars-save': void this.saveStarsSource(); break;
-            case 'stars-run': void this.runStarsSource(); break;
-            case 'stars-forget': void this.forgetStarsSource(); break;
             case 'html-export': void this.exportBookmarksHTML(); break;
             case 'csv-export': void this.exportBookmarksCSV(); break;
             case 'browser-import': document.getElementById('config-browser-import-input')?.click(); break;
@@ -5813,61 +5899,255 @@ class DashboardConfig {
      * and it can say how many are already here — which a total never could.
      */
     /*
-     * GitHub stars: a token, a category, and a round that asks before it writes.
+     * One source's four operations: save, preview-then-import, forget, and read
+     * back what the server knows.
      *
-     * The token field is write-only by design. The server answers with hasToken
-     * rather than the token itself, so there is nothing to prefill and an empty
+     * Written against a descriptor rather than per service, because every source
+     * in cluster A needs exactly these and differs only in its id and its
+     * labels. The token field is write-only throughout: the server answers with
+     * hasToken and never the token, so there is nothing to prefill, and an empty
      * field means "leave it as it is" -- which is why saving a category cannot
      * silently sign the reader out of their own source.
      */
-    get starsSourceId() { return 'github:stars'; }
+    sourceDef(id) {
+        return DashboardConfig.SOURCE_DEFS.find((def) => def.id === id) || null;
+    }
 
-    async loadStarsSource() {
-        const note = document.getElementById('config-stars-token-note');
-        const category = document.getElementById('config-stars-category');
-        if (!note) return;
+    /*
+     * A half-typed token, kept across a repaint.
+     *
+     * The panel is rebuilt from scratch whenever the section repaints -- a
+     * settings save, a revision check, switching tabs and back -- and that threw
+     * away whatever was in the token field. Paste a token, have anything at all
+     * repaint before the click lands, and Save sends an empty field: which means
+     * "unchanged", which means nothing was stored. From the outside that is
+     * exactly "it does not remember my token".
+     *
+     * Held in memory only, and dropped the moment it is saved: it is a token,
+     * so it does not go to localStorage and it does not go into the markup.
+     */
+    get sourceTokenDrafts() {
+        if (!this._sourceTokenDrafts) this._sourceTokenDrafts = new Map();
+        return this._sourceTokenDrafts;
+    }
+
+    /** Put the drafts back after a render, and keep recording new ones. */
+    bindSourceTokenDrafts(container) {
+        DashboardConfig.SOURCE_DEFS.forEach((def) => {
+            const field = container.querySelector(`#config-${def.slug}-token`);
+            if (!field) return;
+            const draft = this.sourceTokenDrafts.get(def.id);
+            if (draft) field.value = draft;
+            field.addEventListener('input', () => {
+                if (field.value) this.sourceTokenDrafts.set(def.id, field.value);
+                else this.sourceTokenDrafts.delete(def.id);
+            });
+        });
+    }
+
+    /*
+     * The page a source writes to, chosen rather than inherited.
+     *
+     * It used to be whichever page happened to be open when the token was
+     * saved, which is not a choice anyone made: import a month later from a
+     * different page and the bookmarks land somewhere else entirely, and it
+     * reads as nothing having happened.
+     *
+     * The same shape as the bookmark form's page field, down to the "+ New
+     * page" entry and the shared InlineCreateRow it opens, because it is the
+     * same decision and should not need learning twice.
+     */
+    static SOURCE_NEW_PAGE = '__new__';
+
+    fillSourcePageSelect(select, selectedId) {
+        const pages = this.dash.pages || [];
+        select.replaceChildren();
+
+        const create = document.createElement('option');
+        create.value = DashboardConfig.SOURCE_NEW_PAGE;
+        create.textContent = this.t('config.addNewPageOption', '➕ New page…');
+        select.appendChild(create);
+
+        let matched = false;
+        pages.forEach((page) => {
+            const option = document.createElement('option');
+            option.value = String(page.id);
+            option.textContent = page.name || String(page.id);
+            if (Number(page.id) === Number(selectedId)) {
+                option.selected = true;
+                matched = true;
+            }
+            select.appendChild(option);
+        });
+        // A source pointing at a page that has since been deleted falls back to
+        // the one being looked at rather than to the create entry, which would
+        // make an ordinary save open a name prompt.
+        if (!matched && pages.length) {
+            select.value = String(this.dash.currentPageId || pages[0].id);
+        }
+        return matched;
+    }
+
+    /** Wire each panel's page select, including its inline create row. */
+    bindSourcePageSelects(container) {
+        DashboardConfig.SOURCE_DEFS.forEach((def) => {
+            const select = container.querySelector(`[data-source-page="${CSS.escape(def.id)}"]`);
+            if (!select || select.dataset.bound === '1') return;
+            select.dataset.bound = '1';
+            this.fillSourcePageSelect(select, this.dash.currentPageId);
+
+            const field = select.closest('[data-source-page-field]');
+            if (!field || typeof window.InlineCreateRow !== 'function' && !window.InlineCreateRow?.create) {
+                return;
+            }
+            const row = window.InlineCreateRow.create({
+                kind: 'page',
+                placeholder: this.t('config.newPageNamePlaceholder', 'Page name'),
+                labels: {
+                    create: this.t('config.create', 'Create'),
+                    cancel: this.t('config.cancel', 'Cancel'),
+                },
+            });
+            field.appendChild(row.box);
+
+            // What the select showed before "+ New page…" was picked, so
+            // cancelling puts it back rather than leaving the sentinel selected.
+            let lastValue = select.value;
+
+            const close = () => {
+                row.box.hidden = true;
+                row.error.hidden = true;
+                row.input.value = '';
+                select.hidden = false;
+                select.value = lastValue;
+                select.focus({ preventScroll: true });
+            };
+
+            window.InlineCreateRow.wire(row, {
+                submit: async (name) => {
+                    const created = await this.dash.structureCreate?.createPageFromForm?.(name);
+                    if (!created || created.error) {
+                        return created?.error || this.t('config.sourcePageCreateError', 'Could not create that page.');
+                    }
+                    this.fillSourcePageSelect(select, created.id);
+                    select.value = String(created.id);
+                    lastValue = select.value;
+                    row.box.hidden = true;
+                    row.error.hidden = true;
+                    row.input.value = '';
+                    select.hidden = false;
+                    select.focus({ preventScroll: true });
+                    return null;
+                },
+                onCancel: close,
+            });
+            row.box.__closeInlineCreate = close;
+
+            select.addEventListener('change', () => {
+                if (select.value !== DashboardConfig.SOURCE_NEW_PAGE) {
+                    lastValue = select.value;
+                    return;
+                }
+                // Put the real value back at once: a save while this row is open
+                // must not read the sentinel as the target page.
+                select.value = lastValue;
+                select.hidden = true;
+                row.box.hidden = false;
+                row.error.hidden = true;
+                row.input.value = '';
+                row.input.focus({ preventScroll: true });
+            });
+        });
+    }
+
+    /** Whether the server is holding a token for this source. */
+    async sourceHasToken(id) {
+        try {
+            const res = await this.writeFetch('/api/sources');
+            if (!res.ok) return false;
+            const body = await res.json();
+            return Boolean((Array.isArray(body) ? body : []).find((s) => s.id === id)?.hasToken);
+        } catch {
+            return false;
+        }
+    }
+
+    /** Read every configured source once and fill in each panel. */
+    async loadSourceStates() {
+        let sources = [];
         try {
             const res = await this.writeFetch('/api/sources');
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const sources = await res.json();
-            const stars = (Array.isArray(sources) ? sources : []).find((s) => s.id === this.starsSourceId);
-            if (category && stars?.targetCategory) category.value = stars.targetCategory;
-            note.textContent = stars?.hasToken
-                ? this.t('config.starsTokenSet', 'A token is saved. Leave this empty to keep it.')
-                : this.t('config.starsTokenMissing', 'No token saved yet.');
-            this.renderStarsStatus(stars);
+            const body = await res.json();
+            sources = Array.isArray(body) ? body : [];
         } catch {
-            note.textContent = '';
+            // Offline or no write access: the panels stay as they are rather
+            // than claiming no token is saved, which would be a lie the reader
+            // might act on by pasting theirs again.
+            return;
         }
+        DashboardConfig.SOURCE_DEFS.forEach((def) => {
+            this.renderSourceState(def, sources.find((s) => s.id === def.id));
+        });
     }
 
-    renderStarsStatus(source) {
-        const status = document.getElementById('config-stars-status');
+    renderSourceState(def, source) {
+        const note = document.getElementById(`config-${def.slug}-token-note`);
+        const status = document.getElementById(`config-${def.slug}-status`);
+        const category = document.getElementById(`config-${def.slug}-category`);
+        const pageSelect = document.getElementById(`config-${def.slug}-page`);
+        if (!note) return;
+
+        if (pageSelect && source?.targetPage) {
+            this.fillSourcePageSelect(pageSelect, source.targetPage);
+        }
+
+        note.textContent = source?.hasToken
+            ? this.t('config.sourceTokenSet', 'A token is saved. Leave this empty to keep it.')
+            : this.t('config.sourceTokenMissing', 'No token saved yet.');
+        if (category && source?.targetCategory && !category.value) {
+            category.value = source.targetCategory;
+        }
         if (!status) return;
         if (source?.lastError) {
-            status.textContent = this.t('config.starsLastError', 'Last attempt failed: {e}')
+            status.textContent = this.t('config.sourceLastError', 'Last attempt failed: {e}')
                 .replace('{e}', source.lastError);
-            return;
-        }
-        if (source?.lastResult) {
-            status.textContent = this.t('config.starsLastRun', 'Last import: {r}')
+        } else if (source?.lastResult) {
+            status.textContent = this.t('config.sourceLastRun', 'Last import: {r}')
                 .replace('{r}', source.lastResult);
-            return;
+        } else {
+            status.textContent = '';
         }
-        status.textContent = '';
     }
 
-    async saveStarsSource() {
-        const token = document.getElementById('config-stars-token');
-        const category = document.getElementById('config-stars-category');
-        const pageId = Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
+    async saveSource(id) {
+        const def = this.sourceDef(id);
+        if (!def) return;
+        const token = document.getElementById(`config-${def.slug}-token`);
+        const category = document.getElementById(`config-${def.slug}-category`);
+        const chosen = document.getElementById(`config-${def.slug}-page`)?.value;
+        const pageId = (chosen && chosen !== DashboardConfig.SOURCE_NEW_PAGE ? Number(chosen) : 0)
+            || Number(this.dash.currentPageId) || (this.dash.pages?.[0]?.id) || 1;
+
+        /*
+         * An empty field means "keep the stored token" -- but only if there is
+         * one. With nothing stored it means the reader has not given one yet,
+         * and answering "Source saved." to that is how someone concludes the
+         * token was forgotten: the message said it worked.
+         */
+        if (!token?.value?.trim() && !(await this.sourceHasToken(id))) {
+            this.notify(this.t('config.sourceTokenRequired', 'Paste a token first — this source cannot read anything without one.'), 'error');
+            token?.focus();
+            return;
+        }
+
         try {
-            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(this.starsSourceId)}`, {
+            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(id)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    kind: 'github-stars',
-                    label: 'GitHub stars',
+                    kind: def.kind,
+                    label: def.titleFallback,
                     token: token?.value || '',
                     targetPage: pageId,
                     targetCategory: category?.value?.trim() || '',
@@ -5878,80 +6158,190 @@ class DashboardConfig {
             // Cleared rather than left standing: a token sitting in a form field
             // after it has been saved is one screenshot away from being shared.
             if (token) token.value = '';
-            this.notify(this.t('config.starsSaved', 'GitHub source saved.'), 'success');
-            void this.loadStarsSource();
+            this.sourceTokenDrafts.delete(id);
+            this.notify(this.t('config.sourceSaved', 'Source saved.'), 'success');
+            void this.loadSourceStates();
         } catch {
-            this.notify(this.t('config.starsSaveError', 'Could not save the GitHub source.'), 'error');
+            this.notify(this.t('config.sourceSaveError', 'Could not save that source.'), 'error');
         }
     }
 
-    async runStarsSource() {
-        const url = `/api/sources/${encodeURIComponent(this.starsSourceId)}/run`;
+    /*
+     * The blocking overlay a long-running config action shows.
+     *
+     * The same element and the same look as the favicon prefetch, because it is
+     * the same message: nextDash is working through something, wait. It is
+     * indeterminate here on purpose -- an import is one request that walks a
+     * service's API for as many pages as it takes and answers once, so there is
+     * no honest number to put on it, and a bar frozen at zero reads as broken.
+     */
+    showProgressOverlay(title, status) {
+        let overlay = document.getElementById('config-progress-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'config-progress-overlay';
+            overlay.className = 'progress-overlay';
+            overlay.setAttribute('role', 'status');
+            overlay.setAttribute('aria-live', 'polite');
+            overlay.innerHTML = `
+                <div class="progress-overlay-panel">
+                    <p class="progress-overlay-title" data-progress-title></p>
+                    <div class="progress-overlay-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-overlay-fill progress-overlay-fill--indeterminate" data-progress-fill></div>
+                    </div>
+                    <p class="progress-overlay-status" data-progress-status></p>
+                </div>`;
+            document.body.appendChild(overlay);
+        }
+        const fill = overlay.querySelector('[data-progress-fill]');
+        // Reset: the element is reused, and a second run must not open already
+        // showing the finished state of the first.
+        if (fill) {
+            fill.classList.add('progress-overlay-fill--indeterminate');
+            fill.style.removeProperty('width');
+        }
+        // An indeterminate bar has no value, and saying it is at zero would be
+        // read aloud as no progress rather than as unknown progress.
+        overlay.querySelector('[role="progressbar"]')?.removeAttribute('aria-valuenow');
+        overlay.querySelector('[data-progress-title]').textContent = title || '';
+        overlay.querySelector('[data-progress-status]').textContent = status || '';
+        overlay.hidden = false;
+        return overlay;
+    }
+
+    /** Fill the bar and say what happened, briefly, before it goes. */
+    finishProgressOverlay(status) {
+        const overlay = document.getElementById('config-progress-overlay');
+        if (!overlay || overlay.hidden) return;
+        const fill = overlay.querySelector('[data-progress-fill]');
+        if (fill) {
+            fill.classList.remove('progress-overlay-fill--indeterminate');
+            fill.style.width = '100%';
+        }
+        const bar = overlay.querySelector('[role="progressbar"]');
+        bar?.setAttribute('aria-valuenow', '100');
+        if (status) overlay.querySelector('[data-progress-status]').textContent = status;
+        setTimeout(() => { overlay.hidden = true; }, 600);
+    }
+
+    hideProgressOverlay() {
+        const overlay = document.getElementById('config-progress-overlay');
+        if (overlay) overlay.hidden = true;
+    }
+
+    async runSource(id) {
+        const def = this.sourceDef(id);
+        if (!def) return;
+        const url = `/api/sources/${encodeURIComponent(id)}/run`;
+        const serviceName = this.t(`config.${def.titleKey}`, def.titleFallback);
+
+        // Nothing to import with. Said plainly rather than as "could not reach
+        // that service", which sends the reader looking at their network.
+        if (!await this.sourceHasToken(id)) {
+            this.notify(this.t('config.sourceTokenRequired', 'Paste a token first — this source cannot read anything without one.'), 'error');
+            document.getElementById(`config-${def.slug}-token`)?.focus();
+            return;
+        }
+
+        // The preview walks the whole service, so it is itself the slow part --
+        // it earns the overlay just as much as the import does.
+        this.showProgressOverlay(
+            this.t('config.sourceCheckingTitle', 'Checking {s}…').replace('{s}', serviceName),
+            this.t('config.sourceCheckingStatus', 'Reading what is there'));
 
         let preview;
         try {
             const res = await this.writeFetch(url);
             if (res.status === 401) {
-                this.notify(this.t('config.starsTokenRejected', 'GitHub rejected that token.'), 'error');
-                void this.loadStarsSource();
+                this.hideProgressOverlay();
+                this.notify(this.t('config.sourceTokenRejected', 'That token was rejected.'), 'error');
+                void this.loadSourceStates();
                 return;
             }
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             preview = await res.json();
         } catch {
-            this.notify(this.t('config.starsRunError', 'Could not reach GitHub.'), 'error');
-            void this.loadStarsSource();
+            this.hideProgressOverlay();
+            this.notify(this.t('config.sourceRunError', 'Could not reach that service.'), 'error');
+            void this.loadSourceStates();
             return;
         }
+        this.hideProgressOverlay();
 
         if (!Number(preview.new)) {
-            this.notify(this.t('config.starsNothingNew', 'No new stars to import.'), 'info');
-            void this.loadStarsSource();
+            this.notify(this.t('config.sourceNothingNew', 'Nothing new to import.'), 'info');
+            void this.loadSourceStates();
             return;
         }
 
+        /*
+         * Which page the bookmarks are going to, named in the confirm.
+         *
+         * A source keeps the page it was configured with, so an import can land
+         * somewhere the reader is not currently looking -- and then it looks
+         * like nothing happened. Saying so before it writes is cheaper than
+         * explaining it afterwards.
+         */
+        const targetPage = Number(preview.page) || Number(this.dash.currentPageId) || 1;
+        const pageName = (this.dash.pages || []).find((p) => Number(p.id) === targetPage)?.name || '';
+
         const question = Number(preview.duplicates) > 0
-            ? this.t('config.starsConfirmDetail', 'Import {n} starred repositories? {d} are already here and will be skipped.')
-                .replace('{n}', String(preview.new)).replace('{d}', String(preview.duplicates))
-            : this.t('config.starsConfirm', 'Import {n} starred repositories?')
-                .replace('{n}', String(preview.new));
+            ? this.t('config.sourceConfirmDetail', 'Import {n} bookmarks onto {p}? {d} are already here and will be skipped.')
+                .replace('{n}', String(preview.new)).replace('{d}', String(preview.duplicates)).replace('{p}', pageName)
+            : this.t('config.sourceConfirm', 'Import {n} bookmarks onto {p}?')
+                .replace('{n}', String(preview.new)).replace('{p}', pageName);
         const ok = await this.confirmAction(question,
             { confirmLabel: this.t('config.confirmImport', 'Import'), danger: false });
         if (!ok) return;
+
+        this.showProgressOverlay(
+            this.t('config.sourceImportingTitle', 'Importing from {s}…').replace('{s}', serviceName),
+            this.t('config.sourceImportingStatus', '{n} bookmarks').replace('{n}', String(preview.new)));
 
         try {
             const res = await this.writeFetch(url, { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json();
-            this.notify(this.t('config.starsImported', 'Imported {n} repositories.')
-                .replace('{n}', String(result.imported ?? preview.new)), 'success');
-            // The shell holds its own copy of every page's bookmarks, so a
-            // server-side import is invisible until that copy is refreshed --
-            // this was `loadBookmarks?.()`, a method that does not exist, and
-            // the optional call swallowed it: the import worked and the screen
-            // kept showing the collection from before it. This is the same
-            // refresh every other write in config goes through, and it
-            // re-fetches the page rather than merging, so a category the import
-            // created arrives with it.
-            await this.refreshBookmarksAfterWrite();
+            const imported = result.imported ?? preview.new;
+            this.finishProgressOverlay(
+                this.t('config.sourceImported', 'Imported {n} bookmarks.').replace('{n}', String(imported)));
+            this.notify(this.t('config.sourceImported', 'Imported {n} bookmarks.')
+                .replace('{n}', String(imported)), 'success');
+            /*
+             * Refresh the page the import actually wrote to, not just the one
+             * being looked at. Those are the same only by luck: the target is
+             * stored on the source and the reader may have moved pages since.
+             * Refreshing only the current page left the target page's cached
+             * copy stale, so switching to it showed the collection from before
+             * the import -- and its new categories were missing, which is what
+             * makes an imported bookmark uneditable.
+             */
+            const currentPage = Number(this.dash.currentPageId) || targetPage;
+            await this.dash.data?.refreshAfterBookmarkMutation?.({
+                pageIds: [...new Set([targetPage, currentPage])],
+                repaintActiveView: true,
+            });
         } catch {
-            this.notify(this.t('config.starsRunError', 'Could not reach GitHub.'), 'error');
+            this.hideProgressOverlay();
+            this.notify(this.t('config.sourceRunError', 'Could not reach that service.'), 'error');
         }
-        void this.loadStarsSource();
+        void this.loadSourceStates();
     }
 
-    async forgetStarsSource() {
+    async forgetSource(id) {
+        const def = this.sourceDef(id);
+        if (!def) return;
         const ok = await this.confirmAction(
-            this.t('config.starsForgetConfirm', 'Forget the GitHub token? Imported bookmarks stay where they are.'),
-            { confirmLabel: this.t('config.starsForgetBtn', 'Forget token'), danger: true });
+            this.t('config.sourceForgetConfirm', 'Forget this token? Imported bookmarks stay where they are.'),
+            { confirmLabel: this.t('config.sourceForgetBtn', 'Forget token'), danger: true });
         if (!ok) return;
         try {
-            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(this.starsSourceId)}`, { method: 'DELETE' });
+            const res = await this.writeFetch(`/api/sources/${encodeURIComponent(id)}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            this.notify(this.t('config.starsForgotten', 'GitHub token forgotten.'), 'success');
-            void this.loadStarsSource();
+            this.notify(this.t('config.sourceForgotten', 'Token forgotten.'), 'success');
+            void this.loadSourceStates();
         } catch {
-            this.notify(this.t('config.starsSaveError', 'Could not save the GitHub source.'), 'error');
+            this.notify(this.t('config.sourceSaveError', 'Could not save that source.'), 'error');
         }
     }
 
@@ -11257,7 +11647,18 @@ class DashboardConfig {
      * Data & backups keeps its destructive actions on a separate tab, and icon
      * upkeep on another: neither belongs beside the export buttons.
      */
-    static DB_TABS = ['backups', 'icons', 'logs', 'trash', 'reset'];
+    /*
+     * Sources sits between Backups and Icons because that is the order of the
+     * question being asked: what do I keep, where does it come in from, how does
+     * it look.
+     *
+     * Named Sources rather than Import: Backups & data already has import
+     * buttons on it, and two things called import on neighbouring tabs is a
+     * question the reader has to answer before every click. Those are files;
+     * these are places bookmarks come from and keep coming from. It is also what
+     * the register underneath already calls them -- sources.json, /api/sources.
+     */
+    static DB_TABS = ['backups', 'sources', 'icons', 'logs', 'trash', 'reset'];
 
     /**
      * Bookmarks is a list section, so its settings used to sit after the list —

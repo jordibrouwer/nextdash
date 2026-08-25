@@ -1,11 +1,18 @@
 /**
- * Favicon batch prefetch overlay.
+ * The blocking progress overlay.
+ *
+ * Written for the favicon batch prefetch and now shared with the source imports
+ * on Config -> Data & backups -> Sources, which is why every rule carries a
+ * second, service-neutral selector. One look for "nextDash is working through
+ * something and you should wait", rather than a second panel that is almost the
+ * same.
  *
  * Shared by config (after an import) and the dashboard (`:favicons fetch`), so
  * it lives outside the config-only stylesheets. Colours come from the theme
  * variables only.
  */
-.favicon-prefetch-overlay {
+.favicon-prefetch-overlay,
+.progress-overlay {
     position: fixed;
     inset: 0;
     z-index: 12000;
@@ -17,11 +24,13 @@
     backdrop-filter: blur(2px);
 }
 
-.favicon-prefetch-overlay[hidden] {
+.favicon-prefetch-overlay[hidden],
+.progress-overlay[hidden] {
     display: none !important;
 }
 
-.favicon-prefetch-panel {
+.favicon-prefetch-panel,
+.progress-overlay-panel {
     width: min(22rem, 100%);
     padding: 1rem 1.1rem;
     border: 1px solid var(--border-primary);
@@ -32,21 +41,24 @@
     gap: 0.65rem;
 }
 
-.favicon-prefetch-title {
+.favicon-prefetch-title,
+.progress-overlay-title {
     margin: 0;
     font-size: var(--font-size-controls);
     font-weight: var(--font-weight-semibold);
     color: var(--text-primary);
 }
 
-.favicon-prefetch-bar-track {
+.favicon-prefetch-bar-track,
+.progress-overlay-track {
     height: 0.45rem;
     border-radius: 999px;
     overflow: hidden;
     background: color-mix(in srgb, var(--text-secondary) 18%, transparent);
 }
 
-.favicon-prefetch-bar-fill {
+.favicon-prefetch-bar-fill,
+.progress-overlay-fill {
     height: 100%;
     width: 0;
     border-radius: inherit;
@@ -54,8 +66,37 @@
     transition: width 0.2s ease;
 }
 
-.favicon-prefetch-status {
+.favicon-prefetch-status,
+.progress-overlay-status {
     margin: 0;
     font-size: var(--font-size-small);
     color: var(--text-secondary);
+}
+
+/*
+ * The indeterminate bar.
+ *
+ * A source import is a single request: the server walks the service's API,
+ * however many pages that takes, and answers once. There is no honest number to
+ * put on that, and a bar sitting at zero until it jumps to a hundred reads as
+ * frozen. So it sweeps instead -- which says "working", which is all that is
+ * actually known.
+ */
+.progress-overlay-fill--indeterminate {
+    width: 40%;
+    transition: none;
+    animation: progress-overlay-sweep 1.1s ease-in-out infinite;
+}
+
+@keyframes progress-overlay-sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(250%); }
+}
+
+/* Reduced motion gets a filled bar rather than a sweeping one. */
+@media (prefers-reduced-motion: reduce) {
+    .progress-overlay-fill--indeterminate {
+        width: 100%;
+        animation: none;
+    }
 }

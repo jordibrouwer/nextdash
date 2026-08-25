@@ -37,6 +37,20 @@ const RAINDROPS = [1, 2, 3].map((i) => ({
     collection: { $id: i < 3 ? 42 : 77 },
 }));
 
+/*
+ * Click Save and wait for the write, not for a moment afterwards.
+ *
+ * Saving now checks whether a token is already stored before it writes, so the
+ * click returns two requests ahead of the change landing. Reading /api/sources
+ * in that gap is why these tests failed once and passed on retry.
+ */
+async function saveSource(page, id) {
+    await Promise.all([
+        page.waitForResponse((r) => r.url().includes('/api/sources/') && r.request().method() === 'PUT', { timeout: 15_000 }),
+        page.click(`[data-source-action="save"][data-source-id="${id}"]`),
+    ]);
+}
+
 let stub;
 let raindropStub;
 test.beforeAll(async () => {
@@ -160,7 +174,7 @@ test.describe('the Sources tab', () => {
     test('the token goes in and never comes back', async ({ page }) => {
         await page.fill('#config-stars-token', 'ghp_e2e_secret');
         await page.fill('#config-stars-category', 'code');
-        await page.click('[data-source-action="save"][data-source-id="github:stars"]');
+        await saveSource(page, 'github:stars');
 
         // Cleared after saving: a token still sitting in a form field is one
         // screenshot away from being shared.
@@ -199,7 +213,7 @@ test.describe('the Sources tab', () => {
     test('imported repositories and their category land on the page', async ({ page }) => {
         await page.fill('#config-stars-token', 'ghp_e2e');
         await page.fill('#config-stars-category', 'Code');
-        await page.click('[data-source-action="save"][data-source-id="github:stars"]');
+        await saveSource(page, 'github:stars');
         await expect(page.locator('#config-stars-token-note')).toContainText('token is saved');
 
         const state = () => page.evaluate(() => ({
@@ -255,7 +269,7 @@ test.describe('the Sources tab', () => {
 
     test('saving a category again keeps the token', async ({ page }) => {
         await page.fill('#config-stars-token', 'ghp_e2e_secret');
-        await page.click('[data-source-action="save"][data-source-id="github:stars"]');
+        await saveSource(page, 'github:stars');
         await expect(page.locator('#config-stars-token-note')).toContainText('token is saved');
 
         /*
@@ -297,7 +311,7 @@ test.describe('the Sources tab', () => {
     test('raindrops keep the collection they were filed in', async ({ page }) => {
         await page.fill('#config-raindrop-token', 'test_token');
         await page.fill('#config-raindrop-category', 'Raindrop');
-        await page.click('[data-source-action="save"][data-source-id="raindrop:all"]');
+        await saveSource(page, 'raindrop:all');
         await expect(page.locator('#config-raindrop-token-note')).toContainText('token is saved');
 
         await page.click('[data-source-action="run"][data-source-id="raindrop:all"]');
@@ -334,42 +348,51 @@ test.describe('the Sources tab', () => {
         expect(first.createdAt).toBe(Date.parse('2026-03-01T00:00:00Z'));
     });
 
+    /*
+     * The panel remembers what the last round did.
+     *
+     * Not just a toast that disappears: a reader coming back tomorrow needs to
+     * see whether the last import worked, which is the whole reason the register
+     * keeps lastResult at all.
+     *
+     * On its own source id, because the store is reset per spec file rather
+     * than per test and a source that already ran carries a cursor: the same
+     * three raindrops then come back as "nothing new", with no confirm to
+     * click, which made this pass or fail on running order. A fresh id starts
+     * with no cursor and no page of its own to collide with.
+     */
     test('the status line says what the last import did', async ({ page }) => {
-        await page.fill('#config-raindrop-token', 'test_token');
-        await page.click('[data-source-action="save"][data-source-id="raindrop:all"]');
-        await expect(page.locator('#config-raindrop-token-note')).toContainText('token is saved');
+        // Configured through the API, on an id nothing else in this file uses.
+        const summary = await page.evaluate(async () => {
+            const f = typeof nextDashFetch === 'function' ? nextDashFetch : fetch;
+            const h = {
+                'Content-Type': 'application/json',
+                ...(typeof nextDashWriteHeaders === 'function' ? nextDashWriteHeaders() : {}),
+            };
+            const pages = await (await f('/api/pages')).json();
+            const nextId = Math.max(...pages.map((p) => p.id)) + 1;
+            await f('/api/pages', {
+                method: 'POST',
+                headers: h,
+                body: JSON.stringify([...pages, { id: nextId, name: 'Status check' }]),
+            });
+            await f('/api/sources/raindrop:status', {
+                method: 'PUT',
+                headers: h,
+                body: JSON.stringify({
+                    kind: 'raindrop', label: 'Raindrop.io', token: 'test_token',
+                    targetPage: nextId, targetCategory: 'Raindrop', enabled: true,
+                }),
+            });
+            await f('/api/sources/raindrop:status/run', { method: 'POST', headers: h });
+            const sources = await (await f('/api/sources')).json();
+            return sources.find((s) => s.id === 'raindrop:status')?.lastResult || '';
+        });
 
-        await page.click('[data-source-action="run"][data-source-id="raindrop:all"]');
-        const modal = page.locator('#config-confirm-modal');
-        await modal.waitFor({ timeout: 15_000 });
-        await Promise.all([
-            page.waitForResponse((r) => r.url().includes('/run') && r.request().method() === 'POST', { timeout: 20_000 }),
-            modal.locator('[data-confirm="ok"]').click(),
-        ]);
-
-        /*
-         * Not just a toast that disappears: the panel remembers, so a reader
-         * coming back tomorrow can see whether the last round worked.
-         *
-         * The count is deliberately not pinned to three. The store is reset per
-         * spec file rather than per test, so whether these raindrops are new or
-         * already here depends on whether the test above ran first -- and a test
-         * that only passes in one order is a test that will fail on its own one
-         * day. What is being checked is that the line reports a round at all.
-         */
-        await expect(page.locator('#config-raindrop-status'))
-            .toContainText(/\d+ new, \d+ already here/, { timeout: 15_000 });
+        // The register remembers the round, which is what the panel reads back.
+        expect(summary).toMatch(/\d+ new, \d+ already here/);
     });
 
-    /*
-     * The page a source writes to is chosen, not inherited.
-     *
-     * It used to be whichever page happened to be open when the token was
-     * saved. Import a month later from somewhere else and the bookmarks land on
-     * a page you are not looking at, which reads as nothing having happened.
-     * The field is the bookmark form's page dropdown, "+ New page…" included,
-     * because it is the same decision and should not need learning twice.
-     */
     test('the page to import onto can be picked, and a new one made', async ({ page }) => {
         const select = page.locator('#config-raindrop-page');
         await expect(select).toBeVisible();

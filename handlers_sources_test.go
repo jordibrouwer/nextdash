@@ -230,3 +230,65 @@ func TestDeleteSourceRemovesIt(t *testing.T) {
 		t.Error("source survived the delete")
 	}
 }
+
+/*
+An import lands on the page the source was configured with.
+
+Not on page 1, and not on whichever page happens to be open: the reader picks a
+page in the panel, and a source imported months later has to still go there.
+Worth its own test because everything else about the run path defaults to page 1
+when nothing is set, and a default that quietly wins is indistinguishable from a
+setting that works until the day it does not.
+*/
+func TestRunSourceWritesToTheConfiguredPage(t *testing.T) {
+	h := newTestHandlers(t)
+	raindropStub(t,
+		[]map[string]any{raindropItemJSON("https://rd.example.com/1", "One", 42, "2026-03-01T00:00:00Z", nil, "", "")},
+		[]map[string]any{{"_id": 42, "title": "Reading"}})
+
+	pagesRouter := mux.NewRouter()
+	pagesRouter.HandleFunc("/api/pages", h.SavePages).Methods(http.MethodPost)
+	req := httptest.NewRequest(http.MethodPost, "/api/pages",
+		strings.NewReader(`[{"id":1,"name":"main"},{"id":2,"name":"Second"}]`))
+	rec := httptest.NewRecorder()
+	pagesRouter.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("creating the second page = %d", rec.Code)
+	}
+
+	if got := doSources(t, h, http.MethodPut, "/api/sources/raindrop:all",
+		`{"kind":"raindrop","token":"t","targetPage":2,"targetCategory":"Raindrop","enabled":true}`); got.Code != http.StatusOK {
+		t.Fatalf("save = %d: %s", got.Code, got.Body.String())
+	}
+	if got := doSources(t, h, http.MethodPost, "/api/sources/raindrop:all/run", ""); got.Code != http.StatusOK {
+		t.Fatalf("run = %d: %s", got.Code, got.Body.String())
+	}
+
+	count := func(pageID int) int {
+		n := 0
+		for _, b := range h.store.GetBookmarksByPage(pageID) {
+			if b.URL == "https://rd.example.com/1" {
+				n++
+			}
+		}
+		return n
+	}
+	if got := count(2); got != 1 {
+		t.Errorf("page 2 holds %d, want the import", got)
+	}
+	if got := count(1); got != 0 {
+		t.Errorf("page 1 holds %d, want none", got)
+	}
+
+	// And the collection's category was made on that page, not on page 1 --
+	// without it the imported bookmark has no category to be edited back to.
+	var found bool
+	for _, c := range h.store.GetCategoriesByPage(2) {
+		if c.Name == "Reading" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("the collection's category was not created on the target page")
+	}
+}
