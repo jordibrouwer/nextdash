@@ -1,0 +1,17 @@
+{
+  "tag": "v1.3.3.5",
+  "date": "25 August 2026",
+  "releasedAt": "2026-08-25",
+  "modalLead": "The window that asks what to do with a link you pasted, drawn as plain unstyled text.",
+  "sections": [
+    {
+      "title": "Saving a link",
+      "items": [
+        {
+          "badge": "fix",
+          "text": "<strong>The window that opens when you paste a link looks like a window again.</strong> Paste a link on the dashboard and <em>Save this link</em> appeared as bare text: the address printed on top of the question, and <em>Add bookmark</em> and <em>Save to Inbox</em> running together on one line with their <kbd>1</kbd> and <kbd>2</kbd> stranded underneath. Both choices now sit side by side as cards, and the address has its own line above them."
+        }
+      ]
+    }
+  ]
+}

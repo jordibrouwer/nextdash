@@ -414,7 +414,7 @@ Since **v2026.09.05.1**, the **Page** and **Category** dropdowns each lead with 
 
 ### 7.3 Paste a URL (`Ctrl+V`)
 
-With the dashboard focused and no text field active, paste a URL. A choice dialog offers **Save to Inbox** or **Add bookmark** (full modal pre-filled). Set a default under **Config → Behavior → Inbox** (*Ask each time*, *Always add bookmark*, or *Always save to Inbox*). Paste is ignored while **inline edit** or the **tag word cloud** is open. If paste cannot open the form (no active page, Inbox disabled, or the feature is blocked), a notification explains what to do.
+With the dashboard focused and no text field active, paste a URL. A choice dialog offers **Save to Inbox** or **Add bookmark** (full modal pre-filled), the two side by side as cards with **1** and **2** as their shortcuts, above the address you pasted. Until **v1.3.3.5** the dialog drew as plain unstyled text — the address printed over the question and both choices ran together on one line — because its styling shipped in the sheet that loads with Inbox, Health or Config, none of which is open when you paste on the dashboard. Set a default under **Config → Behavior → Inbox** (*Ask each time*, *Always add bookmark*, or *Always save to Inbox*). Paste is ignored while **inline edit** or the **tag word cloud** is open. If paste cannot open the form (no active page, Inbox disabled, or the feature is blocked), a notification explains what to do.
 
 ### 7.4 Inline edit after long-press
 
