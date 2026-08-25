@@ -5513,6 +5513,119 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .dashboard-widget-row {
     display: flex;
     align-items: baseline;
+
+/* A figure with its qualifier beside it — the inbox count and how old the
+   oldest is, the neglected count and the threshold that produced it. The
+   qualifier is load-bearing: "eleven neglected" is a different claim at thirty
+   days than at a year. */
+.dashboard-widget-headline {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.dashboard-widget-headline-value {
+    font-size: 1.5em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.dashboard-widget-headline-note {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+/* The heartbeat, as a row of ticks rather than a chart: what it has to show is
+   a pattern of good and bad, not a value per moment. */
+.dashboard-widget-spark {
+    display: flex;
+    flex: none;
+    gap: 1px;
+    align-items: flex-end;
+    margin-left: 8px;
+}
+
+.dashboard-widget-spark-tick {
+    width: 2px;
+    height: 10px;
+    border-radius: 1px;
+    background: var(--border-secondary);
+}
+
+.dashboard-widget-spark-tick--up {
+    background: var(--status-success, var(--text-secondary));
+}
+
+.dashboard-widget-spark-tick--down {
+    background: var(--status-error, var(--text-primary));
+}
+
+/* degraded, as health_uptime.go names it: a bucket where some samples answered
+   and some did not. */
+.dashboard-widget-spark-tick--degraded {
+    background: var(--status-warning, var(--text-secondary));
+}
+
+.dashboard-widget-trend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.dashboard-widget-trend-value {
+    font-size: 1.5em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.dashboard-widget-trend-change {
+    font-size: var(--font-size-small);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Fewer broken links is good news even when the number is still high, so the
+   direction carries the colour and the value stays neutral. */
+.dashboard-widget-trend-change.is-better {
+    color: var(--status-success, var(--text-secondary));
+}
+
+.dashboard-widget-trend-change.is-worse {
+    color: var(--status-error, var(--text-primary));
+}
+
+.dashboard-widget-trend-change.is-level {
+    color: var(--text-tertiary);
+}
+
+.dashboard-widget-trend-line {
+    display: block;
+    width: 100%;
+    height: 40px;
+    margin-top: 4px;
+}
+
+a.dashboard-widget-row {
+    text-decoration: none;
+}
+
+a.dashboard-widget-row:hover,
+a.dashboard-widget-row:focus-visible {
+    background: rgba(127, 127, 127, 0.09);
+}
+
+/* The row that says what did not fit. Quieter than the rows above it — it is a
+   pointer, not a finding — but present, because a list that cuts itself off in
+   silence answers a different question than the one it appears to answer. */
+.dashboard-widget-row--more .dashboard-widget-row-name {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-small);
+}
+
+button.dashboard-widget-row--more {
+    cursor: pointer;
+}
     justify-content: space-between;
     gap: 10px;
     width: 100%;
