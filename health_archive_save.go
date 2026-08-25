@@ -82,6 +82,9 @@ type spnSubmitResponse struct {
 	URL     string `json:"url"`
 	Message string `json:"message"`
 	Status  string `json:"status"`
+	// StatusExt names the kind of refusal -- "error:too-many-daily-captures"
+	// for a spent budget -- where Message is prose for a person.
+	StatusExt string `json:"status_ext"`
 }
 
 /*
@@ -220,10 +223,26 @@ func (h *Handlers) SubmitArchiveCapture(ctx context.Context, target string) (SPN
 		return SPNResult{}, fmt.Errorf("archive.org sent something that is not a job: %w", err)
 	}
 	if strings.TrimSpace(parsed.JobID) == "" {
-		// A 200 with no job id is how this API reports refusals -- an excluded
-		// domain, a spent budget stated in prose. The message is the answer.
+		/*
+		 * A 200 with no job id is how this API reports refusals -- an excluded
+		 * domain, a spent budget stated in prose. The message is the answer.
+		 *
+		 * A spent budget arrives this way too, which is why the 429 branch
+		 * above never fires: measured live on 25 August 2026, a sixth capture
+		 * of the same page in one day answered HTTP 200 with
+		 * {"status":"error","status_ext":"error:too-many-daily-captures", ...}.
+		 * Without reading status_ext, a caller cannot tell "wait until
+		 * tomorrow" from "this address will never work", and a queue would
+		 * keep retrying an address the archive has already refused for the day.
+		 */
+		if strings.Contains(parsed.StatusExt, "too-many") || strings.Contains(parsed.StatusExt, "daily") {
+			if msg := strings.TrimSpace(parsed.Message); msg != "" {
+				return SPNResult{}, fmt.Errorf("%w: %s", ErrSPNRateLimited, trimToLength(msg, 300))
+			}
+			return SPNResult{}, ErrSPNRateLimited
+		}
 		if msg := strings.TrimSpace(parsed.Message); msg != "" {
-			return SPNResult{}, errors.New(msg)
+			return SPNResult{}, errors.New(trimToLength(msg, 300))
 		}
 		return SPNResult{}, errors.New("archive.org returned no job id")
 	}

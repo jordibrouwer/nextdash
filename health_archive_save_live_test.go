@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -190,5 +191,80 @@ func TestAQueuedCaptureKeepsItsPlaceInTheWindow(t *testing.T) {
 	}
 	if attempts != 1 {
 		t.Errorf("the archive saw %d attempts, want 1", attempts)
+	}
+}
+
+/*
+A spent budget arrives as a 200, not a 429.
+
+Measured live on 25 August 2026 with real keys: a sixth capture of the same page
+in one day answered
+
+	HTTP 200
+	{"status":"error","status_ext":"error:too-many-daily-captures",
+	 "message":"This URL has been already captured 5 times today, ..."}
+
+so the http.StatusTooManyRequests branch never fires for the case it was written
+for. Without reading status_ext the caller cannot tell "wait until tomorrow"
+from "this address will never work", and the handler cannot answer 429 -- which
+is the signal a queue needs in order to stop rather than retry.
+*/
+func TestASpentDailyBudgetIsRecognisedDespiteThe200(t *testing.T) {
+	h := newTestHandlers(t)
+	withArchiveKeys(t, h, true)
+
+	const measured = `{"status":"error","status_ext":"error:too-many-daily-captures",` +
+		`"message":"This URL has been already captured 5 times today, which is a daily limit we have set for that Resource type."}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// The status the archive really sends for this.
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(measured))
+	}))
+	defer server.Close()
+
+	previous := spnSaveAPI
+	spnSaveAPI = server.URL
+	defer func() { spnSaveAPI = previous }()
+
+	_, err := h.SubmitArchiveCapture(context.Background(), "https://example.com/spent-budget")
+	if err == nil {
+		t.Fatal("a refusal was reported as success")
+	}
+	if !errors.Is(err, ErrSPNRateLimited) {
+		t.Errorf("not recognised as a spent budget, so the handler cannot answer 429: %v", err)
+	}
+	// The archive's own sentence still reaches the reader.
+	if !strings.Contains(err.Error(), "captured 5 times today") {
+		t.Errorf("the explanation was dropped: %v", err)
+	}
+}
+
+// A refusal that is not about the budget must not be reported as one, or a
+// queue waits until tomorrow for an address that will never work.
+func TestAnExcludedAddressIsNotMistakenForASpentBudget(t *testing.T) {
+	h := newTestHandlers(t)
+	withArchiveKeys(t, h, true)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"error","status_ext":"error:invalid-url-syntax","message":"URL syntax is not valid."}`))
+	}))
+	defer server.Close()
+
+	previous := spnSaveAPI
+	spnSaveAPI = server.URL
+	defer func() { spnSaveAPI = previous }()
+
+	_, err := h.SubmitArchiveCapture(context.Background(), "https://example.com/excluded")
+	if err == nil {
+		t.Fatal("a refusal was reported as success")
+	}
+	if errors.Is(err, ErrSPNRateLimited) {
+		t.Error("an address the archive will not take was reported as a spent budget")
+	}
+	if !strings.Contains(err.Error(), "syntax") {
+		t.Errorf("the explanation was dropped: %v", err)
 	}
 }
