@@ -2,7 +2,7 @@
 <Container version="2">
   <Name>NextDash</Name>
   <Repository>ghcr.io/jordibrouwer/nextdash:latest</Repository>
-  <Registry>https://github.com/jordibrouwer/nextdash</Registry>
+  <Registry>https://github.com/jordibrouwer/nextdash/pkgs/container/nextdash</Registry>
   <Project>https://www.nextdash.cc</Project>
   <Support>https://github.com/jordibrouwer/nextdash/issues</Support>
   <ReadMe>https://raw.githubusercontent.com/jordibrouwer/nextdash/main/README.md</ReadMe>
@@ -13,6 +13,7 @@
   <WebUI>http://[IP]:[PORT:8080]</WebUI>
   <ExtraParams>--restart unless-stopped</ExtraParams>
   <Overview>A lightweight, self-hosted bookmark dashboard that features a minimalist, keyboard-driven interface with extensive customization options, making it the perfect personal dashboard for power users. Based on the excellent ThinkDashboard.</Overview>
+  <Date>2026-08-25</Date>
   <Category>Network:Web Tools:Utilities</Category>
 
   <Config Name="WebUI Port"
