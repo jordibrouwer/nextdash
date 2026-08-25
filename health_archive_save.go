@@ -164,9 +164,18 @@ func (h *Handlers) SubmitArchiveCapture(ctx context.Context, target string) (SPN
 
 	// The canonical key, so http/https and a trailing slash are one page rather
 	// than three requests against the same budget.
-	if !spnShouldAsk(canonicalBookmarkURLKey(target), time.Now()) {
+	askKey := canonicalBookmarkURLKey(target)
+	if !spnShouldAsk(askKey, time.Now()) {
 		return SPNResult{Skipped: "asked recently"}, nil
 	}
+	// An attempt that never reached the archive must not hold the window
+	// against the next one -- see spnForgetAsk.
+	queued := false
+	defer func() {
+		if !queued {
+			spnForgetAsk(askKey)
+		}
+	}()
 
 	form := neturl.Values{}
 	form.Set("url", target)
@@ -199,11 +208,11 @@ func (h *Handlers) SubmitArchiveCapture(ctx context.Context, target string) (SPN
 
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized, resp.StatusCode == http.StatusForbidden:
-		return SPNResult{}, errors.New("archive.org rejected those keys")
+		return SPNResult{}, spnError(body, "archive.org rejected those keys")
 	case resp.StatusCode == http.StatusTooManyRequests:
 		return SPNResult{}, ErrSPNRateLimited
 	case resp.StatusCode >= 400:
-		return SPNResult{}, fmt.Errorf("archive.org answered %d", resp.StatusCode)
+		return SPNResult{}, spnError(body, fmt.Sprintf("archive.org answered %d", resp.StatusCode))
 	}
 
 	var parsed spnSubmitResponse
@@ -219,6 +228,7 @@ func (h *Handlers) SubmitArchiveCapture(ctx context.Context, target string) (SPN
 		return SPNResult{}, errors.New("archive.org returned no job id")
 	}
 
+	queued = true
 	return SPNResult{JobID: parsed.JobID, URL: target, Queued: true}, nil
 }
 
@@ -268,12 +278,27 @@ func (h *Handlers) ArchiveCaptureStatus(ctx context.Context, jobID string) (SPNS
 		return SPNStatus{}, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return SPNStatus{}, fmt.Errorf("archive.org answered %d", resp.StatusCode)
-	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, spnMaxBody))
 	if err != nil {
 		return SPNStatus{}, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		/*
+		 * Read before judging the code, because the body is where the reason
+		 * is. Measured against the real service: asking for a job's status
+		 * with keys it does not accept answers 401 and
+		 * {"message":"You need to be logged in to use Save Page Now."} --
+		 * this endpoint checks authorisation before it looks at the job id,
+		 * so keys that expired between submitting and asking land here rather
+		 * than on the submit path.
+		 */
+		if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+			return SPNStatus{}, spnError(body, "archive.org rejected those keys")
+		}
+		if resp.StatusCode == http.StatusTooManyRequests {
+			return SPNStatus{}, ErrSPNRateLimited
+		}
+		return SPNStatus{}, spnError(body, fmt.Sprintf("archive.org answered %d", resp.StatusCode))
 	}
 
 	var parsed spnStatusResponse
@@ -497,4 +522,51 @@ func (h *Handlers) recordArchiveJob(target, jobID string) {
 			_ = h.store.SaveBookmarksByPage(page.ID, bookmarks)
 		}
 	}
+}
+
+/*
+spnError prefers the archive's own words to a status code.
+
+Every refusal measured against the real service answers application/json with a
+"message" saying what is wrong -- "You need to be logged in to use Save Page
+Now." for keys it does not accept, and prose for a domain it will not take or a
+budget already spent. Reporting "archive.org answered 401" throws that away and
+leaves someone with a number to search for; the message is the one thing on
+screen that tells them what to do next.
+
+Falls back to the caller's wording when the body is not JSON, is empty, or
+carries no message -- an outage returning an HTML error page must not surface as
+a wall of markup.
+*/
+func spnError(body []byte, fallback string) error {
+	var parsed struct {
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(body, &parsed); err == nil {
+		if msg := strings.TrimSpace(parsed.Message); msg != "" {
+			return errors.New(trimToLength(msg, 300))
+		}
+	}
+	return errors.New(fallback)
+}
+
+/*
+spnForgetAsk undoes the record a failed attempt left behind.
+
+spnShouldAsk notes the address before the request is made, which is right for a
+capture that reaches the archive: the window exists so fifty bookmarks on one
+host do not become fifty submissions. It is wrong for one that never got there.
+Someone whose keys are rejected fixes them, presses the button again, and is
+told "asked recently" -- the correction cannot be tested for an hour, and
+nothing on screen explains why the second press did nothing.
+
+Only failures call this. A queued capture keeps its record.
+*/
+func spnForgetAsk(key string) {
+	if key == "" {
+		return
+	}
+	spnRecentlyAsked.Lock()
+	defer spnRecentlyAsked.Unlock()
+	delete(spnRecentlyAsked.at, key)
 }
