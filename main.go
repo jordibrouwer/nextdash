@@ -68,6 +68,10 @@ func main() {
 
 	// Initialize handlers
 	handlers := NewHandlers(store, embeddedFiles)
+	// The sources that reach the network through the handler's own client, so
+	// they inherit the SSRF checks and the rate limiting rather than each
+	// arranging their own.
+	handlers.registerHandlerSources()
 
 	// Create router
 	r := mux.NewRouter()

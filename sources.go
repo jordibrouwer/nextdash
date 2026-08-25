@@ -69,6 +69,25 @@ type SourceState struct {
 	// when a service changes how it paginates.
 	Cursor string `json:"cursor,omitempty"`
 	// TargetPage and TargetCategory are where imported bookmarks land.
+	/*
+	 * Handle is the account or address a source needs beside its token.
+	 *
+	 * A Hacker News name, a Mastodon instance, a YouTube channel -- things that
+	 * are not secret and not a category, so neither Token nor TargetCategory is
+	 * the right home. One field rather than one per service, because every one
+	 * of them answers "whose items are these".
+	 */
+	Handle string `json:"handle,omitempty"`
+	/*
+	 * AsRows decides what a feed becomes.
+	 *
+	 * Some sources are a list of saved items -- each one is a bookmark. Others
+	 * are a subscription: a YouTube channel is one thing the reader follows, and
+	 * turning its rolling window into rows means new bookmarks appearing for
+	 * ever. Both readings are defensible, so it is a setting rather than a
+	 * decision made here.
+	 */
+	AsRows         bool   `json:"asRows,omitempty"`
 	TargetPage     int    `json:"targetPage,omitempty"`
 	TargetCategory string `json:"targetCategory,omitempty"`
 	LastRun        int64  `json:"lastRun,omitempty"`
@@ -189,10 +208,14 @@ type SourceStatus struct {
 	HasToken       bool   `json:"hasToken"`
 	TargetPage     int    `json:"targetPage,omitempty"`
 	TargetCategory string `json:"targetCategory,omitempty"`
-	LastRun        int64  `json:"lastRun,omitempty"`
-	LastResult     string `json:"lastResult,omitempty"`
-	LastError      string `json:"lastError,omitempty"`
-	Enabled        bool   `json:"enabled"`
+	// Not secret, so unlike the token these travel back out: the panel has to
+	// show which account it is pointed at.
+	Handle     string `json:"handle,omitempty"`
+	AsRows     bool   `json:"asRows,omitempty"`
+	LastRun    int64  `json:"lastRun,omitempty"`
+	LastResult string `json:"lastResult,omitempty"`
+	LastError  string `json:"lastError,omitempty"`
+	Enabled    bool   `json:"enabled"`
 }
 
 func sourceStatusOf(id string, source SourceState) SourceStatus {
@@ -203,6 +226,8 @@ func sourceStatusOf(id string, source SourceState) SourceStatus {
 		HasToken:       strings.TrimSpace(source.Token) != "",
 		TargetPage:     source.TargetPage,
 		TargetCategory: source.TargetCategory,
+		Handle:         source.Handle,
+		AsRows:         source.AsRows,
 		LastRun:        source.LastRun,
 		LastResult:     source.LastResult,
 		LastError:      source.LastError,
@@ -240,6 +265,8 @@ func SaveSource(id string, next SourceState) (SourceStatus, error) {
 	merged.Label = truncateForState(next.Label, sourceMaxResultLen)
 	merged.TargetPage = next.TargetPage
 	merged.TargetCategory = strings.TrimSpace(next.TargetCategory)
+	merged.Handle = strings.TrimSpace(next.Handle)
+	merged.AsRows = next.AsRows
 	merged.Enabled = next.Enabled
 	if token := strings.TrimSpace(next.Token); token != "" {
 		// A changed token invalidates the cursor: it may be a different account,

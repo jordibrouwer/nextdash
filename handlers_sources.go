@@ -118,6 +118,38 @@ var sourceImporters = map[string]sourceImporter{
 }
 
 /*
+registerHandlerSources adds the importers that need the Handlers receiver.
+
+The table above holds plain functions; these three reach the network through
+h.outboundHTTPClient, which is where the SSRF checks, the redirect validation
+and the global rate limit live. A source that used http.Get would skip all
+three, and the atlas is explicit that this is not negotiable.
+*/
+func (h *Handlers) registerHandlerSources() {
+	sourceImporters["hackernews"] = func(ctx context.Context, source SourceState) ([]ImportedRow, string, bool, error) {
+		result, err := h.FetchHackerNewsFavorites(ctx, source)
+		if err != nil {
+			return nil, "", false, err
+		}
+		return result.Bookmarks, result.NewestAt, false, nil
+	}
+	sourceImporters["youtube"] = func(ctx context.Context, source SourceState) ([]ImportedRow, string, bool, error) {
+		result, err := h.FetchYouTubeChannel(ctx, source)
+		if err != nil {
+			return nil, "", false, err
+		}
+		return result.Bookmarks, result.NewestAt, false, nil
+	}
+	sourceImporters["mastodon"] = func(ctx context.Context, source SourceState) ([]ImportedRow, string, bool, error) {
+		result, err := h.FetchMastodonBookmarks(ctx, source)
+		if err != nil {
+			return nil, "", false, err
+		}
+		return result.Bookmarks, result.NewestID, result.Truncated, nil
+	}
+}
+
+/*
 RunSourceHandler answers POST /api/sources/{id}/run, and GET .../run?dryRun=1.
 
 The dry run and the real one take the identical path up to the point of writing,
@@ -165,7 +197,8 @@ func (h *Handlers) RunSourceHandler(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusBadGateway
 		// Every source reports a rejected credential the same way, because it is
 		// the one failure the reader can actually act on.
-		if errors.Is(err, errGitHubUnauthorized) || errors.Is(err, errRaindropUnauthorized) {
+		if errors.Is(err, errGitHubUnauthorized) || errors.Is(err, errRaindropUnauthorized) ||
+			errors.Is(err, errMastodonUnauthorized) {
 			message = "That token was rejected"
 			status = http.StatusUnauthorized
 		}

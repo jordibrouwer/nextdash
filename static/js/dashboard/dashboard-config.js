@@ -4316,6 +4316,62 @@ class DashboardConfig {
             tokenPlaceholder: '…',
             categoryFallback: 'Raindrop',
         },
+        /*
+         * The three that identify an account rather than authenticate one.
+         *
+         * needsHandle puts a second field on the panel; needsToken false hides
+         * the token pair entirely, because a panel asking for a token that is
+         * never sent is a panel that looks broken.
+         */
+        {
+            id: 'hn:favorites',
+            kind: 'hackernews',
+            slug: 'hn',
+            needsHandle: true,
+            needsToken: false,
+            offersRows: true,
+            titleKey: 'hnSectionTitle',
+            titleFallback: 'Hacker News favorites',
+            descKey: 'hnDescription',
+            descFallback: 'Import what you starred on Hacker News. No token and no account needed — just your username.',
+            handleLabelKey: 'hnHandleLabel',
+            handleLabelFallback: 'Hacker News username',
+            handlePlaceholder: 'pg',
+            categoryFallback: 'Hacker News',
+        },
+        {
+            id: 'youtube:channel',
+            kind: 'youtube',
+            slug: 'youtube',
+            needsHandle: true,
+            needsToken: false,
+            offersRows: true,
+            titleKey: 'youtubeSectionTitle',
+            titleFallback: 'YouTube channel',
+            descKey: 'youtubeDescription',
+            descFallback: 'Follow a channel through its public feed. No API key and no quota; a handle is resolved to a channel id for you.',
+            handleLabelKey: 'youtubeHandleLabel',
+            handleLabelFallback: 'Channel',
+            handlePlaceholder: '@handle, UC… id, or a channel URL',
+            categoryFallback: 'YouTube',
+        },
+        {
+            id: 'mastodon:bookmarks',
+            kind: 'mastodon',
+            slug: 'mastodon',
+            needsHandle: true,
+            titleKey: 'mastodonSectionTitle',
+            titleFallback: 'Mastodon bookmarks',
+            descKey: 'mastodonDescription',
+            descFallback: 'Import the posts you bookmarked. Needs an access token from your own instance; nextDash only ever reads.',
+            handleLabelKey: 'mastodonHandleLabel',
+            handleLabelFallback: 'Instance',
+            handlePlaceholder: 'mastodon.social',
+            tokenHelpKey: 'mastodonTokenHelp',
+            tokenHelpFallback: 'Your instance → Preferences → Development → New application, with the read:bookmarks scope.',
+            tokenPlaceholder: '…',
+            categoryFallback: 'Mastodon',
+        },
     ];
 
     /** Everything nextDash can pull bookmarks in from, on repeat. */
@@ -4412,17 +4468,47 @@ class DashboardConfig {
     renderSourcePanel(def) {
         const esc = (v) => this.dash.escapeHtml(v);
         const slug = def.slug;
+        // Defaults so the two descriptor shapes -- token sources and account
+        // sources -- do not each need every field spelled out.
+        const needsToken = def.needsToken !== false;
+
+        const handleField = def.needsHandle ? `
+                <div class="config-field">
+                    <label class="config-field-label" for="config-${esc(slug)}-handle">${esc(this.t(`config.${def.handleLabelKey}`, def.handleLabelFallback))}</label>
+                    <input type="text" id="config-${esc(slug)}-handle" class="config-text" autocomplete="off" spellcheck="false"
+                        placeholder="${esc(def.handlePlaceholder || '')}">
+                </div>` : '';
+
+        const tokenFields = needsToken ? `
+                <div class="config-field">
+                    <label class="config-field-label" for="config-${esc(slug)}-token">${esc(this.t('config.sourceTokenLabel', 'Access token'))}</label>
+                    <input type="password" id="config-${esc(slug)}-token" class="config-text" autocomplete="off" spellcheck="false"
+                        placeholder="${esc(def.tokenPlaceholder || '')}">
+                    <p class="config-field-hint">${esc(this.t(`config.${def.tokenHelpKey}`, def.tokenHelpFallback))}</p>
+                    <p class="config-field-hint" id="config-${esc(slug)}-token-note"></p>
+                </div>` : '';
+
+        /*
+         * What a feed becomes.
+         *
+         * Offered only where both answers are defensible. A list of saved items
+         * is bookmarks and nothing else; a subscription is one thing followed,
+         * and turning its rolling window into rows means new bookmarks for ever.
+         */
+        const rowsField = def.offersRows ? `
+                <label class="config-toggle">
+                    <input type="checkbox" data-source-rows="${esc(def.id)}">
+                    <span>${esc(this.t('config.sourceAsRows', 'Import each item as its own bookmark'))}</span>
+                </label>
+                <p class="config-field-hint">${esc(this.t('config.sourceAsRowsHint',
+                    'Off: one bookmark to the source itself, which Fresh can then count new items on.'))}</p>` : '';
+
         return `
             <div class="config-panel" data-source-panel="${esc(def.id)}">
                 <h3 class="config-panel-title">${esc(this.t(`config.${def.titleKey}`, def.titleFallback))}</h3>
                 <p class="config-panel-note">${esc(this.t(`config.${def.descKey}`, def.descFallback))}</p>
-                <div class="config-field">
-                    <label class="config-field-label" for="config-${esc(slug)}-token">${esc(this.t('config.sourceTokenLabel', 'Access token'))}</label>
-                    <input type="password" id="config-${esc(slug)}-token" class="config-text" autocomplete="off" spellcheck="false"
-                        placeholder="${esc(def.tokenPlaceholder)}">
-                    <p class="config-field-hint">${esc(this.t(`config.${def.tokenHelpKey}`, def.tokenHelpFallback))}</p>
-                    <p class="config-field-hint" id="config-${esc(slug)}-token-note"></p>
-                </div>
+                ${handleField}
+                ${tokenFields}
                 <div class="config-field" data-source-page-field="${esc(def.id)}">
                     <label class="config-field-label" for="config-${esc(slug)}-page">${esc(this.t('config.sourcePageLabel', 'Page to import onto'))}</label>
                     <select id="config-${esc(slug)}-page" class="config-select" data-source-page="${esc(def.id)}"></select>
@@ -4433,10 +4519,11 @@ class DashboardConfig {
                         placeholder="${esc(def.categoryFallback)}">
                     <p class="config-field-hint">${esc(this.t('config.sourceCategoryHint', 'Used only for bookmarks the service files nowhere — folders and collections keep their own names.'))}</p>
                 </div>
+                ${rowsField}
                 <div class="config-actions">
-                    <button type="button" class="config-btn" data-source-action="save" data-source-id="${esc(def.id)}">${esc(this.t('config.sourceSaveBtn', 'Save token'))}</button>
+                    <button type="button" class="config-btn" data-source-action="save" data-source-id="${esc(def.id)}">${esc(this.t(needsToken ? 'config.sourceSaveBtn' : 'config.sourceSaveSettingsBtn', needsToken ? 'Save token' : 'Save'))}</button>
                     <button type="button" class="config-btn" data-source-action="run" data-source-id="${esc(def.id)}">${esc(this.t('config.sourceRunBtn', 'Import…'))}</button>
-                    <button type="button" class="config-btn config-btn--danger" data-source-action="forget" data-source-id="${esc(def.id)}">${esc(this.t('config.sourceForgetBtn', 'Forget token'))}</button>
+                    <button type="button" class="config-btn config-btn--danger" data-source-action="forget" data-source-id="${esc(def.id)}">${esc(this.t(needsToken ? 'config.sourceForgetBtn' : 'config.sourceForgetSettingsBtn', needsToken ? 'Forget token' : 'Forget'))}</button>
                 </div>
                 <p class="config-panel-note" id="config-${esc(slug)}-status"></p>
             </div>
@@ -6531,6 +6618,21 @@ class DashboardConfig {
         }
     }
 
+    /** The account this source is pointed at, as the server has it. */
+    async sourceHandleValue(id) {
+        const def = this.sourceDef(id);
+        const typed = document.getElementById(`config-${def?.slug}-handle`)?.value?.trim();
+        if (typed) return typed;
+        try {
+            const res = await this.writeFetch('/api/sources');
+            if (!res.ok) return '';
+            const body = await res.json();
+            return (Array.isArray(body) ? body : []).find((s) => s.id === id)?.handle || '';
+        } catch {
+            return '';
+        }
+    }
+
     /** Whether the server is holding a token for this source. */
     async sourceHasToken(id) {
         try {
@@ -6572,6 +6674,13 @@ class DashboardConfig {
         if (pageSelect && source?.targetPage) {
             this.fillSourcePageSelect(pageSelect, source.targetPage);
         }
+        // The handle is not secret, so unlike the token it comes back and is
+        // shown -- a panel that forgot which account it points at is a panel
+        // nobody trusts.
+        const handle = document.getElementById(`config-${def.slug}-handle`);
+        if (handle && source?.handle && !handle.value) handle.value = source.handle;
+        const rows = document.querySelector(`[data-source-rows="${CSS.escape(def.id)}"]`);
+        if (rows && source) rows.checked = Boolean(source.asRows);
 
         note.textContent = source?.hasToken
             ? this.t('config.sourceTokenSet', 'A token is saved. Leave this empty to keep it.')
@@ -6606,7 +6715,9 @@ class DashboardConfig {
          * and answering "Source saved." to that is how someone concludes the
          * token was forgotten: the message said it worked.
          */
-        if (!token?.value?.trim() && !(await this.sourceHasToken(id))) {
+        // Only where a token is part of the source: Hacker News and YouTube
+        // authenticate nothing, so demanding one would block a working setup.
+        if (def.needsToken !== false && !token?.value?.trim() && !(await this.sourceHasToken(id))) {
             this.notify(this.t('config.sourceTokenRequired', 'Paste a token first — this source cannot read anything without one.'), 'error');
             token?.focus();
             return;
@@ -6620,6 +6731,8 @@ class DashboardConfig {
                     kind: def.kind,
                     label: def.titleFallback,
                     token: token?.value || '',
+                    handle: document.getElementById(`config-${def.slug}-handle`)?.value?.trim() || '',
+                    asRows: Boolean(document.querySelector(`[data-source-rows="${CSS.escape(def.id)}"]`)?.checked),
                     targetPage: pageId,
                     targetCategory: category?.value?.trim() || '',
                     enabled: true,
@@ -6665,9 +6778,16 @@ class DashboardConfig {
 
         // Nothing to import with. Said plainly rather than as "could not reach
         // that service", which sends the reader looking at their network.
-        if (!await this.sourceHasToken(id)) {
+        if (def.needsToken !== false && !await this.sourceHasToken(id)) {
             this.notify(this.t('config.sourceTokenRequired', 'Paste a token first — this source cannot read anything without one.'), 'error');
             document.getElementById(`config-${def.slug}-token`)?.focus();
+            return;
+        }
+        // An account source needs its name instead, and saying which is missing
+        // is the difference between a fixable message and a puzzle.
+        if (def.needsHandle && !(await this.sourceHandleValue(id))) {
+            this.notify(this.t('config.sourceHandleRequired', 'Fill in the account or channel first.'), 'error');
+            document.getElementById(`config-${def.slug}-handle`)?.focus();
             return;
         }
 
