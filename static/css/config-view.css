@@ -5640,3 +5640,193 @@ button.config-bm-shortcut-pill {
     color: var(--text-tertiary);
     font-style: italic;
 }
+
+/* ─── Widgets tab ────────────────────────────────────────────────────────── */
+/*
+   Its own layout rather than the shared .config-crud-row, which is a flex line
+   with no wrap: the type name, the shown toggle and three buttons were fighting
+   for the same line, and a settings panel had nowhere to go but beside them.
+   A widget row is two stacked parts — what it is, and what it may be told — so
+   it is laid out as one.
+*/
+.config-widget-add {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 10px;
+    background: var(--card-bg, rgba(127, 127, 127, 0.03));
+}
+
+.config-widget-add-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.config-widget-add-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 9rem;
+}
+
+.config-widget-add-field > span {
+    font-size: calc(var(--font-size-text) * 0.86);
+    color: var(--text-muted, #888);
+}
+
+/* The line that says what the picked type does, before it is added. */
+.config-widget-add-about {
+    margin: 0;
+    max-width: 62ch;
+    font-size: calc(var(--font-size-text) * 0.9);
+    color: var(--text-muted, #888);
+    line-height: 1.45;
+}
+
+.config-widget-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.config-widget-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    border-radius: 10px;
+}
+
+/* An open row is the one being worked on, so it reads as the foreground. */
+.config-widget-row.is-open {
+    border-color: var(--accent-primary, rgba(128, 128, 128, 0.5));
+}
+
+/* Switched off is a state worth seeing in the list, not only in the checkbox. */
+.config-widget-row.is-off .config-widget-row-identity,
+.config-widget-row.is-off .config-widget-row-about {
+    opacity: 0.55;
+}
+
+.config-widget-row-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.config-widget-row-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 14rem;
+}
+
+/* The type, as a quiet chip ahead of the name someone chose. It used to sit
+   after the title field on a line with no room, which is why it landed on top
+   of the toggle. */
+.config-widget-row-kind {
+    flex: none;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+    font-size: calc(var(--font-size-text) * 0.8);
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+}
+
+.config-widget-row-title {
+    flex: 1;
+    min-width: 8rem;
+}
+
+.config-widget-row-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.config-widget-row-about {
+    margin: 0;
+    max-width: 68ch;
+    font-size: calc(var(--font-size-text) * 0.88);
+    color: var(--text-muted, #888);
+    line-height: 1.45;
+}
+
+/* The settings, folded out under the row they belong to. Full width, since a
+   checkset needs the room, and separated by a rule rather than a box so the row
+   still reads as one thing. */
+.config-widget-settings {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+}
+
+/*
+   Two columns where there is room. A widget with five settings was a single
+   column half a screen tall for controls that are mostly a number or a
+   checkbox, which pushed the next widget in the list out of view.
+   auto-fit rather than a fixed count, so a narrow window gets one column
+   without a breakpoint saying so.
+*/
+.config-widget-settings-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 12px 20px;
+    align-items: start;
+}
+
+/* A checkset is a row of boxes and needs the full width, whatever the grid
+   would otherwise give it. */
+.config-widget-settings-body > .config-widget-field:has(.config-widget-checkset) {
+    grid-column: 1 / -1;
+}
+
+.config-widget-settings-empty {
+    margin: 0;
+    color: var(--text-muted, #888);
+    font-size: calc(var(--font-size-text) * 0.9);
+}
+
+.config-widget-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.config-widget-field > label,
+.config-widget-field-label {
+    font-size: calc(var(--font-size-text) * 0.86);
+    color: var(--text-muted, #888);
+}
+
+/* A bounded number reads better short: a wide box for a value that stops at
+   twenty invites a value that will be refused. */
+.config-text--number {
+    max-width: 7rem;
+}
+
+.config-widget-checkset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+}
+
+@media (max-width: 640px) {
+    .config-widget-row-actions {
+        width: 100%;
+    }
+}

@@ -13850,29 +13850,37 @@ class DashboardConfig {
                 const rows = widgets.map((widget) => {
                     const index = this._widgetBlocks.indexOf(widget);
                     const enabled = widget.config?.enabled !== false;
+                    const open = this._widgetSettingsOpen === index;
                     return `
-                <li class="config-crud-row" data-widget-row="${index}">
-                    <div class="config-crud-fields">
-                        <input type="text" class="config-text" data-widget="title" data-index="${index}"
-                            value="${esc(widget.title || '')}"
-                            placeholder="${esc(this.widgetTypeName(widget.type))}">
-                        <span class="config-widget-kind">${esc(this.widgetTypeName(widget.type))}</span>
+                <li class="config-widget-row${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}"
+                    data-widget-row="${index}">
+                    <div class="config-widget-row-head">
+                        <div class="config-widget-row-identity">
+                            <span class="config-widget-row-kind">${esc(this.widgetTypeName(widget.type))}</span>
+                            <input type="text" class="config-text config-widget-row-title" data-widget="title"
+                                data-index="${index}" value="${esc(widget.title || '')}"
+                                aria-label="${esc(this.t('config.widgetsTitleLabel', 'Widget title'))}"
+                                placeholder="${esc(this.widgetTypeName(widget.type))}">
+                        </div>
+                        <div class="config-widget-row-actions">
+                            <label class="config-toggle config-toggle--inline"
+                                title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
+                                <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}>
+                                <span>${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
+                            </label>
+                            <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
+                                aria-expanded="${open ? 'true' : 'false'}">${esc(
+                                this.t('config.widgetsConfigure', 'Settings'))}</button>
+                            <button type="button" class="config-btn config-btn--small config-btn--danger"
+                                data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
+                        </div>
                     </div>
-                    <div class="config-crud-row-actions">
-                        <label class="config-toggle config-toggle--inline" title="${esc(this.t('config.widgetsEnabledHint', 'Show this widget on the dashboard'))}">
-                            <input type="checkbox" data-widget-enabled="${index}" ${enabled ? 'checked' : ''}>
-                            <span>${esc(this.t('config.widgetsEnabled', 'Shown'))}</span>
-                        </label>
-                        <button type="button" class="config-btn config-btn--small" data-widget-settings="${index}"
-                            aria-expanded="${this._widgetSettingsOpen === index ? 'true' : 'false'}">${esc(
-                            this.t('config.widgetsConfigure', 'Settings'))}</button>
-                        <button type="button" class="config-btn config-btn--small config-btn--danger" data-widget-delete="${index}">${esc(this.t('config.backupDelete', 'Delete'))}</button>
-                    </div>
-                    <div class="config-widget-settings" ${this._widgetSettingsOpen === index ? '' : 'hidden'}>${
-                        this._widgetSettingsOpen === index ? this.renderWidgetSettings(widget, index) : ''}</div>
+                    <p class="config-widget-row-about">${esc(this.widgetTypeAbout(widget.type))}</p>
+                    <div class="config-widget-settings" ${open ? '' : 'hidden'}>${
+                        open ? this.renderWidgetSettings(widget, index) : ''}</div>
                 </li>`;
                 }).join('');
-                body = `<ul class="config-crud-list">${rows}</ul>`;
+                body = `<ul class="config-widget-list">${rows}</ul>`;
             }
         }
 
@@ -13882,10 +13890,21 @@ class DashboardConfig {
         return `
             <p class="config-panel-note">${esc(this.t('config.widgetsIntro',
                 'Widgets are blocks on a page that hold something other than bookmarks. Where each one sits is arranged under Categories, together with the categories it sits between.'))}</p>
-            <div class="config-crud-toolbar">
-                <select class="config-select" data-widget-page aria-label="${esc(this.t('config.categoriesPageLabel', 'Page'))}">${pageOptions}</select>
-                <select class="config-select" data-widget-type aria-label="${esc(this.t('config.widgetsTypeLabel', 'Widget type'))}">${typeOptions}</select>
-                <button type="button" class="config-btn config-btn--small" data-widget-add>${esc(this.t('config.widgetsAdd', 'Add widget'))}</button>
+            <div class="config-widget-add">
+                <div class="config-widget-add-fields">
+                    <label class="config-widget-add-field">
+                        <span>${esc(this.t('config.widgetsPageLabel', 'Page'))}</span>
+                        <select class="config-select" data-widget-page>${pageOptions}</select>
+                    </label>
+                    <label class="config-widget-add-field">
+                        <span>${esc(this.t('config.widgetsTypeLabel', 'Widget type'))}</span>
+                        <select class="config-select" data-widget-type>${typeOptions}</select>
+                    </label>
+                    <button type="button" class="config-btn" data-widget-add>${esc(
+                        this.t('config.widgetsAdd', 'Add widget'))}</button>
+                </div>
+                <p class="config-widget-add-about" data-widget-add-about>${esc(
+                    this.widgetTypeAbout(DashboardConfig.WIDGET_TYPES[0]))}</p>
             </div>
             ${body}
         `;
@@ -13943,6 +13962,7 @@ class DashboardConfig {
         ],
         sources: [
             { key: 'errorsOnly', kind: 'bool', label: ['config.widgetErrorsOnly', 'Only sources that failed'] },
+            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         ],
         neglected: [
             { key: 'sinceDays', kind: 'int', min: 7, max: 730,
@@ -13962,7 +13982,6 @@ class DashboardConfig {
             return `<p class="config-widget-settings-empty">${esc(this.t(
                 'config.widgetNoSettings', 'This widget has nothing to set.'))}</p>`;
         }
-            { key: 'rows', kind: 'int', min: 1, max: 20, label: ['config.widgetRows', 'Rows to show'] },
         const config = widget.config || {};
         const rows = fields.map((field) => {
             const label = esc(this.t(field.label[0], field.label[1]));
@@ -14015,6 +14034,29 @@ class DashboardConfig {
                 </div>`;
         }).join('');
         return `<div class="config-widget-settings-body">${rows}</div>`;
+    }
+
+    /**
+     * One line on what a widget puts on the dashboard.
+     *
+     * Beside the name rather than behind a help icon: eight types is past the
+     * point where the names carry themselves, and "Neglected" or "Trend" says
+     * nothing about what lands on the grid.
+     */
+    widgetTypeAbout(type) {
+        const key = `config.widgetAbout.${type}`;
+        const fallbacks = {
+            health: 'How many bookmarks are broken, down, changed or fine — each figure opens its own filter.',
+            uptime: 'The bookmarks you monitor, worst first, with uptime over the last week.',
+            certs: 'Certificates about to expire, grouped by host rather than by bookmark.',
+            trend: 'Broken links over time, as a line — the direction is what a single number cannot show.',
+            inbox: 'How much is waiting to be filed, and how long the oldest has waited.',
+            feeds: 'Feeds with new items, and the ones that stopped after repeated failures.',
+            sources: 'What each import last did, so a failed import is not only visible in config.',
+            neglected: 'Bookmarks you have not opened in a long time — the graveyard question in reverse.',
+        };
+        const label = this.dash.language?.t?.(key);
+        return label && label !== key ? label : (fallbacks[type] || '');
     }
 
     widgetTypeName(type) {
@@ -14087,6 +14129,14 @@ class DashboardConfig {
         container.querySelector('[data-widget-add]')?.addEventListener('click', () => {
             const type = container.querySelector('[data-widget-type]')?.value || 'health';
             void this.addWidget(type);
+        });
+
+        // The line under the picker follows the picker, so what you are about
+        // to add is described before you add it rather than after.
+        const typePicker = container.querySelector('[data-widget-type]');
+        typePicker?.addEventListener('change', () => {
+            const about = container.querySelector('[data-widget-add-about]');
+            if (about) about.textContent = this.widgetTypeAbout(typePicker.value);
         });
 
         // Whether a widget is drawn at all, and what it counts. Where it sits is
@@ -14283,6 +14333,13 @@ class DashboardConfig {
             d.blockOrder = blocks.order || [];
             d.data?.updatePageDataCache?.(pageId, { blocks: { widgets: d.widgets, order: d.blockOrder } });
             d.renderDashboard?.({ animate: false, forceFull: true });
+        /*
+         * Editing another page's widgets leaves this page alone — but the
+         * cached answers are the dashboard's, not the page's, so they go either
+         * way. Otherwise switching to the page that was edited draws its new
+         * tiles from data fetched before the edit.
+         */
+        d.renderCore?.forgetWidgetCaches?.();
         } catch {
             // The dashboard keeps what it had; the next load corrects it.
         }
@@ -14333,13 +14390,6 @@ class DashboardConfig {
             const summary = this.renderStatSummary([
                 [this._categories.length, this.t('config.categoriesStatTotal', 'categories')],
                 [catCounts.reduce((sum, n) => sum + n, 0), this.t('config.categoriesStatBookmarks', 'bookmarks on this page')],
-        /*
-         * Editing another page's widgets leaves this page alone — but the
-         * cached answers are the dashboard's, not the page's, so they go either
-         * way. Otherwise switching to the page that was edited draws its new
-         * tiles from data fetched before the edit.
-         */
-        d.renderCore?.forgetWidgetCaches?.();
             ]);
             /*
              * The widgets that live between these categories.

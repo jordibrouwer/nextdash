@@ -5446,54 +5446,6 @@ body[data-grid-keys="shown"] .dashboard-legend {
 
 /* Config: the widgets tab lists categories too, greyed, to be moved past. */
 .config-widget-row--category .config-widget-category-name { color: var(--text-tertiary); }
-/* The settings a widget takes, folded out of its row rather than in a dialog:
-   the list stays the list, and what you are configuring stays visible above the
-   fields. Full width of the row, since a checkset needs the room. */
-.config-widget-settings {
-    grid-column: 1 / -1;
-    margin-top: 10px;
-    padding: 12px 14px;
-    border-top: 1px solid var(--border-secondary);
-    background: rgba(127, 127, 127, 0.04);
-    border-radius: var(--layout-radius-sm, 6px);
-}
-
-.config-widget-settings-body {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.config-widget-settings-empty {
-    margin: 0;
-    color: var(--text-tertiary);
-    font-size: var(--font-size-small);
-}
-
-.config-widget-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.config-widget-field > label,
-.config-widget-field-label {
-    font-size: var(--font-size-small);
-    color: var(--text-secondary);
-}
-
-/* A number that is bounded reads better short: a four-digit box for a value
-   that stops at 20 invites a value that will be refused. */
-.config-text--number {
-    max-width: 7rem;
-}
-
-.config-widget-checkset {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 14px;
-}
-
 .config-widget-kind {
     font-size: var(--font-size-small);
     color: var(--text-tertiary);
@@ -5513,6 +5465,54 @@ body[data-grid-keys="shown"] .dashboard-legend {
 .dashboard-widget-row {
     display: flex;
     align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 3px 6px;
+    border: 0;
+    border-radius: var(--layout-radius-sm, 5px);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+button.dashboard-widget-row {
+    cursor: pointer;
+}
+
+button.dashboard-widget-row:hover,
+button.dashboard-widget-row:focus-visible {
+    background: rgba(127, 127, 127, 0.09);
+}
+
+.dashboard-widget-row-name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* The number or the verdict, kept on one line and lined up down the column. */
+.dashboard-widget-row-detail {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-tertiary);
+}
+
+.dashboard-widget-row--bad .dashboard-widget-row-detail {
+    color: var(--status-error, var(--text-primary));
+}
+
+.dashboard-widget-row--warn .dashboard-widget-row-detail {
+    color: var(--status-warning, var(--text-primary));
+}
+
+.dashboard-widget-waiting,
+.dashboard-widget-empty {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
 
 /* A figure with its qualifier beside it — the inbox count and how old the
    oldest is, the neglected count and the threshold that produced it. The
@@ -5625,52 +5625,4 @@ a.dashboard-widget-row:focus-visible {
 
 button.dashboard-widget-row--more {
     cursor: pointer;
-}
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    padding: 3px 6px;
-    border: 0;
-    border-radius: var(--layout-radius-sm, 5px);
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-}
-
-button.dashboard-widget-row {
-    cursor: pointer;
-}
-
-button.dashboard-widget-row:hover,
-button.dashboard-widget-row:focus-visible {
-    background: rgba(127, 127, 127, 0.09);
-}
-
-.dashboard-widget-row-name {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-/* The number or the verdict, kept on one line and lined up down the column. */
-.dashboard-widget-row-detail {
-    flex: none;
-    font-variant-numeric: tabular-nums;
-    color: var(--text-tertiary);
-}
-
-.dashboard-widget-row--bad .dashboard-widget-row-detail {
-    color: var(--status-error, var(--text-primary));
-}
-
-.dashboard-widget-row--warn .dashboard-widget-row-detail {
-    color: var(--status-warning, var(--text-primary));
-}
-
-.dashboard-widget-waiting,
-.dashboard-widget-empty {
-    margin: 0;
-    color: var(--text-tertiary);
-    font-style: italic;
 }
