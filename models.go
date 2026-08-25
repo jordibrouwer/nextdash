@@ -105,7 +105,20 @@ type Bookmark struct {
 	ArchiveSnapshotURL string `json:"archiveSnapshotUrl,omitempty"`
 	// ArchiveCheckedAt is when the index was last asked, so it is not asked
 	// again for every check.
-	ArchiveCheckedAt int64  `json:"archiveCheckedAt,omitempty"`
+	ArchiveCheckedAt int64 `json:"archiveCheckedAt,omitempty"`
+	/*
+	 * ArchiveJobID is the receipt for a capture that was asked for.
+	 *
+	 * Save Page Now answers with a job id and does the work over the following
+	 * seconds to minutes, so the id is the only way to find out afterwards
+	 * whether the capture happened. Thrown away, as it was at first, the status
+	 * route had nothing to look up and a reader had no way to tell a queued
+	 * capture from one the archive quietly refused.
+	 */
+	ArchiveJobID string `json:"archiveJobId,omitempty"`
+	// ArchiveJobAt is when that capture was asked for, so a job id that never
+	// finished can be recognised as stale rather than pending for ever.
+	ArchiveJobAt     int64  `json:"archiveJobAt,omitempty"`
 	DriftTitle       string `json:"driftTitle,omitempty"`
 	DriftFingerprint string `json:"driftFingerprint,omitempty"`
 	// DriftNoticed is what the last check found, as one of the kinds in
@@ -3632,11 +3645,21 @@ type HealthIssue struct {
 	// ArchiveDiedAt is when the web lost the page, which is a different fact
 	// from when this install started seeing failures -- see the field of the
 	// same name on Bookmark.
-	ArchiveDiedAt int64  `json:"archiveDiedAt,omitempty"`
-	PreviewTitle  string `json:"previewTitle,omitempty"`
-	PreviewDesc   string `json:"previewDesc,omitempty"`
-	PreviewImage  string `json:"previewImage,omitempty"`
-	Icon          string `json:"icon,omitempty"`
+	ArchiveDiedAt int64 `json:"archiveDiedAt,omitempty"`
+	/*
+	 * FailureUncertain marks a failure that says nothing about whether the page
+	 * still exists -- a bot check, a rate limit, a timeout.
+	 *
+	 * Derived per report rather than stored on the bookmark: it is a reading of
+	 * LastError, and a second copy would be one more thing to keep in step. One
+	 * rule decides it here, so the row, the archive backfill and anything
+	 * counting rot cannot disagree about what a 403 means.
+	 */
+	FailureUncertain bool   `json:"failureUncertain,omitempty"`
+	PreviewTitle     string `json:"previewTitle,omitempty"`
+	PreviewDesc      string `json:"previewDesc,omitempty"`
+	PreviewImage     string `json:"previewImage,omitempty"`
+	Icon             string `json:"icon,omitempty"`
 	// Status is the single worst thing about this bookmark, picked by priority.
 	// It drives how the row is presented — colour band, sort rank, headline
 	// reason — so it stays one value.

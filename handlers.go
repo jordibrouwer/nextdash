@@ -825,6 +825,7 @@ func (h *Handlers) buildBookmarkHealthReport() BookmarkHealthReport {
 				LastError:              bm.LastError,
 				BrokenSince:            bm.BrokenSince,
 				ArchiveDiedAt:          bm.ArchiveDiedAt,
+				FailureUncertain:       failureIsUncertain(bm.LastError),
 				PreviewTitle:           bm.PreviewTitle,
 				PreviewDesc:            bm.PreviewDesc,
 				PreviewImage:           bm.PreviewImage,

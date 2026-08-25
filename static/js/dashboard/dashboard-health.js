@@ -1284,6 +1284,23 @@ class DashboardHealth {
     renderBrokenSince(issue) {
         const since = Number(issue?.brokenSince) || 0;
         if (!since || !String(issue?.lastError || '').trim()) return '';
+        /*
+         * A failure that only describes the request gets a softer sentence.
+         *
+         * "failing for 40 days" beside a 403 reads as a dead link, and it is
+         * how a dashboard of working bookmarks comes to look half dead --
+         * after which the reader stops believing any of the warnings, and the
+         * real 404s go unnoticed with them. The row still shows the failure and
+         * the code; what it stops claiming is that the page is rotting.
+         */
+        if (issue?.failureUncertain) {
+            const blockedLabel = this.t('dashboard.healthBlockedFor',
+                'not answering us for {duration}', { duration: this.formatDuration(Date.now() - since) });
+            const blockedTitle = this.t('dashboard.healthBlockedTitle',
+                'The site refused or could not answer our checks since {date}. It may load fine in a browser.',
+                { date: new Date(since).toLocaleString() });
+            return `<span class="health-view-item-broken-since" title="${this.escape(blockedTitle)}">${this.escape(blockedLabel)}</span>`;
+        }
         // A monitor already says it, in its own strip and with its own record.
         if (Number(issue?.monitorStats?.downSince) > 0) return '';
         const label = this.t('dashboard.healthBrokenFor', 'failing for {duration}', {
@@ -1310,6 +1327,10 @@ class DashboardHealth {
     renderArchiveDied(issue) {
         const diedAt = Number(issue?.archiveDiedAt) || 0;
         if (!diedAt) return '';
+        // A failure that says nothing about the page says nothing about when it
+        // died either: "gone from the web since 2019" beside a bot check is
+        // confidently wrong about a page that opens fine in a browser.
+        if (issue?.failureUncertain) return '';
         // A death the archive dates to after we started seeing failures is the
         // archive catching up with us, not new information.
         const since = Number(issue?.brokenSince) || 0;

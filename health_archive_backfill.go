@@ -39,6 +39,18 @@ func archiveBackfillDue(bm Bookmark, now time.Time) bool {
 	if strings.TrimSpace(bm.URL) == "" || strings.TrimSpace(bm.LastError) == "" {
 		return false
 	}
+	/*
+	 * Only failures that say something about the page.
+	 *
+	 * A 403 from a bot check or a 429 from a rate limiter says this request did
+	 * not get through, not that the page is gone -- and dating a live page's
+	 * "death" from the archive would put "gone from the web since 2019" on a
+	 * bookmark that opens fine in a browser. That is worse than saying nothing:
+	 * it is confidently wrong, and it spends an expensive index query to be so.
+	 */
+	if failureIsUncertain(bm.LastError) {
+		return false
+	}
 	if bm.ArchiveCheckedAt <= 0 {
 		return true
 	}

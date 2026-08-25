@@ -238,6 +238,10 @@ func classifyPingError(err error, resp *http.Response) string {
 		}
 	}
 	if resp != nil && resp.StatusCode >= 400 {
+		// The code is kept verbatim, including the ones that say nothing about
+		// the page. Whether a failure counts as evidence the page has died is
+		// failureIsUncertain's job, one layer up: this sentence is the record of
+		// what happened, and softening it here would lose the actual code.
 		return fmt.Sprintf("HTTP %d", resp.StatusCode)
 	}
 	return "Unreachable"
